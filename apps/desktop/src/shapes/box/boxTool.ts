@@ -118,7 +118,7 @@ export const boxTool: ToolKind<BoxParams> = {
                 shortRankAt: _shortRankAt,
                 ...rest
             } = params;
-            // A layout at a width it can't make the count with (a saved shape's family at the
+            // A layout at a width it can't make the count with (a remembered family at the
             // drawn file count) is stored as its nearest version; one whose family can't make
             // the count at all is kept as asked, Short back standing in (#387)
             const resolved =

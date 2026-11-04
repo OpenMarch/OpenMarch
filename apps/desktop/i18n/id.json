@@ -1880,21 +1880,6 @@
             },
             "selectWholeShape": "Pilih {shape, select, block {blok} circle {lingkaran} other {bentuk}}"
         },
-        "save": {
-            "descriptionLabel": "Deskripsi bentuk yang disimpan (opsional)",
-            "descriptionPlaceholder": "Deskripsi (opsional)",
-            "ariaLabel": "Simpan bentuk ini ke pustaka",
-            "button": "Simpan",
-            "cancel": "Batal",
-            "nameLabel": "Nama bentuk yang disimpan",
-            "savedAs": "Disimpan sebagai {name}",
-            "tip": "Simpan bentuk ini ke pustaka dan beri bintang",
-            "mixedIntervals": "Garis dengan jarak campuran belum dapat disimpan"
-        },
-        "saved": {
-            "copyFailed": "Tidak dapat menyalin bentuk tersimpan ke pertunjukan",
-            "deleteFailed": "Tidak dapat menghapus bentuk tersimpan dari pertunjukan"
-        },
         "command": {
             "fill": "Isian: {modes}",
             "layout": "Tata letak: {layouts}"
@@ -2132,37 +2117,6 @@
                 "spacing": "Penjarakan"
             }
         },
-        "library": {
-            "addNamed": "Tambahkan {name} ke Pustaka saya",
-            "addTip": "Tambahkan ke Pustaka saya, untuk semua pertunjukan",
-            "close": "Tutup",
-            "deleteNamed": "Hapus {name}",
-            "deleteTip": "Hapus bentuk tersimpan ini",
-            "dismiss": "Tutup",
-            "draw": "Gambar {name}",
-            "full": "{max} bentuk sudah diberi bintang, sebanyak yang dapat ditampung cincin bentuk. Hapus bintang salah satu bentuk terlebih dahulu untuk memberi bintang {name}.",
-            "group": {
-                "basic": "Dasar",
-                "saved": "Tersimpan"
-            },
-            "intro": "Beri bintang pada bentuk agar tetap ada di tab Bentuk dan cincin bentuk, maksimal {max}.",
-            "note": {
-                "apart": "berjarak {spacing}",
-                "modeApart": "{mode, select, outline {Garis tepi} other {Sebar}} berjarak {spacing}",
-                "apartStagger": "berjarak {spacing}, geser {fraction}",
-                "apartStaggerLeft": "berjarak {spacing}, geser {fraction} ke kiri",
-                "showOnly": "hanya pertunjukan ini",
-                "stagger": "geser {fraction}",
-                "staggerLeft": "geser {fraction} ke kiri"
-            },
-            "savedEmpty": "Simpan bentuk dari baris ⋯ miliknya atau dari panel Inspector agar tersimpan di sini, untuk semua pertunjukan.",
-            "savedNewer": "{count, plural, other {# bentuk tersimpan memerlukan}} versi OpenMarch yang lebih baru.",
-            "star": "Beri bintang",
-            "starNamed": "Beri bintang {name}",
-            "title": "Bentuk",
-            "unstar": "Hapus bintang",
-            "unstarNamed": "Hapus bintang {name}"
-        },
         "spacing": {
             "empty": "Masukkan jarak dalam langkah",
             "noGaps": "Rentang memerlukan minimal 1 celah",
@@ -2183,8 +2137,7 @@
             },
             "placeError": "Gagal menempatkan bentuk",
             "ring": {
-                "hint": "Klik bentuk, atau klik di tempat lain untuk menutup",
-                "starred": "Berbintang"
+                "hint": "Klik bentuk, atau klik di tempat lain untuk menutup"
             },
             "section": {
                 "box": "Blok",
@@ -2194,8 +2147,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Jenis bentuk",
-                "library": "Pustaka",
-                "libraryTip": "Buka pustaka bentuk untuk memberi bintang pada bentuk",
                 "ringHintKeys": "Tahan <keys></keys> di lapangan untuk membuka cincin bentuk"
             }
         },

@@ -1,0 +1,572 @@
+{
+    "omSchemaVersion": "0.2.0",
+    "metadata": {
+        "createdAtUtc": "1970-01-01T00:00:00.000Z",
+        "audioOffsetSeconds": 0,
+        "performanceArea": {
+            "yOrigin": "front",
+            "inchesPerStep": 22.5,
+            "xCheckpoints": [
+                {
+                    "name": "0 yard line",
+                    "terseName": "0",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -80
+                },
+                {
+                    "name": "5 yard line",
+                    "terseName": "5",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -72
+                },
+                {
+                    "name": "10 yard line",
+                    "terseName": "10",
+                    "useAsReference": true,
+                    "fieldLabel": "10",
+                    "visible": true,
+                    "stepsFromCenter": -64
+                },
+                {
+                    "name": "15 yard line",
+                    "terseName": "15",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -56
+                },
+                {
+                    "name": "20 yard line",
+                    "terseName": "20",
+                    "useAsReference": true,
+                    "fieldLabel": "20",
+                    "visible": true,
+                    "stepsFromCenter": -48
+                },
+                {
+                    "name": "25 yard line",
+                    "terseName": "25",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -40
+                },
+                {
+                    "name": "30 yard line",
+                    "terseName": "30",
+                    "useAsReference": true,
+                    "fieldLabel": "30",
+                    "visible": true,
+                    "stepsFromCenter": -32
+                },
+                {
+                    "name": "35 yard line",
+                    "terseName": "35",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -24
+                },
+                {
+                    "name": "40 yard line",
+                    "terseName": "40",
+                    "useAsReference": true,
+                    "fieldLabel": "40",
+                    "visible": true,
+                    "stepsFromCenter": -16
+                },
+                {
+                    "name": "45 yard line",
+                    "terseName": "45",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": -8
+                },
+                {
+                    "name": "50 yard line",
+                    "terseName": "50",
+                    "useAsReference": true,
+                    "fieldLabel": "50",
+                    "visible": true,
+                    "stepsFromCenter": 0
+                },
+                {
+                    "name": "45 yard line",
+                    "terseName": "45",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 8
+                },
+                {
+                    "name": "40 yard line",
+                    "terseName": "40",
+                    "useAsReference": true,
+                    "fieldLabel": "40",
+                    "visible": true,
+                    "stepsFromCenter": 16
+                },
+                {
+                    "name": "35 yard line",
+                    "terseName": "35",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 24
+                },
+                {
+                    "name": "30 yard line",
+                    "terseName": "30",
+                    "useAsReference": true,
+                    "fieldLabel": "30",
+                    "visible": true,
+                    "stepsFromCenter": 32
+                },
+                {
+                    "name": "25 yard line",
+                    "terseName": "25",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 40
+                },
+                {
+                    "name": "20 yard line",
+                    "terseName": "20",
+                    "useAsReference": true,
+                    "fieldLabel": "20",
+                    "visible": true,
+                    "stepsFromCenter": 48
+                },
+                {
+                    "name": "15 yard line",
+                    "terseName": "15",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 56
+                },
+                {
+                    "name": "10 yard line",
+                    "terseName": "10",
+                    "useAsReference": true,
+                    "fieldLabel": "10",
+                    "visible": true,
+                    "stepsFromCenter": 64
+                },
+                {
+                    "name": "5 yard line",
+                    "terseName": "5",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 72
+                },
+                {
+                    "name": "0 yard line",
+                    "terseName": "0",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromCenter": 80
+                }
+            ],
+            "yCheckpoints": [
+                {
+                    "name": "front sideline",
+                    "terseName": "FSL",
+                    "useAsReference": true,
+                    "visible": false,
+                    "stepsFromYOrigin": 0
+                },
+                {
+                    "name": "HS front hash",
+                    "terseName": "FH",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromYOrigin": 28
+                },
+                {
+                    "name": "HS back hash",
+                    "terseName": "BH",
+                    "useAsReference": true,
+                    "visible": true,
+                    "stepsFromYOrigin": 56
+                },
+                {
+                    "name": "grid back sideline",
+                    "terseName": "grid:BSL",
+                    "useAsReference": true,
+                    "visible": false,
+                    "stepsFromYOrigin": 85
+                },
+                {
+                    "name": "real back sideline",
+                    "terseName": "real:BSL",
+                    "useAsReference": false,
+                    "visible": false,
+                    "stepsFromYOrigin": 85.33
+                }
+            ],
+            "widthFeet": 300,
+            "heightFeet": 159.99375,
+            "useHashes": true
+        }
+    },
+    "performers": [
+        {
+            "id": 5,
+            "label": "S1",
+            "section": "Snare"
+        },
+        {
+            "id": 6,
+            "label": "S2",
+            "section": "Snare"
+        },
+        {
+            "id": 1,
+            "label": "T1",
+            "section": "Trumpet"
+        },
+        {
+            "id": 2,
+            "label": "T2",
+            "section": "Trumpet"
+        },
+        {
+            "id": 3,
+            "label": "T3",
+            "section": "Trumpet"
+        },
+        {
+            "id": 4,
+            "label": "T4",
+            "section": "Trumpet"
+        }
+    ],
+    "performerAppearance": {
+        "defaultAppearance": {
+            "fillRgba": "rgba(255,0,0,1)",
+            "strokeRgba": "rgba(0,0,0,0)",
+            "strokeWidth": 1,
+            "visible": true,
+            "textVisible": true,
+            "shape": "circle"
+        },
+        "performers": [],
+        "sections": []
+    },
+    "pages": [
+        {
+            "id": "0",
+            "duration": 0,
+            "startBeatIndex": 0,
+            "name": "0"
+        },
+        {
+            "id": "1",
+            "duration": 4,
+            "startBeatIndex": 1,
+            "name": "1"
+        },
+        {
+            "id": "2",
+            "duration": 4,
+            "startBeatIndex": 9,
+            "name": "2"
+        },
+        {
+            "id": "3",
+            "duration": 2,
+            "startBeatIndex": 17,
+            "isSubset": true,
+            "name": "2A"
+        },
+        {
+            "id": "4",
+            "duration": 5.333333333333334,
+            "startBeatIndex": 21,
+            "name": "3"
+        },
+        {
+            "id": "5",
+            "duration": 6.666666666666668,
+            "startBeatIndex": 33,
+            "name": "4"
+        }
+    ],
+    "tempoSections": [
+        {
+            "tempo": 120,
+            "numberOfBeats": 24
+        },
+        {
+            "tempo": 144,
+            "numberOfBeats": 24
+        }
+    ],
+    "coordinates": [
+        {
+            "marcherId": "1",
+            "pageId": "0",
+            "xSteps": -35.55555555555556,
+            "ySteps": 49.77444444444444
+        },
+        {
+            "marcherId": "2",
+            "pageId": "0",
+            "xSteps": -31.288888888888888,
+            "ySteps": 46.93
+        },
+        {
+            "marcherId": "3",
+            "pageId": "0",
+            "xSteps": -27.022222222222222,
+            "ySteps": 44.08555555555555
+        },
+        {
+            "marcherId": "4",
+            "pageId": "0",
+            "xSteps": -22.755555555555556,
+            "ySteps": 49.77444444444444
+        },
+        {
+            "marcherId": "1",
+            "pageId": "1",
+            "xSteps": -30.22222222222222,
+            "ySteps": 47.99666666666666
+        },
+        {
+            "marcherId": "2",
+            "pageId": "1",
+            "xSteps": -25.955555555555556,
+            "ySteps": 45.15222222222222
+        },
+        {
+            "marcherId": "3",
+            "pageId": "1",
+            "xSteps": -21.68888888888889,
+            "ySteps": 50.84111111111111
+        },
+        {
+            "marcherId": "4",
+            "pageId": "1",
+            "xSteps": -17.42222222222222,
+            "ySteps": 47.99666666666666
+        },
+        {
+            "marcherId": "1",
+            "pageId": "2",
+            "xSteps": -31.288888888888888,
+            "ySteps": 46.218888888888884
+        },
+        {
+            "marcherId": "2",
+            "pageId": "2",
+            "xSteps": -27.022222222222222,
+            "ySteps": 51.907777777777774
+        },
+        {
+            "marcherId": "3",
+            "pageId": "2",
+            "xSteps": -22.755555555555556,
+            "ySteps": 49.06333333333333
+        },
+        {
+            "marcherId": "4",
+            "pageId": "2",
+            "xSteps": -18.488888888888887,
+            "ySteps": 46.218888888888884
+        },
+        {
+            "marcherId": "1",
+            "pageId": "3",
+            "xSteps": -25.955555555555556,
+            "ySteps": 52.974444444444444
+        },
+        {
+            "marcherId": "2",
+            "pageId": "3",
+            "xSteps": -21.68888888888889,
+            "ySteps": 50.129999999999995
+        },
+        {
+            "marcherId": "3",
+            "pageId": "3",
+            "xSteps": -17.42222222222222,
+            "ySteps": 47.285555555555554
+        },
+        {
+            "marcherId": "4",
+            "pageId": "3",
+            "xSteps": -13.155555555555555,
+            "ySteps": 52.974444444444444
+        },
+        {
+            "marcherId": "1",
+            "pageId": "4",
+            "xSteps": -27.022222222222222,
+            "ySteps": 51.196666666666665
+        },
+        {
+            "marcherId": "2",
+            "pageId": "4",
+            "xSteps": -22.755555555555556,
+            "ySteps": 48.352222222222224
+        },
+        {
+            "marcherId": "3",
+            "pageId": "4",
+            "xSteps": -18.488888888888887,
+            "ySteps": 54.04111111111111
+        },
+        {
+            "marcherId": "4",
+            "pageId": "4",
+            "xSteps": -14.222222222222221,
+            "ySteps": 51.196666666666665
+        },
+        {
+            "marcherId": "1",
+            "pageId": "5",
+            "xSteps": -21.68888888888889,
+            "ySteps": 49.41888888888889
+        },
+        {
+            "marcherId": "2",
+            "pageId": "5",
+            "xSteps": -17.42222222222222,
+            "ySteps": 55.10777777777778
+        },
+        {
+            "marcherId": "3",
+            "pageId": "5",
+            "xSteps": -13.155555555555555,
+            "ySteps": 52.26333333333333
+        },
+        {
+            "marcherId": "4",
+            "pageId": "5",
+            "xSteps": -8.88888888888889,
+            "ySteps": 49.41888888888889
+        },
+        {
+            "marcherId": "5",
+            "pageId": "0",
+            "xSteps": -18.488888888888887,
+            "ySteps": 46.93
+        },
+        {
+            "marcherId": "6",
+            "pageId": "0",
+            "xSteps": -14.222222222222221,
+            "ySteps": 44.08555555555555
+        },
+        {
+            "marcherId": "5",
+            "pageId": "1",
+            "xSteps": -13.155555555555555,
+            "ySteps": 45.15222222222222
+        },
+        {
+            "marcherId": "6",
+            "pageId": "1",
+            "xSteps": -8.88888888888889,
+            "ySteps": 50.84111111111111
+        },
+        {
+            "marcherId": "5",
+            "pageId": "2",
+            "xSteps": -14.222222222222221,
+            "ySteps": 51.907777777777774
+        },
+        {
+            "marcherId": "6",
+            "pageId": "2",
+            "xSteps": -9.955555555555556,
+            "ySteps": 49.06333333333333
+        },
+        {
+            "marcherId": "5",
+            "pageId": "3",
+            "xSteps": -14.222222222222221,
+            "ySteps": 51.907777777777774
+        },
+        {
+            "marcherId": "6",
+            "pageId": "3",
+            "xSteps": -9.955555555555556,
+            "ySteps": 49.06333333333333
+        },
+        {
+            "marcherId": "5",
+            "pageId": "4",
+            "xSteps": -9.955555555555556,
+            "ySteps": 48.352222222222224
+        },
+        {
+            "marcherId": "6",
+            "pageId": "4",
+            "xSteps": -5.688888888888889,
+            "ySteps": 54.04111111111111
+        },
+        {
+            "marcherId": "5",
+            "pageId": "5",
+            "xSteps": -4.622222222222222,
+            "ySteps": 55.10777777777778
+        },
+        {
+            "marcherId": "6",
+            "pageId": "5",
+            "xSteps": -0.35555555555555557,
+            "ySteps": 52.26333333333333
+        }
+    ],
+    "measures": [
+        {
+            "startBeatIndex": 1,
+            "name": "Measure 1",
+            "rehearsalMark": "A"
+        },
+        {
+            "startBeatIndex": 5,
+            "name": "Measure 2"
+        },
+        {
+            "startBeatIndex": 9,
+            "name": "Measure 3"
+        },
+        {
+            "startBeatIndex": 13,
+            "name": "Measure 4"
+        },
+        {
+            "startBeatIndex": 17,
+            "name": "Measure 5"
+        },
+        {
+            "startBeatIndex": 21,
+            "name": "Measure 6"
+        },
+        {
+            "startBeatIndex": 25,
+            "name": "Measure 7",
+            "rehearsalMark": "B"
+        },
+        {
+            "startBeatIndex": 29,
+            "name": "Measure 8"
+        },
+        {
+            "startBeatIndex": 33,
+            "name": "Measure 9"
+        },
+        {
+            "startBeatIndex": 37,
+            "name": "Measure 10"
+        },
+        {
+            "startBeatIndex": 41,
+            "name": "Measure 11"
+        },
+        {
+            "startBeatIndex": 45,
+            "name": "Measure 12"
+        }
+    ]
+}

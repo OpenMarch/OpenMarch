@@ -12,4 +12,3 @@ export * from "./tags/queries";
 export * from "./tags/mutations";
 export * from "./useMarcherAppearances";
 export * from "./useItems";
-export * from "./useSavedShapes";

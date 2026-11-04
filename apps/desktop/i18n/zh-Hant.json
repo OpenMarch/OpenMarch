@@ -1880,21 +1880,6 @@
             },
             "selectWholeShape": "選取{shape, select, block {方陣} circle {圓形} other {圖形}}"
         },
-        "save": {
-            "descriptionLabel": "已儲存圖形的說明（選填）",
-            "descriptionPlaceholder": "說明（選填）",
-            "ariaLabel": "將此圖形儲存到你的資源庫",
-            "button": "儲存",
-            "cancel": "取消",
-            "nameLabel": "已儲存圖形的名稱",
-            "savedAs": "已儲存為「{name}」",
-            "tip": "將此圖形儲存到你的資源庫並加上星號",
-            "mixedIntervals": "目前尚無法儲存間距不一的線條"
-        },
-        "saved": {
-            "copyFailed": "無法將已儲存的圖形複製到表演中",
-            "deleteFailed": "無法從表演中刪除已儲存的圖形"
-        },
         "command": {
             "fill": "填滿方式：{modes}",
             "layout": "排列方式：{layouts}"
@@ -2132,37 +2117,6 @@
                 "spacing": "間距"
             }
         },
-        "library": {
-            "addNamed": "將{name}加入我的圖形庫",
-            "addTip": "加入我的圖形庫，供所有表演使用",
-            "close": "關閉",
-            "deleteNamed": "刪除{name}",
-            "deleteTip": "刪除此已儲存的圖形",
-            "dismiss": "關閉",
-            "draw": "繪製{name}",
-            "full": "已有{max}個圖形加上星號，圖形環已滿。請先移除一個星號，才能為「{name}」加上星號。",
-            "group": {
-                "basic": "基本",
-                "saved": "已儲存"
-            },
-            "intro": "為圖形加上星號，即可保留在「圖形」分頁和圖形環中，最多{max}個。",
-            "note": {
-                "apart": "間距{spacing}",
-                "modeApart": "{mode, select, outline {外框} other {分散}}，間距{spacing}",
-                "apartStagger": "間距{spacing}，交錯{fraction}",
-                "apartStaggerLeft": "間距{spacing}，向左交錯{fraction}",
-                "showOnly": "僅限此表演",
-                "stagger": "交錯{fraction}",
-                "staggerLeft": "向左交錯{fraction}"
-            },
-            "savedEmpty": "從圖形的 ⋯ 列或檢閱器儲存圖形，即可保留在這裡，供所有表演使用。",
-            "savedNewer": "{count, plural, other {#個已儲存的圖形}}需要較新版本的 OpenMarch。",
-            "star": "加上星號",
-            "starNamed": "為{name}加上星號",
-            "title": "圖形",
-            "unstar": "移除星號",
-            "unstarNamed": "移除{name}的星號"
-        },
         "spacing": {
             "empty": "請輸入以步為單位的間距",
             "noGaps": "一段排列至少需要 1 個間隔",
@@ -2183,8 +2137,7 @@
             },
             "placeError": "放置圖形時發生錯誤",
             "ring": {
-                "hint": "點選圖形，或點選其他任何地方以關閉",
-                "starred": "已加星號"
+                "hint": "點選圖形，或點選其他任何地方以關閉"
             },
             "section": {
                 "box": "方陣",
@@ -2194,8 +2147,6 @@
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "圖形種類",
-                "library": "圖形庫",
-                "libraryTip": "開啟圖形庫以為圖形加上星號",
                 "ringHintKeys": "在場地上按住<keys></keys>即可開啟圖形環"
             }
         },

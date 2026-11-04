@@ -4,7 +4,7 @@ import type { ShapeToolEntry } from "./shapeTools";
 /** How many shapes the favorites ring holds, so it stays fast to aim at (#344) */
 export const RING_SLOTS = 8;
 
-/** A shape the ring offers: a basic kind, or (once the library exists, #352) a starred shape */
+/** A shape the ring offers: a kind that can be drawn */
 export interface RingShape {
     readonly id: string;
     readonly label: string;
@@ -12,28 +12,16 @@ export interface RingShape {
     readonly kind: AnyToolKind;
 }
 
-/**
- * The ring's slots: starred shapes first, then the basic kinds in the Shapes tab's order to fill
- * the empty ones, at most {@link RING_SLOTS}. A starred basic kind isn't offered twice.
- */
-export function ringSlots(
-    starred: readonly RingShape[],
-    basics: readonly ShapeToolEntry[],
-): RingShape[] {
-    const slots = starred.slice(0, RING_SLOTS);
-    for (const { kind } of basics) {
-        if (slots.length >= RING_SLOTS) break;
-        if (slots.some((s) => s.id === toolId(kind))) continue;
-        slots.push({
-            id: toolId(kind),
-            // A getter, so a kept slot follows the app's language
-            get label() {
-                return kind.shape.label;
-            },
-            kind,
-        });
-    }
-    return slots;
+/** The ring's slots: the kinds that can be drawn, in the Shapes tab's order, at most {@link RING_SLOTS} */
+export function ringSlots(basics: readonly ShapeToolEntry[]): RingShape[] {
+    return basics.slice(0, RING_SLOTS).map(({ kind }) => ({
+        id: toolId(kind),
+        // A getter, so a kept slot follows the app's language
+        get label() {
+            return kind.shape.label;
+        },
+        kind,
+    }));
 }
 
 interface Point {

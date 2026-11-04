@@ -7,7 +7,6 @@ import AppearanceModal from "@/components/marcher/appearance/AppearanceModal";
 import MobileExportModal from "../mobile/MobileExportModal";
 import { isWebBuild } from "@/utilities/webBuild";
 import PropsModal from "@/components/items/PropsModal";
-import ShapeLibraryModal from "@/shapes/library/ShapeLibraryPanel";
 
 export default function Sidebar() {
     return (
@@ -17,8 +16,6 @@ export default function Sidebar() {
         >
             <div className="flex flex-col gap-16">
                 <MarchersModal />
-                {/* Shapes before Props (#485, tester request) */}
-                <ShapeLibraryModal />
                 <MusicModal />
                 <FieldModal />
                 <MetronomeModal />

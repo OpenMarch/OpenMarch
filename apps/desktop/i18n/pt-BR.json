@@ -1883,21 +1883,6 @@
             },
             "selectWholeShape": "Selecionar {shape, select, block {bloco} circle {círculo} other {forma}}"
         },
-        "save": {
-            "descriptionLabel": "Descrição da forma salva (opcional)",
-            "descriptionPlaceholder": "Descrição (opcional)",
-            "ariaLabel": "Salvar esta forma na sua biblioteca",
-            "button": "Salvar",
-            "cancel": "Cancelar",
-            "nameLabel": "Nome da forma salva",
-            "savedAs": "Salva como {name}",
-            "tip": "Salvar esta forma na sua biblioteca como favorita",
-            "mixedIntervals": "Linhas com intervalos mistos ainda não podem ser salvas"
-        },
-        "saved": {
-            "copyFailed": "Não foi possível copiar a forma salva para o show",
-            "deleteFailed": "Não foi possível excluir a forma salva do show"
-        },
         "command": {
             "fill": "Preenchimento: {modes}",
             "layout": "Disposição: {layouts}"
@@ -2135,37 +2120,6 @@
                 "spacing": "Espaçamento"
             }
         },
-        "library": {
-            "addNamed": "Adicionar {name} à minha biblioteca",
-            "addTip": "Adicionar à minha biblioteca, para todos os shows",
-            "close": "Fechar",
-            "deleteNamed": "Excluir {name}",
-            "deleteTip": "Excluir esta forma salva",
-            "dismiss": "Dispensar",
-            "draw": "Desenhar {name}",
-            "full": "{max} formas estão favoritadas, o máximo que o anel comporta. Desfavorite uma primeiro para favoritar {name}.",
-            "group": {
-                "basic": "Básicas",
-                "saved": "Salvas"
-            },
-            "intro": "Favorite uma forma para mantê-la na aba Formas e no anel de formas, até {max}.",
-            "note": {
-                "apart": "a {spacing} de distância",
-                "modeApart": "{mode, select, outline {Contorno} other {Distribuído}}, a {spacing} de distância",
-                "apartStagger": "a {spacing} de distância, escalonado {fraction}",
-                "apartStaggerLeft": "a {spacing} de distância, escalonado {fraction} à esquerda",
-                "showOnly": "somente neste show",
-                "stagger": "escalonado {fraction}",
-                "staggerLeft": "escalonado {fraction} à esquerda"
-            },
-            "savedEmpty": "Salve uma forma pela linha ⋯ ou pelo inspetor para mantê-la aqui, em todos os shows.",
-            "savedNewer": "{count, plural, one {# forma salva precisa} other {# formas salvas precisam}} de uma versão mais recente do OpenMarch.",
-            "star": "Favoritar",
-            "starNamed": "Favoritar {name}",
-            "title": "Formas",
-            "unstar": "Desfavoritar",
-            "unstarNamed": "Desfavoritar {name}"
-        },
         "spacing": {
             "empty": "Digite um intervalo em passos",
             "noGaps": "Um trecho precisa de pelo menos 1 espaço",
@@ -2186,8 +2140,7 @@
             },
             "placeError": "Erro ao posicionar a forma",
             "ring": {
-                "hint": "Clique em uma forma ou em qualquer outro lugar para fechar",
-                "starred": "Favoritada"
+                "hint": "Clique em uma forma ou em qualquer outro lugar para fechar"
             },
             "section": {
                 "box": "Bloco",
@@ -2197,8 +2150,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Tipos de forma",
-                "library": "Biblioteca",
-                "libraryTip": "Abrir a biblioteca de formas para favoritar formas",
                 "ringHintKeys": "Segure <keys></keys> no campo para abrir o anel de formas"
             }
         },

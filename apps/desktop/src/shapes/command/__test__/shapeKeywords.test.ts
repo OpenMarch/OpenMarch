@@ -17,12 +17,6 @@ describe("a shape's keywords in the command bar", () => {
         expect(words).not.toContain("line");
     });
 
-    it("finds a saved shape by its kind's id and name", () => {
-        expect(
-            shapeKeywords(lineTool, { id: "s1", label: "Company front" }),
-        ).toEqual(["line", "Line"]);
-    });
-
     it("finds the Box by its layouts too", () => {
         expect(shapeKeywords(boxTool)).toContain("stagger");
     });
