@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import { itemGeometryAt } from "@openmarch/core";
+import { rgbaToHex } from "@uiw/react-color";
 import {
     Button,
     Input,
@@ -228,10 +229,7 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
                             params={{ count: selectedProps.length }}
                         />
                     </span>
-                    <PropColorControl
-                        items={selectedProps}
-                        label={t("props.color")}
-                    />
+                    <PropColorControl items={selectedProps} />
                 </div>
             )}
             {propItems.map((item) => {
@@ -319,25 +317,28 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
 
 /**
  * The color of `items` (one prop, or the props selected on the field), on the field and in the 3D
- * View. Setting or clearing it is one undo step for all of them. Mixed colors show as none set.
+ * View. Setting or clearing it is one undo step for all of them. The button shows the color's hex,
+ * "None", or "Mixed" when the props differ.
  */
-function PropColorControl({
-    items,
-    label,
-}: {
-    items: readonly ItemWithMarcher[];
-    label: string;
-}) {
+function PropColorControl({ items }: { items: readonly ItemWithMarcher[] }) {
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const updateItems = useMutation(updateItemsMutationOptions(queryClient));
     const stored = items.map((item) =>
         propColorToString(parsePropColor(item.color)),
     );
-    const shared = stored.every((c) => c === stored[0]) ? stored[0] : null;
+    const mixed = stored.some((c) => c !== stored[0]);
+    const shared = mixed ? null : stored[0];
     const initialColor = useMemo(() => parsePropColor(shared), [shared]);
     return (
         <ColorPickerMini
-            label={label}
+            label={
+                initialColor
+                    ? rgbaToHex(initialColor).toUpperCase()
+                    : mixed
+                      ? t("props.colorMixed")
+                      : t("props.colorNone")
+            }
             initialColor={initialColor}
             onBlur={(color) => {
                 const next = propColorToString(color);
@@ -502,11 +503,11 @@ function PropEditor({ itemId }: { itemId: number }) {
                 />
             </label>
             {item.kind === "prop" && (
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex flex-col gap-4 text-sm">
                     <span className="text-text/70">
-                        <T keyName="props.colorLabel" />
+                        <T keyName="props.color" />
                     </span>
-                    <PropColorControl items={[item]} label={t("props.color")} />
+                    <PropColorControl items={[item]} />
                 </div>
             )}
             {item.kind === "prop" && (
