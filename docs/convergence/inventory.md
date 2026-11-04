@@ -79,3 +79,11 @@ confirm each before cutting.
 - Preview mode: **keep** (owner). The switch becomes Editor/Preview once Visuals is parked.
 - Mobile export: use whatever `@openmarch/schema` currently is (owner).
 - Collisions: **hide** for now (owner).
+
+## Owner decisions, 2026-11-04
+
+- Shape stars: removed with saved shapes (#668).
+- v0.1.7 conversion keeps dropping per-page rotation, notes and appearance overrides; the mobile export follows.
+- Props hidden on the 2D field are hidden in the 3D View too.
+- Props get an optional color, drawn in 2D and 3D (no color = today's look).
+- Remove keyframe vs Clear this page: owner reviewing pictures of each before deciding.
