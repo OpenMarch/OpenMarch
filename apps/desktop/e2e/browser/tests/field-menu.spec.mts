@@ -201,9 +201,13 @@ test("offers Clear this page, not Remove keyframe, and Clear is unavailable wher
     ).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    // T3 holds over page 2: it has nothing to clear
+    // T3 holds over page 2: it has nothing to clear, so the entry shows checked and unavailable
     await rightClickMarcher(page, "T3");
-    await expect(clearEntry(page)).toHaveAttribute("data-disabled", "");
+    const cleared = menu(page).getByRole("menuitemcheckbox", {
+        name: /^Clear Page \S+ \(selected\)/,
+    });
+    await expect(cleared).toHaveAttribute("aria-checked", "true");
+    await expect(cleared).toHaveAttribute("data-disabled", "");
     // Swap needs two marchers
     await expect(entry(page, "Swap two marchers")).toHaveAttribute(
         "data-disabled",
