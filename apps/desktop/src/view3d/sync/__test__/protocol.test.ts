@@ -1,11 +1,15 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+    hiddenPropsOf,
     isView3dClock,
+    isView3dHiddenProps,
     isView3dInvalidate,
     isView3dSelection,
     newerClock,
     showTimeAt,
+    VIEW3D_HIDDEN_PROPS_CHANNEL,
+    VIEW3D_PUBLISH_CHANNELS,
     type View3dClock,
 } from "../protocol";
 
@@ -102,5 +106,26 @@ describe("payload guards", () => {
         ).toBe(false);
         expect(isView3dSelection({ selectedMarcherIds: [] })).toBe(false);
         expect(isView3dInvalidate({ queryKeys: ["pages"] })).toBe(false);
+    });
+});
+
+describe("hidden props", () => {
+    it("lists the hidden props' item ids, ascending, from the UI setting", () => {
+        expect(hiddenPropsOf({ 9: true, 3: true, 4: false })).toEqual({
+            hiddenItemIds: [3, 9],
+        });
+        expect(hiddenPropsOf({})).toEqual({ hiddenItemIds: [] });
+    });
+
+    it("checks a payload the window receives", () => {
+        expect(isView3dHiddenProps({ hiddenItemIds: [1, 2] })).toBe(true);
+        expect(isView3dHiddenProps({ hiddenItemIds: [] })).toBe(true);
+        expect(isView3dHiddenProps({ hiddenItemIds: ["1"] })).toBe(false);
+        expect(isView3dHiddenProps({})).toBe(false);
+        expect(isView3dHiddenProps(null)).toBe(false);
+    });
+
+    it("is a channel the editor publishes", () => {
+        expect(VIEW3D_PUBLISH_CHANNELS).toContain(VIEW3D_HIDDEN_PROPS_CHANNEL);
     });
 });

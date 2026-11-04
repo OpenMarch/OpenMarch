@@ -1,7 +1,7 @@
 /**
  * Window side of the 3D View sync (ADR 0002 D-4, docs/3d/design.md §7).
  *
- * Holds the editor's latest clock and selection. Scene code reads
+ * Holds the editor's latest clock, selection and hidden props. Scene code reads
  * `showMs()` inside `useFrame` (`useView3dSyncStore.getState().showMs()`),
  * not through React renders.
  */
@@ -9,9 +9,11 @@ import { create } from "zustand";
 import type { QueryClient } from "@tanstack/react-query";
 import {
     VIEW3D_CLOCK_CHANNEL,
+    VIEW3D_HIDDEN_PROPS_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
     isView3dClock,
+    isView3dHiddenProps,
     isView3dInvalidate,
     isView3dSelection,
     newerClock,
@@ -25,9 +27,12 @@ export interface View3dSyncState {
     /** The newest clock from the editor, or null before the first one. */
     clock: View3dClock | null;
     selection: View3dSelection;
+    /** `items.id` of the props hidden on the field in the editor */
+    hiddenItemIds: ReadonlySet<number>;
     /** Keeps `clock` unless `incoming` has a newer `seq`. */
     receiveClock: (incoming: View3dClock) => void;
     receiveSelection: (selection: View3dSelection) => void;
+    receiveHiddenItemIds: (ids: readonly number[]) => void;
     /** The show time now, in milliseconds. 0 before the first clock. */
     showMs: (nowWallMs?: number) => number;
 }
@@ -40,12 +45,14 @@ const EMPTY_SELECTION: View3dSelection = {
 export const useView3dSyncStore = create<View3dSyncState>()((set, get) => ({
     clock: null,
     selection: EMPTY_SELECTION,
+    hiddenItemIds: new Set(),
     receiveClock: (incoming) =>
         set((state) => {
             const clock = newerClock(state.clock, incoming);
             return clock === state.clock ? state : { clock };
         }),
     receiveSelection: (selection) => set({ selection }),
+    receiveHiddenItemIds: (ids) => set({ hiddenItemIds: new Set(ids) }),
     showMs: (nowWallMs = wallNowMs()) => {
         const { clock } = get();
         return clock ? showTimeAt(clock, nowWallMs) : 0;
@@ -66,7 +73,7 @@ export function applyInvalidate(
 
 /**
  * Feeds the store and the window's query client from the editor, then says
- * hello so the editor sends a fresh clock and selection.
+ * hello so the editor sends a fresh clock, selection and hidden props.
  *
  * @returns a function that stops listening.
  */
@@ -74,13 +81,18 @@ export function startView3dSync(
     api: Pick<Window["view3d"], "on" | "hello">,
     queryClient: QueryClient,
 ): () => void {
-    const { receiveClock, receiveSelection } = useView3dSyncStore.getState();
+    const { receiveClock, receiveSelection, receiveHiddenItemIds } =
+        useView3dSyncStore.getState();
     const cleanups = [
         api.on(VIEW3D_CLOCK_CHANNEL, (payload) => {
             if (isView3dClock(payload)) receiveClock(payload);
         }),
         api.on(VIEW3D_SELECTION_CHANNEL, (payload) => {
             if (isView3dSelection(payload)) receiveSelection(payload);
+        }),
+        api.on(VIEW3D_HIDDEN_PROPS_CHANNEL, (payload) => {
+            if (isView3dHiddenProps(payload))
+                receiveHiddenItemIds(payload.hiddenItemIds);
         }),
         api.on(VIEW3D_INVALIDATE_CHANNEL, (payload) => {
             if (isView3dInvalidate(payload)) {

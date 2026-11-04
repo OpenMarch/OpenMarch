@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     VIEW3D_CLOCK_CHANNEL,
+    VIEW3D_HIDDEN_PROPS_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
     type View3dClock,
@@ -18,6 +19,7 @@ import {
 } from "../useView3dPublisher";
 import { registerActionHandler } from "@/shortcuts/registry";
 import { usePlaybackSpeedStore } from "@/stores/PlaybackSpeedStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { emitTimelineChange } from "@/db-functions/timelineChanges";
 import {
     applyInvalidate,
@@ -146,7 +148,7 @@ describe("view3dSyncStore", () => {
         };
         const stop = startView3dSync(api, new QueryClient());
         expect(calls.at(-1)).toBe("hello");
-        expect(calls).toHaveLength(4);
+        expect(calls).toHaveLength(5);
 
         listeners.get(VIEW3D_CLOCK_CHANNEL)?.({ seq: "bad" });
         expect(useView3dSyncStore.getState().clock).toBeNull();
@@ -157,6 +159,12 @@ describe("view3dSyncStore", () => {
             selectedMarcherIds: [1, 2],
         });
         expect(useView3dSyncStore.getState().selection.selectedPageId).toBe(4);
+        listeners.get(VIEW3D_HIDDEN_PROPS_CHANNEL)?.({ hiddenItemIds: ["x"] });
+        expect(useView3dSyncStore.getState().hiddenItemIds.size).toBe(0);
+        listeners.get(VIEW3D_HIDDEN_PROPS_CHANNEL)?.({ hiddenItemIds: [3, 5] });
+        expect([...useView3dSyncStore.getState().hiddenItemIds]).toEqual([
+            3, 5,
+        ]);
 
         stop();
         expect(listeners.size).toBe(0);
@@ -302,6 +310,28 @@ describe("useView3dPublisher", () => {
         expect(
             sent.filter((m) => m.channel === VIEW3D_SELECTION_CHANNEL),
         ).not.toHaveLength(0);
+    });
+
+    it("sends the hidden props on hello and whenever they change while open", () => {
+        const set = (hiddenPropIds: Record<string, boolean>) => {
+            const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
+            setUiSettings({ ...uiSettings, hiddenPropIds });
+        };
+        act(() => set({ 7: true, 2: true, 4: false }));
+        render();
+        act(() => onHello?.());
+        const hidden = () =>
+            sent
+                .filter((m) => m.channel === VIEW3D_HIDDEN_PROPS_CHANNEL)
+                .map((m) => m.payload);
+        expect(hidden().at(-1)).toEqual({ hiddenItemIds: [2, 7] });
+        sent = [];
+        act(() => set({ 2: true }));
+        expect(hidden()).toEqual([{ hiddenItemIds: [2] }]);
+        act(() => onWindowState?.(false));
+        sent = [];
+        act(() => set({}));
+        expect(hidden()).toEqual([]);
     });
 
     it("ignores invalid venue change requests", () => {

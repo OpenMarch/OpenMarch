@@ -68,6 +68,7 @@ const VIEW3D_PUBLISH_CHANNELS: readonly string[] = [
     "view3d:clock",
     "view3d:selection",
     "view3d:invalidate",
+    "view3d:hidden-props",
 ] satisfies View3dPublishChannel[];
 
 function domReady(
@@ -439,7 +440,7 @@ const APP_API = {
     /** Whether a 3D View window is open now, for an editor that just (re)loaded. */
     isView3dOpen: () =>
         ipcRenderer.invoke("view3d:is-open") as Promise<boolean>,
-    /** Sends a clock, selection or invalidate to the 3D View, through main. */
+    /** Sends a clock, selection, invalidate or hidden props to the 3D View, through main. */
     publishToView3d: <C extends View3dPublishChannel>(
         channel: C,
         payload: View3dPayloads[C],

@@ -31,6 +31,7 @@ import {
     beatIndexesById,
     itemOutlineChanges,
 } from "@/items/itemOutlineTimeline";
+import { propColorsByMarcher } from "@/items/propColor";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { useTimingObjects } from "@/hooks";
 import { useFieldImage } from "@/view3d/window/useFieldImage";
@@ -751,6 +752,7 @@ function useFieldItems(
                     .filter((item) => hiddenPropIds[item.id])
                     .map((item) => item.marcher_id),
             ),
+            colors: propColorsByMarcher(rows),
         });
     }, [items, itemRows, geometry, beats, hiddenPropIds]);
     return useMemo(

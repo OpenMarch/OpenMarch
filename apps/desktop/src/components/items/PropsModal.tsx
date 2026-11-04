@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import { itemGeometryAt } from "@openmarch/core";
+import { rgbaToHex } from "@uiw/react-color";
 import {
     Button,
     Input,
@@ -26,6 +27,7 @@ import {
     UnitInput,
 } from "@openmarch/ui";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
+import ColorPickerMini from "@/components/ui/ColorPickerMini";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
@@ -55,6 +57,7 @@ import {
     itemOutlineChanges,
     outlineWriteBeat,
 } from "@/items/itemOutlineTimeline";
+import { parsePropColor, propColorToString } from "@/items/propColor";
 
 type ItemWithMarcher = Awaited<ReturnType<typeof getItems>>[number];
 
@@ -180,12 +183,16 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
     const queryClient = useQueryClient();
     const { data: items } = useQuery(allItemsQueryOptions());
     const deleteItems = useMutation(deleteItemsMutationOptions(queryClient));
-    const { setSelectedMarchers } = useSelectedMarchers()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore();
     const propItems = useMemo(
         () => items?.filter((i) => i.kind === "prop") ?? [],
         [items],
     );
+    const selectedProps = useMemo(() => {
+        const ids = new Set(selectedMarchers.map((m) => m.id));
+        return propItems.filter((item) => ids.has(item.marcher_id));
+    }, [propItems, selectedMarchers]);
 
     if (propItems.length === 0)
         return (
@@ -213,6 +220,17 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
                     }
                 />
             </label>
+            {selectedProps.length > 1 && (
+                <div className="flex items-center justify-between px-4 pb-4 text-sm">
+                    <span className="text-text/70">
+                        <T
+                            keyName="props.selectedCount"
+                            params={{ count: selectedProps.length }}
+                        />
+                    </span>
+                    <PropColorControl items={selectedProps} />
+                </div>
+            )}
             {propItems.map((item) => {
                 const hidden = !!uiSettings.hiddenPropIds[item.id];
                 const visibilityLabel = hidden
@@ -293,6 +311,44 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
                 );
             })}
         </div>
+    );
+}
+
+/**
+ * The color of `items` (one prop, or the props selected on the field), on the field and in the 3D
+ * View. Setting or clearing it is one undo step for all of them. The button shows the color's hex,
+ * "None", or "Mixed" when the props differ.
+ */
+function PropColorControl({ items }: { items: readonly ItemWithMarcher[] }) {
+    const { t } = useTranslate();
+    const queryClient = useQueryClient();
+    const updateItems = useMutation(updateItemsMutationOptions(queryClient));
+    const stored = items.map((item) =>
+        propColorToString(parsePropColor(item.color)),
+    );
+    const mixed = stored.some((c) => c !== stored[0]);
+    const shared = mixed ? null : stored[0];
+    const initialColor = useMemo(() => parsePropColor(shared), [shared]);
+    return (
+        <ColorPickerMini
+            label={
+                initialColor
+                    ? rgbaToHex(initialColor).toUpperCase()
+                    : mixed
+                      ? t("props.colorMixed")
+                      : t("props.colorNone")
+            }
+            initialColor={initialColor}
+            onBlur={(color) => {
+                const next = propColorToString(color);
+                const changed = items.filter((_, i) => stored[i] !== next);
+                if (changed.length === 0) return;
+                updateItems.mutate(
+                    changed.map((item) => ({ itemId: item.id, color: next })),
+                );
+            }}
+            className="px-0"
+        />
     );
 }
 
@@ -444,6 +500,14 @@ function PropEditor({ itemId }: { itemId: number }) {
                     }}
                 />
             </label>
+            {item.kind === "prop" && (
+                <div className="flex flex-col gap-4 text-sm">
+                    <span className="text-text/70">
+                        <T keyName="props.color" />
+                    </span>
+                    <PropColorControl items={[item]} />
+                </div>
+            )}
             {item.kind === "prop" && (
                 <label className="flex flex-col gap-4 text-sm">
                     <span className="text-text/70">

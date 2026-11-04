@@ -280,9 +280,11 @@ export interface ModifiedItemArgs {
     name?: string | null;
     /** Props only */
     surfaceType?: SurfaceType;
+    /** The prop's color as `rgba(r, g, b, a)` (`propColorToString`); null clears it */
+    color?: string | null;
 }
 
-/** Renames items and changes props' surface types. */
+/** Renames items, changes props' surface types and colors. */
 export async function updateItemsInTransaction({
     tx,
     modifiedItems,
@@ -290,7 +292,7 @@ export async function updateItemsInTransaction({
     tx: DbTransaction;
     modifiedItems: readonly ModifiedItemArgs[];
 }): Promise<void> {
-    for (const { itemId, name, surfaceType } of modifiedItems) {
+    for (const { itemId, name, surfaceType, color } of modifiedItems) {
         const item = await tx
             .select()
             .from(schema.items)
@@ -302,6 +304,12 @@ export async function updateItemsInTransaction({
                 .update(schema.marchers)
                 .set({ name })
                 .where(eq(schema.marchers.id, item.marcher_id))
+                .run();
+        if (color !== undefined)
+            await tx
+                .update(schema.items)
+                .set({ color })
+                .where(eq(schema.items.id, itemId))
                 .run();
         if (surfaceType !== undefined) {
             if (item.kind !== "prop")
