@@ -84,6 +84,7 @@ export function toolEnvFor(
         pullRadius: EDGE_PULL_PX / (field.zoom() || 1),
         // constrain flips the box's ratio lock for the drag: one idea, not two (modifier roles, 2)
         ratioLocked: editor.ratioLocked !== roles.constrain,
+        sizesLocked: editor.sizesLocked !== roles.constrain,
         layout: useLastLayoutStore.getState().family,
         pivotSnaps: () => [
             ...field.drawn(field.marchers().map((m) => m.id)).values(),
