@@ -1,6 +1,5 @@
 /**
- * The show's own camera lists, and camera profiles (ADR 0002 D-5 and D-12,
- * amended 2026-10-16).
+ * The show's own camera lists (ADR 0002 D-5).
  *
  * Each kit ships default cameras (`KitResult.cameras`). A show can replace a
  * kit's list with its own: keep, rename, reorder or remove the defaults, and
@@ -8,13 +7,6 @@
  * row, so switching venues and back keeps each venue's list, and a kit with
  * no list uses its defaults ("Reset to defaults" removes the list). That row
  * is not in the undo history.
- *
- * A camera profile is a named list for one venue kit, kept in this
- * computer's Library so any show can use it. A show that picks a profile
- * keeps a copy of it (`ProfileCopy`), so it works on a computer without the
- * profile. Edits change the show's list only; the copy says what the list
- * started from, so the panel can tell "edited", "the profile changed on
- * this computer" and "not on this computer" apart (`profileStatus`).
  *
  * - A `kit` entry points at one of the kit's defaults by id, with an optional
  *   name. Its position comes from the kit, so it still fits when the field's
@@ -219,24 +211,12 @@ export function editCameraList(
 
 // ------------------------------------------------------------------ show
 
-/** Longest profile name. */
-export const PROFILE_NAME_MAX = 60;
-
-const isoTime = z.iso.datetime();
-
-/** The profile a show's list came from, as it was when picked or saved. */
-export const profileCopySchema = z.object({
-    id: z.string().min(1),
-    name: z.string().min(1).max(PROFILE_NAME_MAX),
-    updatedAt: isoTime,
-    cameras: cameraListSchema,
-});
-export type ProfileCopy = z.infer<typeof profileCopySchema>;
-
-/** One venue's cameras in a show: its own list, and the profile it came from. */
+/**
+ * One venue's cameras in a show: its own list. Files from a fork build may also hold the camera
+ * profile the list came from (`profile`, since parked); parsing drops it.
+ */
 export const venueCamerasSchema = z.object({
     list: cameraListSchema,
-    profile: profileCopySchema.optional(),
 });
 export type VenueCameras = z.infer<typeof venueCamerasSchema>;
 
@@ -275,93 +255,4 @@ export function parseShowCamerasJson(json: string): ShowCameras | undefined {
     } catch {
         return undefined;
     }
-}
-
-// ------------------------------------------------------------------ profiles
-
-/** What a profile holds; the Library adds the id, name and times. */
-export const profileDataSchema = z.object({
-    kit: z.enum(VENUE_KIT_IDS),
-    cameras: cameraListSchema,
-});
-export type ProfileData = z.infer<typeof profileDataSchema>;
-
-/** A camera profile in this computer's Library. */
-export interface CameraProfile extends ProfileData {
-    id: string;
-    name: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-/** The show's copy of a profile. */
-export function copyOfProfile(profile: CameraProfile): ProfileCopy {
-    return {
-        id: profile.id,
-        name: profile.name,
-        updatedAt: profile.updatedAt,
-        cameras: profile.cameras,
-    };
-}
-
-/** True when two lists hold the same cameras in the same order. */
-export function sameCameraList(
-    a: readonly SavedCamera[],
-    b: readonly SavedCamera[],
-): boolean {
-    return JSON.stringify(a) === JSON.stringify(b);
-}
-
-/**
- * Where a venue's cameras stand:
- *
- * - `defaults`: the kit's own cameras;
- * - `custom`: the show's own list, from no profile;
- * - `profile`: from `profile`. `edited` when the list no longer matches it.
- *   `local` compares this computer's profile with the copy: `missing` (not
- *   here, offer to add it), `newer` (changed here since, offer to update),
- *   or `same`.
- */
-export type ProfileStatus =
-    | { kind: "defaults" }
-    | { kind: "custom" }
-    | {
-          kind: "profile";
-          profile: ProfileCopy;
-          edited: boolean;
-          local: "same" | "newer" | "missing";
-          localProfile: CameraProfile | null;
-      };
-
-export function profileStatus(
-    cameras: VenueCameras | undefined,
-    profiles: readonly CameraProfile[],
-): ProfileStatus {
-    if (!cameras) return { kind: "defaults" };
-    const copy = cameras.profile;
-    if (!copy) return { kind: "custom" };
-    const localProfile = profiles.find((p) => p.id === copy.id) ?? null;
-    const local = !localProfile
-        ? "missing"
-        : localProfile.updatedAt > copy.updatedAt &&
-            !sameCameraList(localProfile.cameras, copy.cameras)
-          ? "newer"
-          : "same";
-    return {
-        kind: "profile",
-        profile: copy,
-        edited: !sameCameraList(cameras.list, copy.cameras),
-        local,
-        localProfile,
-    };
-}
-
-/**
- * True when replacing the venue's cameras would lose work: a list that is
- * neither the defaults nor an unedited profile this computer still has.
- */
-export function replacingLosesWork(status: ProfileStatus): boolean {
-    if (status.kind === "defaults") return false;
-    if (status.kind === "custom") return true;
-    return status.edited || status.local === "missing";
 }

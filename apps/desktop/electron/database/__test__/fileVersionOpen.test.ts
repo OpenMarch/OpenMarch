@@ -1,8 +1,9 @@
 /**
- * Opens real `.dots` files at versions 7, 8, 9 and 10 through the same steps as the
+ * Opens real `.dots` files at versions 7 to 10 through the same steps as the
  * main process's `setActiveDb` (setDbPath, version decision, migrations), and
- * checks that 7, 8 and 9 open and keep their version while 10 is refused without a
- * single byte of the file changing (ADR 0001 §6).
+ * checks that 7 and 8 open and keep their version, a parked fork-only floor
+ * file (9) opens and is written as 8, and 10 is refused without a single byte
+ * of the file changing (ADR 0001 §6).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseSync } from "node:sqlite";
@@ -96,20 +97,25 @@ describe("opening files by format version", () => {
         vi.restoreAllMocks();
     });
 
-    it.each([7, 8, 9])(
-        "opens a file at %i and keeps its version",
-        async (v) => {
-            const filePath = path.join(tempDir, `show-${v}.dots`);
-            await createShowFile(filePath, v);
+    it.each([7, 8])("opens a file at %i and keeps its version", async (v) => {
+        const filePath = path.join(tempDir, `show-${v}.dots`);
+        await createShowFile(filePath, v);
 
-            expect(await openLikeSetActiveDb(filePath)).toBe(200);
-            expect(userVersionOf(filePath)).toBe(v);
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(v);
 
-            // Opening twice doesn't drift either.
-            expect(await openLikeSetActiveDb(filePath)).toBe(200);
-            expect(userVersionOf(filePath)).toBe(v);
-        },
-    );
+        // Opening twice doesn't drift either.
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(v);
+    });
+
+    it("opens a parked floor-model file (9) and writes it as 8", async () => {
+        const filePath = path.join(tempDir, "show-9.dots");
+        await createShowFile(filePath, 9);
+
+        expect(await openLikeSetActiveDb(filePath)).toBe(200);
+        expect(userVersionOf(filePath)).toBe(8);
+    });
 
     it("refuses a file at 10 and leaves its bytes unchanged", async () => {
         const filePath = path.join(tempDir, "show-10.dots");
@@ -135,7 +141,7 @@ describe("opening files by format version", () => {
         expect(sha256(filePath)).toBe(hashBefore);
     });
 
-    it("creates a new file at 8: it gets 9 with its first floor", async () => {
+    it("creates a new file at 8", async () => {
         const filePath = path.join(tempDir, "new.dots");
 
         expect(await openLikeSetActiveDb(filePath, true)).toBe(200);
@@ -143,7 +149,7 @@ describe("opening files by format version", () => {
     });
 
     describe("migration service", () => {
-        it.each([7, 8, 9])(
+        it.each([7, 8])(
             "runs migrations on a file at %i without changing its version",
             async (v) => {
                 const db = new DatabaseSync(path.join(tempDir, `m-${v}.dots`));

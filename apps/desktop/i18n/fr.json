@@ -174,53 +174,6 @@
         "releaseNotes": "Notes de version",
         "updated": "OpenMarch a été mis à jour en v{version}"
     },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Tous droits réservés",
-                "unknown": "Licence inconnue"
-            },
-            "modified": "{credit} (modifié)",
-            "none": "Rien dans ce spectacle ne nécessite de crédit.",
-            "shareNote": {
-                "badge": "Partage",
-                "detail": "Certains éléments ont une licence inconnue. Vous n’avez peut-être pas le droit de les partager avec ce spectacle.",
-                "export": "Ce spectacle contient des éléments dont la licence est inconnue. Vous n’avez peut-être pas le droit de les partager."
-            },
-            "title": "Crédits",
-            "uncredited": "{count, plural, one {# autre élément est sous CC0 ou intégré et ne nécessite aucun crédit.} other {# autres éléments sont sous CC0 ou intégrés et ne nécessitent aucun crédit.}}"
-        },
-        "show": {
-            "addFailed": "Impossible d’ajouter {name} à votre Bibliothèque.",
-            "added": "{name} a été ajouté à votre Bibliothèque.",
-            "addToLibrary": "Ajouter à ma Bibliothèque",
-            "delete": {
-                "addFirst": "Ajouter d’abord à ma Bibliothèque",
-                "cancel": "Annuler",
-                "checking": "Recherche des utilisations…",
-                "confirm": "Votre Bibliothèque conserve sa propre copie. Cette action est irréversible.",
-                "confirmNoCopy": "Votre Bibliothèque n’en a pas de copie : l’élément sera définitivement perdu. Cette action est irréversible.",
-                "confirmUnknownCopy": "Cette action est irréversible.",
-                "delete": "Supprimer",
-                "deleted": "{name} a été supprimé de ce spectacle.",
-                "failed": "Impossible de supprimer l’élément.",
-                "inUseTitle": "{name} est utilisé",
-                "isFloor": "C’est le sol de ce spectacle, il ne peut donc pas être supprimé. Changez le sol dans Paramètres du terrain → Image.",
-                "itemModel": "modèle",
-                "keptForUndo": "{name} reste dans ce spectacle tant que la commande Annuler peut le récupérer, puis en est retiré à la fermeture du spectacle.",
-                "label": "Supprimer de ce spectacle",
-                "pinnedBy": "Cet élément fait partie de {names}, il ne peut donc pas être supprimé.",
-                "title": "Supprimer {name} de ce spectacle ?",
-                "usedByItems": "{count, plural, =1 {Un accessoire l’utilise, il ne peut donc pas être supprimé :} other {# accessoires l’utilisent, il ne peut donc pas être supprimé :}}"
-            },
-            "empty": "Ce spectacle n’utilise encore aucune ressource.",
-            "emptyHint": "Les éléments importés sont copiés dans le spectacle ouvert.",
-            "title": "Ce spectacle",
-            "updateDetails": "Ses informations ont changé dans votre Bibliothèque.",
-            "updateVersion": "Une version plus récente se trouve dans votre Bibliothèque."
-        },
-        "title": "Ressources"
-    },
     "audio": {
         "beats": {
             "create": {
@@ -639,6 +592,7 @@
         "applyFieldType": "Appliquer le type de terrain",
         "applyFieldTypeWarning": "Les marcheurs ne seront pas déplacés selon la taille du nouveau type de terrain, ils resteront à leur place sur le canevas. Vous pourrez toujours revenir au type de terrain précédent.",
         "buttons": {
+            "importImage": "Importer une image",
             "newXCheckpoint": "Nouveau repère X",
             "newYCheckpoint": "Nouveau repère Y",
             "resetTheme": "Rétablir le thème par défaut",
@@ -742,7 +696,8 @@
             "fieldRatio": "{ratio} ou {decimal}",
             "measurementModificationNote": "Ces valeurs peuvent être modifiées en ajustant les coordonnées X et Y, la longueur de pas et l'image d'arrière-plan",
             "noFloor": "Aucun sol",
-            "floorUnnamed": "Sol"
+            "floorUnnamed": "Sol",
+            "refreshAfterImporting": "Actualiser après l'importation [Ctrl + R]"
         },
         "options": {
             "fill": "Remplir",
@@ -774,6 +729,7 @@
             "pathways": "Trajets"
         },
         "tooltips": {
+            "importImage": "Importer une image à afficher sur le champ",
             "conformMethod": "Ajuster l'image d'arrière-plan pour qu'elle tienne entièrement dans le terrain, ou lui faire remplir le terrain. Les proportions de l'image sont toujours conservées",
             "directorsLeft": "Par ex. « Côté 1 », « Gauche public » ou « Côté jardin »",
             "directorsRight": "Par ex. « Côté 2 », « Droite public » ou « Côté cour »",
@@ -1036,7 +992,6 @@
                 "audioNotSaved": "L’audio n’a peut-être pas été enregistré. Vous pourrez en ajouter plus tard dans l’éditeur.",
                 "createFailed": "Impossible de créer le spectacle",
                 "databaseNotReady": "La base de données n’est pas prête. Terminez d’abord l’étape du projet.",
-                "fieldImageNotCopied": "Impossible de copier l’image du terrain du spectacle précédent",
                 "filePathRequired": "Le chemin du fichier est obligatoire",
                 "importFailed": "Impossible d’importer le fichier .dots précédent",
                 "saveFailed": "Impossible d’enregistrer le spectacle à l’emplacement {path}",
@@ -1121,360 +1076,6 @@
         "help": {
             "addYours": "Vous ne trouvez pas votre langue ? <link>Aidez-nous à l’ajouter</link>",
             "madeWithAi": "Cette traduction a été réalisée par IA, certains mots peuvent donc être erronés. <link>Aidez-nous à la vérifier</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Bibliothèque",
-            "search": "Rechercher par nom",
-            "empty": "Votre bibliothèque est vide.",
-            "emptyHint": "Utilisez Importer… pour ajouter des modèles et des illustrations.",
-            "noMatches": "Aucun élément de la bibliothèque ne correspond à « {query} ».",
-            "loadFailed": "Impossible de charger la bibliothèque ({code}).",
-            "groups": {
-                "silks": "Toiles de drapeau",
-                "floors": "Sols",
-                "props": "Accessoires",
-                "equipment": "Équipements",
-                "uniforms": "Uniformes",
-                "other": "Autres"
-            }
-        },
-        "templates": {
-            "menu": "Modèles d’illustration",
-            "menuHint": "Taille réelle, un fichier par clic",
-            "groups": {
-                "silk": "Coupes de toile",
-                "floor": "Sols de base",
-                "floorProp": "Accessoires de sol",
-                "prop": "Panneaux d’accessoire",
-                "uniform": "Panneaux d’uniforme"
-            },
-            "withSag": "{name}, affaissement de {sag}",
-            "saggingBottom": "{name}, bas affaissé",
-            "propFace": {
-                "top": "Dessus, {name}",
-                "front": "Face avant, {name}",
-                "back": "Face arrière, {name}"
-            },
-            "download": "Télécharger {name} au format {format}",
-            "saved": "{filename} enregistré",
-            "saveFailed": "Impossible d’enregistrer le modèle",
-            "uniformPanel": {
-                "top": {
-                    "front": "Haut, devant",
-                    "back": "Haut, dos"
-                },
-                "bottoms": {
-                    "front": "Bas, devant",
-                    "back": "Bas, dos"
-                },
-                "overlay": {
-                    "front": "Surcouche (cape), devant",
-                    "back": "Surcouche (cape), dos"
-                }
-            }
-        },
-        "import": {
-            "entry": "Importer…",
-            "library": "Bibliothèque",
-            "title": "Importation",
-            "back": "Retour à la bibliothèque",
-            "picking": "Choisissez les fichiers dans la boîte de dialogue…",
-            "fileCount": "{count, plural, one {# fichier} other {# fichiers}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Depuis le sélecteur {kind}",
-            "fromSlot": "Pour un emplacement {surface}",
-            "pageN": "Page {n}",
-            "pageOf": "page {index} sur {count}",
-            "showPage": "Afficher {label}",
-            "cancel": "Annuler",
-            "close": "Terminé",
-            "importMore": "Importer d’autres…",
-            "tryAgain": "Réessayer",
-            "chooseAgain": "Choisir à nouveau les fichiers",
-            "cancelKeeps": "Si vous annulez, les pages déjà ajoutées restent dans votre bibliothèque.",
-            "cancelled": "Annulé. Les éléments déjà ajoutés restent dans votre bibliothèque.",
-            "clean": "Prêt à ajouter. Aucun choix n’est nécessaire.",
-            "starterKit": "Le kit de démarrage Blender d’OpenMarch exporte des modèles qui s’importent sans problème.",
-            "groups": {
-                "cantImport": "Importation impossible",
-                "needsChoice": "À vous de choisir",
-                "fixed": "Corrigé automatiquement",
-                "notes": "Remarques"
-            },
-            "kind": {
-                "title": "Qu’est-ce que c’est ?",
-                "hint": "Obligatoire. La plage de tailles et les limites de triangles sont vérifiées ensuite.",
-                "from": {
-                    "picker": "Défini par le sélecteur",
-                    "stamp": "D’après le marqueur du kit de démarrage"
-                }
-            },
-            "kinds": {
-                "prop": "Accessoire",
-                "equipment": "Équipement",
-                "garment": "Vêtement",
-                "floorProp": "Accessoire de sol",
-                "baseFloor": "Sol principal"
-            },
-            "surfaces": {
-                "silk": "Soie",
-                "baseFloor": "Sol principal",
-                "floorProp": "Accessoire de sol",
-                "propSlot": "Accessoire",
-                "uniformPart": "Uniforme"
-            },
-            "stages": {
-                "reading": "Lecture du fichier…",
-                "validating": "Vérification du fichier…",
-                "decoding": "Décodage…",
-                "checking": "Vérification des tailles et des limites…",
-                "converting": "Conversion…",
-                "writing": "Écriture…",
-                "rendering-pdf": "Rendu des pages PDF…",
-                "saving": "Ajout à votre Bibliothèque…"
-            },
-            "refused": {
-                "unsupported": "Format non pris en charge par OpenMarch. Utilisez GLB ou glTF pour les modèles, et PNG, JPG, SVG ou PDF pour les visuels.",
-                "tooLarge": {
-                    "model": "Dépasse la limite de 200 MB pour un modèle et ses fichiers.",
-                    "artwork": "Dépasse la limite de 300 MB pour un fichier visuel."
-                }
-            },
-            "match": {
-                "kitTitle": "Nouvelle version de {name}",
-                "filenameTitle": "Déjà dans votre Bibliothèque sous le nom {name}",
-                "detail": "Les spectacles qui l’utilisent affichent « mise à jour disponible » ; rien ne change tant qu’elle n’est pas acceptée.",
-                "builtInDetail": "{name} est intégré, ceci devient donc votre propre copie.",
-                "newVersionOf": "Nouvelle version de {name}",
-                "update": "Mettre à jour {name}",
-                "copyOf": "Votre copie de {name}",
-                "addNew": "Ajouter comme nouveau"
-            },
-            "choices": {
-                "suggested": "recommandé",
-                "units": {
-                    "title": "Unités",
-                    "detail": "Tel qu’exporté, il mesure {largest} dans sa plus grande dimension, hors de la plage de tailles pour ce type.",
-                    "none": "Tel qu’exporté",
-                    "cm": "Centimètres ({factor})",
-                    "in": "Pouces ({factor})",
-                    "ft": "Pieds ({factor})"
-                },
-                "rotate": {
-                    "title": "Orienter Y vers le haut",
-                    "detail": "Exporté avec Z vers le haut : il serait couché sur le côté."
-                },
-                "simplify": {
-                    "title": "Simplifier à {cap} triangles",
-                    "detail": "{triangles} triangles, au-delà de la limite de {cap} pour le type « {kind} »."
-                },
-                "before": "Avant {triangles}",
-                "after": "Après {triangles}",
-                "grip": {
-                    "title": "Définir la prise",
-                    "detail": "Aucun OM_grip_R dans le fichier : un point situé au quart de son plus grand côté est prédéfini. Cliquez sur le modèle pour le déplacer.",
-                    "misnamed": "Trouvé : {names}, qui ne correspond pas à OM_grip_R. Point prédéfini sur son plus grand côté ; cliquez sur le modèle pour le déplacer.",
-                    "manual": "Défini par votre clic sur le modèle.",
-                    "pick": "Cliquer sur un point du modèle",
-                    "picking": "Sélection… (<keys></keys> pour arrêter)"
-                },
-                "surface": {
-                    "title": "Surface du visuel",
-                    "detail": "Le fichier n’indique aucune surface pour le visuel. Choisissez celle sur laquelle il s’imprime, ou aucune ; survolez-en une pour la voir sur le modèle.",
-                    "none": "Aucune",
-                    "unnamed": "Matériau {index}",
-                    "size": "Environ {width} × {height}",
-                    "noUVs": "pas d’UV, le visuel ne peut pas y être appliqué"
-                }
-            },
-            "rows": {
-                "unreadable": "Impossible de lire le fichier",
-                "missingResource": "Un fichier nécessaire est manquant",
-                "externalUri": "Il charge un fichier depuis Internet",
-                "resourceOutsideFolder": "Il pointe vers un fichier hors de son dossier",
-                "validatorErrors": "{count, plural, one {# erreur glTF} other {# erreurs glTF}}",
-                "requiredExtension": "Nécessite une extension qu’OpenMarch ne peut pas charger",
-                "noGeometry": "Il ne contient aucune géométrie",
-                "overTriangleCap": "{triangles} triangles : au-delà de la limite de {limit}",
-                "overTriangleCapDetail": "Plus de 4× la limite de {cap} pour le type « {kind} ». Réduisez-le avant l’export.",
-                "rigNotAllowed": "Le type « {kind} » ne peut pas avoir de rig",
-                "garmentNotRigged": "Un vêtement nécessite le rig v4",
-                "garmentJointsNotV4": "Le rig n’est pas le squelette v4",
-                "missingJoints": "Manquants : {names}",
-                "unexpectedJoints": "En trop : {names}",
-                "garmentRestPoseMismatch": "La pose de repos du rig ne correspond pas à v4",
-                "garmentQuantized": "Les maillages avec skinning sont quantifiés",
-                "garmentTransformsNotApplied": "Les transformations ne sont pas appliquées",
-                "garmentNoPartPaint": "Pas de peinture _PART : il s’afficherait couleur peau",
-                "garmentNoMedianFit": "Aucune coupe pour le corps médian",
-                "garmentUnknownFit": "Une coupe désigne un type de corps inconnu",
-                "texturesDownsized": "{count, plural, one {# texture réduite} other {# textures réduites}} à {cap} px",
-                "dracoDecoded": "Compression Draco décodée",
-                "meshOptimizerDecoded": "Compression mesh optimizer décodée",
-                "instancesExpanded": "Instances développées",
-                "extensionsStripped": "Extensions inutilisées supprimées",
-                "extrasStripped": "Données extras inutilisées supprimées",
-                "contentStripped": "Contenu inutilisé par OpenMarch supprimé",
-                "contentStrippedDetail": "Animations {animations} · caméras {cameras} · cibles de morphing {morphTargets} · scènes supplémentaires {scenes}",
-                "influencesRenormalized": "Poids des os renormalisés sur {vertices} sommets",
-                "validatorWarnings": "{count, plural, one {# avertissement glTF} other {# avertissements glTF}}",
-                "sizeOutOfRange": "{size} dans sa plus grande dimension",
-                "sizeOutOfRangeDetail": "Hors de la plage habituelle de {min} à {max} pour ce type. Vérifiez les unités.",
-                "noStretchZones": "Aucune zone d’étirement",
-                "noStretchZonesDetail": "Il garde sa taille modélisée, ou se met à l’échelle uniformément.",
-                "customPropertiesOff": "Les propriétés personnalisées semblaient désactivées",
-                "customPropertiesOffDetail": "Réexportez avec le préréglage OpenMarch pour conserver les prises et les emplacements.",
-                "stillOverTriangleCap": "Encore {triangles} triangles, au-delà de la limite de {cap}",
-                "slotWithoutUVs": "L’emplacement de visuel {slot} n’a pas d’UV",
-                "slotDropped": "L’emplacement de visuel {slot} a été ignoré",
-                "invalidOpenMarchData": "Données OpenMarch sur {where} ignorées",
-                "unknownStampKind": "Le marqueur désigne un type inconnu : {value}",
-                "missingFits": "Coupes manquantes",
-                "duplicateFits": "Plusieurs maillages ont la même coupe",
-                "wgiEquipmentUnderMinimum": "WGI : équipement de moins de 24 in",
-                "wgiFloorOverMaximum": "WGI : sol de plus de 78 × 106 ft"
-            },
-            "size": {
-                "title": "Quelle est sa taille ?",
-                "members": "{selected} sur {count} {count, plural, one {page} other {pages}}",
-                "fromFile": "D’après le fichier : {size}",
-                "width": "Largeur",
-                "height": "Hauteur",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Proportions verrouillées : le visuel n’est jamais étiré",
-                "needed": "Choisissez une taille : ce fichier n’indique pas sa taille d’impression.",
-                "printsOn": "Imprimé sur",
-                "fitted": "Ajusté à la forme de votre image ; la taille standard pour {surface} est {size}."
-            },
-            "details": {
-                "name": "Nom",
-                "namesFromFiles": "Chaque fichier garde son propre nom.",
-                "tags": "Mots-clés, séparés par des virgules",
-                "toggle": "Auteur, licence et source",
-                "unknown": "Inconnu",
-                "author": "Auteur",
-                "license": "Licence",
-                "licensePlaceholder": "Licence, par exemple CC-BY-4.0",
-                "source": "URL source",
-                "emptyIsUnknown": "Si vide, la licence est inconnue et n’est jamais considérée comme libre de partage.",
-                "rights": "N’importez que des illustrations et des modèles que vous avez le droit d’utiliser."
-            },
-            "add": {
-                "one": "Ajouter à la Bibliothèque",
-                "many": "Ajouter {count} à la Bibliothèque",
-                "newVersion": "Ajouter une nouvelle version",
-                "cantImport": "Importation impossible"
-            },
-            "done": {
-                "added": "{count, plural, one {# élément ajouté à votre Bibliothèque} other {# éléments ajoutés à votre Bibliothèque}}",
-                "newVersion": "Nouvelle version de {name} ajoutée",
-                "notImported": "Non importés"
-            },
-            "stage": {
-                "label": "Aperçu de l’importation · Vue 3D inchangée",
-                "loading": "Chargement de l’aperçu…",
-                "empty": "Rien à prévisualiser",
-                "needsKind": "Choisissez de quoi il s’agit pour voir l’aperçu.",
-                "rejected": "Importation impossible, donc pas d’aperçu.",
-                "previewFailed": "Impossible de charger l’aperçu.",
-                "noArtwork": "Aucune page à prévisualiser.",
-                "triangles": "{triangles} triangles",
-                "trianglesCap": "{triangles} triangles · max. {cap}",
-                "tall": "{height} de haut",
-                "before": "Avant",
-                "after": "Après",
-                "vector": "vectoriel",
-                "pixels": "{width} × {height} px",
-                "views": "Vues",
-                "view": {
-                    "front": "Face",
-                    "side": "Côté",
-                    "top": "Dessus"
-                },
-                "pickGrip": "Cliquez sur un point du modèle pour définir la prise · <keys></keys> pour arrêter",
-                "surface": "Surface d’illustration : {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Importez les modèles et les illustrations séparément",
-                    "body": "Choisissez soit un seul modèle, soit un nombre quelconque de fichiers d’illustration."
-                },
-                "session-expired": {
-                    "title": "Cette importation a expiré",
-                    "body": "Les importations se ferment après 30 minutes d’inactivité. Choisissez à nouveau les fichiers."
-                },
-                "unknown-file": {
-                    "title": "Ce fichier ne fait pas partie de cette importation",
-                    "body": "Choisissez à nouveau les fichiers."
-                },
-                "too-large": {
-                    "title": "Trop de fichiers",
-                    "body": "Choisissez au maximum 50 fichiers à la fois."
-                },
-                "unreadable": {
-                    "title": "Le fichier n’a pas pu être lu",
-                    "body": "Il a peut-être été déplacé, ou une autre application l’a ouvert."
-                },
-                "busy": {
-                    "title": "Une autre étape d’importation est en cours",
-                    "body": "Attendez qu’elle se termine, puis réessayez."
-                },
-                "timeout": {
-                    "title": "L’importation a pris trop de temps",
-                    "body": "Les fichiers volumineux ou complexes peuvent dépasser le délai. Réessayez, ou simplifiez le fichier avant de l’exporter."
-                },
-                "worker-crashed": {
-                    "title": "L’importation s’est arrêtée pendant la lecture du fichier",
-                    "body": "Votre fichier n’a pas été modifié. Réessayez ; si cela se reproduit, le fichier est peut-être endommagé."
-                },
-                "pdf-unavailable": {
-                    "title": "Impossible d’afficher les pages du PDF",
-                    "body": "Réessayez. Si le problème persiste, exportez l’illustration en PNG ou SVG."
-                },
-                "write-failed": {
-                    "title": "Impossible d’enregistrer dans votre Bibliothèque",
-                    "body": "Vérifiez qu’il reste de l’espace disque, puis réessayez."
-                },
-                "read-only": {
-                    "title": "Cet élément ne peut pas être modifié",
-                    "body": "Les éléments intégrés sont en lecture seule. Ajoutez-le plutôt comme nouvel élément."
-                },
-                "corrupt": {
-                    "title": "Votre Bibliothèque contient une entrée endommagée",
-                    "body": "Réessayez. Le reste de votre Bibliothèque n’est pas affecté."
-                },
-                "cancelled": {
-                    "title": "Annulé",
-                    "body": "Rien de plus n’a été importé."
-                },
-                "other": {
-                    "title": "Une erreur s’est produite",
-                    "body": "Réessayez."
-                }
-            },
-            "finishFailed": "Impossible de terminer l’importation",
-            "copyIntoShowFailed": "Impossible de copier l’importation dans le spectacle"
-        },
-        "fileDialog": {
-            "importTitle": "Importer",
-            "saveTemplateTitle": "Enregistrer le gabarit",
-            "models": "Modèle 3D (glb, gltf)",
-            "artwork": "Illustration (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Modèles et illustrations",
-            "pngImage": "Image PNG"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Enregistrer le kit de démarrage Blender",
-            "saveFailed": "Impossible d’enregistrer le kit de démarrage Blender"
         }
     },
     "marchers": {
@@ -1698,7 +1299,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Arrière-plan de la production",
-                "drawFailed": "L'image d'arrière-plan n'a pas pu être générée",
                 "empty": "Aucune image d'arrière-plan",
                 "help": "L'image d'arrière-plan est synchronisée automatiquement lorsque vous envoyez une nouvelle révision. Pour la changer, modifiez l'image d'arrière-plan dans l'éditeur du terrain et envoyez une nouvelle révision.",
                 "title": "Image d'arrière-plan"
@@ -3327,7 +2927,6 @@
             "title": "Caméras",
             "close": "Fermer les caméras",
             "edit": "Modifier les caméras…",
-            "saveView": "Enregistrer la vue actuelle",
             "none": "Aucune caméra",
             "empty": "Aucune caméra. Placez la vue où vous le souhaitez, puis ajoutez-la.",
             "addView": "Ajouter la vue actuelle",
@@ -3350,68 +2949,7 @@
             "removed": "« {name} » retirée",
             "undo": "Annuler",
             "replace": "Remplacer",
-            "replaceWithProfile": "Remplacer vos caméras par « {name} » ? Votre liste actuelle n’est enregistrée nulle part ailleurs.",
-            "profile": "Profil",
-            "source": {
-                "defaults": "Par défaut du lieu",
-                "custom": "Caméras de ce spectacle"
-            },
-            "edited": "Modifié",
-            "myProfiles": "Sur cet ordinateur",
-            "saveAsProfile": "Enregistrer comme profil de caméras…",
-            "saveAsProfileShort": "Enregistrer comme profil…",
-            "manageProfiles": "Gérer les profils…",
-            "notice": {
-                "defaults": "Les caméras propres au lieu. Toute modification les rattache à ce spectacle.",
-                "custom": "Enregistrées avec ce spectacle uniquement.",
-                "profile": "Enregistrées avec ce spectacle et dans votre profil.",
-                "edited": "Modifiées depuis l’enregistrement du profil.",
-                "newer": "Ce profil a été modifié sur cet ordinateur.",
-                "missing": "Le profil de ce spectacle n’est pas sur cet ordinateur."
-            },
-            "updateProfile": "Mettre à jour le profil",
-            "saveAsNew": "Enregistrer comme nouveau…",
-            "useNewVersion": "Utiliser la nouvelle version",
-            "addToMyProfiles": "Ajouter à mes profils",
-            "profileName": "Nom du profil",
-            "save": "Enregistrer",
-            "defaultProfileName": "Caméras {venue}",
-            "copyName": "{name} (copie)",
-            "profilesTitle": "Profils de caméras",
-            "profilesHint": "Enregistrés dans votre Bibliothèque sur cet ordinateur, pour tous les spectacles. Un spectacle garde sa propre copie du profil qu’il utilise.",
-            "noProfiles": "Aucun profil de caméras pour l’instant. Choisissez « Enregistrer comme profil de caméras… » pour en créer un.",
-            "cameraCount": "{count, plural, one {# caméra} other {# caméras}}",
-            "use": "Utiliser",
-            "otherVenue": "Ce profil est destiné à un autre lieu",
-            "deleteProfile": "Supprimer",
-            "deleteProfileConfirm": "Supprimer « {name} » de cet ordinateur ? Les spectacles qui l’utilisent gardent leur copie.",
             "saveFailed": "Échec de l’enregistrement des caméras de la vue 3D"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Drapeau pour mât de 5 ft",
-                "silk5_5ftPole": "Drapeau pour mât de 5,5 ft",
-                "silk6ftPole": "Drapeau pour mât de 6 ft",
-                "silk7ftPole": "Drapeau pour mât de 7 ft",
-                "silkStandard": "Standard",
-                "silkOversized": "Grand format",
-                "silkTeardrop": "Goutte d’eau",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Swing incurvé ou super swing",
-                "silkOversizedSwing": "Swing grand format",
-                "silkArc": "Arc standard",
-                "silkNarrowArc": "Arc étroit",
-                "silkSuperArc": "Super arc",
-                "floorWgiMinimum": "Aire de compétition WGI, minimum",
-                "floorWgiMaximum": "Aire de compétition WGI, maximum",
-                "flatProp4x8ft": "Panneau 4 x 8 ft"
-            },
-            "kind": {
-                "silk": "Drapeau",
-                "floor": "Tapis de sol",
-                "flatProp": "Accessoire plat"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Échec de la mise à jour du lieu de la vue 3D"
@@ -3761,7 +3299,6 @@
         "help": {
             "title": "Aide",
             "showShortcuts": "Raccourcis clavier",
-            "starterKit": "Obtenir le kit de démarrage Blender…",
             "website": "Site web",
             "guides": "Documentation/guides"
         },
@@ -3772,7 +3309,6 @@
             "openMarchFile": "Fichier OpenMarch",
             "allFiles": "Tous les fichiers",
             "audioFile": "Fichier audio",
-            "zipArchive": "Archive zip",
             "video": "Vidéo"
         },
         "newShow": {

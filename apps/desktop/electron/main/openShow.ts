@@ -200,6 +200,8 @@ async function openWithSuspension(
             return { status: 200, db, sqlSuspension };
         }
 
+        // A parked floor-model file (9) is written back as the timeline file it is (8).
+        applyFileVersionDecision(db, false);
         db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
         const worker = deps.convertWorker;
         const checkDb = db;
@@ -334,7 +336,7 @@ export function resumeSqlProxyAfterReload(
     });
 }
 
-/** A timeline file (or one just converted, which has nothing pending): migrate, then its floor. */
+/** A timeline file (or one just converted, which has nothing pending): run its migrations. */
 async function migrateTimelineFile(
     filePath: string,
     db: DatabaseSync,
@@ -344,23 +346,4 @@ async function migrateTimelineFile(
     if (migrator.hasPendingMigrations(deps.migrationsFolder))
         deps.beforeMigrations?.(filePath);
     await migrator.applyPendingMigrations(deps.migrationsFolder);
-    await convertFieldImage(db);
-}
-
-/**
- * Makes a legacy field image the show's floor and writes the floor-model version (ADR 0002
- * D-23). Loaded on demand, like the page converter. A failure never stops the open: the file is
- * left as it was, and the next open tries again.
- */
-async function convertFieldImage(db: DatabaseSync): Promise<void> {
-    try {
-        const [{ convertFieldImageOnOpen }, { floorFromFieldImage }] =
-            await Promise.all([
-                import("../database/convertFieldImage"),
-                import("./floor/fieldImageFloor"),
-            ]);
-        await convertFieldImageOnOpen(db, { makeFloor: floorFromFieldImage });
-    } catch (error) {
-        console.error("Couldn't convert the field image on open", error);
-    }
 }

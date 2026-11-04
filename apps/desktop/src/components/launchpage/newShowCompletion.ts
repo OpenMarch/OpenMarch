@@ -14,9 +14,10 @@ import {
     FIRST_PAGE_ID,
 } from "@/db-functions/page";
 import { transactionWithHistory } from "@/db-functions/history";
-import { updateFieldProperties } from "@/global/classes/FieldProperties";
-import { showLibraryKeys } from "@/hooks/queries/useShowLibrary";
-import { conToastError } from "@/utilities/utils";
+import {
+    updateFieldProperties,
+    updateFieldPropertiesImage,
+} from "@/global/classes/FieldProperties";
 import {
     updateWorkspaceSettingsParsed,
     getWorkspaceSettingsParsed,
@@ -325,35 +326,17 @@ async function applyPreviousDotsCoordinates(
     });
 }
 
-export async function applyPreviousDotsFieldImage(
+async function applyPreviousDotsFieldImage(
     form: NewShowFormState,
     queryClient: QueryClient,
 ): Promise<void> {
-    const fieldFloor = form.previousDotsImport?.fieldFloor;
     const fieldImage = form.previousDotsImport?.fieldImage;
-    if (!fieldFloor && (fieldImage == null || fieldImage.length === 0)) return;
+    if (fieldImage == null || fieldImage.length === 0) return;
 
-    // The new show's floor (D-23): the previous show's floor Version as it is, or one made in
-    // main from a previous show's legacy image. The rest of the copy goes on without it: a floor
-    // that can't be made is a toast, not a failed show.
-    try {
-        if (fieldFloor)
-            await window.electron.setNewShowFloorFromVersion(fieldFloor);
-        else await window.electron.setNewShowFloorFromImage(fieldImage!);
-    } catch (error) {
-        conToastError(
-            tolgee.t(
-                "launchpage.newShow.errors.fieldImageNotCopied",
-                "Couldn't copy the previous show's field image",
-            ),
-            error,
-        );
-        return;
-    }
+    await updateFieldPropertiesImage(fieldImage);
     await queryClient.invalidateQueries({
         queryKey: fieldPropertiesKeys.detail(),
     });
-    await queryClient.invalidateQueries({ queryKey: showLibraryKeys.all() });
 }
 
 async function applyPreviousDotsSectionAppearances(

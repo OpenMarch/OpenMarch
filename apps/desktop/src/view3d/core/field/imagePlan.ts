@@ -9,26 +9,12 @@ import type { ImageSize, PlanContext, PlanImage } from "./plan";
  * "fill" is treated as "fit", as in 2D.
  */
 export function planImage(
-    ctx: Pick<PlanContext, "fieldProperties">,
+    ctx: PlanContext,
     image: ImageSize,
     opacity: number,
 ): PlanImage {
     const fp = ctx.fieldProperties;
     const { width, height } = fp;
-    if (image.sizeM) {
-        // A floor at its physical size, centered on the canvas like 2D's `floorPlacement`
-        const center = pixelsToWorld(fp, { x: width / 2, y: height / 2 });
-        const { widthM, heightM } = image.sizeM;
-        return {
-            type: "image",
-            role: "image",
-            minX: center.x - widthM / 2,
-            maxX: center.x + widthM / 2,
-            minZ: center.z - heightM / 2,
-            maxZ: center.z + heightM / 2,
-            opacity,
-        };
-    }
     const imgAspect = image.width / image.height;
     const canvasAspect = width / height;
     const fill = fp.imageFillOrFit === "fill";

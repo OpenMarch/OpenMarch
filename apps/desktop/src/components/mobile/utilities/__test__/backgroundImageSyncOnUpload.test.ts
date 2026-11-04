@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     prepareBackgroundImageSyncResult,
     buildBackgroundImageFormData,
-    backgroundImagePng,
 } from "../backgroundImageSyncOnUpload";
 
 describe("backgroundImageSyncOnUpload", () => {
@@ -151,29 +150,5 @@ describe("backgroundImageSyncOnUpload", () => {
             const fileEntry = formData.get("file") as Blob;
             expect(fileEntry.size).toBe(imageData.length);
         });
-    });
-});
-
-describe("backgroundImagePng (D-23: mobile takes a PNG)", () => {
-    const PNG = new Uint8Array([
-        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7,
-    ]);
-    const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2]);
-
-    it("sends a PNG as it is, so its checksum matches an earlier sync", async () => {
-        const encode = vi.fn();
-        expect(await backgroundImagePng(PNG, encode)).toBe(PNG);
-        expect(encode).not.toHaveBeenCalled();
-    });
-
-    it("draws anything else, such as a JPEG original, into a PNG", async () => {
-        const encode = vi.fn(async () => PNG);
-        expect(await backgroundImagePng(JPEG, encode)).toBe(PNG);
-        expect(encode).toHaveBeenCalledWith(JPEG);
-    });
-
-    it("has nothing to send without an image", async () => {
-        expect(await backgroundImagePng(null)).toBeNull();
-        expect(await backgroundImagePng(new Uint8Array())).toBeNull();
     });
 });

@@ -67,11 +67,7 @@ export interface ShowPlans {
 
 /** What the window's compile reads besides the marchers and beats. */
 export interface WindowCueInputs {
-    /**
-     * The show's Library items and each section's usual equipment, for the
-     * Carry and Silk defaults (`view3d/library/cueAspects`).
-     */
-    libraryItems?: CompileInput["libraryItems"];
+    /** Each section's usual equipment, for the Carry default (`performers/cueSections`). */
     sections?: CompileInput["sections"];
     /**
      * 1 for each count on which any performer travels (`bandMovingCounts`),
@@ -108,7 +104,6 @@ export function compileWindowCues(
             carries: carries(m.id),
         })),
         cues: [],
-        libraryItems: inputs.libraryItems,
         sections: inputs.sections,
         bandTravels: bandMoving ? (c) => bandMoving[c] === 1 : undefined,
         showDefaults: { stepOffFoot },

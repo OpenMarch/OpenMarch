@@ -10,12 +10,10 @@ onlyBuiltDependencies:
   - core-js
   - electron
   - esbuild
-  - sharp
   - unrs-resolver
 patchedDependencies:
   canvas: patches/canvas.patch
-# pdfjs-dist's optional @napi-rs/canvas is only for rendering in plain Node.
-# The app renders PDFs in a hidden Electron window (ADR 0002, package C1.8),
-# so keep this native module out of node_modules and the packaged app.
+# pdfjs-dist (a dev dependency for the export-diff harness) has an optional
+# @napi-rs/canvas for rendering in plain Node; the harness renders in a browser.
 ignoredOptionalDependencies:
   - "@napi-rs/canvas"

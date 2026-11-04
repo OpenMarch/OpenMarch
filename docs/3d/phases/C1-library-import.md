@@ -11,6 +11,10 @@ updated: 2026-10-11
 
 # C1: Customization, Library and import
 
+> Parked (convergence, 2026-11-03): the Library, import, Artwork templates, Credits and the
+> Blender Starter kit are removed from `main` and kept on branch `archive/pre-convergence`. See
+> the convergence note at the top of [ADR 0002](../../adr/0002-3d-view.md).
+
 <!-- cspell:words meshopt dedup CMYK -->
 
 Follow the protocol in [../README.md](../README.md). Claim a work package before you start, and append to the progress log as you go.

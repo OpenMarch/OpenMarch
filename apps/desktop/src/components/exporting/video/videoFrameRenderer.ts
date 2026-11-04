@@ -1,4 +1,3 @@
-import type { FieldImageSize } from "@/db-functions/fieldFloor";
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import type { ResolverFrameSampler } from "@/timeline/timelineExport";
@@ -112,8 +111,6 @@ export interface CreateVideoRenderContextArgs {
     appearanceSteps: AppearanceStepsByMarcherId | undefined;
     /** The decoded field image, or null when the show has none */
     backgroundImage: ImageBitmap | null;
-    /** The floor's physical size, centered on the field; null places the image by fill or fit */
-    backgroundImageSize?: FieldImageSize | null;
     /** The first frame's size; a frame of another size resizes the field */
     width: number;
     height: number;
@@ -137,7 +134,6 @@ export async function createVideoRenderContext(
             args.marchers.map((marcher) => [marcher.id, marcher.drill_number]),
         ),
         image: args.backgroundImage,
-        imageSize: args.backgroundImageSize,
         width: args.width,
         height: args.height,
     });

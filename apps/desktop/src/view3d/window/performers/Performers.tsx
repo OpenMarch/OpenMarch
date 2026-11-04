@@ -39,8 +39,7 @@ import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
 import { allSectionAppearancesQueryOptions } from "@/hooks/queries/useSectionAppearances";
 import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
-import { showLibraryItemsQueryOptions } from "@/hooks/queries/useShowLibrary";
-import { cueLibraryItemsOf, cueSectionsOf } from "@/view3d/library/cueAspects";
+import { cueSectionsOf } from "./cueSections";
 import {
     guardUniformPresetOf,
     uniformPresetOf,
@@ -212,8 +211,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 : null,
         [marchers],
     );
-    // Each flag section's usual flag, with its Cut's aspect, for the Silk
-    // aspect note; keyed on the sections' flags alone, like the carries.
+    // Each flag section's usual flag, for the Carry default; keyed on the
+    // sections' flags alone, like the carries.
     const cueSectionsKey = useMemo(() => {
         if (!marchers || !marcherLooks) return null;
         const sectionById = new Map(marchers.map((m) => [m.id, m.section]));
@@ -227,12 +226,6 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             ),
         );
     }, [marchers, marcherLooks, slots.ids]);
-    // The show's Silk Artwork Versions, with their aspects
-    const { data: showLibrary } = useQuery(showLibraryItemsQueryOptions());
-    const cueLibraryItems = useMemo(
-        () => cueLibraryItemsOf(showLibrary ?? []),
-        [showLibrary],
-    );
     // Which counts anyone travels on, for the Feet default (marchers mark
     // time while the band moves). Keyed on its content, so a drill edit that
     // keeps the band's moving counts doesn't recompile and replan everyone.
@@ -263,7 +256,6 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             beats,
             stepOffFoot,
             {
-                libraryItems: cueLibraryItems,
                 sections: JSON.parse(cueSectionsKey) as CueSection[],
                 bandMoving: Array.from(bandMovingKey, Number),
             },
@@ -275,7 +267,6 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         stepOffFoot,
         carriesKey,
         cueSectionsKey,
-        cueLibraryItems,
         bandMovingKey,
     ]);
     // What each count's dot marks: the show's default

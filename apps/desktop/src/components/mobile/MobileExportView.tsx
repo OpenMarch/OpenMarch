@@ -45,7 +45,6 @@ import {
 import {
     prepareBackgroundImageSyncResult,
     buildBackgroundImageFormData,
-    backgroundImagePng,
     type BackgroundImageSyncResult,
 } from "./utilities/backgroundImageSyncOnUpload";
 import {
@@ -234,15 +233,12 @@ export const SubmitRevisionForm = ({
         void (async () => {
             try {
                 const [localImage, fieldProperties] = await Promise.all([
-                    getFieldPropertiesImage("print"),
+                    getFieldPropertiesImage(),
                     getFieldProperties(),
                 ]);
                 if (cancelled) return;
-                // Mobile takes a PNG, made from the floor's original (D-23)
-                const png = await backgroundImagePng(localImage?.bytes ?? null);
-                if (cancelled) return;
                 const result = await prepareBackgroundImageSyncResult(
-                    png,
+                    localImage,
                     currentProduction.background_image_source_checksum ?? null,
                     fieldProperties.imageFillOrFit,
                     currentProduction.background_image_draw_type ?? null,

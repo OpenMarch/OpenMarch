@@ -174,53 +174,6 @@
         "releaseNotes": "版本说明",
         "updated": "OpenMarch已更新至v{version}"
     },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "保留所有权利",
-                "unknown": "许可证未知"
-            },
-            "modified": "{credit}（已修改）",
-            "none": "此表演中没有需要署名的内容。",
-            "shareNote": {
-                "badge": "分享须知",
-                "detail": "部分项目的许可证未知。你可能无权随此表演一同分享它们。",
-                "export": "此表演包含许可证未知的项目。你可能无权分享它们。"
-            },
-            "title": "致谢",
-            "uncredited": "{count, plural, other {另有#个项目为CC0或内置内容，无需署名。}}"
-        },
-        "show": {
-            "addFailed": "无法将{name}添加到你的素材库。",
-            "added": "已将{name}添加到你的素材库。",
-            "addToLibrary": "添加到我的素材库",
-            "delete": {
-                "addFirst": "先添加到我的素材库",
-                "cancel": "取消",
-                "checking": "正在检查使用情况…",
-                "confirm": "你的素材库保留有自己的副本。此操作无法撤销。",
-                "confirmNoCopy": "你的素材库中没有副本，删除后将永久丢失。此操作无法撤销。",
-                "confirmUnknownCopy": "此操作无法撤销。",
-                "delete": "删除",
-                "deleted": "已从此表演中删除{name}。",
-                "failed": "无法删除。",
-                "inUseTitle": "{name}正在使用中",
-                "isFloor": "它是此表演的地面，因此无法删除。请在“场地设置 → 图像”中更改地面。",
-                "itemModel": "模型",
-                "keptForUndo": "在仍可撤销期间，{name}会保留在此表演中，之后关闭表演时将被移除。",
-                "label": "从此表演中删除",
-                "pinnedBy": "它是{names}的一部分，因此无法删除。",
-                "title": "要从此表演中删除{name}吗？",
-                "usedByItems": "{count, plural, =1 {有一个道具在使用它，因此无法删除：} other {有#个道具在使用它，因此无法删除：}}"
-            },
-            "empty": "此表演尚未使用任何素材。",
-            "emptyHint": "导入的内容会复制到当前打开的表演中。",
-            "title": "此表演",
-            "updateDetails": "其详细信息已在你的素材库中更改。",
-            "updateVersion": "你的素材库中有更新的版本。"
-        },
-        "title": "素材"
-    },
     "audio": {
         "beats": {
             "create": {
@@ -1036,7 +989,6 @@
                 "audioNotSaved": "音频可能未保存。可稍后在编辑器中添加音频。",
                 "createFailed": "无法创建表演",
                 "databaseNotReady": "数据库尚未就绪。请先完成“项目详情”步骤。",
-                "fieldImageNotCopied": "无法复制之前表演的场地图片",
                 "filePathRequired": "必须指定文件路径",
                 "importFailed": "无法导入之前的.dots文件",
                 "saveFailed": "无法将表演保存到{path}",
@@ -1121,360 +1073,6 @@
         "help": {
             "addYours": "没有找到你的语言？<link>帮助我们添加</link>",
             "madeWithAi": "此语言版本由AI翻译，部分用词可能有误。<link>帮助我们检查</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "素材库",
-            "search": "按名称搜索",
-            "empty": "素材库为空。",
-            "emptyHint": "使用“导入…”添加模型和图稿。",
-            "noMatches": "素材库中没有与“{query}”匹配的项目。",
-            "loadFailed": "无法加载素材库（{code}）。",
-            "groups": {
-                "silks": "旗面",
-                "floors": "地面",
-                "props": "道具",
-                "equipment": "器械",
-                "uniforms": "服装",
-                "other": "其他"
-            }
-        },
-        "templates": {
-            "menu": "图稿模板",
-            "menuHint": "实际尺寸，每次点击一个文件",
-            "groups": {
-                "silk": "旗面规格",
-                "floor": "基础地面",
-                "floorProp": "地面道具",
-                "prop": "道具面板",
-                "uniform": "服装面板"
-            },
-            "withSag": "{name}，下垂{sag}",
-            "saggingBottom": "{name}，底边下垂",
-            "propFace": {
-                "top": "顶面，{name}",
-                "front": "正面，{name}",
-                "back": "背面，{name}"
-            },
-            "download": "将{name}下载为{format}",
-            "saved": "已保存{filename}",
-            "saveFailed": "无法保存模板",
-            "uniformPanel": {
-                "top": {
-                    "front": "上衣，正面",
-                    "back": "上衣，背面"
-                },
-                "bottoms": {
-                    "front": "裤子，正面",
-                    "back": "裤子，背面"
-                },
-                "overlay": {
-                    "front": "外搭（披风），正面",
-                    "back": "外搭（披风），背面"
-                }
-            }
-        },
-        "import": {
-            "entry": "导入…",
-            "library": "素材库",
-            "title": "导入",
-            "back": "返回素材库",
-            "picking": "请在对话框中选择文件…",
-            "fileCount": "{count, plural, other {#个文件}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "来自{kind}选择器",
-            "fromSlot": "用于{surface}槽位",
-            "pageN": "第{n}页",
-            "pageOf": "第{index}页，共{count}页",
-            "showPage": "显示{label}",
-            "cancel": "取消",
-            "close": "完成",
-            "importMore": "导入更多…",
-            "tryAgain": "重试",
-            "chooseAgain": "重新选择文件",
-            "cancelKeeps": "取消后，已添加的页面仍会保留在素材库中。",
-            "cancelled": "已取消。已添加的内容仍保留在素材库中。",
-            "clean": "可以添加，无需做任何选择。",
-            "starterKit": "使用 OpenMarch Blender 入门套件导出的模型可以顺利导入。",
-            "groups": {
-                "cantImport": "无法导入",
-                "needsChoice": "需要你选择",
-                "fixed": "已自动修复",
-                "notes": "说明"
-            },
-            "kind": {
-                "title": "这是什么？",
-                "hint": "必选。选择后再检查尺寸范围和三角面上限。",
-                "from": {
-                    "picker": "由选择器设定",
-                    "stamp": "来自入门套件标记"
-                }
-            },
-            "kinds": {
-                "prop": "道具",
-                "equipment": "器械",
-                "garment": "服装",
-                "floorProp": "地面道具",
-                "baseFloor": "基础地面"
-            },
-            "surfaces": {
-                "silk": "旗面",
-                "baseFloor": "基础地面",
-                "floorProp": "地面道具",
-                "propSlot": "道具",
-                "uniformPart": "制服"
-            },
-            "stages": {
-                "reading": "正在读取文件…",
-                "validating": "正在检查文件…",
-                "decoding": "正在解码…",
-                "checking": "正在检查尺寸和上限…",
-                "converting": "正在转换…",
-                "writing": "正在写入…",
-                "rendering-pdf": "正在渲染 PDF 页面…",
-                "saving": "正在添加到资源库…"
-            },
-            "refused": {
-                "unsupported": "OpenMarch 不支持导入此格式。模型请使用 GLB 或 glTF，图稿请使用 PNG、JPG、SVG 或 PDF。",
-                "tooLarge": {
-                    "model": "模型及其所需文件超过 200 MB 上限。",
-                    "artwork": "图稿文件超过 300 MB 上限。"
-                }
-            },
-            "match": {
-                "kitTitle": "{name}的新版本",
-                "filenameTitle": "资源库中已有，名为{name}",
-                "detail": "使用它的表演会显示“有可用更新”；在接受更新之前不会有任何改动。",
-                "builtInDetail": "{name}是内置项目，因此将创建你自己的副本。",
-                "newVersionOf": "{name}的新版本",
-                "update": "更新{name}",
-                "copyOf": "你的{name}副本",
-                "addNew": "作为新项目添加"
-            },
-            "choices": {
-                "suggested": "推荐",
-                "units": {
-                    "title": "单位",
-                    "detail": "按导出时的尺寸，其最长边为{largest}，超出了该类型的尺寸范围。",
-                    "none": "保持导出尺寸",
-                    "cm": "厘米（{factor}）",
-                    "in": "英寸（{factor}）",
-                    "ft": "英尺（{factor}）"
-                },
-                "rotate": {
-                    "title": "旋转为 Y 轴向上",
-                    "detail": "导出时为 Z 轴向上，模型会侧躺。"
-                },
-                "simplify": {
-                    "title": "简化为{cap}个三角面",
-                    "detail": "{triangles}个三角面，超过{kind}的上限{cap}。"
-                },
-                "before": "简化前 {triangles}",
-                "after": "简化后 {triangles}",
-                "grip": {
-                    "title": "设置握点",
-                    "detail": "文件中没有 OM_grip_R：已预设在最长边四分之一处的点。点击模型可移动握点。",
-                    "misnamed": "找到{names}，与 OM_grip_R 不符。已预设在最长边上；点击模型可移动握点。",
-                    "manual": "由你在模型上点击设定。",
-                    "pick": "点击模型上的一点",
-                    "picking": "等待点击…（按<keys></keys>停止）"
-                },
-                "surface": {
-                    "title": "图稿表面",
-                    "detail": "文件未标记图稿表面。请选择用于印制图稿的表面，或选择无；将鼠标悬停在选项上可在模型上查看。",
-                    "none": "无",
-                    "unnamed": "材质{index}",
-                    "size": "约{width} × {height}",
-                    "noUVs": "没有 UV，无法映射图稿"
-                }
-            },
-            "rows": {
-                "unreadable": "无法读取文件",
-                "missingResource": "缺少所需的文件",
-                "externalUri": "会从互联网加载文件",
-                "resourceOutsideFolder": "引用了所在文件夹之外的文件",
-                "validatorErrors": "{count, plural, other {#个 glTF 错误}}",
-                "requiredExtension": "需要 OpenMarch 无法加载的扩展",
-                "noGeometry": "文件中没有几何体",
-                "overTriangleCap": "{triangles}个三角面：超过上限{limit}",
-                "overTriangleCapDetail": "超过{kind}上限{cap}的 4 倍以上。请先减面再导出。",
-                "rigNotAllowed": "{kind}不能带有骨骼绑定",
-                "garmentNotRigged": "服装需要 v4 骨骼绑定",
-                "garmentJointsNotV4": "骨骼不是 v4 骨架",
-                "missingJoints": "缺少{names}",
-                "unexpectedJoints": "多出{names}",
-                "garmentRestPoseMismatch": "骨骼的静止姿势与 v4 不一致",
-                "garmentQuantized": "蒙皮网格经过了量化",
-                "garmentTransformsNotApplied": "变换未应用",
-                "garmentNoPartPaint": "没有 _PART 绘制层：会渲染为皮肤",
-                "garmentNoMedianFit": "没有适配中等体型的版本",
-                "garmentUnknownFit": "某个适配指定了未知体型",
-                "texturesDownsized": "{count, plural, other {#张纹理已缩小至{cap} px}}",
-                "dracoDecoded": "已解码 Draco 压缩",
-                "meshOptimizerDecoded": "已解码 Mesh optimizer 压缩",
-                "instancesExpanded": "已展开实例",
-                "extensionsStripped": "已移除未使用的扩展",
-                "extrasStripped": "已移除未使用的附加数据",
-                "contentStripped": "已移除 OpenMarch 不使用的内容",
-                "contentStrippedDetail": "动画 {animations} · 相机 {cameras} · 变形目标 {morphTargets} · 多余场景 {scenes}",
-                "influencesRenormalized": "已重新归一化{vertices}个顶点的骨骼权重",
-                "validatorWarnings": "{count, plural, other {#个 glTF 警告}}",
-                "sizeOutOfRange": "最长边为{size}",
-                "sizeOutOfRangeDetail": "超出该类型通常的{min}至{max}范围。请检查单位。",
-                "noStretchZones": "没有拉伸区域",
-                "noStretchZonesDetail": "将保持建模时的尺寸，或按统一比例缩放。",
-                "customPropertiesOff": "自定义属性似乎未开启",
-                "customPropertiesOffDetail": "请使用 OpenMarch 预设重新导出，以保留握点和图稿槽。",
-                "stillOverTriangleCap": "仍有{triangles}个三角面，超过上限{cap}",
-                "slotWithoutUVs": "图稿槽 {slot} 没有 UV",
-                "slotDropped": "已忽略图稿槽 {slot}",
-                "invalidOpenMarchData": "已忽略{where}上的 OpenMarch 数据",
-                "unknownStampKind": "标记指定了未知类型：{value}",
-                "missingFits": "缺少体型适配",
-                "duplicateFits": "多个网格使用相同的体型适配",
-                "wgiEquipmentUnderMinimum": "WGI：器械短于 24 in",
-                "wgiFloorOverMaximum": "WGI：地面超过 78 × 106 ft"
-            },
-            "size": {
-                "title": "尺寸多大？",
-                "members": "已选{selected}/{count}页",
-                "fromFile": "来自文件：{size}",
-                "width": "宽度",
-                "height": "高度",
-                "feetUnit": "英尺",
-                "inchesUnit": "英寸",
-                "feetLabel": "{label}（英尺）",
-                "inchesLabel": "{label}（英寸）",
-                "feetSize": "{width} × {height} 英尺",
-                "inchesSize": "{width} × {height} 英寸",
-                "lengthSize": "{width} × {height}",
-                "locked": "已锁定比例：图稿不会被拉伸",
-                "needed": "请选择尺寸：此文件未注明打印尺寸。",
-                "printsOn": "打印位置",
-                "fitted": "已按图片形状调整；标准{surface}尺寸为{size}。"
-            },
-            "details": {
-                "name": "名称",
-                "namesFromFiles": "每个文件保留各自的名称。",
-                "tags": "标签，用逗号分隔",
-                "toggle": "作者、许可协议和来源",
-                "unknown": "未知",
-                "author": "作者",
-                "license": "许可协议",
-                "licensePlaceholder": "许可协议，例如CC-BY-4.0",
-                "source": "来源网址",
-                "emptyIsUnknown": "留空即视为未知，绝不视为可自由分享。",
-                "rights": "请仅导入你有权使用的图稿和模型。"
-            },
-            "add": {
-                "one": "添加到素材库",
-                "many": "添加{count}项到素材库",
-                "newVersion": "添加新版本",
-                "cantImport": "无法导入"
-            },
-            "done": {
-                "added": "{count, plural, other {已将#项添加到素材库}}",
-                "newVersion": "已添加{name}的新版本",
-                "notImported": "未导入"
-            },
-            "stage": {
-                "label": "导入预览 · 3D视图未更改",
-                "loading": "正在加载预览…",
-                "empty": "无可预览内容",
-                "needsKind": "请先选择类型以查看预览。",
-                "rejected": "无法导入，因此没有预览。",
-                "previewFailed": "无法加载预览。",
-                "noArtwork": "没有可预览的页面。",
-                "triangles": "{triangles}个三角面",
-                "trianglesCap": "{triangles}个三角面 · 上限{cap}",
-                "tall": "高{height}",
-                "before": "简化前",
-                "after": "简化后",
-                "vector": "矢量",
-                "pixels": "{width} × {height} px",
-                "views": "视图",
-                "view": {
-                    "front": "正面",
-                    "side": "侧面",
-                    "top": "顶部"
-                },
-                "pickGrip": "点击模型上的一点以设置握持点 · 按<keys></keys>停止",
-                "surface": "图稿表面：{name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "请分开导入模型和图稿",
-                    "body": "每次可选择一个模型，或任意数量的图稿文件。"
-                },
-                "session-expired": {
-                    "title": "此导入已超时",
-                    "body": "导入在30分钟未操作后会关闭。请重新选择文件。"
-                },
-                "unknown-file": {
-                    "title": "该文件不在此次导入中",
-                    "body": "请重新选择文件。"
-                },
-                "too-large": {
-                    "title": "文件过多",
-                    "body": "每次最多选择50个文件。"
-                },
-                "unreadable": {
-                    "title": "无法读取该文件",
-                    "body": "文件可能已被移动，或正被其他应用打开。"
-                },
-                "busy": {
-                    "title": "另一个导入步骤仍在运行",
-                    "body": "请等待其完成后再试。"
-                },
-                "timeout": {
-                    "title": "导入程序耗时过长",
-                    "body": "大型或复杂的文件可能会超时。请重试，或在导出前简化文件。"
-                },
-                "worker-crashed": {
-                    "title": "导入程序在读取文件时停止",
-                    "body": "你的文件未被更改。请重试；如果再次发生，文件可能已损坏。"
-                },
-                "pdf-unavailable": {
-                    "title": "无法渲染PDF页面",
-                    "body": "请重试。如果问题持续，请将图稿导出为PNG或SVG。"
-                },
-                "write-failed": {
-                    "title": "无法保存到素材库",
-                    "body": "请检查磁盘是否有可用空间，然后重试。"
-                },
-                "read-only": {
-                    "title": "该项无法更改",
-                    "body": "内置项为只读。请改为“添加为新项”。"
-                },
-                "corrupt": {
-                    "title": "素材库中有一项已损坏",
-                    "body": "请重试。素材库中的其他内容不受影响。"
-                },
-                "cancelled": {
-                    "title": "已取消",
-                    "body": "未再导入任何内容。"
-                },
-                "other": {
-                    "title": "出现问题",
-                    "body": "请重试。"
-                }
-            },
-            "finishFailed": "无法完成导入",
-            "copyIntoShowFailed": "无法将导入项复制到表演中"
-        },
-        "fileDialog": {
-            "importTitle": "导入",
-            "saveTemplateTitle": "保存模板",
-            "models": "3D模型（glb、gltf）",
-            "artwork": "图稿（png、jpg、svg、pdf）",
-            "modelsAndArtwork": "模型和图稿",
-            "pngImage": "PNG图像"
-        },
-        "starterKit": {
-            "saveDialogTitle": "保存Blender入门套件",
-            "saveFailed": "无法保存Blender入门套件"
         }
     },
     "marchers": {
@@ -1698,7 +1296,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "制作背景",
-                "drawFailed": "无法绘制背景图片",
                 "empty": "无背景图片",
                 "help": "上传新修订版本时，背景图片会自动同步。如需更改，请在场地编辑器中更改背景图片，然后上传新修订版本。",
                 "title": "背景图片"
@@ -3327,7 +2924,6 @@
             "title": "机位",
             "close": "关闭机位",
             "edit": "编辑机位…",
-            "saveView": "保存当前视角",
             "none": "无机位",
             "empty": "没有机位。先把视角调到想要的位置，再添加。",
             "addView": "添加当前视角",
@@ -3350,68 +2946,7 @@
             "removed": "已移除“{name}”",
             "undo": "撤销",
             "replace": "替换",
-            "replaceWithProfile": "要用“{name}”替换你的机位吗？当前列表没有保存在其他地方。",
-            "profile": "方案",
-            "source": {
-                "defaults": "场馆默认",
-                "custom": "本表演的机位"
-            },
-            "edited": "已修改",
-            "myProfiles": "本机",
-            "saveAsProfile": "存为机位方案…",
-            "saveAsProfileShort": "存为方案…",
-            "manageProfiles": "管理方案…",
-            "notice": {
-                "defaults": "场馆自带的机位。任何修改都会让它们成为本表演的机位。",
-                "custom": "仅随本表演保存。",
-                "profile": "已随本表演保存，并保存在你的方案中。",
-                "edited": "方案保存后已有修改。",
-                "newer": "此方案已在本机上修改过。",
-                "missing": "本表演使用的方案不在本机上。"
-            },
-            "updateProfile": "更新方案",
-            "saveAsNew": "另存为新方案…",
-            "useNewVersion": "使用新版本",
-            "addToMyProfiles": "添加到我的方案",
-            "profileName": "方案名称",
-            "save": "保存",
-            "defaultProfileName": "{venue}机位",
-            "copyName": "{name} 副本",
-            "profilesTitle": "机位方案",
-            "profilesHint": "保存在本机的资源库中，任何表演都可使用。每个表演会保留其所用方案的副本。",
-            "noProfiles": "还没有机位方案。选择“存为机位方案…”来创建。",
-            "cameraCount": "{count, plural, other {#个机位}}",
-            "use": "使用",
-            "otherVenue": "此方案适用于其他场馆",
-            "deleteProfile": "删除",
-            "deleteProfileConfirm": "要从本机删除“{name}”吗？使用它的表演会保留各自的副本。",
             "saveFailed": "无法保存3D视图机位"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "5 ft旗杆旗面",
-                "silk5_5ftPole": "5.5 ft旗杆旗面",
-                "silk6ftPole": "6 ft旗杆旗面",
-                "silk7ftPole": "7 ft旗杆旗面",
-                "silkStandard": "标准",
-                "silkOversized": "加大",
-                "silkTeardrop": "水滴形",
-                "silkSwing": "旋旗",
-                "silkSuperSwing": "弧边旋旗或超级旋旗",
-                "silkOversizedSwing": "加大旋旗",
-                "silkArc": "常规弧形",
-                "silkNarrowArc": "窄弧形",
-                "silkSuperArc": "超大弧形",
-                "floorWgiMinimum": "WGI比赛区域（最小）",
-                "floorWgiMaximum": "WGI比赛区域（最大）",
-                "flatProp4x8ft": "4 x 8 ft板材"
-            },
-            "kind": {
-                "silk": "旗面",
-                "floor": "地垫",
-                "flatProp": "平面道具"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "无法更新3D视图场馆"
@@ -3761,7 +3296,6 @@
         "help": {
             "title": "帮助",
             "showShortcuts": "键盘快捷键",
-            "starterKit": "获取Blender入门套件…",
             "website": "网站",
             "guides": "文档/指南"
         },
@@ -3772,7 +3306,6 @@
             "openMarchFile": "OpenMarch文件",
             "allFiles": "所有文件",
             "audioFile": "音频文件",
-            "zipArchive": "Zip归档",
             "video": "视频"
         },
         "newShow": {

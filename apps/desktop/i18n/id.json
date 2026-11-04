@@ -174,53 +174,6 @@
         "releaseNotes": "Catatan rilis",
         "updated": "OpenMarch diperbarui ke v{version}"
     },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Hak cipta dilindungi",
-                "unknown": "Lisensi tidak diketahui"
-            },
-            "modified": "{credit} (dimodifikasi)",
-            "none": "Tidak ada item dalam pertunjukan ini yang memerlukan kredit.",
-            "shareNote": {
-                "badge": "Catatan berbagi",
-                "detail": "Beberapa item memiliki lisensi yang tidak diketahui. Anda mungkin tidak berhak membagikannya bersama pertunjukan ini.",
-                "export": "Pertunjukan ini memiliki item dengan lisensi yang tidak diketahui. Anda mungkin tidak berhak membagikannya."
-            },
-            "title": "Kredit",
-            "uncredited": "{count, plural, other {# item lainnya berlisensi CC0 atau bawaan dan tidak memerlukan kredit.}}"
-        },
-        "show": {
-            "addFailed": "Tidak dapat menambahkan {name} ke Pustaka Anda.",
-            "added": "{name} ditambahkan ke Pustaka Anda.",
-            "addToLibrary": "Tambahkan ke Pustaka saya",
-            "delete": {
-                "addFirst": "Tambahkan ke Pustaka saya dulu",
-                "cancel": "Batal",
-                "checking": "Memeriksa penggunaannya…",
-                "confirm": "Pustaka Anda menyimpan salinannya sendiri. Tindakan ini tidak dapat diurungkan.",
-                "confirmNoCopy": "Pustaka Anda tidak memiliki salinannya, jadi item ini akan hilang selamanya. Tindakan ini tidak dapat diurungkan.",
-                "confirmUnknownCopy": "Tindakan ini tidak dapat diurungkan.",
-                "delete": "Hapus",
-                "deleted": "{name} dihapus dari pertunjukan ini.",
-                "failed": "Tidak dapat menghapusnya.",
-                "inUseTitle": "{name} sedang digunakan",
-                "isFloor": "Item ini adalah lantai pertunjukan ini, jadi tidak dapat dihapus. Ubah lantai di Pengaturan lapangan → Gambar.",
-                "itemModel": "model",
-                "keptForUndo": "{name} tetap ada di pertunjukan ini selama masih dapat dikembalikan dengan Urungkan, lalu dihapus saat pertunjukan ditutup setelahnya.",
-                "label": "Hapus dari pertunjukan ini",
-                "pinnedBy": "Item ini bagian dari {names}, jadi tidak dapat dihapus.",
-                "title": "Hapus {name} dari pertunjukan ini?",
-                "usedByItems": "{count, plural, =1 {Satu properti menggunakannya, jadi tidak dapat dihapus:} other {# properti menggunakannya, jadi tidak dapat dihapus:}}"
-            },
-            "empty": "Pertunjukan ini belum menggunakan aset apa pun.",
-            "emptyHint": "Item yang diimpor disalin ke pertunjukan yang sedang terbuka.",
-            "title": "Pertunjukan ini",
-            "updateDetails": "Detailnya berubah di Pustaka Anda.",
-            "updateVersion": "Ada versi yang lebih baru di Pustaka Anda."
-        },
-        "title": "Aset"
-    },
     "audio": {
         "beats": {
             "create": {
@@ -1036,7 +989,6 @@
                 "audioNotSaved": "Audio mungkin tidak tersimpan. Audio dapat ditambahkan nanti di editor.",
                 "createFailed": "Gagal membuat pertunjukan",
                 "databaseNotReady": "Database belum siap. Selesaikan langkah proyek terlebih dahulu.",
-                "fieldImageNotCopied": "Tidak dapat menyalin gambar lapangan dari pertunjukan sebelumnya",
                 "filePathRequired": "Jalur file wajib diisi",
                 "importFailed": "Gagal mengimpor file .dots sebelumnya",
                 "saveFailed": "Gagal menyimpan pertunjukan di {path}",
@@ -1121,360 +1073,6 @@
         "help": {
             "addYours": "Bahasa Anda tidak ada? <link>Bantu kami menambahkannya</link>",
             "madeWithAi": "Terjemahan ini dibuat dengan AI, jadi beberapa kata mungkin salah. <link>Bantu kami memeriksanya</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Pustaka",
-            "search": "Cari berdasarkan nama",
-            "empty": "Pustaka Anda masih kosong.",
-            "emptyHint": "Gunakan Impor… untuk menambahkan model dan artwork.",
-            "noMatches": "Tidak ada item di Pustaka yang cocok dengan “{query}”.",
-            "loadFailed": "Tidak dapat memuat Pustaka ({code}).",
-            "groups": {
-                "silks": "Silk",
-                "floors": "Lantai",
-                "props": "Properti",
-                "equipment": "Perlengkapan",
-                "uniforms": "Seragam",
-                "other": "Lainnya"
-            }
-        },
-        "templates": {
-            "menu": "Template artwork",
-            "menuHint": "Ukuran penuh, satu file per klik",
-            "groups": {
-                "silk": "Potongan silk",
-                "floor": "Lantai dasar",
-                "floorProp": "Properti lantai",
-                "prop": "Panel properti",
-                "uniform": "Panel seragam"
-            },
-            "withSag": "{name}, melengkung {sag}",
-            "saggingBottom": "{name}, bagian bawah melengkung",
-            "propFace": {
-                "top": "Atas, {name}",
-                "front": "Depan, {name}",
-                "back": "Belakang, {name}"
-            },
-            "download": "Unduh {name} sebagai {format}",
-            "saved": "{filename} disimpan",
-            "saveFailed": "Tidak dapat menyimpan template",
-            "uniformPanel": {
-                "top": {
-                    "front": "Atasan, depan",
-                    "back": "Atasan, belakang"
-                },
-                "bottoms": {
-                    "front": "Bawahan, depan",
-                    "back": "Bawahan, belakang"
-                },
-                "overlay": {
-                    "front": "Lapisan luar (jubah), depan",
-                    "back": "Lapisan luar (jubah), belakang"
-                }
-            }
-        },
-        "import": {
-            "entry": "Impor…",
-            "library": "Pustaka",
-            "title": "Impor",
-            "back": "Kembali ke Pustaka",
-            "picking": "Pilih file di jendela dialog…",
-            "fileCount": "{count, plural, other {# file}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Dari pemilih {kind}",
-            "fromSlot": "Untuk slot {surface}",
-            "pageN": "Halaman {n}",
-            "pageOf": "halaman {index} dari {count}",
-            "showPage": "Tampilkan {label}",
-            "cancel": "Batal",
-            "close": "Selesai",
-            "importMore": "Impor lagi…",
-            "tryAgain": "Coba lagi",
-            "chooseAgain": "Pilih file lagi",
-            "cancelKeeps": "Halaman yang sudah ditambahkan tetap ada di Pustaka jika impor dibatalkan.",
-            "cancelled": "Dibatalkan. Item yang sudah ditambahkan tetap ada di Pustaka.",
-            "clean": "Siap ditambahkan. Tidak ada yang perlu dipilih.",
-            "starterKit": "Starter kit Blender OpenMarch mengekspor model yang dapat diimpor tanpa masalah.",
-            "groups": {
-                "cantImport": "Tidak dapat diimpor",
-                "needsChoice": "Perlu pilihan Anda",
-                "fixed": "Diperbaiki otomatis",
-                "notes": "Catatan"
-            },
-            "kind": {
-                "title": "Apa jenisnya?",
-                "hint": "Wajib. Rentang ukuran dan batas segitiga diperiksa setelahnya.",
-                "from": {
-                    "picker": "Ditetapkan oleh pemilih",
-                    "stamp": "Dari stempel starter kit"
-                }
-            },
-            "kinds": {
-                "prop": "Properti",
-                "equipment": "Peralatan",
-                "garment": "Pakaian",
-                "floorProp": "Properti lantai",
-                "baseFloor": "Lantai dasar"
-            },
-            "surfaces": {
-                "silk": "Kain bendera",
-                "baseFloor": "Lantai dasar",
-                "floorProp": "Properti lantai",
-                "propSlot": "Properti",
-                "uniformPart": "Seragam"
-            },
-            "stages": {
-                "reading": "Membaca file…",
-                "validating": "Memeriksa file…",
-                "decoding": "Mendekode…",
-                "checking": "Memeriksa ukuran dan batas…",
-                "converting": "Mengonversi…",
-                "writing": "Menulis…",
-                "rendering-pdf": "Merender halaman PDF…",
-                "saving": "Menambahkan ke Pustaka Anda…"
-            },
-            "refused": {
-                "unsupported": "Format ini tidak dapat diimpor oleh OpenMarch. Gunakan GLB atau glTF untuk model, dan PNG, JPG, SVG, atau PDF untuk artwork.",
-                "tooLarge": {
-                    "model": "Melebihi batas 200 MB untuk model beserta file pendukungnya.",
-                    "artwork": "Melebihi batas 300 MB untuk file artwork."
-                }
-            },
-            "match": {
-                "kitTitle": "Versi baru {name}",
-                "filenameTitle": "Sudah ada di Pustaka Anda sebagai {name}",
-                "detail": "Pertunjukan yang menggunakannya akan menampilkan “pembaruan tersedia”; tidak ada yang berubah sampai pembaruan diterima.",
-                "builtInDetail": "{name} adalah item bawaan, jadi ini akan menjadi salinan Anda sendiri.",
-                "newVersionOf": "Versi baru {name}",
-                "update": "Perbarui {name}",
-                "copyOf": "Salinan {name} milik Anda",
-                "addNew": "Tambahkan sebagai baru"
-            },
-            "choices": {
-                "suggested": "disarankan",
-                "units": {
-                    "title": "Satuan",
-                    "detail": "Ukuran terbesarnya {largest} saat diekspor, di luar rentang ukuran untuk jenisnya.",
-                    "none": "Sesuai ekspor",
-                    "cm": "Sentimeter ({factor})",
-                    "in": "Inci ({factor})",
-                    "ft": "Kaki ({factor})"
-                },
-                "rotate": {
-                    "title": "Putar ke Y-atas",
-                    "detail": "Diekspor dengan Z ke atas; model akan tampak rebah miring."
-                },
-                "simplify": {
-                    "title": "Sederhanakan menjadi {cap} segitiga",
-                    "detail": "{triangles} segitiga, melebihi batas {cap} untuk {kind}."
-                },
-                "before": "Sebelum {triangles}",
-                "after": "Sesudah {triangles}",
-                "grip": {
-                    "title": "Atur pegangan",
-                    "detail": "Tidak ada OM_grip_R di file: titik pada seperempat panjang sisi terpanjangnya sudah ditetapkan. Klik model untuk memindahkannya.",
-                    "misnamed": "Ditemukan {names}, yang tidak cocok dengan OM_grip_R. Ditetapkan pada sisi terpanjangnya; klik model untuk memindahkannya.",
-                    "manual": "Ditetapkan dengan klik Anda pada model.",
-                    "pick": "Klik titik pada model",
-                    "picking": "Mengklik… (<keys></keys> untuk berhenti)"
-                },
-                "surface": {
-                    "title": "Permukaan artwork",
-                    "detail": "File tidak menandai permukaan untuk artwork. Pilih permukaan tempat artwork dicetak, atau tidak ada; arahkan kursor ke salah satunya untuk melihatnya pada model.",
-                    "none": "Tidak ada",
-                    "unnamed": "Material {index}",
-                    "size": "Sekitar {width} × {height}",
-                    "noUVs": "tidak ada UV, jadi artwork tidak dapat dipetakan ke permukaan ini"
-                }
-            },
-            "rows": {
-                "unreadable": "File tidak dapat dibaca",
-                "missingResource": "File yang diperlukan tidak ada",
-                "externalUri": "Model memuat file dari internet",
-                "resourceOutsideFolder": "Model merujuk ke file di luar foldernya",
-                "validatorErrors": "{count, plural, other {# kesalahan glTF}}",
-                "requiredExtension": "Memerlukan ekstensi yang tidak dapat dimuat OpenMarch",
-                "noGeometry": "Tidak ada geometri di dalamnya",
-                "overTriangleCap": "{triangles} segitiga: melebihi batas {limit}",
-                "overTriangleCapDetail": "Lebih dari 4× batas {cap} untuk {kind}. Kurangi sebelum mengekspor.",
-                "rigNotAllowed": "{kind} tidak boleh memiliki rig",
-                "garmentNotRigged": "Pakaian memerlukan rig v4",
-                "garmentJointsNotV4": "Rig ini bukan kerangka v4",
-                "missingJoints": "Kurang: {names}",
-                "unexpectedJoints": "Berlebih: {names}",
-                "garmentRestPoseMismatch": "Rest pose rig tidak cocok dengan v4",
-                "garmentQuantized": "Skinned mesh dikuantisasi",
-                "garmentTransformsNotApplied": "Transformasi belum diterapkan",
-                "garmentNoPartPaint": "Tidak ada lapisan cat _PART: akan dirender sebagai kulit",
-                "garmentNoMedianFit": "Tidak ada fit untuk tubuh median",
-                "garmentUnknownFit": "Ada fit yang menyebut tipe tubuh tidak dikenal",
-                "texturesDownsized": "{count, plural, other {# tekstur}} diperkecil menjadi {cap} px",
-                "dracoDecoded": "Kompresi Draco didekode",
-                "meshOptimizerDecoded": "Kompresi mesh optimizer didekode",
-                "instancesExpanded": "Instance dijadikan salinan terpisah",
-                "extensionsStripped": "Ekstensi yang tidak digunakan dihapus",
-                "extrasStripped": "Data tambahan yang tidak digunakan dihapus",
-                "contentStripped": "Konten yang tidak digunakan OpenMarch dihapus",
-                "contentStrippedDetail": "Animasi {animations} · kamera {cameras} · morph target {morphTargets} · scene tambahan {scenes}",
-                "influencesRenormalized": "Bobot tulang dinormalisasi ulang pada {vertices} verteks",
-                "validatorWarnings": "{count, plural, other {# peringatan glTF}}",
-                "sizeOutOfRange": "{size} pada sisi terpanjangnya",
-                "sizeOutOfRangeDetail": "Di luar rentang biasa {min} hingga {max} untuk jenisnya. Periksa satuannya.",
-                "noStretchZones": "Tidak ada zona regang",
-                "noStretchZonesDetail": "Model mempertahankan ukuran saat dimodelkan, atau diskalakan secara seragam.",
-                "customPropertiesOff": "Sepertinya opsi custom properties nonaktif",
-                "customPropertiesOffDetail": "Ekspor ulang dengan preset OpenMarch agar pegangan dan slot tetap ada.",
-                "stillOverTriangleCap": "Masih {triangles} segitiga, melebihi batas {cap}",
-                "slotWithoutUVs": "Slot artwork {slot} tidak memiliki UV",
-                "slotDropped": "Slot artwork {slot} diabaikan",
-                "invalidOpenMarchData": "Data OpenMarch pada {where} diabaikan",
-                "unknownStampKind": "Stempel menyebut jenis yang tidak dikenal: {value}",
-                "missingFits": "Ada fit yang kurang",
-                "duplicateFits": "Lebih dari satu mesh memiliki fit yang sama",
-                "wgiEquipmentUnderMinimum": "WGI: peralatan di bawah 24 in",
-                "wgiFloorOverMaximum": "WGI: lantai melebihi 78 × 106 ft"
-            },
-            "size": {
-                "title": "Seberapa besar?",
-                "members": "{selected} dari {count} {count, plural, other {halaman}}",
-                "fromFile": "Dari file: {size}",
-                "width": "Lebar",
-                "height": "Tinggi",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Rasio aspek dikunci: gambar tidak pernah diregangkan",
-                "needed": "Pilih ukuran: file ini tidak menyebutkan ukuran cetaknya.",
-                "printsOn": "Dicetak pada",
-                "fitted": "Disesuaikan dengan bentuk gambar Anda; ukuran standar {surface} adalah {size}."
-            },
-            "details": {
-                "name": "Nama",
-                "namesFromFiles": "Setiap file mempertahankan namanya sendiri.",
-                "tags": "Tag, pisahkan dengan koma",
-                "toggle": "Pembuat, lisensi, dan sumber",
-                "unknown": "Tidak diketahui",
-                "author": "Pembuat",
-                "license": "Lisensi",
-                "licensePlaceholder": "Lisensi, misalnya CC-BY-4.0",
-                "source": "URL sumber",
-                "emptyIsUnknown": "Kosong berarti Tidak diketahui, tidak pernah dianggap bebas dibagikan.",
-                "rights": "Impor hanya gambar dan model yang berhak Anda gunakan."
-            },
-            "add": {
-                "one": "Tambahkan ke Pustaka",
-                "many": "Tambahkan {count} ke Pustaka",
-                "newVersion": "Tambahkan versi baru",
-                "cantImport": "Tidak dapat diimpor"
-            },
-            "done": {
-                "added": "{count, plural, other {# item ditambahkan ke Pustaka Anda}}",
-                "newVersion": "Versi baru {name} ditambahkan",
-                "notImported": "Tidak diimpor"
-            },
-            "stage": {
-                "label": "Pratinjau impor · Tampilan 3D tidak berubah",
-                "loading": "Memuat pratinjau…",
-                "empty": "Tidak ada yang bisa dipratinjau",
-                "needsKind": "Pilih jenisnya untuk melihat pratinjau.",
-                "rejected": "Tidak dapat diimpor, jadi tidak ada pratinjau.",
-                "previewFailed": "Tidak dapat memuat pratinjau.",
-                "noArtwork": "Tidak ada halaman untuk dipratinjau.",
-                "triangles": "{triangles} segitiga",
-                "trianglesCap": "{triangles} segitiga · batas {cap}",
-                "tall": "Tinggi {height}",
-                "before": "Sebelum",
-                "after": "Sesudah",
-                "vector": "vektor",
-                "pixels": "{width} × {height} px",
-                "views": "Tampilan",
-                "view": {
-                    "front": "Depan",
-                    "side": "Samping",
-                    "top": "Atas"
-                },
-                "pickGrip": "Klik satu titik pada model untuk menetapkan pegangan · <keys></keys> untuk berhenti",
-                "surface": "Permukaan gambar: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Impor model dan gambar secara terpisah",
-                    "body": "Pilih satu model, atau file gambar sebanyak apa pun, dalam satu kali impor."
-                },
-                "session-expired": {
-                    "title": "Waktu impor ini habis",
-                    "body": "Impor ditutup setelah 30 menit tidak digunakan. Pilih file lagi."
-                },
-                "unknown-file": {
-                    "title": "File itu tidak termasuk dalam impor ini",
-                    "body": "Pilih file lagi."
-                },
-                "too-large": {
-                    "title": "Terlalu banyak file",
-                    "body": "Pilih maksimal 50 file sekaligus."
-                },
-                "unreadable": {
-                    "title": "File tidak dapat dibaca",
-                    "body": "File mungkin telah dipindahkan, atau sedang dibuka oleh aplikasi lain."
-                },
-                "busy": {
-                    "title": "Langkah impor lain masih berjalan",
-                    "body": "Tunggu hingga selesai, lalu coba lagi."
-                },
-                "timeout": {
-                    "title": "Pengimpor terlalu lama",
-                    "body": "File yang besar atau rumit bisa melebihi batas waktu. Coba lagi, atau sederhanakan file sebelum mengekspornya."
-                },
-                "worker-crashed": {
-                    "title": "Pengimpor berhenti saat membaca file",
-                    "body": "File Anda tidak diubah. Coba lagi; jika terjadi lagi, file mungkin rusak."
-                },
-                "pdf-unavailable": {
-                    "title": "Halaman PDF tidak dapat dirender",
-                    "body": "Coba lagi. Jika terus terjadi, ekspor gambar sebagai PNG atau SVG."
-                },
-                "write-failed": {
-                    "title": "Tidak dapat menyimpan ke Pustaka Anda",
-                    "body": "Pastikan masih ada ruang disk kosong, lalu coba lagi."
-                },
-                "read-only": {
-                    "title": "Item itu tidak dapat diubah",
-                    "body": "Item bawaan hanya dapat dibaca. Tambahkan sebagai item baru."
-                },
-                "corrupt": {
-                    "title": "Pustaka Anda memiliki entri yang rusak",
-                    "body": "Coba lagi. Bagian lain Pustaka Anda tidak terpengaruh."
-                },
-                "cancelled": {
-                    "title": "Dibatalkan",
-                    "body": "Tidak ada lagi yang diimpor."
-                },
-                "other": {
-                    "title": "Terjadi kesalahan",
-                    "body": "Coba lagi."
-                }
-            },
-            "finishFailed": "Tidak dapat menyelesaikan impor",
-            "copyIntoShowFailed": "Tidak dapat menyalin hasil impor ke pertunjukan"
-        },
-        "fileDialog": {
-            "importTitle": "Impor",
-            "saveTemplateTitle": "Simpan template",
-            "models": "Model 3D (glb, gltf)",
-            "artwork": "Gambar (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Model dan gambar",
-            "pngImage": "Gambar PNG"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Simpan paket pemula Blender",
-            "saveFailed": "Tidak dapat menyimpan paket pemula Blender"
         }
     },
     "marchers": {
@@ -1698,7 +1296,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Latar belakang produksi",
-                "drawFailed": "Gambar latar belakang tidak dapat digambar",
                 "empty": "Tidak ada gambar latar belakang",
                 "help": "Gambar latar belakang otomatis disinkronkan saat Anda mengunggah revisi baru. Untuk menggantinya, ubah gambar latar belakang di editor lapangan, lalu unggah revisi baru.",
                 "title": "Gambar latar belakang"
@@ -3327,7 +2924,6 @@
             "title": "Kamera",
             "close": "Tutup kamera",
             "edit": "Edit kamera…",
-            "saveView": "Simpan tampilan saat ini",
             "none": "Tidak ada kamera",
             "empty": "Tidak ada kamera. Pindahkan tampilan ke posisi yang diinginkan, lalu tambahkan.",
             "addView": "Tambahkan tampilan saat ini",
@@ -3350,68 +2946,7 @@
             "removed": "“{name}” dihapus",
             "undo": "Urungkan",
             "replace": "Ganti",
-            "replaceWithProfile": "Ganti kamera Anda dengan “{name}”? Daftar Anda saat ini tidak disimpan di tempat lain.",
-            "profile": "Profil",
-            "source": {
-                "defaults": "Bawaan venue",
-                "custom": "Kamera pertunjukan ini"
-            },
-            "edited": "Diubah",
-            "myProfiles": "Di komputer ini",
-            "saveAsProfile": "Simpan sebagai profil kamera…",
-            "saveAsProfileShort": "Simpan sebagai profil…",
-            "manageProfiles": "Kelola profil…",
-            "notice": {
-                "defaults": "Kamera bawaan venue. Setiap perubahan menjadikannya milik pertunjukan ini.",
-                "custom": "Hanya disimpan bersama pertunjukan ini.",
-                "profile": "Disimpan bersama pertunjukan ini dan di profil Anda.",
-                "edited": "Diubah sejak profil disimpan.",
-                "newer": "Profil ini telah diubah di komputer ini.",
-                "missing": "Profil pertunjukan ini tidak ada di komputer ini."
-            },
-            "updateProfile": "Perbarui profil",
-            "saveAsNew": "Simpan sebagai baru…",
-            "useNewVersion": "Gunakan versi baru",
-            "addToMyProfiles": "Tambahkan ke profil saya",
-            "profileName": "Nama profil",
-            "save": "Simpan",
-            "defaultProfileName": "Kamera {venue}",
-            "copyName": "Salinan {name}",
-            "profilesTitle": "Profil kamera",
-            "profilesHint": "Disimpan di Pustaka Anda di komputer ini, untuk pertunjukan apa pun. Setiap pertunjukan menyimpan salinan sendiri dari profil yang digunakannya.",
-            "noProfiles": "Belum ada profil kamera. Pilih Simpan sebagai profil kamera… untuk membuatnya.",
-            "cameraCount": "{count, plural, other {# kamera}}",
-            "use": "Gunakan",
-            "otherVenue": "Profil ini untuk venue lain",
-            "deleteProfile": "Hapus",
-            "deleteProfileConfirm": "Hapus “{name}” dari komputer ini? Pertunjukan yang menggunakannya tetap menyimpan salinannya.",
             "saveFailed": "Gagal menyimpan kamera Tampilan 3D"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Kain bendera tiang 5 ft",
-                "silk5_5ftPole": "Kain bendera tiang 5,5 ft",
-                "silk6ftPole": "Kain bendera tiang 6 ft",
-                "silk7ftPole": "Kain bendera tiang 7 ft",
-                "silkStandard": "Standar",
-                "silkOversized": "Ekstra besar",
-                "silkTeardrop": "Tetesan air",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Swing melengkung atau super",
-                "silkOversizedSwing": "Swing ekstra besar",
-                "silkArc": "Busur reguler",
-                "silkNarrowArc": "Busur sempit",
-                "silkSuperArc": "Busur super",
-                "floorWgiMinimum": "Area kompetisi WGI, minimum",
-                "floorWgiMaximum": "Area kompetisi WGI, maksimum",
-                "flatProp4x8ft": "Lembaran 4 x 8 ft"
-            },
-            "kind": {
-                "silk": "Kain bendera",
-                "floor": "Lantai",
-                "flatProp": "Properti datar"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Gagal memperbarui venue Tampilan 3D"
@@ -3761,7 +3296,6 @@
         "help": {
             "title": "Bantuan",
             "showShortcuts": "Pintasan keyboard",
-            "starterKit": "Dapatkan paket pemula Blender…",
             "website": "Situs web",
             "guides": "Dokumentasi/Panduan"
         },
@@ -3772,7 +3306,6 @@
             "openMarchFile": "File OpenMarch",
             "allFiles": "Semua file",
             "audioFile": "File audio",
-            "zipArchive": "Arsip zip",
             "video": "Video"
         },
         "newShow": {

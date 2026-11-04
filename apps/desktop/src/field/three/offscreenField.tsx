@@ -17,7 +17,6 @@ import {
 } from "@/field/fieldQuality";
 import { planFieldImage } from "@/field/fieldPlan";
 import tolgee from "@/global/singletons/Tolgee";
-import type { FieldImageSize } from "@/db-functions/fieldFloor";
 import type { PositionSource } from "@/timeline/positionBuffer";
 import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
 import { FieldDimming } from "./fieldDimming";
@@ -42,8 +41,6 @@ export interface OffscreenFieldArgs {
     labels: ReadonlyMap<number, string>;
     /** The decoded field image, or null when the show has none. */
     image: ImageBitmap | null;
-    /** The floor's physical size, centered on the field; null places the image by fill or fit */
-    imageSize?: FieldImageSize | null;
     width: number;
     height: number;
 }
@@ -128,11 +125,7 @@ export async function createOffscreenField(
     };
     const placement = planFieldImage(
         args.fieldProperties,
-        args.image && {
-            width: args.image.width,
-            height: args.image.height,
-            size: args.imageSize,
-        },
+        args.image && { width: args.image.width, height: args.image.height },
     );
 
     let mounted!: () => void;

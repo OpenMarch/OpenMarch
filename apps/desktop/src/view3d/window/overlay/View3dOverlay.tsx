@@ -20,7 +20,7 @@
  * closes the settings panel, then the Cameras panel, then leaves fullscreen. The camera rig (P3.2)
  * owns 1–9, and Esc for pick-a-seat.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslate } from "@tolgee/react";
 import {
     CornersInIcon,
@@ -182,15 +182,12 @@ export default function View3dOverlay() {
     const { t } = useTranslate();
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [camerasOpen, setCamerasOpen] = useState(false);
-    /** A just-saved camera whose name field should take focus. */
-    const [focusCameraId, setFocusCameraId] = useState<string | null>(null);
     const { isFullscreen, toggleFullscreen } = useFullscreen();
     const hidden = usePointerIdle(
         isFullscreen && !settingsOpen && !camerasOpen,
     );
     const closeSettings = () => setSettingsOpen(false);
     const closeCameras = () => setCamerasOpen(false);
-    const clearFocusCamera = useCallback(() => setFocusCameraId(null), []);
     usePlaybackShortcuts();
     useOverlayShortcuts(
         toggleFullscreen,
@@ -228,18 +225,10 @@ export default function View3dOverlay() {
                 )}
             >
                 <div className="flex max-h-full min-h-0 flex-col items-start gap-8">
-                    <CameraBar
-                        onEdit={() => setCamerasOpen(true)}
-                        onSaved={(id) => {
-                            setCamerasOpen(true);
-                            setFocusCameraId(id);
-                        }}
-                    />
+                    <CameraBar onEdit={() => setCamerasOpen(true)} />
                     {camerasOpen && (
                         <CamerasPanel
                             onClose={closeCameras}
-                            focusId={focusCameraId}
-                            onFocused={clearFocusCamera}
                             className="min-h-0"
                         />
                     )}

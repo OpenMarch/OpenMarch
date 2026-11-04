@@ -3,12 +3,6 @@
 import { describe, expect, it } from "vitest";
 import { catalogDims, catalogEntries, silkDepthM } from "../catalog";
 import {
-    boxOutsideCut,
-    distanceToPolygonEdge,
-    insetPolygon,
-    pointInPolygon,
-} from "../cutGeometry";
-import {
     SILK_CUTS,
     catalogSilkCutPath,
     curveCutPath,
@@ -222,47 +216,5 @@ describe("sag (Q40)", () => {
             enterLength("9 in"),
         );
         expect(recommendedSilkSag({ m: 1 })).toEqual({ m: 0.25 });
-    });
-});
-
-describe("cut geometry", () => {
-    const teardrop = sampleCutPath(
-        catalogSilkCutPath(silks.find((e) => e.id === "silk-teardrop-44x74")!),
-    );
-
-    it("tells inside from outside", () => {
-        expect(pointInPolygon(teardrop, [inches(20), inches(20)])).toBe(true);
-        expect(pointInPolygon(teardrop, [inches(5), inches(70)])).toBe(false);
-        expect(pointInPolygon(teardrop, [inches(73), inches(2)])).toBe(false);
-    });
-
-    it("insets an outline by the safe area, dropping the narrow tip", () => {
-        const inset = inches(1);
-        const ring = insetPolygon(teardrop, inset);
-        expect(ring.length).toBeGreaterThan(20);
-        for (const p of ring) {
-            expect(pointInPolygon(teardrop, p)).toBe(true);
-            expect(distanceToPolygonEdge(teardrop, p)).toBeGreaterThanOrEqual(
-                inset * (1 - 1e-6),
-            );
-        }
-        expect(insetPolygon(teardrop, inches(200))).toEqual([]);
-        expect(insetPolygon(teardrop, 0)).toEqual(teardrop);
-    });
-
-    it("flags a box that leaves the cut", () => {
-        const box = (x: number, y: number, w: number, h: number) => ({
-            x: inches(x),
-            y: inches(y),
-            width: inches(w),
-            height: inches(h),
-        });
-        expect(boxOutsideCut(teardrop, box(5, 5, 20, 20))).toBe(false);
-        // Crosses the bottom edge below the pole end.
-        expect(boxOutsideCut(teardrop, box(2, 30, 20, 20))).toBe(true);
-        // The whole trim: the corners are outside the teardrop.
-        expect(boxOutsideCut(teardrop, box(0, 0, 74, 79.625))).toBe(true);
-        // Touching the pole edge is still inside.
-        expect(boxOutsideCut(teardrop, box(0, 10, 10, 10))).toBe(false);
     });
 });

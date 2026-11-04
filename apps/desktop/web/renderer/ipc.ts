@@ -64,38 +64,6 @@ export function invokeWorker<T = unknown>(
     });
 }
 
-/** Runs a page handler the worker asked for and posts its answer back. */
-async function answerWorker({
-    id,
-    channel,
-    args,
-}: {
-    id: number;
-    channel: string;
-    args: unknown[];
-}) {
-    let answer: ToWorker;
-    try {
-        const handler = pageHandlers.get(channel);
-        if (!handler)
-            throw new Error(`No page handler registered for '${channel}'`);
-        answer = {
-            type: "answer",
-            id,
-            ok: true,
-            value: await handler(...args),
-        };
-    } catch (error) {
-        answer = {
-            type: "answer",
-            id,
-            ok: false,
-            error: error instanceof Error ? error.message : String(error),
-        };
-    }
-    worker?.postMessage(answer);
-}
-
 /** Starts the worker and resolves once it has reopened the last show, if any. */
 export function startWorker(): Promise<WorkerStatus> {
     return new Promise((resolve, reject) => {
@@ -131,9 +99,6 @@ export function startWorker(): Promise<WorkerStatus> {
                     }
                     case "emit":
                         emit(message.channel, ...message.args);
-                        break;
-                    case "ask":
-                        void answerWorker(message);
                         break;
                     case "result": {
                         const call = pending.get(message.id);

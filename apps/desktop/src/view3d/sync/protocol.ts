@@ -10,8 +10,6 @@
  * the editor share the pure helpers.
  */
 
-import type { ProfileData } from "../core/cameraList";
-
 /** Editor → window. Hard-coded channel names; main relays only these. */
 export const VIEW3D_CLOCK_CHANNEL = "view3d:clock";
 export const VIEW3D_SELECTION_CHANNEL = "view3d:selection";
@@ -132,20 +130,6 @@ export const VIEW3D_AUTO_OPEN_CHANNELS = {
     get: "view3d:auto-open-get",
     set: "view3d:auto-open-set",
 } as const;
-
-/** Window → main, `invoke`: this computer's camera profiles (ADR 0002 D-12). */
-export const VIEW3D_CAMERA_PROFILE_CHANNELS = {
-    list: "view3d:camera-profiles",
-    save: "view3d:camera-profile-save",
-    remove: "view3d:camera-profile-delete",
-} as const;
-
-/** Saves a profile: a new one without `id`, else replaces that one. */
-export interface View3dCameraProfileSave {
-    id?: string;
-    name: string;
-    data: ProfileData;
-}
 
 /**
  * The playback actions the window may ask for. Each is the name of the
