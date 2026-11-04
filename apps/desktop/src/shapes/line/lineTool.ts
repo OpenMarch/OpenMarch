@@ -132,7 +132,7 @@ const pointOf = (p: LineParams, key: string, pattern = POINT_KEY): number => {
  * groups, #526) kept: its stretches whole runs of gaps again, as typing it would (#524). Grown from
  * `env`'s pivot, or the line's own where there's none (a click on a handle has no env).
  */
-const keptInterval = (
+export const keptInterval = (
     next: LineParams,
     n: number,
     env: Pick<ToolEnv, "pivot" | "anchor"> = {},
@@ -245,7 +245,7 @@ function eachInterval(
  * and typing or dragging it sizes the line to it; locked it's kept (Keep interval, or the run on
  * the path). Measured as an offset, the two offset numbers show instead.
  */
-const INTERVAL: ToolParam<LineParams> = {
+export const INTERVAL: ToolParam<LineParams> = {
     key: "interval",
     get label() {
         return tolgee.t(
@@ -1367,9 +1367,9 @@ function lineOwnPivot(p: LineParams, pivot: Pivot): boolean {
 }
 
 /** A new line with its pivot at its leftmost end or point ({@link linePivot}, owner on #596) */
-function pivoted(p: LineParams): LineParams;
-function pivoted(p: LineParams | undefined): LineParams | undefined;
-function pivoted(p: LineParams | undefined): LineParams | undefined {
+export function pivoted(p: LineParams): LineParams;
+export function pivoted(p: LineParams | undefined): LineParams | undefined;
+export function pivoted(p: LineParams | undefined): LineParams | undefined {
     return p && withPivot(p, linePivot(p));
 }
 

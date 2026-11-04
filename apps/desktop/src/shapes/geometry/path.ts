@@ -18,6 +18,20 @@ export type Segment =
           readonly sweep: number;
       }
     | {
+          /**
+           * An arc of an ellipse (#634): the points `center + R(rotation)·(rx cos t, ry sin t)` for
+           * t from `start` through `start + sweep` (radians, signed as an arc's)
+           */
+          readonly type: "ellipse";
+          readonly center: XY;
+          readonly rx: number;
+          readonly ry: number;
+          /** Radians, canvas axes: the way the `rx` axis points */
+          readonly rotation: number;
+          readonly start: number;
+          readonly sweep: number;
+      }
+    | {
           readonly type: "cubic";
           readonly a: XY;
           readonly c1: XY;
@@ -26,11 +40,28 @@ export type Segment =
       };
 
 const CUBIC_SAMPLES = 64;
+/** How many pieces an ellipse arc is measured in, for its length along it */
+const ELLIPSE_SAMPLES = 128;
+
+/** The point at angle `t` on an ellipse segment */
+export function ellipsePoint(
+    seg: Extract<Segment, { type: "ellipse" }>,
+    t: number,
+): XY {
+    const x = seg.rx * Math.cos(t);
+    const y = seg.ry * Math.sin(t);
+    const c = Math.cos(seg.rotation);
+    const s = Math.sin(seg.rotation);
+    return xy(seg.center.x + x * c - y * s, seg.center.y + x * s + y * c);
+}
 
 interface Measured {
     readonly segment: Segment;
     readonly length: number;
-    /** Cubic only: cumulative length at t = i / CUBIC_SAMPLES */
+    /**
+     * Cubic and ellipse: cumulative length at t = i / CUBIC_SAMPLES of the curve (an ellipse's
+     * i / ELLIPSE_SAMPLES of its sweep)
+     */
     readonly table?: Float64Array;
 }
 
@@ -67,6 +98,19 @@ function measure(segment: Segment): Measured {
             return { segment, length: dist(segment.a, segment.b) };
         case "arc":
             return { segment, length: Math.abs(segment.sweep) * segment.r };
+        case "ellipse": {
+            const table = new Float64Array(ELLIPSE_SAMPLES + 1);
+            let prev = ellipsePoint(segment, segment.start);
+            for (let i = 1; i <= ELLIPSE_SAMPLES; i++) {
+                const p = ellipsePoint(
+                    segment,
+                    segment.start + (segment.sweep * i) / ELLIPSE_SAMPLES,
+                );
+                table[i] = table[i - 1]! + dist(prev, p);
+                prev = p;
+            }
+            return { segment, length: table[ELLIPSE_SAMPLES]!, table };
+        }
         case "cubic": {
             const table = new Float64Array(CUBIC_SAMPLES + 1);
             let prev = segment.a;
@@ -95,6 +139,35 @@ function pointOn(m: Measured, s: number): XY {
                 seg.r,
                 seg.start + Math.sign(seg.sweep || 1) * (s / seg.r),
             );
+        }
+        case "ellipse": {
+            const table = m.table!;
+            const at = (k: number) =>
+                ellipsePoint(
+                    seg,
+                    seg.start + (seg.sweep * k) / ELLIPSE_SAMPLES,
+                );
+            const first = at(0);
+            const last = at(ELLIPSE_SAMPLES);
+            if (m.length === 0) return first;
+            if (s <= 0) {
+                const dir = unit(sub(at(1e-3), first));
+                return add(first, scale(dir, s));
+            }
+            if (s >= m.length) {
+                const dir = unit(sub(last, at(ELLIPSE_SAMPLES - 1e-3)));
+                return add(last, scale(dir, s - m.length));
+            }
+            let lo = 0;
+            let hi = ELLIPSE_SAMPLES;
+            while (hi - lo > 1) {
+                const midIndex = (lo + hi) >> 1;
+                if (table[midIndex]! < s) lo = midIndex;
+                else hi = midIndex;
+            }
+            const span = table[hi]! - table[lo]!;
+            const f = span === 0 ? 0 : (s - table[lo]!) / span;
+            return at(lo + f);
         }
         case "cubic": {
             const table = m.table!;

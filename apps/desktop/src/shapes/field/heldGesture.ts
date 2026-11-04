@@ -15,7 +15,7 @@ import {
 } from "@/input/modifierRoles";
 import { onScreenRoles, subscribeOnScreen } from "@/stores/TouchModifierStore";
 import type { ShapeTarget } from "../frame/gestures";
-import { useShapeEditorStore } from "../frame/shapeEditorStore";
+import { locksSizes, useShapeEditorStore } from "../frame/shapeEditorStore";
 import type { AnyToolKind, KindHonors } from "../tool/toolKind";
 import type { XY } from "../types";
 
@@ -171,7 +171,10 @@ export function pressShapeKeys(
             honored: shapeDragHonors(
                 shape,
                 target,
-                useShapeEditorStore.getState().ratioLocked,
+                // The lock this kind reads: an Arc's sizes, a box's spacings
+                locksSizes(shape.kind)
+                    ? useShapeEditorStore.getState().sizesLocked
+                    : useShapeEditorStore.getState().ratioLocked,
             ),
             screen: () => lastScreen,
         },
