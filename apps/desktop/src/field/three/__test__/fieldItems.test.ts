@@ -130,4 +130,18 @@ describe("FieldItems", () => {
         expect(items.outlines()).toEqual([]);
         expect(items.itemAt({ x: 100, y: 50 })).toBeNull();
     });
+
+    it("draws an item in its own color, and others in none", () => {
+        const { marchers, items } = setup([change(0)]);
+        marchers.fill(3);
+        expect(items.outlines()[0].color).toBeNull();
+        const red = { r: 220, g: 38, b: 38, a: 1 };
+        items.set({
+            itemIds: new Set([2]),
+            changes: new Map([[2, [change(0)]]]),
+            hidden: new Set(),
+            colors: new Map([[2, red]]),
+        });
+        expect(items.outlines()[0].color).toEqual(red);
+    });
 });

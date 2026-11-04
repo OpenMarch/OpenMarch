@@ -1,7 +1,9 @@
 /**
  * Props in the 3D View as plain blocks (convergence P4, inventory row 6a):
- * each prop's Outline footprint extruded to its height, matte, in a neutral
- * grey, at its timeline position and turn. No textures or artwork.
+ * each prop's Outline footprint extruded to its height, matte, in its color
+ * (`items.color`) or a neutral grey, at its timeline position and turn. No
+ * textures or artwork. A prop hidden on the field in the editor (the Props
+ * panel's "Hide on the field", relayed on `view3d:hidden-props`) isn't drawn.
  *
  * - One `InstancedMesh` per footprint the show uses (`propShapes`): every
  *   rectangle prop shares one, every circle another, each custom outline its
@@ -27,6 +29,7 @@ import {
     InstancedBufferAttribute,
     InstancedMesh,
     MeshStandardMaterial,
+    SRGBColorSpace,
     Shape,
     Vector2,
 } from "three";
@@ -39,6 +42,7 @@ import {
     itemOutlineChanges,
 } from "@/items/itemOutlineTimeline";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { propColorsByMarcher } from "@/items/propColor";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import {
     cachedShapeKey,
@@ -47,6 +51,7 @@ import {
     PROP_BLOCK_COLOR,
     propShapes,
     propTracks,
+    type BlockRgb,
     type PropShape,
 } from "@/view3d/core/props/propBlocks";
 import { useShowPositions } from "@/view3d/positions";
@@ -72,6 +77,15 @@ function footprintGeometry(shape: PropShape): ExtrudeGeometry {
     return geometry;
 }
 
+/** sRGB 0–255 to the linear floats three's instance colors take. */
+function linearRgb(r: number, g: number, b: number): BlockRgb {
+    const color = new Color().setRGB(r / 255, g / 255, b / 255, SRGBColorSpace);
+    return [color.r, color.g, color.b];
+}
+
+const GREY = new Color(PROP_BLOCK_COLOR);
+const DEFAULT_RGB: BlockRgb = [GREY.r, GREY.g, GREY.b];
+
 interface PropBlocksProps {
     fieldProperties: FieldProperties;
 }
@@ -83,18 +97,30 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
     const { data: geometry } = useQuery(itemGeometryQueryOptions());
     const { beats } = useTimingObjects();
     const { positions } = useShowPositions();
+    const hiddenItemIds = useView3dSyncStore((s) => s.hiddenItemIds);
 
-    const tracks = useMemo(
-        () =>
-            propTracks(
-                itemOutlineChanges({
-                    items: items ?? [],
-                    geometry: geometry ?? [],
-                    beatIndexes: beatIndexesById(beats),
-                }),
-            ),
-        [items, geometry, beats],
-    );
+    const tracks = useMemo(() => {
+        const rows = items ?? [];
+        const colors = propColorsByMarcher(rows);
+        return propTracks(
+            itemOutlineChanges({
+                items: rows,
+                geometry: geometry ?? [],
+                beatIndexes: beatIndexesById(beats),
+            }),
+            {
+                hidden: new Set(
+                    rows
+                        .filter((item) => hiddenItemIds.has(item.id))
+                        .map((item) => item.marcher_id),
+                ),
+                colorOf: (marcherId) => {
+                    const color = colors.get(marcherId);
+                    return color ? linearRgb(color.r, color.g, color.b) : null;
+                },
+            },
+        );
+    }, [items, geometry, beats, hiddenItemIds]);
     const shapes = useMemo(() => propShapes(tracks), [tracks]);
     // Keyed by the parsed outline objects, which every refetch replaces, so a
     // fresh cache per tracks keeps the old ones from piling up.
@@ -108,7 +134,8 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
     const material = useMemo(
         () =>
             new MeshStandardMaterial({
-                color: new Color(PROP_BLOCK_COLOR),
+                // Each instance's color is the whole color
+                color: 0xffffff,
                 roughness: 0.9,
                 metalness: 0,
             }),
@@ -122,6 +149,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         const frame = createPropBlockFrame(
             shapes.map((s) => s.key),
             propCount,
+            DEFAULT_RGB,
         );
         const list = shapes.map((shape, k) => {
             const mesh = new InstancedMesh(
@@ -136,6 +164,11 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
                 16,
             );
             mesh.instanceMatrix.setUsage(DynamicDrawUsage);
+            mesh.instanceColor = new InstancedBufferAttribute(
+                frame.colors[k],
+                3,
+            );
+            mesh.instanceColor.setUsage(DynamicDrawUsage);
             // Props move anywhere on the field; skip the stale bounds test.
             mesh.frustumCulled = false;
             mesh.count = 0;
@@ -187,8 +220,10 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         } else frame.counts.fill(0);
         list.forEach((mesh, k) => {
             const count = frame.counts[k];
-            if (count > 0 || mesh.count > 0)
+            if (count > 0 || mesh.count > 0) {
                 mesh.instanceMatrix.needsUpdate = true;
+                mesh.instanceColor!.needsUpdate = true;
+            }
             mesh.count = count;
         });
         lastMsRef.current = ms;

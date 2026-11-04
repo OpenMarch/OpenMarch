@@ -24,25 +24,43 @@ import type { ItemOutlineChanges } from "@/items/itemOutlineTimeline";
  * and is drawn as a slab just thick enough to show above the field.
  */
 export const MIN_PROP_HEIGHT = 0.03;
-/** Neutral grey (sRGB), since props have no fill color of their own. */
+/** Neutral grey (sRGB), for a prop with no color of its own (`items.color`). */
 export const PROP_BLOCK_COLOR = 0x9a9a9a;
+
+/** A block color as three floats, in the space the renderer wants them. */
+export type BlockRgb = readonly [number, number, number];
 
 /** One prop's Outline changes, sorted by beat, for its marchers row. */
 export interface PropTrack {
     marcherId: number;
     changes: readonly GeometryChange[];
+    /** Its own color, or null for the frame's default */
+    color: BlockRgb | null;
 }
 
 /**
  * Every prop with Outline changes, by marcher id, from the changes the 2D
  * field reads (`itemOutlineChanges`). A prop with no changes on a loaded beat
- * is left out: it is never on field.
+ * is left out: it is never on field. So is one hidden on the field in the
+ * editor (`hidden`, by marcher id).
  */
-export function propTracks(changes: ItemOutlineChanges): PropTrack[] {
+export function propTracks(
+    changes: ItemOutlineChanges,
+    {
+        hidden,
+        colorOf,
+    }: {
+        hidden?: ReadonlySet<number>;
+        /** The prop's own color by marcher id, or null for none */
+        colorOf?: (marcherId: number) => BlockRgb | null;
+    } = {},
+): PropTrack[] {
     return [...changes]
+        .filter(([marcherId]) => !hidden?.has(marcherId))
         .map(([marcherId, list]) => ({
             marcherId,
             changes: [...list].sort((a, b) => a.beat - b.beat),
+            color: colorOf?.(marcherId) ?? null,
         }))
         .sort((a, b) => a.marcherId - b.marcherId);
 }
@@ -146,6 +164,10 @@ export interface PropBlockFrame {
     keys: readonly string[];
     /** Per key: 16 floats per instance, room for every prop */
     matrices: Float32Array[];
+    /** Per key: 3 floats per instance, each prop's color or `defaultColor` */
+    colors: Float32Array[];
+    /** For a prop with no color of its own */
+    defaultColor: BlockRgb;
     /** Per key: how many instances were written */
     counts: Int32Array;
 }
@@ -153,17 +175,20 @@ export interface PropBlockFrame {
 export function createPropBlockFrame(
     keys: readonly string[],
     propCount: number,
+    defaultColor: BlockRgb = [1, 1, 1],
 ): PropBlockFrame {
     return {
         keys,
         matrices: keys.map(() => new Float32Array(propCount * 16)),
+        colors: keys.map(() => new Float32Array(propCount * 3)),
+        defaultColor,
         counts: new Int32Array(keys.length),
     };
 }
 
 /**
  * Places every prop at `beat`: for each one on field with a position, writes
- * its matrix under its footprint's key. Packed from index 0 per key.
+ * its matrix and color under its footprint's key. Packed from index 0 per key.
  *
  * @param positionInto - the prop's center in world meters at this moment
  *   into `out`, or false when it has none
@@ -183,13 +208,10 @@ export function placePropBlocks(
         if (!geometry || !positionInto(track.marcherId, scratch)) continue;
         const k = frame.keys.indexOf(keyOf(geometry));
         if (k < 0) continue;
-        writePropMatrix(
-            frame.matrices[k],
-            frame.counts[k]++,
-            geometry,
-            scratch,
-            baseY,
-        );
+        const index = frame.counts[k]++;
+        writePropMatrix(frame.matrices[k], index, geometry, scratch, baseY);
+        const color = track.color ?? frame.defaultColor;
+        frame.colors[k].set(color, index * 3);
     }
 }
 

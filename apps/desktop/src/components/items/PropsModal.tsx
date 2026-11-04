@@ -26,6 +26,7 @@ import {
     UnitInput,
 } from "@openmarch/ui";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
+import ColorPickerMini from "@/components/ui/ColorPickerMini";
 import { ItemNotes } from "@/components/notes/ShowNotesList";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -56,6 +57,7 @@ import {
     itemOutlineChanges,
     outlineWriteBeat,
 } from "@/items/itemOutlineTimeline";
+import { parsePropColor, propColorToString } from "@/items/propColor";
 
 type ItemWithMarcher = Awaited<ReturnType<typeof getItems>>[number];
 
@@ -181,12 +183,16 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
     const queryClient = useQueryClient();
     const { data: items } = useQuery(allItemsQueryOptions());
     const deleteItems = useMutation(deleteItemsMutationOptions(queryClient));
-    const { setSelectedMarchers } = useSelectedMarchers()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore();
     const propItems = useMemo(
         () => items?.filter((i) => i.kind === "prop") ?? [],
         [items],
     );
+    const selectedProps = useMemo(() => {
+        const ids = new Set(selectedMarchers.map((m) => m.id));
+        return propItems.filter((item) => ids.has(item.marcher_id));
+    }, [propItems, selectedMarchers]);
 
     if (propItems.length === 0)
         return (
@@ -214,6 +220,20 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
                     }
                 />
             </label>
+            {selectedProps.length > 1 && (
+                <div className="flex items-center justify-between px-4 pb-4 text-sm">
+                    <span className="text-text/70">
+                        <T
+                            keyName="props.selectedCount"
+                            params={{ count: selectedProps.length }}
+                        />
+                    </span>
+                    <PropColorControl
+                        items={selectedProps}
+                        label={t("props.color")}
+                    />
+                </div>
+            )}
             {propItems.map((item) => {
                 const hidden = !!uiSettings.hiddenPropIds[item.id];
                 const visibilityLabel = hidden
@@ -294,6 +314,41 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
                 );
             })}
         </div>
+    );
+}
+
+/**
+ * The color of `items` (one prop, or the props selected on the field), on the field and in the 3D
+ * View. Setting or clearing it is one undo step for all of them. Mixed colors show as none set.
+ */
+function PropColorControl({
+    items,
+    label,
+}: {
+    items: readonly ItemWithMarcher[];
+    label: string;
+}) {
+    const queryClient = useQueryClient();
+    const updateItems = useMutation(updateItemsMutationOptions(queryClient));
+    const stored = items.map((item) =>
+        propColorToString(parsePropColor(item.color)),
+    );
+    const shared = stored.every((c) => c === stored[0]) ? stored[0] : null;
+    const initialColor = useMemo(() => parsePropColor(shared), [shared]);
+    return (
+        <ColorPickerMini
+            label={label}
+            initialColor={initialColor}
+            onBlur={(color) => {
+                const next = propColorToString(color);
+                const changed = items.filter((_, i) => stored[i] !== next);
+                if (changed.length === 0) return;
+                updateItems.mutate(
+                    changed.map((item) => ({ itemId: item.id, color: next })),
+                );
+            }}
+            className="px-0"
+        />
     );
 }
 
@@ -446,6 +501,14 @@ function PropEditor({ itemId }: { itemId: number }) {
                     }}
                 />
             </label>
+            {item.kind === "prop" && (
+                <div className="flex items-center justify-between text-sm">
+                    <span className="text-text/70">
+                        <T keyName="props.colorLabel" />
+                    </span>
+                    <PropColorControl items={[item]} label={t("props.color")} />
+                </div>
+            )}
             {item.kind === "prop" && (
                 <label className="flex flex-col gap-4 text-sm">
                     <span className="text-text/70">

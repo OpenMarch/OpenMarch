@@ -16,6 +16,11 @@ import type { ProfileData } from "../core/cameraList";
 export const VIEW3D_CLOCK_CHANNEL = "view3d:clock";
 export const VIEW3D_SELECTION_CHANNEL = "view3d:selection";
 export const VIEW3D_INVALIDATE_CHANNEL = "view3d:invalidate";
+/**
+ * The props hidden on the field (the Props panel's "Hide on the field", a
+ * local UI setting, not show data), which the window doesn't draw either.
+ */
+export const VIEW3D_HIDDEN_PROPS_CHANNEL = "view3d:hidden-props";
 /** Main → editor: whether a 3D View window is open (a boolean push). */
 export const VIEW3D_WINDOW_STATE_CHANNEL = "view3d:window-state";
 /**
@@ -54,6 +59,7 @@ export const VIEW3D_PUBLISH_CHANNELS = [
     VIEW3D_CLOCK_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
+    VIEW3D_HIDDEN_PROPS_CHANNEL,
 ] as const;
 export type View3dPublishChannel = (typeof VIEW3D_PUBLISH_CHANNELS)[number];
 
@@ -81,6 +87,24 @@ export interface View3dClock {
 export interface View3dSelection {
     selectedPageId: number | null;
     selectedMarcherIds: number[];
+}
+
+export interface View3dHiddenProps {
+    /** `items.id` of each prop hidden on the field, ascending */
+    hiddenItemIds: number[];
+}
+
+/** The hidden props payload from `UiSettingsStore.hiddenPropIds`. */
+export function hiddenPropsOf(
+    hiddenPropIds: Readonly<Record<string, boolean>>,
+): View3dHiddenProps {
+    return {
+        hiddenItemIds: Object.entries(hiddenPropIds)
+            .filter(([, hidden]) => hidden)
+            .map(([id]) => Number(id))
+            .filter(Number.isFinite)
+            .sort((a, b) => a - b),
+    };
 }
 
 export interface View3dInvalidate {
@@ -172,6 +196,7 @@ export interface View3dPayloads {
     [VIEW3D_CLOCK_CHANNEL]: View3dClock;
     [VIEW3D_SELECTION_CHANNEL]: View3dSelection;
     [VIEW3D_INVALIDATE_CHANNEL]: View3dInvalidate;
+    [VIEW3D_HIDDEN_PROPS_CHANNEL]: View3dHiddenProps;
 }
 
 /**
@@ -244,5 +269,15 @@ export function isView3dInvalidate(value: unknown): value is View3dInvalidate {
         isRecord(value) &&
         Array.isArray(value.queryKeys) &&
         value.queryKeys.every((key) => Array.isArray(key))
+    );
+}
+
+export function isView3dHiddenProps(
+    value: unknown,
+): value is View3dHiddenProps {
+    return (
+        isRecord(value) &&
+        Array.isArray(value.hiddenItemIds) &&
+        value.hiddenItemIds.every(isFiniteNumber)
     );
 }

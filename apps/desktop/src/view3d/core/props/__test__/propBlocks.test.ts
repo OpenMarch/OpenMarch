@@ -171,6 +171,24 @@ describe("propTracks", () => {
             [5, 3],
         ]);
     });
+
+    it("leaves out props hidden on the field, and carries each prop's color", () => {
+        const tracks = propTracks(
+            new Map([
+                [1, [change({ beat: 0 })]],
+                [2, [change({ beat: 0 })]],
+                [3, [change({ beat: 0 })]],
+            ]),
+            {
+                hidden: new Set([2]),
+                colorOf: (id) => (id === 3 ? [1, 0, 0] : null),
+            },
+        );
+        expect(tracks.map((t) => [t.marcherId, t.color])).toEqual([
+            [1, null],
+            [3, [1, 0, 0]],
+        ]);
+    });
 });
 
 describe("placePropBlocks", () => {
@@ -212,6 +230,20 @@ describe("placePropBlocks", () => {
         placePropBlocks(tracks, 6, at(0, 0), frame, cachedShapeKey());
         const done = apply(frame.matrices[k], 0, 1, 0, 0);
         expect(Math.atan2(done.z, done.x)).toBeCloseTo(Math.PI / 2, 6);
+    });
+
+    it("writes each block's color, or the frame's default, beside its matrix", () => {
+        const colored = propTracks(
+            new Map([
+                [1, [change({ beat: 0 })]],
+                [2, [change({ beat: 0 })]],
+            ]),
+            { colorOf: (id) => (id === 2 ? [1, 0, 0] : null) },
+        );
+        const frame = createPropBlockFrame(["rectangle"], 2, [0.5, 0.5, 0.5]);
+        placePropBlocks(colored, 1, at(0, 0), frame, cachedShapeKey());
+        expect(frame.counts[0]).toBe(2);
+        expect([...frame.colors[0]]).toEqual([0.5, 0.5, 0.5, 1, 0, 0]);
     });
 
     it("skips a prop without a position", () => {
