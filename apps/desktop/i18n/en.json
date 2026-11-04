@@ -3808,8 +3808,8 @@
             "modes": "Basic works in pages, like a drill chart. Expert opens up the full timeline.",
             "props": "Draw props on the field and move them on the timeline, just like marchers.",
             "shapes": "Draw a line, arc, curve, circle or box, and your selected marchers fill it; drag its handles to reshape it.",
-            "snapping": "Shapes snap to half steps and to yard lines and hashes, turns go 15° at a time, and the magnet button turns Snap off.",
-            "tempo": "Import a MusicXML score and its tempo changes, meter changes and repeats come in the way the music plays.",
+            "snapping": "Shapes snap to half steps, yard lines and hashes; the magnet button turns Snap off.",
+            "tempo": "Import a MusicXML score to bring in its tempo changes, meter changes and repeats.",
             "timeline": "A timeline under the field lines up your pages, moves and counts with the music.",
             "title": "What's new",
             "view3d": "The 3D View plays your show from the stands, with marchers in uniform."
