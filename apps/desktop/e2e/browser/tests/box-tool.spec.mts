@@ -5388,9 +5388,9 @@ test("the Shapes tab lists the kinds, greyed out until marchers are selected; pi
         .toBe(true);
 });
 
-// The favorites ring (#351): hold R around the cursor and let go over a shape
-// to arm it, or tap R to keep it open until a click. It holds the starred
-// shapes, then the basic kinds.
+// The shape ring (#351): hold R around the cursor and let go over a shape
+// to arm it, or tap R to keep it open until a click. It holds the shape kinds
+// in the Shapes tab's order.
 const ring = (page: Page) => page.getByTestId("shape-ring");
 const ringSlot = (page: Page, id: string) =>
     page.getByTestId(`shape-ring-slot-${id}`);

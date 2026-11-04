@@ -134,6 +134,8 @@ describe("Line in the pickers", () => {
             ["Line", "shapeLine"],
             // Its preset with smooth points (#525)
             ["Curve", "shapeCurve"],
+            // A Line of two points bent as an arc, its own kind (#634)
+            ["Arc", "shapeArc"],
         ]);
     });
 

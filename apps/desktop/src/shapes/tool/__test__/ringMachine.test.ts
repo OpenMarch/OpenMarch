@@ -36,6 +36,7 @@ describe("the favorites ring's slots", () => {
             "circle",
             "line",
             "curve",
+            "arc",
         ]);
     });
 });
