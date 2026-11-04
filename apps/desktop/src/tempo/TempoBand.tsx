@@ -128,7 +128,6 @@ import {
     StepGlyph,
 } from "./TempoPopovers";
 import { TempoToolbar } from "./TempoToolbar";
-import { TempoMusicFile } from "./TempoMusicFile";
 import {
     CountAsk,
     CountRange,
@@ -3467,8 +3466,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     </div>
                 ))}
             </div>
-            {/* The music file, at the start of its lane: pick, import or delete it */}
-            <TempoMusicFile left={gutterRight + 6} top={MUSIC.top + 5} />
             {/* The mode's header, over the transport (in a portal: it is outside the viewport) */}
             {headerSlot &&
                 createPortal(

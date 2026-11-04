@@ -89,7 +89,7 @@ export function TempoHelp() {
             "musicFile",
             tolgee.t(
                 "tempoMode.help.musicFile.gesture",
-                "The file's name on the music",
+                "The file's name in the header",
             ),
             tolgee.t(
                 "tempoMode.help.musicFile.effect",

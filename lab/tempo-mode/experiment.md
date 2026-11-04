@@ -25,9 +25,9 @@ Open a demo show (they have music), or add your own music there.
 
 - Click **Edit music** at the right of the timeline bar (or press Shift+T).
   New lanes open: rehearsal marks, measures, tempo and the music's waveform.
-- With no music yet, click **Add music…** on the music lane. With music,
-  click the file's name there to switch to another audio file, import one or
-  delete it. **Import** in the header also takes an audio file.
+- The music file's name is in the header, after "Editing music": click it
+  to switch to another audio file, import one or delete it. With no music
+  yet, click **Add music…** there.
   Press **?** for how it works, and **Done** or Esc to leave.
 - Turn on **Metronome** and play, to hear whether the counts sit on the music.
   Zoom with the − and + buttons, Ctrl/⌘+scroll or Fit.

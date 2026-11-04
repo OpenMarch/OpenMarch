@@ -1,10 +1,11 @@
 /**
- * Edit music: the music file, on the Music lane next to its waveform. With no music it offers
+ * Edit music: the music file, in the header after the mode's name. With no music it offers
  * "Add music…"; with music it names the file, and its menu switches to another of the show's
  * audio files, imports one, or deletes it. (The Music sidebar used to hold these; owner,
- * 2026-11-04: the music is edited where it is shown.)
+ * 2026-11-04: in Edit music, and in its header rather than over the waveform.)
  */
 import { useCallback, useEffect, useState } from "react";
+import clsx from "clsx";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CaretDownIcon,
@@ -69,25 +70,15 @@ function useAudioFiles() {
     return { files, selected, select, remove };
 }
 
-/** Over the Music lane at the view's left edge (`left`, `top` in the band's px) */
-export function TempoMusicFile(props: { left: number; top: number }) {
+/** In the header, after the mode's name: the music file, or "Add music…" */
+export function TempoMusicFile() {
     const { files, selected, select, remove } = useAudioFiles();
     const [deleting, setDeleting] = useState<AudioFile | null>(null);
     if (files === null) return null;
     const current = files.find((f) => f.id === selected?.id) ?? null;
 
     return (
-        <div
-            className="absolute flex"
-            style={{ left: props.left, top: props.top }}
-            // The band's own pointer handling mustn't see these
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerMove={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onContextMenu={(e) => e.stopPropagation()}
-        >
+        <div className="flex min-w-0 shrink">
             {files.length === 0 ? (
                 <button
                     type="button"
@@ -96,7 +87,9 @@ export function TempoMusicFile(props: { left: number; top: number }) {
                     onClick={importAudioFile}
                 >
                     <PlusIcon size={12} weight="bold" aria-hidden />
-                    {tolgee.t("tempoMode.music.add", "Add music…")}
+                    <span className="@max-[640px]:hidden">
+                        {tolgee.t("tempoMode.music.add", "Add music…")}
+                    </span>
                 </button>
             ) : (
                 <DropdownMenu.Root modal={false}>
@@ -106,10 +99,14 @@ export function TempoMusicFile(props: { left: number; top: number }) {
                             "tempoMode.music.menuLabel",
                             "Music file",
                         )}
-                        className={toolButton(false)}
+                        className={clsx(toolButton(false), "min-w-0")}
                     >
-                        <MusicNotesIcon size={12} aria-hidden />
-                        <span className="max-w-[16rem] truncate">
+                        <MusicNotesIcon
+                            size={12}
+                            className="shrink-0"
+                            aria-hidden
+                        />
+                        <span className="max-w-[14rem] truncate @max-[640px]:max-w-[6rem]">
                             {current?.nickname ??
                                 tolgee.t("tempoMode.music.pick", "Pick music")}
                         </span>

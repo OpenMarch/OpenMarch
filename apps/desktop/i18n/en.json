@@ -4555,7 +4555,7 @@
                 "effect": "Start the music here: puts that spot on count 1"
             },
             "musicFile": {
-                "gesture": "The file's name on the music",
+                "gesture": "The file's name in the header",
                 "effect": "switches to another audio file, imports one or deletes it"
             }
         },

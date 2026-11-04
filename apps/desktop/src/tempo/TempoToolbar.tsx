@@ -1,7 +1,7 @@
 // cspell:ignore priya
 /**
  * Edit music: the mode's header row: Tap tempo, the
- * metronome, Import (audio or MusicXML), help and Done.
+ * music file, metronome, Import (audio or MusicXML), help and Done.
  */
 import clsx from "clsx";
 import {
@@ -19,6 +19,7 @@ import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
 import { TempoImport } from "./TempoImport";
+import { TempoMusicFile } from "./TempoMusicFile";
 
 /** A tool button in tempo mode's header, lit when `on` (its colors are either/or, not overrides) */
 export const toolButton = (on = false, iconOnly = false) =>
@@ -59,6 +60,9 @@ export function TempoToolbar(props: {
                         {tolgee.t("tempoMode.toolbar.title", "Editing music")}
                     </span>
                 </span>
+                <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
+                {/* The music file, by the mode's name, like a document's name in a title bar */}
+                <TempoMusicFile />
                 <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
                 <TapTempo target={props.tapTarget} onUse={props.onUseTap} />
                 {/* The metronome, up front: editing tempo is listening to the counts against the
