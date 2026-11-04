@@ -81,7 +81,7 @@ The audit was read-only. Paths are relative to `apps/desktop/src` unless they st
 | Performance mode (Appearance) — off, auto-on in software GPU             | AppearanceSettings.tsx:66                                | new #214                     | OK, misplaced | Beside the separate 3D Quality setting.                                                         |
 | Editor mode Basic/Expert (Timeline)                                      | TimelineSettings.tsx:15-35                               | new #134                     | OK            | The General description says it lives there.                                                    |
 | Waveform Simplified (default)/Precise/Hidden (Timeline)                  | TimelineSettings.tsx:44                                  | new #184                     | JARGON (mild) | "decibels".                                                                                     |
-| Grid lines, Half lines, Step size warnings (Field)                       | FieldSettings.tsx:34,45,86                               | moved from upstream View tab | OK            | The field Theme tab also has a "Grid lines" colour (field/customizer/ThemeTab.tsx:124).         |
+| Grid lines, Half lines, Step size warnings (Field)                       | FieldSettings.tsx:34,45,86                               | moved from upstream View tab | OK            | The field Theme tab also has a "Grid lines" color (field/customizer/ThemeTab.tsx:124).         |
 | Label size, Label position (Field)                                       | FieldSettings.tsx:56,71                                  | new                          | DUP-ish       | Label mode is in the field display bar (FieldDisplayBar.tsx:57-64).                             |
 | While shaping: Fade the rest (default) / Fade only while drawing (Field) | FieldSettings.tsx:103                                    | new #363                     | DEBUG (A/B)   |                                                                                                 |
 | 3D Quality Automatic, Resolution Sharp                                   | View3dSettings.tsx:42,64                                 | new                          | DUP           | Also in the 3D settings panel (SettingsPanel.tsx:97-104,352,379). Resolution overlaps Quality.  |
@@ -171,7 +171,7 @@ Expert adds nothing of its own; Basic hides things. The mode lives in stores/Edi
 - Whether "Audio Offset" in Show settings duplicates the timeline's audio alignment.
 - Whether to keep the `?` Shortcuts dialog or Settings › Shortcuts (owner call).
 - Not traced: WebFileMenu.tsx, BugReport.tsx, and the 3D defaults in drawPolicy.ts and renderPrefs.ts.
-- Note: five parallel sub-audits produced this report. I re-checked a sample of the claims in code: the `showCollisions` force-off, the benchmark action, the Eye readout, the placeholder buttons and the unwired "Add selected marchers". Other line numbers weren't all re-verified.
+- Note: five parallel sub-audits produced this report. I re-checked a sample of the claims in code: the `showCollisions` force-off, the benchmark action, the Eye readout, the placeholder buttons and the never-wired "Add selected marchers". Other line numbers weren't all re-verified.
 
 ---
 
@@ -488,7 +488,7 @@ TimelineVariants.tsx holds three densities (Expanded/Basic/Collapsed, :1327-1343
 
 ## Unsure
 
-- Whether `onNavigate` is wired: it showed as unpassed by name, but Timeline.tsx:1011 builds it from playback internally, so it is probably fine.
+- Whether `onNavigate` is wired: it showed as not passed by name, but Timeline.tsx:1011 builds it from playback internally, so it is probably fine.
 - I didn't trace whether `timelinePixelsPerSecond` still affects anything outside the beat editor (10 reads in components/timeline).
 
 # Settings window and Basic/Expert audit (surfaces 5 and 8)
