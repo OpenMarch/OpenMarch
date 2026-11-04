@@ -40,15 +40,15 @@ describe("registry", () => {
     it("passes definition args and respects enabled", () => {
         const run = vi.fn();
         let enabled = false;
-        const off = registerActionHandler("timelineTapBeats4", {
+        const off = registerActionHandler("exportCoordinateSheets", {
             run,
             isEnabled: () => enabled,
         });
-        expect(isActionEnabled("timelineTapBeats4")).toBe(false);
-        expect(runAction("timelineTapBeats4")).toBe(false);
+        expect(isActionEnabled("exportCoordinateSheets")).toBe(false);
+        expect(runAction("exportCoordinateSheets")).toBe(false);
         enabled = true;
-        runAction("timelineTapBeats4");
-        expect(run).toHaveBeenCalledWith({ count: 4 });
+        runAction("exportCoordinateSheets");
+        expect(run).toHaveBeenCalledWith({ tab: "coordinate-sheets" });
         off();
     });
 
@@ -83,14 +83,16 @@ describe("useActionHandler", () => {
         const run = vi.fn();
         const { unmount } = renderHook(() =>
             useActionHandlerGroup(
-                ["timelineTapBeats1", "timelineTapBeats2"],
+                ["exportCoordinateSheets", "exportDrillCharts"],
                 run,
             ),
         );
-        runAction("timelineTapBeats2");
-        expect(run).toHaveBeenCalledWith("timelineTapBeats2", { count: 2 });
+        runAction("exportDrillCharts");
+        expect(run).toHaveBeenCalledWith("exportDrillCharts", {
+            tab: "drill-charts",
+        });
         unmount();
-        expect(hasActionHandler("timelineTapBeats1")).toBe(false);
+        expect(hasActionHandler("exportCoordinateSheets")).toBe(false);
     });
 
     it("group with no ids registers nothing", () => {

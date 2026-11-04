@@ -129,11 +129,7 @@
             "createPageAtPlayhead": "Cipta halaman di kepala main",
             "createSubsetAtPlayhead": "Cipta subset di kepala main",
             "goTo": "Pergi ke halaman, bar atau tanda latihan",
-            "nextPage": "Halaman seterusnya (garis masa)",
-            "playPause": "Main / jeda audio",
-            "previousPage": "Halaman sebelumnya (garis masa)",
             "splitMoveAtPlayhead": "Pisahkan gerakan di kepala main",
-            "tapBeats": "Tambah {count} rentak sementara",
             "unsetHere": "Buang kerangka kunci",
             "unsetHereAndFollowing": "Buang kerangka kunci, halaman kemudian mengikut semula",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete kerangka kunci berlian buang padam kosongkan tarik balik koordinat kedudukan",
@@ -141,9 +137,6 @@
             "mergeMoveIntoPage": "Gabungkan gerakan ini ke dalam halamannya"
         },
         "ui": {
-            "exitTimelineFocus": "Selesai mengedit garis masa",
-            "focusCanvas": "Fokuskan kanvas",
-            "focusTimeline": "Edit garis masa",
             "openFieldMenu": "Buka menu padang",
             "hideNextPaths": "Sembunyikan laluan halaman seterusnya",
             "openCommandPalette": "Palet arahan",
@@ -273,31 +266,15 @@
             "error": "Gagal memulakan konteks audio"
         },
         "contextMenu": {
-            "ariaLabel": "Menu konteks rentak",
             "beat": {
-                "addBeat": "Tambah rentak",
-                "cannotDeleteOnPage": "Rentak pada halaman tidak boleh dipadam",
-                "delete": "Padam rentak",
-                "errorCreating": "Ralat semasa mencipta rentak",
-                "errorCreatingMeasure": "Ralat semasa mencipta bar",
-                "errorDeleting": "Ralat semasa memadam rentak",
-                "markAsMeasure": "Tandakan sebagai bar"
+                "cannotDeleteOnPage": "Rentak pada halaman tidak boleh dipadam"
             },
             "measure": {
-                "addMeasure": "Tambah bar",
                 "cannotDeleteOnPage": "Rentak pada halaman tidak boleh dipadam",
-                "delete": "Padam bar",
                 "errorCreatingMeasureAndBeats": "Ralat semasa mencipta bar dan rentak",
-                "errorDeletingMeasureAndBeats": "Ralat semasa memadam bar dan rentak",
-                "errorRemovingMarking": "Ralat semasa membuang tanda bar",
-                "removeMarking": "Buang tanda bar"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Ralat semasa menyimpan tanda latihan",
-                "label": "Tanda latihan"
+                "errorDeletingMeasureAndBeats": "Ralat semasa memadam bar dan rentak"
             },
             "tempo": {
-                "errorSaving": "Ralat semasa menyimpan tempo",
                 "firstBeatTempo": "Tempo rentak pertama",
                 "label": "Tempo"
             }
@@ -305,31 +282,10 @@
         "decode": {
             "error": "Gagal menyahkod fail audio"
         },
-        "editableBeatPlayer": {
-            "description": "Seret tepi kanan mana-mana rentak untuk melaraskan tempohnya"
-        },
-        "saveNewBeats": {
-            "label": "Simpan rentak baharu"
-        },
-        "seeDocs": {
-            "label": "Lihat dokumen"
-        },
         "silentPlaceholder": "Audio senyap",
-        "tapNewTempo": {
-            "exit": "Keluar",
-            "label": "Ketuk tempo baharu",
-            "restart": "Mula semula"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Rentak setiap ketukan",
-            "label": "Ketuk Tempo",
-            "tap": "Ketuk",
-            "tapButton": "Ketuk untuk menambah {count} rentak sementara pada masa audio semasa"
-        },
         "player": {
             "pause": "Jeda",
-            "play": "Main",
-            "toStart": "Kembali ke mula"
+            "play": "Main"
         },
         "insert": {
             "noFileOpen": "Tiada fail dibuka. Cipta atau buka persembahan dahulu.",
@@ -894,11 +850,6 @@
             "success": "Salinan disimpan"
         },
         "undo": "Buat asal"
-    },
-    "focusNotice": {
-        "exit": "Keluar fokus garis masa",
-        "message": "Garis masa sedang difokuskan, semua interaksi lain dilumpuhkan. Tekan <keys></keys> atau butang di bawah untuk memfokuskan semula editor utama.",
-        "messageNoKey": "Garis masa sedang difokuskan, semua interaksi lain dilumpuhkan. Gunakan butang di bawah untuk memfokuskan semula editor utama."
     },
     "formButtons": {
         "discardChanges": "Buang perubahan",
@@ -2102,7 +2053,6 @@
         "shortcuts.reset": "Tetapkan semula {action} kepada lalai",
         "shortcuts.resetAll": "Tetapkan semula semua",
         "shortcuts.search": "Cari pintasan",
-        "shortcuts.tapBeats": "Ketuk rentak",
         "timeline": "Garis masa",
         "timeline.description": "Rupa garis masa.",
         "timeline.waveformStyle": "Bentuk gelombang",
@@ -2739,7 +2689,6 @@
         "errorUpdatingTempoGroup": "Ralat semasa mengemas kini kumpulan tempo"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "passThrough": {
                 "catchUp": "Kini mengejar formasi di hujung {caughtUp}",
@@ -2894,7 +2843,6 @@
             "onTooltip": "Garis masa padat: hidup. Klik untuk menunjukkan garis masa penuh"
         },
         "volumeSlider": "Peluncur kelantangan garis masa",
-        "zoomReset": "Tetapkan semula zum garis masa",
         "playbackSpeed": {
             "current": "Kelajuan main balik: {speed}",
             "hintClick": "Klik untuk kelajuan seterusnya, klik kanan untuk pilihan lain",
@@ -2943,10 +2891,6 @@
             "muted": "Senyap",
             "metronomeOn": "Metronom hidup",
             "metronomeOff": "Metronom mati"
-        },
-        "beatEditor": {
-            "zoomOut": "Zum keluar",
-            "zoomIn": "Zum masuk"
         },
         "waveform": {
             "label": "Bentuk gelombang audio"

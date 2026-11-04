@@ -21,7 +21,6 @@ import {
 } from "../keymap";
 
 const canvas: ShortcutContext = {
-    baseScope: "canvas",
     inTextInput: false,
     modalOpen: false,
 };
@@ -32,12 +31,6 @@ const fixture: Record<string, ActionDefinition> = {
         labelKey: "x",
         category: "ui",
         scope: "canvas",
-        defaultBindings: ["E"],
-    },
-    b: {
-        labelKey: "x",
-        category: "ui",
-        scope: "timeline",
         defaultBindings: ["E"],
     },
     c: {
@@ -65,13 +58,9 @@ describe("getEffectiveBindings", () => {
 });
 
 describe("findConflicts", () => {
-    it("flags same-scope and global overlaps but not canvas vs timeline", () => {
+    it("flags a canvas action and a global one on the same key", () => {
         const conflicts = findConflicts({}, fixture);
-        expect(conflicts).toEqual([
-            { binding: "E", actionIds: ["a", "b", "d"] },
-        ]);
-        const withoutGlobal = findConflicts({}, { a: fixture.a, b: fixture.b });
-        expect(withoutGlobal).toEqual([]);
+        expect(conflicts).toEqual([{ binding: "E", actionIds: ["a", "d"] }]);
     });
 
     it("shipped defaults have no conflicts", () => {
@@ -87,12 +76,9 @@ describe("findConflicts", () => {
 describe("pickAction", () => {
     const entries = buildKeymap({}, fixture);
 
-    it("prefers the base scope over global", () => {
+    it("prefers the canvas action over a global one", () => {
         const e = entries.filter((x) => x.binding === "E");
         expect(pickAction(e, canvas, always)?.id).toBe("a");
-        expect(
-            pickAction(e, { ...canvas, baseScope: "timeline" }, always)?.id,
-        ).toBe("b");
     });
 
     it("blocks non-input actions while typing and in modals", () => {
@@ -170,12 +156,6 @@ describe("customizing", () => {
         ).toEqual([]);
     });
 
-    it("ignores bindings in a non-overlapping scope", () => {
-        expect(
-            findBindingOwners("timelinePlayPause", "Space", {}, false),
-        ).toEqual([]);
-    });
-
     it("removing Ctrl+Z off macOS drops both $mod and Control variants", () => {
         expect(withoutBinding({}, "performUndo", "Control+Z", false)).toEqual({
             performUndo: [],
@@ -229,7 +209,6 @@ describe("resolveKeyEvent", () => {
     it("matches digits on the top row and the numpad", () => {
         const compiled = compileKeymap(buildKeymap());
         const context = {
-            baseScope: "canvas" as const,
             inTextInput: false,
             modalOpen: false,
         };
@@ -286,7 +265,6 @@ describe("resolveKeyEvent", () => {
 });
 
 describe("page navigation shortcuts", () => {
-    const timeline: ShortcutContext = { ...canvas, baseScope: "timeline" };
     const press = (code: string, key: string) =>
         new KeyboardEvent("keydown", { key, code });
     const resolve = (event: KeyboardEvent, context: ShortcutContext) =>
@@ -300,9 +278,8 @@ describe("page navigation shortcuts", () => {
     it.each([
         ["KeyE", "e", "nextPage"],
         ["KeyQ", "q", "previousPage"],
-    ])("%s resolves to %s on the canvas and the timeline", (code, key, id) => {
+    ])("%s resolves to %s", (code, key, id) => {
         expect(resolve(press(code, key), canvas)).toBe(id);
-        expect(resolve(press(code, key), timeline)).toBe(id);
     });
 
     it("Shift steps a beat, and Alt or Home and End go to the start or end", () => {
@@ -318,31 +295,22 @@ describe("page navigation shortcuts", () => {
         expect(resolve(withMods("KeyQ", "œ", { altKey: true }), canvas)).toBe(
             "firstPage",
         );
-        expect(resolve(withMods("KeyE", "´", { altKey: true }), timeline)).toBe(
+        expect(resolve(withMods("KeyE", "´", { altKey: true }), canvas)).toBe(
             "lastPage",
         );
         expect(resolve(press("Home", "Home"), canvas)).toBe("firstPage");
-        expect(resolve(press("End", "End"), timeline)).toBe("lastPage");
+        expect(resolve(press("End", "End"), canvas)).toBe("lastPage");
         // Alt wins over Shift, as on the transport's buttons
         const altShift = { altKey: true, shiftKey: true };
         expect(resolve(withMods("KeyQ", "Œ", altShift), canvas)).toBe(
             "firstPage",
         );
-        expect(resolve(withMods("KeyE", "E", altShift), timeline)).toBe(
+        expect(resolve(withMods("KeyE", "E", altShift), canvas)).toBe(
             "lastPage",
         );
     });
 
-    it("arrow keys step pages on the timeline", () => {
-        expect(resolve(press("ArrowRight", "ArrowRight"), timeline)).toBe(
-            "timelineNextPage",
-        );
-        expect(resolve(press("ArrowLeft", "ArrowLeft"), timeline)).toBe(
-            "timelinePreviousPage",
-        );
-    });
-
-    it("arrow keys still nudge marchers on the canvas", () => {
+    it("arrow keys nudge marchers", () => {
         for (const key of ["ArrowRight", "ArrowLeft"]) {
             const id = resolve(press(key, key), canvas);
             expect(NUDGE_ACTION_IDS).toContain(id);

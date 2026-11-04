@@ -129,11 +129,7 @@
             "createPageAtPlayhead": "在播放头处创建页",
             "createSubsetAtPlayhead": "在播放头处创建子页",
             "goTo": "跳转到页、小节或排练记号",
-            "nextPage": "下一页（时间轴）",
-            "playPause": "播放/暂停音频",
-            "previousPage": "上一页（时间轴）",
             "splitMoveAtPlayhead": "在播放头处拆分动作",
-            "tapBeats": "添加{count}个临时节拍",
             "unsetHere": "删除关键帧",
             "unsetHereAndFollowing": "删除关键帧，后续页恢复跟随",
             "unsetHereKeywords": "关键帧 菱形 取消设置 设置 后续 删除 清除 撤回 坐标 位置 keyframe diamond unset set following remove clear take back coordinate position delete",
@@ -141,9 +137,6 @@
             "mergeMoveIntoPage": "将此动作合并回所属页"
         },
         "ui": {
-            "exitTimelineFocus": "完成时间轴编辑",
-            "focusCanvas": "聚焦场地画布",
-            "focusTimeline": "编辑时间轴",
             "openFieldMenu": "打开场地菜单",
             "hideNextPaths": "隐藏下一页路径",
             "openCommandPalette": "命令面板",
@@ -273,31 +266,15 @@
             "error": "无法初始化音频上下文"
         },
         "contextMenu": {
-            "ariaLabel": "节拍右键菜单",
             "beat": {
-                "addBeat": "添加节拍",
-                "cannotDeleteOnPage": "页面起止所在的节拍无法删除",
-                "delete": "删除节拍",
-                "errorCreating": "创建节拍时出错",
-                "errorCreatingMeasure": "创建小节时出错",
-                "errorDeleting": "删除节拍时出错",
-                "markAsMeasure": "标记为小节"
+                "cannotDeleteOnPage": "页面起止所在的节拍无法删除"
             },
             "measure": {
-                "addMeasure": "添加小节",
                 "cannotDeleteOnPage": "页面起止所在的节拍无法删除",
-                "delete": "删除小节",
                 "errorCreatingMeasureAndBeats": "创建小节及节拍时出错",
-                "errorDeletingMeasureAndBeats": "删除小节及节拍时出错",
-                "errorRemovingMarking": "移除小节标记时出错",
-                "removeMarking": "移除小节标记"
-            },
-            "rehearsalMark": {
-                "errorSaving": "保存排练记号时出错",
-                "label": "排练记号"
+                "errorDeletingMeasureAndBeats": "删除小节及节拍时出错"
             },
             "tempo": {
-                "errorSaving": "保存速度时出错",
                 "firstBeatTempo": "首个节拍速度",
                 "label": "速度"
             }
@@ -305,31 +282,10 @@
         "decode": {
             "error": "无法解码音频文件"
         },
-        "editableBeatPlayer": {
-            "description": "拖动任意节拍的右边缘可调整其时长"
-        },
-        "saveNewBeats": {
-            "label": "保存新节拍"
-        },
-        "seeDocs": {
-            "label": "查看文档"
-        },
         "silentPlaceholder": "静音音频",
-        "tapNewTempo": {
-            "exit": "退出",
-            "label": "敲击新速度",
-            "restart": "重新开始"
-        },
-        "tapTempo": {
-            "beatsPerTap": "每次敲击的节拍数",
-            "label": "敲击定速",
-            "tap": "敲击",
-            "tapButton": "敲击以在当前音频时间添加{count}个临时节拍"
-        },
         "player": {
             "pause": "暂停",
-            "play": "播放",
-            "toStart": "回到开头"
+            "play": "播放"
         },
         "insert": {
             "noFileOpen": "没有打开的文件。请先新建或打开一个表演。",
@@ -894,11 +850,6 @@
             "success": "副本已保存"
         },
         "undo": "撤销"
-    },
-    "focusNotice": {
-        "exit": "退出时间轴焦点",
-        "message": "时间轴当前处于焦点状态，其他所有操作均已禁用。按<keys></keys>或点击下方按钮，可将焦点返回主编辑器。",
-        "messageNoKey": "时间轴当前处于焦点状态，其他所有操作均已禁用。点击下方按钮，可将焦点返回主编辑器。"
     },
     "formButtons": {
         "discardChanges": "放弃更改",
@@ -2102,7 +2053,6 @@
         "shortcuts.reset": "将“{action}”重置为默认值",
         "shortcuts.resetAll": "全部重置",
         "shortcuts.search": "搜索快捷键",
-        "shortcuts.tapBeats": "敲击节拍",
         "timeline": "时间轴",
         "timeline.description": "时间轴的外观。",
         "timeline.waveformStyle": "波形",
@@ -2739,7 +2689,6 @@
         "errorUpdatingTempoGroup": "更新速度组时出错"
     },
     "timeline": {
-        "audio": "音频",
         "edit": {
             "passThrough": {
                 "catchUp": "现在会追上{caughtUp}结束时的定位",
@@ -2894,7 +2843,6 @@
             "onTooltip": "紧凑时间轴：开。点击显示完整时间轴"
         },
         "volumeSlider": "时间轴音量滑块",
-        "zoomReset": "重置时间轴缩放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
             "hintClick": "单击切换到下一档速度，右键单击查看更多",
@@ -2943,10 +2891,6 @@
             "muted": "已静音",
             "metronomeOn": "节拍器：开",
             "metronomeOff": "节拍器：关"
-        },
-        "beatEditor": {
-            "zoomOut": "缩小",
-            "zoomIn": "放大"
         },
         "waveform": {
             "label": "音频波形"

@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
     isTimelineOwnKey,
     shortcutStillRuns,
@@ -79,17 +78,10 @@ export default function ShortcutDispatcher({
             // theirs; Space still plays
             const focused = document.activeElement;
             if (isTimelineOwnKey(event, focused)) return;
-            // Read the store directly rather than via a hook-driven ref: a
-            // hook selector only updates on React's next render, which can
-            // lag behind a keydown that arrives immediately after a state
-            // change (e.g. outside of an act()-wrapped event in tests, or a
-            // rapid focus switch in the app).
-            const baseScope =
-                useUiSettingsStore.getState().uiSettings.focussedComponent;
             const entry = resolveKeyEvent(
                 event,
                 compiled,
-                readShortcutContext(baseScope),
+                readShortcutContext(),
                 // No nudge on a timeline move control (code review)
                 (id) =>
                     isActionEnabled(id) &&

@@ -141,11 +141,7 @@
             "createPageAtPlayhead": "Create page at playhead",
             "createSubsetAtPlayhead": "Create subset at playhead",
             "goTo": "Go to a page, measure or rehearsal mark",
-            "nextPage": "Next page (timeline)",
-            "playPause": "Play / pause audio",
-            "previousPage": "Previous page (timeline)",
             "splitMoveAtPlayhead": "Split the move at the playhead",
-            "tapBeats": "Add {count} temporary beats",
             "unsetHere": "{removeKeyframe}",
             "unsetHereAndFollowing": "{removeKeyframe}, later pages move back too",
             "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, Page {first} moves back too} other {{removeKeyframe}, Pages {first}–{last} move back too}}",
@@ -154,9 +150,6 @@
             "mergeMoveIntoPage": "Merge this move into its page"
         },
         "ui": {
-            "exitTimelineFocus": "Done editing timeline",
-            "focusCanvas": "Focus canvas",
-            "focusTimeline": "Edit timeline",
             "openFieldMenu": "Open the field menu",
             "hideNextPaths": "Hide next page paths",
             "openCommandPalette": "Command palette",
@@ -286,31 +279,15 @@
             "error": "Failed to initialize audio context"
         },
         "contextMenu": {
-            "ariaLabel": "Beat context menu",
             "beat": {
-                "addBeat": "Add Beat",
-                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
-                "delete": "Delete beat",
-                "errorCreating": "Error creating beat",
-                "errorCreatingMeasure": "Error creating measure",
-                "errorDeleting": "Error deleting beat",
-                "markAsMeasure": "Mark as Measure"
+                "cannotDeleteOnPage": "Beats on pages cannot be deleted"
             },
             "measure": {
-                "addMeasure": "Add Measure",
                 "cannotDeleteOnPage": "Beats on pages cannot be deleted",
-                "delete": "Delete measure",
                 "errorCreatingMeasureAndBeats": "Error creating measure and beats",
-                "errorDeletingMeasureAndBeats": "Error deleting measure and beats",
-                "errorRemovingMarking": "Error removing measure marking",
-                "removeMarking": "Remove Measure Marking"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Error saving rehearsal mark",
-                "label": "Rehearsal Mark"
+                "errorDeletingMeasureAndBeats": "Error deleting measure and beats"
             },
             "tempo": {
-                "errorSaving": "Error saving tempo",
                 "firstBeatTempo": "First beat tempo",
                 "label": "Tempo"
             }
@@ -318,31 +295,10 @@
         "decode": {
             "error": "Failed to decode audio file"
         },
-        "editableBeatPlayer": {
-            "description": "Drag the right edge of any beat to adjust its duration"
-        },
-        "saveNewBeats": {
-            "label": "Save New Beats"
-        },
-        "seeDocs": {
-            "label": "See docs"
-        },
         "silentPlaceholder": "Silent Audio",
-        "tapNewTempo": {
-            "exit": "Exit",
-            "label": "Tap New Tempo",
-            "restart": "Restart"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Beats per tap",
-            "label": "Tap Tempo",
-            "tap": "Tap",
-            "tapButton": "Tap to add {count} temporary beats at the current audio time"
-        },
         "player": {
             "pause": "Pause",
-            "play": "Play",
-            "toStart": "Back to start"
+            "play": "Play"
         },
         "insert": {
             "noFileOpen": "No file is open. Create or open a show first.",
@@ -907,11 +863,6 @@
             "success": "Copy saved"
         },
         "undo": "Undo"
-    },
-    "focusNotice": {
-        "exit": "Exit Timeline Focus",
-        "message": "Timeline is currently focussed, all other interaction is disabled. Press <keys></keys> or the button below to re-focus the main editor.",
-        "messageNoKey": "Timeline is currently focussed, all other interaction is disabled. Use the button below to re-focus the main editor."
     },
     "formButtons": {
         "discardChanges": "Discard Changes",
@@ -2122,7 +2073,6 @@
         "shortcuts.reset": "Reset {action} to default",
         "shortcuts.resetAll": "Reset all",
         "shortcuts.search": "Search shortcuts",
-        "shortcuts.tapBeats": "Tap beats",
         "timeline": "Timeline",
         "timeline.description": "How the timeline looks.",
         "timeline.waveformStyle": "Waveform",
@@ -2759,7 +2709,6 @@
         "errorUpdatingTempoGroup": "Error updating tempo group"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
@@ -2973,7 +2922,6 @@
             "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
         "volumeSlider": "Timeline volume slider",
-        "zoomReset": "Reset timeline zoom",
         "playbackSpeed": {
             "current": "Playback speed: {speed}",
             "hintClick": "Click for the next speed, right-click for more",
@@ -3022,10 +2970,6 @@
             "muted": "Muted",
             "metronomeOn": "Metronome on",
             "metronomeOff": "Metronome off"
-        },
-        "beatEditor": {
-            "zoomOut": "Zoom out",
-            "zoomIn": "Zoom in"
         },
         "waveform": {
             "label": "Audio waveform"

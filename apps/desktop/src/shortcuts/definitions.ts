@@ -1,5 +1,5 @@
 import { isWebBuild } from "@/utilities/webBuild";
-export type ActionScope = "global" | "canvas" | "timeline";
+export type ActionScope = "global" | "canvas";
 export type ActionCategory =
     | "file"
     | "edit"
@@ -40,7 +40,6 @@ export interface ActionDefinition {
     keywordsKey?: string;
     /** i18n key appended in parentheses, e.g. "(fine)" */
     labelSuffixKey?: string;
-    labelParams?: Readonly<Record<string, string | number>>;
     /** The label names a page state or a hold command, filled from `holdTerms` */
     labelHoldTerms?: true;
     toggleOnKey?: string;
@@ -161,24 +160,6 @@ function buildNudgeActions(): Record<NudgeActionId, ActionDefinition> {
                 },
             };
         }
-    }
-    return result;
-}
-
-type TapBeatsActionId = `timelineTapBeats${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
-
-function buildTapBeatsActions(): Record<TapBeatsActionId, ActionDefinition> {
-    const result = {} as Record<TapBeatsActionId, ActionDefinition>;
-    for (let count = 1; count <= 9; count++) {
-        result[`timelineTapBeats${count}` as TapBeatsActionId] = {
-            labelKey: "actions.timeline.tapBeats",
-            labelParams: { count },
-            category: "timeline",
-            editsDrill: false,
-            scope: "timeline",
-            defaultBindings: [String(count)],
-            args: { count },
-        };
     }
     return result;
 }
@@ -611,13 +592,6 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["M"],
     },
-    focusCanvas: {
-        labelKey: "actions.ui.focusCanvas",
-        category: "ui",
-        editsDrill: false,
-        scope: "global",
-        defaultBindings: ["Alt+C"],
-    },
     // #315: the field's right-click menu, from the keyboard, at the selection. Enabled only with
     // a selection
     openFieldMenu: {
@@ -627,13 +601,6 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["ContextMenu", "Shift+F10"],
         hiddenFromPalette: true,
-    },
-    focusTimeline: {
-        labelKey: "actions.ui.focusTimeline",
-        category: "ui",
-        editsDrill: false,
-        scope: "global",
-        defaultBindings: ["Alt+T"],
     },
     openSettings: {
         labelKey: "actions.ui.openSettings",
@@ -707,15 +674,6 @@ const STATIC_ACTIONS = {
         editsDrill: false,
         scope: "global",
         defaultBindings: ["Slash"],
-        hiddenFromPalette: true,
-    },
-    exitTimelineFocus: {
-        labelKey: "actions.ui.exitTimelineFocus",
-        category: "ui",
-        editsDrill: false,
-        scope: "timeline",
-        defaultBindings: ["Escape"],
-        allowInInputs: true,
         hiddenFromPalette: true,
     },
 
@@ -983,39 +941,11 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: [],
     },
-
-    // Timeline (audio editor)
-    timelinePlayPause: {
-        labelKey: "actions.timeline.playPause",
-        category: "timeline",
-        editsDrill: false,
-        scope: "timeline",
-        defaultBindings: ["Space"],
-        hiddenFromPalette: true,
-    },
-    // Arrow keys step between pages while the timeline has focus (on the canvas they nudge marchers).
-    timelinePreviousPage: {
-        labelKey: "actions.timeline.previousPage",
-        category: "timeline",
-        editsDrill: false,
-        scope: "timeline",
-        defaultBindings: ["ArrowLeft"],
-        hiddenFromPalette: true,
-    },
-    timelineNextPage: {
-        labelKey: "actions.timeline.nextPage",
-        category: "timeline",
-        editsDrill: false,
-        scope: "timeline",
-        defaultBindings: ["ArrowRight"],
-        hiddenFromPalette: true,
-    },
 } satisfies Record<string, ActionDefinition>;
 
 export const ACTIONS = {
     ...STATIC_ACTIONS,
     ...buildNudgeActions(),
-    ...buildTapBeatsActions(),
 } as const satisfies Record<string, ActionDefinition>;
 
 export type ActionId = keyof typeof ACTIONS;
@@ -1033,10 +963,6 @@ export const EXPORT_ACTION_IDS = [
     "exportVideo",
     "exportToMobile",
 ] as const satisfies readonly ActionId[];
-
-export const TAP_BEATS_ACTION_IDS = ACTION_IDS.filter((id) =>
-    id.startsWith("timelineTapBeats"),
-);
 
 export function getActionDefinition(id: ActionId): ActionDefinition {
     return ACTIONS[id];

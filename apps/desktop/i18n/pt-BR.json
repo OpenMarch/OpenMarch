@@ -129,11 +129,7 @@
             "createPageAtPlayhead": "Criar página no indicador de reprodução",
             "createSubsetAtPlayhead": "Criar subpágina no indicador de reprodução",
             "goTo": "Ir para página, compasso ou marca de ensaio",
-            "nextPage": "Próxima página (linha do tempo)",
-            "playPause": "Reproduzir / pausar áudio",
-            "previousPage": "Página anterior (linha do tempo)",
             "splitMoveAtPlayhead": "Dividir o movimento no indicador de reprodução",
-            "tapBeats": "Adicionar {count} batidas temporárias",
             "unsetHere": "Remover quadro-chave",
             "unsetHereAndFollowing": "Remover quadro-chave, páginas seguintes voltam a acompanhar",
             "unsetHereKeywords": "quadro-chave losango remover desdefinir definir seguintes limpar desfazer coordenada posição excluir keyframe diamond unset set following remove clear take back coordinate position delete",
@@ -141,9 +137,6 @@
             "mergeMoveIntoPage": "Mesclar este movimento à sua página"
         },
         "ui": {
-            "exitTimelineFocus": "Concluir edição da linha do tempo",
-            "focusCanvas": "Focar o campo",
-            "focusTimeline": "Editar linha do tempo",
             "openFieldMenu": "Abrir o menu do campo",
             "hideNextPaths": "Ocultar trajetos da próxima página",
             "openCommandPalette": "Paleta de comandos",
@@ -273,31 +266,15 @@
             "error": "Falha ao inicializar o contexto de áudio"
         },
         "contextMenu": {
-            "ariaLabel": "Menu de contexto da batida",
             "beat": {
-                "addBeat": "Adicionar batida",
-                "cannotDeleteOnPage": "Batidas que marcam páginas não podem ser excluídas",
-                "delete": "Excluir batida",
-                "errorCreating": "Erro ao criar batida",
-                "errorCreatingMeasure": "Erro ao criar compasso",
-                "errorDeleting": "Erro ao excluir batida",
-                "markAsMeasure": "Marcar como compasso"
+                "cannotDeleteOnPage": "Batidas que marcam páginas não podem ser excluídas"
             },
             "measure": {
-                "addMeasure": "Adicionar compasso",
                 "cannotDeleteOnPage": "Batidas que marcam páginas não podem ser excluídas",
-                "delete": "Excluir compasso",
                 "errorCreatingMeasureAndBeats": "Erro ao criar compasso e batidas",
-                "errorDeletingMeasureAndBeats": "Erro ao excluir compasso e batidas",
-                "errorRemovingMarking": "Erro ao remover a marca de compasso",
-                "removeMarking": "Remover marca de compasso"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Erro ao salvar a marca de ensaio",
-                "label": "Marca de ensaio"
+                "errorDeletingMeasureAndBeats": "Erro ao excluir compasso e batidas"
             },
             "tempo": {
-                "errorSaving": "Erro ao salvar o andamento",
                 "firstBeatTempo": "Andamento da primeira batida",
                 "label": "Andamento"
             }
@@ -305,31 +282,10 @@
         "decode": {
             "error": "Falha ao decodificar o arquivo de áudio"
         },
-        "editableBeatPlayer": {
-            "description": "Arraste a borda direita de qualquer batida para ajustar sua duração"
-        },
-        "saveNewBeats": {
-            "label": "Salvar novas batidas"
-        },
-        "seeDocs": {
-            "label": "Ver documentação"
-        },
         "silentPlaceholder": "Áudio silencioso",
-        "tapNewTempo": {
-            "exit": "Sair",
-            "label": "Marcar novo andamento",
-            "restart": "Reiniciar"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Batidas por toque",
-            "label": "Tap Tempo",
-            "tap": "Toque",
-            "tapButton": "Toque para adicionar {count} batidas temporárias na posição atual do áudio"
-        },
         "player": {
             "pause": "Pausar",
-            "play": "Reproduzir",
-            "toStart": "Voltar ao início"
+            "play": "Reproduzir"
         },
         "insert": {
             "noFileOpen": "Nenhum arquivo aberto. Crie ou abra um show primeiro.",
@@ -894,11 +850,6 @@
             "success": "Cópia salva"
         },
         "undo": "Desfazer"
-    },
-    "focusNotice": {
-        "exit": "Sair do foco da linha do tempo",
-        "message": "A linha do tempo está em foco e todas as outras interações estão desativadas. Pressione <keys></keys> ou use o botão abaixo para voltar o foco ao editor principal.",
-        "messageNoKey": "A linha do tempo está em foco e todas as outras interações estão desativadas. Use o botão abaixo para voltar o foco ao editor principal."
     },
     "formButtons": {
         "discardChanges": "Descartar alterações",
@@ -2102,7 +2053,6 @@
         "shortcuts.reset": "Redefinir {action} para o padrão",
         "shortcuts.resetAll": "Redefinir tudo",
         "shortcuts.search": "Pesquisar atalhos",
-        "shortcuts.tapBeats": "Marcar batidas",
         "timeline": "Linha do tempo",
         "timeline.description": "Aparência da linha do tempo.",
         "timeline.waveformStyle": "Forma de onda",
@@ -2739,7 +2689,6 @@
         "errorUpdatingTempoGroup": "Erro ao atualizar grupo de tempo"
     },
     "timeline": {
-        "audio": "Áudio",
         "edit": {
             "passThrough": {
                 "catchUp": "Agora alcança a formação no fim de {caughtUp}",
@@ -2894,7 +2843,6 @@
             "onTooltip": "Linha do tempo compacta: ativada. Clique para mostrar a linha do tempo completa"
         },
         "volumeSlider": "Controle de volume da linha do tempo",
-        "zoomReset": "Redefinir zoom da linha do tempo",
         "playbackSpeed": {
             "current": "Velocidade de reprodução: {speed}",
             "hintClick": "Clique para a próxima velocidade, clique com o botão direito para mais opções",
@@ -2943,10 +2891,6 @@
             "muted": "Mudo",
             "metronomeOn": "Metrônomo ativado",
             "metronomeOff": "Metrônomo desativado"
-        },
-        "beatEditor": {
-            "zoomOut": "Reduzir zoom",
-            "zoomIn": "Ampliar zoom"
         },
         "waveform": {
             "label": "Forma de onda do áudio"

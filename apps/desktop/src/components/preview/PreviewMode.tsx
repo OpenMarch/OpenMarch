@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { readShortcutContext } from "@/shortcuts/context";
 import { notifyActionHandlersChanged } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
@@ -7,13 +7,11 @@ import {
     usePreviewModeStore,
 } from "@/stores/PreviewModeStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 /**
  * Runs Preview (`PreviewModeStore`), the workspace switch's third mode: **Alt+P** turns it on and
  * off and **Esc** leaves it, back to the Editor or Visuals as before. Going in
- * leaves anything mid-edit: an isolated move, a line drag, and the beat editor, which edits too
- * (and comes back on leaving). Playback that loops or plays a window once plays on instead, as
+ * leaves anything mid-edit: an isolated move or a line drag. Playback that loops or plays a window once plays on instead, as
  * Preview always does. Mount once, in the editor.
  */
 export function PreviewModeHost() {
@@ -22,36 +20,20 @@ export function PreviewModeHost() {
         usePreviewModeStore.getState().togglePreview(),
     );
 
-    // The beat editor was open when Preview began: it opens again when Preview ends
-    const beatEditorWasOpen = useRef(false);
-
     useEffect(() => {
         // Preview turns most actions off (`isActionOffInWorkspace`): buttons and the palette read again
         notifyActionHandlersChanged();
-        if (!preview) {
-            if (beatEditorWasOpen.current) {
-                beatEditorWasOpen.current = false;
-                setFocussedComponent("timeline");
-            }
-            return;
-        }
+        if (!preview) return;
         const timeline = useTimelineSelectionStore.getState();
         if (timeline.lineDrag) timeline.cancelLineDrag();
         if (timeline.isolation) timeline.exitIsolation();
         if (timeline.playback?.kind === "preview")
             timeline.setPlayback({ kind: "on" });
-        if (
-            useUiSettingsStore.getState().uiSettings.focussedComponent ===
-            "timeline"
-        ) {
-            beatEditorWasOpen.current = true;
-            setFocussedComponent("canvas");
-        }
 
         // Esc leaves, unless a dialog or menu is open or a box is being typed in, which take it
         const onKeyDown = (event: KeyboardEvent) => {
             if (event.key !== "Escape" || event.defaultPrevented) return;
-            const context = readShortcutContext("canvas");
+            const context = readShortcutContext();
             if (context.modalOpen || context.inTextInput) return;
             event.preventDefault();
             usePreviewModeStore.getState().setPreview(false);
@@ -62,8 +44,3 @@ export function PreviewModeHost() {
 
     return null;
 }
-
-const setFocussedComponent = (focussedComponent: "canvas" | "timeline") => {
-    const ui = useUiSettingsStore.getState();
-    ui.setUiSettings({ ...ui.uiSettings, focussedComponent });
-};

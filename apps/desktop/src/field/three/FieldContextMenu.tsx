@@ -165,7 +165,7 @@ export default function FieldContextMenu({
                     side="bottom"
                     collisionPadding={8}
                     // Focus isn't returned to the anchor, a hidden div: it falls to the page
-                    // body. The field keeps the shortcuts' focus (`focussedComponent`), so its
+                    // body. The shortcuts listen on the window, so the field's
                     // keys still work
                     onCloseAutoFocus={(event) => event.preventDefault()}
                     {...KEEP_MENU_EVENTS}

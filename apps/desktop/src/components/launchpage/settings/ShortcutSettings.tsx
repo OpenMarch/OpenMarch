@@ -17,7 +17,6 @@ import {
 import { bindingFromEvent, formatBinding } from "@/shortcuts/bindings";
 import {
     ACTION_IDS,
-    TAP_BEATS_ACTION_IDS,
     getActionDefinition,
     type ActionCategory,
     type ActionId,
@@ -45,9 +44,6 @@ const DISPLAY_GROUPS: readonly {
     { id: "shape", categories: ["shape"] },
     { id: "ui", categories: ["ui"] },
 ];
-
-const TAP_BEATS_ROW_ID = "tapBeats";
-const TAP_BEATS_DIGITS = Array.from({ length: 9 }, (_, i) => String(i + 1));
 
 interface PendingConflict {
     id: ActionId;
@@ -94,25 +90,11 @@ function useKeyRecorder(
 }
 
 interface Row {
-    /** The nine "tap N beats" actions are folded into one read-only row. */
-    id: ActionId | typeof TAP_BEATS_ROW_ID;
+    id: ActionId;
     category: ActionCategory;
     label: string;
     bindings: string[];
     formatted: string[];
-}
-
-function TapBeatsRow({ row }: { row: Row }) {
-    return (
-        <li className="flex min-h-[48px] items-center justify-between gap-16 py-12">
-            <span className="text-body text-text">{row.label}</span>
-            <div className="flex items-center gap-4">
-                <Shortcut keys={["1–9"]} size="md" />
-                {/* Matches the hidden remove (16px + 2px gap) and add (22px) buttons on other rows, so keycaps line up. */}
-                <span aria-hidden className="h-[22px] w-[40px] shrink-0" />
-            </div>
-        </li>
-    );
 }
 
 function ShortcutRow({
@@ -287,10 +269,8 @@ export default function ShortcutSettings() {
     );
 
     const rows = useMemo<Row[]>(
-        () => [
-            ...ACTION_IDS.filter(
-                (id) => !TAP_BEATS_ACTION_IDS.includes(id),
-            ).map((id) => {
+        () =>
+            ACTION_IDS.map((id) => {
                 const bindings = getDisplayBindings(id, overrides, isMac);
                 return {
                     id,
@@ -300,14 +280,6 @@ export default function ShortcutSettings() {
                     formatted: bindings.map((b) => formatBinding(b, isMac)),
                 };
             }),
-            {
-                id: TAP_BEATS_ROW_ID,
-                category: "timeline",
-                label: t("settings.shortcuts.tapBeats"),
-                bindings: TAP_BEATS_DIGITS,
-                formatted: TAP_BEATS_DIGITS,
-            },
-        ],
         [overrides, isMac, t],
     );
 
@@ -379,54 +351,40 @@ export default function ShortcutSettings() {
                             />
                         </h2>
                         <ul className="bg-fg-1 rounded-6 divide-stroke flex flex-col divide-y px-16">
-                            {groupRows.map((row) =>
-                                row.id === TAP_BEATS_ROW_ID ? (
-                                    <TapBeatsRow key={row.id} row={row} />
-                                ) : (
-                                    <ShortcutRow
-                                        key={row.id}
-                                        row={row as Row & { id: ActionId }}
-                                        isOverridden={
-                                            overrides[row.id as ActionId] !==
-                                            undefined
-                                        }
-                                        isRecording={recording === row.id}
-                                        conflict={
-                                            pending?.id === row.id
-                                                ? pending
-                                                : null
-                                        }
-                                        t={t}
-                                        language={language}
-                                        isMac={isMac}
-                                        onStartRecording={() => {
-                                            setPending(null);
-                                            setRecording(row.id as ActionId);
-                                        }}
-                                        onRemove={(binding) =>
-                                            removeBinding(
-                                                row.id as ActionId,
-                                                binding,
-                                            )
-                                        }
-                                        onReset={() =>
-                                            resetAction(row.id as ActionId)
-                                        }
-                                        onReassign={() => {
-                                            if (!pending) return;
-                                            addBinding(
-                                                pending.id,
-                                                pending.binding,
-                                                pending.owners,
-                                            );
-                                            setPending(null);
-                                        }}
-                                        onDismissConflict={() =>
-                                            setPending(null)
-                                        }
-                                    />
-                                ),
-                            )}
+                            {groupRows.map((row) => (
+                                <ShortcutRow
+                                    key={row.id}
+                                    row={row}
+                                    isOverridden={
+                                        overrides[row.id] !== undefined
+                                    }
+                                    isRecording={recording === row.id}
+                                    conflict={
+                                        pending?.id === row.id ? pending : null
+                                    }
+                                    t={t}
+                                    language={language}
+                                    isMac={isMac}
+                                    onStartRecording={() => {
+                                        setPending(null);
+                                        setRecording(row.id);
+                                    }}
+                                    onRemove={(binding) =>
+                                        removeBinding(row.id, binding)
+                                    }
+                                    onReset={() => resetAction(row.id)}
+                                    onReassign={() => {
+                                        if (!pending) return;
+                                        addBinding(
+                                            pending.id,
+                                            pending.binding,
+                                            pending.owners,
+                                        );
+                                        setPending(null);
+                                    }}
+                                    onDismissConflict={() => setPending(null)}
+                                />
+                            ))}
                         </ul>
                     </div>
                 );

@@ -12,7 +12,6 @@ import {
     type WaveformStyle,
 } from "@/timeline/timelineWaveform";
 
-export type FocusableComponents = "canvas" | "timeline";
 export interface UiSettings {
     lockX: boolean;
     lockY: boolean;
@@ -55,8 +54,6 @@ export interface UiSettings {
     audioVolume: number;
     /** Whether all app audio is muted */
     audioMuted: boolean;
-    /** The component that is currently focussed */
-    focussedComponent: FocusableComponents;
     /** Mouse settings */
     mouseSettings: {
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
@@ -146,7 +143,6 @@ export const defaultSettings: UiSettings = {
     timelineWaveformStyle: "simplified",
     audioVolume: 100,
     audioMuted: false,
-    focussedComponent: "canvas",
     mouseSettings: {
         trackpadMode: true,
         trackpadPanSensitivity: 0.5,
@@ -176,10 +172,16 @@ const clampZoomSensitivity = (value: number): number =>
 // Helper function to parse settings from a JSON string
 // Throws on bad JSON or invalid structure
 const parseSettings = (raw: string): UiSettings => {
-    // `previousPaths` (Previous paths) gave way to start flag positions (#331): dropped
-    const { previousPaths: _previousPaths, ...parsed } = JSON.parse(
-        raw,
-    ) as UiSettings & { previousPaths?: unknown };
+    // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331), and
+    // `focussedComponent` went with the old timeline focus (beat editor)
+    const {
+        previousPaths: _previousPaths,
+        focussedComponent: _focussedComponent,
+        ...parsed
+    } = JSON.parse(raw) as UiSettings & {
+        previousPaths?: unknown;
+        focussedComponent?: unknown;
+    };
     const mergedMouseSettings = {
         ...defaultSettings.mouseSettings,
         ...parsed.mouseSettings,

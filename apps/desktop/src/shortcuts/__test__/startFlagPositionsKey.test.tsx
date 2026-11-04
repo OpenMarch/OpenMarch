@@ -56,7 +56,6 @@ beforeEach(() => {
     const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
     setUiSettings({
         ...uiSettings,
-        focussedComponent: "canvas",
         startFlagPositions: SETTINGS,
     });
     useStartFlagKeyStore.setState({

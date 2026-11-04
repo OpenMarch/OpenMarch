@@ -7,7 +7,6 @@ import {
     ACTIONS,
     ACTION_IDS,
     NUDGE_ACTION_IDS,
-    TAP_BEATS_ACTION_IDS,
     type ActionId,
 } from "../definitions";
 
@@ -20,14 +19,6 @@ const NOT_IN_PALETTE: Partial<Record<ActionId, string>> = {
     holdSlowerPlayback: "plays slower only while its key is held",
     openCommandPalette: "opens the palette itself",
     openCommandBar: "opens the palette itself",
-    exitTimelineFocus:
-        "Escape on the timeline; the palette lists Focus canvas, which does the same",
-    timelinePlayPause:
-        "Space on the timeline; the palette lists Play / stop, which does the same",
-    timelinePreviousPage:
-        "← on the timeline; the palette lists Previous page, which does the same",
-    timelineNextPage:
-        "→ on the timeline; the palette lists Next page, which does the same",
     openFieldMenu:
         "the keyboard's right-click: opens the field's menu at the selection, which the palette would cover",
     shapeBlock: "listed as Shape › Box, which asks the box's numbers",
@@ -159,14 +150,12 @@ describe("ACTIONS", () => {
         expect(ACTIONS.shapeHideMarchers.defaultBindings).toEqual(["H"]);
     });
 
-    it("generates 24 nudge actions and 9 tap-beat actions", () => {
+    it("generates 24 nudge actions", () => {
         expect(NUDGE_ACTION_IDS).toHaveLength(24);
-        expect(TAP_BEATS_ACTION_IDS).toHaveLength(9);
         expect(ACTIONS.moveSelectedMarchersLeftFine.args).toEqual({
             direction: "left",
             step: "quarter",
             snap: false,
         });
-        expect(ACTIONS.timelineTapBeats3.args).toEqual({ count: 3 });
     });
 });
