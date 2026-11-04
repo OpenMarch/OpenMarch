@@ -191,28 +191,10 @@
         "context": {
             "error": "Impossible d’initialiser le contexte audio"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Les temps de début ou de fin de page ne peuvent pas être supprimés"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Les temps de début ou de fin de page ne peuvent pas être supprimés",
-                "errorCreatingMeasureAndBeats": "Erreur lors de la création de la mesure et des temps",
-                "errorDeletingMeasureAndBeats": "Erreur lors de la suppression de la mesure et des temps"
-            },
-            "tempo": {
-                "firstBeatTempo": "Tempo du premier temps",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Impossible de décoder le fichier audio"
         },
         "silentPlaceholder": "Audio silencieux",
-        "player": {
-            "pause": "Pause",
-            "play": "Lecture"
-        },
         "insert": {
             "noFileOpen": "Aucun fichier n'est ouvert. Créez ou ouvrez d'abord un spectacle.",
             "databaseUnavailable": "La base de données n'est plus disponible. Vérifiez que le fichier de base de données est prêt, puis réessayez."

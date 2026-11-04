@@ -191,28 +191,10 @@
         "context": {
             "error": "无法初始化音频上下文"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "页面起止所在的节拍无法删除"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "页面起止所在的节拍无法删除",
-                "errorCreatingMeasureAndBeats": "创建小节及节拍时出错",
-                "errorDeletingMeasureAndBeats": "删除小节及节拍时出错"
-            },
-            "tempo": {
-                "firstBeatTempo": "首个节拍速度",
-                "label": "速度"
-            }
-        },
         "decode": {
             "error": "无法解码音频文件"
         },
         "silentPlaceholder": "静音音频",
-        "player": {
-            "pause": "暂停",
-            "play": "播放"
-        },
         "insert": {
             "noFileOpen": "没有打开的文件。请先新建或打开一个表演。",
             "databaseUnavailable": "数据库已不可用。请确认数据库文件就绪后重试。"

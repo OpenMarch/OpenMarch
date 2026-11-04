@@ -191,28 +191,10 @@
         "context": {
             "error": "Gagal menginisialisasi konteks audio"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Ketukan pada halaman tidak dapat dihapus"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Ketukan pada halaman tidak dapat dihapus",
-                "errorCreatingMeasureAndBeats": "Gagal membuat birama dan ketukan",
-                "errorDeletingMeasureAndBeats": "Gagal menghapus birama dan ketukan"
-            },
-            "tempo": {
-                "firstBeatTempo": "Tempo ketukan pertama",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Gagal mendekode file audio"
         },
         "silentPlaceholder": "Audio senyap",
-        "player": {
-            "pause": "Jeda",
-            "play": "Putar"
-        },
         "insert": {
             "noFileOpen": "Tidak ada file yang terbuka. Buat atau buka pertunjukan terlebih dahulu.",
             "databaseUnavailable": "Database tidak lagi tersedia. Coba lagi setelah memastikan file database siap."

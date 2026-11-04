@@ -191,28 +191,10 @@
         "context": {
             "error": "Error al inicializar el contexto de audio"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Los pulsos en páginas no se pueden eliminar"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Los pulsos en páginas no se pueden eliminar",
-                "errorCreatingMeasureAndBeats": "Error al crear el compás y sus pulsos",
-                "errorDeletingMeasureAndBeats": "Error al eliminar el compás y sus pulsos"
-            },
-            "tempo": {
-                "firstBeatTempo": "Tempo del primer pulso",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Error al decodificar el archivo de audio"
         },
         "silentPlaceholder": "Audio en silencio",
-        "player": {
-            "pause": "Pausar",
-            "play": "Reproducir"
-        },
         "insert": {
             "noFileOpen": "No hay ningún archivo abierto. Crea o abre un show primero.",
             "databaseUnavailable": "La base de datos dejó de estar disponible. Asegúrate de que el archivo de la base de datos esté listo e inténtalo de nuevo."

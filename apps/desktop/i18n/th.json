@@ -191,28 +191,10 @@
         "context": {
             "error": "ไม่สามารถเริ่มต้นระบบเสียงได้"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "ไม่สามารถลบจังหวะที่หน้าเริ่มหรือสิ้นสุดได้"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "ไม่สามารถลบจังหวะที่หน้าเริ่มหรือสิ้นสุดได้",
-                "errorCreatingMeasureAndBeats": "เกิดข้อผิดพลาดในการสร้างห้องและจังหวะ",
-                "errorDeletingMeasureAndBeats": "เกิดข้อผิดพลาดในการลบห้องและจังหวะ"
-            },
-            "tempo": {
-                "firstBeatTempo": "เทมโปจังหวะแรก",
-                "label": "เทมโป"
-            }
-        },
         "decode": {
             "error": "ไม่สามารถถอดรหัสไฟล์เสียงได้"
         },
         "silentPlaceholder": "เสียงเงียบ",
-        "player": {
-            "pause": "หยุดชั่วคราว",
-            "play": "เล่น"
-        },
         "insert": {
             "noFileOpen": "ไม่มีไฟล์ที่เปิดอยู่ สร้างหรือเปิดโชว์ก่อน",
             "databaseUnavailable": "ฐานข้อมูลไม่พร้อมใช้งาน โปรดตรวจสอบว่าไฟล์ฐานข้อมูลพร้อมแล้วลองอีกครั้ง"

@@ -191,28 +191,10 @@
         "context": {
             "error": "Falha ao inicializar o contexto de áudio"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Batidas que marcam páginas não podem ser excluídas"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Batidas que marcam páginas não podem ser excluídas",
-                "errorCreatingMeasureAndBeats": "Erro ao criar compasso e batidas",
-                "errorDeletingMeasureAndBeats": "Erro ao excluir compasso e batidas"
-            },
-            "tempo": {
-                "firstBeatTempo": "Andamento da primeira batida",
-                "label": "Andamento"
-            }
-        },
         "decode": {
             "error": "Falha ao decodificar o arquivo de áudio"
         },
         "silentPlaceholder": "Áudio silencioso",
-        "player": {
-            "pause": "Pausar",
-            "play": "Reproduzir"
-        },
         "insert": {
             "noFileOpen": "Nenhum arquivo aberto. Crie ou abra um show primeiro.",
             "databaseUnavailable": "O banco de dados ficou indisponível. Verifique se o arquivo do banco de dados está pronto e tente novamente."

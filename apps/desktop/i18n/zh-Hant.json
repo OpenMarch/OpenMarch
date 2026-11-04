@@ -191,28 +191,10 @@
         "context": {
             "error": "無法初始化音訊環境"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "頁起訖處的節拍無法刪除"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "頁起訖處的節拍無法刪除",
-                "errorCreatingMeasureAndBeats": "建立小節與節拍時發生錯誤",
-                "errorDeletingMeasureAndBeats": "刪除小節與節拍時發生錯誤"
-            },
-            "tempo": {
-                "firstBeatTempo": "首節拍速度",
-                "label": "速度"
-            }
-        },
         "decode": {
             "error": "無法解碼音訊檔案"
         },
         "silentPlaceholder": "無聲音訊",
-        "player": {
-            "pause": "暫停",
-            "play": "播放"
-        },
         "insert": {
             "noFileOpen": "未開啟任何檔案。請先建立或開啟表演。",
             "databaseUnavailable": "資料庫已無法使用。請確認資料庫檔案已就緒，然後再試一次。"

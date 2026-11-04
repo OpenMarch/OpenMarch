@@ -191,28 +191,10 @@
         "context": {
             "error": "Gagal memulakan konteks audio"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Rentak pada halaman tidak boleh dipadam"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Rentak pada halaman tidak boleh dipadam",
-                "errorCreatingMeasureAndBeats": "Ralat semasa mencipta bar dan rentak",
-                "errorDeletingMeasureAndBeats": "Ralat semasa memadam bar dan rentak"
-            },
-            "tempo": {
-                "firstBeatTempo": "Tempo rentak pertama",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Gagal menyahkod fail audio"
         },
         "silentPlaceholder": "Audio senyap",
-        "player": {
-            "pause": "Jeda",
-            "play": "Main"
-        },
         "insert": {
             "noFileOpen": "Tiada fail dibuka. Cipta atau buka persembahan dahulu.",
             "databaseUnavailable": "Pangkalan data tidak lagi tersedia. Sila cuba lagi selepas memastikan fail pangkalan data sedia."

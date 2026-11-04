@@ -191,28 +191,10 @@
         "context": {
             "error": "オーディオコンテキストを初期化できませんでした"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "ページの境界にある拍は削除できません"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "ページの境界にある拍は削除できません",
-                "errorCreatingMeasureAndBeats": "小節と拍を作成できませんでした",
-                "errorDeletingMeasureAndBeats": "小節と拍を削除できませんでした"
-            },
-            "tempo": {
-                "firstBeatTempo": "最初の拍のテンポ",
-                "label": "テンポ"
-            }
-        },
         "decode": {
             "error": "オーディオファイルをデコードできませんでした"
         },
         "silentPlaceholder": "無音オーディオ",
-        "player": {
-            "pause": "一時停止",
-            "play": "再生"
-        },
         "insert": {
             "noFileOpen": "ファイルが開かれていません。先にショーを作成するか開いてください。",
             "databaseUnavailable": "データベースが使用できなくなりました。データベースファイルの準備ができていることを確認してから、もう一度お試しください。"

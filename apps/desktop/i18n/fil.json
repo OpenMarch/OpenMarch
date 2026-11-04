@@ -191,28 +191,10 @@
         "context": {
             "error": "Hindi masimulan ang audio context"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Hindi mabubura ang mga kumpas sa simula o dulo ng pahina"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Hindi mabubura ang mga kumpas sa simula o dulo ng pahina",
-                "errorCreatingMeasureAndBeats": "Error sa paggawa ng sukat at mga kumpas",
-                "errorDeletingMeasureAndBeats": "Error sa pagbura ng sukat at mga kumpas"
-            },
-            "tempo": {
-                "firstBeatTempo": "Tempo ng unang kumpas",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Hindi ma-decode ang audio file"
         },
         "silentPlaceholder": "Tahimik na audio",
-        "player": {
-            "pause": "I-pause",
-            "play": "I-play"
-        },
         "insert": {
             "noFileOpen": "Walang nakabukas na file. Gumawa o magbukas muna ng palabas.",
             "databaseUnavailable": "Hindi na magamit ang database. Subukang muli kapag handa na ang database file."

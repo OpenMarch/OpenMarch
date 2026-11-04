@@ -205,28 +205,10 @@
         "context": {
             "error": "Failed to initialize audio context"
         },
-        "contextMenu": {
-            "beat": {
-                "cannotDeleteOnPage": "Beats on pages cannot be deleted"
-            },
-            "measure": {
-                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
-                "errorCreatingMeasureAndBeats": "Error creating measure and beats",
-                "errorDeletingMeasureAndBeats": "Error deleting measure and beats"
-            },
-            "tempo": {
-                "firstBeatTempo": "First beat tempo",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Failed to decode audio file"
         },
         "silentPlaceholder": "Silent Audio",
-        "player": {
-            "pause": "Pause",
-            "play": "Play"
-        },
         "insert": {
             "noFileOpen": "No file is open. Create or open a show first.",
             "databaseUnavailable": "Database became unavailable. Please try again after ensuring the database file is ready."
