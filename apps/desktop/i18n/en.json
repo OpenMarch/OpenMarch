@@ -3127,23 +3127,33 @@
             "skip": "Skip",
             "slide": "Slide",
             "slides": {
-                "timeline": {
-                    "media": "A show playing: the playhead moves along the timeline under the field while the marchers move into their next set.",
-                    "text": "Your pages, moves and counts sit on one timeline under the field, lined up with the music.",
-                    "title": "The timeline"
-                },
-                "shapes": {
-                    "media": "Twelve selected marchers. A box is drawn above them, snapping to the field's lines, and the marchers are placed in it.",
-                    "text": "Draw a box, line, arc or circle and place the selected marchers in it, snapped to half steps and yard lines.",
-                    "title": "Shapes"
+                "pathways": {
+                    "media": "Placeholder picture: the clip of the Path pen isn't recorded yet.",
+                    "text": "Draw a path of corners for a marcher with the Path pen, and they walk it instead of a straight line.",
+                    "title": "Pathways"
                 },
                 "props": {
-                    "media": "A show playing: a riser behind the band turns and slides to a new spot.",
-                    "text": "Draw props on the field and move them on the timeline, just like marchers.",
+                    "media": "In the 3D View, a riser shown as a plain gray block slides and turns behind the marching band.",
+                    "text": "Draw props on the field and move them on the timeline. For now they show as simple blocks in the 3D View.",
                     "title": "Props"
                 },
+                "shapes": {
+                    "media": "A section of marchers is placed in a box, then on a line, then on an arc, each drawn on the field and snapping to the field's lines.",
+                    "text": "Draw a box, line or arc and place the selected marchers in it; its points snap to half steps, yard lines and hashes.",
+                    "title": "Shapes"
+                },
+                "tempo": {
+                    "media": "Placeholder picture: the clip of tempo mode isn't recorded yet.",
+                    "text": "Line your counts up with the music in the timeline: drag a count onto its hit in the music, and set tempo changes, holds and meters.",
+                    "title": "Tempo mode"
+                },
+                "timeline": {
+                    "media": "A show in Expert mode playing: each section's moves, some crossing page flags, stack in rows on the timeline while the marchers move on the field.",
+                    "text": "Pages, moves and counts sit on one timeline under the field, and in Expert, moves can cross pages and overlap.",
+                    "title": "The timeline"
+                },
                 "view3d": {
-                    "media": "The show playing in 3D, seen from the press box: marchers in uniform and a color guard with flags, in a stadium.",
+                    "media": "The band marching between sets in 3D, in a domed stadium seen from the press box: marchers in uniform and a color guard with flags.",
                     "text": "Watch your show from the stands, with marchers in uniform.",
                     "title": "The 3D View"
                 }

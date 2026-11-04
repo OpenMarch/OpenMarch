@@ -409,8 +409,8 @@ describe("WelcomeFlow", () => {
         expect(slideTitles).toEqual([
             "The timeline",
             "Shapes",
-            "Props",
             "The 3D View",
+            "Props",
         ]);
 
         fireEvent.click(await screen.findByTestId("editor-mode-card-basic"));
@@ -482,7 +482,7 @@ describe("WelcomeFlow", () => {
         fireEvent.keyDown(window, { key: "ArrowRight" });
         await screen.findByTestId("whats-new-slide-shapes");
         fireEvent.keyDown(window, { key: "ArrowRight" });
-        await screen.findByTestId("whats-new-slide-props");
+        await screen.findByTestId("whats-new-slide-view3d");
         fireEvent.keyDown(window, { key: "ArrowLeft" });
         await screen.findByTestId("whats-new-slide-shapes");
         // Modified arrows are left alone.
@@ -511,7 +511,7 @@ describe("WelcomeFlow", () => {
         fireEvent.click(screen.getByTestId("welcome-continue"));
         for (let i = 1; i < WHATS_NEW_SLIDES.length; i++)
             fireEvent.click(await screen.findByTestId("whats-new-next"));
-        await screen.findByTestId("whats-new-slide-view3d");
+        await screen.findByTestId("whats-new-slide-props");
         expect(screen.getByTestId("whats-new-guides")).toHaveAttribute(
             "href",
             "https://openmarch.com/guides",
@@ -539,7 +539,7 @@ describe("WelcomeFlow", () => {
             expect(section.querySelector("video")).toBeNull();
             const poster = screen.getByTestId("whats-new-poster");
             expect(poster.tagName).toBe("IMG");
-            expect(poster.getAttribute("alt")).toMatch(/playhead/);
+            expect(poster.getAttribute("alt")).toMatch(/Expert mode/);
         } finally {
             delete (window as { matchMedia?: unknown }).matchMedia;
         }

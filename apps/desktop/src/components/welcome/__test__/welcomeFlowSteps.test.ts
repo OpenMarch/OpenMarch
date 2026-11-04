@@ -8,7 +8,12 @@ import {
     setupSteps,
     shouldShowWelcomeFlow,
 } from "../welcomeFlowSteps";
-import { whatsNewKeyAction } from "../whatsNewSlides";
+import {
+    ALL_WHATS_NEW_SLIDES,
+    WHATS_NEW_SLIDES,
+    visibleWhatsNewSlides,
+    whatsNewKeyAction,
+} from "../whatsNewSlides";
 
 describe("welcome flow steps", () => {
     it("asks language, theme and mode, then analytics when unanswered", () => {
@@ -198,5 +203,63 @@ describe("What's new keys", () => {
         expect(whatsNewKeyAction("Escape")).toBe("skip");
         expect(whatsNewKeyAction("Enter")).toBeNull();
         expect(whatsNewKeyAction(" ")).toBeNull();
+    });
+});
+
+describe("What's new slides", () => {
+    const none = { tempoMode: false, pathways: false };
+    const ids = (slides: readonly { id: string }[]) => slides.map((s) => s.id);
+
+    it("shows the shipped features, in order, and hides Tempo and Pathways until they land", () => {
+        expect(ids(WHATS_NEW_SLIDES)).toEqual([
+            "timeline",
+            "shapes",
+            "view3d",
+            "props",
+        ]);
+        expect(
+            ids(
+                visibleWhatsNewSlides(ALL_WHATS_NEW_SLIDES, {
+                    shipped: none,
+                    preview: false,
+                }),
+            ),
+        ).toEqual(["timeline", "shapes", "view3d", "props"]);
+    });
+
+    it("shows a slide once its feature is switched on", () => {
+        expect(
+            ids(
+                visibleWhatsNewSlides(ALL_WHATS_NEW_SLIDES, {
+                    shipped: { tempoMode: true, pathways: false },
+                    preview: false,
+                }),
+            ),
+        ).toEqual(["timeline", "shapes", "view3d", "props", "tempo"]);
+    });
+
+    it("shows every slide when previewing", () => {
+        expect(
+            ids(
+                visibleWhatsNewSlides(ALL_WHATS_NEW_SLIDES, {
+                    shipped: none,
+                    preview: true,
+                }),
+            ),
+        ).toEqual([
+            "timeline",
+            "shapes",
+            "view3d",
+            "props",
+            "tempo",
+            "pathways",
+        ]);
+    });
+
+    it("gives every shipped slide a clip and every slide a poster", () => {
+        for (const slide of ALL_WHATS_NEW_SLIDES) {
+            expect(slide.poster).toBeTruthy();
+            if (!slide.requires) expect(slide.video).toBeTruthy();
+        }
     });
 });

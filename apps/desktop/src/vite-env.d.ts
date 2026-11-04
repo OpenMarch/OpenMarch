@@ -27,6 +27,8 @@ interface ImportMetaEnv {
     readonly VITE_VIEW3D_NO_SETTINGS_WINDOW?: string;
     /** The app's version, in the web build's worker. */
     readonly VITE_PUBLIC_APP_VERSION?: string;
+    /** "true" shows the welcome flow's What's new slides for features not on main yet, for review. */
+    readonly VITE_PUBLIC_WHATS_NEW_PREVIEW?: string;
 }
 declare module "@fontsource/dm-mono";
 declare module "@fontsource/dm-sans";

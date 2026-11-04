@@ -14,6 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CLIPS } from "./clips.mjs";
+import { makeExpertShow } from "./expertShow.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP = path.resolve(HERE, "../..");
@@ -73,10 +74,11 @@ export function frameAround(box, minWidth = 0) {
     return { x: even(x), y: even(y), width: even(width), height: even(height) };
 }
 
-async function launch() {
+/** Opens `source` (a copy of it) in the app; returns the app, its window and the copy's path. */
+async function launch(source = SHOW) {
     const home = fs.mkdtempSync(path.join(WORK, "home-"));
     const show = path.join(home, "show.dots");
-    fs.copyFileSync(SHOW, show);
+    fs.copyFileSync(source, show);
     const app = await electron.launch({
         executablePath: require("electron"),
         args: [
@@ -109,10 +111,14 @@ async function launch() {
         win.show();
         win.focus();
     }, WINDOW);
-    // The demo was made before timelines: convert it, then wait for the show to load.
-    await page
-        .getByRole("button", { name: "Confirm" })
-        .click({ timeout: 30000 });
+    // The demo was made before timelines: convert it (shows made from a converted copy don't
+    // ask), then wait for the show to load.
+    const convert = page.getByRole("button", { name: "Confirm" });
+    const asked = await convert
+        .waitFor({ state: "visible", timeout: 10000 })
+        .then(() => true)
+        .catch(() => false);
+    if (asked) await convert.click();
     for (let i = 0; i < 120; i++) {
         const n = await page
             .evaluate(() => window.fieldTest?.marchers?.().length ?? 0)
@@ -122,7 +128,22 @@ async function launch() {
     }
     await page.evaluate(() => window.electron.setTheme("light"));
     await wait(1500);
-    return { app, page };
+    return { app, page, show };
+}
+
+/**
+ * The shows a clip can ask for (`clip.show`): the demo as it is, or "expert", the converted
+ * demo with Expert-mode moves added (expertShow.mjs), made once per run.
+ */
+const shows = { demo: SHOW };
+async function showFor(name = "demo") {
+    if (shows[name]) return shows[name];
+    if (name !== "expert") throw new Error(`no show "${name}"`);
+    const { app, show } = await launch(SHOW);
+    await app.close();
+    shows.expert = path.join(WORK, "expert.dots");
+    makeExpertShow(show, shows.expert);
+    return shows.expert;
 }
 
 /** Where a window's page sits on the screen (window frames move it). */
@@ -180,13 +201,14 @@ function recordRegion(file, box, origin, cursor) {
  * The finished loop: `seconds` long from `start` seconds into the raw recording, its last
  * FADE seconds crossfading into its first frames, so it repeats without a jump.
  */
-function encode(raw, name, { start, seconds }) {
+function encode(raw, name, { start, seconds, slowdown = 1 }) {
     const mp4 = path.join(OUT_DIR, `${name}.mp4`);
     const webp = path.join(OUT_DIR, `${name}.webp`);
     const graph = [
-        `[0:v]fps=30,scale=${OUTPUT_WIDTH}:-2:flags=lanczos,split[a][b]`,
-        `[a]trim=start=${start + FADE}:duration=${seconds},setpts=PTS-STARTPTS,settb=AVTB,fps=30[main]`,
-        `[b]trim=start=${start}:duration=${FADE},setpts=PTS-STARTPTS,settb=AVTB,fps=30[head]`,
+        // A clip played slowed down (`slowdown`) is sped back up here.
+        `[0:v]trim=start=${start},setpts=(PTS-STARTPTS)/${slowdown},fps=30,scale=${OUTPUT_WIDTH}:-2:flags=lanczos,split[a][b]`,
+        `[a]trim=start=${FADE}:duration=${seconds},setpts=PTS-STARTPTS,settb=AVTB,fps=30[main]`,
+        `[b]trim=start=0:duration=${FADE},setpts=PTS-STARTPTS,settb=AVTB,fps=30[head]`,
         `[main][head]xfade=transition=fade:duration=${FADE}:offset=${seconds - FADE},format=yuv420p[v]`,
     ].join(";");
     execFileSync("ffmpeg", [
@@ -230,12 +252,18 @@ function encode(raw, name, { start, seconds }) {
 }
 
 const wanted = process.argv.slice(2);
-const clips = CLIPS.filter((c) => !wanted.length || wanted.includes(c.name));
+// A clip waiting on a feature (`pending`, the PR that lands it) is recorded only when named.
+const clips = CLIPS.filter((c) =>
+    wanted.length ? wanted.includes(c.name) : !c.pending,
+);
+for (const c of CLIPS)
+    if (c.pending && !wanted.includes(c.name))
+        console.log(`-- ${c.name}: skipped until ${c.pending} is on main`);
 fs.mkdirSync(OUT_DIR, { recursive: true });
 let failed = false;
 for (const clip of clips) {
     console.log(`>> ${clip.name}`);
-    const { app, page } = await launch();
+    const { app, page } = await launch(await showFor(clip.show));
     try {
         let shots = 0;
         /** A screenshot into the work folder, to see what a clip's setup did. */
@@ -254,13 +282,16 @@ for (const clip of clips) {
         const rec = recordRegion(raw, box, origin, clip.cursor);
         const began = Date.now();
         await clip.perform({ ...ctx, target });
-        const remaining = (clip.seconds + FADE + (clip.lead ?? 0)) * 1000 + 300;
+        const slowdown = clip.slowdown ?? 1;
+        const remaining =
+            ((clip.seconds + FADE) * slowdown + (clip.lead ?? 0)) * 1000 + 300;
         await wait(Math.max(0, remaining - (Date.now() - began)));
         await rec.stop();
         if (process.env.KEEP_RAW)
             fs.copyFileSync(raw, path.join(OUT_DIR, `${clip.name}.raw.mp4`));
         const files = encode(raw, clip.name, {
             start: clip.lead ?? 0,
+            slowdown,
             seconds: clip.seconds,
         });
         for (const f of files)

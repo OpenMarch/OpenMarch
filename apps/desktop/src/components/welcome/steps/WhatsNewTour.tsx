@@ -14,14 +14,15 @@ import {
 
 /**
  * The slide's clip: a muted loop, or its first frame when the person asked
- * for less motion. Both carry the same description for screen readers.
+ * for less motion (or the clip isn't recorded yet). Both carry the same
+ * description for screen readers.
  */
 function SlideMedia({ slide }: { slide: WhatsNewSlide }) {
     const { t } = useTranslate();
     const description = t(slide.mediaKey);
     const className =
         "rounded-6 border-stroke bg-fg-2 aspect-[16/10] w-full border object-cover";
-    if (prefersReducedMotion())
+    if (!slide.video || prefersReducedMotion())
         return (
             <img
                 src={slide.poster}
