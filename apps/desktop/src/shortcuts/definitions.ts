@@ -766,6 +766,17 @@ const STATIC_ACTIONS = {
         args: { kind: "curve" },
         hiddenFromPalette: true,
     },
+    // The Arc (#634): a Line of two points bent as a circular arc. No key of its own yet
+    shapeArc: {
+        labelKey: "actions.shape.arc",
+        keywordsKey: "actions.shape.keywords",
+        category: "shape",
+        editsDrill: true,
+        scope: "canvas",
+        defaultBindings: [],
+        args: { kind: "arc" },
+        hiddenFromPalette: true,
+    },
     // The favorites ring (#351): hold to aim and let go to pick a shape, tap to keep it open.
     // The ring takes the key's release, so a held key doesn't repeat it. From the palette it opens
     // latched, as a tap does (#411).
