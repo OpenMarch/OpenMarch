@@ -11,11 +11,9 @@ import {
     compileCues,
     type CompileInput,
     type CompiledCues,
-    type CueInput,
     type FieldProperties,
     type PerformerCarry,
     pixelsToWorld,
-    type ShowPhraseAsset,
 } from "@openmarch/core";
 import type { Manifest } from "@/view3d/render/step-blend.js";
 import type { ShowPositions } from "@/view3d/positions";
@@ -26,6 +24,7 @@ import {
 import {
     crossfadeWeight,
     planMarcher,
+    REST_EPS,
     eventRows,
     headingAt,
 } from "@/view3d/core/marchers/planner";
@@ -66,36 +65,32 @@ export interface ShowPlans {
     };
 }
 
-/** The show's stored cues and what compile needs to place them (ADR 0004 D-1 to D-3). */
-export interface WindowStoredCues {
-    /** The stored cues (`getCues`); a deleted beat's cues are dropped by compile. */
-    cues?: readonly CueInput[];
-    /** Each marcher's tag ids, for tag targets. */
-    tagIds?: ReadonlyMap<number, readonly number[]>;
-    phraseAssets?: readonly ShowPhraseAsset[];
-    /** Where a marcher stands at a count's click, for positional ripple orders. */
-    positionAt?: CompileInput["positionAt"];
-    /**
-     * The show's Library items and each section's usual equipment, with
-     * their aspects for the Silk aspect note (`view3d/library/cueAspects`).
-     */
-    libraryItems?: CompileInput["libraryItems"];
+/** What the window's compile reads besides the marchers and beats. */
+export interface WindowCueInputs {
+    /** Each section's usual equipment, for the Carry default (`performers/cueSections`). */
     sections?: CompileInput["sections"];
+    /**
+     * 1 for each count on which any performer travels (`bandMovingCounts`),
+     * for the Feet default: marchers mark time while the band moves.
+     */
+    bandMoving?: ArrayLike<number> | null;
 }
 
 /**
- * Compiles the show's cues for the 3D View from the marchers and the timed
- * beats (in the count clock's order). `stepOffFoot` is the show's saved
- * default, or the window's unsaved preview override of it. `carries` says
- * what each marcher carries, which decides the Horn/Equipment cues that fit.
+ * Compiles the 3D View's performer behavior from the marchers and the timed
+ * beats (in the count clock's order) with no stored cues: the show defaults
+ * only (ADR 0004; cue storage is parked). `stepOffFoot` is the show's saved
+ * default. `carries` says what each marcher carries, which decides the
+ * Horn/Equipment default.
  */
 export function compileWindowCues(
     marchers: readonly { id: number; section: string }[],
     beats: readonly { id: number; timestamp: number; duration: number }[],
     stepOffFoot: Foot,
-    stored: WindowStoredCues = {},
+    inputs: WindowCueInputs = {},
     carries: (marcherId: number) => PerformerCarry = () => "none",
 ): CompiledCues {
+    const { bandMoving } = inputs;
     return compileCues({
         beats: beats
             .filter((b) => b.duration > 0)
@@ -104,15 +99,13 @@ export function compileWindowCues(
         marchers: marchers.map((m, i) => ({
             id: m.id,
             section: m.section,
-            tagIds: [...(stored.tagIds?.get(m.id) ?? [])],
+            tagIds: [],
             drillOrder: i,
             carries: carries(m.id),
         })),
-        cues: stored.cues ?? [],
-        phraseAssets: stored.phraseAssets,
-        positionAt: stored.positionAt,
-        libraryItems: stored.libraryItems,
-        sections: stored.sections,
+        cues: [],
+        sections: inputs.sections,
+        bandTravels: bandMoving ? (c) => bandMoving[c] === 1 : undefined,
         showDefaults: { stepOffFoot },
     });
 }
@@ -167,9 +160,36 @@ function sampleDrill(
 }
 
 /**
+ * 1 for each count on which any marcher's dot travels (the planner's
+ * `REST_EPS`), from drill samples at each count boundary.
+ */
+export function bandMovingCounts(
+    ids: readonly number[],
+    positions: ShowPositions | null,
+    clock: CountClock,
+    fieldProperties: FieldProperties,
+): Uint8Array {
+    const K = clock.counts;
+    const moving = new Uint8Array(Math.max(K, 0));
+    for (const p of sampleDrill(ids, positions, clock, fieldProperties)) {
+        if (!p) continue;
+        for (let k = 0; k < K; k++)
+            if (
+                !moving[k] &&
+                Math.hypot(
+                    p[k * 2 + 2] - p[k * 2],
+                    p[k * 2 + 3] - p[k * 2 + 1],
+                ) > REST_EPS
+            )
+                moving[k] = 1;
+    }
+    return moving;
+}
+
+/**
  * Samples every marcher's drill at each count boundary and plans its clips.
- * Each marcher is planned on its own: a hold stands still whatever the rest
- * of the band does (performer-behavior.md section 3).
+ * Each marcher is planned on its own; what a hold does comes from the Feet
+ * channel (marking time while the band moves, `compileWindowCues`).
  */
 export function planShow(
     ids: readonly number[],

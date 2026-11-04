@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { LAYOUT_FAMILIES, type LayoutFamily } from "../distribute/distribution";
-import { userList } from "../library/userStorage";
+import { userList } from "./userStorage";
 
 /**
  * The Files layout the user picked last (#387): a new box starts in it. Like stars it is the

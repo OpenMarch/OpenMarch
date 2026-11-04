@@ -28,7 +28,7 @@ import {
     runAction,
 } from "../registry";
 import { isActionOffInWorkspace } from "../workspaceActions";
-import { isPreviewMode } from "@/stores/PreviewModeStore";
+import { isBasicMode } from "@/stores/EditorModeStore";
 import { paramsCommand } from "./commandBar";
 import type { PaletteContext, PaletteItem } from "./sources";
 
@@ -76,15 +76,23 @@ const SUGGESTED_ACTIONS: readonly ActionId[] = [
 const categoryRank = (id: ActionId) =>
     PALETTE_CATEGORY_ORDER.indexOf(getActionDefinition(id).category);
 
-/** Palette items for every action that has a handler right now and isn't hidden from the palette. */
+/**
+ * Palette items for every action that has a handler right now and isn't hidden from the palette,
+ * nor Expert only in Basic mode.
+ */
 export function getActionPaletteItems(
     { t }: PaletteContext,
     overrides: ShortcutOverrides,
 ): PaletteItem[] {
-    return ACTION_IDS.filter(
-        (id) =>
-            !getActionDefinition(id).hiddenFromPalette && hasActionHandler(id),
-    )
+    const basic = isBasicMode();
+    return ACTION_IDS.filter((id) => {
+        const def = getActionDefinition(id);
+        return (
+            !def.hiddenFromPalette &&
+            !(basic && def.expertOnly) &&
+            hasActionHandler(id)
+        );
+    })
         .sort((a, b) => categoryRank(a) - categoryRank(b))
         .map((id: ActionId) => {
             const def = getActionDefinition(id);
@@ -100,14 +108,9 @@ export function getActionPaletteItems(
                     : [],
                 shortcut: getActionShortcutKeys(id, { overrides }),
                 disabled: !isActionEnabled(id),
-                // Visuals mode turns the drill edits off, and Preview every edit: say so, and
-                // where they work
+                // Preview turns every edit off: say so
                 disabledReason: isActionOffInWorkspace(id)
-                    ? t(
-                          isPreviewMode()
-                              ? "commandPalette.offInPreview"
-                              : "commandPalette.editsDrill",
-                      )
+                    ? t("commandPalette.offInPreview")
                     : undefined,
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)

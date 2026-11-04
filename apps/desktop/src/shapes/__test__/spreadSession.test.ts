@@ -10,7 +10,6 @@ import {
 import { distributionOf, reshuffle, withMode } from "../distribute/modes";
 import { fieldToFrame } from "../frame/frame";
 import { SPREAD_GENERATOR } from "../distribute/spread";
-import { savedShapeOf, withSavedDistribution } from "../library/savedShapes";
 import { boxesAt, type PlacedRecipe } from "../placed/placedBox";
 import { placedBoxSummary } from "../placed/placedBoxText";
 import { placementOf } from "../tool/shapePlacement";
@@ -261,34 +260,6 @@ describe("a box in Spread", () => {
             },
         }));
         expect(shapes).toEqual([]);
-    });
-
-    it("saves without its seed, and a saved spread places from seed 1", () => {
-        let s = spreadOf(box());
-        s = edit(s, reshuffle(boxTool, s.params, N, env), ctx);
-        const saved = savedShapeOf(boxTool, s.params, N, STEP, {
-            id: "s",
-            name: "Scatter",
-            at: "2026-10-23T00:00:00.000Z",
-        });
-        expect(saved.distribution).toEqual({
-            mode: "spread",
-            generator: SPREAD_GENERATOR,
-        });
-        const fresh = drawn(boxTool, 30, { x: 0, y: 0 }, { x: 60, y: 30 });
-        const placed = withSavedDistribution(
-            boxTool,
-            fresh.params,
-            30,
-            saved.distribution,
-            env,
-        );
-        expect(distributionOf(boxTool, placed, 30)).toEqual({
-            mode: "spread",
-            seed: 1,
-            generator: SPREAD_GENERATOR,
-            count: 30,
-        });
     });
 });
 

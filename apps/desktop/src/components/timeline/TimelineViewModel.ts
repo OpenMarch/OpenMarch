@@ -1,4 +1,3 @@
-import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type { TimelineClipResizeCommands } from "./TimelineClipResize";
 import type {
@@ -267,7 +266,6 @@ export interface TimelineInteractionProps {
     readonly returnBeat?: BeatPosition;
     readonly isPlaying: boolean;
     readonly selection?: TimelineSelection;
-    readonly selectedTarget?: TimelineTarget | null;
     readonly onSeek?: TimelineSeek;
     readonly onPlayingChange?: (isPlaying: boolean) => void;
     /** Looping is on, so Play loops (UI-17) */
@@ -278,9 +276,8 @@ export interface TimelineInteractionProps {
     readonly onPlayOn?: () => void;
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
-    readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
-    /** The right-click menu's **Add selected marchers** (UI-9, P8.14), in view beats here */
-    readonly addSelectedMarchers?: TimelineAddMarchersMenu<TimelineMenuTarget>;
+    /** The right-click menu's page-box entries (UI-9), in view beats here */
+    readonly addSelectedMarchers?: TimelineAddMarchersMenu;
     /** A clip's move commands (UI-14), by track id here: its menu, ⋯ button and keys */
     readonly moveCommands?: TimelineMoveCommands<TimelineTrackId>;
     /**
@@ -323,7 +320,7 @@ export interface TimelineCommonProps
     /** The playback clock shown in the transport. The app passes its audio clock; stories pass none. */
     readonly transportClock?: ReactNode;
     /**
-     * A timeline that only navigates (Visuals mode, performer-behavior.md section 7.1): page
+     * A timeline that only navigates (Preview): page
      * boxes select and the ruler seeks, but nothing draws a range. The owner passes no editing
      * commands
      */
@@ -333,8 +330,6 @@ export interface TimelineCommonProps
      * so it shows even where nothing moves it by hand
      */
     readonly startFlagBeat?: number;
-    /** Lanes drawn where the clip rows go, under the waveform (Visuals mode's cue lanes) */
-    readonly band?: TimelineBand;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
     readonly className?: string;
@@ -394,8 +389,3 @@ export interface TimelineRangeChange extends TimelineBeatRange {
  * failed). It never rejects. Nothing (`void`) leaves the preview until the new range arrives.
  */
 export type TimelineRangeCommitResult = Promise<boolean> | void;
-
-export interface TimelineCreateTrackRequest {
-    readonly target: TimelineTarget;
-    readonly range: TimelineBeatRange;
-}

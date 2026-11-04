@@ -368,25 +368,20 @@ describe("a keyframe diamond's menu in the Timeline (#306)", () => {
         expect(menu.onUnset.mock.calls).toEqual([[17]]);
     });
 
-    it("without a menu, a right-click on a diamond goes on to the timeline's own menu", () => {
-        const onAdd = vi.fn();
-        // A selected range over the diamond, which has the timeline's menu: spec beats
-        // [15, 19), drawn as view beats [14, 18)
+    it("without a menu, a right-click on a diamond over a dragged range opens nothing", () => {
+        // A dragged range alone no longer has a timeline menu entry
         showTimeline({
-            addSelectedMarchers: { onAdd },
+            onDeletePageFlag: vi.fn(),
             selection: {
                 kind: "range",
                 range: { startBeatIndex: 15, endBeatIndex: 19 },
             },
         });
-        // jsdom lays nothing out: clientX is px from beat 0
         fireEvent.contextMenu(
             screen.getByTestId("timeline-keyframe-16-filled"),
             { clientX: 16 * 16 },
         );
-        expect(menuItems()).toEqual([
-            expect.stringContaining("Add selected marchers"),
-        ]);
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
         expect(screen.queryByTestId("timeline-keyframe-menu")).toBeNull();
     });
 });

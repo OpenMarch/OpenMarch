@@ -45,6 +45,7 @@ words:
   - unicodes
   - stepoff
   - menuitemradio
+  - menuitemcheckbox
   - prefs
   - frameloop
   - powermetrics
@@ -315,8 +316,6 @@ ignorePaths:
   - docs/timeline/ref/**
   - node_modules/**
   - docs/3d/ref/**
-  # Verbatim license texts (CC0 1.0, GPL-3.0) in the Blender Starter kit
-  - apps/desktop/starter-kit/**/LICENSE
   # Verbatim SIL Open Font License for the vendored text symbols fonts
   - packages/ui/src/fonts/OFL.txt
   - "**/view3d/assets/om-pose/**"

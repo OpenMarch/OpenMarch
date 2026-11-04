@@ -12,8 +12,6 @@ import sanitizeHtml from "sanitize-html";
 
 import Store from "electron-store";
 import { getOrmConnection } from "../../database/database.services";
-import { getFieldImage } from "../../../src/db-functions/fieldFloor";
-import { sniffArtworkFormat } from "../artwork-import/formats";
 import { measureRangeString as _measureRangeString } from "../../../src/global/classes/Page.utils";
 import logoSvgRaw from "@/assets/open-march-logo.svg?raw";
 import { t } from "../i18n";
@@ -559,26 +557,20 @@ export class PDFExportService {
         }
 
         try {
-            // The field image is the show's floor (ADR 0002 D-23): its original, for print
-            const image = (
-                await getFieldImage({
-                    db: getOrmConnection() as never,
-                    use: "print",
-                })
-            )?.bytes;
+            // Access the database in the main process
+            const db = getOrmConnection();
+            const result = await db.query.field_properties.findFirst({
+                columns: { image: true },
+            });
 
-            if (!image) {
+            if (!result?.image) {
                 this.fieldImageCache = null;
                 return null;
             }
 
-            const base64 = Buffer.from(image).toString("base64");
-            // A floor's print image is a PNG or a JPEG (its original, or the display texture
-            // of a vector)
-            const mimeType =
-                sniffArtworkFormat(image) === "jpeg"
-                    ? "image/jpeg"
-                    : "image/png";
+            // Convert Uint8Array to base64
+            const base64 = Buffer.from(result.image).toString("base64");
+            const mimeType = "image/png"; // Adjust if you detect the actual format
             const dataUri = `data:${mimeType};base64,${base64}`;
 
             // Cache the result

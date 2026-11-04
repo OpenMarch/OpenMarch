@@ -3,7 +3,6 @@ import Page from "@/global/classes/Page";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { db } from "@/global/database/db";
-import { getFieldImage, type FieldImage } from "@/db-functions/fieldFloor";
 import { SectionAppearance } from "@/db-functions";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import type { PagePosition, PagePositionMap } from "./exportPagePositions";
@@ -188,9 +187,11 @@ export const generateDrillChartExportSVGs = async (args: {
     return { SVGs: outputSVGs, coords: readableCoordsStrings };
 };
 
-/** The field image for print: the show's floor's original (ADR 0002 D-23), or null. */
-export async function getFieldPropertiesImage(): Promise<FieldImage | null> {
-    return getFieldImage({ db, use: "print" });
+export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {
+    const result = await db.query.field_properties.findFirst({
+        columns: { image: true },
+    });
+    return result?.image ?? null;
 }
 export const OPENMARCH_FIELD_IMAGE_PLACEHOLDER =
     "OPENMARCH_FIELD_IMAGE_PLACEHOLDER";
@@ -212,9 +213,8 @@ const imageMimeType = (bytes: Uint8Array): string => {
 export const getFieldImageForExport = async (): Promise<
     DrillChartFieldImage | undefined
 > => {
-    const fieldImage = await getFieldPropertiesImage();
-    if (fieldImage === null) return;
-    const { bytes, size } = fieldImage;
+    const bytes = await getFieldPropertiesImage();
+    if (bytes === null) return;
     const base64 = btoa(
         Array.from(bytes)
             .map((byte) => String.fromCharCode(byte))
@@ -228,7 +228,7 @@ export const getFieldImageForExport = async (): Promise<
     } catch (error) {
         // Still embed it, as before: the PDF export may be able to draw what the browser can't
         console.error("Couldn't decode the field image for export", error);
-        return { href, width: 0, height: 0, size };
+        return { href, width: 0, height: 0 };
     }
-    return { href, width: img.naturalWidth, height: img.naturalHeight, size };
+    return { href, width: img.naturalWidth, height: img.naturalHeight };
 };

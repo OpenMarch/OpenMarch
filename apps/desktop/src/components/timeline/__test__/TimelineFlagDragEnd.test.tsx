@@ -31,7 +31,6 @@ const renderWindow = () => {
                 kind: "range",
                 range: { startBeatIndex: 5, endBeatIndex: 9 },
             }}
-            selectedTarget={{ id: "marcher-1", type: "marcher" }}
             onSelectionChange={onSelectionChange}
         />,
     );

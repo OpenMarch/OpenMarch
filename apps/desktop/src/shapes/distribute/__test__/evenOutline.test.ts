@@ -13,7 +13,7 @@ import {
 } from "../../box/boxGeometry";
 import { withSpacing } from "../../editor/boxEdits";
 import { chipLayout } from "../../editor/chip";
-import { DEFAULT_ODD_GAP, savedDistributionOf } from "../distribution";
+import { DEFAULT_ODD_GAP } from "../distribution";
 import { shapeSteps } from "../../command/shapeSteps";
 import { withMode } from "../modes";
 import { acrossRange } from "../outline";
@@ -460,9 +460,6 @@ describe("an outline: both spacings are the designer's, held exactly (owner on #
             expect(Math.max(...ys) - Math.min(...ys)).toBeCloseTo(75, 9);
             expect(boxDistribution(q)).not.toHaveProperty("exact");
         }
-        expect(
-            savedDistributionOf(boxDistribution(withExact)),
-        ).not.toHaveProperty("exact");
     });
 
     describe("Even out", () => {

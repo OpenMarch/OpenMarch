@@ -102,6 +102,13 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
 )`),
     // Held marks (ADR 0001 amendment 2026-10-30)
     30: (db) => dropTables(db, ["timeline_held_marks"]),
+    // Prop color (ADR 0002 amendment, props in the 3D View)
+    // Triggers on `items` name the column; the migration service recreates every trigger
+    31: (db) => {
+        db.exec("PRAGMA legacy_alter_table = ON");
+        db.exec("ALTER TABLE `items` DROP COLUMN `color`");
+        db.exec("PRAGMA legacy_alter_table = OFF");
+    },
 };
 
 /**

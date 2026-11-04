@@ -1550,6 +1550,12 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                 onEdit: () => moveCommands.onEdit(trackId),
                 onRename: () => onRenameStart?.(trackId),
                 onDelete: () => moveCommands.onDelete(trackId),
+                ...(moveCommands.onSelectMarchers
+                    ? {
+                          onSelectMarchers: () =>
+                              moveCommands.onSelectMarchers!(trackId),
+                      }
+                    : {}),
                 ...(moveCommands.onSplit
                     ? { onSplit: () => moveCommands.onSplit!(trackId) }
                     : {}),
@@ -1579,7 +1585,7 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
     };
     const menuActions = moveMenu && {
         ...moveMenu,
-        // Edit move puts focus on the Move card (UI-14 review), so don't take it back either
+        // Edit move isolates the move; don't take focus back to the clip either
         onEdit: () => {
             keepFocus.current = true;
             moveMenu.onEdit();
@@ -2622,7 +2628,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
 });
 
 /**
- * The start flag on a read-only timeline (Visuals mode, performer-behavior.md section 7.1): the
+ * The start flag on a read-only timeline (Preview): the
  * same stem and pennant as `TimelineSelectionRange`'s flag, with no handles and no window. Play
  * starts here, so it shows though nothing on that timeline drags it.
  */

@@ -218,6 +218,13 @@
             "when": 1793384181922,
             "tag": "0030_fresh_shocker",
             "breakpoints": true
+        },
+        {
+            "idx": 31,
+            "version": "6",
+            "when": 1793799118939,
+            "tag": "0031_living_black_panther",
+            "breakpoints": true
         }
     ]
 }

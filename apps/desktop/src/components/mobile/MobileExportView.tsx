@@ -25,6 +25,7 @@ import { twMerge } from "tailwind-merge";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
+import PageLinesNote from "./PageLinesNote";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile, {
     computePlaceholderAudioDurationFromPages,
@@ -44,7 +45,6 @@ import {
 import {
     prepareBackgroundImageSyncResult,
     buildBackgroundImageFormData,
-    backgroundImagePng,
     type BackgroundImageSyncResult,
 } from "./utilities/backgroundImageSyncOnUpload";
 import {
@@ -73,6 +73,7 @@ export default function MobileExportView({
                     productionId={currentProduction.id}
                     currentProduction={currentProduction}
                 />
+                <PageLinesNote />
                 <RevisionsList
                     revisions={currentProduction.revisions}
                     activeRevisionId={currentProduction.active_revision_id}
@@ -232,15 +233,12 @@ export const SubmitRevisionForm = ({
         void (async () => {
             try {
                 const [localImage, fieldProperties] = await Promise.all([
-                    getFieldPropertiesImage("print"),
+                    getFieldPropertiesImage(),
                     getFieldProperties(),
                 ]);
                 if (cancelled) return;
-                // Mobile takes a PNG, made from the floor's original (D-23)
-                const png = await backgroundImagePng(localImage?.bytes ?? null);
-                if (cancelled) return;
                 const result = await prepareBackgroundImageSyncResult(
-                    png,
+                    localImage,
                     currentProduction.background_image_source_checksum ?? null,
                     fieldProperties.imageFillOrFit,
                     currentProduction.background_image_draw_type ?? null,

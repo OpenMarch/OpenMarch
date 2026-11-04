@@ -1,4 +1,3 @@
-import type { EmbedLibraryVersion } from "@/db-functions/showLibrary";
 import type { FieldProperties } from "@openmarch/core";
 import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
 
@@ -68,8 +67,6 @@ export interface PreviousDotsImportData {
     sourcePath: string;
     field: NewShowFieldData;
     fieldImage?: Uint8Array | null;
-    /** The previous show's floor Version, copied as it is (ADR 0002 D-23) */
-    fieldFloor?: EmbedLibraryVersion | null;
     performers: NewShowPerformersData;
     coordinates: PreviousDotsCoordinateData[];
     sectionAppearances: NewSectionAppearanceArgs[];

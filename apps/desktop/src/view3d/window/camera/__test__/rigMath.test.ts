@@ -11,7 +11,6 @@ import {
     defaultCameraId,
     easeInOutCubic,
     FLY_MS,
-    horizontalDistance,
     MAX_PAN,
     MAX_PHI,
     MAX_RADIUS,
@@ -305,10 +304,6 @@ describe("defaultCameraId", () => {
 });
 
 describe("helpers", () => {
-    it("measures horizontal distance", () => {
-        expect(horizontalDistance([3, 50, 4], [0, 0, 0])).toBe(5);
-    });
-
     it("maps 1–9 to bar indexes", () => {
         expect(cameraIndexForKey("1")).toBe(0);
         expect(cameraIndexForKey("9")).toBe(8);

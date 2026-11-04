@@ -22,7 +22,6 @@ import {
     Timeline,
     type TimelinePlayback,
     TimelineWaveformProvider,
-    type TimelineCreateTrackRequest,
     type TimelineMode,
     type TimelineSelection,
 } from "./Timeline";
@@ -144,35 +143,6 @@ function TimelineStory({ mode, scenario, state, theme }: TimelineStoryProps) {
         setPositionBeat(storyStartBeat(scenario));
     }, [data.timelines, scenario, state]);
 
-    const createTrack = ({ target, range }: TimelineCreateTrackRequest) => {
-        setTimelines((current) => [
-            ...current,
-            {
-                id: `created-${current.length}`,
-                targetId: target.id,
-                targetType: target.type,
-                label: target.type === "marcher" ? "M" : "SH",
-                color: "#967eff",
-                startBeatIndex: range.startBeatIndex,
-                endBeatIndex: range.endBeatIndex,
-                legs: [
-                    {
-                        id: `created-leg-${current.length}`,
-                        startBeatIndex: range.startBeatIndex,
-                        endBeatIndex: range.endBeatIndex,
-                        texture: "move",
-                    },
-                ],
-                activitySpans: [
-                    {
-                        ...range,
-                        active: true,
-                    },
-                ],
-            },
-        ]);
-    };
-
     return (
         <TimelineWaveformProvider waveform={data.waveform}>
             <div
@@ -190,18 +160,6 @@ function TimelineStory({ mode, scenario, state, theme }: TimelineStoryProps) {
                         playback={playback}
                         mode={mode}
                         selection={selection}
-                        selectedTarget={
-                            // A page box or a clip's timeline selected with no marcher target
-                            state === "track-selected" ||
-                            state === "page-selected"
-                                ? null
-                                : state === "activity"
-                                  ? { id: "marcher-1", type: "marcher" }
-                                  : {
-                                        id: "new-marcher",
-                                        type: "marcher",
-                                    }
-                        }
                         onSelectionChange={(next) => {
                             // UI-9: home seeks to 0, a range to its end
                             setSelection(next);
@@ -209,7 +167,6 @@ function TimelineStory({ mode, scenario, state, theme }: TimelineStoryProps) {
                             if (next?.kind === "range")
                                 setPositionBeat(next.range.endBeatIndex);
                         }}
-                        onCreateTrack={createTrack}
                         onTimelineRangeCommit={(change) => {
                             setTimelines((current) =>
                                 current.map((timeline) => {
@@ -302,7 +259,7 @@ type TimelineStoryObj = Story<TimelineStoryProps>;
 export const Expanded: TimelineStoryObj = {
     play: async ({ canvas }) => {
         await expect(
-            await canvas.findByText("Create Track"),
+            await canvas.findByTestId("timeline-viewport"),
         ).toBeInTheDocument();
         const end = canvas.getByRole("button", { name: "Selection end" });
         const endBounds = end.getBoundingClientRect();
@@ -327,9 +284,6 @@ export const Expanded: TimelineStoryObj = {
         const actions = canvas.getByTestId("timeline-selection-actions");
         await expect(actions).toHaveClass("flex-col");
         await expect(actions.style.transform).toBe("translateX(-100%)");
-        await expect(
-            canvas.getByRole("button", { name: "Create Track" }),
-        ).toBeInTheDocument();
         await expect(
             canvas.getByRole("button", { name: "Zoom in" }),
         ).toBeInTheDocument();
@@ -361,9 +315,6 @@ export const PageSelected: TimelineStoryObj = {
         await expect(
             canvas.queryByTestId("timeline-selection-count"),
         ).not.toBeInTheDocument();
-        await expect(
-            canvas.queryByRole("button", { name: "Create Track" }),
-        ).not.toBeInTheDocument();
     },
 };
 
@@ -376,9 +327,6 @@ export const TrackSelected: TimelineStoryObj = {
         // UI-13: from a page line the window's count is the playhead's, so the badge hides
         await expect(
             canvas.queryByTestId("timeline-selection-count"),
-        ).not.toBeInTheDocument();
-        await expect(
-            canvas.queryByRole("button", { name: "Create Track" }),
         ).not.toBeInTheDocument();
     },
 };
@@ -394,9 +342,6 @@ export const ActiveBeatsAcrossTracks: TimelineStoryObj = {
         await expect(
             canvas.queryByTestId("timeline-selection-count"),
         ).not.toBeInTheDocument();
-        await expect(
-            canvas.getByRole("button", { name: "Create Track" }),
-        ).toBeInTheDocument();
     },
 };
 
@@ -404,11 +349,11 @@ export const NoTracks: TimelineStoryObj = {
     name: "No Tracks",
     args: { state: "no-tracks" },
     play: async ({ canvas }) => {
-        const create = canvas.getByRole("button", { name: "Create Track" });
-        await userEvent.click(create);
-        await expect(canvas.getByLabelText(/M timeline/)).toBeInTheDocument();
         await expect(
-            canvas.getByRole("button", { name: "Create Track" }),
+            canvas.queryByLabelText(/timeline$/),
+        ).not.toBeInTheDocument();
+        await expect(
+            canvas.getByTestId("timeline-viewport"),
         ).toBeInTheDocument();
     },
 };
@@ -427,9 +372,6 @@ export const Collapsed: TimelineStoryObj = {
         await expect(
             canvas.queryByTestId("timeline-selection-count"),
         ).not.toBeInTheDocument();
-        await expect(
-            canvas.getByRole("button", { name: "Create Track" }),
-        ).toBeInTheDocument();
     },
 };
 

@@ -11,7 +11,7 @@ import type Beat from "@/global/classes/Beat";
 import type { DbConnection } from "@/db-functions/types";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { text } from "@/timeline/timelineText";
-import { createTrack, shiftTimeline } from "@/db-functions/timelineCommands";
+import { shiftTimeline } from "@/db-functions/timelineCommands";
 import { conToastError } from "@/utilities/utils";
 import { timelineErrorMessage } from "@/timeline/timelineErrorMessages";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
@@ -21,13 +21,11 @@ import { timelineShiftFor, useTimelineCommands } from "../useTimelineCommands";
 
 /**
  * The timeline's commands as the panel wires them (P8.9): a clip move shifts its spec timeline by
- * the dragged beats, no-ops write nothing, and a refusal is a toast with its error code. Create
- * Track isn't offered in timeline mode (P8.15, UI-9: Add selected marchers replaces it).
+ * the dragged beats, no-ops write nothing, and a refusal is a toast with its error code.
  */
 
 vi.mock("@/db-functions/timelineCommands", () => ({
     shiftTimeline: vi.fn(),
-    createTrack: vi.fn(),
 }));
 vi.mock("@/utilities/utils", () => ({ conToastError: vi.fn() }));
 
@@ -36,14 +34,6 @@ const DB = {} as DbConnection;
 afterEach(cleanup);
 beforeEach(() => {
     vi.mocked(shiftTimeline).mockReset().mockResolvedValue(null);
-    vi.mocked(createTrack)
-        .mockReset()
-        .mockResolvedValue({
-            timelineId: 1,
-            transitionId: 1,
-            assignmentIds: [1],
-            layer: 0,
-        });
     vi.mocked(conToastError).mockReset();
 });
 
@@ -95,11 +85,9 @@ const pointer = (target: Element, type: string, clientX: number) =>
 /** The panel's wiring, around the real `Timeline`. */
 function Harness({
     timelines,
-    selectedMarcherIds,
     initialSelection = null,
 }: {
     timelines: TimelineInput[];
-    selectedMarcherIds: ReadonlySet<number>;
     initialSelection?: TimelineSelection;
 }) {
     const [selection, setSelection] =
@@ -107,7 +95,6 @@ function Harness({
     const commands = useTimelineCommands({
         database: DB,
         timelines,
-        selectedMarcherIds,
     });
     return (
         <Timeline
@@ -120,7 +107,6 @@ function Harness({
             selection={selection}
             onSelectionChange={setSelection}
             onTimelineRangeCommit={commands.commitTimelineRange}
-            addSelectedMarchers={commands.addSelectedMarchers}
         />
     );
 }
@@ -130,10 +116,7 @@ const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 describe("the timeline's commands", () => {
     it("a clip move shifts its whole spec timeline by the dragged beats", () => {
         render(
-            <Harness
-                timelines={[input("A", 7, 3, 9), input("B", 7, 1, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
+            <Harness timelines={[input("A", 7, 3, 9), input("B", 7, 1, 9)]} />,
         );
         const clip = screen.getByLabelText(/^A timeline/);
         // 16 px per beat: a 2-beat drag right
@@ -149,12 +132,7 @@ describe("the timeline's commands", () => {
     });
 
     it("a clip dropped where it started writes nothing", () => {
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         const clip = screen.getByLabelText(/^A timeline/);
         pointer(clip, "pointerdown", 0);
         pointer(clip, "pointermove", 2);
@@ -171,12 +149,7 @@ describe("the timeline's commands", () => {
             }),
         );
         vi.mocked(shiftTimeline).mockRejectedValue(error);
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         const clip = screen.getByLabelText(/^A timeline/);
         pointer(clip, "pointerdown", 64);
         pointer(clip, "pointermove", 32);
@@ -194,12 +167,7 @@ describe("the timeline's commands", () => {
             "assignments overlap on layer 0",
         );
         vi.mocked(shiftTimeline).mockRejectedValue(error);
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         const clip = screen.getByLabelText(/^A timeline/);
         pointer(clip, "pointerdown", 64);
         pointer(clip, "pointermove", 32);
@@ -210,26 +178,6 @@ describe("the timeline's commands", () => {
             error,
         );
         expect(vi.mocked(conToastError).mock.calls[0]![0]).not.toMatch(/E-A3/);
-    });
-
-    it("offers no Create Track, even for one selected marcher on a range (P8.15)", () => {
-        for (const ids of [[5], [1, 2]]) {
-            render(
-                <Harness
-                    timelines={[]}
-                    selectedMarcherIds={new Set(ids)}
-                    initialSelection={{
-                        kind: "range",
-                        range: { startBeatIndex: 3, endBeatIndex: 7 },
-                    }}
-                />,
-            );
-            expect(
-                screen.queryByRole("button", { name: "Create Track" }),
-            ).toBeNull();
-            cleanup();
-        }
-        expect(createTrack).not.toHaveBeenCalled();
     });
 });
 
@@ -270,12 +218,7 @@ describe("a clip move and the selection (UI-9)", () => {
     it("moves a selection of the moved timeline's range with it", async () => {
         vi.mocked(shiftTimeline).mockResolvedValue({} as never);
         useTimelineSelectionStore.getState().selectRange(3, 9);
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         drag();
         await flush();
         expect(useTimelineSelectionStore.getState().selection).toEqual({
@@ -290,12 +233,7 @@ describe("a clip move and the selection (UI-9)", () => {
     it("leaves another selection, and a refused move, alone", async () => {
         vi.mocked(shiftTimeline).mockResolvedValue({} as never);
         useTimelineSelectionStore.getState().selectRange(9, 12);
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         drag();
         await flush();
         expect(useTimelineSelectionStore.getState().selection).toEqual({
@@ -309,12 +247,7 @@ describe("a clip move and the selection (UI-9)", () => {
             new TimelineWriteError("E-ARGS", "refused"),
         );
         useTimelineSelectionStore.getState().selectRange(3, 9);
-        render(
-            <Harness
-                timelines={[input("A", 7, 3, 9)]}
-                selectedMarcherIds={new Set()}
-            />,
-        );
+        render(<Harness timelines={[input("A", 7, 3, 9)]} />);
         drag();
         await flush();
         expect(useTimelineSelectionStore.getState().selection).toEqual({
@@ -324,16 +257,14 @@ describe("a clip move and the selection (UI-9)", () => {
         });
     });
 
-    it("has no Create Track command (P8.15)", () => {
+    it("exposes only commitTimelineRange", () => {
         const { result } = renderHook(() =>
             useTimelineCommands({
                 database: DB,
                 timelines: [],
-                selectedMarcherIds: new Set([4]),
             }),
         );
         expect(Object.keys(result.current).sort()).toEqual([
-            "addSelectedMarchers",
             "commitTimelineRange",
         ]);
     });

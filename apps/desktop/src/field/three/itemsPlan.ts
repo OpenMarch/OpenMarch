@@ -9,6 +9,12 @@ export const ITEM_STROKE_WIDTH = 1.5;
 export const SELECTED_ITEM_STROKE_WIDTH = 2.5;
 /** An Outline's fill: the theme's line color, faint enough for the field to show through. */
 export const ITEM_FILL_ALPHA = 0.25;
+/**
+ * A prop with its own color: filled with it, strong enough to read as that color on both themes'
+ * fields, still letting the grid show through. Its line stays the theme's, so a pale color keeps
+ * an edge on a light field.
+ */
+export const COLORED_ITEM_FILL_ALPHA = 0.6;
 /** A dimmed item (outside an isolated move), as dimmed marchers. */
 export const DIMMED_ITEM_ALPHA = 0.3;
 
@@ -29,8 +35,9 @@ const faded = (color: Rgba, alpha: number): Rgba => [
 ];
 
 /**
- * The items layer's plan: every Outline filled and outlined in the theme's
- * line color, a selected one outlined in the selection color.
+ * The items layer's plan: every Outline filled in its prop's color (or
+ * faintly in the theme's line color) and outlined in the theme's line color,
+ * a selected one outlined in the selection color.
  */
 export function planItems(
     outlines: readonly DrawnItemOutline[],
@@ -53,7 +60,9 @@ export function planItems(
         const isSelected = selected.has(outline.id);
         fills.push({
             points: outline.points,
-            color: faded(line, ITEM_FILL_ALPHA * alpha),
+            color: outline.color
+                ? rgbaOf(outline.color, COLORED_ITEM_FILL_ALPHA * alpha)
+                : faded(line, ITEM_FILL_ALPHA * alpha),
         });
         strokes.push({
             points: outline.closed

@@ -334,7 +334,6 @@ function Harness({
     const commands = useTimelineCommands({
         database: DB,
         timelines,
-        selectedMarcherIds: new Set(),
     });
     return (
         <Timeline

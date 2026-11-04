@@ -45,13 +45,9 @@
         "edit": {
             "noRedoAvailable": "No action to redo",
             "noUndoAvailable": "No action to undo",
-            "redidCueEdit": "Redid a cue edit (Visuals)",
-            "redidDrillEdit": "Redid a drill edit (Editor)",
             "redo": "Redo",
             "redoFailed": "The redo couldn't be applied, so nothing changed.",
             "undo": "Undo",
-            "undidCueEdit": "Undid a cue edit (Visuals)",
-            "undidDrillEdit": "Undid a drill edit (Editor)",
             "undoFailed": "The undo couldn't be applied, so nothing changed."
         },
         "file": {
@@ -165,15 +161,11 @@
             "openSettings": "Settings…",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
-            "runFieldBenchmark": "Run field benchmark",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate",
             "showShortcuts": "Keyboard shortcuts",
             "hideStartFlagPositions": "Hide start flag positions",
             "showStartFlagPositions": "Show start flag positions",
             "toggleStartFlagPositions": "Toggle start flag positions",
             "toggleStartFlagPositionsKeywords": "previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Switch workspace (Editor or Visuals)",
-            "toggleWorkspaceKeywords": "visuals editor workspace cues mode",
             "showNextPaths": "Show next page paths",
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
@@ -193,72 +185,6 @@
         "codegenBanner": "🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions",
         "releaseNotes": "Release notes",
         "updated": "OpenMarch updated to v{version}"
-    },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "All rights reserved",
-                "unknown": "Unknown license"
-            },
-            "modified": "{credit} (modified)",
-            "none": "Nothing in this show needs a credit.",
-            "shareNote": {
-                "badge": "Share note",
-                "detail": "Some items have an unknown license. You may not have the right to share them with this show.",
-                "export": "This show has items with an unknown license. You may not have the right to share them."
-            },
-            "title": "Credits",
-            "uncredited": "{count, plural, one {# more item is CC0 or built in and needs no credit.} other {# more items are CC0 or built in and need no credit.}}"
-        },
-        "show": {
-            "addFailed": "Couldn't add {name} to your Library.",
-            "added": "Added {name} to your Library.",
-            "addToLibrary": "Add to my Library",
-            "delete": {
-                "addFirst": "Add to my Library first",
-                "alsoUsedByCues": "{count, plural, =1 {A cue uses it too:} other {# cues use it too:}}",
-                "useLine": "{channel} · {who} · count {count}",
-                "cancel": "Cancel",
-                "channels": {
-                    "carry": "Carry",
-                    "silk": "Silk",
-                    "uniform": "Uniform"
-                },
-                "checking": "Checking what uses it…",
-                "confirm": "Your Library keeps its own copy. This can't be undone.",
-                "confirmNoCopy": "Your Library doesn't have a copy, so it will be gone for good. This can't be undone.",
-                "confirmUnknownCopy": "This can't be undone.",
-                "delete": "Delete",
-                "deleted": "Deleted {name} from this show.",
-                "failed": "Couldn't delete it.",
-                "inUseTitle": "{name} is in use",
-                "isFloor": "It's this show's floor, so it can't be deleted. Change the floor in Field settings → Image.",
-                "itemModel": "model",
-                "itemSlot": "{slot} artwork",
-                "keptForUndo": "{name} stays in this show while Undo can bring it back, and is removed when the show closes after that.",
-                "label": "Delete from this show",
-                "noReplacement": "This show has nothing else of this kind to replace it with. Import one first.",
-                "pinnedBy": "It's part of {names}, so it can't be deleted.",
-                "replaceAndDelete": "Replace and delete",
-                "replaced": "Replaced {name} with {replacement}.",
-                "replacedKeptForUndo": "Replaced {name} with {replacement}. {name} stays in this show while Undo can bring it back, and is removed when the show closes after that.",
-                "replaceWith": "Replace with…",
-                "targets": {
-                    "band": "Band",
-                    "set": "{count, plural, one {# performer} other {# performers}}",
-                    "tag": "A tag"
-                },
-                "title": "Delete {name} from this show?",
-                "usedByCues": "{count, plural, =1 {A cue uses it. Replace it to delete it:} other {# cues use it. Replace it in all of them to delete it:}}",
-                "usedByItems": "{count, plural, =1 {A prop uses it, so it can't be deleted:} other {# props use it, so it can't be deleted:}}"
-            },
-            "empty": "This show doesn't use any assets yet.",
-            "emptyHint": "Imports are copied into the show you have open.",
-            "title": "This show",
-            "updateDetails": "Its details changed in your Library.",
-            "updateVersion": "A newer version is in your Library."
-        },
-        "title": "Assets"
     },
     "audio": {
         "beats": {
@@ -370,7 +296,6 @@
     },
     "commandPalette": {
         "close": "Close",
-        "editsDrill": "Edits the drill — switch to Editor",
         "empty": "No matching commands.",
         "navigate": "Navigate",
         "placeholder": "Search commands…",
@@ -454,18 +379,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# cue moved to a later count} other {# cues moved to later counts}}",
-            "movedTo": "{count, plural, one {# cue moved to count {at}} other {# cues moved to count {at}}}",
-            "removed": "{count, plural, one {# cue removed} other {# cues removed}}"
-        },
-        "errors": {
-            "create": "Error creating cues",
-            "delete": "Error deleting cues",
-            "update": "Error updating cues"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -630,14 +543,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copied",
-            "copy": "Copy as Markdown",
-            "devBuild": "This is a development build. Only numbers from a production build count.",
-            "intro": "Plays, scrubs, zooms and pans the open show for a few seconds each and measures every frame. Keep this window in front and don't touch anything while it runs.",
-            "run": "Run",
-            "running": "Running: {kind}…",
-            "softwareGl": "Graphics run in software here, so these numbers are a lower bound.",
-            "title": "Field benchmark"
+            "running": "Running: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "equal spacings",
@@ -676,26 +582,17 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direction",
-            "sections": "Sections"
-        },
-        "comingSoon": "Coming soon",
-        "direction": "Field direction",
         "label": "Field display",
-        "sections": "Visible sections",
-        "comingSoonLabel": "{label}: Coming soon",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",
         "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
         "buttons": {
+            "importImage": "Import Image",
             "newXCheckpoint": "New X-Checkpoint",
             "newYCheckpoint": "New Y-Checkpoint",
-            "resetTheme": "Reset Theme to Default",
-            "uploadFloor": "Upload floor…",
-            "removeFloor": "Remove floor"
+            "resetTheme": "Reset Theme to Default"
         },
         "checkpoint": {
             "created": "{axis}-checkpoint at {steps} steps created",
@@ -793,8 +690,7 @@
         "messages": {
             "fieldRatio": "{ratio} or {decimal}",
             "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
-            "noFloor": "No floor",
-            "floorUnnamed": "Floor"
+            "refreshAfterImporting": "Refresh after importing [Ctrl + R]"
         },
         "options": {
             "fill": "Fill",
@@ -826,6 +722,7 @@
             "pathways": "Pathways"
         },
         "tooltips": {
+            "importImage": "Import an image to display on the field",
             "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained",
             "directorsLeft": "E.g. \"Side 1\", \"Audience Left\" or \"Stage Right\"",
             "directorsRight": "E.g. \"Side 2\", \"Audience Right\" or \"Stage Left\"",
@@ -843,8 +740,7 @@
             "stepsFromFrontToHomeLabelTop": "Number of steps from the front sideline to the inside of the home number (closer to the center of the field)",
             "stepSize": "The size of each step on the field in inches or centimeters",
             "stepSizeWarningThreshold": "Marchers whose step size exceeds this distance are flagged with a warning-colored path. Set to 0 to disable.",
-            "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used.",
-            "uploadFloor": "Import an image as this show's floor: its field image in 2D, exports and 3D"
+            "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used."
         },
         "units": {
             "inches": "in",
@@ -894,7 +790,6 @@
         "exitFile": "Exit File",
         "newFile": "New File",
         "openFile": "Open File",
-        "redo": "Redo",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "saveFile": "Save Copy",
         "saveFileCancel": "Cancel",
@@ -937,25 +832,11 @@
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
-                "holdHere": "These marchers have no position of their own here",
-                "movesOnThisPage": "Moves on this page",
-                "pagesShowFromHere": "{count, plural, =1 {Page {first} shows these marchers where this page leaves them} other {Pages {first}–{last} show these marchers where this page leaves them}}",
-                "pagesShowSomeFromHere": "{count, plural, =1 {Page {first} shows some of these marchers where this page leaves them} other {Pages {first}–{last} show some of these marchers where this page leaves them}}",
-                "setAsShown": "{defineAsShown}",
-                "setAsShownHint": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here}}",
-                "setAsShownHintEarlier": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here}}",
-                "someHoldHere": "Some of these marchers have no position of their own here",
-                "unsetHere": "{removeKeyframe}",
-                "unsetHereAndLaterHint": "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
-                "unsetHereAndLaterHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
-                "unsetHereHint": "Remove their keyframe on this count, so they go back to the keyframe before it. Later pages stay where they are",
-                "unsetHereHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they go back to the keyframe before it. Later pages stay where they are",
-                "unsetHereNone": "None of the selected marchers has a keyframe on this count"
+                "movesOnThisPage": "Moves on this page"
             },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}",
@@ -1018,18 +899,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Counts",
-                "delete": "Delete move",
-                "endHelp": "To change where they end up, drag marchers on the field at the move's end.",
-                "goToEnd": "Go to end",
-                "marchers": "{count, plural, one {# marcher} other {# marchers}}",
-                "name": "Name",
-                "nameLimit": "{max} characters at most.",
-                "paused": "Pause to delete a move.",
-                "selectMarchers": "Select them",
-                "split": "Split at playhead",
-                "splitHelp": "Put the playhead inside the move to split it there.",
-                "title": "Move"
+                "splitHelp": "Put the playhead inside the move to split it there."
             }
         },
         "title": "Inspector"
@@ -1095,7 +965,6 @@
                 "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
                 "createFailed": "Failed to create show",
                 "databaseNotReady": "Database is not ready. Complete the project step first.",
-                "fieldImageNotCopied": "Couldn't copy the previous show's field image",
                 "filePathRequired": "File path is required",
                 "importFailed": "Failed to import previous .dots file",
                 "saveFailed": "Failed to save show at {path}",
@@ -1180,360 +1049,6 @@
         "help": {
             "addYours": "Don't see your language? <link>Help us add it</link>",
             "madeWithAi": "This translation was made with AI, so some words may be wrong. <link>Help us check it</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Library",
-            "search": "Search by name",
-            "empty": "Your Library is empty.",
-            "emptyHint": "Use Import… to add models and artwork.",
-            "noMatches": "Nothing in the Library matches “{query}”.",
-            "loadFailed": "Couldn't load the Library ({code}).",
-            "groups": {
-                "silks": "Silks",
-                "floors": "Floors",
-                "props": "Props",
-                "equipment": "Equipment",
-                "uniforms": "Uniforms",
-                "other": "Other"
-            }
-        },
-        "templates": {
-            "menu": "Artwork templates",
-            "menuHint": "Full size, one file per click",
-            "groups": {
-                "silk": "Silk Cuts",
-                "floor": "Base floors",
-                "floorProp": "Floor props",
-                "prop": "Prop panels",
-                "uniform": "Uniform panels"
-            },
-            "withSag": "{name}, {sag} sag",
-            "saggingBottom": "{name}, sagging bottom",
-            "propFace": {
-                "top": "Top, {name}",
-                "front": "Front, {name}",
-                "back": "Back, {name}"
-            },
-            "download": "Download {name} as {format}",
-            "saved": "Saved {filename}",
-            "saveFailed": "Couldn't save the template",
-            "uniformPanel": {
-                "top": {
-                    "front": "Top, front",
-                    "back": "Top, back"
-                },
-                "bottoms": {
-                    "front": "Bottoms, front",
-                    "back": "Bottoms, back"
-                },
-                "overlay": {
-                    "front": "Overlay (cape), front",
-                    "back": "Overlay (cape), back"
-                }
-            }
-        },
-        "import": {
-            "entry": "Import…",
-            "library": "Library",
-            "title": "Import",
-            "back": "Back to the Library",
-            "picking": "Choose files in the dialog…",
-            "fileCount": "{count, plural, one {# file} other {# files}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "From the {kind} picker",
-            "fromSlot": "For a {surface} slot",
-            "pageN": "Page {n}",
-            "pageOf": "page {index} of {count}",
-            "showPage": "Show {label}",
-            "cancel": "Cancel",
-            "close": "Done",
-            "importMore": "Import more…",
-            "tryAgain": "Try again",
-            "chooseAgain": "Choose files again",
-            "cancelKeeps": "Pages already added stay in your Library if you cancel.",
-            "cancelled": "Cancelled. Anything already added stays in your Library.",
-            "clean": "Ready to add. Nothing needs your choice.",
-            "starterKit": "The OpenMarch Blender starter kit exports models that import cleanly.",
-            "groups": {
-                "cantImport": "Can't import",
-                "needsChoice": "Needs your choice",
-                "fixed": "Fixed for you",
-                "notes": "Notes"
-            },
-            "kind": {
-                "title": "What is it?",
-                "hint": "Required. Size range and triangle caps are checked after.",
-                "from": {
-                    "picker": "Set by the picker",
-                    "stamp": "From the starter kit stamp"
-                }
-            },
-            "kinds": {
-                "prop": "Prop",
-                "equipment": "Equipment",
-                "garment": "Garment",
-                "floorProp": "Floor prop",
-                "baseFloor": "Base floor"
-            },
-            "surfaces": {
-                "silk": "Silk",
-                "baseFloor": "Base floor",
-                "floorProp": "Floor prop",
-                "propSlot": "Prop",
-                "uniformPart": "Uniform"
-            },
-            "stages": {
-                "reading": "Reading the file…",
-                "validating": "Checking the file…",
-                "decoding": "Decoding…",
-                "checking": "Checking sizes and caps…",
-                "converting": "Converting…",
-                "writing": "Writing…",
-                "rendering-pdf": "Rendering PDF pages…",
-                "saving": "Adding to your Library…"
-            },
-            "refused": {
-                "unsupported": "Not a format OpenMarch imports. Use GLB or glTF for models, and PNG, JPG, SVG or PDF for artwork.",
-                "tooLarge": {
-                    "model": "Over the 200 MB limit for a model with its files.",
-                    "artwork": "Over the 300 MB limit for an artwork file."
-                }
-            },
-            "match": {
-                "kitTitle": "New version of {name}",
-                "filenameTitle": "Already in your Library as {name}",
-                "detail": "Shows that use it get “update available”; nothing changes until they accept.",
-                "builtInDetail": "{name} is built in, so this becomes your own copy.",
-                "newVersionOf": "New version of {name}",
-                "update": "Update {name}",
-                "copyOf": "Your copy of {name}",
-                "addNew": "Add as new"
-            },
-            "choices": {
-                "suggested": "suggested",
-                "units": {
-                    "title": "Units",
-                    "detail": "It measures {largest} at its largest as exported, outside the size range for its kind.",
-                    "none": "As exported",
-                    "cm": "Centimeters ({factor})",
-                    "in": "Inches ({factor})",
-                    "ft": "Feet ({factor})"
-                },
-                "rotate": {
-                    "title": "Rotate to Y-up",
-                    "detail": "Exported Z-up; it would lie on its side."
-                },
-                "simplify": {
-                    "title": "Simplify to {cap} triangles",
-                    "detail": "{triangles} triangles, over the {kind} cap of {cap}."
-                },
-                "before": "Before {triangles}",
-                "after": "After {triangles}",
-                "grip": {
-                    "title": "Set the grip",
-                    "detail": "No OM_grip_R in the file: a point a quarter of the way along its longest side is pre-set. Click the model to move it.",
-                    "misnamed": "Found {names}, which doesn’t match OM_grip_R. Pre-set to its longest side; click the model to move it.",
-                    "manual": "Set by your click on the model.",
-                    "pick": "Click a point on the model",
-                    "picking": "Clicking… (<keys></keys> to stop)"
-                },
-                "surface": {
-                    "title": "Artwork surface",
-                    "detail": "The file marks no surface for artwork. Pick the one artwork prints on, or none; hover one to see it on the model.",
-                    "none": "None",
-                    "unnamed": "Material {index}",
-                    "size": "About {width} × {height}",
-                    "noUVs": "no UVs, so artwork can’t map onto it"
-                }
-            },
-            "rows": {
-                "unreadable": "The file can’t be read",
-                "missingResource": "A file it needs is missing",
-                "externalUri": "It loads a file from the internet",
-                "resourceOutsideFolder": "It points at a file outside its folder",
-                "validatorErrors": "{count, plural, one {# glTF error} other {# glTF errors}}",
-                "requiredExtension": "Needs an extension OpenMarch can’t load",
-                "noGeometry": "There’s no geometry in it",
-                "overTriangleCap": "{triangles} triangles: over the limit of {limit}",
-                "overTriangleCapDetail": "More than 4× the {kind} cap of {cap}. Reduce it before exporting.",
-                "rigNotAllowed": "A {kind} can’t have a rig",
-                "garmentNotRigged": "A Garment needs the v4 rig",
-                "garmentJointsNotV4": "The rig isn’t the v4 skeleton",
-                "missingJoints": "Missing {names}",
-                "unexpectedJoints": "Extra {names}",
-                "garmentRestPoseMismatch": "The rig’s rest pose doesn’t match v4",
-                "garmentQuantized": "Skinned meshes are quantized",
-                "garmentTransformsNotApplied": "Transforms aren’t applied",
-                "garmentNoPartPaint": "No _PART paint: it would render as skin",
-                "garmentNoMedianFit": "No fit for the median body",
-                "garmentUnknownFit": "A fit names an unknown body type",
-                "texturesDownsized": "{count, plural, one {# texture} other {# textures}} downsized to {cap} px",
-                "dracoDecoded": "Draco compression decoded",
-                "meshOptimizerDecoded": "Mesh optimizer compression decoded",
-                "instancesExpanded": "Instances expanded",
-                "extensionsStripped": "Unused extensions removed",
-                "extrasStripped": "Unused extras removed",
-                "contentStripped": "Content OpenMarch doesn’t use removed",
-                "contentStrippedDetail": "Animations {animations} · cameras {cameras} · morph targets {morphTargets} · extra scenes {scenes}",
-                "influencesRenormalized": "Bone weights renormalized on {vertices} vertices",
-                "validatorWarnings": "{count, plural, one {# glTF warning} other {# glTF warnings}}",
-                "sizeOutOfRange": "{size} at its largest",
-                "sizeOutOfRangeDetail": "Outside the usual {min} to {max} for its kind. Check the units.",
-                "noStretchZones": "No stretch zones",
-                "noStretchZonesDetail": "It keeps its modeled size, or takes a uniform scale.",
-                "customPropertiesOff": "Looks like custom properties were off",
-                "customPropertiesOffDetail": "Re-export with the OpenMarch preset to keep grips and slots.",
-                "stillOverTriangleCap": "Still {triangles} triangles, over the cap of {cap}",
-                "slotWithoutUVs": "Artwork slot {slot} has no UVs",
-                "slotDropped": "Artwork slot {slot} was dropped",
-                "invalidOpenMarchData": "OpenMarch data on {where} was ignored",
-                "unknownStampKind": "The stamp names an unknown kind: {value}",
-                "missingFits": "Missing fits",
-                "duplicateFits": "More than one mesh has the same fit",
-                "wgiEquipmentUnderMinimum": "WGI: equipment under 24 in",
-                "wgiFloorOverMaximum": "WGI: floor over 78 × 106 ft"
-            },
-            "size": {
-                "title": "How big is it?",
-                "members": "{selected} of {count} {count, plural, one {page} other {pages}}",
-                "fromFile": "From file: {size}",
-                "width": "Width",
-                "height": "Height",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Aspect locked: artwork is never stretched",
-                "needed": "Choose a size: this file doesn’t say how big it prints.",
-                "printsOn": "Prints on",
-                "fitted": "Fitted to your image’s shape; the standard {surface} is {size}."
-            },
-            "details": {
-                "name": "Name",
-                "namesFromFiles": "Each file keeps its own name.",
-                "tags": "Tags, comma separated",
-                "toggle": "Author, license and source",
-                "unknown": "Unknown",
-                "author": "Author",
-                "license": "License",
-                "licensePlaceholder": "License, such as CC-BY-4.0",
-                "source": "Source URL",
-                "emptyIsUnknown": "Empty means Unknown, never free to share.",
-                "rights": "Only import artwork and models you have the rights to use."
-            },
-            "add": {
-                "one": "Add to Library",
-                "many": "Add {count} to Library",
-                "newVersion": "Add new version",
-                "cantImport": "Can't import"
-            },
-            "done": {
-                "added": "{count, plural, one {Added # item to your Library} other {Added # items to your Library}}",
-                "newVersion": "Added a new version of {name}",
-                "notImported": "Not imported"
-            },
-            "stage": {
-                "label": "Import preview · 3D View unchanged",
-                "loading": "Loading the preview…",
-                "empty": "Nothing to preview",
-                "needsKind": "Choose what it is to see the preview.",
-                "rejected": "Can't import, so there’s no preview.",
-                "previewFailed": "Couldn’t load the preview.",
-                "noArtwork": "No page to preview.",
-                "triangles": "{triangles} triangles",
-                "trianglesCap": "{triangles} triangles · cap {cap}",
-                "tall": "{height} tall",
-                "before": "Before",
-                "after": "After",
-                "vector": "vector",
-                "pixels": "{width} × {height} px",
-                "views": "Views",
-                "view": {
-                    "front": "Front",
-                    "side": "Side",
-                    "top": "Top"
-                },
-                "pickGrip": "Click a point on the model to set the grip · <keys></keys> to stop",
-                "surface": "Artwork surface: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Import models and artwork separately",
-                    "body": "Pick one model, or any number of artwork files, at a time."
-                },
-                "session-expired": {
-                    "title": "This import timed out",
-                    "body": "Imports close after 30 minutes without use. Choose the files again."
-                },
-                "unknown-file": {
-                    "title": "That file isn’t in this import",
-                    "body": "Choose the files again."
-                },
-                "too-large": {
-                    "title": "Too many files",
-                    "body": "Pick at most 50 files at a time."
-                },
-                "unreadable": {
-                    "title": "The file couldn’t be read",
-                    "body": "It may have moved, or another app may have it open."
-                },
-                "busy": {
-                    "title": "Another import step is still running",
-                    "body": "Wait for it to finish, then try again."
-                },
-                "timeout": {
-                    "title": "The importer took too long",
-                    "body": "Large or complex files can time out. Try again, or simplify the file before exporting."
-                },
-                "worker-crashed": {
-                    "title": "The importer stopped while reading the file",
-                    "body": "Your file wasn’t changed. Try again; if it happens again, the file may be damaged."
-                },
-                "pdf-unavailable": {
-                    "title": "PDF pages couldn’t be rendered",
-                    "body": "Try again. If it keeps happening, export the artwork as PNG or SVG."
-                },
-                "write-failed": {
-                    "title": "Couldn’t save to your Library",
-                    "body": "Check there’s free disk space, then try again."
-                },
-                "read-only": {
-                    "title": "That item can’t be changed",
-                    "body": "Built-in items are read-only. Add it as new instead."
-                },
-                "corrupt": {
-                    "title": "Your Library has a damaged entry",
-                    "body": "Try again. The rest of your Library is unaffected."
-                },
-                "cancelled": {
-                    "title": "Cancelled",
-                    "body": "Nothing more was imported."
-                },
-                "other": {
-                    "title": "Something went wrong",
-                    "body": "Try again."
-                }
-            },
-            "finishFailed": "Couldn't finish the import",
-            "copyIntoShowFailed": "Couldn't copy the import into the show"
-        },
-        "fileDialog": {
-            "importTitle": "Import",
-            "saveTemplateTitle": "Save template",
-            "models": "3D model (glb, gltf)",
-            "artwork": "Artwork (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Models and artwork",
-            "pngImage": "PNG image"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Save the Blender starter kit",
-            "saveFailed": "Couldn't save the Blender starter kit"
         }
     },
     "marchers": {
@@ -1728,6 +1243,9 @@
             "validatingAccess": "Validating On the Move access..."
         },
         "logoAlt": "OTM Logo",
+        "pageLines": {
+            "note": "The phone shows where marchers are at each page, so moves between pages appear as straight lines."
+        },
         "revision": {
             "audioSyncFailed": "Revision uploaded, but audio sync failed: {msg}",
             "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
@@ -1757,7 +1275,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Production background",
-                "drawFailed": "The background image couldn't be drawn",
                 "empty": "No background image",
                 "help": "The background image is automatically synced when you upload a new revision. To change it, change the background image in field editor and upload a new revision.",
                 "title": "Background image"
@@ -1891,6 +1408,9 @@
     "props": {
         "back": "Back",
         "close": "Close",
+        "color": "Color",
+        "colorMixed": "Mixed",
+        "colorNone": "None",
         "counts": "counts",
         "delete": "Delete prop",
         "depth": "Depth",
@@ -1935,6 +1455,7 @@
             "right": "Rolls out from the right"
         },
         "rotation": "Rotation",
+        "selectedCount": "{count, plural, one {# prop selected} other {# props selected}}",
         "show": "Show on the field",
         "showNames": "Show all names",
         "surface": {
@@ -2027,11 +1548,6 @@
         "field.labelSize.large": "Large",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Small",
-        "field.shapeFocus": "While shaping",
-        "field.shapeFocus.drawing": "Fade only while drawing",
-        "field.shapeFocus.drawing.description": "Marchers outside an open shape fade only while you draw it.",
-        "field.shapeFocus.rest": "Fade the rest",
-        "field.shapeFocus.rest.description": "Marchers outside an open shape fade for as long as it is open.",
         "field.stepSizeWarnings": "Step size warnings",
         "field.stepSizeWarnings.description": "Mark moves with steps too large to march, and always show their paths.",
         "general": "General",
@@ -2060,27 +1576,6 @@
         "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
         "mouse.zoomSensitivity": "Zoom sensitivity",
         "noResults": "No settings match.",
-        "plugins": "Plugins",
-        "plugins.community": "Community",
-        "plugins.description": "Add features made by the community.",
-        "plugins.install": "Install",
-        "plugins.installed": "Installed",
-        "plugins.installFailed": "Install Failed",
-        "plugins.installing": "Installing...",
-        "plugins.noCommunityPlugins": "No community plugins available.",
-        "plugins.noOfficialPlugins": "No official plugins available.",
-        "plugins.noPlugins": "No plugins installed.",
-        "plugins.official": "Official",
-        "plugins.refreshNotice": "Please <a>reload the app</a> to update plugins.",
-        "plugins.toast.installFailed": "Failed to install plugin {pluginName}",
-        "plugins.toast.installSuccess": "Plugin {pluginName} installed successfully!",
-        "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
-        "plugins.toast.uninstallSuccess": "Plugin {pluginName} removed successfully!",
-        "plugins.uninstall": "Uninstall",
-        "plugins.uninstalled": "Removed",
-        "plugins.uninstallFailed": "Removal Failed",
-        "plugins.uninstalling": "Removing...",
-        "plugins.version": "v{version}",
         "privacy": "Privacy",
         "privacy.analytics": "Share usage analytics",
         "privacy.analytics.description": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
@@ -2138,8 +1633,6 @@
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
         "view3d": "3D View",
         "view3d.description": "How the 3D View draws on this computer. Not saved in the show.",
-        "view3d.pauseWhenIdle": "Pause drawing when nothing moves",
-        "view3d.pauseWhenIdle.description": "Stops drawing while the show is paused and the camera is still.",
         "view3d.quality": "Quality",
         "view3d.quality.auto": "Automatic",
         "view3d.quality.auto.description": "Starts on High and switches to Low if the view stutters.",
@@ -2154,8 +1647,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.saveOnBattery": "Save power on battery",
-        "view3d.saveOnBattery.description": "On battery, draws at most 30 frames a second at standard resolution.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -2348,21 +1839,6 @@
                 "one": "{name} left the {shape, select, block {box} circle {circle} other {shape}}"
             },
             "selectWholeShape": "Select {shape, select, block {box} circle {circle} other {shape}}"
-        },
-        "save": {
-            "descriptionLabel": "Description of the saved shape (optional)",
-            "descriptionPlaceholder": "Description (optional)",
-            "ariaLabel": "Save this shape to your library",
-            "button": "Save",
-            "cancel": "Cancel",
-            "nameLabel": "Name of the saved shape",
-            "savedAs": "Saved as {name}",
-            "tip": "Save this shape to your library, starred",
-            "mixedIntervals": "Lines with mixed intervals can't be saved yet"
-        },
-        "saved": {
-            "copyFailed": "Couldn't copy the saved shape into the show",
-            "deleteFailed": "Couldn't delete the saved shape from the show"
         },
         "command": {
             "fill": "Fill: {modes}",
@@ -2620,37 +2096,6 @@
                 "spacing": "Spacing"
             }
         },
-        "library": {
-            "addNamed": "Add {name} to my Library",
-            "addTip": "Add to my Library, for every show",
-            "close": "Close",
-            "deleteNamed": "Delete {name}",
-            "deleteTip": "Delete this saved shape",
-            "dismiss": "Dismiss",
-            "draw": "Draw a {name}",
-            "full": "{max} shapes are starred, as many as the ring holds. Unstar one first to star {name}.",
-            "group": {
-                "basic": "Basic",
-                "saved": "Saved"
-            },
-            "intro": "Star a shape to keep it in the Shapes tab and the shape ring, up to {max}.",
-            "note": {
-                "apart": "{spacing} apart",
-                "modeApart": "{mode, select, outline {Outline} other {Spread}} {spacing} apart",
-                "apartStagger": "{spacing} apart, stagger {fraction}",
-                "apartStaggerLeft": "{spacing} apart, stagger {fraction} left",
-                "showOnly": "this show only",
-                "stagger": "stagger {fraction}",
-                "staggerLeft": "stagger {fraction} left"
-            },
-            "savedEmpty": "Save a shape from its ⋯ row or the inspector to keep it here, for every show.",
-            "savedNewer": "{count, plural, one {# saved shape needs} other {# saved shapes need}} a newer version of OpenMarch.",
-            "star": "Star",
-            "starNamed": "Star {name}",
-            "title": "Shapes",
-            "unstar": "Unstar",
-            "unstarNamed": "Unstar {name}"
-        },
         "spacing": {
             "empty": "Enter an interval in steps",
             "noGaps": "A run needs at least 1 gap",
@@ -2671,27 +2116,19 @@
             },
             "placeError": "Error placing the shape",
             "ring": {
-                "hint": "Click a shape, or anywhere else to close",
-                "starred": "Starred"
+                "hint": "Click a shape, or anywhere else to close"
             },
             "section": {
-                "box": "Box",
                 "title": "Shapes"
             },
             "selectMarchersFirst": "Select marchers first",
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Shape kinds",
-                "library": "Library",
-                "libraryTip": "Open the shape library, to star shapes",
                 "ringHintKeys": "Hold <keys></keys> on the field for the shape ring"
             }
         },
         "transform": {
-            "flipAcross": "Flip ↔",
-            "flipAcrossTip": "Flip side to side around the pivot",
-            "flipDeep": "Flip ↕",
-            "flipDeepTip": "Flip front to back around the pivot",
             "title": "Transform"
         },
         "validate": {
@@ -2726,32 +2163,7 @@
             "countAt": "{count} at {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "A Horn/Equipment cue doesn't fit what they carry",
-        "crewDistance": "{item}'s crew is away from it",
-        "crewDistanceDetail": "Out of reach: {who}",
-        "crewlessMove": "{item} moves without a crew",
-        "empty": "Nothing to check.",
-        "forWho": "For {who}",
-        "handConflict": "{item} isn't drawn",
-        "handConflictDetail": "{count, plural, =1 {{other} takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}} other {{other} take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}}}",
-        "handConflictByCarry": "A Carry cue takes {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
-        "handConflictWithCarry": "{other} and a Carry cue take {who}'s {hand, select, left {left hand} right {right hand} other {hands}}",
-        "performers": "{count, plural, one {# performer} other {# performers}}",
-        "pick": "Go to this count and select what it names",
-        "putDownDrift": "{item} put down away from its holder",
-        "putDownDriftDetail": "Its own move puts it there, not at {who}",
-        "shortHanded": "{item} is held with too few hands",
-        "shortHandedDetail": "{who}: {held} of {needed} hands",
-        "silkAspect": "A Silk cue's Artwork is fitted to a flag of another shape",
-        "snapToHolder": "Snap to holder",
-        "title": "Show checks",
-        "titleCount": "Show checks ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, at the start"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# cue targets this tag and will be removed} other {# cues target this tag and will be removed}}",
         "title": "Tags",
         "rename": "Rename tag",
         "namePlaceholder": "Enter tag name...",
@@ -2895,7 +2307,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
-        "masterVolume": "Master Volume",
         "moveDeleted": {
             "message": "Deleted {label}",
             "withPages": "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}"
@@ -2927,9 +2338,7 @@
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
             "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
             "setAsShownError": "Error setting marchers as shown",
-            "addSelected": "Add selected marchers",
-            "deletePage": "Delete page",
-            "addSelectedNone": "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+            "deletePage": "Delete page"
         },
         "terms": {
             "clearThisPage": "Clear this page",
@@ -2999,7 +2408,6 @@
             "label": "Compact timeline",
             "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
-        "volumeSlider": "Timeline volume slider",
         "zoomReset": "Reset timeline zoom",
         "playbackSpeed": {
             "current": "Playback speed: {speed}",
@@ -3024,7 +2432,6 @@
             "lockedNotMoved": "{count, plural, =1 {One marcher uses Expert moves on this page, so it wasn't moved. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so they weren't moved. Switch to Expert to edit them.}}",
             "switchToExpert": "Switch to Expert"
         },
-        "volume": "Timeline volume",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3217,6 +2624,7 @@
         },
         "moveMenu": {
             "edit": "Edit move",
+            "selectMarchers": "Select marchers",
             "rename": "Rename move…",
             "splitAtPlayhead": "Split at playhead",
             "delete": "Delete move",
@@ -3230,7 +2638,6 @@
             "range": "counts {from}–{to}",
             "length": "{count, plural, one {# count} other {# counts}}"
         },
-        "createTrack": "Create Track",
         "playheadChip": {
             "label": "Show the playhead",
             "text": "Playhead"
@@ -3360,7 +2767,8 @@
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...to next page positions",
-            "setMarcherPositionsAriaLabel": "Set marcher positions"
+            "setMarcherPositionsAriaLabel": "Set marcher positions",
+            "toPreviousPagePositions": "...to previous page positions"
         },
         "collisions": {
             "collisionsToolbar": "Collisions",
@@ -3474,17 +2882,11 @@
             "freeCamera": "Free view"
         },
         "readout": {
-            "camera": "Eye {eye} up · {distance} to center",
-            "checks": "{count, plural, one {# check} other {# checks}}",
             "count": "Count {count} of {total}",
             "noPages": "No pages",
             "page": "Page {page}",
             "pastEnd": "END +{count}",
             "showTime": "Show time"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D View — {showName}",
@@ -3521,32 +2923,7 @@
             "endZoneColor": "Color",
             "graphicsSection": "This computer",
             "graphicsHint": "Not saved in the show, so it can differ on each computer.",
-            "hornState": "Horn state",
-            "hornStateMode": {
-                "up": "Up",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Holds every horn and drum in one position for the whole show, to check the poses. Follow cues plays the Horn/Equipment cues, horns up where there are none.",
-            "guardEquipment": "Guard equipment",
-            "guardEquipmentMode": {
-                "flag6": "6 ft flag",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Puts one piece in every guard member's hands, to see it. Follow cues gives each section its own: flags the 6 ft flag, rifles the rifle.",
-            "stepOffFoot": "Step off",
-            "stepOffFootMode": {
-                "left": "Performer's left",
-                "right": "Performer's right"
-            },
-            "stepOffFootHint": "The performer's own foot, whichever way they face. Facing you, their left foot is on your right. Follow cues steps off on the show's saved foot ({foot, select, left {performer's left} other {performer's right}}), or the foot a Feet cue sets.",
             "keysSection": "Keyboard and mouse",
-            "previewSection": "Preview only",
-            "previewHint": "Not saved. These change only what this window draws; in the show, cues decide. Set them back to Follow cues to see the show.",
-            "followCues": "Follow cues",
             "uniforms": "Band uniform",
             "guardUniforms": "Guard uniform"
         },
@@ -3578,7 +2955,6 @@
             "title": "Cameras",
             "close": "Close cameras",
             "edit": "Edit cameras…",
-            "saveView": "Save current view",
             "none": "No cameras",
             "empty": "No cameras. Move the view where you want it, then add it.",
             "addView": "Add current view",
@@ -3601,68 +2977,7 @@
             "removed": "Removed “{name}”",
             "undo": "Undo",
             "replace": "Replace",
-            "replaceWithProfile": "Replace your cameras with “{name}”? Your current list isn't saved anywhere else.",
-            "profile": "Profile",
-            "source": {
-                "defaults": "Venue defaults",
-                "custom": "This show's cameras"
-            },
-            "edited": "Edited",
-            "myProfiles": "On this computer",
-            "saveAsProfile": "Save as camera profile…",
-            "saveAsProfileShort": "Save as profile…",
-            "manageProfiles": "Manage profiles…",
-            "notice": {
-                "defaults": "The venue's own cameras. Any change makes them this show's.",
-                "custom": "Saved with this show only.",
-                "profile": "Saved with this show and in your profile.",
-                "edited": "Changed since the profile was saved.",
-                "newer": "This profile was changed on this computer.",
-                "missing": "This show's profile isn't on this computer."
-            },
-            "updateProfile": "Update profile",
-            "saveAsNew": "Save as new…",
-            "useNewVersion": "Use the new version",
-            "addToMyProfiles": "Add to my profiles",
-            "profileName": "Profile name",
-            "save": "Save",
-            "defaultProfileName": "{venue} cameras",
-            "copyName": "{name} copy",
-            "profilesTitle": "Camera profiles",
-            "profilesHint": "Saved in your Library on this computer, for any show. A show keeps its own copy of the profile it uses.",
-            "noProfiles": "No camera profiles yet. Choose Save as camera profile… to make one.",
-            "cameraCount": "{count, plural, one {# camera} other {# cameras}}",
-            "use": "Use",
-            "otherVenue": "This profile is for another venue",
-            "deleteProfile": "Delete",
-            "deleteProfileConfirm": "Delete “{name}” from this computer? Shows that use it keep their copy.",
             "saveFailed": "Failed to save the 3D View cameras"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "5 ft pole silk",
-                "silk5_5ftPole": "5.5 ft pole silk",
-                "silk6ftPole": "6 ft pole silk",
-                "silk7ftPole": "7 ft pole silk",
-                "silkStandard": "Standard",
-                "silkOversized": "Oversized",
-                "silkTeardrop": "Teardrop",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Curved or super swing",
-                "silkOversizedSwing": "Oversized swing",
-                "silkArc": "Regular arc",
-                "silkNarrowArc": "Narrow arc",
-                "silkSuperArc": "Super arc",
-                "floorWgiMinimum": "WGI competition area, minimum",
-                "floorWgiMaximum": "WGI competition area, maximum",
-                "flatProp4x8ft": "4 x 8 ft sheet"
-            },
-            "kind": {
-                "silk": "Silk",
-                "floor": "Floor",
-                "flatProp": "Flat prop"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Failed to update the 3D View venue"
@@ -3835,263 +3150,9 @@
             "seconds": "seconds"
         },
         "unsavedChanges": "You have unsaved changes",
-        "warnPropMovesWithoutCrew": "Warn when a prop moves without a crew",
-        "warnPropMovesWithoutCrewHelp": "Show checks names a placed prop that moves with nobody on its crew.",
         "close": "Close",
         "saved": "Show settings saved",
         "updateFailed": "Failed to update workspace settings"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "Workspace",
-            "editor": "Editor",
-            "visuals": "Visuals",
-            "preview": "Preview"
-        },
-        "channels": {
-            "feet": "Feet",
-            "horn": "Horn",
-            "equipment": "Equipment",
-            "hornEquipment": "Horn / Equipment",
-            "facing": "Facing",
-            "body": "Body"
-        },
-        "inspector": {
-            "title": "Visuals",
-            "who": "Who",
-            "band": "Band",
-            "selection": "Selection",
-            "selectionCount": "{count, plural, =0 {Nothing selected} one {# selected} other {# selected}}",
-            "sections": "Sections",
-            "tags": "Tags",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Clear focus",
-            "focusHint": "Click a who to focus it. Everyone else dims on the field."
-        },
-        "band": {
-            "editing": "Editing: {channel} for {who}",
-            "focusFirst": "Visuals: focus a who in the inspector to edit its cues",
-            "selectFirst": "Select marchers on the field to make cues for the selection",
-            "marchers": "{count, plural, one {# marcher} other {# marchers}}",
-            "mixed": "Mixed",
-            "rowCue": "{who}: {value}",
-            "lane": "Cue lane",
-            "paste": "{count, plural, one {Paste # cue at the playhead} other {Paste # cues at the playhead}}",
-            "flagged": "{count, plural, one {# flagged cue} other {# flagged cues}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Delete",
-            "where": "{who}, {where}",
-            "count": "count {count}",
-            "start": "the start",
-            "value": "Value",
-            "notForEveryone": "{value} (doesn't fit everyone)",
-            "transition": "Transition (counts)",
-            "length": "Length (counts)",
-            "ripple": "Ripple",
-            "rippleSpan": "Ripple over (counts)",
-            "rippleOrder": "Order",
-            "order": {
-                "drill": "Drill order",
-                "left_right": "Left to right",
-                "right_left": "Right to left",
-                "down_form": "Down the form"
-            },
-            "notes": "Notes",
-            "facingWheel": "Facing angle",
-            "pickPoint": "Pick the point on the field",
-            "pickingPoint": "Click a point on the field (<keys></keys> cancels)"
-        },
-        "why": {
-            "title": "Why, at {where}",
-            "value": "{value}: {n} of {total}",
-            "setBy": "Set by <cue></cue>",
-            "setByTakenOver": "Set by <cue></cue> (taken over from {channel})",
-            "beat": "Beat <cues></cues>",
-            "cue": "{value} for {who} on {where}",
-            "default": {
-                "library": "The default",
-                "carry": "The default for what they carry",
-                "section_equipment": "The section's usual equipment",
-                "equipment_fallback": "The usual equipment for the section's name",
-                "marcher_carries": "What they usually carry",
-                "section_color": "The section's 2D color",
-                "band_uniform": "The band uniform",
-                "guard_uniform": "The guard uniform"
-            }
-        },
-        "settings": {
-            "pace": "Pace",
-            "moving": "Moving",
-            "onHolds": "On holds",
-            "stepOffFoot": "Step off",
-            "angle": "Horn angle",
-            "degrees": "Angle (degrees)",
-            "x": "Point x",
-            "y": "Point y",
-            "energy": "Energy"
-        },
-        "options": {
-            "single": "Single",
-            "half": "Half time",
-            "double": "Double time",
-            "straightLeg": "Straight leg",
-            "bentLeg": "Bent leg",
-            "highStep": "High step",
-            "stand": "Stand",
-            "markTime": "Mark time",
-            "highMarkTime": "High mark time",
-            "left": "Left",
-            "right": "Right",
-            "box": "The box",
-            "plus10": "10° above the box",
-            "low": "Low",
-            "medium": "Medium",
-            "high": "High"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Step",
-                    "label": "Step",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horns up",
-                    "label": "HU"
-                },
-                "down": {
-                    "name": "Horns down",
-                    "label": "HD"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Playing",
-                    "label": "Play"
-                },
-                "sticksIn": {
-                    "name": "Sticks in",
-                    "label": "In"
-                },
-                "sticksDown": {
-                    "name": "Sticks down",
-                    "label": "Down"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Flag set",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Flag port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Flag drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Flag single toss",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Rifle drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Rifle single toss",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Rifle double toss",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre set",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Sabre single toss",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Front",
-                    "label": "Front"
-                },
-                "back": {
-                    "name": "Back",
-                    "label": "Back"
-                },
-                "side1": {
-                    "name": "Side 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Side 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Direction of travel",
-                    "label": "Travel"
-                },
-                "angle": {
-                    "name": "Angle",
-                    "label": "Angle"
-                },
-                "point": {
-                    "name": "Toward a point",
-                    "label": "Point"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Kneel",
-                    "label": "Kneel"
-                },
-                "choreo": {
-                    "name": "Choreography",
-                    "label": "Choreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Clashes with another cue on the same count.",
-            "phrase_overlap": "Overlaps another phrase.",
-            "takeover_while_moving": "Takes over the feet while the dot moves.",
-            "fits_nobody": "Fits none of its marchers.",
-            "kind_not_allowed": "Is a phrase on a channel that takes states only.",
-            "transition_cut": "Its transition starts before the cue before it lands."
-        }
     },
     "canvas": {
         "zoom": {
@@ -4099,9 +3160,7 @@
             "in": "Zoom in",
             "out": "Zoom out",
             "reset": "Zoom {zoom}%, reset zoom and center",
-            "resetAndCenter": "Reset Zoom and Center",
-            "perspective": "Perspective",
-            "perspectiveComingSoon": "Perspective (coming soon)"
+            "resetAndCenter": "Reset Zoom and Center"
         }
     },
     "errorBoundary": {
@@ -4282,7 +3341,6 @@
         "help": {
             "title": "Help",
             "showShortcuts": "Keyboard Shortcuts",
-            "starterKit": "Get the Blender starter kit…",
             "website": "Website",
             "guides": "Docs/Guides"
         },
@@ -4293,7 +3351,6 @@
             "openMarchFile": "OpenMarch File",
             "allFiles": "All Files",
             "audioFile": "Audio File",
-            "zipArchive": "Zip archive",
             "video": "Video"
         },
         "newShow": {
@@ -4305,9 +3362,6 @@
         "openFailed": {
             "title": "Error Loading Database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Error snapping an item to its holder"
     },
     "coordinates": {
         "full": "{x} - {y}",
@@ -4347,5 +3401,10 @@
         "tiny": "Tiny",
         "toFive": "{steps, number} to 5",
         "undefined": "Undefined"
+    },
+    "workspace": {
+        "label": "Workspace",
+        "editor": "Editor",
+        "preview": "Preview"
     }
 }

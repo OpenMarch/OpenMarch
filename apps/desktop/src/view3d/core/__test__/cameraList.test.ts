@@ -3,15 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { CameraSeat } from "../types";
 import {
     cameraListSchema,
-    copyOfProfile,
     defaultCameraList,
     EMPTY_SHOW_CAMERAS,
     parseShowCamerasJson,
-    profileStatus,
-    replacingLosesWork,
     showCamerasSchema,
     withVenueCameras,
-    type CameraProfile,
     editCameraList,
     MAX_CAMERAS,
     newCameraId,
@@ -230,62 +226,22 @@ describe("the show's cameras", () => {
             ),
         ).toBeUndefined();
     });
-});
 
-describe("profileStatus", () => {
-    const list: SavedCamera[] = [{ kind: "kit", id: "pressBox" }];
-    const profile: CameraProfile = {
-        id: "p1",
-        name: "Judges",
-        kit: "hs",
-        cameras: list,
-        createdAt: "2026-10-01T00:00:00.000Z",
-        updatedAt: "2026-10-01T00:00:00.000Z",
-    };
-    const fromProfile = { list, profile: copyOfProfile(profile) };
-
-    it("tells defaults and the show's own list apart", () => {
-        expect(profileStatus(undefined, [profile])).toEqual({
-            kind: "defaults",
-        });
-        expect(profileStatus({ list }, [profile])).toEqual({ kind: "custom" });
-        expect(replacingLosesWork({ kind: "defaults" })).toBe(false);
-        expect(replacingLosesWork({ kind: "custom" })).toBe(true);
-    });
-
-    it("an unedited profile this computer has is safe to replace", () => {
-        const status = profileStatus(fromProfile, [profile]);
-        expect(status).toMatchObject({
-            kind: "profile",
-            edited: false,
-            local: "same",
-        });
-        expect(replacingLosesWork(status)).toBe(false);
-    });
-
-    it("notices edits", () => {
-        const status = profileStatus({ ...fromProfile, list: [] }, [profile]);
-        expect(status).toMatchObject({ edited: true, local: "same" });
-        expect(replacingLosesWork(status)).toBe(true);
-    });
-
-    it("notices a profile changed on this computer, but not a rename", () => {
-        const later = "2026-10-02T00:00:00.000Z";
+    it("drops the camera profile a fork build stored with a list", () => {
+        const list: SavedCamera[] = [{ kind: "kit", id: "pressBox" }];
+        const profile = {
+            id: "p1",
+            name: "Home stadium",
+            updatedAt: "2026-10-16T00:00:00.000Z",
+            cameras: list,
+        };
         expect(
-            profileStatus(fromProfile, [
-                { ...profile, updatedAt: later, cameras: [] },
-            ]),
-        ).toMatchObject({ local: "newer" });
-        expect(
-            profileStatus(fromProfile, [
-                { ...profile, updatedAt: later, name: "Renamed" },
-            ]),
-        ).toMatchObject({ local: "same" });
-    });
-
-    it("notices a profile this computer doesn't have", () => {
-        const status = profileStatus(fromProfile, []);
-        expect(status).toMatchObject({ local: "missing", localProfile: null });
-        expect(replacingLosesWork(status)).toBe(true);
+            parseShowCamerasJson(
+                JSON.stringify({
+                    version: 1,
+                    venues: { hs: { list, profile } },
+                }),
+            ),
+        ).toEqual({ version: 1, venues: { hs: { list } } });
     });
 });

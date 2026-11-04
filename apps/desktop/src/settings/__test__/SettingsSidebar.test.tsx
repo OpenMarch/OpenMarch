@@ -38,7 +38,6 @@ describe("SettingsSidebar", () => {
             "Timeline",
             "Field",
             "Keyboard shortcuts",
-            "Plugins",
             "Privacy",
             "Developer Settings",
             "Database",

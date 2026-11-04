@@ -104,7 +104,6 @@ import {
 } from "./editTargets";
 import { parseDegrees, scrubDistance } from "./scrub";
 import { ScrubNumber, type ScrubMove } from "./ScrubNumber";
-import { SaveShapeButton } from "../library/SaveShapeButton";
 import { LayoutMenu } from "./LayoutPicker";
 import { ReshuffleButton } from "./ReshuffleButton";
 import { EdgeToggle } from "./EdgeToggle";
@@ -161,7 +160,7 @@ const EDIT_WINDOW_MS = 1000;
  * flips, Shrink and Expand scale the shape keeping its proportions (#489, `ScaleButtons`).
  * Recalculate works out who goes where again by least travel (a Line in Keep order or Reverse: in
  * that order), which moving and turning keep until it's pressed, and shows its word only when it
- * would change something; Close up shows for a placed shape with holes (#392). Pathways and ☆ Save, which leave the shape as it is, come last
+ * would change something; Close up shows for a placed shape with holes (#392). Pathways, which leave the shape as it is, come last
  * before Place. Its controls show the app's tooltips (`RichTips`). Under the editor, a pill of
  * its own says how the shape is filled (#435): the mode menu (Grid, Outline, Spread, each with a
  * picture of this shape in it), then after a divider the box's layout menu in Grid, the leftover
@@ -547,14 +546,11 @@ function ShapeEditorBar({
                         canExpand={canExpand}
                         asIs={kind.asIs === true}
                     />
-                    {/* What doesn't change the shape itself, at the end (owner): its pathways
-                        and saving it to the library */}
+                    {/* What doesn't change the shape itself, at the end (owner): its pathways */}
                     <Divider />
                     <EndControls
                         live={live}
-                        stepPx={stepPx}
                         canPlace={target.place !== undefined}
-                        canSave={kind.asIs !== true}
                     />
                 </span>
             </div>
@@ -1163,19 +1159,14 @@ const TurnControls = memo(function TurnControls({
 });
 
 /**
- * The eye, Guides (#634), Snap, Pathways and ☆ Save (not for a group, which the library can't keep), then Place for a new
- * shape or Ungroup for a placed one
+ * The eye, Guides (#634), Snap and Pathways, then Place for a new shape or Ungroup for a placed one
  */
 const EndControls = memo(function EndControls({
     live: target,
-    stepPx,
     canPlace,
-    canSave,
 }: {
     live: ShapeEditTarget;
-    stepPx: number;
     canPlace: boolean;
-    canSave: boolean;
 }) {
     return (
         <>
@@ -1186,15 +1177,6 @@ const EndControls = memo(function EndControls({
                 <GuidesMenu target={target} />
                 <SnapButton />
                 {canPlace && <PathwaysButton />}
-                {canSave && (
-                    <SaveShapeButton
-                        shape={target}
-                        stepPx={stepPx}
-                        compact
-                        className="rounded-4 hover:text-accent flex min-h-24 min-w-24 items-center justify-center p-4"
-                        testId="shape-editor-save"
-                    />
-                )}
             </span>
             {canPlace && (
                 <>
@@ -1336,7 +1318,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         fieldWidth: Infinity,
         fieldHeight: Infinity,
     });
-    // Its own size (the Save form opens) and the field's, as they change
+    // Its own size and the field's, as they change
     useLayoutEffect(() => {
         const el = ref.current;
         const field = el?.offsetParent;

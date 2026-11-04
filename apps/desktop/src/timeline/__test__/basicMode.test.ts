@@ -6,7 +6,7 @@ import {
     TimelineNotReadyError,
 } from "../timelineCoordinateWrites";
 import { basicEditSpot } from "@/components/timeline/TimelineIsolationBar";
-import { describePages, withoutLockedMarchers } from "../basicLocks";
+import { withoutLockedMarchers } from "../basicLocks";
 
 /** Basic mode's edit routing (UI-19, docs/timeline/research/basic-mode). */
 
@@ -189,10 +189,5 @@ describe("withoutLockedMarchers", () => {
                 locks,
             ).locked,
         ).toEqual([]);
-    });
-
-    it("describes pages", () => {
-        expect(describePages(["4"])).toBe("Page 4");
-        expect(describePages(["4", "5", "9"])).toBe("Pages 4, 5 and 9");
     });
 });

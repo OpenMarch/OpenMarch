@@ -1,4 +1,4 @@
-import { Fragment, useId, useMemo, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useTranslate } from "@tolgee/react";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -15,16 +15,7 @@ import {
     resolverSpans,
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
-import {
-    followingPages,
-    marcherNamesText,
-    type KeepTranslate,
-    type MarcherNameOf,
-} from "@/timeline/timelineKeepLater";
-import { setAsShownOn } from "@/timeline/timelineSetAsShown";
-import { holdTerms } from "@/timeline/holdTerms";
 import { OWN_KEYS_WITH_SPACE } from "@/components/timeline/timelineHotkeys";
-import { usePageKeepStates } from "@/timeline/useKeepLaterPages";
 import {
     ShortcutTooltip,
     TransportTooltipProvider,
@@ -69,201 +60,18 @@ export function useSelectionHoldState(
 const LINK_CLASS =
     "text-body text-text decoration-text/40 hover:decoration-text focus-visible:ring-accent rounded-6 inline-flex items-center gap-4 leading-none underline underline-offset-4 focus-visible:ring focus-visible:outline-none";
 
-/** "·" between the line's parts */
-const DOT = (
-    <span className="text-text-subtitle leading-none" aria-hidden>
-        ·
-    </span>
-);
-
 /**
- * **Set as shown** after the line (UI-18 keep later pages; holds decision 12): a real button
- * styled as the line's link, with a tooltip that says what it changes.
+ * The marcher inspector's line for the selected marchers (UI-18), under Step Size: whether they
+ * move on the current page or hold there, with a link to the page they last moved on
+ * (defined-coordinates 08: readable, and visibly a link). Nothing where they don't agree.
  */
-function SetAsShownButton({
-    testId,
-    label,
-    tooltip,
-    onClick,
-}: {
-    testId: string;
-    label: string;
-    tooltip: string;
-    onClick: () => void;
-}) {
-    const descriptionId = useId();
-    return (
-        <>
-            <ShortcutTooltip label={tooltip} side="bottom" closeOnPress>
-                <button
-                    type="button"
-                    className={LINK_CLASS}
-                    // Enter and Space press it, not the app's shortcuts (pre-merge review)
-                    data-timeline-own-keys={OWN_KEYS_WITH_SPACE}
-                    data-testid={testId}
-                    aria-describedby={descriptionId}
-                    onClick={onClick}
-                >
-                    {label}
-                </button>
-            </ShortcutTooltip>
-            <span id={descriptionId} className="sr-only">
-                {tooltip}
-            </span>
-        </>
-    );
-}
-
-/**
- * The selection's keep state on the selected page's box (`PageKeepState`), and which later pages
- * follow it from there (`followingPages`).
- */
-function useSelectionKeepState(marcherIds: readonly number[]) {
-    const { pages } = useTimingObjects()!;
-    const { selectedPage } = useSelectedPage()!;
-    const states = usePageKeepStates(pages, marcherIds);
-    return useMemo(() => {
-        if (!selectedPage || states.length === 0)
-            return { here: null, following: null };
-        return {
-            here: states.find((s) => s.pageId === selectedPage.id) ?? null,
-            following: followingPages(
-                states,
-                selectedPage.id,
-                pages[0]?.id ?? null,
-            ),
-        };
-    }, [states, selectedPage, pages]);
-}
-
-/**
- * The quiet line under the hold line (UI-18 keep later pages): which later pages follow the
- * selected marchers from this page, so an edit here carries into them.
- */
-function FollowingPagesLine({
-    following,
-}: {
-    following: { names: string[]; all: boolean } | null;
-}) {
-    const { t } = useTranslate();
-    if (!following) return null;
-    const { names, all } = following;
-    const pages = {
-        count: names.length,
-        first: names[0]!,
-        last: names[names.length - 1]!,
-    };
-    const text = all
-        ? t("inspector.marcher.timeline.pagesShowFromHere", pages)
-        : t("inspector.marcher.timeline.pagesShowSomeFromHere", pages);
-    return (
-        <p
-            className="text-sub text-text-subtitle px-6 leading-none"
-            data-testid="timeline-following-pages"
-        >
-            {text}
-        </p>
-    );
-}
-
-function TimelineHoldLineContent({
+export default function TimelineHoldLine({
     marcherIds,
-    nameOf,
 }: {
     marcherIds: readonly number[];
-    nameOf?: MarcherNameOf;
 }) {
     const { t } = useTranslate();
     const state = useSelectionHoldState(marcherIds);
-    const { here, following } = useSelectionKeepState(marcherIds);
-    const selected = marcherIds.length;
-    const follows = here?.follows ?? [];
-    const page = here?.pageName ?? "";
-    const from = here?.from.length === 1 ? here.from[0]! : null;
-    const terms = holdTerms();
-    const translate: KeepTranslate = (key, defaultValue, params) =>
-        t(key, { defaultValue, ...params });
-    /**
-     * Whom a button changes, as arguments of its tooltip: `who` picks the sentence's wording, by
-     * name up to three ("OT1 and OT8", `named`), and when it's not everyone selected, how many of
-     * them ("OT1 (1 of the 2 selected)", `someNamed`; `some` without names); otherwise "these
-     * marchers"
-     */
-    const who = (ids: readonly number[]) => {
-        const names = marcherNamesText(ids, nameOf, translate) ?? "";
-        const all = ids.length === selected;
-        return {
-            who: all ? (names ? "named" : "all") : names ? "someNamed" : "some",
-            names,
-            count: ids.length,
-            total: selected,
-        };
-    };
-
-    const setButton = here && follows.length > 0 && (
-        <SetAsShownButton
-            testId="timeline-set-as-shown"
-            label={t("inspector.marcher.timeline.setAsShown", {
-                defaultValue: "{defineAsShown}",
-                ...terms,
-            })}
-            tooltip={
-                from
-                    ? t("inspector.marcher.timeline.setAsShownHint", {
-                          ...terms,
-                          ...who(follows),
-                          page,
-                          from,
-                      })
-                    : t("inspector.marcher.timeline.setAsShownHintEarlier", {
-                          ...terms,
-                          ...who(follows),
-                          page,
-                      })
-            }
-            // Writes directly rather than through the timelineDefineAsShown action: this line
-            // counts performers only (`performersOnly` in MarcherEditor), and the action takes the
-            // whole selection, items too
-            onClick={() => void setAsShownOn(here.box, follows)}
-        />
-    );
-    /** The buttons, a dot before each (or only between them, `leading` false) */
-    const buttons = (
-        leading: boolean,
-        ...parts: (ReactNode | false | null | undefined)[]
-    ) =>
-        parts
-            .filter(Boolean)
-            .flatMap((part, i) => [
-                ...(leading || i > 0
-                    ? [<Fragment key={`dot-${i}`}>{DOT}</Fragment>]
-                    : []),
-                <Fragment key={`part-${i}`}>{part}</Fragment>,
-            ]);
-    /**
-     * The line's words, then its buttons: after a dot for short words, on a line of their own
-     * under long ones (the "some of these marchers" wordings), so a wrap never starts with a dot
-     */
-    const textLine = (
-        text: string,
-        long: boolean,
-        ...parts: (ReactNode | false | null | undefined)[]
-    ) => (
-        <div className="text-body text-text flex flex-col gap-6 px-6 leading-none">
-            <p className="flex flex-wrap items-center gap-6 leading-none">
-                <span className="leading-none" data-testid="timeline-hold-line">
-                    {text}
-                </span>
-                {!long && buttons(true, ...parts)}
-            </p>
-            {long && parts.some(Boolean) && (
-                <p className="flex flex-wrap items-center gap-6 leading-none">
-                    {buttons(false, ...parts)}
-                </p>
-            )}
-        </div>
-    );
-
     let line: ReactNode = null;
     if (state?.kind === "movesHere")
         line = (
@@ -318,46 +126,13 @@ function TimelineHoldLineContent({
                         <ArrowRightIcon size={14} aria-hidden />
                     </button>
                 </ShortcutTooltip>
-                {buttons(true, setButton)}
             </p>
         );
-    } else if (follows.length > 0)
-        line = textLine(
-            follows.length === selected
-                ? t("inspector.marcher.timeline.holdHere", {
-                      defaultValue:
-                          "These marchers have no position of their own here",
-                      ...terms,
-                  })
-                : t("inspector.marcher.timeline.someHoldHere", {
-                      defaultValue:
-                          "Some of these marchers have no position of their own here",
-                      ...terms,
-                  }),
-            follows.length !== selected,
-            setButton,
-        );
-    if (!line && !following) return null;
+    }
+    if (!line) return null;
     return (
         <TransportTooltipProvider disableHoverableContent>
             {line}
-            <FollowingPagesLine following={following} />
         </TransportTooltipProvider>
     );
-}
-
-/**
- * The marcher inspector's line for the selected marchers (UI-18), under Step Size: whether they
- * move on the current page or hold there, with a link to the page they hold from
- * (defined-coordinates 08: readable, and visibly a link).
- */
-export default function TimelineHoldLine({
-    marcherIds,
-    nameOf,
-}: {
-    marcherIds: readonly number[];
-    /** The selected marchers' names, for the Set as shown tooltip */
-    nameOf?: MarcherNameOf;
-}) {
-    return <TimelineHoldLineContent marcherIds={marcherIds} nameOf={nameOf} />;
 }

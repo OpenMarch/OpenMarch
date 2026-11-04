@@ -452,7 +452,7 @@ export const isolatedTimeline = (
  * The move the window is on (UI-14): the isolated timeline (P may be anywhere inside it), else the
  * stored timeline the window resolves to, when it is off the page boxes. A page's own timeline
  * isn't a move (pages are moved with their flags), so it is `null` there, and with no timeline.
- * The Move card, the inspector's beat and **Select them**'s cleanup all go by this.
+ * The Move card, the inspector's beat and **Select marchers**'s cleanup all go by this.
  */
 export const windowMove = (
     state: Pick<

@@ -38,7 +38,8 @@ test.use({
     uiSettings: { showCollisions: true },
 });
 
-test("marchers dragged onto the same spot are a collision to review", async ({
+// Collisions are hidden for now (convergence P5): no Collisions tab, detection unmounted.
+test.skip("marchers dragged onto the same spot are a collision to review", async ({
     show,
 }) => {
     const { page } = show;

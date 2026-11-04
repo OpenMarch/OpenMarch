@@ -12,7 +12,7 @@ import {
     DatabaseBeat,
     createBeats,
     getBeats,
-    deleteBeatsCarryingCues,
+    deleteBeats,
     updateBeats,
     shiftBeats,
     flattenOrder,
@@ -20,7 +20,6 @@ import {
     NewBeatArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
-import { showCueCarryNotice } from "@/utilities/cueCarryNotice";
 import { itemGeometryKeys } from "./useItems";
 
 /**
@@ -108,16 +107,14 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
 
 export const deleteBeatsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: (beatIds: Set<number>) =>
-            deleteBeatsCarryingCues({ db, beatIds }),
-        onSuccess: ({ cues }) => {
+        mutationFn: (beatIds: Set<number>) => deleteBeats({ db, beatIds }),
+        onSuccess: () => {
             // Invalidate all beat queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
             // Item Outline changes on the deleted beats were carried to other beats
             void qc.invalidateQueries({ queryKey: itemGeometryKeys.all() });
-            showCueCarryNotice(cues, qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("audio.beats.delete.error"), e, variables);

@@ -26,7 +26,6 @@ import {
     CollapsedTimeline,
     ExpandedTimeline,
 } from "./TimelineVariants";
-import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineKeyframe,
@@ -53,14 +52,12 @@ import type {
     TimelineBasicPoint,
     TimelineAppendAtPlayhead,
     TimelineBeatRange,
-    TimelineCreateTrackRequest,
     TimelineNavigation,
     TimelinePageFlagMove,
     TimelineRangeChange,
     TimelineRangeCommitResult,
     TimelineSeekOptions,
     TimelineSelection,
-    TimelineTarget,
     TimelineViewportExtent,
     TimelineTrack,
     TimelineTrackTargetType,
@@ -162,7 +159,7 @@ const STOPPED_AT_START: TimelinePlayback = {
  */
 export interface TimelineProps {
     /**
-     * A timeline that only navigates (Visuals mode, performer-behavior.md section 7.1): no clips,
+     * A timeline that only navigates (Preview): no clips,
      * no window, no page flag or move edits, no ranges drawn. Page boxes and home still select
      * (`onSelectionChange`, to go to that page), and the ruler and the surface scrub. The editing
      * commands given are ignored
@@ -170,8 +167,6 @@ export interface TimelineProps {
     readonly readOnly?: boolean;
     /** A read-only timeline with no start flag drawn (Preview, which always plays on) */
     readonly hideStartFlag?: boolean;
-    /** Lanes drawn in place of the clip rows, under the waveform (Visuals mode's cue lanes) */
-    readonly band?: TimelineBand;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -194,10 +189,8 @@ export interface TimelineProps {
     readonly zoomFitted?: boolean;
     readonly onZoomFittedChange?: (fitted: boolean) => void;
     readonly selection?: TimelineSelection;
-    readonly selectedTarget?: TimelineTarget | null;
     readonly className?: string;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
-    readonly onCreateTrack?: (request: TimelineCreateTrackRequest) => void;
     readonly onTimelineRangeCommit?: (
         change: TimelineRangeChange,
     ) => TimelineRangeCommitResult;
@@ -208,8 +201,8 @@ export interface TimelineProps {
     /** A loop end dragged or stepped (UI-17), spec beats */
     readonly onLoopChange?: (loop: TimelineBeatRange) => void;
     /**
-     * The right-click menu's **Add selected marchers** (UI-9, P8.14), for a page box, a clip's
-     * timeline or a dragged range. It gets spec beats; the menu doesn't change the selection.
+     * The right-click menu's page-box entries (UI-9), passed through to the surface. Separate
+     * props (`onDeletePageFlag`, `setAsShown`, …) also fill this menu.
      */
     readonly addSelectedMarchers?: TimelineAddMarchersMenu;
     /**
@@ -442,7 +435,6 @@ const NO_TIMELINES: readonly TimelineInput[] = [];
 const READ_ONLY_EDITS = {
     readOnly: true,
     selection: undefined,
-    onCreateTrack: undefined,
     addSelectedMarchers: undefined,
     moveCommands: undefined,
     onAddPageFlag: undefined,
@@ -568,7 +560,7 @@ export function Timeline(props: TimelineProps) {
                   })
             : undefined,
     );
-    const { onTimelineRangeCommit, onCreateTrack } = props;
+    const { onTimelineRangeCommit } = props;
     // A clip move keeps its length: send the spec range shifted by the move, so a clip whose start
     // was hidden with beat 0 moves by exactly the beats it was dragged
     const commitRange = useLatestCallback(
@@ -639,20 +631,6 @@ export function Timeline(props: TimelineProps) {
             },
         };
     }, [clipResize, axis, timelines]);
-    const createTrack = useLatestCallback(
-        onCreateTrack
-            ? (request: TimelineCreateTrackRequest) =>
-                  onCreateTrack({
-                      target: request.target,
-                      range: {
-                          startBeatIndex: axis.toSpec(
-                              request.range.startBeatIndex,
-                          ),
-                          endBeatIndex: axis.toSpec(request.range.endBeatIndex),
-                      },
-                  })
-            : undefined,
-    );
     const {
         addSelectedMarchers,
         onDeletePageFlag,
@@ -664,7 +642,7 @@ export function Timeline(props: TimelineProps) {
         clearPage,
         pageMenuExtra,
     } = props;
-    // A clip's stored spec range, else the view range mapped back (as the menu's Add does)
+    // A clip's stored spec range, else the view range mapped back
     const specRangeOf = ({ range, trackId }: TimelineMenuTarget) => {
         const input =
             trackId === undefined
@@ -701,7 +679,7 @@ export function Timeline(props: TimelineProps) {
     // A clip sends its stored spec range: the view axis folds spec beats 0 and 1 together, so a
     // converted show's timeline over [0, N) would come back as [1, N). Page boxes and dragged
     // ranges start on a flag or a timed beat, which `toSpec` maps back exactly.
-    // The right-click menu has an entry for each command given: add, and delete on page boxes
+    // The right-click menu has an entry for each page-box command given
     const deleteFlag = useLatestCallback(
         onDeletePageFlag
             ? (pageId: string | number) => onDeletePageFlag(Number(pageId))
@@ -734,12 +712,6 @@ export function Timeline(props: TimelineProps) {
                 : undefined,
         [setSubset],
     );
-    const addMarchers = useLatestCallback(
-        addSelectedMarchers?.onAdd
-            ? (target: TimelineMenuTarget) =>
-                  addSelectedMarchers.onAdd?.(specRangeOf(target))
-            : undefined,
-    );
     const pageExtra = useLatestCallback(
         pageMenuExtra
             ? (pageId: string | number) => pageMenuExtra(Number(pageId))
@@ -755,14 +727,10 @@ export function Timeline(props: TimelineProps) {
         holdFromPrevious ||
         clearPage
     );
-    const disabledReason = addSelectedMarchers?.disabledReason;
-    const addMarchersMenu = useMemo<
-        TimelineAddMarchersMenu<TimelineMenuTarget> | undefined
-    >(
+    const addMarchersMenu = useMemo<TimelineAddMarchersMenu | undefined>(
         () =>
             hasMarchersMenu
                 ? {
-                      disabledReason,
                       ...(deleteFlag ? { onDeleteFlag: deleteFlag } : {}),
                       ...(deleteWithMoves
                           ? { onDeleteWithMoves: deleteWithMoves }
@@ -772,14 +740,11 @@ export function Timeline(props: TimelineProps) {
                       ...(clearPage ? { clearPage } : {}),
                       ...(subsetMenu ? { subset: subsetMenu } : {}),
                       ...(pageExtra ? { extraFor: pageExtra } : {}),
-                      onAdd: addMarchers,
                   }
                 : undefined,
         [
-            addMarchers,
             deleteFlag,
             deleteWithMoves,
-            disabledReason,
             hasMarchersMenu,
             setAsShown,
             holdFromPrevious,
@@ -820,6 +785,14 @@ export function Timeline(props: TimelineProps) {
               }
             : undefined,
     );
+    const selectMoveMarchers = useLatestCallback(
+        moveCommands?.onSelectMarchers
+            ? (trackId: string | number) => {
+                  const id = storedIdOf(trackId);
+                  if (id !== null) moveCommands.onSelectMarchers!(id);
+              }
+            : undefined,
+    );
     // UI-27: Split at playhead, by stored id too; its reason is read as the menu opens
     const splitMove = useLatestCallback(
         moveCommands?.onSplit
@@ -857,6 +830,9 @@ export function Timeline(props: TimelineProps) {
                       onEdit: editMove,
                       onDelete: deleteMove,
                       onRename: renameMove,
+                      ...(selectMoveMarchers
+                          ? { onSelectMarchers: selectMoveMarchers }
+                          : {}),
                       ...(splitMove ? { onSplit: splitMove } : {}),
                       ...(splitMoveReason
                           ? { splitDisabledReason: splitMoveReason }
@@ -869,6 +845,7 @@ export function Timeline(props: TimelineProps) {
             editMove,
             moveDisabledReason,
             renameMove,
+            selectMoveMarchers,
             splitMove,
             splitMoveReason,
             moveExtraFor,
@@ -1002,7 +979,6 @@ export function Timeline(props: TimelineProps) {
         isPlaying: playback.isPlaying,
         pixelsPerBeat,
         selection,
-        selectedTarget: props.selectedTarget,
         className: props.className,
         onSeek: seekToBeat,
         onPlayingChange: useLatestCallback(playback.onPlayingChange),
@@ -1014,7 +990,6 @@ export function Timeline(props: TimelineProps) {
         zoomFitted: props.zoomFitted,
         onZoomFittedChange: useLatestCallback(props.onZoomFittedChange),
         onSelectionChange: changeSelection,
-        onCreateTrack: createTrack,
         addSelectedMarchers: addMarchersMenu,
         moveCommands: trackMoveCommands,
         clipPeel: trackPeel,
@@ -1048,7 +1023,7 @@ export function Timeline(props: TimelineProps) {
         expertMarks: props.expertMarks,
     };
 
-    // Read-only (Visuals mode): no window and no edits; page boxes still select, to go to their page
+    // Read-only (Preview): no window and no edits; page boxes still select, to go to their page
     // Its start flag is still drawn, where Play starts from
     const shownProps = readOnly
         ? {
@@ -1057,9 +1032,8 @@ export function Timeline(props: TimelineProps) {
               startFlagBeat: props.hideStartFlag
                   ? undefined
                   : readOnlyStartFlag(selection),
-              band: props.band,
           }
-        : { ...commonProps, band: props.band };
+        : commonProps;
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />
@@ -1074,7 +1048,6 @@ export type {
     TimelineActivitySpan,
     TimelineAppendAtPlayhead,
     TimelineBeatRange,
-    TimelineCreateTrackRequest,
     TimelineSeekGesture,
     TimelineSeekOptions,
     TimelineSelection,

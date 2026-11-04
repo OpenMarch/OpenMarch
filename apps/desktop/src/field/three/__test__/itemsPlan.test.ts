@@ -4,6 +4,7 @@ import { DEFAULT_FIELD_THEME } from "@openmarch/core";
 import type { DrawnItemOutline } from "../fieldItems";
 import {
     DIMMED_ITEM_ALPHA,
+    COLORED_ITEM_FILL_ALPHA,
     ITEM_FILL_ALPHA,
     ITEM_STROKE_WIDTH,
     planItems,
@@ -11,8 +12,13 @@ import {
 } from "../itemsPlan";
 import { SELECTION_RGBA01 } from "../selectionRing";
 
-const square = (id: number, closed = true): DrawnItemOutline => ({
+const square = (
+    id: number,
+    closed = true,
+    color: DrawnItemOutline["color"] = null,
+): DrawnItemOutline => ({
     id,
+    color,
     points: [
         { x: 0, y: 0 },
         { x: 10, y: 0 },
@@ -51,6 +57,31 @@ describe("planItems", () => {
         expect(stroke.points).toHaveLength(5);
         expect(stroke.points.at(-1)).toEqual(stroke.points[0]);
         expect(stroke.width).toBe(ITEM_STROKE_WIDTH);
+    });
+
+    it("fills a colored prop with its color and keeps the theme's line", () => {
+        const red = { r: 220, g: 38, b: 38, a: 1 };
+        const plan = planItems([square(1, true, red)], options);
+        const [r, g, b, a] = plan.fills[0].color;
+        expect([r, g, b]).toEqual([220 / 255, 38 / 255, 38 / 255]);
+        expect(a).toBeCloseTo(COLORED_ITEM_FILL_ALPHA);
+        const line = DEFAULT_FIELD_THEME.primaryStroke;
+        expect(plan.strokes[0].color.slice(0, 3)).toEqual([
+            line.r / 255,
+            line.g / 255,
+            line.b / 255,
+        ]);
+    });
+
+    it("dims a colored prop like the others", () => {
+        const red = { r: 220, g: 38, b: 38, a: 1 };
+        const plan = planItems([square(1, true, red)], {
+            ...options,
+            isDimmed: () => true,
+        });
+        expect(plan.fills[0].color[3]).toBeCloseTo(
+            COLORED_ITEM_FILL_ALPHA * DIMMED_ITEM_ALPHA,
+        );
     });
 
     it("leaves an open freehand line open", () => {

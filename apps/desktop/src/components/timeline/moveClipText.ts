@@ -19,7 +19,7 @@ type StoredRange = {
  *   beats. The clip adds ", selected" itself.
  * - **Description:** why a clip is dashed where it is, "Overridden by Move 4 on Page 3, counts
  *   1–4", from `overriddenBy` (the other timeline whose spans take every member there). A page's
- *   own timeline is named "Page 4's move". The same text goes to the Move card, by stored id.
+ *   own timeline is named "Page 4's move".
  */
 export function describeMoveClips<T extends TimelineInput>({
     clips,

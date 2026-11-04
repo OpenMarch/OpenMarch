@@ -8,7 +8,6 @@ import {
     HandPointingIcon,
     KeyboardIcon,
     PaletteIcon,
-    PuzzlePieceIcon,
     ShieldCheckIcon,
     WaveformIcon,
     WrenchIcon,
@@ -24,7 +23,6 @@ import TimelineSettings from "@/components/launchpage/settings/TimelineSettings"
 import View3dSettings from "@/components/launchpage/settings/View3dSettings";
 import InputSettings from "@/components/launchpage/settings/InputSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
-import PluginsContents from "@/components/launchpage/settings/plugins/Plugins";
 import PrivacySettings from "@/components/launchpage/settings/PrivacySettings";
 import DeveloperSettings from "@/components/launchpage/settings/DeveloperSettings";
 import DatabaseRepairSettings from "@/components/launchpage/settings/DatabaseRepairSettings";
@@ -39,7 +37,6 @@ export type SettingsSectionId =
     | "field"
     | "view3d"
     | "shortcuts"
-    | "plugins"
     | "privacy"
     | "developer"
     | "database";
@@ -144,7 +141,6 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.field.labelSize",
             "settings.field.labelPosition",
             "settings.field.stepSizeWarnings",
-            "settings.field.shapeFocus",
         ],
     },
     {
@@ -153,12 +149,7 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         Icon: CubeIcon,
         Component: View3dSettings,
         descriptionKey: "settings.view3d.description",
-        searchKeys: [
-            "settings.view3d.quality",
-            "settings.view3d.resolution",
-            "settings.view3d.pauseWhenIdle",
-            "settings.view3d.saveOnBattery",
-        ],
+        searchKeys: ["settings.view3d.quality", "settings.view3d.resolution"],
     },
     {
         id: "shortcuts",
@@ -176,18 +167,6 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
                     ),
                 ),
             ),
-        ],
-    },
-    {
-        id: "plugins",
-        labelKey: "settings.plugins",
-        Icon: PuzzlePieceIcon,
-        Component: PluginsContents,
-        descriptionKey: "settings.plugins.description",
-        searchKeys: [
-            "settings.plugins.installed",
-            "settings.plugins.official",
-            "settings.plugins.community",
         ],
     },
     {
@@ -219,9 +198,8 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
     },
 ];
 
-/** Sections for things the web build doesn't have: plugins, analytics, Tolgee tools, file repair. */
+/** Sections for things the web build doesn't have: analytics, Tolgee tools, file repair. */
 const WEB_HIDDEN_SECTIONS: ReadonlySet<string> = new Set([
-    "plugins",
     "privacy",
     "developer",
     "database",

@@ -58,9 +58,7 @@ describe("timeline stories", () => {
         expect(
             screen.queryByTestId("timeline-selection-count"),
         ).not.toBeInTheDocument();
-        expect(
-            screen.getByRole("button", { name: "Create Track" }),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("timeline-viewport")).toBeInTheDocument();
         // UI-17: Play reads Stop while playing
         fireEvent.click(
             screen.getByRole("button", {

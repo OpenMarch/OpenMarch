@@ -2,7 +2,6 @@ import { useMemo, useRef } from "react";
 import { create } from "zustand";
 import type { FieldModeDrawing } from "@/field/editor/fieldEditor";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { isVisualsView, useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import { useBoxSelectionStore } from "../placed/boxSelectionStore";
 import {
@@ -117,22 +116,17 @@ export interface ShapeSight {
     /** The open shape's moment is somewhere else (#416) */
     readonly away: boolean;
     readonly playing: boolean;
-    readonly visuals: boolean;
     readonly preview: boolean;
 }
 
 /**
  * Whether a shape is edited and in sight: an open shape, or else a selected placed one, while the
- * Editor shows and the show is still. Playing, Visuals and Preview put either out of sight, and an
+ * Editor shows and the show is still. Playing and Preview put either out of sight, and an
  * open shape is also out of sight away from its moment (#416). The one rule for the field and the
  * field test API, so the two can't drift.
  */
 export const isShapeInSight = (s: ShapeSight): boolean =>
-    (s.open || s.placed) &&
-    !s.playing &&
-    !s.visuals &&
-    !s.preview &&
-    !(s.open && s.away);
+    (s.open || s.placed) && !s.playing && !s.preview && !(s.open && s.away);
 
 /**
  * Whether the field hides the shape's marchers, spots and walks now: held or latched, with a shape
@@ -146,7 +140,6 @@ export function useMarchersHidden(): boolean {
         placed: useBoxSelectionStore((s) => s.selected !== null),
         away: useShapeAway(),
         playing: useTimelineSelectionStore((s) => s.playback !== null),
-        visuals: useIsVisualsView(),
         preview: usePreviewModeStore((s) => s.isPreview),
     });
     return hiding && inSight;
@@ -160,7 +153,6 @@ export const marchersHiddenNow = (): boolean =>
         placed: useBoxSelectionStore.getState().selected !== null,
         away: isShapeAway(),
         playing: useTimelineSelectionStore.getState().playback !== null,
-        visuals: isVisualsView(),
         preview: usePreviewModeStore.getState().isPreview,
     });
 

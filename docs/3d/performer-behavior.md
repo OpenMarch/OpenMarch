@@ -2,7 +2,11 @@
 
 <!-- cspell:words retargeting Choreo recompiles rebakes rebaked rebake playhead lerp lerps texel texels -->
 
-- Status: draft for owner review
+- Status: draft for owner review. Convergence (2026-11-03): the compiler
+  shipped and the 3D View plays its show defaults (mark time while the band
+  moves, else stand; face the front; horns up). Cue storage, Visuals mode
+  (section 7) and item placement are parked on branch
+  `archive/pre-convergence`; the sections about them describe that branch.
 - Date: 2026-10-10
 - Decision record: [ADR 0004](../adr/0004-performer-cues.md) (proposed)
 - Builds on: `timeline-try-2` (ADR 0001, the timeline motion model) and

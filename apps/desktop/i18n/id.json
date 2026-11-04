@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Tidak ada tindakan untuk diulangi",
             "noUndoAvailable": "Tidak ada tindakan untuk diurungkan",
-            "redidCueEdit": "Pengeditan cue diulangi (Visual)",
-            "redidDrillEdit": "Pengeditan drill diulangi (Editor)",
             "redo": "Ulangi",
             "redoFailed": "Tindakan tidak dapat diulangi, jadi tidak ada yang berubah.",
             "undo": "Urungkan",
-            "undidCueEdit": "Pengeditan cue diurungkan (Visual)",
-            "undidDrillEdit": "Pengeditan drill diurungkan (Editor)",
             "undoFailed": "Tindakan tidak dapat diurungkan, jadi tidak ada yang berubah."
         },
         "file": {
@@ -151,15 +147,11 @@
             "openSettings": "Pengaturan…",
             "openView3d": "Buka Tampilan 3D",
             "openView3dKeywords": "3d tiga dimensi stadion venue tempat jendela three dimensional stadium window",
-            "runFieldBenchmark": "Jalankan benchmark lapangan",
-            "runFieldBenchmarkKeywords": "performa kinerja fps kecepatan tes uji frame rate laju bingkai performance speed test",
             "showShortcuts": "Pintasan keyboard",
             "hideStartFlagPositions": "Sembunyikan posisi penanda awal",
             "showStartFlagPositions": "Tampilkan posisi penanda awal",
             "toggleStartFlagPositions": "Alihkan posisi penanda awal",
             "toggleStartFlagPositionsKeywords": "jalur sebelumnya titik posisi pemain sebelumnya asal tahan intip kunci previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Ganti ruang kerja (Editor atau Visual)",
-            "toggleWorkspaceKeywords": "visual editor ruang kerja cue mode visuals workspace cues",
             "showNextPaths": "Tampilkan jalur halaman berikutnya",
             "toggleNextPaths": "Alihkan jalur halaman berikutnya",
             "togglePreview": "Pratinjau pertunjukan",
@@ -179,72 +171,6 @@
         "codegenBanner": "🎭 MODE PLAYWRIGHT CODEGEN - Merekam tindakan pengujian",
         "releaseNotes": "Catatan rilis",
         "updated": "OpenMarch diperbarui ke v{version}"
-    },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Hak cipta dilindungi",
-                "unknown": "Lisensi tidak diketahui"
-            },
-            "modified": "{credit} (dimodifikasi)",
-            "none": "Tidak ada item dalam pertunjukan ini yang memerlukan kredit.",
-            "shareNote": {
-                "badge": "Catatan berbagi",
-                "detail": "Beberapa item memiliki lisensi yang tidak diketahui. Anda mungkin tidak berhak membagikannya bersama pertunjukan ini.",
-                "export": "Pertunjukan ini memiliki item dengan lisensi yang tidak diketahui. Anda mungkin tidak berhak membagikannya."
-            },
-            "title": "Kredit",
-            "uncredited": "{count, plural, other {# item lainnya berlisensi CC0 atau bawaan dan tidak memerlukan kredit.}}"
-        },
-        "show": {
-            "addFailed": "Tidak dapat menambahkan {name} ke Pustaka Anda.",
-            "added": "{name} ditambahkan ke Pustaka Anda.",
-            "addToLibrary": "Tambahkan ke Pustaka saya",
-            "delete": {
-                "addFirst": "Tambahkan ke Pustaka saya dulu",
-                "alsoUsedByCues": "{count, plural, =1 {Satu cue juga menggunakannya:} other {# cue juga menggunakannya:}}",
-                "useLine": "{channel} · {who} · hitungan {count}",
-                "cancel": "Batal",
-                "channels": {
-                    "carry": "Pegangan",
-                    "silk": "Kain bendera",
-                    "uniform": "Seragam"
-                },
-                "checking": "Memeriksa penggunaannya…",
-                "confirm": "Pustaka Anda menyimpan salinannya sendiri. Tindakan ini tidak dapat diurungkan.",
-                "confirmNoCopy": "Pustaka Anda tidak memiliki salinannya, jadi item ini akan hilang selamanya. Tindakan ini tidak dapat diurungkan.",
-                "confirmUnknownCopy": "Tindakan ini tidak dapat diurungkan.",
-                "delete": "Hapus",
-                "deleted": "{name} dihapus dari pertunjukan ini.",
-                "failed": "Tidak dapat menghapusnya.",
-                "inUseTitle": "{name} sedang digunakan",
-                "isFloor": "Item ini adalah lantai pertunjukan ini, jadi tidak dapat dihapus. Ubah lantai di Pengaturan lapangan → Gambar.",
-                "itemModel": "model",
-                "itemSlot": "gambar {slot}",
-                "keptForUndo": "{name} tetap ada di pertunjukan ini selama masih dapat dikembalikan dengan Urungkan, lalu dihapus saat pertunjukan ditutup setelahnya.",
-                "label": "Hapus dari pertunjukan ini",
-                "noReplacement": "Pertunjukan ini tidak memiliki item lain yang sejenis untuk menggantikannya. Impor satu terlebih dahulu.",
-                "pinnedBy": "Item ini bagian dari {names}, jadi tidak dapat dihapus.",
-                "replaceAndDelete": "Ganti dan hapus",
-                "replaced": "{name} diganti dengan {replacement}.",
-                "replacedKeptForUndo": "{name} diganti dengan {replacement}. {name} tetap ada di pertunjukan ini selama masih dapat dikembalikan dengan Urungkan, lalu dihapus saat pertunjukan ditutup setelahnya.",
-                "replaceWith": "Ganti dengan…",
-                "targets": {
-                    "band": "Band",
-                    "set": "{count, plural, other {# pemain}}",
-                    "tag": "Sebuah tag"
-                },
-                "title": "Hapus {name} dari pertunjukan ini?",
-                "usedByCues": "{count, plural, =1 {Satu cue menggunakannya. Ganti untuk menghapusnya:} other {# cue menggunakannya. Ganti di semuanya untuk menghapusnya:}}",
-                "usedByItems": "{count, plural, =1 {Satu properti menggunakannya, jadi tidak dapat dihapus:} other {# properti menggunakannya, jadi tidak dapat dihapus:}}"
-            },
-            "empty": "Pertunjukan ini belum menggunakan aset apa pun.",
-            "emptyHint": "Item yang diimpor disalin ke pertunjukan yang sedang terbuka.",
-            "title": "Pertunjukan ini",
-            "updateDetails": "Detailnya berubah di Pustaka Anda.",
-            "updateVersion": "Ada versi yang lebih baru di Pustaka Anda."
-        },
-        "title": "Aset"
     },
     "audio": {
         "beats": {
@@ -356,7 +282,6 @@
     },
     "commandPalette": {
         "close": "Tutup",
-        "editsDrill": "Mengedit drill — beralih ke Editor",
         "empty": "Tidak ada perintah yang cocok.",
         "navigate": "Navigasi",
         "placeholder": "Cari perintah…",
@@ -440,18 +365,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {# cue dipindahkan ke hitungan yang lebih akhir}}",
-            "movedTo": "{count, plural, other {# cue dipindahkan ke hitungan {at}}}",
-            "removed": "{count, plural, other {# cue dihapus}}"
-        },
-        "errors": {
-            "create": "Gagal membuat cue",
-            "delete": "Gagal menghapus cue",
-            "update": "Gagal memperbarui cue"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -616,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Disalin",
-            "copy": "Salin sebagai Markdown",
-            "devBuild": "Ini adalah build pengembangan. Hanya angka dari build produksi yang berlaku.",
-            "intro": "Memutar, menggulir linimasa, memperbesar/memperkecil, dan menggeser tampilan pertunjukan yang terbuka, masing-masing selama beberapa detik, lalu mengukur setiap frame. Biarkan jendela ini tetap di depan dan jangan menyentuh apa pun selama pengujian berjalan.",
-            "run": "Jalankan",
-            "running": "Menjalankan: {kind}…",
-            "softwareGl": "Grafis di sini dijalankan oleh perangkat lunak, jadi angka ini merupakan batas bawah.",
-            "title": "Benchmark lapangan"
+            "running": "Menjalankan: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "jarak sama",
@@ -662,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Arah",
-            "sections": "Seksi"
-        },
-        "comingSoon": "Segera hadir",
-        "direction": "Arah lapangan",
         "label": "Tampilan lapangan",
-        "sections": "Seksi yang ditampilkan",
-        "comingSoonLabel": "{label}: Segera hadir",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -880,7 +778,6 @@
         "exitFile": "Tutup file",
         "newFile": "File baru",
         "openFile": "Buka file",
-        "redo": "Ulangi",
         "saveCopyDialogDescription": "OpenMarch otomatis menyimpan perubahan Anda ke file saat ini. Gunakan fungsi ini jika Anda ingin membuat salinan lengkap dari file saat ini.",
         "saveFile": "Simpan salinan",
         "saveFileCancel": "Batal",
@@ -923,18 +820,11 @@
             "stepSizeWarning": "Ukuran langkah melebihi ambang batas",
             "swapMarchers": "Tukar posisi pemain",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Lompat ke Halaman {page}, tempat pemain-pemain ini terakhir bergerak",
                 "goToStart": "Lompat ke awal",
                 "holdFrom": "Diam sejak Halaman {page}",
                 "holdFromStart": "Diam sejak awal",
-                "holdHere": "Pemain-pemain ini diam di sini",
-                "movesOnThisPage": "Bergerak di halaman ini",
-                "someHoldHere": "Sebagian pemain ini diam di sini",
-                "unsetHere": "Hapus keyframe",
-                "unsetHereHint": "Hapus keyframe mereka pada hitungan ini agar mereka mengikuti posisi sebelumnya. Posisi di halaman berikutnya tidak berubah",
-                "unsetHereHintSome": "Hapus keyframe pada hitungan ini untuk {count} dari {total} pemain terpilih yang memilikinya, agar mereka mengikuti posisi sebelumnya. Posisi di halaman berikutnya tidak berubah",
-                "unsetHereNone": "Tidak ada pemain terpilih yang memiliki keyframe pada hitungan ini"
+                "movesOnThisPage": "Bergerak di halaman ini"
             },
             "title": "{count} pemain",
             "titleSingle": "Pemain {drillNumber}",
@@ -997,18 +887,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Hitungan",
-                "delete": "Hapus gerakan",
-                "endHelp": "Untuk mengubah posisi akhir pemain, seret pemain di lapangan pada akhir gerakan.",
-                "goToEnd": "Lompat ke akhir",
-                "marchers": "{count, plural, other {# pemain}}",
-                "name": "Nama",
-                "nameLimit": "Maksimal {max} karakter.",
-                "paused": "Jeda pemutaran untuk menghapus gerakan.",
-                "selectMarchers": "Pilih pemainnya",
-                "split": "Bagi di playhead",
-                "splitHelp": "Letakkan playhead di dalam gerakan untuk membaginya di titik itu.",
-                "title": "Gerakan"
+                "splitHelp": "Letakkan playhead di dalam gerakan untuk membaginya di titik itu."
             }
         },
         "title": "Inspektor"
@@ -1074,7 +953,6 @@
                 "audioNotSaved": "Audio mungkin tidak tersimpan. Audio dapat ditambahkan nanti di editor.",
                 "createFailed": "Gagal membuat pertunjukan",
                 "databaseNotReady": "Database belum siap. Selesaikan langkah proyek terlebih dahulu.",
-                "fieldImageNotCopied": "Tidak dapat menyalin gambar lapangan dari pertunjukan sebelumnya",
                 "filePathRequired": "Jalur file wajib diisi",
                 "importFailed": "Gagal mengimpor file .dots sebelumnya",
                 "saveFailed": "Gagal menyimpan pertunjukan di {path}",
@@ -1159,360 +1037,6 @@
         "help": {
             "addYours": "Bahasa Anda tidak ada? <link>Bantu kami menambahkannya</link>",
             "madeWithAi": "Terjemahan ini dibuat dengan AI, jadi beberapa kata mungkin salah. <link>Bantu kami memeriksanya</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Pustaka",
-            "search": "Cari berdasarkan nama",
-            "empty": "Pustaka Anda masih kosong.",
-            "emptyHint": "Gunakan Impor… untuk menambahkan model dan artwork.",
-            "noMatches": "Tidak ada item di Pustaka yang cocok dengan “{query}”.",
-            "loadFailed": "Tidak dapat memuat Pustaka ({code}).",
-            "groups": {
-                "silks": "Silk",
-                "floors": "Lantai",
-                "props": "Properti",
-                "equipment": "Perlengkapan",
-                "uniforms": "Seragam",
-                "other": "Lainnya"
-            }
-        },
-        "templates": {
-            "menu": "Template artwork",
-            "menuHint": "Ukuran penuh, satu file per klik",
-            "groups": {
-                "silk": "Potongan silk",
-                "floor": "Lantai dasar",
-                "floorProp": "Properti lantai",
-                "prop": "Panel properti",
-                "uniform": "Panel seragam"
-            },
-            "withSag": "{name}, melengkung {sag}",
-            "saggingBottom": "{name}, bagian bawah melengkung",
-            "propFace": {
-                "top": "Atas, {name}",
-                "front": "Depan, {name}",
-                "back": "Belakang, {name}"
-            },
-            "download": "Unduh {name} sebagai {format}",
-            "saved": "{filename} disimpan",
-            "saveFailed": "Tidak dapat menyimpan template",
-            "uniformPanel": {
-                "top": {
-                    "front": "Atasan, depan",
-                    "back": "Atasan, belakang"
-                },
-                "bottoms": {
-                    "front": "Bawahan, depan",
-                    "back": "Bawahan, belakang"
-                },
-                "overlay": {
-                    "front": "Lapisan luar (jubah), depan",
-                    "back": "Lapisan luar (jubah), belakang"
-                }
-            }
-        },
-        "import": {
-            "entry": "Impor…",
-            "library": "Pustaka",
-            "title": "Impor",
-            "back": "Kembali ke Pustaka",
-            "picking": "Pilih file di jendela dialog…",
-            "fileCount": "{count, plural, other {# file}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Dari pemilih {kind}",
-            "fromSlot": "Untuk slot {surface}",
-            "pageN": "Halaman {n}",
-            "pageOf": "halaman {index} dari {count}",
-            "showPage": "Tampilkan {label}",
-            "cancel": "Batal",
-            "close": "Selesai",
-            "importMore": "Impor lagi…",
-            "tryAgain": "Coba lagi",
-            "chooseAgain": "Pilih file lagi",
-            "cancelKeeps": "Halaman yang sudah ditambahkan tetap ada di Pustaka jika impor dibatalkan.",
-            "cancelled": "Dibatalkan. Item yang sudah ditambahkan tetap ada di Pustaka.",
-            "clean": "Siap ditambahkan. Tidak ada yang perlu dipilih.",
-            "starterKit": "Starter kit Blender OpenMarch mengekspor model yang dapat diimpor tanpa masalah.",
-            "groups": {
-                "cantImport": "Tidak dapat diimpor",
-                "needsChoice": "Perlu pilihan Anda",
-                "fixed": "Diperbaiki otomatis",
-                "notes": "Catatan"
-            },
-            "kind": {
-                "title": "Apa jenisnya?",
-                "hint": "Wajib. Rentang ukuran dan batas segitiga diperiksa setelahnya.",
-                "from": {
-                    "picker": "Ditetapkan oleh pemilih",
-                    "stamp": "Dari stempel starter kit"
-                }
-            },
-            "kinds": {
-                "prop": "Properti",
-                "equipment": "Peralatan",
-                "garment": "Pakaian",
-                "floorProp": "Properti lantai",
-                "baseFloor": "Lantai dasar"
-            },
-            "surfaces": {
-                "silk": "Kain bendera",
-                "baseFloor": "Lantai dasar",
-                "floorProp": "Properti lantai",
-                "propSlot": "Properti",
-                "uniformPart": "Seragam"
-            },
-            "stages": {
-                "reading": "Membaca file…",
-                "validating": "Memeriksa file…",
-                "decoding": "Mendekode…",
-                "checking": "Memeriksa ukuran dan batas…",
-                "converting": "Mengonversi…",
-                "writing": "Menulis…",
-                "rendering-pdf": "Merender halaman PDF…",
-                "saving": "Menambahkan ke Pustaka Anda…"
-            },
-            "refused": {
-                "unsupported": "Format ini tidak dapat diimpor oleh OpenMarch. Gunakan GLB atau glTF untuk model, dan PNG, JPG, SVG, atau PDF untuk artwork.",
-                "tooLarge": {
-                    "model": "Melebihi batas 200 MB untuk model beserta file pendukungnya.",
-                    "artwork": "Melebihi batas 300 MB untuk file artwork."
-                }
-            },
-            "match": {
-                "kitTitle": "Versi baru {name}",
-                "filenameTitle": "Sudah ada di Pustaka Anda sebagai {name}",
-                "detail": "Pertunjukan yang menggunakannya akan menampilkan “pembaruan tersedia”; tidak ada yang berubah sampai pembaruan diterima.",
-                "builtInDetail": "{name} adalah item bawaan, jadi ini akan menjadi salinan Anda sendiri.",
-                "newVersionOf": "Versi baru {name}",
-                "update": "Perbarui {name}",
-                "copyOf": "Salinan {name} milik Anda",
-                "addNew": "Tambahkan sebagai baru"
-            },
-            "choices": {
-                "suggested": "disarankan",
-                "units": {
-                    "title": "Satuan",
-                    "detail": "Ukuran terbesarnya {largest} saat diekspor, di luar rentang ukuran untuk jenisnya.",
-                    "none": "Sesuai ekspor",
-                    "cm": "Sentimeter ({factor})",
-                    "in": "Inci ({factor})",
-                    "ft": "Kaki ({factor})"
-                },
-                "rotate": {
-                    "title": "Putar ke Y-atas",
-                    "detail": "Diekspor dengan Z ke atas; model akan tampak rebah miring."
-                },
-                "simplify": {
-                    "title": "Sederhanakan menjadi {cap} segitiga",
-                    "detail": "{triangles} segitiga, melebihi batas {cap} untuk {kind}."
-                },
-                "before": "Sebelum {triangles}",
-                "after": "Sesudah {triangles}",
-                "grip": {
-                    "title": "Atur pegangan",
-                    "detail": "Tidak ada OM_grip_R di file: titik pada seperempat panjang sisi terpanjangnya sudah ditetapkan. Klik model untuk memindahkannya.",
-                    "misnamed": "Ditemukan {names}, yang tidak cocok dengan OM_grip_R. Ditetapkan pada sisi terpanjangnya; klik model untuk memindahkannya.",
-                    "manual": "Ditetapkan dengan klik Anda pada model.",
-                    "pick": "Klik titik pada model",
-                    "picking": "Mengklik… (<keys></keys> untuk berhenti)"
-                },
-                "surface": {
-                    "title": "Permukaan artwork",
-                    "detail": "File tidak menandai permukaan untuk artwork. Pilih permukaan tempat artwork dicetak, atau tidak ada; arahkan kursor ke salah satunya untuk melihatnya pada model.",
-                    "none": "Tidak ada",
-                    "unnamed": "Material {index}",
-                    "size": "Sekitar {width} × {height}",
-                    "noUVs": "tidak ada UV, jadi artwork tidak dapat dipetakan ke permukaan ini"
-                }
-            },
-            "rows": {
-                "unreadable": "File tidak dapat dibaca",
-                "missingResource": "File yang diperlukan tidak ada",
-                "externalUri": "Model memuat file dari internet",
-                "resourceOutsideFolder": "Model merujuk ke file di luar foldernya",
-                "validatorErrors": "{count, plural, other {# kesalahan glTF}}",
-                "requiredExtension": "Memerlukan ekstensi yang tidak dapat dimuat OpenMarch",
-                "noGeometry": "Tidak ada geometri di dalamnya",
-                "overTriangleCap": "{triangles} segitiga: melebihi batas {limit}",
-                "overTriangleCapDetail": "Lebih dari 4× batas {cap} untuk {kind}. Kurangi sebelum mengekspor.",
-                "rigNotAllowed": "{kind} tidak boleh memiliki rig",
-                "garmentNotRigged": "Pakaian memerlukan rig v4",
-                "garmentJointsNotV4": "Rig ini bukan kerangka v4",
-                "missingJoints": "Kurang: {names}",
-                "unexpectedJoints": "Berlebih: {names}",
-                "garmentRestPoseMismatch": "Rest pose rig tidak cocok dengan v4",
-                "garmentQuantized": "Skinned mesh dikuantisasi",
-                "garmentTransformsNotApplied": "Transformasi belum diterapkan",
-                "garmentNoPartPaint": "Tidak ada lapisan cat _PART: akan dirender sebagai kulit",
-                "garmentNoMedianFit": "Tidak ada fit untuk tubuh median",
-                "garmentUnknownFit": "Ada fit yang menyebut tipe tubuh tidak dikenal",
-                "texturesDownsized": "{count, plural, other {# tekstur}} diperkecil menjadi {cap} px",
-                "dracoDecoded": "Kompresi Draco didekode",
-                "meshOptimizerDecoded": "Kompresi mesh optimizer didekode",
-                "instancesExpanded": "Instance dijadikan salinan terpisah",
-                "extensionsStripped": "Ekstensi yang tidak digunakan dihapus",
-                "extrasStripped": "Data tambahan yang tidak digunakan dihapus",
-                "contentStripped": "Konten yang tidak digunakan OpenMarch dihapus",
-                "contentStrippedDetail": "Animasi {animations} · kamera {cameras} · morph target {morphTargets} · scene tambahan {scenes}",
-                "influencesRenormalized": "Bobot tulang dinormalisasi ulang pada {vertices} verteks",
-                "validatorWarnings": "{count, plural, other {# peringatan glTF}}",
-                "sizeOutOfRange": "{size} pada sisi terpanjangnya",
-                "sizeOutOfRangeDetail": "Di luar rentang biasa {min} hingga {max} untuk jenisnya. Periksa satuannya.",
-                "noStretchZones": "Tidak ada zona regang",
-                "noStretchZonesDetail": "Model mempertahankan ukuran saat dimodelkan, atau diskalakan secara seragam.",
-                "customPropertiesOff": "Sepertinya opsi custom properties nonaktif",
-                "customPropertiesOffDetail": "Ekspor ulang dengan preset OpenMarch agar pegangan dan slot tetap ada.",
-                "stillOverTriangleCap": "Masih {triangles} segitiga, melebihi batas {cap}",
-                "slotWithoutUVs": "Slot artwork {slot} tidak memiliki UV",
-                "slotDropped": "Slot artwork {slot} diabaikan",
-                "invalidOpenMarchData": "Data OpenMarch pada {where} diabaikan",
-                "unknownStampKind": "Stempel menyebut jenis yang tidak dikenal: {value}",
-                "missingFits": "Ada fit yang kurang",
-                "duplicateFits": "Lebih dari satu mesh memiliki fit yang sama",
-                "wgiEquipmentUnderMinimum": "WGI: peralatan di bawah 24 in",
-                "wgiFloorOverMaximum": "WGI: lantai melebihi 78 × 106 ft"
-            },
-            "size": {
-                "title": "Seberapa besar?",
-                "members": "{selected} dari {count} {count, plural, other {halaman}}",
-                "fromFile": "Dari file: {size}",
-                "width": "Lebar",
-                "height": "Tinggi",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Rasio aspek dikunci: gambar tidak pernah diregangkan",
-                "needed": "Pilih ukuran: file ini tidak menyebutkan ukuran cetaknya.",
-                "printsOn": "Dicetak pada",
-                "fitted": "Disesuaikan dengan bentuk gambar Anda; ukuran standar {surface} adalah {size}."
-            },
-            "details": {
-                "name": "Nama",
-                "namesFromFiles": "Setiap file mempertahankan namanya sendiri.",
-                "tags": "Tag, pisahkan dengan koma",
-                "toggle": "Pembuat, lisensi, dan sumber",
-                "unknown": "Tidak diketahui",
-                "author": "Pembuat",
-                "license": "Lisensi",
-                "licensePlaceholder": "Lisensi, misalnya CC-BY-4.0",
-                "source": "URL sumber",
-                "emptyIsUnknown": "Kosong berarti Tidak diketahui, tidak pernah dianggap bebas dibagikan.",
-                "rights": "Impor hanya gambar dan model yang berhak Anda gunakan."
-            },
-            "add": {
-                "one": "Tambahkan ke Pustaka",
-                "many": "Tambahkan {count} ke Pustaka",
-                "newVersion": "Tambahkan versi baru",
-                "cantImport": "Tidak dapat diimpor"
-            },
-            "done": {
-                "added": "{count, plural, other {# item ditambahkan ke Pustaka Anda}}",
-                "newVersion": "Versi baru {name} ditambahkan",
-                "notImported": "Tidak diimpor"
-            },
-            "stage": {
-                "label": "Pratinjau impor · Tampilan 3D tidak berubah",
-                "loading": "Memuat pratinjau…",
-                "empty": "Tidak ada yang bisa dipratinjau",
-                "needsKind": "Pilih jenisnya untuk melihat pratinjau.",
-                "rejected": "Tidak dapat diimpor, jadi tidak ada pratinjau.",
-                "previewFailed": "Tidak dapat memuat pratinjau.",
-                "noArtwork": "Tidak ada halaman untuk dipratinjau.",
-                "triangles": "{triangles} segitiga",
-                "trianglesCap": "{triangles} segitiga · batas {cap}",
-                "tall": "Tinggi {height}",
-                "before": "Sebelum",
-                "after": "Sesudah",
-                "vector": "vektor",
-                "pixels": "{width} × {height} px",
-                "views": "Tampilan",
-                "view": {
-                    "front": "Depan",
-                    "side": "Samping",
-                    "top": "Atas"
-                },
-                "pickGrip": "Klik satu titik pada model untuk menetapkan pegangan · <keys></keys> untuk berhenti",
-                "surface": "Permukaan gambar: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Impor model dan gambar secara terpisah",
-                    "body": "Pilih satu model, atau file gambar sebanyak apa pun, dalam satu kali impor."
-                },
-                "session-expired": {
-                    "title": "Waktu impor ini habis",
-                    "body": "Impor ditutup setelah 30 menit tidak digunakan. Pilih file lagi."
-                },
-                "unknown-file": {
-                    "title": "File itu tidak termasuk dalam impor ini",
-                    "body": "Pilih file lagi."
-                },
-                "too-large": {
-                    "title": "Terlalu banyak file",
-                    "body": "Pilih maksimal 50 file sekaligus."
-                },
-                "unreadable": {
-                    "title": "File tidak dapat dibaca",
-                    "body": "File mungkin telah dipindahkan, atau sedang dibuka oleh aplikasi lain."
-                },
-                "busy": {
-                    "title": "Langkah impor lain masih berjalan",
-                    "body": "Tunggu hingga selesai, lalu coba lagi."
-                },
-                "timeout": {
-                    "title": "Pengimpor terlalu lama",
-                    "body": "File yang besar atau rumit bisa melebihi batas waktu. Coba lagi, atau sederhanakan file sebelum mengekspornya."
-                },
-                "worker-crashed": {
-                    "title": "Pengimpor berhenti saat membaca file",
-                    "body": "File Anda tidak diubah. Coba lagi; jika terjadi lagi, file mungkin rusak."
-                },
-                "pdf-unavailable": {
-                    "title": "Halaman PDF tidak dapat dirender",
-                    "body": "Coba lagi. Jika terus terjadi, ekspor gambar sebagai PNG atau SVG."
-                },
-                "write-failed": {
-                    "title": "Tidak dapat menyimpan ke Pustaka Anda",
-                    "body": "Pastikan masih ada ruang disk kosong, lalu coba lagi."
-                },
-                "read-only": {
-                    "title": "Item itu tidak dapat diubah",
-                    "body": "Item bawaan hanya dapat dibaca. Tambahkan sebagai item baru."
-                },
-                "corrupt": {
-                    "title": "Pustaka Anda memiliki entri yang rusak",
-                    "body": "Coba lagi. Bagian lain Pustaka Anda tidak terpengaruh."
-                },
-                "cancelled": {
-                    "title": "Dibatalkan",
-                    "body": "Tidak ada lagi yang diimpor."
-                },
-                "other": {
-                    "title": "Terjadi kesalahan",
-                    "body": "Coba lagi."
-                }
-            },
-            "finishFailed": "Tidak dapat menyelesaikan impor",
-            "copyIntoShowFailed": "Tidak dapat menyalin hasil impor ke pertunjukan"
-        },
-        "fileDialog": {
-            "importTitle": "Impor",
-            "saveTemplateTitle": "Simpan template",
-            "models": "Model 3D (glb, gltf)",
-            "artwork": "Gambar (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Model dan gambar",
-            "pngImage": "Gambar PNG"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Simpan paket pemula Blender",
-            "saveFailed": "Tidak dapat menyimpan paket pemula Blender"
         }
     },
     "marchers": {
@@ -1736,7 +1260,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Latar belakang produksi",
-                "drawFailed": "Gambar latar belakang tidak dapat digambar",
                 "empty": "Tidak ada gambar latar belakang",
                 "help": "Gambar latar belakang otomatis disinkronkan saat Anda mengunggah revisi baru. Untuk menggantinya, ubah gambar latar belakang di editor lapangan, lalu unggah revisi baru.",
                 "title": "Gambar latar belakang"
@@ -2006,11 +1529,6 @@
         "field.labelSize.large": "Besar",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Kecil",
-        "field.shapeFocus": "Saat membentuk",
-        "field.shapeFocus.drawing": "Pudar hanya saat menggambar",
-        "field.shapeFocus.drawing.description": "Pemain di luar bentuk yang terbuka memudar hanya saat Anda menggambarnya.",
-        "field.shapeFocus.rest": "Pudarkan lainnya",
-        "field.shapeFocus.rest.description": "Pemain di luar bentuk yang terbuka memudar selama bentuk itu terbuka.",
         "field.stepSizeWarnings": "Peringatan ukuran langkah",
         "field.stepSizeWarnings.description": "Tandai gerakan dengan langkah yang terlalu besar untuk dimarching, dan selalu tampilkan jalurnya.",
         "general": "Umum",
@@ -2039,27 +1557,6 @@
         "mouse.trackpadPanSensitivity": "Sensitivitas geser trackpad",
         "mouse.zoomSensitivity": "Sensitivitas zoom",
         "noResults": "Tidak ada pengaturan yang cocok.",
-        "plugins": "Plugin",
-        "plugins.community": "Komunitas",
-        "plugins.description": "Tambahkan fitur buatan komunitas.",
-        "plugins.install": "Instal",
-        "plugins.installed": "Terinstal",
-        "plugins.installFailed": "Instalasi gagal",
-        "plugins.installing": "Menginstal...",
-        "plugins.noCommunityPlugins": "Tidak ada plugin komunitas yang tersedia.",
-        "plugins.noOfficialPlugins": "Tidak ada plugin resmi yang tersedia.",
-        "plugins.noPlugins": "Belum ada plugin yang terinstal.",
-        "plugins.official": "Resmi",
-        "plugins.refreshNotice": "Harap <a>muat ulang aplikasi</a> untuk memperbarui plugin.",
-        "plugins.toast.installFailed": "Gagal menginstal plugin {pluginName}",
-        "plugins.toast.installSuccess": "Plugin {pluginName} berhasil diinstal!",
-        "plugins.toast.uninstallFailed": "Gagal menghapus {pluginName}",
-        "plugins.toast.uninstallSuccess": "Plugin {pluginName} berhasil dihapus!",
-        "plugins.uninstall": "Hapus",
-        "plugins.uninstalled": "Dihapus",
-        "plugins.uninstallFailed": "Gagal menghapus",
-        "plugins.uninstalling": "Menghapus...",
-        "plugins.version": "v{version}",
         "privacy": "Privasi",
         "privacy.analytics": "Bagikan analitik penggunaan",
         "privacy.analytics.description": "Untuk membantu kami meningkatkan OpenMarch, kami mengumpulkan data analitik, log kesalahan, dan rekaman sesi. Data ini membantu kami memahami cara Anda menggunakan aplikasi dan menemukan bug. Baca <a>kebijakan privasi</a> kami untuk mengetahui selengkapnya.",
@@ -2117,8 +1614,6 @@
         "tolgeeDevToolsToggle": "Penerjemahan dalam konteks Tolgee",
         "view3d": "Tampilan 3D",
         "view3d.description": "Cara Tampilan 3D digambar di komputer ini. Tidak disimpan dalam pertunjukan.",
-        "view3d.pauseWhenIdle": "Jeda penggambaran saat tidak ada yang bergerak",
-        "view3d.pauseWhenIdle.description": "Berhenti menggambar saat pertunjukan dijeda dan kamera diam.",
         "view3d.quality": "Kualitas",
         "view3d.quality.auto": "Otomatis",
         "view3d.quality.auto.description": "Dimulai dengan Tinggi dan beralih ke Rendah jika tampilan tersendat.",
@@ -2133,8 +1628,6 @@
         "view3d.resolution.fast.description": "Paling lembut, dengan beban sekitar setengahnya. Untuk komputer lama.",
         "view3d.resolution.sharp": "Tajam",
         "view3d.resolution.sharp.description": "Detail penuh pada layar beresolusi tinggi.",
-        "view3d.saveOnBattery": "Hemat daya saat memakai baterai",
-        "view3d.saveOnBattery.description": "Saat memakai baterai, menggambar paling banyak 30 bingkai per detik pada resolusi standar.",
         "input": "Sentuh & Input",
         "input.description": "Pilih tata letak tablet (untuk jari dan pena) atau tata letak desktop (untuk mouse dan trackpad).",
         "input.interface": "Tata letak",
@@ -2320,21 +1813,6 @@
                 "one": "{name} keluar dari {shape, select, block {blok} circle {lingkaran} other {bentuk}}"
             },
             "selectWholeShape": "Pilih {shape, select, block {blok} circle {lingkaran} other {bentuk}}"
-        },
-        "save": {
-            "descriptionLabel": "Deskripsi bentuk yang disimpan (opsional)",
-            "descriptionPlaceholder": "Deskripsi (opsional)",
-            "ariaLabel": "Simpan bentuk ini ke pustaka",
-            "button": "Simpan",
-            "cancel": "Batal",
-            "nameLabel": "Nama bentuk yang disimpan",
-            "savedAs": "Disimpan sebagai {name}",
-            "tip": "Simpan bentuk ini ke pustaka dan beri bintang",
-            "mixedIntervals": "Garis dengan jarak campuran belum dapat disimpan"
-        },
-        "saved": {
-            "copyFailed": "Tidak dapat menyalin bentuk tersimpan ke pertunjukan",
-            "deleteFailed": "Tidak dapat menghapus bentuk tersimpan dari pertunjukan"
         },
         "command": {
             "fill": "Isian: {modes}",
@@ -2573,37 +2051,6 @@
                 "spacing": "Penjarakan"
             }
         },
-        "library": {
-            "addNamed": "Tambahkan {name} ke Pustaka saya",
-            "addTip": "Tambahkan ke Pustaka saya, untuk semua pertunjukan",
-            "close": "Tutup",
-            "deleteNamed": "Hapus {name}",
-            "deleteTip": "Hapus bentuk tersimpan ini",
-            "dismiss": "Tutup",
-            "draw": "Gambar {name}",
-            "full": "{max} bentuk sudah diberi bintang, sebanyak yang dapat ditampung cincin bentuk. Hapus bintang salah satu bentuk terlebih dahulu untuk memberi bintang {name}.",
-            "group": {
-                "basic": "Dasar",
-                "saved": "Tersimpan"
-            },
-            "intro": "Beri bintang pada bentuk agar tetap ada di tab Bentuk dan cincin bentuk, maksimal {max}.",
-            "note": {
-                "apart": "berjarak {spacing}",
-                "modeApart": "{mode, select, outline {Garis tepi} other {Sebar}} berjarak {spacing}",
-                "apartStagger": "berjarak {spacing}, geser {fraction}",
-                "apartStaggerLeft": "berjarak {spacing}, geser {fraction} ke kiri",
-                "showOnly": "hanya pertunjukan ini",
-                "stagger": "geser {fraction}",
-                "staggerLeft": "geser {fraction} ke kiri"
-            },
-            "savedEmpty": "Simpan bentuk dari baris ⋯ miliknya atau dari panel Inspector agar tersimpan di sini, untuk semua pertunjukan.",
-            "savedNewer": "{count, plural, other {# bentuk tersimpan memerlukan}} versi OpenMarch yang lebih baru.",
-            "star": "Beri bintang",
-            "starNamed": "Beri bintang {name}",
-            "title": "Bentuk",
-            "unstar": "Hapus bintang",
-            "unstarNamed": "Hapus bintang {name}"
-        },
         "spacing": {
             "empty": "Masukkan jarak dalam langkah",
             "noGaps": "Rentang memerlukan minimal 1 celah",
@@ -2624,27 +2071,19 @@
             },
             "placeError": "Gagal menempatkan bentuk",
             "ring": {
-                "hint": "Klik bentuk, atau klik di tempat lain untuk menutup",
-                "starred": "Berbintang"
+                "hint": "Klik bentuk, atau klik di tempat lain untuk menutup"
             },
             "section": {
-                "box": "Blok",
                 "title": "Bentuk"
             },
             "selectMarchersFirst": "Pilih pemain terlebih dahulu",
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Jenis bentuk",
-                "library": "Pustaka",
-                "libraryTip": "Buka pustaka bentuk untuk memberi bintang pada bentuk",
                 "ringHintKeys": "Tahan <keys></keys> di lapangan untuk membuka cincin bentuk"
             }
         },
         "transform": {
-            "flipAcross": "Balik ↔",
-            "flipAcrossTip": "Balik kiri–kanan terhadap titik poros",
-            "flipDeep": "Balik ↕",
-            "flipDeepTip": "Balik depan–belakang terhadap titik poros",
             "title": "Transformasi"
         },
         "validate": {
@@ -2679,32 +2118,7 @@
             "countAt": "{count} berjarak {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Cue Horn/Equipment tidak cocok dengan yang dibawa pemain",
-        "crewDistance": "Kru {item} berada jauh darinya",
-        "crewDistanceDetail": "Di luar jangkauan: {who}",
-        "crewlessMove": "{item} berpindah tanpa kru",
-        "empty": "Tidak ada yang perlu diperiksa.",
-        "forWho": "Untuk {who}",
-        "handConflict": "{item} tidak ditampilkan",
-        "handConflictDetail": "{count, plural, =1 {{other} memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}} other {{other} memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}}}",
-        "handConflictByCarry": "Cue Carry memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}",
-        "handConflictWithCarry": "{other} dan cue Carry memakai {hand, select, left {tangan kiri} right {tangan kanan} other {kedua tangan}} {who}",
-        "performers": "{count, plural, other {# pemain}}",
-        "pick": "Lompat ke hitungan ini dan pilih yang disebutkan",
-        "putDownDrift": "{item} diletakkan jauh dari pemegangnya",
-        "putDownDriftDetail": "Gerakannya sendiri menempatkannya di sana, bukan di {who}",
-        "shortHanded": "{item} dipegang oleh terlalu sedikit tangan",
-        "shortHandedDetail": "{who}: {held} dari {needed} tangan",
-        "silkAspect": "Artwork cue Silk dipasang pada bendera yang bentuknya berbeda",
-        "snapToHolder": "Pindahkan ke pemegang",
-        "title": "Pemeriksaan pertunjukan",
-        "titleCount": "Pemeriksaan pertunjukan ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, di awal"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {# cue menargetkan tag ini dan akan dihapus}}",
         "title": "Tag",
         "rename": "Ganti nama tag",
         "namePlaceholder": "Masukkan nama tag...",
@@ -2805,7 +2219,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Linimasa",
-        "masterVolume": "Volume utama",
         "moveDeleted": {
             "message": "{label} dihapus",
             "withPages": "{count, plural, =1 {{label} dihapus · Halaman {pages} berubah} other {{label} dihapus · Halaman {pages} berubah}}"
@@ -2834,9 +2247,7 @@
             "setAsShown": "Tetapkan sesuai tampilan",
             "setAsShownNone": "Semua pemain terpilih sudah ditetapkan di {page}, atau sedang di tengah gerakan",
             "setAsShownError": "Gagal menetapkan pemain sesuai tampilan",
-            "addSelected": "Tambahkan pemain terpilih",
-            "deletePage": "Hapus halaman",
-            "addSelectedNone": "Pilih pemain terlebih dahulu: di home, di rentang yang belum memiliki linimasa, atau di linimasa tempat mereka berada."
+            "deletePage": "Hapus halaman"
         },
         "startFlagPositions": {
             "always": "Selalu",
@@ -2893,7 +2304,6 @@
             "label": "Linimasa ringkas",
             "onTooltip": "Linimasa ringkas: aktif. Klik untuk menampilkan linimasa penuh"
         },
-        "volumeSlider": "Penggeser volume linimasa",
         "zoomReset": "Atur ulang zoom linimasa",
         "playbackSpeed": {
             "current": "Kecepatan putar: {speed}",
@@ -2918,7 +2328,6 @@
             "lockedNotMoved": "{count, plural, =1 {Satu pemain menggunakan gerakan Expert di halaman ini, jadi tidak dipindahkan. Beralih ke Expert untuk mengeditnya.} other {# pemain menggunakan gerakan Expert di halaman ini, jadi tidak dipindahkan. Beralih ke Expert untuk mengeditnya.}}",
             "switchToExpert": "Beralih ke Expert"
         },
-        "volume": "Volume linimasa",
         "percent": "{percent}%",
         "loop": {
             "label": "Pengulangan",
@@ -3124,7 +2533,6 @@
             "range": "hitungan {from}–{to}",
             "length": "{count, plural, other {# hitungan}}"
         },
-        "createTrack": "Buat trek",
         "playheadChip": {
             "label": "Tampilkan playhead",
             "text": "Playhead"
@@ -3361,17 +2769,11 @@
             "freeCamera": "Tampilan bebas"
         },
         "readout": {
-            "camera": "Tinggi mata {eye} · {distance} ke tengah",
-            "checks": "{count, plural, other {# pemeriksaan}}",
             "count": "Hitungan {count} dari {total}",
             "noPages": "Tidak ada halaman",
             "page": "Halaman {page}",
             "pastEnd": "AKHIR +{count}",
             "showTime": "Waktu pertunjukan"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Tampilan 3D — {showName}",
@@ -3408,32 +2810,7 @@
             "endZoneColor": "Warna",
             "graphicsSection": "Komputer ini",
             "graphicsHint": "Tidak disimpan dalam pertunjukan, jadi bisa berbeda di setiap komputer.",
-            "hornState": "Posisi instrumen",
-            "hornStateMode": {
-                "up": "Angkat",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Menahan setiap alat tiup dan drum dalam satu posisi selama seluruh pertunjukan, untuk memeriksa posenya. Ikuti cue memutar cue Horn/Perlengkapan, dengan alat tiup diangkat jika tidak ada cue.",
-            "guardEquipment": "Perlengkapan guard",
-            "guardEquipmentMode": {
-                "flag6": "Bendera 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Menempatkan satu perlengkapan di tangan setiap anggota guard, untuk melihatnya. Ikuti cue memberi setiap seksi perlengkapannya sendiri: seksi bendera dengan bendera 6 ft, seksi rifle dengan rifle.",
-            "stepOffFoot": "Langkah awal",
-            "stepOffFootMode": {
-                "left": "Kiri pemain",
-                "right": "Kanan pemain"
-            },
-            "stepOffFootHint": "Kaki pemain sendiri, ke mana pun ia menghadap. Saat menghadap Anda, kaki kirinya ada di sisi kanan Anda. Ikuti cue memulai langkah dengan kaki yang disimpan di pertunjukan ({foot, select, left {kiri pemain} other {kanan pemain}}), atau kaki yang ditetapkan oleh cue Kaki.",
             "keysSection": "Keyboard dan mouse",
-            "previewSection": "Hanya pratinjau",
-            "previewHint": "Tidak disimpan. Pilihan ini hanya mengubah apa yang digambar jendela ini; dalam pertunjukan, cue yang menentukan. Kembalikan ke Ikuti cue untuk melihat pertunjukan.",
-            "followCues": "Ikuti cue",
             "uniforms": "Seragam band",
             "guardUniforms": "Seragam guard"
         },
@@ -3465,7 +2842,6 @@
             "title": "Kamera",
             "close": "Tutup kamera",
             "edit": "Edit kamera…",
-            "saveView": "Simpan tampilan saat ini",
             "none": "Tidak ada kamera",
             "empty": "Tidak ada kamera. Pindahkan tampilan ke posisi yang diinginkan, lalu tambahkan.",
             "addView": "Tambahkan tampilan saat ini",
@@ -3488,68 +2864,7 @@
             "removed": "“{name}” dihapus",
             "undo": "Urungkan",
             "replace": "Ganti",
-            "replaceWithProfile": "Ganti kamera Anda dengan “{name}”? Daftar Anda saat ini tidak disimpan di tempat lain.",
-            "profile": "Profil",
-            "source": {
-                "defaults": "Bawaan venue",
-                "custom": "Kamera pertunjukan ini"
-            },
-            "edited": "Diubah",
-            "myProfiles": "Di komputer ini",
-            "saveAsProfile": "Simpan sebagai profil kamera…",
-            "saveAsProfileShort": "Simpan sebagai profil…",
-            "manageProfiles": "Kelola profil…",
-            "notice": {
-                "defaults": "Kamera bawaan venue. Setiap perubahan menjadikannya milik pertunjukan ini.",
-                "custom": "Hanya disimpan bersama pertunjukan ini.",
-                "profile": "Disimpan bersama pertunjukan ini dan di profil Anda.",
-                "edited": "Diubah sejak profil disimpan.",
-                "newer": "Profil ini telah diubah di komputer ini.",
-                "missing": "Profil pertunjukan ini tidak ada di komputer ini."
-            },
-            "updateProfile": "Perbarui profil",
-            "saveAsNew": "Simpan sebagai baru…",
-            "useNewVersion": "Gunakan versi baru",
-            "addToMyProfiles": "Tambahkan ke profil saya",
-            "profileName": "Nama profil",
-            "save": "Simpan",
-            "defaultProfileName": "Kamera {venue}",
-            "copyName": "Salinan {name}",
-            "profilesTitle": "Profil kamera",
-            "profilesHint": "Disimpan di Pustaka Anda di komputer ini, untuk pertunjukan apa pun. Setiap pertunjukan menyimpan salinan sendiri dari profil yang digunakannya.",
-            "noProfiles": "Belum ada profil kamera. Pilih Simpan sebagai profil kamera… untuk membuatnya.",
-            "cameraCount": "{count, plural, other {# kamera}}",
-            "use": "Gunakan",
-            "otherVenue": "Profil ini untuk venue lain",
-            "deleteProfile": "Hapus",
-            "deleteProfileConfirm": "Hapus “{name}” dari komputer ini? Pertunjukan yang menggunakannya tetap menyimpan salinannya.",
             "saveFailed": "Gagal menyimpan kamera Tampilan 3D"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Kain bendera tiang 5 ft",
-                "silk5_5ftPole": "Kain bendera tiang 5,5 ft",
-                "silk6ftPole": "Kain bendera tiang 6 ft",
-                "silk7ftPole": "Kain bendera tiang 7 ft",
-                "silkStandard": "Standar",
-                "silkOversized": "Ekstra besar",
-                "silkTeardrop": "Tetesan air",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Swing melengkung atau super",
-                "silkOversizedSwing": "Swing ekstra besar",
-                "silkArc": "Busur reguler",
-                "silkNarrowArc": "Busur sempit",
-                "silkSuperArc": "Busur super",
-                "floorWgiMinimum": "Area kompetisi WGI, minimum",
-                "floorWgiMaximum": "Area kompetisi WGI, maksimum",
-                "flatProp4x8ft": "Lembaran 4 x 8 ft"
-            },
-            "kind": {
-                "silk": "Kain bendera",
-                "floor": "Lantai",
-                "flatProp": "Properti datar"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Gagal memperbarui venue Tampilan 3D"
@@ -3706,263 +3021,9 @@
             "seconds": "detik"
         },
         "unsavedChanges": "Ada perubahan yang belum disimpan",
-        "warnPropMovesWithoutCrew": "Peringatkan saat properti bergerak tanpa kru",
-        "warnPropMovesWithoutCrewHelp": "Pemeriksaan pertunjukan menyebutkan properti yang ditempatkan dan bergerak tanpa ada anggota kru.",
         "close": "Tutup",
         "saved": "Pengaturan pertunjukan disimpan",
         "updateFailed": "Gagal memperbarui pengaturan pertunjukan"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "Ruang kerja",
-            "editor": "Editor",
-            "visuals": "Visual",
-            "preview": "Pratinjau"
-        },
-        "channels": {
-            "feet": "Kaki",
-            "horn": "Horn",
-            "equipment": "Peralatan",
-            "hornEquipment": "Horn / Peralatan",
-            "facing": "Arah hadap",
-            "body": "Tubuh"
-        },
-        "inspector": {
-            "title": "Visual",
-            "who": "Siapa",
-            "band": "Band",
-            "selection": "Pilihan",
-            "selectionCount": "{count, plural, =0 {Tidak ada yang dipilih} other {# dipilih}}",
-            "sections": "Seksi",
-            "tags": "Tag",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Hapus fokus",
-            "focusHint": "Klik sebuah grup untuk memfokuskannya. Pemain lainnya diredupkan di lapangan."
-        },
-        "band": {
-            "editing": "Mengedit: {channel} untuk {who}",
-            "focusFirst": "Visual: fokuskan sebuah grup di inspector untuk mengedit cue-nya",
-            "selectFirst": "Pilih pemain di lapangan untuk membuat cue bagi pilihan tersebut",
-            "marchers": "{count, plural, other {# pemain}}",
-            "mixed": "Campuran",
-            "rowCue": "{who}: {value}",
-            "lane": "Jalur cue",
-            "paste": "{count, plural, other {Tempel # cue di playhead}}",
-            "flagged": "{count, plural, other {# cue bermasalah}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Hapus",
-            "where": "{who}, {where}",
-            "count": "hitungan {count}",
-            "start": "awal pertunjukan",
-            "value": "Nilai",
-            "notForEveryone": "{value} (tidak cocok untuk semua)",
-            "transition": "Transisi (hitungan)",
-            "length": "Durasi (hitungan)",
-            "ripple": "Ripple",
-            "rippleSpan": "Ripple selama (hitungan)",
-            "rippleOrder": "Urutan",
-            "order": {
-                "drill": "Urutan drill",
-                "left_right": "Kiri ke kanan",
-                "right_left": "Kanan ke kiri",
-                "down_form": "Sepanjang formasi"
-            },
-            "notes": "Catatan",
-            "facingWheel": "Sudut hadap",
-            "pickPoint": "Pilih titik di lapangan",
-            "pickingPoint": "Klik sebuah titik di lapangan (<keys></keys> untuk batal)"
-        },
-        "why": {
-            "title": "Mengapa, pada {where}",
-            "value": "{value}: {n} dari {total}",
-            "setBy": "Diatur oleh <cue></cue>",
-            "setByTakenOver": "Diatur oleh <cue></cue> (diambil alih dari {channel})",
-            "beat": "Mengalahkan <cues></cues>",
-            "cue": "{value} untuk {who} pada {where}",
-            "default": {
-                "library": "Nilai bawaan",
-                "carry": "Bawaan sesuai yang mereka bawa",
-                "section_equipment": "Peralatan biasa seksi tersebut",
-                "equipment_fallback": "Peralatan biasa sesuai nama seksi",
-                "marcher_carries": "Yang biasa mereka bawa",
-                "section_color": "Warna 2D seksi",
-                "band_uniform": "Seragam band",
-                "guard_uniform": "Seragam color guard"
-            }
-        },
-        "settings": {
-            "pace": "Tempo",
-            "moving": "Saat bergerak",
-            "onHolds": "Saat diam",
-            "stepOffFoot": "Kaki awal",
-            "angle": "Sudut horn",
-            "degrees": "Sudut (derajat)",
-            "x": "Titik x",
-            "y": "Titik y",
-            "energy": "Energi"
-        },
-        "options": {
-            "single": "Normal",
-            "half": "Setengah tempo",
-            "double": "Tempo ganda",
-            "straightLeg": "Kaki lurus",
-            "bentLeg": "Kaki ditekuk",
-            "highStep": "Langkah tinggi",
-            "stand": "Berdiri",
-            "markTime": "Jalan di tempat",
-            "highMarkTime": "Jalan di tempat lutut tinggi",
-            "left": "Kiri",
-            "right": "Kanan",
-            "box": "Posisi box",
-            "plus10": "10° di atas box",
-            "low": "Rendah",
-            "medium": "Sedang",
-            "high": "Tinggi"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Melangkah",
-                    "label": "Langkah",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "JDT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horn naik",
-                    "label": "HN"
-                },
-                "down": {
-                    "name": "Horn turun",
-                    "label": "HT"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Bermain",
-                    "label": "Main"
-                },
-                "sticksIn": {
-                    "name": "Stik bersilang",
-                    "label": "Silang"
-                },
-                "sticksDown": {
-                    "name": "Stik turun",
-                    "label": "Turun"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Set bendera",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Port bendera",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Drop spin bendera",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal bendera",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Drop spin rifle",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal rifle",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lemparan ganda rifle",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Set sabre",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Lemparan tunggal sabre",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Depan",
-                    "label": "Depan"
-                },
-                "back": {
-                    "name": "Belakang",
-                    "label": "Blkg"
-                },
-                "side1": {
-                    "name": "Sisi 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Sisi 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Arah gerak",
-                    "label": "Arah"
-                },
-                "angle": {
-                    "name": "Sudut",
-                    "label": "Sudut"
-                },
-                "point": {
-                    "name": "Ke arah titik",
-                    "label": "Titik"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Netral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Berlutut",
-                    "label": "Berlutut"
-                },
-                "choreo": {
-                    "name": "Koreografi",
-                    "label": "Koreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Bentrok dengan cue lain pada hitungan yang sama.",
-            "phrase_overlap": "Tumpang tindih dengan frasa lain.",
-            "takeover_while_moving": "Mengambil alih kaki saat titik sedang bergerak.",
-            "fits_nobody": "Tidak cocok untuk satu pun pemainnya.",
-            "kind_not_allowed": "Berupa frasa pada kanal yang hanya menerima keadaan.",
-            "transition_cut": "Transisinya dimulai sebelum cue sebelumnya selesai tiba."
-        }
     },
     "canvas": {
         "zoom": {
@@ -3970,9 +3031,7 @@
             "in": "Perbesar",
             "out": "Perkecil",
             "reset": "Zoom {zoom}%, atur ulang zoom dan pusatkan",
-            "resetAndCenter": "Atur ulang zoom dan pusatkan",
-            "perspective": "Perspektif",
-            "perspectiveComingSoon": "Perspektif (segera hadir)"
+            "resetAndCenter": "Atur ulang zoom dan pusatkan"
         }
     },
     "errorBoundary": {
@@ -4153,7 +3212,6 @@
         "help": {
             "title": "Bantuan",
             "showShortcuts": "Pintasan keyboard",
-            "starterKit": "Dapatkan paket pemula Blender…",
             "website": "Situs web",
             "guides": "Dokumentasi/Panduan"
         },
@@ -4164,7 +3222,6 @@
             "openMarchFile": "File OpenMarch",
             "allFiles": "Semua file",
             "audioFile": "File audio",
-            "zipArchive": "Arsip zip",
             "video": "Video"
         },
         "newShow": {
@@ -4176,9 +3233,6 @@
         "openFailed": {
             "title": "Gagal memuat database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Gagal memindahkan item ke pemegangnya"
     },
     "coordinates": {
         "full": "{x} - {y}",
@@ -4218,5 +3272,10 @@
         "tiny": "Sangat kecil",
         "toFive": "{steps, number} to 5",
         "undefined": "Tidak dapat ditentukan"
+    },
+    "workspace": {
+        "label": "Ruang kerja",
+        "editor": "Editor",
+        "preview": "Pratinjau"
     }
 }

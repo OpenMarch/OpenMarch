@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ClearPageMenuItems from "@/components/toolbar/ClearPageMenuItems";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     fieldPropertiesQueryOptions,
@@ -47,10 +46,6 @@ import {
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
 import TimelineHoldLine from "./TimelineHoldLine";
-import UnsetHereButton, {
-    UnsetHereAndFollowingButton,
-} from "./UnsetHereButton";
-import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
 import MovePad from "./marcher/MovePad";
 import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { formatList } from "@/utilities/formatList";
@@ -427,11 +422,13 @@ function AlignmentButtons() {
                     </Dropdown.Trigger>
                     <Dropdown.Portal>
                         <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ClearPageMenuItems
-                                scope="selected"
+                            <ActionButton
+                                action="setSelectedMarchersToPreviousPage"
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
-                            />
+                            >
+                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
+                            </ActionButton>
                             <ActionButton
                                 action="setSelectedMarchersToNextPage"
                                 onRun={closePlaceMenu}
@@ -522,8 +519,6 @@ function MarcherEditor() {
         () => selectedMarchers.map((marcher) => marcher.id),
         [selectedMarchers],
     );
-    // UI-18 keep later pages: the keep tooltips name the selected marchers
-    const selectedNameOf = useMarcherNameOf(selectedMarchers);
     const previousPage = useMemo(
         () => pages.find((p) => p.id === selectedPage?.previousPageId) ?? null,
         [pages, selectedPage?.previousPageId],
@@ -723,14 +718,6 @@ function MarcherEditor() {
                                         )}
                                     {/* Under the step sizes: hold or move on this page (UI-18) */}
                                     <TimelineHoldLine
-                                        marcherIds={selectedMarcherIdList}
-                                        nameOf={selectedNameOf}
-                                    />
-                                    {/* Set vs Following (#304, #305) */}
-                                    <UnsetHereButton
-                                        marcherIds={selectedMarcherIdList}
-                                    />
-                                    <UnsetHereAndFollowingButton
                                         marcherIds={selectedMarcherIdList}
                                     />
                                     {selectedMarchers.length === 2 && (
@@ -995,18 +982,6 @@ function MarcherEditor() {
                                                 )}
                                                 {/* Under Step Size: hold or move on this page (UI-18) */}
                                                 <TimelineHoldLine
-                                                    marcherIds={
-                                                        selectedMarcherIdList
-                                                    }
-                                                    nameOf={selectedNameOf}
-                                                />
-                                                {/* Set vs Following (#304, #305) */}
-                                                <UnsetHereButton
-                                                    marcherIds={
-                                                        selectedMarcherIdList
-                                                    }
-                                                />
-                                                <UnsetHereAndFollowingButton
                                                     marcherIds={
                                                         selectedMarcherIdList
                                                     }

@@ -13,8 +13,8 @@ import {
 
 /**
  * **Clear Page N** and, when later pages would move back, **Clear Page N, Pages N–M move back
- * too** (#573), for all marchers (the Alignment tab's "Place all marchers ▾") or the selected ones
- * (the inspector's "Place selected marchers ▾"). Mounted inside the open menu, so the follow-back
+ * too** (#573), for all marchers (the Alignment tab's "Place all marchers ▾") or the selected
+ * ones. Mounted inside the open menu, so the follow-back
  * check runs only while it shows; the command palette reads the follow-back label only when it
  * opens (`clearPageFollowBackReader`).
  */

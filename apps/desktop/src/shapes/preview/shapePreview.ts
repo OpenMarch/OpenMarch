@@ -3,8 +3,8 @@ import type { ShapeContext, XY } from "../types";
 
 /**
  * A shape's small picture (#378): its own spots, and its outline where the kind has one, made
- * from the kind's geometry each time the app runs. No kind draws an icon, so a new kind or a
- * saved shape looks like itself in the Shapes tab, the ring, the library and the command bar.
+ * from the kind's geometry each time the app runs. No kind draws an icon, so a new kind looks
+ * like itself in the Shapes tab, the ring and the command bar.
  * Everything here is pure.
  */
 export interface ShapePreview {
@@ -48,14 +48,13 @@ const PREVIEWS = new WeakMap<AnyToolKind, ShapePreview>();
 
 /**
  * The picture of a shape of `kind`: {@link PREVIEW_SPOTS} spots filling a square, as picking the
- * kind with a square shape open would lay them out. A saved shape keeps its intervals, so a wide
- * box looks wide. The same kind gives the same picture.
+ * kind with a square shape open would lay them out, or its own picture's numbers
+ * (`pictureParams`). The same kind gives the same picture.
  */
 export function shapePreview(kind: AnyToolKind): ShapePreview {
     const known = PREVIEWS.get(kind);
     if (known) return known;
     const n = PREVIEW_SPOTS;
-    // A saved shape's kind sets the saved intervals as it fills the frame
     const params =
         kind.pictureParams?.(n, ENV) ??
         kind.fromFrame(

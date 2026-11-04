@@ -138,7 +138,7 @@ export type ParamGlyph = "↔" | "↕";
  * `n` is the spot count, which the host gives; a kind never reads the selection.
  */
 export interface ToolParam<P> {
-    /** Stable for the kind: the command bar and saved shapes name the parameter by it */
+    /** Stable for the kind: the command bar names the parameter by it */
     readonly key: string;
     /**
      * Shown as about so much ("≈1.83"): worked out from the shape rather than set, off the half
@@ -194,8 +194,7 @@ export interface ToolParam<P> {
     /** The number as shown: "6 × 2", "2" */
     display(params: P, n: number, stepPx: number): string;
     /**
-     * The number in `unit`. Intervals declare it: a saved shape keeps its intervals by it (#353)
-     * and sets them back through {@link set}.
+     * The number in `unit`. Intervals declare it, and are set back through {@link set}.
      */
     value?(params: P, n: number, stepPx: number): number;
     /** A note after the number, such as "1 short"; null for none */
@@ -219,8 +218,7 @@ export interface ToolParam<P> {
     /**
      * The params with the number set to `value`, in `unit`, as typing it would but without going
      * through its text, so a value the chip shows rounded (1.13 for 1⅛) comes back exact (#423).
-     * Saved shapes and the command bar's starting numbers use it; without it they type the value
-     * as shown.
+     * The command bar's starting numbers use it; without it they type the value as shown.
      */
     set?(params: P, n: number, value: number, env: ToolEnv): P | null;
     /** The params with the number dragged by `move` from `base`, the params at the press */

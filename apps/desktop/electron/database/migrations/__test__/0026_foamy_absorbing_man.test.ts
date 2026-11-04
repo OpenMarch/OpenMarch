@@ -2,7 +2,7 @@
 /**
  * Migration 0026 adds Artwork slot assignments (props-spec section 4, ADR 0002 D-10): the
  * beat-keyed `item_artwork_slots`. A new table only, `IF NOT EXISTS` so the migration can run
- * twice. Slot ids are letters, digits, underscores or dashes (`artworkSlotId.ts`).
+ * twice. Slot ids are letters, digits, underscores or dashes.
  * It comes after `0020_drop_page_era`, so a timeline file takes it on open and a page-era file
  * takes it in its conversion; it needs no `user_version` bump.
  */

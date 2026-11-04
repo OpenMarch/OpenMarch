@@ -296,30 +296,3 @@ describe("FieldProperties", () => {
         });
     });
 });
-
-describe("floor (ADR 0002 D-23)", () => {
-    const floor = {
-        itemId: "6b1f3c1e-5a43-4d0e-9a51-2f7c8e9d0a11",
-        versionHash: "a".repeat(64),
-    };
-    const base = { name: "Test", xCheckpoints, yCheckpoints };
-
-    it("has no floor by default, and leaves it out of the JSON", () => {
-        const fp = new FieldProperties(base);
-        expect(fp.floor).toBeUndefined();
-        expect(JSON.parse(JSON.stringify(fp))).not.toHaveProperty("floor");
-    });
-
-    it("keeps the floor through JSON and through an edit that spreads the properties", () => {
-        const fp = new FieldProperties({ ...base, floor });
-        const roundTripped = new FieldProperties(
-            JSON.parse(JSON.stringify(fp)),
-        );
-        expect(roundTripped.floor).toEqual(floor);
-        const edited = new FieldProperties({
-            ...roundTripped,
-            backgroundImageOpacity: 0.5,
-        });
-        expect(edited.floor).toEqual(floor);
-    });
-});

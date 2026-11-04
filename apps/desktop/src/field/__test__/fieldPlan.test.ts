@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { FieldProperties, stepMeters } from "@openmarch/core";
+import { FieldProperties } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import {
     fieldReferenceLines,
@@ -69,34 +69,6 @@ describe("planFieldImage", () => {
             height: height * 2,
             opacity: 0.4,
         });
-    });
-
-    it("places a floor at its physical size, centered, whatever fill or fit says", () => {
-        const fp = withImage("fill");
-        const pxPerM = fp.pixelsPerStep / stepMeters(fp);
-        // A 40 × 30 yd logo tarp
-        const size = { widthM: 36.576, heightM: 27.432 };
-        const at = planFieldImage(fp, { ...wide, size })!;
-        expect(at.width).toBeCloseTo(size.widthM * pxPerM, 6);
-        expect(at.height).toBeCloseTo(size.heightM * pxPerM, 6);
-        expect(at.x + at.width / 2).toBeCloseTo(width / 2, 6);
-        expect(at.y + at.height / 2).toBeCloseTo(height / 2, 6);
-    });
-
-    it("lands a floor sized from its fill or fit placement where that placement was", () => {
-        const fp = withImage("fit");
-        const placed = planFieldImage(fp, wide)!;
-        const mPerPx = stepMeters(fp) / fp.pixelsPerStep;
-        const floor = planFieldImage(fp, {
-            ...wide,
-            size: {
-                widthM: placed.width * mPerPx,
-                heightM: placed.height * mPerPx,
-            },
-        })!;
-        expect(floor.x).toBeCloseTo(placed.x, 6);
-        expect(floor.y).toBeCloseTo(placed.y, 6);
-        expect(floor.width).toBeCloseTo(placed.width, 6);
     });
 
     it("stretches an image whose size is unknown over the field", () => {

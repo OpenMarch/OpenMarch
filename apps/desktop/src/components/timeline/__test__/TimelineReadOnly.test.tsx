@@ -3,10 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 import { Timeline, type TimelineInput, type TimelineProps } from "../Timeline";
-import type { TimelineBandGeometry } from "../TimelineBand";
 
 /**
- * The read-only timeline (Visuals mode's, performer-behavior.md section 7.1): the drill
+ * The read-only timeline (Preview's): the drill
  * timeline's ruler and playhead with lanes in place of the clips, where page boxes and scrubs
  * only seek and nothing edits the drill.
  */
@@ -171,26 +170,5 @@ describe("the read-only timeline", () => {
         ).not.toBeInTheDocument();
         event("pointerup", 6 * 16);
         expect(onSelectionChange).not.toHaveBeenCalled();
-    });
-
-    it("draws its band where the clip rows go, as wide as the show", () => {
-        const geometry: TimelineBandGeometry[] = [];
-        renderTimeline({
-            readOnly: true,
-            band: {
-                height: 120,
-                render: (at) => {
-                    geometry.push(at);
-                    return <div data-testid="band" />;
-                },
-            },
-        });
-        expect(screen.getByTestId("band")).toBeInTheDocument();
-        const at = geometry.at(-1)!;
-        expect(at.beatCount).toBe(16);
-        expect(at.width).toBe(16 * at.pixelsPerBeat);
-        // under the page boxes and the measure row
-        expect(at.top).toBeGreaterThan(30);
-        expect(at.snapBeats).toContain(8);
     });
 });

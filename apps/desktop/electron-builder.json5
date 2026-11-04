@@ -1,4 +1,3 @@
-// cspell:ignore linuxmusl pdfjs cmaps iccs
 /**
  * @see https://www.electron.build/configuration/configuration
  */
@@ -6,13 +5,7 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    // sharp loads libvips at runtime, which can't be read from inside the
-    // asar (ADR 0002 D-14).
-    asarUnpack: [
-        "**/*.node",
-        "**/node_modules/sharp/**/*",
-        "**/node_modules/@img/**/*",
-    ],
+    asarUnpack: ["**/*.node"],
     npmRebuild: false,
     nodeGypRebuild: false,
     directories: {
@@ -23,21 +16,7 @@
         "dist",
         "node_modules",
         "electron/database/migrations",
-        // The Blender Starter kit, zipped on demand by Help ‣ Get the
-        // Blender starter kit… (package C1.13).
-        "starter-kit",
         "!**/node_modules/canvas/**",
-        // Ship only the sharp binaries for this build's platform and
-        // architecture: no linuxmusl, wasm32 or other-arch @img packages.
-        // `${platform}` is the build host's `process.platform`, which matches
-        // the release workflow's native builds. Don't move this into
-        // `mac`/`win`/`linux`: a platform `files` replaces this whole list.
-        "!**/node_modules/@img/sharp-!(${platform}-${arch}|libvips-${platform}-${arch}){,/**/*}",
-        // The PDF renderer serves pdfjs-dist's legacy build and its data
-        // (cmaps, standard_fonts, wasm, iccs) from the asar; the viewer,
-        // types and source maps aren't used.
-        "!**/node_modules/pdfjs-dist/{web,image_decoders,types}{,/**/*}",
-        "!**/node_modules/pdfjs-dist/**/*.map",
     ],
     artifactName: "${productName}-${platform}-${arch}.${ext}",
 

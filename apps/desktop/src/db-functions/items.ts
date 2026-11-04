@@ -15,10 +15,6 @@ import { transactionWithHistory } from "./history";
 import { storedBeatIdInTransaction } from "./endlessCounts";
 import { createMarchersInTransaction } from "./marcher";
 import { updateMarcherHomesInTransaction } from "./marcherHome";
-import {
-    setItemPlacementInTransaction,
-    type PlacementArgs,
-} from "./itemPlacements";
 
 export type DatabaseItem = typeof schema.items.$inferSelect;
 export type DatabaseItemGeometry = typeof schema.item_geometry.$inferSelect;
@@ -55,12 +51,6 @@ export interface NewItemArgs {
     geometry: ItemGeometryArgs;
     /** A Library model and the Version it pins */
     library?: { itemId: string; versionHash: string };
-    /**
-     * Its Placement from its beat on, written as an explicit change there. An item that comes
-     * from a flag (C3.7) is held by its original performer from its first beat; left out, an item
-     * is placed at its own position. Nothing else records where an item came from.
-     */
-    placement?: PlacementArgs;
 }
 
 /** Each kind has its own section and drill prefix, apart from every performer's */
@@ -111,7 +101,7 @@ async function nextDrillOrders(
 
 /**
  * Creates items at home where they were drawn, on field from their beat: a marchers row, its
- * home, the item row, its first Outline change and, if given, its first Placement change.
+ * home, the item row and its first Outline change.
  */
 export async function createItemsInTransaction({
     tx,
@@ -170,13 +160,6 @@ export async function createItemsInTransaction({
                 ...geometryValues(newItem.geometry),
             })
             .run();
-        if (newItem.placement)
-            await setItemPlacementInTransaction({
-                tx,
-                itemId: item.id,
-                beatId,
-                placement: newItem.placement,
-            });
         items.push(item);
     }
     return items;
@@ -297,9 +280,11 @@ export interface ModifiedItemArgs {
     name?: string | null;
     /** Props only */
     surfaceType?: SurfaceType;
+    /** The prop's color as `rgba(r, g, b, a)` (`propColorToString`); null clears it */
+    color?: string | null;
 }
 
-/** Renames items and changes props' surface types. */
+/** Renames items, changes props' surface types and colors. */
 export async function updateItemsInTransaction({
     tx,
     modifiedItems,
@@ -307,7 +292,7 @@ export async function updateItemsInTransaction({
     tx: DbTransaction;
     modifiedItems: readonly ModifiedItemArgs[];
 }): Promise<void> {
-    for (const { itemId, name, surfaceType } of modifiedItems) {
+    for (const { itemId, name, surfaceType, color } of modifiedItems) {
         const item = await tx
             .select()
             .from(schema.items)
@@ -319,6 +304,12 @@ export async function updateItemsInTransaction({
                 .update(schema.marchers)
                 .set({ name })
                 .where(eq(schema.marchers.id, item.marcher_id))
+                .run();
+        if (color !== undefined)
+            await tx
+                .update(schema.items)
+                .set({ color })
+                .where(eq(schema.items.id, itemId))
                 .run();
         if (surfaceType !== undefined) {
             if (item.kind !== "prop")

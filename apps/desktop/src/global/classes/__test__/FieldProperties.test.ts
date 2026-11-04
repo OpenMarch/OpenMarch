@@ -1,7 +1,12 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach } from "vitest";
 import { FieldProperties } from "@openmarch/core";
-import { getFieldProperties } from "../FieldProperties";
+import {
+    getFieldProperties,
+    getFieldPropertiesImage,
+    updateFieldPropertiesImage,
+    deleteFieldPropertiesImage,
+} from "../FieldProperties";
 import { setupTestSqlProxy } from "@/__mocks__/TestSqlProxy";
 import FieldPropertiesTemplates from "../FieldProperties.templates";
 
@@ -18,6 +23,21 @@ describe.todo("FieldProperties", () => {
             const result = await getFieldProperties();
             expect(result).toBeInstanceOf(FieldProperties);
             expect(result).toEqual(defaultFieldProperties);
+        });
+    });
+
+    describe("crud operations for field properties image", () => {
+        it("should update and delete field properties image successfully", async () => {
+            const mockBuffer = Uint8Array.from(Buffer.from("mock image data"));
+
+            await updateFieldPropertiesImage(mockBuffer);
+
+            const imageBuffer = await getFieldPropertiesImage();
+            expect(imageBuffer).toEqual(mockBuffer);
+
+            await deleteFieldPropertiesImage();
+            const image = await getFieldPropertiesImage();
+            expect(image).toBeNull();
         });
     });
 });
