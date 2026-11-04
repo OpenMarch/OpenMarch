@@ -1,4 +1,3 @@
-import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import MetronomeModal from "@/components/music/MetronomeModal";
@@ -20,7 +19,7 @@ export default function Sidebar() {
                 <MarchersModal />
                 {/* Shapes before Props (#485, tester request) */}
                 <ShapeLibraryModal />
-                <MusicModal />
+                {/* The music is edited on the timeline: Edit music (owner, 2026-11-04) */}
                 <FieldModal />
                 <MetronomeModal />
                 <AppearanceModal />

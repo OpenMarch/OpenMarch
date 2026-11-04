@@ -1,9 +1,16 @@
 /**
- * Tempo mode: "Import MusicXML…" in the header. Says what the score replaces before anything
- * happens, then picks the file and takes its timing in (`scoreImport.ts`), one undo step.
+ * Edit music: the header's Import menu: an audio file, or a MusicXML score. The score says what
+ * it replaces before anything happens, then picks the file and takes its timing in
+ * (`scoreImport.ts`), one undo step.
  */
 import { useRef, useState } from "react";
-import { FileArrowDownIcon } from "@phosphor-icons/react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+    CaretDownIcon,
+    FileArrowDownIcon,
+    MusicNotesIcon,
+    MusicNotesSimpleIcon,
+} from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     AlertDialog,
@@ -24,14 +31,15 @@ import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import { importScoreTiming } from "./scoreImport";
 import { toolButton } from "./TempoToolbar";
+import { importAudioFile, MENU_CLASS, MENU_ITEM_CLASS } from "./TempoMusicFile";
 
-export function TempoImportScore() {
+export function TempoImport() {
     const [asking, setAsking] = useState(false);
     const [busy, setBusy] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
     const { fetchTimingObjects } = useTimingObjects();
-    const label = tolgee.t("tempoMode.importScore.button", "Import MusicXML…");
+    const label = tolgee.t("tempoMode.import.button", "Import");
 
     const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -59,28 +67,60 @@ export function TempoImportScore() {
 
     return (
         <>
-            <ShortcutTooltip
-                closeOnPress
-                label={label}
-                hint={tolgee.t(
-                    "tempoMode.importScore.hint",
-                    "Take the tempos, time signatures, measures and rehearsal marks from a score",
-                )}
-            >
-                <button
-                    type="button"
-                    aria-label={label}
-                    className={toolButton(false)}
-                    disabled={busy}
-                    onClick={() => setAsking(true)}
-                    data-testid="tempo-import-score"
+            <DropdownMenu.Root modal={false}>
+                <ShortcutTooltip
+                    closeOnPress
+                    label={label}
+                    hint={tolgee.t(
+                        "tempoMode.import.hint",
+                        "Bring in the music file, or a score's tempos, time signatures, measures and rehearsal marks",
+                    )}
                 >
-                    <FileArrowDownIcon size={12} aria-hidden />
-                    <span className="@max-[640px]:hidden">
-                        {busy ? tolgee.t("music.importing") : label}
-                    </span>
-                </button>
-            </ShortcutTooltip>
+                    <DropdownMenu.Trigger
+                        aria-label={label}
+                        className={toolButton(false)}
+                        disabled={busy}
+                        data-testid="tempo-import"
+                    >
+                        <FileArrowDownIcon size={12} aria-hidden />
+                        <span className="@max-[640px]:hidden">
+                            {busy ? tolgee.t("music.importing") : label}
+                        </span>
+                        <CaretDownIcon
+                            size={10}
+                            className="text-text/60"
+                            aria-hidden
+                        />
+                    </DropdownMenu.Trigger>
+                </ShortcutTooltip>
+                <DropdownMenu.Portal>
+                    <DropdownMenu.Content
+                        align="end"
+                        sideOffset={4}
+                        className={MENU_CLASS}
+                    >
+                        <DropdownMenu.Item
+                            className={MENU_ITEM_CLASS}
+                            onSelect={importAudioFile}
+                            data-testid="tempo-import-audio"
+                        >
+                            <MusicNotesIcon size={12} aria-hidden />
+                            {tolgee.t("tempoMode.import.audio", "Audio file…")}
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                            className={MENU_ITEM_CLASS}
+                            onSelect={() => setAsking(true)}
+                            data-testid="tempo-import-score"
+                        >
+                            <MusicNotesSimpleIcon size={12} aria-hidden />
+                            {tolgee.t(
+                                "tempoMode.import.score",
+                                "MusicXML score…",
+                            )}
+                        </DropdownMenu.Item>
+                    </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+            </DropdownMenu.Root>
             <input
                 ref={fileRef}
                 type="file"
@@ -101,7 +141,7 @@ export function TempoImportScore() {
                             <span>
                                 {tolgee.t(
                                     "tempoMode.importScore.replaces",
-                                    "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed in tempo mode.",
+                                    "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed here.",
                                 )}
                             </span>
                             <span>

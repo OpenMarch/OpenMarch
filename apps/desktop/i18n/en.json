@@ -1808,7 +1808,6 @@
         "importing": "Importing...",
         "importLabel": "MusicXML Import",
         "importSuccess": "MusicXML file: \"{fileName}\" imported successfully!",
-        "openTempoMode": "Open tempo mode",
         "repeatPlayNote": "m{label}, time {time}",
         "importChecksTitle": "Check these in the score",
         "importChecksIntro": "{fileName} was imported. The importer guessed or couldn't read these, so the counts may not match the music here:",
@@ -1843,7 +1842,6 @@
         "tempoGroupNamePlaceholder": "Optional",
         "tempoGroups": "Tempo Groups",
         "tempoGroupUpdated": "Tempo group updated",
-        "timingInTempoMode": "Tempos, time signatures, measures, rehearsal marks and MusicXML import are in tempo mode, next to the music.",
         "undoWithShortcut": "This action is undoable with <keys></keys>",
         "timeSignature": "Time signature: {timeSignature}",
         "title": "Music",
@@ -4494,11 +4492,11 @@
             }
         },
         "button": {
-            "hint": "Line the counts up with the music: tempo, time signatures, rehearsal marks",
+            "hint": "The music file, and lining the counts up with it: tempo, time signatures, rehearsal marks",
             "hintOn": "Line the counts up with the music. <escape></escape> or <toggle></toggle> leaves.",
-            "label": "Tempo mode",
-            "labelOn": "Tempo mode: on",
-            "text": "Tempo"
+            "label": "Edit music",
+            "labelOn": "Editing music",
+            "text": "Edit music"
         },
         "errors": {
             "cantRemoveLastCount": "Can't remove the last count",
@@ -4536,13 +4534,13 @@
                 "gesture": "Drag a stretch's round handle"
             },
             "keys": {
-                "escape": "Clear the selection, or cancel a drag; with nothing to clear, leave tempo mode",
+                "escape": "Clear the selection, or cancel a drag; with nothing to clear, stop editing music",
                 "mark": "Drop a rehearsal mark while playing",
                 "play": "Play from the playhead, or stop where it is",
                 "tap": "Tap tempo: tap on each beat to see how fast it is",
-                "toggle": "Tempo mode on and off"
+                "toggle": "Start or stop editing music"
             },
-            "label": "How tempo mode works",
+            "label": "How editing music works",
             "rightClick": {
                 "effect": "holds, tempo changes, adding and removing counts",
                 "gesture": "Right-click"
@@ -4555,14 +4553,16 @@
             "rightClickMusic": {
                 "gesture": "Right-click the music",
                 "effect": "Start the music here: puts that spot on count 1"
+            },
+            "musicFile": {
+                "gesture": "The file's name on the music",
+                "effect": "switches to another audio file, imports one or deletes it"
             }
         },
         "importScore": {
-            "button": "Import MusicXML…",
             "choose": "Choose a file…",
-            "hint": "Take the tempos, time signatures, measures and rehearsal marks from a score",
             "keeps": "Pages, drill, cues and props stay on their counts, so they play at the score's tempos. Undo puts it all back.",
-            "replaces": "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed in tempo mode.",
+            "replaces": "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed here.",
             "title": "Use a score's timing?"
         },
         "lanes": {
@@ -4620,12 +4620,25 @@
         },
         "toolbar": {
             "done": "Done",
-            "doneLabel": "Done: leave tempo mode",
+            "doneLabel": "Done: stop editing music",
             "metronome": "Metronome",
             "metronomeHint": "A click on every count, to hear whether the counts sit on the music",
             "metronomeOff": "Metronome: off",
             "metronomeOn": "Metronome: on",
-            "title": "Tempo mode"
+            "title": "Editing music"
+        },
+        "import": {
+            "button": "Import",
+            "hint": "Bring in the music file, or a score's tempos, time signatures, measures and rehearsal marks",
+            "audio": "Audio file…",
+            "score": "MusicXML score…"
+        },
+        "music": {
+            "add": "Add music…",
+            "menuLabel": "Music file",
+            "pick": "Pick music",
+            "importAnother": "Import another audio file…",
+            "delete": "Delete this audio file…"
         }
     }
 }

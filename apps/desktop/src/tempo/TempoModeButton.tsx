@@ -1,8 +1,8 @@
 /**
- * Tempo mode: turns tempo mode on and off (Shift+T). Lit
- * while on.
+ * Edit music: the timeline bar's "Edit music" button turns tempo mode on and off (Shift+T). Lit
+ * while on. Tempo mode is the code's name; the app calls it editing the music (owner, 2026-11-04).
  */
-import { GaugeIcon } from "@phosphor-icons/react";
+import { MusicNotesIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { useEffect } from "react";
 import { T } from "@tolgee/react";
@@ -37,8 +37,8 @@ export function TempoModeButton() {
         <ShortcutTooltip
             label={
                 on
-                    ? tolgee.t("tempoMode.button.labelOn", "Tempo mode: on")
-                    : tolgee.t("tempoMode.button.label", "Tempo mode")
+                    ? tolgee.t("tempoMode.button.labelOn", "Editing music")
+                    : tolgee.t("tempoMode.button.label", "Edit music")
             }
             shortcut="Shift + T"
             hint={
@@ -56,7 +56,7 @@ export function TempoModeButton() {
                 ) : (
                     tolgee.t(
                         "tempoMode.button.hint",
-                        "Line the counts up with the music: tempo, time signatures, rehearsal marks",
+                        "The music file, and lining the counts up with it: tempo, time signatures, rehearsal marks",
                     )
                 )
             }
@@ -64,7 +64,7 @@ export function TempoModeButton() {
             <button
                 type="button"
                 data-testid="timeline-tempo-mode"
-                aria-label={tolgee.t("tempoMode.button.label", "Tempo mode")}
+                aria-label={tolgee.t("tempoMode.button.label", "Edit music")}
                 aria-pressed={on}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={toggle}
@@ -73,9 +73,9 @@ export function TempoModeButton() {
                     on ? "text-accent bg-fg-2" : "text-text hover:text-accent",
                 )}
             >
-                <GaugeIcon size={16} weight={on ? "bold" : "regular"} />
+                <MusicNotesIcon size={16} weight={on ? "bold" : "regular"} />
                 <span className="text-[11px]">
-                    {tolgee.t("tempoMode.button.text", "Tempo")}
+                    {tolgee.t("tempoMode.button.text", "Edit music")}
                 </span>
             </button>
         </ShortcutTooltip>

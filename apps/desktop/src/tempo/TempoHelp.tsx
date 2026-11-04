@@ -86,6 +86,17 @@ export function TempoHelp() {
             ),
         ],
         [
+            "musicFile",
+            tolgee.t(
+                "tempoMode.help.musicFile.gesture",
+                "The file's name on the music",
+            ),
+            tolgee.t(
+                "tempoMode.help.musicFile.effect",
+                "switches to another audio file, imports one or deletes it",
+            ),
+        ],
+        [
             "rightClickMusic",
             tolgee.t(
                 "tempoMode.help.rightClickMusic.gesture",
@@ -143,15 +154,18 @@ export function TempoHelp() {
             "Escape",
             tolgee.t(
                 "tempoMode.help.keys.escape",
-                "Clear the selection, or cancel a drag; with nothing to clear, leave tempo mode",
+                "Clear the selection, or cancel a drag; with nothing to clear, stop editing music",
             ),
         ],
         [
             "Shift + T",
-            tolgee.t("tempoMode.help.keys.toggle", "Tempo mode on and off"),
+            tolgee.t(
+                "tempoMode.help.keys.toggle",
+                "Start or stop editing music",
+            ),
         ],
     ];
-    const label = tolgee.t("tempoMode.help.label", "How tempo mode works");
+    const label = tolgee.t("tempoMode.help.label", "How editing music works");
     return (
         <Popover.Root>
             <ShortcutTooltip closeOnPress label={label}>

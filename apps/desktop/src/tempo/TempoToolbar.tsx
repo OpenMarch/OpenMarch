@@ -1,10 +1,14 @@
 // cspell:ignore priya
 /**
- * Tempo mode: tempo mode's header row: Tap tempo, the
- * metronome, Import MusicXML, help and Done.
+ * Edit music: the mode's header row: Tap tempo, the
+ * metronome, Import (audio or MusicXML), help and Done.
  */
 import clsx from "clsx";
-import { CheckIcon, GaugeIcon, MetronomeIcon } from "@phosphor-icons/react";
+import {
+    CheckIcon,
+    MetronomeIcon,
+    MusicNotesIcon,
+} from "@phosphor-icons/react";
 import {
     ShortcutTooltip,
     TransportTooltipProvider,
@@ -14,7 +18,7 @@ import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
-import { TempoImportScore } from "./TempoImportScore";
+import { TempoImport } from "./TempoImport";
 
 /** A tool button in tempo mode's header, lit when `on` (its colors are either/or, not overrides) */
 export const toolButton = (on = false, iconOnly = false) =>
@@ -50,9 +54,9 @@ export function TempoToolbar(props: {
                 onContextMenu={(e) => e.stopPropagation()}
             >
                 <span className="text-accent flex shrink-0 items-center gap-4 text-[12px] font-bold whitespace-nowrap">
-                    <GaugeIcon size={14} weight="bold" aria-hidden />
+                    <MusicNotesIcon size={14} weight="bold" aria-hidden />
                     <span className="@max-[640px]:hidden">
-                        {tolgee.t("tempoMode.toolbar.title", "Tempo mode")}
+                        {tolgee.t("tempoMode.toolbar.title", "Editing music")}
                     </span>
                 </span>
                 <span className="bg-stroke h-16 w-px shrink-0" aria-hidden />
@@ -95,13 +99,13 @@ export function TempoToolbar(props: {
                     </button>
                 </ShortcutTooltip>
                 <span className="min-w-0 flex-1" aria-hidden />
-                <TempoImportScore />
+                <TempoImport />
                 <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress
                     label={tolgee.t(
                         "tempoMode.toolbar.doneLabel",
-                        "Done: leave tempo mode",
+                        "Done: stop editing music",
                     )}
                     shortcut="Esc"
                 >

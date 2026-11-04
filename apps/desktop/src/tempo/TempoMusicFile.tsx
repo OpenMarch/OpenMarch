@@ -1,0 +1,221 @@
+/**
+ * Edit music: the music file, on the Music lane next to its waveform. With no music it offers
+ * "Add music…"; with music it names the file, and its menu switches to another of the show's
+ * audio files, imports one, or deletes it. (The Music sidebar used to hold these; owner,
+ * 2026-11-04: the music is edited where it is shown.)
+ */
+import { useCallback, useEffect, useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import {
+    CaretDownIcon,
+    CheckIcon,
+    MusicNotesIcon,
+    PlusIcon,
+    TrashIcon,
+} from "@phosphor-icons/react";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    Button,
+} from "@openmarch/ui";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import AudioFile from "@/global/classes/AudioFile";
+import tolgee from "@/global/singletons/Tolgee";
+import { runAction } from "@/shortcuts/registry";
+import { toolButton } from "./TempoToolbar";
+
+export const MENU_CLASS =
+    "border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text z-50 flex min-w-[13rem] max-w-[24rem] flex-col border p-4";
+export const MENU_ITEM_CLASS =
+    "rounded-4 text-body data-[highlighted]:bg-text/10 data-[disabled]:text-text/40 flex h-28 cursor-pointer items-center gap-8 px-8 outline-hidden select-none data-[disabled]:cursor-default";
+
+/** Opens the file picker for an audio file; the new file becomes the show's music */
+export const importAudioFile = () => runAction("launchInsertAudioFileDialogue");
+
+/** The show's audio files, and the one it plays */
+function useAudioFiles() {
+    const context = useSelectedAudioFile();
+    const selected = context?.selectedAudioFile ?? null;
+    const setSelected = context?.setSelectedAudioFile;
+    const [files, setFiles] = useState<AudioFile[] | null>(null);
+    const refresh = useCallback(() => {
+        void AudioFile.getAudioFilesDetails().then(setFiles);
+    }, []);
+    useEffect(() => {
+        refresh();
+    }, [refresh, selected]);
+    useEffect(() => {
+        window.addEventListener("audioFilesUpdated", refresh);
+        return () => window.removeEventListener("audioFilesUpdated", refresh);
+    }, [refresh]);
+
+    const select = (id: number) => {
+        void AudioFile.setSelectedAudioFile(id).then((f) => setSelected?.(f));
+    };
+    const remove = async (file: AudioFile) => {
+        const next = await AudioFile.deleteAudioFile(file.id);
+        // The last one gone, the show plays silence again
+        setSelected?.(next ?? (await AudioFile.getSelectedAudioFile()));
+        refresh();
+        toast.success(
+            tolgee.t("music.deleteSuccess", { fileName: file.nickname }),
+        );
+    };
+    return { files, selected, select, remove };
+}
+
+/** Over the Music lane at the view's left edge (`left`, `top` in the band's px) */
+export function TempoMusicFile(props: { left: number; top: number }) {
+    const { files, selected, select, remove } = useAudioFiles();
+    const [deleting, setDeleting] = useState<AudioFile | null>(null);
+    if (files === null) return null;
+    const current = files.find((f) => f.id === selected?.id) ?? null;
+
+    return (
+        <div
+            className="absolute flex"
+            style={{ left: props.left, top: props.top }}
+            // The band's own pointer handling mustn't see these
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onContextMenu={(e) => e.stopPropagation()}
+        >
+            {files.length === 0 ? (
+                <button
+                    type="button"
+                    data-testid="tempo-add-music"
+                    className={toolButton(true)}
+                    onClick={importAudioFile}
+                >
+                    <PlusIcon size={12} weight="bold" aria-hidden />
+                    {tolgee.t("tempoMode.music.add", "Add music…")}
+                </button>
+            ) : (
+                <DropdownMenu.Root modal={false}>
+                    <DropdownMenu.Trigger
+                        data-testid="tempo-music-file"
+                        aria-label={tolgee.t(
+                            "tempoMode.music.menuLabel",
+                            "Music file",
+                        )}
+                        className={toolButton(false)}
+                    >
+                        <MusicNotesIcon size={12} aria-hidden />
+                        <span className="max-w-[16rem] truncate">
+                            {current?.nickname ??
+                                tolgee.t("tempoMode.music.pick", "Pick music")}
+                        </span>
+                        <CaretDownIcon
+                            size={10}
+                            className="text-text/60"
+                            aria-hidden
+                        />
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content
+                            align="start"
+                            sideOffset={4}
+                            className={MENU_CLASS}
+                            data-testid="tempo-music-menu"
+                        >
+                            {files.map((f) => (
+                                <DropdownMenu.Item
+                                    key={f.id}
+                                    className={MENU_ITEM_CLASS}
+                                    onSelect={() => {
+                                        if (f.id !== current?.id) select(f.id);
+                                    }}
+                                >
+                                    <CheckIcon
+                                        size={12}
+                                        className={
+                                            f.id === current?.id
+                                                ? "shrink-0"
+                                                : "invisible shrink-0"
+                                        }
+                                        aria-hidden
+                                    />
+                                    <span className="truncate">
+                                        {f.nickname}
+                                    </span>
+                                </DropdownMenu.Item>
+                            ))}
+                            <DropdownMenu.Separator className="bg-stroke mx-4 my-4 h-px" />
+                            <DropdownMenu.Item
+                                className={MENU_ITEM_CLASS}
+                                onSelect={importAudioFile}
+                            >
+                                <PlusIcon size={12} aria-hidden />
+                                {tolgee.t(
+                                    "tempoMode.music.importAnother",
+                                    "Import another audio file…",
+                                )}
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className={MENU_ITEM_CLASS}
+                                disabled={!current}
+                                data-testid="tempo-music-delete"
+                                onSelect={() => setDeleting(current)}
+                            >
+                                <TrashIcon
+                                    size={12}
+                                    className="text-red"
+                                    aria-hidden
+                                />
+                                {tolgee.t(
+                                    "tempoMode.music.delete",
+                                    "Delete this audio file…",
+                                )}
+                            </DropdownMenu.Item>
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            )}
+            <AlertDialog
+                open={deleting !== null}
+                onOpenChange={(open) => {
+                    if (!open) setDeleting(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        {tolgee.t("music.deleteAudioFile")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        {tolgee.t("music.deleteAudioFileDescription")}
+                        <span className="bg-bg-1 border-stroke text-text mt-8 block overflow-auto rounded-md border p-16 font-mono text-wrap">
+                            {deleting?.nickname}
+                        </span>
+                    </AlertDialogDescription>
+                    <div className="flex justify-end gap-8">
+                        <AlertDialogCancel>
+                            <Button variant="secondary" size="compact">
+                                {tolgee.t("music.cancel")}
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="red"
+                                size="compact"
+                                data-testid="tempo-music-delete-confirm"
+                                onClick={() => {
+                                    if (deleting) void remove(deleting);
+                                }}
+                            >
+                                {tolgee.t("music.delete")}
+                            </Button>
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+        </div>
+    );
+}

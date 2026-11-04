@@ -2,8 +2,8 @@
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
 id: tempo-mode
-title: Line the counts up with your music in tempo mode
-summary: A Tempo button opens tempo lanes in the timeline. Set the tempo by typing it or dragging the tempo line, add gradual changes and holds, set time signatures like 7/8, renumber measures and add rehearsal marks, before or after your pages.
+title: Edit your music: add it and line the counts up with it
+summary: An Edit music button opens music lanes in the timeline. Add or switch the music file there, set the tempo by typing it or dragging the tempo line, add gradual changes and holds, set time signatures like 7/8, renumber measures and add rehearsal marks, before or after your pages.
 status: open
 questions:
   - "Could you get the counts to sit on the music, with the metronome on? What did you use: typing a tempo, dragging the line, Tap tempo or Start the music here?"
@@ -12,18 +12,22 @@ questions:
   - "Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?"
   - "When you added or removed counts or a measure, did the result match what you expected?"
   - "Could you set the tempo before writing any pages, or past your last page?"
-  - "If you tried Import MusicXML: did the counts, measures and marks match your score? Was anything missing from the Music button that you used to use there?"
+  - "If you tried Import > MusicXML score: did the counts, measures and marks match your score?"
+  - "The Music sidebar is gone: did you find where to add, switch or delete the music? Where did you look first?"
   - "Did Undo always put back what you expected?"
 ---
 
-Tempo mode edits the counts against the music inside the timeline, the way a
-tempo track works in a music app. Open a demo show (they have music) or add
-your own music to a show.
+Edit music holds the show's music inside the timeline: the music file, and
+the counts lined up against it, the way a tempo track works in a music app.
+Open a demo show (they have music), or add your own music there.
 
 **What to try**
 
-- Click **Tempo** at the right of the timeline bar (or press Shift+T). New
-  lanes open: rehearsal marks, measures, tempo and the music's waveform.
+- Click **Edit music** at the right of the timeline bar (or press Shift+T).
+  New lanes open: rehearsal marks, measures, tempo and the music's waveform.
+- With no music yet, click **Add music…** on the music lane. With music,
+  click the file's name there to switch to another audio file, import one or
+  delete it. **Import** in the header also takes an audio file.
   Press **?** for how it works, and **Done** or Esc to leave.
 - Turn on **Metronome** and play, to hear whether the counts sit on the music.
   Zoom with the − and + buttons, Ctrl/⌘+scroll or Fit.
@@ -46,11 +50,10 @@ your own music to a show.
   drag a mark to move it. Press M while playing to drop a mark.
 - Tempo editing works past your last page too, so you can set the tempo
   before writing any pages. A show with no measures shows 4/4 from count 1.
-- Click **Import MusicXML…** to take the tempos, time signatures, measures
-  and rehearsal marks from a score. It says what it replaces first; your
+- Choose **Import > MusicXML score…** to take the tempos, time signatures,
+  measures and rehearsal marks from a score. It says what it replaces first; your
   pages and drill stay on their counts, and Undo puts it all back.
-- The Music button in the sidebar now holds only the music file, with a
-  button that opens tempo mode.
+- The Music sidebar is gone: the music file is in Edit music now.
 
 **Good to know**
 
