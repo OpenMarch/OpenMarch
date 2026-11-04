@@ -490,10 +490,10 @@ test("3D View follows the editor and saves the venue", async ({
     await expectVenue(view3d, kit, lighting, webgl);
 
     // Undo in the editor reverts each change; redo puts it back.
-    await editor.getByRole("tab", { name: "File" }).click();
-    // The File tab's buttons, which show their words (the title bar's are icons)
-    const undo = editor.getByRole("button").filter({ hasText: /^Undo$/ });
-    const redo = editor.getByRole("button").filter({ hasText: /^Redo$/ });
+    // The title bar's buttons (the File tab no longer has its own)
+    const titleBar = editor.locator(".titlebar-button");
+    const undo = titleBar.getByRole("button", { name: "Undo", exact: true });
+    const redo = titleBar.getByRole("button", { name: "Redo", exact: true });
     await undo.click();
     await expectVenue(view3d, kit, kitLighting, webgl);
     await undo.click();
@@ -505,6 +505,7 @@ test("3D View follows the editor and saves the venue", async ({
 
     // Close the show (which closes the window) and reopen both.
     const closed = view3d.waitForEvent("close");
+    await editor.getByRole("tab", { name: "File" }).click();
     await editor.getByRole("button", { name: "Exit File" }).click();
     await closed;
     await expect(editor.getByText("Recent Files")).toBeVisible({

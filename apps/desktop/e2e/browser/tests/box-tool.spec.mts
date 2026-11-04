@@ -714,39 +714,19 @@ test("change: the field display bar holds paths, labels and shapes; the rest is 
         "field-display-shapes",
     ])
         await expect(bar.getByTestId(id)).toBeVisible();
-    // Nothing else crept in: those three and the two placeholders
-    await expect(bar.getByRole("button")).toHaveCount(5);
+    // Nothing else crept in
+    await expect(bar.getByRole("button")).toHaveCount(3);
     await expect(page.getByTestId("open-view3d")).toBeVisible();
 
     const settings = await openSettings(page, "Field");
     for (const name of ["Grid lines", "Half lines", "Step size warnings"])
         await expect(settings.getByRole("switch", { name })).toBeVisible();
-    for (const name of ["Normal", "Above the dot", "Fade the rest"])
+    for (const name of ["Normal", "Above the dot"])
         await expect(settings.getByRole("radio", { name })).toBeChecked();
-});
-
-test("change: Settings › Field › While shaping changes who fades on the open field at once", async ({
-    show,
-}) => {
-    const { page } = show;
-    const settings = await openSettings(page, "Field");
-    const dimmedIds = async () =>
-        (await drawnMarchers(page)).filter((m) => m.dimmed).map((m) => m.id);
-    await page.bringToFront();
-    await page.mouse.click(...(await screenOf(page, 1)));
-    await page.keyboard.down("Shift");
-    await page.mouse.click(...(await screenOf(page, 2)));
-    await page.keyboard.up("Shift");
-    await page.keyboard.press("b");
-    await expect.poll(dimmedIds).toEqual([3, 4, 5, 6, 7, 8]);
-
-    // Only while a drag draws it: an open box at rest fades nobody
-    await settings
-        .getByRole("radio", { name: "Fade only while drawing" })
-        .click();
-    await expect.poll(dimmedIds).toEqual([]);
-    await settings.getByRole("radio", { name: "Fade the rest" }).click();
-    await expect.poll(dimmedIds).toEqual([3, 4, 5, 6, 7, 8]);
+    // While shaping is gone: an open shape always fades the rest
+    await expect(
+        settings.getByRole("radio", { name: "Fade the rest" }),
+    ).toHaveCount(0);
 });
 
 test("change: Settings › Field › Grid lines redraws the open field at once", async ({

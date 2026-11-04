@@ -16,8 +16,8 @@ import { seedShowSql } from "../seed.mjs";
 // The field's right-click menu (#315). A right-click that doesn't drag opens
 // it at the pointer; a right-drag still pans. Right-clicking a marcher that
 // isn't selected selects it first, and empty field keeps the selection. Its
-// entries are registered actions: here, both Unset actions (Set vs Following, #304
-// and #305) and the selection actions. The context-menu key and Shift+F10
+// entries are registered actions: here, Clear this page (the field menu's clear;
+// Remove keyframe is on the timeline's keyframe menu) and the selection actions. The context-menu key and Shift+F10
 // open it at the selection.
 //
 // The show is unset-here.spec's: pages flag at beats 9, 17 and 25 (measures
@@ -94,6 +94,10 @@ const entry = (page: Page, name: string) =>
         ),
     });
 
+/** Clear this page for the selection, named for the page ("Clear Page 2 (selected)") */
+const clearEntry = (page: Page) =>
+    menu(page).getByRole("menuitem", { name: /^Clear Page \S+ \(selected\)/ });
+
 /** Where field point (x, y) is on screen, from where T1 is drawn and the zoom. */
 async function screenAt(page: Page, x: number, y: number) {
     const t1 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T1")!;
@@ -126,7 +130,7 @@ async function atPage2(show: Show) {
     await waitForIdle(page);
 }
 
-test("right-clicking a marcher that isn't selected selects it and opens the menu there; Unset here runs from it", async ({
+test("right-clicking a marcher that isn't selected selects it and opens the menu there; Clear this page runs from it", async ({
     show,
 }) => {
     const { page } = show;
@@ -142,7 +146,7 @@ test("right-clicking a marcher that isn't selected selects it and opens the menu
     expect(Math.abs(box.x - t2.screen.x)).toBeLessThan(24);
     expect(Math.abs(box.y - t2.screen.y)).toBeLessThan(24);
 
-    await entry(page, "Remove keyframe").click();
+    await clearEntry(page).click();
     await expect(menu(page)).toBeHidden();
     await expect
         .poll(() => spots(show, 2))
@@ -154,7 +158,7 @@ test("right-clicking a marcher that isn't selected selects it and opens the menu
     await expect.poll(() => spots(show, 2)).toEqual(PAGE_2_BEFORE);
 });
 
-test("right-clicking a selected marcher or empty field keeps the selection; the second Unset names the page that follows", async ({
+test("right-clicking a selected marcher or empty field keeps the selection; Clear this page acts on it and keeps the later pages", async ({
     show,
 }) => {
     const { page } = show;
@@ -172,35 +176,34 @@ test("right-clicking a selected marcher or empty field keeps the selection; the 
     await page.mouse.click(empty.x, empty.y, { button: "right" });
     await expect(menu(page)).toBeVisible();
     expect(await selectedDrillNumbers(page)).toEqual(["T1", "T2"]);
-    // T2 holds over page 3: that page follows its page 2 spot
-    await entry(page, "Remove keyframe, Page 3 moves back too").click();
+    // The follow-back variant lives in the Alignment tab, the page menu and the palette
+    await expect(
+        menu(page).getByRole("menuitem", { name: /move back too/ }),
+    ).toHaveCount(0);
+    await clearEntry(page).click();
     await expect
         .poll(() => spots(show, 2))
         .toEqual({ ...PAGE_2_BEFORE, T1: "400,340", T2: "500,340" });
-    await expect
-        .poll(() => spots(show, 3))
-        .toEqual({ ...PAGE_3, T2: "500,340" });
+    // T2 held over page 3 on its page 2 spot: page 3 keeps it
+    await expect.poll(() => spots(show, 3)).toEqual(PAGE_3);
 });
 
-test("only offers Unset here and on Pages N–M when pages follow, and Unset is unavailable with nobody Set", async ({
+test("offers Clear this page, not Remove keyframe, and Clear is unavailable where nobody has a position of their own", async ({
     show,
 }) => {
     const { page } = show;
     await atPage2(show);
     // T1 moves again over page 3: no page follows its spot
     await rightClickMarcher(page, "T1");
-    await expect(entry(page, "Remove keyframe")).toBeEnabled();
+    await expect(clearEntry(page)).toBeEnabled();
     await expect(
-        menu(page).getByRole("menuitem", { name: /Unset here and on/ }),
+        menu(page).getByRole("menuitem", { name: /Remove keyframe/ }),
     ).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    // T3 holds over page 2: it isn't Set here
+    // T3 holds over page 2: it has nothing to clear
     await rightClickMarcher(page, "T3");
-    await expect(entry(page, "Remove keyframe")).toHaveAttribute(
-        "data-disabled",
-        "",
-    );
+    await expect(clearEntry(page)).toHaveAttribute("data-disabled", "");
     // Swap needs two marchers
     await expect(entry(page, "Swap two marchers")).toHaveAttribute(
         "data-disabled",
@@ -266,7 +269,7 @@ test("the context-menu key and Shift+F10 open it at the selection, only with one
     const box = (await menu(page).boundingBox())!;
     expect(Math.abs(box.x - t2.screen.x)).toBeLessThan(24);
     // The keyboard reaches the entries
-    await expect(entry(page, "Remove keyframe")).toBeVisible();
+    await expect(clearEntry(page)).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(menu(page)).toBeHidden();
 
