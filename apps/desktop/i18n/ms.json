@@ -2321,21 +2321,6 @@
             },
             "selectWholeShape": "Pilih {shape, select, block {blok} circle {bulatan} other {bentuk}}"
         },
-        "save": {
-            "descriptionLabel": "Penerangan bentuk yang disimpan (pilihan)",
-            "descriptionPlaceholder": "Penerangan (pilihan)",
-            "ariaLabel": "Simpan bentuk ini ke pustaka anda",
-            "button": "Simpan",
-            "cancel": "Batal",
-            "nameLabel": "Nama bentuk yang disimpan",
-            "savedAs": "Disimpan sebagai {name}",
-            "tip": "Simpan bentuk ini ke pustaka anda, dengan bintang",
-            "mixedIntervals": "Garisan dengan jarak bercampur belum boleh disimpan"
-        },
-        "saved": {
-            "copyFailed": "Tidak dapat menyalin bentuk yang disimpan ke dalam persembahan",
-            "deleteFailed": "Tidak dapat memadam bentuk yang disimpan daripada persembahan"
-        },
         "command": {
             "fill": "Isian: {modes}",
             "layout": "Susun atur: {layouts}"
@@ -2573,37 +2558,6 @@
                 "spacing": "Penjarakan"
             }
         },
-        "library": {
-            "addNamed": "Tambah {name} ke Pustaka saya",
-            "addTip": "Tambah ke Pustaka saya, untuk setiap persembahan",
-            "close": "Tutup",
-            "deleteNamed": "Padam {name}",
-            "deleteTip": "Padam bentuk tersimpan ini",
-            "dismiss": "Ketepikan",
-            "draw": "Lukis {name}",
-            "full": "{max} bentuk telah dibintangkan, iaitu had lingkaran bentuk. Nyahbintang satu dahulu untuk membintangkan {name}.",
-            "group": {
-                "basic": "Asas",
-                "saved": "Disimpan"
-            },
-            "intro": "Bintangkan bentuk untuk mengekalkannya dalam tab Bentuk dan lingkaran bentuk, sehingga {max}.",
-            "note": {
-                "apart": "berjarak {spacing}",
-                "modeApart": "{mode, select, outline {Garis luar} other {Sebar}} berjarak {spacing}",
-                "apartStagger": "berjarak {spacing}, selang-seli {fraction}",
-                "apartStaggerLeft": "berjarak {spacing}, selang-seli {fraction} ke kiri",
-                "showOnly": "persembahan ini sahaja",
-                "stagger": "selang-seli {fraction}",
-                "staggerLeft": "selang-seli {fraction} ke kiri"
-            },
-            "savedEmpty": "Simpan bentuk daripada baris ⋯ atau pemeriksa untuk menyimpannya di sini, untuk setiap persembahan.",
-            "savedNewer": "{count, plural, other {# bentuk tersimpan memerlukan}} versi OpenMarch yang lebih baharu.",
-            "star": "Bintangkan",
-            "starNamed": "Bintangkan {name}",
-            "title": "Bentuk",
-            "unstar": "Nyahbintang",
-            "unstarNamed": "Nyahbintang {name}"
-        },
         "spacing": {
             "empty": "Masukkan jarak dalam langkah",
             "noGaps": "Rentang memerlukan sekurang-kurangnya 1 sela",
@@ -2624,8 +2578,7 @@
             },
             "placeError": "Ralat semasa meletakkan bentuk",
             "ring": {
-                "hint": "Klik bentuk, atau di mana-mana tempat lain untuk menutup",
-                "starred": "Dibintangkan"
+                "hint": "Klik bentuk, atau di mana-mana tempat lain untuk menutup"
             },
             "section": {
                 "box": "Blok",
@@ -2635,8 +2588,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Jenis bentuk",
-                "library": "Pustaka",
-                "libraryTip": "Buka pustaka bentuk untuk membintangkan bentuk",
                 "ringHintKeys": "Tahan <keys></keys> pada padang untuk lingkaran bentuk"
             }
         },

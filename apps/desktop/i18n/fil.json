@@ -2321,21 +2321,6 @@
             },
             "selectWholeShape": "Piliin ang {shape, select, block {bloke} circle {bilog} other {hugis}}"
         },
-        "save": {
-            "descriptionLabel": "Paglalarawan ng na-save na hugis (opsyonal)",
-            "descriptionPlaceholder": "Paglalarawan (opsyonal)",
-            "ariaLabel": "I-save ang hugis na ito sa iyong library",
-            "button": "I-save",
-            "cancel": "Kanselahin",
-            "nameLabel": "Pangalan ng na-save na hugis",
-            "savedAs": "Na-save bilang {name}",
-            "tip": "I-save ang hugis na ito sa iyong library, naka-star",
-            "mixedIntervals": "Hindi pa puwedeng i-save ang mga linyang may magkakaibang pagitan"
-        },
-        "saved": {
-            "copyFailed": "Hindi makopya ang na-save na hugis sa palabas",
-            "deleteFailed": "Hindi mabura ang na-save na hugis mula sa palabas"
-        },
         "command": {
             "fill": "Pagpuno: {modes}",
             "layout": "Layout: {layouts}"
@@ -2573,37 +2558,6 @@
                 "spacing": "Pagitan"
             }
         },
-        "library": {
-            "addNamed": "Idagdag ang {name} sa aking Library",
-            "addTip": "Idagdag sa aking Library, para sa bawat palabas",
-            "close": "Isara",
-            "deleteNamed": "Burahin ang {name}",
-            "deleteTip": "Burahin ang naka-save na hugis na ito",
-            "dismiss": "Isara",
-            "draw": "Gumuhit ng {name}",
-            "full": "Naka-star na ang {max} hugis, ang pinakamaraming kaya ng ring. Alisin muna ang star ng isa para ma-star ang {name}.",
-            "group": {
-                "basic": "Pangunahin",
-                "saved": "Naka-save"
-            },
-            "intro": "Mag-star ng hugis para manatili ito sa tab na Mga hugis at sa ring ng mga hugis, hanggang {max}.",
-            "note": {
-                "apart": "{spacing} ang pagitan",
-                "modeApart": "{mode, select, outline {Outline} other {Spread}} {spacing} ang pagitan",
-                "apartStagger": "{spacing} ang pagitan, stagger {fraction}",
-                "apartStaggerLeft": "{spacing} ang pagitan, stagger {fraction} pakaliwa",
-                "showOnly": "sa palabas na ito lang",
-                "stagger": "stagger {fraction}",
-                "staggerLeft": "stagger {fraction} pakaliwa"
-            },
-            "savedEmpty": "Mag-save ng hugis mula sa ⋯ ng row nito o sa inspector para manatili ito rito, para sa bawat palabas.",
-            "savedNewer": "{count, plural, one {# naka-save na hugis ang nangangailangan} other {# naka-save na hugis ang nangangailangan}} ng mas bagong bersyon ng OpenMarch.",
-            "star": "I-star",
-            "starNamed": "I-star ang {name}",
-            "title": "Mga hugis",
-            "unstar": "Alisin ang star",
-            "unstarNamed": "Alisin ang star ng {name}"
-        },
         "spacing": {
             "empty": "Maglagay ng pagitan sa hakbang",
             "noGaps": "Kailangan ng kahit 1 puwang ang isang run",
@@ -2624,8 +2578,7 @@
             },
             "placeError": "Nagka-error sa paglalagay ng hugis",
             "ring": {
-                "hint": "Mag-click ng hugis, o kahit saan para isara",
-                "starred": "Naka-star"
+                "hint": "Mag-click ng hugis, o kahit saan para isara"
             },
             "section": {
                 "box": "Bloke",
@@ -2635,8 +2588,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Mga uri ng hugis",
-                "library": "Library",
-                "libraryTip": "Buksan ang library ng hugis para mag-star ng mga hugis",
                 "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis"
             }
         },

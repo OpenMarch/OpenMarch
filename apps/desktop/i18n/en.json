@@ -2352,21 +2352,6 @@
             },
             "selectWholeShape": "Select {shape, select, block {box} circle {circle} other {shape}}"
         },
-        "save": {
-            "descriptionLabel": "Description of the saved shape (optional)",
-            "descriptionPlaceholder": "Description (optional)",
-            "ariaLabel": "Save this shape to your library",
-            "button": "Save",
-            "cancel": "Cancel",
-            "nameLabel": "Name of the saved shape",
-            "savedAs": "Saved as {name}",
-            "tip": "Save this shape to your library, starred",
-            "mixedIntervals": "Lines with mixed intervals can't be saved yet"
-        },
-        "saved": {
-            "copyFailed": "Couldn't copy the saved shape into the show",
-            "deleteFailed": "Couldn't delete the saved shape from the show"
-        },
         "command": {
             "fill": "Fill: {modes}",
             "layout": "Layout: {layouts}"
@@ -2623,37 +2608,6 @@
                 "spacing": "Spacing"
             }
         },
-        "library": {
-            "addNamed": "Add {name} to my Library",
-            "addTip": "Add to my Library, for every show",
-            "close": "Close",
-            "deleteNamed": "Delete {name}",
-            "deleteTip": "Delete this saved shape",
-            "dismiss": "Dismiss",
-            "draw": "Draw a {name}",
-            "full": "{max} shapes are starred, as many as the ring holds. Unstar one first to star {name}.",
-            "group": {
-                "basic": "Basic",
-                "saved": "Saved"
-            },
-            "intro": "Star a shape to keep it in the Shapes tab and the shape ring, up to {max}.",
-            "note": {
-                "apart": "{spacing} apart",
-                "modeApart": "{mode, select, outline {Outline} other {Spread}} {spacing} apart",
-                "apartStagger": "{spacing} apart, stagger {fraction}",
-                "apartStaggerLeft": "{spacing} apart, stagger {fraction} left",
-                "showOnly": "this show only",
-                "stagger": "stagger {fraction}",
-                "staggerLeft": "stagger {fraction} left"
-            },
-            "savedEmpty": "Save a shape from its ⋯ row or the inspector to keep it here, for every show.",
-            "savedNewer": "{count, plural, one {# saved shape needs} other {# saved shapes need}} a newer version of OpenMarch.",
-            "star": "Star",
-            "starNamed": "Star {name}",
-            "title": "Shapes",
-            "unstar": "Unstar",
-            "unstarNamed": "Unstar {name}"
-        },
         "spacing": {
             "empty": "Enter an interval in steps",
             "noGaps": "A run needs at least 1 gap",
@@ -2674,8 +2628,7 @@
             },
             "placeError": "Error placing the shape",
             "ring": {
-                "hint": "Click a shape, or anywhere else to close",
-                "starred": "Starred"
+                "hint": "Click a shape, or anywhere else to close"
             },
             "section": {
                 "box": "Box",
@@ -2685,8 +2638,6 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Shape kinds",
-                "library": "Library",
-                "libraryTip": "Open the shape library, to star shapes",
                 "ringHintKeys": "Hold <keys></keys> on the field for the shape ring"
             }
         },

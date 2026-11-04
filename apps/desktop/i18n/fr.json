@@ -2321,21 +2321,6 @@
             },
             "selectWholeShape": "Sélectionner {shape, select, block {le bloc} circle {le cercle} other {la forme}}"
         },
-        "save": {
-            "descriptionLabel": "Description de la forme enregistrée (facultatif)",
-            "descriptionPlaceholder": "Description (facultatif)",
-            "ariaLabel": "Enregistrer cette forme dans votre bibliothèque",
-            "button": "Enregistrer",
-            "cancel": "Annuler",
-            "nameLabel": "Nom de la forme enregistrée",
-            "savedAs": "Enregistrée sous {name}",
-            "tip": "Enregistrer cette forme dans votre bibliothèque et l'ajouter aux favoris",
-            "mixedIntervals": "Les lignes à intervalles variables ne peuvent pas encore être enregistrées"
-        },
-        "saved": {
-            "copyFailed": "Impossible de copier la forme enregistrée dans le spectacle",
-            "deleteFailed": "Impossible de supprimer la forme enregistrée du spectacle"
-        },
         "command": {
             "fill": "Remplissage : {modes}",
             "layout": "Disposition : {layouts}"
@@ -2573,37 +2558,6 @@
                 "spacing": "Espacement"
             }
         },
-        "library": {
-            "addNamed": "Ajouter {name} à ma bibliothèque",
-            "addTip": "Ajouter à ma bibliothèque, pour tous les spectacles",
-            "close": "Fermer",
-            "deleteNamed": "Supprimer {name}",
-            "deleteTip": "Supprimer cette forme enregistrée",
-            "dismiss": "Ignorer",
-            "draw": "Dessiner : {name}",
-            "full": "{max} formes sont en favori, le maximum que l'anneau peut contenir. Retirez-en une des favoris pour y mettre {name}.",
-            "group": {
-                "basic": "De base",
-                "saved": "Enregistrées"
-            },
-            "intro": "Mettez une forme en favori pour la garder dans l'onglet Formes et l'anneau de formes, jusqu'à {max}.",
-            "note": {
-                "apart": "espacés de {spacing}",
-                "modeApart": "{mode, select, outline {Contour} other {Réparti}}, espacés de {spacing}",
-                "apartStagger": "espacés de {spacing}, en quinconce {fraction}",
-                "apartStaggerLeft": "espacés de {spacing}, en quinconce {fraction} à gauche",
-                "showOnly": "ce spectacle uniquement",
-                "stagger": "en quinconce {fraction}",
-                "staggerLeft": "en quinconce {fraction} à gauche"
-            },
-            "savedEmpty": "Enregistrez une forme depuis sa ligne ⋯ ou l'inspecteur pour la garder ici, pour tous les spectacles.",
-            "savedNewer": "{count, plural, one {# forme enregistrée nécessite} other {# formes enregistrées nécessitent}} une version plus récente d'OpenMarch.",
-            "star": "Mettre en favori",
-            "starNamed": "Mettre {name} en favori",
-            "title": "Formes",
-            "unstar": "Retirer des favoris",
-            "unstarNamed": "Retirer {name} des favoris"
-        },
         "spacing": {
             "empty": "Saisissez un intervalle en pas",
             "noGaps": "Un parcours doit avoir au moins 1 écart",
@@ -2624,8 +2578,7 @@
             },
             "placeError": "Erreur lors du placement de la forme",
             "ring": {
-                "hint": "Cliquez sur une forme, ou ailleurs pour fermer",
-                "starred": "En favori"
+                "hint": "Cliquez sur une forme, ou ailleurs pour fermer"
             },
             "section": {
                 "box": "Bloc",
@@ -2635,8 +2588,6 @@
             "tab": {
                 "greyed": "{name} : {reason}",
                 "kinds": "Types de forme",
-                "library": "Bibliothèque",
-                "libraryTip": "Ouvrir la bibliothèque de formes pour mettre des formes en favori",
                 "ringHintKeys": "Maintenez <keys></keys> sur le terrain pour l'anneau de formes"
             }
         },
