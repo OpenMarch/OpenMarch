@@ -1,16 +1,12 @@
 import { threeZoomControls } from "@/field/three/fieldNavigation";
 import Toolbar from "@/components/toolbar/Toolbar";
 import Inspector from "@/components/inspector/Inspector";
-import VisualsInspector from "@/components/visuals/VisualsInspector";
-import { VisualsProvider } from "@/components/visuals/VisualsProvider";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import { View3dPublisher } from "@/view3d/sync/useView3dPublisher";
-import { AssetsHost } from "@/components/assets/AssetsModal";
 import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import {
@@ -40,14 +36,14 @@ import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import { useSnapOnWhenFileOpens } from "./hooks/useSnapOnWhenFileOpens";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import FieldDisplayBar from "@/components/canvas/display/FieldDisplayBar";
-import View3dButton from "@/components/visuals/View3dButton";
+import View3dButton from "@/components/toolbar/View3dButton";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useIsPreviewMode } from "./stores/PreviewModeStore";
 import { PreviewModeHost } from "./components/preview/PreviewMode";
-import WorkspaceViewSwitch from "./components/visuals/WorkspaceViewSwitch";
+import WorkspaceViewSwitch from "./components/toolbar/WorkspaceViewSwitch";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { useEditorModeStore } from "./stores/EditorModeStore";
 import ErrorBoundary from "./ErrorBoundary";
@@ -125,7 +121,6 @@ function App() {
     const pluginsLoadedRef = useRef(false);
     // Preview watches the show: no toolbar, sidebar or inspector
     const preview = useIsPreviewMode();
-    const visuals = useIsVisualsView();
     const isTouchMode = useIsTouchMode();
     const windowSize = useWindowSize();
     const [inspectorChoices, setInspectorChoices] = useState<InspectorChoices>({
@@ -323,15 +318,7 @@ function App() {
                 {process.env.NODE_ENV !== "production" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                <main
-                    data-workspace={visuals ? "visuals" : "editor"}
-                    className={clsx(
-                        "app-frame bg-bg-1 text-text outline-accent fixed inset-0 flex min-h-0 min-w-0 flex-col overflow-hidden font-sans",
-                        // Visuals mode is its own workspace (performer-behavior.md 7.1): a tint says so
-                        visuals &&
-                            "before:to-accent/10 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:bg-linear-to-b before:from-transparent",
-                    )}
-                >
+                <main className="app-frame bg-bg-1 text-text outline-accent fixed inset-0 flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null &&
                         !isCodegen &&
                         !welcomeFlowAsksAnalytics && (
@@ -382,11 +369,10 @@ function App() {
                                             <ExportCoordinatesModal />
                                             <TimelineResolverHost />
                                             <View3dPublisher />
-                                            <AssetsHost />
                                             <SvgPreviewHandler />
                                             <PreviewModeHost />
                                             <TitleBar showControls />
-                                            <VisualsProvider>
+                                            <>
                                                 <div
                                                     id="app"
                                                     className="relative flex h-full min-h-0 w-full gap-8 px-8 pb-8"
@@ -423,13 +409,12 @@ function App() {
                                                             )}
                                                             inert={tempoMode}
                                                         >
-                                                            {!preview &&
-                                                                !visuals && (
-                                                                    <>
-                                                                        <Sidebar />
-                                                                        <SidebarModal />
-                                                                    </>
-                                                                )}
+                                                            {!preview && (
+                                                                <>
+                                                                    <Sidebar />
+                                                                    <SidebarModal />
+                                                                </>
+                                                            )}
                                                             <Suspense>
                                                                 <ThreeField />
                                                             </Suspense>
@@ -455,15 +440,11 @@ function App() {
                                                             }
                                                             inert={tempoMode}
                                                         >
-                                                            {visuals ? (
-                                                                <VisualsInspector />
-                                                            ) : (
-                                                                <Inspector />
-                                                            )}
+                                                            <Inspector />
                                                         </InspectorDock>
                                                     )}
                                                 </div>
-                                            </VisualsProvider>
+                                            </>
                                             <Toaster />
                                         </SelectedAudioFileProvider>
                                     </SelectedMarchersProvider>

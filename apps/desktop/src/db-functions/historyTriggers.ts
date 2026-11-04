@@ -34,19 +34,9 @@ export const tablesWithHistory = [
     schema.timeline_slot_destinations,
     // App data beside them: where marchers are Held (ADR 0001 amendment 2026-10-30)
     schema.timeline_held_marks,
-    // Performer cues (ADR 0004 D-5)
-    schema.phrase_assets,
-    schema.cues,
-    schema.cue_marchers,
-    schema.page_performer_settings,
     // Items and their Outline changes (ADR 0002 D-10)
     schema.items,
     schema.item_geometry,
-    // Where each item is (ADR 0002 D-10), its holders and crew after their change
-    schema.item_placements,
-    schema.item_placement_marchers,
-    // Which Artwork sits on each item slot (ADR 0002 D-10)
-    schema.item_artwork_slots,
     // Shape recipes beside the positions they placed (ADR 0006)
     schema.timeline_shape_recipes,
     schema.timeline_shape_recipe_marchers,
@@ -75,7 +65,7 @@ export async function createUndoTriggers(
  */
 export async function createAllUndoTriggers(db: DbConnection | DB) {
     // Only the tables the file has: a page-era file gets the tables the timeline-only migrations
-    // add (the performer cues) when it converts, and the conversion creates their triggers. A
+    // add when it converts, and the conversion creates their triggers. A
     // table that isn't there can't be edited, so it needs no history.
     const rows = await db.all<{ name: string } | [string]>(
         sql`SELECT name FROM sqlite_schema WHERE type = 'table'`,

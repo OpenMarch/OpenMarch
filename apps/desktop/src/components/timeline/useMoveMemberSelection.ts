@@ -33,7 +33,7 @@ export function isLeftoverMoveSelection(
 
 /**
  * Clicking another move (its clip, a double-click, **Edit move**) clears a selection left by
- * the previous move's **Select them** (UI-14 round-2 review), so the inspector shows the new
+ * the previous move's **Select marchers** (UI-14 round-2 review), so the inspector shows the new
  * move's card rather than the old move's marchers. The record goes once another move is on.
  */
 export function useClearLeftoverMoveSelection(): void {

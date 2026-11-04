@@ -42,8 +42,8 @@ describe("FieldSettings", () => {
             screen.getByRole("radio", { name: "Above the dot" }),
         ).toBeChecked();
         expect(
-            screen.getByRole("radio", { name: "Fade the rest" }),
-        ).toBeChecked();
+            screen.queryByRole("radio", { name: "Fade the rest" }),
+        ).toBeNull();
     });
 
     it("saves each toggle to the UI settings", async () => {
@@ -64,18 +64,14 @@ describe("FieldSettings", () => {
         ).toMatchObject({ gridLines: false });
     });
 
-    it("saves label size, label position and shape focus", async () => {
+    it("saves label size and label position", async () => {
         await renderSettings();
         const user = userEvent.setup();
         await user.click(screen.getByRole("radio", { name: "Large" }));
         await user.click(screen.getByRole("radio", { name: "Beside the dot" }));
-        await user.click(
-            screen.getByRole("radio", { name: "Fade only while drawing" }),
-        );
         expect(settings()).toMatchObject({
             marcherLabelSize: "large",
             marcherLabelPosition: "beside",
-            shapeFocus: "drawing",
         });
     });
 

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* Text glyphs for symbols a platform could draw as color emoji (↩ ↔); see the file */
+@import "./text-symbols.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 /* Touch mode: set by the app on <html data-input="touch"> (InputModeStore). Use for finger-sized targets. */
@@ -35,12 +37,15 @@
 }
 
 @theme {
+    /* "OpenMarch Text Symbols" (text-symbols.css) must stay right after the brand
+       font in both stacks, or symbols such as ↩ and ↔ can show as color emoji */
     --font-sans:
-        "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
-        "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        "DM Sans", "OpenMarch Text Symbols", ui-sans-serif, system-ui,
+        sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+        "Noto Color Emoji";
     --font-mono:
-        "DM Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-        "Liberation Mono", "Courier New", monospace;
+        "DM Mono", "OpenMarch Text Symbols", ui-monospace, SFMono-Regular,
+        Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
     --text-sub: 0.6875rem;
     --text-body: 0.875rem;

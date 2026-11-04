@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Walang aksyong ire-redo",
             "noUndoAvailable": "Walang aksyong ia-undo",
-            "redidCueEdit": "Na-redo ang isang pag-edit ng cue (Visuals)",
-            "redidDrillEdit": "Na-redo ang isang pag-edit ng drill (Editor)",
             "redo": "I-redo",
             "redoFailed": "Hindi nailapat ang redo, kaya walang nagbago.",
             "undo": "I-undo",
-            "undidCueEdit": "Na-undo ang isang pag-edit ng cue (Visuals)",
-            "undidDrillEdit": "Na-undo ang isang pag-edit ng drill (Editor)",
             "undoFailed": "Hindi nailapat ang undo, kaya walang nagbago."
         },
         "file": {
@@ -144,15 +140,11 @@
             "openSettings": "Mga setting…",
             "openView3d": "Buksan ang 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window tatlong dimensyon istadyum lugar bintana",
-            "runFieldBenchmark": "Patakbuhin ang field benchmark",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate bilis pagganap pagsubok",
             "showShortcuts": "Mga keyboard shortcut",
             "hideStartFlagPositions": "Itago ang mga posisyon sa panimulang marka",
             "showStartFlagPositions": "Ipakita ang mga posisyon sa panimulang marka",
             "toggleStartFlagPositions": "I-toggle ang mga posisyon sa panimulang marka",
             "toggleStartFlagPositionsKeywords": "previous paths dots where marchers were came from hold peek latch nakaraan landas tuldok miyembro pinanggalingan pindutin silip",
-            "toggleWorkspace": "Lumipat ng workspace (Editor o Visuals)",
-            "toggleWorkspaceKeywords": "visuals editor workspace cues mode lumipat",
             "showNextPaths": "Ipakita ang mga path sa susunod na pahina",
             "toggleNextPaths": "I-toggle ang mga path sa susunod na pahina",
             "togglePreview": "I-preview ang palabas",
@@ -172,72 +164,6 @@
         "codegenBanner": "🎭 PLAYWRIGHT CODEGEN MODE - Nire-record ang mga test action",
         "releaseNotes": "Mga release note",
         "updated": "Na-update ang OpenMarch sa v{version}"
-    },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Nakalaan ang lahat ng karapatan",
-                "unknown": "Hindi alam ang lisensya"
-            },
-            "modified": "{credit} (binago)",
-            "none": "Walang anuman sa palabas na ito ang nangangailangan ng credit.",
-            "shareNote": {
-                "badge": "Paalala sa pag-share",
-                "detail": "May mga item na hindi alam ang lisensya. Maaaring wala kang karapatang i-share ang mga ito kasama ng palabas na ito.",
-                "export": "May mga item sa palabas na ito na hindi alam ang lisensya. Maaaring wala kang karapatang i-share ang mga ito."
-            },
-            "title": "Mga credit",
-            "uncredited": "{count, plural, one {May # pang item na CC0 o built-in at hindi na kailangan ng credit.} other {May # pang item na CC0 o built-in at hindi na kailangan ng credit.}}"
-        },
-        "show": {
-            "addFailed": "Hindi maidagdag ang {name} sa iyong Library.",
-            "added": "Naidagdag ang {name} sa iyong Library.",
-            "addToLibrary": "Idagdag sa aking Library",
-            "delete": {
-                "addFirst": "Idagdag muna sa aking Library",
-                "alsoUsedByCues": "{count, plural, =1 {Ginagamit din ito ng isang cue:} other {Ginagamit din ito ng # cue:}}",
-                "useLine": "{channel} · {who} · bilang {count}",
-                "cancel": "Kanselahin",
-                "channels": {
-                    "carry": "Dala",
-                    "silk": "Silk",
-                    "uniform": "Uniporme"
-                },
-                "checking": "Tinitingnan kung ano ang gumagamit nito…",
-                "confirm": "May sariling kopya ang iyong Library. Hindi na ito maa-undo.",
-                "confirmNoCopy": "Walang kopya ang iyong Library, kaya tuluyan na itong mawawala. Hindi na ito maa-undo.",
-                "confirmUnknownCopy": "Hindi na ito maa-undo.",
-                "delete": "Burahin",
-                "deleted": "Binura ang {name} sa palabas na ito.",
-                "failed": "Hindi ito mabura.",
-                "inUseTitle": "Ginagamit ang {name}",
-                "isFloor": "Ito ang sahig ng palabas na ito, kaya hindi ito mabubura. Palitan ang sahig sa Mga setting ng field → Larawan.",
-                "itemModel": "model",
-                "itemSlot": "artwork sa {slot}",
-                "keptForUndo": "Mananatili ang {name} sa palabas na ito habang maibabalik pa ito ng Undo, at aalisin ito kapag isinara ang palabas pagkatapos noon.",
-                "label": "Burahin sa palabas na ito",
-                "noReplacement": "Walang ibang item na ganitong uri sa palabas na ito na maipapalit dito. Mag-import muna ng isa.",
-                "pinnedBy": "Bahagi ito ng {names}, kaya hindi ito mabubura.",
-                "replaceAndDelete": "Palitan at burahin",
-                "replaced": "Pinalitan ang {name} ng {replacement}.",
-                "replacedKeptForUndo": "Pinalitan ang {name} ng {replacement}. Mananatili ang {name} sa palabas na ito habang maibabalik pa ito ng Undo, at aalisin ito kapag isinara ang palabas pagkatapos noon.",
-                "replaceWith": "Palitan ng…",
-                "targets": {
-                    "band": "Banda",
-                    "set": "{count, plural, one {# miyembro} other {# na miyembro}}",
-                    "tag": "Isang tag"
-                },
-                "title": "Burahin ang {name} sa palabas na ito?",
-                "usedByCues": "{count, plural, =1 {Ginagamit ito ng isang cue. Palitan ito para mabura:} other {Ginagamit ito ng # cue. Palitan ito sa lahat ng mga iyon para mabura:}}",
-                "usedByItems": "{count, plural, =1 {Ginagamit ito ng isang prop, kaya hindi ito mabubura:} other {Ginagamit ito ng # prop, kaya hindi ito mabubura:}}"
-            },
-            "empty": "Wala pang ginagamit na asset ang palabas na ito.",
-            "emptyHint": "Kinokopya ang mga import sa palabas na nakabukas.",
-            "title": "Palabas na ito",
-            "updateDetails": "Nagbago ang mga detalye nito sa iyong Library.",
-            "updateVersion": "May mas bagong bersyon sa iyong Library."
-        },
-        "title": "Mga asset"
     },
     "audio": {
         "beats": {
@@ -312,7 +238,6 @@
     },
     "commandPalette": {
         "close": "Isara",
-        "editsDrill": "Binabago nito ang drill — lumipat sa Editor",
         "empty": "Walang tugmang command.",
         "navigate": "Mag-navigate",
         "placeholder": "Maghanap ng command…",
@@ -396,18 +321,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# cue ang nailipat sa mas huling bilang} other {# cue ang nailipat sa mas huling bilang}}",
-            "movedTo": "{count, plural, one {# cue ang nailipat sa bilang {at}} other {# cue ang nailipat sa bilang {at}}}",
-            "removed": "{count, plural, one {# cue ang inalis} other {# cue ang inalis}}"
-        },
-        "errors": {
-            "create": "Nagka-error sa paggawa ng mga cue",
-            "delete": "Nagka-error sa pagbura ng mga cue",
-            "update": "Nagka-error sa pag-update ng mga cue"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -572,14 +485,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Nakopya",
-            "copy": "Kopyahin bilang Markdown",
-            "devBuild": "Isa itong development build. Ang mga numero lang mula sa production build ang may saysay.",
-            "intro": "Pine-play, sini-scrub, ini-zoom at pina-pan ang nakabukas na palabas nang ilang segundo bawat isa, at sinusukat ang bawat frame. Panatilihing nasa harap ang window na ito at huwag galawin ang kahit ano habang tumatakbo ito.",
-            "run": "Patakbuhin",
-            "running": "Tumatakbo: {kind}…",
-            "softwareGl": "Sa software tumatakbo ang graphics dito, kaya pinakamababang halaga lang ang mga numerong ito.",
-            "title": "Benchmark ng field"
+            "running": "Tumatakbo: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "pantay na pagitan",
@@ -618,15 +524,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direksyon",
-            "sections": "Seksyon"
-        },
-        "comingSoon": "Malapit na",
-        "direction": "Direksyon ng field",
         "label": "Display ng field",
-        "sections": "Mga nakikitang seksyon",
-        "comingSoonLabel": "{label}: Malapit na",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -836,7 +734,6 @@
         "exitFile": "Isara ang file",
         "newFile": "Bagong file",
         "openFile": "Buksan ang file",
-        "redo": "I-redo",
         "saveCopyDialogDescription": "Awtomatikong sine-save ng OpenMarch ang mga pagbabago mo sa kasalukuyang file. Gamitin ito kung gusto mong gumawa ng buong kopya ng kasalukuyang file.",
         "saveFile": "I-save ang kopya",
         "saveFileCancel": "Kanselahin",
@@ -874,18 +771,11 @@
             "stepSizeWarning": "Lumampas sa hangganan ang laki ng hakbang",
             "swapMarchers": "Pagpalitin ang mga miyembro",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Pumunta sa Pahina {page}, kung saan huling gumalaw ang mga miyembrong ito",
                 "goToStart": "Pumunta sa simula",
                 "holdFrom": "Nakatigil mula sa Pahina {page}",
                 "holdFromStart": "Nakatigil mula sa simula",
-                "holdHere": "Nakatigil dito ang mga miyembrong ito",
-                "movesOnThisPage": "Gumagalaw sa pahinang ito",
-                "someHoldHere": "Nakatigil dito ang ilan sa mga miyembrong ito",
-                "unsetHere": "Alisin ang keyframe",
-                "unsetHereHint": "Alisin ang kanilang keyframe sa bilang na ito, para sundan nila ulit ang mga nauna. Mananatili sa puwesto ang mga susunod na pahina",
-                "unsetHereHintSome": "Alisin ang keyframe ng {count} sa {total} na napili na may keyframe sa bilang na ito, para sundan nila ulit ang mga nauna. Mananatili sa puwesto ang mga susunod na pahina",
-                "unsetHereNone": "Wala sa mga napiling miyembro ang may keyframe sa bilang na ito"
+                "movesOnThisPage": "Gumagalaw sa pahinang ito"
             },
             "title": "{count} miyembro",
             "titleSingle": "Miyembro {drillNumber}",
@@ -948,18 +838,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Bilang",
-                "delete": "Burahin ang galaw",
-                "endHelp": "Para baguhin kung saan sila hihinto, i-drag ang mga miyembro sa field sa dulo ng galaw.",
-                "goToEnd": "Pumunta sa dulo",
-                "marchers": "{count, plural, one {# miyembro} other {# miyembro}}",
-                "name": "Pangalan",
-                "nameLimit": "Hanggang {max} na character lamang.",
-                "paused": "I-pause para makapagbura ng galaw.",
-                "selectMarchers": "Piliin sila",
-                "split": "Hatiin sa playhead",
-                "splitHelp": "Ilagay ang playhead sa loob ng galaw para hatiin ito roon.",
-                "title": "Galaw"
+                "splitHelp": "Ilagay ang playhead sa loob ng galaw para hatiin ito roon."
             }
         },
         "title": "Inspector"
@@ -1025,7 +904,6 @@
                 "audioNotSaved": "Maaaring hindi na-save ang audio. Puwede kang magdagdag ng audio mamaya sa editor.",
                 "createFailed": "Hindi nagawa ang palabas",
                 "databaseNotReady": "Hindi pa handa ang database. Tapusin muna ang bahagi ng proyekto.",
-                "fieldImageNotCopied": "Hindi makopya ang larawan ng field ng nakaraang palabas",
                 "filePathRequired": "Kailangan ang file path",
                 "importFailed": "Hindi na-import ang nakaraang .dots file",
                 "saveFailed": "Hindi na-save ang palabas sa {path}",
@@ -1110,360 +988,6 @@
         "help": {
             "addYours": "Hindi makita ang wika mo? <link>Tulungan kaming idagdag ito</link>",
             "madeWithAi": "Ginawa gamit ang AI ang salin na ito, kaya maaaring may maling salita. <link>Tulungan kaming suriin ito</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Library",
-            "search": "Maghanap ayon sa pangalan",
-            "empty": "Wala pang laman ang Library mo.",
-            "emptyHint": "Gamitin ang Mag-import… para magdagdag ng mga model at artwork.",
-            "noMatches": "Walang tumutugma sa “{query}” sa Library.",
-            "loadFailed": "Hindi ma-load ang Library ({code}).",
-            "groups": {
-                "silks": "Mga silk",
-                "floors": "Mga sahig",
-                "props": "Mga prop",
-                "equipment": "Kagamitan",
-                "uniforms": "Mga uniporme",
-                "other": "Iba pa"
-            }
-        },
-        "templates": {
-            "menu": "Mga artwork template",
-            "menuHint": "Buong laki, isang file bawat click",
-            "groups": {
-                "silk": "Mga silk cut",
-                "floor": "Mga base floor",
-                "floorProp": "Mga floor prop",
-                "prop": "Mga prop panel",
-                "uniform": "Mga panel ng uniporme"
-            },
-            "withSag": "{name}, {sag} na sag",
-            "saggingBottom": "{name}, nakalaylay ang ibaba",
-            "propFace": {
-                "top": "Itaas, {name}",
-                "front": "Harap, {name}",
-                "back": "Likod, {name}"
-            },
-            "download": "I-download ang {name} bilang {format}",
-            "saved": "Na-save ang {filename}",
-            "saveFailed": "Hindi na-save ang template",
-            "uniformPanel": {
-                "top": {
-                    "front": "Pang-itaas, harap",
-                    "back": "Pang-itaas, likod"
-                },
-                "bottoms": {
-                    "front": "Pang-ibaba, harap",
-                    "back": "Pang-ibaba, likod"
-                },
-                "overlay": {
-                    "front": "Overlay (kapa), harap",
-                    "back": "Overlay (kapa), likod"
-                }
-            }
-        },
-        "import": {
-            "entry": "Mag-import…",
-            "library": "Library",
-            "title": "Import",
-            "back": "Bumalik sa Library",
-            "picking": "Pumili ng mga file sa dialog…",
-            "fileCount": "{count, plural, one {# file} other {# file}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Mula sa picker ng {kind}",
-            "fromSlot": "Para sa slot ng {surface}",
-            "pageN": "Pahina {n}",
-            "pageOf": "pahina {index} ng {count}",
-            "showPage": "Ipakita ang {label}",
-            "cancel": "Kanselahin",
-            "close": "Tapos na",
-            "importMore": "Mag-import pa…",
-            "tryAgain": "Subukang muli",
-            "chooseAgain": "Pumili ulit ng mga file",
-            "cancelKeeps": "Mananatili sa Library mo ang mga pahinang naidagdag na kahit magkansela ka.",
-            "cancelled": "Kinansela. Mananatili sa Library mo ang anumang naidagdag na.",
-            "clean": "Handa nang idagdag. Wala kang kailangang piliin.",
-            "starterKit": "Nag-e-export ang OpenMarch Blender starter kit ng mga model na maayos na nai-import.",
-            "groups": {
-                "cantImport": "Hindi ma-import",
-                "needsChoice": "Kailangan mong pumili",
-                "fixed": "Naayos na para sa iyo",
-                "notes": "Mga tala"
-            },
-            "kind": {
-                "title": "Ano ito?",
-                "hint": "Kailangan. Susuriin pagkatapos ang saklaw ng laki at ang triangle cap.",
-                "from": {
-                    "picker": "Itinakda ng picker",
-                    "stamp": "Mula sa stamp ng starter kit"
-                }
-            },
-            "kinds": {
-                "prop": "Prop",
-                "equipment": "Equipment",
-                "garment": "Kasuotan",
-                "floorProp": "Floor prop",
-                "baseFloor": "Base floor"
-            },
-            "surfaces": {
-                "silk": "Silk",
-                "baseFloor": "Base floor",
-                "floorProp": "Floor prop",
-                "propSlot": "Prop",
-                "uniformPart": "Uniporme"
-            },
-            "stages": {
-                "reading": "Binabasa ang file…",
-                "validating": "Sinusuri ang file…",
-                "decoding": "Dine-decode…",
-                "checking": "Sinusuri ang laki at mga cap…",
-                "converting": "Kino-convert…",
-                "writing": "Isinusulat…",
-                "rendering-pdf": "Nire-render ang mga pahina ng PDF…",
-                "saving": "Idinadagdag sa iyong Library…"
-            },
-            "refused": {
-                "unsupported": "Hindi ito format na ini-import ng OpenMarch. Gumamit ng GLB o glTF para sa mga model, at PNG, JPG, SVG o PDF para sa artwork.",
-                "tooLarge": {
-                    "model": "Lampas sa 200 MB na limitasyon para sa isang model kasama ang mga file nito.",
-                    "artwork": "Lampas sa 300 MB na limitasyon para sa isang artwork file."
-                }
-            },
-            "match": {
-                "kitTitle": "Bagong bersyon ng {name}",
-                "filenameTitle": "Nasa iyong Library na bilang {name}",
-                "detail": "Makikita ang “may available na update” sa mga palabas na gumagamit nito; walang magbabago hangga’t hindi ito tinatanggap.",
-                "builtInDetail": "Built-in ang {name}, kaya magiging sarili mong kopya ito.",
-                "newVersionOf": "Bagong bersyon ng {name}",
-                "update": "I-update ang {name}",
-                "copyOf": "Sarili mong kopya ng {name}",
-                "addNew": "Idagdag bilang bago"
-            },
-            "choices": {
-                "suggested": "inirerekomenda",
-                "units": {
-                    "title": "Mga unit",
-                    "detail": "May sukat itong {largest} sa pinakamahabang bahagi nito ayon sa pagka-export, labas sa saklaw ng laki para sa uri nito.",
-                    "none": "Gaya ng pagka-export",
-                    "cm": "Sentimetro ({factor})",
-                    "in": "Pulgada ({factor})",
-                    "ft": "Talampakan ({factor})"
-                },
-                "rotate": {
-                    "title": "I-rotate sa Y-up",
-                    "detail": "Na-export nang Z-up; mahihiga ito nang patagilid."
-                },
-                "simplify": {
-                    "title": "Pasimplehin sa {cap} triangle",
-                    "detail": "{triangles} triangle, lampas sa cap ng {kind} na {cap}."
-                },
-                "before": "Bago {triangles}",
-                "after": "Pagkatapos {triangles}",
-                "grip": {
-                    "title": "Itakda ang grip",
-                    "detail": "Walang OM_grip_R sa file: naka-preset ang isang punto sa ikaapat na bahagi ng pinakamahabang gilid nito. I-click ang model para ilipat ito.",
-                    "misnamed": "May nakitang {names}, na hindi tugma sa OM_grip_R. Naka-preset sa pinakamahabang gilid nito; i-click ang model para ilipat ito.",
-                    "manual": "Itinakda ng pag-click mo sa model.",
-                    "pick": "Mag-click ng punto sa model",
-                    "picking": "Pumipili… (<keys></keys> para tumigil)"
-                },
-                "surface": {
-                    "title": "Surface ng artwork",
-                    "detail": "Walang surface na minarkahan ang file para sa artwork. Piliin kung saan ipi-print ang artwork, o wala; i-hover ang isa para makita ito sa model.",
-                    "none": "Wala",
-                    "unnamed": "Material {index}",
-                    "size": "Mga {width} × {height}",
-                    "noUVs": "walang UV, kaya hindi mailalapat dito ang artwork"
-                }
-            },
-            "rows": {
-                "unreadable": "Hindi mabasa ang file",
-                "missingResource": "Nawawala ang isang file na kailangan nito",
-                "externalUri": "Naglo-load ito ng file mula sa internet",
-                "resourceOutsideFolder": "Tumuturo ito sa file na nasa labas ng folder nito",
-                "validatorErrors": "{count, plural, one {# error sa glTF} other {# error sa glTF}}",
-                "requiredExtension": "Kailangan ng extension na hindi ma-load ng OpenMarch",
-                "noGeometry": "Walang geometry dito",
-                "overTriangleCap": "{triangles} triangle: lampas sa limitasyong {limit}",
-                "overTriangleCapDetail": "Higit 4× sa cap ng {kind} na {cap}. Bawasan ito bago i-export.",
-                "rigNotAllowed": "Hindi puwedeng magkaroon ng rig ang {kind}",
-                "garmentNotRigged": "Kailangan ng Kasuotan ang v4 rig",
-                "garmentJointsNotV4": "Hindi v4 skeleton ang rig",
-                "missingJoints": "Kulang: {names}",
-                "unexpectedJoints": "Sobra: {names}",
-                "garmentRestPoseMismatch": "Hindi tugma sa v4 ang rest pose ng rig",
-                "garmentQuantized": "Naka-quantize ang mga skinned mesh",
-                "garmentTransformsNotApplied": "Hindi pa naa-apply ang mga transform",
-                "garmentNoPartPaint": "Walang _PART paint: magre-render ito bilang balat",
-                "garmentNoMedianFit": "Walang fit para sa median na katawan",
-                "garmentUnknownFit": "May fit na tumutukoy sa hindi kilalang uri ng katawan",
-                "texturesDownsized": "{count, plural, one {# texture ang pinaliit} other {# texture ang pinaliit}} sa {cap} px",
-                "dracoDecoded": "Na-decode ang Draco compression",
-                "meshOptimizerDecoded": "Na-decode ang mesh optimizer compression",
-                "instancesExpanded": "Na-expand ang mga instance",
-                "extensionsStripped": "Inalis ang mga hindi ginagamit na extension",
-                "extrasStripped": "Inalis ang mga hindi ginagamit na extra",
-                "contentStripped": "Inalis ang content na hindi ginagamit ng OpenMarch",
-                "contentStrippedDetail": "Animation {animations} · camera {cameras} · morph target {morphTargets} · dagdag na scene {scenes}",
-                "influencesRenormalized": "Ni-renormalize ang bone weight sa {vertices} vertex",
-                "validatorWarnings": "{count, plural, one {# babala sa glTF} other {# babala sa glTF}}",
-                "sizeOutOfRange": "{size} sa pinakamahaba nito",
-                "sizeOutOfRangeDetail": "Labas sa karaniwang {min} hanggang {max} para sa uri nito. Suriin ang mga unit.",
-                "noStretchZones": "Walang stretch zone",
-                "noStretchZonesDetail": "Mananatili ito sa laki nito noong ginawa, o pantay itong ise-scale.",
-                "customPropertiesOff": "Mukhang naka-off ang custom properties",
-                "customPropertiesOffDetail": "Mag-export ulit gamit ang OpenMarch preset para mapanatili ang mga grip at slot.",
-                "stillOverTriangleCap": "{triangles} triangle pa rin, lampas sa cap na {cap}",
-                "slotWithoutUVs": "Walang UV ang artwork slot na {slot}",
-                "slotDropped": "Inalis ang artwork slot na {slot}",
-                "invalidOpenMarchData": "Hindi pinansin ang OpenMarch data sa {where}",
-                "unknownStampKind": "Hindi kilalang uri ang nakasaad sa stamp: {value}",
-                "missingFits": "Kulang na fit",
-                "duplicateFits": "Higit sa isang mesh ang may parehong fit",
-                "wgiEquipmentUnderMinimum": "WGI: equipment na mas maikli sa 24 in",
-                "wgiFloorOverMaximum": "WGI: floor na lampas sa 78 × 106 ft"
-            },
-            "size": {
-                "title": "Gaano ito kalaki?",
-                "members": "{selected} sa {count} {count, plural, one {pahina} other {pahina}}",
-                "fromFile": "Mula sa file: {size}",
-                "width": "Lapad",
-                "height": "Taas",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Naka-lock ang proporsyon: hindi kailanman mababanat ang artwork",
-                "needed": "Pumili ng laki: hindi sinasabi ng file na ito kung gaano kalaki ito ipi-print.",
-                "printsOn": "Ipi-print sa",
-                "fitted": "Inayon sa hugis ng iyong larawan; ang karaniwang laki ng {surface} ay {size}."
-            },
-            "details": {
-                "name": "Pangalan",
-                "namesFromFiles": "Pananatilihin ng bawat file ang sarili nitong pangalan.",
-                "tags": "Mga tag, hiwalay sa kuwit",
-                "toggle": "May-akda, lisensya at pinagmulan",
-                "unknown": "Hindi alam",
-                "author": "May-akda",
-                "license": "Lisensya",
-                "licensePlaceholder": "Lisensya, gaya ng CC-BY-4.0",
-                "source": "URL ng pinagmulan",
-                "emptyIsUnknown": "Kapag walang laman, ituturing itong Hindi alam, at hindi kailanman malayang ibahagi.",
-                "rights": "Mag-import lang ng artwork at model na may karapatan kang gamitin."
-            },
-            "add": {
-                "one": "Idagdag sa Library",
-                "many": "Idagdag ang {count} sa Library",
-                "newVersion": "Magdagdag ng bagong bersyon",
-                "cantImport": "Hindi ma-import"
-            },
-            "done": {
-                "added": "{count, plural, one {Naidagdag ang # item sa iyong Library} other {Naidagdag ang # item sa iyong Library}}",
-                "newVersion": "Naidagdag ang bagong bersyon ng {name}",
-                "notImported": "Hindi na-import"
-            },
-            "stage": {
-                "label": "Preview ng import · Hindi binago ang 3D View",
-                "loading": "Nilo-load ang preview…",
-                "empty": "Walang ipi-preview",
-                "needsKind": "Piliin kung ano ito para makita ang preview.",
-                "rejected": "Hindi ma-import, kaya walang preview.",
-                "previewFailed": "Hindi ma-load ang preview.",
-                "noArtwork": "Walang pahinang ipi-preview.",
-                "triangles": "{triangles} na triangle",
-                "trianglesCap": "{triangles} na triangle · limit {cap}",
-                "tall": "{height} ang taas",
-                "before": "Bago",
-                "after": "Pagkatapos",
-                "vector": "vector",
-                "pixels": "{width} × {height} px",
-                "views": "Mga view",
-                "view": {
-                    "front": "Harap",
-                    "side": "Gilid",
-                    "top": "Itaas"
-                },
-                "pickGrip": "Mag-click ng punto sa model para itakda ang hawakan · <keys></keys> para huminto",
-                "surface": "Surface ng artwork: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Mag-import ng mga model at artwork nang magkahiwalay",
-                    "body": "Pumili ng isang model, o kahit ilang artwork file, sa bawat pagkakataon."
-                },
-                "session-expired": {
-                    "title": "Nag-time out ang import na ito",
-                    "body": "Nagsasara ang mga import pagkatapos ng 30 minutong hindi paggamit. Piliin muli ang mga file."
-                },
-                "unknown-file": {
-                    "title": "Wala sa import na ito ang file na iyon",
-                    "body": "Piliin muli ang mga file."
-                },
-                "too-large": {
-                    "title": "Masyadong maraming file",
-                    "body": "Pumili ng hanggang 50 file lang sa bawat pagkakataon."
-                },
-                "unreadable": {
-                    "title": "Hindi mabasa ang file",
-                    "body": "Maaaring nailipat ito, o bukas ito sa ibang app."
-                },
-                "busy": {
-                    "title": "May tumatakbo pang ibang bahagi ng import",
-                    "body": "Hintaying matapos ito, saka subukang muli."
-                },
-                "timeout": {
-                    "title": "Masyadong natagalan ang importer",
-                    "body": "Maaaring mag-time out ang malalaki o masalimuot na file. Subukang muli, o gawing mas simple ang file bago ito i-export."
-                },
-                "worker-crashed": {
-                    "title": "Huminto ang importer habang binabasa ang file",
-                    "body": "Hindi nabago ang iyong file. Subukang muli; kung mangyari ulit, maaaring sira ang file."
-                },
-                "pdf-unavailable": {
-                    "title": "Hindi ma-render ang mga pahina ng PDF",
-                    "body": "Subukang muli. Kung patuloy itong mangyari, i-export ang artwork bilang PNG o SVG."
-                },
-                "write-failed": {
-                    "title": "Hindi ma-save sa iyong Library",
-                    "body": "Tiyaking may bakanteng espasyo sa disk, saka subukang muli."
-                },
-                "read-only": {
-                    "title": "Hindi mababago ang item na iyon",
-                    "body": "Read-only ang mga built-in na item. Idagdag ito bilang bago."
-                },
-                "corrupt": {
-                    "title": "May sirang entry ang iyong Library",
-                    "body": "Subukang muli. Hindi apektado ang iba pang bahagi ng iyong Library."
-                },
-                "cancelled": {
-                    "title": "Kinansela",
-                    "body": "Wala nang iba pang na-import."
-                },
-                "other": {
-                    "title": "May nangyaring mali",
-                    "body": "Subukang muli."
-                }
-            },
-            "finishFailed": "Hindi matapos ang pag-import",
-            "copyIntoShowFailed": "Hindi makopya sa palabas ang na-import"
-        },
-        "fileDialog": {
-            "importTitle": "I-import",
-            "saveTemplateTitle": "I-save ang template",
-            "models": "3D model (glb, gltf)",
-            "artwork": "Artwork (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Mga model at artwork",
-            "pngImage": "PNG na larawan"
-        },
-        "starterKit": {
-            "saveDialogTitle": "I-save ang Blender starter kit",
-            "saveFailed": "Hindi ma-save ang Blender starter kit"
         }
     },
     "marchers": {
@@ -1687,7 +1211,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Background ng produksyon",
-                "drawFailed": "Hindi maiguhit ang background image",
                 "empty": "Walang background image",
                 "help": "Awtomatikong nasi-sync ang background image kapag nag-upload ka ng bagong rebisyon. Para palitan ito, palitan ang background image sa field editor at mag-upload ng bagong rebisyon.",
                 "title": "Background image"
@@ -1957,11 +1480,6 @@
         "field.labelSize.large": "Malaki",
         "field.labelSize.normal": "Karaniwan",
         "field.labelSize.small": "Maliit",
-        "field.shapeFocus": "Habang ine-edit ang hugis",
-        "field.shapeFocus.drawing": "Palabuin lang habang gumuguhit",
-        "field.shapeFocus.drawing.description": "Lumalabo ang mga miyembro sa labas ng bukas na hugis habang iginuguhit mo lang ito.",
-        "field.shapeFocus.rest": "Palabuin ang iba",
-        "field.shapeFocus.rest.description": "Lumalabo ang mga miyembro sa labas ng bukas na hugis hangga't bukas ito.",
         "field.stepSizeWarnings": "Babala sa laki ng hakbang",
         "field.stepSizeWarnings.description": "Markahan ang mga galaw na masyadong malaki ang hakbang para i-march, at laging ipakita ang mga daanan nila.",
         "general": "Pangkalahatan",
@@ -1990,27 +1508,6 @@
         "mouse.trackpadPanSensitivity": "Sensitibidad ng pag-pan sa trackpad",
         "mouse.zoomSensitivity": "Sensitibidad ng zoom",
         "noResults": "Walang tumugmang setting.",
-        "plugins": "Mga plugin",
-        "plugins.community": "Komunidad",
-        "plugins.description": "Magdagdag ng mga feature na gawa ng komunidad.",
-        "plugins.install": "I-install",
-        "plugins.installed": "Naka-install",
-        "plugins.installFailed": "Hindi na-install",
-        "plugins.installing": "Ini-install...",
-        "plugins.noCommunityPlugins": "Walang available na plugin mula sa komunidad.",
-        "plugins.noOfficialPlugins": "Walang available na opisyal na plugin.",
-        "plugins.noPlugins": "Walang naka-install na plugin.",
-        "plugins.official": "Opisyal",
-        "plugins.refreshNotice": "<a>I-reload ang app</a> para ma-update ang mga plugin.",
-        "plugins.toast.installFailed": "Hindi na-install ang plugin na {pluginName}",
-        "plugins.toast.installSuccess": "Matagumpay na na-install ang plugin na {pluginName}!",
-        "plugins.toast.uninstallFailed": "Hindi naalis ang {pluginName}",
-        "plugins.toast.uninstallSuccess": "Matagumpay na naalis ang plugin na {pluginName}!",
-        "plugins.uninstall": "I-uninstall",
-        "plugins.uninstalled": "Naalis na",
-        "plugins.uninstallFailed": "Hindi naalis",
-        "plugins.uninstalling": "Inaalis...",
-        "plugins.version": "v{version}",
         "privacy": "Privacy",
         "privacy.analytics": "Ibahagi ang usage analytics",
         "privacy.analytics.description": "Para matulungan kaming pagbutihin ang OpenMarch, nangongolekta kami ng analytics data, mga error log, at mga recording ng session. Nakakatulong ito para maunawaan namin kung paano mo ginagamit ang app at matukoy ang mga bug. Basahin ang aming <a>privacy policy</a> para malaman ang higit pa.",
@@ -2067,8 +1564,6 @@
         "tolgeeDevToolsToggle": "In-context na pagsasalin sa Tolgee",
         "view3d": "3D View",
         "view3d.description": "Kung paano gumuguhit ang 3D View sa computer na ito. Hindi naka-save sa palabas.",
-        "view3d.pauseWhenIdle": "I-pause ang pagguhit kapag walang gumagalaw",
-        "view3d.pauseWhenIdle.description": "Humihinto sa pagguhit habang naka-pause ang palabas at hindi gumagalaw ang camera.",
         "view3d.quality": "Kalidad",
         "view3d.quality.auto": "Awtomatiko",
         "view3d.quality.auto.description": "Nagsisimula sa Mataas at lumilipat sa Mababa kapag pumapalya ang view.",
@@ -2083,8 +1578,6 @@
         "view3d.resolution.fast.description": "Pinakamalabo, pero mga kalahati lang ang trabaho. Para sa mas lumang computer.",
         "view3d.resolution.sharp": "Matalas",
         "view3d.resolution.sharp.description": "Buong detalye sa mga high-resolution na screen.",
-        "view3d.saveOnBattery": "Magtipid kapag naka-baterya",
-        "view3d.saveOnBattery.description": "Kapag naka-baterya, gumuguhit nang hanggang 30 frame bawat segundo sa standard na resolusyon.",
         "input": "Touch at Input",
         "input.description": "Piliin ang tablet layout (para sa daliri at pen) o ang desktop layout (para sa mouse at trackpad).",
         "input.interface": "Layout",
@@ -2270,21 +1763,6 @@
                 "one": "Umalis si {name} sa {shape, select, block {bloke} circle {bilog} other {hugis}}"
             },
             "selectWholeShape": "Piliin ang {shape, select, block {bloke} circle {bilog} other {hugis}}"
-        },
-        "save": {
-            "descriptionLabel": "Paglalarawan ng na-save na hugis (opsyonal)",
-            "descriptionPlaceholder": "Paglalarawan (opsyonal)",
-            "ariaLabel": "I-save ang hugis na ito sa iyong library",
-            "button": "I-save",
-            "cancel": "Kanselahin",
-            "nameLabel": "Pangalan ng na-save na hugis",
-            "savedAs": "Na-save bilang {name}",
-            "tip": "I-save ang hugis na ito sa iyong library, naka-star",
-            "mixedIntervals": "Hindi pa puwedeng i-save ang mga linyang may magkakaibang pagitan"
-        },
-        "saved": {
-            "copyFailed": "Hindi makopya ang na-save na hugis sa palabas",
-            "deleteFailed": "Hindi mabura ang na-save na hugis mula sa palabas"
         },
         "command": {
             "fill": "Pagpuno: {modes}",
@@ -2523,37 +2001,6 @@
                 "spacing": "Pagitan"
             }
         },
-        "library": {
-            "addNamed": "Idagdag ang {name} sa aking Library",
-            "addTip": "Idagdag sa aking Library, para sa bawat palabas",
-            "close": "Isara",
-            "deleteNamed": "Burahin ang {name}",
-            "deleteTip": "Burahin ang naka-save na hugis na ito",
-            "dismiss": "Isara",
-            "draw": "Gumuhit ng {name}",
-            "full": "Naka-star na ang {max} hugis, ang pinakamaraming kaya ng ring. Alisin muna ang star ng isa para ma-star ang {name}.",
-            "group": {
-                "basic": "Pangunahin",
-                "saved": "Naka-save"
-            },
-            "intro": "Mag-star ng hugis para manatili ito sa tab na Mga hugis at sa ring ng mga hugis, hanggang {max}.",
-            "note": {
-                "apart": "{spacing} ang pagitan",
-                "modeApart": "{mode, select, outline {Outline} other {Spread}} {spacing} ang pagitan",
-                "apartStagger": "{spacing} ang pagitan, stagger {fraction}",
-                "apartStaggerLeft": "{spacing} ang pagitan, stagger {fraction} pakaliwa",
-                "showOnly": "sa palabas na ito lang",
-                "stagger": "stagger {fraction}",
-                "staggerLeft": "stagger {fraction} pakaliwa"
-            },
-            "savedEmpty": "Mag-save ng hugis mula sa ⋯ ng row nito o sa inspector para manatili ito rito, para sa bawat palabas.",
-            "savedNewer": "{count, plural, one {# naka-save na hugis ang nangangailangan} other {# naka-save na hugis ang nangangailangan}} ng mas bagong bersyon ng OpenMarch.",
-            "star": "I-star",
-            "starNamed": "I-star ang {name}",
-            "title": "Mga hugis",
-            "unstar": "Alisin ang star",
-            "unstarNamed": "Alisin ang star ng {name}"
-        },
         "spacing": {
             "empty": "Maglagay ng pagitan sa hakbang",
             "noGaps": "Kailangan ng kahit 1 puwang ang isang run",
@@ -2574,27 +2021,19 @@
             },
             "placeError": "Nagka-error sa paglalagay ng hugis",
             "ring": {
-                "hint": "Mag-click ng hugis, o kahit saan para isara",
-                "starred": "Naka-star"
+                "hint": "Mag-click ng hugis, o kahit saan para isara"
             },
             "section": {
-                "box": "Bloke",
                 "title": "Mga hugis"
             },
             "selectMarchersFirst": "Pumili muna ng mga miyembro",
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Mga uri ng hugis",
-                "library": "Library",
-                "libraryTip": "Buksan ang library ng hugis para mag-star ng mga hugis",
                 "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis"
             }
         },
         "transform": {
-            "flipAcross": "I-flip ↔",
-            "flipAcrossTip": "I-flip pakaliwa't pakanan sa paligid ng pivot",
-            "flipDeep": "I-flip ↕",
-            "flipDeepTip": "I-flip harap-likod sa paligid ng pivot",
             "title": "Transform"
         },
         "validate": {
@@ -2629,32 +2068,7 @@
             "countAt": "{count} sa {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "May Horn/Equipment cue na hindi tugma sa dala nila",
-        "crewDistance": "Malayo sa {item} ang crew nito",
-        "crewDistanceDetail": "Masyadong malayo: {who}",
-        "crewlessMove": "Gumagalaw ang {item} nang walang crew",
-        "empty": "Walang susuriin.",
-        "forWho": "Para sa {who}",
-        "handConflict": "Hindi ipinapakita ang {item}",
-        "handConflictDetail": "{count, plural, =1 {Ginagamit ng {other} ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}} other {Ginagamit ng {other} ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}}}",
-        "handConflictByCarry": "Ginagamit ng isang Carry cue ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}",
-        "handConflictWithCarry": "Ginagamit ng {other} at ng isang Carry cue ang {hand, select, left {kaliwang kamay} right {kanang kamay} other {mga kamay}} ng {who}",
-        "performers": "{count, plural, one {# miyembro} other {# miyembro}}",
-        "pick": "Pumunta sa count na ito at piliin ang tinutukoy nito",
-        "putDownDrift": "Naibaba ang {item} nang malayo sa may hawak nito",
-        "putDownDriftDetail": "Dinadala ito roon ng sarili nitong galaw, hindi sa puwesto ni {who}",
-        "shortHanded": "Kulang ang kamay na humahawak sa {item}",
-        "shortHandedDetail": "{who}: {held} sa {needed} kamay",
-        "silkAspect": "Ang Artwork ng isang Silk cue ay pinagkasya sa flag na iba ang hugis",
-        "snapToHolder": "I-snap sa may hawak",
-        "title": "Pagsusuri ng palabas",
-        "titleCount": "Pagsusuri ng palabas ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, sa simula"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {Buburahin ang # cue na nakatutok sa tag na ito} other {Buburahin ang # cue na nakatutok sa tag na ito}}",
         "title": "Mga tag",
         "rename": "Palitan ang pangalan ng tag",
         "namePlaceholder": "Ilagay ang pangalan ng tag...",
@@ -2754,7 +2168,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
-        "masterVolume": "Pangunahing volume",
         "moveDeleted": {
             "message": "Binura ang {label}",
             "withPages": "{count, plural, =1 {Binura ang {label} · Nagbago ang Pahina {pages}} other {Binura ang {label} · Nagbago ang mga Pahina {pages}}}"
@@ -2783,9 +2196,7 @@
             "setAsShown": "I-set ayon sa nakikita",
             "setAsShownNone": "Naka-set na sa {page} ang bawat napiling miyembro, o nasa gitna sila ng isang galaw",
             "setAsShownError": "Nagka-error sa pag-set ng mga miyembro ayon sa nakikita",
-            "addSelected": "Idagdag ang mga napiling miyembro",
-            "deletePage": "Burahin ang pahina",
-            "addSelectedNone": "Pumili muna ng mga miyembro: sa home, sa bahaging wala pang timeline, o sa timeline na kinabibilangan nila."
+            "deletePage": "Burahin ang pahina"
         },
         "startFlagPositions": {
             "always": "Palagi",
@@ -2842,7 +2253,6 @@
             "label": "Compact na timeline",
             "onTooltip": "Compact na timeline: naka-on. I-click para ipakita ang buong timeline"
         },
-        "volumeSlider": "Slider ng volume ng timeline",
         "playbackSpeed": {
             "current": "Bilis ng playback: {speed}",
             "hintClick": "I-click para sa susunod na bilis, i-right-click para sa iba pa",
@@ -2866,7 +2276,6 @@
             "lockedNotMoved": "{count, plural, =1 {Isang miyembro ang gumagamit ng Expert na galaw sa pahinang ito, kaya hindi ito inilipat. Lumipat sa Expert para i-edit ito.} other {# miyembro ang gumagamit ng Expert na galaw sa pahinang ito, kaya hindi sila inilipat. Lumipat sa Expert para i-edit sila.}}",
             "switchToExpert": "Lumipat sa Expert"
         },
-        "volume": "Volume ng timeline",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3068,7 +2477,6 @@
             "range": "bilang {from}–{to}",
             "length": "{count, plural, one {# bilang} other {# bilang}}"
         },
-        "createTrack": "Gumawa ng track",
         "playheadChip": {
             "label": "Ipakita ang playhead",
             "text": "Playhead"
@@ -3305,17 +2713,11 @@
             "freeCamera": "Malayang view"
         },
         "readout": {
-            "camera": "Taas ng mata {eye} · {distance} mula sa gitna",
-            "checks": "{count, plural, one {# check} other {# check}}",
             "count": "Bilang {count} ng {total}",
             "noPages": "Walang pahina",
             "page": "Pahina {page}",
             "pastEnd": "WAKAS +{count}",
             "showTime": "Oras ng palabas"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D View — {showName}",
@@ -3352,32 +2754,7 @@
             "endZoneColor": "Kulay",
             "graphicsSection": "Computer na ito",
             "graphicsHint": "Hindi naka-save sa palabas, kaya puwedeng magkaiba sa bawat computer.",
-            "hornState": "Posisyon ng horn",
-            "hornStateMode": {
-                "up": "Up",
-                "carry": "Carry",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Pinapanatili ang bawat horn at drum sa iisang posisyon sa buong palabas, para masuri ang mga pose. Ang Sundin ang cue ay sumusunod sa mga Horn/Equipment cue, at naka-up ang horn kung walang cue.",
-            "guardEquipment": "Equipment ng guard",
-            "guardEquipmentMode": {
-                "flag6": "6 ft na flag",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Naglalagay ng iisang equipment sa kamay ng bawat miyembro ng guard, para makita ito. Ang Sundin ang cue ay nagbibigay sa bawat seksyon ng sarili nito: 6 ft na flag sa flags, rifle sa rifles.",
-            "stepOffFoot": "Step off",
-            "stepOffFootMode": {
-                "left": "Kaliwa ng miyembro",
-                "right": "Kanan ng miyembro"
-            },
-            "stepOffFootHint": "Ang sariling paa ng miyembro, saanman siya nakaharap. Kapag nakaharap siya sa iyo, nasa kanan mo ang kaliwang paa niya. Ang Sundin ang cue ay nag-i-step off sa naka-save na paa ng palabas ({foot, select, left {kaliwa ng miyembro} other {kanan ng miyembro}}), o sa paang itinakda ng Feet cue.",
             "keysSection": "Keyboard at mouse",
-            "previewSection": "Preview lang",
-            "previewHint": "Hindi naka-save. Binabago lang nito ang ipinapakita ng window na ito; sa palabas, ang mga cue ang nagpapasya. Ibalik sa Sundin ang cue para makita ang palabas.",
-            "followCues": "Sundin ang cue",
             "uniforms": "Uniporme ng banda",
             "guardUniforms": "Uniporme ng guard"
         },
@@ -3409,7 +2786,6 @@
             "title": "Mga camera",
             "close": "Isara ang mga camera",
             "edit": "I-edit ang mga camera…",
-            "saveView": "I-save ang kasalukuyang view",
             "none": "Walang camera",
             "empty": "Walang camera. Ilipat ang view kung saan mo gusto, saka ito idagdag.",
             "addView": "Idagdag ang kasalukuyang view",
@@ -3432,68 +2808,7 @@
             "removed": "Inalis ang “{name}”",
             "undo": "I-undo",
             "replace": "Palitan",
-            "replaceWithProfile": "Palitan ang mga camera mo ng “{name}”? Wala nang ibang kopya ang kasalukuyan mong listahan.",
-            "profile": "Profile",
-            "source": {
-                "defaults": "Default ng venue",
-                "custom": "Mga camera ng palabas na ito"
-            },
-            "edited": "Binago",
-            "myProfiles": "Sa computer na ito",
-            "saveAsProfile": "I-save bilang camera profile…",
-            "saveAsProfileShort": "I-save bilang profile…",
-            "manageProfiles": "Pamahalaan ang mga profile…",
-            "notice": {
-                "defaults": "Ang sariling mga camera ng venue. Kapag may binago ka, magiging sa palabas na ito ang mga ito.",
-                "custom": "Naka-save sa palabas na ito lang.",
-                "profile": "Naka-save sa palabas na ito at sa iyong profile.",
-                "edited": "Binago mula nang i-save ang profile.",
-                "newer": "Binago ang profile na ito sa computer na ito.",
-                "missing": "Wala sa computer na ito ang profile ng palabas na ito."
-            },
-            "updateProfile": "I-update ang profile",
-            "saveAsNew": "I-save bilang bago…",
-            "useNewVersion": "Gamitin ang bagong bersyon",
-            "addToMyProfiles": "Idagdag sa aking mga profile",
-            "profileName": "Pangalan ng profile",
-            "save": "I-save",
-            "defaultProfileName": "Mga camera ng {venue}",
-            "copyName": "Kopya ng {name}",
-            "profilesTitle": "Mga camera profile",
-            "profilesHint": "Naka-save sa iyong Library sa computer na ito, para sa anumang palabas. May sariling kopya ang bawat palabas ng profile na ginagamit nito.",
-            "noProfiles": "Wala pang camera profile. Piliin ang I-save bilang camera profile… para gumawa nito.",
-            "cameraCount": "{count, plural, one {# camera} other {# camera}}",
-            "use": "Gamitin",
-            "otherVenue": "Para sa ibang venue ang profile na ito",
-            "deleteProfile": "Burahin",
-            "deleteProfileConfirm": "Burahin ang “{name}” sa computer na ito? Mananatili ang kopya ng mga palabas na gumagamit nito.",
             "saveFailed": "Hindi na-save ang mga camera ng 3D View"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Silk para sa 5 ft na pole",
-                "silk5_5ftPole": "Silk para sa 5.5 ft na pole",
-                "silk6ftPole": "Silk para sa 6 ft na pole",
-                "silk7ftPole": "Silk para sa 7 ft na pole",
-                "silkStandard": "Standard",
-                "silkOversized": "Oversized",
-                "silkTeardrop": "Teardrop",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Curved o super swing",
-                "silkOversizedSwing": "Oversized swing",
-                "silkArc": "Regular na arc",
-                "silkNarrowArc": "Makitid na arc",
-                "silkSuperArc": "Super arc",
-                "floorWgiMinimum": "Competition area ng WGI, pinakamaliit",
-                "floorWgiMaximum": "Competition area ng WGI, pinakamalaki",
-                "flatProp4x8ft": "4 x 8 ft na sheet"
-            },
-            "kind": {
-                "silk": "Silk",
-                "floor": "Floor",
-                "flatProp": "Flat prop"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Hindi na-update ang venue ng 3D View"
@@ -3650,263 +2965,9 @@
             "seconds": "segundo"
         },
         "unsavedChanges": "May mga pagbabago kang hindi pa naka-save",
-        "warnPropMovesWithoutCrew": "Magbabala kapag gumalaw ang prop nang walang crew",
-        "warnPropMovesWithoutCrewHelp": "Ililista ng Show checks ang nakalagay na prop na gumagalaw nang walang miyembro sa crew nito.",
         "close": "Isara",
         "saved": "Na-save ang mga setting ng palabas",
         "updateFailed": "Hindi na-update ang mga setting ng workspace"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "Workspace",
-            "editor": "Editor",
-            "visuals": "Visuals",
-            "preview": "Preview"
-        },
-        "channels": {
-            "feet": "Paa",
-            "horn": "Horn",
-            "equipment": "Kagamitan",
-            "hornEquipment": "Horn / Kagamitan",
-            "facing": "Harap",
-            "body": "Katawan"
-        },
-        "inspector": {
-            "title": "Visuals",
-            "who": "Sino",
-            "band": "Banda",
-            "selection": "Napili",
-            "selectionCount": "{count, plural, =0 {Walang napili} one {# ang napili} other {# ang napili}}",
-            "sections": "Mga seksyon",
-            "tags": "Mga tag",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Alisin ang focus",
-            "focusHint": "I-click ang isang grupo para i-focus ito. Lalabo ang lahat ng iba sa field."
-        },
-        "band": {
-            "editing": "Ine-edit: {channel} para sa {who}",
-            "focusFirst": "Visuals: mag-focus ng grupo sa inspector para ma-edit ang mga cue nito",
-            "selectFirst": "Pumili ng mga miyembro sa field para gumawa ng mga cue para sa napili",
-            "marchers": "{count, plural, one {# miyembro} other {# miyembro}}",
-            "mixed": "Halo-halo",
-            "rowCue": "{who}: {value}",
-            "lane": "Lane ng cue",
-            "paste": "{count, plural, one {I-paste ang # cue sa playhead} other {I-paste ang # cue sa playhead}}",
-            "flagged": "{count, plural, one {# cue na may problema} other {# cue na may problema}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Cue",
-            "delete": "Burahin",
-            "where": "{who}, {where}",
-            "count": "bilang {count}",
-            "start": "simula",
-            "value": "Halaga",
-            "notForEveryone": "{value} (hindi bagay sa lahat)",
-            "transition": "Transisyon (bilang)",
-            "length": "Haba (bilang)",
-            "ripple": "Ripple",
-            "rippleSpan": "Haba ng ripple (bilang)",
-            "rippleOrder": "Pagkakasunod",
-            "order": {
-                "drill": "Pagkakasunod sa drill",
-                "left_right": "Kaliwa pakanan",
-                "right_left": "Kanan pakaliwa",
-                "down_form": "Pababa sa formation"
-            },
-            "notes": "Mga tala",
-            "facingWheel": "Anggulo ng pagharap",
-            "pickPoint": "Pumili ng punto sa field",
-            "pickingPoint": "Mag-click ng punto sa field (<keys></keys> para kanselahin)"
-        },
-        "why": {
-            "title": "Bakit, sa {where}",
-            "value": "{value}: {n} sa {total}",
-            "setBy": "Itinakda ng <cue></cue>",
-            "setByTakenOver": "Itinakda ng <cue></cue> (mula sa {channel}, na pumalit dito)",
-            "beat": "Tinalo ang <cues></cues>",
-            "cue": "{value} para sa {who} sa {where}",
-            "default": {
-                "library": "Ang default",
-                "carry": "Ang default para sa dala nila",
-                "section_equipment": "Ang karaniwang gamit ng seksyon",
-                "equipment_fallback": "Ang karaniwang gamit para sa pangalan ng seksyon",
-                "marcher_carries": "Ang karaniwan nilang dala",
-                "section_color": "Ang 2D na kulay ng seksyon",
-                "band_uniform": "Ang uniporme ng banda",
-                "guard_uniform": "Ang uniporme ng color guard"
-            }
-        },
-        "settings": {
-            "pace": "Bilis",
-            "moving": "Habang gumagalaw",
-            "onHolds": "Sa mga hold",
-            "stepOffFoot": "Unang hakbang",
-            "angle": "Anggulo ng horn",
-            "degrees": "Anggulo (digri)",
-            "x": "Punto x",
-            "y": "Punto y",
-            "energy": "Enerhiya"
-        },
-        "options": {
-            "single": "Single",
-            "half": "Half time",
-            "double": "Double time",
-            "straightLeg": "Tuwid na binti",
-            "bentLeg": "Baluktot na binti",
-            "highStep": "Mataas na hakbang",
-            "stand": "Nakatayo",
-            "markTime": "Mark time",
-            "highMarkTime": "High mark time",
-            "left": "Kaliwa",
-            "right": "Kanan",
-            "box": "Ang box",
-            "plus10": "10° sa itaas ng box",
-            "low": "Mababa",
-            "medium": "Katamtaman",
-            "high": "Mataas"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Hakbang",
-                    "label": "Hakbang",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Horns up",
-                    "label": "HU"
-                },
-                "down": {
-                    "name": "Horns down",
-                    "label": "HD"
-                },
-                "trail": {
-                    "name": "Trail",
-                    "label": "Trail"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Tumutugtog",
-                    "label": "Tugtog"
-                },
-                "sticksIn": {
-                    "name": "Sticks in",
-                    "label": "In"
-                },
-                "sticksDown": {
-                    "name": "Sticks down",
-                    "label": "Down"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Flag set",
-                    "label": "Set"
-                },
-                "port": {
-                    "name": "Flag port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Flag drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Flag single toss",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port arms",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Present",
-                    "label": "Pres"
-                },
-                "dropSpin": {
-                    "name": "Rifle drop spin",
-                    "label": "Drop"
-                },
-                "toss1": {
-                    "name": "Rifle single toss",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Rifle double toss",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre set",
-                    "label": "Set"
-                },
-                "toss1": {
-                    "name": "Sabre single toss",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Harap",
-                    "label": "Harap"
-                },
-                "back": {
-                    "name": "Likod",
-                    "label": "Likod"
-                },
-                "side1": {
-                    "name": "Side 1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "Side 2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "Direksyon ng paggalaw",
-                    "label": "Direksyon"
-                },
-                "angle": {
-                    "name": "Anggulo",
-                    "label": "Anggulo"
-                },
-                "point": {
-                    "name": "Paharap sa isang punto",
-                    "label": "Punto"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutral",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Lumuhod",
-                    "label": "Luhod"
-                },
-                "choreo": {
-                    "name": "Koreograpiya",
-                    "label": "Choreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Sumasalungat sa ibang cue sa parehong bilang.",
-            "phrase_overlap": "Sumasapaw sa ibang phrase.",
-            "takeover_while_moving": "Kinokontrol ang mga paa habang gumagalaw ang dot.",
-            "fits_nobody": "Hindi angkop sa alinman sa mga miyembro nito.",
-            "kind_not_allowed": "Isa itong phrase sa channel na tumatanggap lang ng mga state.",
-            "transition_cut": "Nagsisimula ang transition nito bago pa makarating ang naunang cue."
-        }
     },
     "canvas": {
         "zoom": {
@@ -3914,9 +2975,7 @@
             "in": "Mag-zoom in",
             "out": "Mag-zoom out",
             "reset": "Zoom {zoom}%, i-reset ang zoom at igitna",
-            "resetAndCenter": "I-reset ang zoom at igitna",
-            "perspective": "Perspektiba",
-            "perspectiveComingSoon": "Perspektiba (malapit na)"
+            "resetAndCenter": "I-reset ang zoom at igitna"
         }
     },
     "errorBoundary": {
@@ -4097,7 +3156,6 @@
         "help": {
             "title": "Tulong",
             "showShortcuts": "Mga keyboard shortcut",
-            "starterKit": "Kunin ang Blender starter kit…",
             "website": "Website",
             "guides": "Docs/Mga gabay"
         },
@@ -4108,7 +3166,6 @@
             "openMarchFile": "OpenMarch file",
             "allFiles": "Lahat ng file",
             "audioFile": "Audio file",
-            "zipArchive": "Zip archive",
             "video": "Video"
         },
         "newShow": {
@@ -4120,9 +3177,6 @@
         "openFailed": {
             "title": "Error sa pag-load ng database"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Error sa pagbalik ng item sa may hawak nito"
     },
     "coordinates": {
         "full": "{x} - {y}",
@@ -4162,5 +3216,10 @@
         "tiny": "Napakaliit",
         "toFive": "{steps, number} to 5",
         "undefined": "Hindi matukoy"
+    },
+    "workspace": {
+        "label": "Workspace",
+        "editor": "Editor",
+        "preview": "Preview"
     }
 }

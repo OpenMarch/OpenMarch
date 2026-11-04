@@ -6,7 +6,6 @@ import { distributionOf, switchModes, withMode } from "../../distribute/modes";
 import { filesDistribution } from "../../distribute/distribution";
 import { flipShape, turnShape } from "../../frame/gestures";
 import { scaleShape } from "../../frame/scale";
-import { savedShapeOf, savedToolKind } from "../../library/savedShapes";
 import { placementOf } from "../../tool/shapePlacement";
 import { SHAPE_TOOLS } from "../../tool/shapeTools";
 import { shapeSteps, startingParams } from "../../command/shapeSteps";
@@ -266,6 +265,7 @@ describe("the circle and the host", () => {
             "Circle",
             "Line",
             "Curve",
+            "Arc",
         ]);
     });
 
@@ -328,27 +328,6 @@ describe("the circle and the host", () => {
                 col: s.col,
             })),
         );
-    });
-
-    it("is saved with its interval and lays it out on any count", () => {
-        const t = drawn(6, { x: 100, y: 100 }, { x: 125, y: 100 });
-        const saved = savedShapeOf(circleTool, t.params, 6, STEP, {
-            id: "s1",
-            name: "Ring",
-        });
-        expect(saved).toMatchObject({
-            kind: "circle",
-            kindVersion: 2,
-            intervals: { interval: 2.5 },
-        });
-        const kind = savedToolKind(circleTool, saved);
-        const p = kind.draw(
-            { x: 0, y: 0 },
-            { x: 80, y: 0 },
-            12,
-            env,
-        ) as CircleParams;
-        expect(p.interval).toBe(25);
     });
 
     it("starts the command bar's circle around the marchers, at the default interval", () => {

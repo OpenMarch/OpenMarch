@@ -10,7 +10,6 @@ import {
     writeMarks,
 } from "../tempoWrites";
 import { performRedo, performUndo } from "@/db-functions/history";
-import { createCues } from "@/db-functions/cues";
 
 /**
  * Tempo mode's count edits on the `marchersAndPages` show, converted to timelines on open: beat 0,
@@ -251,7 +250,7 @@ describeDbTests("removing a whole measure", (it) => {
             to: 21,
             drill: "adjust",
         });
-        expect(result.cues).toEqual({ moved: [], dropped: [] });
+        expect(result.removedCounts).toBe(true);
         expect(await measuresNow(db, 6)).toEqual([
             [1, "4/4", "2+2+2+2", null, null],
             [5, null, null, null, null],
@@ -305,36 +304,6 @@ describeDbTests("removing a whole measure", (it) => {
                 ([, meter, grouping]) => meter === null && grouping === null,
             ),
         ).toBe(true);
-    });
-
-    it("says where the cues on the removed counts went", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const rows = await db
-            .select()
-            .from(schema.beats)
-            .orderBy(asc(schema.beats.position))
-            .all();
-        await createCues({
-            db,
-            newCues: [
-                {
-                    channel: "horn_equipment",
-                    kind: "state",
-                    target: { kind: "band" },
-                    beatId: rows[18]!.id,
-                    value: "builtin:horn_equipment.horn.up",
-                },
-            ],
-        });
-        const result = await deleteCounts({
-            from: 17,
-            to: 21,
-            drill: "adjust",
-        });
-        expect(result.cues?.moved).toHaveLength(1);
-        expect(result.cues?.moved[0]!.toBeatId).toBe(rows[21]!.id);
     });
 });
 

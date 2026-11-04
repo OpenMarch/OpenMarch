@@ -17,20 +17,12 @@
  *   there), so highlight it without flying.
  * - `currentPose()`: the view right now (eye, look-at point, field of
  *   view), for saving it as a camera. Null before the rig mounts.
- * - `readout`: eye height above the ground and horizontal distance from the
- *   eye to the kit's focus (the field center), in meters. Updated at most 10
- *   times a second, and only when a value changes by 5 cm or more.
  *
  * Fields starting with `_` are for the rig only.
  */
 import { create } from "zustand";
 import { useView3dSceneStore } from "../sceneStore";
 import type { ViewPose } from "@/view3d/core/cameraList";
-
-export interface CameraReadout {
-    eyeHeightM: number;
-    distanceToFocusM: number;
-}
 
 /** A pending fly-to. `seq` changes on every request, even for the same id. */
 export interface CameraRequest {
@@ -43,7 +35,6 @@ export interface CameraState {
     selectCamera: (id: string) => void;
     pickMode: boolean;
     setPickMode: (on: boolean) => void;
-    readout: CameraReadout;
     markActive: (id: string) => void;
     currentPose: () => ViewPose | null;
     /** Rig only: sets where `currentPose` reads from. */
@@ -52,14 +43,7 @@ export interface CameraState {
     _request: CameraRequest | null;
     /** Rig only. */
     _setActive: (id: string | null) => void;
-    /** Rig only. */
-    _setReadout: (readout: CameraReadout) => void;
 }
-
-/** Minimum time between readout updates (10 Hz). */
-export const READOUT_INTERVAL_MS = 100;
-/** Readout changes smaller than this (meters) aren't published. */
-export const READOUT_EPSILON_M = 0.05;
 
 let poseSource: (() => ViewPose) | null = null;
 
@@ -76,7 +60,6 @@ export const useCameraStore = create<CameraState>()((set, get) => ({
     },
     pickMode: false,
     setPickMode: (on) => set({ pickMode: on }),
-    readout: { eyeHeightM: 0, distanceToFocusM: 0 },
     markActive: (id) => set({ activeCameraId: id, pickMode: false }),
     currentPose: () => poseSource?.() ?? null,
     _setPoseSource: (source) => {
@@ -84,31 +67,4 @@ export const useCameraStore = create<CameraState>()((set, get) => ({
     },
     _request: null,
     _setActive: (id) => set({ activeCameraId: id }),
-    _setReadout: (readout) => set({ readout }),
 }));
-
-/**
- * Throttles readout updates to `READOUT_INTERVAL_MS` and skips changes under
- * `READOUT_EPSILON_M`. Returns whether it published.
- */
-export function createReadoutThrottle(
-    publish: (readout: CameraReadout) => void,
-): (readout: CameraReadout, nowMs: number) => boolean {
-    let lastAt = -Infinity;
-    let last: CameraReadout | null = null;
-    return (readout, nowMs) => {
-        if (nowMs - lastAt < READOUT_INTERVAL_MS) return false;
-        if (
-            last &&
-            Math.abs(last.eyeHeightM - readout.eyeHeightM) <
-                READOUT_EPSILON_M &&
-            Math.abs(last.distanceToFocusM - readout.distanceToFocusM) <
-                READOUT_EPSILON_M
-        )
-            return false;
-        lastAt = nowMs;
-        last = { ...readout };
-        publish(last);
-        return true;
-    };
-}

@@ -47,6 +47,24 @@ export interface LinePoint extends XY {
      * line ({@link holdsMarcher}). An open line's ends always hold one.
      */
     readonly marcher?: boolean;
+    /**
+     * The segment from this point to the next bent as a circular arc (the Arc, #634): its sweep in
+     * degrees, signed as the path's arcs are (positive turns toward +y), more than -360 and less
+     * than 360. Absent (or 0) where the segment is straight or follows the points' tension.
+     */
+    readonly bend?: number;
+    /**
+     * The bent segment on an ellipse rather than a circle (#634): its depth over its width
+     * (`ratio`, never 1) and the way its width axis points (`axis`, degrees clockwise from the
+     * field's x axis). The bend is then the angle around the ellipse. Only with a bend.
+     */
+    readonly ellipse?: LineEllipse;
+}
+
+/** An ellipse a bent segment runs on ({@link LinePoint.ellipse}) */
+export interface LineEllipse {
+    readonly ratio: number;
+    readonly axis: number;
 }
 
 /** The tension a point made smooth starts with: the plain Catmull-Rom curve (#525) */
@@ -162,7 +180,7 @@ const withTension =
     ({ x, y }: XY): LinePoint => ({ x, y, tension });
 
 /** A point's own fields: anything else is a later build's (ADR 0006, decision 5) */
-const POINT_KEYS = new Set(["x", "y", "tension", "marcher"]);
+const POINT_KEYS = new Set(["x", "y", "tension", "marcher", "bend", "ellipse"]);
 
 const isPoint = (q: unknown): q is LinePoint =>
     typeof q === "object" &&
@@ -174,7 +192,33 @@ const isPoint = (q: unknown): q is LinePoint =>
     Number.isFinite((q as LinePoint).y) &&
     Number.isFinite((q as LinePoint).tension) &&
     (q as LinePoint).tension >= 0 &&
-    (q as LinePoint).tension <= MAX_TENSION;
+    (q as LinePoint).tension <= MAX_TENSION &&
+    isBend((q as LinePoint).bend) &&
+    isEllipse((q as LinePoint).ellipse, (q as LinePoint).bend);
+
+/** A stored ellipse: absent, or on a bent segment with a finite ratio other than 1 and an axis */
+const isEllipse = (e: unknown, bend: unknown): boolean => {
+    if (e === undefined) return true;
+    if (typeof e !== "object" || e === null || bend === undefined) return false;
+    if (Object.keys(e).some((key) => key !== "ratio" && key !== "axis"))
+        return false;
+    const { ratio, axis } = e as LineEllipse;
+    return (
+        Number.isFinite(ratio) &&
+        ratio > 0 &&
+        Math.abs(ratio - 1) > 1e-9 &&
+        Number.isFinite(axis)
+    );
+};
+
+/** A stored bend: absent, or a finite sweep short of a full turn either way */
+const isBend = (b: unknown): boolean =>
+    b === undefined ||
+    (typeof b === "number" && Number.isFinite(b) && Math.abs(b) < 360);
+
+/** Whether point `q`'s segment to the next bends as a circular arc */
+export const bends = (q: Pick<LinePoint, "bend">): boolean =>
+    q.bend !== undefined && Math.abs(q.bend) > 1e-9;
 
 const isGroup = (g: unknown): g is LineGroup => {
     if (typeof g !== "object" || g === null) return false;
@@ -242,7 +286,12 @@ export function isLineParams(params: unknown): params is LineParams {
     if ((p.measured === "offset") !== (p.offset !== undefined)) return false;
     if (p.offset !== undefined && !isOffset(p.offset)) return false;
     if (p.turn !== undefined && !isTurn(p.turn)) return false;
-    if (!Array.isArray(p.points) || p.points.length < (p.closed ? 3 : 2))
+    // A closed line has three points, or two joined by a bent segment (an Arc's chord or circle)
+    if (
+        !Array.isArray(p.points) ||
+        p.points.length <
+            (p.closed && !p.points.some((q) => isPoint(q) && bends(q)) ? 3 : 2)
+    )
         return false;
     // A closed line's fill (#529): one this version fills, and never on an open line
     if (p.distribution !== undefined) {
@@ -286,6 +335,10 @@ export function lineSegments(p: LineParams): Segment[] {
     return Array.from({ length: count }, (_, i): Segment => {
         const a = points[i]!;
         const b = points[(i + 1) % points.length]!;
+        if (bends(a))
+            return a.ellipse
+                ? ellipseSegment(a, b, a.bend!, a.ellipse)
+                : bentSegment(a, b, a.bend!);
         const line: Segment = { type: "line", a, b };
         if (a.tension === 0 && b.tension === 0) return line;
         const full = catmullRomSpan(points, i, closed);
@@ -304,6 +357,79 @@ export function lineSegments(p: LineParams): Segment[] {
     });
 }
 
+/**
+ * The circular arc from `a` to `b` turning through `degrees` (signed as the path's arcs): its
+ * center on the chord's perpendicular, a half turn's center the chord's midpoint. Straight when
+ * `a` and `b` are one point.
+ */
+export function bentSegment(a: XY, b: XY, degrees: number): Segment {
+    const d = sub(b, a);
+    const chord = Math.hypot(d.x, d.y);
+    const sweep = (degrees * Math.PI) / 180;
+    if (chord < 1e-9 || Math.abs(sweep) < 1e-9)
+        return { type: "line", a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } };
+    const u = { x: d.x / chord, y: d.y / chord };
+    const normal = { x: -u.y, y: u.x };
+    const away = chord / 2 / Math.tan(sweep / 2);
+    const center = {
+        x: (a.x + b.x) / 2 + normal.x * away,
+        y: (a.y + b.y) / 2 + normal.y * away,
+    };
+    const r = chord / 2 / Math.abs(Math.sin(sweep / 2));
+    return {
+        type: "arc",
+        center,
+        r,
+        start: Math.atan2(a.y - center.y, a.x - center.x),
+        sweep,
+    };
+}
+
+/** A point into the space where `ellipse` is a circle: turned to its axis, its depth stretched */
+function intoCircle(p: XY, ellipse: LineEllipse): XY {
+    const angle = (-ellipse.axis * Math.PI) / 180;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return { x: p.x * c - p.y * s, y: (p.x * s + p.y * c) / ellipse.ratio };
+}
+
+/** A point from the space where `ellipse` is a circle back onto the field */
+function outOfCircle(p: XY, ellipse: LineEllipse): XY {
+    const angle = (ellipse.axis * Math.PI) / 180;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    const y = p.y * ellipse.ratio;
+    return { x: p.x * c - y * s, y: p.x * s + y * c };
+}
+
+/**
+ * The arc of `ellipse` from `a` to `b` turning through `degrees` around it: the circular arc
+ * through them where the ellipse is a circle ({@link intoCircle}), stretched back
+ */
+export function ellipseSegment(
+    a: XY,
+    b: XY,
+    degrees: number,
+    ellipse: LineEllipse,
+): Segment {
+    const round = bentSegment(
+        intoCircle(a, ellipse),
+        intoCircle(b, ellipse),
+        degrees,
+    );
+    if (round.type !== "arc")
+        return { type: "line", a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y } };
+    return {
+        type: "ellipse",
+        center: outOfCircle(round.center, ellipse),
+        rx: round.r,
+        ry: round.r * ellipse.ratio,
+        rotation: (ellipse.axis * Math.PI) / 180,
+        start: round.start,
+        sweep: round.sweep,
+    };
+}
+
 /** The path through the line's points, round to its first again when closed */
 export function linePath(p: LineParams): Path {
     return makePath(lineSegments(p), isClosed(p));
@@ -314,7 +440,8 @@ export const gapCount = (p: LineParams, n: number): number =>
     isClosed(p) ? n : n - 1;
 
 /** Whether any point of the line is smooth */
-const smooth = (p: LineParams) => p.points.some((q) => q.tension > 0);
+const smooth = (p: LineParams) =>
+    p.points.some((q) => q.tension > 0 || bends(q));
 
 /** How many pieces a curved segment of a closed outline is cut into */
 const CURVE_PIECES = 32;
@@ -328,7 +455,9 @@ export function lineOutline(p: LineParams): XY[] {
     if (isClosed(p)) return closedOutline(p).points;
     if (!smooth(p)) return p.points.map(({ x, y }) => ({ x, y }));
     const path = linePath(p);
-    return path.polyline(path.length / (24 * (p.points.length - 1)));
+    // An arc (#634) can be large and round all the way: drawn finer so it never shows corners
+    const pieces = p.points.some(bends) ? 120 : 24 * (p.points.length - 1);
+    return path.polyline(path.length / pieces);
 }
 
 /**
@@ -348,8 +477,10 @@ export function closedOutline(p: LineParams): {
         points.push({ x, y });
         if (segment.type === "line") return;
         const path = makePath([segment]);
-        for (let k = 1; k < CURVE_PIECES; k++)
-            points.push(path.at((path.length * k) / CURVE_PIECES));
+        // An arc (#634) bends all the way along: cut finer, so a large one shows no corners
+        const pieces = bends(p.points[i]!) ? 4 * CURVE_PIECES : CURVE_PIECES;
+        for (let k = 1; k < pieces; k++)
+            points.push(path.at((path.length * k) / pieces));
     });
     return { points, corners };
 }
@@ -1430,6 +1561,40 @@ export function withLineFrame(p: LineParams, frame: ShapeFrame): LineParams {
         };
     });
     const mirrored = frame.flipX !== frame.flipY;
+    // A mirror bends every arc the other way, and an ellipse's axis goes round with it (#634)
+    const moved = (q: XY) => {
+        const local = fieldToFrame(was, q);
+        return frameToField(frame, {
+            x: frame.flipX ? -local.x : local.x,
+            y: frame.flipY ? -local.y : local.y,
+        });
+    };
+    const flips = mirrored !== (was.flipX !== was.flipY);
+    points.forEach((q, i) => {
+        const bend = q.bend !== undefined && flips ? -q.bend : q.bend;
+        let ellipse = q.ellipse;
+        if (ellipse) {
+            // The frame moves every direction alike, so map it from one fixed spot: points
+            // sharing an ellipse then keep exactly the same axis
+            const angle = (ellipse.axis * Math.PI) / 180;
+            const from = moved({ x: 0, y: 0 });
+            const to = moved({
+                x: Math.cos(angle) * 100,
+                y: Math.sin(angle) * 100,
+            });
+            ellipse = {
+                ...ellipse,
+                axis:
+                    (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI,
+            };
+        }
+        if (bend !== q.bend || ellipse !== q.ellipse)
+            points[i] = {
+                ...points[i]!,
+                ...(bend === undefined ? {} : { bend }),
+                ...(ellipse ? { ellipse } : {}),
+            };
+    });
     const turn = mirrored
         ? -lineTurn(p)
         : lineTurn(p) + (frame.rotation - was.rotation);

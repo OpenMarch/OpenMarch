@@ -252,9 +252,8 @@ export class DrizzleMigrationService {
      * This uses Drizzle's built-in migration functionality
      *
      * Runs only on files whose `user_version` this build supports (7, the page
-     * model, which is an artifact of the previous migration system, 8, the
-     * timeline model, and 9, the floor model). It never changes the version.
-     * See `../fileVersion.ts`.
+     * model, which is an artifact of the previous migration system, and 8, the
+     * timeline model). It never changes the version. See `../fileVersion.ts`.
      */
     async applyPendingMigrations(migrationsFolder?: string): Promise<void> {
         const userVersion = readUserVersion(this.rawDb);

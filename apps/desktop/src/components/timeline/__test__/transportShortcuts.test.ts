@@ -53,7 +53,7 @@ describe("transport shortcuts (UI-17)", () => {
 describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
     const items = [...PLAYBACK_MENU_ACTIONS, ...HELP_MENU_ACTIONS];
 
-    it("lists Play, Play from Playhead / Pause and Loop, plus the shortcuts list (UI-17)", () => {
+    it("lists Play, Play from Playhead / Pause and Loop (Play On and Loop Expert only), plus the shortcuts list (UI-17)", () => {
         expect(PLAYBACK_MENU_ACTIONS).toEqual([
             {
                 action: "playPause",
@@ -69,11 +69,13 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
                 action: "playOn",
                 labelKey: "menu.playback.playOn",
                 accelerator: "Alt+Space",
+                expertOnly: true,
             },
             {
                 action: "toggleLoop",
                 labelKey: "menu.playback.toggleLoop",
                 accelerator: "C",
+                expertOnly: true,
             },
         ]);
         expect(HELP_MENU_ACTIONS).toEqual([
@@ -127,6 +129,13 @@ describe("the shortcuts list (UI-17 follow-up)", () => {
         expect(movement).toEqual(
             expect.arrayContaining(["Shift + Drag", "Mod + Drag"]),
         );
+    });
+
+    it("leaves out Play On and Loop in Basic, where they're off (UI-19)", () => {
+        const playback = shortcutGroups((key) => key, {}, false, true)[0]!;
+        expect(playback.rows.map((row) => row.keys)).not.toContain("Alt+Space");
+        expect(playback.rows.map((row) => row.keys)).not.toContain("C");
+        expect(playback.rows.map((row) => row.keys)).toContain("Space");
     });
 
     it("groups every shortcut, playback first, with the timeline's own keys", () => {

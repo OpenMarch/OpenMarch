@@ -16,11 +16,8 @@
  * - moves: a keyframe move of marchers 1–3 over counts 11–14 inside page 2, a placed shape (arc
  *   recipe) of marchers 4–8 animating over counts 27–31 inside page 4, and marcher 76 Held (a held
  *   mark) over page 5;
- * - cues: states on counts 3, 12, 13, 17 (a page start), 20 (the hold), 24, 29 (a tempo point),
- *   45 and 60 (past the last page), a set cue on 10, and an 8-count phrase from count 26;
- * - props: a riser made on count 2 with Outline changes on 13 and 17 and an artwork slot on 13, and
- *   a flag held by marcher 1 from count 14 and put down on 22;
- * - page-keyed data: a tag appearance and dot mode on page 3, a section appearance, 3D cameras, and
+ * - props: a riser made on count 2 with Outline changes on 13 and 17, and a flag;
+ * - page-keyed data: a tag appearance on page 3, a section appearance, 3D cameras, and
  *   the music offset in `tempo_settings`.
  */
 import { expect } from "vitest";
@@ -32,10 +29,7 @@ import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import { saveShapeRecipeInTransaction } from "@/db-functions/shapeRecipes";
 import { unsetMarchersAt } from "@/db-functions/timelineUnset";
 import { holdFromPreviousPage } from "@/db-functions/timelineHoldFromPrevious";
-import { createCues, type NewCueArgs } from "@/db-functions/cues";
 import { createItems, setItemGeometry } from "@/db-functions/items";
-import { setItemPlacement } from "@/db-functions/itemPlacements";
-import { setItemArtworkSlot } from "@/db-functions/itemArtworkSlots";
 
 /** Measures written by `buildRichShow`: start count and facts */
 export const MEASURES: readonly {
@@ -72,17 +66,7 @@ export const TEMPO_POINTS = [9, 29] as const;
 export const KEYFRAME = { start: 11, end: 14, marchers: [1, 2, 3] } as const;
 export const SHAPE = { start: 27, end: 31, marchers: [4, 5, 6, 7, 8] } as const;
 export const HELD = { start: 33, end: 41, marcher: 76 } as const;
-export const CUE_COUNTS = [3, 12, 13, 17, 20, 24, 29, 45, 60] as const;
-export const SET_CUE_COUNT = 10;
-export const PHRASE = { start: 26, length: 8 } as const;
-export const RISER = { made: 2, outlines: [13, 17], artwork: 13 } as const;
-export const FLAG = { held: 14, down: 22, holder: 1 } as const;
-
-const STATES = [
-    "builtin:horn_equipment.horn.up",
-    "builtin:horn_equipment.horn.down",
-    "builtin:horn_equipment.horn.trail",
-];
+export const RISER = { made: 2, outlines: [13, 17] } as const;
 
 /** Beat ids in order (beat 0 first) */
 export const beatIds = async (db: DbConnection): Promise<number[]> =>
@@ -208,33 +192,8 @@ export async function buildRichShow(db: DbConnection): Promise<void> {
         marcherIds: [HELD.marcher],
     });
 
-    // ---- cues
-    const cues: NewCueArgs[] = CUE_COUNTS.map((b, i) => ({
-        channel: "horn_equipment",
-        kind: "state",
-        target: { kind: "band" },
-        beatId: id(b),
-        value: STATES[i % STATES.length]!,
-    }));
-    cues.push({
-        channel: "horn_equipment",
-        kind: "state",
-        target: { kind: "set", marcherIds: [1, 2, 3] },
-        beatId: id(SET_CUE_COUNT),
-        value: STATES[1]!,
-    });
-    cues.push({
-        channel: "horn_equipment",
-        kind: "phrase",
-        target: { kind: "section", section: "Trumpet" },
-        beatId: id(PHRASE.start),
-        value: "builtin:horn_equipment.flag.dropSpin",
-        length: PHRASE.length,
-    } as NewCueArgs);
-    await createCues({ db, newCues: cues });
-
     // ---- props
-    const [riser, flag] = await createItems({
+    const [riser] = await createItems({
         db,
         newItems: [
             {
@@ -266,38 +225,12 @@ export async function buildRichShow(db: DbConnection): Promise<void> {
             beatId: id(b),
             geometry: { outlineType: "rectangle", width: 3 + i, depth: 1.2 },
         });
-    await setItemArtworkSlot({
-        db,
-        itemId: riser!.id,
-        slot: "top",
-        beatId: id(RISER.artwork),
-        assignment: { artwork: null, fit: "fit", padColor: "#123456" },
-    });
-    await setItemPlacement({
-        db,
-        itemId: flag!.id,
-        beatId: id(FLAG.held),
-        placement: {
-            state: "held",
-            holders: [{ marcherId: FLAG.holder, hand: "both" }],
-        },
-    });
-    await setItemPlacement({
-        db,
-        itemId: flag!.id,
-        beatId: id(FLAG.down),
-        placement: { state: "placed" },
-    });
 
     // ---- page-keyed and show-wide data
     await db.insert(schema.tags).values({ id: 1, name: "Front" }).run();
     await db
         .insert(schema.tag_appearances)
         .values({ tag_id: 1, start_page_id: 3, fill_color: "#ff0000" })
-        .run();
-    await db
-        .insert(schema.page_performer_settings)
-        .values({ page_id: 3, dot_mode: "body" })
         .run();
     await db
         .insert(schema.section_appearances)
@@ -381,12 +314,7 @@ export interface ShowState {
     transitions: Row[];
     assignments: Row[];
     held: Row[];
-    cues: Row[];
-    cueMarchers: Row[];
     geometry: Row[];
-    placements: Row[];
-    placementMarchers: Row[];
-    artwork: Row[];
     /** Tables no count edit should change at all */
     untouched: Record<string, unknown[]>;
     /** Every marcher and prop the resolver places */
@@ -401,11 +329,9 @@ export const UNTOUCHED_TABLES = [
     "timeline_slot_destinations",
     "timeline_shape_recipes",
     "timeline_shape_recipe_marchers",
-    "saved_shapes",
     "items",
     "tags",
     "tag_appearances",
-    "page_performer_settings",
     "section_appearances",
     "view3d_cameras",
     "tempo_settings",
@@ -452,12 +378,7 @@ export async function readState(db: DbConnection): Promise<ShowState> {
         transitions: await rows(db, "timeline_transitions"),
         assignments: await rows(db, "timeline_assignments"),
         held: await rows(db, "timeline_held_marks"),
-        cues: (await rows(db, "cues")).map(strip),
-        cueMarchers: await rows(db, "cue_marchers"),
         geometry: (await rows(db, "item_geometry")).map(strip),
-        placements: (await rows(db, "item_placements")).map(strip),
-        placementMarchers: await rows(db, "item_placement_marchers"),
-        artwork: (await rows(db, "item_artwork_slots")).map(strip),
         untouched,
         marcherIds: ((await rows(db, "marchers")) as Row[]).map(
             (m) => m.id as number,

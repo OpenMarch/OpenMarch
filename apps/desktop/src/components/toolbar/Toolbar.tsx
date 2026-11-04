@@ -1,44 +1,17 @@
 import { Tabs, TabContent, TabItem, TabsList } from "@openmarch/ui";
 import { FileTab } from "./tabs/FileTab";
-import { CollisionsTab } from "./tabs/CollisionsTab";
 import AlignmentTab from "./tabs/AlignmentTab";
 import ShapesTab from "@/shapes/tool/ShapesTab";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { T } from "@tolgee/react";
-import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
-import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useCollisionStore } from "@/stores/CollisionStore";
 import SelectTab from "./tabs/SelectTab";
-import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
-import VisualsToolbar from "@/components/visuals/VisualsToolbar";
-import WorkspaceViewSwitch from "@/components/visuals/WorkspaceViewSwitch";
-import View3dButton from "@/components/visuals/View3dButton";
+import WorkspaceViewSwitch from "./WorkspaceViewSwitch";
+import View3dButton from "./View3dButton";
 
 export default function Topbar() {
     const [activeTab, setActiveTab] = useState("alignment");
-    const { selectedPage } = useSelectedPage()!;
-    const { currentCollisions } = useCollisionStore();
-    const visuals = useIsVisualsView();
-
-    // Switch from collisions tab to alignment when page changes and no collisions exist. Not while
-    // playing or scrubbing, when the selected page follows the playhead (#226): the tab waits for
-    // the page it stops on.
-    const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    const scrubbing = useTimelineSelectionStore((s) => s.scrubbing);
-    useEffect(() => {
-        if (isPlaying || scrubbing) return;
-        if (activeTab === "collisions" && currentCollisions.length === 0) {
-            setActiveTab("alignment");
-        }
-    }, [
-        selectedPage,
-        currentCollisions.length,
-        activeTab,
-        isPlaying,
-        scrubbing,
-    ]);
+    // The Collisions tab (CollisionsTab.tsx) is hidden for now, with collision detection
+    // unmounted (TimelineResolverHost): the field never drew the markers it reviews.
 
     return (
         <div className="group @container relative">
@@ -51,66 +24,43 @@ export default function Topbar() {
                 />
                 <WorkspaceViewSwitch />
             </div>
-            {visuals ? (
-                <VisualsToolbar />
-            ) : (
-                <Tabs
-                    value={activeTab}
-                    onValueChange={setActiveTab}
-                    className="flex flex-col gap-0 overflow-hidden"
-                >
-                    <TabsList className="gap-0 border-none">
-                        <TabItem value="file">
-                            <T keyName="inspector.shape.fileTab" />
-                        </TabItem>
-                        <TabItem value="alignment">
-                            <T keyName="inspector.shape.alignmentTab" />
-                        </TabItem>
-                        <TabItem
-                            value="shapes"
-                            data-testid="toolbar-shapes-tab"
-                        >
-                            <T keyName="inspector.shape.shapesTab" />
-                        </TabItem>
+            <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="flex flex-col gap-0 overflow-hidden"
+            >
+                <TabsList className="gap-0 border-none">
+                    <TabItem value="file">
+                        <T keyName="inspector.shape.fileTab" />
+                    </TabItem>
+                    <TabItem value="alignment">
+                        <T keyName="inspector.shape.alignmentTab" />
+                    </TabItem>
+                    <TabItem value="shapes" data-testid="toolbar-shapes-tab">
+                        <T keyName="inspector.shape.shapesTab" />
+                    </TabItem>
 
-                        <TabItem value="select">
-                            <T keyName="inspector.shape.selectTab" />
-                        </TabItem>
-                        {selectedPage && currentCollisions.length > 0 && (
-                            <TabItem value="collisions">
-                                <div className="flex items-center gap-4">
-                                    <WarningIcon
-                                        width={18}
-                                        height={18}
-                                        className="text-yellow size-20"
-                                    />
-                                    <T keyName="toolbar.collisions.tab" />
-                                </div>
-                            </TabItem>
-                        )}
-                    </TabsList>
+                    <TabItem value="select">
+                        <T keyName="inspector.shape.selectTab" />
+                    </TabItem>
+                </TabsList>
 
-                    <TabContent value="file">
-                        <FileTab />
-                    </TabContent>
+                <TabContent value="file">
+                    <FileTab />
+                </TabContent>
 
-                    <TabContent value="alignment">
-                        <AlignmentTab />
-                    </TabContent>
+                <TabContent value="alignment">
+                    <AlignmentTab />
+                </TabContent>
 
-                    <TabContent value="shapes">
-                        <ShapesTab />
-                    </TabContent>
+                <TabContent value="shapes">
+                    <ShapesTab />
+                </TabContent>
 
-                    <TabContent value="select">
-                        <SelectTab />
-                    </TabContent>
-
-                    <TabContent value="collisions">
-                        <CollisionsTab />
-                    </TabContent>
-                </Tabs>
-            )}
+                <TabContent value="select">
+                    <SelectTab />
+                </TabContent>
+            </Tabs>
         </div>
     );
 }

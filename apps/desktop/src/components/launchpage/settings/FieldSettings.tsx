@@ -3,7 +3,6 @@ import { Switch } from "@openmarch/ui";
 import {
     useUiSettingsStore,
     type MarcherLabelSize,
-    type ShapeFocus,
     type UiSettings,
 } from "@/stores/UiSettingsStore";
 import SettingRow from "@/settings/SettingRow";
@@ -12,7 +11,6 @@ import SettingChoices from "@/settings/SettingChoices";
 
 const LABEL_SIZES: readonly MarcherLabelSize[] = ["small", "normal", "large"];
 const LABEL_POSITIONS = ["above", "beside"] as const;
-const SHAPE_FOCUSES: readonly ShapeFocus[] = ["rest", "drawing"];
 
 /**
  * How the field looks, set once rather than flipped while working (#418). The
@@ -95,26 +93,6 @@ export default function FieldSettings() {
                     onCheckedChange={(stepSizeWarnings) =>
                         change({ stepSizeWarnings })
                     }
-                />
-            </SettingRow>
-
-            {/* Who fades while a shape is open (08-shape-system-ux.md, "Marcher styling") */}
-            <SettingRow
-                label={<T keyName="settings.field.shapeFocus" />}
-                htmlFor="field-shape-focus"
-                stacked
-                description={
-                    <T
-                        keyName={`settings.field.shapeFocus.${uiSettings.shapeFocus ?? "rest"}.description`}
-                    />
-                }
-            >
-                <SettingChoices
-                    id="field-shape-focus"
-                    value={uiSettings.shapeFocus ?? "rest"}
-                    options={SHAPE_FOCUSES}
-                    keyPrefix="settings.field.shapeFocus"
-                    onChange={(shapeFocus) => change({ shapeFocus })}
                 />
             </SettingRow>
         </SettingsPanel>

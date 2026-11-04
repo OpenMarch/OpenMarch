@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Nenhuma ação para refazer",
             "noUndoAvailable": "Nenhuma ação para desfazer",
-            "redidCueEdit": "Edição de deixa refeita (Visuais)",
-            "redidDrillEdit": "Edição de coreografia refeita (Editor)",
             "redo": "Refazer",
             "redoFailed": "Não foi possível refazer a ação; nada foi alterado.",
             "undo": "Desfazer",
-            "undidCueEdit": "Edição de deixa desfeita (Visuais)",
-            "undidDrillEdit": "Edição de coreografia desfeita (Editor)",
             "undoFailed": "Não foi possível desfazer a ação; nada foi alterado."
         },
         "file": {
@@ -144,15 +140,11 @@
             "openSettings": "Configurações…",
             "openView3d": "Abrir Visualização 3D",
             "openView3dKeywords": "3d tridimensional três dimensões estádio arena local janela three dimensional stadium venue window",
-            "runFieldBenchmark": "Testar desempenho do campo",
-            "runFieldBenchmarkKeywords": "desempenho fps velocidade teste taxa de quadros quadros por segundo benchmark performance speed test frame rate",
             "showShortcuts": "Atalhos de teclado",
             "hideStartFlagPositions": "Ocultar posições do marcador de início",
             "showStartFlagPositions": "Mostrar posições do marcador de início",
             "toggleStartFlagPositions": "Alternar posições do marcador de início",
             "toggleStartFlagPositionsKeywords": "trajetos anteriores pontos onde os integrantes estavam de onde vieram segurar espiar fixar previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Alternar espaço de trabalho (Editor ou Visuais)",
-            "toggleWorkspaceKeywords": "visuais editor espaço de trabalho deixas modo visuals workspace cues mode",
             "showNextPaths": "Mostrar trajetos da próxima página",
             "toggleNextPaths": "Alternar trajetos da próxima página",
             "togglePreview": "Pré-visualizar o show",
@@ -172,72 +164,6 @@
         "codegenBanner": "🎭 MODO CODEGEN DO PLAYWRIGHT - Gravando ações de teste",
         "releaseNotes": "Notas da versão",
         "updated": "OpenMarch atualizado para a v{version}"
-    },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "Todos os direitos reservados",
-                "unknown": "Licença desconhecida"
-            },
-            "modified": "{credit} (modificado)",
-            "none": "Nada neste show precisa de crédito.",
-            "shareNote": {
-                "badge": "Aviso",
-                "detail": "Alguns itens têm licença desconhecida. Talvez você não tenha o direito de compartilhá-los com este show.",
-                "export": "Este show tem itens com licença desconhecida. Talvez você não tenha o direito de compartilhá-los."
-            },
-            "title": "Créditos",
-            "uncredited": "{count, plural, one {Mais # item é CC0 ou integrado e não precisa de crédito.} other {Mais # itens são CC0 ou integrados e não precisam de crédito.}}"
-        },
-        "show": {
-            "addFailed": "Não foi possível adicionar {name} à sua Biblioteca.",
-            "added": "Item {name} adicionado à sua Biblioteca.",
-            "addToLibrary": "Adicionar à minha Biblioteca",
-            "delete": {
-                "addFirst": "Adicionar à minha Biblioteca antes",
-                "alsoUsedByCues": "{count, plural, =1 {Uma deixa também usa este item:} other {# deixas também usam este item:}}",
-                "useLine": "{channel} · {who} · tempo {count}",
-                "cancel": "Cancelar",
-                "channels": {
-                    "carry": "Objeto",
-                    "silk": "Tecido",
-                    "uniform": "Uniforme"
-                },
-                "checking": "Verificando o que usa este item…",
-                "confirm": "Sua Biblioteca mantém uma cópia própria. Esta ação não pode ser desfeita.",
-                "confirmNoCopy": "Sua Biblioteca não tem uma cópia, então o item será perdido para sempre. Esta ação não pode ser desfeita.",
-                "confirmUnknownCopy": "Esta ação não pode ser desfeita.",
-                "delete": "Excluir",
-                "deleted": "Item {name} excluído deste show.",
-                "failed": "Não foi possível excluir.",
-                "inUseTitle": "{name} está em uso",
-                "isFloor": "É o piso deste show, então não pode ser excluído. Altere o piso em Configurações do campo → Imagem.",
-                "itemModel": "modelo",
-                "itemSlot": "arte de {slot}",
-                "keptForUndo": "{name} permanece neste show enquanto Desfazer puder restaurá-lo e será removido quando o show for fechado depois disso.",
-                "label": "Excluir deste show",
-                "noReplacement": "Este show não tem outro item deste tipo para substituí-lo. Importe um primeiro.",
-                "pinnedBy": "Faz parte de {names}, então não pode ser excluído.",
-                "replaceAndDelete": "Substituir e excluir",
-                "replaced": "Item {name} substituído por {replacement}.",
-                "replacedKeptForUndo": "Item {name} substituído por {replacement}. {name} permanece neste show enquanto Desfazer puder restaurá-lo e será removido quando o show for fechado depois disso.",
-                "replaceWith": "Substituir por…",
-                "targets": {
-                    "band": "Banda",
-                    "set": "{count, plural, one {# integrante} other {# integrantes}}",
-                    "tag": "Uma tag"
-                },
-                "title": "Excluir {name} deste show?",
-                "usedByCues": "{count, plural, =1 {Uma deixa usa este item. Substitua-o para excluí-lo:} other {# deixas usam este item. Substitua-o em todas para excluí-lo:}}",
-                "usedByItems": "{count, plural, =1 {Um adereço usa este item, então ele não pode ser excluído:} other {# adereços usam este item, então ele não pode ser excluído:}}"
-            },
-            "empty": "Este show ainda não usa nenhum recurso.",
-            "emptyHint": "Os itens importados são copiados para o show aberto.",
-            "title": "Este show",
-            "updateDetails": "Os detalhes mudaram na sua Biblioteca.",
-            "updateVersion": "Há uma versão mais recente na sua Biblioteca."
-        },
-        "title": "Recursos"
     },
     "audio": {
         "beats": {
@@ -312,7 +238,6 @@
     },
     "commandPalette": {
         "close": "Fechar",
-        "editsDrill": "Edita a coreografia — mude para o Editor",
         "empty": "Nenhum comando encontrado.",
         "navigate": "Navegar",
         "placeholder": "Pesquisar comandos…",
@@ -396,18 +321,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# deixa movida para um tempo posterior} other {# deixas movidas para tempos posteriores}}",
-            "movedTo": "{count, plural, one {# deixa movida para o tempo {at}} other {# deixas movidas para o tempo {at}}}",
-            "removed": "{count, plural, one {# deixa removida} other {# deixas removidas}}"
-        },
-        "errors": {
-            "create": "Erro ao criar deixas",
-            "delete": "Erro ao excluir deixas",
-            "update": "Erro ao atualizar deixas"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -572,14 +485,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copiado",
-            "copy": "Copiar como Markdown",
-            "devBuild": "Esta é uma versão de desenvolvimento. Só valem os números de uma versão de produção.",
-            "intro": "Reproduz, percorre, aplica zoom e desloca o show aberto por alguns segundos cada e mede cada quadro. Mantenha esta janela em primeiro plano e não toque em nada durante a execução.",
-            "run": "Executar",
-            "running": "Executando: {kind}…",
-            "softwareGl": "Aqui os gráficos são processados por software, então estes números são um limite inferior.",
-            "title": "Benchmark do campo"
+            "running": "Executando: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "espaçamentos iguais",
@@ -618,21 +524,14 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direção",
-            "sections": "Naipes"
-        },
-        "comingSoon": "Em breve",
-        "direction": "Direção do campo",
         "label": "Exibição do campo",
-        "sections": "Naipes visíveis",
-        "comingSoonLabel": "{label}: em breve",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
         "applyFieldType": "Aplicar tipo de campo",
         "applyFieldTypeWarning": "Os integrantes não serão movidos para o tamanho do novo tipo de campo; eles permanecerão onde estão na tela. Você pode voltar ao tipo de campo anterior a qualquer momento.",
         "buttons": {
+            "importImage": "Importar Imagem",
             "newXCheckpoint": "Nova linha de referência X",
             "newYCheckpoint": "Nova linha de referência Y",
             "resetTheme": "Restaurar tema padrão",
@@ -736,7 +635,8 @@
             "fieldRatio": "{ratio} ou {decimal}",
             "measurementModificationNote": "Esses valores podem ser alterados ajustando as coordenadas X e Y, o tamanho do passo e a imagem de fundo",
             "noFloor": "Sem piso",
-            "floorUnnamed": "Piso"
+            "floorUnnamed": "Piso",
+            "refreshAfterImporting": "Atualizar após importar [Ctrl + R]"
         },
         "options": {
             "fill": "Preencher",
@@ -768,6 +668,7 @@
             "pathways": "Caminhos"
         },
         "tooltips": {
+            "importImage": "Importe uma imagem para mostrar no campo",
             "conformMethod": "Define se a imagem de fundo se ajusta dentro do campo ou o preenche. A proporção é sempre mantida",
             "directorsLeft": "Ex.: \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\"",
             "directorsRight": "Ex.: \"Lado 2\", \"Direita da plateia\" ou \"Esquerda do palco\"",
@@ -836,7 +737,6 @@
         "exitFile": "Fechar arquivo",
         "newFile": "Novo arquivo",
         "openFile": "Abrir arquivo",
-        "redo": "Refazer",
         "saveCopyDialogDescription": "O OpenMarch salva automaticamente suas alterações no arquivo atual. Use esta função se quiser criar uma cópia completa do arquivo atual.",
         "saveFile": "Salvar cópia",
         "saveFileCancel": "Cancelar",
@@ -874,18 +774,11 @@
             "stepSizeWarning": "Tamanho do passo excede o limite",
             "swapMarchers": "Trocar integrantes",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Ir para a página {page}, onde estes integrantes se moveram pela última vez",
                 "goToStart": "Ir para o início",
                 "holdFrom": "Parados desde a página {page}",
                 "holdFromStart": "Parados desde o início",
-                "holdHere": "Estes integrantes ficam parados aqui",
-                "movesOnThisPage": "Movem-se nesta página",
-                "someHoldHere": "Alguns destes integrantes ficam parados aqui",
-                "unsetHere": "Remover quadro-chave",
-                "unsetHereHint": "Remover o quadro-chave deles neste tempo, para que sigam as posições anteriores. As páginas seguintes ficam como estão",
-                "unsetHereHintSome": "Remover o quadro-chave dos {count} dos {total} selecionados que têm um neste tempo, para que sigam as posições anteriores. As páginas seguintes ficam como estão",
-                "unsetHereNone": "Nenhum dos integrantes selecionados tem quadro-chave neste tempo"
+                "movesOnThisPage": "Movem-se nesta página"
             },
             "title": "{count} integrantes",
             "titleSingle": "Integrante {drillNumber}",
@@ -948,18 +841,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Tempos",
-                "delete": "Excluir movimento",
-                "endHelp": "Para mudar onde eles terminam, arraste os integrantes no campo no fim do movimento.",
-                "goToEnd": "Ir para o fim",
-                "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-                "name": "Nome",
-                "nameLimit": "No máximo {max} caracteres.",
-                "paused": "Pause para excluir um movimento.",
-                "selectMarchers": "Selecioná-los",
-                "split": "Dividir no indicador",
-                "splitHelp": "Coloque o indicador de reprodução dentro do movimento para dividi-lo ali.",
-                "title": "Movimento"
+                "splitHelp": "Coloque o indicador de reprodução dentro do movimento para dividi-lo ali."
             }
         },
         "title": "Inspetor"
@@ -1025,7 +907,6 @@
                 "audioNotSaved": "O áudio pode não ter sido salvo. Você pode adicionar o áudio depois no editor.",
                 "createFailed": "Falha ao criar o show",
                 "databaseNotReady": "O banco de dados não está pronto. Conclua primeiro a etapa do projeto.",
-                "fieldImageNotCopied": "Não foi possível copiar a imagem do campo do show anterior",
                 "filePathRequired": "O caminho do arquivo é obrigatório",
                 "importFailed": "Falha ao importar o arquivo .dots anterior",
                 "saveFailed": "Falha ao salvar o show em {path}",
@@ -1110,360 +991,6 @@
         "help": {
             "addYours": "Não encontrou seu idioma? <link>Ajude-nos a adicioná-lo</link>",
             "madeWithAi": "Esta tradução foi feita com IA, então algumas palavras podem estar erradas. <link>Ajude-nos a revisá-la</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "Biblioteca",
-            "search": "Pesquisar por nome",
-            "empty": "Sua Biblioteca está vazia.",
-            "emptyHint": "Use Importar… para adicionar modelos e artes.",
-            "noMatches": "Nada na Biblioteca corresponde a “{query}”.",
-            "loadFailed": "Não foi possível carregar a Biblioteca ({code}).",
-            "groups": {
-                "silks": "Bandeiras",
-                "floors": "Pisos",
-                "props": "Adereços",
-                "equipment": "Equipamentos",
-                "uniforms": "Uniformes",
-                "other": "Outros"
-            }
-        },
-        "templates": {
-            "menu": "Modelos de arte",
-            "menuHint": "Tamanho real, um arquivo por clique",
-            "groups": {
-                "silk": "Cortes de bandeira",
-                "floor": "Pisos de base",
-                "floorProp": "Adereços de piso",
-                "prop": "Painéis de adereço",
-                "uniform": "Painéis de uniforme"
-            },
-            "withSag": "{name}, caimento de {sag}",
-            "saggingBottom": "{name}, base com caimento",
-            "propFace": {
-                "top": "Topo, {name}",
-                "front": "Frente, {name}",
-                "back": "Verso, {name}"
-            },
-            "download": "Baixar {name} como {format}",
-            "saved": "{filename} salvo",
-            "saveFailed": "Não foi possível salvar o modelo",
-            "uniformPanel": {
-                "top": {
-                    "front": "Parte superior, frente",
-                    "back": "Parte superior, costas"
-                },
-                "bottoms": {
-                    "front": "Parte inferior, frente",
-                    "back": "Parte inferior, costas"
-                },
-                "overlay": {
-                    "front": "Sobreposição (capa), frente",
-                    "back": "Sobreposição (capa), costas"
-                }
-            }
-        },
-        "import": {
-            "entry": "Importar…",
-            "library": "Biblioteca",
-            "title": "Importação",
-            "back": "Voltar à Biblioteca",
-            "picking": "Escolha os arquivos na janela…",
-            "fileCount": "{count, plural, one {# arquivo} other {# arquivos}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "Do seletor de {kind}",
-            "fromSlot": "Para um espaço de {surface}",
-            "pageN": "Página {n}",
-            "pageOf": "página {index} de {count}",
-            "showPage": "Mostrar {label}",
-            "cancel": "Cancelar",
-            "close": "Concluído",
-            "importMore": "Importar mais…",
-            "tryAgain": "Tentar novamente",
-            "chooseAgain": "Escolher arquivos novamente",
-            "cancelKeeps": "Se você cancelar, as páginas já adicionadas continuam na sua Biblioteca.",
-            "cancelled": "Cancelado. O que já foi adicionado continua na sua Biblioteca.",
-            "clean": "Pronto para adicionar. Nenhuma escolha necessária.",
-            "starterKit": "O kit inicial do OpenMarch para Blender exporta modelos que são importados sem problemas.",
-            "groups": {
-                "cantImport": "Impossível importar",
-                "needsChoice": "Requer sua escolha",
-                "fixed": "Corrigido automaticamente",
-                "notes": "Observações"
-            },
-            "kind": {
-                "title": "O que é?",
-                "hint": "Obrigatório. A faixa de tamanho e os limites de triângulos são verificados depois.",
-                "from": {
-                    "picker": "Definido pelo seletor",
-                    "stamp": "Pelo selo do kit inicial"
-                }
-            },
-            "kinds": {
-                "prop": "Adereço",
-                "equipment": "Equipamento",
-                "garment": "Vestimenta",
-                "floorProp": "Adereço de piso",
-                "baseFloor": "Piso base"
-            },
-            "surfaces": {
-                "silk": "Seda",
-                "baseFloor": "Piso base",
-                "floorProp": "Adereço de piso",
-                "propSlot": "Adereço",
-                "uniformPart": "Uniforme"
-            },
-            "stages": {
-                "reading": "Lendo o arquivo…",
-                "validating": "Verificando o arquivo…",
-                "decoding": "Decodificando…",
-                "checking": "Verificando tamanhos e limites…",
-                "converting": "Convertendo…",
-                "writing": "Gravando…",
-                "rendering-pdf": "Renderizando páginas do PDF…",
-                "saving": "Adicionando à sua Biblioteca…"
-            },
-            "refused": {
-                "unsupported": "Formato que o OpenMarch não importa. Use GLB ou glTF para modelos e PNG, JPG, SVG ou PDF para arte.",
-                "tooLarge": {
-                    "model": "Acima do limite de 200 MB para um modelo com seus arquivos.",
-                    "artwork": "Acima do limite de 300 MB para um arquivo de arte."
-                }
-            },
-            "match": {
-                "kitTitle": "Nova versão de {name}",
-                "filenameTitle": "Já está na sua Biblioteca como {name}",
-                "detail": "Os shows que o usam passam a mostrar “atualização disponível”; nada muda até que a aceitem.",
-                "builtInDetail": "{name} é nativo do OpenMarch, então isto se torna sua própria cópia.",
-                "newVersionOf": "Nova versão de {name}",
-                "update": "Atualizar {name}",
-                "copyOf": "Sua cópia de {name}",
-                "addNew": "Adicionar como novo"
-            },
-            "choices": {
-                "suggested": "sugerido",
-                "units": {
-                    "title": "Unidades",
-                    "detail": "Como exportado, mede {largest} no lado maior, fora da faixa de tamanho para o seu tipo.",
-                    "none": "Como exportado",
-                    "cm": "Centímetros ({factor})",
-                    "in": "Polegadas ({factor})",
-                    "ft": "Pés ({factor})"
-                },
-                "rotate": {
-                    "title": "Girar para Y para cima",
-                    "detail": "Exportado com Z para cima; ficaria deitado de lado."
-                },
-                "simplify": {
-                    "title": "Simplificar para {cap} triângulos",
-                    "detail": "{triangles} triângulos, acima do limite de {cap} para o tipo {kind}."
-                },
-                "before": "Antes: {triangles}",
-                "after": "Depois: {triangles}",
-                "grip": {
-                    "title": "Definir a empunhadura",
-                    "detail": "Não há OM_grip_R no arquivo: um ponto a um quarto do lado maior foi predefinido. Clique no modelo para movê-lo.",
-                    "misnamed": "Encontramos {names}, que não corresponde a OM_grip_R. Predefinida no lado maior; clique no modelo para movê-la.",
-                    "manual": "Definida pelo seu clique no modelo.",
-                    "pick": "Clicar em um ponto do modelo",
-                    "picking": "Clicando… (<keys></keys> para parar)"
-                },
-                "surface": {
-                    "title": "Superfície da arte",
-                    "detail": "O arquivo não marca nenhuma superfície para arte. Escolha aquela em que a arte é impressa, ou nenhuma; passe o mouse sobre uma para vê-la no modelo.",
-                    "none": "Nenhuma",
-                    "unnamed": "Material {index}",
-                    "size": "Cerca de {width} × {height}",
-                    "noUVs": "sem UVs, então a arte não pode ser mapeada nela"
-                }
-            },
-            "rows": {
-                "unreadable": "Não é possível ler o arquivo",
-                "missingResource": "Falta um arquivo necessário",
-                "externalUri": "Ele carrega um arquivo da internet",
-                "resourceOutsideFolder": "Ele aponta para um arquivo fora da sua pasta",
-                "validatorErrors": "{count, plural, one {# erro de glTF} other {# erros de glTF}}",
-                "requiredExtension": "Requer uma extensão que o OpenMarch não carrega",
-                "noGeometry": "Não há geometria nele",
-                "overTriangleCap": "{triangles} triângulos: acima do limite de {limit}",
-                "overTriangleCapDetail": "Mais de 4× o limite de {cap} para o tipo {kind}. Reduza-o antes de exportar.",
-                "rigNotAllowed": "O tipo {kind} não pode ter rig",
-                "garmentNotRigged": "Uma Vestimenta precisa do rig v4",
-                "garmentJointsNotV4": "O rig não é o esqueleto v4",
-                "missingJoints": "Faltando: {names}",
-                "unexpectedJoints": "Extras: {names}",
-                "garmentRestPoseMismatch": "A pose de repouso do rig não corresponde à v4",
-                "garmentQuantized": "As malhas com skinning estão quantizadas",
-                "garmentTransformsNotApplied": "As transformações não foram aplicadas",
-                "garmentNoPartPaint": "Sem pintura _PART: seria renderizada como pele",
-                "garmentNoMedianFit": "Sem ajuste para o corpo mediano",
-                "garmentUnknownFit": "Um ajuste indica um tipo de corpo desconhecido",
-                "texturesDownsized": "{count, plural, one {# textura reduzida} other {# texturas reduzidas}} para {cap} px",
-                "dracoDecoded": "Compressão Draco decodificada",
-                "meshOptimizerDecoded": "Compressão Mesh optimizer decodificada",
-                "instancesExpanded": "Instâncias expandidas",
-                "extensionsStripped": "Extensões não usadas removidas",
-                "extrasStripped": "Extras não usados removidos",
-                "contentStripped": "Conteúdo não usado pelo OpenMarch removido",
-                "contentStrippedDetail": "Animações {animations} · câmeras {cameras} · alvos de morph {morphTargets} · cenas extras {scenes}",
-                "influencesRenormalized": "Pesos dos ossos renormalizados em {vertices} vértices",
-                "validatorWarnings": "{count, plural, one {# aviso de glTF} other {# avisos de glTF}}",
-                "sizeOutOfRange": "{size} no lado maior",
-                "sizeOutOfRangeDetail": "Fora da faixa usual de {min} a {max} para o seu tipo. Verifique as unidades.",
-                "noStretchZones": "Sem zonas de estiramento",
-                "noStretchZonesDetail": "Ele mantém o tamanho em que foi modelado ou recebe uma escala uniforme.",
-                "customPropertiesOff": "Parece que as propriedades personalizadas estavam desativadas",
-                "customPropertiesOffDetail": "Exporte novamente com a predefinição do OpenMarch para manter empunhaduras e slots.",
-                "stillOverTriangleCap": "Ainda com {triangles} triângulos, acima do limite de {cap}",
-                "slotWithoutUVs": "O slot de arte {slot} não tem UVs",
-                "slotDropped": "O slot de arte {slot} foi descartado",
-                "invalidOpenMarchData": "Os dados do OpenMarch em {where} foram ignorados",
-                "unknownStampKind": "O selo indica um tipo desconhecido: {value}",
-                "missingFits": "Ajustes ausentes",
-                "duplicateFits": "Mais de uma malha tem o mesmo ajuste",
-                "wgiEquipmentUnderMinimum": "WGI: equipamento com menos de 24 in",
-                "wgiFloorOverMaximum": "WGI: piso maior que 78 × 106 ft"
-            },
-            "size": {
-                "title": "Qual é o tamanho?",
-                "members": "{selected} de {count} {count, plural, one {página} other {páginas}}",
-                "fromFile": "Do arquivo: {size}",
-                "width": "Largura",
-                "height": "Altura",
-                "feetUnit": "ft",
-                "inchesUnit": "in",
-                "feetLabel": "{label} (ft)",
-                "inchesLabel": "{label} (in)",
-                "feetSize": "{width} × {height} ft",
-                "inchesSize": "{width} × {height} in",
-                "lengthSize": "{width} × {height}",
-                "locked": "Proporção travada: a arte nunca é esticada",
-                "needed": "Escolha um tamanho: este arquivo não informa o tamanho de impressão.",
-                "printsOn": "Imprime em",
-                "fitted": "Ajustado ao formato da sua imagem; o tamanho padrão para {surface} é {size}."
-            },
-            "details": {
-                "name": "Nome",
-                "namesFromFiles": "Cada arquivo mantém o próprio nome.",
-                "tags": "Tags, separadas por vírgula",
-                "toggle": "Autor, licença e origem",
-                "unknown": "Desconhecido",
-                "author": "Autor",
-                "license": "Licença",
-                "licensePlaceholder": "Licença, como CC-BY-4.0",
-                "source": "URL de origem",
-                "emptyIsUnknown": "Em branco significa Desconhecido, nunca livre para compartilhar.",
-                "rights": "Importe apenas artes e modelos que você tem o direito de usar."
-            },
-            "add": {
-                "one": "Adicionar à Biblioteca",
-                "many": "Adicionar {count} à Biblioteca",
-                "newVersion": "Adicionar nova versão",
-                "cantImport": "Não é possível importar"
-            },
-            "done": {
-                "added": "{count, plural, one {# item adicionado à sua Biblioteca} other {# itens adicionados à sua Biblioteca}}",
-                "newVersion": "Nova versão de {name} adicionada",
-                "notImported": "Não importados"
-            },
-            "stage": {
-                "label": "Prévia da importação · Visualização 3D inalterada",
-                "loading": "Carregando a prévia…",
-                "empty": "Nada para pré-visualizar",
-                "needsKind": "Escolha o que é para ver a prévia.",
-                "rejected": "Não é possível importar, então não há prévia.",
-                "previewFailed": "Não foi possível carregar a prévia.",
-                "noArtwork": "Nenhuma página para pré-visualizar.",
-                "triangles": "{triangles} triângulos",
-                "trianglesCap": "{triangles} triângulos · limite {cap}",
-                "tall": "{height} de altura",
-                "before": "Antes",
-                "after": "Depois",
-                "vector": "vetorial",
-                "pixels": "{width} × {height} px",
-                "views": "Vistas",
-                "view": {
-                    "front": "Frontal",
-                    "side": "Lateral",
-                    "top": "Superior"
-                },
-                "pickGrip": "Clique em um ponto do modelo para definir a empunhadura · <keys></keys> para parar",
-                "surface": "Superfície da arte: {name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "Importe modelos e artes separadamente",
-                    "body": "Escolha um modelo ou qualquer número de arquivos de arte por vez."
-                },
-                "session-expired": {
-                    "title": "Esta importação expirou",
-                    "body": "As importações são fechadas após 30 minutos sem uso. Escolha os arquivos novamente."
-                },
-                "unknown-file": {
-                    "title": "Esse arquivo não faz parte desta importação",
-                    "body": "Escolha os arquivos novamente."
-                },
-                "too-large": {
-                    "title": "Arquivos demais",
-                    "body": "Escolha no máximo 50 arquivos por vez."
-                },
-                "unreadable": {
-                    "title": "Não foi possível ler o arquivo",
-                    "body": "Ele pode ter sido movido, ou outro aplicativo pode estar com ele aberto."
-                },
-                "busy": {
-                    "title": "Outra etapa da importação ainda está em andamento",
-                    "body": "Aguarde a conclusão e tente novamente."
-                },
-                "timeout": {
-                    "title": "O importador demorou demais",
-                    "body": "Arquivos grandes ou complexos podem exceder o tempo limite. Tente novamente ou simplifique o arquivo antes de exportar."
-                },
-                "worker-crashed": {
-                    "title": "O importador parou ao ler o arquivo",
-                    "body": "Seu arquivo não foi alterado. Tente novamente; se acontecer de novo, o arquivo pode estar danificado."
-                },
-                "pdf-unavailable": {
-                    "title": "Não foi possível renderizar as páginas do PDF",
-                    "body": "Tente novamente. Se continuar acontecendo, exporte a arte como PNG ou SVG."
-                },
-                "write-failed": {
-                    "title": "Não foi possível salvar na sua Biblioteca",
-                    "body": "Verifique se há espaço livre em disco e tente novamente."
-                },
-                "read-only": {
-                    "title": "Esse item não pode ser alterado",
-                    "body": "Itens integrados são somente leitura. Adicione-o como novo."
-                },
-                "corrupt": {
-                    "title": "Sua Biblioteca tem um item danificado",
-                    "body": "Tente novamente. O restante da sua Biblioteca não foi afetado."
-                },
-                "cancelled": {
-                    "title": "Cancelado",
-                    "body": "Nada mais foi importado."
-                },
-                "other": {
-                    "title": "Algo deu errado",
-                    "body": "Tente novamente."
-                }
-            },
-            "finishFailed": "Não foi possível concluir a importação",
-            "copyIntoShowFailed": "Não foi possível copiar a importação para o show"
-        },
-        "fileDialog": {
-            "importTitle": "Importar",
-            "saveTemplateTitle": "Salvar gabarito",
-            "models": "Modelo 3D (glb, gltf)",
-            "artwork": "Arte (png, jpg, svg, pdf)",
-            "modelsAndArtwork": "Modelos e artes",
-            "pngImage": "Imagem PNG"
-        },
-        "starterKit": {
-            "saveDialogTitle": "Salvar o kit inicial do Blender",
-            "saveFailed": "Não foi possível salvar o kit inicial do Blender"
         }
     },
     "marchers": {
@@ -1687,7 +1214,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "Fundo da produção",
-                "drawFailed": "Não foi possível desenhar a imagem de fundo",
                 "empty": "Nenhuma imagem de fundo",
                 "help": "A imagem de fundo é sincronizada automaticamente quando você envia uma nova revisão. Para alterá-la, altere a imagem de fundo no editor do campo e envie uma nova revisão.",
                 "title": "Imagem de fundo"
@@ -1957,11 +1483,6 @@
         "field.labelSize.large": "Grande",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Pequeno",
-        "field.shapeFocus": "Ao editar formas",
-        "field.shapeFocus.drawing": "Esmaecer só ao desenhar",
-        "field.shapeFocus.drawing.description": "Os integrantes fora de uma forma aberta esmaecem só enquanto você a desenha.",
-        "field.shapeFocus.rest": "Esmaecer o resto",
-        "field.shapeFocus.rest.description": "Os integrantes fora de uma forma aberta esmaecem enquanto ela estiver aberta.",
         "field.stepSizeWarnings": "Avisos de tamanho de passo",
         "field.stepSizeWarnings.description": "Marca movimentos com passos grandes demais para marchar e sempre mostra seus caminhos.",
         "general": "Geral",
@@ -1990,27 +1511,6 @@
         "mouse.trackpadPanSensitivity": "Sensibilidade de deslocamento do trackpad",
         "mouse.zoomSensitivity": "Sensibilidade do zoom",
         "noResults": "Nenhuma configuração encontrada.",
-        "plugins": "Plugins",
-        "plugins.community": "Comunidade",
-        "plugins.description": "Adicione recursos criados pela comunidade.",
-        "plugins.install": "Instalar",
-        "plugins.installed": "Instalado",
-        "plugins.installFailed": "Falha ao instalar",
-        "plugins.installing": "Instalando...",
-        "plugins.noCommunityPlugins": "Nenhum plugin da comunidade disponível.",
-        "plugins.noOfficialPlugins": "Nenhum plugin oficial disponível.",
-        "plugins.noPlugins": "Nenhum plugin instalado.",
-        "plugins.official": "Oficial",
-        "plugins.refreshNotice": "<a>Recarregue o aplicativo</a> para atualizar os plugins.",
-        "plugins.toast.installFailed": "Falha ao instalar o plugin {pluginName}",
-        "plugins.toast.installSuccess": "Plugin {pluginName} instalado com sucesso!",
-        "plugins.toast.uninstallFailed": "Falha ao remover {pluginName}",
-        "plugins.toast.uninstallSuccess": "Plugin {pluginName} removido com sucesso!",
-        "plugins.uninstall": "Desinstalar",
-        "plugins.uninstalled": "Removido",
-        "plugins.uninstallFailed": "Falha ao remover",
-        "plugins.uninstalling": "Removendo...",
-        "plugins.version": "v{version}",
         "privacy": "Privacidade",
         "privacy.analytics": "Compartilhar análises de uso",
         "privacy.analytics.description": "Para nos ajudar a melhorar o OpenMarch, coletamos dados de análise, logs de erros e gravações de sessão. Isso nos ajuda a entender como você usa o aplicativo e a identificar bugs. Leia nossa <a>política de privacidade</a> para saber mais.",
@@ -2067,8 +1567,6 @@
         "tolgeeDevToolsToggle": "Tradução no contexto com Tolgee",
         "view3d": "Visualização 3D",
         "view3d.description": "Como a Visualização 3D é desenhada neste computador. Não fica salvo no show.",
-        "view3d.pauseWhenIdle": "Pausar o desenho quando nada se move",
-        "view3d.pauseWhenIdle.description": "Para de desenhar enquanto o show está pausado e a câmera está parada.",
         "view3d.quality": "Qualidade",
         "view3d.quality.auto": "Automática",
         "view3d.quality.auto.description": "Começa em Alta e muda para Baixa se a visualização travar.",
@@ -2083,8 +1581,6 @@
         "view3d.resolution.fast.description": "A menos nítida, com cerca de metade do trabalho. Para computadores mais antigos.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Detalhe máximo em telas de alta resolução.",
-        "view3d.saveOnBattery": "Economizar energia na bateria",
-        "view3d.saveOnBattery.description": "Na bateria, desenha no máximo 30 quadros por segundo em resolução padrão.",
         "input": "Toque e entrada",
         "input.description": "Escolha o layout de tablet (para dedos e caneta) ou o layout de desktop (para mouse e trackpad).",
         "input.interface": "Layout",
@@ -2270,21 +1766,6 @@
                 "one": "{name} saiu {shape, select, block {do bloco} circle {do círculo} other {da forma}}"
             },
             "selectWholeShape": "Selecionar {shape, select, block {bloco} circle {círculo} other {forma}}"
-        },
-        "save": {
-            "descriptionLabel": "Descrição da forma salva (opcional)",
-            "descriptionPlaceholder": "Descrição (opcional)",
-            "ariaLabel": "Salvar esta forma na sua biblioteca",
-            "button": "Salvar",
-            "cancel": "Cancelar",
-            "nameLabel": "Nome da forma salva",
-            "savedAs": "Salva como {name}",
-            "tip": "Salvar esta forma na sua biblioteca como favorita",
-            "mixedIntervals": "Linhas com intervalos mistos ainda não podem ser salvas"
-        },
-        "saved": {
-            "copyFailed": "Não foi possível copiar a forma salva para o show",
-            "deleteFailed": "Não foi possível excluir a forma salva do show"
         },
         "command": {
             "fill": "Preenchimento: {modes}",
@@ -2523,37 +2004,6 @@
                 "spacing": "Espaçamento"
             }
         },
-        "library": {
-            "addNamed": "Adicionar {name} à minha biblioteca",
-            "addTip": "Adicionar à minha biblioteca, para todos os shows",
-            "close": "Fechar",
-            "deleteNamed": "Excluir {name}",
-            "deleteTip": "Excluir esta forma salva",
-            "dismiss": "Dispensar",
-            "draw": "Desenhar {name}",
-            "full": "{max} formas estão favoritadas, o máximo que o anel comporta. Desfavorite uma primeiro para favoritar {name}.",
-            "group": {
-                "basic": "Básicas",
-                "saved": "Salvas"
-            },
-            "intro": "Favorite uma forma para mantê-la na aba Formas e no anel de formas, até {max}.",
-            "note": {
-                "apart": "a {spacing} de distância",
-                "modeApart": "{mode, select, outline {Contorno} other {Distribuído}}, a {spacing} de distância",
-                "apartStagger": "a {spacing} de distância, escalonado {fraction}",
-                "apartStaggerLeft": "a {spacing} de distância, escalonado {fraction} à esquerda",
-                "showOnly": "somente neste show",
-                "stagger": "escalonado {fraction}",
-                "staggerLeft": "escalonado {fraction} à esquerda"
-            },
-            "savedEmpty": "Salve uma forma pela linha ⋯ ou pelo inspetor para mantê-la aqui, em todos os shows.",
-            "savedNewer": "{count, plural, one {# forma salva precisa} other {# formas salvas precisam}} de uma versão mais recente do OpenMarch.",
-            "star": "Favoritar",
-            "starNamed": "Favoritar {name}",
-            "title": "Formas",
-            "unstar": "Desfavoritar",
-            "unstarNamed": "Desfavoritar {name}"
-        },
         "spacing": {
             "empty": "Digite um intervalo em passos",
             "noGaps": "Um trecho precisa de pelo menos 1 espaço",
@@ -2574,27 +2024,19 @@
             },
             "placeError": "Erro ao posicionar a forma",
             "ring": {
-                "hint": "Clique em uma forma ou em qualquer outro lugar para fechar",
-                "starred": "Favoritada"
+                "hint": "Clique em uma forma ou em qualquer outro lugar para fechar"
             },
             "section": {
-                "box": "Bloco",
                 "title": "Formas"
             },
             "selectMarchersFirst": "Selecione integrantes primeiro",
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Tipos de forma",
-                "library": "Biblioteca",
-                "libraryTip": "Abrir a biblioteca de formas para favoritar formas",
                 "ringHintKeys": "Segure <keys></keys> no campo para abrir o anel de formas"
             }
         },
         "transform": {
-            "flipAcross": "Espelhar ↔",
-            "flipAcrossTip": "Espelhar de lado a lado em torno do pivô",
-            "flipDeep": "Espelhar ↕",
-            "flipDeepTip": "Espelhar de frente para trás em torno do pivô",
             "title": "Transformação"
         },
         "validate": {
@@ -2629,32 +2071,7 @@
             "countAt": "{count} a {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Uma deixa de Instrumento/Equipamento não combina com o que os integrantes carregam",
-        "crewDistance": "A equipe de {item} está longe do objeto",
-        "crewDistanceDetail": "Fora de alcance: {who}",
-        "crewlessMove": "{item} se move sem equipe",
-        "empty": "Nada a verificar.",
-        "forWho": "Para {who}",
-        "handConflict": "{item} não aparece",
-        "handConflictDetail": "{count, plural, =1 {{other} ocupa {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}} other {{other} ocupam {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}}}",
-        "handConflictByCarry": "Uma deixa de Porte ocupa {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}",
-        "handConflictWithCarry": "{other} e uma deixa de Porte ocupam {hand, select, left {a mão esquerda} right {a mão direita} other {as mãos}} de {who}",
-        "performers": "{count, plural, one {# integrante} other {# integrantes}}",
-        "pick": "Ir para este tempo e selecionar o que é indicado",
-        "putDownDrift": "{item} vai ao chão longe do portador",
-        "putDownDriftDetail": "O próprio movimento do item o leva até lá, e não até {who}",
-        "shortHanded": "Faltam mãos para segurar {item}",
-        "shortHandedDetail": "{who}: {held} de {needed} mãos",
-        "silkAspect": "A Arte de uma deixa de Tecido foi ajustada a uma bandeira de outro formato",
-        "snapToHolder": "Levar ao portador",
-        "title": "Verificações do show",
-        "titleCount": "Verificações do show ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, no início"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# deixa aponta para esta etiqueta e será removida} other {# deixas apontam para esta etiqueta e serão removidas}}",
         "title": "Etiquetas",
         "rename": "Renomear etiqueta",
         "namePlaceholder": "Digite o nome da etiqueta...",
@@ -2754,7 +2171,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Linha do tempo",
-        "masterVolume": "Volume geral",
         "moveDeleted": {
             "message": "Excluído: {label}",
             "withPages": "{count, plural, =1 {Excluído: {label} · Página {pages} alterada} other {Excluído: {label} · Páginas {pages} alteradas}}"
@@ -2783,9 +2199,7 @@
             "setAsShown": "Fixar como exibido",
             "setAsShownNone": "Todos os integrantes selecionados já estão fixados em {page} ou no meio de um movimento",
             "setAsShownError": "Erro ao fixar integrantes como exibidos",
-            "addSelected": "Adicionar integrantes selecionados",
-            "deletePage": "Excluir página",
-            "addSelectedNone": "Selecione integrantes primeiro: no início, em um trecho ainda sem linha do tempo ou em uma linha do tempo da qual eles façam parte."
+            "deletePage": "Excluir página"
         },
         "startFlagPositions": {
             "always": "Sempre",
@@ -2842,7 +2256,6 @@
             "label": "Linha do tempo compacta",
             "onTooltip": "Linha do tempo compacta: ativada. Clique para mostrar a linha do tempo completa"
         },
-        "volumeSlider": "Controle de volume da linha do tempo",
         "playbackSpeed": {
             "current": "Velocidade de reprodução: {speed}",
             "hintClick": "Clique para a próxima velocidade, clique com o botão direito para mais opções",
@@ -2866,7 +2279,6 @@
             "lockedNotMoved": "{count, plural, =1 {Um integrante usa movimentos do modo Avançado nesta página, então não foi movido. Mude para o Avançado para editá-lo.} other {# integrantes usam movimentos do modo Avançado nesta página, então não foram movidos. Mude para o Avançado para editá-los.}}",
             "switchToExpert": "Mudar para Avançado"
         },
-        "volume": "Volume da linha do tempo",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -3068,7 +2480,6 @@
             "range": "tempos {from}–{to}",
             "length": "{count, plural, one {# tempo} other {# tempos}}"
         },
-        "createTrack": "Criar faixa",
         "playheadChip": {
             "label": "Mostrar o indicador de reprodução",
             "text": "Indicador"
@@ -3191,7 +2602,8 @@
             "placeSelectedMarchers": "Posicionar integrantes selecionados",
             "snapToggleCaption": "Ajuste",
             "toNextPagePositions": "...nas posições da próxima página",
-            "setMarcherPositionsAriaLabel": "Definir posições dos integrantes"
+            "setMarcherPositionsAriaLabel": "Definir posições dos integrantes",
+            "toPreviousPagePositions": "...para posições anteriores de página"
         },
         "collisions": {
             "collisionsToolbar": "Colisões",
@@ -3305,17 +2717,11 @@
             "freeCamera": "Vista livre"
         },
         "readout": {
-            "camera": "Olhos a {eye} · {distance} do centro",
-            "checks": "{count, plural, one {# verificação} other {# verificações}}",
             "count": "Tempo {count} de {total}",
             "noPages": "Nenhuma página",
             "page": "Página {page}",
             "pastEnd": "FIM +{count}",
             "showTime": "Tempo decorrido do show"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Visualização 3D — {showName}",
@@ -3352,32 +2758,7 @@
             "endZoneColor": "Cor",
             "graphicsSection": "Este computador",
             "graphicsHint": "Não é salvo no show, então pode ser diferente em cada computador.",
-            "hornState": "Posição dos instrumentos",
-            "hornStateMode": {
-                "up": "Para cima",
-                "carry": "Transporte",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Mantém todos os instrumentos de sopro e de percussão em uma só posição durante todo o show, para conferir as poses. Seguir deixas reproduz as deixas de Instrumento/Equipamento, com os instrumentos para cima onde não houver nenhuma.",
-            "guardEquipment": "Equipamento da color guard",
-            "guardEquipmentMode": {
-                "flag6": "Bandeira de 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Swing duplo",
-                "rifle": "Rifle",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Coloca um equipamento nas mãos de cada integrante da color guard, para visualizá-lo. Seguir deixas dá a cada naipe o seu: bandeiras recebem a bandeira de 6 ft, rifles recebem o rifle.",
-            "stepOffFoot": "Pé de saída",
-            "stepOffFootMode": {
-                "left": "Esquerdo do integrante",
-                "right": "Direito do integrante"
-            },
-            "stepOffFootHint": "O pé do próprio integrante, para onde quer que esteja virado. De frente para você, o pé esquerdo do integrante fica à sua direita. Seguir deixas sai com o pé salvo no show ({foot, select, left {esquerdo do integrante} other {direito do integrante}}) ou com o pé definido por uma deixa de Pés.",
             "keysSection": "Teclado e mouse",
-            "previewSection": "Só pré-visualização",
-            "previewHint": "Não é salvo. Estas opções mudam só o que esta janela desenha; no show, as deixas decidem. Volte para Seguir deixas para ver o show.",
-            "followCues": "Seguir deixas",
             "uniforms": "Uniforme da banda",
             "guardUniforms": "Uniforme da color guard"
         },
@@ -3409,7 +2790,6 @@
             "title": "Câmeras",
             "close": "Fechar câmeras",
             "edit": "Editar câmeras…",
-            "saveView": "Salvar visualização atual",
             "none": "Nenhuma câmera",
             "empty": "Nenhuma câmera. Mova a visualização para onde quiser e depois adicione-a.",
             "addView": "Adicionar visualização atual",
@@ -3432,68 +2812,7 @@
             "removed": "“{name}” removida",
             "undo": "Desfazer",
             "replace": "Substituir",
-            "replaceWithProfile": "Substituir suas câmeras por “{name}”? Sua lista atual não está salva em nenhum outro lugar.",
-            "profile": "Perfil",
-            "source": {
-                "defaults": "Padrões do local",
-                "custom": "Câmeras deste show"
-            },
-            "edited": "Editado",
-            "myProfiles": "Neste computador",
-            "saveAsProfile": "Salvar como perfil de câmera…",
-            "saveAsProfileShort": "Salvar como perfil…",
-            "manageProfiles": "Gerenciar perfis…",
-            "notice": {
-                "defaults": "As câmeras do próprio local. Qualquer alteração as torna deste show.",
-                "custom": "Salvas apenas com este show.",
-                "profile": "Salvas com este show e no seu perfil.",
-                "edited": "Alteradas desde que o perfil foi salvo.",
-                "newer": "Este perfil foi alterado neste computador.",
-                "missing": "O perfil deste show não está neste computador."
-            },
-            "updateProfile": "Atualizar perfil",
-            "saveAsNew": "Salvar como novo…",
-            "useNewVersion": "Usar a nova versão",
-            "addToMyProfiles": "Adicionar aos meus perfis",
-            "profileName": "Nome do perfil",
-            "save": "Salvar",
-            "defaultProfileName": "Câmeras de {venue}",
-            "copyName": "Cópia de {name}",
-            "profilesTitle": "Perfis de câmera",
-            "profilesHint": "Salvos na sua Biblioteca neste computador, para qualquer show. Cada show guarda a própria cópia do perfil que usa.",
-            "noProfiles": "Ainda não há perfis de câmera. Escolha Salvar como perfil de câmera… para criar um.",
-            "cameraCount": "{count, plural, one {# câmera} other {# câmeras}}",
-            "use": "Usar",
-            "otherVenue": "Este perfil é de outro local",
-            "deleteProfile": "Excluir",
-            "deleteProfileConfirm": "Excluir “{name}” deste computador? Os shows que o usam mantêm a própria cópia.",
             "saveFailed": "Falha ao salvar as câmeras da Visualização 3D"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "Bandeira para mastro de 5 ft",
-                "silk5_5ftPole": "Bandeira para mastro de 5,5 ft",
-                "silk6ftPole": "Bandeira para mastro de 6 ft",
-                "silk7ftPole": "Bandeira para mastro de 7 ft",
-                "silkStandard": "Padrão",
-                "silkOversized": "Extragrande",
-                "silkTeardrop": "Gota",
-                "silkSwing": "Swing",
-                "silkSuperSwing": "Swing curvo ou super swing",
-                "silkOversizedSwing": "Swing extragrande",
-                "silkArc": "Arco normal",
-                "silkNarrowArc": "Arco estreito",
-                "silkSuperArc": "Super arco",
-                "floorWgiMinimum": "Área de competição WGI, mínima",
-                "floorWgiMaximum": "Área de competição WGI, máxima",
-                "flatProp4x8ft": "Chapa de 4 x 8 ft"
-            },
-            "kind": {
-                "silk": "Bandeira",
-                "floor": "Piso",
-                "flatProp": "Adereço plano"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "Falha ao atualizar o local da Visualização 3D"
@@ -3650,263 +2969,9 @@
             "seconds": "segundos"
         },
         "unsavedChanges": "Você tem alterações não salvas",
-        "warnPropMovesWithoutCrew": "Avisar quando um adereço se mover sem equipe",
-        "warnPropMovesWithoutCrewHelp": "As Verificações do show apontam um adereço posicionado que se move sem ninguém na equipe dele.",
         "close": "Fechar",
         "saved": "Configurações do show salvas",
         "updateFailed": "Falha ao atualizar as configurações do show"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "Espaço de trabalho",
-            "editor": "Editor",
-            "visuals": "Visuais",
-            "preview": "Prévia"
-        },
-        "channels": {
-            "feet": "Pés",
-            "horn": "Instrumento",
-            "equipment": "Equipamento",
-            "hornEquipment": "Instrumento / Equipamento",
-            "facing": "Orientação",
-            "body": "Corpo"
-        },
-        "inspector": {
-            "title": "Visuais",
-            "who": "Quem",
-            "band": "Banda",
-            "selection": "Seleção",
-            "selectionCount": "{count, plural, =0 {Nada selecionado} one {# selecionado} other {# selecionados}}",
-            "sections": "Naipes",
-            "tags": "Tags",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Limpar foco",
-            "focusHint": "Clique em um grupo para colocá-lo em foco. Os demais ficam esmaecidos no campo."
-        },
-        "band": {
-            "editing": "Editando: {channel} para {who}",
-            "focusFirst": "Visuais: coloque um grupo em foco no inspetor para editar as deixas dele",
-            "selectFirst": "Selecione integrantes no campo para criar deixas para a seleção",
-            "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-            "mixed": "Misto",
-            "rowCue": "{who}: {value}",
-            "lane": "Faixa de deixas",
-            "paste": "{count, plural, one {Colar # deixa no indicador de reprodução} other {Colar # deixas no indicador de reprodução}}",
-            "flagged": "{count, plural, one {# deixa sinalizada} other {# deixas sinalizadas}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "Deixa",
-            "delete": "Excluir",
-            "where": "{who}, {where}",
-            "count": "tempo {count}",
-            "start": "início",
-            "value": "Valor",
-            "notForEveryone": "{value} (não serve para todos)",
-            "transition": "Transição (tempos)",
-            "length": "Duração (tempos)",
-            "ripple": "Cascata",
-            "rippleSpan": "Duração da cascata (tempos)",
-            "rippleOrder": "Ordem",
-            "order": {
-                "drill": "Ordem da coreografia",
-                "left_right": "Da esquerda para a direita",
-                "right_left": "Da direita para a esquerda",
-                "down_form": "Ao longo da formação"
-            },
-            "notes": "Observações",
-            "facingWheel": "Ângulo de orientação",
-            "pickPoint": "Escolher o ponto no campo",
-            "pickingPoint": "Clique em um ponto no campo (<keys></keys> cancela)"
-        },
-        "why": {
-            "title": "Por quê — {where}",
-            "value": "{value}: {n} de {total}",
-            "setBy": "Definido por <cue></cue>",
-            "setByTakenOver": "Definido por <cue></cue> (assumido por {channel})",
-            "beat": "Prevaleceu sobre <cues></cues>",
-            "cue": "{value} para {who}, {where}",
-            "default": {
-                "library": "O padrão",
-                "carry": "O padrão para o que carregam",
-                "section_equipment": "O equipamento habitual do naipe",
-                "equipment_fallback": "O equipamento habitual para o nome do naipe",
-                "marcher_carries": "O que costuma carregar",
-                "section_color": "A cor 2D do naipe",
-                "band_uniform": "O uniforme da banda",
-                "guard_uniform": "O uniforme da color guard"
-            }
-        },
-        "settings": {
-            "pace": "Cadência",
-            "moving": "Em movimento",
-            "onHolds": "Nas paradas",
-            "stepOffFoot": "Pé de saída",
-            "angle": "Ângulo do instrumento",
-            "degrees": "Ângulo (graus)",
-            "x": "Ponto x",
-            "y": "Ponto y",
-            "energy": "Energia"
-        },
-        "options": {
-            "single": "Normal",
-            "half": "Meio tempo",
-            "double": "Tempo dobrado",
-            "straightLeg": "Perna reta",
-            "bentLeg": "Perna flexionada",
-            "highStep": "Passo alto",
-            "stand": "Parado",
-            "markTime": "Marcar passo",
-            "highMarkTime": "Marcar passo alto",
-            "left": "Esquerdo",
-            "right": "Direito",
-            "box": "Posição padrão",
-            "plus10": "10° acima do padrão",
-            "low": "Baixa",
-            "medium": "Média",
-            "high": "Alta"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Passo",
-                    "label": "Passo",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MP"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Instrumentos erguidos",
-                    "label": "IE"
-                },
-                "down": {
-                    "name": "Instrumentos abaixados",
-                    "label": "IA"
-                },
-                "trail": {
-                    "name": "Instrumento ao lado",
-                    "label": "Lado"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "Tocando",
-                    "label": "Toca"
-                },
-                "sticksIn": {
-                    "name": "Baquetas cruzadas",
-                    "label": "Cruz"
-                },
-                "sticksDown": {
-                    "name": "Baquetas abaixadas",
-                    "label": "Baixo"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Bandeira em posição",
-                    "label": "Pos"
-                },
-                "port": {
-                    "name": "Bandeira em diagonal",
-                    "label": "Diag"
-                },
-                "dropSpin": {
-                    "name": "Giro baixo da bandeira",
-                    "label": "Giro"
-                },
-                "toss1": {
-                    "name": "Lançamento simples da bandeira",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Rifle em diagonal",
-                    "label": "Diag"
-                },
-                "present": {
-                    "name": "Apresentar armas",
-                    "label": "Apr"
-                },
-                "dropSpin": {
-                    "name": "Giro baixo do rifle",
-                    "label": "Giro"
-                },
-                "toss1": {
-                    "name": "Lançamento simples do rifle",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lançamento duplo do rifle",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre em posição",
-                    "label": "Pos"
-                },
-                "toss1": {
-                    "name": "Lançamento simples do sabre",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Frente",
-                    "label": "Frente"
-                },
-                "back": {
-                    "name": "Fundo",
-                    "label": "Fundo"
-                },
-                "side1": {
-                    "name": "Lado 1",
-                    "label": "L1"
-                },
-                "side2": {
-                    "name": "Lado 2",
-                    "label": "L2"
-                },
-                "travel": {
-                    "name": "Direção do deslocamento",
-                    "label": "Desloc."
-                },
-                "angle": {
-                    "name": "Ângulo",
-                    "label": "Ângulo"
-                },
-                "point": {
-                    "name": "Para um ponto",
-                    "label": "Ponto"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutro",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "Ajoelhar",
-                    "label": "Ajoel."
-                },
-                "choreo": {
-                    "name": "Coreografia corporal",
-                    "label": "Coreo"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Conflita com outra deixa no mesmo tempo.",
-            "phrase_overlap": "Sobrepõe-se a outra frase.",
-            "takeover_while_moving": "Assume o controle dos pés enquanto o ponto se move.",
-            "fits_nobody": "Não se aplica a nenhum dos seus integrantes.",
-            "kind_not_allowed": "É uma frase em um canal que só aceita estados.",
-            "transition_cut": "Sua transição começa antes de a deixa anterior terminar de chegar."
-        }
     },
     "canvas": {
         "zoom": {
@@ -3914,9 +2979,7 @@
             "in": "Aumentar zoom",
             "out": "Diminuir zoom",
             "reset": "Zoom {zoom}%, redefinir zoom e centralizar",
-            "resetAndCenter": "Redefinir zoom e centralizar",
-            "perspective": "Perspectiva",
-            "perspectiveComingSoon": "Perspectiva (em breve)"
+            "resetAndCenter": "Redefinir zoom e centralizar"
         }
     },
     "errorBoundary": {
@@ -4097,7 +3160,6 @@
         "help": {
             "title": "Ajuda",
             "showShortcuts": "Atalhos de teclado",
-            "starterKit": "Obter o kit inicial do Blender…",
             "website": "Site",
             "guides": "Documentação/guias"
         },
@@ -4108,7 +3170,6 @@
             "openMarchFile": "Arquivo do OpenMarch",
             "allFiles": "Todos os arquivos",
             "audioFile": "Arquivo de áudio",
-            "zipArchive": "Arquivo ZIP",
             "video": "Vídeo"
         },
         "newShow": {
@@ -4120,9 +3181,6 @@
         "openFailed": {
             "title": "Erro ao carregar o banco de dados"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "Erro ao devolver um item a quem o segura"
     },
     "coordinates": {
         "full": "{x} - {y}",
@@ -4162,5 +3220,10 @@
         "tiny": "Mínimo",
         "toFive": "{steps, number} para 5",
         "undefined": "Indefinido"
+    },
+    "workspace": {
+        "label": "Espaço de trabalho",
+        "editor": "Editor",
+        "preview": "Prévia"
     }
 }

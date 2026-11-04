@@ -27,9 +27,7 @@ test("Change selected audio file", async ({ audioFiles, electronApp }) => {
     await (await openMusicMenu(page)).getByText(otherFile).click();
     await expect(file).toContainText(otherFile);
 
-    await (await openMusicMenu(page))
-        .getByText(currentlySelectedFile)
-        .click();
+    await (await openMusicMenu(page)).getByText(currentlySelectedFile).click();
     await expect(file).toContainText(currentlySelectedFile);
 });
 

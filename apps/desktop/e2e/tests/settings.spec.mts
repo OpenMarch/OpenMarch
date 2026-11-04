@@ -155,7 +155,7 @@ settingsMenus.forEach(({ name, navigate }) => {
 });
 
 settingsMenus.forEach(({ name, navigate }) => {
-    test(`${name} - Plugins and usage`, async ({ electronApp }) => {
+    test(`${name} - Usage analytics`, async ({ electronApp }) => {
         const { app, page: mainPage } = electronApp;
         const page = await navigate(app, mainPage);
         await goToSection(page, "Privacy");
@@ -167,8 +167,5 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page
             .getByRole("button", { name: "Share usage analytics" })
             .click();
-        await goToSection(page, "Plugins");
-        await page.getByRole("tab", { name: "Official" }).click();
-        await page.getByRole("tab", { name: "Community" }).click();
     });
 });

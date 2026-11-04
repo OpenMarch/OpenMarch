@@ -9,7 +9,6 @@ import {
     useTimelineSelectionStore,
 } from "@/stores/TimelineSelectionStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import {
     startFlagLevelsDrawAnything,
     type StartFlagLevels,
@@ -128,7 +127,7 @@ function useStartFlagWindow() {
 /**
  * Start flag positions on the field (fork #331): the dots and paths plans for the edit window at
  * the levels in effect (`useStartFlagLevelsInEffect`), or `null` when nothing is drawn: every
- * level off, isolating (isolation draws its own route and ghosts), the Visuals workspace, at home,
+ * level off, isolating (isolation draws its own route and ghosts), at home,
  * before the resolver is ready, or when the beat the canvas shows isn't after the start flag.
  *
  * The window runs from the start flag to the beat the canvas shows: the cursor (a held preview
@@ -164,7 +163,6 @@ export function useStartFlagOverlay({
     const isolating = useTimelineSelectionStore((s) => s.isolation !== null);
     // Tempo mode hides the start flag, so nothing is drawn from it
     const startHidden = useTimelineSelectionStore((s) => s.startHidden);
-    const visuals = useIsVisualsView();
     const levels = useStartFlagLevelsInEffect();
     const stepSizeWarnings = useUiSettingsStore(
         (s) => s.uiSettings.stepSizeWarnings,
@@ -177,7 +175,6 @@ export function useStartFlagOverlay({
         enabled &&
         !isolating &&
         !startHidden &&
-        !visuals &&
         startFlagLevelsDrawAnything(levels) &&
         inRange &&
         resolver !== null &&

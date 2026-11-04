@@ -19,6 +19,7 @@ import { DOT_RADIUS } from "@/field/editor/hitTest";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 import { GUIDE_INK, GUIDE_INK_TEXT } from "./guideInk";
 import { shapeAlone, useMarchersHidden } from "@/shapes/field/marchersHidden";
+import { useShapeGuidesStore } from "@/shapes/field/shapeGuides";
 import {
     GROUP_LABEL_HEIGHT,
     GROUP_LABEL_PX,
@@ -46,6 +47,8 @@ const SUBTRACT_LASSO_DASH = "2 4";
  */
 const SHAPE_OUTLINE_WIDTH = 1;
 const SHAPE_OUTLINE_DASH = "6 4";
+/** How far an angle line runs from its circle's center, in field units: past any field */
+const GUIDE_REACH = 100_000;
 const SPOT_RADIUS = 4;
 const SPOT_WIDTH = 1.5;
 const WALK_WIDTH = 1;
@@ -477,7 +480,7 @@ function GuideLabel({
                 y={y + h / 2}
                 fontSize={GUIDE_LABEL_PX}
                 fontWeight={600}
-                fontFamily="DM Sans, sans-serif"
+                className="font-sans"
                 fill={GUIDE_INK_TEXT}
                 textAnchor="middle"
                 dominantBaseline="central"
@@ -525,8 +528,51 @@ const ShapeBody = memo(function ShapeBody({
     const fill = rgbaToString({ ...theme.shape, a: 0.06 });
     const open = drawing.stage === "open";
     const dots = drawing.stage === "drawing";
+    const guides = useShapeGuidesStore((s) => s.shown);
+    // A shape's guides: solid, a shade lighter than the shape (owner on #634)
+    const guide = rgbaToString({ ...theme.shape, a: 0.55 });
     return (
         <>
+            {guides.angles &&
+                drawing.construction?.flatMap(({ center, spokes }, i) =>
+                    (spokes ?? []).flatMap((to, j) => {
+                        // From the circle's center out through an arc's end and on past it, so
+                        // its angle reads (#634)
+                        const d = Math.hypot(to.x - center.x, to.y - center.y);
+                        if (!(d > 0)) return [];
+                        const k = GUIDE_REACH / d;
+                        return [
+                            <line
+                                key={`spoke-${i}-${j}`}
+                                x1={center.x}
+                                y1={center.y}
+                                x2={center.x + (to.x - center.x) * k}
+                                y2={center.y + (to.y - center.y) * k}
+                                stroke={guide}
+                                strokeWidth={SHAPE_OUTLINE_WIDTH}
+                                vectorEffect="non-scaling-stroke"
+                                data-testid="fieldShapeAngleLine"
+                            />,
+                        ];
+                    }),
+                )}
+            {guides.circle &&
+                drawing.construction?.map(({ center, rx, ry, rotation }, i) => (
+                    // The circle or ellipse an arc is part of, under it (#634)
+                    <ellipse
+                        key={`construction-${i}`}
+                        cx={center.x}
+                        cy={center.y}
+                        rx={rx}
+                        ry={ry}
+                        transform={`rotate(${(rotation * 180) / Math.PI} ${center.x} ${center.y})`}
+                        fill="none"
+                        stroke={guide}
+                        strokeWidth={SHAPE_OUTLINE_WIDTH}
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="fieldShapeConstruction"
+                    />
+                ))}
             {drawing.outline &&
                 (drawing.openOutline ? (
                     // A line has no inside to fill (#524)
@@ -691,7 +737,7 @@ function GroupGapLabel({
                 y={at.y}
                 fontSize={GROUP_LABEL_PX}
                 fontWeight={600}
-                fontFamily="DM Sans, sans-serif"
+                className="font-sans"
                 fill={seam ? GROUP_SEAM_INK : "white"}
                 textAnchor="middle"
                 dominantBaseline="central"
@@ -745,7 +791,7 @@ function OffsetStep({
                     y={y}
                     fontSize={GROUP_LABEL_PX}
                     fontWeight={600}
-                    fontFamily="DM Sans, sans-serif"
+                    className="font-sans"
                     fill="black"
                     textAnchor="middle"
                     dominantBaseline="central"
@@ -911,7 +957,7 @@ function ModeDrawing({
                         x={p.x}
                         y={p.y - (SPOT_RADIUS + 2) * z}
                         fontSize={SPOT_LABEL_PX}
-                        fontFamily="DM Sans, sans-serif"
+                        className="font-sans"
                         textAnchor="middle"
                         fill={shape}
                         data-testid="fieldShapeSpotLabel"

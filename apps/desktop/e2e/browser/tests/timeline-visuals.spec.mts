@@ -77,7 +77,8 @@ test("isolating a move dims the marchers outside it, and they can't be selected"
         .toBe(false);
 });
 
-test("zoom to collisions frames the collisions", async ({ show }) => {
+// Collisions are hidden for now (convergence P5): no Collisions tab, detection unmounted.
+test.skip("zoom to collisions frames the collisions", async ({ show }) => {
     const { page } = show;
     await waitForField(page);
     await turnOn(page, "showCollisions");

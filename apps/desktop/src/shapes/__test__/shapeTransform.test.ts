@@ -24,7 +24,7 @@ import {
     undo,
     type ToolState,
 } from "../tool/toolMachine";
-import { flipSelection, selectionPivot } from "../transform/selectionTransform";
+import { selectionPivot } from "../transform/selectionTransform";
 import type { ShapeContext, XY } from "../types";
 import {
     gapListTool,
@@ -338,20 +338,6 @@ describe("a plain selection", () => {
         { id: 2, x: 40, y: 0 },
         { id: 3, x: 40, y: 20 },
     ];
-
-    it("flips about a line through the pivot, keeping who is who", () => {
-        expect(flipSelection(points, "across", "c")).toEqual([
-            { id: 1, x: 40, y: 0 },
-            { id: 2, x: 0, y: 0 },
-            { id: 3, x: 0, y: 20 },
-        ]);
-        expect(flipSelection(points, "across", "w").map((p) => p.x)).toEqual([
-            0, -40, -40,
-        ]);
-        expect(flipSelection(points, "deep", "s").map((p) => p.y)).toEqual([
-            40, 40, 20,
-        ]);
-    });
 
     it("puts the pivot on the box around them", () => {
         expect(selectionPivot(points, "ne")).toEqual({ x: 40, y: 0 });

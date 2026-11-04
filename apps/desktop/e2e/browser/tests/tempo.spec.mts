@@ -40,7 +40,7 @@ function silentWavHex(): string {
     const header = Buffer.alloc(44);
     header.write("RIFF", 0);
     header.writeUInt32LE(36 + data.length, 4);
-    header.write("WAVEfmt ", 8);
+    header.write("WAVEfmt ", 8); // cspell:disable-line
     header.writeUInt32LE(16, 16);
     header.writeUInt16LE(1, 20);
     header.writeUInt16LE(1, 22);

@@ -1,8 +1,6 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useStartFlagKeyStore } from "@/stores/StartFlagKeyStore";
 import { useShortcutsDialogStore } from "@/stores/ShortcutsDialogStore";
-import { useIsBasicMode } from "@/stores/EditorModeStore";
-import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { useActionHandler } from "../useActionHandler";
 
 export function useUiActionHandlers() {
@@ -32,16 +30,6 @@ export function useUiActionHandlers() {
     useActionHandler("openView3d", () => {
         void window.electron.openView3d();
     });
-    // The Editor or Visuals mode (performer-behavior.md section 7.1); Basic has no Visuals mode
-    const basic = useIsBasicMode();
-    useActionHandler(
-        "toggleWorkspace",
-        () => {
-            const { view, setView } = useWorkspaceViewStore.getState();
-            setView(view === "visuals" ? "editor" : "visuals");
-        },
-        { enabled: !basic },
-    );
     // UI-17 follow-up: ? lists every shortcut
     useActionHandler("showShortcuts", () =>
         useShortcutsDialogStore.getState().setOpen(true),

@@ -668,66 +668,9 @@ export async function applyAndCheck(
             );
     }
 
-    // ---- cues
-    {
-        const now = byId(after.cues);
-        const droppedCues = new Set(result.cues?.dropped ?? []);
-        for (const c of before.cues) {
-            const a = now.get(n(c.id));
-            const onDoomed = doomed.has(n(c.beat_id));
-            const o = before.ordinal.get(n(c.beat_id));
-            if (!a) {
-                if (onDoomed && droppedCues.has(n(c.id)))
-                    dropped.push(
-                        `${where}: cue ${c.id} on count ${o} dropped (reported to the user)`,
-                    );
-                else
-                    problems.push(
-                        `${where}: cue ${c.id} on count ${o} is gone${onDoomed ? " and not reported" : ""}`,
-                    );
-                continue;
-            }
-            const wantBeat = onDoomed ? survivorId : c.beat_id;
-            if (a.beat_id !== wantBeat)
-                problems.push(
-                    `${where}: cue ${c.id} on count ${o} moved to beat ${a.beat_id}, expected ${wantBeat}`,
-                );
-            const moved = (result.cues?.moved ?? []).find(
-                (m) => m.cueId === c.id,
-            );
-            const changed = without(
-                a,
-                "beat_id",
-                ...(moved?.shortenedTo !== undefined ? ["length"] : []),
-            );
-            if (
-                !same(
-                    without(
-                        c,
-                        "beat_id",
-                        ...(moved?.shortenedTo !== undefined ? ["length"] : []),
-                    ),
-                    changed,
-                )
-            )
-                problems.push(
-                    `${where}: cue ${c.id} changed ${JSON.stringify(c)} → ${JSON.stringify(a)}`,
-                );
-        }
-        const members = (list: Row[]) =>
-            list
-                .filter((m) => now.has(n(m.cue_id)))
-                .map((m) => JSON.stringify(m))
-                .sort();
-        if (!same(members(before.cueMarchers), members(after.cueMarchers)))
-            problems.push(`${where}: cue members changed`);
-    }
-
     // ---- prop changes
     for (const [name, list, listAfter] of [
         ["Outline change", before.geometry, after.geometry],
-        ["Placement change", before.placements, after.placements],
-        ["artwork slot", before.artwork, after.artwork],
     ] as const) {
         const now = byId(listAfter as Row[]);
         for (const r of list as Row[]) {
@@ -737,18 +680,14 @@ export async function applyAndCheck(
             if (!a) {
                 // the carry keeps the last change of a run, unless the item has one on the survivor
                 const itemOnSurvivor = (listAfter as Row[]).some(
-                    (x) =>
-                        x.item_id === r.item_id &&
-                        x.beat_id === survivorId &&
-                        (name !== "artwork slot" || x.slot === r.slot),
+                    (x) => x.item_id === r.item_id && x.beat_id === survivorId,
                 );
                 const laterInRun = (list as Row[]).some(
                     (x) =>
                         x.id !== r.id &&
                         x.item_id === r.item_id &&
                         doomed.has(n(x.beat_id)) &&
-                        before.ordinal.get(n(x.beat_id))! > o! &&
-                        (name !== "artwork slot" || x.slot === r.slot),
+                        before.ordinal.get(n(x.beat_id))! > o!,
                 );
                 if (onDoomed && (itemOnSurvivor || laterInRun))
                     dropped.push(

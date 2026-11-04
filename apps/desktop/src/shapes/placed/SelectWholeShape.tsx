@@ -13,7 +13,7 @@ import { selectOnField } from "./boxSelection";
 import { setInsideBox } from "./boxSelectionStore";
 
 /**
- * **Select box** (**Select circle**…) in the inspector when some of a placed shape's marchers are
+ * **Select box** (**Select circle**…) in the inspector, under a Shapes heading, when some of a placed shape's marchers are
  * selected but not all of it (07-placed-boxes.md). A shape selected whole is edited in its
  * floating editor (#435), so the inspector shows nothing of it.
  */
@@ -30,26 +30,38 @@ export function SelectWholeShape() {
     );
     if (!partOf) return null;
     return (
-        <button
-            type="button"
-            className={clsx(
-                getButtonClassName({ variant: "secondary", size: "compact" }),
-                "flex items-center gap-6",
-            )}
-            onClick={() => {
-                selectOnField(partOf.recipe.members.map((m) => m.marcherId));
-                setInsideBox(null);
-            }}
-            data-testid="placed-box-select"
-        >
-            <BoundingBoxIcon size={16} weight="bold" />
-            {tolgee.t(
-                "shapes.placed.selectWholeShape",
-                "Select {shape, select, block {box} circle {circle} other {shape}}",
-                {
-                    shape: partOf.kind.shape.id,
-                },
-            )}
-        </button>
+        <div className="flex flex-col gap-8" data-testid="shape-tool-section">
+            <h5 className="text-h5">
+                {tolgee.t("shapes.tool.section.title", "Shapes")}
+            </h5>
+            <div className="flex flex-wrap gap-8">
+                <button
+                    type="button"
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex items-center gap-6",
+                    )}
+                    onClick={() => {
+                        selectOnField(
+                            partOf.recipe.members.map((m) => m.marcherId),
+                        );
+                        setInsideBox(null);
+                    }}
+                    data-testid="placed-box-select"
+                >
+                    <BoundingBoxIcon size={16} weight="bold" />
+                    {tolgee.t(
+                        "shapes.placed.selectWholeShape",
+                        "Select {shape, select, block {box} circle {circle} other {shape}}",
+                        {
+                            shape: partOf.kind.shape.id,
+                        },
+                    )}
+                </button>
+            </div>
+        </div>
     );
 }

@@ -267,7 +267,7 @@ test("Field properties customizer tabs are visible", async ({
         page.getByRole("heading", { name: "Image Rendering" }),
     ).toBeVisible();
     await expect(
-        page.getByRole("button", { name: "Upload floor…" }),
+        page.getByRole("button", { name: "Import Image" }),
     ).toBeVisible();
     await expect(
         page.getByRole("heading", { name: "Measurements" }),

@@ -12,7 +12,7 @@ import { transactionWithHistory } from "@/db-functions/history";
 import type { DbTransaction } from "@/db-functions/types";
 import {
     createBeatsInTransaction,
-    deleteBeatsCarryingCuesInTransaction,
+    deleteBeatsCarryingItemChangesInTransaction,
     updateBeatsInTransaction,
 } from "@/db-functions/beat";
 import {
@@ -27,7 +27,6 @@ import {
     deleteMeasuresInTransaction,
     updateMeasuresInTransaction,
 } from "@/db-functions/measures";
-import type { CueCarryResult } from "@/db-functions/cues";
 import { readMeters, sameMeter, storedMeterOf } from "./meters";
 
 /** Beat flags tempo mode writes, as sets of spec beats; a missing set is left as it is */
@@ -292,8 +291,8 @@ export interface CountEditResult {
     kept: number;
     /** Moves that couldn't keep their counts and changed length after all */
     couldNotKeep: number;
-    /** Removed counts only: where the cues on them went (`afterCountEdit` says so) */
-    cues?: CueCarryResult;
+    /** Removed counts only: their item Outline changes were carried onward (`afterCountEdit`) */
+    removedCounts?: true;
 }
 
 /**
@@ -875,8 +874,8 @@ async function endHiddenMovesEarlyInTransaction(
 }
 
 /**
- * What the removed counts (`doomed`) hand on to the next count left (`survivor`), as measures,
- * pages and cues do: a tempo point (the change now starts there) and their notes, written before
+ * What the removed counts (`doomed`) hand on to the next count left (`survivor`), as measures
+ * and pages do: a tempo point (the change now starts there) and their notes, written before
  * its own in playing order. A hold goes with its count: it was that count's length.
  */
 async function carryCountFactsInTransaction(
@@ -956,7 +955,6 @@ export async function deleteCounts({
                 ),
             ))
             around.set(m.id, m);
-        let cues: CueCarryResult = { moved: [], dropped: [] };
         let holderId: number | undefined;
         await carryCountFactsInTransaction(tx, doomed, survivor);
         // The last page gets shorter by the counts removed from it (see insertCounts)
@@ -993,17 +991,21 @@ export async function deleteCounts({
                     .update(schema.pages)
                     .set({ start_beat: survivor })
                     .where(eq(schema.pages.id, p.id));
-            ({ cues } = await deleteBeatsCarryingCuesInTransaction({
+            await deleteBeatsCarryingItemChangesInTransaction({
                 tx,
                 beatIds: new Set(doomed),
-            }));
+            });
             if (last && lastLength !== last.end - last.start)
                 await updateLastPageCounts({ tx, lastPageCounts: lastLength! });
         });
         if (holderId !== undefined)
             await clearRepeatedMeterInTransaction(tx, holderId);
         await writeLengthsInTransaction(tx, respaced);
-        const result: CountEditResult = { kept: 0, couldNotKeep: 0, cues };
+        const result: CountEditResult = {
+            kept: 0,
+            couldNotKeep: 0,
+            removedCounts: true,
+        };
         if (drill === "keep")
             for (const move of around.values()) {
                 const now = await tx

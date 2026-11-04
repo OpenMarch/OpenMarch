@@ -31,6 +31,7 @@ import {
     beatIndexesById,
     itemOutlineChanges,
 } from "@/items/itemOutlineTimeline";
+import { propColorsByMarcher } from "@/items/propColor";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { useTimingObjects } from "@/hooks";
 import { useFieldImage } from "@/view3d/window/useFieldImage";
@@ -56,8 +57,7 @@ import {
 } from "@/field/fieldQuality";
 import { FieldEditor } from "@/field/editor/fieldEditor";
 import { settingsMoveOptions } from "@/field/editor/settingsMoveOptions";
-import { VisualsFieldEditor } from "@/field/editor/visualsFieldEditor";
-import { useIsVisualsView } from "@/stores/WorkspaceViewStore";
+import { ReadOnlyFieldEditor } from "@/field/editor/readOnlyFieldEditor";
 import { setActiveFieldEditor } from "@/field/editor/activeFieldEditor";
 import { takeFieldPress } from "@/field/takeFieldPress";
 import { setShapeField } from "@/shapes/field/shapeField";
@@ -203,7 +203,7 @@ function ThreeFieldView() {
     const { beats, pages, countGrid } = useTimingObjects()!;
     const preview = useIsPreviewMode();
     const panning = useFieldViewStore((s) => s.panning);
-    const { image: fieldImage, size: fieldImageSize } = useFieldImage();
+    const { image: fieldImage } = useFieldImage();
     // Planned once, for the layer that draws it and the field test API
     const fieldImagePlan = useMemo(
         () =>
@@ -213,11 +213,10 @@ function ThreeFieldView() {
                       fieldImage && {
                           width: fieldImage.width,
                           height: fieldImage.height,
-                          size: fieldImageSize,
                       },
                   )
                 : null,
-        [fieldProperties, fieldImage, fieldImageSize],
+        [fieldProperties, fieldImage],
     );
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const { mutateAsync: moveMarchers } = useMutation(
@@ -372,7 +371,7 @@ function ThreeFieldView() {
 
     const editor = useMemo(
         () =>
-            new VisualsFieldEditor(
+            new ReadOnlyFieldEditor(
                 {
                     selection: {
                         get: () => selection.current,
@@ -461,14 +460,10 @@ function ThreeFieldView() {
         setActiveFieldEditor(editor);
         return () => setActiveFieldEditor(null);
     }, [editor]);
-    // Visuals mode edits cues: the field only selects there (performer-behavior.md 7.1). Preview
-    // edits nothing: the editor hears no presses there at all (`EditorInput`), only navigation
-    const visuals = useIsVisualsView();
+    // Preview edits nothing: the editor hears no presses there at all (`EditorInput`), only
+    // navigation
     const previewing = useIsPreviewMode();
-    useEffect(
-        () => editor.setReadOnly(visuals || previewing),
-        [editor, visuals, previewing],
-    );
+    useEffect(() => editor.setReadOnly(previewing), [editor, previewing]);
     // A rotation typed into the inspector belongs to its selection and page:
     // when either changes before it's saved, it's dropped (#198)
     useEffect(() => editor.selectionChanged(), [editor, selectedIds]);
@@ -756,6 +751,7 @@ function useFieldItems(
                     .filter((item) => hiddenPropIds[item.id])
                     .map((item) => item.marcher_id),
             ),
+            colors: propColorsByMarcher(rows),
         });
     }, [items, itemRows, geometry, beats, hiddenPropIds]);
     return useMemo(

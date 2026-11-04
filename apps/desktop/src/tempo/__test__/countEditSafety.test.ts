@@ -61,12 +61,6 @@ interface Case {
     /** The edit is refused (and must write nothing) */
     refused?: RegExp;
     /**
-     * The flag prop is put down at count 22 by marcher 1 mid-move (page 3's move, counts 17–25):
-     * an edit that re-times that move puts it down somewhere else (see "behavior the owner should
-     * know about"): for every choice, or only for these
-     */
-    propMoves?: boolean | readonly Choice[];
-    /**
      * The edit makes the keyframe (marchers 1–3, counts 11–14) end where page 2's move under it
      * now ends, which hides page 2's set for them (see "behavior the owner should know about")
      */
@@ -103,11 +97,6 @@ const remove = (
     ...more,
 });
 
-/** Edits inside page 3's move (counts 17–25), which carries the flag to where it is put down */
-const PAGE3 = { propMoves: true };
-/** Edits that re-time page 3's move only when it stretches (with keep it keeps its counts) */
-const PAGE3_SHIFT = { propMoves: ["shift"] as const };
-
 const CASES: Case[] = [
     // ---- adding
     add("before count 1 (the first page's first count)", 1),
@@ -117,9 +106,9 @@ const CASES: Case[] = [
     add("inside a move and a keyframe (13)", 13),
     add("after a keyframe's last count (14)", 14),
     add("after a move's last count, at page 3's flag (17)", 17),
-    add("on the hold (20)", 20, 1, PAGE3),
-    add("on a 7/8 measure's count 1 (21)", 21, 1, PAGE3),
-    add("after the flag is put down (23)", 23, 1, PAGE3_SHIFT),
+    add("on the hold (20)", 20, 1),
+    add("on a 7/8 measure's count 1 (21)", 21, 1),
+    add("after the flag is put down (23)", 23, 1),
     add("on a shape's first count (27)", 27),
     add("inside a shape's animation, on a tempo point (29)", 29),
     add("after a shape's last count (31)", 31),
@@ -139,12 +128,11 @@ const CASES: Case[] = [
         10,
         3,
     ),
-    add("several counts at a page boundary (25, 2 counts)", 25, 2, PAGE3_SHIFT),
+    add("several counts at a page boundary (25, 2 counts)", 25, 2),
     add("several counts inside the last page (44, 2 counts)", 44, 2),
     add("a measure before m. 2 (4 counts at 5)", 5, 4, { measure: true }),
     add("a measure before the 7/8 m. 6 (3 counts at 21)", 21, 3, {
         measure: true,
-        ...PAGE3,
     }),
     add("a measure before m. 8, numbered 101 with mark B (4 at 27)", 27, 4, {
         measure: true,
@@ -156,29 +144,24 @@ const CASES: Case[] = [
     remove("count 1 (the first page's first count)", 1),
     remove("a move's first count at a page flag (9)", 9),
     remove("a keyframe's first count (11)", 11),
-    remove("a cue's count, with a cue right after (12)", 12),
-    remove("a keyframe's last count, with a cue and prop changes (13)", 13),
+    remove("inside a move, before a keyframe's last count (12)", 12),
+    remove("a keyframe's last count, with prop changes (13)", 13),
     remove("the count the flag is picked up on (14)", 14),
     remove("a move's last count before a page flag (16)", 16),
-    remove("page 3's first count, with a cue (17)", 17, 18, PAGE3),
-    remove("the hold, with a cue (20)", 20, 21, PAGE3),
-    remove("a 7/8 measure's first count (21)", 21, 22, PAGE3),
-    remove("the count the flag is put down on (22)", 22, 23, PAGE3),
-    remove("inside a shape's animation, on a tempo point and a cue (29)", 29),
+    remove("page 3's first count (17)", 17, 18),
+    remove("the hold (20)", 20, 21),
+    remove("a 7/8 measure's first count (21)", 21, 22),
+    remove("the count the flag is put down on (22)", 22, 23),
+    remove("inside a shape's animation, on a tempo point (29)", 29),
     remove("page 6's first count (41)", 41),
-    remove("inside the last page, on a cue and a note (44)", 44),
+    remove("inside the last page, on a note (44)", 44),
     remove("the last page's last count (48)", 48),
     remove("the count right after the last page (49)", 49),
-    remove("past the last page, on a cue (60)", 60),
+    remove("past the last page (60)", 60),
     remove("past the stored counts (120)", 120),
-    remove("several counts inside a move, with cues (12–13)", 12, 14),
-    remove("the whole 7/8 m. 6 (21–23)", 21, 24, PAGE3),
-    remove(
-        "the whole m. 7, with a cue and the phrase's start (24–26)",
-        24,
-        27,
-        PAGE3,
-    ),
+    remove("several counts inside a move (12–13)", 12, 14),
+    remove("the whole 7/8 m. 6 (21–23)", 21, 24),
+    remove("the whole m. 7 (24–26)", 24, 27),
     // the shape (27–31) would end with page 4's move on page 5's flag and hide page 4's set
     remove("the whole m. 9 after a renumbered measure (31–34)", 31, 35, {
         refused: /keyframe ending on the same count/,
@@ -189,14 +172,8 @@ const CASES: Case[] = [
         "a selection across a measure line and page 3's flag (15–18)",
         15,
         19,
-        PAGE3,
     ),
-    remove(
-        "a selection across page 4's flag, with a cue (23–25)",
-        23,
-        26,
-        PAGE3,
-    ),
+    remove("a selection across page 4's flag (23–25)", 23, 26),
     remove("a selection across page 6's flag (39–42)", 39, 43),
     // the keyframe would end with page 2's move on page 3's flag and hide page 2's set
     remove(
@@ -317,15 +294,8 @@ describeDbTests(
                         outcome.layerTies.length > 0,
                         outcome.layerTies.join("\n"),
                     ).toBe(!!c.layerTie);
-                    if (!c.refused)
-                        expect(
-                            outcome.propMoved.length > 0,
-                            outcome.propMoved.join("\n"),
-                        ).toBe(
-                            Array.isArray(c.propMoves)
-                                ? c.propMoves.includes(choice)
-                                : !!c.propMoves,
-                        );
+                    // Props aren't held by marchers (prop holding is parked), so no edit moves one
+                    expect(outcome.propMoved).toEqual([]);
                 });
     },
 );
@@ -356,7 +326,7 @@ describeDbTests("count edits on other shows", (it) => {
         }
     });
 
-    it("a show with no pages: counts are added and removed with their measures, cues and holds", async ({
+    it("a show with no pages: counts are added and removed with their measures and holds", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -373,7 +343,6 @@ describeDbTests("count edits on other shows", (it) => {
         ])
             await db.delete(t).run();
         await db.delete(schema.tag_appearances).run();
-        await db.delete(schema.page_performer_settings).run();
         await db
             .delete(schema.pages)
             .where(sql`id <> 0`)
@@ -710,38 +679,6 @@ describeDbTests(
                 .map((m) => m.rehearsal_mark)
                 .filter(Boolean);
             expect(marks).toEqual(["A", "B", "D"]);
-        });
-
-        it("removing a cue's count drops the cue when the next count has one on the same channel (the toast says so)", async ({
-            db,
-            marchersAndPages: _,
-        }) => {
-            await buildRichShow(db);
-            const result = await deleteCounts({
-                from: 12,
-                to: 13,
-                drill: "adjust",
-            });
-            expect(result.cues?.dropped).toHaveLength(1);
-        });
-
-        it("a prop put down mid-move is put down where its holder is on that count, so re-timing the move moves it", async ({
-            db,
-            marchersAndPages: _,
-        }) => {
-            await buildRichShow(db);
-            const flag = (await readState(db)).propIds;
-            const flagId = Math.max(...flag);
-            const before = (await positionsAt(db, [25])).get(25)!.get(flagId)!;
-            // a count added in page 3's move, before the put-down on 22
-            await insertCounts({
-                at: 20,
-                count: 1,
-                duration: 0.5,
-                drill: "adjust",
-            });
-            const after = (await positionsAt(db, [26])).get(26)!.get(flagId)!;
-            expect(after).not.toEqual(before);
         });
 
         it("a count added before a measure's count 1 joins the measure before", async ({

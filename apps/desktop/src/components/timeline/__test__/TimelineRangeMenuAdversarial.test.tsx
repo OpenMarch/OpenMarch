@@ -4,7 +4,6 @@ import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 import { Timeline, type TimelineInput } from "../Timeline";
 import type { TimelineSelection } from "../TimelineViewModel";
-import type { TimelineAddMarchersMenu } from "../TimelineRangeMenu";
 
 /** Adversarial checks of the P8.14 right-click menu. */
 
@@ -76,18 +75,28 @@ const clipAt = (start: number, end: number, label = "A1"): TimelineInput => ({
     activitySpans: [{ startBeatIndex: start, endBeatIndex: end, active: true }],
 });
 
+const moveCommands = {
+    disabledReason: null as string | null,
+    onEdit: vi.fn(),
+    onRename: vi.fn(),
+    onDelete: vi.fn(),
+    onSelectMarchers: vi.fn(),
+};
+
 const show = ({
-    menu,
+    onDeletePageFlag = vi.fn(),
     timelines = [clipAt(3, 7)],
     selection = null,
     onSelectionChange = vi.fn(),
     onSeek = vi.fn(),
+    withMoves = false,
 }: {
-    menu: TimelineAddMarchersMenu;
+    onDeletePageFlag?: (pageId: number) => void;
     timelines?: TimelineInput[];
     selection?: TimelineSelection;
     onSelectionChange?: (s: TimelineSelection) => void;
     onSeek?: (b: number) => void;
+    withMoves?: boolean;
 }) =>
     render(
         <Timeline
@@ -100,7 +109,8 @@ const show = ({
             selection={selection}
             onSelectionChange={onSelectionChange}
             playback={{ positionBeat: 5, isPlaying: false, onSeek }}
-            addSelectedMarchers={menu}
+            onDeletePageFlag={onDeletePageFlag}
+            moveCommands={withMoves ? moveCommands : undefined}
         />,
     );
 
@@ -120,32 +130,57 @@ const RANGE: TimelineSelection = {
 };
 
 describe("right-click menu, adversarial", () => {
-    for (const [name, target] of [
-        ["page box", () => screen.getByRole("button", { name: "Page 2" })],
-        ["clip", () => screen.getByRole("button", { name: /A1 timeline/ })],
-        ["dragged range", () => screen.getByTestId("timeline-pointer-surface")],
-    ] as const)
-        it(`a full right-click on a ${name} neither seeks nor changes the selection`, () => {
-            const onSeek = vi.fn();
-            const onSelectionChange = vi.fn();
-            const onAdd = vi.fn();
-            show({
-                menu: { onAdd },
-                onSeek,
-                onSelectionChange,
-                selection: RANGE,
-            });
-            rightClick(target(), { clientX: 12 * 16 });
-            expect(screen.queryByRole("menuitem")).not.toBeNull();
-            fireEvent.click(screen.getByRole("menuitem"));
-            expect(onAdd).toHaveBeenCalledTimes(1);
-            expect(onSeek).not.toHaveBeenCalled();
-            expect(onSelectionChange).not.toHaveBeenCalled();
+    it("a full right-click on a page box neither seeks nor changes the selection", () => {
+        const onSeek = vi.fn();
+        const onSelectionChange = vi.fn();
+        const onDeletePageFlag = vi.fn();
+        show({
+            onDeletePageFlag,
+            onSeek,
+            onSelectionChange,
+            selection: RANGE,
         });
+        rightClick(screen.getByRole("button", { name: "Page 2" }), {
+            clientX: 12 * 16,
+        });
+        expect(screen.queryByRole("menuitem")).not.toBeNull();
+        fireEvent.click(screen.getByTestId("timeline-range-menu-delete-flag"));
+        expect(onDeletePageFlag).toHaveBeenCalledTimes(1);
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it("a full right-click on a clip neither seeks nor changes the selection", () => {
+        const onSeek = vi.fn();
+        const onSelectionChange = vi.fn();
+        show({
+            onSeek,
+            onSelectionChange,
+            selection: RANGE,
+            withMoves: true,
+        });
+        rightClick(screen.getByRole("button", { name: /A1 timeline/ }), {
+            clientX: 12 * 16,
+        });
+        expect(screen.queryAllByRole("menuitem").length).toBeGreaterThan(0);
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(onSelectionChange).not.toHaveBeenCalled();
+    });
+
+    it("a dragged range with no page-box or move entry opens no menu", () => {
+        show({
+            onDeletePageFlag: vi.fn(),
+            selection: RANGE,
+        });
+        rightClick(screen.getByTestId("timeline-pointer-surface"), {
+            clientX: 12 * 16,
+        });
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+    });
 
     it("control: a plain left press on the surface does seek", () => {
         const onSeek = vi.fn();
-        show({ menu: { onAdd: vi.fn() }, onSeek });
+        show({ onSeek });
         const surface = screen.getByTestId("timeline-pointer-surface");
         const opts = { button: 0, buttons: 1, pointerId: 1, clientX: 5 * 16 };
         fireEvent.pointerDown(surface, opts);
@@ -156,7 +191,7 @@ describe("right-click menu, adversarial", () => {
     it("macOS ctrl+click (button 0 with ctrlKey) on the surface doesn't seek", () => {
         vi.spyOn(navigator, "platform", "get").mockReturnValue("MacIntel");
         const onSeek = vi.fn();
-        show({ menu: { onAdd: vi.fn() }, onSeek, selection: RANGE });
+        show({ onSeek, selection: RANGE });
         const surface = screen.getByTestId("timeline-pointer-surface");
         const opts = {
             button: 0,
@@ -172,35 +207,8 @@ describe("right-click menu, adversarial", () => {
         vi.restoreAllMocks();
     });
 
-    it("a clip whose timeline starts at spec beat 0 sends its stored range [0, 8)", () => {
-        const onAdd = vi.fn();
-        show({ menu: { onAdd }, timelines: [clipAt(0, 8)] });
-        fireEvent.contextMenu(
-            screen.getByRole("button", { name: /A1 timeline/ }),
-        );
-        fireEvent.click(screen.getByRole("menuitem"));
-        expect(onAdd).toHaveBeenCalledWith({
-            startBeatIndex: 0,
-            endBeatIndex: 8,
-        });
-    });
-
-    it("disabled with a reason: Enter and click do nothing", () => {
-        const onAdd = vi.fn();
-        show({ menu: { onAdd, disabledReason: "Select marchers first" } });
-        fireEvent.contextMenu(screen.getByRole("button", { name: "Page 1" }));
-        const item = screen.getByRole("menuitem");
-        expect(item.getAttribute("aria-disabled")).toBe("true");
-        fireEvent.keyDown(item, { key: "Enter" });
-        fireEvent.click(item);
-        expect(onAdd).not.toHaveBeenCalled();
-        expect(
-            screen.getByTestId("timeline-range-menu-reason").textContent,
-        ).toBe("Select marchers first");
-    });
-
     it("the initial page box (home) offers no menu", () => {
-        show({ menu: { onAdd: vi.fn() } });
+        show({ onDeletePageFlag: vi.fn() });
         const labels = screen
             .getAllByRole("button")
             .map((b) => b.getAttribute("aria-label"));

@@ -16,8 +16,7 @@ export interface TimelineBandGeometry {
 }
 
 /**
- * Lanes a timeline draws in place of its clip rows (performer-behavior.md
- * section 7.1, Visuals mode's cue lanes): they make the timeline `height`
+ * Lanes a timeline draws in place of its clip rows (tempo mode's lanes): they make the timeline `height`
  * tall below the waveform and draw `render` there. Not in Basic.
  */
 export interface TimelineBand {

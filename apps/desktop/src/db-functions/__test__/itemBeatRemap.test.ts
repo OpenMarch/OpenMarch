@@ -9,7 +9,7 @@ import {
 } from "@/components/music/MusicXmlImport";
 import Measure from "@/global/classes/Measure";
 import { performUndo } from "../history";
-import { deleteBeatsCarryingCues, deleteBeatsInTransaction } from "../beat";
+import { deleteBeats, deleteBeatsInTransaction } from "../beat";
 import {
     createItems,
     getItemGeometry,
@@ -245,7 +245,7 @@ describeDbTests("item changes when every beat is replaced", (it) => {
         }) => {
             expect(beats).toBeDefined();
             await createItems({ db, newItems: [riser(95)] });
-            await deleteBeatsCarryingCues({ db, beatIds: new Set([95, 96]) });
+            await deleteBeats({ db, beatIds: new Set([95, 96]) });
             expect(
                 (await getItemGeometry({ db })).map((g) => g.beat_id),
             ).toEqual([94]);
@@ -263,7 +263,7 @@ describeDbTests("item changes when every beat is replaced", (it) => {
                 beatId: 96,
                 geometry: { outlineType: "rectangle", width: 5, depth: 1 },
             });
-            await deleteBeatsCarryingCues({ db, beatIds: new Set([95, 96]) });
+            await deleteBeats({ db, beatIds: new Set([95, 96]) });
             expect(
                 (await getItemGeometry({ db })).map((g) => g.beat_id),
             ).toEqual([10]);

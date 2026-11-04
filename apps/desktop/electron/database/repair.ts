@@ -9,7 +9,7 @@ import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
 import {
     fileTooNewMessage,
     isSupportedUserVersion,
-    MAX_SUPPORTED_USER_VERSION,
+    decideFileVersion,
     NEW_FILE_USER_VERSION,
     PAGE_MODEL_USER_VERSION,
     readUserVersion,
@@ -56,21 +56,9 @@ const DEPENDENT_TABLE_COPY_ORDER = [
     "timeline_assignments",
     // Held marks after the marchers they name (no trigger reads them)
     "timeline_held_marks",
-    // Performer cues after the beats, pages, marchers and tags they name (ADR 0004 D-5). No
-    // trigger reads them, so this is for order's sake: a cue after its phrase asset, set
-    // members after their cue.
-    "phrase_assets",
-    "cues",
-    "cue_marchers",
-    "page_performer_settings",
     // Items after the marchers that back them, Outline changes after their item (ADR 0002 D-10)
     "items",
     "item_geometry",
-    // Placement changes after their item and beat, holders and crew after their change
-    "item_placements",
-    "item_placement_marchers",
-    // Artwork slot assignments after their item and beat
-    "item_artwork_slots",
     // Shape recipes after their moves, then their members (ADR 0006)
     "timeline_shape_recipes",
     "timeline_shape_recipe_marchers",
@@ -302,7 +290,7 @@ const PAGE_ERA_TABLES = [
  * True when the file being repaired must be repaired as a page-era file (7), so its positions are
  * copied into page-era tables and converted, after the person confirms, when it opens.
  *
- * A timeline file (8, or 9 with a floor) never is. A page-model file (7) always is. Any other version, such as 0 from
+ * A timeline file (8, or a parked floor-model 9) never is. A page-model file (7) always is. Any other version, such as 0 from
  * a damaged header or 1 to 6 from 0.0.9 or earlier, is judged by what the file holds: page-era
  * tables mean its motion is still in the page model.
  */
@@ -354,7 +342,9 @@ export const repairDatabase = async (originalDbPath: string) => {
         // build's schema, and the repaired copy would otherwise be written at
         // an older version (ADR 0001 §6). The original is never written to.
         const sourceVersion = readUserVersion(originalDb);
-        if (sourceVersion > MAX_SUPPORTED_USER_VERSION) {
+        if (
+            decideFileVersion(sourceVersion, false).action === "refuse-too-new"
+        ) {
             originalDb.close();
             throw new Error(fileTooNewMessage(sourceVersion));
         }

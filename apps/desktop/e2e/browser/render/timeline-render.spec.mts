@@ -227,6 +227,8 @@ for (const c of CASES)
         test.use({ showFile: DEMO, seedSql: c.seedSql ?? [] });
 
         test("render", async ({ show }) => {
+            // Collisions are hidden for now (convergence P5): no Collisions tab to wait on
+            test.skip(c.name === "collisions", "Collisions are hidden");
             test.setTimeout(180_000);
             const { page } = show;
             fs.mkdirSync(OUT, { recursive: true });

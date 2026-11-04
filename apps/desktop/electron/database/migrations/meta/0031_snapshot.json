@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "a6d61799-7cb7-488f-a709-43860d9a3127",
+    "id": "03228143-3dc9-4790-9724-8e09e8cafb2c",
     "prevId": "df32aced-c71c-413d-9e6a-97d79646d5db",
     "tables": {
         "audio_files": {
@@ -104,22 +104,6 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
-                },
-                "tempo_hold": {
-                    "name": "tempo_hold",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
-                },
-                "tempo_change": {
-                    "name": "tempo_change",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1116,6 +1100,13 @@
                     "notNull": false,
                     "autoincrement": false
                 },
+                "color": {
+                    "name": "color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",
@@ -1526,27 +1517,6 @@
                 },
                 "notes": {
                     "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "number_override": {
-                    "name": "number_override",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "meter": {
-                    "name": "meter",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "grouping": {
-                    "name": "grouping",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
@@ -2158,35 +2128,6 @@
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}
-        },
-        "tempo_settings": {
-            "name": "tempo_settings",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "audio_offset_seconds": {
-                    "name": "audio_offset_seconds",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "tempo_settings_id_check": {
-                    "name": "tempo_settings_id_check",
-                    "value": "id = 0"
-                }
-            }
         },
         "timeline_assignments": {
             "name": "timeline_assignments",

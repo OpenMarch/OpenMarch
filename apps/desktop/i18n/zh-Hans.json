@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "没有可重做的操作",
             "noUndoAvailable": "没有可撤销的操作",
-            "redidCueEdit": "已重做提示点编辑（视觉）",
-            "redidDrillEdit": "已重做队形编辑（编辑器）",
             "redo": "重做",
             "redoFailed": "无法重做，未做任何更改。",
             "undo": "撤销",
-            "undidCueEdit": "已撤销提示点编辑（视觉）",
-            "undidDrillEdit": "已撤销队形编辑（编辑器）",
             "undoFailed": "无法撤销，未做任何更改。"
         },
         "file": {
@@ -144,15 +140,11 @@
             "openSettings": "设置…",
             "openView3d": "打开3D视图",
             "openView3dKeywords": "3d 三维 立体 体育场 场馆 窗口 three dimensional stadium venue window",
-            "runFieldBenchmark": "运行场地基准测试",
-            "runFieldBenchmarkKeywords": "性能 帧率 fps 速度 测试 performance speed test frame rate",
             "showShortcuts": "键盘快捷键",
             "hideStartFlagPositions": "隐藏起始标记位置",
             "showStartFlagPositions": "显示起始标记位置",
             "toggleStartFlagPositions": "切换起始标记位置",
             "toggleStartFlagPositionsKeywords": "之前 上一个 路径 点 队员 原来 位置 来自 按住 查看 锁定 previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "切换工作区（编辑器或视觉）",
-            "toggleWorkspaceKeywords": "视觉 编辑器 工作区 提示点 模式 visuals editor workspace cues mode",
             "showNextPaths": "显示下一页路径",
             "toggleNextPaths": "切换下一页路径",
             "togglePreview": "预览表演",
@@ -172,72 +164,6 @@
         "codegenBanner": "🎭 PLAYWRIGHT CODEGEN 模式 - 正在录制测试操作",
         "releaseNotes": "版本说明",
         "updated": "OpenMarch已更新至v{version}"
-    },
-    "assets": {
-        "credits": {
-            "license": {
-                "proprietary": "保留所有权利",
-                "unknown": "许可证未知"
-            },
-            "modified": "{credit}（已修改）",
-            "none": "此表演中没有需要署名的内容。",
-            "shareNote": {
-                "badge": "分享须知",
-                "detail": "部分项目的许可证未知。你可能无权随此表演一同分享它们。",
-                "export": "此表演包含许可证未知的项目。你可能无权分享它们。"
-            },
-            "title": "致谢",
-            "uncredited": "{count, plural, other {另有#个项目为CC0或内置内容，无需署名。}}"
-        },
-        "show": {
-            "addFailed": "无法将{name}添加到你的素材库。",
-            "added": "已将{name}添加到你的素材库。",
-            "addToLibrary": "添加到我的素材库",
-            "delete": {
-                "addFirst": "先添加到我的素材库",
-                "alsoUsedByCues": "{count, plural, =1 {还有一个提示点在使用它：} other {还有#个提示点在使用它：}}",
-                "useLine": "{channel} · {who} · 第{count}拍",
-                "cancel": "取消",
-                "channels": {
-                    "carry": "手持物",
-                    "silk": "旗面",
-                    "uniform": "制服"
-                },
-                "checking": "正在检查使用情况…",
-                "confirm": "你的素材库保留有自己的副本。此操作无法撤销。",
-                "confirmNoCopy": "你的素材库中没有副本，删除后将永久丢失。此操作无法撤销。",
-                "confirmUnknownCopy": "此操作无法撤销。",
-                "delete": "删除",
-                "deleted": "已从此表演中删除{name}。",
-                "failed": "无法删除。",
-                "inUseTitle": "{name}正在使用中",
-                "isFloor": "它是此表演的地面，因此无法删除。请在“场地设置 → 图像”中更改地面。",
-                "itemModel": "模型",
-                "itemSlot": "{slot}图案",
-                "keptForUndo": "在仍可撤销期间，{name}会保留在此表演中，之后关闭表演时将被移除。",
-                "label": "从此表演中删除",
-                "noReplacement": "此表演中没有其他同类项目可用于替换。请先导入一个。",
-                "pinnedBy": "它是{names}的一部分，因此无法删除。",
-                "replaceAndDelete": "替换并删除",
-                "replaced": "已将{name}替换为{replacement}。",
-                "replacedKeptForUndo": "已将{name}替换为{replacement}。在仍可撤销期间，{name}会保留在此表演中，之后关闭表演时将被移除。",
-                "replaceWith": "替换为…",
-                "targets": {
-                    "band": "乐队",
-                    "set": "{count, plural, other {#名队员}}",
-                    "tag": "某个标签"
-                },
-                "title": "要从此表演中删除{name}吗？",
-                "usedByCues": "{count, plural, =1 {有一个提示点在使用它。替换后才能删除：} other {有#个提示点在使用它。在所有提示点中替换后才能删除：}}",
-                "usedByItems": "{count, plural, =1 {有一个道具在使用它，因此无法删除：} other {有#个道具在使用它，因此无法删除：}}"
-            },
-            "empty": "此表演尚未使用任何素材。",
-            "emptyHint": "导入的内容会复制到当前打开的表演中。",
-            "title": "此表演",
-            "updateDetails": "其详细信息已在你的素材库中更改。",
-            "updateVersion": "你的素材库中有更新的版本。"
-        },
-        "title": "素材"
     },
     "audio": {
         "beats": {
@@ -312,7 +238,6 @@
     },
     "commandPalette": {
         "close": "关闭",
-        "editsDrill": "会编辑队形——请切换到编辑器",
         "empty": "没有匹配的命令。",
         "navigate": "导航",
         "placeholder": "搜索命令…",
@@ -396,18 +321,6 @@
         "unnamedMarcherName": "{section}{number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {#个提示点已移至之后的拍}}",
-            "movedTo": "{count, plural, other {#个提示点已移至第{at}拍}}",
-            "removed": "{count, plural, other {已移除#个提示点}}"
-        },
-        "errors": {
-            "create": "创建提示点时出错",
-            "delete": "删除提示点时出错",
-            "update": "更新提示点时出错"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -572,14 +485,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "已复制",
-            "copy": "复制为Markdown",
-            "devBuild": "这是开发版本。只有正式版本的测试数据才有参考价值。",
-            "intro": "对当前打开的表演依次进行播放、拖动浏览、缩放和平移，每项持续几秒，并测量每一帧。运行期间请让此窗口保持在最前面，不要进行任何操作。",
-            "run": "运行",
-            "running": "正在运行：{kind}…",
-            "softwareGl": "此处图形由软件渲染，因此这些数据仅为下限。",
-            "title": "场地性能测试"
+            "running": "正在运行：{kind}…"
         },
         "gestureChip": {
             "equalSpacings": "等距",
@@ -618,15 +524,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "方向",
-            "sections": "声部"
-        },
-        "comingSoon": "即将推出",
-        "direction": "场地方向",
         "label": "场地显示",
-        "sections": "可见声部",
-        "comingSoonLabel": "{label}：即将推出",
         "valueLabel": "{label}：{value}"
     },
     "fieldProperties": {
@@ -836,7 +734,6 @@
         "exitFile": "关闭文件",
         "newFile": "新建文件",
         "openFile": "打开文件",
-        "redo": "重做",
         "saveCopyDialogDescription": "OpenMarch会自动将更改保存到当前文件。如需创建当前文件的完整副本，请使用此功能。",
         "saveFile": "保存副本",
         "saveFileCancel": "取消",
@@ -874,18 +771,11 @@
             "stepSizeWarning": "步幅超过阈值",
             "swapMarchers": "交换队员位置",
             "timeline": {
-                "buttonWithHint": "{label}。{hint}",
                 "goToPage": "转到第{page}页（这些队员最后一次移动的页）",
                 "goToStart": "转到开头",
                 "holdFrom": "从第{page}页起保持不动",
                 "holdFromStart": "从开头起保持不动",
-                "holdHere": "这些队员在此保持不动",
-                "movesOnThisPage": "在本页移动",
-                "someHoldHere": "部分队员在此保持不动",
-                "unsetHere": "移除关键帧",
-                "unsetHereHint": "移除其在这一拍上的关键帧，使其跟随之前的位置。之后的页保持不变",
-                "unsetHereHintSome": "移除所选{total}名中在这一拍上有关键帧的{count}名队员的关键帧，使其跟随之前的位置。之后的页保持不变",
-                "unsetHereNone": "所选队员在这一拍上均没有关键帧"
+                "movesOnThisPage": "在本页移动"
             },
             "title": "{count}名队员",
             "titleSingle": "队员{drillNumber}",
@@ -948,18 +838,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "拍",
-                "delete": "删除动作",
-                "endHelp": "要更改队员的终点位置，请在动作结束处拖动场地上的队员。",
-                "goToEnd": "转到结尾",
-                "marchers": "{count, plural, other {#名队员}}",
-                "name": "名称",
-                "nameLimit": "最多{max}个字符。",
-                "paused": "暂停播放后才能删除动作。",
-                "selectMarchers": "选中这些队员",
-                "split": "在播放头处拆分",
-                "splitHelp": "将播放头置于动作内部，即可在该处拆分。",
-                "title": "动作"
+                "splitHelp": "将播放头置于动作内部，即可在该处拆分。"
             }
         },
         "title": "检查器"
@@ -1025,7 +904,6 @@
                 "audioNotSaved": "音频可能未保存。可稍后在编辑器中添加音频。",
                 "createFailed": "无法创建表演",
                 "databaseNotReady": "数据库尚未就绪。请先完成“项目详情”步骤。",
-                "fieldImageNotCopied": "无法复制之前表演的场地图片",
                 "filePathRequired": "必须指定文件路径",
                 "importFailed": "无法导入之前的.dots文件",
                 "saveFailed": "无法将表演保存到{path}",
@@ -1110,360 +988,6 @@
         "help": {
             "addYours": "没有找到你的语言？<link>帮助我们添加</link>",
             "madeWithAi": "此语言版本由AI翻译，部分用词可能有误。<link>帮助我们检查</link>"
-        }
-    },
-    "library": {
-        "browser": {
-            "title": "素材库",
-            "search": "按名称搜索",
-            "empty": "素材库为空。",
-            "emptyHint": "使用“导入…”添加模型和图稿。",
-            "noMatches": "素材库中没有与“{query}”匹配的项目。",
-            "loadFailed": "无法加载素材库（{code}）。",
-            "groups": {
-                "silks": "旗面",
-                "floors": "地面",
-                "props": "道具",
-                "equipment": "器械",
-                "uniforms": "服装",
-                "other": "其他"
-            }
-        },
-        "templates": {
-            "menu": "图稿模板",
-            "menuHint": "实际尺寸，每次点击一个文件",
-            "groups": {
-                "silk": "旗面规格",
-                "floor": "基础地面",
-                "floorProp": "地面道具",
-                "prop": "道具面板",
-                "uniform": "服装面板"
-            },
-            "withSag": "{name}，下垂{sag}",
-            "saggingBottom": "{name}，底边下垂",
-            "propFace": {
-                "top": "顶面，{name}",
-                "front": "正面，{name}",
-                "back": "背面，{name}"
-            },
-            "download": "将{name}下载为{format}",
-            "saved": "已保存{filename}",
-            "saveFailed": "无法保存模板",
-            "uniformPanel": {
-                "top": {
-                    "front": "上衣，正面",
-                    "back": "上衣，背面"
-                },
-                "bottoms": {
-                    "front": "裤子，正面",
-                    "back": "裤子，背面"
-                },
-                "overlay": {
-                    "front": "外搭（披风），正面",
-                    "back": "外搭（披风），背面"
-                }
-            }
-        },
-        "import": {
-            "entry": "导入…",
-            "library": "素材库",
-            "title": "导入",
-            "back": "返回素材库",
-            "picking": "请在对话框中选择文件…",
-            "fileCount": "{count, plural, other {#个文件}}",
-            "fileSizeMb": "{size} MB",
-            "fileSizeKb": "{size} KB",
-            "fromPicker": "来自{kind}选择器",
-            "fromSlot": "用于{surface}槽位",
-            "pageN": "第{n}页",
-            "pageOf": "第{index}页，共{count}页",
-            "showPage": "显示{label}",
-            "cancel": "取消",
-            "close": "完成",
-            "importMore": "导入更多…",
-            "tryAgain": "重试",
-            "chooseAgain": "重新选择文件",
-            "cancelKeeps": "取消后，已添加的页面仍会保留在素材库中。",
-            "cancelled": "已取消。已添加的内容仍保留在素材库中。",
-            "clean": "可以添加，无需做任何选择。",
-            "starterKit": "使用 OpenMarch Blender 入门套件导出的模型可以顺利导入。",
-            "groups": {
-                "cantImport": "无法导入",
-                "needsChoice": "需要你选择",
-                "fixed": "已自动修复",
-                "notes": "说明"
-            },
-            "kind": {
-                "title": "这是什么？",
-                "hint": "必选。选择后再检查尺寸范围和三角面上限。",
-                "from": {
-                    "picker": "由选择器设定",
-                    "stamp": "来自入门套件标记"
-                }
-            },
-            "kinds": {
-                "prop": "道具",
-                "equipment": "器械",
-                "garment": "服装",
-                "floorProp": "地面道具",
-                "baseFloor": "基础地面"
-            },
-            "surfaces": {
-                "silk": "旗面",
-                "baseFloor": "基础地面",
-                "floorProp": "地面道具",
-                "propSlot": "道具",
-                "uniformPart": "制服"
-            },
-            "stages": {
-                "reading": "正在读取文件…",
-                "validating": "正在检查文件…",
-                "decoding": "正在解码…",
-                "checking": "正在检查尺寸和上限…",
-                "converting": "正在转换…",
-                "writing": "正在写入…",
-                "rendering-pdf": "正在渲染 PDF 页面…",
-                "saving": "正在添加到资源库…"
-            },
-            "refused": {
-                "unsupported": "OpenMarch 不支持导入此格式。模型请使用 GLB 或 glTF，图稿请使用 PNG、JPG、SVG 或 PDF。",
-                "tooLarge": {
-                    "model": "模型及其所需文件超过 200 MB 上限。",
-                    "artwork": "图稿文件超过 300 MB 上限。"
-                }
-            },
-            "match": {
-                "kitTitle": "{name}的新版本",
-                "filenameTitle": "资源库中已有，名为{name}",
-                "detail": "使用它的表演会显示“有可用更新”；在接受更新之前不会有任何改动。",
-                "builtInDetail": "{name}是内置项目，因此将创建你自己的副本。",
-                "newVersionOf": "{name}的新版本",
-                "update": "更新{name}",
-                "copyOf": "你的{name}副本",
-                "addNew": "作为新项目添加"
-            },
-            "choices": {
-                "suggested": "推荐",
-                "units": {
-                    "title": "单位",
-                    "detail": "按导出时的尺寸，其最长边为{largest}，超出了该类型的尺寸范围。",
-                    "none": "保持导出尺寸",
-                    "cm": "厘米（{factor}）",
-                    "in": "英寸（{factor}）",
-                    "ft": "英尺（{factor}）"
-                },
-                "rotate": {
-                    "title": "旋转为 Y 轴向上",
-                    "detail": "导出时为 Z 轴向上，模型会侧躺。"
-                },
-                "simplify": {
-                    "title": "简化为{cap}个三角面",
-                    "detail": "{triangles}个三角面，超过{kind}的上限{cap}。"
-                },
-                "before": "简化前 {triangles}",
-                "after": "简化后 {triangles}",
-                "grip": {
-                    "title": "设置握点",
-                    "detail": "文件中没有 OM_grip_R：已预设在最长边四分之一处的点。点击模型可移动握点。",
-                    "misnamed": "找到{names}，与 OM_grip_R 不符。已预设在最长边上；点击模型可移动握点。",
-                    "manual": "由你在模型上点击设定。",
-                    "pick": "点击模型上的一点",
-                    "picking": "等待点击…（按<keys></keys>停止）"
-                },
-                "surface": {
-                    "title": "图稿表面",
-                    "detail": "文件未标记图稿表面。请选择用于印制图稿的表面，或选择无；将鼠标悬停在选项上可在模型上查看。",
-                    "none": "无",
-                    "unnamed": "材质{index}",
-                    "size": "约{width} × {height}",
-                    "noUVs": "没有 UV，无法映射图稿"
-                }
-            },
-            "rows": {
-                "unreadable": "无法读取文件",
-                "missingResource": "缺少所需的文件",
-                "externalUri": "会从互联网加载文件",
-                "resourceOutsideFolder": "引用了所在文件夹之外的文件",
-                "validatorErrors": "{count, plural, other {#个 glTF 错误}}",
-                "requiredExtension": "需要 OpenMarch 无法加载的扩展",
-                "noGeometry": "文件中没有几何体",
-                "overTriangleCap": "{triangles}个三角面：超过上限{limit}",
-                "overTriangleCapDetail": "超过{kind}上限{cap}的 4 倍以上。请先减面再导出。",
-                "rigNotAllowed": "{kind}不能带有骨骼绑定",
-                "garmentNotRigged": "服装需要 v4 骨骼绑定",
-                "garmentJointsNotV4": "骨骼不是 v4 骨架",
-                "missingJoints": "缺少{names}",
-                "unexpectedJoints": "多出{names}",
-                "garmentRestPoseMismatch": "骨骼的静止姿势与 v4 不一致",
-                "garmentQuantized": "蒙皮网格经过了量化",
-                "garmentTransformsNotApplied": "变换未应用",
-                "garmentNoPartPaint": "没有 _PART 绘制层：会渲染为皮肤",
-                "garmentNoMedianFit": "没有适配中等体型的版本",
-                "garmentUnknownFit": "某个适配指定了未知体型",
-                "texturesDownsized": "{count, plural, other {#张纹理已缩小至{cap} px}}",
-                "dracoDecoded": "已解码 Draco 压缩",
-                "meshOptimizerDecoded": "已解码 Mesh optimizer 压缩",
-                "instancesExpanded": "已展开实例",
-                "extensionsStripped": "已移除未使用的扩展",
-                "extrasStripped": "已移除未使用的附加数据",
-                "contentStripped": "已移除 OpenMarch 不使用的内容",
-                "contentStrippedDetail": "动画 {animations} · 相机 {cameras} · 变形目标 {morphTargets} · 多余场景 {scenes}",
-                "influencesRenormalized": "已重新归一化{vertices}个顶点的骨骼权重",
-                "validatorWarnings": "{count, plural, other {#个 glTF 警告}}",
-                "sizeOutOfRange": "最长边为{size}",
-                "sizeOutOfRangeDetail": "超出该类型通常的{min}至{max}范围。请检查单位。",
-                "noStretchZones": "没有拉伸区域",
-                "noStretchZonesDetail": "将保持建模时的尺寸，或按统一比例缩放。",
-                "customPropertiesOff": "自定义属性似乎未开启",
-                "customPropertiesOffDetail": "请使用 OpenMarch 预设重新导出，以保留握点和图稿槽。",
-                "stillOverTriangleCap": "仍有{triangles}个三角面，超过上限{cap}",
-                "slotWithoutUVs": "图稿槽 {slot} 没有 UV",
-                "slotDropped": "已忽略图稿槽 {slot}",
-                "invalidOpenMarchData": "已忽略{where}上的 OpenMarch 数据",
-                "unknownStampKind": "标记指定了未知类型：{value}",
-                "missingFits": "缺少体型适配",
-                "duplicateFits": "多个网格使用相同的体型适配",
-                "wgiEquipmentUnderMinimum": "WGI：器械短于 24 in",
-                "wgiFloorOverMaximum": "WGI：地面超过 78 × 106 ft"
-            },
-            "size": {
-                "title": "尺寸多大？",
-                "members": "已选{selected}/{count}页",
-                "fromFile": "来自文件：{size}",
-                "width": "宽度",
-                "height": "高度",
-                "feetUnit": "英尺",
-                "inchesUnit": "英寸",
-                "feetLabel": "{label}（英尺）",
-                "inchesLabel": "{label}（英寸）",
-                "feetSize": "{width} × {height} 英尺",
-                "inchesSize": "{width} × {height} 英寸",
-                "lengthSize": "{width} × {height}",
-                "locked": "已锁定比例：图稿不会被拉伸",
-                "needed": "请选择尺寸：此文件未注明打印尺寸。",
-                "printsOn": "打印位置",
-                "fitted": "已按图片形状调整；标准{surface}尺寸为{size}。"
-            },
-            "details": {
-                "name": "名称",
-                "namesFromFiles": "每个文件保留各自的名称。",
-                "tags": "标签，用逗号分隔",
-                "toggle": "作者、许可协议和来源",
-                "unknown": "未知",
-                "author": "作者",
-                "license": "许可协议",
-                "licensePlaceholder": "许可协议，例如CC-BY-4.0",
-                "source": "来源网址",
-                "emptyIsUnknown": "留空即视为未知，绝不视为可自由分享。",
-                "rights": "请仅导入你有权使用的图稿和模型。"
-            },
-            "add": {
-                "one": "添加到素材库",
-                "many": "添加{count}项到素材库",
-                "newVersion": "添加新版本",
-                "cantImport": "无法导入"
-            },
-            "done": {
-                "added": "{count, plural, other {已将#项添加到素材库}}",
-                "newVersion": "已添加{name}的新版本",
-                "notImported": "未导入"
-            },
-            "stage": {
-                "label": "导入预览 · 3D视图未更改",
-                "loading": "正在加载预览…",
-                "empty": "无可预览内容",
-                "needsKind": "请先选择类型以查看预览。",
-                "rejected": "无法导入，因此没有预览。",
-                "previewFailed": "无法加载预览。",
-                "noArtwork": "没有可预览的页面。",
-                "triangles": "{triangles}个三角面",
-                "trianglesCap": "{triangles}个三角面 · 上限{cap}",
-                "tall": "高{height}",
-                "before": "简化前",
-                "after": "简化后",
-                "vector": "矢量",
-                "pixels": "{width} × {height} px",
-                "views": "视图",
-                "view": {
-                    "front": "正面",
-                    "side": "侧面",
-                    "top": "顶部"
-                },
-                "pickGrip": "点击模型上的一点以设置握持点 · 按<keys></keys>停止",
-                "surface": "图稿表面：{name}"
-            },
-            "errors": {
-                "mixed-selection": {
-                    "title": "请分开导入模型和图稿",
-                    "body": "每次可选择一个模型，或任意数量的图稿文件。"
-                },
-                "session-expired": {
-                    "title": "此导入已超时",
-                    "body": "导入在30分钟未操作后会关闭。请重新选择文件。"
-                },
-                "unknown-file": {
-                    "title": "该文件不在此次导入中",
-                    "body": "请重新选择文件。"
-                },
-                "too-large": {
-                    "title": "文件过多",
-                    "body": "每次最多选择50个文件。"
-                },
-                "unreadable": {
-                    "title": "无法读取该文件",
-                    "body": "文件可能已被移动，或正被其他应用打开。"
-                },
-                "busy": {
-                    "title": "另一个导入步骤仍在运行",
-                    "body": "请等待其完成后再试。"
-                },
-                "timeout": {
-                    "title": "导入程序耗时过长",
-                    "body": "大型或复杂的文件可能会超时。请重试，或在导出前简化文件。"
-                },
-                "worker-crashed": {
-                    "title": "导入程序在读取文件时停止",
-                    "body": "你的文件未被更改。请重试；如果再次发生，文件可能已损坏。"
-                },
-                "pdf-unavailable": {
-                    "title": "无法渲染PDF页面",
-                    "body": "请重试。如果问题持续，请将图稿导出为PNG或SVG。"
-                },
-                "write-failed": {
-                    "title": "无法保存到素材库",
-                    "body": "请检查磁盘是否有可用空间，然后重试。"
-                },
-                "read-only": {
-                    "title": "该项无法更改",
-                    "body": "内置项为只读。请改为“添加为新项”。"
-                },
-                "corrupt": {
-                    "title": "素材库中有一项已损坏",
-                    "body": "请重试。素材库中的其他内容不受影响。"
-                },
-                "cancelled": {
-                    "title": "已取消",
-                    "body": "未再导入任何内容。"
-                },
-                "other": {
-                    "title": "出现问题",
-                    "body": "请重试。"
-                }
-            },
-            "finishFailed": "无法完成导入",
-            "copyIntoShowFailed": "无法将导入项复制到表演中"
-        },
-        "fileDialog": {
-            "importTitle": "导入",
-            "saveTemplateTitle": "保存模板",
-            "models": "3D模型（glb、gltf）",
-            "artwork": "图稿（png、jpg、svg、pdf）",
-            "modelsAndArtwork": "模型和图稿",
-            "pngImage": "PNG图像"
-        },
-        "starterKit": {
-            "saveDialogTitle": "保存Blender入门套件",
-            "saveFailed": "无法保存Blender入门套件"
         }
     },
     "marchers": {
@@ -1687,7 +1211,6 @@
         "settings": {
             "backgroundImage": {
                 "alt": "制作背景",
-                "drawFailed": "无法绘制背景图片",
                 "empty": "无背景图片",
                 "help": "上传新修订版本时，背景图片会自动同步。如需更改，请在场地编辑器中更改背景图片，然后上传新修订版本。",
                 "title": "背景图片"
@@ -1957,11 +1480,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "中",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "编辑形状时",
-        "field.shapeFocus.drawing": "仅绘制时淡化",
-        "field.shapeFocus.drawing.description": "仅在绘制打开的形状时，淡化形状外的队员。",
-        "field.shapeFocus.rest": "淡化其余队员",
-        "field.shapeFocus.rest.description": "形状打开期间，一直淡化形状外的队员。",
         "field.stepSizeWarnings": "步幅警告",
         "field.stepSizeWarnings.description": "标记步幅过大、无法行进的动作，并始终显示其路径。",
         "general": "通用",
@@ -1990,27 +1508,6 @@
         "mouse.trackpadPanSensitivity": "触控板平移灵敏度",
         "mouse.zoomSensitivity": "缩放灵敏度",
         "noResults": "没有匹配的设置。",
-        "plugins": "插件",
-        "plugins.community": "社区",
-        "plugins.description": "添加由社区制作的功能。",
-        "plugins.install": "安装",
-        "plugins.installed": "已安装",
-        "plugins.installFailed": "安装失败",
-        "plugins.installing": "正在安装...",
-        "plugins.noCommunityPlugins": "暂无社区插件。",
-        "plugins.noOfficialPlugins": "暂无官方插件。",
-        "plugins.noPlugins": "未安装插件。",
-        "plugins.official": "官方",
-        "plugins.refreshNotice": "请<a>重新加载应用</a>以更新插件。",
-        "plugins.toast.installFailed": "插件 {pluginName} 安装失败",
-        "plugins.toast.installSuccess": "插件 {pluginName} 安装成功！",
-        "plugins.toast.uninstallFailed": "移除 {pluginName} 失败",
-        "plugins.toast.uninstallSuccess": "插件 {pluginName} 已成功移除！",
-        "plugins.uninstall": "卸载",
-        "plugins.uninstalled": "已移除",
-        "plugins.uninstallFailed": "移除失败",
-        "plugins.uninstalling": "正在移除...",
-        "plugins.version": "v{version}",
         "privacy": "隐私",
         "privacy.analytics": "共享使用情况分析",
         "privacy.analytics.description": "为了帮助我们改进 OpenMarch，我们会收集分析数据、错误日志和会话录制。这有助于我们了解你如何使用本应用并发现问题。阅读我们的<a>隐私政策</a>了解更多。",
@@ -2067,8 +1564,6 @@
         "tolgeeDevToolsToggle": "Tolgee 上下文内翻译",
         "view3d": "3D 视图",
         "view3d.description": "3D 视图在这台电脑上的绘制方式。不会保存在表演中。",
-        "view3d.pauseWhenIdle": "画面静止时暂停绘制",
-        "view3d.pauseWhenIdle.description": "当表演暂停且镜头静止时停止绘制。",
         "view3d.quality": "画质",
         "view3d.quality.auto": "自动",
         "view3d.quality.auto.description": "从“高”开始，如果画面卡顿则切换为“低”。",
@@ -2083,8 +1578,6 @@
         "view3d.resolution.fast.description": "最柔和，工作量约减半。适合较旧的电脑。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高分辨率屏幕上显示全部细节。",
-        "view3d.saveOnBattery": "使用电池时节省电量",
-        "view3d.saveOnBattery.description": "使用电池时，以标准分辨率绘制，每秒最多 30 帧。",
         "input": "触控与输入",
         "input.description": "选择平板布局（适用于手指和触控笔）或桌面布局（适用于鼠标和触控板）。",
         "input.interface": "布局",
@@ -2270,21 +1763,6 @@
                 "one": "{name}离开了{shape, select, block {方阵} circle {圆形} other {图形}}"
             },
             "selectWholeShape": "选择整个{shape, select, block {方阵} circle {圆形} other {图形}}"
-        },
-        "save": {
-            "descriptionLabel": "已保存图形的说明（可选）",
-            "descriptionPlaceholder": "说明（可选）",
-            "ariaLabel": "将此图形保存到你的库",
-            "button": "保存",
-            "cancel": "取消",
-            "nameLabel": "已保存图形的名称",
-            "savedAs": "已保存为“{name}”",
-            "tip": "将此图形保存到你的库并加星标",
-            "mixedIntervals": "暂不能保存间距不一的线条"
-        },
-        "saved": {
-            "copyFailed": "无法将已保存的图形复制到表演中",
-            "deleteFailed": "无法从表演中删除已保存的图形"
         },
         "command": {
             "fill": "填充方式：{modes}",
@@ -2523,37 +2001,6 @@
                 "spacing": "间距"
             }
         },
-        "library": {
-            "addNamed": "将{name}添加到我的库",
-            "addTip": "添加到我的库，供所有表演使用",
-            "close": "关闭",
-            "deleteNamed": "删除{name}",
-            "deleteTip": "删除此已保存的形状",
-            "dismiss": "关闭",
-            "draw": "绘制{name}",
-            "full": "已为{max}个形状加星标，已达到轮盘上限。请先取消一个星标，再为{name}加星标。",
-            "group": {
-                "basic": "基本",
-                "saved": "已保存"
-            },
-            "intro": "为形状加星标，即可将其保留在“形状”标签页和形状轮盘中，最多{max}个。",
-            "note": {
-                "apart": "间距{spacing}",
-                "modeApart": "{mode, select, outline {轮廓} other {分散}}，间距{spacing}",
-                "apartStagger": "间距{spacing}，错位{fraction}",
-                "apartStaggerLeft": "间距{spacing}，向左错位{fraction}",
-                "showOnly": "仅限此表演",
-                "stagger": "错位{fraction}",
-                "staggerLeft": "向左错位{fraction}"
-            },
-            "savedEmpty": "从形状的⋯行或检查器中保存形状，即可将其保留在此处，供所有表演使用。",
-            "savedNewer": "{count, plural, other {#个已保存的形状}}需要更新版本的OpenMarch。",
-            "star": "加星标",
-            "starNamed": "为{name}加星标",
-            "title": "形状",
-            "unstar": "取消星标",
-            "unstarNamed": "取消{name}的星标"
-        },
         "spacing": {
             "empty": "请输入以步为单位的间距",
             "noGaps": "一段排布至少需要1个空隙",
@@ -2574,27 +2021,19 @@
             },
             "placeError": "放置形状时出错",
             "ring": {
-                "hint": "点击形状，或点击其他任意位置关闭",
-                "starred": "已加星标"
+                "hint": "点击形状，或点击其他任意位置关闭"
             },
             "section": {
-                "box": "方阵",
                 "title": "形状"
             },
             "selectMarchersFirst": "请先选择队员",
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "形状类型",
-                "library": "形状库",
-                "libraryTip": "打开形状库，为形状加星标",
                 "ringHintKeys": "在场地上按住<keys></keys>打开形状轮盘"
             }
         },
         "transform": {
-            "flipAcross": "翻转 ↔",
-            "flipAcrossTip": "围绕支点左右翻转",
-            "flipDeep": "翻转 ↕",
-            "flipDeepTip": "围绕支点前后翻转",
             "title": "变换"
         },
         "validate": {
@@ -2629,32 +2068,7 @@
             "countAt": "{count}人间距{interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "某个乐器/器材提示点与队员所携带的物品不符",
-        "crewDistance": "{item}的搬运组离它太远",
-        "crewDistanceDetail": "够不到：{who}",
-        "crewlessMove": "{item}在没有搬运组的情况下移动",
-        "empty": "没有需要检查的内容。",
-        "forWho": "涉及：{who}",
-        "handConflict": "{item}未显示",
-        "handConflictDetail": "{count, plural, other {{other}占用了{who}的{hand, select, left {左手} right {右手} other {双手}}}}",
-        "handConflictByCarry": "某个携带提示点占用了{who}的{hand, select, left {左手} right {右手} other {双手}}",
-        "handConflictWithCarry": "{other}和某个携带提示点占用了{who}的{hand, select, left {左手} right {右手} other {双手}}",
-        "performers": "{count, plural, other {#名队员}}",
-        "pick": "跳转到此拍并选中相关对象",
-        "putDownDrift": "{item}放下时偏离了持有者",
-        "putDownDriftDetail": "它自身的动作将它移到了那里，而不是{who}的位置",
-        "shortHanded": "{item}的持握手数不足",
-        "shortHandedDetail": "{who}：{held}只手（需要{needed}只）",
-        "silkAspect": "某个旗面提示点的图案被适配到了形状不同的旗帜上",
-        "snapToHolder": "对齐到持有者",
-        "title": "表演检查",
-        "titleCount": "表演检查（{count}）",
-        "withWhere": "{text}，{where}",
-        "withStart": "{text}，位于开头"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {有#个提示点以此标签为目标，将被删除}}",
         "title": "标签",
         "rename": "重命名标签",
         "namePlaceholder": "输入标签名称…",
@@ -2754,7 +2168,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "时间轴",
-        "masterVolume": "主音量",
         "moveDeleted": {
             "message": "已删除{label}",
             "withPages": "{count, plural, other {已删除{label} · 第{pages}页已更改}}"
@@ -2783,9 +2196,7 @@
             "setAsShown": "设为当前显示位置",
             "setAsShownNone": "所选队员均已在{page}上设定位置，或正处于动作中途",
             "setAsShownError": "将队员设为当前显示位置时出错",
-            "addSelected": "添加所选队员",
-            "deletePage": "删除此页",
-            "addSelectedNone": "请先选择队员：可在起点、尚无动作的区段，或其所在动作的轨道中选择。"
+            "deletePage": "删除此页"
         },
         "startFlagPositions": {
             "always": "始终",
@@ -2842,7 +2253,6 @@
             "label": "紧凑时间轴",
             "onTooltip": "紧凑时间轴：开。点击显示完整时间轴"
         },
-        "volumeSlider": "时间轴音量滑块",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
             "hintClick": "单击切换到下一档速度，右键单击查看更多",
@@ -2866,7 +2276,6 @@
             "lockedNotMoved": "{count, plural, other {此页有#名队员使用专家模式动作，因此未被移动。请切换到专家模式进行编辑。}}",
             "switchToExpert": "切换到专家模式"
         },
-        "volume": "时间轴音量",
         "percent": "{percent}%",
         "loop": {
             "label": "循环",
@@ -3068,7 +2477,6 @@
             "range": "第{from}–{to}拍",
             "length": "{count, plural, other {#拍}}"
         },
-        "createTrack": "创建轨道",
         "playheadChip": {
             "label": "显示播放头",
             "text": "播放头"
@@ -3305,17 +2713,11 @@
             "freeCamera": "自由视角"
         },
         "readout": {
-            "camera": "视高{eye} · 距中心{distance}",
-            "checks": "{count, plural, other {#项检查}}",
             "count": "第{count}拍，共{total}拍",
             "noPages": "无页",
             "page": "第{page}页",
             "pastEnd": "结束 +{count}",
             "showTime": "表演时间"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D视图 — {showName}",
@@ -3352,32 +2754,7 @@
             "endZoneColor": "颜色",
             "graphicsSection": "本电脑",
             "graphicsHint": "不保存在表演中，因此每台电脑可以不同。",
-            "hornState": "持号姿势",
-            "hornStateMode": {
-                "up": "举号",
-                "carry": "持号",
-                "trail": "单手后持"
-            },
-            "hornStateHint": "让所有号和鼓在整场表演中保持同一姿势，以便检查姿态。“跟随提示点”按号/器材提示点播放，没有提示点的地方为举号。",
-            "guardEquipment": "旗队器材",
-            "guardEquipmentMode": {
-                "flag6": "6 ft旗",
-                "swingFlag": "摆旗",
-                "doubleSwingFlag": "双摆旗",
-                "rifle": "道具枪",
-                "sabre": "军刀"
-            },
-            "guardEquipmentHint": "让每位旗队队员手持同一件器材以便查看。“跟随提示点”为每个声部配上各自的器材：旗手用6 ft旗，枪手用道具枪。",
-            "stepOffFoot": "起步脚",
-            "stepOffFootMode": {
-                "left": "队员左脚",
-                "right": "队员右脚"
-            },
-            "stepOffFootHint": "指队员自己的脚，无论其面向哪个方向。队员面向你时，其左脚在你的右侧。“跟随提示点”按表演保存的脚起步（{foot, select, left {队员左脚} other {队员右脚}}），或按“脚步”提示点设置的脚起步。",
             "keysSection": "键盘和鼠标",
-            "previewSection": "仅预览",
-            "previewHint": "不会保存。这些选项只改变本窗口的显示；在表演中由提示点决定。改回“跟随提示点”即可查看表演。",
-            "followCues": "跟随提示点",
             "uniforms": "乐队制服",
             "guardUniforms": "旗队制服"
         },
@@ -3409,7 +2786,6 @@
             "title": "机位",
             "close": "关闭机位",
             "edit": "编辑机位…",
-            "saveView": "保存当前视角",
             "none": "无机位",
             "empty": "没有机位。先把视角调到想要的位置，再添加。",
             "addView": "添加当前视角",
@@ -3432,68 +2808,7 @@
             "removed": "已移除“{name}”",
             "undo": "撤销",
             "replace": "替换",
-            "replaceWithProfile": "要用“{name}”替换你的机位吗？当前列表没有保存在其他地方。",
-            "profile": "方案",
-            "source": {
-                "defaults": "场馆默认",
-                "custom": "本表演的机位"
-            },
-            "edited": "已修改",
-            "myProfiles": "本机",
-            "saveAsProfile": "存为机位方案…",
-            "saveAsProfileShort": "存为方案…",
-            "manageProfiles": "管理方案…",
-            "notice": {
-                "defaults": "场馆自带的机位。任何修改都会让它们成为本表演的机位。",
-                "custom": "仅随本表演保存。",
-                "profile": "已随本表演保存，并保存在你的方案中。",
-                "edited": "方案保存后已有修改。",
-                "newer": "此方案已在本机上修改过。",
-                "missing": "本表演使用的方案不在本机上。"
-            },
-            "updateProfile": "更新方案",
-            "saveAsNew": "另存为新方案…",
-            "useNewVersion": "使用新版本",
-            "addToMyProfiles": "添加到我的方案",
-            "profileName": "方案名称",
-            "save": "保存",
-            "defaultProfileName": "{venue}机位",
-            "copyName": "{name} 副本",
-            "profilesTitle": "机位方案",
-            "profilesHint": "保存在本机的资源库中，任何表演都可使用。每个表演会保留其所用方案的副本。",
-            "noProfiles": "还没有机位方案。选择“存为机位方案…”来创建。",
-            "cameraCount": "{count, plural, other {#个机位}}",
-            "use": "使用",
-            "otherVenue": "此方案适用于其他场馆",
-            "deleteProfile": "删除",
-            "deleteProfileConfirm": "要从本机删除“{name}”吗？使用它的表演会保留各自的副本。",
             "saveFailed": "无法保存3D视图机位"
-        },
-        "catalog": {
-            "entry": {
-                "silk5ftPole": "5 ft旗杆旗面",
-                "silk5_5ftPole": "5.5 ft旗杆旗面",
-                "silk6ftPole": "6 ft旗杆旗面",
-                "silk7ftPole": "7 ft旗杆旗面",
-                "silkStandard": "标准",
-                "silkOversized": "加大",
-                "silkTeardrop": "水滴形",
-                "silkSwing": "旋旗",
-                "silkSuperSwing": "弧边旋旗或超级旋旗",
-                "silkOversizedSwing": "加大旋旗",
-                "silkArc": "常规弧形",
-                "silkNarrowArc": "窄弧形",
-                "silkSuperArc": "超大弧形",
-                "floorWgiMinimum": "WGI比赛区域（最小）",
-                "floorWgiMaximum": "WGI比赛区域（最大）",
-                "flatProp4x8ft": "4 x 8 ft板材"
-            },
-            "kind": {
-                "silk": "旗面",
-                "floor": "地垫",
-                "flatProp": "平面道具"
-            },
-            "chip": "{kind} {size}"
         },
         "venue": {
             "updateFailed": "无法更新3D视图场馆"
@@ -3650,263 +2965,9 @@
             "seconds": "秒"
         },
         "unsavedChanges": "有未保存的更改",
-        "warnPropMovesWithoutCrew": "道具移动但无搬运人员时发出警告",
-        "warnPropMovesWithoutCrewHelp": "“表演检查”会列出已放置但在无人搬运的情况下移动的道具。",
         "close": "关闭",
         "saved": "表演设置已保存",
         "updateFailed": "无法更新工作区设置"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "工作区",
-            "editor": "编辑器",
-            "visuals": "视觉",
-            "preview": "预览"
-        },
-        "channels": {
-            "feet": "步伐",
-            "horn": "号",
-            "equipment": "器材",
-            "hornEquipment": "号/器材",
-            "facing": "朝向",
-            "body": "身体"
-        },
-        "inspector": {
-            "title": "视觉",
-            "who": "对象",
-            "band": "乐团",
-            "selection": "所选队员",
-            "selectionCount": "{count, plural, =0 {未选择} other {已选择#个}}",
-            "sections": "声部",
-            "tags": "标签",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "取消聚焦",
-            "focusHint": "点击某个对象即可聚焦，场地上的其他队员会变暗。"
-        },
-        "band": {
-            "editing": "正在编辑：{who}的{channel}",
-            "focusFirst": "视觉：在检查器中聚焦一个对象以编辑其提示点",
-            "selectFirst": "请先在场地上选择队员，再为所选队员创建提示点",
-            "marchers": "{count, plural, other {#名队员}}",
-            "mixed": "混合",
-            "rowCue": "{who}：{value}",
-            "lane": "提示点轨道",
-            "paste": "{count, plural, other {在播放头处粘贴#个提示点}}",
-            "flagged": "{count, plural, other {#个提示点有问题}}",
-            "flaggedCue": "{value}：{problems}"
-        },
-        "cue": {
-            "title": "提示点",
-            "delete": "删除",
-            "where": "{who}，{where}",
-            "count": "第{count}拍",
-            "start": "开头",
-            "value": "值",
-            "notForEveryone": "{value}（不适用于所有人）",
-            "transition": "过渡（拍）",
-            "length": "时长（拍）",
-            "ripple": "波浪",
-            "rippleSpan": "波浪跨度（拍）",
-            "rippleOrder": "顺序",
-            "order": {
-                "drill": "编号顺序",
-                "left_right": "从左到右",
-                "right_left": "从右到左",
-                "down_form": "沿队形依次"
-            },
-            "notes": "备注",
-            "facingWheel": "朝向角度",
-            "pickPoint": "在场地上选取点",
-            "pickingPoint": "点击场地上的一点（按<keys></keys>取消）"
-        },
-        "why": {
-            "title": "{where}处的原因",
-            "value": "{value}：{total}人中的{n}人",
-            "setBy": "由<cue></cue>设置",
-            "setByTakenOver": "由<cue></cue>设置（被{channel}接管）",
-            "beat": "覆盖了<cues></cues>",
-            "cue": "{value}（{who}，{where}）",
-            "default": {
-                "library": "默认值",
-                "carry": "所持器材的默认值",
-                "section_equipment": "声部的常用器材",
-                "equipment_fallback": "声部名称对应的常用器材",
-                "marcher_carries": "其通常所持的器材",
-                "section_color": "声部的2D颜色",
-                "band_uniform": "乐队制服",
-                "guard_uniform": "旗队制服"
-            }
-        },
-        "settings": {
-            "pace": "步速",
-            "moving": "行进中",
-            "onHolds": "静止时",
-            "stepOffFoot": "起步脚",
-            "angle": "持号角度",
-            "degrees": "角度（度）",
-            "x": "点x坐标",
-            "y": "点y坐标",
-            "energy": "力度"
-        },
-        "options": {
-            "single": "常速",
-            "half": "半速",
-            "double": "倍速",
-            "straightLeg": "直腿",
-            "bentLeg": "屈腿",
-            "highStep": "高抬腿",
-            "stand": "站立",
-            "markTime": "原地踏步",
-            "highMarkTime": "高抬腿原地踏步",
-            "left": "左脚",
-            "right": "右脚",
-            "box": "标准位",
-            "plus10": "高于标准位10°",
-            "low": "低",
-            "medium": "中",
-            "high": "高"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "行进步",
-                    "label": "行进",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "踏步"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "举号",
-                    "label": "举"
-                },
-                "down": {
-                    "name": "放号",
-                    "label": "放"
-                },
-                "trail": {
-                    "name": "垂号",
-                    "label": "垂"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "演奏中",
-                    "label": "演奏"
-                },
-                "sticksIn": {
-                    "name": "鼓棒收拢",
-                    "label": "收"
-                },
-                "sticksDown": {
-                    "name": "鼓棒垂放",
-                    "label": "垂"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "旗预备",
-                    "label": "预备"
-                },
-                "port": {
-                    "name": "旗斜持",
-                    "label": "斜持"
-                },
-                "dropSpin": {
-                    "name": "旗下落旋转",
-                    "label": "落旋"
-                },
-                "toss1": {
-                    "name": "旗单周抛",
-                    "label": "1周"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "枪斜持",
-                    "label": "斜持"
-                },
-                "present": {
-                    "name": "举枪礼",
-                    "label": "举枪"
-                },
-                "dropSpin": {
-                    "name": "枪下落旋转",
-                    "label": "落旋"
-                },
-                "toss1": {
-                    "name": "枪单周抛",
-                    "label": "1周"
-                },
-                "toss2": {
-                    "name": "枪双周抛",
-                    "label": "2周"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "军刀预备",
-                    "label": "预备"
-                },
-                "toss1": {
-                    "name": "军刀单周抛",
-                    "label": "1周"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "前方",
-                    "label": "前"
-                },
-                "back": {
-                    "name": "后方",
-                    "label": "后"
-                },
-                "side1": {
-                    "name": "1号侧",
-                    "label": "侧1"
-                },
-                "side2": {
-                    "name": "侧2",
-                    "label": "侧2"
-                },
-                "travel": {
-                    "name": "行进方向",
-                    "label": "行进"
-                },
-                "angle": {
-                    "name": "角度",
-                    "label": "角度"
-                },
-                "point": {
-                    "name": "朝向某点",
-                    "label": "定点"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "常态",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "跪姿",
-                    "label": "跪"
-                },
-                "choreo": {
-                    "name": "编舞",
-                    "label": "编舞"
-                }
-            }
-        },
-        "flags": {
-            "clash": "与同一拍上的另一个提示点冲突。",
-            "phrase_overlap": "与另一个时段提示重叠。",
-            "takeover_while_moving": "在点位移动时接管了脚步。",
-            "fits_nobody": "不适用于其任何目标队员。",
-            "kind_not_allowed": "是时段提示，但所在通道只接受状态提示。",
-            "transition_cut": "其过渡在前一个提示点到位之前就开始了。"
-        }
     },
     "canvas": {
         "zoom": {
@@ -3914,9 +2975,7 @@
             "in": "放大",
             "out": "缩小",
             "reset": "缩放{zoom}%，重置缩放并居中",
-            "resetAndCenter": "重置缩放并居中",
-            "perspective": "透视",
-            "perspectiveComingSoon": "透视（即将推出）"
+            "resetAndCenter": "重置缩放并居中"
         }
     },
     "errorBoundary": {
@@ -4097,7 +3156,6 @@
         "help": {
             "title": "帮助",
             "showShortcuts": "键盘快捷键",
-            "starterKit": "获取Blender入门套件…",
             "website": "网站",
             "guides": "文档/指南"
         },
@@ -4108,7 +3166,6 @@
             "openMarchFile": "OpenMarch文件",
             "allFiles": "所有文件",
             "audioFile": "音频文件",
-            "zipArchive": "Zip归档",
             "video": "视频"
         },
         "newShow": {
@@ -4120,9 +3177,6 @@
         "openFailed": {
             "title": "加载数据库时出错"
         }
-    },
-    "notes": {
-        "snapToHolderFailed": "将物品吸附回持有者时出错"
     },
     "coordinates": {
         "full": "{x} - {y}",
@@ -4162,5 +3216,10 @@
         "tiny": "极小",
         "toFive": "{steps, number}步5码",
         "undefined": "未定义"
+    },
+    "workspace": {
+        "label": "工作区",
+        "editor": "编辑器",
+        "preview": "预览"
     }
 }

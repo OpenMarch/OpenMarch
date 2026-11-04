@@ -206,11 +206,6 @@ export interface FieldPlan {
 export interface ImageSize {
     width: number;
     height: number;
-    /**
-     * The floor's physical size in meters (ADR 0002 D-23): placed at that size, centered on the
-     * field, as in 2D. Without it, the image is placed by fill or fit.
-     */
-    sizeM?: { widthM: number; heightM: number } | null;
 }
 
 export interface PlanInput {

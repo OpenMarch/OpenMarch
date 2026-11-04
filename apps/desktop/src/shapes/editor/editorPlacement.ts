@@ -20,6 +20,11 @@ export interface PlacementInput {
     readonly outline: readonly XY[];
     /** The rotate knob in the field element's px, which the editor mustn't cover */
     readonly knob?: XY;
+    /**
+     * The shape's handles in the field element's px: those inside the field count as part of the
+     * shape, so the editor never covers one (#634)
+     */
+    readonly handles?: readonly XY[];
     /** The editor's size */
     readonly width: number;
     readonly height: number;
@@ -40,6 +45,9 @@ export function editorPlacement(input: PlacementInput): Placement {
     const xs = input.outline.map((p) => p.x);
     const ys = input.outline.map((p) => p.y);
     if (input.knob) ys.push(input.knob.y);
+    for (const h of input.handles ?? [])
+        if (h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight)
+            ys.push(h.y);
     const x = (Math.min(...xs) + Math.max(...xs)) / 2;
     const below = Math.max(...ys) + pad;
     const over = Math.min(...ys) - pad - height;

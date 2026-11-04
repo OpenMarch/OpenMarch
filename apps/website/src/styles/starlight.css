@@ -86,9 +86,9 @@
     --sl-line-height: 1.75;
     --sl-line-height-headings: 1.2;
 
-    --sl-font: "DM Sans", sans-serif;
-    --sl-font-mono: "DM Mono", monospace;
-    --sl-font-bold: "DM Sans", sans-serif;
+    --sl-font: "DM Sans", "OpenMarch Text Symbols", sans-serif;
+    --sl-font-mono: "DM Mono", "OpenMarch Text Symbols", monospace;
+    --sl-font-bold: "DM Sans", "OpenMarch Text Symbols", sans-serif;
 
     --sl-font-system:
         ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",

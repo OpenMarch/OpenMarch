@@ -2,7 +2,6 @@
 import { describe, expect, it } from "vitest";
 import {
     countsPastEnd,
-    formatLength,
     pageCountAt,
     pausedPageCount,
     type ReadoutPage,
@@ -131,36 +130,6 @@ describe("pausedPageCount", () => {
     it("is null for an unknown or missing page", () => {
         expect(pausedPageCount(pages, 999, 0)).toBeNull();
         expect(pausedPageCount(pages, null, 0)).toBeNull();
-    });
-});
-
-describe("formatLength", () => {
-    it("uses whole feet for imperial fields", () => {
-        expect(formatLength(12.192, "imperial")).toEqual({
-            value: "40",
-            unit: "ft",
-        });
-    });
-
-    it("uses meters with one decimal for metric fields", () => {
-        expect(formatLength(12.25, "metric")).toEqual({
-            value: "12.3",
-            unit: "m",
-        });
-        expect(formatLength(182.4, "metric")).toEqual({
-            value: "182",
-            unit: "m",
-        });
-    });
-
-    it("writes the given locale's decimal mark", () => {
-        expect(formatLength(12.25, "metric", "fr").value).toBe("12,3");
-        expect(formatLength(1234.5, "metric", "en").value).toBe("1235");
-    });
-
-    it("clamps bad values to zero", () => {
-        expect(formatLength(Number.NaN, "metric").value).toBe("0.0");
-        expect(formatLength(-3, "imperial").value).toBe("0");
     });
 });
 

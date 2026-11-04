@@ -25,7 +25,6 @@ import {
 } from "@/view3d/sync/protocol";
 import { parseVenueSettings } from "@/view3d/core/venueSettings";
 import { showCamerasSchema } from "@/view3d/core/cameraList";
-import { localCameraProfiles } from "@/view3d/window/localCameraProfiles";
 
 const migrationSql = import.meta.glob<string>(
     "../electron/database/migrations/*.sql",
@@ -155,7 +154,6 @@ class WebHost {
         },
         requestVenueChange: (settings) => this.writeVenue(settings),
         requestCamerasChange: (cameras) => this.writeCameras(cameras),
-        cameraProfiles: localCameraProfiles,
         // The demo has no app settings: never asks to open on launch
         autoOpen: {
             get: () => Promise.resolve(null),

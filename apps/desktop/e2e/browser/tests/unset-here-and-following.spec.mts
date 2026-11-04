@@ -15,7 +15,7 @@ import { seedShowSql } from "../seed.mjs";
 // Unset here and on Pages N–M (Set vs Following, #300 and #305): as Unset
 // here, but the later pages that followed the spot follow back to the earlier
 // one. It's the timelineUnsetHereAndFollowing action, offered only when some
-// pages follow, run here from the command palette and the inspector's button.
+// pages follow, run here from the command palette.
 //
 // Pages flag at beats 9, 17 and 25 (measures 3, 5 and 7), four beats a
 // measure. Over page 1 everyone moves. Over page 2 T1 and T2 move and T3
@@ -110,9 +110,6 @@ async function searchUnset(page: Page) {
     await page.getByPlaceholder("Search commands…").fill("Remove keyframe");
 }
 
-const button = (page: Page) =>
-    page.getByTestId("timeline-unset-here-and-following");
-
 /** T2 is back on page 1's spot on page 2's flag and on page 3, which followed it. */
 async function expectFollowedBack(show: Show) {
     await expect
@@ -152,15 +149,15 @@ test("Unset here and on Page 3: the page that followed follows back, and one Und
     await fromPaletteThenUndo(show);
 });
 
-test("the inspector names the pages, and a mixed selection takes back only the Set marchers", async ({
+test("the palette names the pages, and a mixed selection takes back only the Set marchers", async ({
     show,
 }) => {
     const { page } = show;
     await atPage2With(show, ["T2", "T3"]);
-    await expect(button(page)).toHaveText(
-        "Remove keyframe, Page 3 moves back too",
-    );
-    await button(page).click();
+    await searchUnset(page);
+    await page
+        .getByRole("option", { name: "Remove keyframe, Page 3 moves back too" })
+        .click();
     await expectFollowedBack(show);
     await undoRestores(show);
 });
@@ -171,9 +168,13 @@ test("it isn't offered when no later page follows the spot", async ({
     const { page } = show;
     // T1 moves again over page 3: nothing follows its spot on page 2's flag
     await atPage2With(show, ["T1"]);
-    await expect(page.getByTestId("timeline-unset-here")).toBeEnabled();
-    await expect(button(page)).toHaveCount(0);
     await searchUnset(page);
+    await expect(
+        page.getByRole("option", {
+            name: "Remove keyframe Timeline",
+            exact: true,
+        }),
+    ).not.toHaveAttribute("aria-disabled", "true");
     await expect(
         page.getByRole("option", {
             name: "Remove keyframe, later pages move back too",

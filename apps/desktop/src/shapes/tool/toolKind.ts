@@ -4,6 +4,7 @@ import type { ScrubMove } from "../editor/scrub";
 import type { ClosedShape } from "../distribute/region";
 import type { LayoutFamily } from "../distribute/distribution";
 import type { AnyShapeKind, Slot, XY } from "../types";
+import type { ShapeGuide } from "../field/shapeGuides";
 
 /** The roles a kind's own drag reads beyond fine, which every shape drag reads */
 export type KindHonors = Pick<HonoredRoles, "constrain" | "fromCenter">;
@@ -60,6 +61,8 @@ export interface ToolEnv {
     readonly pivotSnaps?: () => readonly XY[];
     /** The box's ratio lock: changing one spacing changes the other in proportion */
     readonly ratioLocked?: boolean;
+    /** An Arc's lock: changing its width changes its depth in proportion, and back (#634) */
+    readonly sizesLocked?: boolean;
     /**
      * Where the pivot was, on the field, when a run of size presses began (the chip's − and +):
      * each press grows from there rather than from the last one's rounding, so the shape doesn't
@@ -108,6 +111,23 @@ export interface ToolHandle {
     readonly bar?: XY;
 }
 
+/**
+ * A circle or ellipse a shape is drawn on ({@link ToolKind.construction}), in field units:
+ * `rotation` (radians) the way its `rx` axis points
+ */
+export interface ConstructionCircle {
+    readonly center: XY;
+    readonly rx: number;
+    readonly ry: number;
+    readonly rotation: number;
+    /**
+     * Points its angle lines run through from its center and on past, when they're shown (the
+     * editor's Guides menu): an Arc's ends, so the angle it turns reads at a glance (owner on
+     * #634). None when absent.
+     */
+    readonly spokes?: readonly XY[];
+}
+
 /** A parameter's direction mark: ↔ across, ↕ deep */
 export type ParamGlyph = "↔" | "↕";
 
@@ -118,7 +138,7 @@ export type ParamGlyph = "↔" | "↕";
  * `n` is the spot count, which the host gives; a kind never reads the selection.
  */
 export interface ToolParam<P> {
-    /** Stable for the kind: the command bar and saved shapes name the parameter by it */
+    /** Stable for the kind: the command bar names the parameter by it */
     readonly key: string;
     /**
      * Shown as about so much ("≈1.83"): worked out from the shape rather than set, off the half
@@ -135,9 +155,9 @@ export interface ToolParam<P> {
     readonly label: string;
     /**
      * Counts are whole numbers; steps and degrees are typed and shown as such; a choice is typed
-     * by name (the host's mode step)
+     * by name (the host's mode step); a ratio is so many times (an Arc's stretch, "1.3×")
      */
-    readonly unit: "count" | "steps" | "degrees" | "choice";
+    readonly unit: "count" | "steps" | "degrees" | "choice" | "ratio";
     /** Shown in the floating chip */
     readonly primary: boolean;
     /** Which way a drag changes it: right for more, up for more, or the first way moved */
@@ -174,19 +194,31 @@ export interface ToolParam<P> {
     /** The number as shown: "6 × 2", "2" */
     display(params: P, n: number, stepPx: number): string;
     /**
-     * The number in `unit`. Intervals declare it: a saved shape keeps its intervals by it (#353)
-     * and sets them back through {@link set}.
+     * The number in `unit`. Intervals declare it, and are set back through {@link set}.
      */
     value?(params: P, n: number, stepPx: number): number;
     /** A note after the number, such as "1 short"; null for none */
     note?(params: P, n: number): string | null;
+    /**
+     * Words just before and after the number, muted, so a few numbers read as one phrase: an
+     * Arc's "Circle 60 × 60 steps" (owner on #634). None when absent or null.
+     */
+    words?(
+        params: P,
+        n: number,
+    ): { readonly before?: string; readonly after?: string } | null;
+    /**
+     * The kind's ratio lock ({@link ToolKind.ratioLock}) sits just after this number, for a kind
+     * whose proportioned sizes aren't intervals: an Arc's "Circle 60 × 60 steps 🔒" (owner on
+     * #634)
+     */
+    readonly ratioLockAfter?: boolean;
     /** The params with `text` typed over the number; null when the text isn't understood */
     type(params: P, n: number, text: string, env: ToolEnv): P | null;
     /**
      * The params with the number set to `value`, in `unit`, as typing it would but without going
      * through its text, so a value the chip shows rounded (1.13 for 1⅛) comes back exact (#423).
-     * Saved shapes and the command bar's starting numbers use it; without it they type the value
-     * as shown.
+     * The command bar's starting numbers use it; without it they type the value as shown.
      */
     set?(params: P, n: number, value: number, env: ToolEnv): P | null;
     /** The params with the number dragged by `move` from `base`, the params at the press */
@@ -578,6 +610,16 @@ export interface ToolKind<P> {
     outline?(params: P, n: number): readonly XY[];
     /** Whether the outline is open, drawn without joining its last point to its first (a line) */
     outlineOpen?(params: P, n: number): boolean;
+    /**
+     * Circles or ellipses the shape is drawn on, shown as quiet solid lines while it's edited: an
+     * Arc's whole circle (owner on #634). None when absent.
+     */
+    construction?(params: P, n: number): readonly ConstructionCircle[];
+    /**
+     * The guides the editor's Guides menu shows or hides for this kind's construction (owner on
+     * #634): the circle, and its angle lines. No menu when absent.
+     */
+    readonly guides?: readonly ShapeGuide[];
     /**
      * The points pulled onto the field's lines while the shape is moved (#446): a box's corners,
      * then its center. None when absent, so the shape moves on the grid alone.

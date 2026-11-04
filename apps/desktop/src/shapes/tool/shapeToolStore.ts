@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import type { CanvasEditPlan } from "@/timeline/timelineCoordinateWrites";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { isVisualsView, useIsVisualsView } from "@/stores/WorkspaceViewStore";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import type { ToolState } from "./toolMachine";
 import { isAwayFrom, momentOf, type ShapeMoment } from "./shapeMoment";
@@ -95,14 +94,13 @@ export function useShapeAway(): boolean {
 
 /**
  * Whether a shape is open but waiting out of sight (#416): away from its moment, while the show
- * plays, or in Visuals or Preview. Nothing acts on it then; it shows again once that ends.
+ * plays, or in Preview. Nothing acts on it then; it shows again once that ends.
  */
 export function isShapeHidden(): boolean {
     if (!useShapeToolStore.getState().tool) return false;
     return (
         isShapeAway() ||
         useTimelineSelectionStore.getState().playback !== null ||
-        isVisualsView() ||
         usePreviewModeStore.getState().isPreview
     );
 }
@@ -112,7 +110,6 @@ export function useShapeHidden(): boolean {
     const open = useShapeToolStore((s) => s.tool !== null);
     const away = useShapeAway();
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
-    const visuals = useIsVisualsView();
     const preview = usePreviewModeStore((s) => s.isPreview);
-    return open && (away || playing || visuals || preview);
+    return open && (away || playing || preview);
 }

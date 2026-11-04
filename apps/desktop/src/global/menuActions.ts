@@ -20,6 +20,8 @@ export interface MenuAction {
      * keyboard handler owns the key, so text fields keep Space and letters
      */
     readonly accelerator: string;
+    /** Left out of the menu in Basic mode, where the action's handler is off (UI-19) */
+    readonly expertOnly?: true;
 }
 
 export const PLAYBACK_MENU_ACTIONS: readonly MenuAction[] = [
@@ -37,11 +39,13 @@ export const PLAYBACK_MENU_ACTIONS: readonly MenuAction[] = [
         action: "playOn",
         labelKey: "menu.playback.playOn",
         accelerator: "Alt+Space",
+        expertOnly: true,
     },
     {
         action: "toggleLoop",
         labelKey: "menu.playback.toggleLoop",
         accelerator: "C",
+        expertOnly: true,
     },
 ];
 

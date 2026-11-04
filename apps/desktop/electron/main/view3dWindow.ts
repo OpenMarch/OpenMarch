@@ -14,12 +14,9 @@ import { BrowserWindow, ipcMain, shell } from "electron";
 import { basename, extname } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { isReadOnlySql, isView3dSqlReadMethod } from "./view3dSql";
-import { createCameraProfileHandlers } from "./view3dCameraProfiles";
 import { t } from "./i18n";
-import type { LibraryStore } from "./library/store";
 import {
     VIEW3D_AUTO_OPEN_CHANNELS,
-    VIEW3D_CAMERA_PROFILE_CHANNELS,
     VIEW3D_HELLO_CHANNEL,
     VIEW3D_IS_OPEN_CHANNEL,
     VIEW3D_PLAYBACK_REQUEST_CHANNEL,
@@ -42,8 +39,6 @@ export interface View3dWindowConfig {
     getLanguage: () => string;
     /** The editor window, which publishes to and answers the 3D View. */
     getEditorWindow: () => BrowserWindow | null;
-    /** The Library, for the window's camera profile calls only (D-12). */
-    getLibraryStore: () => Promise<LibraryStore>;
     /**
      * The "open with the show" setting, for the window's question: undefined while never answered,
      * null where the window shouldn't ask (Playwright sessions).
@@ -167,32 +162,6 @@ export function initView3dWindow(windowConfig: View3dWindowConfig) {
             );
         return DatabaseServices.handleSqlReadBatch(queries);
     });
-
-    // Window → main: this computer's camera profiles, the only Library
-    // calls the window can make.
-    const profiles = createCameraProfileHandlers(() =>
-        windowConfig.getLibraryStore(),
-    );
-    const onlyView3d =
-        <A extends unknown[], R>(channel: string, fn: (...args: A) => R) =>
-        (event: Electron.IpcMainInvokeEvent, ...args: A): R => {
-            if (!isView3dSender(event.sender))
-                throw new Error(`${channel} is only available to the 3D View`);
-            return fn(...args);
-        };
-    const C = VIEW3D_CAMERA_PROFILE_CHANNELS;
-    ipcMain.handle(
-        C.list,
-        onlyView3d(C.list, () => profiles.list()),
-    );
-    ipcMain.handle(
-        C.save,
-        onlyView3d(C.save, (payload: unknown) => profiles.save(payload)),
-    );
-    ipcMain.handle(
-        C.remove,
-        onlyView3d(C.remove, (payload: unknown) => profiles.remove(payload)),
-    );
 
     // Editor → window: clock, selection and invalidate, relayed as they are.
     for (const channel of VIEW3D_PUBLISH_CHANNELS) {
