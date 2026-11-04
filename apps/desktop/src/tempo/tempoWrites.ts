@@ -46,6 +46,34 @@ export interface MeasureRef {
     start: number;
 }
 
+/** Counts in a measure tempo mode shows in a show with no measures stored (4/4 from count 1) */
+export const DEFAULT_MEASURE_COUNTS = 4;
+
+/**
+ * In a show with no measures stored, store the 4/4 measures tempo mode shows (from count 1, over
+ * the stored counts), so a count or measure edit changes what was on screen. Does nothing when
+ * any measure is stored.
+ */
+export async function ensureMeasuresInTransaction(
+    tx: DbTransaction,
+): Promise<void> {
+    const any = await tx
+        .select({ id: schema.measures.id })
+        .from(schema.measures)
+        .limit(1)
+        .get();
+    if (any) return;
+    const ids = await beatIdsInTransaction(tx);
+    const newItems = [];
+    for (let s = 1; s < ids.length; s += DEFAULT_MEASURE_COUNTS)
+        newItems.push({
+            start_beat: ids[s]!,
+            rehearsal_mark: null,
+            notes: null,
+        });
+    if (newItems.length) await createMeasuresInTransaction({ tx, newItems });
+}
+
 /**
  * The stored id of `measure`. One past the stored counts has the counts up to it stored first, in
  * the same edit; they continue the show's last measure, so a measure starts where it was drawn.
@@ -56,6 +84,7 @@ async function measureIdInTransaction(
 ): Promise<number> {
     if (measure.id !== null) return measure.id;
     await ensureCountsInTransaction({ tx, through: measure.start + 1 });
+    await ensureMeasuresInTransaction(tx);
     const beatId = (await beatIdsInTransaction(tx))[measure.start];
     const row =
         beatId === undefined
@@ -482,6 +511,7 @@ export async function insertCounts({
 }): Promise<CountEditResult> {
     return await transactionWithHistory(db, "tempoInsertCounts", async (tx) => {
         await ensureCountsInTransaction({ tx, through: at });
+        await ensureMeasuresInTransaction(tx);
         // A count added right after a move's last count lengthens it too (the page before a page
         // boundary takes the count), so with `keep` that move holds as well
         const around = await movesAround(tx, at, { orEnding: true });
@@ -905,6 +935,7 @@ export async function deleteCounts({
 }): Promise<CountEditResult> {
     return await transactionWithHistory(db, "tempoDeleteCounts", async (tx) => {
         await ensureCountsInTransaction({ tx, through: to + 1 });
+        await ensureMeasuresInTransaction(tx);
         const hidden = await hiddenSetsIn(tx, from, to);
         if (hidden.length && (!endEarly || hidden.some((h) => h.counts < 2)))
             throw new HiddenSetError(hidden);

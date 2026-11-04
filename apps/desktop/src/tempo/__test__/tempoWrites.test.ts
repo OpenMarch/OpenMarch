@@ -5,6 +5,7 @@ import {
     deleteCounts,
     endMovesEarly,
     insertCounts,
+    setRehearsalMark,
     writeDurations,
     writeMarks,
 } from "../tempoWrites";
@@ -334,5 +335,63 @@ describeDbTests("removing a whole measure", (it) => {
         });
         expect(result.cues?.moved).toHaveLength(1);
         expect(result.cues?.moved[0]!.toBeatId).toBe(rows[21]!.id);
+    });
+});
+
+describeDbTests("a show with no measures stored", (it) => {
+    const measureStarts = async (db: DbConnection) => {
+        const beats = await db
+            .select()
+            .from(schema.beats)
+            .orderBy(asc(schema.beats.position))
+            .all();
+        const ordinal = new Map(beats.map((b, i) => [b.id, i]));
+        return (await db.select().from(schema.measures).all())
+            .map((m) => ({
+                start: ordinal.get(m.start_beat)!,
+                mark: m.rehearsal_mark,
+            }))
+            .sort((a, b) => a.start - b.start);
+    };
+
+    it("stores the 4/4 measures tempo mode shows on the first measure edit, in its undo step", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await db.delete(schema.measures).run();
+        const beatCount = (await db.select().from(schema.beats).all()).length;
+        await setRehearsalMark({ measure: { id: null, start: 5 }, mark: "A" });
+        const stored = await measureStarts(db);
+        expect(stored.map((m) => m.start)).toEqual(
+            Array.from(
+                { length: Math.ceil((beatCount - 1) / 4) },
+                (_, i) => 1 + i * 4,
+            ),
+        );
+        expect(stored.filter((m) => m.mark)).toEqual([{ start: 5, mark: "A" }]);
+        await performUndo(db);
+        expect(await measureStarts(db)).toEqual([]);
+    });
+
+    it("stores them before a count edit, so the measures move with the counts", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        await db.delete(schema.measures).run();
+        await insertCounts({ at: 3, count: 1, duration: 0.5, drill: "adjust" });
+        const starts = (await measureStarts(db)).map((m) => m.start);
+        // m. 1 is 5 counts now; the measures after start a count later
+        expect(starts.slice(0, 3)).toEqual([1, 6, 10]);
+        await performUndo(db);
+        expect(await measureStarts(db)).toEqual([]);
+    });
+
+    it("leaves a show with measures alone", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const before = await measureStarts(db);
+        await writeDurations({ before: [0, 0.5], after: [0, 0.5] });
+        expect(await measureStarts(db)).toEqual(before);
     });
 });

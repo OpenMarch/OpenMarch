@@ -89,3 +89,14 @@ export function seedShowSql(show: SeedShow): string[] {
     sql.push("DELETE FROM timeline_change_log");
     return sql;
 }
+
+/**
+ * A show of `measures` measures of 4 counts at ♩ = 120, page 0 only and no marchers: what the
+ * Music sidebar's tempo groups made before tempo mode took timing over.
+ */
+export const fourFourShowSql = (measures: number): string[] =>
+    seedShowSql({
+        beats: measures * 4,
+        measureStarts: Array.from({ length: measures }, (_, i) => 1 + i * 4),
+        pageStarts: [],
+    });

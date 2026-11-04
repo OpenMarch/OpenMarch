@@ -1,7 +1,7 @@
 // cspell:ignore priya
 /**
  * Tempo mode: tempo mode's header row: Tap tempo, the
- * metronome, help and Done.
+ * metronome, Import MusicXML, help and Done.
  */
 import clsx from "clsx";
 import { CheckIcon, GaugeIcon, MetronomeIcon } from "@phosphor-icons/react";
@@ -14,6 +14,7 @@ import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
 import { TempoHelp } from "./TempoHelp";
+import { TempoImportScore } from "./TempoImportScore";
 
 /** A tool button in tempo mode's header, lit when `on` (its colors are either/or, not overrides) */
 export const toolButton = (on = false, iconOnly = false) =>
@@ -94,6 +95,7 @@ export function TempoToolbar(props: {
                     </button>
                 </ShortcutTooltip>
                 <span className="min-w-0 flex-1" aria-hidden />
+                <TempoImportScore />
                 <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress

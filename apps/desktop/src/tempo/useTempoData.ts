@@ -7,7 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { type TempoEditResult } from "./tempoMath";
-import { writeMarks, writeDurations } from "./tempoWrites";
+import {
+    DEFAULT_MEASURE_COUNTS,
+    writeMarks,
+    writeDurations,
+} from "./tempoWrites";
 import { useAudioOffsetSeconds } from "./audioOffset";
 
 /** The toast a tempo edit's note goes in (one at a time; undo and leaving the mode clear it) */
@@ -99,10 +103,22 @@ export function useTempoData(beatCount: number): TempoData {
             meter: (m as { meter?: string | null }).meter ?? null,
             grouping: (m as { grouping?: string | null }).grouping ?? null,
         }));
+        // A show with no measures stored shows 4/4 from count 1; the first count or measure edit
+        // stores them (ensureMeasuresInTransaction)
+        if (ms.length === 0)
+            for (let s = 1, number = 1; s < n; s += DEFAULT_MEASURE_COUNTS)
+                ms.push({
+                    start: s,
+                    number: number++,
+                    mark: null,
+                    counts: DEFAULT_MEASURE_COUNTS,
+                    id: null,
+                    overridden: false,
+                });
         // The endless measures: where the timeline's count grid puts downbeats past the stored
         // counts (a short last measure is finished first, then its meter carries on)
         const last = ms[ms.length - 1];
-        if (last) {
+        if (last && last.id !== null) {
             const storedEnd = beats.length;
             // the last stored measure runs on to the grid's next downbeat
             let b = storedEnd;

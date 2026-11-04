@@ -1,21 +1,15 @@
 import { test, expect, type Show } from "../fixtures.mjs";
-import {
-    addPageAt,
-    createMarchers,
-    createTempoGroup,
-    expectCanvasMatchesShow,
-} from "../app.mjs";
+import { addPageAt, createMarchers, expectCanvasMatchesShow } from "../app.mjs";
+import { fourFourShowSql } from "../seed.mjs";
 import { savedPositions } from "../positions.mjs";
+
+// 12 measures of 4/4 to add pages on
+test.use({ seedSql: fourFourShowSql(12) });
 
 test("adds a page that starts where the marchers already are", async ({
     show,
 }) => {
     const { page } = show;
-    await createTempoGroup(page, {
-        tempo: 120,
-        beatsPerMeasure: 4,
-        measures: 8,
-    });
     await createMarchers(page, { quantity: 4, section: "Baritone" });
 
     await addPageAt(page, 5);
@@ -46,11 +40,6 @@ test.describe("page shortcuts", () => {
 
     const setUp = async (show: Show) => {
         const { page } = show;
-        await createTempoGroup(page, {
-            tempo: 120,
-            beatsPerMeasure: 4,
-            measures: 12,
-        });
         await createMarchers(page, { quantity: 2, section: "Baritone" });
         await addPageAt(page, 3);
         await expect(
@@ -103,14 +92,9 @@ test.describe("page shortcuts", () => {
 
 test("the pages row's text keeps page names apart", async ({ show }) => {
     const { page } = show;
-    await createTempoGroup(page, {
-        tempo: 120,
-        beatsPerMeasure: 4,
-        measures: 12,
-    });
-    await addPage(page);
+    await addPageAt(page, 3);
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
-    await addPage(page);
+    await addPageAt(page, 5);
     await expect(page.getByRole("heading", { name: "Page 2" })).toBeVisible();
     // The Electron suite reads the last page's name from this text (e.g.
     // "0 1 2", never "012"): the resize handles separate the names
@@ -122,13 +106,8 @@ test("choosing where to place all marchers closes the menu", async ({
     show,
 }) => {
     const { page } = show;
-    await createTempoGroup(page, {
-        tempo: 120,
-        beatsPerMeasure: 4,
-        measures: 8,
-    });
     await createMarchers(page, { quantity: 2, section: "Baritone" });
-    await addPage(page);
+    await addPageAt(page, 3);
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Alignment" }).click();

@@ -121,35 +121,6 @@ export async function createMarchers(
         .toBe(before + quantity);
 }
 
-/** Adds a tempo group through the Music sidebar, then closes the sidebar. */
-export async function createTempoGroup(
-    page: Page,
-    {
-        name,
-        tempo,
-        beatsPerMeasure,
-        measures,
-    }: {
-        name?: string;
-        tempo: number;
-        beatsPerMeasure: number;
-        measures: number;
-    },
-) {
-    await page.locator("#sidebar-launcher-music").click();
-    const form = page.locator("form").filter({ hasText: "Start Tempo" });
-    // The form is already open in a show with no music; otherwise it's behind a button.
-    const addGroup = page.getByRole("button", { name: "Add New Group" });
-    await expect(form.or(addGroup)).toBeVisible();
-    if (await addGroup.isVisible()) await addGroup.click();
-    if (name) await form.locator("#name-input").fill(name);
-    await form.locator("#start-tempo-input").fill(`${tempo}`);
-    await form.locator("#bpm-input").fill(`${beatsPerMeasure}`);
-    await form.locator("#repeats-input").fill(`${measures}`);
-    await form.getByRole("button", { name: "Create" }).click();
-    await page.locator("#sidebar-launcher-music").click();
-}
-
 /**
  * Waits until every marcher is drawn where the show file says it is at the
  * end of the selected page (`savedPositions`). Call it after any step that

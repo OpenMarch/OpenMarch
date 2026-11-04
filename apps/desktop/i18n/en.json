@@ -1808,6 +1808,7 @@
         "importing": "Importing...",
         "importLabel": "MusicXML Import",
         "importSuccess": "MusicXML file: \"{fileName}\" imported successfully!",
+        "openTempoMode": "Open tempo mode",
         "repeatPlayNote": "m{label}, time {time}",
         "importChecksTitle": "Check these in the score",
         "importChecksIntro": "{fileName} was imported. The importer guessed or couldn't read these, so the counts may not match the music here:",
@@ -1842,6 +1843,7 @@
         "tempoGroupNamePlaceholder": "Optional",
         "tempoGroups": "Tempo Groups",
         "tempoGroupUpdated": "Tempo group updated",
+        "timingInTempoMode": "Tempos, time signatures, measures, rehearsal marks and MusicXML import are in tempo mode, next to the music.",
         "undoWithShortcut": "This action is undoable with <keys></keys>",
         "timeSignature": "Time signature: {timeSignature}",
         "title": "Music",
@@ -4554,6 +4556,14 @@
                 "gesture": "Right-click the music",
                 "effect": "Start the music here: puts that spot on count 1"
             }
+        },
+        "importScore": {
+            "button": "Import MusicXML…",
+            "choose": "Choose a file…",
+            "hint": "Take the tempos, time signatures, measures and rehearsal marks from a score",
+            "keeps": "Pages, drill, cues and props stay on their counts, so they play at the score's tempos. Undo puts it all back.",
+            "replaces": "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed in tempo mode.",
+            "title": "Use a score's timing?"
         },
         "lanes": {
             "marks": {

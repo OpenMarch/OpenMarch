@@ -1,32 +1,11 @@
 import AudioSelector from "./AudioSelector";
-import {
-    tempoSettingsKey,
-    useAudioOffsetSeconds,
-    writeAudioOffset,
-} from "@/tempo/audioOffset";
-import MusicXmlSelector from "./MusicXmlSelector";
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
-import { BooksIcon, XIcon } from "@phosphor-icons/react";
+import { GaugeIcon, MusicNotesIcon, XIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import {
-    getLastBeatOfTempoGroup,
-    TempoGroupsFromMeasures,
-} from "@/components/music/TempoGroup/TempoGroup";
-import { Button, UnitInput } from "@openmarch/ui";
-import React, {
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    useCallback,
-} from "react";
-import { useTimingObjects } from "@/hooks";
-import TempoGroupCard from "./TempoGroup/TempoGroupCard";
-import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
-import { MusicNotesIcon } from "@phosphor-icons/react";
-import { T, useTolgee, useTranslate } from "@tolgee/react";
-import { useQueryClient } from "@tanstack/react-query";
-import { StaticFormField } from "../ui/FormField";
+import { Button } from "@openmarch/ui";
+import React from "react";
+import { T, useTranslate } from "@tolgee/react";
+import { useTempoModeStore } from "@/tempo/tempoModeStore";
 
 export default function MusicModal({
     label = <MusicNotesIcon size={24} />,
@@ -49,46 +28,11 @@ export default function MusicModal({
 
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const { measures } = useTimingObjects();
-    const [newGroupFormIndex, setNewGroupFormIndex] = React.useState<
-        number | null
-    >(null);
-    const [newGroupFormHidden, setNewGroupFormHidden] = React.useState(
-        measures.length > 0,
-    );
-    // The groups carry translated range text ("m 1-4"), so rebuild them when the
-    // app language changes.
-    const language = useTolgee(["language"]).getLanguage();
-    const tempoGroups = useMemo(
-        () => TempoGroupsFromMeasures(measures),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [measures, language],
-    );
-
-    const newFormRef = useRef<HTMLDivElement>(null);
     const { t } = useTranslate();
-
-    const scrollToBottom = () => {
-        newFormRef.current?.scrollIntoView({ behavior: "smooth" });
+    const openTempoMode = () => {
+        toggleOpen();
+        useTempoModeStore.getState().setOn(true);
     };
-
-    useEffect(() => {
-        if (newGroupFormIndex !== null) {
-            setNewGroupFormHidden(true);
-        }
-    }, [newGroupFormIndex]);
-
-    useEffect(() => {
-        if (!newGroupFormHidden) {
-            setNewGroupFormIndex(null);
-        }
-    }, [newGroupFormHidden]);
-
-    useEffect(() => {
-        if (!measures.length) {
-            setNewGroupFormHidden(false);
-        }
-    }, [measures]);
 
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
@@ -106,149 +50,25 @@ function MusicModalContents() {
             </header>
 
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
-                <div className="flex flex-col gap-16">
-                    <AudioSelector />
-                    <AudioOffsetInput />
-                </div>
-                <div className="flex items-center gap-8">
-                    <h4 className="text-h4 leading-none">
-                        <T keyName="music.tempoGroups" />
-                    </h4>
-                    <a
-                        href="https://openmarch.com/guides/music/tempo"
-                        target="_blank"
-                        rel="noreferrer"
+                <AudioSelector />
+                {/* Timing lives in tempo mode, next to the music it lines up with: tempos, time
+                    signatures, measures, rehearsal marks, MusicXML import and the music's start */}
+                <div className="rounded-6 border-stroke bg-fg-1 mx-12 flex flex-col gap-8 border p-12">
+                    <p className="text-body text-text/80">
+                        {t("music.timingInTempoMode")}
+                    </p>
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        className="w-fit"
+                        onClick={openTempoMode}
+                        data-testid="music-open-tempo-mode"
                     >
-                        <Button
-                            size={"compact"}
-                            variant="secondary"
-                            className="w-fit min-w-fit whitespace-nowrap"
-                        >
-                            <BooksIcon size={22} />
-                            <T keyName="music.seeDocs" />
-                        </Button>
-                    </a>
-                </div>
-                <div className="flex flex-col gap-16">
-                    <MusicXmlSelector />
-                </div>
-                <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
-                    {tempoGroups.map((tempoGroup, i) => (
-                        <div
-                            key={tempoGroup.measures?.[0]?.id ?? i}
-                            className="flex flex-col gap-8"
-                        >
-                            <TempoGroupCard
-                                tempoGroup={tempoGroup}
-                                index={i}
-                                setNewGroupFormIndex={setNewGroupFormIndex}
-                            />
-                            {newGroupFormIndex === i && (
-                                <NewTempoGroupForm
-                                    startingPosition={
-                                        getLastBeatOfTempoGroup(tempoGroup)
-                                            ?.position ?? undefined
-                                    }
-                                    setSelfHidden={() =>
-                                        setNewGroupFormIndex(null)
-                                    }
-                                />
-                            )}
-                        </div>
-                    ))}
-                    <div className="flex flex-col">
-                        <div
-                            className="flex justify-end py-8"
-                            hidden={measures.length === 0}
-                        >
-                            <Button
-                                variant="secondary"
-                                onClick={() =>
-                                    setNewGroupFormHidden(!newGroupFormHidden)
-                                }
-                            >
-                                {newGroupFormHidden
-                                    ? t("music.addTempoGroup")
-                                    : t("music.cancel")}
-                            </Button>
-                        </div>
-                        <div ref={newFormRef}>
-                            {!newGroupFormHidden && (
-                                <NewTempoGroupForm
-                                    scrollFunc={scrollToBottom}
-                                />
-                            )}
-                        </div>
-                    </div>
+                        <GaugeIcon size={18} aria-hidden />
+                        {t("music.openTempoMode")}
+                    </Button>
                 </div>
             </div>
         </div>
-    );
-}
-
-function AudioOffsetInput() {
-    const queryClient = useQueryClient();
-    const { t } = useTranslate();
-    const [audioOffsetValue, setAudioOffsetValue] = useState("");
-    // Tempo mode: the offset lives in the show's history (tempo/audioOffset.ts)
-    const effectiveOffset = useAudioOffsetSeconds();
-
-    // Update local state when the offset changes
-    useEffect(() => {
-        setAudioOffsetValue(effectiveOffset.toString());
-    }, [effectiveOffset]);
-
-    const handleBlur = useCallback(
-        (e: React.FocusEvent<HTMLInputElement>) => {
-            e.preventDefault();
-            const parsedValue = parseFloat(e.target.value);
-
-            const next = !isNaN(parsedValue)
-                ? parsedValue
-                : e.target.value === ""
-                  ? 0
-                  : null;
-            if (next !== null && next !== effectiveOffset)
-                void writeAudioOffset(next).then(() =>
-                    queryClient.invalidateQueries({
-                        queryKey: tempoSettingsKey,
-                    }),
-                );
-        },
-        [effectiveOffset, queryClient],
-    );
-
-    const handleChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            // Filter input to allow negative numbers and decimals
-            const filtered = e.target.value.replace(/[^-0-9.]/g, "");
-            setAudioOffsetValue(filtered);
-        },
-        [],
-    );
-
-    const blurOnEnter = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter") {
-                e.currentTarget.blur();
-            }
-        },
-        [],
-    );
-
-    return (
-        <StaticFormField label={t("workspaceSettings.audioOffsetSeconds")}>
-            <UnitInput
-                type="text"
-                inputMode="numeric"
-                pattern="-?[0-9]*.?[0-9]*"
-                containerClassName="col-span-6 self-center"
-                unit={t("workspaceSettings.units.seconds")}
-                onBlur={handleBlur}
-                onChange={handleChange}
-                onKeyDown={blurOnEnter}
-                value={audioOffsetValue}
-            />
-        </StaticFormField>
     );
 }

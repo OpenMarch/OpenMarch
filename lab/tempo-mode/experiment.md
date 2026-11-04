@@ -12,6 +12,7 @@ questions:
   - "Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?"
   - "When you added or removed counts or a measure, did the result match what you expected?"
   - "Could you set the tempo before writing any pages, or past your last page?"
+  - "If you tried Import MusicXML: did the counts, measures and marks match your score? Was anything missing from the Music button that you used to use there?"
   - "Did Undo always put back what you expected?"
 ---
 
@@ -44,8 +45,12 @@ your own music to a show.
   Double-click a measure number to renumber it, or a mark to rename it, and
   drag a mark to move it. Press M while playing to drop a mark.
 - Tempo editing works past your last page too, so you can set the tempo
-  before writing any pages. Measure edits there need a show that has
-  measures (the Part 1 demo does).
+  before writing any pages. A show with no measures shows 4/4 from count 1.
+- Click **Import MusicXML…** to take the tempos, time signatures, measures
+  and rehearsal marks from a score. It says what it replaces first; your
+  pages and drill stay on their counts, and Undo puts it all back.
+- The Music button in the sidebar now holds only the music file, with a
+  button that opens tempo mode.
 
 **Good to know**
 
