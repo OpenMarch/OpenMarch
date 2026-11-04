@@ -2,7 +2,7 @@
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
 id: tempo-mode
-title: Edit your music: add it and line the counts up with it
+title: "Edit your music: add it and line the counts up with it"
 summary: An Edit music button opens music lanes in the timeline. Add or switch the music file there, set the tempo by typing it or dragging the tempo line, add gradual changes and holds, set time signatures like 7/8, renumber measures and add rehearsal marks, before or after your pages.
 status: open
 questions:

@@ -7,8 +7,13 @@ const otherFile = expectedAudioFiles[0]!;
 
 /** The music file is picked on the Music lane, in Edit music */
 async function openMusicMenu(page: Page) {
-    if (!(await page.getByTestId("tempo-music-file").isVisible()))
-        await page.getByTestId("timeline-tempo-mode").click();
+    if (!(await page.getByTestId("tempo-music-file").isVisible())) {
+        // A narrow window folds the transport's view controls into "More controls"
+        const button = page.getByTestId("timeline-tempo-mode");
+        if (!(await button.isVisible()))
+            await page.getByRole("button", { name: "More controls" }).click();
+        await button.click();
+    }
     await page.getByTestId("tempo-music-file").click();
     return page.getByTestId("tempo-music-menu");
 }
