@@ -18,7 +18,6 @@ import {
     deleteMarcherTagsMutationOptions,
     updateTagsMutationOptions,
     deleteTagsMutationOptions,
-    allCuesQueryOptions,
 } from "@/hooks/queries";
 import { useTranslate } from "@tolgee/react";
 import { DatabaseTag, NewMarcherTagArgs } from "@/db-functions";
@@ -109,15 +108,6 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
         deleteTagsMutationOptions(queryClient),
     );
     const { t } = useTranslate();
-    // Deleting the tag deletes the cues that target it (ADR 0004 D-1)
-    const { data: cues } = useQuery(allCuesQueryOptions());
-    const cuesOnTag = useMemo(
-        () =>
-            (cues ?? []).filter(
-                (c) => c.target.kind === "tag" && c.target.tagId === tag.id,
-            ).length,
-        [cues, tag.id],
-    );
 
     useEffect(() => {
         if (isRenaming && renameInputRef.current) {
@@ -253,16 +243,6 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                                 {t("tags.delete")}
                                 <TrashIcon size={16} />
                             </div>
-                            {cuesOnTag > 0 && (
-                                <p
-                                    className="text-text-subtitle max-w-[220px] text-xs"
-                                    data-testid="tag-delete-cues-line"
-                                >
-                                    {t("tags.deleteRemovesCues", {
-                                        count: cuesOnTag,
-                                    })}
-                                </p>
-                            )}
                         </>
                     )}
                 </Popover.Content>

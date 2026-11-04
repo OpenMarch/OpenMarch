@@ -19,8 +19,6 @@ type Db = DbConnection | DbTransaction;
 
 /** One reference to a Library item, and what holds it. */
 export type LibraryReference =
-    /** A Carry, Silk or Uniform cue's value (ADR 0004) */
-    | { source: "cues"; itemId: string; versionHash: string; cueId: number }
     /** The show's floor, named in the field properties (D-23) */
     | { source: "floor"; itemId: string; versionHash: string }
     /** An item's model (C2.1) */
@@ -29,14 +27,6 @@ export type LibraryReference =
           itemId: string;
           versionHash: string;
           marcherId: number;
-      }
-    /** An Artwork slot assignment on an item (C2.4), dormant ones included */
-    | {
-          source: "itemArtworkSlots";
-          itemId: string;
-          versionHash: string;
-          marcherId: number;
-          slot: string;
       }
     /**
      * An undo or redo row: undoing an old edit must find the item it used. Any Version of the
@@ -56,38 +46,13 @@ export async function hasTable(db: Db, name: string): Promise<boolean> {
     return !!found?.n;
 }
 
-/** A cue value naming a Library item: `library:<item id>@<version hash>` (ADR 0004). */
-const LIBRARY_CUE_VALUE = /^library:([^@]+)@(.+)$/;
-
-async function cueReferences(db: Db): Promise<LibraryReference[]> {
-    // A page-era file that hasn't converted has no cue table
-    if (!(await hasTable(db, "cues"))) return [];
-    const rows = await db
-        .select({ id: schema.cues.id, value: schema.cues.value })
-        .from(schema.cues)
-        .where(sql`${schema.cues.value} LIKE 'library:%'`)
-        .all();
-    const refs: LibraryReference[] = [];
-    for (const { id, value } of rows) {
-        const match = LIBRARY_CUE_VALUE.exec(value);
-        if (match)
-            refs.push({
-                source: "cues",
-                itemId: match[1]!,
-                versionHash: match[2]!,
-                cueId: id,
-            });
-    }
-    return refs;
-}
-
 async function floorReferences(db: Db): Promise<LibraryReference[]> {
     const floor = await getFieldFloor({ db });
     return floor ? [{ source: "floor", ...floor }] : [];
 }
 
 /*
- * The Item tables (C2.1 `items`, C2.4 `item_artwork_slots`) come with the props packages. Read
+ * The Item table (C2.1 `items`) comes with the props packages. Read
  * by name, so a file or build without them names nothing here.
  */
 async function itemModelReferences(db: Db): Promise<LibraryReference[]> {
@@ -104,27 +69,6 @@ async function itemModelReferences(db: Db): Promise<LibraryReference[]> {
         )
         .all();
     return rows.map((r) => ({ source: "itemModels", ...r }));
-}
-
-async function itemArtworkSlotReferences(db: Db): Promise<LibraryReference[]> {
-    if (
-        !(await hasTable(db, "item_artwork_slots")) ||
-        !(await hasTable(db, "items"))
-    )
-        return [];
-    const rows = await db
-        .select({
-            marcherId: sql<number>`i.marcher_id`,
-            slot: sql<string>`s.slot`,
-            itemId: sql<string>`s.library_item_id`,
-            versionHash: sql<string>`s.library_version_hash`,
-        })
-        .from(sql`item_artwork_slots s JOIN items i ON i.id = s.item_id`)
-        .where(
-            sql`s.library_item_id IS NOT NULL AND s.library_version_hash IS NOT NULL`,
-        )
-        .all();
-    return rows.map((r) => ({ source: "itemArtworkSlots", ...r }));
 }
 
 async function historyReferences(db: Db): Promise<LibraryReference[]> {
@@ -152,13 +96,8 @@ export const LIBRARY_REFERENCE_SOURCES: Record<
     LibraryReferenceSource,
     { tables: readonly string[]; read: (db: Db) => Promise<LibraryReference[]> }
 > = {
-    cues: { tables: ["cues"], read: cueReferences },
     floor: { tables: ["field_properties"], read: floorReferences },
     itemModels: { tables: ["items"], read: itemModelReferences },
-    itemArtworkSlots: {
-        tables: ["item_artwork_slots"],
-        read: itemArtworkSlotReferences,
-    },
     history: {
         tables: ["history_undo", "history_redo"],
         read: historyReferences,

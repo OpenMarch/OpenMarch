@@ -1,4 +1,3 @@
-import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type { TimelineClipResizeCommands } from "./TimelineClipResize";
 import type {
@@ -323,7 +322,7 @@ export interface TimelineCommonProps
     /** The playback clock shown in the transport. The app passes its audio clock; stories pass none. */
     readonly transportClock?: ReactNode;
     /**
-     * A timeline that only navigates (Visuals mode, performer-behavior.md section 7.1): page
+     * A timeline that only navigates (Preview): page
      * boxes select and the ruler seeks, but nothing draws a range. The owner passes no editing
      * commands
      */
@@ -333,8 +332,6 @@ export interface TimelineCommonProps
      * so it shows even where nothing moves it by hand
      */
     readonly startFlagBeat?: number;
-    /** Lanes drawn where the clip rows go, under the waveform (Visuals mode's cue lanes) */
-    readonly band?: TimelineBand;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
     readonly className?: string;

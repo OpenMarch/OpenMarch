@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "Aucune action à rétablir",
             "noUndoAvailable": "Aucune action à annuler",
-            "redidCueEdit": "Modification d'un top rétablie (Visuels)",
-            "redidDrillEdit": "Modification du drill rétablie (Éditeur)",
             "redo": "Rétablir",
             "redoFailed": "Impossible de rétablir la modification : rien n'a changé.",
             "undo": "Annuler",
-            "undidCueEdit": "Modification d'un top annulée (Visuels)",
-            "undidDrillEdit": "Modification du drill annulée (Éditeur)",
             "undoFailed": "Impossible d'annuler la dernière modification : rien n'a changé."
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "Afficher les positions au repère de début",
             "toggleStartFlagPositions": "Afficher/masquer les positions au repère de début",
             "toggleStartFlagPositionsKeywords": "trajectoires précédentes points où étaient les marcheurs d’où venaient maintenir aperçu coup d’œil verrouiller previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "Changer d’espace de travail (Éditeur ou Visuels)",
-            "toggleWorkspaceKeywords": "visuels éditeur espace de travail tops mode visuals editor workspace cues",
             "showNextPaths": "Afficher les trajectoires de la page suivante",
             "toggleNextPaths": "Afficher/masquer les trajectoires de la page suivante",
             "togglePreview": "Prévisualiser le spectacle",
@@ -202,14 +196,7 @@
             "addToLibrary": "Ajouter à ma Bibliothèque",
             "delete": {
                 "addFirst": "Ajouter d’abord à ma Bibliothèque",
-                "alsoUsedByCues": "{count, plural, =1 {Un top l’utilise aussi :} other {# tops l’utilisent aussi :}}",
-                "useLine": "{channel} · {who} · temps {count}",
                 "cancel": "Annuler",
-                "channels": {
-                    "carry": "Objet porté",
-                    "silk": "Tissu",
-                    "uniform": "Uniforme"
-                },
                 "checking": "Recherche des utilisations…",
                 "confirm": "Votre Bibliothèque conserve sa propre copie. Cette action est irréversible.",
                 "confirmNoCopy": "Votre Bibliothèque n’en a pas de copie : l’élément sera définitivement perdu. Cette action est irréversible.",
@@ -220,22 +207,10 @@
                 "inUseTitle": "{name} est utilisé",
                 "isFloor": "C’est le sol de ce spectacle, il ne peut donc pas être supprimé. Changez le sol dans Paramètres du terrain → Image.",
                 "itemModel": "modèle",
-                "itemSlot": "illustration {slot}",
                 "keptForUndo": "{name} reste dans ce spectacle tant que la commande Annuler peut le récupérer, puis en est retiré à la fermeture du spectacle.",
                 "label": "Supprimer de ce spectacle",
-                "noReplacement": "Ce spectacle ne contient aucun autre élément de ce type pour le remplacer. Importez-en un d’abord.",
                 "pinnedBy": "Cet élément fait partie de {names}, il ne peut donc pas être supprimé.",
-                "replaceAndDelete": "Remplacer et supprimer",
-                "replaced": "{name} a été remplacé par {replacement}.",
-                "replacedKeptForUndo": "{name} a été remplacé par {replacement}. {name} reste dans ce spectacle tant que la commande Annuler peut le récupérer, puis en est retiré à la fermeture du spectacle.",
-                "replaceWith": "Remplacer par…",
-                "targets": {
-                    "band": "Orchestre",
-                    "set": "{count, plural, one {# marcheur} other {# marcheurs}}",
-                    "tag": "Une étiquette"
-                },
                 "title": "Supprimer {name} de ce spectacle ?",
-                "usedByCues": "{count, plural, =1 {Un top l’utilise. Remplacez-le pour pouvoir le supprimer :} other {# tops l’utilisent. Remplacez-le dans chacun d’eux pour pouvoir le supprimer :}}",
                 "usedByItems": "{count, plural, =1 {Un accessoire l’utilise, il ne peut donc pas être supprimé :} other {# accessoires l’utilisent, il ne peut donc pas être supprimé :}}"
             },
             "empty": "Ce spectacle n’utilise encore aucune ressource.",
@@ -356,7 +331,6 @@
     },
     "commandPalette": {
         "close": "Fermer",
-        "editsDrill": "Modifie le drill — passez à l'Éditeur",
         "empty": "Aucune commande ne correspond.",
         "navigate": "Naviguer",
         "placeholder": "Rechercher des commandes…",
@@ -440,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, one {# top déplacé à un temps ultérieur} other {# tops déplacés à des temps ultérieurs}}",
-            "movedTo": "{count, plural, one {# top déplacé au temps {at}} other {# tops déplacés au temps {at}}}",
-            "removed": "{count, plural, one {# top supprimé} other {# tops supprimés}}"
-        },
-        "errors": {
-            "create": "Erreur lors de la création des tops",
-            "delete": "Erreur lors de la suppression des tops",
-            "update": "Erreur lors de la mise à jour des tops"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2630,32 +2592,7 @@
             "countAt": "{count} à {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "Un top d'instrument/d'équipement ne correspond pas à ce que portent les marcheurs",
-        "crewDistance": "{item} est loin de son équipe",
-        "crewDistanceDetail": "Hors de portée : {who}",
-        "crewlessMove": "{item} se déplace sans équipe",
-        "empty": "Rien à vérifier.",
-        "forWho": "Pour {who}",
-        "handConflict": "{item} n'est pas affiché",
-        "handConflictDetail": "{count, plural, =1 {{other} occupe {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}} other {{other} occupent {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}}}",
-        "handConflictByCarry": "Un top de port occupe {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}",
-        "handConflictWithCarry": "{other} et un top de port occupent {hand, select, left {la main gauche} right {la main droite} other {les mains}} de {who}",
-        "performers": "{count, plural, one {# marcheur} other {# marcheurs}}",
-        "pick": "Aller à ce temps et sélectionner les éléments concernés",
-        "putDownDrift": "{item} posé loin de son porteur",
-        "putDownDriftDetail": "Son propre mouvement le place là, et non auprès de {who}",
-        "shortHanded": "{item} est tenu avec trop peu de mains",
-        "shortHandedDetail": "{who} : {held} sur {needed} mains",
-        "silkAspect": "L'illustration d'un top de voile est adaptée à un drapeau d'une autre forme",
-        "snapToHolder": "Ramener au porteur",
-        "title": "Vérifications du spectacle",
-        "titleCount": "Vérifications du spectacle ({count})",
-        "withWhere": "{text}, {where}",
-        "withStart": "{text}, au début"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, one {# top cible cette étiquette et sera supprimé} other {# tops ciblent cette étiquette et seront supprimés}}",
         "title": "Étiquettes",
         "rename": "Renommer l'étiquette",
         "namePlaceholder": "Saisissez le nom de l'étiquette…",
@@ -3313,7 +3250,6 @@
         },
         "readout": {
             "camera": "Œil à {eye} · {distance} du centre",
-            "checks": "{count, plural, one {# vérification} other {# vérifications}}",
             "count": "Temps {count} sur {total}",
             "noPages": "Aucune page",
             "page": "Page {page}",
@@ -3359,32 +3295,7 @@
             "endZoneColor": "Couleur",
             "graphicsSection": "Cet ordinateur",
             "graphicsHint": "Non enregistré dans le spectacle, peut donc varier d'un ordinateur à l'autre.",
-            "hornState": "Position des instruments",
-            "hornStateMode": {
-                "up": "Levés",
-                "carry": "Port",
-                "trail": "Trail"
-            },
-            "hornStateHint": "Maintient chaque instrument à vent et chaque tambour dans une même position pendant tout le spectacle, pour vérifier les postures. Suivre les tops applique les tops Instrument/Équipement, instruments levés là où il n'y en a pas.",
-            "guardEquipment": "Équipement de la color guard",
-            "guardEquipmentMode": {
-                "flag6": "Drapeau 6 ft",
-                "swingFlag": "Swing flag",
-                "doubleSwingFlag": "Double swing",
-                "rifle": "Fusil",
-                "sabre": "Sabre"
-            },
-            "guardEquipmentHint": "Place un même équipement dans les mains de chaque membre de la color guard, pour le visualiser. Suivre les tops donne à chaque pupitre le sien : le drapeau 6 ft aux drapeaux, le fusil aux fusils.",
-            "stepOffFoot": "Pied de départ",
-            "stepOffFootMode": {
-                "left": "Gauche du marcheur",
-                "right": "Droit du marcheur"
-            },
-            "stepOffFootHint": "Il s'agit du pied du marcheur, quelle que soit son orientation. S'il vous fait face, son pied gauche est à votre droite. Suivre les tops part du pied enregistré dans le spectacle ({foot, select, left {gauche du marcheur} other {droit du marcheur}}) ou du pied défini par un top Pieds.",
             "keysSection": "Clavier et souris",
-            "previewSection": "Aperçu seulement",
-            "previewHint": "Non enregistré. Ces choix modifient uniquement l'affichage de cette fenêtre ; dans le spectacle, ce sont les tops qui décident. Remettez-les sur Suivre les tops pour voir le spectacle.",
-            "followCues": "Suivre les tops",
             "uniforms": "Uniforme de l'orchestre",
             "guardUniforms": "Uniforme de la color guard"
         },
@@ -3657,263 +3568,9 @@
             "seconds": "secondes"
         },
         "unsavedChanges": "Vous avez des modifications non enregistrées",
-        "warnPropMovesWithoutCrew": "Avertir si un accessoire se déplace sans équipe",
-        "warnPropMovesWithoutCrewHelp": "Les vérifications du spectacle signalent tout accessoire placé qui se déplace alors que personne n'est dans son équipe.",
         "close": "Fermer",
         "saved": "Paramètres du spectacle enregistrés",
         "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "Espace de travail",
-            "editor": "Éditeur",
-            "visuals": "Visuels",
-            "preview": "Aperçu"
-        },
-        "channels": {
-            "feet": "Pieds",
-            "horn": "Instrument",
-            "equipment": "Équipement",
-            "hornEquipment": "Instrument / Équipement",
-            "facing": "Orientation",
-            "body": "Corps"
-        },
-        "inspector": {
-            "title": "Visuels",
-            "who": "Qui",
-            "band": "Orchestre",
-            "selection": "Sélection",
-            "selectionCount": "{count, plural, =0 {Aucune sélection} one {# sélectionné} other {# sélectionnés}}",
-            "sections": "Pupitres",
-            "tags": "Étiquettes",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "Retirer le focus",
-            "focusHint": "Cliquez sur un groupe pour lui donner le focus. Tous les autres sont estompés sur le terrain."
-        },
-        "band": {
-            "editing": "Modification : {channel} pour {who}",
-            "focusFirst": "Visuels : donnez le focus à un groupe dans l'inspecteur pour modifier ses tops",
-            "selectFirst": "Sélectionnez des marcheurs sur le terrain pour créer des tops pour la sélection",
-            "marchers": "{count, plural, one {# marcheur} many {# de marcheurs} other {# marcheurs}}",
-            "mixed": "Mixte",
-            "rowCue": "{who} : {value}",
-            "lane": "Piste de tops",
-            "paste": "{count, plural, one {Coller # top à la tête de lecture} many {Coller # de tops à la tête de lecture} other {Coller # tops à la tête de lecture}}",
-            "flagged": "{count, plural, one {# top signalé} many {# de tops signalés} other {# tops signalés}}",
-            "flaggedCue": "{value} : {problems}"
-        },
-        "cue": {
-            "title": "Top",
-            "delete": "Supprimer",
-            "where": "{who}, {where}",
-            "count": "temps {count}",
-            "start": "au début",
-            "value": "Valeur",
-            "notForEveryone": "{value} (ne convient pas à tous)",
-            "transition": "Transition (temps)",
-            "length": "Durée (temps)",
-            "ripple": "Cascade",
-            "rippleSpan": "Durée de la cascade (temps)",
-            "rippleOrder": "Ordre",
-            "order": {
-                "drill": "Ordre du drill",
-                "left_right": "De gauche à droite",
-                "right_left": "De droite à gauche",
-                "down_form": "Le long de la formation"
-            },
-            "notes": "Notes",
-            "facingWheel": "Angle d'orientation",
-            "pickPoint": "Choisir le point sur le terrain",
-            "pickingPoint": "Cliquez sur un point du terrain (<keys></keys> pour annuler)"
-        },
-        "why": {
-            "title": "Pourquoi : {where}",
-            "value": "{value} : {n} sur {total}",
-            "setBy": "Défini par <cue></cue>",
-            "setByTakenOver": "Défini par <cue></cue> (imposé par l'onglet {channel})",
-            "beat": "L'emporte sur <cues></cues>",
-            "cue": "{value} pour {who}, {where}",
-            "default": {
-                "library": "La valeur par défaut",
-                "carry": "La valeur par défaut selon l'équipement porté",
-                "section_equipment": "L'équipement habituel du pupitre",
-                "equipment_fallback": "L'équipement habituel associé au nom du pupitre",
-                "marcher_carries": "L'équipement porté habituellement",
-                "section_color": "La couleur 2D du pupitre",
-                "band_uniform": "L'uniforme de l'orchestre",
-                "guard_uniform": "L'uniforme de la color guard"
-            }
-        },
-        "settings": {
-            "pace": "Cadence",
-            "moving": "En déplacement",
-            "onHolds": "À l'arrêt",
-            "stepOffFoot": "Pied de départ",
-            "angle": "Angle de l'instrument",
-            "degrees": "Angle (degrés)",
-            "x": "Point x",
-            "y": "Point y",
-            "energy": "Énergie"
-        },
-        "options": {
-            "single": "Temps simple",
-            "half": "Demi-temps",
-            "double": "Double temps",
-            "straightLeg": "Jambe tendue",
-            "bentLeg": "Jambe fléchie",
-            "highStep": "Genoux levés",
-            "stand": "Immobile",
-            "markTime": "Marquer le pas",
-            "highMarkTime": "Marquer le pas, genoux levés",
-            "left": "Gauche",
-            "right": "Droite",
-            "box": "Position standard",
-            "plus10": "10° au-dessus de la position standard",
-            "low": "Faible",
-            "medium": "Moyenne",
-            "high": "Élevée"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "Pas",
-                    "label": "Pas",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MP"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "Instruments levés",
-                    "label": "IL"
-                },
-                "down": {
-                    "name": "Instruments baissés",
-                    "label": "IB"
-                },
-                "trail": {
-                    "name": "Le long du corps",
-                    "label": "Long"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "En jeu",
-                    "label": "Jeu"
-                },
-                "sticksIn": {
-                    "name": "Baguettes croisées",
-                    "label": "Crois."
-                },
-                "sticksDown": {
-                    "name": "Baguettes baissées",
-                    "label": "Bas"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "Drapeau prêt",
-                    "label": "Prêt"
-                },
-                "port": {
-                    "name": "Drapeau au port",
-                    "label": "Port"
-                },
-                "dropSpin": {
-                    "name": "Rotation basse du drapeau",
-                    "label": "Rot."
-                },
-                "toss1": {
-                    "name": "Lancer simple du drapeau",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "Port d'armes",
-                    "label": "Port"
-                },
-                "present": {
-                    "name": "Présenter arme",
-                    "label": "Prés"
-                },
-                "dropSpin": {
-                    "name": "Rotation basse du fusil",
-                    "label": "Rot."
-                },
-                "toss1": {
-                    "name": "Lancer simple du fusil",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "Lancer double du fusil",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "Sabre prêt",
-                    "label": "Prêt"
-                },
-                "toss1": {
-                    "name": "Lancer simple du sabre",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "Face",
-                    "label": "Face"
-                },
-                "back": {
-                    "name": "Dos",
-                    "label": "Dos"
-                },
-                "side1": {
-                    "name": "Côté 1",
-                    "label": "C1"
-                },
-                "side2": {
-                    "name": "Côté 2",
-                    "label": "C2"
-                },
-                "travel": {
-                    "name": "Sens du déplacement",
-                    "label": "Dépl."
-                },
-                "angle": {
-                    "name": "Angle",
-                    "label": "Angle"
-                },
-                "point": {
-                    "name": "Vers un point",
-                    "label": "Point"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "Neutre",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "À genoux",
-                    "label": "À genoux"
-                },
-                "choreo": {
-                    "name": "Chorégraphie",
-                    "label": "Choré"
-                }
-            }
-        },
-        "flags": {
-            "clash": "Entre en conflit avec un autre top sur le même temps.",
-            "phrase_overlap": "Chevauche une autre phrase.",
-            "takeover_while_moving": "Prend le contrôle des pieds pendant que le point se déplace.",
-            "fits_nobody": "Ne convient à aucun de ses marcheurs.",
-            "kind_not_allowed": "Est une phrase sur un canal qui n'accepte que des états.",
-            "transition_cut": "Sa transition commence avant que le top précédent ne soit arrivé."
-        }
     },
     "canvas": {
         "zoom": {
@@ -4128,9 +3785,6 @@
             "title": "Erreur de chargement de la base de données"
         }
     },
-    "notes": {
-        "snapToHolderFailed": "Erreur lors du replacement d’un élément auprès de son porteur"
-    },
     "coordinates": {
         "full": "{x} - {y}",
         "withSide": "{side} : {position}",
@@ -4169,5 +3823,10 @@
         "tiny": "Minuscule",
         "toFive": "{steps, number} pour 5",
         "undefined": "Non défini"
+    },
+    "workspace": {
+        "label": "Espace de travail",
+        "editor": "Éditeur",
+        "preview": "Aperçu"
     }
 }

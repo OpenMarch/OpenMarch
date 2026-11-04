@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { pixelsToWorld, type CueInput } from "@openmarch/core";
+import {
+    compileCues,
+    pixelsToWorld,
+    type CueInput,
+    type PerformerCarry,
+} from "@openmarch/core";
 import fs from "node:fs";
 import path from "node:path";
 import type { Manifest } from "@/view3d/render/step-blend.js";
@@ -8,6 +13,7 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 import { buildCountClock } from "@/view3d/core/marchers/countClock";
 import { eventRows } from "@/view3d/core/marchers/planner";
 import {
+    bandMovingCounts,
     compileWindowCues,
     MarcherMotion,
     planShow,
@@ -148,7 +154,7 @@ describe("planning from the window's cues", () => {
         expect(CUE_LEAD).toBe(STEP_AHEAD);
     });
 
-    it("steps off on the window's foot, a preview of the show default", () => {
+    it("steps off on the show's default foot", () => {
         const right = planShow(
             ids,
             lines,
@@ -203,7 +209,59 @@ describe("planning from the window's cues", () => {
     });
 });
 
-describe("planning from the show's stored cues", () => {
+describe("automatic mark time", () => {
+    // Marchers 1 and 2 move over counts 4-12; marcher 3 holds all show
+    const ids = [1, 2, 3];
+    const positions = show([
+        track(800, 500, 90),
+        track(830, 500, 90),
+        track(860, 500, 0),
+    ]);
+    const beats = Array.from({ length: 16 }, (_, k) => ({
+        id: 50 + k,
+        timestamp: k * 0.5,
+        duration: 0.5,
+    }));
+    const marchers = ids.map((id) => ({ id, section: "Snare" }));
+    const bandMoving = bandMovingCounts(ids, positions, clock, fp);
+    const plans = planShow(
+        ids,
+        positions,
+        [1, 1, 1],
+        clock,
+        fp,
+        manifest,
+        compileWindowCues(marchers, beats, "left", { bandMoving }),
+    ).plans;
+    const holder = plans[2]!.events;
+
+    it("finds the counts on which anyone travels", () => {
+        expect(Array.from(bandMoving)).toEqual([
+            0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0,
+        ]);
+    });
+
+    it("marks time while the band moves, and stands while it holds", () => {
+        expect(holder.some((e) => e.clip.startsWith("marktime"))).toBe(true);
+        expect(holder[0]!.clip.startsWith("attention")).toBe(true);
+        expect(holder.at(-1)!.clip.startsWith("attention")).toBe(true);
+    });
+
+    it("stands throughout without the band's moving counts", () => {
+        const still = planShow(
+            ids,
+            positions,
+            [1, 1, 1],
+            clock,
+            fp,
+            manifest,
+            compileWindowCues(marchers, beats, "left"),
+        ).plans[2]!.events;
+        expect(still.every((e) => !e.clip.includes("marktime"))).toBe(true);
+    });
+});
+
+describe("planning from compiled cues", () => {
     const ids = [1, 2];
     const lines = show([track(800, 500, 90), track(830, 500, 90)]);
     const beats = Array.from({ length: 16 }, (_, k) => ({
@@ -211,6 +269,24 @@ describe("planning from the show's stored cues", () => {
         timestamp: k * 0.5,
         duration: 0.5,
     }));
+    // The compiler, as the window would call it if the show stored cues
+    const compiled = (
+        cues: CueInput[],
+        tagIds: ReadonlyMap<number, number[]> = new Map(),
+        carries: (id: number) => PerformerCarry = () => "none",
+    ) =>
+        compileCues({
+            beats: beats.map((b) => ({ id: b.id, duration: b.duration })),
+            marchers: ids.map((id, i) => ({
+                id,
+                section: "Trumpet",
+                tagIds: tagIds.get(id) ?? [],
+                drillOrder: i,
+                carries: carries(id),
+            })),
+            cues,
+            showDefaults: { stepOffFoot: "left" },
+        });
     const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
     const facing = (
         value: string,
@@ -234,17 +310,17 @@ describe("planning from the show's stored cues", () => {
             clock,
             fp,
             manifest,
-            compileWindowCues(marchers, beats, "left", { cues, tagIds }),
+            compiled(cues, tagIds),
         ).plans.map((p) => p!.headings);
 
-    it("turns to a stored Facing cue from its count", () => {
+    it("turns to a Facing cue from its count", () => {
         const [first] = headingsOf([facing("builtin:facing.back")]);
         // the plan runs a count ahead (CUE_LEAD): the back facing is drawn from boundary 9
         expect(first![2]).toBeCloseTo(0);
         expect(Math.abs(first![12])).toBeCloseTo(Math.PI);
     });
 
-    it("plays a stored Horn/Equipment cue on carriers' Horn channel", () => {
+    it("plays a Horn/Equipment cue on carriers' Horn channel", () => {
         const down: CueInput = {
             id: 2,
             channel: "horn_equipment",
@@ -254,12 +330,8 @@ describe("planning from the show's stored cues", () => {
             beatId: 58,
             value: "builtin:horn.down",
         };
-        const cues = compileWindowCues(
-            marchers,
-            beats,
-            "left",
-            { cues: [down] },
-            (id) => (id === 1 ? "winds" : "none"),
+        const cues = compiled([down], new Map(), (id) =>
+            id === 1 ? "winds" : "none",
         );
         const plan = (id: number) =>
             planHornChannel(cues.segments(id, "horn_equipment"), {

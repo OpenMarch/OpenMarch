@@ -13,15 +13,13 @@ import {
     embedLibraryVersionInTransaction,
     embedLibraryVersions,
     getShowLibraryItems,
-    libraryKeepsFromCues,
     libraryKeepsFromHistory,
     pruneShowLibraryInTransaction,
     readLibraryBlob,
     type EmbedLibraryVersion,
 } from "../showLibrary";
-import { deleteShowLibraryItem, libraryItemUses } from "../showLibraryDelete";
+import { deleteShowLibraryItem } from "../showLibraryDelete";
 import { hashParts, versionHashOf } from "@/view3d/library/showHash";
-import { createCuesInTransaction, getCues, type NewCueArgs } from "../cues";
 import {
     createShowBlobCache,
     renderPartHash,
@@ -419,36 +417,6 @@ describeDbTests("showLibrary", (it) => {
             ]);
         });
 
-        it("keeps the Versions cues name", async ({ db }) => {
-            const r = await rifle();
-            await embedLibraryVersion({ db, version: r });
-            await embedLibraryVersion({ db, version: await flag() });
-            // Outside history, so only the cue keeps the rifle
-            await db.transaction((tx) =>
-                createCuesInTransaction({
-                    tx,
-                    newCues: [
-                        {
-                            channel: "carry",
-                            kind: "state",
-                            target: { kind: "band" },
-                            beatId: 0,
-                            value: `library:${RIFLE}@${r.versionHash}`,
-                        },
-                    ],
-                }),
-            );
-
-            expect(await libraryKeepsFromCues({ db })).toEqual([
-                { itemId: RIFLE, versionHash: r.versionHash },
-            ]);
-            const plan = await pruneShowLibrary({ db, keep: [] });
-            expect(plan.items.map((i) => i.itemId)).toEqual([FLAG]);
-            expect(
-                (await getShowLibraryItems({ db })).map((i) => i.itemId),
-            ).toEqual([RIFLE]);
-        });
-
         it("removes no blobs while a row can't be read", async ({ db }) => {
             await embedLibraryVersion({ db, version: await rifle() });
             await db
@@ -479,29 +447,6 @@ describeDbTests("showLibrary", (it) => {
     });
 
     describe("deleting", () => {
-        /** A beat after the start, for a cue to sit on; a new show has only beat 0. */
-        const LATER = 7;
-        const silkCue = (
-            versionHash: string,
-            extra: Partial<NewCueArgs> = {},
-        ): NewCueArgs => ({
-            channel: "silk",
-            kind: "state",
-            target: { kind: "section", section: "Flag" },
-            beatId: LATER,
-            value: `library:${FLAG}@${versionHash}`,
-            ...extra,
-        });
-        const addCues = async (db: DbConnection, newCues: NewCueArgs[]) => {
-            await db
-                .insert(schema.beats)
-                .values({ id: LATER, duration: 0.5, position: 1 })
-                .onConflictDoNothing()
-                .run();
-            return await db.transaction((tx) =>
-                createCuesInTransaction({ tx, newCues }),
-            );
-        };
         const itemIds = async (db: DbConnection) =>
             (await getShowLibraryItems({ db })).map((i) => i.itemId).sort();
 
@@ -539,30 +484,6 @@ describeDbTests("showLibrary", (it) => {
             expect(await rows(db)).toEqual({ items: 1, blobs: 1 });
         });
 
-        it("is refused while a cue uses it, and lists the cues", async ({
-            db,
-        }) => {
-            const f = await flag();
-            await embedLibraryVersion({ db, version: f });
-            const [cue] = await addCues(db, [silkCue(f.versionHash)]);
-            await addCues(db, [
-                {
-                    channel: "carry",
-                    kind: "state",
-                    target: { kind: "band" },
-                    beatId: 0,
-                    value: "none",
-                },
-            ]);
-
-            const result = await deleteShowLibraryItem({ db, itemId: FLAG });
-            if (result.outcome !== "inUse") throw new Error(result.outcome);
-            expect(result.uses.cues.map((u) => u.cue.id)).toEqual([cue!.id]);
-            expect(result.uses.pinnedBy).toEqual([]);
-            expect(await itemIds(db)).toEqual([FLAG]);
-            expect(await rows(db)).toEqual({ items: 1, blobs: 2 });
-        });
-
         it("is refused while another item pins it", async ({ db }) => {
             const f = await flag();
             await embedLibraryVersion({ db, version: f });
@@ -595,201 +516,23 @@ describeDbTests("showLibrary", (it) => {
             );
         });
 
-        describe("uses", () => {
-            it("finds cues naming any Version of the item, with each cue's count and tag", async ({
-                db,
-            }) => {
-                const f = await flag();
-                await embedLibraryVersion({ db, version: f });
-                const tagId = (
-                    await db
-                        .insert(schema.tags)
-                        .values({ name: "Front" })
-                        .returning({ id: schema.tags.id })
-                        .get()
-                ).id;
-                await addCues(db, [
-                    silkCue(f.versionHash),
-                    silkCue("a".repeat(64), {
-                        beatId: 0,
-                        target: { kind: "tag", tagId },
-                    }),
-                    silkCue(f.versionHash, {
-                        value: `library:${RIFLE}@${f.versionHash}`,
-                    }),
-                ]);
-
-                const uses = await libraryItemUses({ db, itemId: FLAG });
-                expect(
-                    uses.cues.map((u) => ({
-                        beatId: u.cue.beatId,
-                        tag: u.tagName,
-                    })),
-                ).toEqual([
-                    { beatId: 0, tag: "Front" },
-                    { beatId: LATER, tag: null },
-                ]);
-                expect(uses.cues.map((u) => u.beatIndex)).toEqual([0, 1]);
-            });
-
-            it("finds nothing in a show without cues", async ({ db }) => {
-                await db.run(sql`DROP TABLE cue_marchers`);
-                await db.run(sql`DROP TABLE cues`);
-                expect(await libraryItemUses({ db, itemId: FLAG })).toEqual({
-                    cues: [],
-                    floor: false,
-                    items: [],
-                    pinnedBy: [],
-                });
-            });
-        });
-
         it("keeps an item an undo row names, until a prune finds nothing naming it", async ({
             db,
         }) => {
             const f = await flag();
             await embedLibraryVersion({ db, version: f });
-            await transactionWithHistory(db, "createSilkCue", (tx) =>
-                createCuesInTransaction({
-                    tx,
-                    newCues: [{ ...silkCue(f.versionHash), beatId: 0 }],
-                }),
-            );
+            // Stand in for an edit that named the item: a tag named after it
+            await transactionWithHistory(db, "nameFlag", async (tx) => {
+                await tx.insert(schema.tags).values({ name: FLAG }).run();
+            });
             await performUndo(db);
 
-            // Redo would bring the cue back, so the silk stays
+            // Redo would bring the row back, so the item stays
             expect(await deleteShowLibraryItem({ db, itemId: FLAG })).toEqual({
                 outcome: "keptForUndo",
             });
             expect(await itemIds(db)).toEqual([FLAG]);
             await performRedo(db);
-            expect((await getCues({ db }))[0]!.value).toBe(
-                `library:${FLAG}@${f.versionHash}`,
-            );
-        });
-
-        describe("replacing", () => {
-            const other = () =>
-                version(
-                    "44444444-4444-4444-8444-444444444444",
-                    { original: bytes("other.png") },
-                    { kind: "artwork", name: "Other" },
-                );
-
-            it("points every cue at the replacement as one undoable edit, and keeps the item for undo", async ({
-                db,
-            }) => {
-                const f = await flag();
-                const o = await other();
-                await embedLibraryVersion({ db, version: f });
-                await embedLibraryVersion({ db, version: o });
-                await addCues(db, [
-                    silkCue(f.versionHash),
-                    silkCue(f.versionHash, { beatId: 0 }),
-                ]);
-                const to = { itemId: o.itemId, versionHash: o.versionHash };
-                const values = async () =>
-                    (await getCues({ db })).map((c) => c.value);
-
-                expect(
-                    await deleteShowLibraryItem({
-                        db,
-                        itemId: FLAG,
-                        replaceWith: to,
-                    }),
-                ).toEqual({ outcome: "keptForUndo" });
-                expect(await values()).toEqual([
-                    `library:${to.itemId}@${to.versionHash}`,
-                    `library:${to.itemId}@${to.versionHash}`,
-                ]);
-                expect(await itemIds(db)).toEqual([o.itemId, FLAG].sort());
-
-                // Undo finds the item it used
-                await performUndo(db);
-                expect(await values()).toEqual([
-                    `library:${FLAG}@${f.versionHash}`,
-                    `library:${FLAG}@${f.versionHash}`,
-                ]);
-                expect(await itemIds(db)).toContain(FLAG);
-                await performRedo(db);
-                expect(await values()).toEqual([
-                    `library:${to.itemId}@${to.versionHash}`,
-                    `library:${to.itemId}@${to.versionHash}`,
-                ]);
-            });
-
-            it("refuses a replacement of another role, such as the floor for a Silk", async ({
-                db,
-            }) => {
-                const silk = await version(
-                    FLAG,
-                    {
-                        original: bytes("flag.png"),
-                        sidecar: bytes('{"surface":"silk"}'),
-                    },
-                    { kind: "artwork", name: "Flag" },
-                );
-                const floor = await version(
-                    "44444444-4444-4444-8444-444444444444",
-                    {
-                        original: bytes("floor.png"),
-                        sidecar: bytes('{"surface":"baseFloor"}'),
-                    },
-                    { kind: "artwork", name: "Field image" },
-                );
-                await embedLibraryVersion({ db, version: silk });
-                await embedLibraryVersion({ db, version: floor });
-                await addCues(db, [silkCue(silk.versionHash)]);
-
-                await expect(
-                    deleteShowLibraryItem({
-                        db,
-                        itemId: FLAG,
-                        replaceWith: {
-                            itemId: floor.itemId,
-                            versionHash: floor.versionHash,
-                        },
-                    }),
-                ).rejects.toThrow(/role/);
-                expect((await getCues({ db }))[0]!.value).toBe(
-                    `library:${FLAG}@${silk.versionHash}`,
-                );
-            });
-
-            it("refuses a replacement of another kind, or one the show lacks, and changes nothing", async ({
-                db,
-            }) => {
-                const f = await flag();
-                const r = await rifle();
-                await embedLibraryVersion({ db, version: f });
-                await embedLibraryVersion({ db, version: r });
-                await addCues(db, [silkCue(f.versionHash)]);
-
-                await expect(
-                    deleteShowLibraryItem({
-                        db,
-                        itemId: FLAG,
-                        replaceWith: {
-                            itemId: RIFLE,
-                            versionHash: r.versionHash,
-                        },
-                    }),
-                ).rejects.toThrow(/kind/);
-                await expect(
-                    deleteShowLibraryItem({
-                        db,
-                        itemId: FLAG,
-                        replaceWith: {
-                            itemId: UNIFORM,
-                            versionHash: "b".repeat(64),
-                        },
-                    }),
-                ).rejects.toThrow(/doesn't have/);
-                expect((await getCues({ db }))[0]!.value).toBe(
-                    `library:${FLAG}@${f.versionHash}`,
-                );
-                expect(await itemIds(db)).toEqual([RIFLE, FLAG].sort());
-            });
         });
     });
 
@@ -811,8 +554,8 @@ describeDbTests("showLibrary", (it) => {
         });
 
         /**
-         * The props packages' Item tables (C2.1 `items`, C2.4 `item_artwork_slots`), as far as
-         * the references go, for a branch that doesn't have them yet.
+         * The props packages' Item table (C2.1 `items`), as far as the references go, for a
+         * branch that doesn't have it yet.
          */
         const addItemTables = async (db: DbConnection) => {
             await db.run(
@@ -821,15 +564,6 @@ describeDbTests("showLibrary", (it) => {
                     marcher_id INTEGER NOT NULL,
                     kind TEXT NOT NULL,
                     surface_type TEXT,
-                    library_item_id TEXT,
-                    library_version_hash TEXT)`),
-            );
-            await db.run(
-                sql.raw(`CREATE TABLE IF NOT EXISTS item_artwork_slots (
-                    id INTEGER PRIMARY KEY,
-                    item_id INTEGER NOT NULL,
-                    beat_id INTEGER NOT NULL,
-                    slot TEXT NOT NULL,
                     library_item_id TEXT,
                     library_version_hash TEXT)`),
             );
@@ -864,8 +598,13 @@ describeDbTests("showLibrary", (it) => {
                 .all();
             const uncovered: string[] = [];
             for (const { name } of tables) {
-                // The Library's own tables hold it; they don't reference it
-                if (name === "library_items" || name === "library_blobs")
+                // The Library's own tables hold it; they don't reference it. Artwork slots are
+                // parked: their table stays in fork files until the migrations are collapsed
+                if (
+                    name === "library_items" ||
+                    name === "library_blobs" ||
+                    name === "item_artwork_slots"
+                )
                     continue;
                 const columns = await db
                     .select({ name: sql<string>`name` })
@@ -919,7 +658,7 @@ describeDbTests("showLibrary", (it) => {
             });
             expect(result).toMatchObject({
                 outcome: "inUse",
-                uses: { floor: true, cues: [], items: [], pinnedBy: [] },
+                uses: { floor: true, items: [], pinnedBy: [] },
             });
             expect(await getFieldFloorImage({ db })).not.toBeNull();
         });
@@ -935,72 +674,30 @@ describeDbTests("showLibrary", (it) => {
             ).toMatchObject({ outcome: "inUse", uses: { floor: true } });
         });
 
-        it("names item models and slot artwork, dormant ones included, and refuses to delete them", async ({
-            db,
-        }) => {
+        it("names item models and refuses to delete them", async ({ db }) => {
             await addItemTables(db);
             const r = await rifle();
-            const f = await flag();
             await embedLibraryVersion({ db, version: r });
-            await embedLibraryVersion({ db, version: f });
             await addProp(db, 41, "Rifle 1", refOf(r));
             await addProp(db, 42, "", null);
-            // A slot the model no longer declares stays stored, dormant
-            await db.run(
-                sql`INSERT INTO item_artwork_slots (item_id, beat_id, slot, library_item_id, library_version_hash) VALUES (42, 0, 'retired', ${FLAG}, ${f.versionHash})`,
-            );
 
-            const refs = await libraryReferences({ db });
-            expect(refs).toContainEqual({
+            expect(await libraryReferences({ db })).toContainEqual({
                 source: "itemModels",
                 ...refOf(r),
                 marcherId: 41,
             });
-            expect(refs).toContainEqual({
-                source: "itemArtworkSlots",
-                ...refOf(f),
-                marcherId: 42,
-                slot: "retired",
-            });
-
             expect(
                 await deleteShowLibraryItem({ db, itemId: RIFLE }),
             ).toMatchObject({
                 outcome: "inUse",
-                uses: {
-                    items: [{ marcherId: 41, label: "Rifle 1", slot: null }],
-                },
-            });
-            expect(
-                await deleteShowLibraryItem({ db, itemId: FLAG }),
-            ).toMatchObject({
-                outcome: "inUse",
-                uses: {
-                    items: [{ marcherId: 42, label: "P42", slot: "retired" }],
-                },
-            });
-            // Replace with… only moves cues: an item use still refuses
-            const other = await version(UNIFORM, {
-                glb: bytes("glTF other rifle"),
-                sidecar: bytes('{"kind":"rifle"}'),
-            });
-            await embedLibraryVersion({ db, version: other });
-            expect(
-                await deleteShowLibraryItem({
-                    db,
-                    itemId: RIFLE,
-                    replaceWith: refOf(other),
-                }),
-            ).toMatchObject({
-                outcome: "inUse",
-                uses: { items: [{ marcherId: 41 }] },
+                uses: { items: [{ marcherId: 41, label: "Rifle 1" }] },
             });
 
-            // And the prune keeps both
+            // And the prune keeps it
             await pruneShowLibrary({ db, keep: [] });
             expect(
-                (await getShowLibraryItems({ db })).map((i) => i.itemId).sort(),
-            ).toEqual([RIFLE, FLAG].sort());
+                (await getShowLibraryItems({ db })).map((i) => i.itemId),
+            ).toEqual([RIFLE]);
         });
     });
 });

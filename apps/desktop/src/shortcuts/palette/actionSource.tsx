@@ -28,7 +28,6 @@ import {
     runAction,
 } from "../registry";
 import { isActionOffInWorkspace } from "../workspaceActions";
-import { isPreviewMode } from "@/stores/PreviewModeStore";
 import { paramsCommand } from "./commandBar";
 import type { PaletteContext, PaletteItem } from "./sources";
 
@@ -100,14 +99,9 @@ export function getActionPaletteItems(
                     : [],
                 shortcut: getActionShortcutKeys(id, { overrides }),
                 disabled: !isActionEnabled(id),
-                // Visuals mode turns the drill edits off, and Preview every edit: say so, and
-                // where they work
+                // Preview turns every edit off: say so
                 disabledReason: isActionOffInWorkspace(id)
-                    ? t(
-                          isPreviewMode()
-                              ? "commandPalette.offInPreview"
-                              : "commandPalette.editsDrill",
-                      )
+                    ? t("commandPalette.offInPreview")
                     : undefined,
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)

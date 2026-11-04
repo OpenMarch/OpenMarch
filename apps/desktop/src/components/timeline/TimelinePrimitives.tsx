@@ -2622,7 +2622,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
 });
 
 /**
- * The start flag on a read-only timeline (Visuals mode, performer-behavior.md section 7.1): the
+ * The start flag on a read-only timeline (Preview): the
  * same stem and pennant as `TimelineSelectionRange`'s flag, with no handles and no window. Play
  * starts here, so it shows though nothing on that timeline drags it.
  */

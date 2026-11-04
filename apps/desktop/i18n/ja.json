@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "やり直す操作はありません",
             "noUndoAvailable": "元に戻す操作はありません",
-            "redidCueEdit": "キューの編集をやり直しました（ビジュアル）",
-            "redidDrillEdit": "ドリルの編集をやり直しました（エディター）",
             "redo": "やり直す",
             "redoFailed": "やり直しを適用できなかったため、何も変更されていません。",
             "undo": "元に戻す",
-            "undidCueEdit": "キューの編集を元に戻しました（ビジュアル）",
-            "undidDrillEdit": "ドリルの編集を元に戻しました（エディター）",
             "undoFailed": "元に戻すことができなかったため、何も変更されていません。"
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "開始フラグの位置を表示",
             "toggleStartFlagPositions": "開始フラグの位置を切り替え",
             "toggleStartFlagPositionsKeywords": "前 前の 経路 ドット 点 位置 メンバー どこから 長押し のぞき見 固定 previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "ワークスペースを切り替え（エディター／ビジュアル）",
-            "toggleWorkspaceKeywords": "ビジュアル エディター ワークスペース キュー モード 切り替え visuals editor workspace cues mode",
             "showNextPaths": "次のページの経路を表示",
             "toggleNextPaths": "次のページの経路を切り替え",
             "togglePreview": "ショーをプレビュー",
@@ -202,14 +196,7 @@
             "addToLibrary": "マイライブラリに追加",
             "delete": {
                 "addFirst": "先にマイライブラリに追加",
-                "alsoUsedByCues": "{count, plural, =1 {キューでも使用されています：} other {#件のキューでも使用されています：}}",
-                "useLine": "{channel} · {who} · カウント{count}",
                 "cancel": "キャンセル",
-                "channels": {
-                    "carry": "持ち物",
-                    "silk": "シルク",
-                    "uniform": "ユニフォーム"
-                },
                 "checking": "使用箇所を確認中…",
                 "confirm": "ライブラリには別のコピーが残ります。この操作は取り消せません。",
                 "confirmNoCopy": "ライブラリにコピーがないため、完全に失われます。この操作は取り消せません。",
@@ -220,22 +207,10 @@
                 "inUseTitle": "{name}は使用中です",
                 "isFloor": "このショーのフロアのため、削除できません。フロアは「フィールド設定 → 画像」で変更できます。",
                 "itemModel": "モデル",
-                "itemSlot": "{slot}のアートワーク",
                 "keptForUndo": "{name}は、取り消しで元に戻せる間はこのショーに残り、その後ショーを閉じると削除されます。",
                 "label": "このショーから削除",
-                "noReplacement": "このショーには置き換えに使える同じ種類のアイテムがありません。先にインポートしてください。",
                 "pinnedBy": "{names}の一部のため、削除できません。",
-                "replaceAndDelete": "置き換えて削除",
-                "replaced": "{name}を{replacement}に置き換えました。",
-                "replacedKeptForUndo": "{name}を{replacement}に置き換えました。{name}は、取り消しで元に戻せる間はこのショーに残り、その後ショーを閉じると削除されます。",
-                "replaceWith": "置き換え先…",
-                "targets": {
-                    "band": "バンド",
-                    "set": "{count, plural, other {メンバー#人}}",
-                    "tag": "タグ"
-                },
                 "title": "このショーから{name}を削除しますか？",
-                "usedByCues": "{count, plural, =1 {キューで使用されています。削除するには置き換えてください：} other {#件のキューで使用されています。削除するにはすべてで置き換えてください：}}",
                 "usedByItems": "{count, plural, =1 {プロップで使用されているため、削除できません：} other {#個のプロップで使用されているため、削除できません：}}"
             },
             "empty": "このショーではまだアセットを使用していません。",
@@ -356,7 +331,6 @@
     },
     "commandPalette": {
         "close": "閉じる",
-        "editsDrill": "ドリルを編集するコマンドです。「エディター」に切り替えてください。",
         "empty": "一致するコマンドはありません。",
         "navigate": "移動",
         "placeholder": "コマンドを検索…",
@@ -440,18 +414,6 @@
         "unnamedMarcherName": "{section}{number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {#件のキューが後のカウントに移動しました}}",
-            "movedTo": "{count, plural, other {#件のキューがカウント{at}に移動しました}}",
-            "removed": "{count, plural, other {#件のキューが削除されました}}"
-        },
-        "errors": {
-            "create": "キューの作成中にエラーが発生しました",
-            "delete": "キューの削除中にエラーが発生しました",
-            "update": "キューの更新中にエラーが発生しました"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2630,32 +2592,7 @@
             "countAt": "{count}人・{interval}歩間隔"
         }
     },
-    "showChecks": {
-        "carryMismatch": "ホーン／装備キューが、持っている物と合っていません",
-        "crewDistance": "{item}のクルーが離れています",
-        "crewDistanceDetail": "届かないメンバー：{who}",
-        "crewlessMove": "{item}がクルーなしで移動しています",
-        "empty": "チェックする項目はありません。",
-        "forWho": "対象：{who}",
-        "handConflict": "{item}が表示されていません",
-        "handConflictDetail": "{count, plural, other {{other}が{who}の{hand, select, left {左手} right {右手} other {両手}}を使っています}}",
-        "handConflictByCarry": "キャリーキューが{who}の{hand, select, left {左手} right {右手} other {両手}}を使っています",
-        "handConflictWithCarry": "{other}とキャリーキューが{who}の{hand, select, left {左手} right {右手} other {両手}}を使っています",
-        "performers": "{count, plural, other {#人}}",
-        "pick": "このカウントに移動し、該当する項目を選択します",
-        "putDownDrift": "{item}が持ち手から離れた場所に置かれています",
-        "putDownDriftDetail": "それ自身の動きによって、{who}の位置ではない場所に置かれます",
-        "shortHanded": "{item}を持つ手が足りません",
-        "shortHandedDetail": "{who}：手{needed}本中{held}本",
-        "silkAspect": "シルクキューのアートワークが、形の異なるフラッグに合わせて調整されています",
-        "snapToHolder": "持ち手に合わせる",
-        "title": "ショーチェック",
-        "titleCount": "ショーチェック（{count}）",
-        "withWhere": "{text}（{where}）",
-        "withStart": "{text}（開始時）"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {このタグを対象とするキュー#件も削除されます}}",
         "title": "タグ",
         "rename": "タグ名を変更",
         "namePlaceholder": "タグ名を入力",
@@ -3313,7 +3250,6 @@
         },
         "readout": {
             "camera": "目の高さ{eye} · 中心まで{distance}",
-            "checks": "{count, plural, other {#件のチェック}}",
             "count": "カウント{count}/{total}",
             "noPages": "ページなし",
             "page": "ページ{page}",
@@ -3359,32 +3295,7 @@
             "endZoneColor": "色",
             "graphicsSection": "このコンピューター",
             "graphicsHint": "ショーには保存されないため、コンピューターごとに異なる場合があります。",
-            "hornState": "楽器の構え",
-            "hornStateMode": {
-                "up": "アップ",
-                "carry": "キャリー",
-                "trail": "トレイル"
-            },
-            "hornStateHint": "ショー全体を通してすべての楽器とドラムを1つの構えに固定し、ポーズを確認できます。「キューに従う」では楽器/用具キューを再生し、キューがない箇所では楽器はアップになります。",
-            "guardEquipment": "ガード用具",
-            "guardEquipmentMode": {
-                "flag6": "6フィートフラッグ",
-                "swingFlag": "スウィングフラッグ",
-                "doubleSwingFlag": "ダブルスウィング",
-                "rifle": "ライフル",
-                "sabre": "サーベル"
-            },
-            "guardEquipmentHint": "すべてのガードメンバーに同じ用具を1つ持たせて確認できます。「キューに従う」では各パートに専用の用具を持たせます（フラッグには6フィートフラッグ、ライフルにはライフル）。",
-            "stepOffFoot": "踏み出し足",
-            "stepOffFootMode": {
-                "left": "演者の左",
-                "right": "演者の右"
-            },
-            "stepOffFootHint": "向きに関係なく、演者自身の足です。こちらを向いている場合、演者の左足はあなたから見て右側になります。「キューに従う」では、ショーに保存された足（{foot, select, left {演者の左} other {演者の右}}）、または足キューで設定された足で踏み出します。",
             "keysSection": "キーボードとマウス",
-            "previewSection": "プレビューのみ",
-            "previewHint": "保存されません。このウィンドウの表示だけが変わり、ショーではキューで決まります。ショーどおりに見るには「キューに従う」に戻してください。",
-            "followCues": "キューに従う",
             "uniforms": "バンドのユニフォーム",
             "guardUniforms": "ガードのユニフォーム"
         },
@@ -3657,263 +3568,9 @@
             "seconds": "秒"
         },
         "unsavedChanges": "保存されていない変更があります",
-        "warnPropMovesWithoutCrew": "クルーなしでプロップが動くときに警告",
-        "warnPropMovesWithoutCrewHelp": "クルーが誰もいないまま動く配置済みのプロップを「ショーチェック」で表示します。",
         "close": "閉じる",
         "saved": "ショー設定を保存しました",
         "updateFailed": "ショー設定を更新できませんでした"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "ワークスペース",
-            "editor": "エディター",
-            "visuals": "ビジュアル",
-            "preview": "プレビュー"
-        },
-        "channels": {
-            "feet": "足",
-            "horn": "ホーン",
-            "equipment": "用具",
-            "hornEquipment": "ホーン／用具",
-            "facing": "向き",
-            "body": "体"
-        },
-        "inspector": {
-            "title": "ビジュアル",
-            "who": "対象",
-            "band": "バンド",
-            "selection": "選択中",
-            "selectionCount": "{count, plural, =0 {選択なし} other {#人を選択中}}",
-            "sections": "パート",
-            "tags": "タグ",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "フォーカスを解除",
-            "focusHint": "対象をクリックするとフォーカスします。ほかのメンバーはフィールド上で暗く表示されます。"
-        },
-        "band": {
-            "editing": "編集中：{who}の{channel}",
-            "focusFirst": "ビジュアル：キューを編集するには、インスペクターで対象にフォーカスしてください",
-            "selectFirst": "選択したメンバーのキューを作成するには、フィールド上でメンバーを選択してください",
-            "marchers": "{count, plural, other {メンバー#人}}",
-            "mixed": "混在",
-            "rowCue": "{who}：{value}",
-            "lane": "キューレーン",
-            "paste": "{count, plural, other {#件のキューを再生ヘッドに貼り付け}}",
-            "flagged": "{count, plural, other {問題のあるキュー#件}}",
-            "flaggedCue": "{value}：{problems}"
-        },
-        "cue": {
-            "title": "キュー",
-            "delete": "削除",
-            "where": "{who}、{where}",
-            "count": "カウント{count}",
-            "start": "開始時点",
-            "value": "値",
-            "notForEveryone": "{value}（一部のメンバーには不適合）",
-            "transition": "移行（カウント）",
-            "length": "長さ（カウント）",
-            "ripple": "リップル",
-            "rippleSpan": "リップルの長さ（カウント）",
-            "rippleOrder": "順序",
-            "order": {
-                "drill": "ドリル順",
-                "left_right": "左から右",
-                "right_left": "右から左",
-                "down_form": "隊形に沿って"
-            },
-            "notes": "メモ",
-            "facingWheel": "向きの角度",
-            "pickPoint": "フィールド上の点を選択",
-            "pickingPoint": "フィールド上の点をクリック（<keys></keys>でキャンセル）"
-        },
-        "why": {
-            "title": "理由（{where}）",
-            "value": "{value}：{total}人中{n}人",
-            "setBy": "<cue></cue>により設定",
-            "setByTakenOver": "<cue></cue>により設定（{channel}が優先）",
-            "beat": "<cues></cues>より優先",
-            "cue": "{value}（{who}・{where}）",
-            "default": {
-                "library": "既定値",
-                "carry": "持っている用具の既定値",
-                "section_equipment": "パートの通常の用具",
-                "equipment_fallback": "パート名に対応する通常の用具",
-                "marcher_carries": "通常持っている用具",
-                "section_color": "パートの2Dの色",
-                "band_uniform": "バンドのユニフォーム",
-                "guard_uniform": "カラーガードのユニフォーム"
-            }
-        },
-        "settings": {
-            "pace": "歩調",
-            "moving": "移動中",
-            "onHolds": "静止中",
-            "stepOffFoot": "踏み出し",
-            "angle": "楽器の角度",
-            "degrees": "角度（度）",
-            "x": "点のx",
-            "y": "点のy",
-            "energy": "エネルギー"
-        },
-        "options": {
-            "single": "通常",
-            "half": "ハーフタイム",
-            "double": "ダブルタイム",
-            "straightLeg": "ストレートレッグ",
-            "bentLeg": "ベントレッグ",
-            "highStep": "ハイステップ",
-            "stand": "静止",
-            "markTime": "マークタイム",
-            "highMarkTime": "ハイマークタイム",
-            "left": "左",
-            "right": "右",
-            "box": "ボックス",
-            "plus10": "ボックスより10°上",
-            "low": "低",
-            "medium": "中",
-            "high": "高"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "ステップ",
-                    "label": "歩",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "MT"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "ホーンアップ",
-                    "label": "HU"
-                },
-                "down": {
-                    "name": "ホーンダウン",
-                    "label": "HD"
-                },
-                "trail": {
-                    "name": "トレイル",
-                    "label": "トレイル"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "演奏中",
-                    "label": "演奏"
-                },
-                "sticksIn": {
-                    "name": "スティックイン",
-                    "label": "イン"
-                },
-                "sticksDown": {
-                    "name": "スティックダウン",
-                    "label": "ダウン"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "フラッグセット",
-                    "label": "セット"
-                },
-                "port": {
-                    "name": "フラッグポート",
-                    "label": "ポート"
-                },
-                "dropSpin": {
-                    "name": "フラッグドロップスピン",
-                    "label": "ドロップ"
-                },
-                "toss1": {
-                    "name": "フラッグシングルトス",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "ポートアームズ",
-                    "label": "ポート"
-                },
-                "present": {
-                    "name": "プレゼント",
-                    "label": "プレ"
-                },
-                "dropSpin": {
-                    "name": "ライフルドロップスピン",
-                    "label": "ドロップ"
-                },
-                "toss1": {
-                    "name": "ライフルシングルトス",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "ライフルダブルトス",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "セイバーセット",
-                    "label": "セット"
-                },
-                "toss1": {
-                    "name": "セイバーシングルトス",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "正面",
-                    "label": "正面"
-                },
-                "back": {
-                    "name": "後ろ",
-                    "label": "後ろ"
-                },
-                "side1": {
-                    "name": "サイド1",
-                    "label": "S1"
-                },
-                "side2": {
-                    "name": "サイド2",
-                    "label": "S2"
-                },
-                "travel": {
-                    "name": "進行方向",
-                    "label": "進行"
-                },
-                "angle": {
-                    "name": "角度",
-                    "label": "角度"
-                },
-                "point": {
-                    "name": "指定した点の方向",
-                    "label": "点"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "通常",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "膝立ち",
-                    "label": "膝"
-                },
-                "choreo": {
-                    "name": "振り付け",
-                    "label": "振付"
-                }
-            }
-        },
-        "flags": {
-            "clash": "同じカウントの別のキューと競合しています。",
-            "phrase_overlap": "別のフレーズと重なっています。",
-            "takeover_while_moving": "ドットの移動中に足の制御を引き継いでいます。",
-            "fits_nobody": "対象のメンバーの誰にも当てはまりません。",
-            "kind_not_allowed": "ステートのみを受け付けるチャンネルに置かれたフレーズです。",
-            "transition_cut": "前のキューが到達する前にトランジションが始まっています。"
-        }
     },
     "canvas": {
         "zoom": {
@@ -4128,9 +3785,6 @@
             "title": "データベースの読み込みエラー"
         }
     },
-    "notes": {
-        "snapToHolderFailed": "アイテムを持っている人の位置に戻せませんでした。"
-    },
     "coordinates": {
         "full": "{x} - {y}",
         "withSide": "{side}: {position}",
@@ -4169,5 +3823,10 @@
         "tiny": "極小",
         "toFive": "{steps, number} to 5",
         "undefined": "未定義"
+    },
+    "workspace": {
+        "label": "ワークスペース",
+        "editor": "エディター",
+        "preview": "プレビュー"
     }
 }

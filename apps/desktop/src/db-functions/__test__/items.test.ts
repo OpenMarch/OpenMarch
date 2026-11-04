@@ -5,7 +5,7 @@ import { describeDbTests, schema, type DbConnection } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { libraryReferences } from "../libraryReferences";
 import { performUndo } from "../history";
-import { deleteBeatsCarryingCues } from "../beat";
+import { deleteBeats } from "../beat";
 import {
     createItems,
     getItemGeometry,
@@ -323,7 +323,7 @@ describeDbTests("items", (it) => {
             expect(beats).toBeDefined();
             const [, b1, b2, b3] = await firstBeatIds(db);
             await createItems({ db, newItems: [riser(b1!)] });
-            await deleteBeatsCarryingCues({ db, beatIds: new Set([b1!, b2!]) });
+            await deleteBeats({ db, beatIds: new Set([b1!, b2!]) });
             expect(await geometryBeats(db)).toEqual([b3]);
             await performUndo(db);
             expect(await geometryBeats(db)).toEqual([b1]);
@@ -348,7 +348,7 @@ describeDbTests("items", (it) => {
                 beatId: b3!,
                 geometry: { outlineType: "rectangle", width: 7, depth: 1 },
             });
-            await deleteBeatsCarryingCues({ db, beatIds: new Set([b1!, b2!]) });
+            await deleteBeats({ db, beatIds: new Set([b1!, b2!]) });
             const rows = await getItemGeometry({ db });
             expect(rows.map((g) => [g.beat_id, g.width])).toEqual([[b3, 7]]);
         });

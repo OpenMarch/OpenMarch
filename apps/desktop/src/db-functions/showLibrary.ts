@@ -329,31 +329,9 @@ export async function libraryKeepsFromHistory({
     return keepsOf(await LIBRARY_REFERENCE_SOURCES.history.read(db));
 }
 
-export const libraryCueValue = (ref: LibraryRef) =>
-    `library:${ref.itemId}@${ref.versionHash}`;
-
-/**
- * Library Versions the show's cues name (Carry, Silk and Uniform values), each once. Save never
- * prunes a Library item a cue names (ADR 0004 amendment of 2026-10-11, and of 2026-10-15). One
- * source of `libraryReferences`.
- */
-export async function libraryKeepsFromCues({
-    db,
-}: {
-    db: DbConnection | DbTransaction;
-}): Promise<LibraryKeep[]> {
-    const keeps = new Map<string, LibraryKeep>();
-    for (const ref of await LIBRARY_REFERENCE_SOURCES.cues.read(db))
-        keeps.set(`${ref.itemId}@${ref.versionHash}`, {
-            itemId: ref.itemId,
-            versionHash: ref.versionHash!,
-        });
-    return [...keeps.values()];
-}
-
 /**
  * Removes the Versions nothing keeps, then the blobs no remaining Version names (props-spec.md
- * section 2). Everything the show names is kept (`libraryReferences`: cues, the floor, the Item
+ * section 2). Everything the show names is kept (`libraryReferences`: the floor, the Item
  * tables and history); `keep` adds more.
  */
 export async function pruneShowLibraryInTransaction({

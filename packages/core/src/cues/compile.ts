@@ -99,6 +99,8 @@ interface DefaultSpan {
     /** Settings the default shows beside its value's (the plain silk's color). */
     settings?: Readonly<Record<string, unknown>>;
     holds?: PerformerCarry;
+    /** A span that gives way to any cue in effect (the Feet hold default): it changes only the default. */
+    underCues?: boolean;
 }
 
 function defaultSegment(
@@ -157,8 +159,9 @@ function stateTimeline(
             const { span } = event;
             if (
                 current.kind !== "default" &&
-                span.holds !== undefined &&
-                fitsHolds(lookup, current.value, span.holds)
+                (span.underCues ||
+                    (span.holds !== undefined &&
+                        fitsHolds(lookup, current.value, span.holds)))
             )
                 continue;
             if (span.at > current.from) out.push({ ...current, to: span.at });
@@ -785,9 +788,56 @@ function holdsOver(
     return out.length > 0 ? out : [{ at: 0, holds: usual }];
 }
 
+/** Whether any performer travels on each count, from `bandTravels` or else `travels`. */
+function bandTravelsByCount(input: CompileInput): boolean[] | null {
+    const counts = input.beats.length;
+    if (input.bandTravels) {
+        const bandTravels = input.bandTravels;
+        return Array.from({ length: counts }, (_, c) => bandTravels(c));
+    }
+    const travels = input.travels;
+    if (!travels) return null;
+    const performers = input.marchers.filter((m) => !isItem(m));
+    return Array.from({ length: counts }, (_, c) =>
+        performers.some((m) => travels(m.id, c)),
+    );
+}
+
+/**
+ * The Feet default's spans (performer-behavior.md section 3): a holding
+ * performer marks time (or the show's `holdWhileBandMoves`) on counts where
+ * any performer travels, and stands where the whole band holds. The hold
+ * technique only matters on counts the performer's own dot doesn't travel.
+ * The spans give way to Feet cues.
+ */
+function feetDefaultSpans(input: CompileInput): DefaultSpan[] {
+    const value = defaultCueValue("feet", "none");
+    const moving = input.showDefaults?.holdWhileBandMoves ?? "markTime";
+    const band = bandTravelsByCount(input);
+    if (!band || moving === "stand")
+        return [{ at: 0, value, settings: { onHolds: "stand" } }];
+    const spans: DefaultSpan[] = [];
+    let last: string | null = null;
+    band.forEach((travels, c) => {
+        const onHolds = travels ? moving : "stand";
+        if (onHolds === last) return;
+        last = onHolds;
+        spans.push({ at: c, value, settings: { onHolds }, underCues: c > 0 });
+    });
+    return spans.length > 0
+        ? spans
+        : [{ at: 0, value, settings: { onHolds: "stand" } }];
+}
+
 /** The default spans a channel starts from. */
-function defaultSpans(looks: MarcherLooks, channel: CueChannel): DefaultSpan[] {
+function defaultSpans(
+    looks: MarcherLooks,
+    channel: CueChannel,
+    feet: readonly DefaultSpan[],
+): DefaultSpan[] {
     switch (channel) {
+        case "feet":
+            return [...feet];
         case "carry":
             return [{ at: 0, value: looks.carry.value }];
         case "silk":
@@ -864,6 +914,8 @@ interface Pass {
     /** Whether a channel is reused from the previous compile. */
     reused: (channel: CueChannel) => boolean;
     state: CompileState;
+    /** The Feet default's spans, the same for every performer */
+    feetDefaults: readonly DefaultSpan[];
 }
 
 /**
@@ -884,6 +936,7 @@ function newPass(input: CompileInput, recompile?: RecompileOptions): Pass {
         input,
         lookup,
         placed: placeAll(input),
+        feetDefaults: feetDefaultSpans(input),
         time: new TimeMap(input.beats),
         previous,
         reused,
@@ -943,7 +996,7 @@ function resolve(
             checked.ripples,
             pass.input.beats.length,
             state.channelFlags.get(channel)!,
-            defaultSpans(looks, channel),
+            defaultSpans(looks, channel, pass.feetDefaults),
         );
     state.channels.set(key, result);
     return result;

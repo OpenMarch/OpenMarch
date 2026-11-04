@@ -1231,7 +1231,7 @@ test("change: Escape while typing a number cancels only the number", async ({
 // to the moment it was drawn at. Away from it the shape and its editor hide
 // behind a chip with Go back. Only Enter or Place places it (owner lab
 // feedback): Enter and Escape act only on a shape you can see, playback and
-// Visuals hide it until they end, and a new selection leaves it open.
+// Preview hide it until they end, and a new selection leaves it open.
 
 const awayChip = (page: Page) => page.getByTestId("shape-away-chip");
 
@@ -1393,7 +1393,7 @@ for (const [how, start] of [
         await expect.poll(onNewSpots).toBe(true);
     });
 
-test("change: playing hides an open box until it stops, and Visuals until the Editor is back; neither places it", async ({
+test("change: playing hides an open box until it stops, and Preview until the Editor is back; neither places it", async ({
     show,
 }) => {
     const { page } = show;
@@ -1409,7 +1409,7 @@ test("change: playing hides an open box until it stops, and Visuals until the Ed
     await expect(page.getByTestId("shape-tool-readout")).toBeVisible();
     expect(await openBox(page)).toEqual(before);
 
-    await page.getByTestId("workspace-view-visuals").click();
+    await page.getByTestId("workspace-view-preview").click();
     await expect(page.getByTestId("shape-tool-readout")).toBeHidden();
     await expect(awayChip(page)).toBeHidden();
     await page.getByTestId("workspace-view-editor").click();

@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "没有可重做的操作",
             "noUndoAvailable": "没有可撤销的操作",
-            "redidCueEdit": "已重做提示点编辑（视觉）",
-            "redidDrillEdit": "已重做队形编辑（编辑器）",
             "redo": "重做",
             "redoFailed": "无法重做，未做任何更改。",
             "undo": "撤销",
-            "undidCueEdit": "已撤销提示点编辑（视觉）",
-            "undidDrillEdit": "已撤销队形编辑（编辑器）",
             "undoFailed": "无法撤销，未做任何更改。"
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "显示起始标记位置",
             "toggleStartFlagPositions": "切换起始标记位置",
             "toggleStartFlagPositionsKeywords": "之前 上一个 路径 点 队员 原来 位置 来自 按住 查看 锁定 previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "切换工作区（编辑器或视觉）",
-            "toggleWorkspaceKeywords": "视觉 编辑器 工作区 提示点 模式 visuals editor workspace cues mode",
             "showNextPaths": "显示下一页路径",
             "toggleNextPaths": "切换下一页路径",
             "togglePreview": "预览表演",
@@ -202,14 +196,7 @@
             "addToLibrary": "添加到我的素材库",
             "delete": {
                 "addFirst": "先添加到我的素材库",
-                "alsoUsedByCues": "{count, plural, =1 {还有一个提示点在使用它：} other {还有#个提示点在使用它：}}",
-                "useLine": "{channel} · {who} · 第{count}拍",
                 "cancel": "取消",
-                "channels": {
-                    "carry": "手持物",
-                    "silk": "旗面",
-                    "uniform": "制服"
-                },
                 "checking": "正在检查使用情况…",
                 "confirm": "你的素材库保留有自己的副本。此操作无法撤销。",
                 "confirmNoCopy": "你的素材库中没有副本，删除后将永久丢失。此操作无法撤销。",
@@ -220,22 +207,10 @@
                 "inUseTitle": "{name}正在使用中",
                 "isFloor": "它是此表演的地面，因此无法删除。请在“场地设置 → 图像”中更改地面。",
                 "itemModel": "模型",
-                "itemSlot": "{slot}图案",
                 "keptForUndo": "在仍可撤销期间，{name}会保留在此表演中，之后关闭表演时将被移除。",
                 "label": "从此表演中删除",
-                "noReplacement": "此表演中没有其他同类项目可用于替换。请先导入一个。",
                 "pinnedBy": "它是{names}的一部分，因此无法删除。",
-                "replaceAndDelete": "替换并删除",
-                "replaced": "已将{name}替换为{replacement}。",
-                "replacedKeptForUndo": "已将{name}替换为{replacement}。在仍可撤销期间，{name}会保留在此表演中，之后关闭表演时将被移除。",
-                "replaceWith": "替换为…",
-                "targets": {
-                    "band": "乐队",
-                    "set": "{count, plural, other {#名队员}}",
-                    "tag": "某个标签"
-                },
                 "title": "要从此表演中删除{name}吗？",
-                "usedByCues": "{count, plural, =1 {有一个提示点在使用它。替换后才能删除：} other {有#个提示点在使用它。在所有提示点中替换后才能删除：}}",
                 "usedByItems": "{count, plural, =1 {有一个道具在使用它，因此无法删除：} other {有#个道具在使用它，因此无法删除：}}"
             },
             "empty": "此表演尚未使用任何素材。",
@@ -356,7 +331,6 @@
     },
     "commandPalette": {
         "close": "关闭",
-        "editsDrill": "会编辑队形——请切换到编辑器",
         "empty": "没有匹配的命令。",
         "navigate": "导航",
         "placeholder": "搜索命令…",
@@ -440,18 +414,6 @@
         "unnamedMarcherName": "{section}{number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {#个提示点已移至之后的拍}}",
-            "movedTo": "{count, plural, other {#个提示点已移至第{at}拍}}",
-            "removed": "{count, plural, other {已移除#个提示点}}"
-        },
-        "errors": {
-            "create": "创建提示点时出错",
-            "delete": "删除提示点时出错",
-            "update": "更新提示点时出错"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2630,32 +2592,7 @@
             "countAt": "{count}人间距{interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "某个乐器/器材提示点与队员所携带的物品不符",
-        "crewDistance": "{item}的搬运组离它太远",
-        "crewDistanceDetail": "够不到：{who}",
-        "crewlessMove": "{item}在没有搬运组的情况下移动",
-        "empty": "没有需要检查的内容。",
-        "forWho": "涉及：{who}",
-        "handConflict": "{item}未显示",
-        "handConflictDetail": "{count, plural, other {{other}占用了{who}的{hand, select, left {左手} right {右手} other {双手}}}}",
-        "handConflictByCarry": "某个携带提示点占用了{who}的{hand, select, left {左手} right {右手} other {双手}}",
-        "handConflictWithCarry": "{other}和某个携带提示点占用了{who}的{hand, select, left {左手} right {右手} other {双手}}",
-        "performers": "{count, plural, other {#名队员}}",
-        "pick": "跳转到此拍并选中相关对象",
-        "putDownDrift": "{item}放下时偏离了持有者",
-        "putDownDriftDetail": "它自身的动作将它移到了那里，而不是{who}的位置",
-        "shortHanded": "{item}的持握手数不足",
-        "shortHandedDetail": "{who}：{held}只手（需要{needed}只）",
-        "silkAspect": "某个旗面提示点的图案被适配到了形状不同的旗帜上",
-        "snapToHolder": "对齐到持有者",
-        "title": "表演检查",
-        "titleCount": "表演检查（{count}）",
-        "withWhere": "{text}，{where}",
-        "withStart": "{text}，位于开头"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {有#个提示点以此标签为目标，将被删除}}",
         "title": "标签",
         "rename": "重命名标签",
         "namePlaceholder": "输入标签名称…",
@@ -3313,7 +3250,6 @@
         },
         "readout": {
             "camera": "视高{eye} · 距中心{distance}",
-            "checks": "{count, plural, other {#项检查}}",
             "count": "第{count}拍，共{total}拍",
             "noPages": "无页",
             "page": "第{page}页",
@@ -3359,32 +3295,7 @@
             "endZoneColor": "颜色",
             "graphicsSection": "本电脑",
             "graphicsHint": "不保存在表演中，因此每台电脑可以不同。",
-            "hornState": "持号姿势",
-            "hornStateMode": {
-                "up": "举号",
-                "carry": "持号",
-                "trail": "单手后持"
-            },
-            "hornStateHint": "让所有号和鼓在整场表演中保持同一姿势，以便检查姿态。“跟随提示点”按号/器材提示点播放，没有提示点的地方为举号。",
-            "guardEquipment": "旗队器材",
-            "guardEquipmentMode": {
-                "flag6": "6 ft旗",
-                "swingFlag": "摆旗",
-                "doubleSwingFlag": "双摆旗",
-                "rifle": "道具枪",
-                "sabre": "军刀"
-            },
-            "guardEquipmentHint": "让每位旗队队员手持同一件器材以便查看。“跟随提示点”为每个声部配上各自的器材：旗手用6 ft旗，枪手用道具枪。",
-            "stepOffFoot": "起步脚",
-            "stepOffFootMode": {
-                "left": "队员左脚",
-                "right": "队员右脚"
-            },
-            "stepOffFootHint": "指队员自己的脚，无论其面向哪个方向。队员面向你时，其左脚在你的右侧。“跟随提示点”按表演保存的脚起步（{foot, select, left {队员左脚} other {队员右脚}}），或按“脚步”提示点设置的脚起步。",
             "keysSection": "键盘和鼠标",
-            "previewSection": "仅预览",
-            "previewHint": "不会保存。这些选项只改变本窗口的显示；在表演中由提示点决定。改回“跟随提示点”即可查看表演。",
-            "followCues": "跟随提示点",
             "uniforms": "乐队制服",
             "guardUniforms": "旗队制服"
         },
@@ -3657,263 +3568,9 @@
             "seconds": "秒"
         },
         "unsavedChanges": "有未保存的更改",
-        "warnPropMovesWithoutCrew": "道具移动但无搬运人员时发出警告",
-        "warnPropMovesWithoutCrewHelp": "“表演检查”会列出已放置但在无人搬运的情况下移动的道具。",
         "close": "关闭",
         "saved": "表演设置已保存",
         "updateFailed": "无法更新工作区设置"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "工作区",
-            "editor": "编辑器",
-            "visuals": "视觉",
-            "preview": "预览"
-        },
-        "channels": {
-            "feet": "步伐",
-            "horn": "号",
-            "equipment": "器材",
-            "hornEquipment": "号/器材",
-            "facing": "朝向",
-            "body": "身体"
-        },
-        "inspector": {
-            "title": "视觉",
-            "who": "对象",
-            "band": "乐团",
-            "selection": "所选队员",
-            "selectionCount": "{count, plural, =0 {未选择} other {已选择#个}}",
-            "sections": "声部",
-            "tags": "标签",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "取消聚焦",
-            "focusHint": "点击某个对象即可聚焦，场地上的其他队员会变暗。"
-        },
-        "band": {
-            "editing": "正在编辑：{who}的{channel}",
-            "focusFirst": "视觉：在检查器中聚焦一个对象以编辑其提示点",
-            "selectFirst": "请先在场地上选择队员，再为所选队员创建提示点",
-            "marchers": "{count, plural, other {#名队员}}",
-            "mixed": "混合",
-            "rowCue": "{who}：{value}",
-            "lane": "提示点轨道",
-            "paste": "{count, plural, other {在播放头处粘贴#个提示点}}",
-            "flagged": "{count, plural, other {#个提示点有问题}}",
-            "flaggedCue": "{value}：{problems}"
-        },
-        "cue": {
-            "title": "提示点",
-            "delete": "删除",
-            "where": "{who}，{where}",
-            "count": "第{count}拍",
-            "start": "开头",
-            "value": "值",
-            "notForEveryone": "{value}（不适用于所有人）",
-            "transition": "过渡（拍）",
-            "length": "时长（拍）",
-            "ripple": "波浪",
-            "rippleSpan": "波浪跨度（拍）",
-            "rippleOrder": "顺序",
-            "order": {
-                "drill": "编号顺序",
-                "left_right": "从左到右",
-                "right_left": "从右到左",
-                "down_form": "沿队形依次"
-            },
-            "notes": "备注",
-            "facingWheel": "朝向角度",
-            "pickPoint": "在场地上选取点",
-            "pickingPoint": "点击场地上的一点（按<keys></keys>取消）"
-        },
-        "why": {
-            "title": "{where}处的原因",
-            "value": "{value}：{total}人中的{n}人",
-            "setBy": "由<cue></cue>设置",
-            "setByTakenOver": "由<cue></cue>设置（被{channel}接管）",
-            "beat": "覆盖了<cues></cues>",
-            "cue": "{value}（{who}，{where}）",
-            "default": {
-                "library": "默认值",
-                "carry": "所持器材的默认值",
-                "section_equipment": "声部的常用器材",
-                "equipment_fallback": "声部名称对应的常用器材",
-                "marcher_carries": "其通常所持的器材",
-                "section_color": "声部的2D颜色",
-                "band_uniform": "乐队制服",
-                "guard_uniform": "旗队制服"
-            }
-        },
-        "settings": {
-            "pace": "步速",
-            "moving": "行进中",
-            "onHolds": "静止时",
-            "stepOffFoot": "起步脚",
-            "angle": "持号角度",
-            "degrees": "角度（度）",
-            "x": "点x坐标",
-            "y": "点y坐标",
-            "energy": "力度"
-        },
-        "options": {
-            "single": "常速",
-            "half": "半速",
-            "double": "倍速",
-            "straightLeg": "直腿",
-            "bentLeg": "屈腿",
-            "highStep": "高抬腿",
-            "stand": "站立",
-            "markTime": "原地踏步",
-            "highMarkTime": "高抬腿原地踏步",
-            "left": "左脚",
-            "right": "右脚",
-            "box": "标准位",
-            "plus10": "高于标准位10°",
-            "low": "低",
-            "medium": "中",
-            "high": "高"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "行进步",
-                    "label": "行进",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "踏步"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "举号",
-                    "label": "举"
-                },
-                "down": {
-                    "name": "放号",
-                    "label": "放"
-                },
-                "trail": {
-                    "name": "垂号",
-                    "label": "垂"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "演奏中",
-                    "label": "演奏"
-                },
-                "sticksIn": {
-                    "name": "鼓棒收拢",
-                    "label": "收"
-                },
-                "sticksDown": {
-                    "name": "鼓棒垂放",
-                    "label": "垂"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "旗预备",
-                    "label": "预备"
-                },
-                "port": {
-                    "name": "旗斜持",
-                    "label": "斜持"
-                },
-                "dropSpin": {
-                    "name": "旗下落旋转",
-                    "label": "落旋"
-                },
-                "toss1": {
-                    "name": "旗单周抛",
-                    "label": "1周"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "枪斜持",
-                    "label": "斜持"
-                },
-                "present": {
-                    "name": "举枪礼",
-                    "label": "举枪"
-                },
-                "dropSpin": {
-                    "name": "枪下落旋转",
-                    "label": "落旋"
-                },
-                "toss1": {
-                    "name": "枪单周抛",
-                    "label": "1周"
-                },
-                "toss2": {
-                    "name": "枪双周抛",
-                    "label": "2周"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "军刀预备",
-                    "label": "预备"
-                },
-                "toss1": {
-                    "name": "军刀单周抛",
-                    "label": "1周"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "前方",
-                    "label": "前"
-                },
-                "back": {
-                    "name": "后方",
-                    "label": "后"
-                },
-                "side1": {
-                    "name": "1号侧",
-                    "label": "侧1"
-                },
-                "side2": {
-                    "name": "侧2",
-                    "label": "侧2"
-                },
-                "travel": {
-                    "name": "行进方向",
-                    "label": "行进"
-                },
-                "angle": {
-                    "name": "角度",
-                    "label": "角度"
-                },
-                "point": {
-                    "name": "朝向某点",
-                    "label": "定点"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "常态",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "跪姿",
-                    "label": "跪"
-                },
-                "choreo": {
-                    "name": "编舞",
-                    "label": "编舞"
-                }
-            }
-        },
-        "flags": {
-            "clash": "与同一拍上的另一个提示点冲突。",
-            "phrase_overlap": "与另一个时段提示重叠。",
-            "takeover_while_moving": "在点位移动时接管了脚步。",
-            "fits_nobody": "不适用于其任何目标队员。",
-            "kind_not_allowed": "是时段提示，但所在通道只接受状态提示。",
-            "transition_cut": "其过渡在前一个提示点到位之前就开始了。"
-        }
     },
     "canvas": {
         "zoom": {
@@ -4128,9 +3785,6 @@
             "title": "加载数据库时出错"
         }
     },
-    "notes": {
-        "snapToHolderFailed": "将物品吸附回持有者时出错"
-    },
     "coordinates": {
         "full": "{x} - {y}",
         "withSide": "{side}：{position}",
@@ -4169,5 +3823,10 @@
         "tiny": "极小",
         "toFive": "{steps, number}步5码",
         "undefined": "未定义"
+    },
+    "workspace": {
+        "label": "工作区",
+        "editor": "编辑器",
+        "preview": "预览"
     }
 }

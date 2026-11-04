@@ -7,7 +7,6 @@ import { getActionShortcutKeys, type Translate } from "@/shortcuts/labels";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import type { ActionId } from "@/shortcuts/definitions";
 import { isActionOffInWorkspace } from "@/shortcuts/workspaceActions";
-import { isPreviewMode } from "@/stores/PreviewModeStore";
 import { kindPickGate } from "../tool/pickKind";
 import { shapeSelectionGate } from "../tool/selectionGate";
 import { toolId, type AnyToolKind } from "../tool/toolKind";
@@ -59,7 +58,7 @@ function kindItem(
     const gate = shapeSelectionGate(selected);
     // With a shape open, any kind can be picked: the open shape turns into it
     const pick = kindPickGate(isShapeShown(), selected);
-    // Shapes edit the drill, like the box tool's key
+    // Shapes edit the drill, like the box tool's key: off in Preview
     const offHere = isActionOffInWorkspace("shapeBlock");
     const label = kind.shape.label;
     return {
@@ -75,11 +74,7 @@ function kindItem(
             : undefined,
         disabled: !ready || offHere || !pick.ok,
         disabledReason: offHere
-            ? t(
-                  isPreviewMode()
-                      ? "commandPalette.offInPreview"
-                      : "commandPalette.editsDrill",
-              )
+            ? t("commandPalette.offInPreview")
             : !pick.ok
               ? pick.reason
               : undefined,

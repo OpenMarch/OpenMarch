@@ -157,9 +157,18 @@ export interface ShowPhraseAsset {
     channels: readonly CueChannel[];
 }
 
+/** What the feet do on a hold (a count where the marcher's dot doesn't travel). */
+export type HoldTechnique = "stand" | "markTime" | "highMarkTime";
+
 /** Show-wide defaults the cues fall back to (ADR 0004 D-4). */
 export interface CueShowDefaults {
     stepOffFoot?: "left" | "right";
+    /**
+     * Feet, with no Feet cue: what a holding performer does on a count where
+     * any performer travels. `markTime` when omitted (marchers mark time while
+     * the band moves). On counts where the whole band holds, they stand.
+     */
+    holdWhileBandMoves?: HoldTechnique;
     /** The band's default uniform; `builtin:uniform.band` when omitted. */
     bandUniform?: string;
     /** The guard's default uniform; `builtin:uniform.guard` when omitted. */
@@ -175,6 +184,13 @@ export interface CompileInput {
     showDefaults?: CueShowDefaults;
     /** Whether the marcher's dot travels during count `count`. */
     travels?: (marcherId: number, count: number) => boolean;
+    /**
+     * Whether any performer's dot travels during count `count`, for the Feet
+     * default (`CueShowDefaults.holdWhileBandMoves`). Omitted, it's derived
+     * from `travels` over the performers; with neither, every count is a band
+     * hold.
+     */
+    bandTravels?: (count: number) => boolean;
     /** The marcher's field position at a count's click (x toward side 2, y toward the front). */
     positionAt?: (marcherId: number, count: number) => { x: number; y: number };
     /** Each section's usual equipment and 2D color, for the Carry and Silk defaults. */

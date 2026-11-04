@@ -132,13 +132,11 @@ describe("ACTIONS", () => {
             const def = ACTIONS[id] as {
                 category: string;
                 scope: string;
-                editsDrill: boolean;
                 hiddenFromPalette?: boolean;
             };
             expect(def).toMatchObject({
                 category: clear.category,
                 scope: clear.scope,
-                editsDrill: clear.editsDrill,
             });
             expect(def.hiddenFromPalette).toBeUndefined();
         }

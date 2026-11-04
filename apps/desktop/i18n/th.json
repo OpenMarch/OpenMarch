@@ -33,13 +33,9 @@
         "edit": {
             "noRedoAvailable": "ไม่มีการกระทำให้ทำซ้ำ",
             "noUndoAvailable": "ไม่มีการกระทำให้เลิกทำ",
-            "redidCueEdit": "ทำซ้ำการแก้ไขคิวแล้ว (วิชวล)",
-            "redidDrillEdit": "ทำซ้ำการแก้ไขดริลแล้ว (ตัวแก้ไข)",
             "redo": "ทำซ้ำ",
             "redoFailed": "ไม่สามารถทำซ้ำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ",
             "undo": "เลิกทำ",
-            "undidCueEdit": "เลิกทำการแก้ไขคิวแล้ว (วิชวล)",
-            "undidDrillEdit": "เลิกทำการแก้ไขดริลแล้ว (ตัวแก้ไข)",
             "undoFailed": "ไม่สามารถเลิกทำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ"
         },
         "file": {
@@ -158,8 +154,6 @@
             "showStartFlagPositions": "แสดงตำแหน่งที่ธงเริ่มต้น",
             "toggleStartFlagPositions": "เปิด/ปิดตำแหน่งที่ธงเริ่มต้น",
             "toggleStartFlagPositionsKeywords": "เส้นทางก่อนหน้า จุด ตำแหน่งเดิม ผู้แสดงมาจากไหน กดค้าง แอบดู ล็อก previous paths dots where marchers were came from hold peek latch",
-            "toggleWorkspace": "สลับพื้นที่ทำงาน (ตัวแก้ไขหรือวิชวล)",
-            "toggleWorkspaceKeywords": "วิชวล ตัวแก้ไข พื้นที่ทำงาน คิว โหมด visuals editor workspace cues mode",
             "showNextPaths": "แสดงเส้นทางหน้าถัดไป",
             "toggleNextPaths": "เปิด/ปิดเส้นทางหน้าถัดไป",
             "togglePreview": "ดูตัวอย่างโชว์",
@@ -202,14 +196,7 @@
             "addToLibrary": "เพิ่มลงในคลังของฉัน",
             "delete": {
                 "addFirst": "เพิ่มลงในคลังของฉันก่อน",
-                "alsoUsedByCues": "{count, plural, =1 {มีคิวหนึ่งรายการใช้รายการนี้ด้วย:} other {มีคิว # รายการใช้รายการนี้ด้วย:}}",
-                "useLine": "{channel} · {who} · จังหวะ {count}",
                 "cancel": "ยกเลิก",
-                "channels": {
-                    "carry": "สิ่งที่ถือ",
-                    "silk": "ผ้าธง",
-                    "uniform": "เครื่องแบบ"
-                },
                 "checking": "กำลังตรวจสอบว่ามีอะไรใช้รายการนี้…",
                 "confirm": "คลังของคุณยังเก็บสำเนาของตัวเองไว้ การดำเนินการนี้ไม่สามารถเลิกทำได้",
                 "confirmNoCopy": "คลังของคุณไม่มีสำเนา รายการนี้จึงจะหายไปถาวร การดำเนินการนี้ไม่สามารถเลิกทำได้",
@@ -220,22 +207,10 @@
                 "inUseTitle": "มีการใช้ {name} อยู่",
                 "isFloor": "รายการนี้เป็นพื้นของโชว์นี้ จึงลบไม่ได้ เปลี่ยนพื้นได้ที่การตั้งค่าสนาม → รูปภาพ",
                 "itemModel": "โมเดล",
-                "itemSlot": "อาร์ตเวิร์ก {slot}",
                 "keptForUndo": "{name} จะยังอยู่ในโชว์นี้ตราบที่ยังเลิกทำได้ และจะถูกนำออกเมื่อปิดโชว์หลังจากนั้น",
                 "label": "ลบออกจากโชว์นี้",
-                "noReplacement": "โชว์นี้ไม่มีรายการประเภทเดียวกันอื่นที่จะใช้แทน โปรดนำเข้ารายการก่อน",
                 "pinnedBy": "รายการนี้เป็นส่วนหนึ่งของ {names} จึงลบไม่ได้",
-                "replaceAndDelete": "แทนที่และลบ",
-                "replaced": "แทนที่ {name} ด้วย {replacement} แล้ว",
-                "replacedKeptForUndo": "แทนที่ {name} ด้วย {replacement} แล้ว {name} จะยังอยู่ในโชว์นี้ตราบที่ยังเลิกทำได้ และจะถูกนำออกเมื่อปิดโชว์หลังจากนั้น",
-                "replaceWith": "แทนที่ด้วย…",
-                "targets": {
-                    "band": "วง",
-                    "set": "{count, plural, other {ผู้แสดง # คน}}",
-                    "tag": "แท็กหนึ่ง"
-                },
                 "title": "ลบ {name} ออกจากโชว์นี้หรือไม่",
-                "usedByCues": "{count, plural, =1 {มีคิวหนึ่งรายการใช้รายการนี้ แทนที่เพื่อลบ:} other {มีคิว # รายการใช้รายการนี้ แทนที่ในทุกคิวเพื่อลบ:}}",
                 "usedByItems": "{count, plural, =1 {มีพร็อพหนึ่งชิ้นใช้รายการนี้ จึงลบไม่ได้:} other {มีพร็อพ # ชิ้นใช้รายการนี้ จึงลบไม่ได้:}}"
             },
             "empty": "โชว์นี้ยังไม่ได้ใช้แอสเซ็ตใดๆ",
@@ -356,7 +331,6 @@
     },
     "commandPalette": {
         "close": "ปิด",
-        "editsDrill": "แก้ไขดริล — สลับไปที่ตัวแก้ไข",
         "empty": "ไม่พบคำสั่งที่ตรงกัน",
         "navigate": "นำทาง",
         "placeholder": "ค้นหาคำสั่ง…",
@@ -440,18 +414,6 @@
         "unnamedMarcherName": "{section} {number}",
         "xHeader": "X",
         "yHeader": "Y"
-    },
-    "cues": {
-        "carryNotice": {
-            "movedLater": "{count, plural, other {ย้ายคิว # รายการไปยังจังหวะที่หลังกว่าเดิม}}",
-            "movedTo": "{count, plural, other {ย้ายคิว # รายการไปยังจังหวะที่ {at}}}",
-            "removed": "{count, plural, other {ลบคิว # รายการแล้ว}}"
-        },
-        "errors": {
-            "create": "เกิดข้อผิดพลาดในการสร้างคิว",
-            "delete": "เกิดข้อผิดพลาดในการลบคิว",
-            "update": "เกิดข้อผิดพลาดในการอัปเดตคิว"
-        }
     },
     "ensembles": {
         "attachDialog": {
@@ -2630,32 +2592,7 @@
             "countAt": "{count} ห่าง {interval}"
         }
     },
-    "showChecks": {
-        "carryMismatch": "คิว Horn/Equipment ไม่ตรงกับสิ่งที่ผู้แสดงถืออยู่",
-        "crewDistance": "ทีมงานของ {item} อยู่ไกลเกินไป",
-        "crewDistanceDetail": "เอื้อมไม่ถึง: {who}",
-        "crewlessMove": "{item} เคลื่อนที่โดยไม่มีทีมงาน",
-        "empty": "ไม่มีอะไรให้ตรวจสอบ",
-        "forWho": "สำหรับ {who}",
-        "handConflict": "ไม่ได้แสดง {item}",
-        "handConflictDetail": "{count, plural, other {{other} ใช้{hand, select, left {มือซ้าย} right {มือขวา} other {มือทั้งสองข้าง}}ของ {who}}}",
-        "handConflictByCarry": "คิว Carry ใช้{hand, select, left {มือซ้าย} right {มือขวา} other {มือทั้งสองข้าง}}ของ {who}",
-        "handConflictWithCarry": "{other} และคิว Carry ใช้{hand, select, left {มือซ้าย} right {มือขวา} other {มือทั้งสองข้าง}}ของ {who}",
-        "performers": "{count, plural, other {ผู้แสดง # คน}}",
-        "pick": "ไปที่จังหวะนี้และเลือกรายการที่ระบุ",
-        "putDownDrift": "{item} ถูกวางห่างจากผู้ถือ",
-        "putDownDriftDetail": "การเคลื่อนที่ของพร็อพเองทำให้ไปอยู่ที่นั่น ไม่ใช่ที่ {who}",
-        "shortHanded": "{item} ถูกถือด้วยมือไม่พอ",
-        "shortHandedDetail": "{who}: {held} จาก {needed} มือ",
-        "silkAspect": "ภาพของคิว Silk ถูกปรับให้พอดีกับธงที่มีสัดส่วนต่างกัน",
-        "snapToHolder": "ย้ายไปที่ผู้ถือ",
-        "title": "การตรวจสอบโชว์",
-        "titleCount": "การตรวจสอบโชว์ ({count})",
-        "withWhere": "{text} ที่ {where}",
-        "withStart": "{text} ตอนเริ่มต้น"
-    },
     "tags": {
-        "deleteRemovesCues": "{count, plural, other {คิว # รายการที่ใช้แท็กนี้จะถูกลบไปด้วย}}",
         "title": "แท็ก",
         "rename": "เปลี่ยนชื่อแท็ก",
         "namePlaceholder": "ป้อนชื่อแท็ก...",
@@ -3313,7 +3250,6 @@
         },
         "readout": {
             "camera": "ระดับสายตา {eye} · ห่างจากกึ่งกลาง {distance}",
-            "checks": "{count, plural, other {การตรวจสอบ # รายการ}}",
             "count": "จังหวะ {count} จาก {total}",
             "noPages": "ไม่มีหน้า",
             "page": "หน้า {page}",
@@ -3359,32 +3295,7 @@
             "endZoneColor": "สี",
             "graphicsSection": "คอมพิวเตอร์นี้",
             "graphicsHint": "ไม่ได้บันทึกไว้ในโชว์ จึงอาจแตกต่างกันในแต่ละคอมพิวเตอร์",
-            "hornState": "ท่าถือเครื่องดนตรี",
-            "hornStateMode": {
-                "up": "ยกขึ้น",
-                "carry": "ถือพัก",
-                "trail": "ถือข้างลำตัว"
-            },
-            "hornStateHint": "ตรึงเครื่องเป่าและกลองทุกชิ้นไว้ในท่าเดียวตลอดทั้งโชว์ เพื่อตรวจสอบท่าทาง “ตามคิว” จะใช้คิวเครื่องเป่า/อุปกรณ์ และยกเครื่องขึ้นในช่วงที่ไม่มีคิว",
-            "guardEquipment": "อุปกรณ์คัลเลอร์การ์ด",
-            "guardEquipmentMode": {
-                "flag6": "ธง 6 ฟุต",
-                "swingFlag": "ธงสวิง",
-                "doubleSwingFlag": "ธงสวิงคู่",
-                "rifle": "ปืนไรเฟิล",
-                "sabre": "ดาบเซเบอร์"
-            },
-            "guardEquipmentHint": "ใส่อุปกรณ์ชิ้นเดียวกันในมือสมาชิกคัลเลอร์การ์ดทุกคนเพื่อให้เห็นภาพ “ตามคิว” จะให้แต่ละกลุ่มใช้อุปกรณ์ของตนเอง: กลุ่มธงใช้ธง 6 ฟุต กลุ่มไรเฟิลใช้ปืนไรเฟิล",
-            "stepOffFoot": "ก้าวออก",
-            "stepOffFootMode": {
-                "left": "ซ้ายของผู้แสดง",
-                "right": "ขวาของผู้แสดง"
-            },
-            "stepOffFootHint": "เท้าของผู้แสดงเอง ไม่ว่าจะหันไปทางใด เมื่อหันหน้าเข้าหาคุณ เท้าซ้ายของผู้แสดงจะอยู่ทางขวาของคุณ “ตามคิว” จะก้าวออกด้วยเท้าที่บันทึกไว้ในโชว์ ({foot, select, left {ซ้ายของผู้แสดง} other {ขวาของผู้แสดง}}) หรือเท้าที่คิวเท้ากำหนด",
             "keysSection": "แป้นพิมพ์และเมาส์",
-            "previewSection": "แสดงตัวอย่างเท่านั้น",
-            "previewHint": "ไม่บันทึก ตัวเลือกเหล่านี้เปลี่ยนเฉพาะสิ่งที่หน้าต่างนี้แสดง ส่วนในโชว์ คิวจะเป็นตัวกำหนด ตั้งกลับเป็น “ตามคิว” เพื่อดูโชว์ตามจริง",
-            "followCues": "ตามคิว",
             "uniforms": "เครื่องแบบวง",
             "guardUniforms": "เครื่องแบบคัลเลอร์การ์ด"
         },
@@ -3657,263 +3568,9 @@
             "seconds": "วินาที"
         },
         "unsavedChanges": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
-        "warnPropMovesWithoutCrew": "เตือนเมื่อพร็อพเคลื่อนที่โดยไม่มีทีมงาน",
-        "warnPropMovesWithoutCrewHelp": "การตรวจสอบโชว์จะระบุชื่อพร็อพที่วางไว้ซึ่งเคลื่อนที่โดยไม่มีผู้ใดอยู่ในทีมงานของพร็อพนั้น",
         "close": "ปิด",
         "saved": "บันทึกการตั้งค่าโชว์แล้ว",
         "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ"
-    },
-    "visuals": {
-        "workspace": {
-            "label": "พื้นที่ทำงาน",
-            "editor": "ตัวแก้ไข",
-            "visuals": "วิชวล",
-            "preview": "แสดงตัวอย่าง"
-        },
-        "channels": {
-            "feet": "เท้า",
-            "horn": "เครื่องเป่า",
-            "equipment": "อุปกรณ์",
-            "hornEquipment": "เครื่องเป่า / อุปกรณ์",
-            "facing": "ทิศทางการหัน",
-            "body": "ร่างกาย"
-        },
-        "inspector": {
-            "title": "วิชวล",
-            "who": "ใคร",
-            "band": "วง",
-            "selection": "ที่เลือกไว้",
-            "selectionCount": "{count, plural, =0 {ไม่ได้เลือก} other {เลือกแล้ว # คน}}",
-            "sections": "กลุ่มเครื่อง",
-            "tags": "แท็ก",
-            "unnamedTag": "tag-{id}",
-            "clearFocus": "ล้างโฟกัส",
-            "focusHint": "คลิกกลุ่มเพื่อโฟกัส ผู้แสดงคนอื่นจะจางลงบนสนาม"
-        },
-        "band": {
-            "editing": "กำลังแก้ไข: {channel} ของ {who}",
-            "focusFirst": "วิชวล: โฟกัสกลุ่มในตัวตรวจสอบเพื่อแก้ไขคิวของกลุ่มนั้น",
-            "selectFirst": "เลือกผู้แสดงบนสนามเพื่อสร้างคิวสำหรับผู้แสดงที่เลือกไว้",
-            "marchers": "{count, plural, other {ผู้แสดง # คน}}",
-            "mixed": "ผสม",
-            "rowCue": "{who}: {value}",
-            "lane": "เลนคิว",
-            "paste": "{count, plural, other {วางคิว # รายการที่หัวเล่น}}",
-            "flagged": "{count, plural, other {คิวที่มีปัญหา # รายการ}}",
-            "flaggedCue": "{value}: {problems}"
-        },
-        "cue": {
-            "title": "คิว",
-            "delete": "ลบ",
-            "where": "{who}, {where}",
-            "count": "จังหวะที่ {count}",
-            "start": "จุดเริ่มต้น",
-            "value": "ค่า",
-            "notForEveryone": "{value} (ไม่เหมาะกับทุกคน)",
-            "transition": "การเปลี่ยน (จังหวะ)",
-            "length": "ความยาว (จังหวะ)",
-            "ripple": "ระลอกคลื่น",
-            "rippleSpan": "ระยะระลอก (จังหวะ)",
-            "rippleOrder": "ลำดับ",
-            "order": {
-                "drill": "ลำดับดริล",
-                "left_right": "ซ้ายไปขวา",
-                "right_left": "ขวาไปซ้าย",
-                "down_form": "ไล่ตามแนวรูปขบวน"
-            },
-            "notes": "หมายเหตุ",
-            "facingWheel": "มุมการหัน",
-            "pickPoint": "เลือกจุดบนสนาม",
-            "pickingPoint": "คลิกจุดบนสนาม (กด <keys></keys> เพื่อยกเลิก)"
-        },
-        "why": {
-            "title": "เหตุผล ณ {where}",
-            "value": "{value}: {n} จาก {total}",
-            "setBy": "กำหนดโดย <cue></cue>",
-            "setByTakenOver": "กำหนดโดย <cue></cue> (แทนที่โดย {channel})",
-            "beat": "มีผลเหนือ <cues></cues>",
-            "cue": "{value} สำหรับ {who} ที่ {where}",
-            "default": {
-                "library": "ค่าเริ่มต้น",
-                "carry": "ค่าเริ่มต้นตามสิ่งที่ถือ",
-                "section_equipment": "อุปกรณ์ปกติของกลุ่มเครื่อง",
-                "equipment_fallback": "อุปกรณ์ปกติตามชื่อกลุ่มเครื่อง",
-                "marcher_carries": "สิ่งที่ถือตามปกติ",
-                "section_color": "สี 2D ของกลุ่มเครื่อง",
-                "band_uniform": "เครื่องแบบของวง",
-                "guard_uniform": "เครื่องแบบคัลเลอร์การ์ด"
-            }
-        },
-        "settings": {
-            "pace": "อัตราก้าว",
-            "moving": "ขณะเคลื่อนที่",
-            "onHolds": "ขณะหยุดนิ่ง",
-            "stepOffFoot": "เท้าออกก้าว",
-            "angle": "มุมเครื่องเป่า",
-            "degrees": "มุม (องศา)",
-            "x": "จุด x",
-            "y": "จุด y",
-            "energy": "พลัง"
-        },
-        "options": {
-            "single": "ปกติ",
-            "half": "ครึ่งจังหวะ",
-            "double": "สองเท่า",
-            "straightLeg": "ขาตรง",
-            "bentLeg": "งอขา",
-            "highStep": "ยกเข่าสูง",
-            "stand": "ยืนนิ่ง",
-            "markTime": "ย่ำเท้า",
-            "highMarkTime": "ย่ำเท้ายกเข่าสูง",
-            "left": "ซ้าย",
-            "right": "ขวา",
-            "box": "ระดับบ็อกซ์",
-            "plus10": "สูงกว่าบ็อกซ์ 10°",
-            "low": "ต่ำ",
-            "medium": "ปานกลาง",
-            "high": "สูง"
-        },
-        "values": {
-            "feet": {
-                "step": {
-                    "name": "ก้าว",
-                    "label": "ก้าว",
-                    "half": "½",
-                    "double": "2×",
-                    "markTime": "ย่ำ"
-                }
-            },
-            "horn": {
-                "up": {
-                    "name": "ยกเครื่องขึ้น",
-                    "label": "ยก"
-                },
-                "down": {
-                    "name": "ลดเครื่องลง",
-                    "label": "ลด"
-                },
-                "trail": {
-                    "name": "ถือข้างลำตัว",
-                    "label": "ข้าง"
-                }
-            },
-            "battery": {
-                "playing": {
-                    "name": "กำลังเล่น",
-                    "label": "เล่น"
-                },
-                "sticksIn": {
-                    "name": "ไม้ไขว้บนกลอง",
-                    "label": "ไขว้"
-                },
-                "sticksDown": {
-                    "name": "ไม้ลงข้างลำตัว",
-                    "label": "ลง"
-                }
-            },
-            "flag": {
-                "set": {
-                    "name": "ธงท่าเตรียม",
-                    "label": "เตรียม"
-                },
-                "port": {
-                    "name": "ธงท่าพอร์ต",
-                    "label": "พอร์ต"
-                },
-                "dropSpin": {
-                    "name": "ธงดรอปสปิน",
-                    "label": "ดรอป"
-                },
-                "toss1": {
-                    "name": "โยนธง 1 รอบ",
-                    "label": "1x"
-                }
-            },
-            "rifle": {
-                "portArms": {
-                    "name": "เฉียงอาวุธ",
-                    "label": "เฉียง"
-                },
-                "present": {
-                    "name": "วันทยาวุธ",
-                    "label": "วันทยา"
-                },
-                "dropSpin": {
-                    "name": "ไรเฟิลดรอปสปิน",
-                    "label": "ดรอป"
-                },
-                "toss1": {
-                    "name": "โยนไรเฟิล 1 รอบ",
-                    "label": "1x"
-                },
-                "toss2": {
-                    "name": "โยนไรเฟิล 2 รอบ",
-                    "label": "2x"
-                }
-            },
-            "sabre": {
-                "set": {
-                    "name": "เซเบอร์ท่าเตรียม",
-                    "label": "เตรียม"
-                },
-                "toss1": {
-                    "name": "โยนเซเบอร์ 1 รอบ",
-                    "label": "1x"
-                }
-            },
-            "facing": {
-                "front": {
-                    "name": "ด้านหน้า",
-                    "label": "หน้า"
-                },
-                "back": {
-                    "name": "ด้านหลัง",
-                    "label": "หลัง"
-                },
-                "side1": {
-                    "name": "ด้าน 1",
-                    "label": "ฝ.1"
-                },
-                "side2": {
-                    "name": "ฝั่ง 2",
-                    "label": "ฝ.2"
-                },
-                "travel": {
-                    "name": "ทิศทางการเคลื่อนที่",
-                    "label": "ทิศเดิน"
-                },
-                "angle": {
-                    "name": "มุม",
-                    "label": "มุม"
-                },
-                "point": {
-                    "name": "หันไปยังจุด",
-                    "label": "จุด"
-                }
-            },
-            "body": {
-                "neutral": {
-                    "name": "ปกติ",
-                    "label": "—"
-                },
-                "kneel": {
-                    "name": "คุกเข่า",
-                    "label": "คุกเข่า"
-                },
-                "choreo": {
-                    "name": "ท่าประกอบ",
-                    "label": "ท่า"
-                }
-            }
-        },
-        "flags": {
-            "clash": "คิวนี้ชนกับคิวอื่นในจังหวะเดียวกัน",
-            "phrase_overlap": "คิวนี้ซ้อนทับกับวลีอื่น",
-            "takeover_while_moving": "คิวนี้เข้าควบคุมเท้าขณะที่จุดกำลังเคลื่อนที่",
-            "fits_nobody": "คิวนี้ไม่เหมาะกับผู้แสดงคนใดของคิวเลย",
-            "kind_not_allowed": "คิวนี้เป็นวลีที่อยู่บนช่องที่รับเฉพาะสถานะ",
-            "transition_cut": "ช่วงเปลี่ยนของคิวนี้เริ่มก่อนที่คิวก่อนหน้าจะเสร็จสิ้น"
-        }
     },
     "canvas": {
         "zoom": {
@@ -4128,9 +3785,6 @@
             "title": "เกิดข้อผิดพลาดในการโหลดฐานข้อมูล"
         }
     },
-    "notes": {
-        "snapToHolderFailed": "เกิดข้อผิดพลาดในการย้ายอุปกรณ์กลับไปยังผู้ถือ"
-    },
     "coordinates": {
         "full": "{x} - {y}",
         "withSide": "{side}: {position}",
@@ -4169,5 +3823,10 @@
         "tiny": "เล็กมาก",
         "toFive": "{steps, number} ต่อ 5",
         "undefined": "ไม่ระบุ"
+    },
+    "workspace": {
+        "label": "พื้นที่ทำงาน",
+        "editor": "ตัวแก้ไข",
+        "preview": "แสดงตัวอย่าง"
     }
 }
