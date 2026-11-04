@@ -1856,6 +1856,9 @@
     "props": {
         "back": "Back",
         "close": "Close",
+        "color": "Color",
+        "colorMixed": "Mixed",
+        "colorNone": "None",
         "counts": "counts",
         "delete": "Delete prop",
         "depth": "Depth",
@@ -1900,6 +1903,7 @@
             "right": "Rolls out from the right"
         },
         "rotation": "Rotation",
+        "selectedCount": "{count, plural, one {# prop selected} other {# props selected}}",
         "show": "Show on the field",
         "showNames": "Show all names",
         "surface": {

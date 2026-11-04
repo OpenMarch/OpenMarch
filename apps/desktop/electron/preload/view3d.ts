@@ -21,6 +21,7 @@ const PUBLISH_CHANNELS: readonly View3dPublishChannel[] = [
     "view3d:clock",
     "view3d:selection",
     "view3d:invalidate",
+    "view3d:hidden-props",
 ];
 
 const isPublishChannel = (channel: unknown): channel is View3dPublishChannel =>
@@ -61,7 +62,7 @@ const VIEW3D_API = {
 
     /**
      * Listens to what the editor publishes: `view3d:clock`,
-     * `view3d:selection` and `view3d:invalidate`. Payloads arrive unchecked.
+     * `view3d:selection`, `view3d:invalidate` and `view3d:hidden-props`. Payloads arrive unchecked.
      *
      * @returns a function that removes the listener.
      */

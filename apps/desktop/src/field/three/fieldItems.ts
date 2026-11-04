@@ -1,4 +1,8 @@
-import { itemGeometryAt, type ItemGeometry } from "@openmarch/core";
+import {
+    itemGeometryAt,
+    type ItemGeometry,
+    type RgbaColor,
+} from "@openmarch/core";
 import {
     insideOutline,
     outlineShape,
@@ -24,6 +28,8 @@ export type DrawnItemOutline = {
     readonly geometry: ItemGeometry;
     /** Where the timeline (or a drag) has it */
     readonly center: Pt;
+    /** The prop's own color (`items.color`), or null for the theme's line color */
+    readonly color: RgbaColor | null;
 };
 
 /**
@@ -43,6 +49,7 @@ export class FieldItems implements FieldItemSource {
     version = 0;
     private changes: ItemOutlineChanges = new Map();
     private hidden: ReadonlySet<number> = new Set();
+    private colors: ReadonlyMap<number, RgbaColor> = new Map();
     private previews = new Map<number, DrawnItemGeometry>();
     private drawn: {
         version: number;
@@ -59,19 +66,25 @@ export class FieldItems implements FieldItemSource {
 
     constructor(private readonly marchers: FieldMarchers) {}
 
-    /** The items by marcher id, their Outline changes, and those the user hid. */
+    /**
+     * The items by marcher id, their Outline changes, those the user hid, and
+     * the colors of those that have one.
+     */
     set({
         itemIds,
         changes,
         hidden,
+        colors = new Map(),
     }: {
         itemIds: ReadonlySet<number>;
         changes: ItemOutlineChanges;
         hidden: ReadonlySet<number>;
+        colors?: ReadonlyMap<number, RgbaColor>;
     }) {
         this.ids = itemIds;
         this.changes = changes;
         this.hidden = hidden;
+        this.colors = colors;
         this.geometries = null;
         // The marchers' marks first, so a listener reads the items as they now are
         this.version++;
@@ -132,6 +145,7 @@ export class FieldItems implements FieldItemSource {
                     closed: shape.closed,
                     geometry,
                     center,
+                    color: this.colors.get(id) ?? null,
                 });
             }
         }

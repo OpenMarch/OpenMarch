@@ -20,7 +20,8 @@
  *
  * What it built is published in `useView3dSceneStore` (`sceneStore.ts`) for
  * the camera rig and the overlay. The camera rig (`camera/CameraRig.tsx`,
- * P3.2) places and moves the camera.
+ * P3.2) places and moves the camera. Performers (`performers/`) and props
+ * (`props/PropBlocks.tsx`) follow the editor's playback.
  */
 // cspell:ignore frameloop
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -74,6 +75,7 @@ import {
     stepQualityFallback,
 } from "./qualityFallback";
 import Performers from "./performers/Performers";
+import PropBlocks from "./props/PropBlocks";
 import { warmLightingPresets } from "./warmLighting";
 import { maxPixelRatio } from "./renderPrefs";
 
@@ -419,7 +421,12 @@ function SceneContents({
         snapRef.current = false;
     });
 
-    return <Performers fieldProperties={fieldProperties} />;
+    return (
+        <>
+            <Performers fieldProperties={fieldProperties} />
+            <PropBlocks fieldProperties={fieldProperties} />
+        </>
+    );
 }
 
 const scratch = new Vector3();

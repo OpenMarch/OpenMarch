@@ -285,6 +285,47 @@ describeDbTests("items", (it) => {
             },
         );
 
+        testWithHistory(
+            "colors several props in one step, and clears a color",
+            async ({ db, beats }) => {
+                expect(beats).toBeDefined();
+                const [beat] = await firstBeatIds(db);
+                const [a, b] = await createItems({
+                    db,
+                    newItems: [riser(beat), riser(beat)],
+                });
+                expect(a.color).toBeNull();
+
+                const red = "rgba(220, 38, 38, 1)";
+                await updateItems({
+                    db,
+                    modifiedItems: [
+                        { itemId: a.id, color: red },
+                        { itemId: b.id, color: red },
+                    ],
+                });
+                expect((await getItems({ db })).map((i) => i.color)).toEqual([
+                    red,
+                    red,
+                ]);
+                await performUndo(db);
+                expect((await getItems({ db })).map((i) => i.color)).toEqual([
+                    null,
+                    null,
+                ]);
+
+                await updateItems({
+                    db,
+                    modifiedItems: [{ itemId: a.id, color: red }],
+                });
+                await updateItems({
+                    db,
+                    modifiedItems: [{ itemId: a.id, color: null }],
+                });
+                expect((await getItems({ db }))[0].color).toBeNull();
+            },
+        );
+
         it("refuses a surface type on equipment", async ({ db, beats }) => {
             expect(beats).toBeDefined();
             const [beat] = await firstBeatIds(db);

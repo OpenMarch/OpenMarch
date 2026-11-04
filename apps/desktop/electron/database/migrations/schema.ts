@@ -728,6 +728,11 @@ export const items = sqliteTable(
          */
         library_item_id: text(),
         library_version_hash: text(),
+        /**
+         * The prop's color, as `rgba(r, g, b, a)`, on the field and in the 3D View; null draws
+         * it in the field theme's line color (2D) and neutral grey (3D).
+         */
+        color: text(),
         ...timestamps,
     },
     (_table) => [
