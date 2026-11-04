@@ -96,6 +96,12 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         [items, geometry, beats],
     );
     const shapes = useMemo(() => propShapes(tracks), [tracks]);
+    // Keyed by the parsed outline objects, which every refetch replaces, so a
+    // fresh cache per tracks keeps the old ones from piling up.
+    const keyOf = useMemo(() => {
+        void tracks;
+        return cachedShapeKey();
+    }, [tracks]);
     const shapesKey = shapes.map((s) => s.key).join("\n");
     const propCount = tracks.length;
 
@@ -135,7 +141,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
             mesh.count = 0;
             return mesh;
         });
-        return { frame, list, keyOf: cachedShapeKey() };
+        return { frame, list };
         // shapesKey stands for shapes: same footprints, same meshes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [shapesKey, propCount, material]);
@@ -167,7 +173,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         if (!meshes) return;
         const ms = useView3dSyncStore.getState().showMs();
         if (!dirtyRef.current && ms === lastMsRef.current) return;
-        const { frame, list, keyOf } = meshes;
+        const { frame, list } = meshes;
         if (positions) {
             placePropBlocks(
                 tracks,
