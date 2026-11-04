@@ -10,10 +10,11 @@
  *   opens it, once the person confirms (`convertOnOpen.ts`).
  * - 8: timeline model. New files start here.
  * - 9: a fork-only floor model (the field image as an embedded Base floor), since parked. No
- *   release wrote it. Such a file opens as the timeline file it is and is written back as 8;
- *   its floor is no longer read.
+ *   release wrote it. Such a file opens as the timeline file it is and is written back as 8,
+ *   with its floor's image put back as the field image (`parkedFloor.ts`).
  */
 import type { DatabaseSync } from "node:sqlite";
+import { recoverParkedFloorInTransaction } from "./parkedFloor";
 
 /** Version of a page-model file. */
 export const PAGE_MODEL_USER_VERSION = 7;
@@ -107,8 +108,20 @@ export function applyFileVersionDecision(
     isNewFile: boolean,
 ): FileVersionDecision {
     const decision = decideFileVersion(readUserVersion(db), isNewFile);
-    if (decision.action === "initialize" || decision.action === "downgrade") {
+    if (decision.action === "initialize") {
         db.prepare(`PRAGMA user_version = ${decision.version}`).run();
+    } else if (decision.action === "downgrade") {
+        // The floor's image goes back in the same transaction as the version, so a failure
+        // leaves the file at 9 to try again
+        db.exec("BEGIN IMMEDIATE");
+        try {
+            recoverParkedFloorInTransaction(db);
+            db.prepare(`PRAGMA user_version = ${decision.version}`).run();
+            db.exec("COMMIT");
+        } catch (error) {
+            db.exec("ROLLBACK");
+            throw error;
+        }
     }
     return decision;
 }

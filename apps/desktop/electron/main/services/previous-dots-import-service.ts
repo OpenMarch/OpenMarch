@@ -11,6 +11,7 @@ import {
 import { dialog } from "electron";
 import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
+import { fieldImageOrParkedFloor } from "@om-electron/database/parkedFloor";
 import { asc, desc, eq, isNotNull } from "drizzle-orm";
 import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWorkspaceSettings";
 import { getLastPageNumber } from "@openmarch/core";
@@ -272,9 +273,13 @@ export async function readPreviousDotsFile(
             sourcePageNumberOffset ?? 0,
         );
 
-        const fieldImage = fieldProperties.image
-            ? new Uint8Array(fieldProperties.image)
-            : null;
+        // A fork-only floor-model file (9) keeps its image in its parked floor
+        const fieldImage = fieldImageOrParkedFloor(
+            db,
+            fieldProperties.image
+                ? new Uint8Array(fieldProperties.image)
+                : null,
+        );
 
         return {
             sourcePath,
