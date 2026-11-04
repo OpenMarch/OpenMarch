@@ -2217,21 +2217,6 @@
             },
             "selectWholeShape": "{shape, select, block {ブロック} circle {円} other {形状}}を選択"
         },
-        "save": {
-            "descriptionLabel": "保存した形状の説明（任意）",
-            "descriptionPlaceholder": "説明（任意）",
-            "ariaLabel": "この形状をライブラリに保存",
-            "button": "保存",
-            "cancel": "キャンセル",
-            "nameLabel": "保存する形状の名前",
-            "savedAs": "{name}として保存済み",
-            "tip": "この形状をスター付きでライブラリに保存します",
-            "mixedIntervals": "間隔が混在する直線はまだ保存できません"
-        },
-        "saved": {
-            "copyFailed": "保存した形状をショーにコピーできませんでした",
-            "deleteFailed": "保存した形状をショーから削除できませんでした"
-        },
         "command": {
             "fill": "塗りつぶし：{modes}",
             "layout": "レイアウト：{layouts}"
@@ -2469,37 +2454,6 @@
                 "spacing": "間隔"
             }
         },
-        "library": {
-            "addNamed": "{name}をマイライブラリに追加",
-            "addTip": "マイライブラリに追加（すべてのショーで使用可能）",
-            "close": "閉じる",
-            "deleteNamed": "{name}を削除",
-            "deleteTip": "この保存済みの形状を削除",
-            "dismiss": "閉じる",
-            "draw": "{name}を描く",
-            "full": "スター付きの形状が{max}個あり、リングがいっぱいです。{name}にスターを付けるには、先にどれかのスターを外してください。",
-            "group": {
-                "basic": "基本",
-                "saved": "保存済み"
-            },
-            "intro": "形状にスターを付けると、形状タブと形状リングに表示されます（最大{max}個）。",
-            "note": {
-                "apart": "間隔{spacing}",
-                "modeApart": "{mode, select, outline {輪郭} other {分散}}、間隔{spacing}",
-                "apartStagger": "間隔{spacing}、千鳥{fraction}",
-                "apartStaggerLeft": "間隔{spacing}、千鳥{fraction}（左）",
-                "showOnly": "このショーのみ",
-                "stagger": "千鳥{fraction}",
-                "staggerLeft": "千鳥{fraction}（左）"
-            },
-            "savedEmpty": "⋯の行かインスペクターから形状を保存すると、ここに保管され、すべてのショーで使えます。",
-            "savedNewer": "保存済みの形状{count}個には、新しいバージョンのOpenMarchが必要です。",
-            "star": "スターを付ける",
-            "starNamed": "{name}にスターを付ける",
-            "title": "形状",
-            "unstar": "スターを外す",
-            "unstarNamed": "{name}のスターを外す"
-        },
         "spacing": {
             "empty": "間隔を歩数で入力してください",
             "noGaps": "区間には1つ以上のすき間が必要です",
@@ -2520,8 +2474,7 @@
             },
             "placeError": "形状の配置中にエラーが発生しました",
             "ring": {
-                "hint": "形状をクリックして選択、ほかの場所をクリックで閉じる",
-                "starred": "スター付き"
+                "hint": "形状をクリックして選択、ほかの場所をクリックで閉じる"
             },
             "section": {
                 "title": "形状"
@@ -2530,8 +2483,6 @@
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "形状の種類",
-                "library": "ライブラリ",
-                "libraryTip": "形状ライブラリを開いてスターを付ける",
                 "ringHintKeys": "フィールド上で<keys></keys>を押し続けると形状リングを表示"
             }
         },

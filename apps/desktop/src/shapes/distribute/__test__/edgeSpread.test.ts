@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { distribute, edgeSplit, spreadScale } from "../distribute";
 import {
     reshuffled,
-    savedDistributionOf,
     spreadDistribution,
     storedDistribution,
     type SpreadDistribution,
@@ -225,7 +224,7 @@ describe("Spread with an edge keeps the floor for every seed (#450 review)", () 
 });
 
 describe("Spread with an edge, as stored", () => {
-    it("is `edge: true`, absent when off, and kept by a saved shape", () => {
+    it("is `edge: true`, and absent when off", () => {
         expect(spreadDistribution(1, 10)).not.toHaveProperty("edge");
         const d = edged(3, 10);
         expect(
@@ -237,11 +236,6 @@ describe("Spread with an edge, as stored", () => {
         expect(
             storedDistribution({ distribution: { ...d, edge: "yes" } }, 1),
         ).not.toHaveProperty("edge");
-        expect(savedDistributionOf(d)).toEqual({
-            mode: "spread",
-            generator: d.generator,
-            edge: true,
-        });
     });
 
     it("leaves a plain spread as it was: the same spots as before edges existed", () => {

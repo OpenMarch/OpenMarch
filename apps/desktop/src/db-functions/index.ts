@@ -16,4 +16,3 @@ export * from "./marcherHome";
 export * from "./timelineChanges";
 export * from "./items";
 export * from "./itemBeatRemap";
-export * from "./savedShapes";

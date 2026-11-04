@@ -2217,21 +2217,6 @@
             },
             "selectWholeShape": "选择整个{shape, select, block {方阵} circle {圆形} other {图形}}"
         },
-        "save": {
-            "descriptionLabel": "已保存图形的说明（可选）",
-            "descriptionPlaceholder": "说明（可选）",
-            "ariaLabel": "将此图形保存到你的库",
-            "button": "保存",
-            "cancel": "取消",
-            "nameLabel": "已保存图形的名称",
-            "savedAs": "已保存为“{name}”",
-            "tip": "将此图形保存到你的库并加星标",
-            "mixedIntervals": "暂不能保存间距不一的线条"
-        },
-        "saved": {
-            "copyFailed": "无法将已保存的图形复制到表演中",
-            "deleteFailed": "无法从表演中删除已保存的图形"
-        },
         "command": {
             "fill": "填充方式：{modes}",
             "layout": "布局：{layouts}"
@@ -2469,37 +2454,6 @@
                 "spacing": "间距"
             }
         },
-        "library": {
-            "addNamed": "将{name}添加到我的库",
-            "addTip": "添加到我的库，供所有表演使用",
-            "close": "关闭",
-            "deleteNamed": "删除{name}",
-            "deleteTip": "删除此已保存的形状",
-            "dismiss": "关闭",
-            "draw": "绘制{name}",
-            "full": "已为{max}个形状加星标，已达到轮盘上限。请先取消一个星标，再为{name}加星标。",
-            "group": {
-                "basic": "基本",
-                "saved": "已保存"
-            },
-            "intro": "为形状加星标，即可将其保留在“形状”标签页和形状轮盘中，最多{max}个。",
-            "note": {
-                "apart": "间距{spacing}",
-                "modeApart": "{mode, select, outline {轮廓} other {分散}}，间距{spacing}",
-                "apartStagger": "间距{spacing}，错位{fraction}",
-                "apartStaggerLeft": "间距{spacing}，向左错位{fraction}",
-                "showOnly": "仅限此表演",
-                "stagger": "错位{fraction}",
-                "staggerLeft": "向左错位{fraction}"
-            },
-            "savedEmpty": "从形状的⋯行或检查器中保存形状，即可将其保留在此处，供所有表演使用。",
-            "savedNewer": "{count, plural, other {#个已保存的形状}}需要更新版本的OpenMarch。",
-            "star": "加星标",
-            "starNamed": "为{name}加星标",
-            "title": "形状",
-            "unstar": "取消星标",
-            "unstarNamed": "取消{name}的星标"
-        },
         "spacing": {
             "empty": "请输入以步为单位的间距",
             "noGaps": "一段排布至少需要1个空隙",
@@ -2520,8 +2474,7 @@
             },
             "placeError": "放置形状时出错",
             "ring": {
-                "hint": "点击形状，或点击其他任意位置关闭",
-                "starred": "已加星标"
+                "hint": "点击形状，或点击其他任意位置关闭"
             },
             "section": {
                 "title": "形状"
@@ -2530,8 +2483,6 @@
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "形状类型",
-                "library": "形状库",
-                "libraryTip": "打开形状库，为形状加星标",
                 "ringHintKeys": "在场地上按住<keys></keys>打开形状轮盘"
             }
         },
