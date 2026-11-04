@@ -2359,8 +2359,10 @@ test("change: a press that makes the editor too wide for one row keeps its rows 
 }) => {
     const { page } = show;
     // One row only just fits here (with the Snap and eye buttons), and a + that leaves marchers short
-    // widens it past the field
-    await page.setViewportSize({ width: 1060, height: 1000 });
+    // widens it past the field. 1034 is the 1060 this was tuned at, less the 26 px the editor's
+    // Save button took before it was removed. Sized before the box is drawn: narrowed after, the
+    // pressed + moved.
+    await page.setViewportSize({ width: 1034, height: 1000 });
     await drawBox(show);
     const bar = page.getByTestId("shape-tool-readout-bar");
     await expect(bar).toHaveAttribute("data-rows", "1");
