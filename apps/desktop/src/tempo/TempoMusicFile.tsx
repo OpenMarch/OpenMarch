@@ -12,6 +12,7 @@ import {
     CheckIcon,
     MusicNotesIcon,
     PlusIcon,
+    TimerIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -28,6 +29,8 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import tolgee from "@/global/singletons/Tolgee";
 import { runAction } from "@/shortcuts/registry";
+import { useAudioOffsetSeconds } from "./audioOffset";
+import { offsetText, TempoMusicOffset } from "./TempoMusicOffset";
 import { toolButton } from "./TempoToolbar";
 
 export const MENU_CLASS =
@@ -74,6 +77,8 @@ function useAudioFiles() {
 export function TempoMusicFile() {
     const { files, selected, select, remove } = useAudioFiles();
     const [deleting, setDeleting] = useState<AudioFile | null>(null);
+    const [offsetOpen, setOffsetOpen] = useState(false);
+    const offset = useAudioOffsetSeconds();
     if (files === null) return null;
     const current = files.find((f) => f.id === selected?.id) ?? null;
 
@@ -148,6 +153,22 @@ export function TempoMusicFile() {
                             <DropdownMenu.Separator className="bg-stroke mx-4 my-4 h-px" />
                             <DropdownMenu.Item
                                 className={MENU_ITEM_CLASS}
+                                onSelect={() => setOffsetOpen(true)}
+                                data-testid="tempo-music-offset"
+                            >
+                                <TimerIcon size={12} aria-hidden />
+                                <span className="flex-1">
+                                    {tolgee.t(
+                                        "tempoMode.music.offset",
+                                        "Music offset…",
+                                    )}
+                                </span>
+                                <span className="text-text/60 tabular-nums">
+                                    {offsetText(offset)}
+                                </span>
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Item
+                                className={MENU_ITEM_CLASS}
                                 onSelect={importAudioFile}
                             >
                                 <PlusIcon size={12} aria-hidden />
@@ -176,6 +197,11 @@ export function TempoMusicFile() {
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             )}
+            <TempoMusicOffset
+                open={offsetOpen}
+                onOpenChange={setOffsetOpen}
+                seconds={offset}
+            />
             <AlertDialog
                 open={deleting !== null}
                 onOpenChange={(open) => {

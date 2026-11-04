@@ -4556,7 +4556,7 @@
             },
             "musicFile": {
                 "gesture": "The file's name in the header",
-                "effect": "switches to another audio file, imports one or deletes it"
+                "effect": "switches to another audio file, sets the music offset, imports one or deletes it"
             }
         },
         "importScore": {
@@ -4638,7 +4638,13 @@
             "menuLabel": "Music file",
             "pick": "Pick music",
             "importAnother": "Import another audio file…",
-            "delete": "Delete this audio file…"
+            "delete": "Delete this audio file…",
+            "offset": "Music offset…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Music offset",
+            "offsetHelp": "How many seconds after count 1 the music starts. Negative starts count 1 that far into the music. To set it by ear, right-click the music and choose Start the music here.",
+            "seconds": "seconds",
+            "offsetSet": "Set"
         }
     }
 }
