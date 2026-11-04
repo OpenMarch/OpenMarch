@@ -1,11 +1,5 @@
 import * as Popover from "@radix-ui/react-popover";
-import {
-    BoundingBoxIcon,
-    CompassIcon,
-    TagIcon,
-    UsersThreeIcon,
-    type Icon,
-} from "@phosphor-icons/react";
+import { BoundingBoxIcon, TagIcon, type Icon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
 import clsx from "clsx";
@@ -40,8 +34,7 @@ const SHAPE_CHOICES: readonly Choice<ShapeOutlines>[] = [
 /**
  * How the field is displayed, apart from the timeline: a small bar at the field's top right (the
  * zoom controls hold the bottom right). It replaced the toolbar's View tab. Path overlays, marcher
- * labels and placed shapes' outlines work; sections and the field's direction are placeholders
- * until those features exist.
+ * labels and placed shapes' outlines.
  */
 export default function FieldDisplayBar() {
     const { t } = useTranslate();
@@ -70,19 +63,6 @@ export default function FieldDisplayBar() {
                     icon={BoundingBoxIcon}
                     labelKey="toolbar.view.shapes"
                     testId="field-display-shapes"
-                />
-                <span aria-hidden className="bg-stroke h-px w-16" />
-                <PlaceholderButton
-                    icon={UsersThreeIcon}
-                    label={t("fieldDisplay.sections")}
-                    caption={t("fieldDisplay.caption.sections")}
-                    testId="field-display-sections"
-                />
-                <PlaceholderButton
-                    icon={CompassIcon}
-                    label={t("fieldDisplay.direction")}
-                    caption={t("fieldDisplay.caption.direction")}
-                    testId="field-display-direction"
                 />
             </div>
         </TransportTooltipProvider>
@@ -192,44 +172,5 @@ function ChoiceButton<K extends "marcherLabels" | "shapes">({
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>
-    );
-}
-
-/**
- * A display setting that doesn't exist yet: shown dimmed, says "coming soon" on hover, does
- * nothing. `aria-disabled` rather than `disabled`, so the tooltip still opens.
- */
-function PlaceholderButton({
-    icon: IconComponent,
-    label,
-    caption,
-    testId,
-}: {
-    icon: Icon;
-    label: string;
-    caption: string;
-    testId: string;
-}) {
-    const { t } = useTranslate();
-    return (
-        <ShortcutTooltip
-            label={label}
-            hint={t("fieldDisplay.comingSoon")}
-            side="left"
-        >
-            <button
-                type="button"
-                aria-label={t("fieldDisplay.comingSoonLabel", { label })}
-                aria-disabled
-                data-testid={testId}
-                className={clsx(
-                    DISPLAY_BUTTON_CLASS,
-                    "text-text cursor-not-allowed opacity-40",
-                )}
-            >
-                <IconComponent size={16} />
-                <DisplayCaption>{caption}</DisplayCaption>
-            </button>
-        </ShortcutTooltip>
     );
 }

@@ -468,7 +468,6 @@ describe("timeline views", () => {
     });
 
     it("shows the window's counts only when it starts off a page line (UI-13)", () => {
-        const onCreateTrack = vi.fn();
         const { rerender } = render(
             <ExpandedTimeline
                 {...commonProps}
@@ -493,14 +492,10 @@ describe("timeline views", () => {
                     kind: "range",
                     range: { startBeatIndex: 8, endBeatIndex: 24 },
                 }}
-                onCreateTrack={onCreateTrack}
             />,
         );
         expect(
             screen.queryByTestId("timeline-selection-count"),
-        ).not.toBeInTheDocument();
-        expect(
-            screen.queryByRole("button", { name: "Create Track" }),
         ).not.toBeInTheDocument();
 
         rerender(
@@ -516,9 +511,6 @@ describe("timeline views", () => {
         expect(
             screen.getByTestId("timeline-selection-count"),
         ).toHaveTextContent("4 counts");
-        expect(
-            screen.queryByRole("button", { name: "Create Track" }),
-        ).not.toBeInTheDocument();
 
         rerender(
             <ExpandedTimeline
@@ -543,32 +535,8 @@ describe("timeline views", () => {
         ).not.toBeInTheDocument();
     });
 
-    it("shows create track for an explicit range regardless of coverage", () => {
-        const onCreateTrack = vi.fn();
-        render(
-            <ExpandedTimeline
-                {...commonProps}
-                showTransport={false}
-                selection={{
-                    kind: "range",
-                    range: { startBeatIndex: 5, endBeatIndex: 9 },
-                }}
-                selectedTarget={{ id: "marcher-1", type: "marcher" }}
-                onCreateTrack={onCreateTrack}
-            />,
-        );
-        const create = screen.getByRole("button", { name: "Create Track" });
-        fireEvent.click(create);
-        expect(onCreateTrack).toHaveBeenCalledWith({
-            target: { id: "marcher-1", type: "marcher" },
-            range: { startBeatIndex: 5, endBeatIndex: 9 },
-        });
-        expect(screen.getByText("4 counts")).toBeInTheDocument();
-    });
-
-    it("moves the count with the dragged start flag and reveals create on release", () => {
+    it("moves the count with the dragged start flag", () => {
         const onSelectionChange = vi.fn();
-        const onCreateTrack = vi.fn();
         render(
             <ExpandedTimeline
                 {...commonProps}
@@ -577,9 +545,7 @@ describe("timeline views", () => {
                     kind: "range",
                     range: { startBeatIndex: 5, endBeatIndex: 9 },
                 }}
-                selectedTarget={{ id: "marcher-1", type: "marcher" }}
                 onSelectionChange={onSelectionChange}
-                onCreateTrack={onCreateTrack}
             />,
         );
         const start = screen.getByRole("button", { name: /^Start flag/ });
@@ -611,9 +577,6 @@ describe("timeline views", () => {
             transform: "translateX(-100%)",
         });
         expect(actions).toHaveClass("flex-col");
-        expect(
-            screen.queryByRole("button", { name: "Create Track" }),
-        ).not.toBeInTheDocument();
 
         fireEvent(
             start,
@@ -633,17 +596,10 @@ describe("timeline views", () => {
             range: { startBeatIndex: 0, endBeatIndex: 9 },
         });
         expect(actions).toHaveStyle({ left: "150px", transform: "" });
-        const create = screen.getByRole("button", { name: "Create Track" });
         // UI-13: released on page 1's start line, the window's count is the playhead's, so it hides
         expect(
             screen.queryByTestId("timeline-selection-count"),
         ).not.toBeInTheDocument();
-        expect(actions.firstElementChild).toBe(create);
-        fireEvent.click(create);
-        expect(onCreateTrack).toHaveBeenCalledWith({
-            target: { id: "marcher-1", type: "marcher" },
-            range: { startBeatIndex: 0, endBeatIndex: 9 },
-        });
     });
 
     it("has no end handle: the playhead is the window's end (UI-10)", () => {

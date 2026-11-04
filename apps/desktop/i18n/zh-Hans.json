@@ -147,8 +147,6 @@
             "openSettings": "设置…",
             "openView3d": "打开3D视图",
             "openView3dKeywords": "3d 三维 立体 体育场 场馆 窗口 three dimensional stadium venue window",
-            "runFieldBenchmark": "运行场地基准测试",
-            "runFieldBenchmarkKeywords": "性能 帧率 fps 速度 测试 performance speed test frame rate",
             "showShortcuts": "键盘快捷键",
             "hideStartFlagPositions": "隐藏起始标记位置",
             "showStartFlagPositions": "显示起始标记位置",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "已复制",
-            "copy": "复制为Markdown",
-            "devBuild": "这是开发版本。只有正式版本的测试数据才有参考价值。",
-            "intro": "对当前打开的表演依次进行播放、拖动浏览、缩放和平移，每项持续几秒，并测量每一帧。运行期间请让此窗口保持在最前面，不要进行任何操作。",
-            "run": "运行",
-            "running": "正在运行：{kind}…",
-            "softwareGl": "此处图形由软件渲染，因此这些数据仅为下限。",
-            "title": "场地性能测试"
+            "running": "正在运行：{kind}…"
         },
         "gestureChip": {
             "equalSpacings": "等距",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "方向",
-            "sections": "声部"
-        },
-        "comingSoon": "即将推出",
-        "direction": "场地方向",
         "label": "场地显示",
-        "sections": "可见声部",
-        "comingSoonLabel": "{label}：即将推出",
         "valueLabel": "{label}：{value}"
     },
     "fieldProperties": {
@@ -795,7 +778,6 @@
         "exitFile": "关闭文件",
         "newFile": "新建文件",
         "openFile": "打开文件",
-        "redo": "重做",
         "saveCopyDialogDescription": "OpenMarch会自动将更改保存到当前文件。如需创建当前文件的完整副本，请使用此功能。",
         "saveFile": "保存副本",
         "saveFileCancel": "取消",
@@ -838,18 +820,11 @@
             "stepSizeWarning": "步幅超过阈值",
             "swapMarchers": "交换队员位置",
             "timeline": {
-                "buttonWithHint": "{label}。{hint}",
                 "goToPage": "转到第{page}页（这些队员最后一次移动的页）",
                 "goToStart": "转到开头",
                 "holdFrom": "从第{page}页起保持不动",
                 "holdFromStart": "从开头起保持不动",
-                "holdHere": "这些队员在此保持不动",
-                "movesOnThisPage": "在本页移动",
-                "someHoldHere": "部分队员在此保持不动",
-                "unsetHere": "移除关键帧",
-                "unsetHereHint": "移除其在这一拍上的关键帧，使其跟随之前的位置。之后的页保持不变",
-                "unsetHereHintSome": "移除所选{total}名中在这一拍上有关键帧的{count}名队员的关键帧，使其跟随之前的位置。之后的页保持不变",
-                "unsetHereNone": "所选队员在这一拍上均没有关键帧"
+                "movesOnThisPage": "在本页移动"
             },
             "title": "{count}名队员",
             "titleSingle": "队员{drillNumber}",
@@ -912,18 +887,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "拍",
-                "delete": "删除动作",
-                "endHelp": "要更改队员的终点位置，请在动作结束处拖动场地上的队员。",
-                "goToEnd": "转到结尾",
-                "marchers": "{count, plural, other {#名队员}}",
-                "name": "名称",
-                "nameLimit": "最多{max}个字符。",
-                "paused": "暂停播放后才能删除动作。",
-                "selectMarchers": "选中这些队员",
-                "split": "在播放头处拆分",
-                "splitHelp": "将播放头置于动作内部，即可在该处拆分。",
-                "title": "动作"
+                "splitHelp": "将播放头置于动作内部，即可在该处拆分。"
             }
         },
         "title": "检查器"
@@ -1565,11 +1529,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "中",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "编辑形状时",
-        "field.shapeFocus.drawing": "仅绘制时淡化",
-        "field.shapeFocus.drawing.description": "仅在绘制打开的形状时，淡化形状外的队员。",
-        "field.shapeFocus.rest": "淡化其余队员",
-        "field.shapeFocus.rest.description": "形状打开期间，一直淡化形状外的队员。",
         "field.stepSizeWarnings": "步幅警告",
         "field.stepSizeWarnings.description": "标记步幅过大、无法行进的动作，并始终显示其路径。",
         "general": "通用",
@@ -1598,27 +1557,6 @@
         "mouse.trackpadPanSensitivity": "触控板平移灵敏度",
         "mouse.zoomSensitivity": "缩放灵敏度",
         "noResults": "没有匹配的设置。",
-        "plugins": "插件",
-        "plugins.community": "社区",
-        "plugins.description": "添加由社区制作的功能。",
-        "plugins.install": "安装",
-        "plugins.installed": "已安装",
-        "plugins.installFailed": "安装失败",
-        "plugins.installing": "正在安装...",
-        "plugins.noCommunityPlugins": "暂无社区插件。",
-        "plugins.noOfficialPlugins": "暂无官方插件。",
-        "plugins.noPlugins": "未安装插件。",
-        "plugins.official": "官方",
-        "plugins.refreshNotice": "请<a>重新加载应用</a>以更新插件。",
-        "plugins.toast.installFailed": "插件 {pluginName} 安装失败",
-        "plugins.toast.installSuccess": "插件 {pluginName} 安装成功！",
-        "plugins.toast.uninstallFailed": "移除 {pluginName} 失败",
-        "plugins.toast.uninstallSuccess": "插件 {pluginName} 已成功移除！",
-        "plugins.uninstall": "卸载",
-        "plugins.uninstalled": "已移除",
-        "plugins.uninstallFailed": "移除失败",
-        "plugins.uninstalling": "正在移除...",
-        "plugins.version": "v{version}",
         "privacy": "隐私",
         "privacy.analytics": "共享使用情况分析",
         "privacy.analytics.description": "为了帮助我们改进 OpenMarch，我们会收集分析数据、错误日志和会话录制。这有助于我们了解你如何使用本应用并发现问题。阅读我们的<a>隐私政策</a>了解更多。",
@@ -1676,8 +1614,6 @@
         "tolgeeDevToolsToggle": "Tolgee 上下文内翻译",
         "view3d": "3D 视图",
         "view3d.description": "3D 视图在这台电脑上的绘制方式。不会保存在表演中。",
-        "view3d.pauseWhenIdle": "画面静止时暂停绘制",
-        "view3d.pauseWhenIdle.description": "当表演暂停且镜头静止时停止绘制。",
         "view3d.quality": "画质",
         "view3d.quality.auto": "自动",
         "view3d.quality.auto.description": "从“高”开始，如果画面卡顿则切换为“低”。",
@@ -1692,8 +1628,6 @@
         "view3d.resolution.fast.description": "最柔和，工作量约减半。适合较旧的电脑。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高分辨率屏幕上显示全部细节。",
-        "view3d.saveOnBattery": "使用电池时节省电量",
-        "view3d.saveOnBattery.description": "使用电池时，以标准分辨率绘制，每秒最多 30 帧。",
         "input": "触控与输入",
         "input.description": "选择平板布局（适用于手指和触控笔）或桌面布局（适用于鼠标和触控板）。",
         "input.interface": "布局",
@@ -2140,7 +2074,6 @@
                 "hint": "点击形状，或点击其他任意位置关闭"
             },
             "section": {
-                "box": "方阵",
                 "title": "形状"
             },
             "selectMarchersFirst": "请先选择队员",
@@ -2151,10 +2084,6 @@
             }
         },
         "transform": {
-            "flipAcross": "翻转 ↔",
-            "flipAcrossTip": "围绕支点左右翻转",
-            "flipDeep": "翻转 ↕",
-            "flipDeepTip": "围绕支点前后翻转",
             "title": "变换"
         },
         "validate": {
@@ -2290,7 +2219,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "时间轴",
-        "masterVolume": "主音量",
         "moveDeleted": {
             "message": "已删除{label}",
             "withPages": "{count, plural, other {已删除{label} · 第{pages}页已更改}}"
@@ -2319,9 +2247,7 @@
             "setAsShown": "设为当前显示位置",
             "setAsShownNone": "所选队员均已在{page}上设定位置，或正处于动作中途",
             "setAsShownError": "将队员设为当前显示位置时出错",
-            "addSelected": "添加所选队员",
-            "deletePage": "删除此页",
-            "addSelectedNone": "请先选择队员：可在起点、尚无动作的区段，或其所在动作的轨道中选择。"
+            "deletePage": "删除此页"
         },
         "startFlagPositions": {
             "always": "始终",
@@ -2378,7 +2304,6 @@
             "label": "紧凑时间轴",
             "onTooltip": "紧凑时间轴：开。点击显示完整时间轴"
         },
-        "volumeSlider": "时间轴音量滑块",
         "zoomReset": "重置时间轴缩放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
@@ -2403,7 +2328,6 @@
             "lockedNotMoved": "{count, plural, other {此页有#名队员使用专家模式动作，因此未被移动。请切换到专家模式进行编辑。}}",
             "switchToExpert": "切换到专家模式"
         },
-        "volume": "时间轴音量",
         "percent": "{percent}%",
         "loop": {
             "label": "循环",
@@ -2609,7 +2533,6 @@
             "range": "第{from}–{to}拍",
             "length": "{count, plural, other {#拍}}"
         },
-        "createTrack": "创建轨道",
         "playheadChip": {
             "label": "显示播放头",
             "text": "播放头"
@@ -2846,16 +2769,11 @@
             "freeCamera": "自由视角"
         },
         "readout": {
-            "camera": "视高{eye} · 距中心{distance}",
             "count": "第{count}拍，共{total}拍",
             "noPages": "无页",
             "page": "第{page}页",
             "pastEnd": "结束 +{count}",
             "showTime": "表演时间"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D视图 — {showName}",
@@ -3113,9 +3031,7 @@
             "in": "放大",
             "out": "缩小",
             "reset": "缩放{zoom}%，重置缩放并居中",
-            "resetAndCenter": "重置缩放并居中",
-            "perspective": "透视",
-            "perspectiveComingSoon": "透视（即将推出）"
+            "resetAndCenter": "重置缩放并居中"
         }
     },
     "errorBoundary": {

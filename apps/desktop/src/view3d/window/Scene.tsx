@@ -129,9 +129,6 @@ export default function Scene() {
     const lighting = useView3dSceneStore((s) => s.lighting);
     const quality = useView3dSceneStore((s) => s.quality);
     const onBattery = useView3dSceneStore((s) => s.onBattery);
-    const saveOnBattery = useView3dSceneStore(
-        (s) => s.powerPrefs.saveOnBattery,
-    );
     const resolution = useView3dSceneStore((s) => s.resolution);
 
     // Cameras load first too, so a venue opens on the show's first camera.
@@ -150,10 +147,10 @@ export default function Scene() {
                 // Draw only when something changes (`DrawWhenNeeded`).
                 frameloop="demand"
                 // `low` renders at 1x so HiDPI screens on integrated GPUs keep
-                // up; so does battery power when saving power is on. Otherwise
+                // up; so does battery power. Otherwise
                 // the Resolution setting caps it (`renderPrefs.ts`).
                 dpr={
-                    quality === "low" || (onBattery && saveOnBattery)
+                    quality === "low" || onBattery
                         ? 1
                         : [1, maxPixelRatio(resolution)]
                 }
@@ -382,16 +379,14 @@ function SceneContents({
     const fallbackRef = useRef(createQualityFallbackState());
     const qualityMode = useView3dSceneStore((s) => s.qualityMode);
     const autoLowered = useView3dSceneStore((s) => s.autoLowered);
-    const capped = useView3dSceneStore((s) =>
-        frameCapped(s.onBattery, s.powerPrefs),
-    );
+    const capped = useView3dSceneStore((s) => frameCapped(s.onBattery));
     useEffect(() => {
         fallbackRef.current = createQualityFallbackState();
     }, [qualityMode, autoLowered, capped]);
     useFrame((_, dt) => {
         const store = useView3dSceneStore.getState();
         if (store.qualityMode !== "auto" || store.quality !== "high") return;
-        if (frameCapped(store.onBattery, store.powerPrefs)) return;
+        if (frameCapped(store.onBattery)) return;
         if (stepQualityFallback(fallbackRef.current, dt)) {
             // eslint-disable-next-line no-console -- design.md §9 asks for a log line
             console.info(FALLBACK_LOG_MESSAGE);

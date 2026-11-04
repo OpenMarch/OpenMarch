@@ -147,8 +147,6 @@
             "openSettings": "設定…",
             "openView3d": "3Dビューを開く",
             "openView3dKeywords": "3d 3D 立体 三次元 スタジアム 会場 ウィンドウ three dimensional stadium venue window",
-            "runFieldBenchmark": "フィールドのベンチマークを実行",
-            "runFieldBenchmarkKeywords": "パフォーマンス 性能 fps 速度 速さ テスト フレームレート performance speed test frame rate",
             "showShortcuts": "キーボードショートカット",
             "hideStartFlagPositions": "開始フラグの位置を非表示",
             "showStartFlagPositions": "開始フラグの位置を表示",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "コピー済み",
-            "copy": "Markdownとしてコピー",
-            "devBuild": "これは開発ビルドです。有効なのは製品版ビルドで計測した数値だけです。",
-            "intro": "開いているショーで再生、スクラブ、ズーム、パンをそれぞれ数秒ずつ実行し、すべてのフレームを計測します。実行中はこのウィンドウを前面に表示したまま、何も操作しないでください。",
-            "run": "実行",
-            "running": "実行中：{kind}…",
-            "softwareGl": "この環境ではグラフィックスがソフトウェアで処理されているため、これらの数値は下限値です。",
-            "title": "フィールドベンチマーク"
+            "running": "実行中：{kind}…"
         },
         "gestureChip": {
             "equalSpacings": "等間隔",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "向き",
-            "sections": "パート"
-        },
-        "comingSoon": "近日公開",
-        "direction": "フィールドの向き",
         "label": "フィールド表示",
-        "sections": "表示するパート",
-        "comingSoonLabel": "{label}：近日公開",
         "valueLabel": "{label}：{value}"
     },
     "fieldProperties": {
@@ -798,7 +781,6 @@
         "exitFile": "ファイルを閉じる",
         "newFile": "新規ファイル",
         "openFile": "ファイルを開く",
-        "redo": "やり直し",
         "saveCopyDialogDescription": "OpenMarchは現在のファイルへの変更を自動的に保存します。現在のファイルの完全なコピーを作成したい場合は、この機能を使用してください。",
         "saveFile": "コピーを保存",
         "saveFileCancel": "キャンセル",
@@ -841,18 +823,11 @@
             "stepSizeWarning": "歩幅がしきい値を超えています",
             "swapMarchers": "メンバーを入れ替え",
             "timeline": {
-                "buttonWithHint": "{label}。{hint}",
                 "goToPage": "これらのメンバーが最後に動いたページ{page}へ移動",
                 "goToStart": "先頭へ移動",
                 "holdFrom": "ページ{page}から静止",
                 "holdFromStart": "最初から静止",
-                "holdHere": "これらのメンバーはここで静止しています",
-                "movesOnThisPage": "このページで移動",
-                "someHoldHere": "これらのメンバーの一部はここで静止しています",
-                "unsetHere": "キーフレームを削除",
-                "unsetHereHint": "このカウントのキーフレームを削除し、前の位置に追従させます。以降のページの位置は変わりません",
-                "unsetHereHintSome": "選択中の{total}人のうち、このカウントにキーフレームがある{count}人のキーフレームを削除し、前の位置に追従させます。以降のページの位置は変わりません",
-                "unsetHereNone": "選択中のメンバーには、このカウントにキーフレームがありません"
+                "movesOnThisPage": "このページで移動"
             },
             "title": "{count}人のメンバー",
             "titleSingle": "メンバー {drillNumber}",
@@ -915,18 +890,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "カウント",
-                "delete": "動きを削除",
-                "endHelp": "終了位置を変更するには、動きの終わりでフィールド上のメンバーをドラッグしてください。",
-                "goToEnd": "終わりへ移動",
-                "marchers": "{count, plural, other {#人のメンバー}}",
-                "name": "名前",
-                "nameLimit": "最大{max}文字です。",
-                "paused": "動きを削除するには、再生を一時停止してください。",
-                "selectMarchers": "メンバーを選択",
-                "split": "再生ヘッドで分割",
-                "splitHelp": "分割するには、再生ヘッドを動きの範囲内に置いてください。",
-                "title": "動き"
+                "splitHelp": "分割するには、再生ヘッドを動きの範囲内に置いてください。"
             }
         },
         "title": "インスペクター"
@@ -1568,11 +1532,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "標準",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "形状の編集中",
-        "field.shapeFocus.drawing": "描画中のみ薄くする",
-        "field.shapeFocus.drawing.description": "開いている形状の外にいるメンバーは、描画中のみ薄く表示されます。",
-        "field.shapeFocus.rest": "他を薄くする",
-        "field.shapeFocus.rest.description": "開いている形状の外にいるメンバーは、形状を開いている間ずっと薄く表示されます。",
         "field.stepSizeWarnings": "歩幅の警告",
         "field.stepSizeWarnings.description": "歩幅が大きすぎて行進できない動きに印を付け、その経路を常に表示します。",
         "general": "一般",
@@ -1601,27 +1560,6 @@
         "mouse.trackpadPanSensitivity": "トラックパッドのパン感度",
         "mouse.zoomSensitivity": "ズーム感度",
         "noResults": "一致する設定はありません。",
-        "plugins": "プラグイン",
-        "plugins.community": "コミュニティ",
-        "plugins.description": "コミュニティが作成した機能を追加します。",
-        "plugins.install": "インストール",
-        "plugins.installed": "インストール済み",
-        "plugins.installFailed": "インストール失敗",
-        "plugins.installing": "インストール中...",
-        "plugins.noCommunityPlugins": "利用できるコミュニティプラグインはありません。",
-        "plugins.noOfficialPlugins": "利用できる公式プラグインはありません。",
-        "plugins.noPlugins": "インストールされているプラグインはありません。",
-        "plugins.official": "公式",
-        "plugins.refreshNotice": "プラグインを更新するには、<a>アプリを再読み込み</a>してください。",
-        "plugins.toast.installFailed": "プラグイン「{pluginName}」のインストールに失敗しました。",
-        "plugins.toast.installSuccess": "プラグイン「{pluginName}」をインストールしました！",
-        "plugins.toast.uninstallFailed": "「{pluginName}」の削除に失敗しました。",
-        "plugins.toast.uninstallSuccess": "プラグイン「{pluginName}」を削除しました！",
-        "plugins.uninstall": "アンインストール",
-        "plugins.uninstalled": "削除済み",
-        "plugins.uninstallFailed": "削除失敗",
-        "plugins.uninstalling": "削除中...",
-        "plugins.version": "v{version}",
         "privacy": "プライバシー",
         "privacy.analytics": "使用状況データを共有",
         "privacy.analytics.description": "OpenMarchの改善のため、分析データ、エラーログ、セッションの録画を収集しています。これにより、アプリの使われ方を把握し、バグを見つけることができます。詳しくは<a>プライバシーポリシー</a>をご覧ください。",
@@ -1679,8 +1617,6 @@
         "tolgeeDevToolsToggle": "Tolgeeインコンテキスト翻訳",
         "view3d": "3Dビュー",
         "view3d.description": "このコンピューターでの3Dビューの描画方法です。ショーには保存されません。",
-        "view3d.pauseWhenIdle": "動きがないときは描画を停止",
-        "view3d.pauseWhenIdle.description": "ショーが一時停止中でカメラが動いていないときは、描画を停止します。",
         "view3d.quality": "品質",
         "view3d.quality.auto": "自動",
         "view3d.quality.auto.description": "「高」で開始し、表示がカクつく場合は「低」に切り替えます。",
@@ -1695,8 +1631,6 @@
         "view3d.resolution.fast.description": "最もぼやけますが、負荷は約半分です。古いコンピューター向けです。",
         "view3d.resolution.sharp": "高精細",
         "view3d.resolution.sharp.description": "高解像度の画面でも細部まで表示します。",
-        "view3d.saveOnBattery": "バッテリー使用時は省電力",
-        "view3d.saveOnBattery.description": "バッテリー使用時は、標準解像度で毎秒最大30フレームで描画します。",
         "input": "タッチと入力",
         "input.description": "タブレットレイアウト（指とペン用）またはデスクトップレイアウト（マウスとトラックパッド用）を選択します。",
         "input.interface": "レイアウト",
@@ -2143,7 +2077,6 @@
                 "hint": "形状をクリックして選択、ほかの場所をクリックで閉じる"
             },
             "section": {
-                "box": "ブロック",
                 "title": "形状"
             },
             "selectMarchersFirst": "先にメンバーを選択してください",
@@ -2154,10 +2087,6 @@
             }
         },
         "transform": {
-            "flipAcross": "反転 ↔",
-            "flipAcrossTip": "ピボットを中心に左右反転",
-            "flipDeep": "反転 ↕",
-            "flipDeepTip": "ピボットを中心に前後反転",
             "title": "変形"
         },
         "validate": {
@@ -2293,7 +2222,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "タイムライン",
-        "masterVolume": "マスター音量",
         "moveDeleted": {
             "message": "{label}を削除しました",
             "withPages": "{count, plural, other {{label}を削除しました · ページ{pages}が変わりました}}"
@@ -2322,9 +2250,7 @@
             "setAsShown": "表示どおりにセット",
             "setAsShownNone": "選択したメンバーは全員、{page}ですでにセット済みか、動きの途中です",
             "setAsShownError": "メンバーを表示どおりにセットする際にエラーが発生しました",
-            "addSelected": "選択したメンバーを追加",
-            "deletePage": "ページを削除",
-            "addSelectedNone": "先にメンバーを選択してください（ホーム、まだ動きのない範囲、またはメンバーが属する動きで選択できます）。"
+            "deletePage": "ページを削除"
         },
         "startFlagPositions": {
             "always": "常時",
@@ -2381,7 +2307,6 @@
             "label": "タイムラインをコンパクト表示",
             "onTooltip": "タイムラインのコンパクト表示：オン。クリックするとタイムライン全体を表示します"
         },
-        "volumeSlider": "タイムラインの音量スライダー",
         "zoomReset": "タイムラインのズームをリセット",
         "playbackSpeed": {
             "current": "再生速度：{speed}",
@@ -2406,7 +2331,6 @@
             "lockedNotMoved": "{count, plural, other {このページでは#人のメンバーがエキスパートの動きを使用しているため、移動しませんでした。編集するにはエキスパートに切り替えてください。}}",
             "switchToExpert": "エキスパートに切り替え"
         },
-        "volume": "タイムラインの音量",
         "percent": "{percent}%",
         "loop": {
             "label": "ループ",
@@ -2612,7 +2536,6 @@
             "range": "カウント{from}–{to}",
             "length": "{count, plural, other {#カウント}}"
         },
-        "createTrack": "トラックを作成",
         "playheadChip": {
             "label": "再生ヘッドを表示",
             "text": "再生ヘッド"
@@ -2735,7 +2658,8 @@
             "placeSelectedMarchers": "選択したメンバーを配置",
             "snapToggleCaption": "スナップ",
             "toNextPagePositions": "...次のページの位置へ",
-            "setMarcherPositionsAriaLabel": "メンバーの位置を設定"
+            "setMarcherPositionsAriaLabel": "メンバーの位置を設定",
+            "toPreviousPagePositions": "...前のページ位置へ"
         },
         "collisions": {
             "collisionsToolbar": "衝突",
@@ -2849,16 +2773,11 @@
             "freeCamera": "自由視点"
         },
         "readout": {
-            "camera": "目の高さ{eye} · 中心まで{distance}",
             "count": "カウント{count}/{total}",
             "noPages": "ページなし",
             "page": "ページ{page}",
             "pastEnd": "終了 +{count}",
             "showTime": "ショーの経過時間"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3Dビュー — {showName}",
@@ -3116,9 +3035,7 @@
             "in": "拡大",
             "out": "縮小",
             "reset": "ズーム{zoom}%、ズームをリセットして中央に表示",
-            "resetAndCenter": "ズームをリセットして中央に表示",
-            "perspective": "パースペクティブ",
-            "perspectiveComingSoon": "パースペクティブ（近日公開）"
+            "resetAndCenter": "ズームをリセットして中央に表示"
         }
     },
     "errorBoundary": {

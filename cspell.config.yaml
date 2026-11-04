@@ -45,6 +45,7 @@ words:
   - unicodes
   - stepoff
   - menuitemradio
+  - menuitemcheckbox
   - prefs
   - frameloop
   - powermetrics

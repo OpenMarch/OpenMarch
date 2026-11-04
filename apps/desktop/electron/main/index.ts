@@ -123,6 +123,10 @@ ipcMain.on("settings:set", (event, settings) => {
         setMainLanguage(settings.language);
     }
 
+    // Basic leaves Play On and Loop out of the Playback menu
+    if (Object.prototype.hasOwnProperty.call(settings, "editorMode"))
+        showApplicationMenu();
+
     if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates")) {
         const enabled = automaticUpdatesAreEnabled(settings.automaticUpdates);
         if (app.isPackaged && !process.env.SNAP) {
@@ -730,7 +734,9 @@ function broadcastSettingsChanged(
 let applicationMenu: Menu | null = null;
 
 function showApplicationMenu() {
-    applicationMenu = buildApplicationMenu();
+    applicationMenu = buildApplicationMenu({
+        basic: store.get("editorMode") === "basic",
+    });
     Menu.setApplicationMenu(applicationMenu);
 }
 

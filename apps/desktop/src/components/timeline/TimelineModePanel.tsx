@@ -90,7 +90,6 @@ import { usePageKeepChains } from "./PageKeepChain";
 import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
-import { useMoveNotesStore } from "@/stores/MoveNotesStore";
 import { useClearLeftoverMoveSelection } from "./useMoveMemberSelection";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useBasicLocksStore } from "@/timeline/basicLocks";
@@ -185,8 +184,7 @@ export const toTimelineSelection = (
  * or a dragged range selects that range, and each seeks (home to beat 0, a range to its end).
  * **Create page at playhead** on the free paused playhead's right-click menu adds a page flag there and selects
  * the new page; a page box's right-click menu deletes its flag (P8.13's writes, wired by P8.15), or the page and its
- * moves (defined coordinates, owner decision 3). Neither Create Track
- * nor **Add selected marchers** is offered: dragging marchers adds them (UI-10). Double-clicking
+ * moves (defined coordinates, owner decision 3). Double-clicking
  * a page box or clip isolates its stored timeline (docs/timeline/research/ownership/09-isolation.md).
  * A clip is a move: its menu, its ⋯ button and Delete edit, rename and delete it (UI-14).
  */
@@ -311,7 +309,7 @@ export default function TimelineModePanel() {
             timelines.flatMap((t) => (clipped.has(t) ? [] : [t.id])),
         );
     }, [timelines, clipTimelines]);
-    const { clips: offPage, overridden } = useMemo(
+    const { clips: offPage } = useMemo(
         () =>
             describeMoveClips({
                 clips: clipTimelines,
@@ -322,16 +320,11 @@ export default function TimelineModePanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
         [clipTimelines, pages, storedTimelines, pageBoxes, language],
     );
-    // The Move card says it too
-    useEffect(() => {
-        useMoveNotesStore.getState().setOverridden(overridden);
-    }, [overridden]);
-    // UI-14 round-2 review: a "Select them" selection doesn't follow you to another move
+    // UI-14 round-2 review: a "Select marchers" selection doesn't follow you to another move
     useClearLeftoverMoveSelection();
     const commands = useTimelineCommands({
         database: db,
         timelines,
-        selectedMarcherIds,
     });
     // UI-25: a move can be split, and moves merged (not in Basic, which gets no clips)
     const splitMerge = useSplitMergeMoves({
@@ -355,6 +348,7 @@ export default function TimelineModePanel() {
             onDelete: (id: number) => {
                 if (!isPlaying) void moves.deleteMove(id);
             },
+            onSelectMarchers: (id: number) => void moves.selectMarchers(id),
             // UI-27: two moves that meet at the playhead
             onSplit: (id: number) =>
                 void moves.splitMoveAtPlayhead(id, isPlaying),

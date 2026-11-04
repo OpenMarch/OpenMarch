@@ -7,15 +7,11 @@ import {
     renameTimeline,
     shiftTimeline,
 } from "@/db-functions/timelineCommands";
-import { addMarchersToTimeline } from "@/db-functions/timelineMembership";
 import type { DbConnection } from "@/db-functions/types";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import { allMarcherRowsQueryOptions } from "@/hooks/queries/useMarchers";
-import {
-    toastDroppedHolds,
-    toastTimelineError,
-} from "@/timeline/timelineErrorMessages";
+import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { timelineExists } from "@/db-functions/timelines";
@@ -28,7 +24,6 @@ import {
 import { beatWhere } from "@/timeline/timelineRangeWords";
 import type { TimelineText } from "@/timeline/timelineText";
 import { translateTimelineText } from "@/timeline/translateTimelineText";
-import { useMoveCardRevealStore } from "@/stores/MoveCardRevealStore";
 import { useMoveMemberSelectionStore } from "@/stores/MoveMemberSelectionStore";
 import {
     useTimelineSelectionStore,
@@ -37,9 +32,7 @@ import {
     type TimelineSelectionState,
 } from "@/stores/TimelineSelectionStore";
 import type { TimelineInput } from "./Timeline";
-import type { TimelineAddMarchersMenu } from "./TimelineRangeMenu";
 import type {
-    TimelineBeatRange,
     TimelineRangeChange,
     TimelineRangeCommitResult,
 } from "./TimelineViewModel";
@@ -65,32 +58,17 @@ export function timelineShiftFor(
     return { timelineId: Number(track.linkId), delta };
 }
 
-/** Why **Add selected marchers** is unavailable, or null when it can run. */
-export function addSelectedMarchersBlocker(
-    selectedMarcherIds: ReadonlySet<number>,
-): string | null {
-    return selectedMarcherIds.size === 0
-        ? tolgee.t("timeline.rangeMenu.addSelectedNone")
-        : null;
-}
-
 /**
  * The panel's side of the commands: the callbacks that run each command as one undoable edit and
  * show a refusal's friendly message (P8.6) as a toast. A clip move of the selected timeline moves
  * the selection with it (UI-9).
- *
- * Create Track isn't offered (P8.15): with one timeline per page it would give a
- * marcher a second transition in a page timeline. **Add selected marchers** replaces it (UI-9
- * Creating a timeline).
  */
 export function useTimelineCommands({
     database,
     timelines,
-    selectedMarcherIds,
 }: {
     database: DbConnection;
     timelines: readonly TimelineInput[];
-    selectedMarcherIds: ReadonlySet<number>;
 }) {
     const commitTimelineRange = useCallback(
         (change: TimelineRangeChange): TimelineRangeCommitResult => {
@@ -124,42 +102,7 @@ export function useTimelineCommands({
 
     return {
         commitTimelineRange,
-        addSelectedMarchers: useAddSelectedMarchers(
-            database,
-            selectedMarcherIds,
-        ),
     };
-}
-
-/**
- * UI-9 Adding marchers: the selected marchers join the timeline over the right-clicked range
- * (spec beats), which is created if none has it, as one undoable edit; a refusal is a toast. The
- * menu doesn't change the selection.
- */
-function useAddSelectedMarchers(
-    database: DbConnection,
-    selectedMarcherIds: ReadonlySet<number>,
-): TimelineAddMarchersMenu {
-    return useMemo(
-        (): TimelineAddMarchersMenu => ({
-            disabledReason: addSelectedMarchersBlocker(selectedMarcherIds),
-            onAdd: (range: TimelineBeatRange) => {
-                if (selectedMarcherIds.size === 0) return;
-                addMarchersToTimeline({
-                    db: database,
-                    range: {
-                        start: range.startBeatIndex,
-                        end: range.endBeatIndex,
-                    },
-                    marcherIds: [...selectedMarcherIds],
-                })
-                    // A hold from the starting spot this move cut off is named (#619)
-                    .then((result) => toastDroppedHolds(result.droppedHolds))
-                    .catch((error: unknown) => toastTimelineError(error));
-            },
-        }),
-        [database, selectedMarcherIds],
-    );
 }
 
 /** Why **Edit move** and **Delete move** are unavailable (UI-14), or null when they can run. */
@@ -370,7 +313,7 @@ export function moveSplitMessage(
 }
 
 /**
- * A move's commands (ui.md UI-14), for the timeline's clips and the inspector's Move card. Each
+ * A move's commands (ui.md UI-14), for the timeline's clips and their menu. Each
  * write is one undoable edit, and a refusal is a toast (P8.6).
  *
  * - **Delete move** deletes the timeline, its transitions and assignments; moves it passed through
@@ -380,11 +323,10 @@ export function moveSplitMessage(
  *   stale button), is ignored without an error.
  * - **Rename** stores the name as `renameTimeline` normalizes it; an unchanged name writes nothing,
  *   and a move that is gone (its field left open while it was deleted) is skipped.
- * - **Select its marchers** selects the marchers with an assignment in it on the canvas, and
+ * - **Select marchers** selects the marchers with an assignment in it on the canvas, and
  *   records them, so going to another move clears them (`useClearLeftoverMoveSelection`).
  * - **Edit move** isolates the move (09-isolation.md), so its paths show and canvas drags edit
- *   where it ends; on a move already isolated it stays so. It selects nobody (one Esc leaves),
- *   and brings the inspector's Move card into view, with focus on it.
+ *   where it ends; on a move already isolated it stays so. It selects nobody (one Esc leaves).
  * - Deleting moves focus to the next clip, else the previous one, else the timeline.
  */
 export function useMoveCommands(database: DbConnection) {
@@ -488,8 +430,8 @@ export function createMoveCommands({
         selectMarchers,
         /**
          * **Split at playhead** (UI-27): the move becomes two that meet at the playhead, the one
-         * before it new. That new move becomes the window (its clip selected, the Move card on
-         * it), ending any isolation. Resolves once the split has settled.
+         * before it new. That new move becomes the window (its clip selected), ending any
+         * isolation. Resolves once the split has settled.
          */
         splitMoveAtPlayhead: (timelineId: number, isPlaying = false) =>
             splitMoveAtPlayhead({
@@ -504,9 +446,8 @@ export function createMoveCommands({
         editMove: (timelineId: number) => {
             if (!stored(timelineId)) return;
             // UI-14 review: isolation shows who is in it, so nobody is selected (one Esc
-            // leaves); **Select them** on the card selects them
+            // leaves); the clip menu's **Select marchers** selects them
             useTimelineSelectionStore.getState().isolate(timelineId);
-            useMoveCardRevealStore.getState().reveal(timelineId);
         },
     };
 }

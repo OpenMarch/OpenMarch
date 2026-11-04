@@ -31,18 +31,11 @@ describe("View3dSettings", () => {
         renderSettings();
         await user.click(await screen.findByRole("radio", { name: "Low" }));
         await user.click(screen.getByRole("radio", { name: "Balanced" }));
-        await user.click(
-            screen.getByRole("switch", {
-                name: "Pause drawing when nothing moves",
-            }),
-        );
 
         expect(localStorage.getItem("view3d.quality")).toBe("low");
         expect(localStorage.getItem("view3d.resolution")).toBe("balanced");
-        expect(JSON.parse(localStorage.getItem("view3d.power")!)).toEqual({
-            pauseWhenIdle: false,
-            saveOnBattery: true,
-        });
+        // The power behavior is fixed: nothing to save
+        expect(screen.queryByRole("switch")).toBeNull();
     });
 
     it("shows what was saved before", async () => {

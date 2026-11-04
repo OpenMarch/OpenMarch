@@ -1,7 +1,6 @@
 /**
- * The bottom-left readout (ui.md UI-2, UI-5): the page and count, the show
- * time, and the camera's eye height and distance to the field center in the
- * field's measurement system. It stays visible, larger, when fullscreen hides
+ * The bottom-left readout (ui.md UI-2, UI-5): the page and count and the show
+ * time. It stays visible, larger, when fullscreen hides
  * the rest of the overlay.
  *
  * The show time is written every frame through a ref; React re-renders only
@@ -9,17 +8,12 @@
  * readout used.
  */
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { formatLocale } from "@/utilities/formatLocale";
 import clsx from "clsx";
-import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
 import type { CountClock } from "@/timeline/countGrid";
-import { useCameraStore } from "../camera/cameraStore";
 import {
-    formatLength,
     countsPastEnd,
     pageCountAt,
     pausedPageCount,
@@ -107,18 +101,8 @@ export function Readout({ large }: { large: boolean }) {
         (s) => s.selection.selectedPageId,
     );
     const playing = useView3dSyncStore((s) => !!s.clock?.playing);
-    const { eyeHeightM, distanceToFocusM } = useCameraStore((s) => s.readout);
-    const field = useQuery(fieldPropertiesQueryOptions());
-    const system = field.data?.measurementSystem ?? "imperial";
 
     const current = useLivePageCount(pages, timeRef, countGrid);
-
-    const length = (meters: number) => {
-        const { value, unit } = formatLength(meters, system, formatLocale());
-        return t(unit === "ft" ? "view3d.unit.feet" : "view3d.unit.meters", {
-            value,
-        });
-    };
 
     return (
         <div
@@ -166,12 +150,6 @@ export function Readout({ large }: { large: boolean }) {
                         {formatShowTime(0)}
                     </span>
                 </span>
-            </div>
-            <div className="text-text/60" data-testid="view3d-camera-readout">
-                {t("view3d.readout.camera", {
-                    eye: length(eyeHeightM),
-                    distance: length(distanceToFocusM),
-                })}
             </div>
         </div>
     );

@@ -176,6 +176,22 @@ describe("the clip's menu (UI-14)", () => {
         expect(moves.onEdit).toHaveBeenCalledWith(7);
     });
 
+    it("offers Select marchers after Edit move when given, by stored timeline id", () => {
+        const moves = commands({ onSelectMarchers: vi.fn() });
+        show({ moves });
+        fireEvent.contextMenu(clipButton());
+        expect(items()).toEqual([
+            "Edit move",
+            "Select marchers",
+            "Rename move…",
+            "Delete move",
+        ]);
+        fireEvent.click(
+            screen.getByTestId("timeline-move-menu-select-marchers"),
+        );
+        expect(moves.onSelectMarchers).toHaveBeenCalledWith(7);
+    });
+
     it("offers Split at playhead after Rename when given, by stored timeline id (UI-27)", () => {
         const moves = show({
             moves: commands({

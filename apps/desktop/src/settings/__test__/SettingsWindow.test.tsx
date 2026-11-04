@@ -58,7 +58,6 @@ describe("SettingsWindow", () => {
             "field",
             "view3d",
             "shortcuts",
-            "plugins",
             "privacy",
             "developer",
             "database",

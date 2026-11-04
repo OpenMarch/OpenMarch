@@ -147,8 +147,6 @@
             "openSettings": "Configuración…",
             "openView3d": "Abrir vista 3D",
             "openView3dKeywords": "3d tres dimensiones tridimensional estadio sede recinto ventana three dimensional stadium venue window",
-            "runFieldBenchmark": "Ejecutar prueba de rendimiento del campo",
-            "runFieldBenchmarkKeywords": "rendimiento fps velocidad prueba fotogramas por segundo tasa de fotogramas performance speed test frame rate",
             "showShortcuts": "Atajos de teclado",
             "hideStartFlagPositions": "Ocultar posiciones del marcador de inicio",
             "showStartFlagPositions": "Mostrar posiciones del marcador de inicio",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copiado",
-            "copy": "Copiar como Markdown",
-            "devBuild": "Esta es una compilación de desarrollo. Solo cuentan los números de una compilación de producción.",
-            "intro": "Reproduce, recorre, hace zoom y desplaza el show abierto durante unos segundos cada uno y mide cada fotograma. Mantén esta ventana al frente y no toques nada mientras se ejecuta.",
-            "run": "Ejecutar",
-            "running": "Ejecutando: {kind}…",
-            "softwareGl": "Aquí los gráficos se procesan por software, así que estos números son un límite inferior.",
-            "title": "Prueba de rendimiento del campo"
+            "running": "Ejecutando: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "espaciado uniforme",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Dirección",
-            "sections": "Secciones"
-        },
-        "comingSoon": "Próximamente",
-        "direction": "Dirección del campo",
         "label": "Visualización del campo",
-        "sections": "Secciones visibles",
-        "comingSoonLabel": "{label}: Próximamente",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -798,7 +781,6 @@
         "exitFile": "Cerrar archivo",
         "newFile": "Nuevo archivo",
         "openFile": "Abrir archivo",
-        "redo": "Rehacer",
         "saveCopyDialogDescription": "OpenMarch guarda automáticamente tus cambios en el archivo actual. Usa esta función si deseas crear una copia completa de tu archivo actual.",
         "saveFile": "Guardar copia",
         "saveFileCancel": "Cancelar",
@@ -841,18 +823,11 @@
             "stepSizeWarning": "El tamaño del paso supera el umbral",
             "swapMarchers": "Intercambiar integrantes",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Ir a la página {page}, donde estos integrantes se movieron por última vez",
                 "goToStart": "Ir al inicio",
                 "holdFrom": "Sin moverse desde la página {page}",
                 "holdFromStart": "Sin moverse desde el inicio",
-                "holdHere": "Estos integrantes se mantienen en su lugar aquí",
-                "movesOnThisPage": "Se mueven en esta página",
-                "someHoldHere": "Algunos de estos integrantes se mantienen en su lugar aquí",
-                "unsetHere": "Eliminar fotograma clave",
-                "unsetHereHint": "Elimina su fotograma clave en este tiempo para que sigan las posiciones anteriores. Las páginas posteriores se quedan como están",
-                "unsetHereHintSome": "Elimina el fotograma clave de los {count} de los {total} seleccionados que tienen uno en este tiempo, para que sigan las posiciones anteriores. Las páginas posteriores se quedan como están",
-                "unsetHereNone": "Ninguno de los integrantes seleccionados tiene un fotograma clave en este tiempo"
+                "movesOnThisPage": "Se mueven en esta página"
             },
             "title": "{count} integrantes",
             "titleSingle": "Integrante {drillNumber}",
@@ -915,18 +890,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Tiempos",
-                "delete": "Eliminar movimiento",
-                "endHelp": "Para cambiar dónde terminan, arrastra a los integrantes en el campo al final del movimiento.",
-                "goToEnd": "Ir al final",
-                "marchers": "{count, plural, one {# integrante} other {# integrantes}}",
-                "name": "Nombre",
-                "nameLimit": "{max} caracteres como máximo.",
-                "paused": "Pausa la reproducción para eliminar un movimiento.",
-                "selectMarchers": "Seleccionarlos",
-                "split": "Dividir en el cabezal",
-                "splitHelp": "Coloca el cabezal de reproducción dentro del movimiento para dividirlo ahí.",
-                "title": "Movimiento"
+                "splitHelp": "Coloca el cabezal de reproducción dentro del movimiento para dividirlo ahí."
             }
         },
         "title": "Inspector"
@@ -1568,11 +1532,6 @@
         "field.labelSize.large": "Grande",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Pequeño",
-        "field.shapeFocus": "Al editar formas",
-        "field.shapeFocus.drawing": "Atenuar solo al dibujar",
-        "field.shapeFocus.drawing.description": "Los integrantes fuera de una forma abierta se atenúan solo mientras la dibujas.",
-        "field.shapeFocus.rest": "Atenuar el resto",
-        "field.shapeFocus.rest.description": "Los integrantes fuera de una forma abierta se atenúan mientras siga abierta.",
         "field.stepSizeWarnings": "Avisos de tamaño de paso",
         "field.stepSizeWarnings.description": "Marca los movimientos con pasos demasiado grandes para marchar y muestra siempre sus rutas.",
         "general": "General",
@@ -1601,27 +1560,6 @@
         "mouse.trackpadPanSensitivity": "Sensibilidad de desplazamiento del trackpad",
         "mouse.zoomSensitivity": "Sensibilidad del zoom",
         "noResults": "Ningún ajuste coincide.",
-        "plugins": "Complementos",
-        "plugins.community": "Comunidad",
-        "plugins.description": "Agrega funciones creadas por la comunidad.",
-        "plugins.install": "Instalar",
-        "plugins.installed": "Instalado",
-        "plugins.installFailed": "Error al instalar",
-        "plugins.installing": "Instalando...",
-        "plugins.noCommunityPlugins": "No hay complementos de la comunidad disponibles.",
-        "plugins.noOfficialPlugins": "No hay complementos oficiales disponibles.",
-        "plugins.noPlugins": "No hay complementos instalados.",
-        "plugins.official": "Oficiales",
-        "plugins.refreshNotice": "<a>Recarga la aplicación</a> para actualizar los complementos.",
-        "plugins.toast.installFailed": "No se pudo instalar el complemento {pluginName}",
-        "plugins.toast.installSuccess": "¡Complemento {pluginName} instalado correctamente!",
-        "plugins.toast.uninstallFailed": "No se pudo eliminar {pluginName}",
-        "plugins.toast.uninstallSuccess": "¡Complemento {pluginName} eliminado correctamente!",
-        "plugins.uninstall": "Desinstalar",
-        "plugins.uninstalled": "Eliminado",
-        "plugins.uninstallFailed": "Error al eliminar",
-        "plugins.uninstalling": "Eliminando...",
-        "plugins.version": "v{version}",
         "privacy": "Privacidad",
         "privacy.analytics": "Compartir analíticas de uso",
         "privacy.analytics.description": "Para ayudarnos a mejorar OpenMarch, recopilamos datos analíticos, registros de errores y grabaciones de sesiones. Esto nos ayuda a entender cómo usas la aplicación e identificar errores. Lee nuestra <a>política de privacidad</a> para saber más.",
@@ -1679,8 +1617,6 @@
         "tolgeeDevToolsToggle": "Traducción en contexto de Tolgee",
         "view3d": "Vista 3D",
         "view3d.description": "Cómo se dibuja la Vista 3D en esta computadora. No se guarda en el show.",
-        "view3d.pauseWhenIdle": "Pausar el dibujo si nada se mueve",
-        "view3d.pauseWhenIdle.description": "Deja de dibujar mientras el show está en pausa y la cámara está quieta.",
         "view3d.quality": "Calidad",
         "view3d.quality.auto": "Automática",
         "view3d.quality.auto.description": "Empieza en Alta y cambia a Baja si la vista se traba.",
@@ -1695,8 +1631,6 @@
         "view3d.resolution.fast.description": "La menos nítida, con alrededor de la mitad del trabajo. Para computadoras antiguas.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Máximo detalle en pantallas de alta resolución.",
-        "view3d.saveOnBattery": "Ahorrar energía con batería",
-        "view3d.saveOnBattery.description": "Con batería, dibuja como máximo 30 fotogramas por segundo a resolución estándar.",
         "input": "Táctil y entrada",
         "input.description": "Elige el diseño para tableta (dedos y lápiz) o el diseño de escritorio (mouse y trackpad).",
         "input.interface": "Diseño",
@@ -2143,7 +2077,6 @@
                 "hint": "Haz clic en una forma, o en cualquier otro lugar para cerrar"
             },
             "section": {
-                "box": "Bloque",
                 "title": "Formas"
             },
             "selectMarchersFirst": "Primero selecciona integrantes",
@@ -2154,10 +2087,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Voltear ↔",
-            "flipAcrossTip": "Voltear de lado a lado alrededor del pivote",
-            "flipDeep": "Voltear ↕",
-            "flipDeepTip": "Voltear de adelante hacia atrás alrededor del pivote",
             "title": "Transformar"
         },
         "validate": {
@@ -2293,7 +2222,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Línea de tiempo",
-        "masterVolume": "Volumen principal",
         "moveDeleted": {
             "message": "Se eliminó {label}",
             "withPages": "{count, plural, =1 {Se eliminó {label} · Cambió la página {pages}} other {Se eliminó {label} · Cambiaron las páginas {pages}}}"
@@ -2322,9 +2250,7 @@
             "setAsShown": "Fijar como se muestra",
             "setAsShownNone": "Todos los integrantes seleccionados ya están fijos en {page} o están a mitad de un movimiento",
             "setAsShownError": "Error al fijar los integrantes como se muestran",
-            "addSelected": "Agregar integrantes seleccionados",
-            "deletePage": "Eliminar página",
-            "addSelectedNone": "Primero selecciona integrantes: en el inicio, en un tramo que aún no tiene movimiento o en un movimiento al que pertenezcan."
+            "deletePage": "Eliminar página"
         },
         "startFlagPositions": {
             "always": "Siempre",
@@ -2381,7 +2307,6 @@
             "label": "Línea de tiempo compacta",
             "onTooltip": "Línea de tiempo compacta: activada. Haz clic para mostrar la línea de tiempo completa"
         },
-        "volumeSlider": "Control deslizante de volumen de la línea de tiempo",
         "zoomReset": "Restablecer zoom de la línea de tiempo",
         "playbackSpeed": {
             "current": "Velocidad de reproducción: {speed}",
@@ -2406,7 +2331,6 @@
             "lockedNotMoved": "{count, plural, =1 {Un integrante usa movimientos de Experto en esta página, así que no se movió. Cambia a Experto para editarlo.} other {# integrantes usan movimientos de Experto en esta página, así que no se movieron. Cambia a Experto para editarlos.}}",
             "switchToExpert": "Cambiar a Experto"
         },
-        "volume": "Volumen de la línea de tiempo",
         "percent": "{percent}%",
         "loop": {
             "label": "Bucle",
@@ -2612,7 +2536,6 @@
             "range": "tiempos {from}–{to}",
             "length": "{count, plural, one {# tiempo} other {# tiempos}}"
         },
-        "createTrack": "Crear pista",
         "playheadChip": {
             "label": "Mostrar el cabezal de reproducción",
             "text": "Cabezal"
@@ -2735,7 +2658,8 @@
             "placeSelectedMarchers": "Colocar integrantes seleccionados",
             "snapToggleCaption": "Ajuste",
             "toNextPagePositions": "...en sus posiciones de la página siguiente",
-            "setMarcherPositionsAriaLabel": "Establecer posiciones de integrantes"
+            "setMarcherPositionsAriaLabel": "Establecer posiciones de integrantes",
+            "toPreviousPagePositions": "...a posiciones en la página anterior"
         },
         "collisions": {
             "collisionsToolbar": "Colisiones",
@@ -2849,16 +2773,11 @@
             "freeCamera": "Vista libre"
         },
         "readout": {
-            "camera": "Altura de ojos {eye} · {distance} al centro",
             "count": "Tiempo {count} de {total}",
             "noPages": "Sin páginas",
             "page": "Página {page}",
             "pastEnd": "FIN +{count}",
             "showTime": "Tiempo del show"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Vista 3D — {showName}",
@@ -3116,9 +3035,7 @@
             "in": "Acercar",
             "out": "Alejar",
             "reset": "Zoom {zoom}%, restablecer zoom y centrar",
-            "resetAndCenter": "Restablecer zoom y centrar",
-            "perspective": "Perspectiva",
-            "perspectiveComingSoon": "Perspectiva (próximamente)"
+            "resetAndCenter": "Restablecer zoom y centrar"
         }
     },
     "errorBoundary": {

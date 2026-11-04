@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { TimelineCommitViolationError } from "@/db-functions/timelineChanges";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { text } from "@/timeline/timelineText";
-import { TIMELINE_INSPECTOR_STRINGS } from "@/components/inspector/timelineInspectorStrings";
 import { conToastError } from "@/utilities/utils";
 import { TimelineEditRefusedError } from "../timelineEditRefusals";
 import {
@@ -442,11 +441,6 @@ describe("en.json", () => {
             "timeline.keyframes.detailNames":
                 "{set} of {total} selected: {names}",
         }))
-            expect(lookup(key), key).toBe(text);
-    });
-
-    it("carries every inspector string", () => {
-        for (const [key, text] of Object.entries(TIMELINE_INSPECTOR_STRINGS))
             expect(lookup(key), key).toBe(text);
     });
 

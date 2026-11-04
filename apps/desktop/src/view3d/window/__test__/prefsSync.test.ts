@@ -1,5 +1,4 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { POWER_STORAGE_KEY } from "../drawPolicy";
 import { QUALITY_STORAGE_KEY } from "../qualityPreference";
 import { RESOLUTION_STORAGE_KEY } from "../renderPrefs";
 import { startPrefsSync, useView3dSceneStore } from "../sceneStore";
@@ -17,19 +16,14 @@ describe("startPrefsSync", () => {
         localStorage.clear();
     });
 
-    it("picks up quality, power and resolution saved in Settings", () => {
+    it("picks up quality and resolution saved in Settings", () => {
         stop = startPrefsSync();
         savedElsewhere(QUALITY_STORAGE_KEY, "low");
-        savedElsewhere(
-            POWER_STORAGE_KEY,
-            JSON.stringify({ pauseWhenIdle: false, saveOnBattery: true }),
-        );
         savedElsewhere(RESOLUTION_STORAGE_KEY, "fast");
 
         const s = useView3dSceneStore.getState();
         expect(s.qualityMode).toBe("low");
         expect(s.quality).toBe("low");
-        expect(s.powerPrefs.pauseWhenIdle).toBe(false);
         expect(s.resolution).toBe("fast");
     });
 

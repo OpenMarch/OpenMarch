@@ -333,11 +333,6 @@ export function openingCamera(
     return seat ? { seat, listed: pool === cameras } : null;
 }
 
-/** Horizontal distance from the eye to the focus, like the demo's "to the 50". */
-export function horizontalDistance(a: Vector3Tuple, b: Vector3Tuple): number {
-    return Math.hypot(a[0] - b[0], a[2] - b[2]);
-}
-
 /** The camera index for a 1–9 key in bar order, or null. */
 export function cameraIndexForKey(key: string): number | null {
     return /^[1-9]$/.test(key) ? Number(key) - 1 : null;

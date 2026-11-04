@@ -69,7 +69,6 @@ import type {
     TimelineBeatRange,
     TimelineCommonProps,
     TimelineNavigation,
-    TimelineTarget,
     TimelineTrack,
     TimelineTrackId,
 } from "./TimelineViewModel";
@@ -495,9 +494,9 @@ const sameInteraction = (
         a.dragging === b.dragging);
 
 /**
- * The window's count and Create Track, beside the window's end, or its start while the start flag
- * is dragged. It follows a dragged flag (`interaction`) on its own, without re-rendering the
- * timeline on each move.
+ * The window's count, beside the window's end, or its start while the start flag is dragged. It
+ * follows a dragged flag (`interaction`) on its own, without re-rendering the timeline on each
+ * move.
  */
 const TimelineSelectionActions = memo(function TimelineSelectionActions({
     model,
@@ -506,8 +505,6 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
     pixelsPerBeat,
     expanded,
     snapBeats,
-    createTrackTarget,
-    onCreateTrack,
 }: {
     model: TimelineCommonProps["model"];
     range: TimelineBeatRange;
@@ -515,11 +512,7 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
     pixelsPerBeat: number;
     expanded: boolean;
     snapBeats: readonly number[];
-    /** What Create Track would make a track for; `null` hides it */
-    createTrackTarget: TimelineTarget | null | undefined;
-    onCreateTrack: TimelineCommonProps["onCreateTrack"];
 }) {
-    const { t } = useTranslate();
     const current = useLiveValue(interaction);
     const displayedRange = current?.range ?? range;
     const dragging = current?.dragging ?? false;
@@ -534,7 +527,6 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
         dragging ||
         !snapBeats.includes(displayedRange.startBeatIndex) ||
         isPastLastFlag(model, displayedRange.endBeatIndex);
-    const showCreateTrack = createTrackTarget != null && !dragging;
     return (
         <div
             data-testid="timeline-selection-actions"
@@ -563,21 +555,6 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
                 >
                     {getWindowCountLabel(model, displayedRange)}
                 </span>
-            )}
-            {showCreateTrack && (
-                <button
-                    type="button"
-                    data-timeline-interactive="true"
-                    onClick={() =>
-                        onCreateTrack?.({
-                            target: createTrackTarget,
-                            range: displayedRange,
-                        })
-                    }
-                    className="bg-accent text-text-invert rounded-full px-8 py-3 text-[11px] leading-none whitespace-nowrap"
-                >
-                    {t("timeline.createTrack")}
-                </button>
             )}
         </div>
     );
@@ -632,7 +609,6 @@ const TimelineSurface = memo(function TimelineSurface({
         pixelsPerBeat,
         positionBeat,
         selection,
-        selectedTarget,
         showTransport = true,
         className,
     } = props;
@@ -858,6 +834,12 @@ const TimelineSurface = memo(function TimelineSurface({
             onEdit: () => moveCommands.onEdit(trackId),
             onRename: () => setRenaming(String(trackId)),
             onDelete: () => moveCommands.onDelete(trackId),
+            ...(moveCommands.onSelectMarchers
+                ? {
+                      onSelectMarchers: () =>
+                          moveCommands.onSelectMarchers!(trackId),
+                  }
+                : {}),
             // UI-27
             ...(moveCommands.onSplit
                 ? { onSplit: () => moveCommands.onSplit!(trackId) }
@@ -1298,13 +1280,6 @@ const TimelineSurface = memo(function TimelineSurface({
                                 pixelsPerBeat={pixelsPerBeat}
                                 expanded={expanded}
                                 snapBeats={snapBeats}
-                                createTrackTarget={
-                                    selection?.kind === "range" &&
-                                    props.onCreateTrack != null
-                                        ? selectedTarget
-                                        : null
-                                }
-                                onCreateTrack={props.onCreateTrack}
                             />
                         )}
                     </div>

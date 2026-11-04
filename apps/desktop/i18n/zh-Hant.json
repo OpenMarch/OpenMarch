@@ -147,8 +147,6 @@
             "openSettings": "設定…",
             "openView3d": "開啟3D檢視",
             "openView3dKeywords": "3d 三維 立體 體育場 球場 場館 視窗 three dimensional stadium venue window",
-            "runFieldBenchmark": "執行場地效能測試",
-            "runFieldBenchmarkKeywords": "效能 fps 速度 測試 影格速率 幀率 performance speed test frame rate",
             "showShortcuts": "鍵盤快速鍵",
             "hideStartFlagPositions": "隱藏起始標記位置",
             "showStartFlagPositions": "顯示起始標記位置",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "已複製",
-            "copy": "複製為 Markdown",
-            "devBuild": "這是開發版本。只有正式版本測得的數值才有參考價值。",
-            "intro": "對開啟的表演依序進行播放、拖曳瀏覽、縮放與平移各數秒，並測量每一個影格。執行期間請讓此視窗保持在最前方，且不要進行任何操作。",
-            "run": "執行",
-            "running": "執行中：{kind}…",
-            "softwareGl": "此處以軟體執行圖形運算，因此這些數值僅為下限。",
-            "title": "場地效能測試"
+            "running": "執行中：{kind}…"
         },
         "gestureChip": {
             "equalSpacings": "等距",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "方向",
-            "sections": "聲部"
-        },
-        "comingSoon": "即將推出",
-        "direction": "場地方向",
         "label": "場地顯示",
-        "sections": "顯示的聲部",
-        "comingSoonLabel": "{label}：即將推出",
         "valueLabel": "{label}：{value}"
     },
     "fieldProperties": {
@@ -795,7 +778,6 @@
         "exitFile": "關閉檔案",
         "newFile": "新增檔案",
         "openFile": "開啟檔案",
-        "redo": "重做",
         "saveCopyDialogDescription": "OpenMarch 會自動將你的變更儲存至目前的檔案。如果想建立目前檔案的完整副本，請使用此功能。",
         "saveFile": "儲存副本",
         "saveFileCancel": "取消",
@@ -838,18 +820,11 @@
             "stepSizeWarning": "步幅超過門檻",
             "swapMarchers": "交換隊員位置",
             "timeline": {
-                "buttonWithHint": "{label}。{hint}",
                 "goToPage": "前往第{page}頁（這些隊員最後移動的頁）",
                 "goToStart": "前往開頭",
                 "holdFrom": "從第{page}頁起保持不動",
                 "holdFromStart": "從開頭起保持不動",
-                "holdHere": "這些隊員在此保持不動",
-                "movesOnThisPage": "在此頁移動",
-                "someHoldHere": "部分隊員在此保持不動",
-                "unsetHere": "移除關鍵影格",
-                "unsetHereHint": "移除他們在此拍的關鍵影格，讓他們跟隨先前的位置。後面的頁維持原位",
-                "unsetHereHintSome": "移除已選取{total}位中在此拍有關鍵影格的{count}位隊員的關鍵影格，讓他們跟隨先前的位置。後面的頁維持原位",
-                "unsetHereNone": "選取的隊員在此拍都沒有關鍵影格"
+                "movesOnThisPage": "在此頁移動"
             },
             "title": "{count}位隊員",
             "titleSingle": "隊員{drillNumber}",
@@ -912,18 +887,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "拍",
-                "delete": "刪除動作",
-                "endHelp": "若要變更他們最後的位置，請在動作結尾時於場地上拖曳隊員。",
-                "goToEnd": "前往結尾",
-                "marchers": "{count, plural, other {#位隊員}}",
-                "name": "名稱",
-                "nameLimit": "最多{max}個字元。",
-                "paused": "暫停播放後才能刪除動作。",
-                "selectMarchers": "選取這些隊員",
-                "split": "在播放指示器處分割",
-                "splitHelp": "將播放指示器移到動作內，即可在該處分割。",
-                "title": "動作"
+                "splitHelp": "將播放指示器移到動作內，即可在該處分割。"
             }
         },
         "title": "檢閱器"
@@ -1565,11 +1529,6 @@
         "field.labelSize.large": "大",
         "field.labelSize.normal": "標準",
         "field.labelSize.small": "小",
-        "field.shapeFocus": "編輯圖形時",
-        "field.shapeFocus.drawing": "僅在繪製時淡化",
-        "field.shapeFocus.drawing.description": "只有在你繪製開啟中的圖形時，圖形外的隊員才會淡化。",
-        "field.shapeFocus.rest": "淡化其餘隊員",
-        "field.shapeFocus.rest.description": "圖形開啟期間，圖形外的隊員會一直淡化。",
         "field.stepSizeWarnings": "步幅警告",
         "field.stepSizeWarnings.description": "標示步幅過大而無法行進的動作，並一律顯示其路徑。",
         "general": "一般",
@@ -1598,27 +1557,6 @@
         "mouse.trackpadPanSensitivity": "觸控板平移靈敏度",
         "mouse.zoomSensitivity": "縮放靈敏度",
         "noResults": "沒有符合的設定。",
-        "plugins": "外掛程式",
-        "plugins.community": "社群",
-        "plugins.description": "新增由社群製作的功能。",
-        "plugins.install": "安裝",
-        "plugins.installed": "已安裝",
-        "plugins.installFailed": "安裝失敗",
-        "plugins.installing": "安裝中...",
-        "plugins.noCommunityPlugins": "目前沒有可用的社群外掛程式。",
-        "plugins.noOfficialPlugins": "目前沒有可用的官方外掛程式。",
-        "plugins.noPlugins": "尚未安裝任何外掛程式。",
-        "plugins.official": "官方",
-        "plugins.refreshNotice": "請<a>重新載入應用程式</a>以更新外掛程式。",
-        "plugins.toast.installFailed": "無法安裝外掛程式 {pluginName}",
-        "plugins.toast.installSuccess": "已成功安裝外掛程式 {pluginName}！",
-        "plugins.toast.uninstallFailed": "無法移除 {pluginName}",
-        "plugins.toast.uninstallSuccess": "已成功移除外掛程式 {pluginName}！",
-        "plugins.uninstall": "解除安裝",
-        "plugins.uninstalled": "已移除",
-        "plugins.uninstallFailed": "移除失敗",
-        "plugins.uninstalling": "移除中...",
-        "plugins.version": "v{version}",
         "privacy": "隱私權",
         "privacy.analytics": "分享使用情形分析資料",
         "privacy.analytics.description": "為了改進 OpenMarch，我們會收集分析資料、錯誤記錄和工作階段錄影。這能幫助我們了解你如何使用這個應用程式，並找出錯誤。請參閱我們的<a>隱私權政策</a>以了解詳情。",
@@ -1676,8 +1614,6 @@
         "tolgeeDevToolsToggle": "Tolgee 情境內翻譯",
         "view3d": "3D 檢視",
         "view3d.description": "3D 檢視在這台電腦上的繪製方式。不會儲存在表演中。",
-        "view3d.pauseWhenIdle": "畫面靜止時暫停繪製",
-        "view3d.pauseWhenIdle.description": "當表演暫停且鏡頭靜止時停止繪製。",
         "view3d.quality": "品質",
         "view3d.quality.auto": "自動",
         "view3d.quality.auto.description": "從「高」開始，若畫面不順暢則切換為「低」。",
@@ -1692,8 +1628,6 @@
         "view3d.resolution.fast.description": "最柔和，負擔約減半。適合較舊的電腦。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高解析度螢幕上呈現完整細節。",
-        "view3d.saveOnBattery": "使用電池時省電",
-        "view3d.saveOnBattery.description": "使用電池時，以標準解析度每秒最多繪製 30 個畫面。",
         "input": "觸控與輸入",
         "input.description": "選擇平板版面（適用手指與觸控筆）或桌面版面（適用滑鼠與觸控板）。",
         "input.interface": "版面配置",
@@ -2140,7 +2074,6 @@
                 "hint": "點選圖形，或點選其他任何地方以關閉"
             },
             "section": {
-                "box": "方陣",
                 "title": "圖形"
             },
             "selectMarchersFirst": "請先選取隊員",
@@ -2151,10 +2084,6 @@
             }
         },
         "transform": {
-            "flipAcross": "翻轉 ↔",
-            "flipAcrossTip": "以軸心點為中心左右翻轉",
-            "flipDeep": "翻轉 ↕",
-            "flipDeepTip": "以軸心點為中心前後翻轉",
             "title": "變形"
         },
         "validate": {
@@ -2290,7 +2219,6 @@
             "spoken": "{title}。{detail}"
         },
         "label": "時間軸",
-        "masterVolume": "主音量",
         "moveDeleted": {
             "message": "已刪除{label}",
             "withPages": "{count, plural, =1 {已刪除{label} · 第{pages}頁已變更} other {已刪除{label} · 第{pages}頁已變更}}"
@@ -2319,9 +2247,7 @@
             "setAsShown": "設為目前顯示的位置",
             "setAsShownNone": "所有選取的隊員在{page}都已設定位置，或正處於動作途中",
             "setAsShownError": "將隊員設為目前顯示的位置時發生錯誤",
-            "addSelected": "加入選取的隊員",
-            "deletePage": "刪除頁面",
-            "addSelectedNone": "請先選取隊員：在起點、在尚無動作的區段，或在他們所屬的動作中選取。"
+            "deletePage": "刪除頁面"
         },
         "startFlagPositions": {
             "always": "一律",
@@ -2378,7 +2304,6 @@
             "label": "精簡時間軸",
             "onTooltip": "精簡時間軸：開啟。按一下以顯示完整時間軸"
         },
-        "volumeSlider": "時間軸音量滑桿",
         "zoomReset": "重設時間軸縮放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
@@ -2403,7 +2328,6 @@
             "lockedNotMoved": "{count, plural, =1 {有1名隊員在此頁使用專家模式的動作，因此未移動。請切換至專家模式以編輯。} other {有#名隊員在此頁使用專家模式的動作，因此未移動。請切換至專家模式以編輯。}}",
             "switchToExpert": "切換至專家模式"
         },
-        "volume": "時間軸音量",
         "percent": "{percent}%",
         "loop": {
             "label": "循環",
@@ -2609,7 +2533,6 @@
             "range": "第{from}–{to}拍",
             "length": "{count, plural, other {#拍}}"
         },
-        "createTrack": "建立軌道",
         "playheadChip": {
             "label": "顯示播放指示器",
             "text": "播放指示器"
@@ -2846,16 +2769,11 @@
             "freeCamera": "自由視角"
         },
         "readout": {
-            "camera": "視線高 {eye} · 距中心 {distance}",
             "count": "第 {count} 拍，共 {total} 拍",
             "noPages": "沒有頁",
             "page": "第 {page} 頁",
             "pastEnd": "結束 +{count}",
             "showTime": "表演時間"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D 檢視 — {showName}",
@@ -3113,9 +3031,7 @@
             "in": "放大",
             "out": "縮小",
             "reset": "縮放{zoom}%，重設縮放並置中",
-            "resetAndCenter": "重設縮放並置中",
-            "perspective": "透視",
-            "perspectiveComingSoon": "透視（即將推出）"
+            "resetAndCenter": "重設縮放並置中"
         }
     },
     "errorBoundary": {

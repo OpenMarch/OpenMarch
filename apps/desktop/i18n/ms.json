@@ -147,8 +147,6 @@
             "openSettings": "Tetapan…",
             "openView3d": "Buka Paparan 3D",
             "openView3dKeywords": "3d three dimensional stadium venue window tiga dimensi stadium tempat tetingkap",
-            "runFieldBenchmark": "Jalankan penanda aras padang",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate prestasi kelajuan ujian kadar bingkai",
             "showShortcuts": "Pintasan papan kekunci",
             "hideStartFlagPositions": "Sembunyikan kedudukan penanda mula",
             "showStartFlagPositions": "Tunjukkan kedudukan penanda mula",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Disalin",
-            "copy": "Salin sebagai Markdown",
-            "devBuild": "Ini ialah binaan pembangunan. Hanya angka daripada binaan keluaran yang diambil kira.",
-            "intro": "Memainkan, menyusur, mengezum dan menganjak persembahan yang dibuka selama beberapa saat setiap satu dan mengukur setiap bingkai. Pastikan tetingkap ini kekal di hadapan dan jangan sentuh apa-apa semasa ujian berjalan.",
-            "run": "Jalankan",
-            "running": "Sedang dijalankan: {kind}…",
-            "softwareGl": "Grafik dijalankan secara perisian di sini, jadi angka ini ialah had bawah.",
-            "title": "Penanda aras padang"
+            "running": "Sedang dijalankan: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "jarak sama rata",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Arah",
-            "sections": "Seksyen"
-        },
-        "comingSoon": "Akan datang",
-        "direction": "Arah padang",
         "label": "Paparan padang",
-        "sections": "Seksyen dipaparkan",
-        "comingSoonLabel": "{label}: Akan datang",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -795,7 +778,6 @@
         "exitFile": "Keluar fail",
         "newFile": "Fail baharu",
         "openFile": "Buka fail",
-        "redo": "Buat semula",
         "saveCopyDialogDescription": "OpenMarch menyimpan perubahan anda pada fail semasa secara automatik. Gunakan fungsi ini jika anda ingin membuat salinan penuh fail semasa anda.",
         "saveFile": "Simpan salinan",
         "saveFileCancel": "Batal",
@@ -838,18 +820,11 @@
             "stepSizeWarning": "Saiz langkah melebihi ambang",
             "swapMarchers": "Tukar kedudukan pemain",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Pergi ke Halaman {page}, tempat pemain ini kali terakhir bergerak",
                 "goToStart": "Pergi ke permulaan",
                 "holdFrom": "Kekal sejak Halaman {page}",
                 "holdFromStart": "Kekal sejak permulaan",
-                "holdHere": "Pemain ini kekal di sini",
-                "movesOnThisPage": "Bergerak pada halaman ini",
-                "someHoldHere": "Sebahagian pemain ini kekal di sini",
-                "unsetHere": "Alih keluar kerangka kunci",
-                "unsetHereHint": "Alih keluar kerangka kunci mereka pada kiraan ini, supaya mereka mengikut kedudukan sebelumnya. Halaman seterusnya kekal di tempatnya",
-                "unsetHereHintSome": "Alih keluar kerangka kunci bagi {count} daripada {total} yang dipilih yang mempunyainya pada kiraan ini, supaya mereka mengikut kedudukan sebelumnya. Halaman seterusnya kekal di tempatnya",
-                "unsetHereNone": "Tiada pemain yang dipilih mempunyai kerangka kunci pada kiraan ini"
+                "movesOnThisPage": "Bergerak pada halaman ini"
             },
             "title": "{count} pemain",
             "titleSingle": "Pemain {drillNumber}",
@@ -912,18 +887,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Kiraan",
-                "delete": "Padam gerakan",
-                "endHelp": "Untuk menukar kedudukan akhir mereka, seret pemain di padang pada penghujung gerakan.",
-                "goToEnd": "Pergi ke akhir",
-                "marchers": "{count, plural, other {# pemain}}",
-                "name": "Nama",
-                "nameLimit": "Maksimum {max} aksara.",
-                "paused": "Jeda untuk memadam gerakan.",
-                "selectMarchers": "Pilih mereka",
-                "split": "Pisah pada kepala main",
-                "splitHelp": "Letakkan kepala main di dalam gerakan untuk memisahkannya di situ.",
-                "title": "Gerakan"
+                "splitHelp": "Letakkan kepala main di dalam gerakan untuk memisahkannya di situ."
             }
         },
         "title": "Pemeriksa"
@@ -1565,11 +1529,6 @@
         "field.labelSize.large": "Besar",
         "field.labelSize.normal": "Biasa",
         "field.labelSize.small": "Kecil",
-        "field.shapeFocus": "Semasa membentuk",
-        "field.shapeFocus.drawing": "Pudar hanya semasa melukis",
-        "field.shapeFocus.drawing.description": "Pemain di luar bentuk yang dibuka menjadi pudar hanya semasa anda melukisnya.",
-        "field.shapeFocus.rest": "Pudarkan yang lain",
-        "field.shapeFocus.rest.description": "Pemain di luar bentuk yang dibuka menjadi pudar selagi bentuk itu dibuka.",
         "field.stepSizeWarnings": "Amaran saiz langkah",
         "field.stepSizeWarnings.description": "Tandakan gerakan dengan langkah yang terlalu besar untuk dikawad, dan sentiasa tunjukkan laluannya.",
         "general": "Umum",
@@ -1598,27 +1557,6 @@
         "mouse.trackpadPanSensitivity": "Kepekaan anjakan pad sentuh",
         "mouse.zoomSensitivity": "Kepekaan zum",
         "noResults": "Tiada tetapan yang sepadan.",
-        "plugins": "Pemalam",
-        "plugins.community": "Komuniti",
-        "plugins.description": "Tambah ciri yang dibuat oleh komuniti.",
-        "plugins.install": "Pasang",
-        "plugins.installed": "Dipasang",
-        "plugins.installFailed": "Gagal dipasang",
-        "plugins.installing": "Memasang...",
-        "plugins.noCommunityPlugins": "Tiada pemalam komuniti tersedia.",
-        "plugins.noOfficialPlugins": "Tiada pemalam rasmi tersedia.",
-        "plugins.noPlugins": "Tiada pemalam dipasang.",
-        "plugins.official": "Rasmi",
-        "plugins.refreshNotice": "Sila <a>muat semula aplikasi</a> untuk mengemas kini pemalam.",
-        "plugins.toast.installFailed": "Gagal memasang pemalam {pluginName}",
-        "plugins.toast.installSuccess": "Pemalam {pluginName} berjaya dipasang!",
-        "plugins.toast.uninstallFailed": "Gagal membuang {pluginName}",
-        "plugins.toast.uninstallSuccess": "Pemalam {pluginName} berjaya dibuang!",
-        "plugins.uninstall": "Nyahpasang",
-        "plugins.uninstalled": "Dibuang",
-        "plugins.uninstallFailed": "Gagal dibuang",
-        "plugins.uninstalling": "Membuang...",
-        "plugins.version": "v{version}",
         "privacy": "Privasi",
         "privacy.analytics": "Kongsi analitik penggunaan",
         "privacy.analytics.description": "Untuk membantu kami menambah baik OpenMarch, kami mengumpul data analitik, log ralat dan rakaman sesi. Ini membantu kami memahami cara anda menggunakan aplikasi dan mengenal pasti pepijat. Baca <a>dasar privasi</a> kami untuk mengetahui lebih lanjut.",
@@ -1676,8 +1614,6 @@
         "tolgeeDevToolsToggle": "Terjemahan dalam konteks Tolgee",
         "view3d": "Paparan 3D",
         "view3d.description": "Cara Paparan 3D dilukis pada komputer ini. Tidak disimpan dalam persembahan.",
-        "view3d.pauseWhenIdle": "Jeda lukisan apabila tiada pergerakan",
-        "view3d.pauseWhenIdle.description": "Berhenti melukis semasa persembahan dijeda dan kamera tidak bergerak.",
         "view3d.quality": "Kualiti",
         "view3d.quality.auto": "Automatik",
         "view3d.quality.auto.description": "Bermula pada Tinggi dan bertukar kepada Rendah jika paparan tersekat-sekat.",
@@ -1692,8 +1628,6 @@
         "view3d.resolution.fast.description": "Paling lembut, dengan kira-kira separuh kerja. Untuk komputer lama.",
         "view3d.resolution.sharp": "Tajam",
         "view3d.resolution.sharp.description": "Perincian penuh pada skrin beresolusi tinggi.",
-        "view3d.saveOnBattery": "Jimatkan kuasa semasa guna bateri",
-        "view3d.saveOnBattery.description": "Semasa guna bateri, melukis paling banyak 30 bingkai sesaat pada resolusi standard.",
         "input": "Sentuhan & input",
         "input.description": "Pilih susun atur tablet (untuk jari dan pen) atau susun atur desktop (untuk tetikus dan pad sentuh).",
         "input.interface": "Susun atur",
@@ -2140,7 +2074,6 @@
                 "hint": "Klik bentuk, atau di mana-mana tempat lain untuk menutup"
             },
             "section": {
-                "box": "Blok",
                 "title": "Bentuk"
             },
             "selectMarchersFirst": "Pilih pemain dahulu",
@@ -2151,10 +2084,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Balik ↔",
-            "flipAcrossTip": "Balikkan dari sisi ke sisi pada titik pangsi",
-            "flipDeep": "Balik ↕",
-            "flipDeepTip": "Balikkan dari depan ke belakang pada titik pangsi",
             "title": "Transformasi"
         },
         "validate": {
@@ -2290,7 +2219,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Garis masa",
-        "masterVolume": "Kelantangan utama",
         "moveDeleted": {
             "message": "{label} dipadam",
             "withPages": "{count, plural, =1 {{label} dipadam · Halaman {pages} berubah} other {{label} dipadam · Halaman {pages} berubah}}"
@@ -2319,9 +2247,7 @@
             "setAsShown": "Tetapkan seperti dipaparkan",
             "setAsShownNone": "Setiap pemain terpilih sudah ditetapkan pada {page}, atau berada di tengah-tengah gerakan",
             "setAsShownError": "Ralat semasa menetapkan pemain seperti dipaparkan",
-            "addSelected": "Tambah pemain terpilih",
-            "deletePage": "Padam halaman",
-            "addSelectedNone": "Pilih pemain dahulu: di permulaan, pada julat yang belum ada garis masa, atau dalam garis masa yang mereka sertai."
+            "deletePage": "Padam halaman"
         },
         "startFlagPositions": {
             "always": "Sentiasa",
@@ -2378,7 +2304,6 @@
             "label": "Garis masa padat",
             "onTooltip": "Garis masa padat: hidup. Klik untuk menunjukkan garis masa penuh"
         },
-        "volumeSlider": "Peluncur kelantangan garis masa",
         "zoomReset": "Tetapkan semula zum garis masa",
         "playbackSpeed": {
             "current": "Kelajuan main balik: {speed}",
@@ -2403,7 +2328,6 @@
             "lockedNotMoved": "{count, plural, =1 {Seorang pemain menggunakan gerakan Pakar pada halaman ini, jadi pemain itu tidak dialihkan. Tukar ke Pakar untuk menyuntingnya.} other {# pemain menggunakan gerakan Pakar pada halaman ini, jadi mereka tidak dialihkan. Tukar ke Pakar untuk menyunting mereka.}}",
             "switchToExpert": "Tukar ke Pakar"
         },
-        "volume": "Kelantangan garis masa",
         "percent": "{percent}%",
         "loop": {
             "label": "Gelung",
@@ -2609,7 +2533,6 @@
             "range": "kiraan {from}–{to}",
             "length": "{count, plural, other {# kiraan}}"
         },
-        "createTrack": "Cipta trek",
         "playheadChip": {
             "label": "Tunjukkan kepala main",
             "text": "Kepala main"
@@ -2846,16 +2769,11 @@
             "freeCamera": "Pandangan bebas"
         },
         "readout": {
-            "camera": "Paras mata {eye} · {distance} ke tengah",
             "count": "Kiraan {count} daripada {total}",
             "noPages": "Tiada halaman",
             "page": "Halaman {page}",
             "pastEnd": "TAMAT +{count}",
             "showTime": "Masa persembahan"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "Paparan 3D — {showName}",
@@ -3113,9 +3031,7 @@
             "in": "Zum masuk",
             "out": "Zum keluar",
             "reset": "Zum {zoom}%, set semula zum dan tengahkan",
-            "resetAndCenter": "Set semula zum dan tengahkan",
-            "perspective": "Perspektif",
-            "perspectiveComingSoon": "Perspektif (akan datang)"
+            "resetAndCenter": "Set semula zum dan tengahkan"
         }
     },
     "errorBoundary": {

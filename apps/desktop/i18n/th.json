@@ -147,8 +147,6 @@
             "openSettings": "การตั้งค่า…",
             "openView3d": "เปิดมุมมอง 3 มิติ",
             "openView3dKeywords": "3d 3มิติ สามมิติ สนามกีฬา สเตเดียม สถานที่ หน้าต่าง three dimensional stadium venue window",
-            "runFieldBenchmark": "ทดสอบประสิทธิภาพสนาม",
-            "runFieldBenchmarkKeywords": "ประสิทธิภาพ fps ความเร็ว ทดสอบ อัตราเฟรม เฟรมเรต เบนช์มาร์ก performance speed test frame rate benchmark",
             "showShortcuts": "แป้นพิมพ์ลัด",
             "hideStartFlagPositions": "ซ่อนตำแหน่งที่ธงเริ่มต้น",
             "showStartFlagPositions": "แสดงตำแหน่งที่ธงเริ่มต้น",
@@ -531,14 +529,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "คัดลอกแล้ว",
-            "copy": "คัดลอกเป็น Markdown",
-            "devBuild": "นี่คือบิลด์สำหรับการพัฒนา ใช้ได้เฉพาะตัวเลขจากบิลด์ที่เผยแพร่จริงเท่านั้น",
-            "intro": "เล่น เลื่อนดู ซูม และแพนโชว์ที่เปิดอยู่อย่างละไม่กี่วินาที และวัดผลทุกเฟรม ให้หน้าต่างนี้อยู่ด้านหน้าและอย่าแตะต้องสิ่งใดระหว่างที่กำลังทำงาน",
-            "run": "เรียกใช้",
-            "running": "กำลังทดสอบ: {kind}…",
-            "softwareGl": "เครื่องนี้ประมวลผลกราฟิกด้วยซอฟต์แวร์ ตัวเลขเหล่านี้จึงเป็นเพียงค่าขั้นต่ำ",
-            "title": "ทดสอบประสิทธิภาพสนาม"
+            "running": "กำลังทดสอบ: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "ระยะเท่ากัน",
@@ -577,15 +568,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "ทิศทาง",
-            "sections": "กลุ่มเครื่อง"
-        },
-        "comingSoon": "เร็วๆ นี้",
-        "direction": "ทิศทางสนาม",
         "label": "การแสดงผลสนาม",
-        "sections": "กลุ่มเครื่องที่แสดง",
-        "comingSoonLabel": "{label}: เร็วๆ นี้",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -795,7 +778,6 @@
         "exitFile": "ออกจากไฟล์",
         "newFile": "ไฟล์ใหม่",
         "openFile": "เปิดไฟล์",
-        "redo": "ทำซ้ำ",
         "saveCopyDialogDescription": "OpenMarch บันทึกการเปลี่ยนแปลงลงในไฟล์ปัจจุบันโดยอัตโนมัติ ใช้ฟังก์ชันนี้หากต้องการสร้างสำเนาเต็มของไฟล์ปัจจุบัน",
         "saveFile": "บันทึกสำเนา",
         "saveFileCancel": "ยกเลิก",
@@ -838,18 +820,11 @@
             "stepSizeWarning": "ขนาดก้าวเกินเกณฑ์",
             "swapMarchers": "สลับตำแหน่งผู้แสดง",
             "timeline": {
-                "buttonWithHint": "{label} {hint}",
                 "goToPage": "ไปที่หน้า {page} ซึ่งผู้แสดงเหล่านี้เคลื่อนที่ครั้งล่าสุด",
                 "goToStart": "ไปที่จุดเริ่มต้น",
                 "holdFrom": "อยู่กับที่ตั้งแต่หน้า {page}",
                 "holdFromStart": "อยู่กับที่ตั้งแต่เริ่มต้น",
-                "holdHere": "ผู้แสดงเหล่านี้อยู่กับที่ในหน้านี้",
-                "movesOnThisPage": "เคลื่อนที่ในหน้านี้",
-                "someHoldHere": "ผู้แสดงบางคนในกลุ่มนี้อยู่กับที่ในหน้านี้",
-                "unsetHere": "ลบคีย์เฟรม",
-                "unsetHereHint": "ลบคีย์เฟรมของผู้แสดงเหล่านี้ในจังหวะนี้ เพื่อให้กลับไปตามตำแหน่งก่อนหน้า หน้าถัดไปจะคงตำแหน่งเดิม",
-                "unsetHereHintSome": "ลบคีย์เฟรมของผู้แสดง {count} จาก {total} คนที่เลือกซึ่งมีคีย์เฟรมในจังหวะนี้ เพื่อให้กลับไปตามตำแหน่งก่อนหน้า หน้าถัดไปจะคงตำแหน่งเดิม",
-                "unsetHereNone": "ผู้แสดงที่เลือกไม่มีคีย์เฟรมในจังหวะนี้"
+                "movesOnThisPage": "เคลื่อนที่ในหน้านี้"
             },
             "title": "ผู้แสดง {count} คน",
             "titleSingle": "ผู้แสดง {drillNumber}",
@@ -912,18 +887,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "จังหวะ",
-                "delete": "ลบการเคลื่อนที่",
-                "endHelp": "หากต้องการเปลี่ยนตำแหน่งสิ้นสุด ให้ลากผู้แสดงบนสนามที่จุดสิ้นสุดของการเคลื่อนที่",
-                "goToEnd": "ไปที่จุดสิ้นสุด",
-                "marchers": "{count, plural, other {ผู้แสดง # คน}}",
-                "name": "ชื่อ",
-                "nameLimit": "ไม่เกิน {max} ตัวอักษร",
-                "paused": "หยุดชั่วคราวเพื่อลบการเคลื่อนที่",
-                "selectMarchers": "เลือกผู้แสดง",
-                "split": "แยกที่หัวเล่น",
-                "splitHelp": "วางหัวเล่นไว้ภายในการเคลื่อนที่เพื่อแยกที่ตำแหน่งนั้น",
-                "title": "การเคลื่อนที่"
+                "splitHelp": "วางหัวเล่นไว้ภายในการเคลื่อนที่เพื่อแยกที่ตำแหน่งนั้น"
             }
         },
         "title": "ตัวตรวจสอบ"
@@ -1565,11 +1529,6 @@
         "field.labelSize.large": "ใหญ่",
         "field.labelSize.normal": "ปกติ",
         "field.labelSize.small": "เล็ก",
-        "field.shapeFocus": "ขณะจัดรูปทรง",
-        "field.shapeFocus.drawing": "จางเฉพาะขณะวาด",
-        "field.shapeFocus.drawing.description": "ผู้แสดงที่อยู่นอกรูปทรงที่เปิดอยู่จะจางลงเฉพาะขณะวาดรูปทรงนั้น",
-        "field.shapeFocus.rest": "จางส่วนที่เหลือ",
-        "field.shapeFocus.rest.description": "ผู้แสดงที่อยู่นอกรูปทรงที่เปิดอยู่จะจางลงตลอดเวลาที่รูปทรงนั้นเปิดอยู่",
         "field.stepSizeWarnings": "คำเตือนขนาดก้าว",
         "field.stepSizeWarnings.description": "ทำเครื่องหมายการเคลื่อนที่ที่มีก้าวใหญ่เกินกว่าจะเดินได้ และแสดงเส้นทางของการเคลื่อนที่นั้นเสมอ",
         "general": "ทั่วไป",
@@ -1598,27 +1557,6 @@
         "mouse.trackpadPanSensitivity": "ความไวในการเลื่อนด้วยแทร็กแพด",
         "mouse.zoomSensitivity": "ความไวในการซูม",
         "noResults": "ไม่มีการตั้งค่าที่ตรงกัน",
-        "plugins": "ปลั๊กอิน",
-        "plugins.community": "ชุมชน",
-        "plugins.description": "เพิ่มฟีเจอร์ที่สร้างโดยชุมชน",
-        "plugins.install": "ติดตั้ง",
-        "plugins.installed": "ติดตั้งแล้ว",
-        "plugins.installFailed": "ติดตั้งไม่สำเร็จ",
-        "plugins.installing": "กำลังติดตั้ง...",
-        "plugins.noCommunityPlugins": "ไม่มีปลั๊กอินจากชุมชน",
-        "plugins.noOfficialPlugins": "ไม่มีปลั๊กอินอย่างเป็นทางการ",
-        "plugins.noPlugins": "ยังไม่ได้ติดตั้งปลั๊กอิน",
-        "plugins.official": "ทางการ",
-        "plugins.refreshNotice": "โปรด<a>โหลดแอปใหม่</a>เพื่ออัปเดตปลั๊กอิน",
-        "plugins.toast.installFailed": "ติดตั้งปลั๊กอิน {pluginName} ไม่สำเร็จ",
-        "plugins.toast.installSuccess": "ติดตั้งปลั๊กอิน {pluginName} เรียบร้อยแล้ว!",
-        "plugins.toast.uninstallFailed": "นำ {pluginName} ออกไม่สำเร็จ",
-        "plugins.toast.uninstallSuccess": "นำปลั๊กอิน {pluginName} ออกเรียบร้อยแล้ว!",
-        "plugins.uninstall": "ถอนการติดตั้ง",
-        "plugins.uninstalled": "นำออกแล้ว",
-        "plugins.uninstallFailed": "นำออกไม่สำเร็จ",
-        "plugins.uninstalling": "กำลังนำออก...",
-        "plugins.version": "v{version}",
         "privacy": "ความเป็นส่วนตัว",
         "privacy.analytics": "แชร์ข้อมูลการวิเคราะห์การใช้งาน",
         "privacy.analytics.description": "เพื่อช่วยเราปรับปรุง OpenMarch เราเก็บข้อมูลการวิเคราะห์ บันทึกข้อผิดพลาด และการบันทึกเซสชัน ซึ่งช่วยให้เราเข้าใจว่าคุณใช้แอปอย่างไรและค้นหาข้อบกพร่องได้ อ่าน<a>นโยบายความเป็นส่วนตัว</a>ของเราเพื่อดูข้อมูลเพิ่มเติม",
@@ -1676,8 +1614,6 @@
         "tolgeeDevToolsToggle": "การแปลในบริบทของ Tolgee",
         "view3d": "มุมมอง 3D",
         "view3d.description": "วิธีที่มุมมอง 3D วาดภาพบนคอมพิวเตอร์เครื่องนี้ ไม่ได้บันทึกไว้ในโชว์",
-        "view3d.pauseWhenIdle": "หยุดวาดเมื่อไม่มีสิ่งใดเคลื่อนไหว",
-        "view3d.pauseWhenIdle.description": "หยุดวาดขณะที่โชว์หยุดชั่วคราวและกล้องอยู่นิ่ง",
         "view3d.quality": "คุณภาพ",
         "view3d.quality.auto": "อัตโนมัติ",
         "view3d.quality.auto.description": "เริ่มที่ “สูง” และสลับเป็น “ต่ำ” หากภาพกระตุก",
@@ -1692,8 +1628,6 @@
         "view3d.resolution.fast.description": "ภาพนุ่มที่สุด โดยทำงานน้อยลงประมาณครึ่งหนึ่ง สำหรับคอมพิวเตอร์รุ่นเก่า",
         "view3d.resolution.sharp": "คมชัด",
         "view3d.resolution.sharp.description": "รายละเอียดเต็มที่บนหน้าจอความละเอียดสูง",
-        "view3d.saveOnBattery": "ประหยัดพลังงานเมื่อใช้แบตเตอรี่",
-        "view3d.saveOnBattery.description": "เมื่อใช้แบตเตอรี่ จะวาดสูงสุด 30 เฟรมต่อวินาทีที่ความละเอียดมาตรฐาน",
         "input": "การสัมผัสและอินพุต",
         "input.description": "เลือกเลย์เอาต์แท็บเล็ต (สำหรับนิ้วและปากกา) หรือเลย์เอาต์เดสก์ท็อป (สำหรับเมาส์และแทร็กแพด)",
         "input.interface": "เลย์เอาต์",
@@ -2140,7 +2074,6 @@
                 "hint": "คลิกรูปทรง หรือคลิกที่อื่นเพื่อปิด"
             },
             "section": {
-                "box": "บล็อก",
                 "title": "รูปทรง"
             },
             "selectMarchersFirst": "เลือกผู้แสดงก่อน",
@@ -2151,10 +2084,6 @@
             }
         },
         "transform": {
-            "flipAcross": "พลิก ↔",
-            "flipAcrossTip": "พลิกซ้ายขวารอบจุดหมุน",
-            "flipDeep": "พลิก ↕",
-            "flipDeepTip": "พลิกหน้าหลังรอบจุดหมุน",
             "title": "การแปลง"
         },
         "validate": {
@@ -2290,7 +2219,6 @@
             "spoken": "{title} {detail}"
         },
         "label": "ไทม์ไลน์",
-        "masterVolume": "ระดับเสียงหลัก",
         "moveDeleted": {
             "message": "ลบ {label} แล้ว",
             "withPages": "{count, plural, other {ลบ {label} แล้ว · หน้า {pages} เปลี่ยนไป}}"
@@ -2319,9 +2247,7 @@
             "setAsShown": "กำหนดตำแหน่งตามที่แสดง",
             "setAsShownNone": "ผู้แสดงที่เลือกทุกคนมีตำแหน่งกำหนดไว้ที่ {page} แล้ว หรืออยู่ระหว่างการเคลื่อนที่",
             "setAsShownError": "เกิดข้อผิดพลาดในการกำหนดตำแหน่งผู้แสดงตามที่แสดง",
-            "addSelected": "เพิ่มผู้แสดงที่เลือก",
-            "deletePage": "ลบหน้า",
-            "addSelectedNone": "เลือกผู้แสดงก่อน: ที่ตำแหน่งเริ่มต้น ในช่วงที่ยังไม่มีการเคลื่อนที่ หรือในการเคลื่อนที่ที่ผู้แสดงอยู่"
+            "deletePage": "ลบหน้า"
         },
         "startFlagPositions": {
             "always": "เสมอ",
@@ -2378,7 +2304,6 @@
             "label": "ไทม์ไลน์แบบย่อ",
             "onTooltip": "ไทม์ไลน์แบบย่อ: เปิด คลิกเพื่อแสดงไทม์ไลน์แบบเต็ม"
         },
-        "volumeSlider": "แถบเลื่อนระดับเสียงไทม์ไลน์",
         "zoomReset": "รีเซ็ตการซูมไทม์ไลน์",
         "playbackSpeed": {
             "current": "ความเร็วในการเล่น: {speed}",
@@ -2403,7 +2328,6 @@
             "lockedNotMoved": "{count, plural, other {ผู้แสดง # คนใช้การเคลื่อนที่แบบขั้นสูงในหน้านี้ จึงไม่ได้ถูกย้าย สลับไปโหมดขั้นสูงเพื่อแก้ไข}}",
             "switchToExpert": "สลับไปโหมดขั้นสูง"
         },
-        "volume": "ระดับเสียงไทม์ไลน์",
         "percent": "{percent}%",
         "loop": {
             "label": "วนซ้ำ",
@@ -2609,7 +2533,6 @@
             "range": "จังหวะที่ {from}–{to}",
             "length": "{count, plural, other {# จังหวะ}}"
         },
-        "createTrack": "สร้างแทร็ก",
         "playheadChip": {
             "label": "แสดงหัวเล่น",
             "text": "หัวเล่น"
@@ -2846,16 +2769,11 @@
             "freeCamera": "มุมมองอิสระ"
         },
         "readout": {
-            "camera": "ระดับสายตา {eye} · ห่างจากกึ่งกลาง {distance}",
             "count": "จังหวะ {count} จาก {total}",
             "noPages": "ไม่มีหน้า",
             "page": "หน้า {page}",
             "pastEnd": "จบ +{count}",
             "showTime": "เวลาโชว์"
-        },
-        "unit": {
-            "feet": "{value} ฟุต",
-            "meters": "{value} m"
         },
         "window": {
             "title": "มุมมอง 3D — {showName}",
@@ -3113,9 +3031,7 @@
             "in": "ซูมเข้า",
             "out": "ซูมออก",
             "reset": "ซูม {zoom}% รีเซ็ตการซูมและจัดกึ่งกลาง",
-            "resetAndCenter": "รีเซ็ตการซูมและจัดกึ่งกลาง",
-            "perspective": "มุมมองเปอร์สเปกทีฟ",
-            "perspectiveComingSoon": "มุมมองเปอร์สเปกทีฟ (เร็วๆ นี้)"
+            "resetAndCenter": "รีเซ็ตการซูมและจัดกึ่งกลาง"
         }
     },
     "errorBoundary": {

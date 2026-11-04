@@ -161,8 +161,6 @@
             "openSettings": "Settings…",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
-            "runFieldBenchmark": "Run field benchmark",
-            "runFieldBenchmarkKeywords": "performance fps speed test frame rate",
             "showShortcuts": "Keyboard shortcuts",
             "hideStartFlagPositions": "Hide start flag positions",
             "showStartFlagPositions": "Show start flag positions",
@@ -545,14 +543,7 @@
     },
     "field": {
         "benchmark": {
-            "copied": "Copied",
-            "copy": "Copy as Markdown",
-            "devBuild": "This is a development build. Only numbers from a production build count.",
-            "intro": "Plays, scrubs, zooms and pans the open show for a few seconds each and measures every frame. Keep this window in front and don't touch anything while it runs.",
-            "run": "Run",
-            "running": "Running: {kind}…",
-            "softwareGl": "Graphics run in software here, so these numbers are a lower bound.",
-            "title": "Field benchmark"
+            "running": "Running: {kind}…"
         },
         "gestureChip": {
             "equalSpacings": "equal spacings",
@@ -591,15 +582,7 @@
         }
     },
     "fieldDisplay": {
-        "caption": {
-            "direction": "Direction",
-            "sections": "Sections"
-        },
-        "comingSoon": "Coming soon",
-        "direction": "Field direction",
         "label": "Field display",
-        "sections": "Visible sections",
-        "comingSoonLabel": "{label}: Coming soon",
         "valueLabel": "{label}: {value}"
     },
     "fieldProperties": {
@@ -807,7 +790,6 @@
         "exitFile": "Exit File",
         "newFile": "New File",
         "openFile": "Open File",
-        "redo": "Redo",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "saveFile": "Save Copy",
         "saveFileCancel": "Cancel",
@@ -850,25 +832,11 @@
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "timeline": {
-                "buttonWithHint": "{label}. {hint}",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
-                "holdHere": "These marchers have no position of their own here",
-                "movesOnThisPage": "Moves on this page",
-                "pagesShowFromHere": "{count, plural, =1 {Page {first} shows these marchers where this page leaves them} other {Pages {first}–{last} show these marchers where this page leaves them}}",
-                "pagesShowSomeFromHere": "{count, plural, =1 {Page {first} shows some of these marchers where this page leaves them} other {Pages {first}–{last} show some of these marchers where this page leaves them}}",
-                "setAsShown": "{defineAsShown}",
-                "setAsShownHint": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing Page {from} won't move them here}}",
-                "setAsShownHintEarlier": "{who, select, named {Make {names} {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} someNamed {Make {names} ({count} of the {total} selected) {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} some {Make {count} of the {total} selected {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here} other {Make these marchers {definedLower} on Page {page} where they are shown, so editing earlier pages won't move them here}}",
-                "someHoldHere": "Some of these marchers have no position of their own here",
-                "unsetHere": "{removeKeyframe}",
-                "unsetHereAndLaterHint": "Remove their keyframe on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
-                "unsetHereAndLaterHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, and {pageCount, plural, =1 {Page {first} goes} other {Pages {first}–{last} go}} back to the keyframe before it",
-                "unsetHereHint": "Remove their keyframe on this count, so they go back to the keyframe before it. Later pages stay where they are",
-                "unsetHereHintSome": "Remove the keyframe of the {count} of the {total} selected that have one on this count, so they go back to the keyframe before it. Later pages stay where they are",
-                "unsetHereNone": "None of the selected marchers has a keyframe on this count"
+                "movesOnThisPage": "Moves on this page"
             },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}",
@@ -931,18 +899,7 @@
         },
         "timeline": {
             "move": {
-                "counts": "Counts",
-                "delete": "Delete move",
-                "endHelp": "To change where they end up, drag marchers on the field at the move's end.",
-                "goToEnd": "Go to end",
-                "marchers": "{count, plural, one {# marcher} other {# marchers}}",
-                "name": "Name",
-                "nameLimit": "{max} characters at most.",
-                "paused": "Pause to delete a move.",
-                "selectMarchers": "Select them",
-                "split": "Split at playhead",
-                "splitHelp": "Put the playhead inside the move to split it there.",
-                "title": "Move"
+                "splitHelp": "Put the playhead inside the move to split it there."
             }
         },
         "title": "Inspector"
@@ -1591,11 +1548,6 @@
         "field.labelSize.large": "Large",
         "field.labelSize.normal": "Normal",
         "field.labelSize.small": "Small",
-        "field.shapeFocus": "While shaping",
-        "field.shapeFocus.drawing": "Fade only while drawing",
-        "field.shapeFocus.drawing.description": "Marchers outside an open shape fade only while you draw it.",
-        "field.shapeFocus.rest": "Fade the rest",
-        "field.shapeFocus.rest.description": "Marchers outside an open shape fade for as long as it is open.",
         "field.stepSizeWarnings": "Step size warnings",
         "field.stepSizeWarnings.description": "Mark moves with steps too large to march, and always show their paths.",
         "general": "General",
@@ -1624,27 +1576,6 @@
         "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
         "mouse.zoomSensitivity": "Zoom sensitivity",
         "noResults": "No settings match.",
-        "plugins": "Plugins",
-        "plugins.community": "Community",
-        "plugins.description": "Add features made by the community.",
-        "plugins.install": "Install",
-        "plugins.installed": "Installed",
-        "plugins.installFailed": "Install Failed",
-        "plugins.installing": "Installing...",
-        "plugins.noCommunityPlugins": "No community plugins available.",
-        "plugins.noOfficialPlugins": "No official plugins available.",
-        "plugins.noPlugins": "No plugins installed.",
-        "plugins.official": "Official",
-        "plugins.refreshNotice": "Please <a>reload the app</a> to update plugins.",
-        "plugins.toast.installFailed": "Failed to install plugin {pluginName}",
-        "plugins.toast.installSuccess": "Plugin {pluginName} installed successfully!",
-        "plugins.toast.uninstallFailed": "Failed to remove {pluginName}",
-        "plugins.toast.uninstallSuccess": "Plugin {pluginName} removed successfully!",
-        "plugins.uninstall": "Uninstall",
-        "plugins.uninstalled": "Removed",
-        "plugins.uninstallFailed": "Removal Failed",
-        "plugins.uninstalling": "Removing...",
-        "plugins.version": "v{version}",
         "privacy": "Privacy",
         "privacy.analytics": "Share usage analytics",
         "privacy.analytics.description": "To help us improve OpenMarch, we collect analytics data, error logs, and session recordings. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
@@ -1702,8 +1633,6 @@
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
         "view3d": "3D View",
         "view3d.description": "How the 3D View draws on this computer. Not saved in the show.",
-        "view3d.pauseWhenIdle": "Pause drawing when nothing moves",
-        "view3d.pauseWhenIdle.description": "Stops drawing while the show is paused and the camera is still.",
         "view3d.quality": "Quality",
         "view3d.quality.auto": "Automatic",
         "view3d.quality.auto.description": "Starts on High and switches to Low if the view stutters.",
@@ -1718,8 +1647,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.saveOnBattery": "Save power on battery",
-        "view3d.saveOnBattery.description": "On battery, draws at most 30 frames a second at standard resolution.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -2192,7 +2119,6 @@
                 "hint": "Click a shape, or anywhere else to close"
             },
             "section": {
-                "box": "Box",
                 "title": "Shapes"
             },
             "selectMarchersFirst": "Select marchers first",
@@ -2203,10 +2129,6 @@
             }
         },
         "transform": {
-            "flipAcross": "Flip ↔",
-            "flipAcrossTip": "Flip side to side around the pivot",
-            "flipDeep": "Flip ↕",
-            "flipDeepTip": "Flip front to back around the pivot",
             "title": "Transform"
         },
         "validate": {
@@ -2385,7 +2307,6 @@
             "spoken": "{title}. {detail}"
         },
         "label": "Timeline",
-        "masterVolume": "Master Volume",
         "moveDeleted": {
             "message": "Deleted {label}",
             "withPages": "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}"
@@ -2417,9 +2338,7 @@
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
             "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
             "setAsShownError": "Error setting marchers as shown",
-            "addSelected": "Add selected marchers",
-            "deletePage": "Delete page",
-            "addSelectedNone": "Select marchers first: at home, on a range with no timeline yet, or in a timeline they're in."
+            "deletePage": "Delete page"
         },
         "terms": {
             "clearThisPage": "Clear this page",
@@ -2489,7 +2408,6 @@
             "label": "Compact timeline",
             "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
-        "volumeSlider": "Timeline volume slider",
         "zoomReset": "Reset timeline zoom",
         "playbackSpeed": {
             "current": "Playback speed: {speed}",
@@ -2514,7 +2432,6 @@
             "lockedNotMoved": "{count, plural, =1 {One marcher uses Expert moves on this page, so it wasn't moved. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so they weren't moved. Switch to Expert to edit them.}}",
             "switchToExpert": "Switch to Expert"
         },
-        "volume": "Timeline volume",
         "percent": "{percent}%",
         "loop": {
             "label": "Loop",
@@ -2707,6 +2624,7 @@
         },
         "moveMenu": {
             "edit": "Edit move",
+            "selectMarchers": "Select marchers",
             "rename": "Rename move…",
             "splitAtPlayhead": "Split at playhead",
             "delete": "Delete move",
@@ -2720,7 +2638,6 @@
             "range": "counts {from}–{to}",
             "length": "{count, plural, one {# count} other {# counts}}"
         },
-        "createTrack": "Create Track",
         "playheadChip": {
             "label": "Show the playhead",
             "text": "Playhead"
@@ -2850,7 +2767,8 @@
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
             "toNextPagePositions": "...to next page positions",
-            "setMarcherPositionsAriaLabel": "Set marcher positions"
+            "setMarcherPositionsAriaLabel": "Set marcher positions",
+            "toPreviousPagePositions": "...to previous page positions"
         },
         "collisions": {
             "collisionsToolbar": "Collisions",
@@ -2964,16 +2882,11 @@
             "freeCamera": "Free view"
         },
         "readout": {
-            "camera": "Eye {eye} up · {distance} to center",
             "count": "Count {count} of {total}",
             "noPages": "No pages",
             "page": "Page {page}",
             "pastEnd": "END +{count}",
             "showTime": "Show time"
-        },
-        "unit": {
-            "feet": "{value} ft",
-            "meters": "{value} m"
         },
         "window": {
             "title": "3D View — {showName}",
@@ -3231,9 +3144,7 @@
             "in": "Zoom in",
             "out": "Zoom out",
             "reset": "Zoom {zoom}%, reset zoom and center",
-            "resetAndCenter": "Reset Zoom and Center",
-            "perspective": "Perspective",
-            "perspectiveComingSoon": "Perspective (coming soon)"
+            "resetAndCenter": "Reset Zoom and Center"
         }
     },
     "errorBoundary": {

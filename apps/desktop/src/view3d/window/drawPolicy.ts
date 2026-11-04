@@ -18,21 +18,6 @@ export const BATTERY_FPS = 30;
  */
 export const FRAME_SLACK_MS = 6;
 
-/** The viewer's power choices, saved per computer like the render quality. */
-export interface PowerPrefs {
-    /** Stop drawing when nothing moves. */
-    pauseWhenIdle: boolean;
-    /** Cap the frame rate while on battery. */
-    saveOnBattery: boolean;
-}
-
-export const DEFAULT_POWER_PREFS: PowerPrefs = {
-    pauseWhenIdle: true,
-    saveOnBattery: true,
-};
-
-export const POWER_STORAGE_KEY = "view3d.power";
-
 export interface DrawState {
     /** Keep drawing until this time (ms), whatever moves. */
     awakeUntil: number;
@@ -53,16 +38,15 @@ export function noteFrame(state: DrawState, now: number): void {
     state.lastFrameMs = now;
 }
 
-/** True while the battery frame cap holds the frame rate down. */
-export function frameCapped(onBattery: boolean, prefs: PowerPrefs): boolean {
-    return onBattery && prefs.saveOnBattery;
+/** True while the battery frame cap holds the frame rate down: always on battery. */
+export function frameCapped(onBattery: boolean): boolean {
+    return onBattery;
 }
 
 export interface DrawInputs {
     /** Something animates continuously: playback, a camera move. */
     moving: boolean;
     onBattery: boolean;
-    prefs: PowerPrefs;
 }
 
 /**
@@ -74,14 +58,9 @@ export function nextFrameDelay(
     now: number,
     inputs: DrawInputs,
 ): number | null {
-    const active =
-        inputs.moving || now < state.awakeUntil || !inputs.prefs.pauseWhenIdle;
+    const active = inputs.moving || now < state.awakeUntil;
     if (!active) return null;
-    if (
-        !frameCapped(inputs.onBattery, inputs.prefs) ||
-        state.lastFrameMs === null
-    )
-        return 0;
+    if (!frameCapped(inputs.onBattery) || state.lastFrameMs === null) return 0;
     const wait =
         1000 / BATTERY_FPS - (now - state.lastFrameMs) - FRAME_SLACK_MS;
     return wait > 0 ? wait : 0;
@@ -114,45 +93,4 @@ export function refreshShadows(
 
 export function shadowsNeedUpdate(state: ShadowState, now: number): boolean {
     return now < state.refreshUntil;
-}
-
-export function parsePowerPrefs(value: unknown): PowerPrefs {
-    if (typeof value !== "string") return { ...DEFAULT_POWER_PREFS };
-    try {
-        const parsed = JSON.parse(value) as Partial<PowerPrefs>;
-        return {
-            pauseWhenIdle:
-                typeof parsed.pauseWhenIdle === "boolean"
-                    ? parsed.pauseWhenIdle
-                    : DEFAULT_POWER_PREFS.pauseWhenIdle,
-            saveOnBattery:
-                typeof parsed.saveOnBattery === "boolean"
-                    ? parsed.saveOnBattery
-                    : DEFAULT_POWER_PREFS.saveOnBattery,
-        };
-    } catch {
-        return { ...DEFAULT_POWER_PREFS };
-    }
-}
-
-/** The saved choices, or the defaults when there are none or storage is unavailable. */
-export function loadPowerPrefs(storage?: Storage): PowerPrefs {
-    try {
-        return parsePowerPrefs(
-            (storage ?? window.localStorage).getItem(POWER_STORAGE_KEY),
-        );
-    } catch {
-        return { ...DEFAULT_POWER_PREFS };
-    }
-}
-
-export function savePowerPrefs(prefs: PowerPrefs, storage?: Storage): void {
-    try {
-        (storage ?? window.localStorage).setItem(
-            POWER_STORAGE_KEY,
-            JSON.stringify(prefs),
-        );
-    } catch {
-        // Private or blocked storage: the choice lasts for this session only.
-    }
 }

@@ -60,6 +60,11 @@ export interface ActionDefinition {
      * definitions test lists those with why.
      */
     hiddenFromPalette?: boolean;
+    /**
+     * Turned off in Basic mode (UI-19), so left out of the command palette and the Shortcuts
+     * dialog there. The app menu marks its own items the same way (`menuActions.ts`).
+     */
+    expertOnly?: boolean;
     /** A held key runs the action once, not again on each repeat (for toggles) */
     ignoreRepeat?: boolean;
     args?: ActionArgs;
@@ -331,6 +336,7 @@ const STATIC_ACTIONS = {
         category: "playback",
         scope: "canvas",
         defaultBindings: ["Alt+Space"],
+        expertOnly: true,
     },
     // UI-17: C turns looping on over the page being edited, or off (timeline mode)
     toggleLoop: {
@@ -338,6 +344,7 @@ const STATIC_ACTIONS = {
         category: "playback",
         scope: "canvas",
         defaultBindings: ["C"],
+        expertOnly: true,
     },
     // Playback speed: held, ] plays at double the speed and [ at half, back on release (VLC and
     // mpv use the brackets for speed). Hidden from the palette, which can't hold a key
@@ -579,15 +586,6 @@ const STATIC_ACTIONS = {
         category: "ui",
         scope: "global",
         defaultBindings: ["$mod+Comma"],
-    },
-    // Measures the field's frame rate on this machine (ADR 0005, #205); both fields register it
-    // until #209. Unbound
-    runFieldBenchmark: {
-        labelKey: "actions.ui.runFieldBenchmark",
-        keywordsKey: "actions.ui.runFieldBenchmarkKeywords",
-        category: "ui",
-        scope: "global",
-        defaultBindings: [],
     },
     // Opens the 3D View window, or focuses it (3D View UI-1). Unbound by default.
     openView3d: {

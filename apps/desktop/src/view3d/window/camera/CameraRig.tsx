@@ -20,8 +20,7 @@
  * - in pick-a-seat mode, raycasts the kit's `pickTargets`, snaps to the
  *   nearest seat row and flies to a seated eye looking at the focus; Esc
  *   cancels;
- * - clears the crowd within `CROWD_CLEAR_RADIUS` of the camera on arrival;
- * - publishes the eye-height readout to `useCameraStore`.
+ * - clears the crowd within `CROWD_CLEAR_RADIUS` of the camera on arrival.
  *
  * Camera state the overlay reads lives in `cameraStore.ts`.
  */
@@ -38,7 +37,7 @@ import {
 } from "three";
 import type { CameraSeat, KitResult } from "@/view3d/core/types";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "../sceneStore";
-import { createReadoutThrottle, useCameraStore } from "./cameraStore";
+import { useCameraStore } from "./cameraStore";
 import { RigController } from "./rigController";
 import { classifyWheel, groundHit, wheelPixels } from "./inputMath";
 import { requestDraw } from "../drawWake";
@@ -46,7 +45,6 @@ import { pickAlong } from "../scenePick";
 import {
     cameraIndexForKey,
     FLY_IN_OFFSET,
-    horizontalDistance,
     openingCamera,
     SEAT_FOV_DEG,
     SEATED_EYE,
@@ -135,9 +133,6 @@ export default function CameraRig() {
 
     const rig = useMemo(() => new RigController(camera), [camera]);
     const shownKitIdRef = useRef<string | null>(null);
-    const throttleRef = useRef(
-        createReadoutThrottle((r) => useCameraStore.getState()._setReadout(r)),
-    );
 
     const flyToSeat = (seat: CameraSeat) => {
         const aim = seatAim(seat);
@@ -481,18 +476,6 @@ export default function CameraRig() {
         const now = performance.now();
         rig.update(now);
         if (rig.moving) requestDraw(100);
-        const p = camera.position;
-        const position: Vector3Tuple = [p.x, p.y, p.z];
-        throttleRef.current(
-            {
-                eyeHeightM: p.y,
-                distanceToFocusM: horizontalDistance(
-                    position,
-                    useView3dSceneStore.getState().focus,
-                ),
-            },
-            now,
-        );
     }, -1);
 
     // Leave the store clean when the window's scene goes away.

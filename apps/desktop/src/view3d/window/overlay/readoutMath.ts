@@ -2,7 +2,6 @@
  * Pure helpers for the overlay readout (ui.md UI-2): the page and count at a
  * show time, and lengths in the field's measurement system.
  */
-import type { MeasurementSystem } from "@openmarch/core";
 import type Page from "@/global/classes/Page";
 import type { CountClock } from "@/timeline/countGrid";
 
@@ -97,39 +96,4 @@ export function pausedPageCount(
         count: inPage ? Math.min(page.counts, started) : page.counts,
         total: page.counts,
     };
-}
-
-export const METERS_PER_FOOT = 0.3048;
-
-export interface Length {
-    value: string;
-    unit: "ft" | "m";
-}
-
-/** `value` with `digits` decimals in `locale`, without thousands separators (like `toFixed`) */
-const fixed = (value: number, digits: number, locale: string) =>
-    value.toLocaleString(locale, {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-        useGrouping: false,
-    });
-
-/**
- * A length for display: whole feet for imperial fields, meters with one
- * decimal (whole meters from 100 m) for metric fields. `locale` picks the
- * decimal mark ("en" when omitted).
- */
-export function formatLength(
-    meters: number,
-    system: MeasurementSystem,
-    locale: string = "en",
-): Length {
-    const m = Number.isFinite(meters) ? Math.max(0, meters) : 0;
-    if (system === "metric") {
-        return {
-            value: fixed(m, m >= 100 ? 0 : 1, locale),
-            unit: "m",
-        };
-    }
-    return { value: fixed(m / METERS_PER_FOOT, 0, locale), unit: "ft" };
 }

@@ -1,9 +1,4 @@
-import {
-    pivotPoint,
-    type FlipAxis,
-    type PivotKey,
-    type ShapeFrame,
-} from "../frame/frame";
+import { pivotPoint, type PivotKey, type ShapeFrame } from "../frame/frame";
 import type { XY } from "../types";
 
 /**
@@ -39,22 +34,4 @@ export function selectionPivot(
 ): XY | null {
     const frame = selectionFrame(points);
     return frame && pivotPoint(frame, pivot);
-}
-
-/**
- * `points` mirrored side to side (`across`) or front to back (`deep`) about a line through
- * `pivot`, in the same order
- */
-export function flipSelection<P extends XY>(
-    points: readonly P[],
-    axis: FlipAxis,
-    pivot: PivotKey,
-): P[] {
-    const at = selectionPivot(points, pivot);
-    if (!at) return [];
-    return points.map((p) =>
-        axis === "across"
-            ? { ...p, x: 2 * at.x - p.x }
-            : { ...p, y: 2 * at.y - p.y },
-    );
 }

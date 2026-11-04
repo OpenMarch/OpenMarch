@@ -32,14 +32,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("FieldDisplayBar", () => {
-    it("holds start flag positions, labels, shapes and the placeholders", () => {
+    it("holds start flag positions, labels and shapes", () => {
         open();
         for (const id of [
             "start-flag-positions",
             "field-display-labels",
             "field-display-shapes",
-            "field-display-sections",
-            "field-display-direction",
         ])
             expect(screen.getByTestId(id)).toBeTruthy();
     });
@@ -76,18 +74,5 @@ describe("FieldDisplayBar", () => {
         ).toMatch(/Next paths\s*M/);
         fireEvent.click(screen.getByTestId("field-display-next-paths"));
         expect(settings().nextPaths).toBe(true);
-    });
-
-    it("placeholders do nothing", () => {
-        open();
-        const before = settings();
-        fireEvent.click(screen.getByTestId("field-display-sections"));
-        fireEvent.click(screen.getByTestId("field-display-direction"));
-        expect(settings()).toEqual(before);
-        expect(
-            screen
-                .getByTestId("field-display-sections")
-                .getAttribute("aria-disabled"),
-        ).toBe("true");
     });
 });

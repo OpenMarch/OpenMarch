@@ -1,12 +1,6 @@
-import {
-    act,
-    cleanup,
-    fireEvent,
-    screen,
-    waitFor,
-} from "@testing-library/react";
+import { act, cleanup, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, vi } from "vitest";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
 import {
@@ -23,11 +17,7 @@ import { moveMarchersInTarget } from "@/db-functions/timelineMoves";
 import { readStoredTimelineMemberships } from "@/timeline/useTimelineSelectionHost";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useMoveCardRevealStore } from "@/stores/MoveCardRevealStore";
 import { useMoveMemberSelectionStore } from "@/stores/MoveMemberSelectionStore";
-import { TimelineMoveCard } from "@/components/inspector/TimelineMoveCard";
-import { TIMELINE_INSPECTOR_STRINGS } from "@/components/inspector/timelineInspectorStrings";
-import type { InspectorTranslate } from "@/components/inspector/inspectorHooks";
 import {
     createMoveCommands,
     focusAfterMoveDelete,
@@ -41,9 +31,8 @@ import {
 
 /**
  * UI-14 round-2 review, on a real database inside the app's providers: **Edit move** selects
- * nobody; **Select them** followed by a click on another move clears the leftover selection;
- * deleting a move puts focus on a neighbor; a name typed in the Move card is saved when the card
- * goes before its field blurs.
+ * nobody; **Select marchers** followed by a click on another move clears the leftover selection;
+ * deleting a move puts focus on a neighbor.
  */
 
 const app = vi.hoisted(() => ({ client: (): unknown => null }));
@@ -63,14 +52,8 @@ afterEach(() => {
     cleanup();
     stopTimelineResolver();
     useMoveMemberSelectionStore.getState().clear();
-    useMoveCardRevealStore.getState().clear();
     document.body.innerHTML = "";
 });
-
-const t: InspectorTranslate = (key, params = {}) =>
-    TIMELINE_INSPECTOR_STRINGS[key].replace(/\{(\w+)\}/g, (_, name: string) =>
-        String(params[name]),
-    );
 
 /** Two mid-page moves: marchers 5 and 6 on page 3's box, marcher 7 on page 4's */
 const makeMoves = async (db: DbConnection) => {
@@ -186,10 +169,9 @@ describeDbTests("a move's flows after the round-2 review (UI-14)", (it) => {
             a,
         );
         expect(selectMarchers).not.toHaveBeenCalled();
-        expect(useMoveCardRevealStore.getState().pending).toBe(a);
     });
 
-    it("Select them, then another move: the leftover selection is cleared", async ({
+    it("Select marchers, then another move: the leftover selection is cleared", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -215,7 +197,7 @@ describeDbTests("a move's flows after the round-2 review (UI-14)", (it) => {
         expect(useMoveMemberSelectionStore.getState().selected).toBeNull();
     });
 
-    it("a selection changed since Select them is the designer's own, and stays", async ({
+    it("a selection changed since Select marchers is the designer's own, and stays", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -242,104 +224,5 @@ describeDbTests("a move's flows after the round-2 review (UI-14)", (it) => {
         // Give the effect its turn, then check nothing cleared it
         await act(async () => {});
         expect(selectedIds()).toEqual([5]);
-    });
-
-    it("a name typed in the Move card is saved when the card goes before the field blurs", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { sorted, a } = await makeMoves(db);
-        await loadStore(db, sorted);
-        const timeline = useTimelineSelectionStore
-            .getState()
-            .storedTimelines!.find((s) => s.id === a)!;
-        expect(timeline.name).toBe("Move 1");
-        const { result } = mountFeature(
-            <TimelineMoveCard timeline={timeline} t={t} />,
-        );
-        await loadStore(db, sorted);
-        const field = (await screen.findByTestId(
-            "timeline-move-card-name",
-        )) as HTMLInputElement;
-        expect(field.value).toBe("Move 1");
-        fireEvent.change(field, { target: { value: "Company front" } });
-        // A click on the timeline selects another window: the card goes, the field never blurs
-        result.unmount();
-        await waitFor(async () =>
-            expect(
-                (
-                    await db
-                        .select({ name: schema.timelines.name })
-                        .from(schema.timelines)
-                        .where(eq(schema.timelines.id, a))
-                        .get()
-                )?.name,
-            ).toBe("Company front"),
-        );
-    });
-
-    it("a name saved on blur isn't saved again when the card then goes: one history step", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { sorted, a } = await makeMoves(db);
-        await loadStore(db, sorted);
-        const timeline = useTimelineSelectionStore
-            .getState()
-            .storedTimelines!.find((s) => s.id === a)!;
-        const { result } = mountFeature(
-            <TimelineMoveCard timeline={timeline} t={t} />,
-        );
-        await loadStore(db, sorted);
-        const field = (await screen.findByTestId(
-            "timeline-move-card-name",
-        )) as HTMLInputElement;
-        const steps = () =>
-            db
-                .select({
-                    n: sql<number>`count(distinct ${schema.history_undo.history_group})`,
-                })
-                .from(schema.history_undo)
-                .get()
-                .then((row) => row!.n);
-        const before = await steps();
-        fireEvent.change(field, { target: { value: "Company front" } });
-        // Enter saves, then the blur and the card going before the stored name catches up
-        fireEvent.keyDown(field, { key: "Enter" });
-        fireEvent.blur(field);
-        result.unmount();
-        await waitFor(async () =>
-            expect(
-                (
-                    await db
-                        .select({ name: schema.timelines.name })
-                        .from(schema.timelines)
-                        .where(eq(schema.timelines.id, a))
-                        .get()
-                )?.name,
-            ).toBe("Company front"),
-        );
-        // Any second save would have been queued behind the first
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        expect(await steps()).toBe(before + 1);
-    });
-
-    it("clearing an automatic name in the Move card writes nothing and shows it again", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { sorted, a } = await makeMoves(db);
-        await loadStore(db, sorted);
-        const timeline = useTimelineSelectionStore
-            .getState()
-            .storedTimelines!.find((s) => s.id === a)!;
-        mountFeature(<TimelineMoveCard timeline={timeline} t={t} />);
-        await loadStore(db, sorted);
-        const field = (await screen.findByTestId(
-            "timeline-move-card-name",
-        )) as HTMLInputElement;
-        fireEvent.change(field, { target: { value: "" } });
-        fireEvent.blur(field);
-        expect(field.value).toBe("Move 1");
     });
 });

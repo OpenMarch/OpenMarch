@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 /**
- * The marchers a Move card's **Select them** selected, and for which move (docs/timeline/ui.md
+ * The marchers a clip menu's **Select marchers** selected, and for which move (docs/timeline/ui.md
  * UI-14, round-2 review), so that going to another move can clear them if they are still the
  * selection (`useClearLeftoverMoveSelection`).
  */
