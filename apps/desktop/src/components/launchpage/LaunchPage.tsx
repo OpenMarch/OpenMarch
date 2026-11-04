@@ -25,6 +25,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import WelcomeFlow from "../welcome/WelcomeFlow";
 import { shouldShowWelcomeFlow } from "../welcome/welcomeFlowSteps";
+import { useAnalyticsQuestionStore } from "@/stores/AnalyticsQuestionStore";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
 import {
     clearNewShowDialogSessionFlag,
@@ -48,9 +49,11 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     // new-show wizard waits for it.
     const editorModeLoaded = useEditorModeStore((state) => state.loaded);
     const editorMode = useEditorModeStore((state) => state.mode);
+    const analytics = useAnalyticsQuestionStore((state) => state.status);
     const welcomeOpen = shouldShowWelcomeFlow({
         loaded: editorModeLoaded,
         mode: editorMode,
+        analytics,
     });
     const welcomeBlocks = !editorModeLoaded || editorMode === null;
     const welcomeBlocksRef = useRef(welcomeBlocks);

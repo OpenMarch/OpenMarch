@@ -6,6 +6,8 @@ import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useAnalyticsQuestionStore } from "@/stores/AnalyticsQuestionStore";
+import { WHATS_NEW_SLIDES } from "../whatsNewSlides";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 import { APP_LANGUAGES } from "@/utilities/languages";
 import WelcomeFlow from "../WelcomeFlow";
@@ -104,7 +106,12 @@ async function stepsToMode(): Promise<string[]> {
     let step = await currentStep();
     while (step !== "mode") {
         seen.push(step);
-        fireEvent.click(continueButton());
+        // What's new is a walkthrough of its own: Skip leaves it.
+        fireEvent.click(
+            step === "whatsNew"
+                ? screen.getByTestId("whats-new-skip")
+                : continueButton(),
+        );
         const left = step;
         await waitFor(async () => expect(await currentStep()).not.toBe(left));
         step = await currentStep();
@@ -121,6 +128,7 @@ function setSystemLanguages(languages: string[]) {
 
 beforeEach(() => {
     useEditorModeStore.setState({ mode: null, loaded: true });
+    useAnalyticsQuestionStore.setState({ status: "loading" });
     setSystemLanguages(["en-US"]);
 });
 afterEach(async () => {
@@ -384,14 +392,27 @@ describe("WelcomeFlow", () => {
         expect(continueButton()).toHaveAccessibleName("See what's new");
 
         fireEvent.click(continueButton());
-        const list = await screen.findByTestId("welcome-whats-new");
-        expect(screen.getByText("What's new")).toBeInTheDocument();
-        expect(list.querySelectorAll("li")).toHaveLength(7);
-        expect(
-            screen.getByRole("link", { name: /OpenMarch guides/ }),
-        ).toHaveAttribute("href", "https://openmarch.com/guides");
+        // The walkthrough: one slide per feature, Next to the end.
+        const slideTitles: string[] = [];
+        for (const slide of WHATS_NEW_SLIDES) {
+            const section = await screen.findByTestId(
+                `whats-new-slide-${slide.id}`,
+            );
+            const title = section.querySelector("h1");
+            slideTitles.push(title?.textContent ?? "");
+            expect(title).toHaveFocus();
+            expect(section.querySelector("video")).toHaveAttribute(
+                "aria-label",
+            );
+            fireEvent.click(screen.getByTestId("whats-new-next"));
+        }
+        expect(slideTitles).toEqual([
+            "The timeline",
+            "Shapes",
+            "Props",
+            "The 3D View",
+        ]);
 
-        fireEvent.click(continueButton());
         fireEvent.click(await screen.findByTestId("editor-mode-card-basic"));
         fireEvent.click(continueButton());
 
@@ -433,5 +454,124 @@ describe("WelcomeFlow", () => {
         renderFlow();
 
         expect(await stepsToMode()).toEqual(["welcome", "language", "theme"]);
+    });
+
+    it("skips What's new from the welcome back page", async () => {
+        stubElectron(false, "en", { theme: "dark" });
+        renderFlow();
+
+        fireEvent.click(await screen.findByTestId("welcome-skip-whats-new"));
+        expect(
+            await screen.findByTestId("editor-mode-card-basic"),
+        ).toBeInTheDocument();
+        expect(screen.queryByTestId("welcome-whats-new")).toBeNull();
+
+        // Back from there returns to the welcome back page, not the walkthrough.
+        fireEvent.click(screen.getByTestId("welcome-back"));
+        expect(await screen.findByTestId("welcome-greeting")).toHaveTextContent(
+            "Welcome back",
+        );
+    });
+
+    it("moves through What's new with the arrow keys and leaves on Escape", async () => {
+        stubElectron(false, "en", { theme: "dark" });
+        renderFlow();
+        fireEvent.click(await screen.findByTestId("welcome-continue"));
+        await screen.findByTestId("whats-new-slide-timeline");
+
+        fireEvent.keyDown(window, { key: "ArrowRight" });
+        await screen.findByTestId("whats-new-slide-shapes");
+        fireEvent.keyDown(window, { key: "ArrowRight" });
+        await screen.findByTestId("whats-new-slide-props");
+        fireEvent.keyDown(window, { key: "ArrowLeft" });
+        await screen.findByTestId("whats-new-slide-shapes");
+        // Modified arrows are left alone.
+        fireEvent.keyDown(window, { key: "ArrowRight", shiftKey: true });
+        expect(
+            screen.getByTestId("whats-new-slide-shapes"),
+        ).toBeInTheDocument();
+
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(
+            await screen.findByTestId("editor-mode-card-basic"),
+        ).toBeInTheDocument();
+    });
+
+    it("shows the last slide's guides link and Continue, and Back to the welcome page from the first", async () => {
+        stubElectron(false, "en", { theme: "dark" });
+        renderFlow();
+        fireEvent.click(await screen.findByTestId("welcome-continue"));
+        await screen.findByTestId("whats-new-slide-timeline");
+        expect(screen.queryByTestId("whats-new-guides")).toBeNull();
+        fireEvent.click(screen.getByTestId("whats-new-back"));
+        expect(
+            await screen.findByTestId("welcome-greeting"),
+        ).toBeInTheDocument();
+
+        fireEvent.click(screen.getByTestId("welcome-continue"));
+        for (let i = 1; i < WHATS_NEW_SLIDES.length; i++)
+            fireEvent.click(await screen.findByTestId("whats-new-next"));
+        await screen.findByTestId("whats-new-slide-view3d");
+        expect(screen.getByTestId("whats-new-guides")).toHaveAttribute(
+            "href",
+            "https://openmarch.com/guides",
+        );
+        expect(screen.getByTestId("whats-new-next")).toHaveTextContent(
+            "Continue",
+        );
+    });
+
+    it("shows still pictures instead of videos with reduced motion", async () => {
+        const matchMedia = vi.fn((query: string) => ({
+            matches: query.includes("prefers-reduced-motion"),
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        }));
+        Object.assign(window, { matchMedia });
+        try {
+            stubElectron(false, "en", { theme: "dark" });
+            renderFlow();
+            fireEvent.click(await screen.findByTestId("welcome-continue"));
+            const section = await screen.findByTestId(
+                "whats-new-slide-timeline",
+            );
+            expect(section.querySelector("video")).toBeNull();
+            const poster = screen.getByTestId("whats-new-poster");
+            expect(poster.tagName).toBe("IMG");
+            expect(poster.getAttribute("alt")).toMatch(/playhead/);
+        } finally {
+            delete (window as { matchMedia?: unknown }).matchMedia;
+        }
+    });
+
+    it("asks only about analytics when a mode is already stored", async () => {
+        useEditorModeStore.setState({ mode: "basic", loaded: true });
+        useAnalyticsQuestionStore.setState({ status: "unanswered" });
+        const electron = stubElectron(undefined, "en", {
+            recentFiles: [{ path: "/shows/fall.dots" }],
+        });
+        const { onFinish, reload } = renderFlow();
+
+        expect(
+            await screen.findByTestId("welcome-analytics-opt-in"),
+        ).toBeInTheDocument();
+        // One short screen: no welcome page, no Back, no step count.
+        expect(screen.queryByTestId("welcome-greeting")).toBeNull();
+        expect(screen.queryByTestId("welcome-back")).toBeNull();
+        expect(screen.queryByText(/Step \d of/)).toBeNull();
+
+        fireEvent.click(screen.getByTestId("welcome-analytics-opt-in"));
+        expect(electron.send).toHaveBeenCalledWith("settings:set", {
+            optOutAnalytics: false,
+        });
+        expect(electron.send).not.toHaveBeenCalledWith(
+            "settings:set",
+            expect.objectContaining({ editorMode: expect.anything() }),
+        );
+        expect(useEditorModeStore.getState().mode).toBe("basic");
+        expect(useAnalyticsQuestionStore.getState().status).toBe("answered");
+        expect(onFinish).toHaveBeenCalledWith({ willReload: true });
+        expect(reload).toHaveBeenCalled();
     });
 });

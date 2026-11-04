@@ -27,16 +27,22 @@ export interface ReturningUserChoices {
  * analytics. A returning person (`returning` set, see `isReturningUser`) gets
  * What's new after the welcome page and isn't asked again for a language or
  * theme they already chose; the mode step is new to everyone.
+ *
+ * With a mode already stored (`modeChosen`), the flow opened only because the
+ * analytics question is unanswered: it asks just that, with no welcome page.
  */
 export function getWelcomeSteps({
     analyticsChoiceMade,
     isWeb,
     returning = null,
+    modeChosen = false,
 }: {
     analyticsChoiceMade: boolean;
     isWeb: boolean;
     returning?: ReturningUserChoices | null;
+    modeChosen?: boolean;
 }): readonly WelcomeStepId[] {
+    if (modeChosen) return analyticsChoiceMade || isWeb ? [] : ["analytics"];
     const steps: WelcomeStepId[] = ["welcome"];
     if (returning) steps.push("whatsNew");
     if (!returning?.languageSaved) steps.push("language");
@@ -55,12 +61,32 @@ export function canContinueFrom(
     return true;
 }
 
-/** Whether the flow should open: the stored mode was read and there is none. */
+/**
+ * Where the analytics question stands: still being read, answered, or not.
+ * Codegen and automated sessions count as answered (they never get asked),
+ * and so does the web build, which has no analytics.
+ */
+export type AnalyticsQuestion = "loading" | "answered" | "unanswered";
+
+/**
+ * Whether the flow should open: once the stored mode is read, when there is
+ * no mode, or when the analytics question is unanswered (the flow is the only
+ * place it's asked; Settings › Privacy changes the answer later).
+ */
 export function shouldShowWelcomeFlow(state: {
     loaded: boolean;
     mode: EditorMode | null;
+    analytics?: AnalyticsQuestion;
 }): boolean {
-    return state.loaded && state.mode === null;
+    if (!state.loaded) return false;
+    return state.mode === null || state.analytics === "unanswered";
+}
+
+/** The steps that set the app up, which the progress bar counts: not the welcome or What's new. */
+export function setupSteps(
+    steps: readonly WelcomeStepId[],
+): readonly WelcomeStepId[] {
+    return steps.filter((step) => step !== "welcome" && step !== "whatsNew");
 }
 
 /** Whether the stored `optOutAnalytics` value means the person has answered. */

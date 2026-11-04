@@ -43,7 +43,6 @@ import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useIsPreviewMode } from "./stores/PreviewModeStore";
 import { PreviewModeHost } from "./components/preview/PreviewMode";
 import WorkspaceViewSwitch from "./components/toolbar/WorkspaceViewSwitch";
-import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { useEditorModeStore } from "./stores/EditorModeStore";
 import ErrorBoundary from "./ErrorBoundary";
 import {
@@ -74,7 +73,9 @@ import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
-import { isAnalyticsChoiceMade } from "./components/welcome/welcomeFlowSteps";
+import { shouldShowWelcomeFlow } from "./components/welcome/welcomeFlowSteps";
+import WelcomeScreen from "./components/welcome/WelcomeScreen";
+import { useAnalyticsQuestionStore } from "./stores/AnalyticsQuestionStore";
 import { useIsTouchMode } from "./stores/InputModeStore";
 import { useOnScreenKeyboard } from "./hooks/useOnScreenKeyboard";
 import { startAudioUnlock } from "./utilities/audioUnlock";
@@ -108,15 +109,20 @@ export const queryClient = new QueryClient({
 function App() {
     useLoadFileErrorHandler();
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
-    const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
-        null,
-    );
     const editorModeLoaded = useEditorModeStore((s) => s.loaded);
     const editorMode = useEditorModeStore((s) => s.mode);
-    // With no mode chosen, the launch page's welcome flow asks about analytics
-    // instead (UI-19). Automated sessions get Expert, so they still come here.
-    const welcomeFlowAsksAnalytics =
-        !editorModeLoaded || (editorMode === null && !databaseIsReady);
+    const analyticsQuestion = useAnalyticsQuestionStore((s) => s.status);
+    // Setup isn't finished (no mode, or the analytics question unanswered) but
+    // a show opened at launch: the welcome flow comes first (desktop only; the
+    // launch page shows it when no show is open).
+    const welcomeBeforeShow =
+        !isWebBuild &&
+        databaseIsReady &&
+        shouldShowWelcomeFlow({
+            loaded: editorModeLoaded,
+            mode: editorMode,
+            analytics: analyticsQuestion,
+        });
     const fetchUiSettings = useUiSettingsStore((s) => s.fetchUiSettings);
     const focussedComponent = useUiSettingsStore(
         (s) => s.uiSettings.focussedComponent,
@@ -260,17 +266,6 @@ function App() {
     useEffect(() => refreshAfterStoredCounts(queryClient), [databaseIsReady]);
 
     useEffect(() => {
-        void window.electron
-            .invoke("settings:get", "optOutAnalytics")
-            .then((optOut) => {
-                // Same rule as the welcome flow: a stored null is unanswered too
-                setAnalyticsConsent(
-                    isAnalyticsChoiceMade(optOut) ? !optOut : null,
-                );
-            });
-    }, []);
-
-    useEffect(() => {
         if (databaseIsReady)
             createAllUndoTriggers(db).catch((error) => {
                 console.error("Error creating undo triggers:", error);
@@ -318,15 +313,6 @@ function App() {
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
                 <main className="app-frame bg-bg-1 text-text outline-accent fixed inset-0 flex min-h-0 min-w-0 flex-col overflow-hidden font-sans">
-                    {analyticsConsent === null &&
-                        !isCodegen &&
-                        !welcomeFlowAsksAnalytics && (
-                            <AnalyticsOptInModal
-                                onChoice={(choice) =>
-                                    setAnalyticsConsent(choice)
-                                }
-                            />
-                        )}
                     {/* Codegen mode indicator */}
                     {isCodegen && (
                         <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
@@ -353,6 +339,8 @@ function App() {
                                 setDatabaseIsReady={setDatabaseIsReady}
                             />
                         </SelectedAudioFileProvider>
+                    ) : welcomeBeforeShow ? (
+                        <WelcomeScreen />
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

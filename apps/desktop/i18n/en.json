@@ -3115,19 +3115,40 @@
         },
         "welcomeBack": {
             "description": "Here's what's changed since you last used it.",
+            "skip": "Skip",
             "start": "See what's new",
             "title": "Welcome back"
         },
         "whatsNew": {
+            "carousel": "Walkthrough",
             "guides": "Learn more in the OpenMarch guides",
-            "modes": "Basic works in pages, like a drill chart. Expert opens up the full timeline.",
-            "props": "Draw props on the field and move them on the timeline, just like marchers.",
-            "shapes": "Draw a line, arc, curve, circle or box, and your selected marchers fill it; drag its handles to reshape it.",
-            "snapping": "Shapes snap to half steps, yard lines and hashes; the magnet button turns Snap off.",
-            "tempo": "Import a MusicXML score to bring in its tempo changes, meter changes and repeats.",
-            "timeline": "A timeline under the field lines up your pages, moves and counts with the music.",
-            "title": "What's new",
-            "view3d": "The 3D View plays your show from the stands, with marchers in uniform."
+            "next": "Next",
+            "position": "{current} of {total}",
+            "skip": "Skip",
+            "slide": "Slide",
+            "slides": {
+                "timeline": {
+                    "media": "A show playing: the playhead moves along the timeline under the field while the marchers move into their next set.",
+                    "text": "Your pages, moves and counts sit on one timeline under the field, lined up with the music.",
+                    "title": "The timeline"
+                },
+                "shapes": {
+                    "media": "Twelve selected marchers. A box is drawn above them, snapping to the field's lines, and the marchers are placed in it.",
+                    "text": "Draw a box, line, arc or circle and place the selected marchers in it, snapped to half steps and yard lines.",
+                    "title": "Shapes"
+                },
+                "props": {
+                    "media": "A show playing: a riser behind the band turns and slides to a new spot.",
+                    "text": "Draw props on the field and move them on the timeline, just like marchers.",
+                    "title": "Props"
+                },
+                "view3d": {
+                    "media": "The show playing in 3D, seen from the press box: marchers in uniform and a color guard with flags, in a stadium.",
+                    "text": "Watch your show from the stands, with marchers in uniform.",
+                    "title": "The 3D View"
+                }
+            },
+            "title": "What's new"
         }
     },
     "workspaceSettings": {

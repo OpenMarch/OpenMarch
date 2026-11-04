@@ -15,6 +15,7 @@ import {
     getWelcomeSteps,
     isAnalyticsChoiceMade,
     isReturningUser,
+    setupSteps,
     type ReturningUserChoices,
     type WelcomeStepId,
 } from "./welcomeFlowSteps";
@@ -23,7 +24,8 @@ import LanguageStep from "./steps/LanguageStep";
 import ThemeStep from "./steps/ThemeStep";
 import ModeStep from "./steps/ModeStep";
 import AnalyticsStep from "./steps/AnalyticsStep";
-import WhatsNewStep from "./steps/WhatsNewStep";
+import WhatsNewTour from "./steps/WhatsNewTour";
+import { markAnalyticsAnswered } from "@/stores/AnalyticsQuestionStore";
 import DevSkipSetupButton from "./DevSkipSetupButton";
 
 export interface WelcomeFlowProps {
@@ -36,8 +38,10 @@ export interface WelcomeFlowProps {
     reload?: () => void;
 }
 
-const STEP_TITLE_KEYS: Record<Exclude<WelcomeStepId, "welcome">, string> = {
-    whatsNew: "welcomeFlow.whatsNew.title",
+const STEP_TITLE_KEYS: Record<
+    Exclude<WelcomeStepId, "welcome" | "whatsNew">,
+    string
+> = {
     language: "welcomeFlow.language.title",
     theme: "welcomeFlow.theme.title",
     mode: "welcomeFlow.mode.title",
@@ -130,6 +134,11 @@ export default function WelcomeFlow({
     >(undefined);
     const [stepIndex, setStepIndex] = useState(0);
     const [chosenMode, setChosenMode] = useState<EditorMode | null>(null);
+    // A mode was stored when the flow opened: it opened for the analytics
+    // question alone.
+    const [modeChosen] = useState(
+        () => useEditorModeStore.getState().mode !== null,
+    );
 
     useEffect(() => {
         const { setShowing } = useWelcomeFlowStore.getState();
@@ -203,14 +212,18 @@ export default function WelcomeFlow({
                 analyticsChoiceMade: analyticsChoiceMade ?? false,
                 isWeb: isWebBuild,
                 returning,
+                modeChosen,
             }),
-        [analyticsChoiceMade, returning],
+        [analyticsChoiceMade, returning, modeChosen],
     );
-    const step = steps[Math.min(stepIndex, steps.length - 1)];
+    const step: WelcomeStepId | undefined =
+        steps[Math.min(stepIndex, steps.length - 1)];
     const isLast = stepIndex >= steps.length - 1;
-    // The welcome page isn't counted: the bar and "Step 1 of 4" are the setup.
-    const setupIndex = stepIndex - 1;
-    const setupCount = steps.length - 1;
+    // The welcome page and What's new aren't counted: the bar and "Step 1 of
+    // 4" are the setup.
+    const setup = setupSteps(steps);
+    const setupIndex = step ? setup.indexOf(step) : -1;
+    const setupCount = setup.length;
     const completed = useMemo(
         () => new Set(Array.from({ length: setupIndex }, (_, i) => i)),
         [setupIndex],
@@ -224,10 +237,13 @@ export default function WelcomeFlow({
     };
 
     const finish = (analyticsOptOut?: boolean) => {
-        if (!chosenMode) return;
-        setMode(chosenMode);
+        if (!chosenMode && !modeChosen) return;
+        if (chosenMode) setMode(chosenMode);
         const willReload = analyticsOptOut !== undefined;
-        if (willReload) saveAnalyticsChoice(analyticsOptOut);
+        if (willReload) {
+            saveAnalyticsChoice(analyticsOptOut);
+            markAnalyticsAnswered();
+        }
         onFinish({ willReload });
         if (willReload) reload();
     };
@@ -237,6 +253,7 @@ export default function WelcomeFlow({
     const waitingForAnalytics =
         isLast && !isWebBuild && analyticsChoiceMade === null;
     const continueDisabled =
+        !step ||
         !canContinueFrom(step, chosenMode) ||
         (step === "language" && language === null) ||
         waitingForAnalytics;
@@ -252,7 +269,10 @@ export default function WelcomeFlow({
         setMode("expert");
         useWebWelcomeStore.getState().setOpen(false);
         const willReload = !isWebBuild && analyticsChoiceMade !== true;
-        if (willReload) saveAnalyticsChoice(true);
+        if (willReload) {
+            saveAnalyticsChoice(true);
+            markAnalyticsAnswered();
+        }
         onFinish({ willReload });
         if (willReload) reload();
     };
@@ -269,8 +289,15 @@ export default function WelcomeFlow({
         setStepIndex(stepIndex + 1);
     };
 
+    // Past What's new: where its Skip and its last slide lead.
+    const afterTour = () => setStepIndex(steps.indexOf("whatsNew") + 1);
+    // Back from the first setup step after What's new returns to the welcome
+    // page, which offers What's new again.
+    const back = () =>
+        setStepIndex(steps[stepIndex - 1] === "whatsNew" ? 0 : stepIndex - 1);
+
     // The first page differs for returning people; show it once that's known.
-    if (returning === undefined)
+    if (returning === undefined || !step)
         return (
             <main
                 className="flex min-h-0 flex-1"
@@ -287,7 +314,17 @@ export default function WelcomeFlow({
                 devSkipDisabled={devSkipDisabled}
                 startLanguage={language?.code ?? suggestedLanguage()}
                 returning={returning !== null}
+                onSkip={afterTour}
                 aria-label={t("welcomeFlow.dialogLabel")}
+            />
+        );
+
+    if (step === "whatsNew")
+        return (
+            <WhatsNewTour
+                onDone={afterTour}
+                onSkip={afterTour}
+                onBack={() => setStepIndex(0)}
             />
         );
 
@@ -299,31 +336,36 @@ export default function WelcomeFlow({
         >
             <div className="bg-fg-1 border-stroke rounded-6 flex min-h-0 flex-1 flex-col overflow-y-auto border px-24 py-32">
                 <div className="m-auto flex w-full max-w-[46rem] flex-col gap-24">
+                    {/* A single question (analytics alone) is one short screen:
+                        no progress bar or step count */}
                     <div className="flex items-center gap-24">
                         <OpenMarchLogo
                             height={28}
                             className="text-text shrink-0"
                         />
-                        <NewShowProgressIndicator
-                            currentStepIndex={setupIndex}
-                            steps={steps.slice(1)}
-                            completedSteps={completed}
-                        />
+                        {setupCount > 1 && (
+                            <NewShowProgressIndicator
+                                currentStepIndex={setupIndex}
+                                steps={setup}
+                                completedSteps={completed}
+                            />
+                        )}
                     </div>
                     <div className="flex flex-col items-center gap-4">
-                        <span className="text-sub text-text-subtitle tracking-wide uppercase">
-                            {t("welcomeFlow.step", {
-                                current: setupIndex + 1,
-                                total: setupCount,
-                            })}
-                        </span>
+                        {setupCount > 1 && (
+                            <span className="text-sub text-text-subtitle tracking-wide uppercase">
+                                {t("welcomeFlow.step", {
+                                    current: setupIndex + 1,
+                                    total: setupCount,
+                                })}
+                            </span>
+                        )}
                         <h1 className="text-h3 text-text text-center font-medium">
                             <T keyName={STEP_TITLE_KEYS[step]} />
                         </h1>
                     </div>
 
                     <div key={step} className="animate-fade-in">
-                        {step === "whatsNew" && <WhatsNewStep />}
                         {step === "language" && (
                             <LanguageStep
                                 value={language?.code ?? ""}
@@ -343,13 +385,17 @@ export default function WelcomeFlow({
                     </div>
 
                     <div className="flex w-full justify-between gap-8 pt-8">
-                        <Button
-                            variant="secondary"
-                            onClick={() => setStepIndex(stepIndex - 1)}
-                            data-testid="welcome-back"
-                        >
-                            <T keyName="welcomeFlow.back" />
-                        </Button>
+                        {stepIndex > 0 ? (
+                            <Button
+                                variant="secondary"
+                                onClick={back}
+                                data-testid="welcome-back"
+                            >
+                                <T keyName="welcomeFlow.back" />
+                            </Button>
+                        ) : (
+                            <span />
+                        )}
                         <div className="flex gap-8">
                             {step === "analytics" ? (
                                 <>

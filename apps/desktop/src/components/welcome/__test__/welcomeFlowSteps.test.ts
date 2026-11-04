@@ -5,8 +5,10 @@ import {
     getWelcomeSteps,
     isAnalyticsChoiceMade,
     isReturningUser,
+    setupSteps,
     shouldShowWelcomeFlow,
 } from "../welcomeFlowSteps";
+import { whatsNewKeyAction } from "../whatsNewSlides";
 
 describe("welcome flow steps", () => {
     it("asks language, theme and mode, then analytics when unanswered", () => {
@@ -121,5 +123,80 @@ describe("returning people", () => {
                 returning: { languageSaved: false, themeSaved: true },
             }),
         ).toEqual(["welcome", "whatsNew", "language", "mode", "analytics"]);
+    });
+});
+
+describe("the analytics question", () => {
+    it("opens the flow for an unanswered question even with a mode stored", () => {
+        expect(
+            shouldShowWelcomeFlow({
+                loaded: true,
+                mode: "basic",
+                analytics: "unanswered",
+            }),
+        ).toBe(true);
+        expect(
+            shouldShowWelcomeFlow({
+                loaded: true,
+                mode: "basic",
+                analytics: "answered",
+            }),
+        ).toBe(false);
+        // Still being read: no flash of the flow over a stored mode.
+        expect(
+            shouldShowWelcomeFlow({
+                loaded: true,
+                mode: "basic",
+                analytics: "loading",
+            }),
+        ).toBe(false);
+        expect(
+            shouldShowWelcomeFlow({
+                loaded: false,
+                mode: null,
+                analytics: "unanswered",
+            }),
+        ).toBe(false);
+    });
+
+    it("asks only about analytics when a mode is stored", () => {
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: false,
+                isWeb: false,
+                modeChosen: true,
+                returning: { languageSaved: false, themeSaved: false },
+            }),
+        ).toEqual(["analytics"]);
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: true,
+                isWeb: false,
+                modeChosen: true,
+            }),
+        ).toEqual([]);
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: false,
+                isWeb: true,
+                modeChosen: true,
+            }),
+        ).toEqual([]);
+    });
+
+    it("counts only the setup steps in the progress bar", () => {
+        expect(
+            setupSteps(["welcome", "whatsNew", "theme", "mode", "analytics"]),
+        ).toEqual(["theme", "mode", "analytics"]);
+    });
+});
+
+describe("What's new keys", () => {
+    it("maps the arrows to next and back and Escape to skip", () => {
+        expect(whatsNewKeyAction("ArrowRight")).toBe("next");
+        expect(whatsNewKeyAction("ArrowLeft")).toBe("back");
+        expect(whatsNewKeyAction("Escape")).toBe("skip");
+        expect(whatsNewKeyAction("Enter")).toBeNull();
+        expect(whatsNewKeyAction(" ")).toBeNull();
     });
 });

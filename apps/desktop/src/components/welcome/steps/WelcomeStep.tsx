@@ -29,9 +29,10 @@ const RETURNING_KEYS = {
  * together, starting on `startLanguage`; the next step is in the app's
  * language again. Narrow windows stack the two sides.
  *
- * A returning person (`returning`) gets "Welcome back" and a way into What's
- * new instead, in the app's language only: their language is known or was
- * English, and the language step still follows if it was never chosen.
+ * A returning person (`returning`) gets "Welcome back" instead, in the app's
+ * language only (their language is known or was English, and the language
+ * step still follows if it was never chosen), with See what's new and Skip,
+ * which goes straight on to the remaining choices.
  */
 // eslint-disable-next-line max-lines-per-function
 export default function WelcomeStep({
@@ -40,6 +41,7 @@ export default function WelcomeStep({
     devSkipDisabled,
     startLanguage,
     returning = false,
+    onSkip,
     "aria-label": ariaLabel,
 }: {
     onStart: () => void;
@@ -51,6 +53,8 @@ export default function WelcomeStep({
     startLanguage: string;
     /** The person used OpenMarch before: "Welcome back", no cycling. */
     returning?: boolean;
+    /** Returning people only: past What's new, to the remaining choices. */
+    onSkip?: () => void;
     "aria-label"?: string;
 }) {
     const { t } = useTranslate();
@@ -147,20 +151,32 @@ export default function WelcomeStep({
                         className="text-body text-text-subtitle"
                         data-testid="welcome-description"
                     />
-                    <Button
-                        size="default"
-                        onClick={onStart}
-                        className="mt-8 gap-8 px-24"
-                        aria-label={t(keys.getStarted)}
-                        data-testid="welcome-continue"
-                        autoFocus
-                    >
-                        <CyclingText
-                            texts={translated(keys.getStarted)}
-                            index={index}
-                        />
-                        <ArrowRightIcon size={18} />
-                    </Button>
+                    <div className="mt-8 flex flex-wrap items-center justify-center gap-8">
+                        <Button
+                            size="default"
+                            onClick={onStart}
+                            className="gap-8 px-24"
+                            aria-label={t(keys.getStarted)}
+                            data-testid="welcome-continue"
+                            autoFocus
+                        >
+                            <CyclingText
+                                texts={translated(keys.getStarted)}
+                                index={index}
+                            />
+                            <ArrowRightIcon size={18} />
+                        </Button>
+                        {returning && onSkip && (
+                            <Button
+                                variant="secondary"
+                                onClick={onSkip}
+                                className="px-24"
+                                data-testid="welcome-skip-whats-new"
+                            >
+                                <T keyName="welcomeFlow.welcomeBack.skip" />
+                            </Button>
+                        )}
+                    </div>
                     <DevSkipSetupButton
                         onSkip={onDevSkip}
                         disabled={devSkipDisabled}
