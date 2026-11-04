@@ -1,4 +1,5 @@
 import type { ActionId } from "@/shortcuts/definitions";
+import { arcTool } from "../arc/arcTool";
 import { boxTool } from "../box/boxTool";
 import { circleTool } from "../circle/circleTool";
 import { curveTool, lineTool } from "../line/lineTool";
@@ -19,4 +20,5 @@ export const SHAPE_TOOLS: readonly ShapeToolEntry[] = [
     { kind: circleTool, action: "shapeCircle" },
     { kind: lineTool, action: "shapeLine" },
     { kind: curveTool, action: "shapeCurve" },
+    { kind: arcTool, action: "shapeArc" },
 ];

@@ -127,7 +127,8 @@
             "group": "Group selection",
             "groupKeywords": "group shape freeze as is keep together combine",
             "ungroup": "Shape: Ungroup",
-            "ungroupKeywords": "ungroup shape break apart release separate"
+            "ungroupKeywords": "ungroup shape break apart release separate",
+            "arc": "Shape: Arc"
         },
         "swap": {
             "mustSelectTwo": "Can only swap when 2 marchers are selected.",
@@ -2166,9 +2167,16 @@
             },
             "place": "Place",
             "quarterTurn": "Turn 90° clockwise",
+            "guides": {
+                "label": "Guides",
+                "circle": "Circle",
+                "angles": "Angle lines"
+            },
             "ratioLock": {
                 "locked": "Spacings locked together: click to unlock",
-                "unlocked": "Lock the two spacings together"
+                "unlocked": "Lock the two spacings together",
+                "sizesLocked": "Width and height locked together: click to unlock",
+                "sizesUnlocked": "Lock the width and height together"
             },
             "hideMarchers": {
                 "hide": "Hide the marchers",
@@ -2208,8 +2216,8 @@
                 "reverse": "Reverse order",
                 "label": "Who goes where"
             },
-            "drawHintFor": "Drag on the field to draw a {shape, select, block {box} circle {circle} line {line} curve {curve} arc {arc} other {shape}} · <keys></keys> to cancel",
-            "drawPointsHintFor": "Drag on the field to draw a {shape, select, line {line} curve {curve} arc {arc} other {shape}}, or click point after point · <keys></keys> to cancel"
+            "drawHintFor": "Drag on the field to draw {shape, select, block {a box} circle {a circle} line {a line} curve {a curve} arc {an arc} other {a shape}} · <keys></keys> to cancel",
+            "drawPointsHintFor": "Drag on the field to draw {shape, select, line {a line} curve {a curve} arc {an arc} other {a shape}}, or click point after point · <keys></keys> to cancel"
         },
         "placed": {
             "label": "{name} · {count, plural, one {{interval} step} other {{interval} steps}}",
@@ -2291,6 +2299,25 @@
                 "validate": {
                     "flat": "The arc is flat, so it's a straight line",
                     "sameSpot": "The arc's ends are on the same spot"
+                },
+                "params": {
+                    "bend": "How far the arc turns",
+                    "width": "How far the arc reaches side to side, in steps",
+                    "height": "How tall the arc is, from its ends to its far edge, in steps",
+                    "stretch": "How stretched the ellipse the arc is on is: how many times taller than wide, or wider than tall"
+                },
+                "ends": {
+                    "label": "Open or closed",
+                    "open": "Open",
+                    "chord": "Close with a straight line",
+                    "circle": "Close to circle",
+                    "round": "Close all the way around"
+                },
+                "size": {
+                    "steps": "steps",
+                    "tall": "tall",
+                    "wide": "wide",
+                    "round": "circle"
                 }
             },
             "block": {

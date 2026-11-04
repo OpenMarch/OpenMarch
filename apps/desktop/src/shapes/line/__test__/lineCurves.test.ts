@@ -524,6 +524,7 @@ describe("the Curve", () => {
             "circle",
             "line",
             "curve",
+            "arc",
         ]);
         expect(curveTool.shape.label).toBe("Curve");
         expect(curveTool.shape.id).toBe("line");

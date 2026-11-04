@@ -197,6 +197,17 @@ export type FieldTestShapeOverlay = {
     rings: { x: number; y: number }[];
     /** Spots it leaves empty on purpose (an odd-count outline's gap), field units. */
     gaps: { x: number; y: number }[];
+    /** Circles it's drawn on (an Arc's whole circle, #634), field units. */
+    construction: {
+        center: { x: number; y: number };
+        rx: number;
+        ry: number;
+        rotation: number;
+        /** Whether the circle itself is drawn (the Guides menu's Circle, #634) */
+        shown: boolean;
+        /** The ends its angle lines run through from its center (#634), field units; none when hidden */
+        spokes: { x: number; y: number }[];
+    }[];
     /** Its handles, in the viewport. */
     handles: ScreenPoint[];
     /** Its handles that add a point (a line's segment midpoints, #524), in the viewport. */
