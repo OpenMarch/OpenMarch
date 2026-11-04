@@ -1,3 +1,4 @@
+// cspell:words rawvideo
 // The What's new clips. Each sets things up off camera (`prepare`, which returns the region to
 // film and the window it's in) and then films itself frame by frame (`perform`, with `film`
 // from record.mjs: `freeze`, `skip`, `frame`, `hold`, `drag`). Time only moves when `film`
@@ -6,6 +7,11 @@
 // "drill" (drillShow.mjs). The window is 1600 × 1000 unless --window says otherwise. `pending`
 // names the PR a clip waits on:
 // it's recorded only when named.
+
+import { execFileSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 /** The nth page box on the timeline ruler, in order. */
 const pageBox = (page, n) => page.locator("[data-timeline-range-page]").nth(n);
@@ -169,6 +175,23 @@ async function open3dView(app, page, keepWindowsLive, windowSize) {
 }
 
 /**
+ * Lifts the 3D View's camera, off camera, to a higher box angle than the press box seat: an
+ * orbit drag of `tilt` px tilts it down onto the field, then a Shift-drag of `pan` px pans it
+ * back, so the whole band sits mid-field. Each drag is slow, so the orbit's momentum is small.
+ */
+async function higherBoxAngle(view, { tilt = 65, pan = 90 } = {}) {
+    const scene = await box(view.getByTestId("view3d-scene"));
+    const c = { x: scene.x + scene.width / 2, y: scene.y + scene.height / 2 };
+    await quickDrag(view, c, { x: c.x, y: c.y + tilt }, 40);
+    await view.waitForTimeout(2500);
+    if (!pan) return;
+    await view.keyboard.down("Shift");
+    await quickDrag(view, c, { x: c.x, y: c.y - pan }, 30);
+    await view.keyboard.up("Shift");
+    await view.waitForTimeout(2500);
+}
+
+/**
  * The 3D scene above the window's bottom bar: the field and the stands. With `zoom`, a
  * `zoom.height` share of the scene's height centred at `zoom.centerY` of it (closer in).
  */
@@ -215,6 +238,71 @@ async function fieldPixelsPerMeter(page) {
     ).rows;
     const fp = JSON.parse(row.json_data ?? row[0]);
     return fp.width / 160 / (fp.stepSizeInches * 0.0254);
+}
+
+/**
+ * The box (window points) around the riser in the 3D View, found by its color: lit and shaded,
+ * the amber draws about (190, 160, 60) to (220, 200, 100). Brass is the same hue in small spots,
+ * so only the pixels around the densest 40 px cell (the riser) count. Null if none.
+ */
+async function riserInView(view) {
+    const { width, height } = await view.evaluate(() => ({
+        width: window.innerWidth,
+        height: window.innerHeight,
+    }));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "whats-new-riser-"));
+    const png = path.join(dir, "view.png");
+    await view.screenshot({ path: png });
+    const rgb = execFileSync(
+        "ffmpeg",
+        [
+            "-loglevel",
+            "error",
+            "-i",
+            png,
+            "-vf",
+            `scale=${width}:${height}`,
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-",
+        ],
+        { maxBuffer: width * height * 3 + 1024 },
+    );
+    fs.rmSync(dir, { recursive: true, force: true });
+    const hits = [];
+    for (let y = 0; y < height; y++)
+        for (let x = 0; x < width; x++) {
+            const i = (y * width + x) * 3;
+            const [r, g, b] = [rgb[i], rgb[i + 1], rgb[i + 2]];
+            if (
+                r >= 150 &&
+                g / r >= 0.78 &&
+                g / r <= 0.95 &&
+                b / r >= 0.25 &&
+                b / r <= 0.5
+            )
+                hits.push([x, y]);
+        }
+    if (hits.length < 30) return null;
+    const CELL = 40;
+    const cells = new Map();
+    for (const [x, y] of hits) {
+        const key = `${Math.floor(x / CELL)},${Math.floor(y / CELL)}`;
+        cells.set(key, (cells.get(key) ?? 0) + 1);
+    }
+    const [densest] = [...cells].sort((a, b) => b[1] - a[1])[0];
+    const [cx, cy] = densest.split(",").map((v) => (Number(v) + 0.5) * CELL);
+    const near = hits.filter(
+        ([x, y]) => Math.abs(x - cx) < 5 * CELL && Math.abs(y - cy) < 5 * CELL,
+    );
+    const xs = near.map(([x]) => x);
+    const ys = near.map(([, y]) => y);
+    return union(
+        { x: Math.min(...xs), y: Math.min(...ys) },
+        { x: Math.max(...xs), y: Math.max(...ys) },
+    );
 }
 
 /** The bright color the riser is painted (props have a color). */
@@ -357,39 +445,34 @@ export const CLIPS = [
         show: "drill",
         async prepare({ page }) {
             await tidy(page);
-            await page
-                .getByRole("button", { name: "Fit the show" })
-                .first()
-                .click()
-                .catch(() => {});
-            await page.waitForTimeout(500);
-            // A taller timeline, so all three moves' rows show under the ruler
-            const splitter = await box(page.getByTestId("timeline-splitter"));
-            const grip = {
-                x: splitter.x + splitter.width / 2,
-                y: splitter.y + splitter.height / 2,
-            };
-            await quickDrag(page, grip, { x: grip.x, y: grip.y - 140 });
-            await page.waitForTimeout(800);
-            const field = await box(page.getByTestId("threeField"));
+            // The timeline opens fitted to the show (its "Fit the show" button would toggle
+            // that off)
+            // The three moves' rows, and the drill above them: a frame about as wide as the
+            // slide shows (46rem), so the clips' names stay readable. The show's last page is a
+            // long hold, so the fitted timeline holds the 16-count move in about half its width.
             const timeline = await box(page.getByTestId("timeline-pane"));
-            // The field and the timeline, as wide as they are, bottom-aligned
-            const width = Math.min(field.width, timeline.width);
+            const lastRow = await box(page.getByText("Right gate").first());
+            const width = 900;
             const height = width / 1.6;
-            const bottom = timeline.y + timeline.height;
+            const bottom = Math.min(
+                lastRow.y + lastRow.height + 14,
+                timeline.y + timeline.height,
+            );
             return {
                 box: {
                     x: even(timeline.x),
                     y: even(bottom - height),
-                    width: even(width),
+                    width,
                     height: even(height),
                 },
             };
         },
         async perform({ page, film }) {
             await film.freeze();
-            // Counts 1–16 (8 s at 120 bpm): from the first page to the end of the fourth
-            await playFrom(page, 0, 3, 0.99);
+            // Counts 1–16 (8 s at 120 bpm), from the first page, with the playhead a few counts
+            // into the hold after: still playing at the end (a stopped show draws its marchers
+            // differently)
+            await playFrom(page, 0, 4, 0.25);
             await film.hold(8 + 0.6);
         },
     },
@@ -476,9 +559,17 @@ export const CLIPS = [
             await view.waitForTimeout(2000);
             await view.getByTestId("view3d-settings-button").click();
             await tidy(view);
+            await higherBoxAngle(view);
             await view.waitForTimeout(800);
             this.view = view;
-            return { box: await sceneFrame(view, frameAround), target: view };
+            return {
+                // The whole field, from above the press box
+                box: await sceneFrame(view, frameAround, {
+                    height: 0.74,
+                    centerY: 0.53,
+                }),
+                target: view,
+            };
         },
         async perform({ page, film }) {
             await film.freeze();
@@ -510,12 +601,25 @@ export const CLIPS = [
                 keepWindowsLive,
                 windowSize,
             );
-            // Closer in, on the back of the field where the riser moves
+            // The show's venue (the high-school stadium) seen from its press box is low enough
+            // that the guard's flags, though well in front, rise over the riser: a higher angle
+            await higherBoxAngle(view, { tilt: 45, pan: 0 });
+            // Where the riser is before and after it moves (the 3D View follows the paused
+            // playhead), so the frame holds its whole slide and turn
+            const seen = [];
+            for (const [n, f] of [
+                [3, 0.02],
+                [4, 0.02],
+            ]) {
+                await seekInPage(page, n, f);
+                await view.waitForTimeout(1500);
+                const b = await riserInView(view);
+                if (!b) throw new Error("can't find the riser in the 3D View");
+                seen.push(b);
+            }
             return {
-                box: await sceneFrame(view, frameAround, {
-                    height: 0.42,
-                    centerY: 0.6,
-                }),
+                // Closer in, on the riser and the band in front of it
+                box: frameAround(grow(union(...seen), 120), 760),
                 target: view,
             };
         },

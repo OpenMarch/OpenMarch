@@ -5,15 +5,17 @@
 //
 // The drill (2-step intervals, 120 bpm, 4-count pages: a move that exactly fills one page is
 // drawn as that page's box rather than as a clip of its own, so no move here does):
-// - 20 trumpets (T1–T20) stand side by side, 44 steps behind the front sideline, and march
-//   straight forward for 16 counts ("Line forward", counts 1–16, every marcher). The line
-//   finishes on the front hash.
+// - 20 trumpets (T1–T20) stand side by side, 26 steps behind the front sideline and 24 left of
+//   the 50, and march straight forward for 16 counts ("Line forward", counts 1–16, every
+//   marcher), finishing 10 steps behind the front sideline. (Near the front and left, the
+//   drill sits right above the timeline's clips in the recorded frame.)
 // - On count 8 the five marchers at each end split off ("Left gate", "Right gate"). Each group
 //   swings 90° backward around its inner marcher (T5 on the left, T16 on the right) over counts
 //   9–12 while that pivot keeps marching with the middle, so the line opens into a wide U facing
 //   the back sideline. The middle ten keep marching forward.
 // - Over counts 13–16 the arms swing forward again, and all 20 finish in one straight line.
-// Paths are direct (straight from spot to spot), so each arm turns along chords.
+// Paths are direct (straight from spot to spot), so each arm turns along chords. The last page is
+// a 16-count hold: the timeline opens fitted to the show, so the move fills about half of it.
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -28,14 +30,15 @@ const BLANK = path.resolve(
 const COUNTS = 16;
 const BEAT_SECONDS = 0.5;
 const INTERVAL = 2; // steps between neighbors
-const START_DEPTH = 44; // steps behind the front sideline
+const START_DEPTH = 26; // steps behind the front sideline
+const LEFT = 24; // steps left of the 50
 const MARCHERS = 20;
 const GROUP = 5;
 const ARM_TURN_COUNTS = 4;
 
 /** Where marcher i (0-based) stands in the line, in steps: x across from the 50, depth behind the front. */
 const lineSpot = (i, depth) => ({
-    x: (i - (MARCHERS - 1) / 2) * INTERVAL,
+    x: (i - (MARCHERS - 1) / 2) * INTERVAL - LEFT,
     depth,
 });
 const depthAt = (count) => START_DEPTH - count; // one step forward per count
@@ -66,15 +69,15 @@ export function makeDrillShow(output) {
     ];
 
     db.exec("BEGIN");
-    // Beats 1–24 (counts past the drill so playback can run on), four to a measure
-    for (let b = 1; b <= 24; b++)
+    // Beats 1–32 (a 16-count hold after the drill), four to a measure
+    for (let b = 1; b <= 32; b++)
         run(
             "insert into beats (id, duration, position, include_in_measure) values (?, ?, ?, 1)",
             b,
             BEAT_SECONDS,
             b,
         );
-    for (let m = 0; m < 6; m++)
+    for (let m = 0; m < 8; m++)
         run(
             "insert into measures (id, start_beat) values (?, ?)",
             m + 1,
@@ -86,6 +89,9 @@ export function makeDrillShow(output) {
             p + 1,
             1 + p * 4,
         );
+
+    // The last page (from count 17) is the 16-count hold
+    run("update utility set last_page_counts = 16");
 
     for (let i = 0; i < MARCHERS; i++) {
         const [x, y] = px(lineSpot(i, START_DEPTH));

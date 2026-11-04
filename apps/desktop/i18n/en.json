@@ -3133,7 +3133,7 @@
                     "title": "Pathways"
                 },
                 "props": {
-                    "media": "In the 3D View, a riser shown as a plain gray block slides and turns behind the marching band.",
+                    "media": "In the 3D View, an amber riser slides along the back of the field and turns, clear of the marching band.",
                     "text": "Draw props on the field and move them on the timeline. For now they show as simple blocks in the 3D View.",
                     "title": "Props"
                 },
@@ -3148,12 +3148,12 @@
                     "title": "Tempo mode"
                 },
                 "timeline": {
-                    "media": "A show in Expert mode playing: each section's moves, some crossing page flags, stack in rows on the timeline while the marchers move on the field.",
+                    "media": "A line of 20 marchers moves forward 16 counts in one move. On count 8 the five on each end split off and swing back in their own moves, nested under the line's on the timeline, then rejoin one straight line by count 16.",
                     "text": "Pages, moves and counts sit on one timeline under the field, and in Expert, moves can cross pages and overlap.",
                     "title": "The timeline"
                 },
                 "view3d": {
-                    "media": "The band marching between sets in 3D, in a domed stadium seen from the press box: marchers in uniform and a color guard with flags.",
+                    "media": "The band marching between sets in 3D, in a domed stadium seen from high above the press box: marchers in uniform and a color guard with flags.",
                     "text": "Watch your show from the stands, with marchers in uniform.",
                     "title": "The 3D View"
                 }

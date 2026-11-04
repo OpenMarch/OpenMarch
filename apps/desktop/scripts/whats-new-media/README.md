@@ -1,6 +1,6 @@
 # What's new clips
 
-<!-- cspell:words libx libwebp drawtext winget Gyan xvfb -->
+<!-- cspell:words libx libwebp drawtext winget Gyan xvfb cwebp -->
 
 The welcome flow's What's new walkthrough (`src/components/welcome/steps/WhatsNewTour.tsx`)
 plays one short clip per feature. These scripts record the clips from the real app, so they
@@ -16,8 +16,9 @@ draws. Each frame is a screenshot of the clip's region; ffmpeg turns them into t
 
 Each clip is written to `src/assets/welcome/whats-new/`:
 
-- `<clip>.mp4`: H.264, 60 fps, 1280 px wide (16:10), no audio. The last 0.6 s fades into the
-  first frames, so it loops without a jump.
+- `<clip>.mp4`: H.264, 60 fps, 1280 × 800 (16:10), no audio, one keyframe. The last 0.6 s
+  blends into the first frames, ending on the frame just before the first, so it loops without
+  a jump.
 - `<clip>.webp`: the first frame, the poster (also shown with reduced motion).
 
 Each run also gets a folder, `scripts/whats-new-media/runs/<time>/` (git-ignored), with
@@ -26,14 +27,14 @@ Each run also gets a folder, `scripts/whats-new-media/runs/<time>/` (git-ignored
 
 The clips (`clips.mjs`):
 
-| Clip       | Show            | What it films                                                                                                                  |
-| ---------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `timeline` | `drillShow.mjs` | The 20-marcher drill playing in Expert mode, field and timeline: one move for the line, a nested move for each end group       |
-| `shapes`   | demo            | A section placed in a box, then on a line, then on an arc, with the snapping guides                                            |
-| `view3d`   | demo            | The 3D View in the Pro dome, the band mid-march                                                                                |
-| `props`    | demo            | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame) |
-| `tempo`    | demo            | Waits for #550 (see below)                                                                                                     |
-| `pathways` | demo            | Waits for #674 (see below)                                                                                                     |
+| Clip       | Show            | What it films                                                                                                                                                                                                                                        |
+| ---------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeline` | `drillShow.mjs` | The 20-marcher drill playing in Expert mode, field and timeline: one move for the line, a nested move for each end group, framed close enough to read the moves' names on the slide                                                                  |
+| `shapes`   | demo            | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                  |
+| `view3d`   | demo            | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                      |
+| `props`    | demo            | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color |
+| `tempo`    | demo            | Waits for #550 (see below)                                                                                                                                                                                                                           |
+| `pathways` | demo            | Waits for #674 (see below)                                                                                                                                                                                                                           |
 
 The demo is `web/public/demos/part1-demo.dots`, converted to timelines when the app opens it.
 
@@ -44,8 +45,8 @@ The demo is `web/public/demos/part1-demo.dots`, converted to timelines when the 
 - Git.
 - Node 24 (the version in the repo's `.nvmrc`), for example `nvm install 24`.
 - pnpm, through Corepack: `corepack enable` (the repo pins the version).
-- ffmpeg with libx264 and libwebp, on the `PATH`:
-  - macOS: `brew install ffmpeg`
+- ffmpeg with libx264 on the `PATH`, and libwebp in it or `cwebp` beside it (for the posters):
+  - macOS: `brew install ffmpeg webp` (Homebrew's ffmpeg has no libwebp; `cwebp` stands in)
   - Windows: `winget install Gyan.FFmpeg` (then open a new terminal)
   - Debian or Ubuntu: `sudo apt install ffmpeg`
 - A screen that fits a 1600 × 1000 window (in points; on a smaller screen add

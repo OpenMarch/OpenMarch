@@ -1,4 +1,4 @@
-// cspell:words AVTB faststart libwebp libx movflags setpts settb STARTPTS xfade vstack
+// cspell:words AVTB cwebp faststart libwebp libx movflags setpts settb STARTPTS vstack
 /* eslint-disable no-console -- a command-line script: it reports progress */
 // Records the welcome flow's What's new clips from the real app (see README.md).
 //
@@ -173,6 +173,9 @@ async function launch(source) {
             `--user-data-dir=${path.join(home, "user-data")}`,
             "--no-sandbox",
             "--no-audio",
+            // Each run's profile is new, so on a Mac Chromium would ask for a keychain entry
+            // every time
+            ...(process.platform === "darwin" ? ["--use-mock-keychain"] : []),
             ...gl,
         ],
         env: {
@@ -365,20 +368,36 @@ function makeFilm({ app, target, box, framesDir }) {
     return film;
 }
 
-/** The finished loop from the frames: its last FADE seconds crossfade into its first frames. */
+/** ffmpeg can write the WebP poster itself (Homebrew's ffmpeg can't: then `cwebp` does). */
+const HAS_LIBWEBP = execFileSync("ffmpeg", ["-hide_banner", "-encoders"], {
+    encoding: "utf8",
+}).includes("libwebp");
+
+/**
+ * The finished loop from the frames: from FADE seconds in, its last FADE seconds blending into
+ * the first FADE seconds of frames. The blend reaches them fully on the last frame, which is
+ * then the frame just before the first: it repeats without a jump.
+ */
 function encode(framesDir, name, frameCount) {
     const fps = options.fps;
     const seconds = frameCount / fps;
     if (seconds <= FADE * 2)
         throw new Error(`${name}: only ${frameCount} frames`);
     const length = seconds - FADE;
+    const fadeFrames = Math.round(FADE * fps);
     const mp4 = path.join(options.out, `${name}.mp4`);
     const webp = path.join(options.out, `${name}.webp`);
+    const part = (label, start, duration) =>
+        `[${label}]trim=start=${start}:duration=${duration},setpts=PTS-STARTPTS,settb=AVTB,fps=${fps}[${label}Part]`;
     const graph = [
-        `[0:v]scale=${options.width}:-2:flags=lanczos,split[a][b]`,
-        `[a]trim=start=${FADE}:duration=${length},setpts=PTS-STARTPTS,settb=AVTB,fps=${fps}[main]`,
-        `[b]trim=start=0:duration=${FADE},setpts=PTS-STARTPTS,settb=AVTB,fps=${fps}[head]`,
-        `[main][head]xfade=transition=fade:duration=${FADE}:offset=${length - FADE},format=yuv420p[v]`,
+        // Exactly 16:10, whatever the region's rounding
+        `[0:v]scale=${options.width}:${even(options.width / ASPECT)}:flags=lanczos,format=yuv420p,split=3[body][tail][head]`,
+        part("body", FADE, length - FADE),
+        part("tail", length, FADE),
+        part("head", 0, FADE),
+        // Frame N of the tail is (N + 1) / fadeFrames of the way to frame N of the head
+        `[tailPart][headPart]blend=all_expr='A+(B-A)*min(1\\,(N+1)/${fadeFrames})'[joined]`,
+        `[bodyPart][joined]concat=n=2:v=1:a=0[v]`,
     ].join(";");
     const ffmpeg = (args) =>
         execFileSync("ffmpeg", ["-loglevel", "error", "-y", ...args]);
@@ -400,23 +419,33 @@ function encode(framesDir, name, frameCount) {
         "28",
         "-profile:v",
         "high",
+        // One keyframe, at the start: x264's default of one every 250 frames shows as a jump
+        // in quality partway through a clip
+        "-g",
+        String(frameCount),
         "-r",
         String(fps),
         "-movflags",
         "+faststart",
         mp4,
     ]);
-    ffmpeg([
-        "-i",
-        mp4,
-        "-frames:v",
-        "1",
-        "-c:v",
-        "libwebp",
-        "-quality",
-        "80",
-        webp,
-    ]);
+    if (HAS_LIBWEBP)
+        ffmpeg([
+            "-i",
+            mp4,
+            "-frames:v",
+            "1",
+            "-c:v",
+            "libwebp",
+            "-quality",
+            "80",
+            webp,
+        ]);
+    else {
+        const png = path.join(WORK, `${name}-poster.png`);
+        ffmpeg(["-i", mp4, "-frames:v", "1", png]);
+        execFileSync("cwebp", ["-quiet", "-q", "80", png, "-o", webp]);
+    }
     return { mp4, webp, seconds: length };
 }
 
