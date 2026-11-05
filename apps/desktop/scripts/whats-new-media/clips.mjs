@@ -727,53 +727,116 @@ export const CLIPS = [
     },
     {
         name: "tempo",
-        // TODO(#550): check the selectors once tempo mode is on main, then record with
-        // `record.mjs tempo` and add tempo.mp4 to the slide (whatsNewSlides.ts).
-        pending: "#550",
-        async prepare({ page }) {
+        show: "tempo",
+        // Edit music (tempo mode): counts 1–20 of tempo-test.dots are at ♩60 against music at
+        // ♩72, so the count lines drift off the clicks in the waveform. The tempo line is dragged
+        // up to ♩72 and the clicks land on the counts; then it plays into the hold (fermata) on
+        // count 21, where the playhead waits.
+        async prepare({ page, log }) {
             await tidy(page);
-            await pageBox(page, 3).click();
-            // Tempo (Shift+T) opens the lanes: rehearsal marks, measures, tempo, the music
-            await page
-                .getByRole("button", { name: /^Tempo/ })
-                .first()
-                .click();
+            await page.getByTestId("timeline-tempo-mode").click();
             await page.waitForTimeout(1500);
+            // Close enough that the lane names and measure numbers read on the slide, with the
+            // hold on count 21 and a count after it in the frame (the pane's left 16:10). The
+            // tempo label after the hold starts on count 22, and the band's left edge is count 1.
             const pane = await box(page.getByTestId("timeline-pane"));
-            const height = Math.min(pane.width / 1.6, 1000);
+            const frameRight = pane.x + pane.height * 1.6;
+            const afterHold = page.getByTestId("tempo-label").nth(1);
+            await page.getByTestId("timeline-zoom-in").click();
+            await page.waitForTimeout(600);
+            const band = await box(page.getByTestId("tempo-band"));
+            await page.mouse.move(band.x + 6, band.y + 100);
+            await page.keyboard.down("Control");
+            for (
+                let i = 0;
+                i < 60 && (await box(afterHold)).x > frameRight - 60;
+                i++
+            ) {
+                await page.mouse.wheel(0, 4);
+                await page.waitForTimeout(120);
+            }
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(600);
+            const perCount = async () =>
+                ((await box(afterHold)).x - band.x) / 21;
+            const tempoTag = () =>
+                page
+                    .getByTestId("tempo-drag-tag")
+                    .first()
+                    .textContent({ timeout: 300 })
+                    .catch(() => null);
+            // The tempo line sits just under its label (♩60); a dry run, cancelled with Escape,
+            // finds how far up ♩72 is
+            const label = await box(page.getByTestId("tempo-label").first());
+            if (
+                !/60/.test(
+                    await page.getByTestId("tempo-label").first().textContent(),
+                )
+            )
+                throw new Error("counts 1–20 aren't at ♩60");
+            const from = { x: label.x + 160, y: label.y + label.height + 2 };
+            await page.mouse.move(from.x, from.y);
+            await page.mouse.down();
+            let rise = null;
+            for (let d = 0.5; d <= 50 && rise === null; d += 0.5) {
+                await page.mouse.move(from.x, from.y - d);
+                await page.waitForTimeout(30);
+                if ((await tempoTag())?.includes("72")) rise = d + 0.5;
+            }
+            await page.keyboard.press("Escape");
+            await page.mouse.up();
+            await page.waitForTimeout(600);
+            if (rise === null)
+                throw new Error("dragging the tempo line never reached ♩72");
+            if (
+                !/60/.test(
+                    await page.getByTestId("tempo-label").first().textContent(),
+                )
+            )
+                throw new Error("the dry run changed the tempo");
+            this.from = from;
+            this.to = { x: from.x, y: from.y - rise };
+            // Where playing starts: count 18, three counts before the hold
+            const ppc = await perCount();
+            log(`   ${ppc.toFixed(1)} px a count, ♩72 is ${rise} px up`);
+            // (the band's left edge is count 1)
+            this.playAt = {
+                x: band.x + 17 * ppc + 2,
+                y: band.y + band.height - 30,
+            };
+            await page.mouse.move(800, 200);
+            await page.waitForTimeout(400);
+            // The timeline pane: the music's header and transport, the lanes and their names
             return {
                 box: {
                     x: even(pane.x),
-                    y: even(Math.max(0, pane.y + pane.height - height)),
-                    width: even(pane.width),
-                    height: even(height),
+                    y: even(pane.y),
+                    width: even(pane.height * 1.6),
+                    height: even(pane.height),
                 },
             };
         },
         async perform({ page, film }) {
             await film.freeze();
-            // Drag a count's handle onto its hit in the music, then add a tempo change with a
-            // double-click on the tempo lane and drag its dot up.
-            const h = await box(page.getByTestId("tempo-count-handle").nth(4));
-            const from = { x: h.x + h.width / 2, y: h.y + h.height / 2 };
-            await film.hold(0.4);
-            await film.drag(page, from, { x: from.x + 40, y: from.y }, 1.2);
+            await film.hold(0.7);
+            // The line up to ♩72: the music slides under the counts until the clicks sit on them
+            await film.drag(page, this.from, this.to, 2);
+            // The edit writes the show: wait for it in real time
+            await page.waitForTimeout(1200);
             await film.hold(0.6);
-            const lane = await box(page.getByTestId("tempo-lane"));
-            const at = {
-                x: lane.x + lane.width * 0.5,
-                y: lane.y + lane.height * 0.5,
-            };
-            await page.mouse.dblclick(at.x, at.y);
-            await page.waitForTimeout(400);
-            await film.hold(0.4);
-            await film.drag(
-                page,
-                at,
-                { x: at.x, y: at.y - lane.height * 0.3 },
-                1.2,
-            );
-            await film.hold(1.5);
+            if (
+                !/72/.test(
+                    await page.getByTestId("tempo-label").first().textContent(),
+                )
+            )
+                throw new Error("the drag didn't set ♩72");
+            // A click in the music moves the playhead; play from there into the hold
+            await page.mouse.click(this.playAt.x, this.playAt.y);
+            await page.waitForTimeout(500);
+            await page.mouse.move(800, 200);
+            await page.getByTestId("timeline-play").click();
+            await page.waitForTimeout(800);
+            await film.hold(4.5);
         },
     },
     {

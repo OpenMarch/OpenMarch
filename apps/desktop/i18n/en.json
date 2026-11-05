@@ -3075,10 +3075,10 @@
                     "title": "Shapes"
                 },
                 "tempo": {
-                    "label": "Tempo mode",
-                    "media": "Placeholder picture: the clip of tempo mode isn't recorded yet.",
-                    "text": "Line your counts up with the music in the timeline: drag a count onto its hit in the music, and set tempo changes, holds and meters.",
-                    "title": "Tempo mode"
+                    "label": "Edit music",
+                    "media": "Editing the music in the timeline: the counts are too slow for the recording, so the count lines drift off the clicks in its waveform. The tempo line is dragged up from 60 to 72 and the clicks land on the counts. Then it plays into a hold of 3.2 seconds, where the playhead waits.",
+                    "text": "Line your counts up with the music in the timeline: drag the tempo until the counts sit on the beats, and set tempo changes, holds and time signatures.",
+                    "title": "Edit music"
                 },
                 "timeline": {
                     "label": "Timeline",
