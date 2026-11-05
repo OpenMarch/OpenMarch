@@ -30,7 +30,6 @@ import AudioFile from "@/global/classes/AudioFile";
 import tolgee from "@/global/singletons/Tolgee";
 import { runAction } from "@/shortcuts/registry";
 import { useAudioOffsetSeconds } from "./audioOffset";
-import { countOneAt } from "./musicTime";
 import { offsetText, TempoMusicOffset } from "./TempoMusicOffset";
 import { toolButton } from "./TempoToolbar";
 
@@ -161,11 +160,11 @@ export function TempoMusicFile() {
                                 <span className="flex-1 whitespace-nowrap">
                                     {tolgee.t(
                                         "tempoMode.music.offset",
-                                        "Count 1 in the music…",
+                                        "Music offset…",
                                     )}
                                 </span>
                                 <span className="text-text/60 tabular-nums">
-                                    {offsetText(countOneAt(offset))}
+                                    {offsetText(offset)}
                                 </span>
                             </DropdownMenu.Item>
                             <DropdownMenu.Item

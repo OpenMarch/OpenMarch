@@ -1,9 +1,6 @@
 /**
- * Edit music: "Count 1 in the music…" in the music file's menu opens this box, to type the time
- * in the music file where count 1 falls. In Edit music the clock shows the time in the music, so
- * the playhead on the first hit gives the number to type (owner, 2026-11-04: instead of a "Start
- * the music here" command). It is the audio offset turned around: count 1 at 3.25 s in the
- * music is an offset of -3.25 s. One undo step, the same as Show settings' Audio Offset.
+ * Edit music: "Music offset…" in the music file's menu opens this box, to type how many seconds
+ * after count 1 the music starts. One undo step, the same as Show settings' Audio Offset.
  */
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,9 +15,9 @@ import {
 import tolgee from "@/global/singletons/Tolgee";
 import { conToastError } from "@/utilities/utils";
 import { tempoSettingsKey, writeAudioOffset } from "./audioOffset";
-import { countOneAt, parseSeconds } from "./musicTime";
+import { parseSeconds } from "./musicTime";
 
-/** "3.25 s", as the menu shows where count 1 is */
+/** "0.25 s", as the menu shows the offset */
 export const offsetText = (seconds: number) =>
     tolgee.t("tempoMode.music.offsetValue", "{seconds} s", {
         // + 0 turns -0 into 0
@@ -36,7 +33,7 @@ export function TempoMusicOffset(props: {
     const queryClient = useQueryClient();
     const [text, setText] = useState("");
     const value = parseSeconds(text);
-    const current = countOneAt(props.offset);
+    const current = props.offset;
     // Each time it opens, the field starts at where count 1 is now
     useEffect(() => {
         if (props.open) setText(String(Number(current.toFixed(3)) + 0));
@@ -48,7 +45,7 @@ export function TempoMusicOffset(props: {
         props.onOpenChange(false);
         if (value === current) return;
         try {
-            await writeAudioOffset(countOneAt(value));
+            await writeAudioOffset(value);
             await queryClient.invalidateQueries({ queryKey: tempoSettingsKey });
         } catch (error) {
             conToastError(tolgee.t("workspaceSettings.updateFailed"), error);
@@ -59,15 +56,12 @@ export function TempoMusicOffset(props: {
         <Dialog open={props.open} onOpenChange={props.onOpenChange}>
             <DialogContent className="w-[24rem]">
                 <DialogTitle>
-                    {tolgee.t(
-                        "tempoMode.music.offsetTitle",
-                        "Count 1 in the music",
-                    )}
+                    {tolgee.t("tempoMode.music.offsetTitle", "Music offset")}
                 </DialogTitle>
                 <DialogDescription>
                     {tolgee.t(
                         "tempoMode.music.offsetHelp",
-                        "Where count 1 falls in the music file. While you edit music the clock shows the time in the music: put the playhead on the first hit and type the time it shows. A negative time leaves that much silence before the music starts.",
+                        "Seconds after count 1 that the music starts. Negative skips into the music.",
                     )}
                 </DialogDescription>
                 <form
@@ -77,13 +71,7 @@ export function TempoMusicOffset(props: {
                         void save();
                     }}
                 >
-                    <label className="text-body flex flex-wrap items-center gap-8">
-                        <span className="whitespace-nowrap">
-                            {tolgee.t(
-                                "tempoMode.music.countOneIsAt",
-                                "Count 1 is at",
-                            )}
-                        </span>
+                    <label className="text-body flex items-center gap-8">
                         <Input
                             compact
                             autoFocus
@@ -93,14 +81,13 @@ export function TempoMusicOffset(props: {
                             onChange={(e) => setText(e.target.value)}
                             onFocus={(e) => e.currentTarget.select()}
                             aria-invalid={value === null}
+                            aria-label={tolgee.t(
+                                "tempoMode.music.offsetTitle",
+                                "Music offset",
+                            )}
                             data-testid="tempo-music-offset-input"
                         />
-                        <span className="whitespace-nowrap">
-                            {tolgee.t(
-                                "tempoMode.music.secondsInTheMusic",
-                                "seconds in the music",
-                            )}
-                        </span>
+                        {tolgee.t("tempoMode.music.seconds", "seconds")}
                     </label>
                     <div className="flex justify-end gap-8">
                         <Button

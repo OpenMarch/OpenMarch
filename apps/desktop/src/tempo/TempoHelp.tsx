@@ -93,7 +93,7 @@ export function TempoHelp() {
             ),
             tolgee.t(
                 "tempoMode.help.musicFile.effect",
-                "switches to another audio file, sets where count 1 is in the music, imports one or deletes it",
+                "switches to another audio file, sets the music offset, imports one or deletes it",
             ),
         ],
         [

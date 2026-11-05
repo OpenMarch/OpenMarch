@@ -3555,7 +3555,7 @@
             "title": "Line the counts up with the music",
             "musicFile": {
                 "gesture": "The file's name in the header",
-                "effect": "switches to another audio file, sets where count 1 is in the music, imports one or deletes it"
+                "effect": "switches to another audio file, sets the music offset, imports one or deletes it"
             }
         },
         "importScore": {
@@ -3638,16 +3638,12 @@
             "pick": "Pick music",
             "importAnother": "Import another audio file…",
             "delete": "Delete this audio file…",
-            "offset": "Count 1 in the music…",
+            "offset": "Music offset…",
             "offsetValue": "{seconds} s",
-            "offsetTitle": "Count 1 in the music",
-            "offsetHelp": "Where count 1 falls in the music file. While you edit music the clock shows the time in the music: put the playhead on the first hit and type the time it shows. A negative time leaves that much silence before the music starts.",
+            "offsetTitle": "Music offset",
+            "offsetHelp": "Seconds after count 1 that the music starts. Negative skips into the music.",
             "offsetSet": "Set",
-            "countOneIsAt": "Count 1 is at",
-            "secondsInTheMusic": "seconds in the music"
-        },
-        "clock": {
-            "musicTime": "Time in the music"
+            "seconds": "seconds"
         }
     },
     "workspace": {

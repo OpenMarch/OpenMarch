@@ -17,9 +17,9 @@
  *   right-click > Set tempo… types "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
  *   Every tempo edit re-times the counts it changes, and the counts after move with them.
  * - **Music**: the waveform under the count lines. A drag along it selects counts, a click moves
- *   the playhead; the clock shows the time in the music there, which "Count 1 in the music…"
- *   (the music file's menu) takes. Nothing is detected in the music: lining up is by ear and
- *   eye, with tempo edits, tap tempo and the metronome.
+ *   the playhead. "Music offset…" in the music file's menu says where the music starts against
+ *   count 1. Nothing is detected in the music: lining up is by ear and eye, with tempo edits,
+ *   tap tempo and the metronome.
  * - **T** taps tempo: a panel shows how fast you tap, and Use puts that tempo on the selected
  *   counts or the tempo stretch under the playhead (TapTempo.tsx).
  */

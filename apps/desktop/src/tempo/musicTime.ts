@@ -1,10 +1,4 @@
-/**
- * Edit music: where count 1 is in the music file, the way the "Count 1 in the music" box reads
- * and writes it. It is the audio offset turned around (positive offset: the music starts later).
- */
-
-/** Where count 1 is in the music, for an audio offset (positive: the music starts later) */
-export const countOneAt = (offset: number) => -offset;
+/** Edit music: reading a time typed into the Music offset box */
 
 /**
  * Seconds from what was typed: "3.25", "3,25", or a time the way the clock shows it, "00:03.250"

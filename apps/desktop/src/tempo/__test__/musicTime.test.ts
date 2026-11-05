@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countOneAt, parseSeconds } from "../musicTime";
+import { parseSeconds } from "../musicTime";
 
 describe("parseSeconds", () => {
     it.each([
@@ -21,11 +21,4 @@ describe("parseSeconds", () => {
             expect(parseSeconds(text)).toBeNull();
         },
     );
-});
-
-describe("countOneAt", () => {
-    it("turns the audio offset around, both ways", () => {
-        expect(countOneAt(-3.25)).toBe(3.25);
-        expect(countOneAt(countOneAt(1.5))).toBe(1.5);
-    });
 });

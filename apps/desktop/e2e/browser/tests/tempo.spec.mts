@@ -60,12 +60,8 @@ test.describe("with a music file", () => {
         ],
     });
 
-    test("count 1 in the music: the menu sets it, the clock shows music time", async ({
-        show,
-    }) => {
+    test("the music file's menu sets the music offset", async ({ show }) => {
         const { page } = show;
-        const clock = page.getByTestId("audio-clock");
-        await expect(clock).toContainText("00:00.000");
         await page.getByTestId("timeline-tempo-mode").click();
         const file = page.getByTestId("tempo-music-file");
         await expect(file).toContainText("Opener.wav");
@@ -76,19 +72,12 @@ test.describe("with a music file", () => {
         await page.getByTestId("tempo-music-offset").click();
         const input = page.getByTestId("tempo-music-offset-input");
         await expect(input).toHaveValue("0");
-        // The way the clock shows a time works too
-        await input.fill("00:01.5");
+        await input.fill("0.5");
         await page.getByTestId("tempo-music-offset-set").click();
         await expect(page.getByRole("dialog")).toBeHidden();
-        // Count 1 (the playhead, at the show's start) is 1.5 s into the music
-        await expect(clock).toContainText("00:01.500");
         await file.click();
         await expect(page.getByTestId("tempo-music-offset")).toContainText(
-            "1.5 s",
+            "0.5 s",
         );
-        await page.keyboard.press("Escape");
-        // Out of Edit music the clock is the show's time again
-        await page.getByTestId("timeline-tempo-mode").click();
-        await expect(clock).toContainText("00:00.000");
     });
 });
