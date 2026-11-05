@@ -87,6 +87,6 @@ confirm each before cutting.
 - Props hidden on the 2D field are hidden in the 3D View too.
 - Props get an optional color, drawn in 2D and 3D (no color = today's look).
 - Remove keyframe vs Clear this page: they do different things, so keep both as they are. This replaces row 9's "merge into one Clear action".
-- ADR 0002 amendment for props (`items.color`, `view3d:hidden-props`): accepted.
+- ADR 0010 amendment for props (`items.color`, `view3d:hidden-props`): accepted.
 - Merge the convergence PRs straight into fork `main`. Hold other feature merges into `main` until the cleanup lands.
 - Welcome back: the line reads "Here's what's changed since you last used it." The what's-new step also covers grid snapping, shapes and tempo, and links to the documentation.

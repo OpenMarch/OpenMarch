@@ -41,7 +41,7 @@ Some terms used throughout:
 What rejoin has to deal with:
 
 - **Layers:** a rejoined `N` starts earlier, so its derived layer can change (L-3: a later start
-  wins). The layer module re-derives layers after every edit (ADR 0001 amendment 2026-10-16), so
+  wins). The layer module re-derives layers after every edit (ADR 0008 amendment 2026-10-16), so
   this is automatic, but it can change who wins where `N` now overlaps another move.
 - **Path styles:**
   - Direct is exact.
@@ -149,10 +149,10 @@ What rejoin has to deal with:
 ## Undo
 
 - Every operation above is one `transactionWithHistory` step (`db-functions/history.ts:112`), and
-  undo replays the row changes exactly (ADR 0001 §3). Keyframes are derived from rows under every
+  undo replays the row changes exactly (ADR 0008 §3). Keyframes are derived from rows under every
   definition, so undo restores them for free.
 - **Kept markers** are re-inserted before their assignment on undo, which is safe because no
-  trigger reads them (ADR 0001 amendment 2026-10-09). This doesn't change.
+  trigger reads them (ADR 0008 amendment 2026-10-09). This doesn't change.
 - **A peel** (shared-move rejoin) adds a timeline, a transition, an assignment and a destination,
   and may compact the source. Compaction moves another marcher's slot index
   (`db-functions/timelineMembership.ts:530-588`). Undo restores it, but the focus and history

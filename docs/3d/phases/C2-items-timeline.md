@@ -24,9 +24,9 @@ Props and row-backed equipment as `marchers` rows on the timeline, with their th
 ## Read first
 
 - [../props-spec.md](../props-spec.md): the design spec, sections on items and Placement, notes, and platforms. Ticket numbers on each package are the ones it cites.
-- [ADR 0002](../../adr/0002-3d-view.md) D-9, D-10 and D-22 (amendment of 2026-10-11)
+- [ADR 0010](../../adr/0010-3d-view.md) D-9, D-10 and D-22 (amendment of 2026-10-11)
 - `CONTEXT.md`: **Item**, **Prop**, **Equipment**, **Outline**, **Placement**, **Crew**, **Off field**, **Hidden**, **Artwork slot**, **Depth**, **Floor prop**, **Roll-out**
-- ADR 0001 and the timeline spec on `timeline/timeline-try-2` (resolver R-1, C-10 freeze, C-12 pages are flags)
+- ADR 0008 and the timeline spec on `timeline/timeline-try-2` (resolver R-1, C-10 freeze, C-12 pages are flags)
 - `research/props-in-timeline.md` (branch `research/props-in-timeline`); PR 1013 (`git show pr-1013:...`)
 
 ## Work packages

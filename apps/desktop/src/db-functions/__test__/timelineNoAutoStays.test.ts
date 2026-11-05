@@ -27,7 +27,7 @@ keepFixturesInPageMode(
 
 /**
  * No automatic stays (docs/timeline/research/defined-coordinates, owner decision 2026-10-08;
- * ADR 0001 C-12): a marcher has a move on a page only where the designer moved it, and otherwise
+ * ADR 0008 C-12): a marcher has a move on a page only where the designer moved it, and otherwise
  * holds where it last was, so an edit carries forward until that marcher's next own move. These
  * are the regression tests for the validator's scenarios (07a): adding pages by any path writes
  * no rows, so a later edit to an earlier page shows on the added pages (owner scenario S1).

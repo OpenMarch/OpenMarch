@@ -1,6 +1,6 @@
 /**
  * The page-era file the main process is asking the person about, before it
- * converts it (ADR 0001 §6). An open that returns `NEEDS_CONVERSION_STATUS`
+ * converts it (ADR 0008 §6). An open that returns `NEEDS_CONVERSION_STATUS`
  * asks; the renderer's `ConvertShowDialog` shows the question over whatever is
  * open and answers with `conversion:confirm` or `conversion:cancel`. Any other
  * open, a new show or a close makes the question stale, so it is forgotten.

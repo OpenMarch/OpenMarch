@@ -24,7 +24,7 @@ Ship Artwork and uniforms: the uniform model and its editor, artwork on uniform 
 ## Read first
 
 - [../props-spec.md](../props-spec.md): the design spec, sections on uniforms, silks, sizing and fit, budgets and licensing. Ticket numbers on each package are the ones it cites.
-- [ADR 0002](../../adr/0002-3d-view.md) D-12, D-16 to D-19 and D-21 (amendment of 2026-10-11)
+- [ADR 0010](../../adr/0010-3d-view.md) D-12, D-16 to D-19 and D-21 (amendment of 2026-10-11)
 - `CONTEXT.md`: **Uniform**, **Uniform part**, **Garment**, **Artwork**, **Artwork slot**, **Base floor**, **Floor prop**, **Roll-out**, **Credits**, **Share note**
 - `docs/3d/findings.md`: the C4.7 run
 
@@ -114,7 +114,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** prop slots and Floor props show their Artwork at real size.
 
-**Scope:** slot Artwork from the assignment table with fill or fit and pan; prop slot textures 1024, Floor props 2048 on the long edge; the Floor prop roll-out reveal from its leading edge, rolling back up when the Outline shrinks; Base floor Artwork (2048 on the long edge), which, when set, replaces ADR 0002 D-5's tarp image. The show's floor is the field image (ADR 0002 D-23).
+**Scope:** slot Artwork from the assignment table with fill or fit and pan; prop slot textures 1024, Floor props 2048 on the long edge; the Floor prop roll-out reveal from its leading edge, rolling back up when the Outline shrinks; Base floor Artwork (2048 on the long edge), which, when set, replaces ADR 0010 D-5's tarp image. The show's floor is the field image (ADR 0010 D-23).
 
 **Tickets:** 08, 18, 21, 26.18.
 
@@ -168,7 +168,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** the built-in Library, licensed to ship.
 
-**Scope:** OpenMarch-made built-ins under CC0 1.0 with no OpenMarch logo or name in the art; third-party built-ins CC0 or CC-BY 4.0 only, each with a manifest entry (SPDX license, author, source URL, attribution text, retrieval date) checked in CI against the allow-list; a `LICENSE` in each asset folder (built-ins, templates, Starter kit, om-pose assets); `SOURCE.json` and the om-pose vendor README corrected (ADR 0002 D-7 correction); catalog sizes from C1.4.
+**Scope:** OpenMarch-made built-ins under CC0 1.0 with no OpenMarch logo or name in the art; third-party built-ins CC0 or CC-BY 4.0 only, each with a manifest entry (SPDX license, author, source URL, attribution text, retrieval date) checked in CI against the allow-list; a `LICENSE` in each asset folder (built-ins, templates, Starter kit, om-pose assets); `SOURCE.json` and the om-pose vendor README corrected (ADR 0010 D-7 correction); catalog sizes from C1.4.
 
 **Tickets:** 03, 16, 26.6.
 

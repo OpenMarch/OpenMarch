@@ -2,7 +2,7 @@
 
 Which of two overlapping moves a marcher follows, and how the app chooses the stored `layer` so
 that answer comes from the timeline alone. Decided by the project owner on 2026-10-16; the
-normative rules are spec §6.2 (L-1 to L-6, D-18) and the ADR 0001 amendment of the same date.
+normative rules are spec §6.2 (L-1 to L-6, D-18) and the ADR 0008 amendment of the same date.
 
 ## The rule
 
@@ -25,7 +25,7 @@ of each edit, and a test checks that the stored layers always match (I-L1).
 
 A page's own move is the move a page's box stands for: the one the app makes for each page, and the
 converter writes for each page of an older show. It is now stored as such
-(`timeline_page_moves`, ADR 0001) instead of being guessed from its range.
+(`timeline_page_moves`, ADR 0008) instead of being guessed from its range.
 
 ## Why it changed
 

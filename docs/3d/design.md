@@ -1,6 +1,6 @@
 # 3D View Technical Design
 
-How the MVP fits together. ADR 0002 holds the decisions; this file holds the
+How the MVP fits together. ADR 0010 holds the decisions; this file holds the
 detail workers need to build in parallel without colliding. The reference
 demo, [ref/venue-demo.html](ref/venue-demo.html), shows the intended look. It
 works in **feet** with globals in one file. The product works in **meters**
@@ -58,7 +58,7 @@ Tests sit next to code in `__test__/` folders (`apps/desktop/AGENTS.md`).
 
 ## 3. Venue settings
 
-- The schema is in ADR 0002 D-5.
+- The schema is in ADR 0010 D-5.
 - `defaultVenueForField(fp)` maps templates to kits:
   - football → `hs`;
   - grid, indoor and SoundSport → `gym`;
@@ -254,7 +254,7 @@ approved reference, converted to meters (1 ft = 0.3048 m).
   coordinate data in the window and combines it into one `MarcherTimeline` per
   marcher. It also exports `positionAt(timeline, ms) -> {x, z}` in world
   meters, built on `getCoordinatesAtTime` and `pixelsToWorld`.
-- Performers (ADR 0002 D-7, amended 2026-10-07): om-pose's animated
+- Performers (ADR 0010 D-7, amended 2026-10-07): om-pose's animated
   marchers, drawn by its instanced renderer (vendored in
   `src/view3d/render/`) as one `InstancedMesh` per (body type,
   section uniform), skinned on the GPU from one texture of baked clips.

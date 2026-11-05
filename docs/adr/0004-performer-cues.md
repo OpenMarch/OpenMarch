@@ -30,11 +30,11 @@ count-level detail are wanted.
 The owner settled the behavior model on 2026-10-09 and 2026-10-10; the full
 specification is [docs/3d/performer-behavior.md](../3d/performer-behavior.md).
 It adds persistent tables (a file-format change), a public module in
-`@openmarch/core`, and changes to the 3D View's sync contract (ADR 0002 D-4,
+`@openmarch/core`, and changes to the 3D View's sync contract (ADR 0010 D-4,
 D-6, D-7), so `docs/conventions/architecture-decisions.md` requires this
 record.
 
-This builds on ADR 0001 (the timeline motion model, on `timeline-try-2`):
+This builds on ADR 0008 (the timeline motion model, on `timeline-try-2`):
 beats stay the time grid with stable ids, pages become flags, and motion lives
 in timeline tables addressed by beat ordinals. The 3D branch rebases onto the
 merged timeline first; this record's migration and number come after the
@@ -147,7 +147,7 @@ timestamps. Built-ins aren't stored; cues reference them by id.
 The exact shapes are in the spec's section 6. Its input and output types are
 a public package API; changing them needs an amendment here.
 
-### D-7 Amendments to ADR 0002
+### D-7 Amendments to ADR 0010
 
 - **D-4 Sync:** the editor relays a synthetic `["timeline"]` query key on
   `view3d:invalidate` after each delivered timeline change batch or reset.
@@ -207,11 +207,11 @@ a public package API; changing them needs an amendment here.
 
 ## Amendment 2026-10-11: Carry, Silk and Uniform channels, and item tables beside cues
 
-- Status: approved by the owner on 2026-10-11, beside the ADR 0002
+- Status: approved by the owner on 2026-10-11, beside the ADR 0010
   amendment of the same date. The rest of this record is still proposed.
 - Amends: D-1, D-5, D-6 and D-7; spec sections 2.3, 3, 7.1, 7.6, 8.5, 10
   and 11
-- Companion: [ADR 0002](0002-3d-view.md), amendment of 2026-10-11 (D-9 to
+- Companion: [ADR 0010](0010-3d-view.md), amendment of 2026-10-11 (D-9 to
   D-11); design spec [docs/3d/props-spec.md](../3d/props-spec.md)
 
 ### Context
@@ -280,7 +280,7 @@ changes the spec:
 #### Cue values that name Library items
 
 Carry, Silk and Uniform values name Library items (a model, an Artwork, a
-Uniform) at an exact Version, embedded in the show (ADR 0002 D-12), as
+Uniform) at an exact Version, embedded in the show (ADR 0010 D-12), as
 `library:<uuid>@<version hash>`; Carry also takes `none` [06, 26.10, 26.14].
 
 - Save never prunes a Library item a cue names [06].
@@ -296,7 +296,7 @@ case [26.14].
 
 #### Item tables beside cues
 
-ADR 0002 D-10 adds three tables keyed by `beat_id`, **beside** the cues, not
+ADR 0010 D-10 adds three tables keyed by `beat_id`, **beside** the cues, not
 cues [07 revision, 24]:
 
 - Placement: held (performers and hands), placed (optional Crew) or Off
@@ -336,7 +336,7 @@ om-pose [26.3].
 
 #### Step 6 and the integrated-GPU run (spec sections 8.5 and 10)
 
-One integrated-GPU run serves section 8.5 and ADR 0002's budget (base M1,
+One integrated-GPU run serves section 8.5 and ADR 0010's budget (base M1,
 Intel Iris Xe, `pro`, the compose pass's own GPU time, plus silk layers,
 Garments and hidden-part skinning). Build step 6 waits to merge until the
 per-look texture and the silk wave (phase packages C4.3 and C4.4) are built
@@ -413,11 +413,11 @@ and a page-era file converts to a timeline when it opens.
   Library migrations, not "after 0017 and 0018". A page-era file gets the cue
   tables, and their undo triggers, only when it converts on open; until then
   the history triggers and cue cleanup skip the tables the file lacks.
-- **D-7, ADR 0002 D-6 Positions:** "page mode keeps `marcher_pages`" is moot.
+- **D-7, ADR 0010 D-6 Positions:** "page mode keeps `marcher_pages`" is moot.
   `view3d/positions.ts` on main already builds the window's own resolver
   from the timeline tables. It samples it at any show time (a time becomes
   a beat through the tempo map), not only at count boundaries.
-- **D-7, ADR 0002 D-4 Sync:** already on main, with one difference: after
+- **D-7, ADR 0010 D-4 Sync:** already on main, with one difference: after
   each batch of committed timeline changes the editor relays
   `VIEW3D_TIMELINE_QUERY_KEY` (`["view3d_timeline"]`, the window's resolver
   query) on `view3d:invalidate`, not a synthetic `["timeline"]` key. No new
@@ -484,14 +484,14 @@ or deletes the cues before the beats go, so the cascade finds nothing left.
   `target_tag_id`). The tag delete confirmation gains a line saying so, such
   as "3 cues target this tag and will be removed".
 
-#### Sync (D-7, ADR 0002 D-4)
+#### Sync (D-7, ADR 0010 D-4)
 
 Deleting beats, measures, tags or marchers invalidates the `["cues"]` query
 (and the phrase asset and performer settings queries), and the editor
 relays those keys to the 3D window on `view3d:invalidate`, so the window and
 every cue query refresh after any of these deletes.
 
-#### Prune (D-3, ADR 0002 D-12)
+#### Prune (D-3, ADR 0010 D-12)
 
 Pruning the show's embedded Library keeps every phrase asset and every
 Library item Version a cue references.

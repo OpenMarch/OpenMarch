@@ -1,5 +1,5 @@
 /**
- * Window side of the 3D View sync (ADR 0002 D-4, docs/3d/design.md §7).
+ * Window side of the 3D View sync (ADR 0010 D-4, docs/3d/design.md §7).
  *
  * Holds the editor's latest clock, selection and hidden props. Scene code reads
  * `showMs()` inside `useFrame` (`useView3dSyncStore.getState().showMs()`),

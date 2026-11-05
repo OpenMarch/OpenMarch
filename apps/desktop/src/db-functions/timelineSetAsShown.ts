@@ -24,7 +24,7 @@ import { updateTimelineSlotDestinationInTransaction } from "./timelineTransition
 
 /**
  * **Set as shown** on a page box, in timeline mode (holds, fork #466; holds README decisions 1
- * and 12, review R6; ADR 0001 amendment 2026-10-29).
+ * and 12, review R6; ADR 0008 amendment 2026-10-29).
  *
  * A marcher with no row over any beat of a page box is **Not set** there: it shows the spot it
  * last moved to, and an edit of that earlier page carries into this one. Set as shown gives each

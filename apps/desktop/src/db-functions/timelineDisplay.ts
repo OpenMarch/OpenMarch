@@ -24,7 +24,7 @@ const DISPLAY_TABLES: ReadonlySet<string> = new Set([
     "timeline_shapes",
     // Track labels show the marchers' drill numbers
     "marchers",
-    // Held marks (ADR 0001 amendment 2026-10-30): never in the change log, so an edit that only
+    // Held marks (ADR 0008 amendment 2026-10-30): never in the change log, so an edit that only
     // writes marks refreshes the views through this
     "timeline_held_marks",
 ]);

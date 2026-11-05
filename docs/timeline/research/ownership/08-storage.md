@@ -39,7 +39,7 @@ Status: decision proposal, not yet agreed with the owner. Read-only research on 
   - Change-log triggers are generated from a table list (triggers.ts:311-364).
   - History tables are listed in `tablesWithHistory` (historyTriggers.ts:15-36).
   - The query-key map returns `[]` for timeline tables (hooks/queries/utils.ts:47-52).
-- **Strict typing.** Drizzle can't emit `STRICT`, so `typeof` CHECKs stand in (ADR 0001 §2, C-3). The DDL below says "STRICT" in the spec's sense and is written with those CHECKs.
+- **Strict typing.** Drizzle can't emit `STRICT`, so `typeof` CHECKs stand in (ADR 0008 §2, C-3). The DDL below says "STRICT" in the spec's sense and is written with those CHECKs.
 - **Where layered rows come from today.** UI-9's add path refuses partial overlaps and "inside" windows (timelineMembership.ts:236-245). It puts new rows one layer above anything overlapping (`stealLayer`, timelineCommands.ts:251-279). Layered rows exist **only** in files authored with the dev flag. The converter writes one N-slot transition per page, with rows at layer 0 that cover it (convertPagesInTransaction.ts:239-247).
 - **Ripple (timelineRipple.ts:38-41).** A start edge follows its beat, and an end edge stays at the end of the beat before it. So inserting k beats at a non-page beat p where one row ends and the next starts opens a k-beat **hold** between them. Page deletes remove only `isPageMove` transitions, whose rows are all at layer 0 **and cover the transition** (timelineRipple.ts:284-302). A trimmed host stops being a page move, so its page delete is refused.
 - **Phase 9 and file versions.**
@@ -47,7 +47,7 @@ Status: decision proposal, not yet agreed with the owner. Read-only research on 
   - `NEW_FILE_USER_VERSION` is still 7 (fileVersion.ts:25), and `MAX_SUPPORTED_USER_VERSION = 8` (fileVersion.ts:23).
   - The version guard 84ea6191 (P3.9) is in no release tag; v0.1.7 predates it. So **no released build opens version-8 files**.
   - Drizzle migrations run on 7 and 8 without changing the version (DrizzleMigrationService.ts:73-85).
-- **Resolver inputs** are `TimelineSnapshot {marchers, shapes, transitions, assignments}` (core types.ts:204-209; ADR 0001 §4). R-1 forbids reading timelines (spec.md:511-513). A destination is reached at `T.end_beat` (D-7, R-5, spec.md:566-578).
+- **Resolver inputs** are `TimelineSnapshot {marchers, shapes, transitions, assignments}` (core types.ts:204-209; ADR 0008 §4). R-1 forbids reading timelines (spec.md:511-513). A destination is reached at `T.end_beat` (D-7, R-5, spec.md:566-578).
 
 ## 2. Additions common to every option
 
@@ -311,7 +311,7 @@ The core API change, `TimelineSnapshot` gaining `slotOrigins` and `links` and `C
 
 **Later (optional, Phase 10 or never): H as cleanup.** Do it only if real data shows layers are only ever "host below mover" and the owner wants explicit ownership.
 
-**ADR 0001 amendments:**
+**ADR 0008 amendments:**
 
 - §2: two new tables; I-T6 completeness extended; E-L codes.
 - §3: RESTRICT and child-first deletes for both link FKs and for origins; surrogate ids; `tablesWithHistory`.
@@ -351,4 +351,4 @@ The core API change, `TimelineSnapshot` gaining `slotOrigins` and `links` and `C
 - `apps/desktop/electron/database/migrations/triggers.ts`
 - `packages/core/src/timeline/resolver.ts` (and `types.ts`)
 - `apps/desktop/src/db-functions/timelineMembership.ts` (with `timelineCommands.ts` `stealLayer`, `timelineRipple.ts`)
-- `docs/timeline/spec.md` (§5, §6, §8, §9) and `docs/adr/0001-timeline-motion-model.md`
+- `docs/timeline/spec.md` (§5, §6, §8, §9) and `docs/adr/0008-timeline-motion-model.md`

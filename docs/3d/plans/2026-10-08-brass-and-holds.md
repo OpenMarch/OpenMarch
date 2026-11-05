@@ -16,7 +16,7 @@
 
 - Root `AGENTS.md`: no AI attribution anywhere; commits describe the change.
 - `docs/3d/WORKER.md` policy: focused tests only (`pnpm --dir apps/desktop exec vitest run src/view3d`), never the full history or e2e suites; list every command run in the PR.
-- ADR 0002 D-1: nothing under `src/view3d/core/` imports three, React, drei, Electron or the database.
+- ADR 0010 D-1: nothing under `src/view3d/core/` imports three, React, drei, Electron or the database.
 - Vendored om-pose files (`src/view3d/vendor/om-pose/*.js`) are read-only. Shader additions go through `onBeforeCompile` wrapping in app code.
 - Spec §2: nothing from Yamaha ships; no logos or model names in code, strings or assets.
 - Spec §4: triangle budget 300 to 600 per horn.

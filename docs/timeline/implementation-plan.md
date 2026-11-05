@@ -40,7 +40,7 @@ owner accepts it. Existing safety and release gates remain required.
 ## 2. Conflicts between the spec and the app
 
 Each conflict has a decision. C-1, C-2 and C-8 go back to the spec's authors in
-Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
+Phase 0. Record outcomes in the ADR (`docs/adr/0008-timeline-motion-model.md`).
 
 - **C-1: U-4's cascade order breaks under the app's undo.** The spec's U-4
   assumes AFTER DELETE history triggers, which log children before their
@@ -112,7 +112,7 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   **Decided (project owner, 2026-10-01):** pathways and midsets were never
   implemented and are dropped. SVG page shapes convert to individual
   destinations; page mode moves in straight lines between pages, so only the
-  editable curve is lost. See ADR 0001. P6.6 verifies conversion equality on
+  editable curve is lost. See ADR 0008. P6.6 verifies conversion equality on
   real shows.
 
 - **C-9: Recognizing a converted file at version 7.** Releases without the
@@ -124,7 +124,7 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   version" warning; one with timeline rows and neither the key nor a
   conversion backup is a dev-flag file and opens silently. An older release
   that saves the workspace settings drops unknown keys, so the backup next to
-  the file remains a second signal. To be added to ADR 0001 §6 (text in the
+  the file remains a second signal. To be added to ADR 0008 §6 (text in the
   Phase 9 log).
 - **C-10: Freezing the page-era tables (P9.5).** In timeline mode, `marcher_pages`,
   `midsets`, `pathways`, `shapes`, `shape_pages` and `shape_page_marchers` refuse
@@ -160,7 +160,7 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   converter writes one timeline per page move. A file converted by an earlier
   development build (one show-wide timeline) fails every edit with E-T1 and
   must be converted again by hand; open doesn't repair it (project owner,
-  2026-10-02). Recorded in ADR 0001.
+  2026-10-02). Recorded in ADR 0008.
 
 - **C-12: Pages are cosmetic flags; the selected timeline is the editing
   context.** **Decided (project owner, 2026-10-01):** a page owns no motion.
@@ -170,7 +170,7 @@ Phase 0. Record outcomes in the ADR (`docs/adr/0001-timeline-motion-model.md`).
   page (an edge on a flag follows it), but the page owns no motion. Home
   (page 0) selects no timeline and edits homes. UI-9 in `ui.md` has the
   interaction; P8.11 and P8.13–P8.15 build it and P8.12 removes the selected
-  page. Recorded in ADR 0001.
+  page. Recorded in ADR 0008.
   - **Consequences for the model.**
     - Empty timelines aren't created: a page timeline not yet stored (or a
       dragged range) is created when marchers are first added to it. But

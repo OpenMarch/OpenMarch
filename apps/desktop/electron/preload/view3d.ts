@@ -1,5 +1,5 @@
 /**
- * Preload for the 3D View window (ADR 0002 D-3). It runs sandboxed, so it may
+ * Preload for the 3D View window (ADR 0010 D-3). It runs sandboxed, so it may
  * import only `electron`, and it exposes only `window.view3d`. Channel names
  * are hard-coded, like the editor's preload.
  */

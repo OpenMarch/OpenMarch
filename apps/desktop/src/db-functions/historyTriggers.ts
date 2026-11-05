@@ -23,18 +23,18 @@ export const tablesWithHistory = [
     schema.tags,
     schema.tag_appearances,
     schema.marcher_tags,
-    // The show's 3D View venue (ADR 0002 D-5)
+    // The show's 3D View venue (ADR 0010 D-5)
     schema.view3d_venue,
-    // Timeline data tables (ADR 0001 §3, spec §6.1). `timeline_change_log` is bookkeeping and
+    // Timeline data tables (ADR 0008 §3, spec §6.1). `timeline_change_log` is bookkeeping and
     // gets no history triggers.
     schema.timelines,
     schema.timeline_shapes,
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
-    // App data beside them: where marchers are Held (ADR 0001 amendment 2026-10-30)
+    // App data beside them: where marchers are Held (ADR 0008 amendment 2026-10-30)
     schema.timeline_held_marks,
-    // Items and their Outline changes (ADR 0002 D-10)
+    // Items and their Outline changes (ADR 0010 D-10)
     schema.items,
     schema.item_geometry,
     // Shape recipes beside the positions they placed (ADR 0006)

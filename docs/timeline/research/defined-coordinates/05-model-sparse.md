@@ -140,7 +140,7 @@ marcher's last winning span before the beat, so there is no stored copy to repai
 
 **Docs:**
 
-- ADR 0001 §2 C-12, amended: adding or deleting a page writes no timeline rows on any path; the
+- ADR 0008 §2 C-12, amended: adding or deleting a page writes no timeline rows on any path; the
   converter writes only changed positions; a stored zero-motion move is a deliberate pin.
 - Spec: no change.
 - ui.md:

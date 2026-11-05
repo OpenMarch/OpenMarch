@@ -1,5 +1,5 @@
 /**
- * The pure parts of the 3D View performer blocks (P4.2, ADR 0002 D-7,
+ * The pure parts of the 3D View performer blocks (P4.2, ADR 0010 D-7,
  * design.md §8): instance colors, instance matrices and the selection ring
  * set. `Performers.tsx` owns the meshes and calls these from `useFrame`.
  *
@@ -14,7 +14,7 @@ import {
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import type { ShowPositions } from "@/view3d/positions";
 
-/** Cylinder radius in meters (0.6 m across, ADR 0002 D-7). */
+/** Cylinder radius in meters (0.6 m across, ADR 0010 D-7). */
 export const PERFORMER_RADIUS = 0.3;
 /** Cylinder height in meters. */
 export const PERFORMER_HEIGHT = 1.75;

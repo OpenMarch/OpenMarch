@@ -110,7 +110,7 @@ Build **C as the main way, with A's words and B's shortcut**, and store the "kep
    Only if the owner wants it; it ranked last.
 5. **Store "kept".** A kept spot is the designer's decision, and it must survive reopening the file
    and be told apart from a move that happens to end where it started (07c §1). That needs a small
-   schema addition while user version 8 is unreleased, plus an ADR 0001 amendment. Timeline mode
+   schema addition while user version 8 is unreleased, plus an ADR 0008 amendment. Timeline mode
    only: page mode keeps its runtime equality and Only Page N.
 6. **Separately:** word the pass-through toast in pages and counts, and consider making a click on a
    page box land on the page end.

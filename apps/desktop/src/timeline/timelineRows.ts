@@ -17,7 +17,7 @@ import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "@/db-functions/types";
 
 /**
- * The one place that maps timeline storage to the core model's types (ADR 0001 §4, spec §5.1 and
+ * The one place that maps timeline storage to the core model's types (ADR 0008 §4, spec §5.1 and
  * §10.2): database rows for the cold build, and change-log row images for batches.
  *
  * Tables carry a `timeline_` prefix and spec column names (`dest_shape_id`, `slot_index`, ...);
@@ -273,7 +273,7 @@ function assembleTimelineTables([
 }
 
 /**
- * Reads the post-commit timeline state for a cold build (ADR 0001 §4), one statement at a time.
+ * Reads the post-commit timeline state for a cold build (ADR 0008 §4), one statement at a time.
  * Call it where no timeline write can commit between its reads, such as inside the write lock or a
  * transaction. Anywhere else (another window, an export), use {@link readTimelineTablesSnapshot}.
  */

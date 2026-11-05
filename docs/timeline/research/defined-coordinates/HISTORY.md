@@ -15,7 +15,7 @@ which screenshots are current.
 - [CHANGES.md](CHANGES.md): the code-grounded catalog (B-01 … B-45) with strings, i18n keys, files,
   tests, a QA script and coverage gaps.
 - [README.md](README.md): the research summary and the owner's decisions.
-- The rule itself: `docs/timeline/ui.md` UI-18 and the two `docs/adr/0001-timeline-motion-model.md`
+- The rule itself: `docs/timeline/ui.md` UI-18 and the two `docs/adr/0008-timeline-motion-model.md`
   amendments (2026-10-08, 2026-10-09). Lead defaults to check by hand: V-140 … V-149 and V-181 …
   V-191 in `docs/timeline/research/ownership/VALIDATION.md`.
 
@@ -24,7 +24,7 @@ which screenshots are current.
 | Date       | What                                                                                                                   |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------- |
 | 2026-10-08 | Owner's report; research (current model, prior art, three models, three validators); owner decides four questions      |
-| 2026-10-08 | ADR 0001 amendment, ui.md decision (first numbered UI-15); wp1–wp6 built; PR #112 opened; owner answers V-148, V-149   |
+| 2026-10-08 | ADR 0008 amendment, ui.md decision (first numbered UI-15); wp1–wp6 built; PR #112 opened; owner answers V-148, V-149   |
 | 2026-10-08 | Owner finds the feedback text busy; persona study 08; wp7 (hold marks) and wp8 (shorter toasts, inspector, bug fixes)  |
 | 2026-10-09 | First-time-user study 09; wp9 (Ctrl+A); owner asks for real tooltips and Move them too; merge of timeline-try-2; UI-18 |
 | 2026-10-09 | wp10 (tooltips), wp11 (Move them too); owner: document and test everything; CHANGES.md; wp12–wp14                      |
@@ -82,7 +82,7 @@ The owner answered all four questions as recommended (README "Decisions"):
 
 1. **The sparse model:** a marcher has a coordinate on a page only where the designer moved it there;
    everywhere else it holds. An edit carries forward, per marcher, to that marcher's next page with
-   its own move, and stops there. Recorded as the **ADR 0001 C-12 amendment of 2026-10-08** and the
+   its own move, and stops there. Recorded as the **ADR 0008 C-12 amendment of 2026-10-08** and the
    ui.md decision now numbered **UI-18** (first written as UI-15; renumbered on 2026-10-09 because
    UI-15/16 went to timeline edges and UI-17 to transport keys).
 2. **Page mode carries edits forward now** through untouched equal copies (per marcher, within a
@@ -232,7 +232,7 @@ marker, and a **K** key; Alt+drag (B) was dropped; no chains without a selection
 - **wp15 `dc/wp15-kept-storage`.** _Problem:_ a kept spot stored as an ordinary zero-motion move can't
   be told apart from a move that happens to end where it started. _Result:_ the table
   `timeline_kept_assignments` (migration 0018, user version 8 still unreleased), the
-  keep/follow-again API, and the **ADR 0001 amendment of 2026-10-09** (this reverses decision 4's "no
+  keep/follow-again API, and the **ADR 0008 amendment of 2026-10-09** (this reverses decision 4's "no
   stored kind"). (B-38)
 - **wp16 `dc/wp16-keep-ui`.** Chains on the page boxes, the inspector's Keep here / Follow again and
   "Pages 3–4 follow these marchers", page box menu entries, **K**, and the timeline "Pages 3–4

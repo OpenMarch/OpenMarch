@@ -7,7 +7,7 @@ import { pageEndBeat } from "../pageEndBeat";
  * out. `convertPagesInTransaction.ts` reads the rows and writes the plan.
  *
  * Page semantics (P6.1, the same mapping as `pageEndBeat`): beats are 0-based indexes into
- * `beats` ordered by position (ADR 0001 §2). Page 0 holds only the zero-length beat 0, and its
+ * `beats` ordered by position (ADR 0008 §2). Page 0 holds only the zero-length beat 0, and its
  * `marcher_pages` rows are the start positions. Page N ≥ 1 moves over
  * `[first beat of N, last beat of N + 1)`, and its `marcher_pages` rows are where marchers stand
  * when that range is done: the page-mode keyframe at `(timestamp + duration) * 1000`.

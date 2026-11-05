@@ -47,7 +47,7 @@ Move `openmarch-timeline-spec.md` to `docs/timeline/spec.md` and unzip `ref/` un
 
 Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the result, as the baseline the TypeScript ports must match.
 
-### P0.3: Draft ADR 0001
+### P0.3: Draft ADR 0008
 
 - Owner: timeline-worker (timeline/p0-adr)
 - Status: done
@@ -55,7 +55,7 @@ Run `docs/timeline/ref/run_all.sh` once (Python 3 and Node 24) and log the resul
 - Parallel: yes
 - Depends on: —
 
-Draft `docs/adr/0001-timeline-motion-model.md`: replacing pages, C-1 to C-8, table names, where the resolver lives (`packages/core`), its public API, the change-log listener contract, the file-format bump, and verification.
+Draft `docs/adr/0008-timeline-motion-model.md`: replacing pages, C-1 to C-8, table names, where the resolver lives (`packages/core`), its public API, the change-log listener contract, the file-format bump, and verification.
 
 ### P0.4: Accept the ADR
 
@@ -83,7 +83,7 @@ Tick an item only after running its check, and paste the command and result into
 
 - [x] The spec and `ref/` are under `docs/timeline/`, and the root copies are gone. The cspell and prettier ignore entries for them already exist
 - [x] `run_all.sh` baseline result logged (P0.2)
-- [x] ADR 0001 has status `accepted`
+- [x] ADR 0008 has status `accepted`
 - [x] `pnpm check:agent-guidance`, plus prettier and cspell on the changed Markdown, pass
 
 ## Handoff notes
@@ -124,29 +124,29 @@ Exit code 0. `run_all.sh` itself truncates each line to 90 characters. Environme
 
 ### 2026-09-29 · timeline-worker (timeline/p0-adr) · P0.3
 
-- **Done:** first full draft of `docs/adr/0001-timeline-motion-model.md` (status `proposed`), pushed as a `wip:` commit on `timeline/p0-adr`.
+- **Done:** first full draft of `docs/adr/0008-timeline-motion-model.md` (status `proposed`), pushed as a `wip:` commit on `timeline/p0-adr`.
 - **Checks:** not run yet (prettier, cspell, `pnpm check:agent-guidance` next).
 - **Next:** run the Markdown checks, tidy the commit, open the PR against `timeline-try-2`.
 - **Blockers:** none.
-- **Resume from:** check out `timeline/p0-adr`, run prettier and cspell on `docs/adr/0001-timeline-motion-model.md` and `pnpm check:agent-guidance`, then squash and open the PR (WORKER.md step 6).
+- **Resume from:** check out `timeline/p0-adr`, run prettier and cspell on `docs/adr/0008-timeline-motion-model.md` and `pnpm check:agent-guidance`, then squash and open the PR (WORKER.md step 6).
 
 ### 2026-09-29 · timeline-worker (timeline/p0-adr) · P0.3
 
-- **Done:** `docs/adr/0001-timeline-motion-model.md`, status `proposed`: replacing pages and the rollout, C-1 to C-8 as implemented, `timeline_` table names, the resolver in `packages/core/src/timeline/` and its public API, the renderer-local change-log listener contract (`batch`/`reset`, no new IPC), the file-format bump, and verification. PR: https://github.com/OpenMarch/OpenMarch/pull/1035 (base `timeline-try-2`).
-- **Checks:** `prettier --check docs/adr/0001-timeline-motion-model.md`: pass. `cspell --config cspell.config.yaml --language-id markdown stdin < docs/adr/0001-timeline-motion-model.md`: 0 issues (run via stdin because a file path under `.claude/worktrees/` is git-ignored and cspell skips it; a seeded misspelling was caught, so the check is live). `node scripts/validate-agent-guidance.mjs`: pass. The exit-gate Markdown item is not ticked, because these checks covered only this package's file.
+- **Done:** `docs/adr/0008-timeline-motion-model.md`, status `proposed`: replacing pages and the rollout, C-1 to C-8 as implemented, `timeline_` table names, the resolver in `packages/core/src/timeline/` and its public API, the renderer-local change-log listener contract (`batch`/`reset`, no new IPC), the file-format bump, and verification. PR: https://github.com/OpenMarch/OpenMarch/pull/1035 (base `timeline-try-2`).
+- **Checks:** `prettier --check docs/adr/0008-timeline-motion-model.md`: pass. `cspell --config cspell.config.yaml --language-id markdown stdin < docs/adr/0008-timeline-motion-model.md`: 0 issues (run via stdin because a file path under `.claude/worktrees/` is git-ignored and cspell skips it; a seeded misspelling was caught, so the check is live). `node scripts/validate-agent-guidance.mjs`: pass. The exit-gate Markdown item is not ticked, because these checks covered only this package's file.
 - **Next:** P0.4, a maintainer reviews PR #1035 and sets the ADR to `accepted`.
 - **Blockers:** none for P0.3. P0.4 should confirm or amend ADR section 6 (file format): no current release can refuse a newer file, because the app sets `PRAGMA user_version = 7` on every open before migrating. The ADR proposes a version check that ships before Phase 9. See the cross-phase note in `09-flip.md`.
 
 ### 2026-09-30 · lead session · P0.1, P0.3
 
-- **Done:** PRs #1034 (P0.1) and #1035 (P0.3) merged into `timeline-try-2`; both packages set to done. ADR 0001 is merged with status `proposed`, so P0.4 stays open until a person accepts it.
+- **Done:** PRs #1034 (P0.1) and #1035 (P0.3) merged into `timeline-try-2`; both packages set to done. ADR 0008 is merged with status `proposed`, so P0.4 stays open until a person accepts it.
 - **Checks:** on `timeline-try-2` after both merges: `pnpm check:agent-guidance` (valid); `pnpm exec prettier --check docs/timeline docs/adr` (pass); `pnpm exec cspell --no-must-find-files "docs/timeline/**/*.md" "docs/adr/*.md"` (16 files, 0 issues). Exit-gate Markdown item ticked.
-- **Next:** P0.4, a person accepts ADR 0001 (including its §6 file-format proposal, beat numbering and oracle export). Then Phases 1 and 3 can start.
+- **Next:** P0.4, a person accepts ADR 0008 (including its §6 file-format proposal, beat numbering and oracle export). Then Phases 1 and 3 can start.
 - **Blockers:** P0.4 (human).
 
 ### 2026-09-30 · lead session (accepted by the project owner) · P0.4
 
-- **Done:** the project owner accepted ADR 0001 as written, including §6 (version guard before Phase 9; conversion sets `user_version = 8`), 0-based beat positions, and the `…ForTesting` oracle export. Status set to `accepted` in commit eaa51c67 on `timeline-try-2`.
+- **Done:** the project owner accepted ADR 0008 as written, including §6 (version guard before Phase 9; conversion sets `user_version = 8`), 0-based beat positions, and the `…ForTesting` oracle export. Status set to `accepted` in commit eaa51c67 on `timeline-try-2`.
 - **Checks:** pre-commit (cspell and prettier) passed on the ADR.
 - **Next:** Phases 1 and 3 are unblocked. The §6 version guard is now work package P3.9. P0.5 (amendments to the spec's authors) is still open, but it blocks only Phase 9 (C-8), not Phases 1 to 8.
 - **Blockers:** none for other phases.

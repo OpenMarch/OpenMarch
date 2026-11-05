@@ -12,7 +12,7 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 import { migrationsFolder } from "./convertPages";
 
 /**
- * Test databases are timeline files, like every file the app opens (ADR 0001 §6).
+ * Test databases are timeline files, like every file the app opens (ADR 0008 §6).
  *
  * A data fixture in `base.tsx` (`marchersAndPages`, `pages`, `marchers`, `beats`) loads a page
  * show into a page-era file (`pageEraBlankPath`), then converts it with the app's own convert on
@@ -52,7 +52,7 @@ export function keepFixturesInPageMode(reason: string): void {
 /** Whether the data fixtures convert their page show (true unless the file opted out). */
 export const timelineFixtureMode = (): boolean => !pageModeFixtures;
 
-/** The timeline data tables (ADR 0001 §3), for a history test's `tablesToCheck`. */
+/** The timeline data tables (ADR 0008 §3), for a history test's `tablesToCheck`. */
 export const timelineHistoryTables = (): Table[] => [
     schema.timelines,
     schema.timeline_shapes,

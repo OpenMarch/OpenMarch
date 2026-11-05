@@ -49,7 +49,7 @@ keepFixturesInPageMode(
 
 /**
  * **Hold from previous page** and the drag inside a Held hold (holds, fork #472; holds README
- * decisions 2, 3 and 4; ADR 0001 amendment 2026-10-30).
+ * decisions 2, 3 and 4; ADR 0008 amendment 2026-10-30).
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33); beat ids equal
  * their ordinals. Marchers `a` and `b` move on page 2 and are Not set on pages 3 and 4; `c` never

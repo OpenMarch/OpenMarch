@@ -239,7 +239,7 @@ const APP_API = {
     takeLoadFileRefusal: () =>
         ipcRenderer.invoke("load-file:takeRefusal") as Promise<number | null>,
 
-    // Converting a page-era show to timelines when it opens (ADR 0001 §6)
+    // Converting a page-era show to timelines when it opens (ADR 0008 §6)
     /** The page-era file waiting for the person to agree to convert it, or null. */
     getPendingConversion: () =>
         ipcRenderer.invoke(

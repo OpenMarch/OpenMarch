@@ -342,7 +342,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 ### 2026-09-30 · timeline-worker (timeline/p8-adapter) · P8.8 (review fixes)
 
 - **Done:** commit d301fb02 on PR #21 addresses the lead's review:
-  1. `Resolver.spanInfos(marcherId)` is public in `@openmarch/core` (types and `createResolver`), with a dated amendment in ADR 0001 §4; the oracle is unchanged. `resolverSpans` uses it instead of walking `explain()`.
+  1. `Resolver.spanInfos(marcherId)` is public in `@openmarch/core` (types and `createResolver`), with a dated amendment in ADR 0008 §4; the oracle is unchanged. `resolverSpans` uses it instead of walking `explain()`.
   2. `useTimelineTracks` tags each read with the store version taken under the write lock, and builds only when it matches the resolver's version; the previous tracks stay until then. A test fails if the guard is removed (checked by mutation).
   3. Spans and diagnostics are cached per version; a selection change makes no resolver calls (tested with spies).
   4. SC-11 smoke (default set plus 20 selected, seed 1): 276 tracks in about 15 ms (three runs: 15.2, 14.9, 15.1 ms); the bound is 250 ms. For comparison the old `explain()` walk took 25.8 ms here on a cold resolver, so the bound guards against large regressions only.
@@ -353,7 +353,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-09-30 · lead session · P8.8 (reviewed and merged)
 
-- **Done:** fork PR #21's first review asked for changes: mapping and the beat-0 view-axis shift were correct, but tracks were rebuilt from a span walk over the public `explain()` (which forces origin pulls and per-transition diagnostics) on every edit and selection change, and twice per edit. The worker exposed the resolver's existing `spanInfos(marcherId)` on the public `Resolver` (ADR 0001 §4 amended as an addition), builds once per resolver version, and caches spans so selection changes make no resolver calls. Measured on SC-11: 276 tracks in about 15 ms (the old walk took about 26 ms; the 250 ms smoke bound catches only gross regressions). Squash-merged. P8.8 set to done.
+- **Done:** fork PR #21's first review asked for changes: mapping and the beat-0 view-axis shift were correct, but tracks were rebuilt from a span walk over the public `explain()` (which forces origin pulls and per-transition diagnostics) on every edit and selection change, and twice per edit. The worker exposed the resolver's existing `spanInfos(marcherId)` on the public `Resolver` (ADR 0008 §4 amended as an addition), builds once per resolver version, and caches spans so selection changes make no resolver calls. Measured on SC-11: 276 tracks in about 15 ms (the old walk took about 26 ms; the 250 ms smoke bound catches only gross regressions). Squash-merged. P8.8 set to done.
 - **Checks:** at d301fb02, in the worker's own work tree (a lead scratch work tree that borrows another checkout's `node_modules` resolves `@openmarch/core` to that checkout's build, so core API changes must be tested in a full install): `pnpm --dir packages/core run build` and its tests (456 passed); `pnpm --dir apps/desktop exec tsc --noEmit` (pass); `pnpm --dir apps/desktop run test` (114 files, 1,690 passed).
 - **Next:** P8.9 (timeline commands); P8.2 to P8.6.
 - **Blockers:** none.
@@ -456,7 +456,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 - **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/27 (one commit, f24f0294, rebased on `timeline-try-2` after P7.4/P7.5).
   - `TimelineTransitionEditor` in the inspector's timeline section edits the transition of each selected marcher at the page (or the move ending there): path style (FTL disabled with the reason when there's no shape or the shape is a block), bulge clamped to ±½ with the minor-arc note, FTL waypoints (add, remove, reorder, x/y), order mode with a one-line note, destination shape or individual points (copying the shape's samples), and slot count (at least the highest assigned slot + 1; new shapeless slots start at the last point).
   - Each change is one undoable edit through the new `updateTimelineTransition` and `setTimelineTransitionDestination` wrappers. No-op changes are skipped, and refusals go through `toastTimelineError`.
-  - Shape samples come from a one-transition resolver (`shapeSlotPoints`), so there's no core API change. Exporting core's `sampleDestinations` is an optional follow-up (ADR 0001 §4).
+  - Shape samples come from a one-transition resolver (`shapeSlotPoints`), so there's no core API change. Exporting core's `sampleDestinations` is an optional follow-up (ADR 0008 §4).
 - **For the handoff notes:** the editor and its planner are `src/components/inspector/TimelineTransitionEditor.tsx` and `src/timeline/timelineTransitionEditor.ts`. `useTimelineInspections` returns `transitionEdits` and `shapeOptions`. Follow-ups:
   - Timeline clip and track selections don't drive the editor yet.
   - Waypoints can't be picked on the canvas yet.
@@ -500,7 +500,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - Skipped by policy: the full `test:history` and e2e suites.
 - **Next:**
   - P8.4 (assignments and layers) is unblocked.
-  - Optional follow-ups: timeline clip/track selection driving the editor, picking waypoints on the canvas, exporting `sampleDestinations` from core (ADR 0001 §4).
+  - Optional follow-ups: timeline clip/track selection driving the editor, picking waypoints on the canvas, exporting `sampleDestinations` from core (ADR 0008 §4).
   - The UI exit-gate item still needs a manual app check.
 - **Blockers:** none.
 
@@ -730,7 +730,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-10-01 · timeline-worker (timeline/p8-10-transitions-span-timeline) · P8.10
 
-- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/47. Transitions take their timeline's range (others refused, E-ARGS); `setTimelineRangeInTransaction` moves a timeline with all its transitions and anchored assignments (R-E1), and timeline and transition range edits go through it; deleting a timeline's last transition deletes the timeline; the ripple's holding moves get their own timeline and emptied timelines are deleted; a marcher clip is its timeline's range (UI-8); fixtures group transitions by range. The converter keeps one show-wide timeline through `createLegacyPageTransitionsInTransaction` (TODO P9.10). ADR 0001 records C-11.
+- **Done:** PR https://github.com/AlexDumo/OpenMarch-timeline/pull/47. Transitions take their timeline's range (others refused, E-ARGS); `setTimelineRangeInTransaction` moves a timeline with all its transitions and anchored assignments (R-E1), and timeline and transition range edits go through it; deleting a timeline's last transition deletes the timeline; the ripple's holding moves get their own timeline and emptied timelines are deleted; a marcher clip is its timeline's range (UI-8); fixtures group transitions by range. The converter keeps one show-wide timeline through `createLegacyPageTransitionsInTransaction` (TODO P9.10). ADR 0008 records C-11.
 - **Checks:** `npx vitest run --silent=true` (apps/desktop): 2483 passed, 15 skipped, 15 todo, 0 failed, including the e2e fuzz and its v0.6 negative control. `tsc --noEmit`: pass. Pre-commit (cspell, eslint, prettier): pass. Not run, at the owner's request: `test:timeline`, focused `test:history`, `pnpm check:quick`, Playwright e2e. `test:timeline` is the most relevant of these (ripple on converted shows).
 - **Next:** review and merge; then P9.10.
 - **Blockers:** none.
@@ -744,7 +744,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-10-02 · lead session · UI-9 ready to build
 
-- **Done:** the project owner settled the rest of UI-9 (2026-10-01): a page is named by its end flag; **+** keeps the split page's id and renumbers later pages; home (page 0) selects no timeline and edits homes; play loops the selected timeline; one track per timeline; dimmed marchers can't be selected or touched; removing a marcher never deletes a timeline; new marchers join every stored timeline; editing off the timeline's end is refused for now (TEMPORARY). The lead filled the remaining implementation gaps as _lead default_ items in UI-9 (selection held as a range, playhead may rest on the last flag, **+** past the last flag appends, refusal for more than one row, new-marcher join order). Split P8.11 into P8.11 (selection and playhead), P8.13 (page flags), P8.14 (membership) and P8.15 (canvas edits). C-12 recorded in ADR 0001.
+- **Done:** the project owner settled the rest of UI-9 (2026-10-01): a page is named by its end flag; **+** keeps the split page's id and renumbers later pages; home (page 0) selects no timeline and edits homes; play loops the selected timeline; one track per timeline; dimmed marchers can't be selected or touched; removing a marcher never deletes a timeline; new marchers join every stored timeline; editing off the timeline's end is refused for now (TEMPORARY). The lead filled the remaining implementation gaps as _lead default_ items in UI-9 (selection held as a range, playhead may rest on the last flag, **+** past the last flag appends, refusal for more than one row, new-marcher join order). Split P8.11 into P8.11 (selection and playhead), P8.13 (page flags), P8.14 (membership) and P8.15 (canvas edits). C-12 recorded in ADR 0008.
 - **Checks:** none (decisions and docs only); prettier and cspell on the changed docs.
 - **Next:** P8.11, P8.13 and P8.14 in parallel once P8.10 merges; P9.10 for converted shows.
 - **Blockers:** none for the MVP path. Open owner questions: `ui.md` U-Q5.

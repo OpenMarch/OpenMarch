@@ -14,7 +14,7 @@
  * band the feet flip as usual: a 100 degree slide is a backward march, legs
  * turned 80 degrees.
  *
- * Axes are ADR 0002 D-2: +X toward side 2 (audience right), +Z toward the
+ * Axes are ADR 0010 D-2: +X toward side 2 (audience right), +Z toward the
  * audience. The renderer's heading is radians about +Y with 0 facing +Z
  * (`writeMatrix`), so facing front is heading 0, and the performer's left is +X.
  */

@@ -1,5 +1,5 @@
 /**
- * The show's own camera lists (ADR 0002 D-5).
+ * The show's own camera lists (ADR 0010 D-5).
  *
  * Each kit ships default cameras (`KitResult.cameras`). A show can replace a
  * kit's list with its own: keep, rename, reorder or remove the defaults, and

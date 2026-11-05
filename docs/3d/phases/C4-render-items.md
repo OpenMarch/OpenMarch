@@ -26,7 +26,7 @@ The 3D View draws what C2 and C3 store: props on and under performers, held and 
 ## Read first
 
 - [../props-spec.md](../props-spec.md): the design spec, sections on silks, uniforms, budgets, geometry and platforms. Ticket numbers on each package are the ones it cites.
-- [ADR 0002](../../adr/0002-3d-view.md) D-15, D-17, D-18, D-19 and D-20 (amendment of 2026-10-11); [../design.md](../design.md) section 9 (budgets)
+- [ADR 0010](../../adr/0010-3d-view.md) D-15, D-17, D-18, D-19 and D-20 (amendment of 2026-10-11); [../design.md](../design.md) section 9 (budgets)
 - `docs/3d/performer-behavior.md` section 8 (cue branches): window positions, layered animation, prop bones, om-pose
 - Findings: `research/silk-motion`, `task/gpu-benchmark` (harness in `apps/desktop/view3d-web/bench/`), `research/ompose-uniform-limits`; the silk prototype on `prototype/silk-look` (`a7c7974f`)
 
@@ -152,7 +152,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Tickets:** 15, 18, 26.23.
 
-**Done when:** the numbers are in `docs/3d/findings.md`; the owner confirms or changes ADR 0002 D-19's thresholds, the texture sizes and whether BC7 KTX2 is needed; and section 8.5's integrated-GPU line is answered, confirming step 6 (merged 2026-10-16) or calling for tuning.
+**Done when:** the numbers are in `docs/3d/findings.md`; the owner confirms or changes ADR 0010 D-19's thresholds, the texture sizes and whether BC7 KTX2 is needed; and section 8.5's integrated-GPU line is answered, confirming step 6 (merged 2026-10-16) or calling for tuning.
 
 **Checks:** the harness's JSON output committed beside the findings.
 
@@ -200,7 +200,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** uniforms stop following the 2D fill color. Folded in from the early Phase 6 draft (its P6.1); like C4.11 it rests only on closed tickets and keeps the map's early exception (owner, 2026-10-11), so it doesn't wait for C1.1.
 
-**Scope:** `src/view3d/core/marchers/looks.ts` and `window/performers/Performers.tsx`. `sectionUniform` loses its `fill` parameter, and every section wears one of two built-in looks, chosen by `isGuard`: **Band default**, today's default look (navy `#2d4f9e`, `DEFAULT_PRIMARY`, jacket and shako, white and gold trim, navy pants), and **Guard default**, all black and plain (black top and bottoms with no pattern, trim or seam stripe, black shoes, no headwear, no gloves, bare hands, no cape). Nothing is stored in the show; changing a section's 2D fill changes nothing in 3D. Update the `looks.test.ts` cases that key uniforms by fill (looks now group by band vs guard). Add one line to ADR 0002 D-7: "Amended 2026-10-11 (owner): uniforms no longer take the 2D fill color; sections wear a built-in Band or Guard default until uniforms can be assigned."
+**Scope:** `src/view3d/core/marchers/looks.ts` and `window/performers/Performers.tsx`. `sectionUniform` loses its `fill` parameter, and every section wears one of two built-in looks, chosen by `isGuard`: **Band default**, today's default look (navy `#2d4f9e`, `DEFAULT_PRIMARY`, jacket and shako, white and gold trim, navy pants), and **Guard default**, all black and plain (black top and bottoms with no pattern, trim or seam stripe, black shoes, no headwear, no gloves, bare hands, no cape). Nothing is stored in the show; changing a section's 2D fill changes nothing in 3D. Update the `looks.test.ts` cases that key uniforms by fill (looks now group by band vs guard). Add one line to ADR 0010 D-7: "Amended 2026-10-11 (owner): uniforms no longer take the 2D fill color; sections wear a built-in Band or Guard default until uniforms can be assigned."
 
 **Tickets:** 09.
 

@@ -16,7 +16,7 @@ What to take from it:
 
 What not to copy:
 
-- **units:** the demo works in feet; the product works in meters (ADR 0002 D-2);
+- **units:** the demo works in feet; the product works in meters (ADR 0010 D-2);
 - **structure:** globals in one file, hand-written orbit controls, and the
   pitch text around the demo;
 - **the hard-coded field:** the product paints the show's real

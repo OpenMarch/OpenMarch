@@ -87,7 +87,7 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - Performers move with the editor's playback. When paused, they hold the
   selected page's positions, like the 2D canvas.
 - The editor owns playback. The window's playback buttons and keys ask the
-  editor to run its own action (`view3d:playback-request`, ADR 0002 D-4), and
+  editor to run its own action (`view3d:playback-request`, ADR 0010 D-4), and
   the window follows the clock and selection the editor then sends. This lets
   a designer present from the 3D View, for example on a projector, without
   reaching for the editor.

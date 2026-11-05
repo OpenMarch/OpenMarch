@@ -305,7 +305,7 @@ export const workspace_settings = sqliteTable(
 );
 
 /**
- * The show's 3D View venue (ADR 0002 D-5). A single row with `id = 1` whose
+ * The show's 3D View venue (ADR 0010 D-5). A single row with `id = 1` whose
  * `json_data` is validated by `venueSettingsSchema` in
  * `src/view3d/core/venueSettings.ts`. No row means "use the default for the
  * field"; the row is created on the first change.
@@ -320,7 +320,7 @@ export const view3d_venue = sqliteTable(
 );
 
 /**
- * The show's 3D View cameras (ADR 0002 D-5, amended 2026-10-16). A single
+ * The show's 3D View cameras (ADR 0010 D-5, amended 2026-10-16). A single
  * row with `id = 1` whose `json_data` is validated by `showCamerasSchema` in
  * `src/view3d/core/cameraList.ts`: the show's own camera list for each venue
  * it changed, and the camera profile each one came from. No row means every
@@ -338,7 +338,7 @@ export const view3d_cameras = sqliteTable(
 
 /* ========================= TIMELINES ========================= */
 /*
- * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0001). Column names follow the
+ * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0008). Column names follow the
  * spec; tables carry a `timeline_` prefix (C-4). Drizzle can't declare STRICT tables, so every
  * column the spec's I-N1 covers has a `typeof` CHECK instead (C-3). Invariant triggers, the
  * `timeline_commit_violations` view and the change-log triggers live in `triggers.ts`.
@@ -548,7 +548,7 @@ export const timeline_slot_destinations = sqliteTable(
 );
 
 /**
- * A **Held** hold (holds README decision 2; ADR 0001 amendment 2026-10-30): one marcher stands
+ * A **Held** hold (holds README decision 2; ADR 0008 amendment 2026-10-30): one marcher stands
  * still on purpose over `[start_beat, end_beat)`, where it has no move. Editing a count inside
  * it edits the move that arrives at `start_beat`, so the whole hold moves. App data, kept apart
  * from the motion tables: not in `timeline_change_log`, never read by the
@@ -614,7 +614,7 @@ export const timeline_shape_recipes = sqliteTable(
 /**
  * A marcher placed by a recipe: its spot in the recipe's slot order and where the recipe put it
  * when last placed (ADR 0006). Where the marcher stands now, less this point, is its override.
- * A surrogate id, so undo restores the same row (ADR 0001 C-2).
+ * A surrogate id, so undo restores the same row (ADR 0008 C-2).
  */
 export const timeline_shape_recipe_marchers = sqliteTable(
     "timeline_shape_recipe_marchers",
@@ -671,7 +671,7 @@ const sqlList = (values: readonly string[]) =>
     values.map((v) => `'${v}'`).join(", ");
 
 /**
- * A prop or piece of equipment with its own identity in the show (ADR 0002 D-9, props-spec
+ * A prop or piece of equipment with its own identity in the show (ADR 0010 D-9, props-spec
  * section 4). Backed by a `marchers` row of type `item`, so its positions come from the timeline
  * resolver and its motion and undo are inherited.
  */
@@ -706,7 +706,7 @@ export const items = sqliteTable(
 );
 
 /**
- * An item's Outline from a beat on (ADR 0002 D-10, props-spec section 5). Latest wins: the row
+ * An item's Outline from a beat on (ADR 0010 D-10, props-spec section 5). Latest wins: the row
  * on beat B is fully in place on B's click and eases in from the click of B - L + 1, so a
  * transition of 1 is instant (ADR 0004's state counting). Independent of moves. Sizes are meters,
  * rotation degrees.

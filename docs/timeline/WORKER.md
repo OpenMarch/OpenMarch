@@ -37,7 +37,7 @@ Set by the project owner on 2026-09-30, until they lift it here:
 - **List every command you ran, with its result**, in the PR and the log.
 
 - **Reviews and merges:** workers never merge their own PRs. The lead session
-  has a reviewer sub-agent review each PR against the spec, ADR 0001, `ui.md`
+  has a reviewer sub-agent review each PR against the spec, ADR 0008, `ui.md`
   and the phase file, re-runs the PR's checks itself, and then merges it on the
   fork. The lead stops for the project owner only when a question can't be
   answered from the spec, the ADR, `ui.md` or the plan; otherwise it decides,

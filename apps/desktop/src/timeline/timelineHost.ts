@@ -19,7 +19,7 @@ import {
 } from "./timelineRows";
 
 /**
- * The resolver host for one open file (ADR 0001 §4, spec §10.2): the resolver plus the
+ * The resolver host for one open file (ADR 0008 §4, spec §10.2): the resolver plus the
  * post-commit mirror it reads marchers, shapes and transitions from.
  *
  * The resolver keeps a reference to `snapshot` and reads `marchers`, `shapes` and `transitions`

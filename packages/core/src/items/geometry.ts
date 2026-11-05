@@ -1,5 +1,5 @@
 /**
- * An item's Outline at a moment, from its beat-keyed geometry changes (ADR 0002 D-10,
+ * An item's Outline at a moment, from its beat-keyed geometry changes (ADR 0010 D-10,
  * props-spec section 5). Independent of moves: positions come from the timeline resolver.
  *
  * Counting follows ADR 0004's states: a change on beat B with transition length L is fully in

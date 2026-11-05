@@ -7,7 +7,7 @@
 //
 // Run it from apps/desktop when the om-pose pin moves, then commit the result. Writes
 // src/view3d/assets/om-pose/{bodies/*.glb, clips/clips-h<class>.glb, manifest.json, SOURCE.json}.
-// See ADR 0002 D-7 and src/view3d/render/README.md.
+// See ADR 0010 D-7 and src/view3d/render/README.md.
 import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -264,7 +264,7 @@ fs.writeFileSync(
                 manifest: "out/body/manifest.json",
             },
             license:
-                "Not under the app's license (see LICENSE): the clips are in the counsel gate (lawyer Q3); the meshes take CC0 1.0 once Q3 is answered and om-pose adopts a license upstream (ADR 0002 D-7, D-21)",
+                "Not under the app's license (see LICENSE): the clips are in the counsel gate (lawyer Q3); the meshes take CC0 1.0 once Q3 is answered and om-pose adopts a license upstream (ADR 0010 D-7, D-21)",
             files,
         },
         null,

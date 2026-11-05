@@ -56,7 +56,7 @@ const DEPENDENT_TABLE_COPY_ORDER = [
     "timeline_assignments",
     // Held marks after the marchers they name (no trigger reads them)
     "timeline_held_marks",
-    // Items after the marchers that back them, Outline changes after their item (ADR 0002 D-10)
+    // Items after the marchers that back them, Outline changes after their item (ADR 0010 D-10)
     "items",
     "item_geometry",
     // Shape recipes after their moves, then their members (ADR 0006)
@@ -340,7 +340,7 @@ export const repairDatabase = async (originalDbPath: string) => {
 
         // Refuse a file from a newer release: its tables may not match this
         // build's schema, and the repaired copy would otherwise be written at
-        // an older version (ADR 0001 §6). The original is never written to.
+        // an older version (ADR 0008 §6). The original is never written to.
         const sourceVersion = readUserVersion(originalDb);
         if (
             decideFileVersion(sourceVersion, false).action === "refuse-too-new"
@@ -370,7 +370,7 @@ export const repairDatabase = async (originalDbPath: string) => {
             copyDataFromOriginalDatabase(originalDb, newDb, sourceDbPath);
 
             // The copy went around the write wrapper, so drop what its triggers logged
-            // (ADR 0001 §5). The app also clears the log whenever it opens a file.
+            // (ADR 0008 §5). The app also clears the log whenever it opens a file.
             newDb.prepare("DELETE FROM timeline_change_log").run();
 
             // Turn foreign keys back on

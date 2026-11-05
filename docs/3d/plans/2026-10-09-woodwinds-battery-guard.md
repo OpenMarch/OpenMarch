@@ -16,7 +16,7 @@
 
 - Root `AGENTS.md`: no AI attribution in commits or files; commits describe the change.
 - `docs/3d/WORKER.md` policy: focused tests only (`pnpm --dir apps/desktop exec vitest run src/view3d`), plus `pnpm --dir apps/desktop exec tsc --noEmit`; never the history or e2e suites. Commits run lint-staged (prettier, cspell): add words to `cspell.config.yaml` or an inline `cspell:words` comment when the hook rejects one.
-- ADR 0002 D-1: nothing under `src/view3d/core/` imports three, React, drei, Electron or the database. Models are pure functions of numbers.
+- ADR 0010 D-1: nothing under `src/view3d/core/` imports three, React, drei, Electron or the database. Models are pure functions of numbers.
 - Spec §2: nothing from Yamaha ships. No logos, model numbers or brand names in code, strings or assets. Proportions only.
 - Triangle budgets per model: high 4,000 to 12,000; low 1,000 to 3,500 (`triangleCount` from `mesh.ts`). Budgets are pinned by each file's tests.
 - Instrument frame convention (see `brass.ts` header and `holds.ts`): origin at the right hand's grip, +Z along the instrument's main axis toward its far end (the "bell"), +Y the "caps" direction the hold names, +X the performer's left. The hold tables in `holds.ts` already define each family's `instrument.origin`, `bellAxis` and `capsAxis`; models must agree with them (see each task).

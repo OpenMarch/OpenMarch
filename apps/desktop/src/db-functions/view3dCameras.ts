@@ -8,7 +8,7 @@ import {
     type ShowCameras,
 } from "@/view3d/core/cameraList";
 
-/** The only row id of `view3d_cameras` (ADR 0002 D-5). */
+/** The only row id of `view3d_cameras` (ADR 0010 D-5). */
 export const VIEW3D_CAMERAS_ROW_ID = 1;
 
 /**

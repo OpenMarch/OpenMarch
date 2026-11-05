@@ -1,6 +1,6 @@
 /**
  * Loads, bakes and builds the 3D View's marchers for the current show
- * (ADR 0002 D-7). Returns null until they are ready; the caller keeps the
+ * (ADR 0010 D-7). Returns null until they are ready; the caller keeps the
  * cylinders until then.
  */
 import { prepBase } from "./platformClip";

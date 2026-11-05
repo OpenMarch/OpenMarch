@@ -1,7 +1,7 @@
 // cspell:words glsl beginnormal skinbase skinnormal
 /**
  * The flags' silks, drawn apart from the instruments (props-spec.md
- * section 7, ADR 0002 D-17): one instanced cloth mesh per detail tier for
+ * section 7, ADR 0010 D-17): one instanced cloth mesh per detail tier for
  * every silk in the band, whatever the look, so 40 silks or 400 add one
  * draw call per tier. Each instance is one silk: a flat grid of UVs that
  * the vertex shader waves (`silkWave.ts`) in the silk's own frame, carries

@@ -315,7 +315,7 @@ Summary. The mechanics, and why, are in the ADR.
 - Panel: groups by page, spans, filter chips, freshness line, greyed stale
   rows, Dismissed section, scope switch.
 - Check interface, issue model and stitching in core.
-- The resolver's changed-positions report (ADR 0001 amendment).
+- The resolver's changed-positions report (ADR 0008 amendment).
 - Live tier, worker sweep, fingerprints, pacing, the setting.
 - Dismiss actions with span-overlap identity. One migration adds both tables
   (dismissals left out of undo, rules undoable).

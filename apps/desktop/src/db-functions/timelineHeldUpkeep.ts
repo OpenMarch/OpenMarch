@@ -9,7 +9,7 @@ import {
 import { nameHeldConflict, type HeldConflict } from "./timelineHeldConflict";
 
 /**
- * **Keeping Held marks true after an edit** (ADR 0001 amendment 2026-10-30, part 2; the small
+ * **Keeping Held marks true after an edit** (ADR 0008 amendment 2026-10-30, part 2; the small
  * form #472 needs while every mark is an arrival hold, which #473 grows into the full upkeep).
  *
  * `transactionWithHistory` reads each mark's arrival row (`arrivalRowSql`) before the edit's

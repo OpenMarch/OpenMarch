@@ -10,7 +10,7 @@ import {
 } from "./timelineHeldConflict";
 
 /**
- * The timeline change-log listener contract (ADR 0001 §5, spec §6 and §10.2).
+ * The timeline change-log listener contract (ADR 0008 §5, spec §6 and §10.2).
  *
  * The write wrapper (`transactionWithHistory`, and undo and redo in `executeHistoryAction`) checks
  * `timeline_commit_violations` and drains `timeline_change_log` inside each transaction, then hands
@@ -160,7 +160,7 @@ export async function assertNoTimelineCommitViolationsInTransaction(
 const parseImage = (image: string | null): RowImage | null =>
     image === null ? null : (JSON.parse(image) as RowImage);
 
-/** Debug builds (dev and tests) check that a drain leaves the log empty (ADR 0001 §5). */
+/** Debug builds (dev and tests) check that a drain leaves the log empty (ADR 0008 §5). */
 const isDebugBuild = () => process.env.NODE_ENV !== "production";
 
 /**

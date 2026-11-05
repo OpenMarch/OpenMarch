@@ -26,7 +26,7 @@ export {
  * Page and beat ripple (docs/timeline/phases/07-page-parity.md P7.4, P7.5).
  *
  * Timeline rows hold beat ordinals: beat `n` is the `n`th row of `beats` ordered by position,
- * counting from 0 (ADR 0001). Pages are time labels over those beats. So any edit that inserts,
+ * counting from 0 (ADR 0008). Pages are time labels over those beats. So any edit that inserts,
  * deletes or reorders beats, or moves, adds or removes a page, has to rewrite timeline rows in the
  * same edit, or the rows end up over the wrong music. `withTimelinePageRipple` does that: it
  * reads the page grid (beat ids in order, and each page's beat range) before the page or beat
@@ -66,7 +66,7 @@ export {
  * and so does an empty page timeline that its page box no longer keeps
  * (`deleteStrayEmptyTimelinesInTransaction`); any other empty timeline ripples as usual.
  *
- * **Held marks** (`timeline_held_marks`, ADR 0001 amendment 2026-10-30, part 2) move with the
+ * **Held marks** (`timeline_held_marks`, ADR 0008 amendment 2026-10-30, part 2) move with the
  * rows, by the owner's rules (2026-10-28):
  *
  * - a mark's start follows its **arrival** (the row it grows out of, `arrivalRowSql`): it takes
@@ -740,7 +740,7 @@ export async function readPageTimelinesInTransaction(
  * `readPageTimelinesInTransaction`) that the edit left empty and the UI-25 rule no longer keeps
  * (#581 review). Splitting every marcher off a page leaves the page's timeline empty, and it keeps
  * its row while another timeline shares its range, so a split move never becomes the page's by
- * accident (ADR 0001, UI-25 amendment). Once a page edit leaves it off its box (the page deleted,
+ * accident (ADR 0008, UI-25 amendment). Once a page edit leaves it off its box (the page deleted,
  * a flag deleted or added across it), or the box's oldest timeline isn't it, or no timeline with
  * transitions shares its range, it would only draw as an empty clip, so it goes. Any other empty
  * timeline, such as a move emptied with Remove (UI-9), is never touched. Pass `grid` when it was

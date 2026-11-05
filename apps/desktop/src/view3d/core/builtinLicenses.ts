@@ -1,5 +1,5 @@
 /**
- * The built-in catalog's licenses (props-spec.md section 10, ADR 0002 D-21,
+ * The built-in catalog's licenses (props-spec.md section 10, ADR 0010 D-21,
  * package C5.8). `assets/licenses.json` declares every built-in one of two
  * ways: a folder with its license, whose `LICENSE` file must say so (the
  * om-pose assets), or a third-party
@@ -21,7 +21,7 @@ export const THIRD_PARTY_LICENSES = ["CC0-1.0", "CC-BY-4.0"] as const;
 /**
  * The licenses an OpenMarch folder may declare, each with text its `LICENSE`
  * must contain: CC0 for OpenMarch-made content, GPL for the Blender add-on,
- * and the counsel gate for the om-pose assets (ADR 0002 D-7 correction).
+ * and the counsel gate for the om-pose assets (ADR 0010 D-7 correction).
  */
 export const FOLDER_LICENSES: Readonly<Record<string, string>> = {
     "CC0-1.0": "CC0 1.0 Universal",

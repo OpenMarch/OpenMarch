@@ -26,7 +26,7 @@ from it. The spec still wins on the model; this file decides presentation.
   appears for a range when a target is selected.
 - Moving a clip snaps to whole beats and commits once, on pointer-up.
 - Units are beat indexes with half-open `[start, end)` ranges, the same as
-  spec §7 and ADR 0001.
+  spec §7 and ADR 0008.
 
 ## Decisions
 
@@ -939,7 +939,7 @@ from it. The spec still wins on the model; this file decides presentation.
     Everywhere else they hold where they last were (spec R-6). An edit carries forward, per marcher,
     to that marcher's next page with its own move, and stops there.
   - **Nothing is written on a page's behalf.** Adding, splitting or appending a page writes only
-    page rows (ADR 0001 C-12, now true on every path). New marchers get a home and no moves. The
+    page rows (ADR 0008 C-12, now true on every path). New marchers get a home and no moves. The
     converter writes a slot only where a marcher's position changes. A range write (a page box or a
     window) that leaves a marcher where it already is writes nothing for that marcher, so aligning or distributing on a held page
     doesn't freeze the others. Dragging a marcher back onto the start of its own page move clears
@@ -990,7 +990,7 @@ from it. The spec still wins on the model; this file decides presentation.
   - **Keep later pages** (owner, 2026-10-09, after a study of three prototypes,
     `research/defined-coordinates/10-keep-later-pages-study.md`; timeline mode only). After page 2
     is written and pages 3–4 follow it, the designer can set some marchers where they are on page 3,
-    so that editing page 2 no longer moves them there. **Since holds ticket #467 (ADR 0001
+    so that editing page 2 no longer moves them there. **Since holds ticket #467 (ADR 0008
     amendment 2026-10-29) this is Set as shown, not a stored kept spot:** it writes an ordinary move
     of the marcher's own over the page, ending where it shows there, so the page is Set. Keep,
     Follow again, **K**, the kept chip, the mixed badge, the dot for a narrow box and the kept mark
@@ -1207,7 +1207,7 @@ from it. The spec still wins on the model; this file decides presentation.
   - **Several moves over one range** (owner). The page box still stands for the page's original
     timeline: the oldest stored timeline (lowest id) with exactly its range, the one
     `findTimelineByRange` returned before (`pageTimelineIds`, `isPageTimeline`). A stored page-move
-    mark replaces this inference in the layer-priority change (ADR 0001, 2026-10-16). A move split off
+    mark replaces this inference in the layer-priority change (ADR 0008, 2026-10-16). A move split off
     it always draws as its own clip, even on the page's flags, with its own label ("Move 6"). A
     clicked clip's move is the window's (`windowTimelineId` in the selection store) until the window
     leaves its range, so the clip, not the page box, shows selected, the Move card and the inspector
@@ -1225,7 +1225,7 @@ from it. The spec still wins on the model; this file decides presentation.
     the move, and when all of a move's marchers are (that would only rename it). A page's own
     move is the exception (owner, 2026-11-01, #581): with all of its marchers selected the split
     gives them a move of their own that can be resized or dragged across page flags, and the
-    page's timeline stays, empty, so the page box still stands for it (ADR 0001, UI-25 amendment).
+    page's timeline stays, empty, so the page box still stands for it (ADR 0008, UI-25 amendment).
     That page box's entry then says the page has no move of its own, and to use the move's clip
     while one is over the box's counts. A page edit that leaves the empty timeline off its page's
     box (deleting the page or a flag next to it, adding a flag inside it) deletes it, so it never
@@ -1292,7 +1292,7 @@ from it. The spec still wins on the model; this file decides presentation.
     above the page's moves they now overlap (`growOverLayers` in `timelineResize.ts`). For now
     it still stops at other moves (V-121), and at a page's moves when the marcher has another
     move above it inside this one, which the raise would override; §6.2 drops the stop at other
-    moves when it lands (ADR 0001, 2026-10-16 amendment). A row with a move above it there (often
+    moves when it lands (ADR 0008, 2026-10-16 amendment). A row with a move above it there (often
     the page's own move, edited after this move crossed its flag) is never raised: it grows
     underneath, as over any higher move, so a resize never changes who plays on counts it didn't
     touch (`canRiseOverPageMoves`).

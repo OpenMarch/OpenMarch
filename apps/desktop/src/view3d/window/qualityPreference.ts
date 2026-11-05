@@ -1,6 +1,6 @@
 /**
  * The viewer's render quality choice. It describes this computer's graphics,
- * not the show, so it lives in the window's local storage (ADR 0002 D-5),
+ * not the show, so it lives in the window's local storage (ADR 0010 D-5),
  * never in the show file.
  *
  * - `auto`: start on `high`, and drop to `low` once if frames are slow

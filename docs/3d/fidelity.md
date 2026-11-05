@@ -11,7 +11,7 @@ is built, measured or verified on real hardware yet; §10 lists what is
 unverified.
 
 Read [design.md](design.md) for the module layout and
-[ADR 0002](../adr/0002-3d-view.md) for decisions already made. Nothing here
+[ADR 0010](../adr/0010-3d-view.md) for decisions already made. Nothing here
 reopens those. It adds to them.
 
 > [!IMPORTANT]
@@ -38,7 +38,7 @@ disagrees with this one, this one wins.
   frustum, AgX; (3) baked turf grain in the existing canvas.
 - **Merge `3d/figures` first.** It changes `Performers.tsx` and
   `sceneStore.ts`, where blob shadows and performer detail go.
-- **Persistence: the window's local storage, as ADR 0002 already says.** No
+- **Persistence: the window's local storage, as ADR 0010 already says.** No
   `electron-store`, new IPC or ADR amendment for v1 (§4 is superseded).
 - **A smaller panel.** v1 is the four presets plus at most "Show frame rate",
   "Pause drawing when nothing moves" and crowd density. Advanced rows come
@@ -136,7 +136,7 @@ fade, outline, pinstripe) exist behind `endZoneStyle` for the branding
 setting below. Code: `core/field/brandMark.ts`, `turfPlan.ts`, `paint.ts`.
 
 **Feature for later: show-defined center logo and end-zone artwork.** Venue
-params grow a small branding block, still "small params" under ADR 0002 D-5:
+params grow a small branding block, still "small params" under ADR 0010 D-5:
 
 - Center: none, the OpenMarch mark, or text (one or two lines) with fill and
   outline colors.
@@ -264,12 +264,12 @@ onBattery, photo })`, `isCustom()`, and `classifyChange(prev, next)` that
   `data-custom` for e2e.
 - **Persistence is per machine, never in the show.** Fidelity describes the
   GPU; the same `.dots` opens on a school laptop and a gaming desktop. ADR
-  0002 D-5 already classes view preferences as local. Store it in
+  0010 D-5 already classes view preferences as local. Store it in
   `electron-store` under `view3d.fidelity` through two sandboxed preload
   methods (`getFidelity`/`setFidelity`) backed by `view3d:settings-get/set`
   that main restricts to that key. Not `localStorage`: it dies with cache
   clears, and the editor's Settings page should later show the same section.
-  **This needs a small amendment to ADR 0002** (D-3 preload surface, D-4
+  **This needs a small amendment to ADR 0010** (D-3 preload surface, D-4
   channels plus `view3d:power`, a new D-9 "fidelity is an app setting, schema
   v1, never show data") before the persistence PR.
 - **IPC:** the editor is uninvolved. Main relays `powerMonitor` as
@@ -544,7 +544,7 @@ Skip: individual seats, concourse interiors, animated crowds, cars,
 real-school likenesses, team logos.
 
 **Performers.** Whatever replaces the cylinders (now om-pose's marchers, ADR
-0002 D-7 amended 2026-10-07; they superseded the `3d/figures` branch), facing direction must be visible, the uniform
+0010 D-7 amended 2026-10-07; they superseded the `3d/figures` branch), facing direction must be visible, the uniform
 two-tone from section color, and a contact-shadow blob under every figure on
 every tier. **Camera:** keep the 1.1 s cubic fly-to; add damping to orbit and
 zoom; give the press box and upper deck a longer lens (30-35° FOV) so forms
@@ -572,7 +572,7 @@ benches, a fence and glowing poles.
   `quality`. Unit tests on every preset × override combination, garbage JSON,
   change classification.
 - P6.2 Pre-emptive tier (renderer-string classifier) plus `electron-store`
-  persistence and the ADR 0002 amendment. e2e under SwiftShader asserts
+  persistence and the ADR 0010 amendment. e2e under SwiftShader asserts
   `data-tier="low"` within 1 s.
 - P6.3 Day-one look: environment map from the sky, blob shadows, fitted
   shadow frustum, AgX with retuned presets. No new dependencies; works on
@@ -622,7 +622,7 @@ Each with the recommended answer.
 3. _How many tiers?_ Low, Medium, High plus Automatic, with an Advanced
    disclosure. Presentation and export force High. No Ultra preset.
 4. _Where do fidelity settings live?_ Decided in review: the window's local
-   storage, per ADR 0002 as written. Looks stay with the show, as lighting
+   storage, per ADR 0010 as written. Looks stay with the show, as lighting
    does today.
 5. _May the low tier have shadows?_ Yes: blob contact shadows on every tier.
 6. _Tone mapping?_ AgX, with Neutral as the fallback if color matching the

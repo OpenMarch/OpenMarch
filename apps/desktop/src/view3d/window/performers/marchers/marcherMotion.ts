@@ -1,5 +1,5 @@
 /**
- * Drives the 3D View's marchers from the drill (ADR 0002 D-7) and the
+ * Drives the 3D View's marchers from the drill (ADR 0010 D-7) and the
  * compiled cues (performer-behavior.md sections 8.2 and 8.3): plans every
  * marcher's clips for the whole show once, then each frame switches clips
  * where a marcher's event changes, places its body and turns it to its

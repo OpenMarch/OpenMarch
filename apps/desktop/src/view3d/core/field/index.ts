@@ -26,7 +26,7 @@ import { planTurf } from "./turfPlan";
 
 /**
  * Field surface (P2.1, design.md section 4). Framework-free: three.js only
- * (ADR 0002 D-1), in meters with the field at z <= 0 (D-2).
+ * (ADR 0010 D-1), in meters with the field at z <= 0 (D-2).
  *
  * `buildFieldSurface` plans the field from `FieldProperties` with the same
  * semantics as the 2D field's plan (`fieldPlan.ts`), paints the plan into one

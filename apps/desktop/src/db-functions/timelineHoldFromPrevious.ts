@@ -26,7 +26,7 @@ import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
 
 /**
  * **Hold from previous page** on a page box, in timeline mode (holds, fork #472; holds README
- * decisions 2 and 3, review R3; ADR 0001 amendment 2026-10-30).
+ * decisions 2 and 3, review R3; ADR 0008 amendment 2026-10-30).
  *
  * For each selected marcher, the page box `[start, end)` becomes one **Held** hold
  * (`timeline_held_marks`) over this page only. It grows out of the move that arrives at the

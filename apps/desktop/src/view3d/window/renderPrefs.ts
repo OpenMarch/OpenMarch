@@ -1,7 +1,7 @@
 /**
  * How the 3D View draws on this computer, beside the quality
  * (`qualityPreference.ts`) and power choices (`drawPolicy.ts`). Like them it
- * describes the machine, not the show, so it lives in local storage (ADR 0002
+ * describes the machine, not the show, so it lives in local storage (ADR 0010
  * D-5). The app's Settings window sets these; the 3D window reads them.
  *
  * - Resolution: the most device pixels drawn per screen pixel. `sharp`

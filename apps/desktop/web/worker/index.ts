@@ -102,7 +102,7 @@ async function openShowAt(path: string, isNewFile: boolean): Promise<number> {
         const orm = getOrm(db);
         const migrator = new DrizzleMigrationService(orm, db);
         if (isNewFile) {
-            // A new, empty file starts at the timeline version (ADR 0001 §6).
+            // A new, empty file starts at the timeline version (ADR 0008 §6).
             applyFileVersionDecision(db, true);
             await migrator.applyPendingMigrations(MIGRATIONS_FOLDER);
             await DrizzleMigrationService.initializeDatabase(orm, db);

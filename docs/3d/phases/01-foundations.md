@@ -19,7 +19,7 @@ World math, venue storage, the 3D View window shell and the sync protocol: every
 
 ## Read first
 
-- [ADR 0002](../../adr/0002-3d-view.md) D-2 to D-6
+- [ADR 0010](../../adr/0010-3d-view.md) D-2 to D-6
 - [../design.md](../design.md) §1–3 and §7
 - `apps/desktop/AGENTS.md`, `docs/conventions/database-interactions.md`, `docs/conventions/database-transactions.md`, `docs/conventions/testing.md`
 

@@ -1,7 +1,7 @@
 /**
  * `.dots` file-format version, stored in SQLite's `PRAGMA user_version`.
  *
- * See ADR 0001 §6 (docs/adr/0001-timeline-motion-model.md). The app reads the
+ * See ADR 0008 §6 (docs/adr/0008-timeline-motion-model.md). The app reads the
  * version before it changes anything in a file, and refuses a file written by a
  * newer release instead of rewriting its version and migrating it.
  *

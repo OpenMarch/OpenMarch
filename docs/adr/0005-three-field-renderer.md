@@ -6,7 +6,7 @@
 - Date: 2026-10-14
 - Spec: fork issue #189. Work packages: [docs/field](../field/README.md),
   tickets #190 to #209.
-- Related: [ADR 0002](0002-3d-view.md) (3D View, which already uses React
+- Related: [ADR 0010](0010-3d-view.md) (3D View, which already uses React
   Three Fiber)
 
 ## Context

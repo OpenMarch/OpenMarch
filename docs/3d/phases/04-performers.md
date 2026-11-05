@@ -19,7 +19,7 @@ Block performers that move with the editor's playback, and an end-to-end test of
 
 ## Read first
 
-- [ADR 0002](../../adr/0002-3d-view.md) D-6 and D-7, [../design.md](../design.md) §8
+- [ADR 0010](../../adr/0010-3d-view.md) D-6 and D-7, [../design.md](../design.md) §8
 - `src/utilities/Keyframes.ts`, `src/hooks/queries/useCoordinateData.ts`, `src/hooks/useAnimation.ts`
 - `docs/conventions/multi-query-hooks.md`, `apps/desktop/e2e/` and its README if present
 

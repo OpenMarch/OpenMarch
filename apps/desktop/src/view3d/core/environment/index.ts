@@ -1,6 +1,6 @@
 /**
  * Shared 3D View environment (P2.2). Framework-free: three.js only, no React,
- * R3F, drei, Electron or database imports (ADR 0002 D-1). Meters (D-2).
+ * R3F, drei, Electron or database imports (ADR 0010 D-1). Meters (D-2).
  *
  * Exports, for the kit builders (P2.3 to P2.5) and the scene (P3.1):
  *
