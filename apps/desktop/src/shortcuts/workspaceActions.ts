@@ -35,7 +35,6 @@ const PREVIEW_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "openSettings",
     "openView3d",
     "showShortcuts",
-    "showWhatsNew",
     "openCommandPalette",
     "togglePreview",
 ]);

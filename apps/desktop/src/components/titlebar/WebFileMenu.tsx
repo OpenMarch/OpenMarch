@@ -28,14 +28,12 @@ const FILE_ACTIONS: ActionId[] = [
     "launchSaveFileDialogue",
     "closeFile",
     "openSettings",
-    "showWhatsNew",
 ];
 
 /**
  * The web build's stand-in for the native app menu: the file actions, with
  * "Save a copy" as Back up (share or download the file: the show is already
- * saved in the browser) and the show's Versions. What's new sits at the end,
- * where the desktop has it in Help.
+ * saved in the browser) and the show's Versions.
  */
 export default function WebFileMenu() {
     const { t } = useTranslate();
@@ -92,7 +90,6 @@ export default function WebFileMenu() {
                 {item("closeFile")}
                 <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
                 {item("openSettings")}
-                {item("showWhatsNew")}
             </DropdownMenuContent>
         </DropdownMenu>
     );

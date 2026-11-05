@@ -3115,13 +3115,10 @@
         },
         "welcomeBack": {
             "description": "Here's what's changed since you last used it.",
-            "skip": "Skip",
-            "start": "See what's new",
             "title": "Welcome back"
         },
         "whatsNew": {
             "carousel": "Walkthrough",
-            "done": "Done",
             "guides": "Learn more in the OpenMarch guides",
             "next": "Next",
             "position": "{current} of {total}",
@@ -3159,7 +3156,7 @@
                     "title": "The 3D View"
                 }
             },
-            "title": "What's new"
+            "title": "What's new in 0.2"
         }
     },
     "workspaceSettings": {
@@ -3371,11 +3368,10 @@
             "front": "Bring All to Front"
         },
         "help": {
-            "guides": "Docs/Guides",
-            "showShortcuts": "Keyboard Shortcuts",
             "title": "Help",
+            "showShortcuts": "Keyboard Shortcuts",
             "website": "Website",
-            "whatsNew": "What's new in 0.2"
+            "guides": "Docs/Guides"
         },
         "withShortcut": "{label}  ({shortcut})"
     },

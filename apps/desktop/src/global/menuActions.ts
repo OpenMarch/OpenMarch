@@ -16,10 +16,10 @@ export interface MenuAction {
      */
     readonly labelKey: string;
     /**
-     * The shortcut, in Electron's accelerator form, if it has one. The menu only shows it: the
-     * renderer's own keyboard handler owns the key, so text fields keep Space and letters
+     * The shortcut, in Electron's accelerator form. The menu only shows it: the renderer's own
+     * keyboard handler owns the key, so text fields keep Space and letters
      */
-    readonly accelerator?: string;
+    readonly accelerator: string;
     /** Left out of the menu in Basic mode, where the action's handler is off (UI-19) */
     readonly expertOnly?: true;
 }
@@ -50,11 +50,6 @@ export const PLAYBACK_MENU_ACTIONS: readonly MenuAction[] = [
 ];
 
 export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
-    // The welcome flow's What's new, at any time; its label names the version
-    {
-        action: "showWhatsNew",
-        labelKey: "menu.help.whatsNew",
-    },
     {
         action: "showShortcuts",
         labelKey: "menu.help.showShortcuts",

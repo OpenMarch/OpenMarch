@@ -289,12 +289,9 @@ export default function WelcomeFlow({
         setStepIndex(stepIndex + 1);
     };
 
-    // Past What's new: where its Skip and its last slide lead.
-    const afterTour = () => setStepIndex(steps.indexOf("whatsNew") + 1);
-    // Back from the first setup step after What's new returns to the welcome
-    // page, which offers What's new again.
-    const back = () =>
-        setStepIndex(steps[stepIndex - 1] === "whatsNew" ? 0 : stepIndex - 1);
+    // What's new's Skip and last slide go on; Back on its first slide goes back
+    const afterTour = () => setStepIndex(stepIndex + 1);
+    const back = () => setStepIndex(stepIndex - 1);
 
     // The first page differs for returning people; show it once that's known.
     if (returning === undefined || !step)
@@ -314,18 +311,13 @@ export default function WelcomeFlow({
                 devSkipDisabled={devSkipDisabled}
                 startLanguage={language?.code ?? suggestedLanguage()}
                 returning={returning !== null}
-                onSkip={afterTour}
                 aria-label={t("welcomeFlow.dialogLabel")}
             />
         );
 
     if (step === "whatsNew")
         return (
-            <WhatsNewTour
-                onDone={afterTour}
-                onSkip={afterTour}
-                onBack={() => setStepIndex(0)}
-            />
+            <WhatsNewTour onDone={afterTour} onSkip={afterTour} onBack={back} />
         );
 
     return (

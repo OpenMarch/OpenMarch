@@ -22,25 +22,20 @@ const rendererActionItem = ({
     labelKey,
     accelerator,
 }: MenuAction): MenuItemConstructorOptions =>
-    !accelerator
+    isMacOS
         ? {
-              label: t(labelKey),
+              label: t("menu.withShortcut", {
+                  label: t(labelKey),
+                  shortcut: accelerator.replace("Shift+/", "?"),
+              }),
               click: () => mainProcess.sendMenuAction(action),
           }
-        : isMacOS
-          ? {
-                label: t("menu.withShortcut", {
-                    label: t(labelKey),
-                    shortcut: accelerator.replace("Shift+/", "?"),
-                }),
-                click: () => mainProcess.sendMenuAction(action),
-            }
-          : {
-                label: t(labelKey),
-                accelerator,
-                registerAccelerator: false,
-                click: () => mainProcess.sendMenuAction(action),
-            };
+        : {
+              label: t(labelKey),
+              accelerator,
+              registerAccelerator: false,
+              click: () => mainProcess.sendMenuAction(action),
+          };
 
 /** A link in the Help menu. */
 const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({

@@ -16,22 +16,29 @@ import {
 } from "../whatsNewSlides";
 
 describe("welcome flow steps", () => {
-    it("asks language, theme and mode, then analytics when unanswered", () => {
+    it("asks language, shows What's new, asks theme and mode, then analytics when unanswered", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: false, isWeb: false }),
-        ).toEqual(["welcome", "language", "theme", "mode", "analytics"]);
+        ).toEqual([
+            "welcome",
+            "language",
+            "whatsNew",
+            "theme",
+            "mode",
+            "analytics",
+        ]);
     });
 
     it("skips the analytics step when it has been answered", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: true, isWeb: false }),
-        ).toEqual(["welcome", "language", "theme", "mode"]);
+        ).toEqual(["welcome", "language", "whatsNew", "theme", "mode"]);
     });
 
     it("never asks about analytics on the web", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: false, isWeb: true }),
-        ).toEqual(["welcome", "language", "theme", "mode"]);
+        ).toEqual(["welcome", "language", "whatsNew", "theme", "mode"]);
     });
 
     it("treats either stored analytics answer as made, and unset as not", () => {
@@ -113,7 +120,7 @@ describe("returning people", () => {
         ).toBe(false);
     });
 
-    it("adds What's new and drops the choices already made", () => {
+    it("drops the choices a returning person already made, What's new staying after the language step", () => {
         expect(
             getWelcomeSteps({
                 analyticsChoiceMade: true,
@@ -127,7 +134,14 @@ describe("returning people", () => {
                 isWeb: false,
                 returning: { languageSaved: false, themeSaved: true },
             }),
-        ).toEqual(["welcome", "whatsNew", "language", "mode", "analytics"]);
+        ).toEqual(["welcome", "language", "whatsNew", "mode", "analytics"]);
+        expect(
+            getWelcomeSteps({
+                analyticsChoiceMade: true,
+                isWeb: false,
+                returning: { languageSaved: true, themeSaved: false },
+            }),
+        ).toEqual(["welcome", "whatsNew", "theme", "mode"]);
     });
 });
 
