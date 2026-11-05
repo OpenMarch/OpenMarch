@@ -51,7 +51,7 @@ mode (what every released user runs).
 
 ## 1. Summary
 
-### The rule (ui.md UI-18, ADR 0001 C-12 amendment of 2026-10-08)
+### The rule (ui.md UI-18, ADR 0012 C-12 amendment of 2026-10-08)
 
 A marcher has a coordinate on a page only where the designer moved it there. Everywhere else it
 holds where it last was (spec R-6). An edit carries forward, per marcher, to that marcher's next page
@@ -70,7 +70,7 @@ with its own move, and stops there.
 - **No schema change** before keep later pages. The only edit in
   `electron/database/migrations/schema.ts` was a comment on `tag_appearances.start_page_id` (the
   cascade stays; code now moves rows before it fires). Since wp15, migration 0018 adds the
-  `timeline_kept_assignments` table (B-38, ADR 0001 amendment 2026-10-09).
+  `timeline_kept_assignments` table (B-38, ADR 0012 amendment 2026-10-09).
 - **No file/user version change.** No migration before wp15 (0018, B-38). Existing files are read as
   they are.
 - **The resolver (`@openmarch/core`) is untouched.** Positions at every flag of an unedited show are
@@ -82,7 +82,7 @@ with its own move, and stops there.
 
 | #   | Decision                                                                                                                                                                                                                                        | Where recorded                        |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| 1   | Sparse model adopted; amend ADR 0001                                                                                                                                                                                                            | README Decisions; ADR 0001 amendment  |
+| 1   | Sparse model adopted; amend ADR 0012                                                                                                                                                                                                            | README Decisions; ADR 0012 amendment  |
 | 2   | Page mode carries edits forward now, per marcher, with a tolerance, with Only Page N and the pre-existing fixes; no schema change                                                                                                               | README Decisions                      |
 | 3   | Delete page in timeline mode keeps later pages' look (flag delete); "Delete page and its moves" is explicit                                                                                                                                     | README Decisions                      |
 | 4   | Lock here / Keep later pages deferred (no stored kind)                                                                                                                                                                                          | README Decisions                      |
@@ -92,7 +92,7 @@ with its own move, and stops there.
 | 8   | 2026-10-09: hold-mark tooltips and **Move them too** built at the owner's request (PR #112 comment); renumbered UI-18 (UI-15/16 went to timeline edges, UI-17 to transport keys)                                                                | PR comment; ui.md UI-18; V-181, V-182 |
 | 9   | 2026-10-09 (lead defaults after review): Move them too only when an edit splits a group (V-181); runs of edits add up behind one toast, two-button toasts put the buttons on their own row (V-184)                                              | ui.md UI-18; VALIDATION               |
 | 10  | 2026-10-09: keep later pages (study 10): chains on the page boxes (none without a selection), the inspector's Keep here / Follow again, the page box menu entries, the after-edit Only Page N toast (the C rule); Alt-drag dropped, **K** added | 10; ui.md UI-18; V-185 … V-189        |
-| 11  | 2026-10-09: store kept spots: a schema addition while user version 8 is unreleased, with an ADR 0001 amendment (supersedes decision 4's "no stored kind")                                                                                       | ADR 0001 amendment; B-38              |
+| 11  | 2026-10-09: store kept spots: a schema addition while user version 8 is unreleased, with an ADR 0012 amendment (supersedes decision 4's "no stored kind")                                                                                       | ADR 0012 amendment; B-38              |
 | 12  | 2026-10-09: mark kept marchers on the field with the kept chip's broken chain, whatever is selected (mock-up D); no opacity, since dimming already means "outside isolation, not editable"                                                      | ui.md UI-18; B-45; V-191              |
 
 ---
@@ -1059,7 +1059,7 @@ only; page mode keeps its runtime comparison and its own Only Page N (B-16).
   `timelineKeptMarkers.ts`, `timelineMoves.ts` (`keptAssignmentsMovedBy`); `timeline/timelineKept.ts`.
 - **Tests:** `timelineKeepHere.test.ts` (owner flow, skips, edits of a kept spot, page edits, history
   round trips; wp19: keep a never-moved marcher, and its history round trip), `timelineKept.test.ts`, `0018_clean_sentinels.test.ts`.
-- **V-row:** V-185 … V-189 (the UI on top). ADR 0001 amendment 2026-10-09.
+- **V-row:** V-185 … V-189 (the UI on top). ADR 0012 amendment 2026-10-09.
 - **Pre-merge review (D2, U2):** the not-a-page refusal reads "Keep works on a whole page, not Page 3, counts 1–4"; `KeepResult` gains `markers: { added, removed }` (assignment ids).
 
 #### B-39 Keep states for the selection (renderer)
@@ -1644,7 +1644,7 @@ OT1 and OT8.
 - **No schema, user-version or file-format change; no migration** before keep later pages. Since
   wp15, migration 0018 creates `timeline_kept_assignments` (user version stays 8, unreleased); files
   from earlier development builds get the empty table when they open. A build without 0018 shows a
-  kept spot as an ordinary move that goes nowhere (B-38, ADR 0001 amendment 2026-10-09).
+  kept spot as an ordinary move that goes nowhere (B-38, ADR 0012 amendment 2026-10-09).
 - **Page-mode files (user version 7, released):** read unchanged. Behavior changes start on the next
   edit (carry-forward). Pages already left stale by the old app stay stale; the fix is a manual
   Shift+P or re-edit (README finding 7). Rows that share a pathway with the previous page (copied by
@@ -1654,7 +1654,7 @@ OT1 and OT8.
   replays them generically. Not tested against an older build.
 - **Timeline files made by earlier dev builds (user version 8, unreleased):** keep their holding
   moves, new-marcher stays and converter copies. Those rows are now read as **designer intent**
-  (zero-motion moves = blocks), so the owner's bug persists in them. Per ADR 0001's amendment they
+  (zero-motion moves = blocks), so the owner's bug persists in them. Per ADR 0012's amendment they
   are **converted again by hand**, as for C-11: open the page-mode original and convert with this
   build. `isPageMove` matches the old holding moves (over exactly a page box, layer 0), so Delete page
   and its moves removes them with the page.
@@ -1793,7 +1793,7 @@ Resolved since the first catalog (lead's `5b2c5c6c`, wp12–wp14):
   start" and the hold-mark tooltips; V-181 (Move them too), V-182 (tooltips), V-183 (Delete move)
   added; V-184 (runs add up, two-button layout) added with this update.
 - ui.md UI-18 says "a range write … writes nothing", matching B-03.
-- ADR 0001: "deletes its flag only by default; 'Delete page and its moves' and Yank still remove the
+- ADR 0012: "deletes its flag only by default; 'Delete page and its moves' and Yank still remove the
   page's own moves".
 - Test names: "Start from Page N" → "Keep Page N as a stop" (`65ac6298`).
 - "Ordinary edits silent" (V-146) now holds in code (B-25), verified by dc4.

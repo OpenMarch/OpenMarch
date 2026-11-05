@@ -34,7 +34,7 @@ describeDbTests("marcher mutations", (it) => {
             .from(schema.timeline_assignments)
             .where(eq(schema.timeline_assignments.marcher_id, created!.id))
             .all();
-        // A home and no moves (UI-18, ADR 0001 C-12: no row is written on a page's behalf): the
+        // A home and no moves (UI-18, ADR 0012 C-12: no row is written on a page's behalf): the
         // converted show's transitions are untouched, and the marcher stands at home
         expect(transitions.length).toBeGreaterThan(0);
         expect(assignments).toEqual([]);

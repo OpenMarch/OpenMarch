@@ -10,7 +10,7 @@ others can see what you own and how far you've got.
 
 The MVP is the 3D View window, five venue kits plus a blank one, named
 cameras, block performers that follow playback, and the venue choice saved in
-the show. Everything is decided in [ADR 0002](../adr/0002-3d-view.md). The
+the show. Everything is decided in [ADR 0010](../adr/0010-3d-view.md). The
 in-editor preview, imports, video export and analysis tools come after the
 MVP; don't build them yet, except the imports and customization the
 customization track specifies ([props-spec.md](props-spec.md), phases `C1`
@@ -154,7 +154,7 @@ Log entry format:
 - **Edit only what you own:** your packages' Owner, Status and PR lines, your
   log entries, and the handoff notes of a phase you lead. To tell another phase
   something, append a log entry in its file headed `Cross-phase note from P<n>` (or `C<n>`).
-- **Decisions don't hide in code.** Anything that changes ADR 0002, the
+- **Decisions don't hide in code.** Anything that changes ADR 0010, the
   schema, the file format, IPC or the shared contracts in
   `apps/desktop/src/view3d/core/types.ts` goes into the ADR and
   [plan.md](plan.md) first. Log a blocker instead of improvising.

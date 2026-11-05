@@ -28,7 +28,7 @@ import {
 
 /**
  * Cut and remove: the two move operations the holds commands share (holds spec,
- * docs/timeline/research/holds/, decision 16; ADR 0001, amendment of 2026-10-30). Every holds
+ * docs/timeline/research/holds/, decision 16; ADR 0012, amendment of 2026-10-30). Every holds
  * command that takes a marcher out of some counts goes through them, so they stay one seam.
  * Joining moves back together is #470's `timelineJoinAtBeat.ts`.
  *

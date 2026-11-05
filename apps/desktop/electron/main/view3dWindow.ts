@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 /**
- * The 3D View window (ADR 0002 D-3): at most one, opened from the editor,
+ * The 3D View window (ADR 0010 D-3): at most one, opened from the editor,
  * closed with the editor or the show. It loads the editor's renderer bundle
  * with `?view=3d` and gets its own read-only preload (`preload/view3d.ts`).
  *
- * Sync (ADR 0002 D-4): main relays the editor's clock, selection and
+ * Sync (ADR 0010 D-4): main relays the editor's clock, selection and
  * invalidations to the window, and the window's `hello`, venue-change and
  * playback requests to the editor, without reading the payloads. It tells
  * the editor whether the window is open with `view3d:window-state`, and

@@ -1,5 +1,5 @@
 /**
- * Performer positions for the 3D View (ADR 0002 D-6, docs/3d/design.md §8).
+ * Performer positions for the 3D View (ADR 0010 D-6, docs/3d/design.md §8).
  *
  * This is the only place the 3D View computes where a performer is. Scene code
  * calls {@link useShowPositions} once and reads positions from the

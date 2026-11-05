@@ -3,8 +3,8 @@
 - Status: proposed
 - Date: 2026-11-01
 - Spec: [docs/show-issues](../show-issues/README.md)
-- Related: [ADR 0001](0001-timeline-motion-model.md) (the resolver this reads,
-  amended by D-3), [ADR 0002](0002-3d-view.md) (put-downs, D-9),
+- Related: [ADR 0012](0012-timeline-motion-model.md) (the resolver this reads,
+  amended by D-3), [ADR 0010](0010-3d-view.md) (put-downs, D-9),
   [ADR 0005](0005-three-field-renderer.md) (the field that draws the markers)
 
 ADR numbers 0007 and 0008 are taken by open PRs (#550, #373). If another
@@ -85,7 +85,7 @@ by the tier that sees the whole move.
 
 ### D-3. What's out of date: a resolver report, narrowed by fingerprints
 
-**Resolver addition (amends ADR 0001 §4).** `InvalidationReport.marchersRebuilt`
+**Resolver addition (amends ADR 0012 §4).** `InvalidationReport.marchersRebuilt`
 is not enough. It only lists marchers from assignment rows, transition
 start/end changes and `home` changes. Shape geometry, transition
 `dest`/`slots`/`style`/`params`, slot destination points, and
@@ -212,7 +212,7 @@ keyed by the show file's path.
 - The collision toolbar tab, `CollisionStore`, `zoomToCollisions` and the
   separate step-size field paths and toggles are removed or folded in. The
   framing math in `collisionsView` is reused.
-- The resolver's public report grows by one field, an ADR 0001 §4
+- The resolver's public report grows by one field, an ADR 0012 §4
   amendment. Its correctness becomes a dependency of the sweep, guarded by a
   property test and a debug assertion.
 - A full timeline host in a worker roughly doubles timeline memory for the

@@ -13,7 +13,7 @@ updated: 2026-10-11
 
 > Parked (convergence, 2026-11-03): the Library, import, Artwork templates, Credits and the
 > Blender Starter kit are removed from `main` and kept on branch `archive/pre-convergence`. See
-> the convergence note at the top of [ADR 0002](../../adr/0002-3d-view.md).
+> the convergence note at the top of [ADR 0010](../../adr/0010-3d-view.md).
 
 <!-- cspell:words meshopt dedup CMYK -->
 
@@ -44,7 +44,7 @@ C4.7 + C4.3 merged ─── P12 Artwork and uniforms
 ## Read first
 
 - [../props-spec.md](../props-spec.md): the design spec. Ticket numbers on each package are the ones it cites; read those sections.
-- [ADR 0002](../../adr/0002-3d-view.md), amendment of 2026-10-11 (D-9 to D-22)
+- [ADR 0010](../../adr/0010-3d-view.md), amendment of 2026-10-11 (D-9 to D-22)
 - `CONTEXT.md` at the repo root: **Library**, **Library item**, **Version**, **Artwork**, **Artwork template**, **Starter kit**, **Credits**
 - Findings: `research/gltf-import`, `research/ktx2-wasm-sharp`, `task/ktx2-sharp-spike`, `research/size-standards`, `research/ip-licensing` (branch, file `research/<name>.md`)
 
@@ -60,7 +60,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - Parallel: no
 - Depends on: —
 
-**Goal:** the owner approves the ADR 0002 amendment (D-9 to D-22), the ADR 0004 amendment draft, and these phase files, or asks for changes.
+**Goal:** the owner approves the ADR 0010 amendment (D-9 to D-22), the ADR 0004 amendment draft, and these phase files, or asks for changes.
 
 **Scope:** answer or defer what is left in `DRAFT-NOTES.md` (the review answers of 2026-10-11 are applied); lift [../WORKER.md](../WORKER.md)'s "Scope is the MVP" policy for the customization track, C1 to C5 (it forbids imports today); add the track to [../plan.md](../plan.md) section 3; make the worker docs accept `C<track>.<n>` IDs (below); move the ADR 0004 amendment draft onto the cue branch.
 
@@ -86,7 +86,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** counsel answers lawyer questions Q1 (CC0 art beside AGPL code; whether the CLA covers relicensing contributed assets), Q3 (om-pose clips derived from Cadets 2019 footage), Q4 (GPL vs AGPL `LICENSE` text) and Q5 (Terms §9.1's reach), from `research/ip-licensing.md` §7.
 
-**Scope:** blocks shipping built-ins (C5.8), the Starter kit (C1.13) and any release that ships the om-pose clips (Q3; ADR 0002 D-7 correction), not building them. The Starter kit's reference bodies and v4 skeleton also wait for om-pose to adopt a license upstream. The `LICENSE` and Terms §9.1 fix ships as its own change outside this effort once Q4 and Q5 are answered.
+**Scope:** blocks shipping built-ins (C5.8), the Starter kit (C1.13) and any release that ships the om-pose clips (Q3; ADR 0010 D-7 correction), not building them. The Starter kit's reference bodies and v4 skeleton also wait for om-pose to adopt a license upstream. The `LICENSE` and Terms §9.1 fix ships as its own change outside this effort once Q4 and Q5 are answered.
 
 **Tickets:** 14, 16, 26.6.
 
@@ -210,9 +210,9 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - Parallel: no
 - Depends on: C1.1
 
-**Goal:** the channel list for picking files, running imports and reading and writing the local Library, recorded in ADR 0002 D-13 before code (no ticket or review answer names it).
+**Goal:** the channel list for picking files, running imports and reading and writing the local Library, recorded in ADR 0010 D-13 before code (no ticket or review answer names it).
 
-**Design:** [proposals/C1.9-import-ipc.md](../proposals/C1.9-import-ipc.md), approved by the owner on 2026-10-12 (Q45–Q58), recorded in ADR 0002 D-12, D-13, D-15 and D-22 and props-spec.md section 2.
+**Design:** [proposals/C1.9-import-ipc.md](../proposals/C1.9-import-ipc.md), approved by the owner on 2026-10-12 (Q45–Q58), recorded in ADR 0010 D-12, D-13, D-15 and D-22 and props-spec.md section 2.
 
 **Follow-ups:** C1.7 adds an optional `onStage(stage)` progress callback to `importModel` and fixes the `textures/./` URI normalization bug; C1.8 adds `renderArtworkPreview(file, page, maxPx)` at 256 and 1024 px and closes the PDF renderer's hidden windows on editor close and quit. Q55's `.gltf` containment fix is done (C1.7, `d3cd28e7`).
 
@@ -319,7 +319,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ## Progress log
 
-- 2026-10-11, C1.1 done: the owner approved the ADR 0002 amendment, the ADR
+- 2026-10-11, C1.1 done: the owner approved the ADR 0010 amendment, the ADR
   0004 amendment draft, props-spec.md and the C track. WORKER.md's policy now
   names the C track; README, WORKER.md, plan.md, the 3d-work skill and the
   3d-worker agent accept `C<track>.<n>` IDs and `3d/c<track>-<name>`
@@ -486,7 +486,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 - 2026-10-12, C1.9 design approved: the owner approved every recommendation
   in [proposals/C1.9-import-ipc.md](../proposals/C1.9-import-ipc.md),
-  Q45–Q58. ADR 0002 D-13 lists the 19 `library:` channels and the
+  Q45–Q58. ADR 0010 D-13 lists the 19 `library:` channels and the
   utility-process rule; D-12 adds the thumbnail cache and the embedding path;
   D-15 records `blob:` URLs and no custom scheme; D-22 covers import IPC
   errors. props-spec.md section 2 gains the size limits. Q55 was already done
@@ -706,8 +706,8 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
   floor becomes the field image, mirrored into `field_properties.image`
   for 2D; Assets gets This show and Library sections. Planned as follow-up
   PRs after the C1 stack, starting with C1.11; details in props-spec.md
-  "Base floor". Needs an ADR 0002 amendment.
-- 2026-10-15, owner: ADR 0002 D-23 accepted with changes. The floor is named
+  "Base floor". Needs an ADR 0010 amendment.
+- 2026-10-15, owner: ADR 0010 D-23 accepted with changes. The floor is named
   by reference only (`floor: { itemId, versionHash }`) and there is no 2D
   copy: 2D, exports and the 3D tarp read the floor, and
   `field_properties.image` is legacy, read only by convert on open and then
@@ -719,7 +719,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
   2D, exports and 3D; convert on open makes it from a legacy image and writes
   file version 9 (only once a file has a floor, after review); Field settings
   → Image has Upload floor… and Remove floor;
-  new shows copy a previous show's floor. Details in ADR 0002 D-23 "As
+  new shows copy a previous show's floor. Details in ADR 0010 D-23 "As
   built".
 
 ### 2026-10-13 · trevor (3d/c1-starter-kit) · C1.13
@@ -822,5 +822,5 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
   `library:add-from-show`), and notes a newer Version or changed details in
   the Library without applying them. Credits (C5.7) moved into it. Not built:
   applying an update (no references to swap until C2), thumbnails for items
-  the Library lacks, and the floor-as-field-image change (ADR 0002 amendment
+  the Library lacks, and the floor-as-field-image change (ADR 0010 amendment
   first).

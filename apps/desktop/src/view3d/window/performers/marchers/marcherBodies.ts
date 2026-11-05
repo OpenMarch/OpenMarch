@@ -1,5 +1,5 @@
 /**
- * The 3D View's marchers drawn with the instanced renderer (ADR 0002 D-7,
+ * The 3D View's marchers drawn with the instanced renderer (ADR 0010 D-7,
  * performer-behavior.md section 8.3): one `InstancedMesh` per (body type,
  * `bodyKey`), skinned from the composer's texture, which composes each
  * performer's channels once a frame from the per-channel bake.

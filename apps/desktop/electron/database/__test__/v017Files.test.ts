@@ -1,7 +1,7 @@
 // @vitest-environment node
 /**
  * Show files made by the last public release, OpenMarch v0.1.7, open correctly in this build
- * (ADR 0001 §6, convert on open).
+ * (ADR 0012 §6, convert on open).
  *
  * The files in `v017-files/` were written by v0.1.7's own code (see `v017-files/README.md`), and
  * each `<name>.v017.json` records what v0.1.7 shows for its file, computed by v0.1.7's playback

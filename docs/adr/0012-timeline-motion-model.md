@@ -1,4 +1,6 @@
-# 0001: Timelines replace pages as the motion model
+# 0012: Timelines replace pages as the motion model
+
+> Renumbered from 0001 on 2026-11-05 (duplicate number; 0008 is taken by the command registry in #373).
 
 - Status: accepted
 - Date: 2026-09-29

@@ -1,6 +1,6 @@
 /**
  * What each 3D View marcher looks like: its body (type, skin tone, height
- * class) and its section's uniform (ADR 0002 D-7).
+ * class) and its section's uniform (ADR 0010 D-7).
  *
  * The show file stores only the uniform presets (the venue settings'
  * `uniforms` for the band and `guardUniforms` for the guard), so the rest is
@@ -13,7 +13,7 @@
  * - the uniform from the show's presets (`uniformPresets.ts`): the band
  *   preset's band look, or the guard preset's guard look for the guard
  *   sections, chosen by `isGuard`
- *   (ADR 0002 D-7 and D-18). The section's 2D fill color never touches the
+ *   (ADR 0010 D-7 and D-18). The section's 2D fill color never touches the
  *   uniform; it only colors what the section carries (drum shells, flag
  *   silks), which otherwise take the preset's colors and silk pattern. Each
  *   look carries the section's instrument from `core/instruments` in the

@@ -33,7 +33,7 @@ export {
 } from "./timelineHeldArrival";
 
 /**
- * **Held** holds (holds README decisions 2 and 4; ADR 0001 amendment 2026-10-30): a stored mark
+ * **Held** holds (holds README decisions 2 and 4; ADR 0012 amendment 2026-10-30): a stored mark
  * (`timeline_held_marks`) over a stretch where one marcher has no move, meaning "stand still here
  * on purpose". The resolver never reads it: the marcher holds there anyway (spec R-6). It changes
  * only how an edit inside it is routed, and what the timeline draws.
@@ -43,7 +43,7 @@ export {
  * arriving. No move of the marcher overlaps a mark (H-1) and one marcher's marks don't overlap
  * (H-3); the commit check (`timeline_held_violations`) rejects an edit that breaks either.
  *
- * **Keeping marks true** (ADR 0001 amendment 2026-10-30, part 2). A mark grows out of its
+ * **Keeping marks true** (ADR 0012 amendment 2026-10-30, part 2). A mark grows out of its
  * **arrival**: the marcher's highest-layer row ending at the mark's start, whose move ends there
  * too (`arrivalRowSql`, the one rule), which a drag inside the mark edits.
  *

@@ -1,5 +1,5 @@
 /**
- * Performer blocks for the 3D View (P4.2, ADR 0002 D-7, design.md §8,
+ * Performer blocks for the 3D View (P4.2, ADR 0010 D-7, design.md §8,
  * ui.md UI-4).
  *
  * - One `InstancedMesh` of cylinders (0.3 m radius, 1.75 m tall) standing on
@@ -137,11 +137,11 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     const count = slots.ids.length;
 
     // the show's band and guard uniform presets, from its venue settings
-    // (ADR 0002 D-18)
+    // (ADR 0010 D-18)
     const { data: venue } = useVenueSettings();
     const uniformPreset = uniformPresetOf(venue?.uniforms);
     const guardUniformPreset = guardUniformPresetOf(venue?.guardUniforms);
-    // om-pose marchers (ADR 0002 D-7); the cylinders stand in until they load.
+    // om-pose marchers (ADR 0010 D-7); the cylinders stand in until they load.
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );

@@ -1,5 +1,5 @@
 /**
- * Real-world lengths (ADR 0002 D-9 "Units", docs/3d/props-spec.md §3).
+ * Real-world lengths (ADR 0010 D-9 "Units", docs/3d/props-spec.md §3).
  *
  * Meters in storage, full-precision floats, never rounded on write. Feet and
  * inches convert exactly at 0.3048 m/ft. Display rounds only: ft-in to the

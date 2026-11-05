@@ -4,7 +4,7 @@ import type { DbTransaction } from "./types";
 import { readPageGrid } from "./timelinePageGrid";
 
 /**
- * Who an `E-H1` refusal is about, named for its message (ADR 0001 amendment 2026-10-30). Read by
+ * Who an `E-H1` refusal is about, named for its message (ADR 0012 amendment 2026-10-30). Read by
  * the commit check (`assertNoTimelineCommitViolationsInTransaction`) and the Held marks' upkeep,
  * so it loads nothing the main process's open and convert path mustn't (no ripple, no history).
  */

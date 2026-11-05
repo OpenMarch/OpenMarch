@@ -1,5 +1,5 @@
 /**
- * The built-in uniform presets (ADR 0002 D-18, amended 2026-10-16): what the
+ * The built-in uniform presets (ADR 0010 D-18, amended 2026-10-16): what the
  * band and the guard wear until the show has uniforms of its own, all in
  * OpenMarch purple (#6442ff). The show picks the band's and the guard's
  * apart in the 3D View's venue settings (`uniforms` and `guardUniforms`):

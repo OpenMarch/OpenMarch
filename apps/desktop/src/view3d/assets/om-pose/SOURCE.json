@@ -6,7 +6,7 @@
         "clips": "out/body/animations/*.glb, packed one GLB per height class",
         "manifest": "out/body/manifest.json"
     },
-    "license": "Not under the app's license (see LICENSE): the clips are in the counsel gate (lawyer Q3); the meshes take CC0 1.0 once Q3 is answered and om-pose adopts a license upstream (ADR 0002 D-7, D-21)",
+    "license": "Not under the app's license (see LICENSE): the clips are in the counsel gate (lawyer Q3); the meshes take CC0 1.0 once Q3 is answered and om-pose adopts a license upstream (ADR 0010 D-7, D-21)",
     "files": {
         "clips/clips-h090.glb": {
             "bytes": 5842340,

@@ -1,5 +1,5 @@
 /**
- * Loads om-pose's marcher assets in the 3D View window (ADR 0002 D-7).
+ * Loads om-pose's marcher assets in the 3D View window (ADR 0010 D-7).
  *
  * Vite emits each GLB and the manifest as its own file (`?url`), so they stay
  * out of the JavaScript bundle and nothing is fetched until a show needs it.

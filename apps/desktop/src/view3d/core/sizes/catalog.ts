@@ -1,5 +1,5 @@
 /**
- * The size standards catalog (docs/3d/props-spec.md §3 "Catalog", ADR 0002
+ * The size standards catalog (docs/3d/props-spec.md §3 "Catalog", ADR 0010
  * D-16): the default size for every kind, with custom sizes as the escape
  * hatch. Figures come from `research/size-standards.md` (2026-10-11).
  *

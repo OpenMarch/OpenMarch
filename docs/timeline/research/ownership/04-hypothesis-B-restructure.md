@@ -214,7 +214,7 @@ continuous either way.
   explicit statements in a valid order (D-17). Checks stay checks. Old undo
   stacks are cleared on migration.
 - **File format:** a schema migration (new tables, `assignments` dropped),
-  recorded in ADR 0001 §6. Converted dev files migrate on open. Older builds
+  recorded in ADR 0012 §6. Converted dev files migrate on open. Older builds
   can't open migrated files (already true for converted shows).
 
 ## 9. Cost, and comparison with "keep layers + steals"

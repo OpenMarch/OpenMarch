@@ -198,7 +198,7 @@ Marchers A and B, pages 1–5. `*` = defined, `~` = inherited.
 
 **Docs:**
 
-- An ADR 0001 amendment or ADR 0002: the new page-era column, I-M1 to I-M3, no version bump.
+- An ADR 0012 amendment or ADR 0002: the new page-era column, I-M1 to I-M3, no version bump.
 - `ui.md` UI-9 changes: Set to previous page becomes inherit, new marchers get no rows, and Pin and
   Reset are added.
 - VALIDATION rows for auto-untouch and the delete default.

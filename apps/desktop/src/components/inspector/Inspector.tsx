@@ -27,7 +27,7 @@ function Inspector() {
                     <TransformSection />
                     <PageEditor />
                     <MarcherEditor />
-                    {/* ADR 0002 D-22: the show's one quiet list, in both modes */}
+                    {/* ADR 0010 D-22: the show's one quiet list, in both modes */}
                     {compact && <PageNotesSection />}
                 </div>
 

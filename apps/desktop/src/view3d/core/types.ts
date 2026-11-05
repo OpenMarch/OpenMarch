@@ -1,5 +1,5 @@
 /**
- * Shared contracts for 3D View (ADR 0002). Everything under `view3d/core/` is
+ * Shared contracts for 3D View (ADR 0010). Everything under `view3d/core/` is
  * framework-free: no React, React Three Fiber, drei, Electron or database
  * imports. See docs/3d/design.md.
  *
@@ -22,7 +22,7 @@ export type LightingPreset =
     | "house"
     | "show";
 
-/** Small per-show settings stored with the venue (ADR 0002 D-5). */
+/** Small per-show settings stored with the venue (ADR 0010 D-5). */
 export interface VenueParams {
     /** "#rrggbb" */
     homeColor: string;

@@ -1,7 +1,7 @@
 import type { FieldProperties } from "./FieldProperties";
 
 /**
- * Mapping between the 2D canvas and the 3D View's world (ADR 0002, design.md §2).
+ * Mapping between the 2D canvas and the 3D View's world (ADR 0010, design.md §2).
  *
  * World units are meters. The origin is the center of the front sideline
  * (`FieldProperties.centerFrontPoint`), +X points toward side 2, +Y is up and

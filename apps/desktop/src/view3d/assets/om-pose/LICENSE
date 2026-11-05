@@ -2,12 +2,12 @@ om-pose assets: not under the OpenMarch application's license
 
 The files in this folder (bodies/, clips/ and manifest.json) come from
 OpenMarch's om-pose repository; SOURCE.json records the commit. They don't
-ship under the app's license (ADR 0002 D-7, correction of 2026-10-11).
+ship under the app's license (ADR 0010 D-7, correction of 2026-10-11).
 
 - The clips, derived from 2019 Cadets footage, are in the counsel gate: no
   release that ships them goes out before counsel answers lawyer Q3.
 - The meshes (the reference bodies and the v4 skeleton) take CC0 1.0 once Q3
   is answered and om-pose adopts a license upstream.
 
-See docs/adr/0002-3d-view.md (D-7 and D-21) and docs/3d/props-spec.md
+See docs/adr/0010-3d-view.md (D-7 and D-21) and docs/3d/props-spec.md
 section 10.

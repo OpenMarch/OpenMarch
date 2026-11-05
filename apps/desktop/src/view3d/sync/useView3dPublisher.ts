@@ -1,5 +1,5 @@
 /**
- * Editor side of the 3D View sync (ADR 0002 D-4, docs/3d/design.md §7).
+ * Editor side of the 3D View sync (ADR 0010 D-4, docs/3d/design.md §7).
  *
  * Mounted once in the editor. While a 3D View window is open it publishes:
  * - `clock` on play, pause, seek and page change, and every second while
@@ -411,7 +411,7 @@ export function relayTimelineChanges(send: () => void): () => void {
 /** Mount point for `useView3dPublisher`; renders nothing. */
 /**
  * Playback buttons and shortcuts in the 3D View window run the same actions
- * as the editor's own (ADR 0002 D-4, `view3d:playback-request`). An action
+ * as the editor's own (ADR 0010 D-4, `view3d:playback-request`). An action
  * that is disabled right now does nothing, as in the editor. A held action (a
  * playback speed key) lasts until the window lets go of its key, or closes.
  */

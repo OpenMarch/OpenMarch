@@ -33,7 +33,7 @@ export type DrawnItemOutline = {
 };
 
 /**
- * The show's items on the field (C2.1, ADR 0002 D-10): each one's Outline at
+ * The show's items on the field (C2.1, ADR 0010 D-10): each one's Outline at
  * the beat the marchers are drawn at, around where the timeline (or a drag)
  * has it, outside React like {@link FieldMarchers}. The items layer draws
  * {@link outlines}, and the editor hits items anywhere inside their Outline

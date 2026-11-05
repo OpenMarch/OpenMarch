@@ -1,6 +1,6 @@
 /**
  * The show's count clock for the 3D View marchers: show time to counts
- * elapsed (fractional mid-beat), following the tempo map (ADR 0002 D-7).
+ * elapsed (fractional mid-beat), following the tempo map (ADR 0010 D-7).
  *
  * Count k is the k-th beat with a duration. Its boundary is that beat's
  * start; the last boundary is the end of the last beat. The marchers'

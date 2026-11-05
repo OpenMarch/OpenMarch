@@ -44,7 +44,7 @@ group to rejoin it, merge-in-time) was **dropped**.
 
 For one marcher, a **hold** is any stretch where it stands still. Which move is in charge at a
 count comes from the layers. The spec §6.2 rules are decided (a page's move is underneath, a
-later start wins, and on the same start the shorter wins; ADR 0001 amendment 2026-10-16) but not
+later start wins, and on the same start the shorter wins; ADR 0012 amendment 2026-10-16) but not
 built: today each edit still chooses layers (`stealLayer`, `db-functions/timelineCommands.ts:285`).
 A move hidden under another neither breaks a hold nor makes one. Nothing here depends on the
 derivation being built: the hold invariants are checked against the stored rows (Storage).

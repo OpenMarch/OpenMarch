@@ -72,7 +72,7 @@ Paths are relative to `apps/desktop/` unless they start at the repo root.
 
 ## 2. Decisions
 
-[ADR 0002](../adr/0002-3d-view.md) is the source. In short:
+[ADR 0010](../adr/0010-3d-view.md) is the source. In short:
 
 - **D-1** React Three Fiber scene. Framework-free builders in `src/view3d/core/`.
   Canvas-texture text, no drei `<Text>`.
@@ -111,7 +111,7 @@ P0 decisions ─┬─ P1 foundations ──┬─ P3 window UI and cameras ─�
   validation run, owner verdict.
 
 **Customization track** (owner, 2026-10-11; spec
-[props-spec.md](props-spec.md), ADR 0002 D-9 to D-22), separate from the
+[props-spec.md](props-spec.md), ADR 0010 D-9 to D-22), separate from the
 numbered phases:
 
 - [C1: Library and import](phases/C1-library-import.md)

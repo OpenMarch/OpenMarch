@@ -10,7 +10,7 @@ import {
     type VenueSettings,
 } from "@/view3d/core/venueSettings";
 
-/** The only row id of `view3d_venue` (ADR 0002 D-5). */
+/** The only row id of `view3d_venue` (ADR 0010 D-5). */
 export const VIEW3D_VENUE_ROW_ID = 1;
 
 /**

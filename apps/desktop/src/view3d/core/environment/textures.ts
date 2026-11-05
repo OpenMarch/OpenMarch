@@ -1,7 +1,7 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace } from "three";
 
 /**
- * Canvas texture helpers. Text drawn into the scene is painted here (ADR 0002
+ * Canvas texture helpers. Text drawn into the scene is painted here (ADR 0010
  * D-1). Painting needs a 2D canvas context, which Vitest's jsdom doesn't have,
  * so tests call `setTexturePainting(false)`: textures are still created, just
  * left blank. A missing context is also tolerated at runtime.

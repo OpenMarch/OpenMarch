@@ -7,7 +7,7 @@ still open. Nothing here is built.
 
 How 3D View marchers come to carry instruments that read as the real thing,
 hold them the way a corps does, and how the front ensemble and its speakers
-appear on the field. Adds to [ADR 0002](../adr/0002-3d-view.md) D-7; the
+appear on the field. Adds to [ADR 0010](../adr/0010-3d-view.md) D-7; the
 schema addition in §6 needs an ADR amendment before it is built.
 
 ## 1. Where we are
@@ -382,7 +382,7 @@ a `view3d_props` table (`id`, `kind`, `x`, `y` in field pixels like
 panel with "Add prop", drag on the field and a rotation handle, and undo
 through the existing history tables. The window already saves the venue
 choice in the show the same way (`view3dVenue.ts`), so the pattern exists.
-This is a schema and file-format change: it goes into ADR 0002 as an
+This is a schema and file-format change: it goes into ADR 0010 as an
 amendment before any code, per the project rules.
 
 **Default layout** so a show looks right before anyone places props: on

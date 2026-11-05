@@ -81,7 +81,7 @@ export interface CueInput {
     ripple?: CueRipple | null;
 }
 
-/** A `marchers` row's type: a performer, or an item (ADR 0002 D-10). */
+/** A `marchers` row's type: a performer, or an item (ADR 0010 D-10). */
 export type CueMarcherType = "marcher" | "prop" | "equipment";
 
 export interface CueMarcher {

@@ -1,5 +1,5 @@
 /**
- * Read-only SQL checks for the 3D View window (ADR 0002 D-3).
+ * Read-only SQL checks for the 3D View window (ADR 0010 D-3).
  *
  * The window's `sqlRead` proxy only accepts statements whose first keyword is
  * `SELECT` or `WITH`. Main also runs them with `PRAGMA query_only` on, so a

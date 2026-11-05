@@ -1,5 +1,5 @@
 /**
- * The show's 3D View venue settings (ADR 0002 D-5, docs/3d/design.md §3).
+ * The show's 3D View venue settings (ADR 0010 D-5, docs/3d/design.md §3).
  *
  * Plain TypeScript and zod only: this module lives under `view3d/core/`, so it
  * must not import React, React Three Fiber, drei, Electron or the database.

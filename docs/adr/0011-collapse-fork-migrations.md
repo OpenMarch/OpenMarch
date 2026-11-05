@@ -17,7 +17,7 @@ is not a reasonable ask of upstream.
 Two kinds of file matter:
 
 - **v0.1.7 files** (page era, `user_version` 7, migrations up to 0016). These are what people
-  have. They must keep opening and converting (ADR 0001 §6) with nothing lost.
+  have. They must keep opening and converting (ADR 0012 §6) with nothing lost.
 - **Files saved by fork builds** (nightlies, lab builds, local builds). Their
   `__drizzle_migrations` table records some of the fork's 0017 to 0032 under the fork's dates.
   October files may have only 0017 to 0020; newer ones all of them; lab builds made from branches
@@ -35,9 +35,9 @@ those tables (`FIRST_TIMELINE_MIGRATION_TAG`).
 
 2. **`0017_timeline_model` holds the fork's whole schema on top of 0016.** It was generated with
    drizzle-kit from `schema.ts` (with `pageEraSchema.ts` alongside, so it doesn't drop the
-   page-era tables) on the 0016 snapshot: the timeline tables and marcher homes (ADR 0001), Held
+   page-era tables) on the 0016 snapshot: the timeline tables and marcher homes (ADR 0012), Held
    marks, shape recipes (ADR 0006), the 3D View's venue and cameras, props (`items`,
-   `item_geometry`, ADR 0002) and tempo mode (ADR 0007). Columns of existing tables
+   `item_geometry`, ADR 0010) and tempo mode (ADR 0007). Columns of existing tables
    (`marchers`, `beats`, `measures`) are added with `ALTER TABLE … ADD COLUMN`, not drizzle-kit's
    table rebuild, so a page-era file keeps every row that names a marcher. They are the very
    statements fork builds ran, so a repaired fork file ends with the same table text as a new file.

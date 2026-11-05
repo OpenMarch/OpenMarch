@@ -4,7 +4,7 @@
 
 Status: built (wp1–wp20); fork PR #112 open, rebased onto `timeline-try-2` with #115 on 2026-10-09.
 Started 2026-10-08 (session 4 of 4), on branch `timeline/defined-coordinates` off `timeline-try-2`
-(a4d42cd1). This changes what stored data means, so it needed an ADR 0001 amendment before anything
+(a4d42cd1). This changes what stored data means, so it needed an ADR 0012 amendment before anything
 was built.
 
 ## Start here
@@ -146,7 +146,7 @@ compares with a tolerance.
 - Dot tints beyond the selection.
 - "Hold" on coordinate sheets.
 
-**ADR:** amend ADR 0001 C-12 to say:
+**ADR:** amend ADR 0012 C-12 to say:
 
 - no path writes timeline rows on behalf of a page;
 - the converter writes only changed positions;
@@ -165,7 +165,7 @@ Also add a ui.md decision (UI-18) and amend the P7.4 hold rule in phases/07.
 See the "Decisions" section once answered.
 
 1. Adopt "coordinates exist only where you moved someone; otherwise they hold" as the model, and
-   amend ADR 0001?
+   amend ADR 0012?
 2. Page mode: carry edits forward through untouched copies now (recommended), or leave page mode
    alone until timeline mode is the default (an explicit "Copy to following pages" command as a
    stopgap), or a stored flag (M1)?
@@ -179,7 +179,7 @@ See the "Decisions" section once answered.
 Owner, 2026-10-08, all four as recommended:
 
 1. **Sparse model adopted.** A marcher has a coordinate on a page only where the designer moved
-   them; otherwise they hold. Amend ADR 0001.
+   them; otherwise they hold. Amend ADR 0012.
 2. **Page mode carries edits forward now** through untouched equal copies (per marcher, with a
    tolerance), with an "Only Page N" toast and the pre-existing fixes. No schema change.
 3. **Delete page in timeline mode keeps later pages' look** (flag delete); "delete page and its
@@ -194,7 +194,7 @@ Owner, 2026-10-08, after the build (PR #112):
 
 Owner, 2026-10-09: hold-mark tooltips and Move them too; keep later pages (chains, Keep here / Follow
 again, the after-edit Only Page N toast, K, no Alt-drag) with **stored** kept spots, which reverses
-decision 4 (ADR 0001 amendment 2026-10-09); and the chain icon on kept marchers' dots (mock-up D, no
+decision 4 (ADR 0012 amendment 2026-10-09); and the chain icon on kept marchers' dots (mock-up D, no
 opacity). See [CHANGES.md](CHANGES.md) §1 decisions 8–11 and [HISTORY.md](HISTORY.md) §4.8–4.9.
 
 ## Built (branch `timeline/defined-coordinates`)
@@ -215,7 +215,7 @@ opacity). See [CHANGES.md](CHANGES.md) §1 decisions 8–11 and [HISTORY.md](HIS
 | `dc/wp12-mtt-trigger`       | Move them too only when an edit splits a group at a later page; a window's pass-through toast wins in timeline mode; page mode's one toast with Move them too and Only Page N      |
 | `dc/wp13-gap-tests`         | Coverage-gap tests (7 files); window moves survive Delete page and its moves; the delete toast closes on the next history change                                                   |
 | `dc/wp14-mtt-polish`        | Two-button toast layout; runs of edits add up for Move them too and Only Page N; a fresh id per surprise toast                                                                     |
-| `dc/wp15-kept-storage`      | Kept spots stored in `timeline_kept_assignments` (migration 0018); keep / follow again API; ADR 0001 amendment 2026-10-09                                                          |
+| `dc/wp15-kept-storage`      | Kept spots stored in `timeline_kept_assignments` (migration 0018); keep / follow again API; ADR 0012 amendment 2026-10-09                                                          |
 | `dc/wp16-keep-ui`           | Keep chains on the page boxes; inspector Keep here / Follow again and "Pages 3–4 follow these marchers"; page box menu entries; **K**; timeline "Pages 3–4 followed · Only Page 2" |
 | `dc/wp17-passthrough-words` | The pass-through toast names pages and counts, not beats                                                                                                                           |
 | `dc/wp18-refusal-words`     | Timeline refusal messages name pages and counts (`timelineRangeWords.ts`)                                                                                                          |

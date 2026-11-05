@@ -97,7 +97,7 @@ export function setDbPath(path: string, isNewFile = false) {
         }
 
         // Refuse a file from a newer release before anything below writes to it
-        // (ADR 0001 §6).
+        // (ADR 0012 §6).
         if (
             decideFileVersion(user_version, isNewFile).action ===
             "refuse-too-new"

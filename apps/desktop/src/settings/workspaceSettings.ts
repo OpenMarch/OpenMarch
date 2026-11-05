@@ -21,7 +21,7 @@ export const workspaceSettingsSchema = z.object({
 
     /**
      * When the file was converted to timelines, or created as a timeline file (ISO time; P9.3,
-     * ADR 0001 §6). Written by the main process; kept here so saving the settings keeps it. The
+     * ADR 0012 §6). Written by the main process; kept here so saving the settings keeps it. The
      * conversion worker's host reads it to tell whether a conversion committed.
      */
     timelineConvertedAt: z.string().optional(),

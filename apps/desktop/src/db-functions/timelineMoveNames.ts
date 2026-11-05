@@ -37,7 +37,7 @@ export const readPageBoxes = async (
  * The page's own timeline that timeline `timelineId` would take over by landing on exactly `range`
  * (a resize or a clip move), or `undefined`. A page box stands for the oldest timeline over it
  * (UI-25), so an older move landing there would become the page's move and turn the page's real
- * one into a clip. Until the stored page-move mark (ADR 0001, 2026-10-16) replaces that inference,
+ * one into a clip. Until the stored page-move mark (ADR 0012, 2026-10-16) replaces that inference,
  * such a landing is refused. A box with no stored timeline is fine: the move becomes its page's
  * move (resize-move E9).
  */

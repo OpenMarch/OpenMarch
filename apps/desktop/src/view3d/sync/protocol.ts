@@ -1,5 +1,5 @@
 /**
- * The 3D View sync contract (ADR 0002 D-4, docs/3d/design.md §7).
+ * The 3D View sync contract (ADR 0010 D-4, docs/3d/design.md §7).
  *
  * The editor is the only writer. It publishes the clock, the selection and
  * query invalidations; main relays them to the 3D View window without
@@ -123,7 +123,7 @@ export interface View3dVenueChangeRequest {
 
 /**
  * Window → main, `invoke`: the window's only settings calls, to read and answer the "open on
- * launch" question (`VIEW3D_AUTO_OPEN_SETTING`, ADR 0002 amendment 2026-11-01). Main checks the
+ * launch" question (`VIEW3D_AUTO_OPEN_SETTING`, ADR 0010 amendment 2026-11-01). Main checks the
  * sender and the value.
  */
 export const VIEW3D_AUTO_OPEN_CHANNELS = {

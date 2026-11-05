@@ -1,5 +1,5 @@
 /**
- * Items: props and equipment with their own identity in the show (ADR 0002 D-9 and D-10,
+ * Items: props and equipment with their own identity in the show (ADR 0010 D-9 and D-10,
  * props-spec sections 4 and 5).
  *
  * An item is a `marchers` row of type `item`, so the timeline resolver positions it and its moves

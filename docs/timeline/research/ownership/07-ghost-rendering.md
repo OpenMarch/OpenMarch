@@ -166,7 +166,7 @@ Context moves need each touching span's actual polyline. Colors come from the ti
   - Limits: FTL with `order: inherit` loses its source and falls back (D-ORDER-FALLBACK). Joiners have no `origin_i` until ghost starts are stored. Linked destinations need the core.
 - **Actual and context polylines** come from `sampleTimelinePath` (`timelinePaths.ts:74-102`) over the real resolver.
 
-### 4.3 Minimal core API additions (G1; ADR 0001 §4 amendment required)
+### 4.3 Minimal core API additions (G1; ADR 0012 §4 amendment required)
 
 The resolver must compute intent and links for motion anyway (live links), so the renderer should read them rather than re-derive them. The precedent is `spanInfos`, which was added by ADR amendment 2026-09-30 (`types.ts:113-117`). Proposed additions to `Resolver`:
 

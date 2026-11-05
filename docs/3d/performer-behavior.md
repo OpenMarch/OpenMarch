@@ -9,8 +9,8 @@
   `archive/pre-convergence`; the sections about them describe that branch.
 - Date: 2026-10-10
 - Decision record: [ADR 0004](../adr/0004-performer-cues.md) (proposed)
-- Builds on: `timeline-try-2` (ADR 0001, the timeline motion model) and
-  [ADR 0002](../adr/0002-3d-view.md) (the 3D View)
+- Builds on: `timeline-try-2` (ADR 0012, the timeline motion model) and
+  [ADR 0010](../adr/0010-3d-view.md) (the 3D View)
 
 The show tells performers what to do, not only where to stand: step style,
 horn state and angle, equipment work and choreography. A designer places
@@ -484,18 +484,18 @@ unread; the spec asks Alex to approve dropping them later.
 
 ## 8. 3D View runtime
 
-### 8.1 Positions and sync (ADR 0002 amendment)
+### 8.1 Positions and sync (ADR 0010 amendment)
 
 In timeline mode `marcher_pages` is frozen and stale, and timeline edits
 invalidate no query keys. So:
 
-- `positions.ts` (ADR 0002 D-6) gains a timeline-mode path: the window
+- `positions.ts` (ADR 0010 D-6) gains a timeline-mode path: the window
   cold-builds its own resolver from the timeline tables (as
   `acquireExportResolver` does) and samples `positionsAt(beat)` at every
   count boundary. Page mode keeps the `marcher_pages` path until the
   timeline's Phase 10.
 - The editor relays a synthetic `["timeline"]` key on `view3d:invalidate`
-  after each delivered change batch or reset (ADR 0002 D-4 keeps its shape;
+  after each delivered change batch or reset (ADR 0010 D-4 keeps its shape;
   no new channel). The window rebuilds its resolver on that key.
 - Cue tables have real query keys, so cue edits reach the window through the
   existing invalidation. Deleting beats, measures, tags or marchers also
@@ -518,7 +518,7 @@ compiled Feet and Facing segments:
   relative to it. Turning eases over the transition on the CPU, through the
   instance matrix it already writes every frame.
 
-ADR 0002 D-7's "the upper body always faces the front sideline" becomes the
+ADR 0010 D-7's "the upper body always faces the front sideline" becomes the
 Facing default.
 
 ### 8.3 Layered animation
@@ -590,7 +590,7 @@ with the high school kit:
 
 ## 9. Storage
 
-The schema, the file format and the ADR 0002 amendments are in
+The schema, the file format and the ADR 0010 amendments are in
 [ADR 0004](../adr/0004-performer-cues.md). In short: new tables `cues`,
 `cue_marchers`, `phrase_assets` and `page_performer_settings`; show defaults
 in workspace settings; additive, no conversion step, numbered after the
@@ -610,7 +610,7 @@ migration with the repo scripts if `main` gained one first.
    repair (ADR 0004). History tests.
 3. **Library catalog and compile** in `@openmarch/core`, with unit tests for
    every resolution rule, counting, ripples, take-overs and flags.
-4. **Window positions and sync** (section 8.1), the ADR 0002 amendment.
+4. **Window positions and sync** (section 8.1), the ADR 0010 amendment.
 5. **Planner**: pace, techniques, stand on holds, step-off, dot mode per
    set, Facing.
 6. **Renderer in the repo, then layering**: per-channel bake, per-bone

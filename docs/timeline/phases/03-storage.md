@@ -112,7 +112,7 @@ A migration test modelled on `0012_pink_king_cobra.test.ts`.
 
 Manual: launch the desktop app and open an older `.dots` file with no errors.
 
-### P3.9: File-format version guard (ADR 0001 §6)
+### P3.9: File-format version guard (ADR 0012 §6)
 
 - Owner: timeline-worker agent (timeline/p3-version-guard)
 - Status: done
@@ -180,7 +180,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-09-30 · timeline-worker agent (timeline/p3-storage) · P3.1 to P3.4 (rework (C-5 homes on marchers))
 
-- **Done:** started the rework the project owner asked for: marcher homes move to `home_x`/`home_y` columns on `marchers` (ADR 0001's primary choice), `timeline_marcher_homes` goes, and migration 0017 is regenerated with drizzle's `__new_marchers` rebuild hand-edited into two `ALTER TABLE … ADD COLUMN` statements with CHECKs. P3.1 to P3.4 set back to `in-progress` for the rework.
+- **Done:** started the rework the project owner asked for: marcher homes move to `home_x`/`home_y` columns on `marchers` (ADR 0012's primary choice), `timeline_marcher_homes` goes, and migration 0017 is regenerated with drizzle's `__new_marchers` rebuild hand-edited into two `ALTER TABLE … ADD COLUMN` statements with CHECKs. P3.1 to P3.4 set back to `in-progress` for the rework.
 - **Checks:** none yet.
 - **Next:** `schema.ts`, regenerate 0017, hand-edit it, confirm repeated generation is a no-op.
 - **Blockers:** none.
@@ -196,14 +196,14 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-09-30 · timeline-worker agent (timeline/p3-storage) · P3.1 to P3.4 (rework (C-5 homes on marchers), resumed)
 
-- **Done:** resumed the stalled rework from c474b862. Added a history test (`src/db-functions/__test__/marcher.test.ts`, "marcher homes") that changes `home_x`/`home_y` through `transactionWithHistory`; the history fixture undoes and redoes it and compares whole `marchers` rows. Squashed the branch into two commits, 66002c5d (P3.1 to P3.3: tables, homes on `marchers`, hand-edited 0017) and cca04ca9 (P3.4: triggers, view, change log, `_blank.dots`), and force-pushed `timeline/p3-storage` (tree identical to the tested wip head b04a4a12). C-5 in `implementation-plan.md`, the Phase 3 handoff notes and the Phase 4 cross-phase note now describe homes on `marchers`; none of them refers to `timeline_marcher_homes` or a home row to create. ADR 0001 is outside `coord.sh`'s scope and still words C-5 conditionally (columns on `marchers`, with the side table as the fallback if drizzle rebuilds, and a change-log sentence for that fallback); it needs a one-line follow-up saying the rebuild was hand-edited into `ADD COLUMN`. P3.1 to P3.4 set back to `in-review`; PR #1037 description updated.
+- **Done:** resumed the stalled rework from c474b862. Added a history test (`src/db-functions/__test__/marcher.test.ts`, "marcher homes") that changes `home_x`/`home_y` through `transactionWithHistory`; the history fixture undoes and redoes it and compares whole `marchers` rows. Squashed the branch into two commits, 66002c5d (P3.1 to P3.3: tables, homes on `marchers`, hand-edited 0017) and cca04ca9 (P3.4: triggers, view, change log, `_blank.dots`), and force-pushed `timeline/p3-storage` (tree identical to the tested wip head b04a4a12). C-5 in `implementation-plan.md`, the Phase 3 handoff notes and the Phase 4 cross-phase note now describe homes on `marchers`; none of them refers to `timeline_marcher_homes` or a home row to create. ADR 0012 is outside `coord.sh`'s scope and still words C-5 conditionally (columns on `marchers`, with the side table as the fallback if drizzle rebuilds, and a change-log sentence for that fallback); it needs a one-line follow-up saying the rebuild was hand-edited into `ADD COLUMN`. P3.1 to P3.4 set back to `in-review`; PR #1037 description updated.
 - **Checks:** `pnpm --dir apps/desktop run test:history`: 78 files and 1,237 tests pass (7 files and 3 tests skipped, 15 todo); 21 tests in 2 files fail, `MarcherForm.test.tsx` and `RevisionsList.test.tsx`, with `Invalid Chai property: toBeInTheDocument`/`toHaveTextContent`. Those two files fail identically on `origin/timeline-try-2` (0ac06bdb) in the same install, so they're not caused by this PR: jest-dom's `vitest` import resolves to the root `vitest@3.2.3` while `apps/desktop` runs `vitest@4.1.2`. `pnpm --dir apps/desktop exec tsc --noEmit`: pass. `pnpm --dir apps/desktop run test:focused electron/database/migrations/__test__/`: 3 files, 51 tests pass. `drizzle-kit generate` against `_blank.dots`: "No schema changes, nothing to migrate". `0017_powerful_edwin_jarvis.sql`: only `CREATE TABLE`/`CREATE INDEX` for the new tables plus the two `ALTER TABLE marchers ADD COLUMN` statements; no `INSERT INTO`, `DROP TABLE` or rebuild statement (`__new_marchers` appears only in the explanatory SQL comment). `eslint` on the changed files: clean except one existing `no-loop-func` warning in the 0017 test. Commits carry no attribution lines.
 - **Next:** a person reviews and merges #1037, then does P3.8 (open an older `.dots` file). P3.5 must recreate the `marchers` history triggers in existing files (see handoff notes).
 - **Blockers:** none. The jest-dom/vitest resolution failure above is pre-existing and outside Phase 3.
 
 ### 2026-09-30 · lead session · P3.1 to P3.4 (review check after C-5 rework)
 
-- **Done:** re-checked PR #1037 at cca04ca9. Recorded the C-5 resolution in ADR 0001 (commit on `timeline-try-2`), which the worker couldn't push through `coord.sh`.
+- **Done:** re-checked PR #1037 at cca04ca9. Recorded the C-5 resolution in ADR 0012 (commit on `timeline-try-2`), which the worker couldn't push through `coord.sh`.
 - **Checks:** 0017 creates 6 tables; the only change to an existing table is two `ALTER TABLE marchers ADD COLUMN … CHECK` statements, with no `INSERT INTO`, `DROP TABLE`, `RENAME` or rebuild. Commits carry no attribution lines. In the lead checkout (normal install, workspace packages built), at the PR head: `VITEST_ENABLE_HISTORY=true vitest run` on `MarcherForm.test.tsx`, `RevisionsList.test.tsx`, `db-functions/__test__/marcher.test.ts` and `electron/database/migrations/__test__/` gives 6 files, 110 tests, all passing.
 - **Finding:** the 21 `Invalid Chai property` failures the worker saw are environmental, not caused by the PR. The same files pass at the PR head in a normal checkout. Agent worktrees live under the main checkout (`.claude/worktrees/`), where package resolution can reach the parent checkout's older root `vitest`.
 - **Next:** a person reviews and merges #1037, then P3.8. P3.5 must recreate the `marchers` history triggers on existing files (see handoff notes) before anything writes homes.

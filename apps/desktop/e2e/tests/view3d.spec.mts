@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 /**
- * 3D View end to end (ADR 0002 Verification, docs/3d P4.3): open the window
+ * 3D View end to end (ADR 0010 Verification, docs/3d P4.3): open the window
  * from the editor; play, pause and seek in the editor and check the window's
  * show time follows within 50 ms; step and play from the window's buttons
  * and keys; change the venue from the window's settings panel, undo and redo

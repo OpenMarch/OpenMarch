@@ -19,7 +19,7 @@ code uses.
   "Performer's left" and "Performer's right" for this reason.
 - Body frame: +Z is where the performer faces, +Y up, so +X is the
   performer's left (`core/instruments/holds.ts`, `core/marchers/facing.ts`).
-  Field frame (ADR 0002 D-2): +X toward side 2, +Z toward the audience.
+  Field frame (ADR 0010 D-2): +X toward side 2, +Z toward the audience.
 
 ## Steps and timing
 

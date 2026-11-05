@@ -1,6 +1,6 @@
 // cspell:words glsl
 /**
- * A silk's motion (props-spec.md section 7, ADR 0002 D-17): a stateless
+ * A silk's motion (props-spec.md section 7, ADR 0010 D-17): a stateless
  * wave over a flat grid, evaluated per vertex from the show clock, a phase
  * seed, the performer's ground speed and turn rate. The silk prototype's
  * motion variant B, "hang and billow" (`prototype/silk-look`): the fly sags

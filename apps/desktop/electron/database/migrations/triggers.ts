@@ -83,7 +83,7 @@ const views = {
              WHERE t.start_beat <> l.start_beat OR t.end_beat <> l.end_beat;
     `,
     /**
-     * The Held marks' commit-time invariants (ADR 0001 amendment 2026-10-30): no move of a
+     * The Held marks' commit-time invariants (ADR 0012 amendment 2026-10-30): no move of a
      * marcher overlaps one of its marks (E-H1), and one marcher's marks don't overlap (E-H3).
      * They name no transition (NULL); the detail names the marcher and the counts. Apart from
      * `timeline_commit_violations` because the marks table comes with a timeline-only migration:
@@ -111,7 +111,7 @@ const views = {
 };
 
 /**
- * The timeline invariant triggers (spec §5.1 and §6, ADR 0001 §2), named with a `timeline_`
+ * The timeline invariant triggers (spec §5.1 and §6, ADR 0012 §2), named with a `timeline_`
  * prefix. Each one only reads rows and RAISEs; none modifies a table (spec U-1). Every check is a
  * condition on the resulting state and never compares NEW with OLD (U-2), so undo, which replays
  * the same states in reverse, can't be rejected by them.
@@ -274,7 +274,7 @@ function exactReal(column: string): string {
 }
 
 /**
- * The change-log triggers (spec §10.2, ADR 0001 §5): one `timeline_change_log` row per changed
+ * The change-log triggers (spec §10.2, ADR 0012 §5): one `timeline_change_log` row per changed
  * row, with the spec's logical table name and JSON row image, so a drained log is a
  * `ChangeBatch` without translation. They fire for foreign-key cascades too. They write only to
  * the bookkeeping table (U-1). Timelines are not logged (R-1).

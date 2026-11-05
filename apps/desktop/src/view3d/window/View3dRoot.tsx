@@ -1,5 +1,5 @@
 /**
- * Entry for the 3D View window (`?view=3d`, ADR 0002 D-3, design §7).
+ * Entry for the 3D View window (`?view=3d`, ADR 0010 D-3, design §7).
  *
  * `main.tsx` loads this with a dynamic `import()`, so the editor doesn't pay
  * for three.js. The window gets the editor's query client setup, theme,

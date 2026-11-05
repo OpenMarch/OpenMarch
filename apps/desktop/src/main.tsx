@@ -26,7 +26,7 @@ installClickFocusMarker();
 
 const isSettingsWindow = window.location.hash === "#settings";
 
-// The 3D View window loads this bundle with `?view=3d` (ADR 0002 D-3). It
+// The 3D View window loads this bundle with `?view=3d` (ADR 0010 D-3). It
 // renders its own root, loaded on demand so the editor doesn't pay for
 // three.js, and skips the editor's analytics and providers.
 const isView3dWindow =

@@ -220,7 +220,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-09-30 · lead session · Phase 1 closed
 
-- **Done:** fork PRs #2 (P1.5) and #3 (P1.6) merged; P1.5 and P1.6 set to done. P1.8: `packages/core/src/timeline/index.ts` exports the §10.1 types, `TimelineSnapshot`, the validators and `createTimelineOracleForTesting`, matching ADR 0001 §4; `createResolver` arrives with P2.9. P1.7 (mutation script) deferred as optional: P1.6's mutation smoke check showed a D-7 break is caught by P-12. Phase 1 set to done.
+- **Done:** fork PRs #2 (P1.5) and #3 (P1.6) merged; P1.5 and P1.6 set to done. P1.8: `packages/core/src/timeline/index.ts` exports the §10.1 types, `TimelineSnapshot`, the validators and `createTimelineOracleForTesting`, matching ADR 0012 §4; `createResolver` arrives with P2.9. P1.7 (mutation script) deferred as optional: P1.6's mutation smoke check showed a D-7 break is caught by P-12. Phase 1 set to done.
 - **Checks:** on the fork's `timeline-try-2` at a42286d4: `pnpm --dir packages/core run build` (pass); `pnpm --dir packages/core run test` (17 files, 304 passed, 2 skipped); `pnpm --dir apps/desktop exec tsc --noEmit` (pass).
 - **Next:** Phase 2.
 - **Blockers:** none.

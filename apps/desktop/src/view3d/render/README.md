@@ -53,5 +53,5 @@ held only the three modules, so there was no suite here to move. Checks of these
 preview's pixel comparisons (`docs/3d/findings.md`).
 
 om-pose is OpenMarch's own (private) repository, so these files ship under the
-app's license. Its assets don't: see `../assets/om-pose/LICENSE` (ADR 0002
+app's license. Its assets don't: see `../assets/om-pose/LICENSE` (ADR 0010
 D-7, correction of 2026-10-11).

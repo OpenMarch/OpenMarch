@@ -4,7 +4,7 @@
 
 - Status: approved by the owner on 2026-10-11, with the ADR amendments
 - Date: 2026-10-11
-- Decisions: [ADR 0002](../adr/0002-3d-view.md) amendment of 2026-10-11
+- Decisions: [ADR 0010](../adr/0010-3d-view.md) amendment of 2026-10-11
   (D-9 to D-22) and the [ADR 0004](../adr/0004-performer-cues.md) amendment of 2026-10-11
 - Work: the customization track (C1 to C5) in [phases/](phases/)
 
@@ -29,7 +29,7 @@ phases [26.24].
   hatch. Anything that doesn't fit is flagged or converted, never silently
   stretched (map).
 - Time is counts. Every change is keyed by `beat_id` and happens at the start
-  of its beat, building on ADR 0001 (timeline motion model,
+  of its beat, building on ADR 0012 (timeline motion model,
   `timeline/timeline-try-2`) and ADR 0004 (performer cues) [07 revision, 21].
   Follow vs hang is moot: cues are absolute counts [21].
 - Props and items ship with the timeline, **timeline mode only**, with no
@@ -186,7 +186,7 @@ phases [26.24].
     import.
 - **Import IPC:** the editor asks main to pick files, run the pipeline and
   read and write the local Library over 19 `library:` channels, recorded in
-  ADR 0002 D-13 and designed in
+  ADR 0010 D-13 and designed in
   [proposals/C1.9-import-ipc.md](proposals/C1.9-import-ipc.md); they follow
   D-4's rules. The model pipeline and template generation run in a utility
   process; artwork, pdf.js, the store and dialogs stay in main. Paths never
@@ -484,10 +484,10 @@ deletes the change. It joins undo history and repair like the cue tables.
 ### Base floor [03, 11, 18, 26.18]
 
 The Base floor is an import kind with Artwork (2048 on the long edge). The
-show's floor is its field image (ADR 0002 D-23), so it is D-5's tarp image
+show's floor is its field image (ADR 0010 D-23), so it is D-5's tarp image
 too.
 
-**Planned change (owner, 2026-10-12, Q78–Q82; ADR 0002 D-23, accepted
+**Planned change (owner, 2026-10-12, Q78–Q82; ADR 0010 D-23, accepted
 2026-10-15):**
 
 - All assets are managed in one place, the Assets area. Contextual links
@@ -591,7 +591,7 @@ cascade and its `equipment_name` column are not used [07 revision].
 - One uniform reference per performer from a count on, never per-part
   overrides. A per-performer override is a hand-picked set. Hats off is
   "Trumpets → _Band, hats off_ from count N".
-- Default: the show's uniform presets (ADR 0002 D-18, amended 2026-10-16):
+- Default: the show's uniform presets (ADR 0010 D-18, amended 2026-10-16):
   the band preset's band look, or the guard preset's guard look when
   `isGuard`. Only the two preset ids are stored, in the venue settings.
 
@@ -761,7 +761,7 @@ Research basis [14]; policy [16]. Not legal advice.
 - Declared twice: a `LICENSE` in each asset folder (built-ins, templates,
   Starter kit, om-pose assets) and the per-item `license` field. `SOURCE.json`
   and the om-pose vendor README stop saying "the app's license".
-- **om-pose assets** (correction to ADR 0002 D-7) [16, 26.6]: they don't ship
+- **om-pose assets** (correction to ADR 0010 D-7) [16, 26.6]: they don't ship
   under the app's license. The clips, derived from 2019 Cadets footage, are in
   the counsel gate: no release that ships them goes out before counsel
   answers lawyer Q3. The reference bodies and v4 skeleton become CC0 once Q3
@@ -867,7 +867,7 @@ readout) [22].
   drop from a 56 × 36 to a 24 × 16 grid [02, 10].
 - What performers carry is unchanged [07].
 - A Base floor Artwork, once set, replaces the background-image tarp [26.18].
-  The show's floor is the field image (ADR 0002 D-23).
+  The show's floor is the field image (ADR 0010 D-23).
 - Props appear only in timeline-mode shows [24].
 
 ## 14. Out of scope

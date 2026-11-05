@@ -1,6 +1,6 @@
 /**
  * Which clip each 3D View marcher plays on each count, and where its body is
- * (ADR 0002 D-7; om-pose `docs/openmarch-3d.md`, "Driving clips from drill").
+ * (ADR 0010 D-7; om-pose `docs/openmarch-3d.md`, "Driving clips from drill").
  *
  * The planner doesn't know about pages. It turns the counts into steps by
  * the Feet pace (docs/3d/performer-behavior.md section 3, 8.2): one step a

@@ -20,7 +20,7 @@ Set by the project owner on 2026-10-04, until they lift it here:
   (in-editor preview, imports, video export, analysis), even if they look
   small. Exception (owner, 2026-10-11): the customization track, `C1` to
   `C5` in [phases/](phases/), is in scope, imports included, as specified in
-  [props-spec.md](props-spec.md) and ADR 0002 D-9 to D-22.
+  [props-spec.md](props-spec.md) and ADR 0010 D-9 to D-22.
 - **Don't run the full test suite yourself** (`pnpm test`, `pnpm check:full`,
   the whole `test:history` suite or the whole Playwright e2e suite). The PR
   checks run them on PRs into `main`. Run the type check and focused tests for
@@ -30,7 +30,7 @@ Set by the project owner on 2026-10-04, until they lift it here:
   checks' results. Set by the project owner on 2026-10-13.
 - **List every command you ran, with its result**, in the PR.
 - **Workers never merge their own PRs.** The lead reviews each PR against ADR
-  0002, [design.md](design.md), [ui.md](ui.md) and the phase file, re-runs its
+  0010, [design.md](design.md), [ui.md](ui.md) and the phase file, re-runs its
   checks, and merges. The lead escalates to the project owner only when the
   docs can't answer a question.
 - **Visual evidence:** packages that change what the window shows attach
@@ -45,7 +45,7 @@ Set by the project owner on 2026-10-04, until they lift it here:
    `git remote add timeline https://github.com/AlexDumo/OpenMarch-timeline.git`.
    The coordination branch is `main`.
 2. Read [README.md](README.md), then, if you haven't in this session,
-   [plan.md](plan.md), [design.md](design.md) and ADR 0002. Read [ui.md](ui.md)
+   [plan.md](plan.md), [design.md](design.md) and ADR 0010. Read [ui.md](ui.md)
    for any package that touches the window's UI or cameras.
 3. Read the **coordination branch's** copy of the phase file, not a possibly
    stale local one: `git show <remote>/main:docs/3d/phases/<file>.md`.
@@ -109,7 +109,7 @@ minutes. If you sense the session ending, checkpoint first.
 Throughout:
 
 - Follow the root `AGENTS.md`, `apps/desktop/AGENTS.md` and `docs/conventions/`.
-- Respect the `view3d/core/` boundary (ADR 0002 D-1): no React, React Three
+- Respect the `view3d/core/` boundary (ADR 0010 D-1): no React, React Three
   Fiber, drei, Electron or database imports there.
 - Build against `apps/desktop/src/view3d/core/types.ts`. If a contract there
   doesn't fit, log a blocker for the lead; don't change it on your own.

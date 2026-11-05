@@ -54,7 +54,7 @@ It happens in both modes, for different reasons.
     (`videoFrameRenderer.ts:288`), and the mobile `dots-to-om.ts`;
   - the timeline converter.
 - **Page-era tables are temporary.** They freeze after Phase 9 and are dropped in Phase 10
-  (ADR 0001 §1).
+  (ADR 0012 §1).
 
 ## Timeline mode (per-file `timelineMode`; convert-on-open only with `OPENMARCH_CONVERT_ON_OPEN=1`, both retired 2026-10-12)
 
@@ -76,7 +76,7 @@ It happens in both modes, for different reasons.
   | New marchers get a stay to home in every stored timeline                                                            | `src/db-functions/marcher.ts:200-232`, `src/timeline/timelineMarchers.ts:97-100` | adding marchers                                                                                         |
   | Set to previous/next page copies resolved positions as fixed destinations                                           | `src/timeline/timelineCoordinateWrites.ts:290-305`                               | Shift(+Ctrl)+P/N                                                                                        |
   | Add selected marchers: destination = position at the end of the range (a drag overwrites it for marchers that move) | `src/db-functions/timelineMembership.ts:192-198`                                 | UI-9 add                                                                                                |
-  - The ripple contradicts ADR 0001 C-12 ("adding or deleting a page writes only page rows").
+  - The ripple contradicts ADR 0012 C-12 ("adding or deleting a page writes only page rows").
     Only the UI-9 **+** flag and flag delete (`pageFlags.ts:20-31`) honor it.
 
 - **Reproduced [RAN].** Scratch test: flags at 17, 25 and 33, then page 2 edited with a UI-10 drag
