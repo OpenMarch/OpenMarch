@@ -24,6 +24,7 @@ import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
 import {
     EditorActionHandlers,
     FileActionHandlers,
+    MenuActions,
 } from "@/shortcuts/ActionHandlers";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { TimelineSplitter } from "@/components/timeline/TimelineSplitter";
@@ -63,6 +64,7 @@ import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import ConvertShowDialog from "./components/ConvertShowDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
+import WhatsNewDialog from "./components/welcome/WhatsNewDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
@@ -328,6 +330,8 @@ function App() {
                     <ShortcutDispatcher />
                     <CommandPalette />
                     <ShortcutsDialog />
+                    <WhatsNewDialog />
+                    <MenuActions />
                     <MusicXmlChecksDialog />
                     <LongPressGuard />
                     <WindowTooSmallNotice size={windowSize} />

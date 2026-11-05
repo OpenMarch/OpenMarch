@@ -3121,6 +3121,7 @@
         },
         "whatsNew": {
             "carousel": "Walkthrough",
+            "done": "Done",
             "guides": "Learn more in the OpenMarch guides",
             "next": "Next",
             "position": "{current} of {total}",
@@ -3370,10 +3371,11 @@
             "front": "Bring All to Front"
         },
         "help": {
-            "title": "Help",
+            "guides": "Docs/Guides",
             "showShortcuts": "Keyboard Shortcuts",
+            "title": "Help",
             "website": "Website",
-            "guides": "Docs/Guides"
+            "whatsNew": "What's new in 0.2"
         },
         "withShortcut": "{label}  ({shortcut})"
     },

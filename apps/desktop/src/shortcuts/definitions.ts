@@ -604,6 +604,14 @@ const STATIC_ACTIONS = {
         defaultBindings: ["Alt+P"],
         ignoreRepeat: true,
     },
+    // What's new in this version (the welcome flow's walkthrough), from Help or the web menu
+    showWhatsNew: {
+        labelKey: "menu.help.whatsNew",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+        allowInModals: true,
+    },
     // UI-17 follow-up: ? lists every shortcut
     showShortcuts: {
         labelKey: "actions.ui.showShortcuts",

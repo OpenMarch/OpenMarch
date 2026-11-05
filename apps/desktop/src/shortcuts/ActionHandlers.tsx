@@ -1,3 +1,7 @@
+import { useEffect } from "react";
+import { isMenuAction } from "@/global/menuActions";
+import { ACTIONS, type ActionId } from "./definitions";
+import { runAction } from "./registry";
 import { useAlignmentActionHandlers } from "./handlers/useAlignmentActionHandlers";
 import { useAppActionHandlers } from "./handlers/useAppActionHandlers";
 import { useBatchEditActionHandlers } from "./handlers/useBatchEditActionHandlers";
@@ -18,6 +22,23 @@ import { PlacedBoxKeys } from "@/shapes/placed/PlacedBoxKeys";
 import { useBoxSelectionStore } from "@/shapes/placed/boxSelectionStore";
 import { useUnsetActionHandlers } from "./handlers/useUnsetActionHandlers";
 import { useHoldActionHandlers } from "./handlers/useHoldActionHandlers";
+
+/**
+ * The app menu's playback and help items run their action here, and only those
+ * (docs/adr/0003-menu-actions-ipc.md). Mounted for the whole app, so Help works on the launch
+ * page too; an action with no handler there (playback) does nothing.
+ */
+export function MenuActions() {
+    useEffect(
+        () =>
+            window.electron?.onMenuAction?.((action) => {
+                if (isMenuAction(action) && action in ACTIONS)
+                    runAction(action as ActionId);
+            }),
+        [],
+    );
+    return null;
+}
 
 /** Handlers available before a show is open (launch page). */
 export function FileActionHandlers() {
