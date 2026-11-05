@@ -702,7 +702,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             ctx.restore();
         }
 
-        // Grouped measures (7/8 as 2+2+3): the axis draws every count the same width, so each count
+        // Unevenly grouped measures (7/8 as 2+2+3): the axis draws every count the same width, so each count
         // gets a bracket along the foot of the measures lane with its eighths in it ("2 2 3"), and
         // the long counts are in the accent (sam: "I can't see the long third count")
         for (const m of data.measures) {
@@ -712,7 +712,9 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 (_, i) => units[m.start + i],
             );
             if (g.some((u) => u === undefined)) continue;
-            if (g.every((u) => u === 2)) continue; // plain quarters
+            // Only uneven counts get brackets: in 6/8 (3+3) or plain quarters every count is the
+            // same, and "3 3" under each bar read as triplets (owner, 2026-11-04)
+            if (g.every((u) => u === g[0])) continue;
             const shortest = Math.min(...g);
             g.forEach((u, i) => {
                 const x0 = X(m.start + i);
