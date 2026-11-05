@@ -245,13 +245,16 @@ export function normalizedSchema(db: DatabaseSync): string[] {
 }
 
 /** Opens `filePath` and runs its pending migrations as the app's open does, then closes it. */
-export async function migrateFile(filePath: string): Promise<void> {
+export async function migrateFile(
+    filePath: string,
+    folder: string = migrationsFolder,
+): Promise<void> {
     const db = new DatabaseSync(filePath);
     try {
         await new DrizzleMigrationService(
             getOrm(db),
             db,
-        ).applyPendingMigrations(migrationsFolder);
+        ).applyPendingMigrations(folder);
     } finally {
         db.close();
     }

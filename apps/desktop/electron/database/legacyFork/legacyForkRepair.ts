@@ -21,7 +21,9 @@
  * 4. replaces the fork's rows in `__drizzle_migrations` with the collapsed migration's;
  * 5. checks the file against the collapsed migration (every table and index it makes, every column
  *    it adds, word for word), that the parked tables are gone, and that every other table kept
- *    each of its rows. Anything else a lab build added (a table, an index, a column) is kept.
+ *    each of its rows with the values it had. A table the collapsed migration makes must be exactly
+ *    its own, so an extra column there fails the repair; what a lab build added elsewhere (a table,
+ *    an extra index, a column on an upstream table) is kept.
  *
  * It runs in one transaction with foreign keys off, so a failure leaves the file as it was. The
  * desktop app backs the file up before (`hasPendingMigrations` is true); a page-era file repairs
@@ -40,6 +42,15 @@ import { LEGACY_FORK_MIGRATIONS } from "./legacyForkMigrations";
 
 /** The migration fork files are repaired to. */
 export const COLLAPSED_MIGRATION_TAG = "0017_timeline_model";
+
+/**
+ * The hash drizzle records for `0017_timeline_model` (the sha256 of its SQL). A file records the
+ * collapsed migration when it has a row with this hash, this build's hash for it, or its date: so a
+ * new date for it (a regenerated journal) or a new hash (an edited file) alone never makes a file
+ * this build created look like a fork file. Neither may change (ADR 0011); a test checks the hash.
+ */
+export const COLLAPSED_MIGRATION_HASH =
+    "550f71dec720499bf402f568a7dd6efdc626d98a56d468bab471296e8d2cb8a3";
 
 /** `created_at` of upstream's last migration, `0016_unique_ultimo`. */
 export const UPSTREAM_LAST_MIGRATION_MS = 1764733345489;
@@ -145,14 +156,32 @@ const columnsOf = (db: DatabaseSync) => (table: string) =>
         }[]
     ).map((c) => c.name);
 
-const recordedDates = (db: DatabaseSync): number[] =>
+interface RecordedMigration {
+    hash: string;
+    createdAt: number;
+}
+
+const recordedMigrations = (db: DatabaseSync): RecordedMigration[] =>
     hasTable(db, MIGRATIONS_TABLE)
         ? (
               db
-                  .prepare(`SELECT created_at FROM ${MIGRATIONS_TABLE}`)
-                  .all() as { created_at: number | string }[]
-          ).map((r) => Number(r.created_at))
+                  .prepare(`SELECT hash, created_at FROM ${MIGRATIONS_TABLE}`)
+                  .all() as { hash: string; created_at: number | string }[]
+          ).map((r) => ({ hash: r.hash, createdAt: Number(r.created_at) }))
         : [];
+
+const recordedDates = (db: DatabaseSync): number[] =>
+    recordedMigrations(db).map((r) => r.createdAt);
+
+/** Whether `row` records the collapsed migration (see {@link COLLAPSED_MIGRATION_HASH}). */
+const isCollapsedRow = (
+    row: RecordedMigration,
+    collapsed: FolderMigration | undefined,
+) =>
+    row.hash === COLLAPSED_MIGRATION_HASH ||
+    (!!collapsed &&
+        (row.hash === collapsed.hash ||
+            row.createdAt === collapsed.folderMillis));
 
 function collapsedMigration(
     migrations: readonly FolderMigration[],
@@ -174,12 +203,13 @@ export function needsLegacyForkRepair(
     db: DatabaseSync,
     migrations: readonly FolderMigration[],
 ): boolean {
-    const dates = recordedDates(db);
-    if (dates.some((d) => FORK_MIGRATION_DATES.has(d))) return true;
+    const recorded = recordedMigrations(db);
     const collapsed = migrations.find((m) => m.tag === COLLAPSED_MIGRATION_TAG);
+    // A fork date is never the collapsed migration's, but its row decides first all the same
+    const fork = recorded.filter((r) => !isCollapsedRow(r, collapsed));
+    if (fork.some((r) => FORK_MIGRATION_DATES.has(r.createdAt))) return true;
     return (
-        !!collapsed &&
-        !dates.includes(collapsed.folderMillis) &&
+        !recorded.some((r) => isCollapsedRow(r, collapsed)) &&
         hasTable(db, "timelines")
     );
 }
@@ -237,6 +267,55 @@ function rowCounts(db: DatabaseSync): Map<string, number> {
             ).n,
         ]),
     );
+}
+
+/** FNV-1a over `text`, continuing from `hash`. */
+function fnv1a(text: string, hash: number): number {
+    let h = hash;
+    for (let i = 0; i < text.length; i++) {
+        h ^= text.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h;
+}
+
+/**
+ * A checksum of every row of every table the repair keeps (`rowCounts`'s tables), over the columns
+ * it had before (`columns`; all now but `items`' Library columns, which the repair drops), by rowid.
+ * The repair changes no kept row, so the checksums after must match: the row counts alone would
+ * miss a row whose values a replayed migration changed.
+ */
+function rowDigests(
+    db: DatabaseSync,
+    columns?: Map<string, { columns: string[]; digest: string }>,
+): Map<string, { columns: string[]; digest: string }> {
+    const digests = new Map<string, { columns: string[]; digest: string }>();
+    for (const table of rowCounts(db).keys()) {
+        // The repair resets the undo counters on purpose (step 3)
+        if (table === "history_stats") continue;
+        if (columns && !columns.has(table)) continue;
+        const cols =
+            columns?.get(table)?.columns ??
+            columnsOf(db)(table).filter(
+                (c) => table !== "items" || !ITEMS_LIBRARY_COLUMNS.includes(c),
+            );
+        if (cols.length === 0) continue;
+        const row = cols.map((c) => `quote("${c}")`).join(" || ',' || ");
+        // Two FNV-1a hashes with different seeds, for 64 bits
+        let a = 0x811c9dc5;
+        let b = 0x01000193;
+        for (const { r } of db
+            .prepare(`SELECT ${row} AS r FROM "${table}" ORDER BY rowid`)
+            .all() as { r: string }[]) {
+            a = fnv1a(r + "\n", a);
+            b = fnv1a("\n" + r, b);
+        }
+        digests.set(table, {
+            columns: cols,
+            digest: `${a.toString(16)}:${b.toString(16)}`,
+        });
+    }
+    return digests;
 }
 
 function foreignKeyViolations(db: DatabaseSync): Map<string, number> {
@@ -315,7 +394,7 @@ function recordCollapsedMigration(
     );
     for (const date of recordedDates(db))
         if (FORK_MIGRATION_DATES.has(date)) remove.run(date);
-    if (!recordedDates(db).includes(collapsed.folderMillis))
+    if (!recordedMigrations(db).some((r) => isCollapsedRow(r, collapsed)))
         db.prepare(
             `INSERT INTO ${MIGRATIONS_TABLE} ("hash", "created_at") VALUES (?, ?)`,
         ).run(collapsed.hash, collapsed.folderMillis);
@@ -395,20 +474,24 @@ export function repairLegacyForkFileInTransaction(
             "The fork-file repair needs foreign keys off: dropping a table would cascade",
         );
     const collapsed = collapsedMigration(migrations);
-    const recorded = recordedDates(db)
+    const recorded = recordedMigrations(db)
         .filter(
-            (d) =>
-                d > UPSTREAM_LAST_MIGRATION_MS && d !== collapsed.folderMillis,
+            (r) =>
+                r.createdAt > UPSTREAM_LAST_MIGRATION_MS &&
+                !isCollapsedRow(r, collapsed),
         )
+        .map((r) => r.createdAt)
         .sort((a, b) => a - b)
         .map((d) => FORK_MIGRATION_DATES.get(d) ?? String(d));
     const countsBefore = rowCounts(db);
+    const digestsBefore = rowDigests(db);
     const violationsBefore = foreignKeyViolations(db);
 
     dropAllTriggers(db);
     replayForkMigrations(db);
     // Before the Library tables go: a parked floor-model file keeps its field image there.
-    recoverParkedFloorInTransaction(db);
+    if (recoverParkedFloorInTransaction(db) !== "none")
+        digestsBefore.delete("field_properties");
     const dropped: { table: string; rows: number }[] = [];
     for (const table of PARKED_TABLES) {
         if (!hasTable(db, table)) continue;
@@ -431,6 +514,13 @@ export function repairLegacyForkFileInTransaction(
             );
         else if (!countsAfter.has(table) && !PAGE_ERA_TABLES.has(table))
             problems.push(`${table} is gone`);
+    const digestsAfter = rowDigests(db, digestsBefore);
+    for (const [table, { digest }] of digestsBefore)
+        if (
+            digestsAfter.has(table) &&
+            digestsAfter.get(table)!.digest !== digest
+        )
+            problems.push(`${table} has rows that changed`);
     for (const [key, n] of foreignKeyViolations(db))
         if (n > (violationsBefore.get(key) ?? 0))
             problems.push(`rows lost their parent (${key})`);

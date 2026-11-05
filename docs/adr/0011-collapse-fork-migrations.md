@@ -58,7 +58,7 @@ those tables (`FIRST_TIMELINE_MIGRATION_TAG`).
 5. **Repair on open** (`electron/database/legacyFork/legacyForkRepair.ts`). A file needs it when it
    records any date in `FORK_MIGRATION_DATES` (the fork's 0017 to 0032 and every date its other
    branches gave a migration, from every fork branch's journal), or has the `timelines` table
-   without `0017_timeline_model` (a lab date that list missed). Files from upstream branches (for
+   without a row for `0017_timeline_model` (a lab date that list missed). Files from upstream branches (for
    example the `lighting` branch's own 0017 onwards) are not fork files and are left alone. The
    repair:
    1. replays all the fork's migrations from a frozen copy (`legacyForkMigrations.ts`, never
@@ -74,15 +74,27 @@ those tables (`FIRST_TIMELINE_MIGRATION_TAG`).
       one);
    5. checks the result before committing: every table and index 0017 makes has 0017's exact text,
       every column it adds has its exact definition, no parked table is left, every other table
-      kept each of its rows, and no row lost its parent. Anything else a lab build added (a
-      table, an index, a column) stays. Anything that doesn't match fails the repair.
+      kept each of its rows with the values it had (a checksum per table over its columns from
+      before), and no row lost its parent. Anything that doesn't match fails the repair, so a
+      table 0017 makes must be exactly 0017's: an extra column on one of them gets the file
+      refused. What a lab build added elsewhere is kept: a table 0017 doesn't make, an extra index, or a column on a table upstream made (for example `beats.tempo_pin`).
 
    It runs in one transaction with foreign keys off, so a failed repair leaves the file exactly as
    it was and the open reports it. The desktop app backs the file up first (`hasPendingMigrations`
    is true for such a file). A page-era file repairs inside its conversion's transaction, after the
    conversion's backup. The web editor runs the same code on its in-memory copy.
 
-6. The fork's old `0017_melted_sage` special case (`forgetFork3dVenueMigration`) is replaced by the
+6. **What identifies the collapsed migration, and what must never change.** A file records
+   `0017_timeline_model` when `__drizzle_migrations` has a row with its hash (pinned in the code as
+   `COLLAPSED_MIGRATION_HASH`, the sha256 of its SQL), with this build's hash for it, or with its
+   journal date. Matching on the hash keeps a new date for 0017 (a regenerated journal, a rebase)
+   from making every file this build created look like a fork file. Still, neither may change:
+   - its SQL, byte for byte: a test checks it against `COLLAPSED_MIGRATION_HASH`;
+   - its journal `when` (1793856518601), and 0018's: drizzle runs only migrations dated after a
+     file's newest one, so a later date would make every existing file run 0017 again, and a date
+     after 0018's would keep 0018 from ever running on a file that has 0017.
+
+7. The fork's old `0017_melted_sage` special case (`forgetFork3dVenueMigration`) is replaced by the
    repair, which handles that date like the others.
 
 ## Consequences
@@ -116,6 +128,10 @@ those tables (`FIRST_TIMELINE_MIGRATION_TAG`).
   convert; a failed conversion and a refused repair leave the file as it was; 3d-async, lab-dated
   and upstream-branch files.
 - `electron/database/legacyFork/__test__/realForkFiles.test.ts` (run with `OM_FORK_FIXTURES`): real
-  fork-saved files open through the app's path.
+  fork-saved files open through the app's path, every kept row value for value.
+- The same repair test file: a file this build created isn't repaired, and keeps its undo history,
+  when 0017's journal date changes.
+- `web/worker/__test__/legacyForkRepair.test.ts`: the repair under the web editor's sqlite-wasm ends
+  exactly as on the desktop, and rolls back the same way.
 - `electron/database/__test__/v017Files.test.ts`: the v0.1.7 files convert as before, and a field
   image survives the conversion.

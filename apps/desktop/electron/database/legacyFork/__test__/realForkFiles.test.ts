@@ -71,6 +71,7 @@ const EMPTIED = new Set([
     "__drizzle_migrations",
     "history_undo",
     "history_redo",
+    "history_stats",
     "timeline_change_log",
 ]);
 /** Tables a conversion rewrites from the page-era tables. */
@@ -111,6 +112,49 @@ const countsOf = (filePath: string) =>
         ),
     );
 
+/** Columns no comparison looks at: wall-clock times and the Library pins the repair drops. */
+const IGNORED_COLUMNS = new Set([
+    "updated_at",
+    "library_item_id",
+    "library_version_hash",
+]);
+
+type Row = Record<string, unknown>;
+
+/**
+ * Every row of every table the open keeps (not the parked, page-era, history or migration
+ * tables), by rowid, with blobs as their sha256.
+ */
+const contentsOf = (filePath: string) =>
+    withDb(filePath, (db) => {
+        const tables = new Map<string, Row[]>();
+        for (const table of tablesOf(db).filter((t) => !EMPTIED.has(t)))
+            tables.set(
+                table,
+                (
+                    db
+                        .prepare(`SELECT * FROM "${table}" ORDER BY rowid`)
+                        .all() as Row[]
+                ).map((row) =>
+                    Object.fromEntries(
+                        Object.entries(row)
+                            .filter(([c]) => !IGNORED_COLUMNS.has(c))
+                            .map(([c, v]) => [
+                                c,
+                                v instanceof Uint8Array
+                                    ? `blob:${createHash("sha256").update(v).digest("hex")}`
+                                    : v,
+                            ]),
+                    ),
+                ),
+            );
+        return tables;
+    });
+
+/** `rows` with only `columns`. */
+const project = (rows: Row[], columns: string[]) =>
+    rows.map((row) => Object.fromEntries(columns.map((c) => [c, row[c]])));
+
 /** The sha256 of the field image, or null. */
 const fieldImageOf = (filePath: string) =>
     withDb(filePath, (db) => {
@@ -146,6 +190,7 @@ describe.skipIf(!root)("real files saved by fork builds", () => {
             return readUserVersion(db);
         });
         const before = countsOf(file);
+        const contentsBefore = contentsOf(file);
         const imageBefore = fieldImageOf(file);
 
         if (version === 7) {
@@ -172,6 +217,25 @@ describe.skipIf(!root)("real files saved by fork builds", () => {
         for (const [table, n] of Object.entries(before))
             if (!(version === 7 && CONVERTED.has(table)))
                 expect(after[table], table).toBe(n);
+        // Every kept row, value for value, in the columns it had (new columns aside). A page-era
+        // file's conversion rewrites the timeline tables and gives marchers their page-0 homes;
+        // the conversion tests check those.
+        const contentsAfter = contentsOf(file);
+        for (const [table, rows] of contentsBefore) {
+            if (version === 7 && CONVERTED.has(table)) continue;
+            const columns = Object.keys(rows[0] ?? {}).filter(
+                (c) =>
+                    !(
+                        version === 7 &&
+                        table === "marchers" &&
+                        (c === "home_x" || c === "home_y")
+                    ),
+            );
+            expect(
+                project(contentsAfter.get(table) ?? [], columns),
+                table,
+            ).toEqual(project(rows, columns));
+        }
 
         withDb(file, (db) => {
             // What the collapsed migration makes, word for word, and no parked table

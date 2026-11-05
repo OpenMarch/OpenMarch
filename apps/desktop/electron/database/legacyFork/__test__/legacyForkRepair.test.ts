@@ -28,6 +28,7 @@ import {
 import { convertFileOnOpen } from "../../convertOnOpen";
 import { LEGACY_FORK_MIGRATIONS } from "../legacyForkMigrations";
 import {
+    COLLAPSED_MIGRATION_HASH,
     COLLAPSED_MIGRATION_TAG,
     FORK_MIGRATION_DATES,
     needsLegacyForkRepair,
@@ -429,5 +430,78 @@ describe("files from other builds", () => {
             /saved by a test build.*timeline_transitions/,
         );
         expect(fs.readFileSync(file).equals(bytes)).toBe(true);
+    });
+});
+
+describe("a file this build created", () => {
+    it("records the collapsed migration under the hash the repair pins", () => {
+        expect(
+            folderMigrations.find((m) => m.tag === COLLAPSED_MIGRATION_TAG)!
+                .hash,
+        ).toBe(COLLAPSED_MIGRATION_HASH);
+    });
+
+    /** This build's migrations folder, copied, with 0017's journal date moved to `when`. */
+    function folderWith0017At(when: number): string {
+        const folder = path.join(dir, `migrations-${when}`);
+        fs.cpSync(migrationsFolder, folder, { recursive: true });
+        const journalPath = path.join(folder, "meta", "_journal.json");
+        const journal = JSON.parse(fs.readFileSync(journalPath, "utf-8")) as {
+            entries: { tag: string; when: number }[];
+        };
+        journal.entries.find((e) => e.tag === COLLAPSED_MIGRATION_TAG)!.when =
+            when;
+        fs.writeFileSync(journalPath, JSON.stringify(journal));
+        return folder;
+    }
+
+    it("isn't repaired when 0017 gets a new journal date, and keeps its history", async () => {
+        const file = path.join(dir, "new.dots");
+        await createNewTimelineShow(file);
+        withDb(file, (db) =>
+            db.exec(`
+                INSERT INTO history_undo (history_group, sql) VALUES (1, 'SELECT 1');
+                UPDATE history_stats SET cur_undo_group = 2;
+            `),
+        );
+        const state = () =>
+            withDb(file, (db) => ({
+                history: rowsOf(db, "history_undo"),
+                stats: rowsOf(db, "history_stats"),
+                migrations: rowsOf(db, "__drizzle_migrations"),
+                schema: normalizedSchema(db),
+            }));
+        const before = state();
+        const collapsed = folderMigrations.find(
+            (m) => m.tag === COLLAPSED_MIGRATION_TAG,
+        )!;
+        // Between 0017's date and 0018's, so drizzle itself has nothing to run
+        const folder = folderWith0017At(collapsed.folderMillis + 100);
+        const moved = readTaggedMigrations(folder);
+        withDb(file, (db) =>
+            expect(needsLegacyForkRepair(db, moved)).toBe(false),
+        );
+        await migrateFile(file, folder);
+        expect(state()).toEqual(before);
+    });
+
+    it("isn't taken for a fork file whatever date 0017 gets", async () => {
+        const file = path.join(dir, "new.dots");
+        await createNewTimelineShow(file);
+        for (const when of [
+            UPSTREAM_LAST_MIGRATION_MS + 1,
+            Date.UTC(2030, 0, 1),
+        ]) {
+            const moved = folderMigrations.map((m) =>
+                m.tag === COLLAPSED_MIGRATION_TAG
+                    ? { ...m, folderMillis: when }
+                    : m,
+            );
+            withDb(file, (db) =>
+                expect(needsLegacyForkRepair(db, moved), String(when)).toBe(
+                    false,
+                ),
+            );
+        }
     });
 });
