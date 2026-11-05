@@ -548,7 +548,7 @@ const stopGuide = (
 ];
 
 /**
- * Tempo mode's one Play (prototype; owner, 2026-10-30): one row, named for what it does now, and
+ * Tempo mode's one Play (owner, 2026-10-30): one row, named for what it does now, and
  * Stop stays where it stopped
  */
 const playOnlyGuide = (

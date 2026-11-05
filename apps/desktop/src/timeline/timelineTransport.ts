@@ -425,7 +425,7 @@ export function startTimelinePlayOn(
  * (project owner, 2026-10-13, lab test playback-start: version B won). Alt+Space plays on from the
  * start flag (`playTimelineOn`) and Shift+Space from the playhead (`playTimelinePage`). Playing,
  * it stops and goes back to where Play was pressed (UI-24, `stopTimelinePlayback`); Shift+Space
- * pauses where it is instead. In tempo mode (prototype) it is the only play action
+ * pauses where it is instead. In tempo mode it is the only play action
  * (`playTempoMode`).
  */
 export function toggleTimelinePlayback({
@@ -466,7 +466,7 @@ export function toggleTimelinePlayback({
 }
 
 /**
- * Tempo mode's Play (prototype; owner, 2026-10-30: one playhead, one Play): with measures
+ * Tempo mode's Play (owner, 2026-10-30: one playhead, one Play): with measures
  * selected it loops them, to hear a passage again and again while lining it up; otherwise it
  * plays on from the playhead. Stop stays where playback stopped (`stopTimelinePlayback`).
  * Shift+Space and Alt+Space do the same.

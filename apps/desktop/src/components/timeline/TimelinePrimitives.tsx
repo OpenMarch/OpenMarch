@@ -873,7 +873,7 @@ export const TimelineRuler = memo(function TimelineRuler({
     }, [pageFlagMove]);
     // Rehearsal tabs are never thinned; a number gives way to a tab near it (UI-12). A tab's own
     // measure number goes just right of the tab when there's room before the next number or tab,
-    // so a renumbered measure (C at m. 101) stays readable (tempo mode prototype, marcus)
+    // so a renumbered measure (C at m. 101) stays readable (tempo mode)
     const visibleMeasures = useMemo(() => {
         const tabbed = measures.filter((measure) =>
             measure.rehearsalMark?.trim(),
