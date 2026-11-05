@@ -445,23 +445,98 @@ export const CLIPS = [
         show: "line",
         async prepare({ page }) {
             await tidy(page);
-            // The moves' rows and the drill above them, in a frame about as wide as the slide
-            // shows (46rem), so the moves' names stay readable: Move 1 and the three moves nested
-            // under it, and the marchers on the field above.
-            const timeline = await box(page.getByTestId("timeline-pane"));
+            // Move 1 runs over page boxes 1 and 2; its rows are the last in the timeline
+            const pages = union(
+                await box(pageBox(page, 1)),
+                await box(pageBox(page, 2)),
+            );
             const lastRow = await box(page.getByText("Move 2").first());
-            const width = 1000;
-            const height = width / 1.6;
+            const timeline = await box(page.getByTestId("timeline-pane"));
+            /** Everywhere the marchers stand during Move 1, on screen. */
+            const spread = async () => {
+                const seen = [];
+                const at = [1, 2].flatMap((n) =>
+                    [0.02, 0.15, 0.3, 0.45, 0.6, 0.75, 0.9, 0.99].map((f) => [
+                        n,
+                        f,
+                    ]),
+                );
+                for (const [n, f] of at) {
+                    await seekInPage(page, n, f);
+                    seen.push(...(await marchers(page)));
+                }
+                return union(...seen);
+            };
+            // Zoom the field in on the marchers (a pinch, at their middle), then pan them to
+            // just above Move 1's rows, so one close frame holds both
+            const before = await spread();
+            const middle = (b) => ({
+                x: b.x + b.width / 2,
+                y: b.y + b.height / 2,
+            });
+            const zoom = 1.6;
+            await page.mouse.move(middle(before).x, middle(before).y);
+            await page.keyboard.down("Control");
+            // 0.99 per half unit of deltaY (view.ts): 1.6× is deltaY 2·log(1.6)/log(0.99)
+            const total = (2 * Math.log(zoom)) / Math.log(0.99);
+            for (let i = 0; i < 10; i++) {
+                await page.mouse.wheel(0, total / 10);
+                await page.waitForTimeout(30);
+            }
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(400);
+            /** A middle-button drag on the field, which pans it. */
+            const pan = async (from, to) => {
+                await page.mouse.move(from.x, from.y);
+                await page.mouse.down({ button: "middle" });
+                for (let i = 1; i <= 20; i++) {
+                    await page.mouse.move(
+                        from.x + ((to.x - from.x) * i) / 20,
+                        from.y + ((to.y - from.y) * i) / 20,
+                    );
+                    await page.waitForTimeout(20);
+                }
+                await page.mouse.up({ button: "middle" });
+                await page.waitForTimeout(400);
+            };
+            const zoomed = await spread();
+            await pan(middle(zoomed), {
+                x: pages.x + pages.width / 2,
+                y: timeline.y - 40 - zoomed.height / 2,
+            });
+            // The frame: the marchers and Move 1's rows, cut off just under the last row, and
+            // clear of the field's tool rail (the field pans right until it is)
+            const rail = timeline.x + 60;
             const bottom = Math.min(
                 lastRow.y + lastRow.height + 14,
                 timeline.y + timeline.height,
             );
+            let frame;
+            for (let tries = 0; tries < 6; tries++) {
+                const seen = grow(await spread(), 36);
+                const left = Math.min(seen.x, pages.x - 24);
+                const right = Math.max(
+                    seen.x + seen.width,
+                    pages.x + pages.width + 24,
+                );
+                const width = Math.max(right - left, (bottom - seen.y) * 1.6);
+                const x = (left + right) / 2 - width / 2;
+                frame = { x, width };
+                if (x >= rail - 1) break;
+                const m = middle(seen);
+                await pan(m, { x: m.x + rail - x + 6, y: m.y });
+            }
+            const { x, width } = frame;
+            if (x < rail - 1)
+                throw new Error(
+                    "the marchers don't fit clear of the tool rail",
+                );
+            const height = width / 1.6;
             return {
                 box: {
-                    // Past the tool rail, which centers the marchers over the moves
-                    x: even(timeline.x + 60),
+                    x: even(x),
                     y: even(bottom - height),
-                    width,
+                    width: even(width),
                     height: even(height),
                 },
             };
