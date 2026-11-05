@@ -11,7 +11,8 @@
  * - the file is a timeline file on this build's schema, with every migration applied and a
  *   backup next to it with exactly the v0.1.7 file's contents;
  * - every marcher is where v0.1.7 shows it at the start of every page and at every count;
- * - pages, beats, measures, marchers, audio, tags and settings are kept;
+ * - pages, beats, measures, marchers, audio, tags and settings are kept, and the field
+ *   (`field_properties`: its JSON and image) is exactly what v0.1.7 wrote;
  * - the undo history is dropped (conversion isn't an undoable edit) and reopening converts nothing.
  */
 import {
@@ -56,6 +57,12 @@ const FIXTURES_DIR = path.resolve(__dirname, "v017-files");
 /** What v0.1.7 shows for a file (`generateV017Files.ts`). */
 interface V017View {
     projectName: string;
+    /** Recorded since `field-image`; the older files' JSON predates it */
+    field?: {
+        jsonData: string;
+        fieldProperties: Record<string, unknown>;
+        image: { byteLength: number; sha256: string } | null;
+    };
     lastPageCounts: number;
     beats: {
         id: number;
@@ -97,7 +104,7 @@ interface V017View {
     };
 }
 
-const FIXTURES = ["small", "realistic"].map((name) => ({
+const FIXTURES = ["small", "realistic", "field-image"].map((name) => ({
     name,
     file: path.join(FIXTURES_DIR, `${name}.dots`),
     view: JSON.parse(
@@ -174,6 +181,8 @@ function v017Keyframes(view: V017View) {
 const UNEVEN_TEMPO_DIFFERENCES: Record<string, Record<string, number>> = {
     // A tempo change from 120 to 144 bpm four counts into the page
     small: { "3": 3.2059 },
+    // `small`'s music, with the marchers closer together
+    "field-image": { "3": 3.5316 },
     realistic: {
         // Mixed-meter 7/8 (2+2+3): the long beat is 1.5 times the others
         "8": 74.2933,
@@ -250,47 +259,6 @@ describe.each(["in-thread", "worker"] as const)(
             DatabaseServices.setDbPath("", false);
             fs.rmSync(tempDir, { recursive: true, force: true });
             vi.restoreAllMocks();
-        });
-
-        // v0.1.7 keeps a field image in `field_properties.image`. The generated files have none
-        // (README "Not covered"), so this writes one into that column of `small.dots` the way
-        // v0.1.7's main process stores it, and checks the conversion keeps its bytes.
-        it("keeps a field image through the conversion", async () => {
-            const showPath = path.join(tempDir, "with-image.dots");
-            fs.copyFileSync(FIXTURES[0]!.file, showPath);
-            const image = new Uint8Array(
-                Buffer.from(
-                    "89504e470d0a1a0a0000000d4948445200000001000000010806000000" +
-                        "1f15c4890000000d49444154789c6360f8cfc0f01f0005fe02fea7d6" +
-                        "a4c40000000049454e44ae426082",
-                    "hex",
-                ),
-            );
-            withDb(showPath, (raw) =>
-                raw
-                    .prepare(
-                        "UPDATE field_properties SET image = ? WHERE id = 1",
-                    )
-                    .run(image),
-            );
-            const fieldBefore = withDb(showPath, (raw) =>
-                raw
-                    .prepare("SELECT json_data, image FROM field_properties")
-                    .get(),
-            );
-
-            const { result } = await open(showPath, true);
-
-            expect(result.status).toBe(200);
-            expect(
-                withDb(showPath, (raw) =>
-                    raw
-                        .prepare(
-                            "SELECT json_data, image FROM field_properties",
-                        )
-                        .get(),
-                ),
-            ).toEqual(fieldBefore);
         });
 
         describe.each(FIXTURES.map((f) => [f.name, f] as const))(
@@ -395,6 +363,7 @@ describe.each(["in-thread", "worker"] as const)(
                         const orm = getOrm(raw) as unknown as DbConnection;
                         await checkPositions(orm, name, view);
                         await checkShowKept(orm, raw, view);
+                        checkFieldKept(raw, file, view);
                     } finally {
                         raw.close();
                     }
@@ -674,4 +643,38 @@ async function checkShowKept(
         ).json_data,
     ) as Record<string, unknown>;
     expect(settings.projectName).toBe(view.projectName);
+}
+
+/**
+ * The field: `field_properties` (its JSON and image) is the v0.1.7 file's row byte for byte, and,
+ * where the generator recorded it, what v0.1.7 read back after writing it.
+ */
+function checkFieldKept(raw: DatabaseSync, v017File: string, view: V017View) {
+    type FieldRow = { id: number; json_data: string; image: Uint8Array | null };
+    const read = (db: DatabaseSync) =>
+        db
+            .prepare("SELECT id, json_data, image FROM field_properties")
+            .all() as FieldRow[];
+    const after = read(raw);
+    const v017 = new DatabaseSync(v017File, { readOnly: true });
+    let before: FieldRow[];
+    try {
+        before = read(v017);
+    } finally {
+        v017.close();
+    }
+    expect(after).toHaveLength(1);
+    expect(after[0]!.json_data).toBe(before[0]!.json_data);
+    expect(after[0]!.image && Buffer.from(after[0]!.image)).toEqual(
+        before[0]!.image && Buffer.from(before[0]!.image),
+    );
+    if (!view.field) return;
+    expect(after[0]!.json_data).toBe(view.field.jsonData);
+    const image = after[0]!.image;
+    expect(
+        image && {
+            byteLength: image.byteLength,
+            sha256: createHash("sha256").update(image).digest("hex"),
+        },
+    ).toEqual(view.field.image);
 }

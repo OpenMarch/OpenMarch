@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # Regenerates the OpenMarch v0.1.7 show files in this folder with v0.1.7's own code (see
-# generateV017Files.ts and README.md). Usage: generate.sh [v0.1.7 checkout]
-# Without an argument it adds a temporary worktree of tag v0.1.7 and removes it afterwards.
+# generateV017Files.ts and README.md). Usage: generate.sh [v0.1.7 checkout] [name...]
+# Without a checkout (or with "") it adds a temporary worktree of tag v0.1.7 and removes it
+# afterwards. With names (e.g. field-image) it rewrites only those files; without, every file.
 set -euo pipefail
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 checkout="${1:-}"
+shift || true
+names=("$@")
 temporary=""
 if [ -z "$checkout" ]; then
     checkout="$(mktemp -d)/openmarch-v017"
@@ -23,5 +26,10 @@ test "$(git -C "$checkout" rev-parse HEAD)" = "$(git -C "$checkout" rev-parse 'v
 (cd "$checkout" && pnpm install --frozen-lockfile && pnpm --filter "@openmarch/desktop^..." build)
 mkdir -p "$(dirname "$target")"
 cp "$here/generateV017Files.ts" "$target"
-rm -f "$here"/*.dots "$here"/*.v017.json
-(cd "$checkout/apps/desktop" && V017_OUT_DIR="$here" pnpm exec vitest run src/__test__/generateV017Files.test.ts)
+if [ ${#names[@]} -eq 0 ]; then
+    rm -f "$here"/*.dots "$here"/*.v017.json
+else
+    for name in "${names[@]}"; do rm -f "$here/$name.dots" "$here/$name.v017.json"; done
+fi
+only="$(IFS=,; echo "${names[*]}")"
+(cd "$checkout/apps/desktop" && V017_OUT_DIR="$here" V017_ONLY="$only" pnpm exec vitest run src/__test__/generateV017Files.test.ts)

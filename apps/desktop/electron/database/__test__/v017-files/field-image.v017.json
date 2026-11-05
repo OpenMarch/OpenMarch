@@ -1,0 +1,2664 @@
+{
+ "madeBy": "OpenMarch v0.1.7 (d10b69c06), generateV017Files.ts",
+ "projectName": "Field image v0.1.7 show",
+ "field": {
+  "jsonData": "{\"centerFrontPoint\":{\"xPixels\":240,\"yPixels\":300},\"xCheckpoints\":[{\"id\":0,\"name\":\"5 line\",\"axis\":\"x\",\"terseName\":\"5\",\"stepsFromCenterFront\":0,\"useAsReference\":true,\"visible\":true},{\"id\":1,\"name\":\"Left Edge\",\"axis\":\"x\",\"terseName\":\"LE\",\"stepsFromCenterFront\":-16,\"useAsReference\":true,\"visible\":false},{\"id\":2,\"name\":\"Right Edge\",\"axis\":\"x\",\"terseName\":\"RE\",\"stepsFromCenterFront\":16,\"useAsReference\":true,\"visible\":false},{\"id\":3,\"name\":\"4 line\",\"axis\":\"x\",\"terseName\":\"4\",\"stepsFromCenterFront\":-4,\"useAsReference\":true,\"visible\":true},{\"id\":4,\"name\":\"3 line\",\"axis\":\"x\",\"terseName\":\"3\",\"stepsFromCenterFront\":-8,\"useAsReference\":true,\"visible\":true},{\"id\":5,\"name\":\"2 line\",\"axis\":\"x\",\"terseName\":\"2\",\"stepsFromCenterFront\":-12,\"useAsReference\":true,\"visible\":true},{\"id\":6,\"name\":\"4 line\",\"axis\":\"x\",\"terseName\":\"4\",\"stepsFromCenterFront\":4,\"useAsReference\":true,\"visible\":true},{\"id\":7,\"name\":\"3 line\",\"axis\":\"x\",\"terseName\":\"3\",\"stepsFromCenterFront\":8,\"useAsReference\":true,\"visible\":true},{\"id\":8,\"name\":\"2 line\",\"axis\":\"x\",\"terseName\":\"2\",\"stepsFromCenterFront\":12,\"useAsReference\":true,\"visible\":true}],\"yCheckpoints\":[{\"id\":0,\"name\":\"A line\",\"axis\":\"y\",\"terseName\":\"A\",\"stepsFromCenterFront\":0,\"useAsReference\":true,\"visible\":true},{\"id\":1,\"name\":\"B line\",\"axis\":\"y\",\"terseName\":\"B\",\"stepsFromCenterFront\":-4,\"useAsReference\":true,\"visible\":true},{\"id\":2,\"name\":\"C line\",\"axis\":\"y\",\"terseName\":\"C\",\"stepsFromCenterFront\":-8,\"useAsReference\":true,\"visible\":true},{\"id\":3,\"name\":\"D line\",\"axis\":\"y\",\"terseName\":\"D\",\"stepsFromCenterFront\":-12,\"useAsReference\":true,\"visible\":true},{\"id\":4,\"name\":\"E line\",\"axis\":\"y\",\"terseName\":\"E\",\"stepsFromCenterFront\":-16,\"useAsReference\":true,\"visible\":true},{\"id\":5,\"name\":\"F line\",\"axis\":\"y\",\"terseName\":\"F\",\"stepsFromCenterFront\":-20,\"useAsReference\":true,\"visible\":true}],\"stepSizeInches\":30,\"stepSizeWarningThresholdInches\":45,\"name\":\"Indoor 50x80 - 6 to 5 Steps\",\"width\":480,\"height\":300,\"yardNumberCoordinates\":{},\"sideDescriptions\":{\"verboseLeft\":\"Side 1\",\"verboseRight\":\"Side 2\",\"terseLeft\":\"S1\",\"terseRight\":\"S2\"},\"halfLineXInterval\":0,\"halfLineYInterval\":0,\"measurementSystem\":\"imperial\",\"topLabelsVisible\":true,\"bottomLabelsVisible\":true,\"leftLabelsVisible\":true,\"rightLabelsVisible\":true,\"useHashes\":false,\"isCustom\":false,\"showFieldImage\":true,\"imageFillOrFit\":\"fill\",\"backgroundImageOpacity\":0.4,\"theme\":{\"primaryStroke\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1},\"secondaryStroke\":{\"r\":170,\"g\":170,\"b\":170,\"a\":1},\"tertiaryStroke\":{\"r\":221,\"g\":221,\"b\":221,\"a\":1},\"background\":{\"r\":255,\"g\":255,\"b\":255,\"a\":1},\"fieldLabel\":{\"r\":136,\"g\":136,\"b\":136,\"a\":1},\"externalLabel\":{\"r\":136,\"g\":136,\"b\":136,\"a\":1},\"previousPath\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1},\"nextPath\":{\"r\":0,\"g\":175,\"b\":13,\"a\":1},\"shape\":{\"r\":126,\"g\":34,\"b\":206,\"a\":1},\"shapeType\":\"circle\",\"tempPath\":{\"r\":192,\"g\":132,\"b\":252,\"a\":1},\"defaultMarcher\":{\"fill\":{\"r\":255,\"g\":0,\"b\":0,\"a\":1},\"outline\":{\"r\":0,\"g\":0,\"b\":0,\"a\":0},\"label\":{\"r\":0,\"g\":0,\"b\":0,\"a\":1}}}}",
+  "fieldProperties": {
+   "centerFrontPoint": {
+    "xPixels": 240,
+    "yPixels": 300
+   },
+   "xCheckpoints": [
+    {
+     "id": 0,
+     "name": "5 line",
+     "axis": "x",
+     "terseName": "5",
+     "stepsFromCenterFront": 0,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 1,
+     "name": "Left Edge",
+     "axis": "x",
+     "terseName": "LE",
+     "stepsFromCenterFront": -16,
+     "useAsReference": true,
+     "visible": false
+    },
+    {
+     "id": 2,
+     "name": "Right Edge",
+     "axis": "x",
+     "terseName": "RE",
+     "stepsFromCenterFront": 16,
+     "useAsReference": true,
+     "visible": false
+    },
+    {
+     "id": 3,
+     "name": "4 line",
+     "axis": "x",
+     "terseName": "4",
+     "stepsFromCenterFront": -4,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 4,
+     "name": "3 line",
+     "axis": "x",
+     "terseName": "3",
+     "stepsFromCenterFront": -8,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 5,
+     "name": "2 line",
+     "axis": "x",
+     "terseName": "2",
+     "stepsFromCenterFront": -12,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 6,
+     "name": "4 line",
+     "axis": "x",
+     "terseName": "4",
+     "stepsFromCenterFront": 4,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 7,
+     "name": "3 line",
+     "axis": "x",
+     "terseName": "3",
+     "stepsFromCenterFront": 8,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 8,
+     "name": "2 line",
+     "axis": "x",
+     "terseName": "2",
+     "stepsFromCenterFront": 12,
+     "useAsReference": true,
+     "visible": true
+    }
+   ],
+   "yCheckpoints": [
+    {
+     "id": 0,
+     "name": "A line",
+     "axis": "y",
+     "terseName": "A",
+     "stepsFromCenterFront": 0,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 1,
+     "name": "B line",
+     "axis": "y",
+     "terseName": "B",
+     "stepsFromCenterFront": -4,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 2,
+     "name": "C line",
+     "axis": "y",
+     "terseName": "C",
+     "stepsFromCenterFront": -8,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 3,
+     "name": "D line",
+     "axis": "y",
+     "terseName": "D",
+     "stepsFromCenterFront": -12,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 4,
+     "name": "E line",
+     "axis": "y",
+     "terseName": "E",
+     "stepsFromCenterFront": -16,
+     "useAsReference": true,
+     "visible": true
+    },
+    {
+     "id": 5,
+     "name": "F line",
+     "axis": "y",
+     "terseName": "F",
+     "stepsFromCenterFront": -20,
+     "useAsReference": true,
+     "visible": true
+    }
+   ],
+   "stepSizeInches": 30,
+   "stepSizeWarningThresholdInches": 45,
+   "name": "Indoor 50x80 - 6 to 5 Steps",
+   "width": 480,
+   "height": 300,
+   "yardNumberCoordinates": {},
+   "sideDescriptions": {
+    "verboseLeft": "Side 1",
+    "verboseRight": "Side 2",
+    "terseLeft": "S1",
+    "terseRight": "S2"
+   },
+   "halfLineXInterval": 0,
+   "halfLineYInterval": 0,
+   "measurementSystem": "imperial",
+   "topLabelsVisible": true,
+   "bottomLabelsVisible": true,
+   "leftLabelsVisible": true,
+   "rightLabelsVisible": true,
+   "useHashes": false,
+   "isCustom": false,
+   "showFieldImage": true,
+   "imageFillOrFit": "fill",
+   "backgroundImageOpacity": 0.4,
+   "theme": {
+    "primaryStroke": {
+     "r": 0,
+     "g": 0,
+     "b": 0,
+     "a": 1
+    },
+    "secondaryStroke": {
+     "r": 170,
+     "g": 170,
+     "b": 170,
+     "a": 1
+    },
+    "tertiaryStroke": {
+     "r": 221,
+     "g": 221,
+     "b": 221,
+     "a": 1
+    },
+    "background": {
+     "r": 255,
+     "g": 255,
+     "b": 255,
+     "a": 1
+    },
+    "fieldLabel": {
+     "r": 136,
+     "g": 136,
+     "b": 136,
+     "a": 1
+    },
+    "externalLabel": {
+     "r": 136,
+     "g": 136,
+     "b": 136,
+     "a": 1
+    },
+    "previousPath": {
+     "r": 0,
+     "g": 0,
+     "b": 0,
+     "a": 1
+    },
+    "nextPath": {
+     "r": 0,
+     "g": 175,
+     "b": 13,
+     "a": 1
+    },
+    "shape": {
+     "r": 126,
+     "g": 34,
+     "b": 206,
+     "a": 1
+    },
+    "shapeType": "circle",
+    "tempPath": {
+     "r": 192,
+     "g": 132,
+     "b": 252,
+     "a": 1
+    },
+    "defaultMarcher": {
+     "fill": {
+      "r": 255,
+      "g": 0,
+      "b": 0,
+      "a": 1
+     },
+     "outline": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 0
+     },
+     "label": {
+      "r": 0,
+      "g": 0,
+      "b": 0,
+      "a": 1
+     }
+    }
+   }
+  },
+  "image": {
+   "byteLength": 399,
+   "sha256": "f02373e095632d7deb7eaf12d903421aaf4567cff9e49657b31d85f1a4afb464"
+  }
+ },
+ "lastPageCounts": 16,
+ "beats": [
+  {
+   "id": 0,
+   "position": 0,
+   "duration": 0,
+   "timestamp": 0
+  },
+  {
+   "id": 1,
+   "position": 1,
+   "duration": 0.5,
+   "timestamp": 0
+  },
+  {
+   "id": 2,
+   "position": 2,
+   "duration": 0.5,
+   "timestamp": 0.5
+  },
+  {
+   "id": 3,
+   "position": 3,
+   "duration": 0.5,
+   "timestamp": 1
+  },
+  {
+   "id": 4,
+   "position": 4,
+   "duration": 0.5,
+   "timestamp": 1.5
+  },
+  {
+   "id": 5,
+   "position": 5,
+   "duration": 0.5,
+   "timestamp": 2
+  },
+  {
+   "id": 6,
+   "position": 6,
+   "duration": 0.5,
+   "timestamp": 2.5
+  },
+  {
+   "id": 7,
+   "position": 7,
+   "duration": 0.5,
+   "timestamp": 3
+  },
+  {
+   "id": 8,
+   "position": 8,
+   "duration": 0.5,
+   "timestamp": 3.5
+  },
+  {
+   "id": 9,
+   "position": 9,
+   "duration": 0.5,
+   "timestamp": 4
+  },
+  {
+   "id": 10,
+   "position": 10,
+   "duration": 0.5,
+   "timestamp": 4.5
+  },
+  {
+   "id": 11,
+   "position": 11,
+   "duration": 0.5,
+   "timestamp": 5
+  },
+  {
+   "id": 12,
+   "position": 12,
+   "duration": 0.5,
+   "timestamp": 5.5
+  },
+  {
+   "id": 13,
+   "position": 13,
+   "duration": 0.5,
+   "timestamp": 6
+  },
+  {
+   "id": 14,
+   "position": 14,
+   "duration": 0.5,
+   "timestamp": 6.5
+  },
+  {
+   "id": 15,
+   "position": 15,
+   "duration": 0.5,
+   "timestamp": 7
+  },
+  {
+   "id": 16,
+   "position": 16,
+   "duration": 0.5,
+   "timestamp": 7.5
+  },
+  {
+   "id": 17,
+   "position": 17,
+   "duration": 0.5,
+   "timestamp": 8
+  },
+  {
+   "id": 18,
+   "position": 18,
+   "duration": 0.5,
+   "timestamp": 8.5
+  },
+  {
+   "id": 19,
+   "position": 19,
+   "duration": 0.5,
+   "timestamp": 9
+  },
+  {
+   "id": 20,
+   "position": 20,
+   "duration": 0.5,
+   "timestamp": 9.5
+  },
+  {
+   "id": 21,
+   "position": 21,
+   "duration": 0.5,
+   "timestamp": 10
+  },
+  {
+   "id": 22,
+   "position": 22,
+   "duration": 0.5,
+   "timestamp": 10.5
+  },
+  {
+   "id": 23,
+   "position": 23,
+   "duration": 0.5,
+   "timestamp": 11
+  },
+  {
+   "id": 24,
+   "position": 24,
+   "duration": 0.5,
+   "timestamp": 11.5
+  },
+  {
+   "id": 25,
+   "position": 25,
+   "duration": 0.4166666666666667,
+   "timestamp": 12
+  },
+  {
+   "id": 26,
+   "position": 26,
+   "duration": 0.4166666666666667,
+   "timestamp": 12.416666666666666
+  },
+  {
+   "id": 27,
+   "position": 27,
+   "duration": 0.4166666666666667,
+   "timestamp": 12.833333333333332
+  },
+  {
+   "id": 28,
+   "position": 28,
+   "duration": 0.4166666666666667,
+   "timestamp": 13.249999999999998
+  },
+  {
+   "id": 29,
+   "position": 29,
+   "duration": 0.4166666666666667,
+   "timestamp": 13.666666666666664
+  },
+  {
+   "id": 30,
+   "position": 30,
+   "duration": 0.4166666666666667,
+   "timestamp": 14.08333333333333
+  },
+  {
+   "id": 31,
+   "position": 31,
+   "duration": 0.4166666666666667,
+   "timestamp": 14.499999999999996
+  },
+  {
+   "id": 32,
+   "position": 32,
+   "duration": 0.4166666666666667,
+   "timestamp": 14.916666666666663
+  },
+  {
+   "id": 33,
+   "position": 33,
+   "duration": 0.4166666666666667,
+   "timestamp": 15.333333333333329
+  },
+  {
+   "id": 34,
+   "position": 34,
+   "duration": 0.4166666666666667,
+   "timestamp": 15.749999999999995
+  },
+  {
+   "id": 35,
+   "position": 35,
+   "duration": 0.4166666666666667,
+   "timestamp": 16.16666666666666
+  },
+  {
+   "id": 36,
+   "position": 36,
+   "duration": 0.4166666666666667,
+   "timestamp": 16.58333333333333
+  },
+  {
+   "id": 37,
+   "position": 37,
+   "duration": 0.4166666666666667,
+   "timestamp": 16.999999999999996
+  },
+  {
+   "id": 38,
+   "position": 38,
+   "duration": 0.4166666666666667,
+   "timestamp": 17.416666666666664
+  },
+  {
+   "id": 39,
+   "position": 39,
+   "duration": 0.4166666666666667,
+   "timestamp": 17.833333333333332
+  },
+  {
+   "id": 40,
+   "position": 40,
+   "duration": 0.4166666666666667,
+   "timestamp": 18.25
+  },
+  {
+   "id": 41,
+   "position": 41,
+   "duration": 0.4166666666666667,
+   "timestamp": 18.666666666666668
+  },
+  {
+   "id": 42,
+   "position": 42,
+   "duration": 0.4166666666666667,
+   "timestamp": 19.083333333333336
+  },
+  {
+   "id": 43,
+   "position": 43,
+   "duration": 0.4166666666666667,
+   "timestamp": 19.500000000000004
+  },
+  {
+   "id": 44,
+   "position": 44,
+   "duration": 0.4166666666666667,
+   "timestamp": 19.91666666666667
+  },
+  {
+   "id": 45,
+   "position": 45,
+   "duration": 0.4166666666666667,
+   "timestamp": 20.33333333333334
+  },
+  {
+   "id": 46,
+   "position": 46,
+   "duration": 0.4166666666666667,
+   "timestamp": 20.750000000000007
+  },
+  {
+   "id": 47,
+   "position": 47,
+   "duration": 0.4166666666666667,
+   "timestamp": 21.166666666666675
+  },
+  {
+   "id": 48,
+   "position": 48,
+   "duration": 0.4166666666666667,
+   "timestamp": 21.583333333333343
+  }
+ ],
+ "measures": [
+  {
+   "id": 1,
+   "number": 1,
+   "startBeat": 1,
+   "rehearsalMark": "A",
+   "counts": 4
+  },
+  {
+   "id": 2,
+   "number": 2,
+   "startBeat": 5,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 3,
+   "number": 3,
+   "startBeat": 9,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 4,
+   "number": 4,
+   "startBeat": 13,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 5,
+   "number": 5,
+   "startBeat": 17,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 6,
+   "number": 6,
+   "startBeat": 21,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 7,
+   "number": 7,
+   "startBeat": 25,
+   "rehearsalMark": "B",
+   "counts": 4
+  },
+  {
+   "id": 8,
+   "number": 8,
+   "startBeat": 29,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 9,
+   "number": 9,
+   "startBeat": 33,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 10,
+   "number": 10,
+   "startBeat": 37,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 11,
+   "number": 11,
+   "startBeat": 41,
+   "rehearsalMark": null,
+   "counts": 4
+  },
+  {
+   "id": 12,
+   "number": 12,
+   "startBeat": 45,
+   "rehearsalMark": null,
+   "counts": 4
+  }
+ ],
+ "pages": [
+  {
+   "id": 0,
+   "name": "0",
+   "order": 0,
+   "counts": 0,
+   "isSubset": false,
+   "notes": null,
+   "timestamp": 0,
+   "duration": 0,
+   "beatIds": [
+    0
+   ]
+  },
+  {
+   "id": 1,
+   "name": "1",
+   "order": 1,
+   "counts": 8,
+   "isSubset": false,
+   "notes": "Opener",
+   "timestamp": 0,
+   "duration": 4,
+   "beatIds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  {
+   "id": 2,
+   "name": "2",
+   "order": 2,
+   "counts": 8,
+   "isSubset": false,
+   "notes": null,
+   "timestamp": 4,
+   "duration": 4,
+   "beatIds": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  {
+   "id": 3,
+   "name": "2A",
+   "order": 3,
+   "counts": 4,
+   "isSubset": true,
+   "notes": null,
+   "timestamp": 8,
+   "duration": 2,
+   "beatIds": [
+    17,
+    18,
+    19,
+    20
+   ]
+  },
+  {
+   "id": 4,
+   "name": "3",
+   "order": 4,
+   "counts": 12,
+   "isSubset": false,
+   "notes": "Hit",
+   "timestamp": 10,
+   "duration": 5.333333333333334,
+   "beatIds": [
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32
+   ]
+  },
+  {
+   "id": 5,
+   "name": "4",
+   "order": 5,
+   "counts": 16,
+   "isSubset": false,
+   "notes": null,
+   "timestamp": 15.333333333333334,
+   "duration": 6.666666666666668,
+   "beatIds": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48
+   ]
+  }
+ ],
+ "marchers": [
+  {
+   "id": 1,
+   "name": "Trumpet leader",
+   "section": "Trumpet",
+   "drillPrefix": "T",
+   "drillOrder": 1,
+   "year": "Senior"
+  },
+  {
+   "id": 2,
+   "name": null,
+   "section": "Trumpet",
+   "drillPrefix": "T",
+   "drillOrder": 2,
+   "year": null
+  },
+  {
+   "id": 3,
+   "name": null,
+   "section": "Trumpet",
+   "drillPrefix": "T",
+   "drillOrder": 3,
+   "year": null
+  },
+  {
+   "id": 4,
+   "name": null,
+   "section": "Trumpet",
+   "drillPrefix": "T",
+   "drillOrder": 4,
+   "year": null
+  },
+  {
+   "id": 5,
+   "name": "Snare leader",
+   "section": "Snare",
+   "drillPrefix": "S",
+   "drillOrder": 1,
+   "year": "Senior"
+  },
+  {
+   "id": 6,
+   "name": null,
+   "section": "Snare",
+   "drillPrefix": "S",
+   "drillOrder": 2,
+   "year": null
+  }
+ ],
+ "marcherPages": [
+  {
+   "marcherId": 1,
+   "pageId": 0,
+   "x": 80,
+   "y": 90
+  },
+  {
+   "marcherId": 2,
+   "pageId": 0,
+   "x": 116,
+   "y": 118
+  },
+  {
+   "marcherId": 3,
+   "pageId": 0,
+   "x": 152,
+   "y": 146
+  },
+  {
+   "marcherId": 4,
+   "pageId": 0,
+   "x": 188,
+   "y": 90
+  },
+  {
+   "marcherId": 5,
+   "pageId": 0,
+   "x": 224,
+   "y": 118
+  },
+  {
+   "marcherId": 6,
+   "pageId": 0,
+   "x": 260,
+   "y": 146
+  },
+  {
+   "marcherId": 1,
+   "pageId": 1,
+   "x": 114,
+   "y": 130
+  },
+  {
+   "marcherId": 2,
+   "pageId": 1,
+   "x": 150,
+   "y": 158
+  },
+  {
+   "marcherId": 3,
+   "pageId": 1,
+   "x": 186,
+   "y": 102
+  },
+  {
+   "marcherId": 4,
+   "pageId": 1,
+   "x": 222,
+   "y": 130
+  },
+  {
+   "marcherId": 5,
+   "pageId": 1,
+   "x": 258,
+   "y": 158
+  },
+  {
+   "marcherId": 6,
+   "pageId": 1,
+   "x": 294,
+   "y": 102
+  },
+  {
+   "marcherId": 1,
+   "pageId": 2,
+   "x": 108,
+   "y": 170
+  },
+  {
+   "marcherId": 2,
+   "pageId": 2,
+   "x": 144,
+   "y": 114
+  },
+  {
+   "marcherId": 3,
+   "pageId": 2,
+   "x": 180,
+   "y": 142
+  },
+  {
+   "marcherId": 4,
+   "pageId": 2,
+   "x": 216,
+   "y": 170
+  },
+  {
+   "marcherId": 5,
+   "pageId": 2,
+   "x": 252,
+   "y": 114
+  },
+  {
+   "marcherId": 6,
+   "pageId": 2,
+   "x": 288,
+   "y": 142
+  },
+  {
+   "marcherId": 1,
+   "pageId": 3,
+   "x": 142,
+   "y": 126
+  },
+  {
+   "marcherId": 2,
+   "pageId": 3,
+   "x": 178,
+   "y": 154
+  },
+  {
+   "marcherId": 3,
+   "pageId": 3,
+   "x": 214,
+   "y": 182
+  },
+  {
+   "marcherId": 4,
+   "pageId": 3,
+   "x": 250,
+   "y": 126
+  },
+  {
+   "marcherId": 5,
+   "pageId": 3,
+   "x": 252,
+   "y": 114
+  },
+  {
+   "marcherId": 6,
+   "pageId": 3,
+   "x": 288,
+   "y": 142
+  },
+  {
+   "marcherId": 1,
+   "pageId": 4,
+   "x": 136,
+   "y": 166
+  },
+  {
+   "marcherId": 2,
+   "pageId": 4,
+   "x": 172,
+   "y": 194
+  },
+  {
+   "marcherId": 3,
+   "pageId": 4,
+   "x": 208,
+   "y": 138
+  },
+  {
+   "marcherId": 4,
+   "pageId": 4,
+   "x": 244,
+   "y": 166
+  },
+  {
+   "marcherId": 5,
+   "pageId": 4,
+   "x": 280,
+   "y": 194
+  },
+  {
+   "marcherId": 6,
+   "pageId": 4,
+   "x": 316,
+   "y": 138
+  },
+  {
+   "marcherId": 1,
+   "pageId": 5,
+   "x": 170,
+   "y": 206
+  },
+  {
+   "marcherId": 2,
+   "pageId": 5,
+   "x": 206,
+   "y": 150
+  },
+  {
+   "marcherId": 3,
+   "pageId": 5,
+   "x": 242,
+   "y": 178
+  },
+  {
+   "marcherId": 4,
+   "pageId": 5,
+   "x": 278,
+   "y": 206
+  },
+  {
+   "marcherId": 5,
+   "pageId": 5,
+   "x": 314,
+   "y": 150
+  },
+  {
+   "marcherId": 6,
+   "pageId": 5,
+   "x": 350,
+   "y": 178
+  }
+ ],
+ "playback": {
+  "marcherIds": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "pages": [
+   {
+    "pageId": 1,
+    "counts": [
+     {
+      "count": 0,
+      "ms": 0,
+      "positions": [
+       [
+        80,
+        90
+       ],
+       [
+        116,
+        118
+       ],
+       [
+        152,
+        146
+       ],
+       [
+        188,
+        90
+       ],
+       [
+        224,
+        118
+       ],
+       [
+        260,
+        146
+       ]
+      ]
+     },
+     {
+      "count": 1,
+      "ms": 500,
+      "positions": [
+       [
+        84.25,
+        95
+       ],
+       [
+        120.25,
+        123
+       ],
+       [
+        156.25,
+        140.5
+       ],
+       [
+        192.25,
+        95
+       ],
+       [
+        228.25,
+        123
+       ],
+       [
+        264.25,
+        140.5
+       ]
+      ]
+     },
+     {
+      "count": 2,
+      "ms": 1000,
+      "positions": [
+       [
+        88.5,
+        100
+       ],
+       [
+        124.5,
+        128
+       ],
+       [
+        160.5,
+        135
+       ],
+       [
+        196.5,
+        100
+       ],
+       [
+        232.5,
+        128
+       ],
+       [
+        268.5,
+        135
+       ]
+      ]
+     },
+     {
+      "count": 3,
+      "ms": 1500,
+      "positions": [
+       [
+        92.75,
+        105
+       ],
+       [
+        128.75,
+        133
+       ],
+       [
+        164.75,
+        129.5
+       ],
+       [
+        200.75,
+        105
+       ],
+       [
+        236.75,
+        133
+       ],
+       [
+        272.75,
+        129.5
+       ]
+      ]
+     },
+     {
+      "count": 4,
+      "ms": 2000,
+      "positions": [
+       [
+        97,
+        110
+       ],
+       [
+        133,
+        138
+       ],
+       [
+        169,
+        124
+       ],
+       [
+        205,
+        110
+       ],
+       [
+        241,
+        138
+       ],
+       [
+        277,
+        124
+       ]
+      ]
+     },
+     {
+      "count": 5,
+      "ms": 2500,
+      "positions": [
+       [
+        101.25,
+        115
+       ],
+       [
+        137.25,
+        143
+       ],
+       [
+        173.25,
+        118.5
+       ],
+       [
+        209.25,
+        115
+       ],
+       [
+        245.25,
+        143
+       ],
+       [
+        281.25,
+        118.5
+       ]
+      ]
+     },
+     {
+      "count": 6,
+      "ms": 3000,
+      "positions": [
+       [
+        105.5,
+        120
+       ],
+       [
+        141.5,
+        148
+       ],
+       [
+        177.5,
+        113
+       ],
+       [
+        213.5,
+        120
+       ],
+       [
+        249.5,
+        148
+       ],
+       [
+        285.5,
+        113
+       ]
+      ]
+     },
+     {
+      "count": 7,
+      "ms": 3500,
+      "positions": [
+       [
+        109.75,
+        125
+       ],
+       [
+        145.75,
+        153
+       ],
+       [
+        181.75,
+        107.5
+       ],
+       [
+        217.75,
+        125
+       ],
+       [
+        253.75,
+        153
+       ],
+       [
+        289.75,
+        107.5
+       ]
+      ]
+     },
+     {
+      "count": 8,
+      "ms": 4000,
+      "positions": [
+       [
+        114,
+        130
+       ],
+       [
+        150,
+        158
+       ],
+       [
+        186,
+        102
+       ],
+       [
+        222,
+        130
+       ],
+       [
+        258,
+        158
+       ],
+       [
+        294,
+        102
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "pageId": 2,
+    "counts": [
+     {
+      "count": 0,
+      "ms": 4000,
+      "positions": [
+       [
+        114,
+        130
+       ],
+       [
+        150,
+        158
+       ],
+       [
+        186,
+        102
+       ],
+       [
+        222,
+        130
+       ],
+       [
+        258,
+        158
+       ],
+       [
+        294,
+        102
+       ]
+      ]
+     },
+     {
+      "count": 1,
+      "ms": 4500,
+      "positions": [
+       [
+        113.25,
+        135
+       ],
+       [
+        149.25,
+        152.5
+       ],
+       [
+        185.25,
+        107
+       ],
+       [
+        221.25,
+        135
+       ],
+       [
+        257.25,
+        152.5
+       ],
+       [
+        293.25,
+        107
+       ]
+      ]
+     },
+     {
+      "count": 2,
+      "ms": 5000,
+      "positions": [
+       [
+        112.5,
+        140
+       ],
+       [
+        148.5,
+        147
+       ],
+       [
+        184.5,
+        112
+       ],
+       [
+        220.5,
+        140
+       ],
+       [
+        256.5,
+        147
+       ],
+       [
+        292.5,
+        112
+       ]
+      ]
+     },
+     {
+      "count": 3,
+      "ms": 5500,
+      "positions": [
+       [
+        111.75,
+        145
+       ],
+       [
+        147.75,
+        141.5
+       ],
+       [
+        183.75,
+        117
+       ],
+       [
+        219.75,
+        145
+       ],
+       [
+        255.75,
+        141.5
+       ],
+       [
+        291.75,
+        117
+       ]
+      ]
+     },
+     {
+      "count": 4,
+      "ms": 6000,
+      "positions": [
+       [
+        111,
+        150
+       ],
+       [
+        147,
+        136
+       ],
+       [
+        183,
+        122
+       ],
+       [
+        219,
+        150
+       ],
+       [
+        255,
+        136
+       ],
+       [
+        291,
+        122
+       ]
+      ]
+     },
+     {
+      "count": 5,
+      "ms": 6500,
+      "positions": [
+       [
+        110.25,
+        155
+       ],
+       [
+        146.25,
+        130.5
+       ],
+       [
+        182.25,
+        127
+       ],
+       [
+        218.25,
+        155
+       ],
+       [
+        254.25,
+        130.5
+       ],
+       [
+        290.25,
+        127
+       ]
+      ]
+     },
+     {
+      "count": 6,
+      "ms": 7000,
+      "positions": [
+       [
+        109.5,
+        160
+       ],
+       [
+        145.5,
+        125
+       ],
+       [
+        181.5,
+        132
+       ],
+       [
+        217.5,
+        160
+       ],
+       [
+        253.5,
+        125
+       ],
+       [
+        289.5,
+        132
+       ]
+      ]
+     },
+     {
+      "count": 7,
+      "ms": 7500,
+      "positions": [
+       [
+        108.75,
+        165
+       ],
+       [
+        144.75,
+        119.5
+       ],
+       [
+        180.75,
+        137
+       ],
+       [
+        216.75,
+        165
+       ],
+       [
+        252.75,
+        119.5
+       ],
+       [
+        288.75,
+        137
+       ]
+      ]
+     },
+     {
+      "count": 8,
+      "ms": 8000,
+      "positions": [
+       [
+        108,
+        170
+       ],
+       [
+        144,
+        114
+       ],
+       [
+        180,
+        142
+       ],
+       [
+        216,
+        170
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "pageId": 3,
+    "counts": [
+     {
+      "count": 0,
+      "ms": 8000,
+      "positions": [
+       [
+        108,
+        170
+       ],
+       [
+        144,
+        114
+       ],
+       [
+        180,
+        142
+       ],
+       [
+        216,
+        170
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     },
+     {
+      "count": 1,
+      "ms": 8500,
+      "positions": [
+       [
+        116.5,
+        159
+       ],
+       [
+        152.5,
+        124
+       ],
+       [
+        188.5,
+        152
+       ],
+       [
+        224.5,
+        159
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     },
+     {
+      "count": 2,
+      "ms": 9000,
+      "positions": [
+       [
+        125,
+        148
+       ],
+       [
+        161,
+        134
+       ],
+       [
+        197,
+        162
+       ],
+       [
+        233,
+        148
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     },
+     {
+      "count": 3,
+      "ms": 9500,
+      "positions": [
+       [
+        133.5,
+        137
+       ],
+       [
+        169.5,
+        144
+       ],
+       [
+        205.5,
+        172
+       ],
+       [
+        241.5,
+        137
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     },
+     {
+      "count": 4,
+      "ms": 10000,
+      "positions": [
+       [
+        142,
+        126
+       ],
+       [
+        178,
+        154
+       ],
+       [
+        214,
+        182
+       ],
+       [
+        250,
+        126
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "pageId": 4,
+    "counts": [
+     {
+      "count": 0,
+      "ms": 10000,
+      "positions": [
+       [
+        142,
+        126
+       ],
+       [
+        178,
+        154
+       ],
+       [
+        214,
+        182
+       ],
+       [
+        250,
+        126
+       ],
+       [
+        252,
+        114
+       ],
+       [
+        288,
+        142
+       ]
+      ]
+     },
+     {
+      "count": 1,
+      "ms": 10500,
+      "positions": [
+       [
+        141.4375,
+        129.75
+       ],
+       [
+        177.4375,
+        157.75
+       ],
+       [
+        213.4375,
+        177.875
+       ],
+       [
+        249.4375,
+        129.75
+       ],
+       [
+        254.625,
+        121.5
+       ],
+       [
+        290.625,
+        141.625
+       ]
+      ]
+     },
+     {
+      "count": 2,
+      "ms": 11000,
+      "positions": [
+       [
+        140.875,
+        133.5
+       ],
+       [
+        176.875,
+        161.5
+       ],
+       [
+        212.875,
+        173.75
+       ],
+       [
+        248.875,
+        133.5
+       ],
+       [
+        257.25,
+        129
+       ],
+       [
+        293.25,
+        141.25
+       ]
+      ]
+     },
+     {
+      "count": 3,
+      "ms": 11500,
+      "positions": [
+       [
+        140.3125,
+        137.25
+       ],
+       [
+        176.3125,
+        165.25
+       ],
+       [
+        212.3125,
+        169.625
+       ],
+       [
+        248.3125,
+        137.25
+       ],
+       [
+        259.875,
+        136.5
+       ],
+       [
+        295.875,
+        140.875
+       ]
+      ]
+     },
+     {
+      "count": 4,
+      "ms": 12000,
+      "positions": [
+       [
+        139.75,
+        141
+       ],
+       [
+        175.75,
+        169
+       ],
+       [
+        211.75,
+        165.5
+       ],
+       [
+        247.75,
+        141
+       ],
+       [
+        262.5,
+        144
+       ],
+       [
+        298.5,
+        140.5
+       ]
+      ]
+     },
+     {
+      "count": 5,
+      "ms": 12416.666666666666,
+      "positions": [
+       [
+        139.28125,
+        144.125
+       ],
+       [
+        175.28125,
+        172.125
+       ],
+       [
+        211.28125,
+        162.0625
+       ],
+       [
+        247.28125,
+        144.125
+       ],
+       [
+        264.6875,
+        150.25
+       ],
+       [
+        300.6875,
+        140.1875
+       ]
+      ]
+     },
+     {
+      "count": 6,
+      "ms": 12833.333333333332,
+      "positions": [
+       [
+        138.8125,
+        147.25
+       ],
+       [
+        174.8125,
+        175.25
+       ],
+       [
+        210.8125,
+        158.625
+       ],
+       [
+        246.8125,
+        147.25
+       ],
+       [
+        266.875,
+        156.49999999999997
+       ],
+       [
+        302.875,
+        139.875
+       ]
+      ]
+     },
+     {
+      "count": 7,
+      "ms": 13250,
+      "positions": [
+       [
+        138.34375,
+        150.375
+       ],
+       [
+        174.34375,
+        178.375
+       ],
+       [
+        210.34375,
+        155.1875
+       ],
+       [
+        246.34375,
+        150.375
+       ],
+       [
+        269.0625,
+        162.75
+       ],
+       [
+        305.0625,
+        139.5625
+       ]
+      ]
+     },
+     {
+      "count": 8,
+      "ms": 13666.666666666666,
+      "positions": [
+       [
+        137.875,
+        153.5
+       ],
+       [
+        173.875,
+        181.5
+       ],
+       [
+        209.875,
+        151.75
+       ],
+       [
+        245.875,
+        153.5
+       ],
+       [
+        271.25,
+        169
+       ],
+       [
+        307.25,
+        139.25
+       ]
+      ]
+     },
+     {
+      "count": 9,
+      "ms": 14083.333333333332,
+      "positions": [
+       [
+        137.40625,
+        156.625
+       ],
+       [
+        173.40625,
+        184.625
+       ],
+       [
+        209.40625,
+        148.3125
+       ],
+       [
+        245.40625,
+        156.625
+       ],
+       [
+        273.4375,
+        175.24999999999997
+       ],
+       [
+        309.4375,
+        138.9375
+       ]
+      ]
+     },
+     {
+      "count": 10,
+      "ms": 14500,
+      "positions": [
+       [
+        136.9375,
+        159.75
+       ],
+       [
+        172.9375,
+        187.75
+       ],
+       [
+        208.9375,
+        144.875
+       ],
+       [
+        244.9375,
+        159.75
+       ],
+       [
+        275.625,
+        181.5
+       ],
+       [
+        311.625,
+        138.625
+       ]
+      ]
+     },
+     {
+      "count": 11,
+      "ms": 14916.666666666668,
+      "positions": [
+       [
+        136.46875,
+        162.875
+       ],
+       [
+        172.46875,
+        190.875
+       ],
+       [
+        208.46875,
+        141.4375
+       ],
+       [
+        244.46875,
+        162.875
+       ],
+       [
+        277.8125,
+        187.75
+       ],
+       [
+        313.8125,
+        138.3125
+       ]
+      ]
+     },
+     {
+      "count": 12,
+      "ms": 15333.333333333334,
+      "positions": [
+       [
+        136,
+        166
+       ],
+       [
+        172,
+        194
+       ],
+       [
+        208,
+        138
+       ],
+       [
+        244,
+        166
+       ],
+       [
+        280,
+        194
+       ],
+       [
+        316,
+        138
+       ]
+      ]
+     }
+    ]
+   },
+   {
+    "pageId": 5,
+    "counts": [
+     {
+      "count": 0,
+      "ms": 15333.333333333334,
+      "positions": [
+       [
+        136,
+        166
+       ],
+       [
+        172,
+        194
+       ],
+       [
+        208,
+        138
+       ],
+       [
+        244,
+        166
+       ],
+       [
+        280,
+        194
+       ],
+       [
+        316,
+        138
+       ]
+      ]
+     },
+     {
+      "count": 1,
+      "ms": 15750,
+      "positions": [
+       [
+        138.125,
+        168.5
+       ],
+       [
+        174.125,
+        191.25
+       ],
+       [
+        210.125,
+        140.5
+       ],
+       [
+        246.125,
+        168.5
+       ],
+       [
+        282.125,
+        191.25
+       ],
+       [
+        318.125,
+        140.5
+       ]
+      ]
+     },
+     {
+      "count": 2,
+      "ms": 16166.666666666668,
+      "positions": [
+       [
+        140.25,
+        171
+       ],
+       [
+        176.25,
+        188.5
+       ],
+       [
+        212.25,
+        143
+       ],
+       [
+        248.25,
+        171
+       ],
+       [
+        284.25,
+        188.5
+       ],
+       [
+        320.25,
+        143
+       ]
+      ]
+     },
+     {
+      "count": 3,
+      "ms": 16583.333333333336,
+      "positions": [
+       [
+        142.375,
+        173.5
+       ],
+       [
+        178.375,
+        185.75
+       ],
+       [
+        214.375,
+        145.5
+       ],
+       [
+        250.375,
+        173.5
+       ],
+       [
+        286.375,
+        185.75
+       ],
+       [
+        322.375,
+        145.5
+       ]
+      ]
+     },
+     {
+      "count": 4,
+      "ms": 17000,
+      "positions": [
+       [
+        144.5,
+        176
+       ],
+       [
+        180.5,
+        183
+       ],
+       [
+        216.5,
+        148
+       ],
+       [
+        252.5,
+        176
+       ],
+       [
+        288.5,
+        183
+       ],
+       [
+        324.5,
+        148
+       ]
+      ]
+     },
+     {
+      "count": 5,
+      "ms": 17416.666666666668,
+      "positions": [
+       [
+        146.625,
+        178.5
+       ],
+       [
+        182.625,
+        180.25
+       ],
+       [
+        218.625,
+        150.5
+       ],
+       [
+        254.625,
+        178.5
+       ],
+       [
+        290.625,
+        180.25
+       ],
+       [
+        326.625,
+        150.5
+       ]
+      ]
+     },
+     {
+      "count": 6,
+      "ms": 17833.333333333336,
+      "positions": [
+       [
+        148.75,
+        181
+       ],
+       [
+        184.75,
+        177.5
+       ],
+       [
+        220.75,
+        153
+       ],
+       [
+        256.75,
+        181
+       ],
+       [
+        292.75,
+        177.5
+       ],
+       [
+        328.75,
+        153
+       ]
+      ]
+     },
+     {
+      "count": 7,
+      "ms": 18250,
+      "positions": [
+       [
+        150.875,
+        183.5
+       ],
+       [
+        186.875,
+        174.75
+       ],
+       [
+        222.875,
+        155.5
+       ],
+       [
+        258.875,
+        183.5
+       ],
+       [
+        294.875,
+        174.75
+       ],
+       [
+        330.875,
+        155.5
+       ]
+      ]
+     },
+     {
+      "count": 8,
+      "ms": 18666.666666666668,
+      "positions": [
+       [
+        153,
+        186
+       ],
+       [
+        189,
+        172
+       ],
+       [
+        225,
+        158
+       ],
+       [
+        261,
+        186
+       ],
+       [
+        297,
+        172
+       ],
+       [
+        333,
+        158
+       ]
+      ]
+     },
+     {
+      "count": 9,
+      "ms": 19083.333333333332,
+      "positions": [
+       [
+        155.125,
+        188.5
+       ],
+       [
+        191.125,
+        169.25
+       ],
+       [
+        227.125,
+        160.5
+       ],
+       [
+        263.125,
+        188.5
+       ],
+       [
+        299.125,
+        169.25
+       ],
+       [
+        335.125,
+        160.5
+       ]
+      ]
+     },
+     {
+      "count": 10,
+      "ms": 19500,
+      "positions": [
+       [
+        157.25,
+        191
+       ],
+       [
+        193.25,
+        166.5
+       ],
+       [
+        229.25,
+        163
+       ],
+       [
+        265.25,
+        191
+       ],
+       [
+        301.25,
+        166.5
+       ],
+       [
+        337.25,
+        163
+       ]
+      ]
+     },
+     {
+      "count": 11,
+      "ms": 19916.666666666668,
+      "positions": [
+       [
+        159.375,
+        193.5
+       ],
+       [
+        195.375,
+        163.75
+       ],
+       [
+        231.375,
+        165.5
+       ],
+       [
+        267.375,
+        193.5
+       ],
+       [
+        303.375,
+        163.75
+       ],
+       [
+        339.375,
+        165.5
+       ]
+      ]
+     },
+     {
+      "count": 12,
+      "ms": 20333.333333333336,
+      "positions": [
+       [
+        161.5,
+        196
+       ],
+       [
+        197.5,
+        161
+       ],
+       [
+        233.5,
+        168
+       ],
+       [
+        269.5,
+        196
+       ],
+       [
+        305.5,
+        161
+       ],
+       [
+        341.5,
+        168
+       ]
+      ]
+     },
+     {
+      "count": 13,
+      "ms": 20750,
+      "positions": [
+       [
+        163.625,
+        198.5
+       ],
+       [
+        199.625,
+        158.25
+       ],
+       [
+        235.625,
+        170.5
+       ],
+       [
+        271.625,
+        198.5
+       ],
+       [
+        307.625,
+        158.25
+       ],
+       [
+        343.625,
+        170.5
+       ]
+      ]
+     },
+     {
+      "count": 14,
+      "ms": 21166.666666666668,
+      "positions": [
+       [
+        165.75,
+        201
+       ],
+       [
+        201.75,
+        155.5
+       ],
+       [
+        237.75,
+        173
+       ],
+       [
+        273.75,
+        201
+       ],
+       [
+        309.75,
+        155.5
+       ],
+       [
+        345.75,
+        173
+       ]
+      ]
+     },
+     {
+      "count": 15,
+      "ms": 21583.333333333336,
+      "positions": [
+       [
+        167.875,
+        203.5
+       ],
+       [
+        203.875,
+        152.75
+       ],
+       [
+        239.875,
+        175.5
+       ],
+       [
+        275.875,
+        203.5
+       ],
+       [
+        311.875,
+        152.75
+       ],
+       [
+        347.875,
+        175.5
+       ]
+      ]
+     },
+     {
+      "count": 16,
+      "ms": 22000,
+      "positions": [
+       [
+        170,
+        206
+       ],
+       [
+        206,
+        150
+       ],
+       [
+        242,
+        178
+       ],
+       [
+        278,
+        206
+       ],
+       [
+        314,
+        150
+       ],
+       [
+        350,
+        178
+       ]
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

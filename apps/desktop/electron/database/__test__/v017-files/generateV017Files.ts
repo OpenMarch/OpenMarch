@@ -1,3 +1,4 @@
+// cspell:ignore IHDR IDAT IEND
 /**
  * Writes the OpenMarch v0.1.7 show files in this folder, with v0.1.7's own code. This file does
  * NOT run in this repository: `generate.sh` copies it into a v0.1.7 checkout
@@ -11,7 +12,10 @@
  * - every edit through v0.1.7's renderer database functions (tempo groups, pages, marchers,
  *   positions, shapes, tags, section appearances, workspace settings, undo), whose SQL goes
  *   through v0.1.7's main-process SQL proxy (`handleSqlProxy`) to the file, as in the app;
- * - the audio file through v0.1.7's main-process `insertAudioFile`.
+ * - the audio file through v0.1.7's main-process `insertAudioFile`;
+ * - the field (`field-image` only) as v0.1.7's Field settings set it: a template applied from the
+ *   field picker, then Image > Import Image and the image settings, through v0.1.7's
+ *   `updateFieldProperties` and `updateFieldPropertiesImage`.
  *
  * Next to each `<name>.dots` it writes `<name>.v017.json`: what v0.1.7 shows for that file,
  * computed with v0.1.7's own playback code (`fromDatabasePages` for the page names, counts and
@@ -24,6 +28,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
+import zlib from "zlib";
+import { createHash } from "crypto";
 import { DatabaseSync } from "node:sqlite";
 import * as DatabaseServices from "../../electron/database/database.services";
 import { getOrm } from "../../electron/database/db";
@@ -63,10 +69,20 @@ import {
     type CoordinateDefinition,
     type MarcherTimeline,
 } from "@/utilities/Keyframes";
-import { Path } from "@openmarch/core";
+import { FieldProperties, Path } from "@openmarch/core";
+import {
+    getFieldProperties,
+    getFieldPropertiesImage,
+    getFieldPropertiesJSON,
+    updateFieldProperties,
+    updateFieldPropertiesImage,
+} from "@/global/classes/FieldProperties";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 /** Where the files go: the folder this script was copied from. */
 const OUT_DIR = process.env.V017_OUT_DIR!;
+/** Comma-separated names of the files to write; every file when unset. */
+const ONLY = process.env.V017_ONLY?.split(",").filter(Boolean);
 
 type XY = { x: number; y: number };
 
@@ -101,6 +117,20 @@ interface ShowSpec {
     /** Marchers to sample at every count with v0.1.7's playback (all when undefined) */
     sampleEvery?: number;
     audioSeconds: number;
+    /** A non-default field with an imported image (Field settings), or the new file's default */
+    field?: FieldSpec;
+}
+
+/** What the person sets in v0.1.7's Field settings, in order. */
+interface FieldSpec {
+    /** The template picked in the field picker */
+    template: keyof typeof FieldPropertiesTemplates;
+    /** The file picked with Image > Import Image */
+    image: Uint8Array;
+    /** Image > Conform method */
+    imageFillOrFit: "fill" | "fit";
+    /** Image > Opacity, committed when the slider is let go */
+    backgroundImageOpacity: number;
 }
 
 /** A tiny mono 16-bit PCM WAV: a quiet 440 Hz tone, the same bytes every run. */
@@ -126,6 +156,60 @@ function wav(seconds: number, sampleRate = 8000): Uint8Array {
             44 + i * 2,
         );
     return new Uint8Array(buf);
+}
+
+/** CRC-32 (ISO 3309), as PNG chunks use it. */
+function crc32(bytes: Uint8Array): number {
+    let c = ~0;
+    for (const byte of bytes) {
+        c ^= byte;
+        for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+    }
+    return ~c >>> 0;
+}
+
+/**
+ * A small RGB PNG, the same bytes every run: a left-to-right red ramp over a top-to-bottom blue
+ * ramp, with a green 1-pixel border so its edges show where it's drawn.
+ */
+function png(width: number, height: number): Uint8Array {
+    const rows = Buffer.alloc(height * (1 + width * 3));
+    for (let y = 0; y < height; y++) {
+        const row = y * (1 + width * 3);
+        rows[row] = 0; // filter: none
+        for (let x = 0; x < width; x++) {
+            const edge =
+                x === 0 || y === 0 || x === width - 1 || y === height - 1;
+            const at = row + 1 + x * 3;
+            rows[at] = edge ? 0 : Math.round((255 * x) / (width - 1));
+            rows[at + 1] = edge ? 200 : 64;
+            rows[at + 2] = edge ? 0 : Math.round((255 * y) / (height - 1));
+        }
+    }
+    const chunk = (type: string, data: Buffer) => {
+        const out = Buffer.alloc(12 + data.length);
+        out.writeUInt32BE(data.length, 0);
+        out.write(type, 4, "latin1");
+        data.copy(out, 8);
+        out.writeUInt32BE(
+            crc32(out.subarray(4, 8 + data.length)),
+            8 + data.length,
+        );
+        return out;
+    };
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(width, 0);
+    header.writeUInt32BE(height, 4);
+    header[8] = 8; // bit depth
+    header[9] = 2; // RGB
+    return new Uint8Array(
+        Buffer.concat([
+            Buffer.from("89504e470d0a1a0a", "hex"),
+            chunk("IHDR", header),
+            chunk("IDAT", zlib.deflateSync(rows, { level: 9 })),
+            chunk("IEND", Buffer.alloc(0)),
+        ]),
+    );
 }
 
 const round = (v: number) => Math.round(v * 1000) / 1000;
@@ -155,6 +239,40 @@ async function createNewFileLikeV017(filePath: string) {
     await createAllUndoTriggers(db);
 }
 
+/**
+ * Field settings as v0.1.7's UI writes them: the field picker applies a template
+ * (`FieldPropertiesSelector` → `updateFieldPropertiesMutationOptions` → `updateFieldProperties`),
+ * then Image > Import Image stores the file's bytes and turns the image on at full opacity
+ * (`ImageTab`), then the conform method and the opacity slider each save the properties with one
+ * value changed (`ImageTab`).
+ */
+async function setUpField(field: FieldSpec) {
+    await updateFieldProperties(FieldPropertiesTemplates[field.template]);
+    // Image > Import Image
+    await updateFieldPropertiesImage(field.image);
+    await updateFieldProperties(
+        new FieldProperties({
+            ...(await getFieldProperties()),
+            showFieldImage: true,
+            backgroundImageOpacity: 1.0,
+        }),
+    );
+    // Image > Conform method
+    await updateFieldProperties(
+        new FieldProperties({
+            ...(await getFieldProperties()),
+            imageFillOrFit: field.imageFillOrFit,
+        }),
+    );
+    // Image > Opacity
+    await updateFieldProperties(
+        new FieldProperties({
+            ...(await getFieldProperties()),
+            backgroundImageOpacity: field.backgroundImageOpacity,
+        }),
+    );
+}
+
 // eslint-disable-next-line max-lines-per-function
 async function buildShow(spec: ShowSpec) {
     const filePath = path.join(OUT_DIR, `${spec.name}.dots`);
@@ -166,6 +284,8 @@ async function buildShow(spec: ShowSpec) {
         db,
         settings: { ...settings, projectName: spec.projectName },
     });
+
+    if (spec.field) await setUpField(spec.field);
 
     // Music: tempo groups, appended one after another (Music > New tempo group)
     for (const part of spec.music)
@@ -468,9 +588,27 @@ async function whatV017Shows(spec: ShowSpec) {
     const every = spec.sampleEvery ?? 1;
     const sampled = marchers.filter((_, i) => i % every === 0).map((m) => m.id);
 
+    const fieldImage = await getFieldPropertiesImage();
+    const fieldJson = await getFieldPropertiesJSON();
+
     return {
         madeBy: "OpenMarch v0.1.7 (d10b69c06), generateV017Files.ts",
         projectName: workspace.projectName,
+        /**
+         * The field as v0.1.7 reads it: `field_properties.json_data` exactly as written, what
+         * v0.1.7's `getFieldProperties` makes of it, and the image bytes'
+         * size and SHA-256 (`getFieldPropertiesImage`), or null without one.
+         */
+        field: {
+            jsonData: fieldJson,
+            fieldProperties: JSON.parse(
+                JSON.stringify(new FieldProperties(JSON.parse(fieldJson))),
+            ) as unknown,
+            image: fieldImage && {
+                byteLength: fieldImage.byteLength,
+                sha256: createHash("sha256").update(fieldImage).digest("hex"),
+            },
+        },
         lastPageCounts: utility!.last_page_counts,
         beats: beats.map((b) => ({
             id: b.id,
@@ -667,13 +805,39 @@ const REALISTIC: ShowSpec = {
     audioSeconds: 1,
 };
 
+/**
+ * A small show on a non-default field with an imported image, as a director with an indoor floor
+ * sets it up: the indoor 50 × 80 template, a floor image (wider than the field, so fit and fill
+ * differ) conformed with "fill" at 40% opacity.
+ */
+const FIELD_IMAGE: ShowSpec = {
+    ...SMALL,
+    name: "field-image",
+    projectName: "Field image v0.1.7 show",
+    // Inside the 480 × 300 pixel floor
+    formation: (p, i) => ({
+        x: 80 + 36 * i + 14 * p + (p % 2) * 20,
+        y: 90 + 28 * ((i + p) % 3) + 12 * p,
+    }),
+    field: {
+        template: "INDOOR_50x80_6to5",
+        image: png(24, 10),
+        imageFillOrFit: "fill",
+        backgroundImageOpacity: 0.4,
+    },
+};
+
 describe("v0.1.7 show files", () => {
     afterAll(() => {
         DatabaseServices.closePersistentConnection();
         DatabaseServices.setDbPath("", false);
     });
 
-    it.each([SMALL, REALISTIC])("writes $name", async (spec) => {
+    it.each(
+        [SMALL, REALISTIC, FIELD_IMAGE].filter(
+            (spec) => !ONLY || ONLY.includes(spec.name),
+        ),
+    )("writes $name", async (spec) => {
         await buildShow(spec);
     });
 });
