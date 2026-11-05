@@ -727,8 +727,7 @@
             "errorWithDetails": "無法儲存副本。錯誤：{error}",
             "noFileOpen": "目前沒有開啟的檔案。請先建立或開啟表演。",
             "success": "已儲存副本"
-        },
-        "undo": "復原"
+        }
     },
     "formButtons": {
         "discardChanges": "捨棄變更",

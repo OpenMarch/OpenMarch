@@ -730,8 +730,7 @@
             "errorWithDetails": "Não foi possível salvar a cópia. Erro: {error}",
             "noFileOpen": "Nenhum arquivo aberto. Crie ou abra um show primeiro.",
             "success": "Cópia salva"
-        },
-        "undo": "Desfazer"
+        }
     },
     "formButtons": {
         "discardChanges": "Descartar alterações",

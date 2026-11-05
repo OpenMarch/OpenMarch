@@ -636,7 +636,6 @@
     "fileTab.toasts.errorWithDetails": "Error toast shown when saving a copy of the open show file fails, followed by the technical reason. {error} is the error message from the system, usually in English.",
     "fileTab.toasts.noFileOpen": "Error toast shown when the user tries to add an audio file while no show file is open. A show is an OpenMarch drill file.",
     "fileTab.toasts.success": "Success toast shown after a copy of the show file was saved.",
-    "fileTab.undo": "Button in the File tab of the toolbar, and label of the action in some toasts. Reverts the last change to the show. Verb; the opposite of 'Redo'.",
     "formButtons.discardChanges": "Button of an edit form. Throws away the changes made in the form. Verb phrase.",
     "formButtons.editButton": "Default label of the button that switches a form (for example marcher or page details) from viewing into editing mode.",
     "formButtons.saveChanges": "Button that saves the edits made in a form.",

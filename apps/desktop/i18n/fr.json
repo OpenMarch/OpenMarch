@@ -730,8 +730,7 @@
             "errorWithDetails": "Impossible d'enregistrer la copie. Erreur : {error}",
             "noFileOpen": "Aucun fichier n'est ouvert. Créez ou ouvrez d'abord un spectacle.",
             "success": "Copie enregistrée"
-        },
-        "undo": "Annuler"
+        }
     },
     "formButtons": {
         "discardChanges": "Ignorer les modifications",

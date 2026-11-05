@@ -90,7 +90,7 @@ const toastDeleteWithMoves = (
         duration: 10000,
         action: undo
             ? {
-                  label: tolgee.t("fileTab.undo", "Undo"),
+                  label: tolgee.t("actions.edit.undo", "Undo"),
                   onClick: undo,
               }
             : undefined,

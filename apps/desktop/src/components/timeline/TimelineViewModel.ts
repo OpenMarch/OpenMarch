@@ -9,7 +9,7 @@ import type { TimelineClipPeel } from "./TimelineClipPeel";
 import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
 import type { ReactNode } from "react";
 import type {
-    TimelineAddMarchersMenu,
+    TimelinePageMenu,
     TimelineMoveCommands,
     TimelineMenuTarget,
 } from "./TimelineRangeMenu";
@@ -280,7 +280,7 @@ export interface TimelineInteractionProps {
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     /** The right-click menu's page-box entries (UI-9), in view beats here */
-    readonly addSelectedMarchers?: TimelineAddMarchersMenu;
+    readonly pageMenu?: TimelinePageMenu;
     /** A clip's move commands (UI-14), by track id here: its menu, ⋯ button and keys */
     readonly moveCommands?: TimelineMoveCommands<TimelineTrackId>;
     /**

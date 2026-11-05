@@ -727,8 +727,7 @@
             "errorWithDetails": "Tidak dapat menyimpan salinan. Kesalahan: {error}",
             "noFileOpen": "Tidak ada file yang terbuka. Buat atau buka pertunjukan terlebih dahulu.",
             "success": "Salinan disimpan"
-        },
-        "undo": "Urungkan"
+        }
     },
     "formButtons": {
         "discardChanges": "Buang perubahan",

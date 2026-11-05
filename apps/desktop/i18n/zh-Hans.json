@@ -727,8 +727,7 @@
             "errorWithDetails": "无法保存副本。错误：{error}",
             "noFileOpen": "未打开任何文件。请先新建或打开一个表演。",
             "success": "副本已保存"
-        },
-        "undo": "撤销"
+        }
     },
     "formButtons": {
         "discardChanges": "放弃更改",

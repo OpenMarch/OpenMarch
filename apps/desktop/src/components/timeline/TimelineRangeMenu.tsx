@@ -410,7 +410,7 @@ export function TimelineMoveMenuItems({
  * The page-box side of the timeline's right-click menu. `Timeline` builds it from its page
  * commands; ranges are view beats on the surface.
  */
-export interface TimelineAddMarchersMenu {
+export interface TimelinePageMenu {
     /**
      * **Delete page** on a page box (UI-9 Deleting a flag, P8.15): the page whose flag goes.
      * Without it, the menu has no delete entry.
@@ -554,7 +554,7 @@ export function useTimelineRangeMenu({
     movesFor,
     resolveRange,
 }: {
-    menu?: TimelineAddMarchersMenu;
+    menu?: TimelinePageMenu;
     /** A clip's move entries (UI-14) by its track id, or null where it has none */
     movesFor?: (trackId: string) => TimelineMoveMenuActions | null;
     resolveRange: (event: MouseEvent<HTMLElement>) => TimelineMenuTarget | null;
