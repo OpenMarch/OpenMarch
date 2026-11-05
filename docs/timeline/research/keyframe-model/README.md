@@ -236,8 +236,8 @@ another keyframe: after a gap, or where the row steals the marcher from a longer
 
 Store keyframes and derive moves from them.
 
-- ADR 0008 §1 says keyframe data is an export format only, never read back
-  (`docs/adr/0008-timeline-motion-model.md:68-69`; spec D-2 and §11).
+- ADR 0012 §1 says keyframe data is an export format only, never read back
+  (`docs/adr/0012-timeline-motion-model.md:68-69`; spec D-2 and §11).
 - It would replace the resolver's inputs, shapes and follow-the-leader, which have no
   point-only form.
 - Not pursued.
@@ -359,7 +359,7 @@ hold is a keyframe: it would simply be **Remove keyframe** on a hold keyframe.
    - Basic `planMerge` deleting zero-motion rows;
    - Expert Set to previous page's shared-slot stay.
      Each needs a rule a designer could predict. Kept markers become a display hint, not intent.
-6. **Write an ADR 0008 amendment before building.** It would define keyframes in terms of rows,
+6. **Write an ADR 0012 amendment before building.** It would define keyframes in terms of rows,
    in the same way the 2026-10-08 amendment defined "a stored zero-motion move is designer
    intent".
 

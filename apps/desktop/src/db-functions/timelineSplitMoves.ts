@@ -252,7 +252,7 @@ export async function splitRefusal(
  *
  * Every member of a page's own move may be chosen (#581): every transition moves whole, and the
  * page's timeline stays, empty, so the page box still stands for it and the new move is a move
- * (ADR 0008, UI-25 amendment: an edit that empties the page's timeline keeps its row while
+ * (ADR 0012, UI-25 amendment: an edit that empties the page's timeline keeps its row while
  * another shares its range). Nothing moves on the field.
  *
  * Refused (E-ARGS) before anything is written: a missing timeline, no marchers, none of them in

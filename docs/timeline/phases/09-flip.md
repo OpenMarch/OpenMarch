@@ -54,7 +54,7 @@ Back up the file before converting (next to the original, with a clear name).
 - Parallel: no
 - Depends on: P9.2
 
-A post-migration step in the main process runs the converter in one transaction, and sets `user_version = 8` in that transaction (ADR 0008 §6). Releases with the P3.9 guard refuse newer files; older releases can't, so warn when a converted file comes back at 7 and offer the backup instead of converting again.
+A post-migration step in the main process runs the converter in one transaction, and sets `user_version = 8` in that transaction (ADR 0012 §6). Releases with the P3.9 guard refuse newer files; older releases can't, so warn when a converted file comes back at 7 and offer the backup instead of converting again.
 
 ### P9.4: Remove the dev flag
 
@@ -169,14 +169,14 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-09-29 · Cross-phase note from P0 · P9.3
 
-- **Done:** ADR 0008 (proposed, PR https://github.com/OpenMarch/OpenMarch/pull/1035) section 6 found that P9.3's "older app versions refuse the file cleanly" doesn't hold for any current release: `apps/desktop/electron/main/index.ts` sets `PRAGMA user_version = 7` on every open before migrating, and `DrizzleMigrationService` only checks for 7.
+- **Done:** ADR 0012 (proposed, PR https://github.com/OpenMarch/OpenMarch/pull/1035) section 6 found that P9.3's "older app versions refuse the file cleanly" doesn't hold for any current release: `apps/desktop/electron/main/index.ts` sets `PRAGMA user_version = 7` on every open before migrating, and `DrizzleMigrationService` only checks for 7.
 - **Checks:** read the open path in `main/index.ts` and `DrizzleMigrationService.ts`; no code run.
 - **Next:** if the ADR is accepted as drafted, a release before Phase 9 must read `user_version`, refuse versions above the supported one, and stop overwriting it; P9.3 then sets 8 on conversion and warns when a converted file comes back at 7. Which phase ships the check is for the phase leads to agree.
 - **Blockers:** none yet; depends on P0.4.
 
 ### 2026-10-01 · lead · P9.1
 
-- **Done:** the project owner decided C-8 on 2026-10-01: pathways and midsets were never implemented and are dropped. The lead recorded the outcome in ADR 0008 and `implementation-plan.md`.
+- **Done:** the project owner decided C-8 on 2026-10-01: pathways and midsets were never implemented and are dropped. The lead recorded the outcome in ADR 0012 and `implementation-plan.md`.
   - SVG page shapes become individual destinations. Page-mode motion between pages is straight, so only the editable curve object is lost.
   - P6.6 (conversion equality corpus) verifies the result on real shows.
 - **Checks:** none (a decision record).
@@ -327,7 +327,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   6. **Fresh vs converted:** a converted show with only page 0 drops its empty timeline, so it matches a new gate-on file. An equivalence test covers it.
   7. **Connection leak:** `openShowDatabase` closes its connection when an open throws.
   8. **Repeated opens:** `openOnce` returns the pending open's result for the same path. The preload `repairDatabase` is typed as `Promise<string | null>`.
-- **ADR 0008 §6 addition (for the lead to apply; `coord.sh` doesn't stage `docs/adr`):**
+- **ADR 0012 §6 addition (for the lead to apply; `coord.sh` doesn't stage `docs/adr`):**
   > - **Conversion marker (P9.3, C-9).** The conversion transaction, and the creation of a new file while convert on open is on, write `timelineConvertedAt` (an ISO time) into the workspace settings JSON. A version-7 file with the marker was converted and then saved by a release without the version guard: the app warns and offers the backup instead of converting again, even when no backup is found. A version-7 file with timeline rows but neither the marker nor a conversion backup was made with the dev flag and opens without a warning. An older release that saves the workspace settings drops unknown keys, so the backup next to the file is kept as a second signal.
 - **Checks:**
   - Test files, one vitest process each:
@@ -346,7 +346,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
 
 ### 2026-10-01 · timeline-worker (timeline/p9-3-convert-on-open) · P9.3
 
-- **Done:** second-review fixes are complete on 08f73fc0, and the PR https://github.com/AlexDumo/OpenMarch-timeline/pull/42 body is updated. The previous entry lists the changes. The ADR 0008 §6 text in that entry still needs applying by the lead.
+- **Done:** second-review fixes are complete on 08f73fc0, and the PR https://github.com/AlexDumo/OpenMarch-timeline/pull/42 body is updated. The previous entry lists the changes. The ADR 0012 §6 text in that entry still needs applying by the lead.
 - **Checks (08f73fc0):**
   - `tsc --noEmit`: clean.
   - `vite build`: passed.
@@ -378,7 +378,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
     - fresh and converted files made equivalent;
     - the connection leak fixed;
     - duplicate opens deduplicated.
-  - The lead applied the ADR 0008 §6 marker text (ccb8c772).
+  - The lead applied the ADR 0012 §6 marker text (ccb8c772).
 - **Checks (lead, on 08f73fc0):**
   - `tsc --noEmit`: pass.
   - `vite build`: pass. Only the dynamically loaded `convertOnOpenFlow` chunk requires react, zustand and sonner.
@@ -444,7 +444,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - Electron `convertOnOpen`, `repair` and `pageEraFreeze` tests: 99 passed.
   - Focused `test:history`: 262 passed.
   - `test:timeline`: one failure, fixed afterwards; the full timeline run wasn't repeated.
-- **Next:** lead review. The C-10 note and the ADR 0008 line go in after review confirms the design.
+- **Next:** lead review. The C-10 note and the ADR 0012 line go in after review confirms the design.
 - **Blockers:** none.
 
 ### 2026-10-01 · timeline-worker (timeline/p9-8-convert-worker) · P9.8
@@ -484,7 +484,7 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
     - An undo or redo the freeze refuses is now dropped from its stack, with a notice.
     - Repair always restores the freeze.
     - Release-note text was added to the PR.
-  - **Recorded (owner-approved):** C-10 in `implementation-plan.md` and the ADR 0008 §1 line (983ef06f).
+  - **Recorded (owner-approved):** C-10 in `implementation-plan.md` and the ADR 0012 §1 line (983ef06f).
 - **Checks (lead, on c5fbf966):**
   - `tsc --noEmit`: pass.
   - `test:focused electron`: 20 files, 303 tests passed.
@@ -639,12 +639,12 @@ Kept current by the phase lead: where things stand, surprises, and what not to r
   - Skipped per the policy: the full `test:history` suite and e2e. `build:electron` and an app launch weren't run.
 - **Not done:** `clipsOfShape` in `src/timeline/timelineViewModel.ts` still carries `TODO(P9.10)`. P8.11 is rewriting that file, so I left it; see the cross-phase note in the phase 8 file.
 - **For the lead:**
-  - Implementation-plan C-11 and ADR 0008 still say the E-T1 check "waits for P9.10". They can be updated when this merges.
+  - Implementation-plan C-11 and ADR 0012 still say the E-T1 check "waits for P9.10". They can be updated when this merges.
   - Files converted by an earlier dev build (one show-wide timeline) now fail every edit at commit with E-T1. Re-convert them with `convertPages({ replace: true })`, or from the backup.
 - **Next:** review and merge by the lead.
 - **Blockers:** none.
 
 ### 2026-10-12 · lead (timeline/remove-page-era) · P9.4, P10.1, P10.3
 
-- **Done:** the owner asked for one model with no release in between (ADR 0008 amendments of 2026-10-12). Convert on open is automatic: no environment variable, and the renderer's `ConvertShowDialog` asks first and names the backup, `<name>.pre-conversion.dots` next to the show. The worker backs up the untouched original, migrates, converts and drops the page-era tables (`0020_drop_page_era`) in one transaction. The `timelineMode` flag, the page-era freeze, and the page-era renderer code (old page timeline, page-mode branches, page shapes, pathways) are removed; `_blank.dots` is a version-8 file. Test fixtures convert their page shows the way the app does (`src/test/timelineMode.ts`); `test:timeline` is gone because every run is a timeline run.
+- **Done:** the owner asked for one model with no release in between (ADR 0012 amendments of 2026-10-12). Convert on open is automatic: no environment variable, and the renderer's `ConvertShowDialog` asks first and names the backup, `<name>.pre-conversion.dots` next to the show. The worker backs up the untouched original, migrates, converts and drops the page-era tables (`0020_drop_page_era`) in one transaction. The `timelineMode` flag, the page-era freeze, and the page-era renderer code (old page timeline, page-mode branches, page shapes, pathways) are removed; `_blank.dots` is a version-8 file. Test fixtures convert their page shows the way the app does (`src/test/timelineMode.ts`); `test:timeline` is gone because every run is a timeline run.
 - **Not done:** the P9.4 packaged smoke run and the owner's manual pass on a copy of a real show.

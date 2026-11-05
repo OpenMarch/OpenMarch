@@ -1,5 +1,5 @@
 /**
- * Converts a page-era show to timelines when it is opened (ADR 0008 §6), once
+ * Converts a page-era show to timelines when it is opened (ADR 0012 §6), once
  * the person has agreed to it. The app runs the backup and the conversion in a
  * worker thread (`convertOnOpenWorker.ts`), so the main process stays
  * responsive; the check runs in the main process.

@@ -32,7 +32,7 @@ Ground rules found on the way:
   - `timelineRipple.ts`
   - the converter, and `electron/database/convertOnOpen.ts:227`
 - Everything under `src/timeline/` routes into those. No SQL trigger writes them; the triggers
-  only check rows and log them (ADR 0008 §2).
+  only check rows and log them (ADR 0012 §2).
 - The one implicit write: deleting an assignment cascades to its kept marker
   (`electron/database/migrations/schema.ts:542-555`).
 - **No path writes a row to fill a gap.** A marcher with no row holds. So every **start

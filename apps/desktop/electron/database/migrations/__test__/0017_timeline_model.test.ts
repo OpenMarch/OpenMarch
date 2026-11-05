@@ -56,7 +56,7 @@ type Row = Record<string, unknown>;
 
 /**
  * Migration 0017 is the fork's schema on top of upstream's 0016, collapsed into one (ADR 0011):
- * the timeline tables and marcher homes (ADR 0008), the Held marks, shape recipes (ADR 0006),
+ * the timeline tables and marcher homes (ADR 0012), the Held marks, shape recipes (ADR 0006),
  * the 3D View's venue and cameras and props (ADR 0010), and tempo mode (ADR 0007). Columns of
  * existing tables are added with ALTER TABLE, not drizzle-kit's table rebuild, so a page-era file
  * keeps its marchers and everything that references them; its conversion reads them next.

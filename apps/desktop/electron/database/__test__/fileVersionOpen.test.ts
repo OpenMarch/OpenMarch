@@ -3,7 +3,7 @@
  * main process's `setActiveDb` (setDbPath, version decision, migrations), and
  * checks that 7 and 8 open and keep their version, a parked fork-only floor
  * file (9) opens and is written as 8, and 10 is refused without a single byte
- * of the file changing (ADR 0008 §6).
+ * of the file changing (ADR 0012 §6).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DatabaseSync } from "node:sqlite";

@@ -34,7 +34,7 @@ It adds persistent tables (a file-format change), a public module in
 D-6, D-7), so `docs/conventions/architecture-decisions.md` requires this
 record.
 
-This builds on ADR 0008 (the timeline motion model, on `timeline-try-2`):
+This builds on ADR 0012 (the timeline motion model, on `timeline-try-2`):
 beats stay the time grid with stable ids, pages become flags, and motion lives
 in timeline tables addressed by beat ordinals. The 3D branch rebases onto the
 merged timeline first; this record's migration and number come after the

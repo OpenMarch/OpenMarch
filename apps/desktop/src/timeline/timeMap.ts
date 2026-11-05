@@ -1,5 +1,5 @@
 /**
- * The app's tempo map (spec §7, Q-9; ADR 0008 "Coordinates and beats").
+ * The app's tempo map (spec §7, Q-9; ADR 0012 "Coordinates and beats").
  *
  * The resolver works on real-valued beat positions. Beat `n` is the start of the `n`th row of
  * `beats` ordered by `position`, counting from 0. Ranges are half-open: beat `b` covers show time

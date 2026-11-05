@@ -4,7 +4,7 @@
 
 Status: research and a proposal. Nothing here changes `spec.md` yet. Scope: what the resolver computes once moves can EXIT a host (R-4, exists today) and ENTER a host through a live link. Storage-agnostic where possible; the places that depend on layers vs segments (08-storage.md) are marked **[storage]**.
 
-Sources: spec.md (R-1..R-13, D-5, D-7, D-12, D-16, §8.11, §9, §6.1), `packages/core/src/timeline/resolver.ts`, `types.ts`, `index.ts`, ADR 0008, and 01/03/04 in this folder.
+Sources: spec.md (R-1..R-13, D-5, D-7, D-12, D-16, §8.11, §9, §6.1), `packages/core/src/timeline/resolver.ts`, `types.ts`, `index.ts`, ADR 0012, and 01/03/04 in this folder.
 
 ## 0. Summary
 
@@ -175,7 +175,7 @@ Principle: **every edit that would break a link freezes it in the same procedure
 | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Host shortened past j** (`H.end ≤ j`)                                                                     | **Freeze.** Refusing would block ordinary timing edits, and clamping silently changes meaning.                                                                                                                                         | Range procedure (R-E1 family). Commit-time `E-L2` row in `commit_violations`, because ripple and R-E1 pass through intermediate ranges (U-3 allows commit-time checks for invariants that can only be judged at the end). |
 | **Host range moved** (clip shift, ripple)                                                                   | j stays the feeder's absolute end. If j is still strictly inside, the link stays live and re-reads at the new u, so the merge point slides along H. If not, freeze. Ripple that moves both keeps j inside.                             | Same as the row above.                                                                                                                                                                                                    |
-| **Host deleted**                                                                                            | Freeze all incoming links, delete ghost rows (child-first, C-1), then delete.                                                                                                                                                          | FK `RESTRICT` from link column to transition (ADR 0008 C-1), so a delete without the freeze is refused.                                                                                                                   |
+| **Host deleted**                                                                                            | Freeze all incoming links, delete ghost rows (child-first, C-1), then delete.                                                                                                                                                          | FK `RESTRICT` from link column to transition (ADR 0012 C-1), so a delete without the freeze is refused.                                                                                                                   |
 | **Slot removed** (`slot_count` shrinks below i)                                                             | Freeze incoming links and delete that slot's ghost rows, then shrink.                                                                                                                                                                  | Triggers on both sides (U-3): on link and ghost insert/update, and on `transitions.slot_count` update, like I-A2.                                                                                                         |
 | **Marcher removed from host, or slot re-assigned**                                                          | Freeze the feeder link of that marcher. A slot's intent stays defined (the ghost is stored), so the resolver keeps the link but raises `D-LINK-SLOT` (info) when the slot's occupant differs from the feeder's, or the slot is vacant. | App procedure, plus the diagnostic.                                                                                                                                                                                       |
 | **Link beat on host start** (`j = H.start`)                                                                 | **Refuse at creation.** That is founding: assign from the start with no link (R-4 gives continuity).                                                                                                                                   | `E-L2` (commit-time), and L-2 at resolve time.                                                                                                                                                                            |
@@ -355,9 +355,9 @@ Extend P-13 and add an adversarial linked-arc fuzz either way.
 
 The oracle (`oracle.ts`, `ref/oracle.mjs`) and `ref/resolver.mjs` must implement R-14..R-16 first (§8 is normative).
 
-## 9. Core public API additions (ADR 0008 §4 amendment)
+## 9. Core public API additions (ADR 0012 §4 amendment)
 
-Additive, in the style of the `spanInfos` amendment (ADR 0008 lines 234-242):
+Additive, in the style of the `spanInfos` amendment (ADR 0012 lines 234-242):
 
 ```ts
 type IntentOriginSource = "founder" | "ghost" | null;
@@ -415,4 +415,4 @@ Adding `mode` to `SpanInfo` doesn't change the `SpanKind` union, so existing exh
 - `packages/core/src/timeline/resolver.ts` (`depsOfOrigin` 376-385, `ensure` 413-459, `evalSpan` 494-515, `dirtyWalk`/`seed` 594-629, `notify` 633+, diagnostics 783-846)
 - `packages/core/src/timeline/oracle.ts` (the normative reference must gain R-14..R-16 first)
 - `packages/core/src/timeline/types.ts` (SpanInfo, DiagnosticCode, ChangeBatch, TimelineSnapshot)
-- `docs/adr/0008-timeline-motion-model.md` (§2 schema, §3 C-1, §4 API amendment)
+- `docs/adr/0012-timeline-motion-model.md` (§2 schema, §3 C-1, §4 API amendment)

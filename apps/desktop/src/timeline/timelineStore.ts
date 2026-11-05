@@ -34,7 +34,7 @@ import {
 } from "./timelineWarm";
 
 /**
- * The resolver store for the open file (docs/timeline/phases/05-rendering.md P5.3, ADR 0008 §4
+ * The resolver store for the open file (docs/timeline/phases/05-rendering.md P5.3, ADR 0012 §4
  * and §5).
  *
  * While started, it cold-builds the resolver from the tables, applies each committed batch from
@@ -195,7 +195,7 @@ function onChange(s: Session, event: TimelineChangeEvent): void {
     try {
         applyTimelineBatch(s.host, event.batch);
     } catch (error) {
-        // The host treats its own failure as a reset (ADR 0008 §5)
+        // The host treats its own failure as a reset (ADR 0012 §5)
         console.error("The timeline resolver failed to apply a batch", error);
         void coldBuild(s);
         return;
@@ -323,7 +323,7 @@ export function useExplain(marcherId: number, beat: Beat): Explanation | null {
 
 /**
  * A marcher's resolver spans (spec R-2, R-3), sorted, from the leading hold to the trailing one,
- * from `Resolver.spanInfos` (ADR 0008 §4 amendment): the cached spans only, no positions. For the
+ * from `Resolver.spanInfos` (ADR 0012 §4 amendment): the cached spans only, no positions. For the
  * timeline's view-model adapter (`timelineViewModel.ts`). Empty for a marcher the resolver
  * doesn't have (yet).
  */

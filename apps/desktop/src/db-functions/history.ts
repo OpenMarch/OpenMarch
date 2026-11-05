@@ -181,7 +181,7 @@ export const transactionWithHistory = async <T>(
                 assert(groupBefore != null, "Group before is undefined");
 
                 // Each Held mark's arrival, so the step after the edit can tell a deleted
-                // arrival from one moved in time (ADR 0008 amendment 2026-10-30)
+                // arrival from one moved in time (ADR 0012 amendment 2026-10-30)
                 const heldArrivals = await readHeldArrivalsBefore(tx);
                 // Execute the function
                 result = await func(tx);
@@ -792,7 +792,7 @@ async function executeHistoryActionUnlocked(
 }
 
 /**
- * Clears `timeline_change_log` and tells the listeners to cold-build (ADR 0008 §5). Call it when a
+ * Clears `timeline_change_log` and tells the listeners to cold-build (ADR 0012 §5). Call it when a
  * file is opened, and after any write that bypasses the wrapper (migrations, repair, conversion),
  * so rows those writes logged are never delivered as part of a later edit's batch.
  *

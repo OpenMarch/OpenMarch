@@ -31,7 +31,7 @@ and a group transition into a shape breaks UI-9's one-transition-per-marcher rul
      homes; deleted with the move), `kind` and `kind_version` (the shape kind's id and generator
      version), `params` (the kind's JSON parameters), `order_mode` and `reverse` (who goes where),
      `created_at`.
-   - `timeline_shape_recipe_marchers`: a surrogate `id` (ADR 0008 C-2), `recipe_id` (deleted with
+   - `timeline_shape_recipe_marchers`: a surrogate `id` (ADR 0012 C-2), `recipe_id` (deleted with
      the recipe), `marcher_id` (deleted with the marcher), `slot` (the marcher's spot in the
      recipe's slot order) and `x`, `y` (where the recipe put it when last placed). One row per
      marcher and recipe.

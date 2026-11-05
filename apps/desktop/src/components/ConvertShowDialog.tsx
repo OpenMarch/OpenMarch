@@ -54,7 +54,7 @@ function ProgressLine({ progress }: { progress: ConvertProgress | null }) {
 }
 
 /**
- * Asks the person before a page-era show is converted to timelines (ADR 0008 §6). The main
+ * Asks the person before a page-era show is converted to timelines (ADR 0012 §6). The main
  * process holds the file as the pending conversion and opens nothing until the person confirms;
  * this dialog reads it when the window loads and follows its changes, so it asks over the show
  * that is open (or the launch page). Confirm closes that show, backs the file up as

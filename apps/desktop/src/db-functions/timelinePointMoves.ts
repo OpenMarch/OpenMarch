@@ -445,7 +445,7 @@ const writePlan = async (
 /**
  * A new move over `range` for part of a move (`NewMove.moveOf`). Its range keeps an older
  * timeline, empty if none is stored yet, so the move stays a move (a clip) and the page box there
- * stands for the older one (ADR 0008, UI-25 amendment).
+ * stands for the older one (ADR 0012, UI-25 amendment).
  */
 const movePartTimeline = async (tx: DbTransaction, range: BeatRange) => {
     if (!(await findTimelineByRange(tx, range)))

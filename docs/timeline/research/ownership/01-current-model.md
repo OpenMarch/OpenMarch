@@ -8,7 +8,7 @@ Checkout read: `timeline/p8-17-core-loop` (HEAD 7818f4b3), not `timeline-try-2`.
 
 ### Schema
 
-The schema is spec §5.1 (spec.md:141-245), stored as the `timeline_*` tables (ADR 0008 §2).
+The schema is spec §5.1 (spec.md:141-245), stored as the `timeline_*` tables (ADR 0012 §2).
 
 - **`timelines(start_beat, end_beat)`.** A container only. The resolver must not read it (R-1, spec.md:511-513).
   - App restriction C-11 (implementation-plan.md:147-163): every transition spans its timeline exactly.
@@ -159,11 +159,11 @@ UI-9 and C-12 (ui.md:144, 212-222; implementation-plan.md:186-191) set this up:
 
 ## 6. Constraints any redesign must respect
 
-Sources: docs/conventions/architecture-decisions.md, ADR 0008, spec §6.1.
+Sources: docs/conventions/architecture-decisions.md, ADR 0012, spec §6.1.
 
 1. **Schema and file format.**
    - Any new column or table (such as stored ghost origins or a group or "split" entity) changes the persistent schema and the `.dots` file format.
-   - It needs an ADR 0008 update, a `pnpm run migrate` migration with the generated SQL inspected, and the `timeline_` prefix.
+   - It needs an ADR 0012 update, a `pnpm run migrate` migration with the generated SQL inspected, and the `timeline_` prefix.
    - It needs CHECK-based strict typing (C-3), triggers in `triggers.ts`, and a `timeline_change_log` logging trigger.
    - User version 8 handling and the converter (Phase 9) must stay valid.
 2. **Undo (spec §6.1).** Rules U-1 to U-4 apply:
@@ -174,7 +174,7 @@ Sources: docs/conventions/architecture-decisions.md, ADR 0008, spec §6.1.
    - A new table must join `tablesWithHistory` and the query-key invalidation map.
    - Multi-row edits must be app procedures, ordered so that every intermediate state is valid (R-E1 pattern, D-17).
    - Verify with `test:history` and the e2e fuzzer (QA-UNDO-9).
-3. **Core public API (ADR 0008 §4).**
+3. **Core public API (ADR 0012 §4).**
    - The resolver API is spec §10.1 plus amendments such as `spanInfos`.
    - Exporting a nominal-path method, destinations or `arcPoint` is a public-API change, so it needs an ADR amendment.
    - The oracle, the golden vectors and the `ref/` scripts must agree (spec §8 is normative).
@@ -189,4 +189,4 @@ Sources: docs/conventions/architecture-decisions.md, ADR 0008, spec §6.1.
    - I-A3 and the layer range [-1000, 1000].
    - D-5 (destinations are absolute) and §8.11 (minor arcs keep derived positions bounded).
    - Making a joiner's lead-in relative to the group's path would contradict D-5 and needs a spec amendment.
-6. **C-11 and C-12 are owner decisions recorded in ADR 0008.** "Transitions span the timeline" and "one timeline per range" can change only through the owner and the ADR.
+6. **C-11 and C-12 are owner decisions recorded in ADR 0012.** "Transitions span the timeline" and "one timeline per range" can change only through the owner and the ADR.

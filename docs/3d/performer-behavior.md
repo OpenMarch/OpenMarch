@@ -9,7 +9,7 @@
   `archive/pre-convergence`; the sections about them describe that branch.
 - Date: 2026-10-10
 - Decision record: [ADR 0004](../adr/0004-performer-cues.md) (proposed)
-- Builds on: `timeline-try-2` (ADR 0008, the timeline motion model) and
+- Builds on: `timeline-try-2` (ADR 0012, the timeline motion model) and
   [ADR 0010](../adr/0010-3d-view.md) (the 3D View)
 
 The show tells performers what to do, not only where to stand: step style,

@@ -189,7 +189,7 @@ async function openWithSuspension(
     try {
         if (isNewFile) {
             const orm = getOrm(db);
-            // A new, empty file starts at the timeline version (ADR 0008 §6).
+            // A new, empty file starts at the timeline version (ADR 0012 §6).
             applyFileVersionDecision(db, true);
             await new DrizzleMigrationService(orm, db).applyPendingMigrations(
                 deps.migrationsFolder,

@@ -338,7 +338,7 @@ export const view3d_cameras = sqliteTable(
 
 /* ========================= TIMELINES ========================= */
 /*
- * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0008). Column names follow the
+ * The timeline motion model (docs/timeline/spec.md §5.1, ADR 0012). Column names follow the
  * spec; tables carry a `timeline_` prefix (C-4). Drizzle can't declare STRICT tables, so every
  * column the spec's I-N1 covers has a `typeof` CHECK instead (C-3). Invariant triggers, the
  * `timeline_commit_violations` view and the change-log triggers live in `triggers.ts`.
@@ -548,7 +548,7 @@ export const timeline_slot_destinations = sqliteTable(
 );
 
 /**
- * A **Held** hold (holds README decision 2; ADR 0008 amendment 2026-10-30): one marcher stands
+ * A **Held** hold (holds README decision 2; ADR 0012 amendment 2026-10-30): one marcher stands
  * still on purpose over `[start_beat, end_beat)`, where it has no move. Editing a count inside
  * it edits the move that arrives at `start_beat`, so the whole hold moves. App data, kept apart
  * from the motion tables: not in `timeline_change_log`, never read by the
@@ -614,7 +614,7 @@ export const timeline_shape_recipes = sqliteTable(
 /**
  * A marcher placed by a recipe: its spot in the recipe's slot order and where the recipe put it
  * when last placed (ADR 0006). Where the marcher stands now, less this point, is its override.
- * A surrogate id, so undo restores the same row (ADR 0008 C-2).
+ * A surrogate id, so undo restores the same row (ADR 0012 C-2).
  */
 export const timeline_shape_recipe_marchers = sqliteTable(
     "timeline_shape_recipe_marchers",

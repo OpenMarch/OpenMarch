@@ -29,7 +29,7 @@ phases [26.24].
   hatch. Anything that doesn't fit is flagged or converted, never silently
   stretched (map).
 - Time is counts. Every change is keyed by `beat_id` and happens at the start
-  of its beat, building on ADR 0008 (timeline motion model,
+  of its beat, building on ADR 0012 (timeline motion model,
   `timeline/timeline-try-2`) and ADR 0004 (performer cues) [07 revision, 21].
   Follow vs hang is moot: cues are absolute counts [21].
 - Props and items ship with the timeline, **timeline mode only**, with no

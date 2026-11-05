@@ -1,5 +1,5 @@
 /**
- * The light half of convert on open (ADR 0008 §6): the status codes, the
+ * The light half of convert on open (ADR 0012 §6): the status codes, the
  * conversion marker, and how a new file starts as a timeline file. It imports
  * nothing from the renderer, so the main process (and the renderer, for the
  * status codes) can load it at startup. The conversion itself is in
@@ -44,7 +44,7 @@ export interface PendingConversion {
 
 /**
  * Workspace-settings key that marks a file as converted to timelines (P9.3;
- * ADR 0008 §6): an ISO timestamp, written in the conversion transaction and
+ * ADR 0012 §6): an ISO timestamp, written in the conversion transaction and
  * when a new file starts as a timeline file. Opening a file doesn't read it:
  * every version-7 file is converted alike. The worker host reads it to tell
  * whether a worker that ended without a result committed its conversion, and

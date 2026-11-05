@@ -28,7 +28,7 @@ import {
 } from "../fileVersion";
 
 /**
- * The first migration that only runs on a timeline file (ADR 0008 §6): it drops the page-era
+ * The first migration that only runs on a timeline file (ADR 0012 §6): it drops the page-era
  * tables, which the converter reads. A page-model file (version 7) gets the migrations before it
  * when it opens; it and every later one run inside the conversion transaction
  * (`applyTimelineMigrationsInTransaction`), after the converter has read the page-era tables.

@@ -53,7 +53,7 @@ const SPEC_CODES = [
     "E-A3",
 ];
 const COMBINED_CODES = ["E-A1/E-A2", "E-T3/E-T4"];
-/** The Held marks' commit-time codes (ADR 0008 amendment 2026-10-30) */
+/** The Held marks' commit-time codes (ADR 0012 amendment 2026-10-30) */
 const HELD_CODES = ["E-H1", "E-H3"];
 
 describe("timelineErrorMessage", () => {

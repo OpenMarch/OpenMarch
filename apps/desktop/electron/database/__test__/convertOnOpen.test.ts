@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Convert on open (ADR 0008 §6), on real `.dots` files opened through the same
+ * Convert on open (ADR 0012 §6), on real `.dots` files opened through the same
  * steps as `setActiveDb`: a page-era file is only converted once the person
  * agreed, and the conversion drops the page-era tables. Runs in the node
  * environment, as the main process does, so a converter dependency that needs

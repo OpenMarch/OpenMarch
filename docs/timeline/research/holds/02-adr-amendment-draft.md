@@ -1,8 +1,8 @@
 <!-- cspell:disable -->
 
-# Draft: ADR 0008 amendment for holds
+# Draft: ADR 0012 amendment for holds
 
-Not applied yet. This is the text proposed for `docs/adr/0008-timeline-motion-model.md` §2, after
+Not applied yet. This is the text proposed for `docs/adr/0012-timeline-motion-model.md` §2, after
 the 2026-10-16 amendments. The owner reviewed it on 2026-10-27. An independent validator found it
 "ready with edits" on 2026-10-28; its fixes and the owner's answers of 2026-10-28 are folded in
 below. It lands in two parts, with the tickets named in each heading (fork issues #466–#479).
