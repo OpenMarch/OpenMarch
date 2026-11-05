@@ -21,7 +21,7 @@ function SlideMedia({ slide }: { slide: WhatsNewSlide }) {
     const { t } = useTranslate();
     const description = t(slide.mediaKey);
     const className =
-        "rounded-6 border-stroke bg-fg-2 aspect-[16/10] w-full border object-cover";
+        "rounded-16 border-accent bg-fg-2 ring-accent/15 aspect-[16/10] w-full border-2 object-cover ring-4";
     if (!slide.video || prefersReducedMotion())
         return (
             <img
@@ -112,7 +112,7 @@ export default function WhatsNewTour({
                             height={28}
                             className="text-text shrink-0"
                         />
-                        <span className="text-sub text-text-subtitle tracking-wide uppercase">
+                        <span className="text-h4 text-text font-medium">
                             <T keyName="welcomeFlow.whatsNew.title" />
                         </span>
                     </div>
