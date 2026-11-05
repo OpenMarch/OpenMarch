@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
 import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
@@ -117,30 +117,6 @@ export default function WhatsNewTour({
                         </span>
                     </div>
 
-                    <nav
-                        className="flex flex-wrap justify-center gap-6"
-                        aria-label={t("welcomeFlow.whatsNew.steps")}
-                        data-testid="whats-new-steps"
-                    >
-                        {WHATS_NEW_SLIDES.map((s, i) => (
-                            <button
-                                key={s.id}
-                                type="button"
-                                onClick={() => setIndex(i)}
-                                aria-current={i === index ? "step" : undefined}
-                                className={clsx(
-                                    "text-body rounded-full px-12 py-4 transition-colors duration-150",
-                                    i === index
-                                        ? "bg-accent text-text-invert"
-                                        : "text-text-subtitle hover:bg-fg-2 hover:text-text",
-                                )}
-                                data-testid={`whats-new-step-${s.id}`}
-                            >
-                                <T keyName={s.labelKey} />
-                            </button>
-                        ))}
-                    </nav>
-
                     <section
                         key={slide.id}
                         className="animate-fade-in flex flex-col gap-16"
@@ -186,6 +162,43 @@ export default function WhatsNewTour({
                         >
                             <T keyName="welcomeFlow.back" />
                         </Button>
+                        <nav
+                            className="flex min-w-0 flex-wrap items-center justify-center gap-x-8 gap-y-4"
+                            aria-label={t("welcomeFlow.whatsNew.steps")}
+                            data-testid="whats-new-steps"
+                        >
+                            {WHATS_NEW_SLIDES.map((s, i) => (
+                                <Fragment key={s.id}>
+                                    {i > 0 && (
+                                        <span
+                                            aria-hidden
+                                            className={clsx(
+                                                "h-px w-16 transition-colors duration-150",
+                                                i <= index
+                                                    ? "bg-accent"
+                                                    : "bg-text/20",
+                                            )}
+                                        />
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIndex(i)}
+                                        aria-current={
+                                            i === index ? "step" : undefined
+                                        }
+                                        className={clsx(
+                                            "text-body whitespace-nowrap transition-colors duration-150",
+                                            i === index
+                                                ? "text-accent font-medium"
+                                                : "text-text-subtitle hover:text-text",
+                                        )}
+                                        data-testid={`whats-new-step-${s.id}`}
+                                    >
+                                        <T keyName={s.labelKey} />
+                                    </button>
+                                </Fragment>
+                            ))}
+                        </nav>
                         <div className="flex gap-8">
                             <Button
                                 variant="ghost"
