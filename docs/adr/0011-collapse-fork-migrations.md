@@ -1,6 +1,6 @@
 # 0011: Collapse the fork's migrations into one, and repair fork files on open
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-11-05
 
 ## Context
