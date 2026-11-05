@@ -236,10 +236,11 @@ async function launch(source) {
     return { app, page, show };
 }
 
-/** The shows a clip can ask for (`clip.show`): the demo, or "line", the timeline clip's show. */
+/** The shows a clip can ask for (`clip.show`): the demo, "line" (the timeline clip's show) or "tempo". */
 const shows = {
     demo: DEMO,
     line: path.join(DESKTOP, "scripts/whats-new-media/line-test.dots"),
+    tempo: path.join(DESKTOP, "scripts/whats-new-media/tempo-test.dots"),
 };
 function showFor(name = "demo") {
     if (shows[name]) return shows[name];

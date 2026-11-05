@@ -224,12 +224,13 @@ describe("What's new slides", () => {
     const none = { tempoMode: false, pathways: false };
     const ids = (slides: readonly { id: string }[]) => slides.map((s) => s.id);
 
-    it("shows the shipped features, in order, and hides Tempo and Pathways until they land", () => {
+    it("shows the shipped features, in order, and hides Pathways until it lands", () => {
         expect(ids(WHATS_NEW_SLIDES)).toEqual([
             "timeline",
             "shapes",
             "view3d",
             "props",
+            "tempo",
         ]);
         expect(
             ids(
@@ -275,5 +276,7 @@ describe("What's new slides", () => {
             expect(slide.poster).toBeTruthy();
             if (!slide.requires) expect(slide.video).toBeTruthy();
         }
+        for (const slide of WHATS_NEW_SLIDES)
+            expect(slide.video, slide.id).toBeTruthy();
     });
 });

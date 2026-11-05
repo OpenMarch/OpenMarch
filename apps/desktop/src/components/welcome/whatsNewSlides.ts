@@ -8,6 +8,7 @@ import view3dVideo from "@/assets/welcome/whats-new/view3d.mp4";
 import view3dPoster from "@/assets/welcome/whats-new/view3d.webp";
 import propsVideo from "@/assets/welcome/whats-new/props.mp4";
 import propsPoster from "@/assets/welcome/whats-new/props.webp";
+import tempoVideo from "@/assets/welcome/whats-new/tempo.mp4";
 import tempoPoster from "@/assets/welcome/whats-new/tempo.webp";
 import pathwaysPoster from "@/assets/welcome/whats-new/pathways.webp";
 
@@ -20,8 +21,7 @@ export type UpcomingFeature = "tempoMode" | "pathways";
  * (`node scripts/whats-new-media/record.mjs <clip>`) and add the video to its slide below.
  */
 export const SHIPPED_FEATURES: Record<UpcomingFeature, boolean> = {
-    // Turn on when fork PR #550 (tempo mode) merges.
-    tempoMode: false,
+    tempoMode: true,
     // Turn on when fork PR #674 (pathways: the Path pen) merges.
     pathways: false,
 };
@@ -69,8 +69,7 @@ export const ALL_WHATS_NEW_SLIDES: readonly WhatsNewSlide[] = [
     slide("shapes", { video: shapesVideo, poster: shapesPoster }),
     slide("view3d", { video: view3dVideo, poster: view3dPoster }),
     slide("props", { video: propsVideo, poster: propsPoster }),
-    // Placeholder poster; record tempo.mp4 when #550 lands.
-    slide("tempo", { poster: tempoPoster }, "tempoMode"),
+    slide("tempo", { video: tempoVideo, poster: tempoPoster }, "tempoMode"),
     // Placeholder poster; record pathways.mp4 when #674 lands.
     slide("pathways", { poster: pathwaysPoster }, "pathways"),
 ];

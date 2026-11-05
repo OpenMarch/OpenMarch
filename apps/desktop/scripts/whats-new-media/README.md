@@ -27,14 +27,14 @@ Each run also gets a folder, `scripts/whats-new-media/runs/<time>/` (git-ignored
 
 The clips (`clips.mjs`):
 
-| Clip       | Show             | What it films                                                                                                                                                                                                                                             |
-| ---------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `timeline` | `line-test.dots` | The 20-marcher drill playing in Expert mode, field and timeline: Move 1 for the whole line with Moves 2–4 nested under it; the field is zoomed in and panned so the marchers sit just above the moves, framed close enough to read the names on the slide |
-| `shapes`   | demo             | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                       |
-| `view3d`   | demo             | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                           |
-| `props`    | demo             | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color      |
-| `tempo`    | demo             | Waits for #550 (see below)                                                                                                                                                                                                                                |
-| `pathways` | demo             | Waits for #674 (see below)                                                                                                                                                                                                                                |
+| Clip       | Show              | What it films                                                                                                                                                                                                                                             |
+| ---------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeline` | `line-test.dots`  | The 20-marcher drill playing in Expert mode, field and timeline: Move 1 for the whole line with Moves 2–4 nested under it; the field is zoomed in and panned so the marchers sit just above the moves, framed close enough to read the names on the slide |
+| `shapes`   | demo              | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                       |
+| `view3d`   | demo              | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                           |
+| `props`    | demo              | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color      |
+| `tempo`    | `tempo-test.dots` | Edit music (tempo mode) in the timeline pane: counts 1–20 at ♩60 drift off the clicks of music at ♩72; the tempo line is dragged up to ♩72 and the clicks land on the counts, then it plays into the hold on count 21                                     |
+| `pathways` | demo              | Waits for #674 (see below)                                                                                                                                                                                                                                |
 
 The demo is `web/public/demos/part1-demo.dots`, converted to timelines when the app opens it.
 
@@ -62,7 +62,6 @@ From a fresh clone:
 ```sh
 git clone https://github.com/AlexDumo/OpenMarch-timeline.git
 cd OpenMarch-timeline
-git checkout convergence/p7-welcome-back
 pnpm install
 pnpm turbo run build --filter="@openmarch/desktop^..."
 pnpm --dir apps/desktop run build
@@ -78,6 +77,7 @@ node scripts/whats-new-media/record.mjs timeline
 node scripts/whats-new-media/record.mjs shapes
 node scripts/whats-new-media/record.mjs view3d
 node scripts/whats-new-media/record.mjs props
+node scripts/whats-new-media/record.mjs tempo
 ```
 
 On Windows, the same commands work in PowerShell (`node scripts\whats-new-media\record.mjs`).
@@ -113,20 +113,23 @@ about 20 s a frame in SwiftShader), but the result is the same:
 xvfb-run -a -s "-screen 0 1600x1000x24" node scripts/whats-new-media/record.mjs --software-gl
 ```
 
+Record `tempo` without `--software-gl`: it films only the timeline, and under SwiftShader
+the timeline's header and transport were left as dark tiles while the show played.
+
 In Docker, use an image with Node 24, pnpm, ffmpeg, Xvfb and Electron's libraries, mount the
 repo, and run the install, the two builds and that command inside the container (node_modules
 are per platform, so a host install won't run there).
 
 ## Slides waiting on a feature
 
-The Tempo mode (fork PR #550) and Pathways (fork PR #674) slides are written but hidden. Each
-has a `requires` field in `src/components/welcome/whatsNewSlides.ts`, checked against
-`SHIPPED_FEATURES`, and a placeholder poster from `placeholder.mjs` (needs ffmpeg's drawtext).
-When the feature is on main:
+The Pathways slide (fork PR #674) is written but hidden. It has a `requires` field in
+`src/components/welcome/whatsNewSlides.ts`, checked against `SHIPPED_FEATURES`, and a
+placeholder poster from `placeholder.mjs` (needs ffmpeg's drawtext). When the Path pen is on
+main:
 
-1. Check the selectors in its `clips.mjs` entry (marked `TODO(#550)` or `TODO(#674)`), then
-   record it: `node scripts/whats-new-media/record.mjs tempo` (or `pathways`). This writes
-   the real clip and poster over the placeholder.
+1. Check the selectors in its `clips.mjs` entry (marked `TODO(#674)`), then record it:
+   `node scripts/whats-new-media/record.mjs pathways`. This writes the real clip and poster
+   over the placeholder.
 2. Add the video to its slide and set its switch in `SHIPPED_FEATURES` to `true`.
 
 To review the hidden slides before then, run or build the app with
@@ -141,4 +144,8 @@ To review the hidden slides before then, run or build the app with
 - `line-test.dots`: the timeline clip's show, made in Expert mode: Move 1 (counts 9–24) for
   the whole line, with Moves 2–4 nested under it. Its undo history and music are stripped to
   keep it small.
+- `tempo-test.dots`: the tempo clip's show, made from the tempo test kit's rubato show: the
+  first 34 s of its music (♩72 with a 3.2 s fermata on count 21), counts 1–20 set to ♩60 so
+  they're off the music, the fermatas marked as holds, and the later counts at ♩72 so the
+  tempo lane's scale stays close. Its undo history is stripped.
 - `placeholder.mjs`: a plain poster for a slide whose feature isn't on main yet.

@@ -418,6 +418,7 @@ describe("WelcomeFlow", () => {
             "Shapes",
             "The 3D View",
             "Props",
+            "Edit music",
         ]);
 
         fireEvent.click(await screen.findByTestId("editor-mode-card-basic"));
@@ -536,6 +537,9 @@ describe("WelcomeFlow", () => {
         expect(steps.getByTestId("whats-new-step-view3d")).toHaveTextContent(
             "3D View",
         );
+        expect(steps.getByTestId("whats-new-step-tempo")).toHaveTextContent(
+            "Edit music",
+        );
         expect(steps.getByTestId("whats-new-step-timeline")).toHaveAttribute(
             "aria-current",
             "step",
@@ -566,7 +570,9 @@ describe("WelcomeFlow", () => {
         fireEvent.click(screen.getByTestId("welcome-continue"));
         for (let i = 1; i < WHATS_NEW_SLIDES.length; i++)
             fireEvent.click(await screen.findByTestId("whats-new-next"));
-        await screen.findByTestId("whats-new-slide-props");
+        await screen.findByTestId(
+            `whats-new-slide-${WHATS_NEW_SLIDES.at(-1)!.id}`,
+        );
         expect(screen.getByTestId("whats-new-guides")).toHaveAttribute(
             "href",
             "https://openmarch.com/guides",
