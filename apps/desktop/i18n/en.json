@@ -3509,32 +3509,28 @@
         },
         "help": {
             "doubleClickLane": {
-                "effect": "adds a tempo change there; double-click a change's dot to remove it",
-                "gesture": "Double-click the tempo lane or line"
+                "title": "Add a tempo change",
+                "text": "Double-click the tempo lane where it should change. Double-click a change's dot to remove it."
             },
             "dragChangeDot": {
-                "effect": "up or down for its tempo, sideways to move where it changes",
-                "gesture": "Drag a tempo change's dot"
+                "title": "Move a tempo change",
+                "text": "Drag its dot up or down to change the tempo, or sideways to move where it changes."
             },
             "dragEndDot": {
-                "effect": "sets the tempo it ends on, so a rit. can jump back (a tempo)",
-                "gesture": "Drag a stretch's square end dot"
+                "title": "Set where a rit. ends",
+                "text": "Drag the square dot at the end of a stretch, so the next tempo can jump back (a tempo)."
             },
             "dragLine": {
-                "effect": "up or down; right-click > Set tempo… to type one",
-                "gesture": "Drag the tempo line"
-            },
-            "dragMark": {
-                "effect": "to another measure",
-                "gesture": "Drag a rehearsal mark"
+                "title": "Set a tempo",
+                "text": "Drag the tempo line up or down. To type a tempo, right-click and choose Set tempo…"
             },
             "dragMeasures": {
-                "effect": "selects counts to edit",
-                "gesture": "Drag along Measures or the music"
+                "title": "Select counts",
+                "text": "Drag along the measures or the music, then edit them all at once."
             },
             "dragRoundHandle": {
-                "effect": "makes a gradual change, straight or curved; double-click it for a jump again",
-                "gesture": "Drag a stretch's round handle"
+                "title": "Change tempo gradually",
+                "text": "Drag the round handle in the middle of a stretch. Double-click it to jump again."
             },
             "keys": {
                 "escape": "Clear the selection, or cancel a drag; with nothing to clear, stop editing music",
@@ -3546,17 +3542,17 @@
             },
             "label": "How editing music works",
             "rightClick": {
-                "effect": "holds, tempo changes, adding and removing counts",
-                "gesture": "Right-click"
+                "title": "Holds and counts",
+                "text": "Right-click a count to make it a hold, change tempo gradually, or add and remove counts."
             },
             "rightClickMeasure": {
-                "effect": "renumber from there (or double-click its number), rehearsal mark, time signature",
-                "gesture": "Right-click a measure"
+                "title": "Measures and rehearsal marks",
+                "text": "Right-click a measure to renumber it, set its time signature or add a mark. Drag a mark to move it."
             },
             "title": "Line the counts up with the music",
             "musicFile": {
-                "gesture": "The file's name in the header",
-                "effect": "switches to another audio file, sets the music offset, imports one or deletes it"
+                "title": "Change the music",
+                "text": "Click the file's name in the header to switch, import or delete audio, or set the music offset."
             }
         },
         "importScore": {

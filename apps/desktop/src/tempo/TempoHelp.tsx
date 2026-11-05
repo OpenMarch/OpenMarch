@@ -1,10 +1,21 @@
 /**
- * Tempo mode: how tempo mode works, behind the "?" in its
- * header.
+ * Edit music: how it works, behind the "?" in its header. Each row is an icon, a short title and
+ * one sentence saying how (owner, 2026-11-04: not a gesture column read on into an effect column).
  */
-import { Fragment } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { QuestionIcon } from "@phosphor-icons/react";
+import {
+    ArrowsOutCardinalIcon,
+    BezierCurveIcon,
+    ChartLineIcon,
+    CursorClickIcon,
+    HashIcon,
+    MusicNotesIcon,
+    PlusCircleIcon,
+    QuestionIcon,
+    SelectionIcon,
+    TrendDownIcon,
+    type Icon,
+} from "@phosphor-icons/react";
 import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import tolgee from "@/global/singletons/Tolgee";
@@ -12,108 +23,103 @@ import { toolButton } from "./TempoToolbar";
 
 /** How tempo mode works, behind a "?" in its header */
 export function TempoHelp() {
-    // Each row: a gesture, then what it does (a two-column list)
-    const rows: [id: string, what: string, how: string][] = [
+    // Each row: an icon, a short title and a sentence saying how
+    const rows: [id: string, icon: Icon, title: string, text: string][] = [
         [
             "dragLine",
-            tolgee.t("tempoMode.help.dragLine.gesture", "Drag the tempo line"),
+            ChartLineIcon,
+            tolgee.t("tempoMode.help.dragLine.title", "Set a tempo"),
             tolgee.t(
-                "tempoMode.help.dragLine.effect",
-                "up or down; right-click > Set tempo… to type one",
+                "tempoMode.help.dragLine.text",
+                "Drag the tempo line up or down. To type a tempo, right-click and choose Set tempo…",
             ),
         ],
         [
             "doubleClickLane",
+            PlusCircleIcon,
             tolgee.t(
-                "tempoMode.help.doubleClickLane.gesture",
-                "Double-click the tempo lane or line",
+                "tempoMode.help.doubleClickLane.title",
+                "Add a tempo change",
             ),
             tolgee.t(
-                "tempoMode.help.doubleClickLane.effect",
-                "adds a tempo change there; double-click a change's dot to remove it",
+                "tempoMode.help.doubleClickLane.text",
+                "Double-click the tempo lane where it should change. Double-click a change's dot to remove it.",
             ),
         ],
         [
             "dragChangeDot",
+            ArrowsOutCardinalIcon,
             tolgee.t(
-                "tempoMode.help.dragChangeDot.gesture",
-                "Drag a tempo change's dot",
+                "tempoMode.help.dragChangeDot.title",
+                "Move a tempo change",
             ),
             tolgee.t(
-                "tempoMode.help.dragChangeDot.effect",
-                "up or down for its tempo, sideways to move where it changes",
+                "tempoMode.help.dragChangeDot.text",
+                "Drag its dot up or down to change the tempo, or sideways to move where it changes.",
             ),
         ],
         [
             "dragRoundHandle",
+            BezierCurveIcon,
             tolgee.t(
-                "tempoMode.help.dragRoundHandle.gesture",
-                "Drag a stretch's round handle",
+                "tempoMode.help.dragRoundHandle.title",
+                "Change tempo gradually",
             ),
             tolgee.t(
-                "tempoMode.help.dragRoundHandle.effect",
-                "makes a gradual change, straight or curved; double-click it for a jump again",
+                "tempoMode.help.dragRoundHandle.text",
+                "Drag the round handle in the middle of a stretch. Double-click it to jump again.",
             ),
         ],
         [
             "dragEndDot",
+            TrendDownIcon,
             tolgee.t(
-                "tempoMode.help.dragEndDot.gesture",
-                "Drag a stretch's square end dot",
+                "tempoMode.help.dragEndDot.title",
+                "Set where a rit. ends",
             ),
             tolgee.t(
-                "tempoMode.help.dragEndDot.effect",
-                "sets the tempo it ends on, so a rit. can jump back (a tempo)",
+                "tempoMode.help.dragEndDot.text",
+                "Drag the square dot at the end of a stretch, so the next tempo can jump back (a tempo).",
             ),
         ],
         [
             "dragMeasures",
+            SelectionIcon,
+            tolgee.t("tempoMode.help.dragMeasures.title", "Select counts"),
             tolgee.t(
-                "tempoMode.help.dragMeasures.gesture",
-                "Drag along Measures or the music",
-            ),
-            tolgee.t(
-                "tempoMode.help.dragMeasures.effect",
-                "selects counts to edit",
+                "tempoMode.help.dragMeasures.text",
+                "Drag along the measures or the music, then edit them all at once.",
             ),
         ],
         [
             "rightClick",
-            tolgee.t("tempoMode.help.rightClick.gesture", "Right-click"),
+            CursorClickIcon,
+            tolgee.t("tempoMode.help.rightClick.title", "Holds and counts"),
             tolgee.t(
-                "tempoMode.help.rightClick.effect",
-                "holds, tempo changes, adding and removing counts",
-            ),
-        ],
-        [
-            "musicFile",
-            tolgee.t(
-                "tempoMode.help.musicFile.gesture",
-                "The file's name in the header",
-            ),
-            tolgee.t(
-                "tempoMode.help.musicFile.effect",
-                "switches to another audio file, sets the music offset, imports one or deletes it",
+                "tempoMode.help.rightClick.text",
+                "Right-click a count to make it a hold, change tempo gradually, or add and remove counts.",
             ),
         ],
         [
             "rightClickMeasure",
+            HashIcon,
             tolgee.t(
-                "tempoMode.help.rightClickMeasure.gesture",
-                "Right-click a measure",
+                "tempoMode.help.rightClickMeasure.title",
+                "Measures and rehearsal marks",
             ),
             tolgee.t(
-                "tempoMode.help.rightClickMeasure.effect",
-                "renumber from there (or double-click its number), rehearsal mark, time signature",
+                "tempoMode.help.rightClickMeasure.text",
+                "Right-click a measure to renumber it, set its time signature or add a mark. Drag a mark to move it.",
             ),
         ],
         [
-            "dragMark",
+            "musicFile",
+            MusicNotesIcon,
+            tolgee.t("tempoMode.help.musicFile.title", "Change the music"),
             tolgee.t(
-                "tempoMode.help.dragMark.gesture",
-                "Drag a rehearsal mark",
+                "tempoMode.help.musicFile.text",
+                "Click the file's name in the header to switch, import or delete audio, or set the music offset.",
             ),
-            tolgee.t("tempoMode.help.dragMark.effect", "to another measure"),
         ],
     ];
     // Each row: a binding for `Shortcut`, then what the key does
@@ -187,26 +193,34 @@ export function TempoHelp() {
                             "Line the counts up with the music",
                         )}
                     </div>
-                    <dl className="grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-[11px]">
-                        {rows.map(([id, what, how]) => (
-                            <Fragment key={id}>
-                                <dt className="font-medium whitespace-nowrap">
-                                    {what}
-                                </dt>
-                                <dd className="text-text-subtitle">{how}</dd>
-                            </Fragment>
+                    <ul className="flex flex-col gap-10 text-[11px]">
+                        {rows.map(([id, RowIcon, title, text]) => (
+                            <li key={id} className="flex gap-10">
+                                <span className="bg-text/5 text-text rounded-6 flex size-24 shrink-0 items-center justify-center">
+                                    <RowIcon size={14} aria-hidden />
+                                </span>
+                                <span className="flex min-w-0 flex-col gap-1">
+                                    <span className="font-medium">{title}</span>
+                                    <span className="text-text-subtitle leading-[1.4]">
+                                        {text}
+                                    </span>
+                                </span>
+                            </li>
                         ))}
-                    </dl>
-                    <dl className="border-stroke grid grid-cols-[auto_1fr] items-center gap-x-8 gap-y-3 border-t pt-8 text-[11px]">
+                    </ul>
+                    <ul className="border-stroke flex flex-col gap-4 border-t pt-8 text-[11px]">
                         {keys.map(([key, what]) => (
-                            <Fragment key={key}>
-                                <dt>
-                                    <Shortcut binding={key} />
-                                </dt>
-                                <dd className="text-text-subtitle">{what}</dd>
-                            </Fragment>
+                            <li
+                                key={key}
+                                className="flex items-center justify-between gap-12 pl-[34px]"
+                            >
+                                <span className="text-text-subtitle">
+                                    {what}
+                                </span>
+                                <Shortcut binding={key} />
+                            </li>
                         ))}
-                    </dl>
+                    </ul>
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>
