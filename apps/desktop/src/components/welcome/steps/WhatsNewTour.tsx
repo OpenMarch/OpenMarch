@@ -1,9 +1,8 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
-import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
-import OpenMarchLogo from "@/components/OpenMarchLogo";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import {
     GUIDES_URL,
@@ -108,10 +107,15 @@ export default function WhatsNewTour({
             <div className="bg-fg-1 border-stroke rounded-6 flex min-h-0 flex-1 flex-col overflow-y-auto border px-24 py-24">
                 <div className="m-auto flex w-full max-w-[min(46rem,calc((100vh-20rem)*1.6))] flex-col gap-16">
                     <div className="flex items-center justify-between gap-16">
-                        <OpenMarchLogo
-                            height={28}
-                            className="text-text shrink-0"
-                        />
+                        <Button
+                            variant="ghost"
+                            onClick={back}
+                            className="-ml-16 px-16"
+                            data-testid="whats-new-back"
+                        >
+                            <CaretLeftIcon size={16} aria-hidden />
+                            <T keyName="welcomeFlow.back" />
+                        </Button>
                         <span className="text-h4 text-text font-medium">
                             <T keyName="welcomeFlow.whatsNew.title" />
                         </span>
@@ -154,14 +158,7 @@ export default function WhatsNewTour({
                         </div>
                     </section>
 
-                    <div className="flex w-full items-center justify-between gap-8 pt-8">
-                        <Button
-                            variant="secondary"
-                            onClick={back}
-                            data-testid="whats-new-back"
-                        >
-                            <T keyName="welcomeFlow.back" />
-                        </Button>
+                    <div className="flex w-full flex-col items-center gap-16 pt-8">
                         <nav
                             className="flex min-w-0 flex-wrap items-center justify-center gap-x-8 gap-y-4"
                             aria-label={t("welcomeFlow.whatsNew.steps")}
