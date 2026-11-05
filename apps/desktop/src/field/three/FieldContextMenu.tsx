@@ -36,8 +36,7 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The commands that set the selection's state on the current page (holds):
- *   **Define as shown** and **Hold from previous page** (timeline mode only),
- *   then **Clear this page**, with **set to next page** after it. Each says what it would do
+ *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
  *   unavailable when every selected marcher is already in the state it sets, and with a count,
  *   "Hold from previous page (3 of 5)", when it would change only some of them.
@@ -47,7 +46,6 @@ import { fieldToElement, useFieldViewStore } from "./fieldView";
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
     [
-        "timelineDefineAsShown",
         "timelineHoldFromPrevious",
         "setSelectedMarchersToPreviousPage",
         "setSelectedMarchersToNextPage",
@@ -66,10 +64,7 @@ const GROUPS: readonly (readonly ActionId[])[] = [
 export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
 
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
-const HOLDS: ReadonlySet<ActionId> = new Set([
-    "timelineDefineAsShown",
-    "timelineHoldFromPrevious",
-]);
+const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
 
 /** The group whose entries can show checked: each keeps room for the check, so the words line up */
 const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[1]);

@@ -267,11 +267,12 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(isActionChecked("timelineHoldFromPrevious")).toBe(true);
         expect(runAction("timelineHoldFromPrevious")).toBe(false);
-        // Define as shown skips Held marchers: off, not checked
-        expect(entry("timelineDefineAsShown")).toHaveAttribute("data-disabled");
-        expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
-            "aria-checked",
-        );
+        // Define as shown (not in the field menu, still an action) skips Held marchers: off, not checked
+        expect(
+            screen.queryByTestId("field-menu-timelineDefineAsShown"),
+        ).toBeNull();
+        expect(isActionEnabled("timelineDefineAsShown")).toBe(false);
+        expect(isActionChecked("timelineDefineAsShown")).toBe(false);
         // Clear this page would take the hold away
         expect(entry("setSelectedMarchersToPreviousPage")).not.toHaveAttribute(
             "data-disabled",
@@ -282,12 +283,7 @@ describe("the field menu shows the selection's state on the current page", () =>
     it("mixed: the entries stay on, with no count", () => {
         // Marcher 1 is Not defined on page 3, marcher 2 is Defined there
         openFieldMenu([1, 2]);
-        expect(entry("timelineDefineAsShown")).toHaveTextContent(
-            /^Define as shown$/,
-        );
-        expect(entry("timelineDefineAsShown")).not.toHaveAttribute(
-            "data-disabled",
-        );
+        expect(isActionEnabled("timelineDefineAsShown")).toBe(true);
         // Ctrl+H after it is its shortcut (the test runs as Windows/Linux)
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
             /^Hold from previous page.*Ctrl\+H$/,
@@ -323,10 +319,8 @@ describe("the field menu shows the selection's state on the current page", () =>
             expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
                 false,
             );
-            // Both others would change everyone, with no count
-            expect(entry("timelineDefineAsShown")).toHaveTextContent(
-                /^Define as shown$/,
-            );
+            // Define as shown would still change everyone
+            expect(isActionEnabled("timelineDefineAsShown")).toBe(true);
         } finally {
             SPANS[2] = saved;
         }
@@ -335,8 +329,10 @@ describe("the field menu shows the selection's state on the current page", () =>
     it("on the first page the holds are off; Clear this page still runs and says there's no previous page", () => {
         mocks.selectedPage = PAGES[0];
         openFieldMenu([1]);
-        for (const id of ["timelineDefineAsShown", "timelineHoldFromPrevious"])
-            expect(entry(id)).toHaveAttribute("data-disabled");
+        expect(entry("timelineHoldFromPrevious")).toHaveAttribute(
+            "data-disabled",
+        );
+        expect(isActionEnabled("timelineDefineAsShown")).toBe(false);
         expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(true);
     });
 });
