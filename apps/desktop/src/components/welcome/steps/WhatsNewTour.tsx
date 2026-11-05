@@ -117,6 +117,30 @@ export default function WhatsNewTour({
                         </span>
                     </div>
 
+                    <nav
+                        className="flex flex-wrap justify-center gap-6"
+                        aria-label={t("welcomeFlow.whatsNew.steps")}
+                        data-testid="whats-new-steps"
+                    >
+                        {WHATS_NEW_SLIDES.map((s, i) => (
+                            <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => setIndex(i)}
+                                aria-current={i === index ? "step" : undefined}
+                                className={clsx(
+                                    "text-body rounded-full px-12 py-4 transition-colors duration-150",
+                                    i === index
+                                        ? "bg-accent text-text-invert"
+                                        : "text-text-subtitle hover:bg-fg-2 hover:text-text",
+                                )}
+                                data-testid={`whats-new-step-${s.id}`}
+                            >
+                                <T keyName={s.labelKey} />
+                            </button>
+                        ))}
+                    </nav>
+
                     <section
                         key={slide.id}
                         className="animate-fade-in flex flex-col gap-16"
@@ -162,24 +186,6 @@ export default function WhatsNewTour({
                         >
                             <T keyName="welcomeFlow.back" />
                         </Button>
-                        <div
-                            className="flex items-center gap-6"
-                            aria-hidden
-                            data-testid="whats-new-dots"
-                        >
-                            {WHATS_NEW_SLIDES.map((s, i) => (
-                                <span
-                                    key={s.id}
-                                    data-current={i === index || undefined}
-                                    className={clsx(
-                                        "size-8 rounded-full transition-colors duration-150",
-                                        i === index
-                                            ? "bg-accent"
-                                            : "bg-text/20",
-                                    )}
-                                />
-                            ))}
-                        </div>
                         <div className="flex gap-8">
                             <Button
                                 variant="ghost"

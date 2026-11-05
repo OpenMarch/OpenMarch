@@ -1,6 +1,12 @@
 // cspell:words Hola futuro diseño
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+    fireEvent,
+    render,
+    screen,
+    waitFor,
+    within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -514,6 +520,35 @@ describe("WelcomeFlow", () => {
         expect(
             await screen.findByTestId("editor-mode-card-basic"),
         ).toBeInTheDocument();
+    });
+
+    it("names every What's new step and jumps to one when it's clicked", async () => {
+        stubElectron(false, "en", { theme: "dark" });
+        renderFlow();
+        fireEvent.click(await screen.findByTestId("welcome-continue"));
+        await screen.findByTestId("whats-new-slide-timeline");
+
+        const steps = within(screen.getByTestId("whats-new-steps"));
+        expect(steps.getByTestId("whats-new-step-timeline")).toHaveTextContent(
+            "Timeline",
+        );
+        expect(steps.getByTestId("whats-new-step-view3d")).toHaveTextContent(
+            "3D View",
+        );
+        expect(steps.getByTestId("whats-new-step-timeline")).toHaveAttribute(
+            "aria-current",
+            "step",
+        );
+
+        fireEvent.click(steps.getByTestId("whats-new-step-props"));
+        await screen.findByTestId("whats-new-slide-props");
+        expect(steps.getByTestId("whats-new-step-props")).toHaveAttribute(
+            "aria-current",
+            "step",
+        );
+        expect(
+            steps.getByTestId("whats-new-step-timeline"),
+        ).not.toHaveAttribute("aria-current");
     });
 
     it("shows the last slide's guides link and Continue, and Back to the welcome page from the first", async () => {

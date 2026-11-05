@@ -39,6 +39,8 @@ export type WhatsNewSlide = {
     /** The clip; a slide without one shows its poster (a placeholder until it's recorded). */
     video?: string;
     poster: string;
+    /** Short name in the row of steps above the clip. */
+    labelKey: string;
     titleKey: string;
     textKey: string;
     /** What the clip shows, for screen readers and when it can't play. */
@@ -54,6 +56,7 @@ const slide = (
 ): WhatsNewSlide => ({
     id,
     ...media,
+    labelKey: `welcomeFlow.whatsNew.slides.${id}.label`,
     titleKey: `welcomeFlow.whatsNew.slides.${id}.title`,
     textKey: `welcomeFlow.whatsNew.slides.${id}.text`,
     mediaKey: `welcomeFlow.whatsNew.slides.${id}.media`,
