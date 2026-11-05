@@ -3541,7 +3541,8 @@
                 "mark": "Drop a rehearsal mark while playing",
                 "play": "Play from the playhead, or stop where it is",
                 "tap": "Tap tempo: tap on each beat to see how fast it is",
-                "toggle": "Start or stop editing music"
+                "toggle": "Start or stop editing music",
+                "metronome": "Metronome on or off"
             },
             "label": "How editing music works",
             "rightClick": {

@@ -133,6 +133,10 @@ export function TempoHelp() {
             ),
         ],
         [
+            "$mod+M",
+            tolgee.t("tempoMode.help.keys.metronome", "Metronome on or off"),
+        ],
+        [
             "Space",
             tolgee.t(
                 "tempoMode.help.keys.play",
@@ -174,7 +178,7 @@ export function TempoHelp() {
                     align="end"
                     sideOffset={6}
                     collisionPadding={8}
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-[100] flex w-[340px] max-w-[calc(100vw-16px)] flex-col gap-8 border px-12 py-10 backdrop-blur-md"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-[100] flex max-h-[var(--radix-popover-content-available-height)] w-[340px] max-w-[calc(100vw-16px)] flex-col gap-8 overflow-y-auto overscroll-contain border px-12 py-10 backdrop-blur-md"
                     onPointerDown={(e) => e.stopPropagation()}
                 >
                     <div className="text-[12px] font-bold">
