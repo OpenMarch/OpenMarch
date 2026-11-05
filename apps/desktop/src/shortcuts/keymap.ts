@@ -33,7 +33,6 @@ export interface BindingConflict {
 }
 
 export interface ShortcutContext {
-    baseScope: "canvas" | "timeline";
     inTextInput: boolean;
     modalOpen: boolean;
 }
@@ -278,7 +277,6 @@ export function pickAction(
 ): KeymapEntry | undefined {
     const allowed = candidates.filter(
         (c) =>
-            (c.scope === "global" || c.scope === context.baseScope) &&
             (!context.inTextInput || c.allowInInputs) &&
             (!context.modalOpen || c.allowInModals) &&
             isRunnable(c.id),

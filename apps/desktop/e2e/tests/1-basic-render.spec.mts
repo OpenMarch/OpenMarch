@@ -98,11 +98,6 @@ test("Sidebars are visible", async ({ electronApp }) => {
     await expect(
         page.locator("#workspace div").filter({ hasText: "Marchers" }).nth(1),
     ).toBeVisible();
-    await page.locator("#sidebar-launcher-music").click();
-    await expect(page.locator("header")).toContainText("Music");
-    await expect(
-        page.getByRole("heading", { name: "Tempo Groups" }),
-    ).toBeVisible();
     await page.locator("#sidebar-launcher-field").click();
     await expect(
         page

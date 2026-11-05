@@ -21,11 +21,6 @@ The timeline system handles audio playback and beat/measure visualization. The `
 | `src/components/timeline/PerspectiveSlider.tsx` | 3D perspective control |
 | **Audio Components** | |
 | `src/components/timeline/audio/AudioPlayer.tsx` | Read-only audio player |
-| `src/components/timeline/audio/EditableAudioPlayer.tsx` | Editable audio player |
-| `src/components/timeline/audio/EditableBeatAudioPlayer.tsx` | Beat-synced editable player |
-| `src/components/timeline/audio/WaveformTimingOverlay.tsx` | Waveform overlay |
-| `src/components/timeline/audio/TimingMarkersPlugin.ts` | Beat markers on waveform |
-| `src/components/timeline/audio/EditableTimingMarkersPlugin.ts` | Editable beat markers |
 | `src/components/timeline/audio/volume.ts` | Volume utilities |
 | **Music Components** | |
 | `src/components/music/MusicModal.tsx` | Music settings modal |
@@ -85,9 +80,7 @@ TimelineContainer
 ├── TimelineControls (play/pause/stop/fullscreen)
 ├── PerspectiveSlider (3D view control)
 ├── PageTimeline (visual page blocks with counts)
-└── AudioPlayer / EditableAudioPlayer
-    └── WaveformTimingOverlay
-        └── TimingMarkersPlugin (beat/measure markers)
+└── AudioPlayer
 ```
 
 ## MusicXML Import

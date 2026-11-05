@@ -1,4 +1,3 @@
-import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import MetronomeModal from "@/components/music/MetronomeModal";
@@ -16,7 +15,7 @@ export default function Sidebar() {
         >
             <div className="flex flex-col gap-16">
                 <MarchersModal />
-                <MusicModal />
+                {/* The music is edited on the timeline: Edit music (owner, 2026-11-04) */}
                 <FieldModal />
                 <MetronomeModal />
                 <AppearanceModal />

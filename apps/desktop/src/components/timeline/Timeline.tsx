@@ -26,6 +26,7 @@ import {
     CollapsedTimeline,
     ExpandedTimeline,
 } from "./TimelineVariants";
+import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineKeyframe,
@@ -143,6 +144,11 @@ export interface TimelinePlayback {
     readonly onPlayFromPlayhead?: () => void;
     /** Alt+click on Play (Alt+Space): plays on from the start flag (Expert, UI-26) */
     readonly onPlayOn?: () => void;
+    /**
+     * Tempo mode: Play is the only play action, and its tooltip names it like this
+     * ("Play from the playhead", "Loop m. 11–12"): no Shift or Alt variants
+     */
+    readonly playOnly?: string;
     /** Page navigation from the transport; without it, the transport seeks to page starts */
     readonly onNavigate?: (direction: TimelineNavigation) => void;
 }
@@ -167,6 +173,8 @@ export interface TimelineProps {
     readonly readOnly?: boolean;
     /** A read-only timeline with no start flag drawn (Preview, which always plays on) */
     readonly hideStartFlag?: boolean;
+    /** Lanes drawn in place of the clip rows, under the waveform (tempo mode's lanes) */
+    readonly band?: TimelineBand;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -188,6 +196,8 @@ export interface TimelineProps {
     /** Whether the zoom was fitted to the show; the timeline opens fitted when it was (UI-12) */
     readonly zoomFitted?: boolean;
     readonly onZoomFittedChange?: (fitted: boolean) => void;
+    /** Zoom out and Zoom in buttons beside Fit, for mouse users (tempo mode) */
+    readonly zoomButtons?: boolean;
     readonly selection?: TimelineSelection;
     readonly className?: string;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
@@ -985,10 +995,12 @@ export function Timeline(props: TimelineProps) {
         playLoops: playback.playLoops,
         onPlayFromPlayhead: useLatestCallback(playback.onPlayFromPlayhead),
         onPlayOn: useLatestCallback(playback.onPlayOn),
+        playOnly: playback.playOnly,
         onNavigate: useLatestCallback(playback.onNavigate),
         onPixelsPerBeatChange: useLatestCallback(setPixelsPerBeat),
         zoomFitted: props.zoomFitted,
         onZoomFittedChange: useLatestCallback(props.onZoomFittedChange),
+        zoomButtons: props.zoomButtons,
         onSelectionChange: changeSelection,
         addSelectedMarchers: addMarchersMenu,
         moveCommands: trackMoveCommands,
@@ -1032,8 +1044,9 @@ export function Timeline(props: TimelineProps) {
               startFlagBeat: props.hideStartFlag
                   ? undefined
                   : readOnlyStartFlag(selection),
+              band: props.band,
           }
-        : commonProps;
+        : { ...commonProps, band: props.band };
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />

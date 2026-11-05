@@ -2,22 +2,20 @@ import { test, expect } from "../fixtures.mjs";
 import {
     addPageAt,
     createMarchers,
-    createTempoGroup,
     drawnMarchers,
     expectCanvasMatchesShow,
     waitForField,
 } from "../app.mjs";
+import { fourFourShowSql } from "../seed.mjs";
 import { savedPosition } from "../positions.mjs";
+
+// 8 measures of 4/4 to add pages on
+test.use({ seedSql: fourFourShowSql(8) });
 
 test("a show built in the app looks the same after a reload", async ({
     show,
 }) => {
     const { page } = show;
-    await createTempoGroup(page, {
-        tempo: 120,
-        beatsPerMeasure: 4,
-        measures: 8,
-    });
     await createMarchers(page, { quantity: 6, section: "Trumpet" });
     await addPageAt(page, 5);
     await expect(page.getByRole("heading", { name: "Page 1" })).toBeVisible();

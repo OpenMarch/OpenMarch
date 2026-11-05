@@ -46,6 +46,8 @@ const LATER_TABLES = [
     "timeline_shape_recipe_marchers",
     "saved_shapes",
     "timeline_held_marks",
+    // Tempo mode (0031)
+    "tempo_settings",
 ];
 
 const CUE_TABLES = [

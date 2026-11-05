@@ -7,7 +7,6 @@ import { runAction, subscribeToActionRuns } from "../registry";
 /** Playback controls, and peeks that only change what's drawn, leave a held preview frame alone (UI-11) */
 const TRANSPORT_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "playPause",
-    "timelinePlayPause",
     "toggleLoop",
     "playPage",
     "playOn",

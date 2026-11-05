@@ -126,6 +126,15 @@ export interface TimelineSelectionState {
      * playhead's page. Kept by `TimelineResolverHost`.
      */
     readonly startStays: boolean;
+    /**
+     * Tempo mode (owner, 2026-10-30): the start flag is hidden and parked, and there is
+     * one playhead. Seeks, scrubs, pauses and playhead drags move only the playhead; turning it
+     * off (`setStartHidden`) puts S back where it was, or at the start of the playhead's page
+     * when the playhead is now on or before it.
+     */
+    readonly startHidden: boolean;
+    /** Where S was when `startHidden` turned on; `null` while it's off */
+    readonly parkedStartBeat: number | null;
     /** The paused playhead: a whole spec beat in `[0, beats.length]`. Not updated while playing. */
     readonly playheadBeat: number;
     /**
@@ -300,6 +309,8 @@ export interface TimelineSelectionState {
     readonly peekStart: (peek: boolean) => void;
     /** Used by `TimelineResolverHost` only: Expert (`true`) or Basic. */
     readonly setStartStays: (startStays: boolean) => void;
+    /** Used by tempo mode only (`useTempoModeStore`): hides and parks the start flag, or not */
+    readonly setStartHidden: (hidden: boolean) => void;
     /** Used by `useTimelinePlaybackDriver` only. */
     readonly setShowEndBeat: (showEndBeat: number | null) => void;
     /** Opening a show: home, playhead at 0, nothing loaded. */
@@ -743,6 +754,8 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
             selection: HOME,
             startBeat: 0,
             startStays: true,
+            startHidden: false,
+            parkedStartBeat: null,
             playheadBeat: 0,
             playheadRevision: 0,
             pageBoxes: [],
@@ -826,6 +839,12 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                             ...isolatedWindow(s, s.isolation, playhead),
                             playheadRevision: s.playheadRevision + 1,
                         };
+                    // Tempo mode: one playhead, and the hidden start flag stays put
+                    if (s.startHidden)
+                        return {
+                            ...windowFields(s.startBeat, playhead, s.pageBoxes),
+                            playheadRevision: s.playheadRevision + 1,
+                        };
                     if (s.startStays) {
                         const at = expertSeek(s, beat);
                         return {
@@ -870,6 +889,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     // swaps them live and the field shows the dragged beat
                     const asLine =
                         s.startStays &&
+                        !s.startHidden &&
                         s.isolation === null &&
                         s.playback === null &&
                         s.selection.kind !== "none" &&
@@ -897,6 +917,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     if (
                         s.isolation ||
                         s.startStays ||
+                        s.startHidden ||
                         s.selection.kind === "none"
                     )
                         return { scrubbing: false };
@@ -914,7 +935,8 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 set((s) =>
                     s.isolation !== null ||
                     s.playback !== null ||
-                    s.selection.kind === "none"
+                    s.selection.kind === "none" ||
+                    (s.startHidden && line === "start")
                         ? {}
                         : {
                               lineDrag: {
@@ -933,6 +955,15 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                     const drag = s.lineDrag;
                     if (!drag || !Number.isFinite(beat)) return {};
                     const to = clamp(s, beat);
+                    // Tempo mode: the playhead moves alone, past the hidden start flag too
+                    if (s.startHidden)
+                        return to === s.playheadBeat
+                            ? {}
+                            : {
+                                  lineDrag: { ...drag, beat: to },
+                                  ...windowFields(s.startBeat, to, s.pageBoxes),
+                                  playheadRevision: s.playheadRevision + 1,
+                              };
                     const at = lineDragPositions(drag, to);
                     const lineDrag =
                         drag.beat === to ? drag : { ...drag, beat: to };
@@ -953,6 +984,7 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 set((s) => {
                     const drag = s.lineDrag;
                     if (!drag) return {};
+                    if (s.startHidden) return { lineDrag: null };
                     const landed = landLineDrag(s, drag);
                     if (landed) return { lineDrag: null, ...landed };
                     // Not swapped: S is still where it was. In Basic it follows a playhead drag
@@ -1289,10 +1321,36 @@ export const useTimelineSelectionStore = create<TimelineSelectionState>(
                 }),
             setStartStays: (startStays) =>
                 set((s) => (s.startStays === startStays ? {} : { startStays })),
+            setStartHidden: (hidden) =>
+                set((s) => {
+                    if (s.startHidden === hidden) return {};
+                    if (hidden)
+                        return {
+                            startHidden: true,
+                            parkedStartBeat: s.startBeat,
+                        };
+                    const parked = s.parkedStartBeat ?? s.startBeat;
+                    const playhead = s.playheadBeat;
+                    const start =
+                        normalizePlayheadBeat(playhead) === 0
+                            ? 0
+                            : parked < playhead
+                              ? parked
+                              : followingStart(playhead, s.pageBoxes);
+                    return {
+                        startHidden: false,
+                        parkedStartBeat: null,
+                        ...(s.isolation || s.playback
+                            ? {}
+                            : windowFields(start, playhead, s.pageBoxes)),
+                    };
+                }),
             setShowEndBeat: (showEndBeat) => set({ showEndBeat }),
             reset: () =>
                 set((s) => ({
                     ...windowFields(0, 0, s.pageBoxes),
+                    // A show opened in tempo mode parks its own start flag, at home
+                    parkedStartBeat: s.startHidden ? 0 : null,
                     playheadRevision: s.playheadRevision + 1,
                     isolation: null,
                     storedTimelines: null,

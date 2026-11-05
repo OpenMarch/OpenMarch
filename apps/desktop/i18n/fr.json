@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "Créer une page à la tête de lecture",
             "createSubsetAtPlayhead": "Créer une sous-page à la tête de lecture",
             "goTo": "Aller à une page, une mesure ou une lettre de répétition",
-            "nextPage": "Page suivante (timeline)",
-            "playPause": "Lecture / pause de l'audio",
-            "previousPage": "Page précédente (timeline)",
             "splitMoveAtPlayhead": "Scinder le mouvement à la tête de lecture",
-            "tapBeats": "Ajouter {count} temps provisoires",
             "unsetHere": "Supprimer l'image clé",
             "unsetHereAndFollowing": "Supprimer l'image clé, les pages suivantes suivent à nouveau",
             "unsetHereKeywords": "image clé losange supprimer effacer retirer annuler coordonnée position suivantes keyframe diamond unset set following remove clear take back coordinate delete",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "Fusionner ce mouvement dans sa page"
         },
         "ui": {
-            "exitTimelineFocus": "Terminer l’édition de la timeline",
-            "focusCanvas": "Placer le focus sur le terrain",
-            "focusTimeline": "Modifier la timeline",
             "openFieldMenu": "Ouvrir le menu du terrain",
             "hideNextPaths": "Masquer les trajectoires de la page suivante",
             "openCommandPalette": "Palette de commandes",
@@ -198,65 +191,10 @@
         "context": {
             "error": "Impossible d’initialiser le contexte audio"
         },
-        "contextMenu": {
-            "ariaLabel": "Menu contextuel du temps",
-            "beat": {
-                "addBeat": "Ajouter un temps",
-                "cannotDeleteOnPage": "Les temps de début ou de fin de page ne peuvent pas être supprimés",
-                "delete": "Supprimer le temps",
-                "errorCreating": "Erreur lors de la création du temps",
-                "errorCreatingMeasure": "Erreur lors de la création de la mesure",
-                "errorDeleting": "Erreur lors de la suppression du temps",
-                "markAsMeasure": "Marquer comme mesure"
-            },
-            "measure": {
-                "addMeasure": "Ajouter une mesure",
-                "cannotDeleteOnPage": "Les temps de début ou de fin de page ne peuvent pas être supprimés",
-                "delete": "Supprimer la mesure",
-                "errorCreatingMeasureAndBeats": "Erreur lors de la création de la mesure et des temps",
-                "errorDeletingMeasureAndBeats": "Erreur lors de la suppression de la mesure et des temps",
-                "errorRemovingMarking": "Erreur lors de la suppression de la marque de mesure",
-                "removeMarking": "Supprimer la marque de mesure"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Erreur lors de l’enregistrement de la marque de répétition",
-                "label": "Marque de répétition"
-            },
-            "tempo": {
-                "errorSaving": "Erreur lors de l’enregistrement du tempo",
-                "firstBeatTempo": "Tempo du premier temps",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Impossible de décoder le fichier audio"
         },
-        "editableBeatPlayer": {
-            "description": "Faites glisser le bord droit d’un temps pour ajuster sa durée"
-        },
-        "saveNewBeats": {
-            "label": "Enregistrer les temps"
-        },
-        "seeDocs": {
-            "label": "Voir la doc"
-        },
         "silentPlaceholder": "Audio silencieux",
-        "tapNewTempo": {
-            "exit": "Quitter",
-            "label": "Taper un nouveau tempo",
-            "restart": "Recommencer"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Temps par frappe",
-            "label": "Tap tempo",
-            "tap": "Taper",
-            "tapButton": "{count, plural, one {Tapez pour ajouter {count} temps provisoire à la position actuelle de l'audio} other {Tapez pour ajouter {count} temps provisoires à la position actuelle de l'audio}}"
-        },
-        "player": {
-            "pause": "Pause",
-            "play": "Lecture",
-            "toStart": "Revenir au début"
-        },
         "insert": {
             "noFileOpen": "Aucun fichier n'est ouvert. Créez ou ouvrez d'abord un spectacle.",
             "databaseUnavailable": "La base de données n'est plus disponible. Vérifiez que le fichier de base de données est prêt, puis réessayez."
@@ -794,11 +732,6 @@
             "success": "Copie enregistrée"
         },
         "undo": "Annuler"
-    },
-    "focusNotice": {
-        "exit": "Quitter la timeline",
-        "message": "La timeline a actuellement le focus et toute autre interaction est désactivée. Appuyez sur <keys></keys> ou utilisez le bouton ci-dessous pour revenir à l'éditeur principal.",
-        "messageNoKey": "La timeline a actuellement le focus et toute autre interaction est désactivée. Utilisez le bouton ci-dessous pour revenir à l'éditeur principal."
     },
     "formButtons": {
         "discardChanges": "Ignorer les modifications",
@@ -1602,7 +1535,6 @@
         "shortcuts.reset": "Rétablir les touches par défaut de {action}",
         "shortcuts.resetAll": "Tout réinitialiser",
         "shortcuts.search": "Rechercher des raccourcis",
-        "shortcuts.tapBeats": "Marquer les temps",
         "timeline": "Timeline",
         "timeline.description": "Apparence de la timeline.",
         "timeline.waveformStyle": "Forme d’onde",
@@ -2156,7 +2088,6 @@
         "errorUpdatingTempoGroup": "Erreur lors de la mise à jour du groupe de tempo"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "passThrough": {
                 "catchUp": "Rejoint maintenant la formation à la fin de {caughtUp}",
@@ -2307,7 +2238,6 @@
             "label": "Timeline compacte",
             "onTooltip": "Timeline compacte : activée. Cliquez pour afficher la timeline complète"
         },
-        "zoomReset": "Réinitialiser le zoom de la timeline",
         "playbackSpeed": {
             "current": "Vitesse de lecture : {speed}",
             "hintClick": "Cliquez pour la vitesse suivante, clic droit pour plus d'options",
@@ -2355,10 +2285,6 @@
             "muted": "Coupé",
             "metronomeOn": "Métronome activé",
             "metronomeOff": "Métronome désactivé"
-        },
-        "beatEditor": {
-            "zoomOut": "Zoom arrière",
-            "zoomIn": "Zoom avant"
         },
         "waveform": {
             "label": "Forme d'onde audio"

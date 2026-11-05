@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "再生ヘッドの位置にページを作成",
             "createSubsetAtPlayhead": "再生ヘッドの位置にサブセットを作成",
             "goTo": "ページ、小節、リハーサルマークへ移動",
-            "nextPage": "次のページ（タイムライン）",
-            "playPause": "オーディオを再生／一時停止",
-            "previousPage": "前のページ（タイムライン）",
             "splitMoveAtPlayhead": "再生ヘッドの位置で動きを分割",
-            "tapBeats": "仮の拍を{count}個追加",
             "unsetHere": "キーフレームを削除",
             "unsetHereAndFollowing": "キーフレームを削除、以降のページも追従",
             "unsetHereKeywords": "キーフレーム ひし形 ダイヤ 解除 設定 以降 削除 クリア 取り消し 座標 位置 keyframe diamond unset set following remove clear take back coordinate position delete",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "この動きをページに統合"
         },
         "ui": {
-            "exitTimelineFocus": "タイムラインの編集を終了",
-            "focusCanvas": "キャンバスにフォーカス",
-            "focusTimeline": "タイムラインを編集",
             "openFieldMenu": "フィールドメニューを開く",
             "hideNextPaths": "次のページの経路を非表示",
             "openCommandPalette": "コマンドパレット",
@@ -198,65 +191,10 @@
         "context": {
             "error": "オーディオコンテキストを初期化できませんでした"
         },
-        "contextMenu": {
-            "ariaLabel": "拍のコンテキストメニュー",
-            "beat": {
-                "addBeat": "拍を追加",
-                "cannotDeleteOnPage": "ページの境界にある拍は削除できません",
-                "delete": "拍を削除",
-                "errorCreating": "拍を作成できませんでした",
-                "errorCreatingMeasure": "小節を作成できませんでした",
-                "errorDeleting": "拍を削除できませんでした",
-                "markAsMeasure": "小節の頭に設定"
-            },
-            "measure": {
-                "addMeasure": "小節を追加",
-                "cannotDeleteOnPage": "ページの境界にある拍は削除できません",
-                "delete": "小節を削除",
-                "errorCreatingMeasureAndBeats": "小節と拍を作成できませんでした",
-                "errorDeletingMeasureAndBeats": "小節と拍を削除できませんでした",
-                "errorRemovingMarking": "小節の頭の設定を解除できませんでした",
-                "removeMarking": "小節の頭を解除"
-            },
-            "rehearsalMark": {
-                "errorSaving": "リハーサルマークを保存できませんでした",
-                "label": "リハーサルマーク"
-            },
-            "tempo": {
-                "errorSaving": "テンポを保存できませんでした",
-                "firstBeatTempo": "最初の拍のテンポ",
-                "label": "テンポ"
-            }
-        },
         "decode": {
             "error": "オーディオファイルをデコードできませんでした"
         },
-        "editableBeatPlayer": {
-            "description": "拍の右端をドラッグすると長さを調整できます"
-        },
-        "saveNewBeats": {
-            "label": "新しい拍を保存"
-        },
-        "seeDocs": {
-            "label": "ドキュメントを見る"
-        },
         "silentPlaceholder": "無音オーディオ",
-        "tapNewTempo": {
-            "exit": "終了",
-            "label": "新しいテンポをタップ",
-            "restart": "やり直し"
-        },
-        "tapTempo": {
-            "beatsPerTap": "タップごとの拍数",
-            "label": "タップテンポ",
-            "tap": "タップ",
-            "tapButton": "タップすると、現在のオーディオ位置に一時的な拍を{count}個追加します"
-        },
-        "player": {
-            "pause": "一時停止",
-            "play": "再生",
-            "toStart": "先頭に戻る"
-        },
         "insert": {
             "noFileOpen": "ファイルが開かれていません。先にショーを作成するか開いてください。",
             "databaseUnavailable": "データベースが使用できなくなりました。データベースファイルの準備ができていることを確認してから、もう一度お試しください。"
@@ -794,11 +732,6 @@
             "success": "コピーを保存しました。"
         },
         "undo": "元に戻す"
-    },
-    "focusNotice": {
-        "exit": "タイムラインのフォーカスを解除",
-        "message": "タイムラインにフォーカスがあるため、ほかの操作はできません。<keys></keys>を押すか下のボタンで、メインエディターにフォーカスを戻してください。",
-        "messageNoKey": "タイムラインにフォーカスがあるため、ほかの操作はできません。下のボタンでメインエディターにフォーカスを戻してください。"
     },
     "formButtons": {
         "discardChanges": "変更を破棄",
@@ -1602,7 +1535,6 @@
         "shortcuts.reset": "{action}をデフォルトに戻す",
         "shortcuts.resetAll": "すべてリセット",
         "shortcuts.search": "ショートカットを検索",
-        "shortcuts.tapBeats": "拍をタップ",
         "timeline": "タイムライン",
         "timeline.description": "タイムラインの表示方法です。",
         "timeline.waveformStyle": "波形",
@@ -2156,7 +2088,6 @@
         "errorUpdatingTempoGroup": "テンポグループの更新中にエラーが発生しました"
     },
     "timeline": {
-        "audio": "オーディオ",
         "edit": {
             "passThrough": {
                 "catchUp": "{caughtUp}の終わりのセットに追いつくようになりました",
@@ -2307,7 +2238,6 @@
             "label": "タイムラインをコンパクト表示",
             "onTooltip": "タイムラインのコンパクト表示：オン。クリックするとタイムライン全体を表示します"
         },
-        "zoomReset": "タイムラインのズームをリセット",
         "playbackSpeed": {
             "current": "再生速度：{speed}",
             "hintClick": "クリックで次の速度、右クリックでその他の速度",
@@ -2355,10 +2285,6 @@
             "muted": "ミュート",
             "metronomeOn": "メトロノームオン",
             "metronomeOff": "メトロノームオフ"
-        },
-        "beatEditor": {
-            "zoomOut": "ズームアウト",
-            "zoomIn": "ズームイン"
         },
         "waveform": {
             "label": "オーディオ波形"

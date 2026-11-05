@@ -1,3 +1,4 @@
+import type { TimelineBand } from "./TimelineBand";
 import type { PageKeepChains } from "./PageKeepChain";
 import type { TimelineClipResizeCommands } from "./TimelineClipResize";
 import type {
@@ -274,6 +275,8 @@ export interface TimelineInteractionProps {
     readonly onPlayFromPlayhead?: () => void;
     /** Alt+click on Play (Alt+Space): plays on from the start flag (Expert, UI-26) */
     readonly onPlayOn?: () => void;
+    /** Tempo mode: Play's one action, as its tooltip names it */
+    readonly playOnly?: string;
     readonly onNavigate?: (direction: TimelineNavigation) => void;
     readonly onSelectionChange?: (selection: TimelineSelection) => void;
     /** The right-click menu's page-box entries (UI-9), in view beats here */
@@ -311,6 +314,8 @@ export interface TimelineScaleProps {
     /** The zoom was fitted to the show last time (UI-12): the timeline opens fitted */
     readonly zoomFitted?: boolean;
     readonly onZoomFittedChange?: (fitted: boolean) => void;
+    /** Zoom out and Zoom in buttons beside Fit, for mouse users (tempo mode) */
+    readonly zoomButtons?: boolean;
 }
 
 export interface TimelineCommonProps
@@ -330,6 +335,8 @@ export interface TimelineCommonProps
      * so it shows even where nothing moves it by hand
      */
     readonly startFlagBeat?: number;
+    /** Lanes drawn where the clip rows go, under the waveform (tempo mode's lanes) */
+    readonly band?: TimelineBand;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
     readonly className?: string;

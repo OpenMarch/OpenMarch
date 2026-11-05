@@ -2,7 +2,6 @@ import { fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ShortcutDispatcher from "../ShortcutDispatcher";
 import { registerActionHandler } from "../registry";
 import { readShortcutContext } from "../context";
@@ -18,33 +17,31 @@ afterEach(() => {
     offs.splice(0).forEach((off) => off());
     document.body.innerHTML = "";
     document.body.style.pointerEvents = "";
-    const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-    setUiSettings({ ...uiSettings, focussedComponent: "canvas" });
 });
 
 describe("readShortcutContext", () => {
     it("detects text inputs but not checkboxes", () => {
         document.body.innerHTML = `<input id="t" /><input id="c" type="checkbox" />`;
         (document.getElementById("t") as HTMLInputElement).focus();
-        expect(readShortcutContext("canvas").inTextInput).toBe(true);
+        expect(readShortcutContext().inTextInput).toBe(true);
         (document.getElementById("c") as HTMLInputElement).focus();
-        expect(readShortcutContext("canvas").inTextInput).toBe(false);
+        expect(readShortcutContext().inTextInput).toBe(false);
     });
 
     it("detects an open modal layer with body pointer-events", () => {
         document.body.innerHTML = `<div role="dialog" data-state="open"></div>`;
         document.body.style.pointerEvents = "none";
-        expect(readShortcutContext("canvas").modalOpen).toBe(true);
+        expect(readShortcutContext().modalOpen).toBe(true);
     });
 
     it("ignores pointer-events left behind after a modal unmounts", () => {
         document.body.style.pointerEvents = "none";
-        expect(readShortcutContext("canvas").modalOpen).toBe(false);
+        expect(readShortcutContext().modalOpen).toBe(false);
     });
 
     it("ignores open non-modal layers", () => {
         document.body.innerHTML = `<div role="dialog" data-state="open"></div>`;
-        expect(readShortcutContext("canvas").modalOpen).toBe(false);
+        expect(readShortcutContext().modalOpen).toBe(false);
     });
 });
 
@@ -121,31 +118,6 @@ describe("ShortcutDispatcher", () => {
         expect(cancel).toHaveBeenCalledTimes(1);
     });
 
-    it("routes Escape by focussed component", () => {
-        const cancel = handle("cancelAlignmentUpdates");
-        const exit = handle("exitTimelineFocus");
-        render(<ShortcutDispatcher />);
-        fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
-        expect(cancel).toHaveBeenCalledTimes(1);
-
-        const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-        setUiSettings({ ...uiSettings, focussedComponent: "timeline" });
-        fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
-        expect(exit).toHaveBeenCalledTimes(1);
-        expect(cancel).toHaveBeenCalledTimes(1);
-    });
-
-    it("exits timeline focus with Escape from a text field", () => {
-        const exit = handle("exitTimelineFocus");
-        document.body.innerHTML = `<input id="t" />`;
-        (document.getElementById("t") as HTMLInputElement).focus();
-        const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-        setUiSettings({ ...uiSettings, focussedComponent: "timeline" });
-        render(<ShortcutDispatcher />);
-        fireEvent.keyDown(window, { key: "Escape", code: "Escape" });
-        expect(exit).toHaveBeenCalledTimes(1);
-    });
-
     it("runs legacy Ctrl shortcuts once", () => {
         const undo = handle("performUndo");
         render(<ShortcutDispatcher />);
@@ -188,20 +160,5 @@ describe("ShortcutDispatcher, the field's menu (#315)", () => {
         // Plain F10 doesn't
         fireEvent.keyDown(window, { key: "F10", code: "F10" });
         expect(run).toHaveBeenCalledTimes(2);
-    });
-
-    it("leaves the keys alone while the timeline has focus", () => {
-        const run = handle("openFieldMenu");
-        const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-        act(() => {
-            void setUiSettings({
-                ...uiSettings,
-                focussedComponent: "timeline",
-            });
-        });
-        render(<ShortcutDispatcher />);
-        fireEvent.keyDown(window, { key: "ContextMenu", code: "ContextMenu" });
-        fireEvent.keyDown(window, { key: "F10", code: "F10", shiftKey: true });
-        expect(run).not.toHaveBeenCalled();
     });
 });

@@ -155,13 +155,16 @@ export const getTimelineRows = ({
     expanded,
     showWaveform,
     rowCount,
+    measureRow = true,
 }: {
     expanded: boolean;
     showWaveform: boolean;
     rowCount: number;
+    /** Whether the measure row shows (a focused band, tempo mode, has its own) */
+    measureRow?: boolean;
 }): TimelineRows => {
     // The measure row, under the page boxes
-    const railHeight = expanded ? 20 : 17;
+    const railHeight = measureRow ? (expanded ? 20 : 17) : 0;
     const waveformHeight = expanded ? 32 : 12;
     const audioTop = TIMELINE_PAGE_ROW_BOTTOM + railHeight + 2;
     const trackTop = showWaveform ? audioTop + waveformHeight + 4 : audioTop;
@@ -413,9 +416,16 @@ export const getPageCountAt = (
 export const getPlayheadReadout = (
     model: Pick<TimelineViewModel, "pages" | "measures" | "beatCount">,
     positionBeat: BeatPosition,
+    /**
+     * Where the measure and beat are read, when not at `positionBeat`: while playing, the page
+     * count names the count being marched (the next one to land) but the beat is the one the
+     * music is in, so the transport reads them from different places (jo: the beat read one
+     * ahead of the clock)
+     */
+    measurePositionBeat: BeatPosition = positionBeat,
 ) => {
     const at = getPageCountAt(model, positionBeat);
-    const measureAt = at.home ? null : getMeasureAt(model, positionBeat);
+    const measureAt = at.home ? null : getMeasureAt(model, measurePositionBeat);
     const page = at.home
         ? tolgee.t("timeline.readout.home")
         : at.after

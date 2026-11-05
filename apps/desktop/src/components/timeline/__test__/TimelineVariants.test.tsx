@@ -2141,7 +2141,9 @@ describe("fitBackZoom (UI-12 review)", () => {
         expect(fitBackZoom(null, 10)).toBe(20);
         expect(fitBackZoom(10.2, 10)).toBe(20);
         expect(fitBackZoom(null, 4)).toBe(16);
-        expect(fitBackZoom(null, 50)).toBe(64);
+        expect(fitBackZoom(null, 50)).toBe(100);
+        // never past the closest zoom
+        expect(fitBackZoom(null, 300)).toBe(512);
     });
 });
 

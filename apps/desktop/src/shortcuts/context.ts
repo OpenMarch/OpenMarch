@@ -22,12 +22,9 @@ export function layerIsOpen(): boolean {
     return document.querySelector(OPEN_MODAL_LAYER_SELECTOR) !== null;
 }
 
-export function readShortcutContext(
-    baseScope: ShortcutContext["baseScope"],
-): ShortcutContext {
+export function readShortcutContext(): ShortcutContext {
     const active = document.activeElement;
     return {
-        baseScope,
         inTextInput:
             active instanceof Element &&
             (active.matches(TEXT_INPUT_SELECTOR) ||

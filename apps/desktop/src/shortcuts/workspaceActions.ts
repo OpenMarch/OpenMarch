@@ -1,5 +1,6 @@
 import { isPreviewMode } from "@/stores/PreviewModeStore";
 import type { ActionId } from "./definitions";
+import { isTempoModeOn, TEMPO_MODE_ACTIONS } from "@/tempo/tempoShortcuts";
 
 /**
  * What still works in Preview, which edits nothing: files, exports, page and beat navigation,
@@ -44,5 +45,7 @@ const PREVIEW_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
  * edits nothing, so only `PREVIEW_ACTIONS` work there.
  */
 export function isActionOffInWorkspace(id: ActionId): boolean {
-    return isPreviewMode() && !PREVIEW_ACTIONS.has(id);
+    if (isPreviewMode()) return !PREVIEW_ACTIONS.has(id);
+    // Tempo mode leaves only navigation on (`TEMPO_MODE_ACTIONS`)
+    return isTempoModeOn() && !TEMPO_MODE_ACTIONS.has(id);
 }

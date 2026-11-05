@@ -26,6 +26,7 @@ import clsx from "clsx";
 import { T, useTranslate } from "@tolgee/react";
 import { ShortcutTooltip } from "./ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
+import tolgee from "@/global/singletons/Tolgee";
 import { isMac } from "./platform";
 import { START_INK } from "./startFlagInk";
 import type { TimelineNavigation } from "./TimelineViewModel";
@@ -547,6 +548,29 @@ const stopGuide = (
 ];
 
 /**
+ * Tempo mode's one Play (owner, 2026-10-30): one row, named for what it does now, and
+ * Stop stays where it stopped
+ */
+const playOnlyGuide = (
+    label: string,
+    isPlaying: boolean,
+): readonly TransportGuideRow<TransportPlayMode>[] => [
+    isPlaying
+        ? {
+              mode: "play",
+              icon: STOP_ICON,
+              label: tolgee.t("tempoMode.timeline.stopHere", "Stop here"),
+              shortcut: TRANSPORT_SHORTCUTS.play,
+          }
+        : {
+              mode: "play",
+              icon: PLAY_ICON,
+              label,
+              shortcut: TRANSPORT_SHORTCUTS.play,
+          },
+];
+
+/**
  * Play, or Stop while playing. Shift+click is Shift+Space: plays from the playhead, or the loop
  * once; while playing, it pauses where it is (UI-24), where Stop goes back to where Play was
  * pressed. Holding Shift swaps the icon and label to say so, and the tooltip is a guide to both, as
@@ -558,6 +582,7 @@ export const TransportPlayButton = memo(function TransportPlayButton({
     playLoops,
     onPlayFromPlayhead,
     onPlayOn,
+    playOnly,
     testIdPrefix = "timeline",
 }: {
     isPlaying: boolean;
@@ -566,24 +591,45 @@ export const TransportPlayButton = memo(function TransportPlayButton({
     onPlayFromPlayhead?: () => void;
     /** Alt+click (Alt+Space): plays on from the start flag past the playhead (Expert, UI-26) */
     onPlayOn?: () => void;
+    /**
+     * Tempo mode: Play is the only play action, named like this in its tooltip; Shift
+     * and Alt clicks play the same way
+     */
+    playOnly?: string;
     /** "timeline" in the editor, "view3d" in the 3D View window */
     testIdPrefix?: string;
 }) {
     const { t } = useTranslate();
-    const playsOn = onPlayOn != null;
-    const held = useHeldPlayMode(onPlayingChange != null, playsOn);
+    const single = playOnly !== undefined;
+    const playsOn = onPlayOn != null && !single;
+    const held = useHeldPlayMode(onPlayingChange != null && !single, playsOn);
     const togglePlaying = useCallback(
         (event: ReactMouseEvent) => {
+            if (single) {
+                onPlayingChange?.(!isPlaying);
+                return;
+            }
             const clicked = playMode(event, playsOn);
             if (clicked === "shift" && onPlayFromPlayhead) onPlayFromPlayhead();
             // Playing, Alt+click stops, as Alt+Space does
             else if (clicked === "alt" && onPlayOn && !isPlaying) onPlayOn();
             else onPlayingChange?.(!isPlaying);
         },
-        [isPlaying, onPlayingChange, onPlayFromPlayhead, onPlayOn, playsOn],
+        [
+            isPlaying,
+            onPlayingChange,
+            onPlayFromPlayhead,
+            onPlayOn,
+            playsOn,
+            single,
+        ],
     );
     const onClick = onPlayingChange ? togglePlaying : undefined;
-    const guide = isPlaying ? stopGuide(t) : playGuide(playLoops, playsOn, t);
+    const guide = single
+        ? playOnlyGuide(playOnly, isPlaying)
+        : isPlaying
+          ? stopGuide(t)
+          : playGuide(playLoops, playsOn, t);
     const mode =
         held === "shift" && !onPlayFromPlayhead
             ? "play"
@@ -598,7 +644,11 @@ export const TransportPlayButton = memo(function TransportPlayButton({
             hideLabel
             hint={
                 <TransportGuide
-                    rows={onPlayFromPlayhead ? guide : guide.slice(0, 1)}
+                    rows={
+                        onPlayFromPlayhead && !single
+                            ? guide
+                            : guide.slice(0, 1)
+                    }
                     mode={mode}
                     testId={`${testIdPrefix}-${isPlaying ? "stop" : "play"}-guide`}
                 />

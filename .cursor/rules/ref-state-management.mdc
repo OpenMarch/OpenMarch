@@ -42,7 +42,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 ```typescript
 // UI preferences (persisted to localStorage)
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-const { lockX, lockY, gridLines, collisions, pixelsPerSecond, audioVolume, mouseSettings, focussedComponent } = useUiSettingsStore();
+const { lockX, lockY, gridLines, collisions, pixelsPerSecond, audioVolume, mouseSettings } = useUiSettingsStore();
 ```
 
 ### SidebarModalStore

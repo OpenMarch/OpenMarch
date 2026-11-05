@@ -33,12 +33,15 @@ export default function InspectorDock({
     layout,
     onOpenChange,
     className,
+    inert,
     children,
 }: {
     layout: InspectorLayout;
     onOpenChange: (open: boolean) => void;
     /** Added to the panel and its tab (e.g. dimming). */
     className?: string;
+    /** No presses or focus inside it (e.g. while tempo mode is open). */
+    inert?: boolean;
     children: ReactNode;
 }) {
     const { presentation, open } = layout;
@@ -69,6 +72,7 @@ export default function InspectorDock({
             <div
                 id="inspector-dock"
                 data-presentation={presentation}
+                inert={inert}
                 className={clsx(
                     // `contents` has no box, so opacity there would do nothing:
                     // in the fixed layout the panel takes the class instead.

@@ -109,6 +109,22 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         db.exec("ALTER TABLE `items` DROP COLUMN `color`");
         db.exec("PRAGMA legacy_alter_table = OFF");
     },
+    // Tempo mode (ADR 0007): holds, tempo points, measure numbers, meters and the music offset.
+    // The history triggers name the columns; the migration service recreates every trigger
+    32: (db) => {
+        const triggers = db
+            .prepare(
+                "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name IN ('beats', 'measures', 'tempo_settings')",
+            )
+            .all() as { name: string }[];
+        for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
+        dropTables(db, ["tempo_settings"]);
+        db.exec("ALTER TABLE beats DROP COLUMN tempo_hold");
+        db.exec("ALTER TABLE beats DROP COLUMN tempo_change");
+        db.exec("ALTER TABLE measures DROP COLUMN number_override");
+        db.exec("ALTER TABLE measures DROP COLUMN meter");
+        db.exec("ALTER TABLE measures DROP COLUMN grouping");
+    },
 };
 
 /**

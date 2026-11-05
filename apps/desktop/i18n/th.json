@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "สร้างหน้าที่หัวเล่น",
             "createSubsetAtPlayhead": "สร้างหน้าย่อยที่หัวเล่น",
             "goTo": "ไปยังหน้า ห้อง หรือเครื่องหมายซ้อม",
-            "nextPage": "หน้าถัดไป (ไทม์ไลน์)",
-            "playPause": "เล่น / หยุดเสียงชั่วคราว",
-            "previousPage": "หน้าก่อนหน้า (ไทม์ไลน์)",
             "splitMoveAtPlayhead": "แยกการเคลื่อนที่ที่หัวเล่น",
-            "tapBeats": "เพิ่มจังหวะชั่วคราว {count} จังหวะ",
             "unsetHere": "ลบคีย์เฟรม",
             "unsetHereAndFollowing": "ลบคีย์เฟรม หน้าถัดจากนี้กลับไปตามเดิม",
             "unsetHereKeywords": "คีย์เฟรม เพชร ข้าวหลามตัด ยกเลิก ตั้ง ถัดไป ลบ ล้าง เอาคืน พิกัด ตำแหน่ง keyframe diamond unset set following remove clear take back coordinate position delete",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "รวมการเคลื่อนที่นี้กลับเข้าหน้าของตน"
         },
         "ui": {
-            "exitTimelineFocus": "เสร็จสิ้นการแก้ไขไทม์ไลน์",
-            "focusCanvas": "โฟกัสที่สนาม",
-            "focusTimeline": "แก้ไขไทม์ไลน์",
             "openFieldMenu": "เปิดเมนูสนาม",
             "hideNextPaths": "ซ่อนเส้นทางหน้าถัดไป",
             "openCommandPalette": "แผงคำสั่ง",
@@ -198,65 +191,10 @@
         "context": {
             "error": "ไม่สามารถเริ่มต้นระบบเสียงได้"
         },
-        "contextMenu": {
-            "ariaLabel": "เมนูบริบทของจังหวะ",
-            "beat": {
-                "addBeat": "เพิ่มจังหวะ",
-                "cannotDeleteOnPage": "ไม่สามารถลบจังหวะที่หน้าเริ่มหรือสิ้นสุดได้",
-                "delete": "ลบจังหวะ",
-                "errorCreating": "เกิดข้อผิดพลาดในการสร้างจังหวะ",
-                "errorCreatingMeasure": "เกิดข้อผิดพลาดในการสร้างห้อง",
-                "errorDeleting": "เกิดข้อผิดพลาดในการลบจังหวะ",
-                "markAsMeasure": "ทำเครื่องหมายเป็นห้อง"
-            },
-            "measure": {
-                "addMeasure": "เพิ่มห้อง",
-                "cannotDeleteOnPage": "ไม่สามารถลบจังหวะที่หน้าเริ่มหรือสิ้นสุดได้",
-                "delete": "ลบห้อง",
-                "errorCreatingMeasureAndBeats": "เกิดข้อผิดพลาดในการสร้างห้องและจังหวะ",
-                "errorDeletingMeasureAndBeats": "เกิดข้อผิดพลาดในการลบห้องและจังหวะ",
-                "errorRemovingMarking": "เกิดข้อผิดพลาดในการนำเครื่องหมายห้องออก",
-                "removeMarking": "นำเครื่องหมายห้องออก"
-            },
-            "rehearsalMark": {
-                "errorSaving": "เกิดข้อผิดพลาดในการบันทึกเครื่องหมายซ้อม",
-                "label": "เครื่องหมายซ้อม"
-            },
-            "tempo": {
-                "errorSaving": "เกิดข้อผิดพลาดในการบันทึกเทมโป",
-                "firstBeatTempo": "เทมโปจังหวะแรก",
-                "label": "เทมโป"
-            }
-        },
         "decode": {
             "error": "ไม่สามารถถอดรหัสไฟล์เสียงได้"
         },
-        "editableBeatPlayer": {
-            "description": "ลากขอบขวาของจังหวะใดก็ได้เพื่อปรับความยาว"
-        },
-        "saveNewBeats": {
-            "label": "บันทึกจังหวะใหม่"
-        },
-        "seeDocs": {
-            "label": "ดูเอกสาร"
-        },
         "silentPlaceholder": "เสียงเงียบ",
-        "tapNewTempo": {
-            "exit": "ออก",
-            "label": "แตะเทมโปใหม่",
-            "restart": "เริ่มใหม่"
-        },
-        "tapTempo": {
-            "beatsPerTap": "จังหวะต่อการแตะ",
-            "label": "แทปเทมโป",
-            "tap": "แตะ",
-            "tapButton": "แตะเพื่อเพิ่มจังหวะชั่วคราว {count} จังหวะ ณ เวลาปัจจุบันของเสียง"
-        },
-        "player": {
-            "pause": "หยุดชั่วคราว",
-            "play": "เล่น",
-            "toStart": "กลับไปที่จุดเริ่มต้น"
-        },
         "insert": {
             "noFileOpen": "ไม่มีไฟล์ที่เปิดอยู่ สร้างหรือเปิดโชว์ก่อน",
             "databaseUnavailable": "ฐานข้อมูลไม่พร้อมใช้งาน โปรดตรวจสอบว่าไฟล์ฐานข้อมูลพร้อมแล้วลองอีกครั้ง"
@@ -791,11 +729,6 @@
             "success": "บันทึกสำเนาแล้ว"
         },
         "undo": "เลิกทำ"
-    },
-    "focusNotice": {
-        "exit": "ออกจากโฟกัสไทม์ไลน์",
-        "message": "ไทม์ไลน์กำลังได้รับโฟกัส การโต้ตอบอื่นทั้งหมดถูกปิดใช้งาน กด <keys></keys> หรือปุ่มด้านล่างเพื่อกลับไปโฟกัสที่ตัวแก้ไขหลัก",
-        "messageNoKey": "ไทม์ไลน์กำลังได้รับโฟกัส การโต้ตอบอื่นทั้งหมดถูกปิดใช้งาน ใช้ปุ่มด้านล่างเพื่อกลับไปโฟกัสที่ตัวแก้ไขหลัก"
     },
     "formButtons": {
         "discardChanges": "ละทิ้งการเปลี่ยนแปลง",
@@ -1599,7 +1532,6 @@
         "shortcuts.reset": "รีเซ็ต {action} เป็นค่าเริ่มต้น",
         "shortcuts.resetAll": "รีเซ็ตทั้งหมด",
         "shortcuts.search": "ค้นหาแป้นพิมพ์ลัด",
-        "shortcuts.tapBeats": "แตะจังหวะ",
         "timeline": "ไทม์ไลน์",
         "timeline.description": "ลักษณะการแสดงผลของไทม์ไลน์",
         "timeline.waveformStyle": "รูปคลื่นเสียง",
@@ -2153,7 +2085,6 @@
         "errorUpdatingTempoGroup": "เกิดข้อผิดพลาดในการอัปเดตกลุ่มเทมโป"
     },
     "timeline": {
-        "audio": "เสียง",
         "edit": {
             "passThrough": {
                 "catchUp": "ตอนนี้จะไปถึงฟอร์เมชันตอนท้ายของ {caughtUp}",
@@ -2304,7 +2235,6 @@
             "label": "ไทม์ไลน์แบบย่อ",
             "onTooltip": "ไทม์ไลน์แบบย่อ: เปิด คลิกเพื่อแสดงไทม์ไลน์แบบเต็ม"
         },
-        "zoomReset": "รีเซ็ตการซูมไทม์ไลน์",
         "playbackSpeed": {
             "current": "ความเร็วในการเล่น: {speed}",
             "hintClick": "คลิกเพื่อเปลี่ยนเป็นความเร็วถัดไป คลิกขวาเพื่อดูเพิ่มเติม",
@@ -2352,10 +2282,6 @@
             "muted": "ปิดเสียง",
             "metronomeOn": "เมโทรนอมเปิด",
             "metronomeOff": "เมโทรนอมปิด"
-        },
-        "beatEditor": {
-            "zoomOut": "ซูมออก",
-            "zoomIn": "ซูมเข้า"
         },
         "waveform": {
             "label": "รูปคลื่นเสียง"

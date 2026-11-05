@@ -21,6 +21,8 @@ import {
 import type { TimelinePlayback } from "./Timeline";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useIsPreviewMode } from "@/stores/PreviewModeStore";
+import { useTempoModeStore } from "@/tempo/tempoModeStore";
+import tolgee from "@/global/singletons/Tolgee";
 
 interface PlaybackState {
     readonly countGrid: CountClock;
@@ -144,22 +146,57 @@ export function useTimelinePlayback({
     // has no loop and pauses where it is (`timelineTransport`), so nothing marks a way back
     const basic = useIsBasicMode();
     const preview = useIsPreviewMode();
+    // Tempo mode (owner, 2026-10-30): one playhead, one Play. It loops the selected
+    // measures or plays on from the playhead, and Stop stays where it stopped: nothing to go back to
+    const tempoMode = useTempoModeStore((s) => s.on);
+    const tempoLoop = useTempoModeStore((s) => s.loop?.label ?? null);
 
     return useMemo<TimelinePlayback>(
-        () => ({
-            liveBeat,
-            positionBeat:
-                isPlaying && liveIndex != null ? liveIndex : playheadBeat,
-            isPlaying,
-            returnBeat: isPlaying && !preview ? restingBeat : undefined,
-            playLoops: playLoops && !preview,
-            ...commands,
-            onPlayOn: basic || preview ? undefined : commands.onPlayOn,
-            onPlayFromPlayhead: preview
-                ? undefined
-                : commands.onPlayFromPlayhead,
-        }),
+        () =>
+            tempoMode
+                ? {
+                      liveBeat,
+                      positionBeat:
+                          isPlaying && liveIndex != null
+                              ? liveIndex
+                              : playheadBeat,
+                      isPlaying,
+                      playLoops: tempoLoop !== null,
+                      ...commands,
+                      onPlayOn: undefined,
+                      onPlayFromPlayhead: undefined,
+                      playOnly:
+                          tempoLoop !== null
+                              ? tolgee.t(
+                                    "tempoMode.timeline.playLoop",
+                                    "Loop {measures}",
+                                    { measures: tempoLoop },
+                                )
+                              : tolgee.t(
+                                    "tempoMode.timeline.playFromPlayhead",
+                                    "Play from the playhead",
+                                ),
+                  }
+                : {
+                      liveBeat,
+                      positionBeat:
+                          isPlaying && liveIndex != null
+                              ? liveIndex
+                              : playheadBeat,
+                      isPlaying,
+                      returnBeat:
+                          isPlaying && !preview ? restingBeat : undefined,
+                      playLoops: playLoops && !preview,
+                      ...commands,
+                      onPlayOn:
+                          basic || preview ? undefined : commands.onPlayOn,
+                      onPlayFromPlayhead: preview
+                          ? undefined
+                          : commands.onPlayFromPlayhead,
+                  },
         [
+            tempoMode,
+            tempoLoop,
             basic,
             preview,
             commands,

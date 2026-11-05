@@ -138,11 +138,7 @@
             "createPageAtPlayhead": "Create page at playhead",
             "createSubsetAtPlayhead": "Create subset at playhead",
             "goTo": "Go to a page, measure or rehearsal mark",
-            "nextPage": "Next page (timeline)",
-            "playPause": "Play / pause audio",
-            "previousPage": "Previous page (timeline)",
             "splitMoveAtPlayhead": "Split the move at the playhead",
-            "tapBeats": "Add {count} temporary beats",
             "unsetHere": "{removeKeyframe}",
             "unsetHereAndFollowing": "{removeKeyframe}, later pages move back too",
             "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, Page {first} moves back too} other {{removeKeyframe}, Pages {first}–{last} move back too}}",
@@ -151,9 +147,6 @@
             "mergeMoveIntoPage": "Merge this move into its page"
         },
         "ui": {
-            "exitTimelineFocus": "Done editing timeline",
-            "focusCanvas": "Focus canvas",
-            "focusTimeline": "Edit timeline",
             "openFieldMenu": "Open the field menu",
             "hideNextPaths": "Hide next page paths",
             "openCommandPalette": "Command palette",
@@ -212,65 +205,10 @@
         "context": {
             "error": "Failed to initialize audio context"
         },
-        "contextMenu": {
-            "ariaLabel": "Beat context menu",
-            "beat": {
-                "addBeat": "Add Beat",
-                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
-                "delete": "Delete beat",
-                "errorCreating": "Error creating beat",
-                "errorCreatingMeasure": "Error creating measure",
-                "errorDeleting": "Error deleting beat",
-                "markAsMeasure": "Mark as Measure"
-            },
-            "measure": {
-                "addMeasure": "Add Measure",
-                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
-                "delete": "Delete measure",
-                "errorCreatingMeasureAndBeats": "Error creating measure and beats",
-                "errorDeletingMeasureAndBeats": "Error deleting measure and beats",
-                "errorRemovingMarking": "Error removing measure marking",
-                "removeMarking": "Remove Measure Marking"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Error saving rehearsal mark",
-                "label": "Rehearsal Mark"
-            },
-            "tempo": {
-                "errorSaving": "Error saving tempo",
-                "firstBeatTempo": "First beat tempo",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Failed to decode audio file"
         },
-        "editableBeatPlayer": {
-            "description": "Drag the right edge of any beat to adjust its duration"
-        },
-        "saveNewBeats": {
-            "label": "Save New Beats"
-        },
-        "seeDocs": {
-            "label": "See docs"
-        },
         "silentPlaceholder": "Silent Audio",
-        "tapNewTempo": {
-            "exit": "Exit",
-            "label": "Tap New Tempo",
-            "restart": "Restart"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Beats per tap",
-            "label": "Tap Tempo",
-            "tap": "Tap",
-            "tapButton": "Tap to add {count} temporary beats at the current audio time"
-        },
-        "player": {
-            "pause": "Pause",
-            "play": "Play",
-            "toStart": "Back to start"
-        },
         "insert": {
             "noFileOpen": "No file is open. Create or open a show first.",
             "databaseUnavailable": "Database became unavailable. Please try again after ensuring the database file is ready."
@@ -803,11 +741,6 @@
             "success": "Copy saved"
         },
         "undo": "Undo"
-    },
-    "focusNotice": {
-        "exit": "Exit Timeline Focus",
-        "message": "Timeline is currently focussed, all other interaction is disabled. Press <keys></keys> or the button below to re-focus the main editor.",
-        "messageNoKey": "Timeline is currently focussed, all other interaction is disabled. Use the button below to re-focus the main editor."
     },
     "formButtons": {
         "discardChanges": "Discard Changes",
@@ -1618,7 +1551,6 @@
         "shortcuts.reset": "Reset {action} to default",
         "shortcuts.resetAll": "Reset all",
         "shortcuts.search": "Search shortcuts",
-        "shortcuts.tapBeats": "Tap beats",
         "timeline": "Timeline",
         "timeline.description": "How the timeline looks.",
         "timeline.waveformStyle": "Waveform",
@@ -2198,7 +2130,6 @@
         "errorUpdatingTempoGroup": "Error updating tempo group"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
@@ -2408,7 +2339,6 @@
             "label": "Compact timeline",
             "onTooltip": "Compact timeline: on. Click to show the full timeline"
         },
-        "zoomReset": "Reset timeline zoom",
         "playbackSpeed": {
             "current": "Playback speed: {speed}",
             "hintClick": "Click for the next speed, right-click for more",
@@ -2456,10 +2386,6 @@
             "muted": "Muted",
             "metronomeOn": "Metronome on",
             "metronomeOff": "Metronome off"
-        },
-        "beatEditor": {
-            "zoomOut": "Zoom out",
-            "zoomIn": "Zoom in"
         },
         "waveform": {
             "label": "Audio waveform"
@@ -2570,6 +2496,11 @@
         "fit": {
             "label": "Fit the show",
             "hint": "Press again to go back. Pinch or <keys></keys> to zoom"
+        },
+        "zoom": {
+            "in": "Zoom in",
+            "out": "Zoom out",
+            "hint": "Or pinch, or <keys></keys>"
         },
         "transport": {
             "label": "Transport",
@@ -3437,6 +3368,330 @@
         "tiny": "Tiny",
         "toFive": "{steps, number} to 5",
         "undefined": "Undefined"
+    },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "Added a tempo change at {where}",
+                "curve": "Tempo curve",
+                "endsOn": "Ends on {tempo}",
+                "endsOnThen": "Ends on {tempo}, then {next}",
+                "gradual": "Gradual tempo change",
+                "held": "Held {where} for {seconds} s",
+                "hold": "Hold",
+                "holdDrill": "Hold the drill",
+                "jump": "Tempo jump",
+                "measureNumber": "Measure number",
+                "movedChange": "Moved the tempo change to {where}",
+                "rehearsalMark": "Rehearsal mark",
+                "removedChange": "Removed the tempo change at {where}",
+                "tempo": "Tempo",
+                "timeSignature": "Time signature"
+            },
+            "ask": {
+                "add": {
+                    "intro": "For when the music has an extra beat here that the counts miss. The recording doesn't change: only the counts do.",
+                    "keepMeasure": "{measure} gets {count, plural, one {# count} other {# counts}} in the same time ({tempo}).",
+                    "manyKeep": "{moves, plural, other {The # moves over it keep their counts}}; their marchers hold {count, plural, one {# count} other {# counts}} at each one's end.",
+                    "manyShift": "{moves, plural, other {The # moves over it each get}} {count, plural, one {# count} other {# counts}} longer.",
+                    "noMove": "No move runs over it, so the marchers hold through it.",
+                    "oneKeep": "{move} stays {moveCounts, plural, one {# count} other {# counts}} and its marchers hold {count, plural, one {# count} other {# counts}} at its end.",
+                    "oneShift": "{move} stretches from {from} to {to, plural, one {# count} other {# counts}}.",
+                    "shift": "{count, plural, one {# count} other {# counts}} more time here ({seconds} s): later counts and drill move that much later against the music, for when they were early."
+                },
+                "addCountAfter": "Add a count after {where}",
+                "addCountBefore": "Add a count before {where}",
+                "addMeasureBefore": "Add a measure ({count, plural, one {# count} other {# counts}}) before measure {measure}",
+                "addedCountAfter": "Added a count after {where}",
+                "addedCountBefore": "Added a count before {where}",
+                "addedMeasureBefore": "Added a measure ({count, plural, one {# count} other {# counts}}) before measure {measure}",
+                "breath": {
+                    "many": "{moves, plural, other {The # moves over it end 1 count early}}; their marchers hold for that count.",
+                    "noCountAdded": "No count is added and the music stays.",
+                    "none": "For a breath in the drill with the music as it is: no move runs over this spot to end early.",
+                    "one": "{move}: move {from} → {to, plural, one {# count} other {# counts}}; the marchers hold on {where}."
+                },
+                "countsFewer": "{count, plural, one {# count fewer} other {# counts fewer}}",
+                "countsMore": "{count, plural, one {# count more} other {# counts more}}",
+                "hidden": {
+                    "fewer": "Remove {where} instead",
+                    "fewerHint": "Leaves one count between the keyframe and the flag.",
+                    "fixHint": "They reach the set a count before {move} ends, and the counts are removed. One undo takes both back.",
+                    "fixTooShort": "Their keyframe would be only one count long, so it can't end any earlier.",
+                    "marchersMore": "{names} and {count, plural, one {# other} other {# others}}",
+                    "text": "Their keyframe would end on the same count as {move}. Where two moves end together the keyframe wins, so they'd never stand on that set.",
+                    "theMove": "the move under it",
+                    "title": "{marchers} would miss the set at the end of {move}"
+                },
+                "laterCountsStay": "Later counts stay on the music: for when they already are.",
+                "noMoveHere": "no move here",
+                "pageCounts": "Page {page}: {from} → {to, plural, one {# count} other {# counts}}",
+                "pagesSentence": "{pages}.",
+                "remove": {
+                    "intro": "For when the music has fewer beats here than counts. The recording doesn't change: only the counts do.",
+                    "keep": "The counts around it fill the same time ({where}: {from} → {to, plural, one {# count} other {# counts}}, {tempo}).",
+                    "manyKeep": "{moves, plural, other {The # moves over it keep their counts by ending later}}, if nothing is in the way there.",
+                    "manyShift": "{moves, plural, other {The # moves over it get shorter.}}",
+                    "marksGo": "{count, plural, one {Rehearsal mark {marks} goes: the measure left there keeps its own.} other {Rehearsal marks {marks} go: the measure left there keeps its own.}}",
+                    "noMove": "No move runs over it.",
+                    "oneKeep": "{move} keeps its {moveCounts, plural, one {# count} other {# counts}} by ending {count, plural, one {# count} other {# counts}} later, if nothing is in the way there.",
+                    "oneShift": "{move} gets {count, plural, one {# count} other {# counts}} shorter.",
+                    "shift": "Its time goes too: later counts and drill move earlier against the music, for when they were late.",
+                    "title": "Remove {where}"
+                },
+                "removed": "Removed {where}"
+            },
+            "editor": {
+                "holdHint": "How long {where} is held, in seconds",
+                "markHint": "Rehearsal mark at measure {measure} (empty removes it)",
+                "notATempo": "\"{value}\" isn't a tempo: type a number like 120, or 120-90 to change gradually",
+                "renumberHint": "Renumber from m. {measure}: the measures after count on from the number you give it. Empty goes back to counting on.",
+                "tempoFromToHint": "Tempo from {from} to {to}: \"120\", or \"120-90\" to change gradually",
+                "tempoOfHint": "Tempo of {where}: \"120\", or \"120-90\" to change gradually",
+                "tempoOutOfRange": "\"{value}\" is out of range: a tempo goes from 20 to 400 beats a minute",
+                "wholeStretch": "Whole stretch {range} (now ♩{tempo}) instead"
+            },
+            "label": {
+                "beforeMark": "{where}, before {mark}",
+                "count": "count {count}",
+                "measure": "m. {measure}",
+                "measureCount": "m. {measure} count {count}",
+                "measures": "m. {from}–{to}",
+                "range": "{from} to {to}"
+            },
+            "lane": {
+                "clearSelection": "Clear the selection",
+                "clearSelectionTitle": "Clear the selection ({key})",
+                "holdLabel": "hold {seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → m. {measure}",
+                "markTitle": "Rehearsal mark {mark} at m. {measure}: drag it to another measure; double-click to rename it",
+                "renumberedTitle": "Measure {measure}: renumbered by hand; the measures after count on from it. Right-click or double-click to change it.",
+                "shortMeasureTitle": "Measure {measure}: a short measure, {count, plural, one {# count} other {# counts}}",
+                "tempoLabelTitle": "{range}: click to type a tempo",
+                "timeSignatureTitle": "Time signature {meter}: click to change it from here to the next time signature"
+            },
+            "menu": {
+                "addChange": "Add a tempo change here",
+                "addCountAfter": "Add a count after…",
+                "addCountBefore": "Add a count before…",
+                "addMark": "Add a rehearsal mark…",
+                "addMeasureBefore": "Add a measure before…",
+                "cancel": "Cancel",
+                "clearSelection": "Clear the selection",
+                "countTitle": "m. {measure}, count {count}",
+                "countTitleNoMeasure": "Count {count}",
+                "editMark": "Rehearsal mark…",
+                "gradual": "Gradual change",
+                "gradualHint": "Ends on the tempo after it ({tempo}); holds outside stay as they are",
+                "gradualNothingHint": "Nothing to change to: the tempo after it is the same, or it's one count",
+                "gradualTo": "Gradual change to {tempo}",
+                "holdLength": "Hold length…",
+                "holdSubtitle": "hold {seconds} s",
+                "makeHold": "Make a hold (fermata)",
+                "markMoveHere": "Move {mark} here from m. {measure}",
+                "markTaken": "{mark} is already at m. {measure}. Use it again?",
+                "markUseAgain": "Use {mark} again at m. {measure}",
+                "measureSubtitleMark": "{meter} · mark {mark}",
+                "measureTitle": "Measure {measure}",
+                "notAHold": "Not a hold",
+                "removeChange": "Remove this tempo change",
+                "removeCount": "Remove this count…",
+                "removeCounts": "Remove these counts…",
+                "removeMeasure": "Remove this measure…",
+                "renumber": "Renumber from here…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, one {# count} other {# counts}}",
+                "setTempo": "Set tempo…",
+                "timeSignature": "Time signature…",
+                "toMeasure": "to m. {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} counted {grouping}",
+                "fromSubtitle": "until the next time signature",
+                "fromTitle": "From m. {measure}",
+                "justThisMeasure": "Just this measure",
+                "justThisMeasureHint": "On: the time signature is for this measure only; the measures after keep theirs and move to follow it. Off: it lasts until the next time signature, as in a score.",
+                "onlySubtitle": "the measures after keep theirs",
+                "onlyTitle": "m. {measure} only",
+                "other": "Other… (like 11/8 3+3+3+2)",
+                "otherHint": "Time signature, and how it is counted in eighths: \"7/8 2+2+3\", \"5/8 3+2\", \"3/2\" (counted in quarters)"
+            },
+            "move": {
+                "from": "The move from {where}",
+                "its": "Its move",
+                "page": "Page {page}",
+                "pagesMove": "Page {page}'s move"
+            },
+            "tip": {
+                "outlier": "{where} is much {direction, select, faster {faster} other {slower}} ({tempo}) than its neighbours ({before}, {after}): it may be off the music. Right-click it > Set tempo… to fix it, or leave it if the music really does that."
+            },
+            "toast": {
+                "changedFirst": "{action}: not applied, since the show changed just before. Try again.",
+                "failed": "{action}: {error}",
+                "holdInvalid": "A hold is a length in seconds, such as 2.5",
+                "holdMade": "{where} is a hold. Right-click it > Hold length… to set how long it lasts.",
+                "markAlreadyThere": "m. {measure} already has rehearsal mark {mark}",
+                "markMoved": "Moved {mark} from m. {from} to m. {to}",
+                "meterSetFrom": "{meter} from {where}, {count, plural, one {# count} other {# counts}} a measure; the tempo is as it was",
+                "meterSetOnly": "{meter} for m. {measure} only; the tempo is as it was",
+                "meterShiftNote": "The measures after it start {count, plural, one {# count} other {# counts}} {direction, select, earlier {earlier} other {later}}",
+                "meterShortNote": "The last measure before the next time signature is short: {count, plural, one {# count} other {# counts}} (marked *)",
+                "movesCouldNotKeep": "{count, plural, one {# move couldn't keep its counts and changed length} other {# moves couldn't keep their counts and changed length}}",
+                "movesKept": "{count, plural, one {# move kept its counts} other {# moves kept their counts}}",
+                "movesKeptHold": "{kept, plural, one {The move over it kept its counts: its marchers hold} other {# moves kept their counts: their marchers hold}} {count, plural, one {# count} other {# counts}} at the end",
+                "notATimeSignature": "\"{text}\" isn't a time signature: try 7/8, or 7/8 2+2+3 (the grouping in eighths)",
+                "notMeasureNumber": "\"{value}\" isn't a measure number",
+                "tooFastOrSlow": "{action}: that would make a count too fast or too slow"
+            }
+        },
+        "button": {
+            "hint": "The music file, and lining the counts up with it: tempo, time signatures, rehearsal marks",
+            "hintOn": "Line the counts up with the music. <escape></escape> or <toggle></toggle> leaves.",
+            "label": "Edit music",
+            "labelOn": "Editing music",
+            "text": "Edit music"
+        },
+        "errors": {
+            "cantRemoveLastCount": "Can't remove the last count",
+            "moveOneCountLong": "That move is only one count long",
+            "wouldHideSet": "That would leave a keyframe ending on the same count as the move under it, hiding that move's set. Remove fewer counts, or end the keyframe a count earlier.",
+            "wouldRemovePage": "That would remove a page. Remove fewer counts, or delete the page first."
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "Add a tempo change",
+                "text": "Double-click the tempo lane where it should change. Double-click a change's dot to remove it."
+            },
+            "dragChangeDot": {
+                "title": "Move a tempo change",
+                "text": "Drag its dot up or down to change the tempo, or sideways to move where it changes."
+            },
+            "dragEndDot": {
+                "title": "Set where a rit. ends",
+                "text": "Drag the square dot at the end of a stretch, so the next tempo can jump back (a tempo)."
+            },
+            "dragLine": {
+                "title": "Set a tempo",
+                "text": "Drag the tempo line up or down. To type a tempo, right-click and choose Set tempo…"
+            },
+            "dragMeasures": {
+                "title": "Select counts",
+                "text": "Drag along the measures or the music, then edit them all at once."
+            },
+            "dragRoundHandle": {
+                "title": "Change tempo gradually",
+                "text": "Drag the round handle in the middle of a stretch. Double-click it to jump again."
+            },
+            "keys": {
+                "escape": "Clear the selection, or cancel a drag; with nothing to clear, stop editing music",
+                "play": "Play from the playhead, or stop where it is",
+                "tap": "Tap tempo: tap on each beat to see how fast it is",
+                "toggle": "Start or stop editing music",
+                "metronome": "Metronome on or off"
+            },
+            "label": "How editing music works",
+            "rightClick": {
+                "title": "Holds and counts",
+                "text": "Right-click a count to make it a hold, change tempo gradually, or add and remove counts."
+            },
+            "rightClickMeasure": {
+                "title": "Measures and rehearsal marks",
+                "text": "Right-click a measure to renumber it, set its time signature or add a mark. Drag a mark to move it."
+            },
+            "title": "Line the counts up with the music",
+            "musicFile": {
+                "title": "Change the music",
+                "text": "Click the file's name in the header to switch, import or delete audio, or set the music offset."
+            }
+        },
+        "importScore": {
+            "choose": "Choose a file…",
+            "keeps": "Pages, drill, cues and props stay on their counts, so they play at the score's tempos. Undo puts it all back.",
+            "replaces": "The score's tempos, time signatures, measures and rehearsal marks replace the show's, including what you changed here.",
+            "title": "Use a score's timing?"
+        },
+        "lanes": {
+            "marks": {
+                "name": "Marks",
+                "title": "Rehearsal marks: double-click to name one, or drag one to another measure"
+            },
+            "measures": {
+                "name": "Meas.",
+                "title": "Measures: drag along to select counts, right-click or double-click a number to renumber from there, click a time signature to change it"
+            },
+            "music": {
+                "name": "Music",
+                "title": "The music: drag along it to select counts, click to move the playhead, or right-click a spot to start the music there (on count 1)"
+            },
+            "tempo": {
+                "name": "Tempo",
+                "title": "Tempo: drag the line up or down; drag a dot to move a tempo change, or a round handle for a gradual change. Double-click to add a change; right-click > Set tempo… to type one. Drag off the line to select counts"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "Cancel",
+                    "fix": "End the keyframe a count earlier, then remove"
+                },
+                "footer": "Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back.",
+                "hold": "Hold the drill here instead",
+                "holdIntro": "The music has no extra beat, but the marchers need a breath here?",
+                "keep": "Keep everything else in place",
+                "shift": "Shift everything after"
+            },
+            "measureGlyph": "m{number}"
+        },
+        "tap": {
+            "average": "Average {bpm} · starts over after 2 s",
+            "count": "{count, plural, one {# tap} other {# taps}}",
+            "hint": "Tap along to find roughly what tempo the music is",
+            "instructions": "Tap <key></key> or the button on each beat",
+            "name": "Tap tempo",
+            "reset": "Reset",
+            "selectFirst": "Select some counts first",
+            "setTarget": "Set {target} to ♩{bpm}",
+            "tap": "Tap",
+            "use": "Use",
+            "useBpm": "Use ♩{bpm}",
+            "useBpmOn": "Use ♩{bpm} <muted>on {target}</muted>",
+            "useHint": "A steady tempo on the selected counts, or else on the tempo stretch under the playhead",
+            "useOn": "Use <muted>on {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "Play from the playhead",
+            "playLoop": "Loop {measures}",
+            "stopHere": "Stop here"
+        },
+        "toolbar": {
+            "done": "Done",
+            "doneLabel": "Done: stop editing music",
+            "metronome": "Metronome",
+            "metronomeHint": "A click on every count, to hear whether the counts sit on the music",
+            "metronomeOff": "Metronome: off",
+            "metronomeOn": "Metronome: on",
+            "title": "Editing music"
+        },
+        "import": {
+            "button": "Import",
+            "hint": "Bring in the music file, or a score's tempos, time signatures, measures and rehearsal marks",
+            "audio": "Audio file…",
+            "score": "MusicXML score…"
+        },
+        "music": {
+            "add": "Add music…",
+            "menuLabel": "Music file",
+            "pick": "Pick music",
+            "importAnother": "Import another audio file…",
+            "delete": "Delete this audio file…",
+            "offset": "Music offset…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Music offset",
+            "offsetHelp": "Seconds after count 1 that the music starts. Negative skips into the music.",
+            "offsetSet": "Set",
+            "seconds": "seconds"
+        }
     },
     "workspace": {
         "label": "Workspace",

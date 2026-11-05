@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, renderHook } from "@testing-library/react";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useBasicModeGuards } from "@/timeline/useBasicModeGuards";
 import { navigateTimelinePages } from "@/timeline/timelineTransport";
 import { PreviewModeHost } from "../PreviewMode";
@@ -53,28 +52,6 @@ describe("entering Preview", () => {
         store().setPlayback({ kind: "preview", from: 8, to: 16 });
         setPreview(true);
         expect(store().playback).toEqual({ kind: "on" });
-    });
-
-    it("leaves the beat editor, and opens it again when Preview ends", () => {
-        const setUiSettings = vi.spyOn(
-            useUiSettingsStore.getState(),
-            "setUiSettings",
-        );
-        useUiSettingsStore.setState((s) => ({
-            uiSettings: { ...s.uiSettings, focussedComponent: "timeline" },
-            setUiSettings: (uiSettings) =>
-                useUiSettingsStore.setState({ uiSettings }),
-        }));
-        render(<PreviewModeHost />);
-        setPreview(true);
-        expect(useUiSettingsStore.getState().uiSettings.focussedComponent).toBe(
-            "canvas",
-        );
-        setPreview(false);
-        expect(useUiSettingsStore.getState().uiSettings.focussedComponent).toBe(
-            "timeline",
-        );
-        setUiSettings.mockRestore();
     });
 
     it("doesn't move the loop when paging through, and leaving goes back to it", () => {

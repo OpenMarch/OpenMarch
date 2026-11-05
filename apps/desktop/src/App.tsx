@@ -27,6 +27,8 @@ import {
 } from "@/shortcuts/ActionHandlers";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { TimelineSplitter } from "@/components/timeline/TimelineSplitter";
+import clsx from "clsx";
+import { useTempoModeStore } from "@/tempo/tempoModeStore";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
@@ -38,7 +40,6 @@ import View3dButton from "@/components/toolbar/View3dButton";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
-import FocusNotice from "./components/FocusNotice";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useIsPreviewMode } from "./stores/PreviewModeStore";
 import { PreviewModeHost } from "./components/preview/PreviewMode";
@@ -59,7 +60,6 @@ import {
 } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
-import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import ConvertShowDialog from "./components/ConvertShowDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
@@ -124,9 +124,6 @@ function App() {
             analytics: analyticsQuestion,
         });
     const fetchUiSettings = useUiSettingsStore((s) => s.fetchUiSettings);
-    const focussedComponent = useUiSettingsStore(
-        (s) => s.uiSettings.focussedComponent,
-    );
     const pluginsLoadedRef = useRef(false);
     // Preview watches the show: no toolbar, sidebar or inspector
     const preview = useIsPreviewMode();
@@ -302,9 +299,13 @@ function App() {
         void injectTolgeeApiKey();
     }, []);
 
-    const timelineFocussedClass = clsx({
-        "opacity-30": focussedComponent === "timeline",
-    });
+    // Tempo mode: the tempo lanes are the only thing in focus; the rest steps back and
+    // takes no input until tempo mode is done
+    const tempoMode = useTempoModeStore((s) => s.on);
+    const tempoModeClass = clsx(
+        "transition-opacity duration-200",
+        tempoMode && "pointer-events-none opacity-30 select-none",
+    );
 
     return (
         <ErrorBoundary>
@@ -359,7 +360,6 @@ function App() {
                                             <SvgPreviewHandler />
                                             <PreviewModeHost />
                                             <TitleBar showControls />
-                                            <FocusNotice />
                                             <>
                                                 <div
                                                     id="app"
@@ -378,7 +378,10 @@ function App() {
                                                         ) : (
                                                             <div
                                                                 className={
-                                                                    timelineFocussedClass
+                                                                    tempoModeClass
+                                                                }
+                                                                inert={
+                                                                    tempoMode
                                                                 }
                                                             >
                                                                 <Toolbar />
@@ -387,8 +390,12 @@ function App() {
                                                         <div
                                                             className={clsx(
                                                                 "relative flex h-full min-h-0 min-w-0 gap-8",
-                                                                timelineFocussedClass,
+                                                                tempoModeClass,
+                                                                // the taller tempo pane can leave the sidebar short
+                                                                tempoMode &&
+                                                                    "overflow-hidden",
                                                             )}
+                                                            inert={tempoMode}
                                                         >
                                                             {!preview && (
                                                                 <>
@@ -406,14 +413,9 @@ function App() {
                                                             />
                                                             <FieldDisplayBar />
                                                         </div>
-                                                        {focussedComponent ===
-                                                        "timeline" ? (
+                                                        <TimelineSplitter>
                                                             <TimelineContainer />
-                                                        ) : (
-                                                            <TimelineSplitter>
-                                                                <TimelineContainer />
-                                                            </TimelineSplitter>
-                                                        )}
+                                                        </TimelineSplitter>
                                                     </div>
                                                     {!preview && (
                                                         <InspectorDock
@@ -422,8 +424,9 @@ function App() {
                                                                 setInspectorOpen
                                                             }
                                                             className={
-                                                                timelineFocussedClass
+                                                                tempoModeClass
                                                             }
+                                                            inert={tempoMode}
                                                         >
                                                             <Inspector />
                                                         </InspectorDock>

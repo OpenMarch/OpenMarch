@@ -9,7 +9,6 @@ import { platformBinding } from "@/shortcuts/bindings";
 import {
     ACTION_IDS,
     NUDGE_ACTION_IDS,
-    TAP_BEATS_ACTION_IDS,
     getActionDefinition,
     type ActionId,
 } from "@/shortcuts/definitions";
@@ -125,11 +124,8 @@ const EXTRA_ROWS: Readonly<Record<string, readonly ExtraRow[]>> = {
     ],
 };
 
-/** Shown elsewhere: the nudge (`EXTRA_ROWS`), the tap-beat digits and the beat editor's keys */
-const LISTED_ELSEWHERE: ReadonlySet<ActionId> = new Set([
-    ...NUDGE_ACTION_IDS,
-    ...TAP_BEATS_ACTION_IDS,
-]);
+/** Shown elsewhere: the nudge (`EXTRA_ROWS`) */
+const LISTED_ELSEWHERE: ReadonlySet<ActionId> = new Set(NUDGE_ACTION_IDS);
 
 /**
  * An action's binding for its row. "?" is Shift plus a key that varies by layout, so it is
@@ -153,7 +149,7 @@ export function shortcutGroups(
     const byCategory = new Map<string, Row[]>();
     for (const id of ACTION_IDS) {
         const action = getActionDefinition(id);
-        if (LISTED_ELSEWHERE.has(id) || action.scope === "timeline") continue;
+        if (LISTED_ELSEWHERE.has(id)) continue;
         if (basic && action.expertOnly) continue;
         const [binding] = getDisplayBindings(id, overrides, isMac);
         if (!binding) continue;

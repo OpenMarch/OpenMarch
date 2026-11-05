@@ -104,14 +104,41 @@ export async function pageEraBlankPath(): Promise<string> {
 }
 
 /**
- * `marchers` columns the timeline-only migrations add (0024's `type`). App code reads every
- * column of `marchers`, so a page-mode fixture, which tests write timeline rows into and call
- * app functions on, gets them too; `finishTestConversion` then skips adding them again.
+ * Columns the timeline-only migrations add to page-era tables (0024's `marchers.type`, tempo
+ * mode's beat and measure columns). App code reads every column of these tables, so a page-mode
+ * fixture, which tests write timeline rows into and call app functions on, gets them too;
+ * `finishTestConversion` then skips adding them again.
  */
-export const LATER_MARCHER_COLUMNS = [
+export const LATER_COLUMNS = [
     {
+        table: "marchers",
         name: "type",
         sql: `ALTER TABLE \`marchers\` ADD COLUMN \`type\` text DEFAULT 'marcher' NOT NULL CONSTRAINT "marchers_type_check" CHECK(type IN ('marcher', 'item'))`,
+    },
+    {
+        table: "beats",
+        name: "tempo_hold",
+        sql: "ALTER TABLE `beats` ADD `tempo_hold` integer DEFAULT 0 NOT NULL",
+    },
+    {
+        table: "beats",
+        name: "tempo_change",
+        sql: "ALTER TABLE `beats` ADD `tempo_change` integer DEFAULT 0 NOT NULL",
+    },
+    {
+        table: "measures",
+        name: "number_override",
+        sql: "ALTER TABLE `measures` ADD `number_override` integer",
+    },
+    {
+        table: "measures",
+        name: "meter",
+        sql: "ALTER TABLE `measures` ADD `meter` text",
+    },
+    {
+        table: "measures",
+        name: "grouping",
+        sql: "ALTER TABLE `measures` ADD `grouping` text",
     },
 ] as const;
 
@@ -149,11 +176,11 @@ export function laterTableStatements(): string[] {
     );
 }
 
-/** Adds {@link LATER_MARCHER_COLUMNS} to the page-era file at `dbPath`. */
+/** Adds {@link LATER_COLUMNS} to the page-era file at `dbPath`. */
 export function addLaterMarcherColumns(dbPath: string): void {
     const db = new DatabaseSync(dbPath);
     try {
-        for (const column of LATER_MARCHER_COLUMNS) db.exec(column.sql);
+        for (const column of LATER_COLUMNS) db.exec(column.sql);
     } finally {
         db.close();
     }

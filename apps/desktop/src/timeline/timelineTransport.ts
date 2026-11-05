@@ -20,6 +20,14 @@ import {
     restartLivePlaybackAt,
 } from "@/components/timeline/audio/AudioPlayer";
 import { isPreviewMode } from "@/stores/PreviewModeStore";
+// Tempo mode: its own tiny store, so the transport doesn't load the tempo lanes
+import { useTempoModeStore } from "@/tempo/tempoModeStore";
+
+/**
+ * Tempo mode (owner, 2026-10-21): while tempo mode is on, Play plays on from the
+ * playhead and Stop leaves the playhead where playback stopped, as a DAW does
+ */
+const tempoModeOn = (): boolean => useTempoModeStore.getState().on;
 
 /**
  * The transport (docs/timeline/ui.md UI-9; P8.11), shared by the timeline's transport buttons and
@@ -207,10 +215,13 @@ export function consumeSuspendRequest(): boolean {
  */
 export function stopTimelinePlayback(
     setIsPlaying: (isPlaying: boolean) => void,
+    /** How it ends, when the caller knows better than the mode (tempo mode's tap pass goes back) */
+    end?: TimelinePlaybackEnd,
 ): void {
     if (!useTimelineSelectionStore.getState().playback) return;
-    // Preview plays like a video: stopping, or reaching the end of the show, pauses where it is
-    endRequest = isPreviewMode() ? "pause" : "stop";
+    // Preview plays like a video: stopping, or reaching the end of the show, pauses where it is;
+    // so does tempo mode, as a DAW's Stop does
+    endRequest = end ?? (isPreviewMode() || tempoModeOn() ? "pause" : "stop");
     setIsPlaying(false);
 }
 
@@ -414,7 +425,8 @@ export function startTimelinePlayOn(
  * (project owner, 2026-10-13, lab test playback-start: version B won). Alt+Space plays on from the
  * start flag (`playTimelineOn`) and Shift+Space from the playhead (`playTimelinePage`). Playing,
  * it stops and goes back to where Play was pressed (UI-24, `stopTimelinePlayback`); Shift+Space
- * pauses where it is instead.
+ * pauses where it is instead. In tempo mode it is the only play action
+ * (`playTempoMode`).
  */
 export function toggleTimelinePlayback({
     isPlaying,
@@ -429,6 +441,10 @@ export function toggleTimelinePlayback({
     }
     if (isPreviewMode()) {
         playPreview(setIsPlaying);
+        return;
+    }
+    if (tempoModeOn()) {
+        playTempoMode(setIsPlaying);
         return;
     }
     const state = useTimelineSelectionStore.getState();
@@ -446,6 +462,24 @@ export function toggleTimelinePlayback({
     }
     state.cue(once.from);
     state.setPlayback({ kind: "preview", ...once, once: true });
+    setIsPlaying(true);
+}
+
+/**
+ * Tempo mode's Play (owner, 2026-10-30: one playhead, one Play): with measures
+ * selected it loops them, to hear a passage again and again while lining it up; otherwise it
+ * plays on from the playhead. Stop stays where playback stopped (`stopTimelinePlayback`).
+ * Shift+Space and Alt+Space do the same.
+ */
+function playTempoMode(setIsPlaying: (isPlaying: boolean) => void): void {
+    const state = useTimelineSelectionStore.getState();
+    const loop = useTempoModeStore.getState().loop;
+    if (!loop || loop.to <= loop.from) {
+        startTimelinePlayOn(setIsPlaying, state.playheadBeat);
+        return;
+    }
+    state.cue(loop.from);
+    state.setPlayback({ kind: "preview", from: loop.from, to: loop.to });
     setIsPlaying(true);
 }
 
@@ -489,7 +523,7 @@ export function playTimelineOn({
         return;
     }
     const state = useTimelineSelectionStore.getState();
-    if (state.isolation || isPreviewMode()) {
+    if (state.isolation || isPreviewMode() || tempoModeOn()) {
         toggleTimelinePlayback({ isPlaying, setIsPlaying });
         return;
     }
@@ -516,6 +550,10 @@ export function playTimelinePage({
         playPreview(setIsPlaying);
         return;
     }
+    if (tempoModeOn()) {
+        playTempoMode(setIsPlaying);
+        return;
+    }
     const state = useTimelineSelectionStore.getState();
     const bounds = loopBounds(state);
     if (!bounds) {
@@ -534,7 +572,8 @@ export function playTimelinePage({
  */
 export function toggleTimelineLoop(): void {
     const state = useTimelineSelectionStore.getState();
-    if (state.isolation || isPreviewMode()) return;
+    // Tempo mode loops the selected measures instead (`playTempoMode`)
+    if (state.isolation || isPreviewMode() || tempoModeOn()) return;
     if (state.loop) {
         state.setLoop(null);
         return;

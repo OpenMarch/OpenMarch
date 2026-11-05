@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "Buat halaman di playhead",
             "createSubsetAtPlayhead": "Buat subset di playhead",
             "goTo": "Buka halaman, birama, atau tanda latihan",
-            "nextPage": "Halaman berikutnya (linimasa)",
-            "playPause": "Putar / jeda audio",
-            "previousPage": "Halaman sebelumnya (linimasa)",
             "splitMoveAtPlayhead": "Pisahkan gerakan di playhead",
-            "tapBeats": "Tambahkan {count} ketukan sementara",
             "unsetHere": "Hapus keyframe",
             "unsetHereAndFollowing": "Hapus keyframe, halaman setelahnya kembali mengikuti",
             "unsetHereKeywords": "keyframe berlian diamond hapus batalkan atur mengikuti unset set following remove clear take back koordinat posisi coordinate position delete",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "Gabungkan gerakan ini ke halamannya"
         },
         "ui": {
-            "exitTimelineFocus": "Selesai mengedit linimasa",
-            "focusCanvas": "Fokus ke kanvas",
-            "focusTimeline": "Edit linimasa",
             "openFieldMenu": "Buka menu lapangan",
             "hideNextPaths": "Sembunyikan jalur halaman berikutnya",
             "openCommandPalette": "Palet perintah",
@@ -198,65 +191,10 @@
         "context": {
             "error": "Gagal menginisialisasi konteks audio"
         },
-        "contextMenu": {
-            "ariaLabel": "Menu konteks ketukan",
-            "beat": {
-                "addBeat": "Tambahkan ketukan",
-                "cannotDeleteOnPage": "Ketukan pada halaman tidak dapat dihapus",
-                "delete": "Hapus ketukan",
-                "errorCreating": "Gagal membuat ketukan",
-                "errorCreatingMeasure": "Gagal membuat birama",
-                "errorDeleting": "Gagal menghapus ketukan",
-                "markAsMeasure": "Tandai sebagai birama"
-            },
-            "measure": {
-                "addMeasure": "Tambahkan birama",
-                "cannotDeleteOnPage": "Ketukan pada halaman tidak dapat dihapus",
-                "delete": "Hapus birama",
-                "errorCreatingMeasureAndBeats": "Gagal membuat birama dan ketukan",
-                "errorDeletingMeasureAndBeats": "Gagal menghapus birama dan ketukan",
-                "errorRemovingMarking": "Gagal menghapus penanda birama",
-                "removeMarking": "Hapus penanda birama"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Gagal menyimpan tanda latihan",
-                "label": "Tanda latihan"
-            },
-            "tempo": {
-                "errorSaving": "Gagal menyimpan tempo",
-                "firstBeatTempo": "Tempo ketukan pertama",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Gagal mendekode file audio"
         },
-        "editableBeatPlayer": {
-            "description": "Seret tepi kanan ketukan mana pun untuk mengatur durasinya"
-        },
-        "saveNewBeats": {
-            "label": "Simpan ketukan baru"
-        },
-        "seeDocs": {
-            "label": "Lihat dokumentasi"
-        },
         "silentPlaceholder": "Audio senyap",
-        "tapNewTempo": {
-            "exit": "Keluar",
-            "label": "Ketuk tempo baru",
-            "restart": "Mulai ulang"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Ketukan per tap",
-            "label": "Tap Tempo",
-            "tap": "Ketuk",
-            "tapButton": "Ketuk untuk menambahkan {count} ketukan sementara pada waktu audio saat ini"
-        },
-        "player": {
-            "pause": "Jeda",
-            "play": "Putar",
-            "toStart": "Kembali ke awal"
-        },
         "insert": {
             "noFileOpen": "Tidak ada file yang terbuka. Buat atau buka pertunjukan terlebih dahulu.",
             "databaseUnavailable": "Database tidak lagi tersedia. Coba lagi setelah memastikan file database siap."
@@ -791,11 +729,6 @@
             "success": "Salinan disimpan"
         },
         "undo": "Urungkan"
-    },
-    "focusNotice": {
-        "exit": "Keluar dari fokus linimasa",
-        "message": "Linimasa sedang difokuskan, semua interaksi lain dinonaktifkan. Tekan <keys></keys> atau tombol di bawah untuk kembali memfokuskan editor utama.",
-        "messageNoKey": "Linimasa sedang difokuskan, semua interaksi lain dinonaktifkan. Gunakan tombol di bawah untuk kembali memfokuskan editor utama."
     },
     "formButtons": {
         "discardChanges": "Buang perubahan",
@@ -1599,7 +1532,6 @@
         "shortcuts.reset": "Setel ulang {action} ke default",
         "shortcuts.resetAll": "Setel ulang semua",
         "shortcuts.search": "Cari pintasan",
-        "shortcuts.tapBeats": "Ketuk ketukan",
         "timeline": "Linimasa",
         "timeline.description": "Tampilan linimasa.",
         "timeline.waveformStyle": "Bentuk gelombang",
@@ -2153,7 +2085,6 @@
         "errorUpdatingTempoGroup": "Gagal memperbarui grup tempo"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "passThrough": {
                 "catchUp": "Sekarang menyusul formasi di akhir {caughtUp}",
@@ -2304,7 +2235,6 @@
             "label": "Linimasa ringkas",
             "onTooltip": "Linimasa ringkas: aktif. Klik untuk menampilkan linimasa penuh"
         },
-        "zoomReset": "Atur ulang zoom linimasa",
         "playbackSpeed": {
             "current": "Kecepatan putar: {speed}",
             "hintClick": "Klik untuk kecepatan berikutnya, klik kanan untuk opsi lainnya",
@@ -2352,10 +2282,6 @@
             "muted": "Bisu",
             "metronomeOn": "Metronom aktif",
             "metronomeOff": "Metronom nonaktif"
-        },
-        "beatEditor": {
-            "zoomOut": "Perkecil",
-            "zoomIn": "Perbesar"
         },
         "waveform": {
             "label": "Bentuk gelombang audio"

@@ -38,9 +38,7 @@ export function useNavigationActionHandlers() {
     const transport = () => ({ isPlaying, setIsPlaying });
 
     useActionHandler("nextPage", goNext, enabled);
-    useActionHandler("timelineNextPage", goNext, enabled);
     useActionHandler("previousPage", goPrevious, enabled);
-    useActionHandler("timelinePreviousPage", goPrevious, enabled);
     useActionHandler("firstPage", () => navigate("first-page"), enabled);
     useActionHandler("lastPage", () => navigate("last-page"), enabled);
     useActionHandler("previousBeat", () => navigate("previous-beat"), enabled);

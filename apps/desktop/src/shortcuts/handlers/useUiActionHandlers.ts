@@ -8,8 +8,6 @@ export function useUiActionHandlers() {
     // re-render the handlers
     const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
     const settings = () => useUiSettingsStore.getState().uiSettings;
-    const focus = (focussedComponent: "canvas" | "timeline") =>
-        setUiSettings({ ...settings(), focussedComponent });
 
     useActionHandler("toggleNextPagePaths", () =>
         setUiSettings({ ...settings(), nextPaths: !settings().nextPaths }),
@@ -29,9 +27,6 @@ export function useUiActionHandlers() {
                     : startFlagKey().blurRelease(),
         },
     );
-    useActionHandler("focusCanvas", () => focus("canvas"));
-    useActionHandler("exitTimelineFocus", () => focus("canvas"));
-    useActionHandler("focusTimeline", () => focus("timeline"));
     useActionHandler("openView3d", () => {
         void window.electron.openView3d();
     });

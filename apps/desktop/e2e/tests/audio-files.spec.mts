@@ -1,81 +1,58 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { test } from "../fixtures.mjs";
 import { expectedAudioFiles } from "../mock-databases/audio-files.mjs";
 
-const currentlySelectedFile = expectedAudioFiles[1];
-const otherFile = expectedAudioFiles[0];
+const currentlySelectedFile = expectedAudioFiles[1]!;
+const otherFile = expectedAudioFiles[0]!;
+
+/** The music file is picked on the Music lane, in Edit music */
+async function openMusicMenu(page: Page) {
+    if (!(await page.getByTestId("tempo-music-file").isVisible())) {
+        // A narrow window folds the transport's view controls into "More controls"
+        const button = page.getByTestId("timeline-tempo-mode");
+        if (!(await button.isVisible()))
+            await page.getByRole("button", { name: "More controls" }).click();
+        await button.click();
+    }
+    await page.getByTestId("tempo-music-file").click();
+    return page.getByTestId("tempo-music-menu");
+}
+
 test("Audio files are is visible", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
-
-    await page.locator("#sidebar-launcher-music").click();
-    await page
-        .getByRole("combobox", { name: "/Users/openmarchdev/Documents" })
-        .click();
+    const menu = await openMusicMenu(page);
     for (const audioFile of audioFiles.expectedAudioFiles) {
-        await expect(page.getByRole("listbox")).toContainText(audioFile);
+        await expect(menu).toContainText(audioFile);
     }
 });
 
 test("Change selected audio file", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
-    await page.locator("#sidebar-launcher-music").click();
-    await page.locator("header").getByRole("button").click();
-    await page.locator("#sidebar-launcher-music").click();
-    await expect(
-        page.getByRole("combobox", { name: currentlySelectedFile }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole("combobox", { name: otherFile }),
-    ).not.toBeVisible();
-    await page.getByRole("combobox", { name: currentlySelectedFile }).click();
+    const file = page.getByTestId("tempo-music-file");
+    await (await openMusicMenu(page)).getByText(otherFile).click();
+    await expect(file).toContainText(otherFile);
 
-    await page.getByText(otherFile).click();
-    await expect(page.getByRole("combobox", { name: otherFile })).toBeVisible();
-    await expect(
-        page.getByRole("combobox", { name: currentlySelectedFile }),
-    ).not.toBeVisible();
-
-    await page.getByRole("combobox", { name: otherFile }).click();
-    await page.getByText(currentlySelectedFile).click();
-
-    await expect(
-        page.getByRole("combobox", { name: currentlySelectedFile }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole("combobox", { name: otherFile }),
-    ).not.toBeVisible();
-
-    // await page
+    await (await openMusicMenu(page)).getByText(currentlySelectedFile).click();
+    await expect(file).toContainText(currentlySelectedFile);
 });
 
 test("Delete audio file", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
-
-    await page.locator("#sidebar-launcher-music").click();
-    await page.getByRole("combobox", { name: currentlySelectedFile }).click();
-    await expect(
-        page.getByRole("listbox").getByText(currentlySelectedFile),
-    ).toBeVisible();
-    await expect(page.getByText(otherFile)).toBeVisible();
-    await page.getByRole("listbox").getByText(currentlySelectedFile).click();
-    await page.getByRole("button", { name: "Delete audio file" }).click();
+    await (await openMusicMenu(page)).getByTestId("tempo-music-delete").click();
     const deleteDialog = page.getByRole("alertdialog", {
-        name: "Delete Audio File",
+        name: "Delete audio file",
     });
     await expect(deleteDialog).toBeVisible();
     await expect(deleteDialog).toContainText(currentlySelectedFile);
-    await page.getByLabel("Delete Audio File").getByText("Cancel").click();
-    await page.getByRole("button", { name: "Delete audio file" }).click();
-    await expect(
-        page.getByRole("alertdialog", { name: "Delete Audio File" }),
-    ).toBeVisible();
+    await deleteDialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(deleteDialog).toBeHidden();
     await expect(page.getByText("Successfully deleted")).not.toBeVisible();
-    await page.getByRole("button", { name: "Delete" }).click();
+
+    await (await openMusicMenu(page)).getByTestId("tempo-music-delete").click();
+    await page.getByTestId("tempo-music-delete-confirm").click();
     await expect(page.getByText("Successfully deleted")).toBeVisible();
-    await expect(page.getByRole("combobox", { name: otherFile })).toBeVisible();
-    await page.getByRole("combobox", { name: otherFile }).click();
-    await expect(
-        page.getByRole("listbox").getByText(currentlySelectedFile),
-    ).not.toBeVisible();
-    await expect(page.getByRole("option").getByText(otherFile)).toBeVisible();
+    await expect(page.getByTestId("tempo-music-file")).toContainText(otherFile);
+    const menu = await openMusicMenu(page);
+    await expect(menu).toContainText(otherFile);
+    await expect(menu).not.toContainText(currentlySelectedFile);
 });

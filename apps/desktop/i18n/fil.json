@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "Gumawa ng pahina sa playhead",
             "createSubsetAtPlayhead": "Gumawa ng subset sa playhead",
             "goTo": "Pumunta sa pahina, sukat o rehearsal mark",
-            "nextPage": "Susunod na pahina (timeline)",
-            "playPause": "I-play / i-pause ang audio",
-            "previousPage": "Nakaraang pahina (timeline)",
             "splitMoveAtPlayhead": "Hatiin ang galaw sa playhead",
-            "tapBeats": "Magdagdag ng {count} pansamantalang kumpas",
             "unsetHere": "Alisin ang keyframe",
             "unsetHereAndFollowing": "Alisin ang keyframe, susunod ulit ang mga kasunod na pahina",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete alisin burahin posisyon diyamante",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "Isama ang galaw na ito sa pahina nito"
         },
         "ui": {
-            "exitTimelineFocus": "Tapos na sa pag-edit ng timeline",
-            "focusCanvas": "I-focus ang canvas",
-            "focusTimeline": "I-edit ang timeline",
             "openFieldMenu": "Buksan ang menu ng field",
             "hideNextPaths": "Itago ang mga path sa susunod na pahina",
             "openCommandPalette": "Command palette",
@@ -198,65 +191,10 @@
         "context": {
             "error": "Hindi masimulan ang audio context"
         },
-        "contextMenu": {
-            "ariaLabel": "Context menu ng kumpas",
-            "beat": {
-                "addBeat": "Magdagdag ng kumpas",
-                "cannotDeleteOnPage": "Hindi mabubura ang mga kumpas sa simula o dulo ng pahina",
-                "delete": "Burahin ang kumpas",
-                "errorCreating": "Error sa paggawa ng kumpas",
-                "errorCreatingMeasure": "Error sa paggawa ng sukat",
-                "errorDeleting": "Error sa pagbura ng kumpas",
-                "markAsMeasure": "Markahan bilang sukat"
-            },
-            "measure": {
-                "addMeasure": "Magdagdag ng sukat",
-                "cannotDeleteOnPage": "Hindi mabubura ang mga kumpas sa simula o dulo ng pahina",
-                "delete": "Burahin ang sukat",
-                "errorCreatingMeasureAndBeats": "Error sa paggawa ng sukat at mga kumpas",
-                "errorDeletingMeasureAndBeats": "Error sa pagbura ng sukat at mga kumpas",
-                "errorRemovingMarking": "Error sa pag-alis ng marka ng sukat",
-                "removeMarking": "Alisin ang marka ng sukat"
-            },
-            "rehearsalMark": {
-                "errorSaving": "Error sa pag-save ng rehearsal mark",
-                "label": "Rehearsal mark"
-            },
-            "tempo": {
-                "errorSaving": "Error sa pag-save ng tempo",
-                "firstBeatTempo": "Tempo ng unang kumpas",
-                "label": "Tempo"
-            }
-        },
         "decode": {
             "error": "Hindi ma-decode ang audio file"
         },
-        "editableBeatPlayer": {
-            "description": "I-drag ang kanang gilid ng anumang kumpas para baguhin ang haba nito"
-        },
-        "saveNewBeats": {
-            "label": "I-save ang mga bagong kumpas"
-        },
-        "seeDocs": {
-            "label": "Tingnan ang docs"
-        },
         "silentPlaceholder": "Tahimik na audio",
-        "tapNewTempo": {
-            "exit": "Lumabas",
-            "label": "Mag-tap ng bagong tempo",
-            "restart": "Ulitin"
-        },
-        "tapTempo": {
-            "beatsPerTap": "Kumpas bawat tap",
-            "label": "Tap Tempo",
-            "tap": "I-tap",
-            "tapButton": "I-tap para magdagdag ng {count} pansamantalang kumpas sa kasalukuyang oras ng audio"
-        },
-        "player": {
-            "pause": "I-pause",
-            "play": "I-play",
-            "toStart": "Bumalik sa simula"
-        },
         "insert": {
             "noFileOpen": "Walang nakabukas na file. Gumawa o magbukas muna ng palabas.",
             "databaseUnavailable": "Hindi na magamit ang database. Subukang muli kapag handa na ang database file."
@@ -791,11 +729,6 @@
             "success": "Na-save ang kopya"
         },
         "undo": "I-undo"
-    },
-    "focusNotice": {
-        "exit": "Umalis sa focus ng timeline",
-        "message": "Naka-focus ang timeline, kaya naka-disable ang lahat ng iba pang interaction. Pindutin ang <keys></keys> o ang button sa ibaba para muling i-focus ang pangunahing editor.",
-        "messageNoKey": "Naka-focus ang timeline, kaya naka-disable ang lahat ng iba pang interaction. Gamitin ang button sa ibaba para muling i-focus ang pangunahing editor."
     },
     "formButtons": {
         "discardChanges": "Itapon ang mga pagbabago",
@@ -1599,7 +1532,6 @@
         "shortcuts.reset": "I-reset ang {action} sa default",
         "shortcuts.resetAll": "I-reset lahat",
         "shortcuts.search": "Maghanap ng shortcut",
-        "shortcuts.tapBeats": "I-tap ang mga kumpas",
         "timeline": "Timeline",
         "timeline.description": "Kung ano ang itsura ng timeline.",
         "timeline.waveformStyle": "Waveform",
@@ -2153,7 +2085,6 @@
         "errorUpdatingTempoGroup": "Error sa pag-update ng tempo group"
     },
     "timeline": {
-        "audio": "Audio",
         "edit": {
             "passThrough": {
                 "catchUp": "Hahabol na ngayon sa set sa dulo ng {caughtUp}",
@@ -2304,7 +2235,6 @@
             "label": "Compact na timeline",
             "onTooltip": "Compact na timeline: naka-on. I-click para ipakita ang buong timeline"
         },
-        "zoomReset": "I-reset ang zoom ng timeline",
         "playbackSpeed": {
             "current": "Bilis ng playback: {speed}",
             "hintClick": "I-click para sa susunod na bilis, i-right-click para sa iba pa",
@@ -2352,10 +2282,6 @@
             "muted": "Naka-mute",
             "metronomeOn": "Naka-on ang metronome",
             "metronomeOff": "Naka-off ang metronome"
-        },
-        "beatEditor": {
-            "zoomOut": "Mag-zoom out",
-            "zoomIn": "Mag-zoom in"
         },
         "waveform": {
             "label": "Waveform ng audio"

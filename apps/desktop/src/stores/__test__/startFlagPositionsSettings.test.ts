@@ -78,4 +78,15 @@ describe("start flag positions settings", () => {
         const store = await loadStore({ previousPaths: true });
         expect(store.getState().uiSettings).not.toHaveProperty("previousPaths");
     });
+
+    it("ignore the old timeline focus when loading, and don't save it again", async () => {
+        const store = await loadStore({ focussedComponent: "timeline" });
+        expect(store.getState().uiSettings).not.toHaveProperty(
+            "focussedComponent",
+        );
+        store.getState().setAudioVolume(50);
+        expect(
+            JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}"),
+        ).not.toHaveProperty("focussedComponent");
+    });
 });

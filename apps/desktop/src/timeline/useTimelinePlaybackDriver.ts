@@ -84,7 +84,9 @@ export function useTimelinePlaybackDriver(enabled: boolean): void {
             end === "stop" ||
             (run.kind === "preview" && end !== "pause") ||
             stopAt === null ||
-            (stopAt === startedAt.current && stopAt === store.startBeat)
+            (!store.startHidden &&
+                stopAt === startedAt.current &&
+                stopAt === store.startBeat)
         ) {
             store.clearCursor();
             return;

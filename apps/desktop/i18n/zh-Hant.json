@@ -125,11 +125,7 @@
             "createPageAtPlayhead": "在播放指示器處建立頁",
             "createSubsetAtPlayhead": "在播放指示器處建立子頁",
             "goTo": "前往頁、小節或排練記號",
-            "nextPage": "下一頁（時間軸）",
-            "playPause": "播放／暫停音訊",
-            "previousPage": "上一頁（時間軸）",
             "splitMoveAtPlayhead": "在播放指示器處分割動作",
-            "tapBeats": "加入 {count} 個暫時節拍",
             "unsetHere": "移除關鍵影格",
             "unsetHereAndFollowing": "移除關鍵影格，後面的頁改回跟隨",
             "unsetHereKeywords": "關鍵影格 菱形 取消設定 設定 後續 移除 清除 撤回 座標 位置 刪除 keyframe diamond unset set following remove clear take back coordinate position delete",
@@ -137,9 +133,6 @@
             "mergeMoveIntoPage": "將此動作合併回所屬的頁"
         },
         "ui": {
-            "exitTimelineFocus": "完成編輯時間軸",
-            "focusCanvas": "聚焦場地",
-            "focusTimeline": "編輯時間軸",
             "openFieldMenu": "開啟場地選單",
             "hideNextPaths": "隱藏下一頁路徑",
             "openCommandPalette": "命令面板",
@@ -198,65 +191,10 @@
         "context": {
             "error": "無法初始化音訊環境"
         },
-        "contextMenu": {
-            "ariaLabel": "節拍內容選單",
-            "beat": {
-                "addBeat": "新增節拍",
-                "cannotDeleteOnPage": "頁起訖處的節拍無法刪除",
-                "delete": "刪除節拍",
-                "errorCreating": "建立節拍時發生錯誤",
-                "errorCreatingMeasure": "建立小節時發生錯誤",
-                "errorDeleting": "刪除節拍時發生錯誤",
-                "markAsMeasure": "標記為小節"
-            },
-            "measure": {
-                "addMeasure": "新增小節",
-                "cannotDeleteOnPage": "頁起訖處的節拍無法刪除",
-                "delete": "刪除小節",
-                "errorCreatingMeasureAndBeats": "建立小節與節拍時發生錯誤",
-                "errorDeletingMeasureAndBeats": "刪除小節與節拍時發生錯誤",
-                "errorRemovingMarking": "移除小節標記時發生錯誤",
-                "removeMarking": "移除小節標記"
-            },
-            "rehearsalMark": {
-                "errorSaving": "儲存排練記號時發生錯誤",
-                "label": "排練記號"
-            },
-            "tempo": {
-                "errorSaving": "儲存速度時發生錯誤",
-                "firstBeatTempo": "首節拍速度",
-                "label": "速度"
-            }
-        },
         "decode": {
             "error": "無法解碼音訊檔案"
         },
-        "editableBeatPlayer": {
-            "description": "拖曳任一節拍的右緣即可調整其長度"
-        },
-        "saveNewBeats": {
-            "label": "儲存新節拍"
-        },
-        "seeDocs": {
-            "label": "查看說明文件"
-        },
         "silentPlaceholder": "無聲音訊",
-        "tapNewTempo": {
-            "exit": "結束",
-            "label": "點按新速度",
-            "restart": "重新開始"
-        },
-        "tapTempo": {
-            "beatsPerTap": "每次點按的節拍數",
-            "label": "點按速度",
-            "tap": "點按",
-            "tapButton": "點按以在目前的音訊時間加入{count}個暫時節拍"
-        },
-        "player": {
-            "pause": "暫停",
-            "play": "播放",
-            "toStart": "回到開頭"
-        },
         "insert": {
             "noFileOpen": "未開啟任何檔案。請先建立或開啟表演。",
             "databaseUnavailable": "資料庫已無法使用。請確認資料庫檔案已就緒，然後再試一次。"
@@ -791,11 +729,6 @@
             "success": "已儲存副本"
         },
         "undo": "復原"
-    },
-    "focusNotice": {
-        "exit": "離開時間軸焦點",
-        "message": "時間軸目前處於焦點狀態，其他所有操作皆已停用。按下<keys></keys>或下方的按鈕，即可將焦點移回主編輯器。",
-        "messageNoKey": "時間軸目前處於焦點狀態，其他所有操作皆已停用。請使用下方的按鈕將焦點移回主編輯器。"
     },
     "formButtons": {
         "discardChanges": "捨棄變更",
@@ -1599,7 +1532,6 @@
         "shortcuts.reset": "將「{action}」重設為預設值",
         "shortcuts.resetAll": "全部重設",
         "shortcuts.search": "搜尋快速鍵",
-        "shortcuts.tapBeats": "點按節拍",
         "timeline": "時間軸",
         "timeline.description": "時間軸的顯示方式。",
         "timeline.waveformStyle": "波形",
@@ -2153,7 +2085,6 @@
         "errorUpdatingTempoGroup": "更新速度群組時發生錯誤"
     },
     "timeline": {
-        "audio": "音訊",
         "edit": {
             "passThrough": {
                 "catchUp": "現在會追上{caughtUp}結束時的定位",
@@ -2304,7 +2235,6 @@
             "label": "精簡時間軸",
             "onTooltip": "精簡時間軸：開啟。按一下以顯示完整時間軸"
         },
-        "zoomReset": "重設時間軸縮放",
         "playbackSpeed": {
             "current": "播放速度：{speed}",
             "hintClick": "按一下切換至下一個速度，按右鍵查看更多",
@@ -2352,10 +2282,6 @@
             "muted": "已靜音",
             "metronomeOn": "節拍器開啟",
             "metronomeOff": "節拍器關閉"
-        },
-        "beatEditor": {
-            "zoomOut": "縮小",
-            "zoomIn": "放大"
         },
         "waveform": {
             "label": "音訊波形"

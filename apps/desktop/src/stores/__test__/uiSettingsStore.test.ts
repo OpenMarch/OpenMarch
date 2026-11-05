@@ -41,7 +41,6 @@ describe("uiSettings Store", () => {
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
-        focussedComponent: "canvas",
         mouseSettings: {
             ...defaultSettings.mouseSettings,
             zoomSensitivity: 4,
@@ -201,7 +200,7 @@ describe("uiSettings Store", () => {
         let renders = 0;
         renderHook(() => {
             renders++;
-            return useUiSettingsStore((s) => s.uiSettings.focussedComponent);
+            return useUiSettingsStore((s) => s.uiSettings.nextPaths);
         });
         expect(renders).toBe(1);
 
@@ -217,7 +216,7 @@ describe("uiSettings Store", () => {
         act(() =>
             useUiSettingsStore.getState().setUiSettings({
                 ...useUiSettingsStore.getState().uiSettings,
-                focussedComponent: "timeline",
+                nextPaths: !useUiSettingsStore.getState().uiSettings.nextPaths,
             }),
         );
         expect(renders).toBe(2);
