@@ -16,14 +16,14 @@ import {
 } from "../whatsNewSlides";
 
 describe("welcome flow steps", () => {
-    it("asks language, shows What's new, asks theme and mode, then analytics when unanswered", () => {
+    it("asks language and theme, shows What's new, asks mode, then analytics when unanswered", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: false, isWeb: false }),
         ).toEqual([
             "welcome",
             "language",
-            "whatsNew",
             "theme",
+            "whatsNew",
             "mode",
             "analytics",
         ]);
@@ -32,13 +32,13 @@ describe("welcome flow steps", () => {
     it("skips the analytics step when it has been answered", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: true, isWeb: false }),
-        ).toEqual(["welcome", "language", "whatsNew", "theme", "mode"]);
+        ).toEqual(["welcome", "language", "theme", "whatsNew", "mode"]);
     });
 
     it("never asks about analytics on the web", () => {
         expect(
             getWelcomeSteps({ analyticsChoiceMade: false, isWeb: true }),
-        ).toEqual(["welcome", "language", "whatsNew", "theme", "mode"]);
+        ).toEqual(["welcome", "language", "theme", "whatsNew", "mode"]);
     });
 
     it("treats either stored analytics answer as made, and unset as not", () => {
@@ -120,7 +120,7 @@ describe("returning people", () => {
         ).toBe(false);
     });
 
-    it("drops the choices a returning person already made, What's new staying after the language step", () => {
+    it("drops the choices a returning person already made, What's new staying before the mode step", () => {
         expect(
             getWelcomeSteps({
                 analyticsChoiceMade: true,
@@ -141,7 +141,7 @@ describe("returning people", () => {
                 isWeb: false,
                 returning: { languageSaved: true, themeSaved: false },
             }),
-        ).toEqual(["welcome", "whatsNew", "theme", "mode"]);
+        ).toEqual(["welcome", "theme", "whatsNew", "mode"]);
     });
 });
 
@@ -205,8 +205,8 @@ describe("the analytics question", () => {
 
     it("counts every step after the welcome page in the progress bar", () => {
         expect(
-            setupSteps(["welcome", "whatsNew", "theme", "mode", "analytics"]),
-        ).toEqual(["whatsNew", "theme", "mode", "analytics"]);
+            setupSteps(["welcome", "theme", "whatsNew", "mode", "analytics"]),
+        ).toEqual(["theme", "whatsNew", "mode", "analytics"]);
     });
 });
 

@@ -24,8 +24,8 @@ export interface ReturningUserChoices {
 /**
  * The steps to show. The analytics question is asked only when it hasn't been
  * answered (`optOutAnalytics` unset) and never in the web build, which has no
- * analytics. Everyone sees What's new, right after the language step (or the
- * welcome page when the language isn't asked). A returning person (`returning`
+ * analytics. Everyone sees What's new after the language and theme steps (or
+ * the welcome page when neither is asked). A returning person (`returning`
  * set, see `isReturningUser`) isn't asked again for a language or theme they
  * already chose; the mode step is new to everyone.
  *
@@ -46,8 +46,8 @@ export function getWelcomeSteps({
     if (modeChosen) return analyticsChoiceMade || isWeb ? [] : ["analytics"];
     const steps: WelcomeStepId[] = ["welcome"];
     if (!returning?.languageSaved) steps.push("language");
-    steps.push("whatsNew");
     if (!returning?.themeSaved) steps.push("theme");
+    steps.push("whatsNew");
     steps.push("mode");
     if (!analyticsChoiceMade && !isWeb) steps.push("analytics");
     return steps;

@@ -74,15 +74,15 @@ function renderFlow() {
 
 const continueButton = () => screen.getByTestId("welcome-continue");
 
-/** From the welcome page through language, What's new (skipped) and theme to the mode step. */
+/** From the welcome page through language, theme and What's new (skipped) to the mode step. */
 async function goToModeStep() {
     expect(await screen.findByTestId("welcome-greeting")).toBeInTheDocument();
     fireEvent.click(continueButton());
     await screen.findByTestId("welcome-language-options");
     fireEvent.click(continueButton());
-    fireEvent.click(await screen.findByTestId("whats-new-skip"));
     await screen.findByTestId("welcome-theme-options");
     fireEvent.click(continueButton());
+    fireEvent.click(await screen.findByTestId("whats-new-skip"));
     return screen.findByTestId("editor-mode-card-basic");
 }
 
@@ -283,7 +283,6 @@ describe("WelcomeFlow", () => {
         );
 
         fireEvent.click(continueButton());
-        fireEvent.click(await screen.findByTestId("whats-new-skip"));
         fireEvent.click(await screen.findByTestId("welcome-theme-light"));
         expect(electron.setTheme).toHaveBeenCalledWith("light");
         expect(document.documentElement.classList.contains("dark")).toBe(false);
@@ -302,7 +301,7 @@ describe("WelcomeFlow", () => {
 
         fireEvent.click(continueButton());
         expect(electron.setLanguage).toHaveBeenCalledWith("es");
-        await screen.findByTestId("welcome-whats-new");
+        await screen.findByTestId("welcome-theme-options");
     });
 
     it("keeps a saved language, even English, instead of the system's", async () => {
@@ -318,7 +317,7 @@ describe("WelcomeFlow", () => {
             ),
         );
         fireEvent.click(continueButton());
-        await screen.findByTestId("welcome-whats-new");
+        await screen.findByTestId("welcome-theme-options");
         expect(electron.setLanguage).not.toHaveBeenCalled();
         expect(tolgee.getLanguage()).toBe("en");
     });
@@ -338,7 +337,7 @@ describe("WelcomeFlow", () => {
             ),
         );
         fireEvent.click(continueButton());
-        await screen.findByTestId("welcome-whats-new");
+        await screen.findByTestId("welcome-theme-options");
         expect(electron.setLanguage).not.toHaveBeenCalled();
         expect(tolgee.getLanguage()).toBe("fr");
     });
@@ -359,7 +358,7 @@ describe("WelcomeFlow", () => {
             ),
         );
         fireEvent.click(continueButton());
-        await screen.findByTestId("welcome-whats-new");
+        await screen.findByTestId("welcome-theme-options");
         expect(electron.setLanguage).not.toHaveBeenCalled();
         expect(tolgee.getLanguage()).toBe("ja");
     });
@@ -439,8 +438,8 @@ describe("WelcomeFlow", () => {
         expect(await stepsToMode()).toEqual([
             "welcome",
             "language",
-            "whatsNew",
             "theme",
+            "whatsNew",
         ]);
         fireEvent.click(screen.getByTestId("editor-mode-card-expert"));
         fireEvent.click(continueButton());
@@ -456,8 +455,8 @@ describe("WelcomeFlow", () => {
         expect(await stepsToMode()).toEqual([
             "welcome",
             "language",
-            "whatsNew",
             "theme",
+            "whatsNew",
         ]);
     });
 
@@ -469,29 +468,31 @@ describe("WelcomeFlow", () => {
         expect(await stepsToMode()).toEqual([
             "welcome",
             "language",
-            "whatsNew",
             "theme",
+            "whatsNew",
         ]);
     });
 
-    it("shows a new person What's new after the language step, titled with the version; Skip goes on, Back goes back", async () => {
+    it("shows a new person What's new after the theme step, titled with the version; Skip goes on, Back goes back", async () => {
         stubElectron(undefined);
         renderFlow();
 
         fireEvent.click(await screen.findByTestId("welcome-continue"));
         await screen.findByTestId("welcome-language-options");
         fireEvent.click(continueButton());
+        await screen.findByTestId("welcome-theme-options");
+        fireEvent.click(continueButton());
         await screen.findByTestId("whats-new-slide-timeline");
         expect(screen.getByText("What's new in 0.2")).toBeInTheDocument();
 
-        // Back on the first slide returns to the language step
+        // Back on the first slide returns to the theme step
         fireEvent.click(screen.getByTestId("whats-new-back"));
-        await screen.findByTestId("welcome-language-options");
+        await screen.findByTestId("welcome-theme-options");
         fireEvent.click(continueButton());
 
-        // Skip goes on to the theme, and Back from there returns to What's new
+        // Skip goes on to the mode, and Back from there returns to What's new
         fireEvent.click(await screen.findByTestId("whats-new-skip"));
-        await screen.findByTestId("welcome-theme-options");
+        await screen.findByTestId("editor-mode-card-basic");
         fireEvent.click(screen.getByTestId("welcome-back"));
         expect(
             await screen.findByTestId("whats-new-slide-timeline"),
