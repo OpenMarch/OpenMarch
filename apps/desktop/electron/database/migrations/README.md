@@ -24,3 +24,16 @@ This will cause `SQLITE no such column` errors if not fixed.
 Coordinating database schema changes are a bit of a challenge, since drizzle expects a complete linear history of migrations.
 
 If you'd like to modify or add to the database schema, please make this clear in your pull request so that we can take extra care in merging those changes.
+
+## Files saved by fork builds
+
+Migrations `0000` to `0016` are upstream's and must stay byte-identical. `0017_timeline_model`
+collapses the fork's old migrations 0017 to 0032, and `0018_drop_page_era` drops the page-era
+tables after a page-era file's conversion has read them
+([ADR 0011](../../../../../docs/adr/0011-collapse-fork-migrations.md)).
+
+Files that fork builds saved still record the old migrations. They are repaired when they open
+(`../legacyFork/legacyForkRepair.ts`), from a frozen copy of the old SQL
+(`../legacyFork/legacyForkMigrations.ts`). Never edit that copy. A new migration that changes a
+table `0017_timeline_model` makes needs no change to the repair: it runs after it, like on any
+other file.

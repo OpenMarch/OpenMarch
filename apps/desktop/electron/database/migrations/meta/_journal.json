@@ -124,113 +124,15 @@
         {
             "idx": 17,
             "version": "6",
-            "when": 1790738013811,
-            "tag": "0017_powerful_edwin_jarvis",
+            "when": 1793856518601,
+            "tag": "0017_timeline_model",
             "breakpoints": true
         },
         {
             "idx": 18,
             "version": "6",
-            "when": 1791578533995,
-            "tag": "0018_clean_sentinels",
-            "breakpoints": true
-        },
-        {
-            "idx": 19,
-            "version": "6",
-            "when": 1791742632681,
-            "tag": "0019_gray_brood",
-            "breakpoints": true
-        },
-        {
-            "idx": 20,
-            "version": "6",
-            "when": 1791826706300,
-            "tag": "0020_drop_page_era",
-            "breakpoints": true
-        },
-        {
-            "idx": 21,
-            "version": "6",
-            "when": 1792006391941,
-            "tag": "0021_blue_dust",
-            "breakpoints": true
-        },
-        {
-            "idx": 22,
-            "version": "6",
-            "when": 1792036098905,
-            "tag": "0022_right_fenris",
-            "breakpoints": true
-        },
-        {
-            "idx": 23,
-            "version": "6",
-            "when": 1792157312422,
-            "tag": "0023_even_gunslinger",
-            "breakpoints": true
-        },
-        {
-            "idx": 24,
-            "version": "6",
-            "when": 1792381028229,
-            "tag": "0024_marvelous_malcolm_colcord",
-            "breakpoints": true
-        },
-        {
-            "idx": 25,
-            "version": "6",
-            "when": 1792381504592,
-            "tag": "0025_short_king_cobra",
-            "breakpoints": true
-        },
-        {
-            "idx": 26,
-            "version": "6",
-            "when": 1792382567604,
-            "tag": "0026_foamy_absorbing_man",
-            "breakpoints": true
-        },
-        {
-            "idx": 27,
-            "version": "6",
-            "when": 1792450518202,
-            "tag": "0027_acoustic_stone_men",
-            "breakpoints": true
-        },
-        {
-            "idx": 28,
-            "version": "6",
-            "when": 1792544991523,
-            "tag": "0028_fast_polaris",
-            "breakpoints": true
-        },
-        {
-            "idx": 29,
-            "version": "6",
-            "when": 1793378500584,
-            "tag": "0029_drop_kept_assignments",
-            "breakpoints": true
-        },
-        {
-            "idx": 30,
-            "version": "6",
-            "when": 1793384181922,
-            "tag": "0030_fresh_shocker",
-            "breakpoints": true
-        },
-        {
-            "idx": 31,
-            "version": "6",
-            "when": 1793799118939,
-            "tag": "0031_living_black_panther",
-            "breakpoints": true
-        },
-        {
-            "idx": 32,
-            "version": "6",
-            "when": 1793822905013,
-            "tag": "0032_productive_redwing",
+            "when": 1793856519415,
+            "tag": "0018_drop_page_era",
             "breakpoints": true
         }
     ]

@@ -1,15 +1,19 @@
+// cspell:ignore Millis (drizzle's `folderMillis`)
 /**
  * Turns a fully migrated test file back into one from before a migration. Drizzle applies only
  * migrations newer than the last one a file records, so a test of migration N on a file from
  * before it has to undo N and every later one; opening the file then applies them all again, as
  * it would for a real older file.
  *
- * Each migration from 0022 on registers how a test rolls it back here.
+ * Each migration from 0017 on registers how a test rolls it back here. Before 0017 a file is
+ * upstream's 0016, so both rollbacks restore what they changed from a file built with upstream's
+ * migrations 0000-0016.
  */
-import type { DatabaseSync } from "node:sqlite";
+import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 import * as path from "path";
 import { migrationsFolder, withDb } from "./convertOnOpenFixtures";
+import { readTaggedMigrations } from "../services/DrizzleMigrationService";
 
 type Journal = { entries: { idx: number; tag: string; when: number }[] };
 export const journal: Journal = JSON.parse(
@@ -18,112 +22,128 @@ export const journal: Journal = JSON.parse(
 export const migrationAt = (idx: number) =>
     journal.entries.find((e) => e.idx === idx)!;
 
+/** The tables and indexes of a file at upstream's 0016, by name. */
+function upstream0016Schema(): Map<
+    string,
+    { type: string; tbl: string; sql: string }
+> {
+    const db = new DatabaseSync(":memory:");
+    try {
+        const last = migrationAt(16).when;
+        for (const m of readTaggedMigrations(migrationsFolder))
+            if (m.folderMillis <= last)
+                for (const statement of m.sql) {
+                    // As the migration service runs them: a table rebuild would cascade
+                    db.exec("PRAGMA foreign_keys = OFF");
+                    db.exec(statement);
+                }
+        return new Map(
+            (
+                db
+                    .prepare(
+                        "SELECT type, name, tbl_name AS tbl, sql FROM sqlite_schema WHERE sql IS NOT NULL",
+                    )
+                    .all() as {
+                    type: string;
+                    name: string;
+                    tbl: string;
+                    sql: string;
+                }[]
+            ).map((r) => [r.name, r]),
+        );
+    } finally {
+        db.close();
+    }
+}
+
 const dropTables = (db: DatabaseSync, tables: readonly string[]) => {
     for (const table of tables) db.exec(`DROP TABLE ${table}`);
 };
 
-/** Rebuilds `marchers` from its stored DDL with `fragment` removed, keeping its rows and index. */
-const dropMarchersColumn = (
-    db: DatabaseSync,
-    column: string,
-    fragment: string,
-) => {
-    const { sql } = db
-        .prepare("SELECT sql FROM sqlite_schema WHERE name = 'marchers'")
-        .get() as { sql: string };
-    if (!sql.includes(fragment)) {
-        throw new Error(`marchers has no ${column} column to roll back`);
-    }
-    const columns = (
-        db.prepare("SELECT name FROM pragma_table_info('marchers')").all() as {
+/** Drops every trigger: they name columns a rollback removes. The migration service recreates them. */
+const dropTriggers = (db: DatabaseSync) => {
+    const triggers = db
+        .prepare("SELECT name FROM sqlite_schema WHERE type = 'trigger'")
+        .all() as { name: string }[];
+    for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
+};
+
+/** Rebuilds `table` as upstream's 0016 has it, keeping its rows and its indexes. */
+const restoreUpstreamTable = (db: DatabaseSync, table: string) => {
+    const schema = upstream0016Schema();
+    const create = schema.get(table)!.sql;
+    const columns = new Set(
+        (
+            db.prepare("SELECT name FROM pragma_table_info(?)").all(table) as {
+                name: string;
+            }[]
+        ).map((c) => c.name),
+    );
+    // Other tables name this one; set it aside without rewriting them
+    db.exec("PRAGMA legacy_alter_table = ON");
+    db.exec(`ALTER TABLE \`${table}\` RENAME TO \`${table}_rollback\``);
+    db.exec("PRAGMA legacy_alter_table = OFF");
+    db.exec(create);
+    const kept = (
+        db.prepare("SELECT name FROM pragma_table_info(?)").all(table) as {
             name: string;
         }[]
     )
         .map((c) => c.name)
-        .filter((name) => name !== column)
-        .map((name) => `\`${name}\``)
+        .filter((c) => columns.has(c))
+        .map((c) => `\`${c}\``)
         .join(", ");
     db.exec(
-        sql
-            .replace(fragment, "")
-            .replace('CREATE TABLE "marchers"', 'CREATE TABLE "marchers_old"'),
+        `INSERT INTO \`${table}\` (${kept}) SELECT ${kept} FROM \`${table}_rollback\``,
     );
-    db.exec(
-        `INSERT INTO marchers_old (${columns}) SELECT ${columns} FROM marchers`,
-    );
-    // Triggers on other tables name `marchers`; the migration service recreates every trigger
-    db.exec("PRAGMA legacy_alter_table = ON");
-    db.exec("DROP TABLE marchers");
-    db.exec("ALTER TABLE marchers_old RENAME TO marchers");
-    db.exec("PRAGMA legacy_alter_table = OFF");
-    db.exec(
-        "CREATE UNIQUE INDEX `marchers_drill_prefix_drill_order_unique` ON `marchers` (`drill_prefix`,`drill_order`)",
-    );
+    db.exec(`DROP TABLE \`${table}_rollback\``);
+    for (const object of schema.values())
+        if (object.type === "index" && object.tbl === table)
+            db.exec(object.sql);
 };
 
+const PAGE_ERA_TABLES = [
+    "marcher_pages",
+    "midsets",
+    "pathways",
+    "shape_page_marchers",
+    "shape_pages",
+    "shapes",
+];
+
 const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
-    // Performer cues (ADR 0004)
-    22: (db) =>
+    // The fork's schema, collapsed (ADR 0011): its tables, and the columns it adds to marchers
+    // (homes, type), beats (tempo holds and changes) and measures (numbers, meters)
+    17: (db) => {
+        dropTriggers(db);
         dropTables(db, [
-            "cue_marchers",
-            "cues",
-            "page_performer_settings",
-            "phrase_assets",
-        ]),
-    // 3D View cameras
-    23: (db) => dropTables(db, ["view3d_cameras"]),
-    // Items and Outline geometry (C2.1)
-    24: (db) => {
-        dropTables(db, ["item_geometry", "items"]);
-        dropMarchersColumn(
-            db,
-            "type",
-            `, \`type\` text DEFAULT 'marcher' NOT NULL CONSTRAINT "marchers_type_check" CHECK(type IN ('marcher', 'item'))`,
-        );
-    },
-    // Item Placement (C2.3)
-    25: (db) => dropTables(db, ["item_placement_marchers", "item_placements"]),
-    // Artwork slot assignments (C2.4)
-    26: (db) => dropTables(db, ["item_artwork_slots"]),
-    // Shape recipes (ADR 0006)
-    27: (db) =>
-        dropTables(db, [
+            "item_geometry",
+            "items",
+            "tempo_settings",
+            "timeline_assignments",
+            "timeline_change_log",
+            "timeline_held_marks",
             "timeline_shape_recipe_marchers",
             "timeline_shape_recipes",
-        ]),
-    // Saved shapes, the show's copies (ADR 0006, saved shapes)
-    28: (db) => dropTables(db, ["saved_shapes"]),
-    // Kept spots removed (holds, #467): the table comes back empty, as 0018 made it
-    29: (db) =>
-        db.exec(`CREATE TABLE \`timeline_kept_assignments\` (
-	\`assignment_id\` integer PRIMARY KEY NOT NULL,
-	\`created_at\` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	FOREIGN KEY (\`assignment_id\`) REFERENCES \`timeline_assignments\`(\`id\`) ON UPDATE no action ON DELETE cascade
-)`),
-    // Held marks (ADR 0001 amendment 2026-10-30)
-    30: (db) => dropTables(db, ["timeline_held_marks"]),
-    // Prop color (ADR 0002 amendment, props in the 3D View)
-    // Triggers on `items` name the column; the migration service recreates every trigger
-    31: (db) => {
-        db.exec("PRAGMA legacy_alter_table = ON");
-        db.exec("ALTER TABLE `items` DROP COLUMN `color`");
-        db.exec("PRAGMA legacy_alter_table = OFF");
+            "timeline_slot_destinations",
+            "timeline_transitions",
+            "timeline_shapes",
+            "timelines",
+            "view3d_cameras",
+            "view3d_venue",
+        ]);
+        db.exec("DROP VIEW IF EXISTS timeline_commit_violations");
+        db.exec("DROP VIEW IF EXISTS timeline_held_violations");
+        for (const table of ["marchers", "beats", "measures"])
+            restoreUpstreamTable(db, table);
     },
-    // Tempo mode (ADR 0007): holds, tempo points, measure numbers, meters and the music offset.
-    // The history triggers name the columns; the migration service recreates every trigger
-    32: (db) => {
-        const triggers = db
-            .prepare(
-                "SELECT name FROM sqlite_schema WHERE type = 'trigger' AND tbl_name IN ('beats', 'measures', 'tempo_settings')",
-            )
-            .all() as { name: string }[];
-        for (const { name } of triggers) db.exec(`DROP TRIGGER \`${name}\``);
-        dropTables(db, ["tempo_settings"]);
-        db.exec("ALTER TABLE beats DROP COLUMN tempo_hold");
-        db.exec("ALTER TABLE beats DROP COLUMN tempo_change");
-        db.exec("ALTER TABLE measures DROP COLUMN number_override");
-        db.exec("ALTER TABLE measures DROP COLUMN meter");
-        db.exec("ALTER TABLE measures DROP COLUMN grouping");
+    // The page-era drop: the tables come back empty, as upstream's 0016 has them
+    18: (db) => {
+        const schema = upstream0016Schema();
+        for (const table of PAGE_ERA_TABLES) db.exec(schema.get(table)!.sql);
+        for (const object of schema.values())
+            if (object.type === "index" && PAGE_ERA_TABLES.includes(object.tbl))
+                db.exec(object.sql);
     },
 };
 

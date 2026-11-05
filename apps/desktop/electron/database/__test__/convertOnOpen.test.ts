@@ -288,8 +288,8 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
         expect(after.marcherPages).toBeNull();
         expect(after.pageEraTables).toEqual([]);
         // Not an undoable edit; no stale history or change-log rows; the undo triggers of the
-        // tables that are left are kept, and the tables the timeline-only migrations add (the
-        // performer cues) get theirs.
+        // tables that are left are kept. The timeline-only migration only drops tables (ADR 0011),
+        // so no table is new.
         expect(after.history).toEqual([]);
         expect(after.historyStats).toMatchObject({
             cur_undo_group: 1,
@@ -325,7 +325,7 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
                 .filter((t) => !tablesBefore.includes(t.tbl_name))
                 .map((t) => t.name),
         );
-        expect(onNewTables.length).toBeGreaterThan(0);
+        expect(onNewTables).toEqual([]);
         expect(after.triggers).toEqual(
             [
                 ...before.triggers.filter((t) => !onPageEraTables.includes(t)),
@@ -766,12 +766,6 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
         it("converted by a build that kept the page-era tables, then edited in an older release: asks like any page-era file, then converts the edits, replacing the old timelines", async () => {
             const expected = await destinationsWithTheEdit();
             await convertedByEarlierBuildThenEditedInOlderRelease(showPath);
-            // A kept spot, which goes with the assignments it marks.
-            withDb(showPath, (db) =>
-                db.exec(
-                    "INSERT INTO timeline_kept_assignments (assignment_id) SELECT min(id) FROM timeline_assignments",
-                ),
-            );
             const staleDestinations = destinationsOf(showPath);
             expect(staleDestinations).not.toEqual(expected);
             const before = stateOf(showPath);
