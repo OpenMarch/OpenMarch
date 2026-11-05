@@ -19,6 +19,7 @@ import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import tolgee from "@/global/singletons/Tolgee";
 import { installClickFocusMarker } from "@/utilities/clickFocus";
 import { initEditorModeStore } from "@/stores/EditorModeStore";
+import { initAnalyticsQuestionStore } from "@/stores/AnalyticsQuestionStore";
 import { startInputModeTracking } from "@/stores/InputModeStore";
 
 installClickFocusMarker();
@@ -86,6 +87,8 @@ function mountEditor() {
 
     // Basic or Expert (UI-19): read it and keep it in sync with the Settings window
     initEditorModeStore();
+    // Whether the welcome flow still has to ask about analytics
+    initAnalyticsQuestionStore();
 
     // Listen for language changes from other windows
     window.electron?.onSettingsChanged((change) => {

@@ -1,0 +1,224 @@
+import { Fragment, useEffect, useRef, useState } from "react";
+import { Button } from "@openmarch/ui";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
+import { T, useTranslate } from "@tolgee/react";
+import clsx from "clsx";
+import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
+import {
+    GUIDES_URL,
+    WHATS_NEW_SLIDES,
+    whatsNewKeyAction,
+    type WhatsNewSlide,
+} from "../whatsNewSlides";
+import WelcomeFrame, { type SetupProgress } from "../WelcomeFrame";
+
+/**
+ * The slide's clip: a muted loop, or its first frame when the person asked
+ * for less motion (or the clip isn't recorded yet). Both carry the same
+ * description for screen readers.
+ */
+function SlideMedia({ slide }: { slide: WhatsNewSlide }) {
+    const { t } = useTranslate();
+    const description = t(slide.mediaKey);
+    const className =
+        "rounded-16 border-accent bg-fg-2 ring-accent/15 aspect-[16/10] w-full border-2 object-cover ring-4";
+    if (!slide.video || prefersReducedMotion())
+        return (
+            <img
+                src={slide.poster}
+                alt={description}
+                className={className}
+                draggable={false}
+                data-testid="whats-new-poster"
+            />
+        );
+    return (
+        <video
+            key={slide.id}
+            src={slide.video}
+            poster={slide.poster}
+            aria-label={description}
+            className={className}
+            autoPlay
+            muted
+            loop
+            playsInline
+            disablePictureInPicture
+            data-testid="whats-new-video"
+        />
+    );
+}
+
+/**
+ * Returning people's optional walkthrough of what's new: one feature per
+ * slide, with Back, Next (Continue on the last) and Skip, position dots, and
+ * the arrow keys and Escape (skip). Each slide's title takes focus, so screen
+ * readers announce it. Back on the first slide returns to the welcome page.
+ */
+// eslint-disable-next-line max-lines-per-function
+export default function WhatsNewTour({
+    onDone,
+    onSkip,
+    onBack,
+    progress,
+    onDevSkip,
+    devSkipDisabled,
+}: {
+    /** After the last slide. */
+    onDone: () => void;
+    /** Skip, on any slide (or Escape). */
+    onSkip: () => void;
+    /** Back from the first slide. */
+    onBack: () => void;
+    /** Where What's new sits in the setup. */
+    progress: SetupProgress;
+    onDevSkip: () => void;
+    devSkipDisabled?: boolean;
+}) {
+    const { t } = useTranslate();
+    const [index, setIndex] = useState(0);
+    const heading = useRef<HTMLHeadingElement>(null);
+    const slide = WHATS_NEW_SLIDES[index];
+    const total = WHATS_NEW_SLIDES.length;
+    const isLast = index === total - 1;
+
+    const next = () => (isLast ? onDone() : setIndex(index + 1));
+    const back = () => (index === 0 ? onBack() : setIndex(index - 1));
+
+    useEffect(() => {
+        heading.current?.focus();
+    }, [index]);
+
+    // Kept in a ref so the listener, added once, always calls the latest.
+    const actions = useRef({ next, back, skip: onSkip });
+    actions.current = { next, back, skip: onSkip };
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.defaultPrevented || event.altKey || event.metaKey) return;
+            if (event.ctrlKey || event.shiftKey) return;
+            const action = whatsNewKeyAction(event.key);
+            if (!action) return;
+            event.preventDefault();
+            actions.current[action]();
+        };
+        window.addEventListener("keydown", onKeyDown);
+        return () => window.removeEventListener("keydown", onKeyDown);
+    }, []);
+
+    return (
+        <WelcomeFrame
+            progress={progress}
+            title={<T keyName="welcomeFlow.whatsNew.title" />}
+            aria-label={t("welcomeFlow.whatsNew.title")}
+            testId="welcome-whats-new"
+            onDevSkip={onDevSkip}
+            devSkipDisabled={devSkipDisabled}
+            back={
+                <Button
+                    variant="secondary"
+                    onClick={back}
+                    data-testid="whats-new-back"
+                >
+                    <T keyName="welcomeFlow.back" />
+                </Button>
+            }
+            actions={
+                <>
+                    <Button
+                        variant="ghost"
+                        onClick={onSkip}
+                        data-testid="whats-new-skip"
+                    >
+                        <T keyName="welcomeFlow.whatsNew.skip" />
+                    </Button>
+                    <Button onClick={next} data-testid="whats-new-next">
+                        <T
+                            keyName={
+                                isLast
+                                    ? "welcomeFlow.continue"
+                                    : "welcomeFlow.whatsNew.next"
+                            }
+                        />
+                    </Button>
+                </>
+            }
+        >
+            <div
+                className="flex flex-col items-center gap-16"
+                aria-roledescription={t("welcomeFlow.whatsNew.carousel")}
+            >
+                <section
+                    key={slide.id}
+                    className="animate-fade-in flex w-full flex-col items-center gap-12"
+                    aria-roledescription={t("welcomeFlow.whatsNew.slide")}
+                    aria-label={t("welcomeFlow.whatsNew.position", {
+                        current: index + 1,
+                        total,
+                    })}
+                    data-testid={`whats-new-slide-${slide.id}`}
+                >
+                    <div className="w-full max-w-[max(24rem,calc((100vh-34rem)*1.6))]">
+                        <SlideMedia slide={slide} />
+                    </div>
+                    <div className="flex flex-col items-center gap-4 text-center">
+                        <h2
+                            ref={heading}
+                            tabIndex={-1}
+                            className="text-h5 text-text font-medium outline-hidden"
+                        >
+                            <T keyName={slide.titleKey} />
+                        </h2>
+                        <p className="text-body text-text-subtitle max-w-[36rem]">
+                            <T keyName={slide.textKey} />
+                        </p>
+                        {isLast && (
+                            <a
+                                href={GUIDES_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sub text-accent mt-4 flex items-center gap-4 hover:underline"
+                                data-testid="whats-new-guides"
+                            >
+                                <T keyName="welcomeFlow.whatsNew.guides" />
+                                <ArrowSquareOutIcon size={14} aria-hidden />
+                            </a>
+                        )}
+                    </div>
+                </section>
+                <nav
+                    className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4"
+                    aria-label={t("welcomeFlow.whatsNew.steps")}
+                    data-testid="whats-new-steps"
+                >
+                    {WHATS_NEW_SLIDES.map((s, i) => (
+                        <Fragment key={s.id}>
+                            {i > 0 && (
+                                <span
+                                    aria-hidden
+                                    className={clsx(
+                                        "h-px w-16 transition-colors duration-150",
+                                        i <= index ? "bg-accent" : "bg-text/20",
+                                    )}
+                                />
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setIndex(i)}
+                                aria-current={i === index ? "step" : undefined}
+                                className={clsx(
+                                    "text-body whitespace-nowrap transition-colors duration-150",
+                                    i === index
+                                        ? "text-accent font-medium"
+                                        : "text-text-subtitle hover:text-text",
+                                )}
+                                data-testid={`whats-new-step-${s.id}`}
+                            >
+                                <T keyName={s.labelKey} />
+                            </button>
+                        </Fragment>
+                    ))}
+                </nav>
+            </div>
+        </WelcomeFrame>
+    );
+}
