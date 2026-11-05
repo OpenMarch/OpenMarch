@@ -539,7 +539,7 @@ describe("WelcomeFlow", () => {
             expect(section.querySelector("video")).toBeNull();
             const poster = screen.getByTestId("whats-new-poster");
             expect(poster.tagName).toBe("IMG");
-            expect(poster.getAttribute("alt")).toMatch(/Expert mode/);
+            expect(poster.getAttribute("alt")).toMatch(/20 marchers/);
         } finally {
             delete (window as { matchMedia?: unknown }).matchMedia;
         }
