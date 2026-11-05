@@ -406,7 +406,7 @@ describe("WelcomeFlow", () => {
             const section = await screen.findByTestId(
                 `whats-new-slide-${slide.id}`,
             );
-            const title = section.querySelector("h1");
+            const title = section.querySelector("h2");
             slideTitles.push(title?.textContent ?? "");
             expect(title).toHaveFocus();
             expect(section.querySelector("video")).toHaveAttribute(

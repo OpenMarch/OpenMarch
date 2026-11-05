@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
-import { ArrowSquareOutIcon, CaretLeftIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
@@ -10,6 +10,7 @@ import {
     whatsNewKeyAction,
     type WhatsNewSlide,
 } from "../whatsNewSlides";
+import WelcomeFrame, { type SetupProgress } from "../WelcomeFrame";
 
 /**
  * The slide's clip: a muted loop, or its first frame when the person asked
@@ -59,6 +60,9 @@ export default function WhatsNewTour({
     onDone,
     onSkip,
     onBack,
+    progress,
+    onDevSkip,
+    devSkipDisabled,
 }: {
     /** After the last slide. */
     onDone: () => void;
@@ -66,6 +70,10 @@ export default function WhatsNewTour({
     onSkip: () => void;
     /** Back from the first slide. */
     onBack: () => void;
+    /** Where What's new sits in the setup. */
+    progress: SetupProgress;
+    onDevSkip: () => void;
+    devSkipDisabled?: boolean;
 }) {
     const { t } = useTranslate();
     const [index, setIndex] = useState(0);
@@ -98,125 +106,119 @@ export default function WhatsNewTour({
     }, []);
 
     return (
-        <main
-            className="flex min-h-0 flex-1 p-8"
+        <WelcomeFrame
+            progress={progress}
+            title={<T keyName="welcomeFlow.whatsNew.title" />}
             aria-label={t("welcomeFlow.whatsNew.title")}
-            aria-roledescription={t("welcomeFlow.whatsNew.carousel")}
-            data-testid="welcome-whats-new"
-        >
-            <div className="bg-fg-1 border-stroke rounded-6 flex min-h-0 flex-1 flex-col overflow-y-auto border px-24 py-24">
-                <div className="m-auto flex w-full max-w-[min(46rem,calc((100vh-20rem)*1.6))] flex-col gap-16">
-                    <div className="flex items-center justify-between gap-16">
-                        <Button
-                            variant="ghost"
-                            onClick={back}
-                            className="-ml-16 px-16"
-                            data-testid="whats-new-back"
-                        >
-                            <CaretLeftIcon size={16} aria-hidden />
-                            <T keyName="welcomeFlow.back" />
-                        </Button>
-                        <span className="text-h4 text-text font-medium">
-                            <T keyName="welcomeFlow.whatsNew.title" />
-                        </span>
-                    </div>
-
-                    <section
-                        key={slide.id}
-                        className="animate-fade-in flex flex-col gap-16"
-                        aria-roledescription={t("welcomeFlow.whatsNew.slide")}
-                        aria-label={t("welcomeFlow.whatsNew.position", {
-                            current: index + 1,
-                            total,
-                        })}
-                        data-testid={`whats-new-slide-${slide.id}`}
+            testId="welcome-whats-new"
+            onDevSkip={onDevSkip}
+            devSkipDisabled={devSkipDisabled}
+            back={
+                <Button
+                    variant="secondary"
+                    onClick={back}
+                    data-testid="whats-new-back"
+                >
+                    <T keyName="welcomeFlow.back" />
+                </Button>
+            }
+            actions={
+                <>
+                    <Button
+                        variant="ghost"
+                        onClick={onSkip}
+                        data-testid="whats-new-skip"
                     >
+                        <T keyName="welcomeFlow.whatsNew.skip" />
+                    </Button>
+                    <Button onClick={next} data-testid="whats-new-next">
+                        <T
+                            keyName={
+                                isLast
+                                    ? "welcomeFlow.continue"
+                                    : "welcomeFlow.whatsNew.next"
+                            }
+                        />
+                    </Button>
+                </>
+            }
+        >
+            <div
+                className="flex flex-col items-center gap-16"
+                aria-roledescription={t("welcomeFlow.whatsNew.carousel")}
+            >
+                <section
+                    key={slide.id}
+                    className="animate-fade-in flex w-full flex-col items-center gap-12"
+                    aria-roledescription={t("welcomeFlow.whatsNew.slide")}
+                    aria-label={t("welcomeFlow.whatsNew.position", {
+                        current: index + 1,
+                        total,
+                    })}
+                    data-testid={`whats-new-slide-${slide.id}`}
+                >
+                    <div className="w-full max-w-[max(24rem,calc((100vh-34rem)*1.6))]">
                         <SlideMedia slide={slide} />
-                        <div className="flex flex-col items-center gap-4 text-center">
-                            <h1
-                                ref={heading}
-                                tabIndex={-1}
-                                className="text-h3 text-text font-medium outline-hidden"
-                            >
-                                <T keyName={slide.titleKey} />
-                            </h1>
-                            <p className="text-body text-text-subtitle max-w-[36rem]">
-                                <T keyName={slide.textKey} />
-                            </p>
-                            {isLast && (
-                                <a
-                                    href={GUIDES_URL}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-sub text-accent mt-4 flex items-center gap-4 hover:underline"
-                                    data-testid="whats-new-guides"
-                                >
-                                    <T keyName="welcomeFlow.whatsNew.guides" />
-                                    <ArrowSquareOutIcon size={14} aria-hidden />
-                                </a>
-                            )}
-                        </div>
-                    </section>
-
-                    <div className="flex w-full flex-col items-center gap-16 pt-8">
-                        <nav
-                            className="flex min-w-0 flex-wrap items-center justify-center gap-x-8 gap-y-4"
-                            aria-label={t("welcomeFlow.whatsNew.steps")}
-                            data-testid="whats-new-steps"
-                        >
-                            {WHATS_NEW_SLIDES.map((s, i) => (
-                                <Fragment key={s.id}>
-                                    {i > 0 && (
-                                        <span
-                                            aria-hidden
-                                            className={clsx(
-                                                "h-px w-16 transition-colors duration-150",
-                                                i <= index
-                                                    ? "bg-accent"
-                                                    : "bg-text/20",
-                                            )}
-                                        />
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={() => setIndex(i)}
-                                        aria-current={
-                                            i === index ? "step" : undefined
-                                        }
-                                        className={clsx(
-                                            "text-body whitespace-nowrap transition-colors duration-150",
-                                            i === index
-                                                ? "text-accent font-medium"
-                                                : "text-text-subtitle hover:text-text",
-                                        )}
-                                        data-testid={`whats-new-step-${s.id}`}
-                                    >
-                                        <T keyName={s.labelKey} />
-                                    </button>
-                                </Fragment>
-                            ))}
-                        </nav>
-                        <div className="flex gap-8">
-                            <Button
-                                variant="ghost"
-                                onClick={onSkip}
-                                data-testid="whats-new-skip"
-                            >
-                                <T keyName="welcomeFlow.whatsNew.skip" />
-                            </Button>
-                            <Button onClick={next} data-testid="whats-new-next">
-                                <T
-                                    keyName={
-                                        isLast
-                                            ? "welcomeFlow.continue"
-                                            : "welcomeFlow.whatsNew.next"
-                                    }
-                                />
-                            </Button>
-                        </div>
                     </div>
-                </div>
+                    <div className="flex flex-col items-center gap-4 text-center">
+                        <h2
+                            ref={heading}
+                            tabIndex={-1}
+                            className="text-h5 text-text font-medium outline-hidden"
+                        >
+                            <T keyName={slide.titleKey} />
+                        </h2>
+                        <p className="text-body text-text-subtitle max-w-[36rem]">
+                            <T keyName={slide.textKey} />
+                        </p>
+                        {isLast && (
+                            <a
+                                href={GUIDES_URL}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sub text-accent mt-4 flex items-center gap-4 hover:underline"
+                                data-testid="whats-new-guides"
+                            >
+                                <T keyName="welcomeFlow.whatsNew.guides" />
+                                <ArrowSquareOutIcon size={14} aria-hidden />
+                            </a>
+                        )}
+                    </div>
+                </section>
+                <nav
+                    className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4"
+                    aria-label={t("welcomeFlow.whatsNew.steps")}
+                    data-testid="whats-new-steps"
+                >
+                    {WHATS_NEW_SLIDES.map((s, i) => (
+                        <Fragment key={s.id}>
+                            {i > 0 && (
+                                <span
+                                    aria-hidden
+                                    className={clsx(
+                                        "h-px w-16 transition-colors duration-150",
+                                        i <= index ? "bg-accent" : "bg-text/20",
+                                    )}
+                                />
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setIndex(i)}
+                                aria-current={i === index ? "step" : undefined}
+                                className={clsx(
+                                    "text-body whitespace-nowrap transition-colors duration-150",
+                                    i === index
+                                        ? "text-accent font-medium"
+                                        : "text-text-subtitle hover:text-text",
+                                )}
+                                data-testid={`whats-new-step-${s.id}`}
+                            >
+                                <T keyName={s.labelKey} />
+                            </button>
+                        </Fragment>
+                    ))}
+                </nav>
             </div>
-        </main>
+        </WelcomeFrame>
     );
 }

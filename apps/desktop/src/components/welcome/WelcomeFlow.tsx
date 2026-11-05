@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee, useTranslate } from "@tolgee/react";
-import NewShowProgressIndicator from "@/components/launchpage/newShow/components/NewShowProgressIndicator";
 import { useEditorModeStore, type EditorMode } from "@/stores/EditorModeStore";
 import { useWelcomeFlowStore } from "@/stores/WelcomeFlowStore";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
-import OpenMarchLogo from "@/components/OpenMarchLogo";
 import { saveAnalyticsChoice } from "@/utilities/analyticsConsent";
 import { matchAppLanguage } from "@/utilities/languages";
 import { isWebBuild } from "@/utilities/webBuild";
@@ -25,8 +23,8 @@ import ThemeStep from "./steps/ThemeStep";
 import ModeStep from "./steps/ModeStep";
 import AnalyticsStep from "./steps/AnalyticsStep";
 import WhatsNewTour from "./steps/WhatsNewTour";
+import WelcomeFrame from "./WelcomeFrame";
 import { markAnalyticsAnswered } from "@/stores/AnalyticsQuestionStore";
-import DevSkipSetupButton from "./DevSkipSetupButton";
 
 export interface WelcomeFlowProps {
     /**
@@ -219,15 +217,9 @@ export default function WelcomeFlow({
     const step: WelcomeStepId | undefined =
         steps[Math.min(stepIndex, steps.length - 1)];
     const isLast = stepIndex >= steps.length - 1;
-    // The welcome page and What's new aren't counted: the bar and "Step 1 of
-    // 4" are the setup.
+    // The welcome page isn't counted: the bar and "Step 1 of 4" are the setup.
     const setup = setupSteps(steps);
-    const setupIndex = step ? setup.indexOf(step) : -1;
-    const setupCount = setup.length;
-    const completed = useMemo(
-        () => new Set(Array.from({ length: setupIndex }, (_, i) => i)),
-        [setupIndex],
-    );
+    const progress = { steps: setup, index: step ? setup.indexOf(step) : -1 };
 
     const chooseLanguage = (code: string) => {
         setLanguage({ code, source: "picked" });
@@ -317,118 +309,81 @@ export default function WelcomeFlow({
 
     if (step === "whatsNew")
         return (
-            <WhatsNewTour onDone={afterTour} onSkip={afterTour} onBack={back} />
+            <WhatsNewTour
+                onDone={afterTour}
+                onSkip={afterTour}
+                onBack={back}
+                progress={progress}
+                onDevSkip={devSkip}
+                devSkipDisabled={devSkipDisabled}
+            />
         );
 
     return (
-        <main
-            className="flex min-h-0 flex-1 p-8"
-            aria-label={t("welcomeFlow.dialogLabel")}
-            data-testid="welcome-flow"
-        >
-            <div className="bg-fg-1 border-stroke rounded-6 flex min-h-0 flex-1 flex-col overflow-y-auto border px-24 py-32">
-                <div className="m-auto flex w-full max-w-[46rem] flex-col gap-24">
-                    {/* A single question (analytics alone) is one short screen:
-                        no progress bar or step count */}
-                    <div className="flex items-center gap-24">
-                        <OpenMarchLogo
-                            height={28}
-                            className="text-text shrink-0"
+        <WelcomeFrame
+            progress={progress}
+            title={<T keyName={STEP_TITLE_KEYS[step]} />}
+            contentKey={step}
+            onDevSkip={devSkip}
+            devSkipDisabled={devSkipDisabled}
+            back={
+                stepIndex > 0 ? (
+                    <Button
+                        variant="secondary"
+                        onClick={back}
+                        data-testid="welcome-back"
+                    >
+                        <T keyName="welcomeFlow.back" />
+                    </Button>
+                ) : undefined
+            }
+            actions={
+                step === "analytics" ? (
+                    <>
+                        <Button
+                            variant="secondary"
+                            onClick={() => finish(true)}
+                            data-testid="welcome-analytics-opt-out"
+                        >
+                            <T keyName="analyticsOptIn.optOut" />
+                        </Button>
+                        <Button
+                            onClick={() => finish(false)}
+                            data-testid="welcome-analytics-opt-in"
+                        >
+                            <T keyName="analyticsOptIn.optIn" />
+                        </Button>
+                    </>
+                ) : (
+                    <Button
+                        onClick={next}
+                        disabled={continueDisabled}
+                        data-testid="welcome-continue"
+                    >
+                        <T
+                            keyName={
+                                isLast
+                                    ? "welcomeFlow.finish"
+                                    : "welcomeFlow.continue"
+                            }
                         />
-                        {setupCount > 1 && (
-                            <NewShowProgressIndicator
-                                currentStepIndex={setupIndex}
-                                steps={setup}
-                                completedSteps={completed}
-                            />
-                        )}
-                    </div>
-                    <div className="flex flex-col items-center gap-4">
-                        {setupCount > 1 && (
-                            <span className="text-sub text-text-subtitle tracking-wide uppercase">
-                                {t("welcomeFlow.step", {
-                                    current: setupIndex + 1,
-                                    total: setupCount,
-                                })}
-                            </span>
-                        )}
-                        <h1 className="text-h3 text-text text-center font-medium">
-                            <T keyName={STEP_TITLE_KEYS[step]} />
-                        </h1>
-                    </div>
-
-                    <div key={step} className="animate-fade-in">
-                        {step === "language" && (
-                            <LanguageStep
-                                value={language?.code ?? ""}
-                                onChange={chooseLanguage}
-                            />
-                        )}
-                        {step === "theme" && (
-                            <ThemeStep value={theme} onChange={setTheme} />
-                        )}
-                        {step === "mode" && (
-                            <ModeStep
-                                value={chosenMode}
-                                onChange={setChosenMode}
-                            />
-                        )}
-                        {step === "analytics" && <AnalyticsStep />}
-                    </div>
-
-                    <div className="flex w-full justify-between gap-8 pt-8">
-                        {stepIndex > 0 ? (
-                            <Button
-                                variant="secondary"
-                                onClick={back}
-                                data-testid="welcome-back"
-                            >
-                                <T keyName="welcomeFlow.back" />
-                            </Button>
-                        ) : (
-                            <span />
-                        )}
-                        <div className="flex gap-8">
-                            {step === "analytics" ? (
-                                <>
-                                    <Button
-                                        variant="secondary"
-                                        onClick={() => finish(true)}
-                                        data-testid="welcome-analytics-opt-out"
-                                    >
-                                        <T keyName="analyticsOptIn.optOut" />
-                                    </Button>
-                                    <Button
-                                        onClick={() => finish(false)}
-                                        data-testid="welcome-analytics-opt-in"
-                                    >
-                                        <T keyName="analyticsOptIn.optIn" />
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button
-                                    onClick={next}
-                                    disabled={continueDisabled}
-                                    data-testid="welcome-continue"
-                                >
-                                    <T
-                                        keyName={
-                                            isLast
-                                                ? "welcomeFlow.finish"
-                                                : "welcomeFlow.continue"
-                                        }
-                                    />
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                    <DevSkipSetupButton
-                        onSkip={devSkip}
-                        disabled={devSkipDisabled}
-                        className="-mt-16 self-end"
-                    />
-                </div>
-            </div>
-        </main>
+                    </Button>
+                )
+            }
+        >
+            {step === "language" && (
+                <LanguageStep
+                    value={language?.code ?? ""}
+                    onChange={chooseLanguage}
+                />
+            )}
+            {step === "theme" && (
+                <ThemeStep value={theme} onChange={setTheme} />
+            )}
+            {step === "mode" && (
+                <ModeStep value={chosenMode} onChange={setChosenMode} />
+            )}
+            {step === "analytics" && <AnalyticsStep />}
+        </WelcomeFrame>
     );
 }

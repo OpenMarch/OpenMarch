@@ -83,11 +83,11 @@ export function shouldShowWelcomeFlow(state: {
     return state.mode === null || state.analytics === "unanswered";
 }
 
-/** The steps that set the app up, which the progress bar counts: not the welcome or What's new. */
+/** The steps the progress bar counts: every step after the welcome page, What's new included. */
 export function setupSteps(
     steps: readonly WelcomeStepId[],
 ): readonly WelcomeStepId[] {
-    return steps.filter((step) => step !== "welcome" && step !== "whatsNew");
+    return steps.filter((step) => step !== "welcome");
 }
 
 /** Whether the stored `optOutAnalytics` value means the person has answered. */

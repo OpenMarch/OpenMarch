@@ -203,10 +203,10 @@ describe("the analytics question", () => {
         ).toEqual([]);
     });
 
-    it("counts only the setup steps in the progress bar", () => {
+    it("counts every step after the welcome page in the progress bar", () => {
         expect(
             setupSteps(["welcome", "whatsNew", "theme", "mode", "analytics"]),
-        ).toEqual(["theme", "mode", "analytics"]);
+        ).toEqual(["whatsNew", "theme", "mode", "analytics"]);
     });
 });
 
