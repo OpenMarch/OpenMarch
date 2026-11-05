@@ -252,6 +252,47 @@ describe.each(["in-thread", "worker"] as const)(
             vi.restoreAllMocks();
         });
 
+        // v0.1.7 keeps a field image in `field_properties.image`. The generated files have none
+        // (README "Not covered"), so this writes one into that column of `small.dots` the way
+        // v0.1.7's main process stores it, and checks the conversion keeps its bytes.
+        it("keeps a field image through the conversion", async () => {
+            const showPath = path.join(tempDir, "with-image.dots");
+            fs.copyFileSync(FIXTURES[0]!.file, showPath);
+            const image = new Uint8Array(
+                Buffer.from(
+                    "89504e470d0a1a0a0000000d4948445200000001000000010806000000" +
+                        "1f15c4890000000d49444154789c6360f8cfc0f01f0005fe02fea7d6" +
+                        "a4c40000000049454e44ae426082",
+                    "hex",
+                ),
+            );
+            withDb(showPath, (raw) =>
+                raw
+                    .prepare(
+                        "UPDATE field_properties SET image = ? WHERE id = 1",
+                    )
+                    .run(image),
+            );
+            const fieldBefore = withDb(showPath, (raw) =>
+                raw
+                    .prepare("SELECT json_data, image FROM field_properties")
+                    .get(),
+            );
+
+            const { result } = await open(showPath, true);
+
+            expect(result.status).toBe(200);
+            expect(
+                withDb(showPath, (raw) =>
+                    raw
+                        .prepare(
+                            "SELECT json_data, image FROM field_properties",
+                        )
+                        .get(),
+                ),
+            ).toEqual(fieldBefore);
+        });
+
         describe.each(FIXTURES.map((f) => [f.name, f] as const))(
             "%s.dots",
             (name, { file, view }) => {
@@ -322,8 +363,8 @@ describe.each(["in-thread", "worker"] as const)(
                         }));
                     expect(migrationHashes.map((m) => m.f)).toEqual(
                         expect.arrayContaining([
-                            "0029_drop_kept_assignments.sql",
-                            "0030_fresh_shocker.sql",
+                            "0017_timeline_model.sql",
+                            "0018_drop_page_era.sql",
                         ]),
                     );
                     withDb(showPath, (raw) => {

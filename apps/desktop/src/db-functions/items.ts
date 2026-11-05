@@ -49,8 +49,6 @@ export interface NewItemArgs {
     /** The beat it was created on: Off field before it, on field from it */
     beatId: number;
     geometry: ItemGeometryArgs;
-    /** A Library model and the Version it pins */
-    library?: { itemId: string; versionHash: string };
 }
 
 /** Each kind has its own section and drill prefix, apart from every performer's */
@@ -147,8 +145,6 @@ export async function createItemsInTransaction({
                     newItem.kind === "prop"
                         ? (newItem.surfaceType ?? "obstacle")
                         : null,
-                library_item_id: newItem.library?.itemId ?? null,
-                library_version_hash: newItem.library?.versionHash ?? null,
             })
             .returning()
             .get();

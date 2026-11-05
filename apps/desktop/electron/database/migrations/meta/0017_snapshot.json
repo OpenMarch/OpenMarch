@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "f8ce0649-0b1b-4097-a5bb-d401a29a859c",
+    "id": "79f84d98-1293-4bc1-bcfe-fc872d4dd53c",
     "prevId": "cc2c9992-3db5-4000-8861-cc9195cf2965",
     "tables": {
         "audio_files": {
@@ -104,6 +104,22 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
+                },
+                "tempo_hold": {
+                    "name": "tempo_hold",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "tempo_change": {
+                    "name": "tempo_change",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
                 },
                 "created_at": {
                     "name": "created_at",
@@ -282,8 +298,8 @@
             "uniqueConstraints": {},
             "checkConstraints": {}
         },
-        "marcher_pages": {
-            "name": "marcher_pages",
+        "item_geometry": {
+            "name": "item_geometry",
             "columns": {
                 "id": {
                     "name": "id",
@@ -292,32 +308,85 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "marcher_id": {
-                    "name": "marcher_id",
+                "item_id": {
+                    "name": "item_id",
                     "type": "integer",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
                 },
-                "page_id": {
-                    "name": "page_id",
+                "beat_id": {
+                    "name": "beat_id",
                     "type": "integer",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
                 },
-                "x": {
-                    "name": "x",
+                "outline_type": {
+                    "name": "outline_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "width": {
+                    "name": "width",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
                 },
-                "y": {
-                    "name": "y",
+                "depth": {
+                    "name": "depth",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": true,
+                    "autoincrement": false
+                },
+                "height": {
+                    "name": "height",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "rotation": {
+                    "name": "rotation",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "custom_outline": {
+                    "name": "custom_outline",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "transition_length": {
+                    "name": "transition_length",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 1
+                },
+                "rolls_out": {
+                    "name": "rolls_out",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "leading_edge": {
+                    "name": "leading_edge",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
                     "autoincrement": false
                 },
                 "created_at": {
@@ -335,147 +404,148 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": "(CURRENT_TIMESTAMP)"
-                },
-                "path_data_id": {
-                    "name": "path_data_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "path_start_position": {
-                    "name": "path_start_position",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "path_end_position": {
-                    "name": "path_end_position",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "rotation_degrees": {
-                    "name": "rotation_degrees",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
-                },
-                "fill_color": {
-                    "name": "fill_color",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "outline_color": {
-                    "name": "outline_color",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "shape_type": {
-                    "name": "shape_type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "visible": {
-                    "name": "visible",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 1
-                },
-                "label_visible": {
-                    "name": "label_visible",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 1
-                },
-                "equipment_name": {
-                    "name": "equipment_name",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "equipment_state": {
-                    "name": "equipment_state",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
                 }
             },
             "indexes": {
-                "index_marcher_pages_on_page_id": {
-                    "name": "index_marcher_pages_on_page_id",
-                    "columns": ["page_id"],
+                "item_geometry_beat_id_idx": {
+                    "name": "item_geometry_beat_id_idx",
+                    "columns": ["beat_id"],
                     "isUnique": false
                 },
-                "index_marcher_pages_on_marcher_id": {
-                    "name": "index_marcher_pages_on_marcher_id",
-                    "columns": ["marcher_id"],
-                    "isUnique": false
-                },
-                "marcher_pages_marcher_id_page_id_unique": {
-                    "name": "marcher_pages_marcher_id_page_id_unique",
-                    "columns": ["marcher_id", "page_id"],
+                "item_geometry_item_beat_unique": {
+                    "name": "item_geometry_item_beat_unique",
+                    "columns": ["item_id", "beat_id"],
                     "isUnique": true
                 }
             },
             "foreignKeys": {
-                "marcher_pages_marcher_id_marchers_id_fk": {
-                    "name": "marcher_pages_marcher_id_marchers_id_fk",
-                    "tableFrom": "marcher_pages",
-                    "tableTo": "marchers",
-                    "columnsFrom": ["marcher_id"],
+                "item_geometry_item_id_items_id_fk": {
+                    "name": "item_geometry_item_id_items_id_fk",
+                    "tableFrom": "item_geometry",
+                    "tableTo": "items",
+                    "columnsFrom": ["item_id"],
                     "columnsTo": ["id"],
                     "onDelete": "cascade",
                     "onUpdate": "no action"
                 },
-                "marcher_pages_page_id_pages_id_fk": {
-                    "name": "marcher_pages_page_id_pages_id_fk",
-                    "tableFrom": "marcher_pages",
-                    "tableTo": "pages",
-                    "columnsFrom": ["page_id"],
+                "item_geometry_beat_id_beats_id_fk": {
+                    "name": "item_geometry_beat_id_beats_id_fk",
+                    "tableFrom": "item_geometry",
+                    "tableTo": "beats",
+                    "columnsFrom": ["beat_id"],
                     "columnsTo": ["id"],
                     "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "marcher_pages_path_data_id_pathways_id_fk": {
-                    "name": "marcher_pages_path_data_id_pathways_id_fk",
-                    "tableFrom": "marcher_pages",
-                    "tableTo": "pathways",
-                    "columnsFrom": ["path_data_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
                     "onUpdate": "no action"
                 }
             },
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {
-                "marcher_pages_path_data_position_check": {
-                    "name": "marcher_pages_path_data_position_check",
-                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
+                "item_geometry_outline_type_check": {
+                    "name": "item_geometry_outline_type_check",
+                    "value": "outline_type IN ('rectangle', 'circle', 'arc', 'polygon', 'freehand')"
+                },
+                "item_geometry_size_check": {
+                    "name": "item_geometry_size_check",
+                    "value": "width > 0 AND depth > 0 AND height >= 0"
+                },
+                "item_geometry_transition_check": {
+                    "name": "item_geometry_transition_check",
+                    "value": "typeof(transition_length) = 'integer' AND transition_length >= 1"
+                },
+                "item_geometry_custom_outline_check": {
+                    "name": "item_geometry_custom_outline_check",
+                    "value": "custom_outline IS NULL OR json_valid(custom_outline)"
+                },
+                "item_geometry_rolls_out_check": {
+                    "name": "item_geometry_rolls_out_check",
+                    "value": "(rolls_out = 0 AND leading_edge IS NULL) OR (rolls_out = 1 AND leading_edge IS NOT NULL AND leading_edge IN ('front', 'back', 'left', 'right'))"
+                }
+            }
+        },
+        "items": {
+            "name": "items",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "kind": {
+                    "name": "kind",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "surface_type": {
+                    "name": "surface_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "color": {
+                    "name": "color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {
+                "items_marcher_id_unique": {
+                    "name": "items_marcher_id_unique",
+                    "columns": ["marcher_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "items_marcher_id_marchers_id_fk": {
+                    "name": "items_marcher_id_marchers_id_fk",
+                    "tableFrom": "items",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "items_kind_check": {
+                    "name": "items_kind_check",
+                    "value": "kind IN ('prop', 'equipment')"
+                },
+                "items_surface_type_check": {
+                    "name": "items_surface_type_check",
+                    "value": "(kind = 'prop' AND surface_type IS NOT NULL AND surface_type IN ('floor', 'platform', 'obstacle')) OR (kind = 'equipment' AND surface_type IS NULL)"
                 }
             }
         },
@@ -634,6 +704,14 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": 0
+                },
+                "type": {
+                    "name": "type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'marcher'"
                 }
             },
             "indexes": {
@@ -662,6 +740,10 @@
                 "marchers_home_y_check": {
                     "name": "marchers_home_y_check",
                     "value": "abs(home_y) <= 1e6"
+                },
+                "marchers_type_check": {
+                    "name": "marchers_type_check",
+                    "value": "type IN ('marcher', 'item')"
                 }
             }
         },
@@ -691,6 +773,27 @@
                 },
                 "notes": {
                     "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "number_override": {
+                    "name": "number_override",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "meter": {
+                    "name": "meter",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "grouping": {
+                    "name": "grouping",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
@@ -728,129 +831,6 @@
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}
-        },
-        "midsets": {
-            "name": "midsets",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "mp_id": {
-                    "name": "mp_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "x": {
-                    "name": "x",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "y": {
-                    "name": "y",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "progress_placement": {
-                    "name": "progress_placement",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "path_data_id": {
-                    "name": "path_data_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "path_start_position": {
-                    "name": "path_start_position",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "path_end_position": {
-                    "name": "path_end_position",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "midsets_mp_id_progress_placement_unique": {
-                    "name": "midsets_mp_id_progress_placement_unique",
-                    "columns": ["mp_id", "progress_placement"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "midsets_mp_id_marcher_pages_id_fk": {
-                    "name": "midsets_mp_id_marcher_pages_id_fk",
-                    "tableFrom": "midsets",
-                    "tableTo": "marcher_pages",
-                    "columnsFrom": ["mp_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "midsets_path_data_id_pathways_id_fk": {
-                    "name": "midsets_path_data_id_pathways_id_fk",
-                    "tableFrom": "midsets",
-                    "tableTo": "pathways",
-                    "columnsFrom": ["path_data_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "midsets_path_data_position_check": {
-                    "name": "midsets_path_data_position_check",
-                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
-                },
-                "placement_check": {
-                    "name": "placement_check",
-                    "value": "progress_placement > 0 AND progress_placement < 1"
-                }
-            }
         },
         "pages": {
             "name": "pages",
@@ -927,53 +907,6 @@
                     "value": "is_subset IN (0, 1)"
                 }
             }
-        },
-        "pathways": {
-            "name": "pathways",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "path_data": {
-                    "name": "path_data",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
         },
         "section_appearances": {
             "name": "section_appearances",
@@ -1058,240 +991,6 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": "(CURRENT_TIMESTAMP)"
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "shape_page_marchers": {
-            "name": "shape_page_marchers",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "shape_page_id": {
-                    "name": "shape_page_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "marcher_id": {
-                    "name": "marcher_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "position_order": {
-                    "name": "position_order",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "idx-spm-marcher_id": {
-                    "name": "idx-spm-marcher_id",
-                    "columns": ["marcher_id"],
-                    "isUnique": false
-                },
-                "idx-spm-shape_page_id": {
-                    "name": "idx-spm-shape_page_id",
-                    "columns": ["shape_page_id"],
-                    "isUnique": false
-                },
-                "shape_page_marchers_shape_page_id_marcher_id_unique": {
-                    "name": "shape_page_marchers_shape_page_id_marcher_id_unique",
-                    "columns": ["shape_page_id", "marcher_id"],
-                    "isUnique": true
-                },
-                "shape_page_marchers_shape_page_id_position_order_unique": {
-                    "name": "shape_page_marchers_shape_page_id_position_order_unique",
-                    "columns": ["shape_page_id", "position_order"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "shape_page_marchers_shape_page_id_shape_pages_id_fk": {
-                    "name": "shape_page_marchers_shape_page_id_shape_pages_id_fk",
-                    "tableFrom": "shape_page_marchers",
-                    "tableTo": "shape_pages",
-                    "columnsFrom": ["shape_page_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "shape_page_marchers_marcher_id_marchers_id_fk": {
-                    "name": "shape_page_marchers_marcher_id_marchers_id_fk",
-                    "tableFrom": "shape_page_marchers",
-                    "tableTo": "marchers",
-                    "columnsFrom": ["marcher_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "shape_pages": {
-            "name": "shape_pages",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "shape_id": {
-                    "name": "shape_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "page_id": {
-                    "name": "page_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "svg_path": {
-                    "name": "svg_path",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "shape_pages_page_id_shape_id_unique": {
-                    "name": "shape_pages_page_id_shape_id_unique",
-                    "columns": ["page_id", "shape_id"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "shape_pages_shape_id_shapes_id_fk": {
-                    "name": "shape_pages_shape_id_shapes_id_fk",
-                    "tableFrom": "shape_pages",
-                    "tableTo": "shapes",
-                    "columnsFrom": ["shape_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "shape_pages_page_id_pages_id_fk": {
-                    "name": "shape_pages_page_id_pages_id_fk",
-                    "tableFrom": "shape_pages",
-                    "tableTo": "pages",
-                    "columnsFrom": ["page_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "shapes": {
-            "name": "shapes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "name": {
-                    "name": "name",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "(CURRENT_TIMESTAMP)"
-                },
-                "notes": {
-                    "name": "notes",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
                 }
             },
             "indexes": {},
@@ -1492,6 +1191,35 @@
             "uniqueConstraints": {},
             "checkConstraints": {}
         },
+        "tempo_settings": {
+            "name": "tempo_settings",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "audio_offset_seconds": {
+                    "name": "audio_offset_seconds",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "tempo_settings_id_check": {
+                    "name": "tempo_settings_id_check",
+                    "value": "id = 0"
+                }
+            }
+        },
         "timeline_assignments": {
             "name": "timeline_assignments",
             "columns": {
@@ -1676,6 +1404,234 @@
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}
+        },
+        "timeline_held_marks": {
+            "name": "timeline_held_marks",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "start_beat": {
+                    "name": "start_beat",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "end_beat": {
+                    "name": "end_beat",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "timeline_held_marks_marcher_id_start_beat_unique": {
+                    "name": "timeline_held_marks_marcher_id_start_beat_unique",
+                    "columns": ["marcher_id", "start_beat"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "timeline_held_marks_marcher_id_marchers_id_fk": {
+                    "name": "timeline_held_marks_marcher_id_marchers_id_fk",
+                    "tableFrom": "timeline_held_marks",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "timeline_held_marks_start_beat_check": {
+                    "name": "timeline_held_marks_start_beat_check",
+                    "value": "typeof(start_beat) = 'integer' AND start_beat >= 0"
+                },
+                "timeline_held_marks_end_beat_check": {
+                    "name": "timeline_held_marks_end_beat_check",
+                    "value": "typeof(end_beat) = 'integer' AND end_beat > start_beat"
+                }
+            }
+        },
+        "timeline_shape_recipe_marchers": {
+            "name": "timeline_shape_recipe_marchers",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "recipe_id": {
+                    "name": "recipe_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "slot": {
+                    "name": "slot",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "x": {
+                    "name": "x",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "y": {
+                    "name": "y",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "timeline_shape_recipe_marchers_marcher": {
+                    "name": "timeline_shape_recipe_marchers_marcher",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                },
+                "timeline_shape_recipe_marchers_recipe_id_marcher_id_unique": {
+                    "name": "timeline_shape_recipe_marchers_recipe_id_marcher_id_unique",
+                    "columns": ["recipe_id", "marcher_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "timeline_shape_recipe_marchers_recipe_id_timeline_shape_recipes_id_fk": {
+                    "name": "timeline_shape_recipe_marchers_recipe_id_timeline_shape_recipes_id_fk",
+                    "tableFrom": "timeline_shape_recipe_marchers",
+                    "tableTo": "timeline_shape_recipes",
+                    "columnsFrom": ["recipe_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "timeline_shape_recipe_marchers_marcher_id_marchers_id_fk": {
+                    "name": "timeline_shape_recipe_marchers_marcher_id_marchers_id_fk",
+                    "tableFrom": "timeline_shape_recipe_marchers",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "timeline_shape_recipes": {
+            "name": "timeline_shape_recipes",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "timeline_id": {
+                    "name": "timeline_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "kind": {
+                    "name": "kind",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "kind_version": {
+                    "name": "kind_version",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "params": {
+                    "name": "params",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "order_mode": {
+                    "name": "order_mode",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "reverse": {
+                    "name": "reverse",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {
+                "timeline_shape_recipes_timeline_id_timelines_id_fk": {
+                    "name": "timeline_shape_recipes_timeline_id_timelines_id_fk",
+                    "tableFrom": "timeline_shape_recipes",
+                    "tableTo": "timelines",
+                    "columnsFrom": ["timeline_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "timeline_shape_recipes_params_check": {
+                    "name": "timeline_shape_recipes_params_check",
+                    "value": "json_valid(params)"
+                }
+            }
         },
         "timeline_shapes": {
             "name": "timeline_shapes",
@@ -2093,6 +2049,64 @@
                 }
             }
         },
+        "view3d_cameras": {
+            "name": "view3d_cameras",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "json_data": {
+                    "name": "json_data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "view3d_cameras_id_check": {
+                    "name": "view3d_cameras_id_check",
+                    "value": "id = 1"
+                }
+            }
+        },
+        "view3d_venue": {
+            "name": "view3d_venue",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "json_data": {
+                    "name": "json_data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "view3d_venue_id_check": {
+                    "name": "view3d_venue_id_check",
+                    "value": "id = 1"
+                }
+            }
+        },
         "workspace_settings": {
             "name": "workspace_settings",
             "columns": {
@@ -2137,6 +2151,607 @@
                     "value": "id = 1"
                 }
             }
+        },
+        "marcher_pages": {
+            "name": "marcher_pages",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "page_id": {
+                    "name": "page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "x": {
+                    "name": "x",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "y": {
+                    "name": "y",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "path_data_id": {
+                    "name": "path_data_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "path_start_position": {
+                    "name": "path_start_position",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "path_end_position": {
+                    "name": "path_end_position",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "rotation_degrees": {
+                    "name": "rotation_degrees",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "fill_color": {
+                    "name": "fill_color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "outline_color": {
+                    "name": "outline_color",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "shape_type": {
+                    "name": "shape_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "visible": {
+                    "name": "visible",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 1
+                },
+                "label_visible": {
+                    "name": "label_visible",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 1
+                },
+                "equipment_name": {
+                    "name": "equipment_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "equipment_state": {
+                    "name": "equipment_state",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "index_marcher_pages_on_page_id": {
+                    "name": "index_marcher_pages_on_page_id",
+                    "columns": ["page_id"],
+                    "isUnique": false
+                },
+                "index_marcher_pages_on_marcher_id": {
+                    "name": "index_marcher_pages_on_marcher_id",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                },
+                "marcher_pages_marcher_id_page_id_unique": {
+                    "name": "marcher_pages_marcher_id_page_id_unique",
+                    "columns": ["marcher_id", "page_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "marcher_pages_marcher_id_marchers_id_fk": {
+                    "name": "marcher_pages_marcher_id_marchers_id_fk",
+                    "tableFrom": "marcher_pages",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "marcher_pages_page_id_pages_id_fk": {
+                    "name": "marcher_pages_page_id_pages_id_fk",
+                    "tableFrom": "marcher_pages",
+                    "tableTo": "pages",
+                    "columnsFrom": ["page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "marcher_pages_path_data_id_pathways_id_fk": {
+                    "name": "marcher_pages_path_data_id_pathways_id_fk",
+                    "tableFrom": "marcher_pages",
+                    "tableTo": "pathways",
+                    "columnsFrom": ["path_data_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "marcher_pages_path_data_position_check": {
+                    "name": "marcher_pages_path_data_position_check",
+                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
+                }
+            }
+        },
+        "midsets": {
+            "name": "midsets",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "mp_id": {
+                    "name": "mp_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "x": {
+                    "name": "x",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "y": {
+                    "name": "y",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "progress_placement": {
+                    "name": "progress_placement",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "path_data_id": {
+                    "name": "path_data_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "path_start_position": {
+                    "name": "path_start_position",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "path_end_position": {
+                    "name": "path_end_position",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "midsets_mp_id_progress_placement_unique": {
+                    "name": "midsets_mp_id_progress_placement_unique",
+                    "columns": ["mp_id", "progress_placement"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "midsets_mp_id_marcher_pages_id_fk": {
+                    "name": "midsets_mp_id_marcher_pages_id_fk",
+                    "tableFrom": "midsets",
+                    "tableTo": "marcher_pages",
+                    "columnsFrom": ["mp_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "midsets_path_data_id_pathways_id_fk": {
+                    "name": "midsets_path_data_id_pathways_id_fk",
+                    "tableFrom": "midsets",
+                    "tableTo": "pathways",
+                    "columnsFrom": ["path_data_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "midsets_path_data_position_check": {
+                    "name": "midsets_path_data_position_check",
+                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
+                },
+                "placement_check": {
+                    "name": "placement_check",
+                    "value": "progress_placement > 0 AND progress_placement < 1"
+                }
+            }
+        },
+        "pathways": {
+            "name": "pathways",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "path_data": {
+                    "name": "path_data",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "shape_page_marchers": {
+            "name": "shape_page_marchers",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "shape_page_id": {
+                    "name": "shape_page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "position_order": {
+                    "name": "position_order",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "idx-spm-marcher_id": {
+                    "name": "idx-spm-marcher_id",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                },
+                "idx-spm-shape_page_id": {
+                    "name": "idx-spm-shape_page_id",
+                    "columns": ["shape_page_id"],
+                    "isUnique": false
+                },
+                "shape_page_marchers_shape_page_id_marcher_id_unique": {
+                    "name": "shape_page_marchers_shape_page_id_marcher_id_unique",
+                    "columns": ["shape_page_id", "marcher_id"],
+                    "isUnique": true
+                },
+                "shape_page_marchers_shape_page_id_position_order_unique": {
+                    "name": "shape_page_marchers_shape_page_id_position_order_unique",
+                    "columns": ["shape_page_id", "position_order"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "shape_page_marchers_shape_page_id_shape_pages_id_fk": {
+                    "name": "shape_page_marchers_shape_page_id_shape_pages_id_fk",
+                    "tableFrom": "shape_page_marchers",
+                    "tableTo": "shape_pages",
+                    "columnsFrom": ["shape_page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "shape_page_marchers_marcher_id_marchers_id_fk": {
+                    "name": "shape_page_marchers_marcher_id_marchers_id_fk",
+                    "tableFrom": "shape_page_marchers",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "shape_pages": {
+            "name": "shape_pages",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "shape_id": {
+                    "name": "shape_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "page_id": {
+                    "name": "page_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "svg_path": {
+                    "name": "svg_path",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "shape_pages_page_id_shape_id_unique": {
+                    "name": "shape_pages_page_id_shape_id_unique",
+                    "columns": ["page_id", "shape_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "shape_pages_shape_id_shapes_id_fk": {
+                    "name": "shape_pages_shape_id_shapes_id_fk",
+                    "tableFrom": "shape_pages",
+                    "tableTo": "shapes",
+                    "columnsFrom": ["shape_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "shape_pages_page_id_pages_id_fk": {
+                    "name": "shape_pages_page_id_pages_id_fk",
+                    "tableFrom": "shape_pages",
+                    "tableTo": "pages",
+                    "columnsFrom": ["page_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "shapes": {
+            "name": "shapes",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
         }
     },
     "views": {

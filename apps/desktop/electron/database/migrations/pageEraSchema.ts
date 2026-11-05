@@ -1,7 +1,7 @@
 /**
  * The page-era motion tables (ADR 0001 §1): positions per marcher per page, pathways, midsets
  * and the old page shapes. Timelines replaced them, and the post-conversion migration
- * (`0020_drop_page_era`) drops them. They are not in `schema.ts`, so nothing in the app can read
+ * (`0018_drop_page_era`) drops them. They are not in `schema.ts`, so nothing in the app can read
  * or write them; only the converter (`src/timeline/convert`) reads them, from a file that hasn't
  * been converted yet, in the conversion transaction.
  */

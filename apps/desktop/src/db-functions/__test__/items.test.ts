@@ -14,8 +14,6 @@ import {
     type NewItemArgs,
 } from "../items";
 
-const LIBRARY_ITEM = "11111111-1111-4111-8111-111111111111";
-
 const firstBeatIds = async (db: DbConnection) =>
     (
         await db
@@ -79,8 +77,6 @@ describeDbTests("items", (it) => {
                 expect(item).toMatchObject({
                     kind: "prop",
                     surface_type: "platform",
-                    library_item_id: null,
-                    library_version_hash: null,
                 });
                 expect(await getItemGeometry({ db })).toEqual([
                     expect.objectContaining({
@@ -115,10 +111,6 @@ describeDbTests("items", (it) => {
                             name: "Rifle",
                             home: [0, 0],
                             beatId: beat,
-                            library: {
-                                itemId: LIBRARY_ITEM,
-                                versionHash: "a".repeat(64),
-                            },
                             geometry: {
                                 outlineType: "rectangle",
                                 width: 0.1,
@@ -143,8 +135,6 @@ describeDbTests("items", (it) => {
                 expect(created[1]).toMatchObject({
                     kind: "equipment",
                     surface_type: null,
-                    library_item_id: LIBRARY_ITEM,
-                    library_version_hash: "a".repeat(64),
                 });
             },
         );

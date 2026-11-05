@@ -15,6 +15,7 @@ import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
 import { applyFileVersionDecision, readUserVersion } from "../fileVersion";
 import { fieldImageOrParkedFloor } from "../parkedFloor";
 import { createAllUndoTriggers } from "@/db-functions/historyTriggers";
+import { LEGACY_FORK_MIGRATIONS } from "../legacyFork/legacyForkMigrations";
 
 const migrationsFolder = path.resolve(__dirname, "../migrations");
 
@@ -51,6 +52,13 @@ function writeFloorLike285(
     parts: { original: Uint8Array; display: Uint8Array },
     { holdBlobs = true } = {},
 ) {
+    // The Library tables, as the fork's migration 0021 made them (ADR 0011 drops them now)
+    for (const statement of LEGACY_FORK_MIGRATIONS.find(
+        (m) => m.tag === "0021_blue_dust",
+    )!.sql.split("--> statement-breakpoint"))
+        db.exec(
+            statement.replace(/CREATE TABLE `/, "CREATE TABLE IF NOT EXISTS `"),
+        );
     const sidecar = new TextEncoder().encode('{"type":"openmarch-artwork"}');
     const hashes = {
         original: sha256(parts.original),

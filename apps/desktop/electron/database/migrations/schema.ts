@@ -688,12 +688,6 @@ export const items = sqliteTable(
         /** floor, platform or obstacle. Props only. */
         surface_type: text().$type<(typeof SURFACE_TYPES)[number]>(),
         /**
-         * The Library model and the Version it pins, or both null for a plain Outline. No foreign
-         * key: the show's Library is pruned separately and keeps what this names (D-12).
-         */
-        library_item_id: text(),
-        library_version_hash: text(),
-        /**
          * The prop's color, as `rgba(r, g, b, a)`, on the field and in the 3D View; null draws
          * it in the field theme's line color (2D) and neutral grey (3D).
          */
@@ -707,10 +701,6 @@ export const items = sqliteTable(
             sql.raw(
                 `(kind = 'prop' AND surface_type IS NOT NULL AND surface_type IN (${sqlList(SURFACE_TYPES)})) OR (kind = 'equipment' AND surface_type IS NULL)`,
             ),
-        ),
-        check(
-            "items_library_check",
-            sql`(library_item_id IS NULL AND library_version_hash IS NULL) OR (library_item_id IS NOT NULL AND library_version_hash IS NOT NULL AND length(library_item_id) = 36 AND length(library_version_hash) = 64)`,
         ),
     ],
 );

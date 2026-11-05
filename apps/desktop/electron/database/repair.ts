@@ -276,7 +276,7 @@ export const removeOrphanMarcherPages = (db: DatabaseSync): void => {
     ).run();
 };
 
-/** Tables only a page-era file has: `0020_drop_page_era` drops them when a file is converted. */
+/** Tables only a page-era file has: `0018_drop_page_era` drops them when a file is converted. */
 const PAGE_ERA_TABLES = [
     "marcher_pages",
     "pathways",

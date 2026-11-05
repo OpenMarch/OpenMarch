@@ -213,7 +213,6 @@ function assertNoNewForeignKeyViolations(
  */
 async function convertPageEraTablesInTransaction(
     tx: DbTransaction,
-    db: DatabaseSync,
     onProgress: ConvertOnOpenHooks["onProgress"],
 ): Promise<PageConversionReport | undefined> {
     const pages = await tx
@@ -221,17 +220,6 @@ async function convertPageEraTablesInTransaction(
         .from(schema.pages)
         .get();
     if ((pages?.n ?? 0) === 0) return undefined;
-    // Kept spots (migration 0018, dropped by migration 0029) go with their
-    // assignments; with foreign keys off nothing cascades, so they are deleted first.
-    if (
-        countTimelineRows(db) > 0 &&
-        db
-            .prepare(
-                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'timeline_kept_assignments'",
-            )
-            .get()
-    )
-        db.exec("DELETE FROM timeline_kept_assignments");
     const converted = await convertPagesToTimelineInTransaction(tx, {
         replace: true,
         onProgress: (pagesDone, pagesTotal) =>
@@ -298,7 +286,6 @@ export async function convertFileOnOpen(
                 await step("drop-undo-triggers");
                 const converted = await convertPageEraTablesInTransaction(
                     tx,
-                    db,
                     hooks.onProgress,
                 );
                 await step("convert");

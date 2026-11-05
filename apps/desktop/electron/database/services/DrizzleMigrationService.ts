@@ -15,6 +15,11 @@ import { DB } from "../db";
 import { DatabaseSync } from "node:sqlite";
 import { skipsExistingColumn } from "../migrations/addColumnGuard";
 import {
+    needsLegacyForkRepair,
+    repairLegacyForkFile,
+    repairLegacyForkFileInTransaction,
+} from "../legacyFork/legacyForkRepair";
+import {
     fileTooNewMessage,
     isSupportedUserVersion,
     MAX_SUPPORTED_USER_VERSION,
@@ -29,7 +34,7 @@ import {
  * (`applyTimelineMigrationsInTransaction`), after the converter has read the page-era tables.
  * New files are timeline files from the start and get all of them.
  */
-export const FIRST_TIMELINE_MIGRATION_TAG = "0020_drop_page_era";
+export const FIRST_TIMELINE_MIGRATION_TAG = "0018_drop_page_era";
 
 /** The migrations folder, also found from a built `dist-electron/main`. */
 export function resolveMigrationsFolder(migrationsFolder?: string): string {
@@ -63,7 +68,7 @@ const MIGRATIONS_TABLE = "__drizzle_migrations";
 type TaggedMigration = MigrationMeta & { tag: string };
 
 /** The migrations in `folder`, oldest first, with their journal tags. */
-function readTaggedMigrations(folder: string): TaggedMigration[] {
+export function readTaggedMigrations(folder: string): TaggedMigration[] {
     const journal = JSON.parse(
         fs.readFileSync(path.join(folder, "meta", "_journal.json"), "utf8"),
     ) as { entries: { tag: string; when: number }[] };
@@ -193,41 +198,16 @@ export function applyPageMigrationsInTransaction(
         throw new Error(
             "applyPageMigrationsInTransaction needs foreign keys off: a table rebuild would cascade",
         );
-    forgetFork3dVenueMigration(rawDb);
-    const queries = pendingMigrationQueries(
-        rawDb,
-        resolveMigrationsFolder(migrationsFolder),
-        "page",
-    );
+    const folder = resolveMigrationsFolder(migrationsFolder);
+    // A page-era file a fork build opened has some of the fork's migrations (ADR 0011)
+    const migrations = readTaggedMigrations(folder);
+    if (needsLegacyForkRepair(rawDb, migrations))
+        repairLegacyForkFileInTransaction(rawDb, migrations);
+    const queries = pendingMigrationQueries(rawDb, folder, "page");
     dropAllTriggers(rawDb);
     for (const query of queries) runMigrationQuery(rawDb, query);
     createAllTriggers(rawDb);
     recreateChangeLogTriggers(rawDb);
-}
-
-/**
- * `created_at` of `0017_melted_sage`, the 3D View venue migration of the fork's `3d-async`
- * branch before it merged into the timeline line, where the same table is `0019_gray_brood`.
- * Drizzle only runs migrations dated after a file's newest recorded one, and this one is dated
- * after `0017_powerful_edwin_jarvis`, so a file opened by a `3d-async` build would skip the
- * timeline tables. Fork development files only; no released build ever wrote it.
- */
-export const FORK_3D_VENUE_MIGRATION_MS = 1791099628919;
-
-/**
- * Forgets the fork's old venue migration (see {@link FORK_3D_VENUE_MIGRATION_MS}), so every
- * later migration runs. Its table stays; `0019` creates it only if it is missing.
- */
-export function forgetFork3dVenueMigration(rawDb: DatabaseSync): void {
-    const hasMigrationsTable = rawDb
-        .prepare(
-            "SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = '__drizzle_migrations'",
-        )
-        .get();
-    if (!hasMigrationsTable) return;
-    rawDb
-        .prepare("DELETE FROM __drizzle_migrations WHERE created_at = ?")
-        .run(FORK_3D_VENUE_MIGRATION_MS);
 }
 
 /**
@@ -277,7 +257,13 @@ export class DrizzleMigrationService {
             // console.log("Dropping history triggers...");
             // await dropAllUndoTriggers(this.db);
 
-            forgetFork3dVenueMigration(this.rawDb);
+            // A file a fork build saved is brought to the collapsed migration first (ADR 0011),
+            // in a transaction of its own; the app backed it up (`hasPendingMigrations`).
+            const migrations = readTaggedMigrations(folder);
+            if (needsLegacyForkRepair(this.rawDb, migrations)) {
+                const report = repairLegacyForkFile(this.rawDb, migrations);
+                console.log("Repaired a file saved by a fork build:", report);
+            }
 
             console.log("Applying pending Drizzle migrations...");
 
@@ -357,7 +343,13 @@ export class DrizzleMigrationService {
             );
 
             // If there are more files than applied migrations, we have pending migrations
-            return fileCount > appliedCount;
+            if (fileCount > appliedCount) return true;
+            // A file a fork build saved records more than there are files, and is repaired: back
+            // it up first (ADR 0011)
+            return needsLegacyForkRepair(
+                this.rawDb,
+                readTaggedMigrations(folder),
+            );
         } catch (error) {
             console.error("Error checking for pending migrations:", error);
             // If we can't read the folder or there's an error, assume no pending migrations

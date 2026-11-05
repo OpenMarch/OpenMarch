@@ -169,7 +169,7 @@ export function countTimelineRows(db: DatabaseSync): number {
 
 /**
  * True when the file still has the page-era table the converter reads positions from
- * (`marcher_pages`). Every page-era file has it; the conversion's `0020_drop_page_era` drops it.
+ * (`marcher_pages`). Every page-era file has it; the conversion's `0018_drop_page_era` drops it.
  */
 export function hasPageEraTables(db: DatabaseSync): boolean {
     return tableExists(db, "marcher_pages");

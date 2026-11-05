@@ -76,7 +76,6 @@ import {
     writeRingMatrices,
 } from "./performerData";
 import type { MarcherSlotLook } from "./marchers/marcherBodies";
-import type { DotMode } from "@/view3d/core/marchers/planner";
 import {
     bandMovingCounts,
     compileWindowCues,
@@ -93,13 +92,14 @@ import {
 } from "./marchers/useMarcherBodies";
 import { clipsToLoad } from "./marchers/marcherBodies";
 import { hornRowsOf } from "./marchers/hornRows";
-import { useShowPerformerDefaults } from "./useShowPerformerDefaults";
 import { sectionCueCarry } from "@/view3d/core/marchers/hornChannel";
 import { DEFAULT_HOLD, windowHornEvents } from "./windowHorn";
 import { SilkMotion } from "./marchers/silkMotion";
 
 const CYLINDER_SEGMENTS = 20;
 const RING_SEGMENTS = 32;
+/** Every marcher steps off with the left foot, and the dot marks the foot on every count. */
+const STEP_OFF_FOOT = "left";
 
 interface PerformersProps {
     fieldProperties: FieldProperties;
@@ -110,8 +110,6 @@ interface PerformersProps {
 export default function Performers({ fieldProperties }: PerformersProps) {
     const queryClient = useQueryClient();
     const quality = useView3dSceneStore((s) => s.quality);
-    const showDefaults = useShowPerformerDefaults();
-    const stepOffFoot = showDefaults.stepOffFoot;
     const selectedPageId = useView3dSyncStore(
         (s) => s.selection.selectedPageId,
     );
@@ -241,7 +239,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     );
     // The show defaults compiled for every marcher (no cues are stored): mark
     // time while the band moves, else stand; face the front; horns up; the
-    // show's step-off foot. `carries` decides each marcher's Horn/Equipment
+    // left foot steps off. `carries` decides each marcher's Horn/Equipment
     // default.
     const cues = useMemo(() => {
         if (!marchers || !carriesKey || !cueSectionsKey) return null;
@@ -254,29 +252,14 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         return compileWindowCues(
             marchers,
             beats,
-            stepOffFoot,
+            STEP_OFF_FOOT,
             {
                 sections: JSON.parse(cueSectionsKey) as CueSection[],
                 bandMoving: Array.from(bandMovingKey, Number),
             },
             (id) => carries.get(id) ?? "none",
         );
-    }, [
-        marchers,
-        beats,
-        stepOffFoot,
-        carriesKey,
-        cueSectionsKey,
-        bandMovingKey,
-    ]);
-    // What each count's dot marks: the show's default
-    const dotModes = useMemo(
-        () =>
-            showDefaults.dotMode === "foot"
-                ? null
-                : new Array<DotMode>(clock.counts).fill(showDefaults.dotMode),
-        [showDefaults.dotMode, clock.counts],
-    );
+    }, [marchers, beats, carriesKey, cueSectionsKey, bandMovingKey]);
     const previousPlans = useRef<ShowPlans | null>(null);
     const showPlans = useMemo(() => {
         if (!marcherAssets || !marcherLooks || !cues) return null;
@@ -289,7 +272,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             marcherAssets.manifest,
             cues,
             previousPlans.current,
-            dotModes,
+            null,
         );
         previousPlans.current = planned;
         // eslint-disable-next-line no-console -- planning time is a cost to watch at 2,000 marchers
@@ -299,15 +282,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 `${clock.counts} counts in ${planned.planMs.toFixed(0)} ms`,
         );
         return planned;
-    }, [
-        marcherAssets,
-        marcherLooks,
-        slots,
-        clock,
-        fieldProperties,
-        cues,
-        dotModes,
-    ]);
+    }, [marcherAssets, marcherLooks, slots, clock, fieldProperties, cues]);
     const clipNames = useMemo(() => {
         const names = plannedClips(
             (showPlans?.plans ?? []).filter((p) => p !== null),
