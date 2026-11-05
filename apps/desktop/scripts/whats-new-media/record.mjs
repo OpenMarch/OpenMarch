@@ -26,7 +26,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CLIPS } from "./clips.mjs";
-import { makeDrillShow } from "./drillShow.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DESKTOP = path.resolve(HERE, "../..");
@@ -237,14 +236,14 @@ async function launch(source) {
     return { app, page, show };
 }
 
-/** The shows a clip can ask for (`clip.show`): the demo, or "drill", built by drillShow.mjs. */
-const shows = { demo: DEMO };
+/** The shows a clip can ask for (`clip.show`): the demo, or "line", the timeline clip's show. */
+const shows = {
+    demo: DEMO,
+    line: path.join(DESKTOP, "scripts/whats-new-media/line-test.dots"),
+};
 function showFor(name = "demo") {
     if (shows[name]) return shows[name];
-    if (name !== "drill") throw new Error(`no show "${name}"`);
-    shows.drill = path.join(WORK, "drill.dots");
-    makeDrillShow(shows.drill);
-    return shows.drill;
+    throw new Error(`no show "${name}"`);
 }
 
 /**

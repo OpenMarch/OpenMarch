@@ -27,14 +27,14 @@ Each run also gets a folder, `scripts/whats-new-media/runs/<time>/` (git-ignored
 
 The clips (`clips.mjs`):
 
-| Clip       | Show            | What it films                                                                                                                                                                                                                                        |
-| ---------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `timeline` | `drillShow.mjs` | The 20-marcher drill playing in Expert mode, field and timeline: one move for the line, a nested move for each end group, framed close enough to read the moves' names on the slide                                                                  |
-| `shapes`   | demo            | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                  |
-| `view3d`   | demo            | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                      |
-| `props`    | demo            | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color |
-| `tempo`    | demo            | Waits for #550 (see below)                                                                                                                                                                                                                           |
-| `pathways` | demo            | Waits for #674 (see below)                                                                                                                                                                                                                           |
+| Clip       | Show             | What it films                                                                                                                                                                                                                                        |
+| ---------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeline` | `line-test.dots` | The 20-marcher drill playing in Expert mode, field and timeline: Move 1 for the whole line with Moves 2–4 nested under it, framed close enough to read the moves' names on the slide                                                                 |
+| `shapes`   | demo             | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                  |
+| `view3d`   | demo             | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                      |
+| `props`    | demo             | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color |
+| `tempo`    | demo             | Waits for #550 (see below)                                                                                                                                                                                                                           |
+| `pathways` | demo             | Waits for #674 (see below)                                                                                                                                                                                                                           |
 
 The demo is `web/public/demos/part1-demo.dots`, converted to timelines when the app opens it.
 
@@ -138,6 +138,7 @@ To review the hidden slides before then, run or build the app with
 - `clips.mjs`: one entry per clip. `prepare` sets things up off camera and returns the region
   to film; `perform` films it with `film` (`freeze`, `skip`, `frame`, `hold`, `drag`). `show`
   picks the show, and `pending` marks a clip whose feature isn't on main yet.
-- `drillShow.mjs`: builds the timeline clip's show, as a user would in Expert mode (see the
-  comment at its top for the drill).
+- `line-test.dots`: the timeline clip's show, made in Expert mode: Move 1 (counts 9–24) for
+  the whole line, with Moves 2–4 nested under it. Its undo history and music are stripped to
+  keep it small.
 - `placeholder.mjs`: a plain poster for a slide whose feature isn't on main yet.

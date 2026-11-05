@@ -3148,7 +3148,7 @@
                     "title": "Tempo mode"
                 },
                 "timeline": {
-                    "media": "A line of 20 marchers moves forward 16 counts in one move. On count 8 the five on each end split off and swing back in their own moves, nested under the line's on the timeline, then rejoin one straight line by count 16.",
+                    "media": "A line of 20 marchers moves forward 16 counts in one move. Three shorter moves nested under it on the timeline swing the ends back, open up the line, then curve all 20 into an arc.",
                     "text": "Pages, moves and counts sit on one timeline under the field, and in Expert, moves can cross pages and overlap.",
                     "title": "The timeline"
                 },

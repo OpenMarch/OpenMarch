@@ -4,7 +4,7 @@
 // from record.mjs: `freeze`, `skip`, `frame`, `hold`, `drag`). Time only moves when `film`
 // moves it, so a clip may wait in real time (for the database, the audio to start) freely.
 // `show` picks the show: the demo (web/public/demos/part1-demo.dots, converted to timelines) or
-// "drill" (drillShow.mjs). The window is 1600 × 1000 unless --window says otherwise. `pending`
+// "line" (line-test.dots, the timeline clip's show). The window is 1600 × 1000 unless --window says otherwise. `pending`
 // names the PR a clip waits on:
 // it's recorded only when named.
 
@@ -442,17 +442,15 @@ async function checkRiserClear(page, id, ppm, frame, positions) {
 export const CLIPS = [
     {
         name: "timeline",
-        show: "drill",
+        show: "line",
         async prepare({ page }) {
             await tidy(page);
-            // The timeline opens fitted to the show (its "Fit the show" button would toggle
-            // that off)
-            // The three moves' rows, and the drill above them: a frame about as wide as the
-            // slide shows (46rem), so the clips' names stay readable. The show's last page is a
-            // long hold, so the fitted timeline holds the 16-count move in about half its width.
+            // The moves' rows and the drill above them, in a frame about as wide as the slide
+            // shows (46rem), so the moves' names stay readable: Move 1 and the three moves nested
+            // under it, and the marchers on the field above.
             const timeline = await box(page.getByTestId("timeline-pane"));
-            const lastRow = await box(page.getByText("Right gate").first());
-            const width = 900;
+            const lastRow = await box(page.getByText("Move 2").first());
+            const width = 1000;
             const height = width / 1.6;
             const bottom = Math.min(
                 lastRow.y + lastRow.height + 14,
@@ -460,7 +458,8 @@ export const CLIPS = [
             );
             return {
                 box: {
-                    x: even(timeline.x),
+                    // Past the tool rail, which centers the marchers over the moves
+                    x: even(timeline.x + 60),
                     y: even(bottom - height),
                     width,
                     height: even(height),
@@ -469,10 +468,10 @@ export const CLIPS = [
         },
         async perform({ page, film }) {
             await film.freeze();
-            // Counts 1–16 (8 s at 120 bpm), from the first page, with the playhead a few counts
-            // into the hold after: still playing at the end (a stopped show draws its marchers
+            // Move 1's 16 counts (8 s at 120 bpm), from the second page, playing a couple of
+            // counts past it: still playing at the end (a stopped show draws its marchers
             // differently)
-            await playFrom(page, 0, 4, 0.25);
+            await playFrom(page, 1, 3, 0.15);
             await film.hold(8 + 0.6);
         },
     },
