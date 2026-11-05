@@ -41,8 +41,8 @@ export const TEMPO_MODE_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
 
 export const isTempoModeOn = (): boolean => useTempoModeStore.getState().on;
 
-/** Keys tempo mode's own lanes use (tap tempo, mark, cancel, the toggle) */
-const TEMPO_KEYS = new Set(["T", "Shift+T", "M", "Escape", "Tab", "Shift+Tab"]);
+/** Keys tempo mode's own lanes use (tap tempo, cancel, the toggle) */
+const TEMPO_KEYS = new Set(["T", "Shift+T", "Escape", "Tab", "Shift+Tab"]);
 
 const allowedBindings = (isMac: boolean): Set<string> => {
     const overrides = useShortcutOverridesStore.getState().overrides;

@@ -132,13 +132,6 @@ export function TempoHelp() {
             ),
         ],
         [
-            "M",
-            tolgee.t(
-                "tempoMode.help.keys.mark",
-                "Drop a rehearsal mark while playing",
-            ),
-        ],
-        [
             "$mod+M",
             tolgee.t("tempoMode.help.keys.metronome", "Metronome on or off"),
         ],

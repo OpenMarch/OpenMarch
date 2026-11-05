@@ -49,7 +49,7 @@ Open a demo show (they have music), or add your own music there.
 - Right-click a measure to set its time signature (such as 7/8 counted
   2+2+3), renumber it, add a rehearsal mark, or add or remove a measure.
   Double-click a measure number to renumber it, or a mark to rename it, and
-  drag a mark to move it. Press M while playing to drop a mark.
+  drag a mark to move it.
 - Tempo editing works past your last page too, so you can set the tempo
   before writing any pages. A show with no measures shows 4/4 from count 1.
 - Choose **Import > MusicXML score…** to take the tempos, time signatures,

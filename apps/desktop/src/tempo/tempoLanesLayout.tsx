@@ -28,7 +28,7 @@ export const LANES = [
         get title() {
             return tolgee.t(
                 "tempoMode.lanes.marks.title",
-                "Rehearsal marks: double-click to name one, drag one to another measure, or press M while playing to drop the next",
+                "Rehearsal marks: double-click to name one, or drag one to another measure",
             );
         },
     },

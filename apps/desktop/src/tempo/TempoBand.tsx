@@ -57,13 +57,6 @@ import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
 import { useAudioEnvelopeStore } from "@/timeline/timelineWaveform";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
-import { useIsPlaying } from "@/context/IsPlayingContext";
-import {
-    audioContextRef,
-    getLivePlaybackPosition,
-    getLivePlaybackRate,
-    LIVE_LEAD,
-} from "@/components/timeline/audio/AudioPlayer";
 import type {
     TimelineBand,
     TimelineBandGeometry,
@@ -191,8 +184,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     }, [fetchTimingObjects]);
     const envelope = useAudioEnvelopeStore((s) => s.envelope);
     const ui = useTempoUi();
-    const playing = useIsPlaying();
-    const isPlaying = playing?.isPlaying ?? false;
     const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
     const [preview, setPreview] = useState<
         (TempoEditResult & { changes?: ReadonlySet<number> }) | null
@@ -990,11 +981,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         return b < data.durations.length ? qBpm(b, data.durations) : null;
     };
     const bpmText = (bpm: number) => `♩${Math.round(bpm * 10) / 10}`;
-    /** The music heard now */
-    const audible = () =>
-        getLivePlaybackPosition() -
-        (LIVE_LEAD + (audioContextRef?.outputLatency ?? 0)) *
-            getLivePlaybackRate();
 
     // ---- tempo edits ---------------------------------------------------------------------
     // Holds keep their length through every tempo edit
@@ -1859,45 +1845,14 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 e.stopPropagation();
                 return;
             }
-            // T and M are letters a dialog may want (or that would act behind it)
-            if ((key === "t" || key === "m") && dialogHasKeys(target)) return;
+            // T is a letter a dialog may want (or that would act behind it)
+            if (key === "t" && dialogHasKeys(target)) return;
             if (key === "t") {
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.repeat) return;
                 // when the key went down (same clock as performance.now), not when this runs
                 useTempoUi.getState().tap(e.timeStamp);
-            } else if (key === "m" && isPlaying) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (e.repeat) return;
-                const heard = audible();
-                let best: TempoMeasure | null = null;
-                for (const m of data.measures)
-                    if (
-                        !best ||
-                        Math.abs(starts[m.start]! - heard) <
-                            Math.abs(starts[best.start]! - heard)
-                    )
-                        best = m;
-                if (!best) return;
-                const name = nextMarkName();
-                // every letter A to Z is taken: no name to give it
-                if (!name) return;
-                const measure = best;
-                void run(t("tempoMode.band.action.rehearsalMark"), async () => {
-                    await setRehearsalMark({
-                        measure,
-                        mark: name,
-                    });
-                    await refetch();
-                    toast.success(
-                        t("tempoMode.band.toast.markDropped", {
-                            mark: name,
-                            measure: String(measure.number),
-                        }),
-                    );
-                });
             }
         };
         window.addEventListener("keydown", onKey, true);
