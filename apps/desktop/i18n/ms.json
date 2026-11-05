@@ -727,8 +727,7 @@
             "errorWithDetails": "Tidak dapat menyimpan salinan. Ralat {error}",
             "noFileOpen": "Tiada fail dibuka. Cipta atau buka persembahan dahulu.",
             "success": "Salinan disimpan"
-        },
-        "undo": "Buat asal"
+        }
     },
     "formButtons": {
         "discardChanges": "Buang perubahan",

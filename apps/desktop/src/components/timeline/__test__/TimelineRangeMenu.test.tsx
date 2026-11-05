@@ -8,7 +8,7 @@ import { setAsShownMenu } from "@/timeline/timelineSetAsShown";
 import { holdFromPreviousMenu } from "@/timeline/timelineHoldFromPrevious";
 import { Timeline, type TimelineInput } from "../Timeline";
 import type { TimelineSelection } from "../TimelineViewModel";
-import type { TimelineAddMarchersMenu } from "../TimelineRangeMenu";
+import type { TimelinePageMenu } from "../TimelineRangeMenu";
 
 /**
  * The timeline's right-click menu (P8.14, ui.md UI-9): page-box entries and holds. Opening it
@@ -74,7 +74,7 @@ const show = ({
     selection = null,
     onSelectionChange = vi.fn(),
 }: {
-    menu: TimelineAddMarchersMenu;
+    menu: TimelinePageMenu;
     selection?: TimelineSelection;
     onSelectionChange?: (selection: TimelineSelection) => void;
 }) =>

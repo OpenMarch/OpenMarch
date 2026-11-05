@@ -730,8 +730,7 @@
             "errorWithDetails": "No se pudo guardar la copia. Error: {error}",
             "noFileOpen": "No hay ningún archivo abierto. Crea o abre un show primero.",
             "success": "Copia guardada"
-        },
-        "undo": "Deshacer"
+        }
     },
     "formButtons": {
         "discardChanges": "Descartar cambios",

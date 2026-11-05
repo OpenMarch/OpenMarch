@@ -34,7 +34,7 @@ import type {
 } from "./TimelineKeyframes";
 import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
 import type {
-    TimelineAddMarchersMenu,
+    TimelinePageMenu,
     TimelineSetAsShownMenu,
     TimelinePageCommandMenu,
     TimelineClearPageMenu,
@@ -214,7 +214,7 @@ export interface TimelineProps {
      * The right-click menu's page-box entries (UI-9), passed through to the surface. Separate
      * props (`onDeletePageFlag`, `setAsShown`, …) also fill this menu.
      */
-    readonly addSelectedMarchers?: TimelineAddMarchersMenu;
+    readonly pageMenu?: TimelinePageMenu;
     /**
      * UI-9 **Create page at playhead** on the paused playhead's right-click menu (P8.13's `useAddPageFlag`); omit
      * it where no page can be added (on a flag, at home, past the beats).
@@ -445,7 +445,7 @@ const NO_TIMELINES: readonly TimelineInput[] = [];
 const READ_ONLY_EDITS = {
     readOnly: true,
     selection: undefined,
-    addSelectedMarchers: undefined,
+    pageMenu: undefined,
     moveCommands: undefined,
     onAddPageFlag: undefined,
     onAddSubsetPage: undefined,
@@ -642,7 +642,7 @@ export function Timeline(props: TimelineProps) {
         };
     }, [clipResize, axis, timelines]);
     const {
-        addSelectedMarchers,
+        pageMenu,
         onDeletePageFlag,
         onDeletePageWithMoves,
         onSetPageSubset,
@@ -727,9 +727,9 @@ export function Timeline(props: TimelineProps) {
             ? (pageId: string | number) => pageMenuExtra(Number(pageId))
             : undefined,
     );
-    const hasMarchersMenu = !!(
+    const hasPageMenu = !!(
         pageMenuExtra ||
-        addSelectedMarchers ||
+        pageMenu ||
         onDeletePageFlag ||
         onDeletePageWithMoves ||
         onSetPageSubset ||
@@ -737,9 +737,9 @@ export function Timeline(props: TimelineProps) {
         holdFromPrevious ||
         clearPage
     );
-    const addMarchersMenu = useMemo<TimelineAddMarchersMenu | undefined>(
+    const pageBoxMenu = useMemo<TimelinePageMenu | undefined>(
         () =>
-            hasMarchersMenu
+            hasPageMenu
                 ? {
                       ...(deleteFlag ? { onDeleteFlag: deleteFlag } : {}),
                       ...(deleteWithMoves
@@ -755,7 +755,7 @@ export function Timeline(props: TimelineProps) {
         [
             deleteFlag,
             deleteWithMoves,
-            hasMarchersMenu,
+            hasPageMenu,
             setAsShown,
             holdFromPrevious,
             clearPage,
@@ -1002,7 +1002,7 @@ export function Timeline(props: TimelineProps) {
         onZoomFittedChange: useLatestCallback(props.onZoomFittedChange),
         zoomButtons: props.zoomButtons,
         onSelectionChange: changeSelection,
-        addSelectedMarchers: addMarchersMenu,
+        pageMenu: pageBoxMenu,
         moveCommands: trackMoveCommands,
         clipPeel: trackPeel,
         onAddPageFlag: useLatestCallback(props.onAddPageFlag),

@@ -727,8 +727,7 @@
             "errorWithDetails": "Hindi ma-save ang kopya. Error {error}",
             "noFileOpen": "Walang nakabukas na file. Gumawa o magbukas muna ng palabas.",
             "success": "Na-save ang kopya"
-        },
-        "undo": "I-undo"
+        }
     },
     "formButtons": {
         "discardChanges": "Itapon ang mga pagbabago",

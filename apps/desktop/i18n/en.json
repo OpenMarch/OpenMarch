@@ -739,8 +739,7 @@
             "errorWithDetails": "Unable to save copy. Error {error}",
             "noFileOpen": "No file is open. Create or open a show first.",
             "success": "Copy saved"
-        },
-        "undo": "Undo"
+        }
     },
     "formButtons": {
         "discardChanges": "Discard Changes",

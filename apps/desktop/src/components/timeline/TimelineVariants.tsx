@@ -889,7 +889,7 @@ const TimelineSurface = memo(function TimelineSurface({
                 : {}),
         };
     const rangeMenu = useTimelineRangeMenu({
-        menu: props.addSelectedMarchers,
+        menu: props.pageMenu,
         movesFor: moveCommands
             ? (trackId) => {
                   const track = model.tracks.find(

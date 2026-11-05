@@ -730,8 +730,7 @@
             "errorWithDetails": "コピーを保存できませんでした。エラー：{error}",
             "noFileOpen": "ファイルが開かれていません。先にショーを作成するか開いてください。",
             "success": "コピーを保存しました。"
-        },
-        "undo": "元に戻す"
+        }
     },
     "formButtons": {
         "discardChanges": "変更を破棄",
