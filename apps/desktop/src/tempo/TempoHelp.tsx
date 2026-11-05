@@ -93,18 +93,7 @@ export function TempoHelp() {
             ),
             tolgee.t(
                 "tempoMode.help.musicFile.effect",
-                "switches to another audio file, sets the music offset, imports one or deletes it",
-            ),
-        ],
-        [
-            "rightClickMusic",
-            tolgee.t(
-                "tempoMode.help.rightClickMusic.gesture",
-                "Right-click the music",
-            ),
-            tolgee.t(
-                "tempoMode.help.rightClickMusic.effect",
-                "Start the music here: puts that spot on count 1",
+                "switches to another audio file, sets where count 1 is in the music, imports one or deletes it",
             ),
         ],
         [

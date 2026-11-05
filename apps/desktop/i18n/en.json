@@ -3331,7 +3331,6 @@
                 "jump": "Tempo jump",
                 "measureNumber": "Measure number",
                 "movedChange": "Moved the tempo change to {where}",
-                "musicStart": "Music start",
                 "rehearsalMark": "Rehearsal mark",
                 "removedChange": "Removed the tempo change at {where}",
                 "tempo": "Tempo",
@@ -3453,9 +3452,7 @@
                 "selectionCounts": "{count, plural, one {# count} other {# counts}}",
                 "setTempo": "Set tempo…",
                 "timeSignature": "Time signature…",
-                "toMeasure": "to m. {measure}",
-                "musicStart": "Start the music here",
-                "musicStartHint": "Moves the music so this spot is on count 1 (the lead-in). The counts stay as they are."
+                "toMeasure": "to m. {measure}"
             },
             "meterMenu": {
                 "counted": "{meter} counted {grouping}",
@@ -3492,7 +3489,6 @@
                 "movesCouldNotKeep": "{count, plural, one {# move couldn't keep its counts and changed length} other {# moves couldn't keep their counts and changed length}}",
                 "movesKept": "{count, plural, one {# move kept its counts} other {# moves kept their counts}}",
                 "movesKeptHold": "{kept, plural, one {The move over it kept its counts: its marchers hold} other {# moves kept their counts: their marchers hold}} {count, plural, one {# count} other {# counts}} at the end",
-                "musicMoved": "Moved the music {seconds} s {direction, select, earlier {earlier} other {later}}, so that spot is on count 1",
                 "notATimeSignature": "\"{text}\" isn't a time signature: try 7/8, or 7/8 2+2+3 (the grouping in eighths)",
                 "notMeasureNumber": "\"{value}\" isn't a measure number",
                 "tooFastOrSlow": "{action}: that would make a count too fast or too slow"
@@ -3557,13 +3553,9 @@
                 "gesture": "Right-click a measure"
             },
             "title": "Line the counts up with the music",
-            "rightClickMusic": {
-                "gesture": "Right-click the music",
-                "effect": "Start the music here: puts that spot on count 1"
-            },
             "musicFile": {
                 "gesture": "The file's name in the header",
-                "effect": "switches to another audio file, sets the music offset, imports one or deletes it"
+                "effect": "switches to another audio file, sets where count 1 is in the music, imports one or deletes it"
             }
         },
         "importScore": {
@@ -3646,12 +3638,16 @@
             "pick": "Pick music",
             "importAnother": "Import another audio file…",
             "delete": "Delete this audio file…",
-            "offset": "Music offset…",
+            "offset": "Count 1 in the music…",
             "offsetValue": "{seconds} s",
-            "offsetTitle": "Music offset",
-            "offsetHelp": "How many seconds after count 1 the music starts. Negative starts count 1 that far into the music. To set it by ear, right-click the music and choose Start the music here.",
-            "seconds": "seconds",
-            "offsetSet": "Set"
+            "offsetTitle": "Count 1 in the music",
+            "offsetHelp": "Where count 1 falls in the music file. While you edit music the clock shows the time in the music: put the playhead on the first hit and type the time it shows. A negative time leaves that much silence before the music starts.",
+            "offsetSet": "Set",
+            "countOneIsAt": "Count 1 is at",
+            "secondsInTheMusic": "seconds in the music"
+        },
+        "clock": {
+            "musicTime": "Time in the music"
         }
     },
     "workspace": {

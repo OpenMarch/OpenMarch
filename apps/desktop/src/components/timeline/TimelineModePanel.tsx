@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { TEMPO_BAND, useTempoModeStore } from "@/tempo/TempoBand";
+import { useAudioOffsetSeconds } from "@/tempo/audioOffset";
 import { TempoModeButton } from "@/tempo/TempoModeButton";
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -750,9 +751,18 @@ export function PlayingTimeline({
     // Past the stored counts too: they go on (endless counts)
     const pausedSeconds =
         beats.length > 0 ? countGrid.timeAtBeat(shownBeat) : undefined;
+    // Edit music: the clock reads the time in the music file
+    const audioOffset = useAudioOffsetSeconds();
+    const tempoMode = useTempoModeStore((s) => s.on);
+    const musicOffset = tempoMode ? audioOffset : undefined;
     const clock = useMemo(
-        () => <AudioClock pausedSeconds={pausedSeconds} />,
-        [pausedSeconds],
+        () => (
+            <AudioClock
+                pausedSeconds={pausedSeconds}
+                musicOffset={musicOffset}
+            />
+        ),
+        [pausedSeconds, musicOffset],
     );
     // UI-9 **Create page at playhead** on the free paused playhead's menu; the new page becomes the selection
     const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);

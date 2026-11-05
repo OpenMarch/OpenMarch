@@ -17,9 +17,9 @@
  *   right-click > Set tempo… types "120" or "120-90". Holds (fermatas) leave a gap marked 𝄐.
  *   Every tempo edit re-times the counts it changes, and the counts after move with them.
  * - **Music**: the waveform under the count lines. A drag along it selects counts, a click moves
- *   the playhead; right-click a spot > Start the music here moves the music so that spot is on
- *   count 1 (the lead-in). Nothing is detected in the music: lining up is by ear and eye, with
- *   tempo edits, tap tempo and the metronome.
+ *   the playhead; the clock shows the time in the music there, which "Count 1 in the music…"
+ *   (the music file's menu) takes. Nothing is detected in the music: lining up is by ear and
+ *   eye, with tempo edits, tap tempo and the metronome.
  * - **T** taps tempo: a panel shows how fast you tap, and Use puts that tempo on the selected
  *   counts or the tempo stretch under the playhead (TapTempo.tsx).
  */
@@ -42,7 +42,6 @@ import {
     TrendDownIcon,
     CheckIcon,
     TrendUpIcon,
-    MusicNotesIcon,
     XIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -103,7 +102,6 @@ import {
     setRehearsalMark,
     type CountEditResult,
 } from "./tempoWrites";
-import { tempoSettingsKey, writeAudioOffset } from "./audioOffset";
 import {
     METER_CHOICES,
     meterLabel,
@@ -913,11 +911,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         e.clientX - rootRef.current!.getBoundingClientRect().left;
     const localY = (e: { clientY: number }) =>
         e.clientY - rootRef.current!.getBoundingClientRect().top;
-    const secondsAtX = (x: number) => {
-        const beat = beatAtX(x, ppb);
-        const b = Math.max(1, Math.min(durations.length - 1, Math.floor(beat)));
-        return starts[b]! + (beat - b) * durations[b]!;
-    };
     const segmentAt = (beat: number) =>
         segments.find((s) => beat >= s.from && beat < s.to) ?? null;
     const measureAt = (beat: number) => {
@@ -1000,25 +993,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         getLivePlaybackPosition() -
         (LIVE_LEAD + (audioContextRef?.outputLatency ?? 0)) *
             getLivePlaybackRate();
-
-    /**
-     * Move the music so `seconds` of it is on count 1 (the lead-in): the counts stay, the music
-     * slides under them. In the show's history, so it undoes like any tempo edit.
-     */
-    const moveMusicToCountOne = (seconds: number) => {
-        const offset = data.audioOffset - seconds;
-        void run(t("tempoMode.band.action.musicStart"), async () => {
-            await writeAudioOffset(offset);
-            await queryClient.invalidateQueries({ queryKey: tempoSettingsKey });
-            await refetch();
-            toast.success(
-                t("tempoMode.band.toast.musicMoved", {
-                    seconds: Math.abs(seconds).toFixed(2),
-                    direction: seconds > 0 ? "earlier" : "later",
-                }),
-            );
-        });
-    };
 
     // ---- tempo edits ---------------------------------------------------------------------
     // Holds keep their length through every tempo edit
@@ -2661,16 +2635,6 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                   })
                 : bpmText(qBpm(beat, data.durations));
             const onTempo = y < MUSIC.top;
-            if (!onTempo) {
-                // The music: start it here, so this spot is on count 1 (the lead-in)
-                const seconds = secondsAtX(x);
-                items.push({
-                    label: t("tempoMode.band.menu.musicStart"),
-                    icon: <MusicNotesIcon size={I} aria-hidden />,
-                    hint: t("tempoMode.band.menu.musicStartHint"),
-                    onSelect: () => moveMusicToCountOne(seconds),
-                });
-            }
             if (hold)
                 items.push(
                     {

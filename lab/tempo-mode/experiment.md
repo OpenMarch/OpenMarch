@@ -6,7 +6,7 @@ title: "Edit your music: add it and line the counts up with it"
 summary: An Edit music button opens music lanes in the timeline. Add or switch the music file there, set the tempo by typing it or dragging the tempo line, add gradual changes and holds, set time signatures like 7/8, renumber measures and add rehearsal marks, before or after your pages.
 status: open
 questions:
-  - "Could you get the counts to sit on the music, with the metronome on? What did you use: typing a tempo, dragging the line, Tap tempo or Start the music here?"
+  - "Could you get the counts to sit on the music, with the metronome on? What did you use: typing a tempo, dragging the line, Tap tempo or Count 1 in the music?"
   - "Did Tap tempo give you the tempo you expected? Was Use where you looked for it?"
   - "Did you try a hold (fermata), a gradual change, a time signature or renumbering a measure? Which were easy to find, and which weren't?"
   - "Editing the tempo line: could you grab what you meant to? Did moving a tempo change and making a gradual change (straight or curved) work the way you expected?"
@@ -40,8 +40,9 @@ Open a demo show (they have music), or add your own music there.
 - Click **Tap tempo** (or press T) and tap along on each beat. Select some
   counts first (drag along the measures or the music), and **Use** puts that
   tempo on them.
-- Right-click a spot in the music and choose **Start the music here** to put
-  that spot on count 1.
+- While you edit music, the clock shows the time in the music. Put the
+  playhead on the first hit, then choose **Count 1 in the music…** from the
+  music file's menu and type that time: the counts start there.
 - Right-click a count for more: make it a hold (a fermata) and set its length,
   change tempo gradually, or add or remove counts.
 - Right-click a measure to set its time signature (such as 7/8 counted

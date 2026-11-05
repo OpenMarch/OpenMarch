@@ -30,13 +30,14 @@ import AudioFile from "@/global/classes/AudioFile";
 import tolgee from "@/global/singletons/Tolgee";
 import { runAction } from "@/shortcuts/registry";
 import { useAudioOffsetSeconds } from "./audioOffset";
+import { countOneAt } from "./musicTime";
 import { offsetText, TempoMusicOffset } from "./TempoMusicOffset";
 import { toolButton } from "./TempoToolbar";
 
 export const MENU_CLASS =
-    "border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text z-50 flex min-w-[13rem] max-w-[24rem] flex-col border p-4";
+    "border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text z-50 flex min-w-[16rem] max-w-[24rem] flex-col border p-4";
 export const MENU_ITEM_CLASS =
-    "rounded-4 text-body data-[highlighted]:bg-text/10 data-[disabled]:text-text/40 flex h-28 cursor-pointer items-center gap-8 px-8 outline-hidden select-none data-[disabled]:cursor-default";
+    "rounded-4 text-body data-[highlighted]:bg-text/10 data-[disabled]:text-text/40 flex h-28 cursor-pointer items-center gap-8 px-8 whitespace-nowrap outline-hidden select-none data-[disabled]:cursor-default";
 
 /** Opens the file picker for an audio file; the new file becomes the show's music */
 export const importAudioFile = () => runAction("launchInsertAudioFileDialogue");
@@ -157,14 +158,14 @@ export function TempoMusicFile() {
                                 data-testid="tempo-music-offset"
                             >
                                 <TimerIcon size={12} aria-hidden />
-                                <span className="flex-1">
+                                <span className="flex-1 whitespace-nowrap">
                                     {tolgee.t(
                                         "tempoMode.music.offset",
-                                        "Music offset…",
+                                        "Count 1 in the music…",
                                     )}
                                 </span>
                                 <span className="text-text/60 tabular-nums">
-                                    {offsetText(offset)}
+                                    {offsetText(countOneAt(offset))}
                                 </span>
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
@@ -200,7 +201,7 @@ export function TempoMusicFile() {
             <TempoMusicOffset
                 open={offsetOpen}
                 onOpenChange={setOffsetOpen}
-                seconds={offset}
+                offset={offset}
             />
             <AlertDialog
                 open={deleting !== null}
