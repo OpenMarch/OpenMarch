@@ -11,7 +11,6 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
-import { timelineErrorCode } from "@/timeline/timelineErrorMessages";
 import { performRedo, performUndo } from "../history";
 import { createLastPage, deletePages } from "../page";
 import {
@@ -369,17 +368,13 @@ describeDbTests("A move re-timed into a hold trims it", (it) => {
             await roundTrip(db, before, await snapshot(db));
         });
 
-    it("a move written over a hold is still refused (E-H1): only re-times trim", async ({
+    it("an Expert window written over a hold's start takes the hold away (#476, 01-edit-rules E2)", async ({
         db,
         marchersAndPages: _,
     }) => {
         const { a } = await heldShow(db);
-        const rows = await snapshot(db);
-        const error = await move(db, { start: 17, end: 33 }, [
-            { marcherId: a, xy: FAR },
-        ]).catch((e: unknown) => e);
-        expect(timelineErrorCode(error)).toBe("E-H1");
-        expect(await snapshot(db)).toEqual(rows);
+        await move(db, { start: 17, end: 33 }, [{ marcherId: a, xy: FAR }]);
+        expect(await marksOf(db, a)).toEqual([]);
     });
 });
 

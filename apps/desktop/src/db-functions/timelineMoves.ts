@@ -42,6 +42,7 @@ import {
     dropShapeHomeHoldsInTransaction,
     nameHeldConflict,
     splitHeldEditsInTransaction,
+    trimHeldMarksUnderRowsInTransaction,
     type HeldConflict,
     type HeldArrivalEdit,
     type HeldEditSkip,
@@ -1354,13 +1355,17 @@ export const moveMarchersInTarget = async ({
                         : null;
                 // A marcher Held at the edited count edits the move arriving at its hold
                 // instead, so the whole hold moves (holds decision 4); one whose arrival is a
-                // shape's or follow-the-leader move is skipped and named
+                // shape's or follow-the-leader move is skipped and named. An Expert window that
+                // starts inside the hold wins instead (R2, #476): the window becomes a move
                 const { held, homes, skipped, rest } = clearPage
                     ? { held: [], homes: [], skipped: [], rest: [...moves] }
                     : await splitHeldEditsInTransaction(
                           tx,
                           target.kind === "range" ? target.end : target.beat,
                           moves,
+                          target.kind === "range"
+                              ? { windowStart: target.start }
+                              : {},
                       );
                 const result =
                     rest.length === 0
@@ -1385,6 +1390,13 @@ export const moveMarchersInTarget = async ({
                                 clearPage,
                                 keepUnchanged,
                             });
+                // The window's move ends a hold it starts inside at the start flag, and takes
+                // away one whose start it covers (holds R2, 01-edit-rules E2; #476)
+                if (target.kind === "range" && !clearPage)
+                    await trimHeldMarksUnderRowsInTransaction(
+                        tx,
+                        rest.map((m) => m.marcherId),
+                    );
                 // The range writer names them with its own skips; otherwise they're named here
                 if (
                     skipped.length > 0 &&
