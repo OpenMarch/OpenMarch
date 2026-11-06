@@ -13,6 +13,7 @@ import type { Resolver, SpanInfo } from "@openmarch/core";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
+import { useHeldMarksStore } from "@/timeline/useHeldMarks";
 import { isTimelineOwnKey } from "@/components/timeline/timelineHotkeys";
 import TimelineHoldLine from "../TimelineHoldLine";
 
@@ -71,7 +72,8 @@ const span = (
 
 /**
  * Marcher 1 moves on page 2 and holds; marcher 2 also moves on page 3; marcher 3 never moves;
- * marcher 4 moves on page 2, then has a move that goes nowhere on page 3 (Set as shown there).
+ * marcher 4 moves on page 2, then has a move that goes nowhere on page 3 (Set as shown there);
+ * marcher 5 moves as marcher 1 does.
  */
 const SPANS: Record<number, SpanInfo[]> = {
     1: [
@@ -86,6 +88,11 @@ const SPANS: Record<number, SpanInfo[]> = {
         span(2, 17, Infinity, "hold"),
     ],
     3: [span(3, -Infinity, Infinity, "hold")],
+    5: [
+        span(5, -Infinity, 1, "hold"),
+        span(5, 1, 9, "founding"),
+        span(5, 9, Infinity, "hold"),
+    ],
     4: [
         span(4, -Infinity, 1, "hold"),
         span(4, 1, 9, "founding"),
@@ -95,7 +102,7 @@ const SPANS: Record<number, SpanInfo[]> = {
 };
 
 const resolver = {
-    marcherIds: () => [1, 2, 3, 4],
+    marcherIds: () => [1, 2, 3, 4, 5],
     spanInfos: (id: number) => SPANS[id] ?? [],
 } as unknown as Resolver;
 
@@ -108,6 +115,7 @@ beforeEach(() => {
     mocks.selectedPage = PAGES[2];
     useTimelineResolverStore.setState({ resolver, version: 1 });
     useTimelineSelectionStore.getState().reset();
+    useHeldMarksStore.setState({ marks: [] });
 });
 
 const show = (marcherIds: number[]) =>
@@ -120,10 +128,10 @@ const show = (marcherIds: number[]) =>
 const line = () => screen.queryByTestId("timeline-hold-line");
 
 describe("TimelineHoldLine", () => {
-    it("says a marcher holding on the page has held since its last move, and jumps there", async () => {
+    it("says a Not defined marcher shows its last move's page, and jumps there", async () => {
         mocks.selectedPage = PAGES[3];
         show([1]);
-        expect(line()?.textContent).toBe("Last moved on Page 2");
+        expect(line()?.textContent).toBe("Not defined · showing Page 2");
         // Its tooltip says where the link goes, and why
         fireEvent.focus(line()!);
         expect(
@@ -141,7 +149,7 @@ describe("TimelineHoldLine", () => {
         mocks.selectedPage = PAGES[3];
         useTimelineSelectionStore.getState().seek(17);
         show([3]);
-        expect(line()?.textContent).toBe("No moves since the start");
+        expect(line()?.textContent).toBe("Not defined · showing the start");
         fireEvent.focus(line()!);
         expect(
             (await screen.findAllByText("Go to the start")).length,
@@ -187,8 +195,36 @@ describe("TimelineHoldLine", () => {
         expect(line()).toBeNull();
         cleanup();
         show([1]);
-        expect(line()?.textContent).toBe("Last moved on Page 2");
+        expect(line()?.textContent).toBe("Not defined · showing Page 2");
         expect(screen.queryByTestId("timeline-set-as-shown")).toBeNull();
+    });
+
+    it("says a Held marcher is Held since its arrival's page (#478)", () => {
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
+        });
+        show([1]);
+        expect(line()?.textContent).toBe("Held · since Page 2");
+    });
+
+    it("names neither state when Held and Not defined marchers share the page", () => {
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
+        });
+        // Both hold since page 2: marcher 1 Held, marcher 5 Not defined
+        show([1, 5]);
+        expect(line()?.textContent).toBe("Last moved on Page 2");
+    });
+
+    it("is Not defined after a Held hold ends", () => {
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 17 }],
+        });
+        show([1]);
+        expect(line()?.textContent).toBe("Not defined · showing Page 2");
     });
 
     it("Enter and Space press the hold link, not the app's shortcuts (pre-merge review U3)", () => {

@@ -24,7 +24,33 @@ export type HoldState =
           readonly kind: "holding";
           readonly page: NamedFlag;
           readonly fromStart: boolean;
+          /** What decides the hold, where it's known (`withHoldKind`); the line names it */
+          readonly how?: HoldKind;
       };
+
+/**
+ * What a hold at the current flag is (holds decisions 2 and 8, fork #478): **Held** on purpose (a
+ * Held mark over the flag), a shape **carried** there (the shape's hold, owner 2026-11-01 on #477),
+ * or **Not defined** (nothing decided yet; it shows the last position for now).
+ */
+export type HoldKind = "held" | "carried" | "notDefined";
+
+/**
+ * `state` with what decides its hold (`HoldKind`), for a marcher holding at the flag `current`.
+ *
+ * @param held whether a Held mark of the marcher covers `current` (`start < current <= end`)
+ * @param carried whether a shape the marcher is in is carried onto `current`
+ */
+export function withHoldKind(
+    state: HoldState | null,
+    { held, carried }: { held: boolean; carried: boolean },
+): HoldState | null {
+    if (state?.kind !== "holding") return state;
+    return {
+        ...state,
+        how: held ? "held" : carried ? "carried" : "notDefined",
+    };
+}
 
 /**
  * One marcher's state at the flag `current`. `null` on the first page (its home is its own), when
@@ -68,5 +94,16 @@ export function sharedHoldState(
         s.kind === first.kind &&
         (s.kind === "movesHere" ||
             (first.kind === "holding" && s.page.beat === first.page.beat));
-    return states.every(same) ? first : null;
+    if (!states.every(same)) return null;
+    // Held and Not defined marchers on the same page share the line, without naming either
+    if (
+        first.kind === "holding" &&
+        states.some((s) => s?.kind === "holding" && s.how !== first.how)
+    )
+        return {
+            kind: "holding",
+            page: first.page,
+            fromStart: first.fromStart,
+        };
+    return first;
 }

@@ -766,9 +766,13 @@
             "timeline": {
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
+                "heldFromStart": "{held} · since the start",
+                "heldSince": "{held} · since Page {page}",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
-                "movesOnThisPage": "Moves on this page"
+                "movesOnThisPage": "Moves on this page",
+                "notDefinedFromStart": "{notDefined} · showing the start",
+                "notDefinedShowing": "{notDefined} · showing Page {page}"
             },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}",

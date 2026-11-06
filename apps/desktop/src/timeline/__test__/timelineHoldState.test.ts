@@ -4,6 +4,7 @@ import type { CarrySpan } from "../timelineCarryForward";
 import {
     marcherHoldState,
     sharedHoldState,
+    withHoldKind,
     type NamedFlag,
 } from "../timelineHoldState";
 
@@ -110,5 +111,41 @@ describe("a selection's state", () => {
         expect(sharedHoldState([holding2, holding3])).toBeNull();
         expect(sharedHoldState([holding2, null])).toBeNull();
         expect(sharedHoldState([])).toBeNull();
+    });
+});
+
+describe("withHoldKind (#478)", () => {
+    const holding = {
+        kind: "holding",
+        page: { beat: 9, name: "2" },
+        fromStart: false,
+    } as const;
+
+    it("names a hold Held over a carried shape, and Not defined otherwise", () => {
+        expect(
+            withHoldKind(holding, { held: true, carried: true }),
+        ).toMatchObject({ how: "held" });
+        expect(
+            withHoldKind(holding, { held: false, carried: true }),
+        ).toMatchObject({ how: "carried" });
+        expect(
+            withHoldKind(holding, { held: false, carried: false }),
+        ).toMatchObject({ how: "notDefined" });
+    });
+
+    it("leaves a move on the page, or no state, as it is", () => {
+        const moves = { kind: "movesHere" } as const;
+        expect(withHoldKind(moves, { held: true, carried: false })).toBe(moves);
+        expect(withHoldKind(null, { held: true, carried: false })).toBeNull();
+    });
+
+    it("shares the page but not the state when the selection's kinds differ", () => {
+        const held = withHoldKind(holding, { held: true, carried: false });
+        const notDefined = withHoldKind(holding, {
+            held: false,
+            carried: false,
+        });
+        expect(sharedHoldState([held, notDefined])).toEqual(holding);
+        expect(sharedHoldState([held, held])).toEqual(held);
     });
 });

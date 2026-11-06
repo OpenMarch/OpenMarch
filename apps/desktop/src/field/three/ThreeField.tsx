@@ -117,7 +117,7 @@ import {
     useShapeMarchersHidden,
 } from "@/shapes/field/marchersHidden";
 import { useTimelineVisuals } from "./useTimelineVisuals";
-import { drawnFollowing } from "./fieldFollowing";
+import { drawnLabelBold, drawnNotDefined } from "./fieldNotDefined";
 import {
     currentFieldQuality,
     useFieldQuality,
@@ -323,7 +323,7 @@ function ThreeFieldView() {
         fieldProperties,
         hiddenIds,
     });
-    const { dimming, following } = timeline;
+    const { dimming, look } = timeline;
     useShapeFocus(dimming);
     const root = useRef<HTMLDivElement>(null);
 
@@ -518,11 +518,12 @@ function ThreeFieldView() {
                 dimmed: (id) => dimming.isDimmed(id),
                 opacity: (id) => dimming.opacityOf(id),
                 labelShown: (id) => dimming.labelShown(id),
-                following: (id) => drawnFollowing(dimming, following, id),
+                notDefined: (id) => drawnNotDefined(dimming, look, id),
+                labelBold: (id) => drawnLabelBold(dimming, look, id),
             }),
         );
         return () => installFieldTestApi(undefined);
-    }, [marchers, items, editor, dimming, following]);
+    }, [marchers, items, editor, dimming, look]);
 
     // Navigation (#194): wheel, pan drags and touch anywhere on the field
     useEffect(() => {
@@ -661,13 +662,13 @@ function ThreeFieldView() {
                         <MarchersLayer
                             marchers={marchers}
                             dimming={dimming}
-                            following={following}
+                            look={look}
                             theme={fieldProperties.theme}
                         />
                         <LabelsLayer
                             marchers={marchers}
                             dimming={dimming}
-                            following={following}
+                            look={look}
                             labels={labels}
                             theme={fieldProperties.theme}
                             atlas={atlases.label}

@@ -7,9 +7,16 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     marcherHoldState,
     sharedHoldState,
+    withHoldKind,
     type HoldState,
     type NamedFlag,
 } from "@/timeline/timelineHoldState";
+import { holdTerms } from "@/timeline/holdTerms";
+import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import {
+    placedBoxesAt,
+    usePlacedBoxStore,
+} from "@/shapes/placed/placedBoxStore";
 import { pageFlags } from "@/timeline/timelinePlayhead";
 import {
     resolverSpans,
@@ -23,9 +30,9 @@ import {
 
 /**
  * The selection's state on the current page, in timeline mode (docs/timeline/ui.md UI-18):
- * "Moves on this page" or "Last moved on Page X" ("No moves since the start" when they haven't moved since
- * their starting set), where the selected marchers agree; nothing when they
- * don't. The current page is the selected page, which follows the paused playhead
+ * moving on this page, or holding since Page X, where the selected marchers agree; nothing when
+ * they don't. A hold says what decides it (`HoldKind`, fork #478) where every marcher agrees on
+ * that too. The current page is the selected page, which follows the paused playhead
  * (`useTimelinePageBridge`).
  */
 export function useSelectionHoldState(
@@ -35,6 +42,10 @@ export function useSelectionHoldState(
     const version = useTimelineResolverStore((s) => s.version);
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
+    const marks = useHeldMarksStore((s) => s.marks);
+    // Placed shapes are read from these, so a change to them is a new carried set
+    const recipes = usePlacedBoxStore((s) => s.recipes);
+    const ends = usePlacedBoxStore((s) => s.ends);
     return useMemo(() => {
         void version; // a new version means new spans
         if (!resolver || !selectedPage || marcherIds.length === 0) return null;
@@ -45,16 +56,46 @@ export function useSelectionHoldState(
             beat: f.flag,
             name: f.page.name,
         }));
+        void ends; // placedBoxesAt reads the end beats from the store
+        let carried: Set<number> | null = null;
+        const carriedOnFlag = (id: number) => {
+            carried ??= new Set(
+                placedBoxesAt(current.flag, recipes).flatMap((box) =>
+                    box.recipe.members.map((m) => m.marcherId),
+                ),
+            );
+            return carried.has(id);
+        };
         return sharedHoldState(
             marcherIds.map((id) =>
-                marcherHoldState(
-                    resolverSpans(resolver, id),
-                    current.flag,
-                    flags,
+                withHoldKind(
+                    marcherHoldState(
+                        resolverSpans(resolver, id),
+                        current.flag,
+                        flags,
+                    ),
+                    {
+                        held: marks.some(
+                            (m) =>
+                                m.marcherId === id &&
+                                m.start < current.flag &&
+                                current.flag <= m.end,
+                        ),
+                        carried: carriedOnFlag(id),
+                    },
                 ),
             ),
         );
-    }, [resolver, version, pages, selectedPage, marcherIds]);
+    }, [
+        resolver,
+        version,
+        pages,
+        selectedPage,
+        marcherIds,
+        marks,
+        recipes,
+        ends,
+    ]);
 }
 
 const LINK_CLASS =
@@ -63,7 +104,9 @@ const LINK_CLASS =
 /**
  * The marcher inspector's line for the selected marchers (UI-18), under Step Size: whether they
  * move on the current page or hold there, with a link to the page they last moved on
- * (defined-coordinates 08: readable, and visibly a link). Nothing where they don't agree.
+ * (defined-coordinates 08: readable, and visibly a link). A hold names its state in the working
+ * words (`holdTerms`, fork #478): "Not defined · showing Page 2", "Held · since Page 2"; a carried
+ * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -115,14 +158,7 @@ export default function TimelineHoldLine({
                                 .seek(holdPage.beat)
                         }
                     >
-                        {fromStart
-                            ? t("inspector.marcher.timeline.holdFromStart", {
-                                  defaultValue: "No moves since the start",
-                              })
-                            : t("inspector.marcher.timeline.holdFrom", {
-                                  defaultValue: "Last moved on Page {page}",
-                                  page: holdPage.name,
-                              })}
+                        {holdText(t, state)}
                         <ArrowRightIcon size={14} aria-hidden />
                     </button>
                 </ShortcutTooltip>
@@ -135,4 +171,44 @@ export default function TimelineHoldLine({
             {line}
         </TransportTooltipProvider>
     );
+}
+
+type Translate = ReturnType<typeof useTranslate>["t"];
+
+/** The hold link's words: the state that decides the hold, where known, and the page it shows. */
+function holdText(
+    t: Translate,
+    state: Extract<HoldState, { kind: "holding" }>,
+): string {
+    const { page, fromStart, how } = state;
+    if (how === "notDefined")
+        return fromStart
+            ? t("inspector.marcher.timeline.notDefinedFromStart", {
+                  defaultValue: "{notDefined} · showing the start",
+                  ...holdTerms(),
+              })
+            : t("inspector.marcher.timeline.notDefinedShowing", {
+                  defaultValue: "{notDefined} · showing Page {page}",
+                  ...holdTerms(),
+                  page: page.name,
+              });
+    if (how === "held")
+        return fromStart
+            ? t("inspector.marcher.timeline.heldFromStart", {
+                  defaultValue: "{held} · since the start",
+                  ...holdTerms(),
+              })
+            : t("inspector.marcher.timeline.heldSince", {
+                  defaultValue: "{held} · since Page {page}",
+                  ...holdTerms(),
+                  page: page.name,
+              });
+    return fromStart
+        ? t("inspector.marcher.timeline.holdFromStart", {
+              defaultValue: "No moves since the start",
+          })
+        : t("inspector.marcher.timeline.holdFrom", {
+              defaultValue: "Last moved on Page {page}",
+              page: page.name,
+          });
 }

@@ -129,13 +129,14 @@ test("saves a video of the show with the marchers where the show puts them", asy
 }) => {
     const { page } = show;
     // Paused at 2 s (measure 2) in the editor, T1 is partway through its move
-    // and T2 is on a stay move: both are Following there, drawn dashed (#300)
+    // and T2 is on a stay move: both are decided there, drawn solid, with their
+    // labels off a keyframe (#478)
     await waitForField(page);
     await goTo(page, "m2");
     await expect
         .poll(async () =>
             (await drawnMarchers(page))
-                .filter((m) => m.following)
+                .filter((m) => !m.notDefined && !m.labelBold)
                 .map((m) => m.drillNumber)
                 .sort(),
         )
@@ -165,9 +166,9 @@ test("saves a video of the show with the marchers where the show puts them", asy
     const middle = frameAt(file, 2);
     const last = frameAt(file, 3.9);
     // T2 never moves: its dot's color, in every frame. On the first frame
-    // everyone is Set; later frames draw T2 and T1 just as solid, though the
-    // editor draws them dashed there (#302): a dashed dot's middle is at most a
-    // 60% fill, far outside `close`
+    // everyone is on a keyframe; later frames draw T2 and T1 just as solid
+    // (exports draw nobody dashed, #302, #478): a dashed dot's middle is at
+    // most a 60% fill, far outside `close`
     const marcher = first(pixel(400, 500));
     expect(close(middle(pixel(400, 500)), marcher)).toBe(true);
     expect(close(last(pixel(400, 500)), marcher)).toBe(true);

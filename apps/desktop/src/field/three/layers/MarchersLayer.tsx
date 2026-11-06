@@ -12,10 +12,10 @@ import {
 import type { FieldTheme } from "@openmarch/core";
 import type { FieldMarchers } from "../fieldMarchers";
 import {
-    FOLLOWING_LOOK,
-    followingAmount,
-    type FieldFollowing,
-} from "../fieldFollowing";
+    NOT_DEFINED_LOOK,
+    notDefinedAmount,
+    type FieldNotDefined,
+} from "../fieldNotDefined";
 import type { FieldDimming } from "../fieldDimming";
 import { useFieldDraw } from "../fieldDrawContext";
 import { MARCHER_SHAPE, writeMarcherLooks } from "../marcherLooks";
@@ -42,7 +42,7 @@ attribute vec4 aFill;
 attribute vec4 aOutline;
 attribute float aShape;
 attribute float aOpacity;
-attribute float aFollowing;
+attribute float aNotDefined;
 attribute float aSelected;
 uniform float uScale;
 uniform float uMargin;
@@ -52,11 +52,11 @@ varying vec4 vFill;
 varying vec4 vOutline;
 varying float vShape;
 varying float vOpacity;
-varying float vFollowing;
+varying float vNotDefined;
 varying float vSelected;
 void main() {
     vSelected = aSelected;
-    vFollowing = aFollowing;
+    vNotDefined = aNotDefined;
     vFill = aFill;
     vOutline = aOutline;
     vOpacity = aOpacity;
@@ -71,11 +71,11 @@ void main() {
     gl_Position = projectionMatrix * viewMatrix * vec4(aPos + vLocal * uScale, 0.0, 1.0);
 }`;
 
-const L = FOLLOWING_LOOK;
+const L = NOT_DEFINED_LOOK;
 const FRAGMENT = /* glsl */ `
 #define DOT_R 5.0
 #define PI 3.14159265
-#define FOLLOWING_FILL ${L.fillOpacity.toFixed(3)}
+#define NOT_DEFINED_FILL ${L.fillOpacity.toFixed(3)}
 #define EDGE_WIDTH ${L.edgeWidth.toFixed(3)}
 #define MIN_EDGE_PX ${L.minEdgePx.toFixed(3)}
 #define CIRCLE_DASHES ${L.circleDashes.toFixed(1)}
@@ -90,7 +90,7 @@ varying vec4 vFill;
 varying vec4 vOutline;
 varying float vShape;
 varying float vOpacity;
-varying float vFollowing;
+varying float vNotDefined;
 varying float vSelected;
 uniform vec4 uRing;
 uniform float uRingInner;
@@ -145,7 +145,7 @@ float dashPosition(vec2 p, float shape, float circle, float side) {
 }
 
 /**
- * 1 on a dash, 0 in a gap, for a look 'amount' of the way to Following (0 is
+ * 1 on a dash, 0 in a gap, for a look 'amount' of the way to Not defined (0 is
  * solid). A shape too small on screen for its usual dashes gets fewer, longer
  * ones, and a gap is never under MIN_GAP_PX, so the gaps always show.
  */
@@ -176,9 +176,9 @@ void main() {
     float strokeA = vOutline.a * stroke;
     vec3 strokeRgb = vOutline.rgb;
 
-    // Following (#300): the edge dashed at full strength, at any size. The
+    // Not defined (#300, #478): the edge dashed at full strength, at any size. The
     // amount eases 0 to 1 on Stop (#302): the gaps open from a solid edge
-    float amount = vFollowing;
+    float amount = vNotDefined;
     if (amount > 0.0) {
         float on = dashed(vLocal, vShape, amount);
         float width = mix(1.0, max(EDGE_WIDTH, MIN_EDGE_PX * uMargin), amount);
@@ -187,7 +187,7 @@ void main() {
             fillA *= on;
         } else if (vOutline.a >= 0.1) {
             // The outline, widened inward and dashed, round the fill at 60%
-            fillA *= mix(1.0, FOLLOWING_FILL, amount);
+            fillA *= mix(1.0, NOT_DEFINED_FILL, amount);
             float band = 1.0 - smoothstep(0.5 * width - aa, 0.5 * width + aa, abs(d - 0.5 + 0.5 * width));
             strokeA = vOutline.a * band * on;
         } else {
@@ -218,7 +218,7 @@ type Drawn = {
     idsVersion: number;
     appearanceVersion: number;
     dimVersion: number;
-    followingVersion: number;
+    lookVersion: number;
     selectionVersion: number;
     theme: FieldTheme | null;
 };
@@ -227,14 +227,14 @@ type Drawn = {
 export default function MarchersLayer({
     marchers,
     dimming,
-    following,
+    look,
     theme,
 }: {
     marchers: FieldMarchers;
     /** Marchers drawn dimmed (#201). */
     dimming: FieldDimming;
-    /** Marchers drawn as Following (#300, `FOLLOWING_LOOK`); dimming wins. */
-    following: FieldFollowing;
+    /** Marchers drawn Not defined (#478, `NOT_DEFINED_LOOK`); dimming wins. */
+    look: FieldNotDefined;
     theme: FieldTheme;
 }) {
     const invalidate = useThree((s) => s.invalidate);
@@ -244,7 +244,7 @@ export default function MarchersLayer({
         idsVersion: -1,
         appearanceVersion: -1,
         dimVersion: -1,
-        followingVersion: -1,
+        lookVersion: -1,
         selectionVersion: -1,
         theme: null,
     });
@@ -287,7 +287,7 @@ export default function MarchersLayer({
     useEffect(() => invalidate(), [theme, invalidate]);
     // New dimming redraws them on the next frame
     useEffect(() => dimming.subscribe(invalidate), [dimming, invalidate]);
-    useEffect(() => following.subscribe(invalidate), [following, invalidate]);
+    useEffect(() => look.subscribe(invalidate), [look, invalidate]);
 
     useEffect(
         () => () => {
@@ -317,7 +317,7 @@ export default function MarchersLayer({
         const dimChanged =
             resized ||
             dimming.version !== last.dimVersion ||
-            following.version !== last.followingVersion;
+            look.version !== last.lookVersion;
         const reselected =
             resized || marchers.selectionVersion !== last.selectionVersion;
         if (
@@ -347,7 +347,7 @@ export default function MarchersLayer({
             geometry.setAttribute("aShape", dynamic(new Float32Array(n), 1));
             geometry.setAttribute("aOpacity", dynamic(new Float32Array(n), 1));
             geometry.setAttribute(
-                "aFollowing",
+                "aNotDefined",
                 dynamic(new Float32Array(n), 1),
             );
             geometry.setAttribute("aSelected", dynamic(new Float32Array(n), 1));
@@ -375,15 +375,15 @@ export default function MarchersLayer({
         }
         if (dimChanged) {
             const opacity = instanced("aOpacity");
-            const followingLook = instanced("aFollowing");
+            const notDefinedLook = instanced("aNotDefined");
             const opacities = opacity.array as Float32Array;
-            const amounts = followingLook.array as Float32Array;
+            const amounts = notDefinedLook.array as Float32Array;
             marchers.ids.forEach((id, i) => {
                 opacities[i] = dimming.opacityOf(id);
-                amounts[i] = followingAmount(dimming, following, id);
+                amounts[i] = notDefinedAmount(dimming, look, id);
             });
             opacity.needsUpdate = true;
-            followingLook.needsUpdate = true;
+            notDefinedLook.needsUpdate = true;
         }
         if (reselected) {
             const selected = instanced("aSelected");
@@ -398,7 +398,7 @@ export default function MarchersLayer({
             idsVersion: marchers.idsVersion,
             appearanceVersion: marchers.appearanceVersion,
             dimVersion: dimming.version,
-            followingVersion: following.version,
+            lookVersion: look.version,
             selectionVersion: marchers.selectionVersion,
             theme,
         };

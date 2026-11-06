@@ -10,7 +10,7 @@ import { isolate } from "../timeline.mjs";
  * Set vs Following's look on the field (#300, #301): a Following marcher's
  * edge is dashed at full strength: an outline round its fill at 60%, a shape
  * without one with nothing inside. An X dashes its
- * own lines. The field test API's `following` says what the field means to
+ * own lines. The field test API's `notDefined` says what the field means to
  * draw; this checks the pixels.
  *
  * - The tests on white assert the dashes (at the opening zoom and 3×) and
@@ -110,7 +110,7 @@ async function onPage1(page: Page) {
                 () =>
                     window
                         .fieldTest!.marchers()
-                        .filter((m) => m.following)
+                        .filter((m) => m.notDefined)
                         .map((m) => m.id).length,
             ),
         )
@@ -248,7 +248,7 @@ test.describe("following look, measured", () => {
         const following = () =>
             page.evaluate(
                 () =>
-                    window.fieldTest!.marchers().filter((m) => m.following)
+                    window.fieldTest!.marchers().filter((m) => m.notDefined)
                         .length,
             );
         await page.keyboard.press("Space");
@@ -357,7 +357,7 @@ test.describe("following look, isolated", () => {
                         .map((m) =>
                             m.dimmed
                                 ? "dimmed"
-                                : m.following
+                                : m.notDefined
                                   ? "following"
                                   : "set",
                         ),
@@ -417,7 +417,7 @@ test.describe("following label weight", () => {
         await expect
             .poll(() =>
                 page.evaluate(() =>
-                    window.fieldTest!.marchers().map((m) => m.following),
+                    window.fieldTest!.marchers().map((m) => m.notDefined),
                 ),
             )
             .toEqual([false, true]);
