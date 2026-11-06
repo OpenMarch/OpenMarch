@@ -65,20 +65,23 @@ const PAGES = [
     page(3, "2", BEATS.slice(9, 17)),
 ];
 
-const END: HoldEdgeHandle = {
+/** Marcher 7's hold's end at spec `end` */
+const endAt = (end: number): HoldEdgeHandle => ({
     edge: "end",
-    beat: 13,
+    beat: end,
     marcherIds: [7],
     limits: holdEdgeLimits({
         edge: "end",
-        mark: { start: 9, end: 13 },
+        mark: { start: 9, end },
         moves: [
             { start: 1, end: 9 },
             { start: 17, end: 20 },
         ],
         showEnd: 17,
     })!,
-};
+});
+
+const END = endAt(13);
 
 const HOLDS: SelectionHolds = {
     bars: [
@@ -230,6 +233,58 @@ describe("Held bar edges", () => {
         expect(commit).toHaveBeenCalledWith(
             expect.objectContaining({ from: 13, to: 12 }),
         );
+    });
+
+    it("keeps the focus on a stepped handle when the marks reload, and the next press steps on from there", async () => {
+        const commit = vi.fn(async () => {});
+        const timeline = (end: number) => (
+            <Timeline
+                mode="expanded"
+                beats={BEATS}
+                pages={PAGES}
+                measures={[]}
+                timelines={[]}
+                showTransport={false}
+                pixelsPerBeat={10}
+                playback={{ positionBeat: 3, isPlaying: false }}
+                selection={null}
+                onSelectionChange={vi.fn()}
+                holds={HOLDS}
+                holdEdges={{
+                    handles: [endAt(end)],
+                    preview: vi.fn(),
+                    commit,
+                }}
+            />
+        );
+        const { rerender } = render(timeline(13));
+        handle()!.focus();
+        await act(async () => {
+            fireEvent.keyDown(handle()!, { key: "ArrowLeft" });
+        });
+        // The write landed and the marks reloaded: the edge is now at spec 12 (view 11)
+        rerender(timeline(12));
+        const moved = screen.getByTestId("timeline-hold-end-11");
+        expect(document.activeElement).toBe(moved);
+        await act(async () => {
+            fireEvent.keyDown(document.activeElement!, { key: "ArrowLeft" });
+        });
+        expect(commit.mock.calls).toEqual([
+            [expect.objectContaining({ from: 13, to: 12 })],
+            [expect.objectContaining({ from: 12, to: 11 })],
+        ]);
+    });
+
+    it("adds up quick presses that come before the marks reload", async () => {
+        const { commit } = show();
+        await act(async () => {
+            fireEvent.keyDown(handle()!, { key: "ArrowLeft" });
+            fireEvent.keyDown(handle()!, { key: "ArrowLeft" });
+        });
+        expect(commit.mock.calls).toEqual([
+            [expect.objectContaining({ from: 13, to: 12 })],
+            [expect.objectContaining({ from: 12, to: 11 })],
+        ]);
     });
 });
 

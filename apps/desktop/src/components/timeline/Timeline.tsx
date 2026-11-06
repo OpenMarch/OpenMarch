@@ -1007,11 +1007,11 @@ export function Timeline(props: TimelineProps) {
     const viewHoldEdges = useMemo<TimelineHoldEdges | undefined>(() => {
         if (!holdEdges) return undefined;
         const toView = (beat: number) => axis.toView(beat);
-        const dragOf = (index: number, beat: number) => {
+        const dragOf = (index: number, beat: number, from?: number) => {
             const handle = holdEdges.handles[index]!;
             return {
                 edge: handle.edge,
-                from: handle.beat,
+                from: from === undefined ? handle.beat : axis.toSpec(from),
                 to: axis.toSpec(beat),
                 marcherIds: handle.marcherIds,
             };
@@ -1032,7 +1032,8 @@ export function Timeline(props: TimelineProps) {
             })),
             onPreview: (index, beat) =>
                 holdEdges.preview(beat === null ? null : dragOf(index, beat)),
-            onCommit: (index, beat) => holdEdges.commit(dragOf(index, beat)),
+            onCommit: (index, beat, from) =>
+                holdEdges.commit(dragOf(index, beat, from)),
         };
     }, [axis, holdEdges]);
     // #306: their menu acts on spec beats

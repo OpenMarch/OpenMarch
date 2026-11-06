@@ -2197,7 +2197,9 @@
                 "showEnd": "Stops at the end of the show",
                 "arrival": "Stops where the move before it ends",
                 "showStart": "Stops at the start of the show"
-            }
+            },
+            "changeError": "Error changing the hold",
+            "splitError": "Error splitting the hold"
         },
         "heldBar": {
             "detail": "{held} of {total} selected",

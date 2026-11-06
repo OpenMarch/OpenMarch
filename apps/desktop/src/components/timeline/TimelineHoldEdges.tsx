@@ -3,6 +3,7 @@ import {
     type PointerEvent as ReactPointerEvent,
     memo,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from "react";
@@ -59,8 +60,15 @@ export interface TimelineHoldEdges {
     readonly handles: readonly HoldEdgeHandle[];
     /** The edge at index `index` as it would land at `beat`, or `null` when the drag ends */
     readonly onPreview: (index: number, beat: number | null) => void;
-    /** Writes the edge at index `index` at `beat`, on release */
-    readonly onCommit: (index: number, beat: number) => void | Promise<void>;
+    /**
+     * Writes the edge at index `index` at `beat`, on release; `from`, when given, is where the edge
+     * is now if the handle hasn't caught up yet (a step queued behind another)
+     */
+    readonly onCommit: (
+        index: number,
+        beat: number,
+        from?: number,
+    ) => void | Promise<void>;
 }
 
 interface Landing {
@@ -99,7 +107,27 @@ function blockWords(block: HoldEdgeBlock): string {
     }
 }
 
-const keyOf = (handle: HoldEdgeHandle) => `${handle.edge}:${handle.beat}`;
+/**
+ * Each handle's identity, which stays the same when its edge moves: the edge, the marchers and
+ * which of their holds' edges it is, left to right. So a stepped handle keeps its element, and
+ * with it the keyboard focus.
+ */
+export function holdEdgeHandleKeys(
+    handles: readonly HoldEdgeHandle[],
+): string[] {
+    const sorted = handles
+        .map((handle, index) => ({ handle, index }))
+        .sort((a, b) => a.handle.beat - b.handle.beat);
+    const seen = new Map<string, number>();
+    const keys: string[] = new Array(handles.length);
+    for (const { handle, index } of sorted) {
+        const group = `${handle.edge}:${handle.marcherIds.join(",")}`;
+        const nth = seen.get(group) ?? 0;
+        seen.set(group, nth + 1);
+        keys[index] = `${group}#${nth}`;
+    }
+    return keys;
+}
 
 /** What the readout says while dragging: where the hold now ends or starts, and what stops it. */
 export function holdEdgeReadout(
@@ -167,7 +195,13 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         landing: Landing;
         settling?: boolean;
     } | null>(null);
+    const keys = useMemo(() => holdEdgeHandleKeys(edges.handles), [edges]);
     const keySteps = useRef<Promise<void>>(Promise.resolve());
+    /** Where the last queued arrow step puts its handle (by key), until it is written */
+    const keyTarget = useRef<{ key: string; beat: number } | null>(null);
+    /** The latest handles, for a queued step that runs after they reloaded */
+    const latest = useRef({ edges, keys });
+    latest.current = { edges, keys };
     // A drag that ends unmounted (playback started, the selection changed) writes nothing
     useEffect(
         () => () => {
@@ -252,7 +286,7 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         current.last = next;
         edges.onPreview(current.index, next.beat);
         const handle = edges.handles[current.index];
-        if (handle) setDragging({ key: keyOf(handle), landing: next });
+        if (handle) setDragging({ key: keys[current.index]!, landing: next });
     };
 
     const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
@@ -275,7 +309,11 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
             return;
         }
         // The handle and the bars stay where it was dropped until the marks reload
-        const settling = { key: keyOf(handle), landing: next, settling: true };
+        const settling = {
+            key: keys[current.index]!,
+            landing: next,
+            settling: true,
+        };
         setDragging(settling);
         void Promise.resolve(edges.onCommit(current.index, next.beat)).finally(
             () =>
@@ -304,17 +342,34 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         event.stopPropagation();
         if (drag.current) return;
         const handle = edges.handles[index];
-        if (!handle) return;
-        const { beat } = landHoldEdge(handle.limits, handle.beat + delta);
-        if (beat === handle.beat) return;
+        const key = keys[index];
+        if (!handle || key === undefined) return;
+        // Quick presses add up: each steps from where the one before it puts the edge
+        const from =
+            keyTarget.current?.key === key
+                ? keyTarget.current.beat
+                : handle.beat;
+        const { beat } = landHoldEdge(handle.limits, from + delta);
+        if (beat === from) return;
+        const step = { key, beat };
+        keyTarget.current = step;
         keySteps.current = keySteps.current
-            .then(() => edges.onCommit(index, beat))
-            .catch(() => {});
+            .then(() => {
+                // The handles may have reloaded since the press: find this one again
+                const now = latest.current;
+                const at = now.keys.indexOf(key);
+                if (at < 0) return;
+                return now.edges.onCommit(at, beat, from);
+            })
+            .catch(() => {})
+            .finally(() => {
+                if (keyTarget.current === step) keyTarget.current = null;
+            });
     };
 
     const shown =
         dragging && !dragging.settling
-            ? edges.handles.find((h) => keyOf(h) === dragging.key)
+            ? edges.handles[keys.indexOf(dragging.key)]
             : undefined;
     const readout =
         shown && dragging
@@ -323,7 +378,8 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
     return (
         <>
             {edges.handles.map((handle, index) => {
-                const active = dragging?.key === keyOf(handle);
+                const key = keys[index]!;
+                const active = dragging?.key === key;
                 const beat = active ? dragging.landing.beat : handle.beat;
                 const label =
                     handle.edge === "end"
@@ -339,7 +395,7 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
                           );
                 return (
                     <button
-                        key={keyOf(handle)}
+                        key={key}
                         type="button"
                         data-testid={`timeline-hold-${handle.edge}-${handle.beat}`}
                         data-timeline-interactive="true"

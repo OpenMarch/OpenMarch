@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import tolgee from "@/global/singletons/Tolgee";
 import { db } from "@/global/database/db";
 import {
     setHoldEdge,
@@ -86,7 +87,13 @@ export function useHoldExtentCommands(
                     // Drawn where it was dropped until the marks it wrote are read
                     await refreshHeldMarks(db);
                 } catch (error) {
-                    toastTimelineError(error, "Error changing the hold");
+                    toastTimelineError(
+                        error,
+                        tolgee.t(
+                            "timeline.holdEdge.changeError",
+                            "Error changing the hold",
+                        ),
+                    );
                 } finally {
                     if (useHoldEdgeDragStore.getState().drag === drag)
                         useHoldEdgeDragStore.setState({ drag: null });
@@ -104,7 +111,13 @@ export function useHoldExtentCommands(
                 Number.isInteger(beat) && splitsAnyHold(own, beat),
             onSplit: (beat) => {
                 void splitHoldAt({ db, marcherIds, beat }).catch((error) =>
-                    toastTimelineError(error, "Error splitting the hold"),
+                    toastTimelineError(
+                        error,
+                        tolgee.t(
+                            "timeline.holdEdge.splitError",
+                            "Error splitting the hold",
+                        ),
+                    ),
                 );
             },
         };
