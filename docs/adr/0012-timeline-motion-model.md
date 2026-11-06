@@ -471,13 +471,12 @@ holds to the resolver (spec R-6), so the mark is app data:
   move as a new row ending at the same flag). A mark nothing arrives at any more is deleted when
   its arrival row was deleted, or it had none: a mark over counts nothing arrives at could never
   be reached by a drag, and only blocks edits. When its arrival row is still there but ends
-  somewhere else, the edit is refused with `E-H1` (below). This is steps 2 and 4 below, in the
-  small form #472 needs while every mark is an arrival hold; #473 grows it into the full upkeep.
-- **Upkeep, in `transactionWithHistory`** (fork #473; until it lands, an edit other than a page or
-  beat edit that moves an arrival in time, a clip drag, resize or merge refit, into the hold or
-  away from it, is refused with `E-H1`):
+  somewhere else, the hold follows it (below, step 3; until fork #473 that edit was refused with
+  `E-H1`).
+- **Upkeep, in `transactionWithHistory`** (fork #473):
   - **When:** the step snapshots, before the edit's function runs, the ids of the rows ending at
-    each mark's start. It runs **right after the function**, before the history group is read, so
+    each mark's start, and the counts of the rows of the marchers with marks (so it can tell a
+    re-timed row). It runs **right after the function**, before the history group is read, so
     its writes belong to the same undo step. It never runs during undo or redo replay (C-6).
   - **In order:**
     1. Trim the parts of marks that rows now cover.
@@ -487,11 +486,26 @@ holds to the resolver (spec R-6), so the mark is app data:
     4. Delete a mark whose row ended there before and is gone (Remove keyframe, Delete move).
     5. Otherwise leave it as a borrowed hold.
     6. Merge marks that touch.
+
+    As built (#473), the trim is done once, after steps 2–5, and only by rows the edit
+    **re-timed** (a row that existed before with other counts: a clip drag, resize or merge refit
+    of a later move): a mark ends where such a row starts, and a part after it is dropped. A move
+    an edit **writes** over a hold is still refused at commit with `E-H1`, as decision 6's Expert
+    windows are #476's to build (holds 04-anchors: the trim applies only to retimes). A re-timed
+    arrival that no longer arrives by the rule above (a higher layer ends there too) is refused
+    with `E-H1` instead of leaving a hold nothing arrives at. Until a borrowed hold exists (#474),
+    step 5 keeps only a hold from the starting spot; a mark with nothing to grow out of is deleted.
+    A changed mark is deleted and inserted again with its id, so undo restores the same row.
   - **Writers that delete and re-insert a row with a new end** pass an explicit old→new row map,
-    which step 3 uses. Basic's set-ending is the known case.
-  - **Basic's sweep** of following moves that go nowhere stops at a mark's start.
+    which step 3 uses. Basic's set-ending was the known case; as built it re-inserts rows with
+    the same end (a row still ends at the mark's start, step 2), so no writer needs the map yet.
+  - **Basic's sweep** of following moves that go nowhere stops at a mark's start: a move a mark
+    grows out of stays, and a merge (drag back, Remove this count's position) ending where a mark
+    starts is written even though it goes nowhere, so the hold keeps its arrival (#473).
+  - **An edit that takes a hold's arrival away as a side effect says so:** Clear this page on the
+    page a hold arrives from names the hold in its note ("T1's hold on Page 3 was cleared too").
   - Opening a file runs the upkeep trim once, so a file edited by a build without marks support
-    can't fail every later edit.
+    can't fail every later edit (not built yet).
 - **Page and beat edits** (`planTimelineRipple`, so previews match commits; #472):
   - An arrival hold's start takes its row's planned new end.
   - Any other mark edge that sits on a page flag follows that flag. That covers a borrowed hold's

@@ -318,9 +318,10 @@ async function movesAround(
 /**
  * Whether `keep` must leave a move alone (it then changes length, and counts as couldn't keep):
  *
- * - a Held hold grows out of its end (an arrival): shortening or lengthening the move would leave
- *   the hold growing out of nothing (`E-H1`, refusing the whole edit); a hold moves with its
- *   arrival only through the ripple (#473);
+ * - a Held hold grows out of its end (an arrival): shortening or lengthening the move would carry
+ *   the hold's start with it (the upkeep follows a re-timed arrival, #473), so the hold would no
+ *   longer start where the count edit left it; a hold moves with its arrival only through the
+ *   ripple;
  * - `shrink` (the counts at its end it would give up, after counts were added inside it) hold
  *   another move of its marchers (a keyframe the added counts pushed there), not one under it:
  *   that move would then run past the shortened move and win over its set;
