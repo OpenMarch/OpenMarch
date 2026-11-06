@@ -174,6 +174,16 @@ test("Hold from previous page where nothing arrives draws a borrowed hold: hatch
         await shoot(page, `borrowed-rest-${dark ? "dark" : "light"}`);
     }
     await setTheme(page, false);
+
+    // Away from the hold, the line back shows only while the pointer is over the bar
+    await goTo(page, "m5");
+    const lineBack = page.getByTestId("timeline-borrowed-line-24-32");
+    await expect(lineBack).toHaveCount(0);
+    const box = (await bar.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect(lineBack).toBeVisible();
+    await page.mouse.move(box.x + box.width / 2, box.y - 60);
+    await expect(lineBack).toHaveCount(0);
 });
 
 test("a drag inside the borrowed hold lights it, then adds a move on page 3 and the hold grows out of its diamond", async ({
