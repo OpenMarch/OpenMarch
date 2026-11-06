@@ -27,6 +27,7 @@ import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "
 import { getClerkSignUpUrl, isSignInEnabled } from "@/global/auth/constants";
 import { T, useTranslate } from "@tolgee/react";
 import { isWebBuild } from "@/utilities/webBuild";
+import WebMobileUnavailable from "./WebMobileUnavailable";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -212,7 +213,9 @@ export function MobileExportModalContents() {
                         !isSignedInView && "min-h-0 flex-1",
                     )}
                 >
-                    {validationState.type === "no-access" ? (
+                    {isWebBuild && !isSignInEnabled ? (
+                        <WebMobileUnavailable />
+                    ) : validationState.type === "no-access" ? (
                         <MobileExportAccessError />
                     ) : isAuthLoading ? (
                         <MobileExportLoading

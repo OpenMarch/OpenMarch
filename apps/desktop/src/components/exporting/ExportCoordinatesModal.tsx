@@ -20,7 +20,7 @@ import {
     type PagePositionMap,
 } from "./utils/exportPagePositions";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@openmarch/ui";
-import { ArrowSquareOutIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import InfoTip from "@/components/ui/InfoTip";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
@@ -90,6 +90,7 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+import WebMobileUnavailable from "@/components/mobile/WebMobileUnavailable";
 import { isWebBuild } from "@/utilities/webBuild";
 import { isSignInEnabled } from "@/global/auth/constants";
 import { useIsTouchMode } from "@/stores/InputModeStore";
@@ -1978,35 +1979,6 @@ function WebFinishedVideo({
                 disabled={saving}
             >
                 {t("exportCoordinates.videoWebSave")}
-            </Button>
-        </div>
-    );
-}
-
-/** Where OpenMarch can sign in, to upload to the mobile app. */
-const SIGN_IN_EDITOR_URL = "https://editor.openmarch.com";
-
-/**
- * The Mobile tab in a web build that can't sign in: a test or development
- * build off openmarch.com, where OpenMarch's sign-in doesn't run.
- */
-function WebMobileUnavailable() {
-    return (
-        <div className="border-stroke bg-fg-1 rounded-6 text-body flex flex-col items-start gap-12 border p-24">
-            <h4 className="text-h4 leading-none">
-                <T keyName="exportCoordinates.webMobileUnavailable.title" />
-            </h4>
-            <p className="text-text-subtitle">
-                <T keyName="exportCoordinates.webMobileUnavailable.description" />
-            </p>
-            <Button
-                variant="secondary"
-                onClick={() =>
-                    window.open(SIGN_IN_EDITOR_URL, "_blank", "noopener")
-                }
-            >
-                <ArrowSquareOutIcon size={16} />{" "}
-                <T keyName="exportCoordinates.webMobileUnavailable.openEditor" />
             </Button>
         </div>
     );
