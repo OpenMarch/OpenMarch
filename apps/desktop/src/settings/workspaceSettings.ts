@@ -38,7 +38,7 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     defaultNewPageCounts: 16,
     audioOffsetSeconds: 0,
     pageNumberOffset: 0,
-    measurementOffset: 0,
+    measurementOffset: 1,
     projectName: undefined,
     designer: undefined,
     client: undefined,
