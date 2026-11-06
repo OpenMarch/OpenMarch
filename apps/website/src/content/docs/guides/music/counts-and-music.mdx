@@ -1,0 +1,61 @@
+---
+title: How counts and the music fit together
+description: The show's timing is a row of counts, each with its own length; the music plays under them.
+type: concept
+covers:
+  - apps/desktop/src/tempo
+  - apps/desktop/src/components/timeline
+  - i18n:tempoMode.lanes
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+A show's timing is a row of counts. Each count lasts a set number of seconds, and the music file plays underneath them. Everything you write sits on counts, so lining the counts up with the music is what makes the drill land on the music.
+
+<Media
+  id="music-timeline-waveform"
+  alt="The timeline with page numbers across the top, measure numbers with a tick for each count under them, and the music's waveform along the bottom."
+/>
+
+## Counts
+
+A count is one beat of the show's music. The timeline is laid out in counts: pages, moves and keyframes start and end on counts, and the readout names where you are by page and count.
+
+Each count has its own length. That length is all the show stores about timing, so a count can be any length: the counts of a slow ballad are long, a fermata can be one count several seconds long, and the counts in a rit. get longer one by one.
+
+## Tempo
+
+Tempo is how fast the counts go, in beats a minute. Edit music shows it as a number after a quarter-note sign. At 120 beats a minute, each count lasts half a second. When you set a tempo, OpenMarch works out the length of every count it covers.
+
+Changing the tempo changes when counts happen, not which counts things are on. A move from count 17 to count 32 stays on those counts; at a faster tempo it takes less time. This is why you can line the counts up with the music after the drill is written and the drill follows.
+
+## Measures
+
+Counts are grouped into measures, numbered from the start of the show. Each measure has a time signature, which sets how many counts it has: a 4/4 measure has four counts, a 6/8 measure has two (one for each dotted quarter), and a 7/8 measure counted 2+2+3 has three. A measure can also carry a rehearsal mark, such as A or Closer, so you can find it again.
+
+Measures help you find your way around the music. Pages don't have to start on a measure.
+
+## The music
+
+The music file plays under the counts and never changes. The music offset says how many seconds after count 1 the music starts; a negative offset skips into the music. You can see the music as a waveform along the bottom of the timeline, which shows the loud and quiet moments so you can find the hits.
+
+When the counts don't match the music, you change the counts: their tempo, their time signatures, or how many there are. You can't stretch or cut the recording itself.
+
+## The counts after the last page
+
+The counts don't stop at the end of your last page. Past it, the timeline keeps drawing counts and measures at the tempo and time signature of the last measure, and the music keeps playing under them. Those counts become part of the show as soon as you put something on them, such as a new page.
+
+## Where you change the timing
+
+All of this is edited in Edit music, a mode of the timeline: select <Ui k="tempoMode.button.text" /> at the right end of the timeline's controls, or press <Kbd keys="Shift+T" />. It's where you add the music file, set the tempo, add holds, set time signatures and rehearsal marks, and import a score.
+
+## Related
+
+- [Add the show's music](/guides/music/audio/): choose the music file and where it starts.
+- [Line the counts up with the music](/guides/music/tempo/): tempo, holds, time signatures and measures in Edit music.
+- [Import a MusicXML score](/guides/music/musicxml/): take the tempos and measures from the score.
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages and moves on the counts.

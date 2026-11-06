@@ -1,0 +1,122 @@
+---
+/**
+ * Every keyboard shortcut, grouped the way the app's Shortcuts dialog groups them
+ * (Help › Keyboard shortcuts). Generated from the app (src/data/generated/shortcuts.json), so
+ * it can't drift; shortcuts that Basic mode hides are marked Expert.
+ */
+import data from "../../data/generated/shortcuts.json";
+
+type Shortcut = { keys: string[]; gesture?: string };
+type Row = { label: string; mac: Shortcut[]; other: Shortcut[] };
+type Group = { title: string; rows: Row[] };
+
+const expert = data.expert as Group[];
+const basic = data.basic as Group[];
+const inBasic = new Set(
+    basic.flatMap((g) => g.rows.map((r) => `${g.title}|${r.label}`)),
+);
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+---
+
+{
+    expert.map((group) => (
+        <section class="shortcut-group">
+            <h2 id={slug(group.title)}>{group.title}</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Shortcut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {group.rows.map((row) => (
+                        <tr>
+                            <td>
+                                {row.label}
+                                {!inBasic.has(
+                                    `${group.title}|${row.label}`,
+                                ) && <span class="expert-tag">Expert</span>}
+                            </td>
+                            <td>
+                                {row.other.map((s, i) => (
+                                    <>
+                                        {i > 0 && <span class="alt"> or </span>}
+                                        <kbd class="docs-kbd">
+                                            <span class="docs-kbd-other">
+                                                {s.keys.map((k, j) => (
+                                                    <>
+                                                        {j > 0 && (
+                                                            <span class="docs-kbd-plus">
+                                                                +
+                                                            </span>
+                                                        )}
+                                                        {k}
+                                                    </>
+                                                ))}
+                                            </span>
+                                            <span class="docs-kbd-mac">
+                                                {row.mac[i]?.keys.join("")}
+                                            </span>
+                                            {s.gesture && (
+                                                <span class="docs-kbd-gesture">
+                                                    {s.gesture}
+                                                </span>
+                                            )}
+                                        </kbd>
+                                    </>
+                                ))}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </section>
+    ))
+}
+
+<style>
+    .expert-tag {
+        margin-left: 0.5em;
+        padding: 0 0.4em;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: 500;
+        background: var(--sl-color-accent-low);
+        color: var(--sl-color-accent-high);
+    }
+    .alt {
+        color: var(--sl-color-gray-3);
+        font-size: 0.85em;
+    }
+    .docs-kbd {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.3em;
+        padding: 0.05em 0.45em;
+        border: 1px solid var(--sl-color-gray-5);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        background: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+        font-size: 0.85em;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .docs-kbd-plus {
+        margin: 0 0.12em;
+        opacity: 0.5;
+        font-weight: 400;
+    }
+    .docs-kbd-mac {
+        letter-spacing: 0.08em;
+    }
+    .docs-kbd-gesture {
+        font-weight: 400;
+        opacity: 0.8;
+    }
+    :global(html[data-os="mac"]) .docs-kbd-other,
+    :global(html:not([data-os="mac"])) .docs-kbd-mac {
+        display: none;
+    }
+</style>

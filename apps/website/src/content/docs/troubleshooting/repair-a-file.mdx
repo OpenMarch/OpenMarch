@@ -1,0 +1,51 @@
+---
+title: Repair a show file
+description: Make a repaired copy of a show when edits fail with errors or don't stick.
+type: how-to
+covers:
+  - apps/desktop/electron/database/repair.ts
+  - apps/desktop/src/components/launchpage/settings/DatabaseRepairSettings.tsx
+  - i18n:settings.repairDotsFile
+  - i18n:settings.database
+sidebar:
+  order: 2
+---
+
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+If a show opens but your changes fail with errors such as "Error updating pages" or "Error updating beats", or a change is gone after you undo, redo or reopen the show, the file may be damaged. OpenMarch can copy everything in it into a new, clean file.
+
+Repairing never changes your show file. It makes a repaired copy next to it, named after it with "- FIXED": `Fall Show.dots` becomes `Fall Show - FIXED.dots`.
+
+## Before you start
+
+- Open the show you want to repair. Repair works on the open show.
+- Use the desktop app. The web editor can't repair a file.
+
+## Repair the open show
+
+1. Open <Ui k="settings.title" /> (<Kbd action="openSettings" />).
+2. Select <Ui k="settings.database" />.
+3. Select <Ui k="settings.repairDotsFile" />.
+4. Read the message, then select <Ui k="settings.repairDotsFile.confirm" />.
+
+OpenMarch copies the show into the new file, and the window reloads with the repaired file open. Check that your show looks right, then work in the repaired file from now on.
+
+<Aside type="caution">
+If a file with the "- FIXED" name is already in the folder, for example from an earlier repair, the new repaired copy replaces it. Rename an earlier repaired copy first if you want to keep it.
+</Aside>
+
+## What the repaired copy has
+
+Everything in the show comes across: marchers and sections, pages, counts and music, every position and move, the field and the show's settings. The undo history doesn't: in the repaired file you can't undo anything you did before the repair.
+
+## If it doesn't help
+
+If the repair fails, it shows an error and your show is left as it was. If the repaired copy has the same problems, [report it](/guides/start/get-help/), with the error message and, if you can, the show file.
+
+## Related
+
+- [File errors](/troubleshooting/file-errors/): when a show won't open at all.
+- [Open a show in an older version](/troubleshooting/open-in-an-older-version/): the copies OpenMarch keeps of your shows.

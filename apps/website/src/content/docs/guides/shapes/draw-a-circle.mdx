@@ -1,0 +1,52 @@
+---
+title: Draw a circle
+description: Put the selected marchers in a ring an even interval apart, or spread them over a filled circle.
+type: how-to
+covers:
+  - apps/desktop/src/shapes/circle
+  - action:shapeCircle
+  - action:applyShape
+  - i18n:shapes.kinds.circle
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+A circle stands the selected marchers in a ring, each the same interval from the next, or spreads them over the whole circle. Its size follows from the interval and how many marchers there are.
+
+**Before you start:** select the marchers who go in the circle, and put the playhead on the count where they should stand in it.
+
+<Steps>
+
+1. In the toolbar's <Ui k="inspector.shape.shapesTab" /> tab, select <Ui k="shapes.kinds.circle.label" />, or press <Kbd action="shapeCircle" />.
+
+2. Press where the center of the circle goes, and drag out to where its edge should be. The marchers are spaced round the ring in half steps, so the edge lands near the pointer rather than exactly on it.
+
+3. To change the spacing, drag the handle on the ring, or click the interval in the floating editor and type one.
+
+4. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />.
+
+</Steps>
+
+<Media
+  id="shapes-draw-circle"
+  alt="O is pressed, and a drag outward from a point above a row of trumpets draws a ring of spots that grows with the pointer. The pointer moves to Place and clicks it, and the trumpets move onto the ring."
+/>
+
+## Change the circle
+
+- The interval is the one number in the floating editor: the distance from each marcher to the next round the ring, in steps. A larger interval makes a larger circle. Dragging the handle on the ring sets the interval that puts the edge at the pointer, and keeps the center where it is.
+- Drag inside the circle, or the dot in its middle, to move it. Turning it, with the knob or the degrees in the editor, turns the spots round the ring.
+- The <Ui k="shapes.edit.mode.label" /> menu on the editor's second row has <Ui k="shapes.edit.mode.outline" />, the ring, and <Ui k="shapes.edit.mode.spread" />, the marchers spread evenly over the whole circle. In Spread, <Ui k="shapes.edit.reshuffle.label" /> gives another even layout, and <Ui k="shapes.edit.edge.label" /> stands some of the marchers round the edge.
+
+A circle's edge doesn't catch yard lines and hashes the way a box's does: it moves and grows in half steps only.
+
+## Related
+
+- [How shapes work](/guides/shapes/): spots, intervals and who goes where.
+- [Draw an arc](/guides/shapes/draw-an-arc/): part of a circle, or a circle you size by its width.
+- [Place marchers in a shape](/guides/shapes/place-marchers/): change a circle after it's placed.

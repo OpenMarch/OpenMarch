@@ -1,0 +1,101 @@
+---
+title: Pages
+description: Add pages at the playhead, change how many counts a page has, make subsets, split and delete pages.
+type: how-to
+covers:
+  - apps/desktop/src/components/timeline/AddPageFlagMenu.tsx
+  - apps/desktop/src/components/timeline/TimelineAppendAtPlayhead.tsx
+  - apps/desktop/src/components/timeline/TimelinePageFlagGrips.tsx
+  - apps/desktop/src/components/timeline/TimelineRangeMenu.tsx
+  - apps/desktop/src/components/inspector/PageEditor.tsx
+  - apps/desktop/src/db-functions/pageDelete.ts
+  - action:timelineCreatePageAtPlayhead
+  - action:timelineCreateSubsetAtPlayhead
+  - i18n:timeline.appendAtPlayhead
+  - i18n:timeline.pageFlag
+  - i18n:timeline.rangeMenu
+  - i18n:inspector.page
+sidebar:
+  order: 3
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+A page is a numbered stretch of counts that ends at a set. Each page is a box on the timeline, and its right end, the page's flag, is the count where marchers reach its set. Pages are labels on the music: adding, moving and deleting them never changes the music's counts. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains pages and moves.
+
+Select a page's box to see it in the inspector: its <Ui k="inspector.page.counts" />, whether it's a <Ui k="inspector.page.subset" />, and the measures it covers.
+
+## Add a page at the playhead
+
+A new page ends at the playhead: the playhead's count becomes the new page's flag.
+
+1. Put the playhead on the count where the new page's set should be. It can be inside a page or past the last page.
+2. Right-click the playhead and select <Ui k="actions.timeline.createPageAtPlayhead" />, or press <Kbd action="timelineCreatePageAtPlayhead" />.
+
+The menu shows the number the new page will get. Inside a page, the new flag cuts that page in two, and the pages after it are numbered one higher.
+
+To add a subset instead, which keeps the numbers of the pages after it, select <Ui k="actions.timeline.createSubsetAtPlayhead" /> or press <Kbd action="timelineCreateSubsetAtPlayhead" />.
+
+<Media
+  id="timeline-add-page"
+  alt="The playhead five counts past the last page, Page 18. The shaded counts after Page 18 have a button reading Add 5-Count Page, and the playhead's right-click menu offers Create page at playhead, numbered 19, and Create subset at playhead, numbered 18A, with their shortcuts F and Shift+F."
+/>
+
+## Add a page at the end of the show
+
+Click the timeline past the last page. The counts after the last page are shaded gray, and a button such as <Ui k="timeline.appendAtPlayhead.label" values={{ counts: 5 }} /> appears over them. Select it to add a page from the last page to the playhead. Hold <Kbd keys="Shift" /> to make it a subset instead.
+
+Marchers on a new page are [Not defined](/guides/timeline/defined-held-not-defined/): they stand where the last page left them until you move them.
+
+## Change how many counts a page has
+
+Drag the page's flag: the top of the line at the right end of its box. The page gains the counts the next page loses, and every other flag stays where it is.
+
+<Media
+  id="timeline-page-flag"
+  alt="The flag at the end of Page 3 is dragged two counts later. Page 3's box grows by two counts and Page 4's box shrinks by two; the pages after them don't move."
+/>
+
+While you drag, the flag lands on the playhead and on the start of a measure when it's near one. Hold <Kbd keys="Alt" gesture="drag" /> to put it on any count. A label shows the page's counts before and after.
+
+To move a flag with the keyboard, press <Kbd keys="Tab" /> until the flag is focused, then press <Kbd keys="Left" /> or <Kbd keys="Right" />.
+
+Dragging the flag of the last page makes the last page longer or shorter.
+
+## Make a page a subset
+
+A subset is a page numbered after the one before it with a letter, such as 5A after 5. Pages after a subset keep their numbers. Drill charts use subsets for short stretches between main sets.
+
+- Right-click the page's box and turn on <Ui k="timeline.page.contextMenu.subsetToggle" />, or
+- Select the page's box and turn on <Ui k="inspector.page.subset" /> in the inspector.
+
+Turn it off again the same way. The pages after it are numbered again.
+
+## Split a page
+
+1. Select the page's box.
+2. In the inspector, select <Ui k="inspector.page.splitPage" />.
+
+The page is cut in half at its middle count. The first half keeps the page's number and the second half becomes a subset, so the pages after it keep their numbers. Marchers still reach the old page's set at the same count. To cut at a count of your choosing, use <Ui k="actions.timeline.createPageAtPlayhead" /> instead.
+
+## Delete a page
+
+Right-click the page's box and choose one:
+
+- <Ui k="timeline.rangeMenu.deletePage" /> removes the page's flag. Its counts join the next page, which takes its number, and the pages after it are numbered one lower. Deleting the last page instead makes the page before it the last one, and its counts leave the end of the show. The marchers still move as they did, so every page after it looks as it did before.
+- <Ui k="timeline.rangeMenu.deleteWithMoves" /> removes the page and the positions set on it. Marchers that only held on later pages go back to where they were before the deleted page, and a message lists the pages that now look different.
+
+Both can be undone with <Kbd action="performUndo" />.
+
+## Page numbers
+
+Pages are numbered in order from the start of the show, with subsets lettered after the page before them. The number of the first page comes from <Ui k="workspaceSettings.pageNumberOffset" /> in the show's settings; see [Show settings](/guides/field/show-settings/).
+
+## Related
+
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, counts and moves.
+- [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): what a marcher does on a new page.
+- [Moves](/guides/timeline/moves/): moves that start or end in the middle of a page.
+- [Play the show](/guides/timeline/play-the-show/): go to a page by its number.

@@ -1,0 +1,48 @@
+---
+title: Known issues
+description: Problems in OpenMarch 0.2 that you might run into, and what to do about each one.
+type: reference
+covers:
+  - apps/desktop/src/components/canvas/touch
+  - apps/desktop/src/timeline/timelinePointMoves.ts
+  - apps/desktop/src/field
+  - apps/desktop/src/components/mobile
+  - i18n:mobileExport.pageLines
+sidebar:
+  order: 4
+---
+
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+These are problems we know about in OpenMarch 0.2, with a way around each one. If you run into something that isn't here, please [report it](/guides/start/get-help/).
+
+## Fingers can't move marchers on a tablet
+
+On a tablet, one finger moves the view of the field and two fingers zoom it, but a finger can't select or drag marchers on the field yet. Most other controls work by touch.
+
+What to do: to write drill on a tablet, connect a mouse or trackpad. To check or watch a show, touch is enough.
+
+## Reset to Defaults in Show settings starts measures at 0
+
+<Ui k="workspaceSettings.resetToDefaults" /> in Show settings sets the first measure's number to 0, while a new show starts at 1, so every measure number drops by one.
+
+What to do: after resetting, set <Ui k="workspaceSettings.measurementOffset" plain /> back to 1 and select <Ui k="workspaceSettings.saveChanges" />.
+
+## Basic can take a marcher out of a move made in Expert
+
+If you split some marchers off a page into a move of their own in Expert, and then in Basic move one of them partway through the page, that marcher goes back into the page's own move. Nothing tells you it happened. Moving it at the end of the page keeps its own move.
+
+What to do: edit marchers you split off in Expert while you're in Expert. If it already happened, undo the change in Basic.
+
+## A drag on a later page can move a marcher on earlier pages
+
+When a marcher holds from the start of the show, dragging it on a later page inside that hold moves its starting spot, so it moves on every page before too. No message says so.
+
+What to do: after a drag like this, check the earlier pages, and undo it (<Kbd action="performUndo" />) if they shouldn't have changed.
+
+## OpenMarch Mobile shows straight lines between pages
+
+A show sent to OpenMarch Mobile has each marcher's position at every page, and the phone draws straight lines between them. A move that starts or ends in the middle of a page, or a curved move, looks different on the phone than in the editor. The export dialog says so too.
+
+What to do: where the path in the middle of a page matters to your marchers, add a page at that count, so the phone shows that position.

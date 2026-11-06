@@ -1,0 +1,110 @@
+---
+title: Settings
+description: Every section of the Settings window and what each setting does.
+type: reference
+covers:
+  - apps/desktop/src/settings
+  - apps/desktop/src/components/launchpage/settings
+  - apps/desktop/electron/main/settings-window.ts
+  - action:openSettings
+  - i18n:settings
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+The Settings window holds how OpenMarch looks and behaves on this computer. These settings belong to the app, not to a show: they stay the same whichever show you open, and a show you send to someone else doesn't carry them. Settings that belong to a show, such as its field and the number its first page starts at, are in the show's own panels; see [Show settings](/guides/field/show-settings/).
+
+To open Settings, select <Ui k="toolbar.settings" /> on the toolbar's <Ui k="inspector.shape.fileTab" /> tab or <Ui k="launchpage.settings.title" /> on the start page, or press <Kbd action="openSettings" />. In the web editor, it's in the <Ui k="web.fileMenu" /> menu and opens over the editor instead of in its own window.
+
+<Media
+  id="reference-settings-window"
+  alt="The Settings window: a search box and the list of sections on the left (General, Appearance, Touch and Input, Mouse and Trackpad, Timeline, Field, 3D View, Keyboard shortcuts, Privacy, Developer Settings, Database), with General open on the right showing Language, automatic updates and Open 3D View when a show opens."
+/>
+
+Type in <Ui k="settings.search" /> to find a setting by name. Changes apply as soon as you make them; there's no Save button. Settings opens on the section you used last.
+
+## General
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.general.language" plain /> | The language of the app. Some languages are translated with AI help; the note under the list says so and links to where you can help check it. |
+| <Ui k="settings.general.automaticUpdates" plain /> | On: a new version downloads in the background and installs when you quit. Desktop app only. The Snap Store version shows it too, but the Snap Store does the updating there. On by default. |
+| <Ui k="settings.general.openView3dWithShow" plain /> | On: the 3D View opens in its own window whenever you open a show. The 3D View asks this the first time you open it. Desktop app only. |
+
+## Appearance
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.general.appearance" plain /> | <Ui k="settings.general.appearance.light" plain /> or <Ui k="settings.general.appearance.dark" plain />. |
+| <Ui k="settings.general.showFullDatabasePath" plain /> | The title bar shows the open show's full file path instead of only its name. Off by default. |
+| <Ui k="settings.general.performanceMode" plain /> | Draws the field with less detail so it stays smooth on slower computers. The field also switches to this on its own when the computer draws graphics in software. Off by default. |
+
+## Touch & Input
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.input.interface" plain /> | <Ui k="settings.input.interface.auto" plain /> uses the tablet layout on a tablet and the desktop layout on a computer. <Ui k="settings.input.interface.touch" plain /> always uses the tablet layout, with larger controls for fingers and a pen; choose it on a laptop with a touch screen. <Ui k="settings.input.interface.mouse" plain /> always uses the desktop layout. |
+
+## Mouse & Trackpad
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.mouse.zoomSensitivity" plain /> | How fast the scroll wheel and a pinch zoom the field, from 0.5x to 4.0x. 1.0x by default. |
+| <Ui k="settings.mouse.trackpadMode" plain /> | On: scrolling with two fingers moves the field, and you zoom with a pinch or by holding <Kbd keys="Mod" /> while you scroll. Off: the scroll wheel zooms the field. On by default. |
+| <Ui k="settings.mouse.trackpadPanSensitivity" plain /> | How far a two-finger scroll moves the field, from 0.1x to 3.0x. Shown only when trackpad mode is on. 0.5x by default. |
+
+[Move around the field](/guides/workspace/move-around-the-field/) has every way to pan and zoom.
+
+## Timeline
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.general.editorMode" plain /> | <Ui k="settings.general.editorMode.basic" plain /> or <Ui k="settings.general.editorMode.expert" plain />. Switching doesn't change the open show. See [Basic and Expert](/guides/start/basic-and-expert/). |
+| <Ui k="settings.timeline.waveformStyle" plain /> | How the music looks on the timeline. <Ui k="settings.timeline.waveformStyle.simplified" plain /> (the default): rounded bars at an even spacing, scaled to the loudest moment. <Ui k="settings.timeline.waveformStyle.precise" plain />: square bars locked to each beat, scaled so quiet passages show their detail. <Ui k="settings.timeline.waveformStyle.hidden" plain />: no waveform, so the timeline takes less room; the music still plays. |
+
+## Field
+
+These change how the field is drawn in the editor, not the field itself. To change the field's size and markings, see [Edit the field](/guides/field/edit-the-field/).
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.field.gridLines" plain /> | Draws a light grid with a line at every step, side to side and front to back. On by default. |
+| <Ui k="settings.field.halfLines" plain /> | Draws darker lines at the half-line spacing the field sets, usually halfway between yard lines and between the hashes. On by default. |
+| <Ui k="settings.field.labelSize" plain /> | The size of the marchers' drill numbers: <Ui k="settings.field.labelSize.small" plain />, <Ui k="settings.field.labelSize.normal" plain /> or <Ui k="settings.field.labelSize.large" plain />. |
+| <Ui k="settings.field.labelPosition" plain /> | Where a marcher's drill number sits: <Ui k="settings.field.labelPosition.above" plain /> or <Ui k="settings.field.labelPosition.beside" plain />. |
+| <Ui k="settings.field.stepSizeWarnings" plain /> | Marks moves whose steps are too large to march, and always shows their paths. Off by default. See [Step size warnings](/guides/field/step-size-warnings/). |
+
+## 3D View
+
+How the 3D View draws on this computer. These aren't saved in the show.
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.view3d.quality" plain /> | <Ui k="settings.view3d.quality.auto" plain /> (the default) starts on High and switches to Low if the view stutters. <Ui k="settings.view3d.quality.high" plain />: shadows and a full crowd. <Ui k="settings.view3d.quality.low" plain />: no shadows and a lighter crowd, for older or battery-powered computers. |
+| <Ui k="settings.view3d.resolution" plain /> | <Ui k="settings.view3d.resolution.sharp" plain /> (the default): full detail on high-resolution screens. <Ui k="settings.view3d.resolution.balanced" plain />: a little softer, with about a third less work for the graphics card. <Ui k="settings.view3d.resolution.fast" plain />: softest, with about half the work. |
+
+## Keyboard shortcuts
+
+Change the keys for any action. See [Change a shortcut](/guides/reference/keyboard-shortcuts/#change-a-shortcut).
+
+## Privacy
+
+<Ui k="settings.privacy.analytics.toggle" />: shares usage data, error logs and session recordings with the OpenMarch team, so they can see how the app is used and find bugs. You answer this the first time you open OpenMarch, and can change it here at any time. Desktop app only; the web editor shares nothing.
+
+## Developer Settings
+
+<Ui k="settings.tolgeeDevToolsToggle" />: for people translating OpenMarch, who edit the app's text in place with a translation key. Desktop app only.
+
+## Database
+
+<Ui k="settings.repairDotsFile" /> makes a repaired copy of the open show. It's only there while a show is open, and only in the desktop app. See [Repair a show file](/troubleshooting/repair-a-file/).
+
+## Related
+
+- [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/): every shortcut, and how to change one.
+- [Show settings](/guides/field/show-settings/): settings saved in the show.
+- [Basic and Expert](/guides/start/basic-and-expert/): the two editor modes.

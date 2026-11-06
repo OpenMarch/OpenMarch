@@ -1,0 +1,83 @@
+---
+title: Move around the field
+description: Pan and zoom the field with a mouse, trackpad or touch screen, and fit the whole field back in view.
+type: how-to
+covers:
+  - apps/desktop/src/field/three/fieldNavigation.ts
+  - apps/desktop/src/field/editor/view.ts
+  - apps/desktop/src/components/canvas/CanvasZoomControls.tsx
+  - apps/desktop/src/components/launchpage/settings/MouseSettings.tsx
+  - i18n:canvas.zoom
+  - i18n:settings.mouse
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+When a show opens, the whole field fits in view. Zoom in to place marchers precisely, pan to the part of the field you're working on, and fit the field again when you're done.
+
+<Media
+  id="workspace-pan-zoom"
+  alt="The field is dragged with the right mouse button to pan it, then zoomed in at the pointer with Ctrl held while scrolling. Selecting the zoom percentage glides the view back to the whole field."
+/>
+
+## With a mouse
+
+- To pan, drag with the right mouse button, or with the middle button (the scroll wheel pressed down). On a Mac, you can also hold <Kbd keys="Ctrl" gesture="drag" /> and drag.
+- To zoom, hold <Kbd keys="Mod" gesture="scroll" /> and turn the scroll wheel. The field zooms in and out around the pointer, so point at what you want to see.
+
+A right-click that doesn't move opens the field's menu instead of panning.
+
+The scroll wheel on its own pans the field, up and down. If you'd rather the wheel zoom without holding a key, turn off <Ui k="settings.mouse.trackpadMode" /> in Settings (see [Change how the mouse and trackpad behave](#change-how-the-mouse-and-trackpad-behave)).
+
+## With a trackpad
+
+- To pan, scroll with two fingers in any direction.
+- To zoom, pinch with two fingers. Scrolling with <Kbd keys="Mod" gesture="scroll" /> zooms too.
+
+## With the zoom controls
+
+The zoom controls sit in the field's bottom corner.
+
+<Media
+  id="workspace-zoom-controls"
+  alt="The zoom controls: a slider above a minus button, the zoom percentage and a plus button."
+  maxWidth={260}
+/>
+
+- Drag the slider, or select the minus and plus buttons, to zoom around the middle of the view.
+- Select the percentage to fit the whole field in view again. The view glides back to it. 100% is always the whole field fitted to the space it has, so the number means the same thing however big the window is.
+
+When the window or the timeline changes size, the field keeps its zoom and stays where you left it; in Preview it's fitted again. Select the percentage to fit it to the new size.
+
+## On a tablet
+
+On a touch screen, fingers move the view: drag with one finger to pan, and pinch with two fingers to zoom. A finger doesn't select or move marchers on the field. Use a pen, such as Apple Pencil, which works like a mouse, or the [Select tab](/guides/marchers/select-marchers/) and the inspector's move pad.
+
+## Change how the mouse and trackpad behave
+
+<Steps>
+
+1. Select <Ui k="inspector.shape.fileTab" /> › <Ui k="toolbar.settings" />, or press <Kbd action="openSettings" />.
+
+2. Select <Ui k="settings.mouse" />.
+
+3. Change the settings:
+
+   - <Ui k="settings.mouse.zoomSensitivity" />: how far each turn of the wheel, scroll or pinch zooms.
+   - <Ui k="settings.mouse.trackpadMode" />: on, scrolling pans the field and pinching zooms it. Off, the scroll wheel zooms around the pointer. It's on unless you turn it off.
+   - <Ui k="settings.mouse.trackpadPanSensitivity" />: how far a two-finger scroll pans the field. It shows only while Trackpad mode is on.
+
+</Steps>
+
+The settings take effect at once and apply to every show.
+
+## Related
+
+- [Editor and Preview](/guides/workspace/editor-and-preview/): watch the show with the field filling the window.
+- [Select marchers](/guides/marchers/select-marchers/): click, box and lasso selection on the field.
+- [Settings](/guides/reference/settings/): every app setting.

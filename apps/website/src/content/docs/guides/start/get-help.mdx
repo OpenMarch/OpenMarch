@@ -1,0 +1,44 @@
+---
+title: Get help and send feedback
+description: Where to ask a question, report a bug or suggest a feature, and what to include.
+type: how-to
+covers:
+  - apps/desktop/src/components/titlebar/BugReport.tsx
+  - apps/desktop/src/ErrorBoundary.tsx
+  - i18n:titlebar.bugReport
+  - i18n:errorBoundary
+sidebar:
+  order: 9
+---
+
+import Ui from "@/components/docs/Ui.astro";
+
+OpenMarch is free and built by volunteers, so hearing what goes wrong and what you need is how it gets better. Ask a question, report a bug or suggest a feature in any of the places below.
+
+## Where to go
+
+- [Discord](https://discord.openmarch.com): ask a question, show your work, or talk something through with the team and other users. It's the quickest way to get an answer.
+- [GitHub issues](https://github.com/OpenMarch/OpenMarch/issues): report a bug or request a feature. An issue is tracked until it's fixed, other users can add to it, and you're told when it changes. You need a free GitHub account.
+- [The OpenMarch Facebook group](https://facebook-group.openmarch.com): community discussion.
+- Email [contact@openmarch.com](mailto:contact@openmarch.com) if you'd rather not use any of these, or need to send a show privately.
+
+In the app, <Ui k="titlebar.bugReport" /> in the title bar opens this page.
+
+## Report a bug
+
+1. Check [Known issues](/troubleshooting/known-issues/), in case it's already there with a way around it.
+2. Open a [bug report on GitHub](https://github.com/OpenMarch/OpenMarch/issues/new?template=bug-template.yaml), or post in Discord.
+3. Say what you did, what you expected, and what happened instead. The steps that make it happen again are the most useful part.
+4. Give your OpenMarch version, shown next to the name in the title bar, and your system (for example macOS 15, Windows 11, or the web editor in Safari on an iPad).
+5. If you can, attach a screenshot or a short screen recording, and the `.dots` show it happened in.
+
+If OpenMarch stops with <Ui k="errorBoundary.title" />, select <Ui k="errorBoundary.copyErrorMessage" /> and paste the message into your report. <Ui k="errorBoundary.reportIssue" /> opens this page.
+
+## Suggest a feature
+
+Open a [feature request on GitHub](https://github.com/OpenMarch/OpenMarch/issues/new?template=feature-request.yaml). Describe what you're trying to do in your show and what gets in the way, not only the button you'd like: there's often more than one way to solve it. Before you open a new one, search the [existing issues](https://github.com/OpenMarch/OpenMarch/issues) and add to a request that's already there.
+
+## Related
+
+- [Known issues](/troubleshooting/known-issues/): problems in 0.2 and what to do about them.
+- [File errors](/troubleshooting/file-errors/): when a show won't open.

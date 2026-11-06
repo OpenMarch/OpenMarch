@@ -1,0 +1,135 @@
+---
+title: Edit the field
+description: Choose a field template, or customize the step size, checkpoints, labels, image and colors, and share a field between shows.
+type: how-to
+covers:
+  - apps/desktop/src/components/field
+  - apps/desktop/src/global/classes/fieldTemplates
+  - apps/desktop/src/components/launchpage/settings/FieldSettings.tsx
+  - i18n:fieldProperties
+  - i18n:field.general
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+The field is the surface you write for: its size, its step size, the lines and hashes that marchers' coordinates are measured from, and how it looks. Every show has one. Start from the template closest to where you perform, then customize it if your field or floor is different.
+
+Open the field's settings with <Ui k="sidebar.field" /> in the sidebar. Field changes are part of the show's history, so <Kbd action="performUndo" /> takes them back.
+
+<Media
+  id="field-panel"
+  alt="The Field panel: Import Field and Export Field buttons, the Field Template list set to Custom, and the custom field's General, Checkpoints, Image and Theme tabs with Field Name, Step Size, Step Size Warning Threshold and Measurement System."
+  maxWidth={560}
+/>
+
+## Choose a template
+
+<Steps>
+
+1. Select <Ui k="sidebar.field" /> in the sidebar.
+2. Open <Ui k="fieldProperties.fieldTemplate.label" /> and choose a field.
+3. Select <Ui k="fieldProperties.applyFieldType" />.
+
+</Steps>
+
+The templates are:
+
+- <Ui k="fieldProperties.fieldTemplate.football" />: high school, college and pro football fields, each with or without end zones, at 8 to 5 (22.5-inch steps).
+- <Ui k="fieldProperties.fieldTemplate.grid" />: indoor floors of 40 × 60, 50 × 70, 50 × 80 and 50 × 90 feet, with 24-inch steps or 6 to 5 steps, and SoundSport fields at 8 to 5 or 6 to 5.
+
+<Aside type="caution">Marchers don't move when you change the field. They keep their place on the drawing, so on a field of another size they can end up somewhere else in steps, or off the field. Change the field before you write drill, or check every page after.</Aside>
+
+<Media
+  id="field-template"
+  alt="The Customization section with a different template chosen, the Apply Field Type button, and the warning that marchers will not move to the new field type size."
+  maxWidth={560}
+/>
+
+## Customize the field
+
+Select <Ui k="fieldProperties.customize" /> under the template. The field becomes a custom field (the template list shows <Ui k="fieldProperties.customFieldName" />), and four tabs appear. Changes show on the field as you make them; press <Kbd keys="Enter" /> or leave a box to apply what you typed.
+
+### General
+
+- <Ui k="fieldProperties.labels.fieldName" />: a name for you; it does nothing else.
+- <Ui k="fieldProperties.labels.stepSize" />: the length of one step on this field. It sets how far apart the grid lines are and how step sizes are worked out.
+- <Ui k="fieldProperties.labels.stepSizeWarningThreshold" />: the longest step before a move is marked as too big. See [Step size warnings](/guides/field/step-size-warnings/).
+- <Ui k="fieldProperties.labels.measurementSystem" />: inches (<Ui k="fieldProperties.options.imperial" />) or centimeters (<Ui k="fieldProperties.options.metric" />). You can switch back and forth; the values are converted.
+- <Ui k="fieldProperties.labels.halfLineXInterval" /> and <Ui k="fieldProperties.labels.halfLineYInterval" />: every how many steps a darker half line is drawn, from the center and from the front. Leave one empty for no half lines that way. Half lines don't change coordinates.
+- <Ui k="fieldProperties.sections.sideDescriptions" />: what the two sides are called (Side 1 and Side 2, Audience Left and Audience Right, Stage Right and Stage Left) and their short forms, used in coordinates.
+- <Ui k="fieldProperties.sections.fieldLabels" />: on a football field, how many steps from the front sideline the yard numbers are drawn. These come from the field's template and can't be changed here.
+- <Ui k="fieldProperties.sections.externalLabels" />: whether the labels outside the field show on each side.
+
+### Checkpoints
+
+Checkpoints are the lines that coordinates are measured from: yard lines across the field (X-checkpoints) and hashes or lines from front to back (Y-checkpoints). A marcher's coordinate reads like "2 steps outside the 35, 4 steps behind the front hash".
+
+<Media
+  id="field-checkpoints"
+  alt="The Checkpoints tab with the X-checkpoints listed from the 0 yard line at -80 steps to the 50 yard line at 0 steps, and the first one open for editing."
+  maxWidth={560}
+/>
+
+Select a checkpoint to edit it:
+
+- <Ui k="fieldProperties.checkpoint.name" />: the full name, such as 45 yard line. It's for you.
+- <Ui k="fieldProperties.checkpoint.shortName" />: the name in coordinates and in the labels outside the field, such as 45 or FH.
+- <Ui k="fieldProperties.checkpoint.fieldLabel" />: the number painted on the field, such as the yard number.
+- <Ui k="fieldProperties.checkpoint.stepsFromCenter" /> (X) or <Ui k="fieldProperties.checkpoint.stepsFromFront" /> (Y): where it is. X-checkpoints count from the center: negative is to the audience's left. Y-checkpoints count from the front: negative is toward the back.
+- <Ui k="fieldProperties.checkpoint.visible" />: whether it's drawn. A hidden checkpoint can still be used for coordinates.
+- <Ui k="fieldProperties.checkpoint.useAsReference" />: whether coordinates are measured from it. Turn it off for lines you want to see but not count from, such as the real hash next to the grid hash.
+
+Use <Ui k="fieldProperties.buttons.newXCheckpoint" /> and <Ui k="fieldProperties.buttons.newYCheckpoint" /> to add one, and <Ui k="fieldProperties.checkpoint.delete" /> to remove one. A field needs at least two of each.
+
+The outermost checkpoints set the field's size. Keep the leftmost and rightmost X-checkpoints the same distance from the center, and every Y-checkpoint at 0 or below; the tab warns you when they aren't. Turn on <Ui k="fieldProperties.labels.useHashes" /> to draw Y-checkpoints as short hash marks, as on a football field, instead of lines across the field.
+
+### Image
+
+Put a picture under the field, such as a floor tarp design or a photo of your field.
+
+<Steps>
+
+1. On the <Ui k="fieldProperties.tabs.image" /> tab, select <Ui k="fieldProperties.buttons.importImage" /> and choose an image file.
+2. Choose <Ui k="fieldProperties.options.fit" /> to fit the whole image inside the field, or <Ui k="fieldProperties.options.fill" /> to fill the field and let the image's edges run over. The image keeps its shape either way.
+3. Drag <Ui k="fieldProperties.labels.backgroundImageOpacity" /> to fade it.
+
+</Steps>
+
+Turn off <Ui k="fieldProperties.labels.showBackgroundImage" /> to hide the image without removing it. The image is saved in the show.
+
+### Theme
+
+Change the colors of the field's background, lines, labels, marchers, paths and shapes. Each color has its own reset button, and <Ui k="fieldProperties.buttons.resetTheme" /> puts them all back.
+
+## Use a field in another show
+
+A field you've customized is saved in its show. To use it in another show:
+
+<Steps>
+
+1. In the show with the field, select <Ui k="field.general.exportField" /> in the Field panel and save the `.fieldots` file.
+2. Open the other show and select <Ui k="field.general.importField" />.
+3. Choose the `.fieldots` file.
+
+</Steps>
+
+The window reloads with the new field. The field file doesn't include the field's image; import it again on the <Ui k="fieldProperties.tabs.image" /> tab.
+
+## Change how the field is drawn
+
+A few display choices aren't part of the field, and apply to every show. Open settings (<Kbd action="openSettings" />) and choose <Ui k="settings.field" />:
+
+- Grid lines and Half lines: show or hide the step grid and the half lines.
+- Label size and Label position: how big marchers' labels are, and whether they sit above or beside the dot.
+- Step size warnings (off until you turn them on): see [Step size warnings](/guides/field/step-size-warnings/).
+
+## Related
+
+- [Step size warnings](/guides/field/step-size-warnings/): what the red paths mean and how to set the limit.
+- [Show settings](/guides/field/show-settings/): page and measure numbering and the show's defaults.
+- [Move around the field](/guides/workspace/move-around-the-field/): pan, zoom and fit.

@@ -1,0 +1,139 @@
+---
+title: Props
+description: Draw props on the field, size and turn them, move them during the show, and see them as blocks in the 3D View.
+type: how-to
+covers:
+  - apps/desktop/src/components/items
+  - apps/desktop/src/items
+  - apps/desktop/src/field/editor/propTool.ts
+  - apps/desktop/src/field/editor/itemTransform.ts
+  - apps/desktop/src/view3d/window/props
+  - apps/desktop/src/view3d/core/props
+  - i18n:props
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Props are the set pieces on the field: risers, platforms, floor tarps, walls. You draw a prop's outline on the field, give it a height, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
+
+## Draw a prop
+
+<Steps>
+
+1. Move the playhead to the count where the prop first appears on the field.
+
+2. Select <Ui k="props.title" /> (the cube) in the sidebar.
+
+3. Under <Ui k="props.draw.title" plain />, choose an outline: <Ui k="props.outline.rectangle" />, <Ui k="props.outline.circle" />, <Ui k="props.outline.arc" />, <Ui k="props.outline.polygon" /> or <Ui k="props.outline.freehand" />. The panel closes and a note at the bottom of the field says how to draw that outline.
+
+4. Draw the outline on the field:
+   - <Ui k="props.outline.rectangle" plain />: drag from one corner to the opposite corner.
+   - <Ui k="props.outline.circle" plain />: drag from the center out to the edge.
+   - <Ui k="props.outline.arc" plain />: click both ends of the arc, then click to set how far it curves.
+   - <Ui k="props.outline.polygon" plain />: click each corner, then double-click to finish.
+   - <Ui k="props.outline.freehand" plain />: drag along the shape you want.
+
+</Steps>
+
+The prop appears as soon as you finish, and the drawing tool turns off. To stop drawing without making a prop, select <Ui k="props.draw.cancel" /> in the note or press <Kbd keys="Escape" />.
+
+<Media
+  id="3d-props-draw"
+  alt="Rectangle is chosen in the Props panel, the panel closes, and a drag behind the band draws a rectangle prop on the field."
+/>
+
+Corners and ends snap the way marcher positions do, to the coordinate rounding set in the toolbar's <Ui k="inspector.shape.alignmentTab" plain /> tab. Freehand outlines don't snap.
+
+A new prop is on the field from the count the playhead was on, and not before it. It starts as a <Ui k="props.surface.floor" plain /> prop with no height, like a tarp; give it a height in its settings (below) to make it a riser or a wall.
+
+## Change a prop's name, color and size
+
+<Steps>
+
+1. Select <Ui k="props.title" /> in the sidebar.
+
+2. In the list, select <Ui k="props.edit" /> (the pencil) next to the prop.
+
+</Steps>
+
+<Media
+  id="3d-props-edit"
+  alt="The Edit Prop panel: Name, Color, Surface, and under Outline from count 33, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, and Transition 1 counts."
+  maxWidth={480}
+/>
+
+- <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
+- <Ui k="props.color" />: colors the prop on the field and in the 3D View. Choose <Ui k="props.colorNone" plain /> to go back to the plain look.
+- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In this version the surface doesn't change how the prop is drawn, and marchers don't stand on platforms.
+- <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
+
+The size and turn are set from a count: the heading reads <Ui k="props.outlineFrom" values={{ count: "N" }} plain />, which is the count at or before the playhead. A change you make applies from that count until the prop's next change. That's how a prop grows, shrinks or turns during the show:
+
+<Steps>
+
+1. Move the playhead to the count where the change should be complete.
+
+2. Change <Ui k="props.width" plain />, <Ui k="props.depth" plain />, <Ui k="props.height" plain /> or <Ui k="props.rotation" plain />.
+
+3. Set <Ui k="props.transition" /> to the number of counts the change takes. With 8, the prop turns or resizes over the 8 counts before that count; with 1, it changes on the count.
+
+</Steps>
+
+If the playhead is before the prop's first count, the panel says the prop is off the field there, and you can't change its size until you move the playhead to a count where it's on the field.
+
+To color several props at once, select them on the field: the Props panel shows how many are selected and one color for all of them.
+
+## Resize and turn a prop on the field
+
+Click inside a prop's outline to select it. Handles appear around it:
+
+- Drag a side or a corner to resize the prop. It grows or shrinks about its center.
+- Drag the round handle to turn it about its center.
+
+<Media
+  id="3d-props-handles"
+  alt="A selected rectangle prop with handles: the round handle is dragged to turn the prop, then a corner handle is dragged to make it larger."
+/>
+
+Like the fields in the panel, a resize or turn is saved at the count at or before the playhead. Dragging the handles never moves the prop.
+
+## Move a prop during the show
+
+A prop moves on the timeline the same way a marcher does. Select it and drag it, or use the alignment tools, on a later page: it travels there during that page's move, and it's held in place when nothing moves it. See [Move marchers](/guides/marchers/move-marchers/) and [Moves](/guides/timeline/moves/).
+
+Props aren't marchers, though: they aren't in the marcher list.
+
+## Hide props and their names
+
+In the Props panel:
+
+- The eye next to a prop hides it on the field and in the 3D View, or shows it again. Hiding is a view setting on your computer; it doesn't change the show.
+- <Ui k="props.showNames" /> shows or hides every prop's name on the field.
+- Select a prop's row to select the prop on the field.
+- <Ui k="props.delete" /> (the trash can) deletes the prop. Undo (<Kbd action="performUndo" />) brings it back.
+
+<Media
+  id="3d-props-panel"
+  alt="The Props panel: buttons to draw a Rectangle, Circle, Arc, Polygon or Freehand prop, a Show all names switch, and a prop named Riser with its eye, edit and delete buttons."
+  maxWidth={420}
+/>
+
+## Props in the 3D View
+
+In the 3D View each prop is a solid block: its outline, raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline, as the outlines do on the field. They have no pictures or textures.
+
+<Media
+  id="3d-props-block"
+  alt="The 3D View with an amber block, 1.2 meters tall, standing behind the band on the field."
+/>
+
+## Related
+
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, props included, in 3D.
+- [Move marchers](/guides/marchers/move-marchers/): props move the same way.
+- [Moves](/guides/timeline/moves/): how moves place motion on the timeline.

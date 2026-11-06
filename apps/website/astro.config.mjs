@@ -31,7 +31,21 @@ export default defineConfig({
     redirects: {
         "/alexdumo": "/about/alexdumo",
         "/developers/contributing": "/developers/codebase",
-        "/about/submitting-feedback/": "/guides/submitting-feedback/",
+        "/about/submitting-feedback/": "/guides/start/get-help/",
+        // The 0.1.7 guides, moved when the guide was rewritten for 0.2
+        "/about/features": "/guides/",
+        "/guides/getting-started": "/guides/start/first-show/",
+        "/guides/navigation": "/guides/workspace/move-around-the-field/",
+        "/guides/writing-drill": "/guides/shapes/",
+        "/guides/configuring-your-show": "/guides/field/show-settings/",
+        "/guides/exporting": "/guides/files/print-charts/",
+        "/guides/step-size-warnings": "/guides/field/step-size-warnings/",
+        "/guides/editing-the-grid": "/guides/field/edit-the-field/",
+        "/guides/reverting": "/troubleshooting/open-in-an-older-version/",
+        "/guides/repairing-database": "/troubleshooting/repair-a-file/",
+        "/guides/submitting-feedback": "/guides/start/get-help/",
+        // The app's Learn page links here
+        "/guides/music": "/guides/music/counts-and-music/",
         "/privacy": "/legal/privacy",
         "/refunds": "/legal/refunds",
         "/terms": "/legal/terms",
@@ -84,9 +98,55 @@ export default defineConfig({
                 "./src/styles/starlight.css",
             ],
             sidebar: [
+                // The user guide, ordered the way the app is laid out. Each group is a folder in
+                // src/content/docs/guides; pages order themselves with `sidebar.order`.
+                // See apps/website/AGENTS.md before adding or moving a page.
                 {
-                    label: "Guides",
-                    items: [{ autogenerate: { directory: "guides" } }],
+                    label: "Start here",
+                    items: [
+                        { slug: "guides" },
+                        { autogenerate: { directory: "guides/start" } },
+                    ],
+                },
+                {
+                    label: "The workspace",
+                    items: [
+                        { autogenerate: { directory: "guides/workspace" } },
+                    ],
+                },
+                {
+                    label: "Marchers",
+                    items: [{ autogenerate: { directory: "guides/marchers" } }],
+                },
+                {
+                    label: "Timeline",
+                    items: [{ autogenerate: { directory: "guides/timeline" } }],
+                },
+                {
+                    label: "Shapes",
+                    items: [{ autogenerate: { directory: "guides/shapes" } }],
+                },
+                {
+                    label: "Music",
+                    items: [{ autogenerate: { directory: "guides/music" } }],
+                },
+                {
+                    label: "Field",
+                    items: [{ autogenerate: { directory: "guides/field" } }],
+                },
+                {
+                    label: "3D View and props",
+                    items: [{ autogenerate: { directory: "guides/3d-view" } }],
+                },
+                {
+                    label: "Files and export",
+                    items: [{ autogenerate: { directory: "guides/files" } }],
+                },
+                {
+                    label: "Reference",
+                    items: [
+                        { autogenerate: { directory: "guides/reference" } },
+                    ],
                 },
                 {
                     label: "Troubleshooting",
@@ -94,11 +154,21 @@ export default defineConfig({
                 },
                 {
                     label: "On The Move",
+                    collapsed: true,
                     items: [{ autogenerate: { directory: "otm" } }],
                 },
                 {
                     label: "Developers",
+                    collapsed: true,
                     items: [{ autogenerate: { directory: "developers" } }],
+                },
+            ],
+            head: [
+                // Shortcuts show the reader's own keys (<Kbd>): Mac or everyone else
+                {
+                    tag: "script",
+                    content:
+                        "document.documentElement.dataset.os = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? 'mac' : 'other';",
                 },
             ],
         }),

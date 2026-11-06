@@ -1,116 +1,95 @@
 ---
-title: "File Errors"
-description: "Information for various file errors"
+title: File errors
+description: What to do when OpenMarch can't open or save a show file.
+type: how-to
+covers:
+  - apps/desktop/src/hooks/useLoadFileErrorHandler.tsx
+  - apps/desktop/electron/database/fileVersion.ts
+  - i18n:fileAccessDialogError
+  - i18n:convertShow.openFailed
+  - i18n:convertShow.backupError
+sidebar:
+  order: 1
 ---
 
-import { Steps } from "@astrojs/starlight/components";
+import Ui from "@/components/docs/Ui.astro";
 
-This page contains several file errors you may come across while using OpenMarch.
-Please refer to the appropriate section for the error you are receiving and look for the troubleshooting steps for your operating system.
+When OpenMarch can't open a show, it says why in a message. Find the message's title below.
 
-## Invalid File Permissions Error
+## Invalid file permissions error
 
-This happens when OpenMarch doesn't have permission to access or write to a file.
-If you see the following, it is likely a permissions issue:
+OpenMarch isn't allowed to read or write the file. You might see:
 
-- When opening a file
-  - OpenMarch popup saying - `Invalid file permissions`
-  - System popup saying - `Unable to open file`
-  - An infinite loading spinner
-- When editing a show
-  - Seeing `Error updating pages` when trying to edit marchers
-  - Not seeing your changes persist when you close and reopen the file
+- <Ui k="fileAccessDialogError.forbidden.title" /> or "You do not have permission to open this file" when you open it.
+- A spinner that never stops.
+- An error such as "Error updating pages" when you change something, or changes that are gone the next time you open the show.
 
-If you see an error similar to `You do not have permission to open this file` please review the following steps:
+Give your user account permission to read and write the file, or move the file to a folder of your own, such as Documents, and open it from there.
 
 ### Windows
 
-#### Using the File Explorer
+1. In File Explorer, right-click the file and select **Properties**.
+2. Select the **Security** tab.
+3. Under **Group or user names**, select your user account.
+4. In the permissions list, check that **Read** and **Write** are allowed. If they aren't, or **Deny** is checked, ask whoever manages the computer to give you access.
 
-<Steps>
+### macOS
 
-1. Locate the file in Windows File Explorer.
-1. Right-click on the file and select Properties from the context menu
-1. In the Properties window, go to the Security tab
-1. Under "Group or user names," select your user account or the group you belong to
-1. In the "Permissions for [Your Username]" box below, check the "Allow" column for Read and Write permissions. A checkmark indicates you have the permission
-1. If "Read" or "Write" is not checked, or if "Deny" is checked, you do not have that specific permission. Contact your system administrator for more information
+The first time OpenMarch opens a file in your Desktop, Documents or Downloads folder, macOS asks whether to allow it. If you chose not to, allow it in System Settings:
 
-</Steps>
+1. Open the Apple menu and select **System Settings**.
+2. Select **Privacy & Security**, then **Files & Folders**.
+3. Find OpenMarch and turn on the folder your show is in.
 
-### MacOS
+If that doesn't help, check the file itself:
 
-Be sure when MacOS prompts you with "OpenMarch would like to access files in your Desktop folder," allow it.
-If you clicked "Do not allow," or are having issues with permissions, please review the following steps:
+1. In Finder, select the file, then choose **File › Get Info**.
+2. Open **Sharing & Permissions** at the bottom of the window.
+3. Select the lock and enter your password.
+4. Set your user name to **Read & Write**.
 
-#### System settings
-
-This is most likely the solution to many MacOS file permission issues.
-
-<Steps>
-
-1. **Open System Settings** - Click the Apple icon in the top-left corner and select System Settings.
-1. **Navigate to Privacy** - Click Privacy & Security in the sidebar (you may need to scroll down).
-1. **Find Files & Folders** - Select Files & Folders from the list of permissions.
-1. **Adjust Settings** - Review the apps listed and turn access on or off for individual applications, such as Desktop, Documents, or Downloads.
-
-</Steps>
-
-#### Using Finder
-
-This is only for specific files and is likely just for rare cases.
-
-<Steps>
-
-1. On your Mac, select a disk, folder, or file, then choose `File > Get Info`.
-1. If the information in Sharing & Permissions isn’t visible, click the arrow. (You may need to scroll down.)
-1. Click the lock to unlock permission settings:
-1. Select a user or group in the Name column, click the pop-up menu, then choose a privilege setting.
-   - **Read & Write** - Allows a user to open the item and change it.
-   - **Read only** - Allows a user to open the item, but not change its contents.
-   - **Write only (Drop Box)** - Makes a folder into a drop box. Users can copy items to the drop box, but can’t open it. Only the owner of the drop box can open it.
-   - **No Access** - Blocks all access to the item.
-
-</Steps>
-
-You can undo any changes to privilege settings for a user or group in the Sharing & Permissions section since opening the Info window. Before closing the Info window, click the Action pop-up menu at the bottom of the window, then choose “Revert changes.”
-
-Please see the <a href="https://support.apple.com/en-lb/guide/mac-help/mchlp1203/mac">Mac User Guide</a> for more information.
+Apple's [Mac User Guide](https://support.apple.com/guide/mac-help/mchlp1203/mac) explains permissions in more detail.
 
 ### Linux
 
-#### Using `chmod` via the terminal
+1. Open a terminal in the folder that has the show.
+2. Run `ls -l "my show.dots"` to see the file's permissions.
+3. Run `chmod u+rw "my show.dots"` to give yourself read and write permission.
 
-<Steps>
+## File not found error
 
-1. Open a terminal and enter the directory containing your `.dots` file (e.g. `cd path/to/dots-file/`)
-1. Type `ls -l my-project.dots` to verify whether you have read/write permissions<br/>(see <a href="https://www.redhat.com/en/blog/linux-file-permissions-explained">Linux file permissions explained</a> for more information)
-1. Type `chmod u+rw my-project.dots` to add read and write permissions for your current user
-1. Verify the permissions were updated via `ls -l my-project.dots`
+<Ui k="fileAccessDialogError.notFound.title" /> means there's no file at the place OpenMarch looked. This usually happens when you open a show from the start page's recent files after the file was moved, renamed or deleted.
 
-</Steps>
+1. Find the file where it is now, and open it with <Ui k="launchpage.files.openFile" /> on the start page.
+2. Remove the old entry from <Ui k="launchpage.files.title" /> on the start page.
 
-## File Not Found Error
+If you didn't open it from the recent files, [report it](/guides/start/get-help/).
 
-If you see an error similar to `The file does not exist at this location` this is likely due to trying
-to open a recent file that has since moved or been renamed. Please review the following steps:
+## Update OpenMarch to open this file
 
-<Steps>
+<Ui k="fileAccessDialogError.tooNew.title" /> means the show was saved by a newer version of OpenMarch than the one you're using. The file hasn't been changed. Update OpenMarch, or [download the latest version](/download/), and open it again.
 
-1. Open the source folder of the `.dots` file.
-1. Verify the `.dots` file exists in that folder and has not been renamed.
-1. If the `.dots` file was moved or renamed, use the `Open File` menu item in OpenMarch to open the
-   moved / renamed file. Click the `X` button on the Recent Files section to remove the outdated file.
+## Couldn't back up or convert your file
 
-</Steps>
+These appear when you open a show from OpenMarch 0.1.7, which 0.2 converts after saving a copy of it. In each case your file isn't changed.
 
-If you were not using the Recent Files section and you received this error, please [submit a bug report](/about/submitting-feedback).
+- <Ui k="convertShow.openFailed.backupTitle" />: OpenMarch couldn't save the `.pre-conversion.dots` copy, so it didn't convert anything. The message says why. Most often the folder is read-only or you don't have permission to write in it, or the disk is full: move the show to a folder of your own, or free some space, and open it again. If the file is in use by another program, close that program first.
+- <Ui k="convertShow.openFailed.convertTitle" />: the conversion failed and was undone. The message names the copy that was saved. [Report it](/guides/start/get-help/) and include the show if you can.
 
-## Server Error
+[Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/) explains the conversion.
 
-This was likely caused by an internal system in OpenMarch.
-Please [submit a bug report](/about/submitting-feedback) and consider including your `.dots` file.
+## Server error
 
-## "Unable to open file" Error or Render Failure
+<Ui k="fileAccessDialogError.server.title" /> comes from a problem inside OpenMarch, not from your file. [Report it](/guides/start/get-help/), and include the show if you can.
 
-Please [submit a bug report](/about/submitting-feedback) and consider including your `.dots` file.
+## "Unable to open file" error or render failure
+
+The message says "Unable to open file", or OpenMarch shows <Ui k="fileAccessDialogError.renderFail.title" />. [Report it](/guides/start/get-help/), and include the show if you can.
+
+If a show opens but you get errors while you edit it, try [repairing it](/troubleshooting/repair-a-file/).
+
+## Related
+
+- [Repair a show file](/troubleshooting/repair-a-file/): when a show opens but edits fail.
+- [Open a show in an older version](/troubleshooting/open-in-an-older-version/): the copies OpenMarch keeps.
+- [Get help](/guides/start/get-help/): where to report a problem.

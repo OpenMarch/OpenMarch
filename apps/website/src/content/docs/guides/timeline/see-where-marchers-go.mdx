@@ -1,0 +1,71 @@
+---
+title: See where marchers go
+description: Show where marchers were at the start flag and the paths they walk to the playhead, and the paths into the next page.
+type: how-to
+covers:
+  - apps/desktop/src/timeline/startFlagLevels.ts
+  - apps/desktop/src/stores/StartFlagKeyStore.ts
+  - apps/desktop/src/field/startFlagOverlay.ts
+  - apps/desktop/src/field/timelineOverlays.ts
+  - apps/desktop/src/timeline/useTimelinePathSamples.ts
+  - action:toggleStartFlagPositions
+  - action:toggleNextPagePaths
+  - i18n:timeline.startFlagPositions
+  - i18n:toolbar.view.nextPaths
+sidebar:
+  order: 6
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+While you set a page, it helps to see where the marchers came from and where they go next. The field can draw two things: start flag positions, which show where marchers were at the start flag and the path each one walks to the playhead, and next paths, which show where each marcher goes on the following page.
+
+## Start flag positions
+
+Start flag positions draw, for each marcher:
+
+- a small dot where it was at the start flag, and
+- a thin gray path from that dot to where it is at the playhead.
+
+When you've selected a page, that's where the marchers start the page and the route they walk to its set. On the selected marchers' paths, small squares mark each count where they have a keyframe.
+
+<Media
+  id="timeline-paths"
+  alt="The field at the end of Page 5 with start flag positions on for everyone: a thin gray line runs from each marcher back to a small dot where it stood at the start of the page. Marchers that didn't move on the page have no line."
+/>
+
+By default the field shows dots for the selected marchers only, and no paths. To see everyone's dots and paths for a moment, hold <Kbd action="toggleStartFlagPositions" />. Tap it instead to keep them on, and tap again to go back.
+
+## Choose what start flag positions show
+
+1. Select <Ui k="timeline.startFlagPositions.label" />, the first of the buttons in the field's top-right corner.
+2. Under <Ui k="timeline.startFlagPositions.always" />, choose who gets <Ui k="timeline.startFlagPositions.dots" /> and <Ui k="timeline.startFlagPositions.paths" />: <Ui k="timeline.startFlagPositions.level.off" />, <Ui k="timeline.startFlagPositions.level.selected" /> marchers, or <Ui k="timeline.startFlagPositions.level.all" />.
+3. Under Hold, choose what the field shows while you hold <Kbd action="toggleStartFlagPositions" />.
+
+<Media
+  id="timeline-start-flag-positions"
+  alt="The Start flag positions menu: under Always, Dots set to Selected and Paths set to Off; under Hold N, Dots and Paths both set to All; and a Next paths switch with the key M."
+/>
+
+Paths are never shown for more marchers than dots: choosing All paths also shows all dots, and turning dots down turns paths down with them. The settings are kept for the next time you open OpenMarch.
+
+## Next paths
+
+Next paths show where each marcher goes on the page after the one the playhead is on: a line from its spot at this page's set to its spot at the next page's set, with a dot at the end.
+
+To turn them on or off, turn on <Ui k="toolbar.view.nextPaths" /> in the <Ui k="timeline.startFlagPositions.label" /> menu, or press <Kbd action="toggleNextPagePaths" />.
+
+While you're working on one move alone, the field draws that move's paths instead; see [Moves](/guides/timeline/moves/#work-on-one-move-alone).
+
+## Paths that are too fast
+
+When step size warnings are on, any stretch of a path where a marcher would have to take steps larger than the show's limit is drawn red and dashed. Next paths with a warning show even when next paths are turned off. See [Step size warnings](/guides/field/step-size-warnings/) for how to set the limit and where else the warning shows.
+
+## Related
+
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): the start flag and the playhead.
+- [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): what the keyframes on a path are.
+- [Moves](/guides/timeline/moves/): isolate a move to see only its paths.
+- [Step size warnings](/guides/field/step-size-warnings/): the step size limit and its other warnings.

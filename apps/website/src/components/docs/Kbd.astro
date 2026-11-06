@@ -1,0 +1,173 @@
+---
+// cspell:words arrowleft arrowright arrowup arrowdown
+/**
+ * A keyboard shortcut, written the way the reader's system writes it ("⇧⌘Z" on a Mac,
+ * "Ctrl+Shift+Z" elsewhere), as one cap like the app's own.
+ *
+ *   <Kbd action="redo" />            the action's first default shortcut (from the app)
+ *   <Kbd keys="Mod+Shift+Z" />       a binding: Mod is ⌘ on a Mac and Ctrl elsewhere
+ *   <Kbd keys="Shift" gesture="drag" />   a key held while dragging
+ *
+ * An unknown action fails the build. Action ids are in apps/website/src/data/generated/actions.json.
+ */
+import actions from "../../data/generated/actions.json";
+
+interface Props {
+    action?: string;
+    keys?: string;
+    /** A pointer gesture after the keys: drag, click, scroll, right-drag */
+    gesture?: string;
+}
+
+type Shortcut = { keys: string[]; gesture?: string };
+const { action, keys, gesture } = Astro.props;
+
+const MAC: Record<string, string> = {
+    mod: "⌘",
+    cmd: "⌘",
+    meta: "⌘",
+    ctrl: "⌃",
+    control: "⌃",
+    shift: "⇧",
+    alt: "⌥",
+    option: "⌥",
+};
+const OTHER: Record<string, string> = {
+    mod: "Ctrl",
+    cmd: "Ctrl",
+    meta: "Win",
+    ctrl: "Ctrl",
+    control: "Ctrl",
+    shift: "Shift",
+    alt: "Alt",
+    option: "Alt",
+};
+const NAMES: Record<string, string> = {
+    space: "Space",
+    escape: "Esc",
+    esc: "Esc",
+    enter: "Enter",
+    return: "Enter",
+    tab: "Tab",
+    backspace: "Backspace",
+    delete: "Delete",
+    arrowleft: "←",
+    arrowright: "→",
+    arrowup: "↑",
+    arrowdown: "↓",
+    left: "←",
+    right: "→",
+    up: "↑",
+    down: "↓",
+    home: "Home",
+    end: "End",
+    pageup: "Page Up",
+    pagedown: "Page Down",
+};
+const MAC_ORDER = ["⌃", "⌥", "⇧", "⌘"];
+
+function format(binding: string, isMac: boolean): Shortcut {
+    const parts = binding
+        .replace(/\$mod/gi, "Mod")
+        .split("+")
+        .map((p) => p.trim())
+        .filter(Boolean);
+    const table = isMac ? MAC : OTHER;
+    const mods: string[] = [];
+    const rest: string[] = [];
+    for (const part of parts) {
+        const k = part.toLowerCase();
+        if (table[k]) mods.push(table[k]);
+        else
+            rest.push(
+                NAMES[k] ?? (part.length === 1 ? part.toUpperCase() : part),
+            );
+    }
+    if (isMac) mods.sort((a, b) => MAC_ORDER.indexOf(a) - MAC_ORDER.indexOf(b));
+    return { keys: [...mods, ...rest] };
+}
+
+let mac: Shortcut;
+let other: Shortcut;
+if (action) {
+    const entry = (
+        actions as Record<
+            string,
+            { bindings: { mac: Shortcut; other: Shortcut }[] }
+        >
+    )[action];
+    if (!entry)
+        throw new Error(
+            `<Kbd action="${action}">: no such action (see src/data/generated/actions.json)`,
+        );
+    if (!entry.bindings[0])
+        throw new Error(
+            `<Kbd action="${action}">: the action has no default shortcut`,
+        );
+    ({ mac, other } = entry.bindings[0]);
+} else if (keys) {
+    mac = format(keys, true);
+    other = format(keys, false);
+} else throw new Error("<Kbd> needs action or keys");
+const word = gesture ?? mac.gesture;
+const SPOKEN: Record<string, string> = {
+    "⌘": "Command",
+    "⇧": "Shift",
+    "⌥": "Option",
+    "⌃": "Control",
+};
+const spoken = (s: Shortcut) =>
+    [...s.keys.map((k) => SPOKEN[k] ?? k), word].filter(Boolean).join(" ");
+---
+
+<kbd
+    class="docs-kbd"
+    title={`Mac: ${mac.keys.join("")}${word ? ` ${word}` : ""}; Windows and Linux: ${other.keys.join("+")}${word ? ` ${word}` : ""}`}
+    ><span class="docs-kbd-other" aria-label={spoken(other)}
+        >{
+            other.keys.map((k, i) => (
+                <>
+                    {i > 0 && <span class="docs-kbd-plus">+</span>}
+                    {k}
+                </>
+            ))
+        }</span
+    ><span class="docs-kbd-mac" aria-label={spoken(mac)}
+        >{mac.keys.join("")}</span
+    >{word && <span class="docs-kbd-gesture">{word}</span>}</kbd
+>
+
+<style>
+    .docs-kbd {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 0.3em;
+        padding: 0.05em 0.45em;
+        border: 1px solid var(--sl-color-gray-5);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        background: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+        font-family: var(--sl-font);
+        font-size: 0.85em;
+        font-weight: 500;
+        line-height: 1.5;
+        white-space: nowrap;
+    }
+    .docs-kbd-plus {
+        margin: 0 0.12em;
+        opacity: 0.5;
+        font-weight: 400;
+    }
+    .docs-kbd-mac {
+        letter-spacing: 0.08em;
+    }
+    .docs-kbd-gesture {
+        font-weight: 400;
+        opacity: 0.8;
+    }
+    :global(html[data-os="mac"]) .docs-kbd-other,
+    :global(html:not([data-os="mac"])) .docs-kbd-mac {
+        display: none;
+    }
+</style>
