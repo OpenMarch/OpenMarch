@@ -1,5 +1,5 @@
 import { afterEach, expect } from "vitest";
-import { getTableName } from "drizzle-orm";
+import { eq, getTableName } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
@@ -11,16 +11,22 @@ import {
     timelineResolverSettled,
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
-import { performRedo, performUndo } from "../history";
+import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { createLastPage, deletePages } from "../page";
 import {
     moveMarchersInTarget,
     type TimelineEditTarget,
 } from "../timelineMoves";
 import { readHeldMarks } from "../timelineHeldMarks";
+import { resizeTimeline } from "../timelineResize";
+import { shiftTimeline } from "../timelineCommands";
 import { holdFromPreviousPage } from "../timelineHoldFromPrevious";
 import { setAsShownOnPage } from "../timelineSetAsShown";
 import { unsetMarchersAt } from "../timelineUnset";
+import { createTimelinesInTransaction } from "../timelines";
+import { createTimelineShapesInTransaction } from "../timelineShapes";
+import { createTimelineTransitionsInTransaction } from "../timelineTransitions";
+import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
 
 keepFixturesInPageMode(
     "its tests trim the show, write timeline rows and set the flag themselves",
@@ -126,6 +132,22 @@ const spansOf = async (db: DbConnection, marcherId: number) =>
         .filter((r) => r.marcher_id === marcherId)
         .sort((x, y) => x.start_beat - y.start_beat)
         .map((r) => [r.start_beat, r.end_beat]);
+
+/** The move (timeline id) of `marcherId`'s row ending at `beat`. */
+const moveEndingAt = async (
+    db: DbConnection,
+    marcherId: number,
+    beat: number,
+) => {
+    const row = (
+        await db.select().from(schema.timeline_assignments).all()
+    ).find((r) => r.marcher_id === marcherId && r.end_beat === beat)!;
+    return (await db
+        .select()
+        .from(schema.timeline_transitions)
+        .where(eq(schema.timeline_transitions.id, row.transition_id))
+        .get())!.timeline_id;
+};
 
 const marksOf = async (db: DbConnection, marcherId: number) =>
     (await readHeldMarks(db, [marcherId])).map(({ start, end }) => ({
@@ -239,6 +261,133 @@ describeDbTests("Hold from previous page where nothing arrives", (it) => {
     });
 });
 
+/** A placed shape's recipe, in the move (timeline) `timelineId`, holding `marcherId` at `xy`. */
+const shapeRecipeIn = (
+    db: DbConnection,
+    timelineId: number,
+    marcherId: number,
+    xy: XY,
+) =>
+    transactionWithHistory(db, "test", async (tx) => {
+        const [recipe] = await tx
+            .insert(schema.timeline_shape_recipes)
+            .values({
+                timeline_id: timelineId,
+                kind: "line",
+                kind_version: 1,
+                params: "{}",
+                order_mode: "keep",
+            })
+            .returning();
+        await tx.insert(schema.timeline_shape_recipe_marchers).values({
+            recipe_id: recipe!.id,
+            marcher_id: marcherId,
+            slot: 0,
+            x: xy[0],
+            y: xy[1],
+        });
+    });
+
+/** A follow-the-leader move of `marcherId` alone over `[start, end)`, onto a one-slot line. */
+const followTheLeader = (
+    db: DbConnection,
+    marcherId: number,
+    start: number,
+    end: number,
+) =>
+    transactionWithHistory(db, "test", async (tx) => {
+        const [line] = await createTimelineShapesInTransaction({
+            tx,
+            newShapes: [
+                {
+                    kind: "line",
+                    geometry: { points: [FAR, AWAY] },
+                },
+            ],
+        });
+        const [timeline] = await createTimelinesInTransaction({
+            tx,
+            newTimelines: [{ startBeat: start, endBeat: end }],
+        });
+        const [transition] = await createTimelineTransitionsInTransaction({
+            tx,
+            newTransitions: [
+                {
+                    timelineId: timeline!.id,
+                    startBeat: start,
+                    endBeat: end,
+                    slotCount: 1,
+                    destination: { kind: "shape", shapeId: line!.id },
+                    pathStyle: "follow_the_leader",
+                    pathParams: { waypoints: [] },
+                    orderMode: "inherit",
+                },
+            ],
+        });
+        await createTimelineAssignmentsInTransaction({
+            tx,
+            newAssignments: [
+                {
+                    marcherId,
+                    transitionId: transition!.id,
+                    slotIndex: 0,
+                    startBeat: start,
+                    endBeat: end,
+                    layer: 0,
+                },
+            ],
+        });
+    });
+
+describeDbTests(
+    "Hold from previous page checks the borrowed spot's move",
+    (it) => {
+        // A carried shape is the shape's hold (owner, 2026-11-01): the move a hold would borrow from is
+        // checked as an arrival is
+        it("skips, and names, a marcher whose last move is a placed shape's move", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { a, b } = await show(db);
+            await shapeRecipeIn(
+                db,
+                await moveEndingAt(db, a, PAGE2.end),
+                a,
+                TWO,
+            );
+            const result = await holdFromPreviousPage({
+                db,
+                pageBox: PAGE4,
+                marcherIds: [a, b],
+            });
+            expect(result).toEqual({
+                held: [b],
+                skipped: [{ marcherId: a, reason: "arrivalShape" }],
+            });
+            expect(await marksOf(db, a)).toEqual([]);
+        });
+
+        it("skips, and names, a marcher whose last move follows the leader", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { c } = await show(db);
+            // c follows the leader over counts 9–13, mid-page 2; nothing arrives at page 3's flag
+            await followTheLeader(db, c, 9, 13);
+            const result = await holdFromPreviousPage({
+                db,
+                pageBox: PAGE3,
+                marcherIds: [c],
+            });
+            expect(result).toEqual({
+                held: [],
+                skipped: [{ marcherId: c, reason: "arrivalFollowLeader" }],
+            });
+            expect(await marksOf(db, c)).toEqual([]);
+        });
+    },
+);
+
 describeDbTests("A borrowed hold stays through edits", (it) => {
     it("removing the set it borrows from leaves it, borrowing from the set before", async ({
         db,
@@ -318,6 +467,65 @@ describeDbTests("A borrowed hold stays through edits", (it) => {
     });
 });
 
+describeDbTests("A move re-timed over a borrowed hold's start", (it) => {
+    // 04-anchors: a re-time over a hold's start trims it from the start, and the hold then grows
+    // out of that move's end (demo `normalize`: `k.start = cover.end`)
+    for (const [what, run, mark, spans] of [
+        [
+            "a resize of the move before it to end inside it",
+            (db: DbConnection, id: number) =>
+                resizeTimeline({ db, timelineId: id, start: 9, end: 29 }),
+            { start: 29, end: 33 },
+            [
+                [1, 9],
+                [9, 29],
+            ],
+        ],
+        [
+            "a clip drag of the move before it over its start",
+            (db: DbConnection, id: number) =>
+                shiftTimeline({ db, timelineId: id, delta: 10 }),
+            { start: 27, end: 33 },
+            [
+                [1, 9],
+                [19, 27],
+            ],
+        ],
+    ] as const)
+        it(`${what}: the hold is trimmed from its start and grows out of that move`, async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { a } = await borrowedShow(db);
+            const before = await snapshot(db);
+            await run(db, await moveEndingAt(db, a, PAGE2.end));
+            expect(await spansOf(db, a)).toEqual(spans);
+            expect(await marksOf(db, a)).toEqual([mark]);
+            // Held from the move's new end to the hold's end, on page 2's spot
+            expect(await atCounts(db, a, mark.start, mark.end)).toEqual(
+                Array.from({ length: mark.end - mark.start + 1 }, () => TWO),
+            );
+            await roundTrip(db, before, await snapshot(db));
+            expect(await marksOf(db, a)).toEqual([mark]);
+        });
+
+    it("a re-time past the hold's end leaves it no counts, so it goes; undo brings it back", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a } = await borrowedShow(db);
+        const before = await snapshot(db);
+        await resizeTimeline({
+            db,
+            timelineId: await moveEndingAt(db, a, PAGE2.end),
+            start: 9,
+            end: 35,
+        });
+        expect(await marksOf(db, a)).toEqual([]);
+        await roundTrip(db, before, await snapshot(db));
+    });
+});
+
 describeDbTests("A drag inside a borrowed hold", (it) => {
     it("adds a move ending at the hold's start, from the flag before, and the hold grows out of it", async ({
         db,
@@ -334,6 +542,34 @@ describeDbTests("A drag inside a borrowed hold", (it) => {
             [9, 17],
             [17, 25],
         ]);
+        expect(await marksOf(db, a)).toEqual([PAGE4]);
+        const flags = await atFlags(db, a);
+        expect(flags.slice(1, 3)).toEqual([ONE, TWO]);
+        expect(flags.slice(3)).toEqual([AWAY, AWAY, AWAY]);
+        await roundTrip(db, before, await snapshot(db));
+    });
+
+    it("whose source has since become a shape's move still adds a move of its own, leaving the shape's move alone", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a } = await borrowedShow(db);
+        // A later edit puts a shape on page 2: its recipe holds a in the move the hold borrows from
+        const source = await moveEndingAt(db, a, PAGE2.end);
+        await shapeRecipeIn(db, source, a, TWO);
+        const before = await snapshot(db);
+        const result = await move(db, { start: PAGE4.start, end: 29 }, [
+            { marcherId: a, xy: AWAY },
+        ]);
+        // The drag rewrites only the move it adds on page 3, not the shape's move, so nothing is
+        // skipped: the hold now grows out of the added move's diamond
+        expect(result.skipped).toBeUndefined();
+        expect(await spansOf(db, a)).toEqual([
+            [1, 9],
+            [9, 17],
+            [17, 25],
+        ]);
+        expect(await moveEndingAt(db, a, PAGE2.end)).toBe(source);
         expect(await marksOf(db, a)).toEqual([PAGE4]);
         const flags = await atFlags(db, a);
         expect(flags.slice(1, 3)).toEqual([ONE, TWO]);
