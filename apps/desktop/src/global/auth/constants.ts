@@ -3,6 +3,8 @@
  * Used by both main and renderer processes.
  */
 
+import { isWebBuild } from "../../utilities/webBuild";
+
 /**
  * IPC channel names for auth communication between main and renderer.
  */
@@ -51,8 +53,22 @@ export const CLERK_CONFIG: { DOMAIN: string; CLIENT_ID: string } | null =
         ? { DOMAIN: domain, CLIENT_ID: clientId }
         : null;
 
-/** True when both Clerk env vars are set; sign-in is disabled when false. */
-export const isSignInEnabled = CLERK_CONFIG !== null;
+/**
+ * The web build's Clerk publishable key (`pk_live_…`); empty where the
+ * production Clerk instance can't run (dev and preview builds, which aren't
+ * on openmarch.com). The web build signs in with ClerkJS (web/renderer/auth.ts)
+ * instead of the desktop app's OAuth flow.
+ */
+export const WEB_CLERK_PUBLISHABLE_KEY: string =
+    import.meta.env.VITE_PUBLIC_WEB_CLERK_PUBLISHABLE_KEY ?? "";
+
+/**
+ * True when sign-in is configured: both Clerk env vars in the desktop app,
+ * a publishable key in the web build. Sign-in is disabled when false.
+ */
+export const isSignInEnabled = isWebBuild
+    ? WEB_CLERK_PUBLISHABLE_KEY !== ""
+    : CLERK_CONFIG !== null;
 
 /**
  * Gets the Clerk OAuth authorization endpoint URL.

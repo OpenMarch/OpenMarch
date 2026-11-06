@@ -17,6 +17,8 @@ interface ImportMetaEnv {
     readonly VITE_PUBLIC_WEB_CHANNEL?: string;
     /** Names the web build's browser storage: the channel, or "lab-<test id>". */
     readonly VITE_PUBLIC_WEB_STORAGE_NAMESPACE?: string;
+    /** The web build's Clerk publishable key; empty where sign-in is off (vite.web.config.mts). */
+    readonly VITE_PUBLIC_WEB_CLERK_PUBLISHABLE_KEY?: string;
     /** JSON list of the example shows a preview or lab web build offers. */
     readonly VITE_PUBLIC_WEB_EXAMPLES?: string;
     /** A lab build's show to open straight away, an example show's id (fork-only, web/LAB.md). */

@@ -12,7 +12,12 @@ import { WEB_CHANNELS, type FlushResult } from "../protocol";
 import { leaveDecision, leaveQuestion } from "./leave";
 import { workerErrorText } from "./workerErrors";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
-import { storageKey } from "./channel";
+import { STORAGE_NAMESPACE, storageKey } from "./channel";
+import { createWebAuth } from "./auth";
+import {
+    WEB_CLERK_PUBLISHABLE_KEY,
+    isSignInEnabled,
+} from "../../src/global/auth/constants";
 import { handOffShow } from "./handoff";
 import { webExampleShows } from "../../src/utilities/webBuild";
 import { GPU_CRASHED_CHANNEL } from "../../electron/main/gpu";
@@ -362,6 +367,37 @@ async function confirmLeave(): Promise<{ go: boolean; force: boolean }> {
     return { go, force: go };
 }
 
+/**
+ * Sign-in (for Mobile export): Clerk's hosted pages in a new tab, see
+ * `./auth.ts`. Builds without a Clerk key (dev, preview) stay signed out.
+ */
+function registerAuthHandlers() {
+    if (!isSignInEnabled) {
+        handleInPage("auth:get-state", () => ({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error: null,
+        }));
+        handleInPage("auth:get-access-token", () => ({ token: null }));
+        return;
+    }
+    const doneUrl = new URL(
+        `${import.meta.env.BASE_URL}auth-done.html`,
+        window.location.href,
+    );
+    doneUrl.searchParams.set("channel", STORAGE_NAMESPACE);
+    const handlers = createWebAuth({
+        publishableKey: WEB_CLERK_PUBLISHABLE_KEY,
+        namespace: STORAGE_NAMESPACE,
+        emit,
+        doneUrl: doneUrl.href,
+        confirmLeave: async () => (await confirmLeave()).go,
+    });
+    for (const [channel, handler] of Object.entries(handlers))
+        handleInPage(channel, handler);
+}
+
 async function closeShow() {
     const { go, force } = await confirmLeave();
     if (!go) {
@@ -456,13 +492,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     );
     handleInPage("newShow:getPending", () => false);
     handleInPage("newShow:clearPending", () => undefined);
-    handleInPage("auth:get-state", () => ({
-        isAuthenticated: false,
-        isLoading: false,
-        user: null,
-        error: null,
-    }));
-    handleInPage("auth:get-access-token", () => ({ token: null }));
+    registerAuthHandlers();
 
     if (isSettingsTab) return;
 

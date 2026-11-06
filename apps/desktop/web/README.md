@@ -53,13 +53,36 @@ main-process code and at `renderer/electron.ts` for the preload.
 In the app's own code, `isWebBuild` (`src/utilities/webBuild.ts`) turns off
 what has no meaning in a browser: the window buttons and native menu in the
 title bar (replaced by `WebFileMenu`), the update check, and the new-show
-wizard's file location, every export but video (and mobile upload), and the settings for
-privacy, developer tools and file repair. "Save a copy" backs up the file;
+wizard's file location, every export but video and mobile upload, and the
+settings for privacy, developer tools and file repair. "Save a copy" backs up the file;
 ⌘/Ctrl+S and ⌘/Ctrl+O are bound, since there is no native menu to bind
 them, so swapping marchers moves to ⌘/Ctrl+Shift+S.
 
 There is no analytics or error reporting on the web: PostHog has no key,
 Sentry is stubbed, and the opt-in prompt never shows.
+
+### Sign-in
+
+Mobile upload needs an OpenMarch account. `web/renderer/auth.ts` answers the
+`auth:*` channels the desktop app's main process handles, so `useAuth`, the
+API clients and Mobile export are the same code as on the desktop.
+
+- Signing in happens on Clerk's hosted pages (`accounts.openmarch.com`), as
+  in the desktop app and on app.openmarch.com, never in the editor. They open
+  in a new tab, so the editor (and a show kept only in memory) stays put.
+  Clerk then sends that tab to `auth-done.html` (`web/public/`), which tells
+  the editor's tab over a BroadcastChannel and closes. If pop-ups are
+  blocked, the editor's own tab goes, after the usual question about
+  unsaved changes.
+- ClerkJS loads from the Clerk instance (`clerk.openmarch.com`), without its
+  UI, the first time something asks about sign-in (opening Mobile export).
+  The session is Clerk's own, shared by every app on openmarch.com, and the
+  API gets Clerk's short-lived session token. om-online's editor API allows
+  the editor's origins (CORS).
+- Only the stable, nightly and lab builds sign in: they're on openmarch.com,
+  where the production Clerk instance runs. The publishable key is
+  `VITE_CLERK_PUBLISHABLE_KEY` in `.env.production`. Dev and preview builds
+  have no key, so they hide mobile upload as before.
 
 ### Tablets
 
@@ -187,8 +210,9 @@ WebCodecs); the page answers `export:videoStart`, `export:videoChunk` and
 These are hidden, or answer the way the app expects when they're
 unavailable:
 
-- PDF and mobile export (they use Electron's `printToPDF` and sign-in)
-- Sign-in, automatic updates, analytics
+- PDF export (it uses Electron's `printToPDF`)
+- Mobile upload in dev and preview builds (no sign-in there; see "Sign-in")
+- Automatic updates, analytics
 - Recent files, repairing a file, and backups before migrating
 
 ## Deploying
