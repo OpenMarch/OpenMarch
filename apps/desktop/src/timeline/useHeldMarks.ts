@@ -12,20 +12,38 @@ import { useTimelineResolverStore } from "./timelineStore";
  * them: the marks aren't in the change log, so it follows the resolver's version (an edit that
  * also wrote rows) and the display version (an edit that wrote only marks).
  */
-export const useHeldMarksStore = create<{ marks: readonly HeldMark[] }>(() => ({
+export const useHeldMarksStore = create<{
+    marks: readonly HeldMark[];
+    /**
+     * The resolver version (`useTimelineResolverStore`) the marks were read for, or `null` before
+     * the first read. Behind the resolver's version, the marks may be older than the rows: the
+     * field's look waits for them rather than drawing a Held marcher Not defined for a frame.
+     */
+    version: number | null;
+}>(() => ({
     marks: [],
+    version: null,
 }));
 
 let reads = 0;
 
-/** Reads the Held marks again into `useHeldMarksStore`; a late older read is dropped. */
-export async function refreshHeldMarks(database: DbConnection): Promise<void> {
+/**
+ * Reads the Held marks again into `useHeldMarksStore`; a late older read is dropped.
+ *
+ * @param version the resolver version the read is for; a failed read still records it, so
+ *   nothing waits on marks that won't come
+ */
+export async function refreshHeldMarks(
+    database: DbConnection,
+    version: number | null = useTimelineResolverStore.getState().version,
+): Promise<void> {
     const read = ++reads;
     try {
         const marks = await readHeldMarks(database);
-        if (read === reads) useHeldMarksStore.setState({ marks });
+        if (read === reads) useHeldMarksStore.setState({ marks, version });
     } catch (error) {
         console.error("Couldn't read the Held marks", error);
+        if (read === reads) useHeldMarksStore.setState({ version });
     }
 }
 
@@ -42,10 +60,10 @@ export function useHeldMarksHost(
     useEffect(() => {
         if (!enabled) {
             reads++;
-            useHeldMarksStore.setState({ marks: [] });
+            useHeldMarksStore.setState({ marks: [], version: null });
             return;
         }
-        void refreshHeldMarks(database);
+        void refreshHeldMarks(database, version);
     }, [database, enabled, version, display]);
 }
 

@@ -69,10 +69,10 @@ test.use({
     ],
 });
 
-/** Who's drawn faded as Following, by drill number. */
-const following = async (page: Page) =>
+/** Who's drawn Not defined (dashed), by drill number. */
+const notDefined = async (page: Page) =>
     (await drawnMarchers(page))
-        .filter((m) => m.following)
+        .filter((m) => m.notDefined)
         .map((m) => m.drillNumber)
         .sort();
 
@@ -95,7 +95,7 @@ async function atPage2With(show: Show, drillNumbers: string[]) {
     await expect.poll(async () => (await drawnMarchers(page)).length).toBe(3);
     await goTo(page, "m5");
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
     for (const [i, drillNumber] of drillNumbers.entries())
         await clickMarcher(page, drillNumber, { add: i > 0 });
     await expect
@@ -141,7 +141,7 @@ async function unsetThenUndo(show: Show) {
         .toEqual({ ...PAGE_2_BEFORE, T2: "500,340" });
     expect(await spots(show, 3)).toEqual(PAGE_3);
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T2", "T3"]);
 
     // One Undo puts it all back
     await waitForIdle(page);
@@ -149,7 +149,7 @@ async function unsetThenUndo(show: Show) {
     await expect.poll(() => spots(show, 2)).toEqual(PAGE_2_BEFORE);
     expect(await spots(show, 3)).toEqual(PAGE_3);
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
 }
 
 test("Unset here: the marcher follows from earlier, later pages keep their spots, and one Undo restores it", async ({
@@ -169,12 +169,12 @@ test("a mixed selection takes back only the marchers Set on the count", async ({
         .poll(() => spots(show, 2))
         .toEqual({ ...PAGE_2_BEFORE, T2: "500,340" });
     expect(await spots(show, 3)).toEqual(PAGE_3);
-    await expect.poll(() => following(page)).toEqual(["T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T2", "T3"]);
 
     await waitForIdle(page);
     await page.keyboard.press("ControlOrMeta+z");
     await expect.poll(() => spots(show, 2)).toEqual(PAGE_2_BEFORE);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
 });
 
 test("Unset here is disabled when no selected marcher is Set on the count", async ({

@@ -42,12 +42,18 @@ export type FieldTestMarcher = {
     /** Whether its label is drawn (not for an open shape's faint or hidden marchers) */
     labelShown: boolean;
     /**
-     * Drawn as Following (a dashed edge) because it has no coordinate of its own on the count shown
-     * (#300, Set vs Following). Reports the drawn look: false while playing,
-     * and false when dimmed, which takes over. A Following marcher can still
-     * be selected.
+     * Drawn Not defined (a dashed edge) because nothing decides its position on the count shown:
+     * no move it's walking or arriving in, no Held hold, no shape carried there (#478, holds
+     * decisions 8 and 9). Reports the drawn look: false while playing, and false when dimmed,
+     * which takes over. A Not defined marcher can still be selected.
      */
-    following: boolean;
+    notDefined: boolean;
+    /**
+     * Its label is drawn bold: on a keyframe (a coordinate of its own on the count shown), while
+     * playing, or dimmed. Off a keyframe the label is lighter, whether walking, Held or Not
+     * defined (#478).
+     */
+    labelBold: boolean;
 };
 
 /**

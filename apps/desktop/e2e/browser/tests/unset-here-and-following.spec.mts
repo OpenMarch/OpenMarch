@@ -69,10 +69,10 @@ test.use({
     ],
 });
 
-/** Who's drawn faded as Following, by drill number. */
-const following = async (page: Page) =>
+/** Who's drawn Not defined (dashed), by drill number. */
+const notDefined = async (page: Page) =>
     (await drawnMarchers(page))
-        .filter((m) => m.following)
+        .filter((m) => m.notDefined)
         .map((m) => m.drillNumber)
         .sort();
 
@@ -95,7 +95,7 @@ async function atPage2With(show: Show, drillNumbers: string[]) {
     await expect.poll(async () => (await drawnMarchers(page)).length).toBe(3);
     await goTo(page, "m5");
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
     for (const [i, drillNumber] of drillNumbers.entries())
         await clickMarcher(page, drillNumber, { add: i > 0 });
     await expect
@@ -117,7 +117,7 @@ async function expectFollowedBack(show: Show) {
         .toEqual({ ...PAGE_2_BEFORE, T2: "500,340" });
     expect(await spots(show, 3)).toEqual({ ...PAGE_3_BEFORE, T2: "500,340" });
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(show.page)).toEqual(["T2", "T3"]);
+    await expect.poll(() => notDefined(show.page)).toEqual(["T2", "T3"]);
 }
 
 /** One Undo puts it all back. */
@@ -127,7 +127,7 @@ async function undoRestores(show: Show) {
     await expect.poll(() => spots(show, 2)).toEqual(PAGE_2_BEFORE);
     expect(await spots(show, 3)).toEqual(PAGE_3_BEFORE);
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(show.page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(show.page)).toEqual(["T3"]);
 }
 
 async function fromPaletteThenUndo(show: Show) {
