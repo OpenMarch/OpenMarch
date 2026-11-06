@@ -429,13 +429,13 @@ const STATIC_ACTIONS = {
         defaultBindings: ["$mod+H", "Control+H"],
     },
     setAllMarchersToNextPage: {
-        labelKey: "actions.batchEdit.setAllToNext",
+        labelKey: "actions.batchEdit.moveAllToNextSpots",
         category: "batchEdit",
         scope: "canvas",
         defaultBindings: ["$mod+Shift+N", "Control+Shift+N"],
     },
     setSelectedMarchersToNextPage: {
-        labelKey: "actions.batchEdit.setSelectedToNext",
+        labelKey: "actions.batchEdit.moveSelectedToNextSpots",
         category: "batchEdit",
         scope: "canvas",
         defaultBindings: ["Shift+N"],

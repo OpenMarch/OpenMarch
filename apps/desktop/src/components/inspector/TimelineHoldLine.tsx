@@ -7,6 +7,7 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     heldSince,
     marcherHoldState,
+    readsHeld,
     sharedHoldState,
     withHoldKind,
     type HoldState,
@@ -14,6 +15,7 @@ import {
 } from "@/timeline/timelineHoldState";
 import { holdTerms } from "@/timeline/holdTerms";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { carriedSince } from "@/timeline/timelineCarried";
 import {
     placedBoxesAt,
     usePlacedBoxStore,
@@ -58,14 +60,12 @@ export function useSelectionHoldState(
             name: f.page.name,
         }));
         void ends; // placedBoxesAt reads the end beats from the store
-        let carried: Set<number> | null = null;
+        // Where the shape carried onto the flag with the marcher in it was placed or last laid out
+        let carried: Map<number, number> | null = null;
         const carriedOnFlag = (id: number) => {
-            carried ??= new Set(
-                placedBoxesAt(current.flag, recipes).flatMap((box) =>
-                    box.recipe.members.map((m) => m.marcherId),
-                ),
-            );
-            return carried.has(id);
+            carried ??= carriedSince(placedBoxesAt(current.flag, recipes));
+            const placed = carried.get(id);
+            return placed === undefined ? null : heldSince(placed, flags);
         };
         // Where the Held mark over the flag starts (Hold from previous page: this page only, R3)
         const heldOnFlag = (id: number) => {
@@ -112,8 +112,10 @@ const LINK_CLASS =
  * move on the current page or hold there, with a link to the page they last moved on
  * (defined-coordinates 08: readable, and visibly a link). A hold names its state in the working
  * words (`holdTerms`, fork #478): "Not defined · showing Page 2", or "Held · since Page 3" for the
- * page its Held mark starts on (holds review R3); a carried
- * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
+ * page its Held mark starts on (holds review R3). A carried shape's members read Held too, since
+ * the page the shape was placed or last laid out on (owner, holds wave 2), and the link goes
+ * there. A mix of Held and Not defined keeps "Last moved on Page 2". Nothing where they don't
+ * agree.
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -146,7 +148,7 @@ export default function TimelineHoldLine({
                             ? t("inspector.marcher.timeline.goToStart", {
                                   defaultValue: "Go to the start",
                               })
-                            : state.how === "held"
+                            : readsHeld(state.how)
                               ? t("inspector.marcher.timeline.goToHeldPage", {
                                     defaultValue:
                                         "Go to Page {page}, where this hold starts",
@@ -205,7 +207,7 @@ function holdText(
                   ...holdTerms(),
                   page: page.name,
               });
-    if (how === "held")
+    if (readsHeld(how))
         return fromStart
             ? t("inspector.marcher.timeline.heldFromStart", {
                   defaultValue: "{held} · since the start",

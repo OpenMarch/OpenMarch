@@ -19,10 +19,20 @@ import type { CarrySpan } from "./timelineCarryForward";
 
 /** The members of `boxes` (`boxesAt` at some count): carried there. */
 export function carriedMembers(boxes: readonly PlacedBox[]): Set<number> {
-    const carried = new Set<number>();
+    return new Set(carriedSince(boxes).keys());
+}
+
+/**
+ * The members of `boxes` (`boxesAt` at some count), each with the beat its shape was placed or
+ * last laid out at (`PlacedBox.endBeat`): where the carry comes from, which the inspector's hold
+ * line names as the page the hold is held since.
+ */
+export function carriedSince(boxes: readonly PlacedBox[]): Map<number, number> {
+    const since = new Map<number, number>();
     for (const box of boxes)
-        for (const member of box.recipe.members) carried.add(member.marcherId);
-    return carried;
+        for (const member of box.recipe.members)
+            since.set(member.marcherId, box.endBeat);
+    return since;
 }
 
 /** A beat range `[start, end)`, in spec beats. */

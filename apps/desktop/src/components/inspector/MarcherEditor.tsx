@@ -434,7 +434,7 @@ function AlignmentButtons() {
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
-                                <T keyName="toolbar.alignment.toNextPagePositions" />
+                                <T keyName="toolbar.alignment.toNextPageSpots" />
                             </ActionButton>
                         </Dropdown.Content>
                     </Dropdown.Portal>

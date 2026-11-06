@@ -35,10 +35,10 @@
             "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous",
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
-            "setAllToNext": "Copy positions from next page (all marchers)",
-            "setAllToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
-            "setSelectedToNext": "Copy positions from next page (selected)",
-            "setSelectedToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
+            "moveAllToNextSpots": "Move to next page's spots (all marchers)",
+            "movedAllToNextSpots": "{count, plural, one {Moved # marcher on Page {currentPage} to their spot on Page {nextPage}} other {Moved all # marchers on Page {currentPage} to their spots on Page {nextPage}}}",
+            "moveSelectedToNextSpots": "Move to next page's spots (selected)",
+            "movedSelectedToNextSpots": "{count, plural, one {Moved # marcher on Page {currentPage} to their spot on Page {nextPage}} other {Moved # marchers on Page {currentPage} to their spots on Page {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}",
             "setSelectedToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
         },
@@ -2709,7 +2709,7 @@
             "placeSelectedMarchers": "Place selected marchers",
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...to next page positions",
+            "toNextPageSpots": "...to next page's spots",
             "setMarcherPositionsAriaLabel": "Set marcher positions",
             "toPreviousPagePositions": "...to previous page positions"
         },
