@@ -1,5 +1,6 @@
 import { T } from "@tolgee/react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
+import { siteUrl } from "@/global/siteUrl";
 
 /** What analytics collects and what each choice means; shared by the opt-in modal and the welcome flow. */
 export default function AnalyticsOptInDetails() {
@@ -11,7 +12,7 @@ export default function AnalyticsOptInDetails() {
                     params={{
                         a: (content) => (
                             <a
-                                href="https://openmarch.com/privacy"
+                                href={siteUrl("/privacy")}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-accent underline"

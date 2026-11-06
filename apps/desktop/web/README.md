@@ -235,13 +235,15 @@ pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.j
 ```
 
 `WEB_CHANNEL` (`stable`, `nightly`, or `dev` by default) names a build's
-channel. The fork adds `preview` and `lab` (below).
+channel. `preview` is the editor on preview.openmarch.com, at `/editor/`, next to
+the website (`apps/website/preview/README.md`). The fork adds `examples` and
+`lab` (below).
 
-### The fork's preview build
+### The fork's examples build
 
-This fork also deploys a preview of the editor, with a few changes:
+This fork also deploys a build of the editor with example shows, with a few changes:
 
-- `WEB_CHANNEL=preview` adds an "Or open an example show" list to the start
+- `WEB_CHANNEL=examples` adds an "Or open an example show" list to the start
   page, with the shows in `web/public/demos/` (listed in `web/demos.ts`),
   so a tester doesn't need a `.dots` file of their own. The `lab` channel
   offers them too; other channels leave the shows out of the build.
@@ -262,7 +264,8 @@ pnpm --filter @openmarch/desktop exec wrangler deploy -c web/wrangler.preview.js
 pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.preview.jsonc
 ```
 
-with the build variables `WEB_CHANNEL=preview` and `NODE_VERSION=24`. The
+with the build variables `WEB_CHANNEL=examples` and `NODE_VERSION=24`.
+(This channel was called `preview` until preview.openmarch.com took the name.) The
 Worker's name in the dashboard must match `openmarch-editor-preview`.
 
 ### The fork's lab builds
@@ -271,5 +274,5 @@ The OpenMarch lab (lab.openmarch.com) publishes this build for each test,
 with `WEB_CHANNEL=lab` and `LAB_TEST_ID=<test id>`: it opens straight into
 an example show (the one the test's manifest names), skipping the welcome
 flow and the "Web" notice, and has relative URLs so it runs from the lab's
-`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the preview build,
+`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the examples build,
 it is fork-only.

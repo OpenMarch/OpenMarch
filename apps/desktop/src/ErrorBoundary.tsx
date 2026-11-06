@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import React from "react";
 import tolgee from "@/global/singletons/Tolgee";
+import { siteUrl } from "@/global/siteUrl";
 
 export default class ErrorBoundary extends React.Component<
     { children: React.ReactNode },
@@ -99,7 +100,9 @@ export default class ErrorBoundary extends React.Component<
                                     size="compact"
                                     onClick={() =>
                                         window.open(
-                                            "https://openmarch.com/guides/submitting-feedback/",
+                                            siteUrl(
+                                                "/guides/submitting-feedback/",
+                                            ),
                                             "_blank",
                                             "noopener,noreferrer",
                                         )

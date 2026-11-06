@@ -1,12 +1,12 @@
 import { webChannel } from "./webBuild";
 
 /** Web channels built for developers and reviewers, not the public. */
-const DEV_WEB_CHANNELS = new Set(["dev", "preview", "nightly"]);
+const DEV_WEB_CHANNELS = new Set(["dev", "examples", "nightly"]);
 
 /**
  * Whether this is a developer build: a Vite dev server (Electron or web), a
- * local web build (channel "dev"), the fork's preview Worker, or the nightly
- * Worker and its per-branch preview URLs. Stable, lab (tester) and packaged
+ * local web build (channel "dev"), the fork's examples Worker, or the nightly
+ * Worker and its per-branch preview URLs. Stable, preview (preview.openmarch.com), lab (tester) and packaged
  * Electron builds are not. Dev-only controls show only here.
  */
 export function isDevBuildFor(env: {
