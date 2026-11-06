@@ -69,6 +69,11 @@ interface RowCounts {
 export interface HeldUpkeepBefore {
     /** Each mark's arrival row, by mark id */
     readonly arrivals: HeldArrivalsBefore;
+    /**
+     * Each mark's marcher and start, by mark id. Mark ids can be reused (no AUTOINCREMENT): a
+     * mark whose marcher or start changed was written by the edit, so it is a new mark.
+     */
+    readonly marks: ReadonlyMap<number, { marcherId: number; start: number }>;
     /** The counts of every row of the marchers that have marks, by row id */
     readonly rows: ReadonlyMap<number, RowCounts>;
 }
@@ -107,13 +112,20 @@ export async function readHeldUpkeepBefore(
     tx: DbTransaction,
 ): Promise<HeldUpkeepBefore> {
     const marks = await readHeldMarkArrivals(tx);
-    if (marks.length === 0) return { arrivals: new Map(), rows: new Map() };
+    if (marks.length === 0)
+        return { arrivals: new Map(), marks: new Map(), rows: new Map() };
     const rows = await readRows(
         tx,
         marks.map((m) => m.marcherId),
     );
     return {
         arrivals: arrivalsOf(marks),
+        marks: new Map(
+            marks.map((m) => [
+                m.id,
+                { marcherId: m.marcherId, start: m.start },
+            ]),
+        ),
         rows: new Map(rows.map((r) => [r.id, { start: r.start, end: r.end }])),
     };
 }
@@ -236,11 +248,19 @@ export async function keepHeldMarksTrueInTransaction(
     for (const mark of marks) {
         let start = mark.start;
         if (mark.arrivalId === null) {
-            const was = arrivalBefore(before.arrivals, mark);
-            if (was !== null) {
-                const row = rowById.get(was);
+            const markWas = before.marks.get(mark.id);
+            const same =
+                markWas !== undefined &&
+                markWas.marcherId === mark.marcherId &&
+                markWas.start === mark.start;
+            // A mark the edit wrote (perhaps reusing a deleted mark's id) has no arrival history
+            const was = same ? arrivalBefore(before.arrivals, mark) : null;
+            const row = was === null ? undefined : rowById.get(was);
+            const rowWas = was === null ? undefined : before.rows.get(was);
+            if (was !== null && !row) {
                 // 3. Its arrival was deleted: the hold goes with it
-                if (!row) continue;
+                continue;
+            } else if (row && rowWas !== undefined && rowWas.end !== row.end) {
                 // 2. Its arrival was re-timed: the hold's start follows it
                 if (!(await arrivesAt(tx, mark.marcherId, row.end, row.id))) {
                     refused.push(mark);

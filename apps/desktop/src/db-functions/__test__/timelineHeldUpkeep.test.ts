@@ -489,3 +489,25 @@ describeDbTests("Clear this page names a later hold it took away", (it) => {
         await roundTrip(db, before, await snapshot(db));
     });
 });
+
+describeDbTests("A mark written by the edit is a new mark", (it) => {
+    it("holding the page before a hold joins it even when the joined mark reuses the old mark's id", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        // a's only mark is the Held page 3 (the highest mark id), so the joined mark gets its id back
+        const { a } = await heldShow(db);
+        const home = (await atFlags(db, a))[0]!;
+        const before = await snapshot(db);
+        const result = await holdFromPreviousPage({
+            db,
+            pageBox: PAGE2,
+            marcherIds: [a],
+        });
+        expect(result).toEqual({ held: [a], skipped: [] });
+        expect(await marksOf(db, a)).toEqual([{ start: 9, end: 25 }]);
+        expect(await rowsOf(db, a)).toEqual([]);
+        expect((await atFlags(db, a)).slice(1, 4)).toEqual([home, home, home]);
+        await roundTrip(db, before, await snapshot(db));
+    });
+});
