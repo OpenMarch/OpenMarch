@@ -454,6 +454,14 @@ holds to the resolver (spec R-6), so the mark is app data:
   dragged is Held from the starting spot, it gets the homes (`null`), so a shape placed there is
   stored at the starting spots, and in the same edit those marchers' holds from the starting spot
   go: a starting spot a shape sets can't be held.
+- **An Expert window over a hold** (decision 6, review R2; fork #476). The rule above applies to a
+  window that starts at or before the hold's start and ends inside it. A window that starts
+  **inside** a hold wins: the marcher's edit becomes the window's move, and the hold ends at the
+  start flag; the part after the playhead goes too (excursions are deferred). A window that starts
+  at or before a hold's start and ends past it takes the hold away. The range edit does this right
+  after its write, for the marchers it wrote (`trimHeldMarksUnderRowsInTransaction`), so it is in
+  the same undo step. In Expert, a window that is a page's box inside a hold over several pages so
+  starts inside it: the drag adds a move on that page rather than moving the hold.
 - **Set as shown** (with Only Page N's and Remove keyframe's stays, which share its write) treats a
   Held marcher as decided: it is skipped and reported (`held`), and nothing is written inside the
   hold.
@@ -490,8 +498,9 @@ holds to the resolver (spec R-6), so the mark is app data:
     As built (#473), the trim is done once, after steps 2–5, and only by rows the edit
     **re-timed** (a row that existed before with other counts: a clip drag, resize or merge refit
     of a later move): a mark ends where such a row starts, and a part after it is dropped. A move
-    an edit **writes** over a hold is still refused at commit with `E-H1`, as decision 6's Expert
-    windows are #476's to build (holds 04-anchors: the trim applies only to retimes). A re-timed
+    an edit **writes** over a hold is still refused at commit with `E-H1` (holds 04-anchors: the
+    trim applies only to retimes), except an Expert window's, which trims the holds it overlaps
+    itself (above, #476). A re-timed
     arrival that no longer arrives by the rule above (a higher layer ends there too) is refused
     with `E-H1` instead of leaving a hold nothing arrives at. Until a borrowed hold exists (#474),
     step 5 keeps only a hold from the starting spot; a mark with nothing to grow out of is deleted.
@@ -517,9 +526,23 @@ holds to the resolver (spec R-6), so the mark is app data:
     no counts (its page deleted) is deleted.
 - **Removing the keyframe a hold grows out of** removes the hold, and writes no next-page move
   inside it. The pages become Not set (fork #473).
-- **Hold over the window** removes the selected marchers' moves inside the window, cuts a move that
-  crosses its start flag there, and starts a move that crosses the playhead at the playhead, with
-  the same destination (fork #476).
+- **Hold over the window** (Expert, "Hold from start flag to playhead"; review R8, fork #476) takes
+  the selected marchers out of their moves inside the window with the cut and remove operations
+  below: a move crossing the start flag is cut there, so its first part arrives at the flag, and
+  one crossing the playhead is cut there and keeps its destination, so the marcher walks the rest
+  of it from where it holds, faster; the step-size warning shows it. Then it writes one mark over
+  the window, joined with marks of the marcher it overlaps or touches. Where nothing arrives at the
+  start flag (the marcher stands still there since an earlier move), the mark starts at that
+  move's end instead, until borrowed holds (#474): no position changes, and the pages in between
+  read Held. Shape and follow-the-leader members, and marchers whose hold would grow out of a
+  shape's or follow-the-leader move, are left alone and named.
+- **Make all selected Held** (review R1, fork #476) gives each selected marcher standing still at
+  the playhead without a hold one like the first selected Held marcher's there: its end is the
+  earlier of that hold's end and the marcher's next move, and its start is the marcher's own last
+  arrival (from the starting spot: the Held marcher's start). Where that arrival is earlier than
+  the Held one's start, the hold starts at the arrival, until borrowed holds (#474). Marchers
+  partway through a move or with a move ending at the playhead are left alone and named. A mixed
+  drag never does this by itself.
 - **The converter writes no marks.**
 - **Display:** the selected marchers' Held holds are solid bars at exact counts on the keyframe
   diamonds' row, each from its start (an arrival's diamond) to its end.

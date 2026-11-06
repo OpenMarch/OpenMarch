@@ -48,7 +48,8 @@ import {
  *    7). A mark left with no counts is deleted. Only **re-timed** rows trim: a move an edit writes
  *    over a hold is still refused at commit (`E-H1`, `timeline_held_violations`), since that is an
  *    edit, not a retime (04-anchors: "a move created over a hold's start trims it" applies only to
- *    re-times such as clip drags and resizes).
+ *    re-times such as clip drags and resizes). An Expert window's edit trims the holds it writes
+ *    over itself (`trimHeldMarksUnderRowsInTransaction`, review R2, #476).
  * 6. **Merge** one marcher's marks that now touch or overlap into one (04-anchors: touching holds
  *    are one hold).
  *

@@ -221,14 +221,37 @@ export async function holdOverWindowInTransaction({
         });
     for (const marcherId of eligible) {
         if (stayed.has(marcherId)) continue;
+        const start =
+            planned.get(marcherId)!.from === "cut"
+                ? await startAfterCut(tx, marcherId, window.start)
+                : starts.get(marcherId)!;
         await writeJoinedHeldMarkInTransaction(
             tx,
             marks.filter((m) => m.marcherId === marcherId),
-            { marcherId, start: starts.get(marcherId)!, end: window.end },
+            { marcherId, start, end: window.end },
         );
         result.held.push(marcherId);
     }
     return sorted(result);
+}
+
+/**
+ * Where a hold starts once the marcher's move crossing the window's start was cut there: at the
+ * window's start, which the cut's first part arrives at, or, should the cut have left nothing
+ * arriving there (a part of the move where nobody moves needs no cut), where its last move before
+ * the window now ends.
+ */
+async function startAfterCut(
+    tx: DbTransaction,
+    marcherId: number,
+    windowStart: number,
+): Promise<number> {
+    if ((await readArrival(tx, marcherId, windowStart)) !== null)
+        return windowStart;
+    const ends = (await readBasicRows(tx, { marcherIds: [marcherId] }))
+        .map((r) => r.end)
+        .filter((end) => end <= windowStart);
+    return ends.length === 0 ? windowStart : Math.max(...ends);
 }
 
 /** Why a hold starting where `plan` says can't be made, or null when it can. */
