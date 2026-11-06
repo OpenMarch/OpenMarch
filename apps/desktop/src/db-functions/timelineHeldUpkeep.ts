@@ -56,14 +56,31 @@ import {
  * can't then trip over a neighbor moved in the same step), so undo restores the same row.
  */
 
-/** Each mark's arrival row before an edit, by mark id (`readHeldMarkArrivals`). */
-export type HeldArrivalsBefore = ReadonlyMap<number, number | null>;
+/**
+ * Which `timeline_assignments` row a row is: its id, marcher and move. Row ids can be reused (no
+ * AUTOINCREMENT), so a row is the same row after an edit only when its marcher and move still
+ * match too (`isSameRow`); otherwise the old row was deleted and the edit wrote a new one.
+ */
+interface RowIdentity {
+    readonly id: number;
+    readonly marcherId: number;
+    readonly transitionId: number;
+}
 
-/** A row's counts, `[start, end)`. */
-interface RowCounts {
+/** A row with its counts, `[start, end)`. */
+interface RowCounts extends RowIdentity {
     readonly start: number;
     readonly end: number;
 }
+
+/** Whether `now` is the row `was` was, not a new row reusing its id. */
+const isSameRow = (was: RowIdentity, now: RowIdentity): boolean =>
+    was.id === now.id &&
+    was.marcherId === now.marcherId &&
+    was.transitionId === now.transitionId;
+
+/** Each mark's arrival row before an edit, by mark id (`readHeldMarkArrivals`). */
+export type HeldArrivalsBefore = ReadonlyMap<number, RowIdentity | null>;
 
 /** What the upkeep reads before an edit's function runs (`readHeldUpkeepBefore`). */
 export interface HeldUpkeepBefore {
@@ -74,7 +91,7 @@ export interface HeldUpkeepBefore {
      * mark whose marcher or start changed was written by the edit, so it is a new mark.
      */
     readonly marks: ReadonlyMap<number, { marcherId: number; start: number }>;
-    /** The counts of every row of the marchers that have marks, by row id */
+    /** Every row of the marchers that have marks, with its counts, by row id */
     readonly rows: ReadonlyMap<number, RowCounts>;
 }
 
@@ -82,20 +99,33 @@ export interface HeldUpkeepBefore {
 export async function readHeldArrivalsBefore(
     tx: DbTransaction,
 ): Promise<HeldArrivalsBefore> {
-    return arrivalsOf(await readHeldMarkArrivals(tx));
+    const marks = await readHeldMarkArrivals(tx);
+    return arrivalsOf(marks, await readRowsById(tx, marks));
 }
 
-const arrivalsOf = (marks: readonly HeldMarkArrival[]): HeldArrivalsBefore =>
-    new Map(marks.map((m) => [m.id, m.arrivalId]));
+const arrivalsOf = (
+    marks: readonly HeldMarkArrival[],
+    rows: ReadonlyMap<number, RowCounts>,
+): HeldArrivalsBefore =>
+    new Map(
+        marks.map((m) => [
+            m.id,
+            m.arrivalId === null ? null : rows.get(m.arrivalId)!,
+        ]),
+    );
 
-/** One marcher's rows with their counts, for the marchers in `marcherIds`. */
-async function readRows(tx: DbTransaction, marcherIds: readonly number[]) {
+/** The rows of the marchers in `marcherIds`, with their moves and counts. */
+async function readRows(
+    tx: DbTransaction,
+    marcherIds: readonly number[],
+): Promise<RowCounts[]> {
     if (marcherIds.length === 0) return [];
     const A = schema.timeline_assignments;
     return await tx
         .select({
             id: A.id,
             marcherId: A.marcher_id,
+            transitionId: A.transition_id,
             start: A.start_beat,
             end: A.end_beat,
         })
@@ -103,6 +133,20 @@ async function readRows(tx: DbTransaction, marcherIds: readonly number[]) {
         .where(inArray(A.marcher_id, [...new Set(marcherIds)]))
         .all();
 }
+
+/** The rows of the marchers with `marks`, by row id. */
+const readRowsById = async (
+    tx: DbTransaction,
+    marks: readonly HeldMarkArrival[],
+): Promise<Map<number, RowCounts>> =>
+    new Map(
+        (
+            await readRows(
+                tx,
+                marks.map((m) => m.marcherId),
+            )
+        ).map((r) => [r.id, r]),
+    );
 
 /**
  * What the upkeep after an edit compares against: the marks' arrival rows, and the counts of the
@@ -114,19 +158,16 @@ export async function readHeldUpkeepBefore(
     const marks = await readHeldMarkArrivals(tx);
     if (marks.length === 0)
         return { arrivals: new Map(), marks: new Map(), rows: new Map() };
-    const rows = await readRows(
-        tx,
-        marks.map((m) => m.marcherId),
-    );
+    const rows = await readRowsById(tx, marks);
     return {
-        arrivals: arrivalsOf(marks),
+        arrivals: arrivalsOf(marks, rows),
         marks: new Map(
             marks.map((m) => [
                 m.id,
                 { marcherId: m.marcherId, start: m.start },
             ]),
         ),
-        rows: new Map(rows.map((r) => [r.id, { start: r.start, end: r.end }])),
+        rows,
     };
 }
 
@@ -134,7 +175,7 @@ export async function readHeldUpkeepBefore(
 const arrivalBefore = (
     before: HeldArrivalsBefore,
     mark: HeldMarkArrival,
-): number | null => before.get(mark.id) ?? null;
+): RowIdentity | null => before.get(mark.id) ?? null;
 
 /**
  * The holds from the starting spots (#619) that the upkeep after this edit will delete, named for
@@ -176,22 +217,31 @@ export async function arrivalHoldsLostInTransaction(
     );
     if (orphans.length === 0) return [];
     const A = schema.timeline_assignments;
-    const stillThere = new Set(
+    const now = new Map(
         (
             await tx
-                .select({ id: A.id })
+                .select({
+                    id: A.id,
+                    marcherId: A.marcher_id,
+                    transitionId: A.transition_id,
+                })
                 .from(A)
                 .where(
                     inArray(
                         A.id,
-                        orphans.map((m) => arrivalBefore(before, m)!),
+                        orphans.map((m) => arrivalBefore(before, m)!.id),
                     ),
                 )
                 .all()
-        ).map((r) => r.id),
+        ).map((r) => [r.id, r]),
     );
+    // A row reusing the arrival's id for another marcher or move is a new row: the arrival went
+    const stillThere = (was: RowIdentity) => {
+        const row = now.get(was.id);
+        return row !== undefined && isSameRow(was, row);
+    };
     return orphans
-        .filter((m) => !stillThere.has(arrivalBefore(before, m)!))
+        .filter((m) => !stillThere(arrivalBefore(before, m)!))
         .map((m) => ({ marcherId: m.marcherId, beat: m.start }));
 }
 
@@ -236,10 +286,18 @@ export async function keepHeldMarksTrueInTransaction(
         marks.map((m) => m.marcherId),
     );
     const rowById = new Map(rows.map((r) => [r.id, r]));
+    /** The row with id `id` now, when it is still the row that had it before the edit */
+    const sameRowNow = (id: number) => {
+        const was = before.rows.get(id);
+        const row = rowById.get(id);
+        return was && row && isSameRow(was, row) ? row : undefined;
+    };
     const shifted = rows.filter((r) => {
         const was = before.rows.get(r.id);
         return (
-            was !== undefined && (was.start !== r.start || was.end !== r.end)
+            was !== undefined &&
+            isSameRow(was, r) &&
+            (was.start !== r.start || was.end !== r.end)
         );
     });
 
@@ -255,8 +313,9 @@ export async function keepHeldMarksTrueInTransaction(
                 markWas.start === mark.start;
             // A mark the edit wrote (perhaps reusing a deleted mark's id) has no arrival history
             const was = same ? arrivalBefore(before.arrivals, mark) : null;
-            const row = was === null ? undefined : rowById.get(was);
-            const rowWas = was === null ? undefined : before.rows.get(was);
+            // A row the edit wrote reusing the arrival's id is not the arrival (#726)
+            const row = was === null ? undefined : sameRowNow(was.id);
+            const rowWas = was === null ? undefined : before.rows.get(was.id);
             if (was !== null && !row) {
                 // 3. Its arrival was deleted: the hold goes with it
                 continue;
