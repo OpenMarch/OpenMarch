@@ -240,7 +240,7 @@ async function launch(source) {
 const shows = {
     demo: DEMO,
     line: path.join(DESKTOP, "scripts/whats-new-media/line-test.dots"),
-    tempo: path.join(DESKTOP, "scripts/whats-new-media/tempo-test.dots"),
+    tempo: path.join(DESKTOP, "scripts/whats-new-media/tempo-changes.dots"),
 };
 function showFor(name = "demo") {
     if (shows[name]) return shows[name];

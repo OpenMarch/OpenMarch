@@ -27,14 +27,14 @@ Each run also gets a folder, `scripts/whats-new-media/runs/<time>/` (git-ignored
 
 The clips (`clips.mjs`):
 
-| Clip       | Show              | What it films                                                                                                                                                                                                                                             |
-| ---------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `timeline` | `line-test.dots`  | The 20-marcher drill playing in Expert mode, field and timeline: Move 1 for the whole line with Moves 2–4 nested under it; the field is zoomed in and panned so the marchers sit just above the moves, framed close enough to read the names on the slide |
-| `shapes`   | demo              | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                       |
-| `view3d`   | demo              | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                           |
-| `props`    | demo              | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color      |
-| `tempo`    | `tempo-test.dots` | Edit music (tempo mode) in the timeline pane: counts 1–20 at ♩60 drift off the clicks of music at ♩72; the tempo line is dragged up to ♩72 and the clicks land on the counts, then it plays into the hold on count 21                                     |
-| `pathways` | demo              | Waits for #674 (see below)                                                                                                                                                                                                                                |
+| Clip       | Show                 | What it films                                                                                                                                                                                                                                             |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `timeline` | `line-test.dots`     | The 20-marcher drill playing in Expert mode, field and timeline: Move 1 for the whole line with Moves 2–4 nested under it; the field is zoomed in and panned so the marchers sit just above the moves, framed close enough to read the names on the slide |
+| `shapes`   | demo                 | A section placed in a box, then on a line, then on an arc, with the snapping guides                                                                                                                                                                       |
+| `view3d`   | demo                 | The 3D View in the Pro dome from a higher box angle than the press box seat, the band mid-march                                                                                                                                                           |
+| `props`    | demo                 | An amber riser sliding and turning along the back of the field in the 3D View, clear of every marcher (checked on every frame), from a camera high enough that the guard's flags don't rise over it; the frame follows the riser, found by its color      |
+| `tempo`    | `tempo-changes.dots` | Edit music (tempo mode) in the timeline pane, measures 6–11: it plays at ♩118, slows gradually to ♩81 (a ramp), then jumps back to ♩118 on measure 10                                                                                                     |
+| `pathways` | demo                 | Waits for #674 (see below)                                                                                                                                                                                                                                |
 
 The demo is `web/public/demos/part1-demo.dots`, converted to timelines when the app opens it.
 
@@ -144,8 +144,8 @@ To review the hidden slides before then, run or build the app with
 - `line-test.dots`: the timeline clip's show, made in Expert mode: Move 1 (counts 9–24) for
   the whole line, with Moves 2–4 nested under it. Its undo history and music are stripped to
   keep it small.
-- `tempo-test.dots`: the tempo clip's show, made from the tempo test kit's rubato show: the
-  first 34 s of its music (♩72 with a 3.2 s fermata on count 21), counts 1–20 set to ♩60 so
-  they're off the music, the fermatas marked as holds, and the later counts at ♩72 so the
-  tempo lane's scale stays close. Its undo history is stripped.
+- `tempo-changes.dots`: the tempo clip's show: ♩118, a gradual change from ♩118 to ♩81 over
+  counts 28–34 (ending on a 2/4 bar), then ♩118 again from count 35. Its music is the first
+  30 s of Sousa's _The Washington Post_ march (with a metronome), in mono; its undo history is
+  stripped.
 - `placeholder.mjs`: a plain poster for a slide whose feature isn't on main yet.

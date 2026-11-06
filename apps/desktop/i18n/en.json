@@ -3075,7 +3075,7 @@
                 },
                 "tempo": {
                     "label": "Edit music",
-                    "media": "Editing the music in the timeline: the counts are too slow for the recording, so the count lines drift off the clicks in its waveform. The tempo line is dragged up from 60 to 72 and the clicks land on the counts. Then it plays into a hold of 3.2 seconds, where the playhead waits.",
+                    "media": "Editing the music in the timeline: the show plays at 118 beats a minute, slows gradually to 81 over two measures, then jumps back to 118 at a new time signature. The playhead slows through the gradual change and picks up again after it.",
                     "text": "Line your counts up with the music in the timeline: drag the tempo until the counts sit on the beats, and set tempo changes, holds and time signatures.",
                     "title": "Edit music"
                 },
