@@ -968,6 +968,9 @@ export function Timeline(props: TimelineProps) {
                         ...bar,
                         start: axis.toView(bar.start),
                         end: axis.toView(bar.end),
+                        ...(bar.borrowedFrom === undefined
+                            ? {}
+                            : { borrowedFrom: axis.toView(bar.borrowedFrom) }),
                     }))
                     // The lead-in before page 1's first count has no width on the view axis
                     .filter((bar) => bar.end > bar.start),

@@ -2,7 +2,6 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
-import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import type { SelectionHolds } from "@/timeline/timelineHoldBars";
 import type { TimelinePageMarker } from "../TimelineViewModel";
 import { TimelineHoldBars } from "../TimelineHoldBars";
@@ -57,10 +56,15 @@ const borrowed = (lit = false): SelectionHolds => ({
     departures: [],
 });
 
-const draw = (holds: SelectionHolds) =>
+const draw = (holds: SelectionHolds, selectedEnd: number | null = null) =>
     render(
         <div>
-            <TimelineHoldBars holds={holds} pages={PAGES} pixelsPerBeat={10} />
+            <TimelineHoldBars
+                holds={holds}
+                pages={PAGES}
+                pixelsPerBeat={10}
+                selectedEnd={selectedEnd}
+            />
         </div>,
     );
 
@@ -73,7 +77,6 @@ beforeAll(async () => {
 });
 beforeEach(() => {
     useEditorModeStore.setState({ mode: "expert", loaded: true });
-    useTimelineSelectionStore.getState().reset();
 });
 afterEach(cleanup);
 
@@ -97,8 +100,7 @@ describe("TimelineHoldBars: borrowed holds (#474)", () => {
     });
 
     it("shows the line back while the selected page ends inside the hold", () => {
-        useTimelineSelectionStore.getState().selectRange(24, 32);
-        draw(borrowed());
+        draw(borrowed(), 32);
         expect(line()).not.toBeNull();
     });
 

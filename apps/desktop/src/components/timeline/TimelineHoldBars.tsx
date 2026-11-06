@@ -9,7 +9,6 @@ import {
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
-import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { holdTerms } from "@/timeline/holdTerms";
 import {
     notDefinedOver,
@@ -46,12 +45,16 @@ const GAP = 3;
 const TICK_WIDTH = 2;
 const TICK_HEIGHT = 8;
 /**
- * A borrowed hold's hatching (px): thin stripes over a lighter fill of the same color, so at rest
- * it reads as a lighter line, and lit, as a hatched one
+ * A borrowed hold's hatching: thin stripes over a lighter fill of the same color. At rest (2 px)
+ * it reads as a lighter, still unbroken line, so it stays Held next to the dashes of Not defined;
+ * lit (6 px), as a hatched one
  */
-const HATCH = `repeating-linear-gradient(-45deg, currentColor 0 1.5px, transparent 1.5px 4px), color-mix(in srgb, currentColor 40%, transparent)`;
-/** How far above the bars a borrowed hold's chip and its line back to the source sit (px) */
-const SOURCE_LIFT = 4;
+const HATCH = `repeating-linear-gradient(-45deg, currentColor 0 1px, transparent 1px 4px), color-mix(in srgb, currentColor 50%, transparent)`;
+/**
+ * How far above the bars a borrowed hold's line back to its source runs, its chip centered on it
+ * (px): clear of the Not defined dashes under it, and under the page names
+ */
+const SOURCE_LIFT = 7;
 /** The narrowest borrowed bar that still shows its chip (px) */
 const CHIP_MIN_WIDTH = 28;
 
@@ -80,11 +83,17 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
     holds,
     pages,
     pixelsPerBeat,
+    selectedEnd = null,
 }: {
     /** In view beats */
     holds: SelectionHolds;
     pages: readonly TimelinePageMarker[];
     pixelsPerBeat: number;
+    /**
+     * The count a drag would edit, in view beats: the selected page box's or window's end. A
+     * borrowed hold it's inside shows its line back to the spot it holds
+     */
+    selectedEnd?: number | null;
 }) {
     const labels = useMemo(
         () => holds.bars.map((bar) => holdBarLabel(bar, pages)),
@@ -98,10 +107,6 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
         [holds.departures, pages],
     );
     const basic = useIsBasicMode();
-    // The count a drag would edit: the selected page box's or window's end
-    const selectedEnd = useTimelineSelectionStore((s) =>
-        s.selection.kind === "range" ? s.selection.end : null,
-    );
     const borrowed = useMemo(
         () =>
             basic
@@ -227,8 +232,8 @@ const borrowedId = (bar: SelectionHoldBar) =>
 
 /**
  * A borrowed hold's source (fork #474): a chip at the bar's start naming the spot it holds, and,
- * with `showLine`, a dotted line back to where that spot was reached, above the row so it never
- * sits alongside the Not defined bar under it.
+ * with `showLine`, a dotted line back to where that spot was reached, ending at the chip. Both sit
+ * above the bars, clear of the Not defined bar under the line.
  */
 function BorrowedSource({
     bar,
@@ -255,13 +260,13 @@ function BorrowedSource({
                     {...{ [BORROWED_ATTRIBUTE]: borrowedId(bar) }}
                     data-testid={`timeline-borrowed-chip-${bar.start}-${bar.end}`}
                     className={clsx(
-                        "text-micro pointer-events-none absolute z-[34] -translate-y-full truncate leading-none whitespace-nowrap",
+                        "text-micro pointer-events-none absolute z-[34] -translate-y-1/2 truncate leading-none whitespace-nowrap",
                         color,
                     )}
                     style={{
-                        left: left + 2,
-                        top: top - 1,
-                        maxWidth: width - 4,
+                        left: left + 4,
+                        top,
+                        maxWidth: width - 6,
                     }}
                 >
                     {borrowedChip(from, pages)}
@@ -275,7 +280,12 @@ function BorrowedSource({
                         "pointer-events-none absolute z-[34]",
                         color,
                     )}
-                    style={{ left: source, width: left - source, top }}
+                    style={{
+                        left: source,
+                        width: left - source,
+                        top,
+                        height: 1,
+                    }}
                 >
                     <div className="absolute inset-x-0 top-0 border-t border-dotted border-current" />
                     <div className="absolute top-0 left-0 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
