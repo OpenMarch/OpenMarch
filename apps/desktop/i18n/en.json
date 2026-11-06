@@ -781,6 +781,7 @@
                 "dragMovesPage": "moves Page {page}'s position",
                 "dragMovesStart": "moves the starting position",
                 "dragAddsMove": "adds a move on Page {page}",
+                "dragEndsHold": "adds a move on Page {page} · ends the hold",
                 "makeSelectedHeld": "Make all selected {held}"
             },
             "title": "{count} Marchers",

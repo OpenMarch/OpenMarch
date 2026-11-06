@@ -1,5 +1,6 @@
 import type { SpanInfo } from "@openmarch/core";
 import { heldSince, type NamedFlag } from "./timelineHoldState";
+import { heldOneAt, windowWinsOverHold } from "./heldRules";
 
 /**
  * **What a drag will do, before you let go** (holds 04-anchors "Display", review R1; fork #476):
@@ -10,7 +11,8 @@ import { heldSince, type NamedFlag } from "./timelineHoldState";
  *
  * It follows the write's routing (`splitHeldEditsInTransaction`): a marcher Held at the count edits
  * the move its hold grows out of, so the drag moves that page's position (or the starting position),
- * unless an Expert window starts inside its hold, which wins (R2) and adds a move. Every other
+ * unless an Expert window starts inside its hold, which wins (R2, `windowWinsOverHold`): it adds a
+ * move and ends the hold at the start flag ("adds a move on Page 4 · ends the hold"). Every other
  * marcher changes its own move ending at the count, or gets a new one there. It reads the resolver's
  * spans and the stored marks, not the database, so it can't see the few marchers the write would
  * still skip (a hold growing out of a shape's move); the write names those.
@@ -39,7 +41,13 @@ export type DragOutcome =
     /** Changes the marcher's own position on the page holding the count */
     | { readonly kind: "movesOwn"; readonly page: string }
     /** Adds a move ending at the count, on the page holding it */
-    | { readonly kind: "addsMove"; readonly page: string };
+    | { readonly kind: "addsMove"; readonly page: string }
+    /**
+     * Adds a move ending at the count, on the page holding it, and ends a Held marcher's hold at
+     * the start flag: an Expert window starting inside the hold wins (R2). It says what `addsMove`
+     * on the same page says too, so that one isn't listed beside it
+     */
+    | { readonly kind: "endsHold"; readonly page: string };
 
 export interface DragPreview {
     /** The selected marchers Held at the count */
@@ -83,13 +91,14 @@ export function holdDragPreview({
     const add = (outcome: DragOutcome) =>
         outcomes.set(`${outcome.kind}:${outcome.page}`, outcome);
     const rest: DragOutcome[] = [];
+    const endsHold = new Set<string>();
     for (const marcherId of marcherIds) {
         const moves = spansOf(marcherId).filter((s) => s.kind !== "hold");
         const mark = markAt.get(marcherId);
         const windowWins =
-            target.kind === "range" && mark !== undefined
-                ? target.start > mark.start
-                : false;
+            target.kind === "range" &&
+            mark !== undefined &&
+            windowWinsOverHold(target.start, mark);
         if (mark && !windowWins) {
             if (moves.some((s) => s.end === mark.start)) {
                 const since = heldSince(mark.start, flags);
@@ -104,13 +113,20 @@ export function holdDragPreview({
                 continue;
             }
         }
+        if (mark && windowWins) {
+            endsHold.add(page);
+            continue;
+        }
         rest.push(
             moves.some((s) => s.end === beat && s.assignmentEnd === beat)
                 ? { kind: "movesOwn", page }
                 : { kind: "addsMove", page },
         );
     }
-    for (const outcome of rest) add(outcome);
+    for (const endsOn of endsHold) add({ kind: "endsHold", page: endsOn });
+    for (const outcome of rest)
+        if (!(outcome.kind === "addsMove" && endsHold.has(outcome.page)))
+            add(outcome);
     return {
         held: markAt.size,
         total: marcherIds.length,
@@ -121,8 +137,9 @@ export function holdDragPreview({
 /**
  * How many of `marcherIds` **Make all selected Held** at `beat` would hold (`makeSelectedHeld`):
  * with one of them Held there, the others that stand still there without a hold (not partway
- * through a move, and no move of their own ending there). 0 when none is Held at `beat`. Like the
- * preview, it can't see the few the write would still skip; the write names those.
+ * through a move, and no move of their own ending there) and whose last arrival isn't earlier than
+ * the Held one's start (`heldOneAt`; a borrowed start waits for #474). 0 when none is Held at
+ * `beat`. Like the preview, it can't see the few the write would still skip; the write names those.
  */
 export function makeHeldCount({
     beat,
@@ -135,20 +152,19 @@ export function makeHeldCount({
     marks: readonly Mark[];
     spansOf: (marcherId: number) => readonly SpanInfo[];
 }): number {
+    const selected = marks.filter((m) => marcherIds.includes(m.marcherId));
+    const like = heldOneAt(selected, beat);
+    if (!like) return 0;
     const held = new Set(
-        marks
-            .filter((m) => inside(m, beat) && marcherIds.includes(m.marcherId))
-            .map((m) => m.marcherId),
+        selected.filter((m) => inside(m, beat)).map((m) => m.marcherId),
     );
-    if (held.size === 0) return 0;
-    return marcherIds.filter(
-        (id) =>
-            !held.has(id) &&
-            !spansOf(id).some(
-                (s) =>
-                    s.kind !== "hold" &&
-                    s.start < beat &&
-                    beat <= (s.assignmentEnd ?? s.end),
-            ),
-    ).length;
+    return marcherIds.filter((id) => {
+        if (held.has(id)) return false;
+        const moves = spansOf(id).filter((s) => s.kind !== "hold");
+        const ends = moves.map((s) => s.assignmentEnd ?? s.end);
+        if (moves.some((s, i) => s.start < beat && beat <= ends[i]!))
+            return false;
+        const before = ends.filter((end) => end < beat);
+        return before.length === 0 || Math.max(...before) >= like.start;
+    }).length;
 }

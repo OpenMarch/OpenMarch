@@ -77,10 +77,20 @@ describe("holdDragPreview", () => {
         ]);
     });
 
-    it("M6: a window starting inside the hold wins, so the drag adds a move", () => {
+    it("M6: a window starting inside the hold wins, so the drag adds a move and ends the hold", () => {
         expect(
             preview({ kind: "range", start: 20, end: 28 }, [1])?.outcomes,
-        ).toEqual([{ kind: "addsMove", page: "5" }]);
+        ).toEqual([{ kind: "endsHold", page: "5" }]);
+        // A Not defined marcher adding a move on the same page says no more than that
+        expect(
+            preview({ kind: "range", start: 20, end: 28 }, [1, 2])?.outcomes,
+        ).toEqual([{ kind: "endsHold", page: "5" }]);
+    });
+
+    it("a window starting at the hold's start moves it", () => {
+        expect(
+            preview({ kind: "range", start: 16, end: 28 }, [1])?.outcomes,
+        ).toEqual([{ kind: "movesHold", page: "3" }]);
     });
 
     it("a hold from the starting spot moves the starting position", () => {
@@ -115,6 +125,32 @@ describe("makeHeldCount", () => {
         expect(count(20, [1, 2, 3])).toBe(1);
         // 3's own move ends at 22
         expect(count(22, [1, 3])).toBe(0);
+    });
+
+    it("leaves out a marcher whose last arrival is earlier than the latest-starting Held one's start", () => {
+        const marks = [
+            { marcherId: 1, start: 16, end: 32 },
+            { marcherId: 5, start: 24, end: 32 },
+        ];
+        const spans = (id: number) =>
+            id === 5 ? [span(5, 16, 24)] : spansOf(id);
+        // 2 last arrived at 16, before 5's hold starts at 24; 4 holds from its starting spot
+        expect(
+            makeHeldCount({
+                beat: 28,
+                marcherIds: [1, 2, 5],
+                marks,
+                spansOf: spans,
+            }),
+        ).toBe(0);
+        expect(
+            makeHeldCount({
+                beat: 28,
+                marcherIds: [1, 2],
+                marks,
+                spansOf: spans,
+            }),
+        ).toBe(1);
     });
 
     it("is 0 without a Held marcher, or with every one Held", () => {

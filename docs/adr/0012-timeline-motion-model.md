@@ -460,8 +460,13 @@ holds to the resolver (spec R-6), so the mark is app data:
   start flag; the part after the playhead goes too (excursions are deferred). A window that starts
   at or before a hold's start and ends past it takes the hold away. The range edit does this right
   after its write, for the marchers it wrote (`trimHeldMarksUnderRowsInTransaction`), so it is in
-  the same undo step. In Expert, a window that is a page's box inside a hold over several pages so
-  starts inside it: the drag adds a move on that page rather than moving the hold.
+  the same undo step. One predicate (`windowWinsOverHold`) decides it for the write and the
+  inspector's drag preview, which says "adds a move on Page 4 · ends the hold".
+  - **Pending owner confirmation:** in Expert, a window that is a page's box inside a hold over
+    several pages starts inside it, so the drag adds a move on that page and ends the hold at the
+    page's start, rather than moving the whole hold. This follows decision 6 and the demo's
+    `windowEdit`, and is built that way, but it changes the common page-box drag inside a
+    multi-page hold, so the owner hasn't confirmed it yet (fork #476).
 - **Set as shown** (with Only Page N's and Remove keyframe's stays, which share its write) treats a
   Held marcher as decided: it is skipped and reported (`held`), and nothing is written inside the
   hold.
@@ -531,18 +536,23 @@ holds to the resolver (spec R-6), so the mark is app data:
   below: a move crossing the start flag is cut there, so its first part arrives at the flag, and
   one crossing the playhead is cut there and keeps its destination, so the marcher walks the rest
   of it from where it holds, faster; the step-size warning shows it. Then it writes one mark over
-  the window, joined with marks of the marcher it overlaps or touches. Where nothing arrives at the
-  start flag (the marcher stands still there since an earlier move), the mark starts at that
-  move's end instead, until borrowed holds (#474): no position changes, and the pages in between
-  read Held. Shape and follow-the-leader members, and marchers whose hold would grow out of a
-  shape's or follow-the-leader move, are left alone and named.
+  the window, joined with marks of the marcher it overlaps or touches. A marcher that nothing
+  arrives at at the start flag (it stands still there since an earlier move, and has no hold there
+  to join) is left alone and named, as Hold from previous page leaves it (`noArrival`): a hold
+  starting there is a borrowed hold, which waits for #474, and one starting at the earlier
+  arrival would reach back before the window, so a later window or page drag would edit that
+  earlier arrival or cut the hold short. Shape and follow-the-leader members, and marchers whose
+  hold would grow out of a shape's or follow-the-leader move, are left alone and named.
 - **Make all selected Held** (review R1, fork #476) gives each selected marcher standing still at
-  the playhead without a hold one like the first selected Held marcher's there: its end is the
+  the playhead without a hold one like the Held one's there. The Held one is the selected hold
+  over the playhead that starts latest (ties: the lowest marcher id; `heldOneAt`), so the new
+  holds cover only counts where every selected Held marcher is holding. The new hold's end is the
   earlier of that hold's end and the marcher's next move, and its start is the marcher's own last
-  arrival (from the starting spot: the Held marcher's start). Where that arrival is earlier than
-  the Held one's start, the hold starts at the arrival, until borrowed holds (#474). Marchers
-  partway through a move or with a move ending at the playhead are left alone and named. A mixed
-  drag never does this by itself.
+  arrival (from the starting spot: the Held one's start). A marcher whose own last arrival is
+  earlier than the Held one's start is left alone and named (`noArrival`), until borrowed holds
+  (#474): a hold starting at that earlier arrival would be unlike the Held one's, so a drag of
+  both would move one hold and cut the other. Marchers partway through a move or with a move
+  ending at the playhead are left alone and named too. A mixed drag never does this by itself.
 - **The converter writes no marks.**
 - **Display:** the selected marchers' Held holds are solid bars at exact counts on the keyframe
   diamonds' row, each from its start (an arrival's diamond) to its end.

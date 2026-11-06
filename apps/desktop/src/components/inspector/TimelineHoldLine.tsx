@@ -205,6 +205,11 @@ export default function TimelineHoldLine({
 
 /** One thing a drag would do, as the inspector says it. */
 function outcomeText(t: Translate, outcome: DragOutcome): string {
+    if (outcome.kind === "endsHold")
+        return t("inspector.marcher.timeline.dragEndsHold", {
+            defaultValue: "adds a move on Page {page} · ends the hold",
+            page: outcome.page,
+        });
     if (outcome.kind === "addsMove")
         return t("inspector.marcher.timeline.dragAddsMove", {
             defaultValue: "adds a move on Page {page}",

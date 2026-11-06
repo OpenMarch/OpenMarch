@@ -29,10 +29,9 @@ import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
  *   first, as Clear this page does.
  * - It gets one Held mark over the window, joined with any mark of its own the window overlaps or
  *   touches (touching holds are one hold, 04-anchors).
- * - **Nothing arrives at `S`** (it stands still there since an earlier move): the hold starts where
- *   it last arrived instead, so it grows out of that move. It stands there anyway, so no position
- *   changes. A hold starting at `S` with nothing arriving is a borrowed hold (04-anchors), which
- *   only #474 stores; until then this is the hold that keeps the same positions.
+ * - A hold starts only where it grows out of something at `S`: a move of the marcher's own that
+ *   ends at `S` (or the cut's first part), its starting spot (#619), or a hold of its own that
+ *   `S` is inside or ends at, which it joins.
  *
  * Left alone and reported, with why (`HoldOverWindowSkipReason`):
  * - `held`: it is Held over the whole window already;
@@ -42,7 +41,12 @@ import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
  * - `arrivalShape`, `arrivalFollowLeader`, `homeShape`: the hold would grow out of a shape's move,
  *   a follow-the-leader move or a shape's starting spot, which a drag inside it would rewrite (as
  *   Hold from previous page skips it);
- * - `noArrival`: nothing it could grow out of (a move cut short by a higher layer).
+ * - `noArrival`: nothing arrives at `S` (it stands still there since an earlier move, or a move
+ *   cut short by a higher layer). A hold starting at `S` then is a borrowed hold (04-anchors),
+ *   which only #474 stores. Starting it at the earlier arrival instead would make a hold reaching
+ *   back before the window, which a later window or page drag would route differently from what
+ *   was asked (it would edit the earlier page's arrival, or cut the hold short), so the marcher is
+ *   left alone, as Hold from previous page leaves it, until #474.
  *
  * One undo step; a run that holds nobody opens no edit.
  */
@@ -103,33 +107,35 @@ export async function holdOverWindow({
     }
 }
 
-/** Where a marcher's hold would start, and what it would grow out of. */
+/**
+ * What a marcher's hold over a window would grow out of at the window's start: the first part of
+ * a hold of its own it joins, the first part of a move crossing it (the cut arrives there), its
+ * starting spot, or the move arriving there (`null` when nothing does).
+ */
 type PlannedStart =
-    | { start: number; from: "cut" }
-    | { start: number; from: "home" }
-    | { start: number; from: "row"; arrival: HeldArrival | null };
+    | { from: "joined" }
+    | { from: "cut" }
+    | { from: "home" }
+    | { from: "row"; arrival: HeldArrival | null };
 
 /**
- * Where `rows`' marcher's hold over a window starting at `windowStart` would start: at the window's
- * start when a move crosses it (the cut arrives there), a move ends there, or the marcher stands on
- * its starting spot there; otherwise where its last move before the window ends.
+ * What `rows`' marcher's hold over a window starting at `windowStart` would grow out of; `own` are
+ * its marks.
  */
 async function plannedStart(
     tx: DbTransaction,
     marcherId: number,
     rows: readonly BasicRow[],
+    own: readonly HeldMark[],
     windowStart: number,
 ): Promise<PlannedStart> {
+    if (own.some((m) => m.start < windowStart && windowStart <= m.end))
+        return { from: "joined" };
     if (rows.some((r) => r.start < windowStart && windowStart < r.end))
-        return { start: windowStart, from: "cut" };
-    if (!rows.some((r) => r.start < windowStart))
-        return { start: windowStart, from: "home" };
-    const start = Math.max(
-        ...rows.filter((r) => r.end <= windowStart).map((r) => r.end),
-    );
-    const arrival = await readArrival(tx, marcherId, start);
+        return { from: "cut" };
+    if (!rows.some((r) => r.start < windowStart)) return { from: "home" };
+    const arrival = await readArrival(tx, marcherId, windowStart);
     return {
-        start,
         from: "row",
         arrival: arrival === HOME_ARRIVAL ? null : arrival,
     };
@@ -158,7 +164,6 @@ export async function holdOverWindowInTransaction({
     const rows = await readBasicRows(tx, { marcherIds: ids });
     const marks = await readHeldMarks(tx, ids);
     const result: HoldOverWindowResult = { held: [], skipped: [] };
-    const starts = new Map<number, number>();
     const fromHome: number[] = [];
     const planned = new Map<number, PlannedStart>();
     for (const marcherId of ids) {
@@ -171,6 +176,7 @@ export async function holdOverWindowInTransaction({
             tx,
             marcherId,
             rows.filter((r) => r.marcherId === marcherId),
+            own,
             window.start,
         );
         planned.set(marcherId, plan);
@@ -195,10 +201,7 @@ export async function holdOverWindowInTransaction({
                 : false,
         );
         if (reason) result.skipped.push({ marcherId, reason });
-        else {
-            eligible.push(marcherId);
-            starts.set(marcherId, plan.start);
-        }
+        else eligible.push(marcherId);
     }
     if (eligible.length === 0) return sorted(result);
 
@@ -221,37 +224,16 @@ export async function holdOverWindowInTransaction({
         });
     for (const marcherId of eligible) {
         if (stayed.has(marcherId)) continue;
-        const start =
-            planned.get(marcherId)!.from === "cut"
-                ? await startAfterCut(tx, marcherId, window.start)
-                : starts.get(marcherId)!;
+        // A move crossing the start flag was cut there (a move crossing a count always is), so
+        // its first part arrives at the flag
         await writeJoinedHeldMarkInTransaction(
             tx,
             marks.filter((m) => m.marcherId === marcherId),
-            { marcherId, start, end: window.end },
+            { marcherId, start: window.start, end: window.end },
         );
         result.held.push(marcherId);
     }
     return sorted(result);
-}
-
-/**
- * Where a hold starts once the marcher's move crossing the window's start was cut there: at the
- * window's start, which the cut's first part arrives at, or, should the cut have left nothing
- * arriving there (a part of the move where nobody moves needs no cut), where its last move before
- * the window now ends.
- */
-async function startAfterCut(
-    tx: DbTransaction,
-    marcherId: number,
-    windowStart: number,
-): Promise<number> {
-    if ((await readArrival(tx, marcherId, windowStart)) !== null)
-        return windowStart;
-    const ends = (await readBasicRows(tx, { marcherIds: [marcherId] }))
-        .map((r) => r.end)
-        .filter((end) => end <= windowStart);
-    return ends.length === 0 ? windowStart : Math.max(...ends);
 }
 
 /** Why a hold starting where `plan` says can't be made, or null when it can. */
@@ -260,7 +242,7 @@ function startSkipReason(
     shapeHome: boolean,
     inRecipe: boolean,
 ): HoldOverWindowSkipReason | null {
-    if (plan.from === "cut") return null;
+    if (plan.from === "cut" || plan.from === "joined") return null;
     if (plan.from === "home") return shapeHome ? "homeShape" : null;
     if (!plan.arrival) return "noArrival";
     const reason = arrivalSkipReason(plan.arrival, inRecipe);

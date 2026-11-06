@@ -15,6 +15,7 @@ import {
     type HeldMark,
 } from "./timelineHeldArrival";
 
+import { windowWinsOverHold } from "@/timeline/heldRules";
 import type { HeldConflictSpot } from "./timelineHeldConflict";
 
 export {
@@ -121,7 +122,8 @@ export async function dropShapeHomeHoldsInTransaction(
  * hold (after its start) **wins** (holds decision 6, review R2, fork #476), so that marcher stays
  * with the rest and its edit becomes the window's move; the window's writer then ends the hold at
  * the start flag (`trimHeldMarksUnderRowsInTransaction`). Only a window starting at or before the
- * hold's start moves the whole hold.
+ * hold's start moves the whole hold. The rule is `windowWinsOverHold`, which the drag preview reads
+ * too.
  */
 export async function splitHeldEditsInTransaction<
     M extends { marcherId: number },
@@ -144,7 +146,8 @@ export async function splitHeldEditsInTransaction<
     ).filter(
         (mark) =>
             isInsideHeldMark(mark, beat) &&
-            (windowStart === undefined || windowStart <= mark.start),
+            (windowStart === undefined ||
+                !windowWinsOverHold(windowStart, mark)),
     );
     if (marks.length === 0)
         return { held: [], homes: [], skipped: [], rest: [...moves] };

@@ -316,10 +316,10 @@ describe("TimelineHoldLine, before a drag (#476)", () => {
         );
     });
 
-    it("M6: a window starting inside the hold says the drag adds a move", () => {
+    it("M6: a window starting inside the hold says the drag adds a move and ends the hold", () => {
         setWindow(11, 13);
         show([1]);
-        expect(outcomes()).toBe("Drag: adds a move on Page 3");
+        expect(outcomes()).toBe("Drag: adds a move on Page 3 · ends the hold");
         expect(screen.queryByTestId("timeline-held-count")).toBeNull();
     });
 

@@ -9,6 +9,7 @@ import {
     readArrival,
     readHeldMarks,
 } from "./timelineHeldMarks";
+import { heldOneAt } from "@/timeline/heldRules";
 import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
 import {
     writeJoinedHeldMarkInTransaction,
@@ -20,19 +21,24 @@ import {
  * for a selection that is mixed at the count `beat`, some Held there and some not, each selected
  * marcher that stands still at `beat` without a hold gets one like the Held one's: over the same
  * counts, starting at the later of that hold's start and the marcher's own last arrival, and ending
- * at the earlier of that hold's end and the marcher's next move. The Held one is the first selected
- * marcher Held at `beat`, by id. Holds are always explicit, so a mixed drag never does this by
- * itself (R1: each marcher by its own kind, no toast).
+ * at the earlier of that hold's end and the marcher's next move. Holds are always explicit, so a
+ * mixed drag never does this by itself (R1: each marcher by its own kind, no toast).
  *
- * - A hold grows out of the marcher's own last arrival when the Held one's start isn't one of its
- *   own (it arrived earlier): a hold starting where nothing arrives is a borrowed hold
- *   (04-anchors), which only #474 stores. It stands there anyway, so no position changes.
+ * - **The Held one** (`heldOneAt`) is the selected marchers' hold over `beat` that starts latest
+ *   (ties: the lowest marcher id), so the others' new holds cover only counts where every Held one
+ *   is holding, whatever order the marchers were selected or stored in.
+ * - A marcher on its starting spot until `beat` is Held from the Held one's start (#619).
+ * - A marcher whose own last arrival is **earlier** than the Held one's start is left alone
+ *   (`noArrival`): a hold starting where nothing arrives is a borrowed hold (04-anchors), which
+ *   only #474 stores, and starting it at the earlier arrival would make a hold unlike the Held
+ *   one's, which a drag of both would then route differently (an Expert window starting at the
+ *   Held one's start would move that one's hold and cut this one's).
  * - It joins a mark of its own that it touches (touching holds are one hold).
  *
  * Left alone and reported (`MakeHeldSkipReason`): `moving` (partway through a move at `beat`),
  * `defined` (a move of its own ends at `beat`), and, as Hold from previous page, `arrivalShape`,
  * `arrivalFollowLeader` and `homeShape` (the hold would grow out of a shape's or a
- * follow-the-leader move, or a shape's starting spot), or `noArrival`.
+ * follow-the-leader move, or a shape's starting spot), or `noArrival` (above).
  *
  * Refused (E-ARGS) when no selected marcher is Held at `beat`. One undo step; a run that holds
  * nobody opens no edit.
@@ -98,7 +104,7 @@ export async function makeSelectedHeldInTransaction({
 }): Promise<MakeHeldResult> {
     const ids = [...new Set(marcherIds)].sort((x, y) => x - y);
     const marks = await readHeldMarks(tx, ids);
-    const like = marks.find((m) => isInsideHeldMark(m, beat));
+    const like = heldOneAt(marks, beat);
     if (!like)
         refuse(
             `Make all selected Held needs a selected marcher Held at beat ${beat}`,
@@ -123,9 +129,13 @@ export async function makeSelectedHeldInTransaction({
             continue;
         }
         const before = own.filter((r) => r.end < beat).map((r) => r.end);
-        // From its starting spot any start works, so the Held one's; else its own last arrival:
-        // the later of the two, or its own where the Held one's is later (until #474)
+        // From its starting spot any start works, so the Held one's; else its own last arrival,
+        // unless that is earlier than the Held one's start (a borrowed start, until #474)
         const start = before.length === 0 ? like.start : Math.max(...before);
+        if (start < like.start) {
+            result.skipped.push({ marcherId, reason: "noArrival" });
+            continue;
+        }
         const end = Math.min(
             like.end,
             ...own.filter((r) => r.start >= beat).map((r) => r.start),

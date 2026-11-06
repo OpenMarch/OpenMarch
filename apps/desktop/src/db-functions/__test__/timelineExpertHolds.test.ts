@@ -323,23 +323,72 @@ describeDbTests("Hold over the window (R8)", (it) => {
         await roundTrip(db, before, await snapshot(db));
     });
 
-    it("R8: with nothing arriving at the start flag, the hold starts where the marcher last arrived", async ({
+    it("R8: with nothing arriving at the start flag, the marcher is left alone and named (borrowed starts wait for #474)", async ({
         db,
         marchersAndPages: _,
     }) => {
-        const { a } = await show(db);
+        const { a, b } = await show(db);
         await move(db, { start: 21, end: 23 }, [{ marcherId: a, xy: FAR }]);
+        const before = await snapshot(db);
         const result = await holdOverWindow({
             db,
             window: { start: 19, end: 31 },
             marcherIds: [a],
         });
-        await timelineResolverSettled();
-        expect(result.held).toEqual([a]);
-        expect(await spansOf(db, a)).toEqual([[9, 17]]);
-        // Standing on page 2's spot throughout, as it already did up to the start flag
-        expect(await marksOf(db, a)).toEqual([{ start: 17, end: 31 }]);
-        expect(await atCounts(a, 17, 31)).toEqual(Array(15).fill(UP));
+        expect(result).toEqual({
+            held: [],
+            skipped: [{ marcherId: a, reason: "noArrival" }],
+        });
+        expect(await snapshot(db)).toEqual(before);
+
+        // Its move inside the window is kept, and a page 3 drag edits page 3 only, not page 2's
+        // arrival (a hold from count 17 would have routed it there)
+        const page2 = await atCounts(a, 9, 17);
+        await move(db, PAGE3, [
+            { marcherId: a, xy: AWAY },
+            { marcherId: b, xy: AWAY },
+        ]);
+        expect(await atCounts(a, 9, 17)).toEqual(page2);
+        expect(await at(a, 25)).toEqual(AWAY);
+        expect(await marksOf(db, a)).toEqual([]);
+    });
+
+    it("with nothing arriving at the start flag, a later window drag adds a move and keeps every count after it", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a } = await show(db);
+        // a last arrived at 17; a hold from 17 over [21, 31) would be cut to [17, 21) by this drag
+        const result = await holdOverWindow({
+            db,
+            window: { start: 21, end: 31 },
+            marcherIds: [a],
+        });
+        expect(result.skipped).toEqual([{ marcherId: a, reason: "noArrival" }]);
+        expect(await marksOf(db, a)).toEqual([]);
+        await move(db, { start: 21, end: 29 }, [{ marcherId: a, xy: FAR }]);
+        expect(await spansOf(db, a)).toEqual([
+            [9, 17],
+            [21, 29],
+        ]);
+        expect(await atCounts(a, 17, 21)).toEqual(Array(5).fill(UP));
+        expect(await atCounts(a, 29, 31)).toEqual(Array(3).fill(FAR));
+        expect(await marksOf(db, a)).toEqual([]);
+    });
+
+    it("holds from the start flag where a move ends exactly there, and from the starting spot", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { b, c } = await show(db);
+        const result = await holdOverWindow({
+            db,
+            window: { start: 17, end: 29 },
+            marcherIds: [b, c],
+        });
+        expect(result).toEqual({ held: [b, c], skipped: [] });
+        expect(await marksOf(db, b)).toEqual([{ start: 17, end: 29 }]);
+        expect(await marksOf(db, c)).toEqual([{ start: 17, end: 29 }]);
     });
 
     it("cuts a move crossing each edge: the one crossing the playhead keeps its destination and walks faster, which the step-size warning flags", async ({
@@ -495,7 +544,7 @@ describeDbTests("Make all selected Held (R1, B2)", (it) => {
         expect(await marksOf(db, c)).toEqual([{ start: 17, end: 33 }]);
     });
 
-    it("with a marcher whose own last arrival is earlier, its hold starts there", async ({
+    it("leaves a marcher whose own last arrival is earlier than the Held one's start alone, so a drag of both doesn't cut its hold", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -503,13 +552,51 @@ describeDbTests("Make all selected Held (R1, B2)", (it) => {
         // a walks again over page 3 and is Held on page 4; b last arrived at 17
         await move(db, PAGE3, [{ marcherId: a, xy: FAR }]);
         await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [a] });
+        const before = await snapshot(db);
         const result = await makeSelectedHeld({
             db,
             beat: 29,
             marcherIds: [a, b],
         });
-        expect(result.held).toEqual([b]);
-        expect(await marksOf(db, b)).toEqual([{ start: 17, end: 33 }]);
-        expect(await atCounts(b, 17, 33)).toEqual(Array(17).fill(UP2));
+        expect(result).toEqual({
+            held: [],
+            skipped: [{ marcherId: b, reason: "noArrival" }],
+        });
+        expect(await snapshot(db)).toEqual(before);
+
+        // An Expert drag of both on page 4: a's whole hold moves; b, Not defined, gets a move
+        await move(db, PAGE4, [
+            { marcherId: a, xy: AWAY },
+            { marcherId: b, xy: AWAY },
+        ]);
+        expect(await marksOf(db, a)).toEqual([PAGE4]);
+        expect(await atCounts(a, 25, 33)).toEqual(Array(9).fill(AWAY));
+        expect(await marksOf(db, b)).toEqual([]);
+        expect(await spansOf(db, b)).toEqual([
+            [9, 17],
+            [25, 33],
+        ]);
+        expect(await atCounts(b, 17, 25)).toEqual(Array(9).fill(UP2));
+    });
+
+    it("the others' hold is like the latest-starting hold over the count, whatever the order", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a, b, c } = await heldShow(db);
+        // a is Held over pages 3 and 4; b walks over page 3 and is Held on page 4 only
+        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [a] });
+        await move(db, PAGE3, [{ marcherId: b, xy: FAR }]);
+        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [b] });
+        expect(await marksOf(db, a)).toEqual([{ start: 17, end: 33 }]);
+        expect(await marksOf(db, b)).toEqual([PAGE4]);
+        const result = await makeSelectedHeld({
+            db,
+            beat: 29,
+            marcherIds: [c, b, a],
+        });
+        expect(result).toEqual({ held: [c], skipped: [] });
+        // From page 4's flag, where every Held one in the selection is already holding
+        expect(await marksOf(db, c)).toEqual([PAGE4]);
     });
 });
