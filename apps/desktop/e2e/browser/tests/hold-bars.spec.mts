@@ -135,8 +135,11 @@ test("hovering the diamond menu's follow-back entry lights the page that would f
     await expect(followBack).toHaveText(
         "Remove keyframe, Page 3 moves back too",
     );
+    await expect.poll(() => lineHeight(page3Bar(page))).toBe(2);
     await followBack.hover();
     await expect(page3Bar(page)).toHaveAttribute("data-lit", "true");
+    // Lit, the thin line grows
+    await expect.poll(() => lineHeight(page3Bar(page))).toBe(6);
 
     // Onto the plain entry: only the follow-back entry lights anything
     await page
@@ -203,6 +206,14 @@ test("a right-click on a Not defined bar offers Define as shown for its page", a
     // T2 now has a move of its own over page 3: no Not defined bar there
     await expect(page3Bar(page)).toHaveCount(0);
 });
+
+/** The drawn thickness (px) of a bar's line, inside its taller hit strip */
+const lineHeight = (bar: Locator) =>
+    bar.evaluate(
+        (el) =>
+            el.querySelector("[data-hold-line]")!.getBoundingClientRect()
+                .height,
+    );
 
 /** A clip of the timeline around `bar`, attached to the test's report for review */
 async function attachAround(page: Page, bar: Locator, name: string) {
@@ -278,11 +289,13 @@ test.describe("a mixed selection over the same counts", () => {
         await expect(notDefined).toBeVisible();
         await expect(held).toHaveAttribute("data-mixed", "true");
         // Both dash in step with the timeline's start, not their own left edge
+        // (the bar's box is a hit strip; its line is drawn inside it, as wide)
         const dashStart = (bar: Locator) =>
             bar.evaluate((el) => {
-                const style = getComputedStyle(el);
+                const line = el.querySelector("[data-hold-line]")!;
+                const style = getComputedStyle(line);
                 const layers = (
-                    el.dataset.held
+                    (el as HTMLElement).dataset.held
                         ? style.maskPosition
                         : style.backgroundPosition
                 ).split(",");
