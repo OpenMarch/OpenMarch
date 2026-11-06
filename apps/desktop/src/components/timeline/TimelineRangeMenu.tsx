@@ -32,6 +32,11 @@ import {
 } from "@/timeline/holdMenuState";
 import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
+import {
+    MENU_CONTENT_CLASS,
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
 
 /**
  * The timeline's right-click menu (ui.md UI-9, P8.14). On a page box it offers **Delete page**
@@ -41,13 +46,6 @@ import type { TimelineBeatRange } from "./TimelineViewModel";
  * the same entries as the selected clip's ⋯ button. A dragged range with none of those opens
  * nothing.
  */
-
-/**
- * The menus' entry style; `data-[disabled]` dims a Radix-disabled one.
- * Entries with a reason dim themselves (`MenuItemWithReason`).
- */
-export const TIMELINE_MENU_ITEM_CLASS =
-    "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
 
 /**
  * A small switch in front of a checkbox entry's words, drawn from the entry's `data-state`. It's
@@ -81,7 +79,7 @@ export function MenuItemWithReason({
     reason,
     reasonTestId,
     onSelect,
-    className = TIMELINE_MENU_ITEM_CLASS,
+    className = MENU_ITEM_CLASS,
     checked,
     children,
 }: {
@@ -149,7 +147,7 @@ export function MenuItemWithReason({
                                                 ? closeMenu()
                                                 : setOpen(false)
                                         }
-                                        className={`${TooltipClassName} max-w-[240px] text-[12px]`}
+                                        className={`${TooltipClassName} text-body max-w-[240px]`}
                                     >
                                         {reason}
                                     </Tooltip.Content>
@@ -201,7 +199,7 @@ function HoldCommandItem({
                 data-testid={testId}
                 checked
                 disabled
-                className={TIMELINE_MENU_ITEM_CLASS}
+                className={MENU_ITEM_CLASS}
             >
                 <DropdownMenu.ItemIndicator className="flex">
                     <CheckIcon size={14} />
@@ -223,8 +221,7 @@ function HoldCommandItem({
 }
 
 /** The menus' panel style */
-export const TIMELINE_MENU_CONTENT_CLASS =
-    "bg-modal text-text rounded-6 border-stroke shadow-modal z-50 flex min-w-[180px] flex-col gap-4 border p-4 backdrop-blur-md";
+export const TIMELINE_MENU_CONTENT_CLASS = `${MENU_CONTENT_CLASS} min-w-180`;
 
 /**
  * For a menu's content: React events bubble out of a portal through the component tree, so a
@@ -360,7 +357,7 @@ export function TimelineMoveMenuItems({
                 <DropdownMenu.Item
                     data-testid="timeline-move-menu-select-marchers"
                     onSelect={actions.onSelectMarchers}
-                    className={TIMELINE_MENU_ITEM_CLASS}
+                    className={MENU_ITEM_CLASS}
                 >
                     <UsersThreeIcon size={14} />
                     {t("timeline.moveMenu.selectMarchers")}
@@ -369,7 +366,7 @@ export function TimelineMoveMenuItems({
             <DropdownMenu.Item
                 data-testid="timeline-move-menu-rename"
                 onSelect={actions.onRename}
-                className={TIMELINE_MENU_ITEM_CLASS}
+                className={MENU_ITEM_CLASS}
             >
                 <CursorTextIcon size={14} />
                 {t("timeline.moveMenu.rename")}
@@ -387,17 +384,17 @@ export function TimelineMoveMenuItems({
             )}
             {extra.length > 0 && (
                 <>
-                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                    <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
                     <TimelineMenuEntries entries={extra} />
                 </>
             )}
-            <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+            <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
             <MenuItemWithReason
                 testId="timeline-move-menu-delete"
                 reason={reason}
                 reasonTestId="timeline-move-menu-delete-reason"
                 onSelect={actions.onDelete}
-                className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
+                className={`${MENU_ITEM_CLASS} text-red`}
             >
                 <TrashIcon size={14} />
                 {t("timeline.moveMenu.delete")}
@@ -635,7 +632,9 @@ export function useTimelineRangeMenu({
                         {pageExtra.length > 0 && (
                             <>
                                 <TimelineMenuEntries entries={pageExtra} />
-                                <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
                             </>
                         )}
                         {setAsShownReason !== undefined && (
@@ -654,7 +653,9 @@ export function useTimelineRangeMenu({
                                     )}
                                 />
                                 {holdReason === undefined && (
-                                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
                                 )}
                             </>
                         )}
@@ -674,7 +675,9 @@ export function useTimelineRangeMenu({
                                     )}
                                 />
                                 {clearLabels === undefined && (
-                                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
                                 )}
                             </>
                         )}
@@ -685,7 +688,7 @@ export function useTimelineRangeMenu({
                                         data-testid="timeline-range-menu-clear-page"
                                         checked
                                         disabled
-                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                        className={MENU_ITEM_CLASS}
                                     >
                                         <DropdownMenu.ItemIndicator className="flex">
                                             <CheckIcon size={14} />
@@ -695,7 +698,7 @@ export function useTimelineRangeMenu({
                                 ) : (
                                     <DropdownMenu.Item
                                         data-testid="timeline-range-menu-clear-page"
-                                        className={TIMELINE_MENU_ITEM_CLASS}
+                                        className={MENU_ITEM_CLASS}
                                         onSelect={() =>
                                             menu?.clearPage?.onClear(
                                                 open.target.pageId!,
@@ -711,7 +714,7 @@ export function useTimelineRangeMenu({
                                     clearLabels.followBack !== null && (
                                         <DropdownMenu.Item
                                             data-testid="timeline-range-menu-clear-page-follow-back"
-                                            className={TIMELINE_MENU_ITEM_CLASS}
+                                            className={MENU_ITEM_CLASS}
                                             onSelect={() =>
                                                 menu?.clearPage?.onClear(
                                                     open.target.pageId!,
@@ -723,7 +726,9 @@ export function useTimelineRangeMenu({
                                             {clearLabels.followBack}
                                         </DropdownMenu.Item>
                                     )}
-                                <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
                             </>
                         )}
                         {menu?.subset && open.target.pageId !== undefined && (
@@ -739,7 +744,7 @@ export function useTimelineRangeMenu({
                                             checked,
                                         )
                                     }
-                                    className={`${TIMELINE_MENU_ITEM_CLASS} group`}
+                                    className={`${MENU_ITEM_CLASS} group`}
                                 >
                                     <MenuSwitch />
                                     {tolgee.t(
@@ -747,7 +752,9 @@ export function useTimelineRangeMenu({
                                         "Subset",
                                     )}
                                 </DropdownMenu.CheckboxItem>
-                                <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
                             </>
                         )}
                         {menu?.onDeleteFlag &&
@@ -757,7 +764,7 @@ export function useTimelineRangeMenu({
                                     onSelect={() =>
                                         menu.onDeleteFlag?.(open.target.pageId!)
                                     }
-                                    className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
+                                    className={`${MENU_ITEM_CLASS} text-red`}
                                 >
                                     <FlagIcon size={14} />
                                     {tolgee.t("timeline.rangeMenu.deletePage")}
@@ -772,7 +779,7 @@ export function useTimelineRangeMenu({
                                             open.target.pageId!,
                                         )
                                     }
-                                    className={`${TIMELINE_MENU_ITEM_CLASS} text-red`}
+                                    className={`${MENU_ITEM_CLASS} text-red`}
                                 >
                                     <TrashIcon size={14} />
                                     {tolgee.t(

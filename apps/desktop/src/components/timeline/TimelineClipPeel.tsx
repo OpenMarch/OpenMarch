@@ -267,7 +267,7 @@ export function useClipPeel({
                           data-testid="timeline-peel-ghost"
                           aria-live="polite"
                           className={clsx(
-                              "rounded-4 pointer-events-none fixed z-[60] flex items-center border border-dashed px-6 text-[11px] font-medium whitespace-nowrap shadow-md",
+                              "rounded-4 text-sub pointer-events-none fixed z-[60] flex items-center border border-dashed px-6 font-medium whitespace-nowrap shadow-md",
                               state.verdict.refused
                                   ? "border-red bg-bg-1 text-red"
                                   : "border-accent bg-bg-1/90 text-text",
@@ -291,7 +291,7 @@ export function useClipPeel({
                       >
                           <span
                               className={clsx(
-                                  "rounded-4 absolute -top-20 left-0 px-4 text-[11px] whitespace-nowrap shadow-md",
+                                  "rounded-4 text-sub absolute -top-20 left-0 px-4 whitespace-nowrap shadow-md",
                                   state.verdict.refused
                                       ? "bg-red text-white"
                                       : "bg-accent text-white",

@@ -15,8 +15,8 @@ import { ShortcutTooltip, TransportTooltipProvider } from "./ShortcutTooltip";
 import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
-    TIMELINE_MENU_ITEM_CLASS,
 } from "./TimelineRangeMenu";
+import { MENU_ITEM_CLASS } from "@/components/ui/popupClasses";
 
 /**
  * A selection keyframe as the timeline draws it, with the selected marchers Set there by name
@@ -236,7 +236,7 @@ function KeyframeMenuItems({
     return (
         <>
             <ContextMenu.Item
-                className={TIMELINE_MENU_ITEM_CLASS}
+                className={MENU_ITEM_CLASS}
                 disabled={!canUnset}
                 onSelect={() => menu.onUnset(beat)}
             >
@@ -248,7 +248,7 @@ function KeyframeMenuItems({
             </ContextMenu.Item>
             {followingLabel && (
                 <ContextMenu.Item
-                    className={TIMELINE_MENU_ITEM_CLASS}
+                    className={MENU_ITEM_CLASS}
                     onSelect={() => menu.onUnsetAndFollowing(beat)}
                 >
                     {followingLabel}

@@ -109,6 +109,9 @@ minutes. If you sense the session ending, checkpoint first.
 Throughout:
 
 - Follow the root `AGENTS.md`, `apps/desktop/AGENTS.md` and `docs/conventions/`.
+- For any UI, follow `docs/conventions/ui-styling.md`: the theme's radii, font
+  sizes and spacing, the shared popover and menu classes, and `Button`. Compare a
+  screenshot of the new surface with its neighbors before calling it done.
 - Respect the `view3d/core/` boundary (ADR 0010 D-1): no React, React Three
   Fiber, drei, Electron or database imports there.
 - Build against `apps/desktop/src/view3d/core/types.ts`. If a contract there

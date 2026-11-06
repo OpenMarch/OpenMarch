@@ -31,7 +31,8 @@ import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import { importScoreTiming } from "./scoreImport";
 import { toolButton } from "./TempoToolbar";
-import { importAudioFile, MENU_CLASS, MENU_ITEM_CLASS } from "./TempoMusicFile";
+import { MENU_ITEM_CLASS } from "@/components/ui/popupClasses";
+import { importAudioFile, MUSIC_MENU_CLASS } from "./TempoMusicFile";
 
 export function TempoImport() {
     const [asking, setAsking] = useState(false);
@@ -97,7 +98,7 @@ export function TempoImport() {
                     <DropdownMenu.Content
                         align="end"
                         sideOffset={4}
-                        className={MENU_CLASS}
+                        className={MUSIC_MENU_CLASS}
                     >
                         <DropdownMenu.Item
                             className={MENU_ITEM_CLASS}

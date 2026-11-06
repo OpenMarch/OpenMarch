@@ -20,6 +20,7 @@ import { useCameraStore } from "../camera/cameraStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { Panel, PanelSeparator, ToggleButton } from "./Panel";
 import { useCameraList } from "./useCameraList";
+import { MENU_SEPARATOR_CLASS } from "@/components/ui/popupClasses";
 
 const ITEM_CLASS =
     "rounded-4 text-body data-[highlighted]:bg-text/10 data-[disabled]:text-text/40 flex h-28 cursor-pointer items-center gap-8 px-8 outline-hidden select-none data-[disabled]:cursor-default";
@@ -103,7 +104,9 @@ export function CameraBar({
                                 </DropdownMenu.Item>
                             );
                         })}
-                        <DropdownMenu.Separator className="bg-stroke mx-4 my-4 h-px" />
+                        <DropdownMenu.Separator
+                            className={MENU_SEPARATOR_CLASS}
+                        />
                         <DropdownMenu.Item
                             onSelect={onEdit}
                             data-testid="view3d-camera-edit"

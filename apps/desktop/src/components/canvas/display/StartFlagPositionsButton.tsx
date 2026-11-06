@@ -141,7 +141,7 @@ export function StartFlagPositionsButton() {
     // The tooltip's hint line shows the held key as a keycap
     const hint =
         hold && key !== undefined ? (
-            <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+            <span className="text-text-subtitle text-sub flex items-center gap-4">
                 <T
                     keyName="timeline.startFlagPositions.stateLineHold"
                     params={{
@@ -196,7 +196,7 @@ export function StartFlagPositionsButton() {
                     align="start"
                     sideOffset={6}
                     aria-label={label}
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex flex-col gap-12 border px-16 py-12 backdrop-blur-sm"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-50 flex flex-col gap-12 border px-16 py-12"
                 >
                     <LevelsBlock
                         state="always"

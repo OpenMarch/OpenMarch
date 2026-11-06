@@ -154,7 +154,7 @@ export default function AudioSelector() {
                         </AlertDialogTitle>
                         <AlertDialogDescription>
                             <T keyName="music.deleteAudioFileDescription" />
-                            <div className="border-border bg-bg-1 border-stroke text-text overflow-auto rounded-md border p-16 font-mono text-wrap">
+                            <div className="border-border bg-bg-1 border-stroke text-text rounded-6 overflow-auto border p-16 font-mono text-wrap">
                                 {selectedAudioFile?.nickname}
                             </div>
                         </AlertDialogDescription>

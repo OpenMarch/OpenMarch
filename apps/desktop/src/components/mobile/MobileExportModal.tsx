@@ -344,7 +344,7 @@ function SignedOutMobileExportContent() {
                             key={`${url}-${index}`}
                             src={url}
                             alt=""
-                            className="border-stroke shadow-fg-1 aspect-[9/19.5] h-300 w-auto shrink-0 rounded-[1.25rem] border object-cover"
+                            className="border-stroke shadow-fg-1 rounded-20 aspect-[9/19.5] h-300 w-auto shrink-0 border object-cover"
                             draggable={false}
                         />
                     ))}

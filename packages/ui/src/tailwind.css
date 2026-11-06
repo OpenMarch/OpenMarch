@@ -47,6 +47,10 @@
         "DM Mono", "OpenMarch Text Symbols", ui-monospace, SFMono-Regular,
         Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 
+    /* Only for labels inside timeline and tempo lanes (counts, clip names, lane
+       headings), where rows are a few pixels tall. Everything else: text-sub or
+       text-body. See docs/conventions/ui-styling.md */
+    --text-micro: 0.625rem;
     --text-sub: 0.6875rem;
     --text-body: 0.875rem;
     --text-h5: 1.125rem;

@@ -17,7 +17,7 @@ import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
 import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 
 const POPOVER_CLASS =
-    "border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex flex-col gap-4 border p-8 backdrop-blur-sm";
+    "border-stroke bg-modal text-text shadow-modal rounded-6 z-50 flex flex-col gap-4 border p-8 backdrop-blur-32";
 
 const LABEL_CHOICES: readonly Choice<MarcherLabelForm>[] = [
     { value: "auto", key: "toolbar.view.labelsAuto" },
@@ -44,7 +44,7 @@ export default function FieldDisplayBar() {
                 role="group"
                 aria-label={t("fieldDisplay.label")}
                 data-testid="field-display-bar"
-                className="border-stroke bg-bg-1 text-text pointer-events-auto absolute top-6 right-6 z-10 flex flex-col items-center gap-4 rounded-lg border p-4 shadow-lg"
+                className="border-stroke bg-bg-1 text-text rounded-8 pointer-events-auto absolute top-6 right-6 z-10 flex flex-col items-center gap-4 border p-4 shadow-lg"
             >
                 <StartFlagPositionsButton />
                 <ChoiceButton

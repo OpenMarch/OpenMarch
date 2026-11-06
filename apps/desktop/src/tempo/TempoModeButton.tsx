@@ -43,7 +43,7 @@ export function TempoModeButton() {
             shortcut="Shift + T"
             hint={
                 on ? (
-                    <span className="text-text-subtitle block text-[11px]">
+                    <span className="text-text-subtitle text-sub block">
                         <T
                             keyName="tempoMode.button.hintOn"
                             defaultValue="Line the counts up with the music. <escape></escape> or <toggle></toggle> leaves."
@@ -74,7 +74,7 @@ export function TempoModeButton() {
                 )}
             >
                 <MusicNotesIcon size={16} weight={on ? "bold" : "regular"} />
-                <span className="text-[11px]">
+                <span className="text-sub">
                     {tolgee.t("tempoMode.button.text", "Edit music")}
                 </span>
             </button>

@@ -14,3 +14,7 @@ and person runs the same procedure. Checkpoint as it says, and end with its
 Don't run the full test suite yourself (`pnpm test`, `pnpm check:full`, all of
 `test:history` or e2e): the PR checks run it. Run the type check and focused
 tests for the files you change, push, then read the PR checks.
+
+UI must match the app's existing look: read `docs/conventions/ui-styling.md`
+(theme radii and font sizes, shared popover and menu classes, `Button`) before
+building or restyling any surface.

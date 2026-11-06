@@ -675,7 +675,7 @@ export function useClipEdgeResize({
                 role="status"
                 className={clsx(
                     // Opaque: it often sits over the waveform
-                    "rounded-4 bg-bg-1 border-stroke pointer-events-none absolute z-[60] border px-4 py-[1px] text-[11px] whitespace-nowrap shadow-sm",
+                    "rounded-4 bg-bg-1 border-stroke text-sub pointer-events-none absolute z-[60] border px-4 py-[1px] whitespace-nowrap shadow-sm",
                     preview.blockedBy ? "text-red" : "text-text",
                     tagBeside
                         ? clsx(

@@ -32,7 +32,7 @@ const Inspector: React.FC = () => {
                                     {variant.title}
                                 </p>
                                 <select
-                                    className="bg-fg-2 border-stroke text-body w-1/2 rounded-md border px-3 py-2"
+                                    className="bg-fg-2 border-stroke text-body rounded-6 w-1/2 border px-3 py-2"
                                     value={String(
                                         selectedVariants[variant.title] ??
                                             variant.default,

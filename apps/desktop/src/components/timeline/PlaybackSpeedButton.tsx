@@ -28,7 +28,7 @@ function sliderToSpeed(value: number): number {
 // The tooltip's second part: what a click does, then each hold key on its own line
 function SpeedHint() {
     return (
-        <span className="text-text-subtitle flex flex-col gap-4 text-[11px]">
+        <span className="text-text-subtitle text-sub flex flex-col gap-4">
             <span>
                 <T keyName="timeline.playbackSpeed.hintClick" />
             </span>
@@ -108,7 +108,7 @@ export function PlaybackSpeedButton({
                             setOpen(true);
                         }}
                         className={clsx(
-                            "rounded-4 hover:bg-fg-2 focus-visible:ring-accent flex min-w-36 items-center justify-center px-4 font-mono text-[11px] tabular-nums outline-hidden duration-150 focus-visible:ring-2",
+                            "rounded-4 hover:bg-fg-2 focus-visible:ring-accent text-sub flex min-w-36 items-center justify-center px-4 font-mono tabular-nums outline-hidden duration-150 focus-visible:ring-2",
                             playing !== 1 || held
                                 ? "text-accent bg-accent/10"
                                 : "text-text hover:text-accent",
@@ -125,7 +125,7 @@ export function PlaybackSpeedButton({
                     sideOffset={6}
                     // The button keeps focus off itself; so does the popover, so Space still plays
                     onOpenAutoFocus={(event) => event.preventDefault()}
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex w-256 flex-col gap-10 border px-16 py-12 backdrop-blur-sm"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-50 flex w-256 flex-col gap-10 border px-16 py-12"
                 >
                     <div className="flex items-baseline justify-between">
                         <p className="text-body">
@@ -157,7 +157,7 @@ export function PlaybackSpeedButton({
                                 aria-pressed={speed === chip}
                                 onClick={() => onSetSpeed(chip)}
                                 className={clsx(
-                                    "rounded-4 focus-visible:ring-accent h-22 px-4 font-mono text-[11px] tabular-nums outline-hidden focus-visible:ring-2",
+                                    "rounded-4 focus-visible:ring-accent text-sub h-22 px-4 font-mono tabular-nums outline-hidden focus-visible:ring-2",
                                     speed === chip
                                         ? "bg-accent text-text-invert"
                                         : "bg-fg-2 hover:text-accent",

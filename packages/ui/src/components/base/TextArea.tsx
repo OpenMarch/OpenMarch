@@ -13,7 +13,7 @@ const TextArea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                     "flex",
                     "min-h-[80px]",
                     "w-full",
-                    "rounded-md",
+                    "rounded-6",
                     "border",
                     "bg-fg-2",
                     "px-3",

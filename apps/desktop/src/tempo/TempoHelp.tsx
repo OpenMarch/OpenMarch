@@ -177,16 +177,16 @@ export function TempoHelp() {
                     align="end"
                     sideOffset={6}
                     collisionPadding={8}
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-[100] flex max-h-[var(--radix-popover-content-available-height)] w-[340px] max-w-[calc(100vw-16px)] flex-col gap-8 overflow-y-auto overscroll-contain border px-12 py-10 backdrop-blur-md"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-[100] flex max-h-[var(--radix-popover-content-available-height)] w-[340px] max-w-[calc(100vw-16px)] flex-col gap-8 overflow-y-auto overscroll-contain border px-12 py-10"
                     onPointerDown={(e) => e.stopPropagation()}
                 >
-                    <div className="text-[12px] font-bold">
+                    <div className="text-body font-bold">
                         {tolgee.t(
                             "tempoMode.help.title",
                             "Line the counts up with the music",
                         )}
                     </div>
-                    <ul className="flex flex-col gap-10 text-[11px]">
+                    <ul className="text-sub flex flex-col gap-10">
                         {rows.map(([id, RowIcon, title, text]) => (
                             <li key={id} className="flex gap-10">
                                 <span className="bg-text/5 text-text rounded-6 flex size-24 shrink-0 items-center justify-center">
@@ -201,7 +201,7 @@ export function TempoHelp() {
                             </li>
                         ))}
                     </ul>
-                    <ul className="border-stroke flex flex-col gap-4 border-t pt-8 text-[11px]">
+                    <ul className="border-stroke text-sub flex flex-col gap-4 border-t pt-8">
                         {keys.map(([key, what]) => (
                             <li
                                 key={key}

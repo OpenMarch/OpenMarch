@@ -6,11 +6,14 @@ import {
     KEEP_MENU_EVENTS,
     MenuItemWithReason,
     TIMELINE_MENU_CONTENT_CLASS,
-    TIMELINE_MENU_ITEM_CLASS,
     TimelineMenuClose,
 } from "@/components/timeline/TimelineRangeMenu";
 import type { ToolMenuItem, ToolMenuSection } from "../tool/toolKind";
 import { closeHandleMenu, useHandleMenuStore } from "../field/handleMenu";
+import {
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
 
 /** A tick in front of the answer the shape has now; room for one in front of the others */
 const Tick = ({ item }: { item: ToolMenuItem }) =>
@@ -26,7 +29,7 @@ const ICONS = { trash: TrashIcon } as const;
 const SEGMENTS_CLASS =
     "bg-fg-1 border-stroke mx-4 flex gap-2 rounded-full border p-2 shadow-inner";
 const SEGMENT_CLASS = clsx(
-    "text-text-subtitle flex flex-1 cursor-default items-center justify-center rounded-full border border-transparent px-12 py-2 text-[12px] whitespace-nowrap outline-hidden select-none",
+    "text-text-subtitle flex flex-1 cursor-default items-center justify-center rounded-full border border-transparent px-12 py-2 text-body whitespace-nowrap outline-hidden select-none",
     "transition-colors duration-150 ease-out",
     "data-[highlighted]:text-accent data-[highlighted]:ring-accent data-[highlighted]:ring-1",
     "data-[state=checked]:bg-fg-2 data-[state=checked]:text-text data-[state=checked]:border-accent",
@@ -46,7 +49,7 @@ const TRACK_CLASS =
 const THUMB_CLASS =
     "bg-text/80 block size-[13px] translate-x-[2px] rounded-full transition-transform duration-100";
 /** A quiet line under a switch or an either/or */
-const NOTE_CLASS = "text-text-subtitle px-8 text-[11px]";
+const NOTE_CLASS = "text-text-subtitle px-8 text-sub";
 
 /**
  * A shape handle's right-click menu (#569, look #568): a Line's point (its corner type as a
@@ -86,7 +89,7 @@ export default function HandleMenu() {
             </>
         );
         const className = clsx(
-            TIMELINE_MENU_ITEM_CLASS,
+            MENU_ITEM_CLASS,
             item.destructive && "data-[highlighted]:text-red",
         );
         if (item.disabled)
@@ -159,7 +162,7 @@ export default function HandleMenu() {
                     <p
                         id={hintId}
                         data-testid="shape-menu-hint"
-                        className="text-text-subtitle -mt-2 mb-4 px-8 text-center text-[10px] opacity-80"
+                        className="text-text-subtitle text-sub -mt-2 mb-4 px-8 text-center opacity-80"
                     >
                         {section.hint}
                     </p>
@@ -195,7 +198,7 @@ export default function HandleMenu() {
                             event.preventDefault();
                             menu.pick(toggle.value);
                         }}
-                        className={clsx(TIMELINE_MENU_ITEM_CLASS, "group")}
+                        className={clsx(MENU_ITEM_CLASS, "group")}
                     >
                         {toggle.label}
                         <span
@@ -289,7 +292,9 @@ export default function HandleMenu() {
                         {menu.sections.map((section, i) => (
                             <Fragment key={section.items[0]?.value ?? i}>
                                 {i > 0 && (
-                                    <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
                                 )}
                                 {section.look === "follow" ? (
                                     <div className="flex min-w-[232px] flex-col gap-4 pb-4">
@@ -300,7 +305,7 @@ export default function HandleMenu() {
                                         {section.label && (
                                             <DropdownMenu.Label
                                                 id={`${labelId}-${i}`}
-                                                className="text-text-subtitle px-8 pt-4 text-[11px]"
+                                                className="text-text-subtitle text-sub px-8 pt-4"
                                             >
                                                 {section.label}
                                             </DropdownMenu.Label>
@@ -314,7 +319,7 @@ export default function HandleMenu() {
                                     >
                                         <DropdownMenu.Label
                                             id={`${labelId}-${i}`}
-                                            className="text-text-subtitle px-8 pt-4 text-[11px]"
+                                            className="text-text-subtitle text-sub px-8 pt-4"
                                         >
                                             {section.label}
                                         </DropdownMenu.Label>

@@ -74,7 +74,7 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
                                 data-testid="basic-expert-mark"
                                 data-timeline-interactive="true"
                                 aria-label={text}
-                                className="bg-fg-1 border-stroke text-text-subtitle pointer-events-auto absolute top-6 z-20 rounded-full border px-4 font-sans text-[10px] leading-[14px]"
+                                className="bg-fg-1 border-stroke text-text-subtitle text-micro pointer-events-auto absolute top-6 z-20 rounded-full border px-4 font-sans leading-[14px]"
                                 style={{
                                     left: beatToX(start, pixelsPerBeat) + 4,
                                 }}
@@ -153,7 +153,7 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                                 // React bubbles the portal's presses to the timeline, which
                                 // would scrub and capture the pointer
                                 data-timeline-interactive="true"
-                                className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 flex flex-col border p-4 backdrop-blur-md"
+                                className="bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 flex flex-col border p-4"
                             >
                                 <ContextMenu.Item
                                     className="text-body hover:text-red rounded-4 cursor-pointer px-8 py-4 outline-none"

@@ -362,7 +362,7 @@ function AlignmentButtons() {
                             setHorizontalStepInterval(e.target.value)
                         }
                         compact
-                        className="w-8 flex-1 rounded border text-center text-xs"
+                        className="rounded-4 w-8 flex-1 border text-center text-xs"
                     />
                 </div>
                 <div className="flex flex-1 items-center justify-center gap-4">
@@ -396,7 +396,7 @@ function AlignmentButtons() {
                         onChange={(e) =>
                             setVerticalStepInterval(e.target.value)
                         }
-                        className="w-8 flex-1 rounded border text-center text-xs"
+                        className="rounded-4 w-8 flex-1 border text-center text-xs"
                     />
                 </div>
             </div>

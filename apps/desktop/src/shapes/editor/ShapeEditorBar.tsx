@@ -2,6 +2,7 @@ import { T } from "@tolgee/react";
 import Shortcut from "@/components/ui/Shortcut";
 import { create } from "zustand";
 import clsx from "clsx";
+import { getButtonClassName } from "@openmarch/ui";
 import {
     Fragment,
     memo,
@@ -1183,7 +1184,11 @@ const EndControls = memo(function EndControls({
                     <Divider />
                     <button
                         type="button"
-                        className="bg-accent text-text-invert rounded-4 px-8 py-2 font-medium hover:opacity-90"
+                        // text-body after twMerge, which drops it (docs/conventions/ui-styling.md)
+                        className={`${getButtonClassName({
+                            variant: "primary",
+                            size: "compact",
+                        })} text-body`}
                         onPointerDown={keepFocus}
                         onClick={() => target.place?.()}
                         data-testid="shape-editor-place"

@@ -11,6 +11,9 @@ describes.
 You can't ask the user questions. When a decision needs a person, record it as
 a blocker in the phase's progress log, as `WORKER.md` describes, and stop.
 
+Any UI you build follows `docs/conventions/ui-styling.md`: no one-off radii,
+font sizes or hand-built buttons and popovers.
+
 Checkpoint often: pushed commits and log entries are the only state that
 survives if you are interrupted. End your final message with the
 `VIEW3D-STATUS:` line from `WORKER.md` step 7.

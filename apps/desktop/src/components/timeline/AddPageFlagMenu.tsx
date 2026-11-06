@@ -8,9 +8,7 @@ import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
 } from "./TimelineRangeMenu";
-
-const ITEM_CLASS =
-    "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none";
+import { MENU_ITEM_CLASS } from "@/components/ui/popupClasses";
 
 /**
  * The paused playhead's right-click menu (UI-9; replaced the **+** beside the playhead, owner
@@ -97,13 +95,13 @@ function MenuEntry({
         <ContextMenu.Item
             data-testid={testId}
             onSelect={onSelect}
-            className={ITEM_CLASS}
+            className={MENU_ITEM_CLASS}
         >
             {getActionLabel(action, translate)}
             {name && (
                 <span
                     data-testid="timeline-add-page-name"
-                    className="text-text-subtitle text-[11px]"
+                    className="text-text-subtitle text-sub"
                 >
                     {name}
                 </span>

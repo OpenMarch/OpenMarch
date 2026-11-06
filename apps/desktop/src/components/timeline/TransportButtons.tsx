@@ -45,7 +45,7 @@ const PLAY_ICON = <PlayIcon size={16} weight="fill" />;
 /** Play while Shift is held: a bar, the playhead's line, then Play ("play from the playhead") */
 const PLAY_FROM_PLAYHEAD_ICON = (
     <span className="flex items-center gap-2">
-        <span aria-hidden className="rounded-2 bg-text h-14 w-[2.5px]" />
+        <span aria-hidden className="bg-text h-14 w-[2.5px] rounded-full" />
         <PlayIcon size={14} weight="fill" />
     </span>
 );
@@ -58,7 +58,7 @@ const PLAY_ON_ICON = (
     <span className="flex items-center gap-2">
         <span
             aria-hidden
-            className={clsx("rounded-2 h-14 w-[2.5px]", START_INK.bg)}
+            className={clsx("h-14 w-[2.5px] rounded-full", START_INK.bg)}
         />
         <PlayIcon size={14} weight="fill" />
     </span>
@@ -365,7 +365,7 @@ function TransportGuide({
                     <span aria-hidden="true" className="flex">
                         {row.icon}
                     </span>
-                    <span className="flex items-center gap-4 text-[12px]">
+                    <span className="text-body flex items-center gap-4">
                         {row.content ?? row.label}
                     </span>
                     <Shortcut binding={row.shortcut} />

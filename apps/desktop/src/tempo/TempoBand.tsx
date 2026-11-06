@@ -2971,7 +2971,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                                 })
                               : undefined
                     }
-                    className={`absolute text-[10px] leading-[14px] whitespace-nowrap ${m.overridden ? "text-accent font-bold" : "text-text-subtitle"} ${partial ? "text-red" : ""}`}
+                    className={`text-micro absolute leading-[14px] whitespace-nowrap ${m.overridden ? "text-accent font-bold" : "text-text-subtitle"} ${partial ? "text-red" : ""}`}
                     style={{
                         left: box.x,
                         top: box.y,
@@ -2999,7 +2999,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                         key={`sig-${m.start}`}
                         type="button"
                         data-meter-start={m.start}
-                        className="bg-fg-1 border-stroke text-text hover:border-accent absolute rounded-full border px-4 text-[10px] leading-[14px] whitespace-nowrap"
+                        className="bg-fg-1 border-stroke text-text hover:border-accent text-micro absolute rounded-full border px-4 leading-[14px] whitespace-nowrap"
                         style={{ left: box.x, top: box.y }}
                         title={t("tempoMode.band.lane.timeSignatureTitle", {
                             meter: meterLabel(mMeter, true),
@@ -3033,7 +3033,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     <span
                         key={`mk-${m.start}`}
                         className={clsx(
-                            "bg-accent text-text-invert absolute cursor-grab rounded-[3px] px-4 text-[11px] leading-[16px] font-bold whitespace-nowrap",
+                            "bg-accent text-text-invert rounded-4 text-sub absolute cursor-grab px-4 leading-[16px] font-bold whitespace-nowrap",
                             gesture?.kind === "mark" &&
                                 gesture.moved &&
                                 gesture.measure.start === m.start &&
@@ -3106,7 +3106,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                     // from the line, leaving the line and the point's dot their own grab
                     // (owner, 2026-11-03: clicking the number didn't seem to work)
                     className={clsx(
-                        "text-accent hover:bg-accent/15 focus-visible:bg-accent/15 absolute cursor-text rounded-[3px] pr-6 text-[10px] leading-[12px] font-medium whitespace-nowrap",
+                        "text-accent hover:bg-accent/15 focus-visible:bg-accent/15 rounded-4 text-micro absolute cursor-text pr-6 leading-[12px] font-medium whitespace-nowrap",
                         below ? "pb-4" : "pt-4",
                     )}
                     style={{ left: box.x, top: below ? box.y : box.y - 4 }}
@@ -3143,7 +3143,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             render: (index, box) => (
                 <span
                     key={`h-${b}`}
-                    className="text-accent pointer-events-none absolute text-[11px] leading-[12px] whitespace-nowrap"
+                    className="text-accent text-sub pointer-events-none absolute leading-[12px] whitespace-nowrap"
                     style={{ left: box.x, top: box.y }}
                 >
                     {texts[index]}
@@ -3167,7 +3167,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             <span
                 key="mark-drag"
                 className={clsx(
-                    "text-text-invert pointer-events-none absolute z-[5] rounded-[3px] px-4 text-[11px] leading-[16px] font-bold whitespace-nowrap",
+                    "text-text-invert rounded-4 text-sub pointer-events-none absolute z-[5] px-4 leading-[16px] font-bold whitespace-nowrap",
                     target?.mark && target.start !== gesture.measure.start
                         ? "bg-red"
                         : "bg-accent",
@@ -3229,7 +3229,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             <span
                 key="tempo-drag-tag"
                 data-testid="tempo-drag-tag"
-                className="bg-accent text-text-invert pointer-events-none absolute z-[6] rounded-[3px] px-5 text-[11px] leading-[16px] font-semibold whitespace-nowrap"
+                className="bg-accent text-text-invert rounded-4 text-sub pointer-events-none absolute z-[6] px-5 leading-[16px] font-semibold whitespace-nowrap"
                 style={{
                     left: Math.max(left, (left + right) / 2 - w / 2),
                     top: y < TEMPO.top + 22 ? y + 6 : y - 22,
@@ -3248,7 +3248,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             <span
                 key="tempo-drag-tag"
                 data-testid="tempo-drag-tag"
-                className="bg-accent text-text-invert pointer-events-none absolute z-[6] rounded-[3px] px-5 text-[11px] leading-[16px] font-semibold whitespace-nowrap"
+                className="bg-accent text-text-invert rounded-4 text-sub pointer-events-none absolute z-[6] px-5 leading-[16px] font-semibold whitespace-nowrap"
                 style={{
                     left: Math.min(
                         x + 10,
@@ -3270,7 +3270,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 key="tip"
                 role="tooltip"
                 data-testid="tempo-tip"
-                className="bg-modal border-stroke text-text shadow-modal pointer-events-none absolute z-[7] rounded-[4px] border px-8 py-4 text-[11px] leading-[14px]"
+                className="bg-modal border-stroke text-text shadow-modal rounded-6 text-sub pointer-events-none absolute z-[7] border px-8 py-4 leading-[14px]"
                 style={{
                     left: Math.max(
                         gutterRight + 2,
@@ -3379,7 +3379,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 {LANES.map((lane) => (
                     <div
                         key={lane.name}
-                        className="border-stroke text-text-subtitle absolute inset-x-0 border-b px-4 pt-3 text-[9px] leading-[12px] tracking-wide uppercase"
+                        className="border-stroke text-text-subtitle text-micro absolute inset-x-0 truncate border-b pt-3 pl-4 leading-[12px] uppercase"
                         style={{ top: lane.top, height: lane.height }}
                         title={lane.title}
                     >

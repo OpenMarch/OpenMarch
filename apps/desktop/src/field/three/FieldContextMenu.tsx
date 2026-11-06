@@ -26,6 +26,10 @@ import {
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
+import {
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
 
 /**
  * The field's right-click menu (#315). Every entry is a registered action, run
@@ -69,9 +73,6 @@ const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
 /** The group whose entries can show checked: each keeps room for the check, so the words line up */
 const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[1]);
 
-/** The entries' style, as the timeline's menus */
-const ITEM_CLASS =
-    "rounded-4 data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-6 text-[12px] outline-hidden select-none data-[disabled]:opacity-50";
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
 
@@ -156,7 +157,9 @@ export default function FieldContextMenu({
                     {groups.map((group, i) => (
                         <Fragment key={group[0]}>
                             {i > 0 && (
-                                <DropdownMenu.Separator className="bg-stroke mx-4 h-px" />
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
                             )}
                             {group.map((id) => {
                                 const label =
@@ -176,7 +179,7 @@ export default function FieldContextMenu({
                                             data-testid={`field-menu-${id}`}
                                             checked
                                             disabled
-                                            className={ITEM_CLASS}
+                                            className={MENU_ITEM_CLASS}
                                         >
                                             <span className={CHECK_SLOT_CLASS}>
                                                 <DropdownMenu.ItemIndicator className="flex">
@@ -193,7 +196,7 @@ export default function FieldContextMenu({
                                         data-testid={`field-menu-${id}`}
                                         disabled={!enabled(id)}
                                         onSelect={() => runAction(id)}
-                                        className={ITEM_CLASS}
+                                        className={MENU_ITEM_CLASS}
                                     >
                                         {CHECKABLE.has(id) && (
                                             <span

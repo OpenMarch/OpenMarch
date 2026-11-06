@@ -34,7 +34,7 @@ export default function DevSkipSetupButton({
         >
             <FastForwardIcon size={14} />
             <span className="text-sub">Skip setup</span>
-            <span className="bg-yellow rounded-full px-6 text-[10px] leading-[16px] font-medium tracking-wide text-black uppercase">
+            <span className="bg-yellow text-sub rounded-full px-6 leading-[16px] font-medium tracking-wide text-black uppercase">
                 Dev only
             </span>
         </Button>

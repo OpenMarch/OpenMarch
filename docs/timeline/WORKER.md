@@ -129,6 +129,9 @@ Throughout:
 
 - Follow the root `AGENTS.md`, the nearest package `AGENTS.md`, and
   `docs/conventions/` for the area you're changing.
+- For any UI, follow `docs/conventions/ui-styling.md`: the theme's radii, font
+  sizes and spacing, the shared popover and menu classes, and `Button`. Compare a
+  screenshot of the new surface with its neighbors before calling it done.
 - The spec (`docs/timeline/spec.md`) wins on the model. The reference code is in
   `docs/timeline/ref/`.
 - Don't edit other packages' lines or other phases' work packages. Use a

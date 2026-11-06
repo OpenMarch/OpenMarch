@@ -194,7 +194,7 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
             </Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content
-                    className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex min-w-[200px] flex-col gap-8 border p-16 py-12 backdrop-blur-md outline-none"
+                    className="bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 m-6 flex min-w-[200px] flex-col gap-8 border p-16 py-12 outline-none"
                     sideOffset={8}
                     align="start"
                     onCloseAutoFocus={(e) => {

@@ -238,14 +238,14 @@ export default function ShortcutsDialog() {
                             key={group.title}
                             className="mb-16 break-inside-avoid"
                         >
-                            <h3 className="text-text-subtitle mb-6 text-[12px] font-medium tracking-wide uppercase">
+                            <h3 className="text-text-subtitle text-body mb-6 font-medium tracking-wide uppercase">
                                 {group.title}
                             </h3>
                             <dl className="flex flex-col gap-4">
                                 {group.rows.map((row) => (
                                     <div
                                         key={`${row.label}|${row.keys}`}
-                                        className="flex items-center justify-between gap-12 text-[13px]"
+                                        className="text-body flex items-center justify-between gap-12"
                                     >
                                         <dt className="text-text">
                                             {row.label}

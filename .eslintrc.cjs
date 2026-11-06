@@ -1,4 +1,30 @@
 /* eslint-env node */
+
+/**
+ * Class names that bypass the theme's tokens (docs/conventions/ui-styling.md), as
+ * no-restricted-syntax entries for string literals and template strings.
+ */
+function uiStyleRestrictions() {
+    const checks = [
+        {
+            // text-[11px], text-[0.8rem]: use text-micro / text-sub / text-body / text-h*
+            pattern: String.raw`(^|[\s:"'\x60])text-\[\d`,
+            message:
+                "Use a theme font size (text-sub, text-body, text-h5..h1; text-micro only for timeline/tempo lane labels), not text-[Npx]. See docs/conventions/ui-styling.md.",
+        },
+        {
+            // rounded-[3px], rounded-t-[5px]; rounded-2 / rounded-sm etc. aren't the theme's radii
+            pattern: String.raw`(^|[\s:"'\x60])rounded(-(t|b|l|r|s|e|tl|tr|bl|br|ss|se|es|ee))?-(\[|(2|xs|sm|md|lg|xl|2xl|3xl)($|[\s"'\x60]))`,
+            message:
+                "Use a theme radius (rounded-4, rounded-6, rounded-8, ..., rounded-full), not rounded-[..] or Tailwind's default names; rounded-2 does not exist. See docs/conventions/ui-styling.md.",
+        },
+    ];
+    return checks.flatMap(({ pattern, message }) => [
+        { selector: `Literal[value=/${pattern}/]`, message },
+        { selector: `TemplateElement[value.raw=/${pattern}/]`, message },
+    ]);
+}
+
 module.exports = {
     extends: [
         "eslint:recommended",
@@ -57,6 +83,22 @@ module.exports = {
         ],
     },
     overrides: [
+        {
+            // UI style tokens (docs/conventions/ui-styling.md): font sizes and corner radii
+            // come from the theme in packages/ui/src/tailwind.css, never one-off values
+            files: [
+                "apps/desktop/src/**/*.{ts,tsx}",
+                "packages/ui/src/**/*.{ts,tsx}",
+            ],
+            excludedFiles: ["**/__test__/**", "**/*.test.*", "**/*.stories.*"],
+            rules: {
+                "no-restricted-syntax": [
+                    "error",
+                    "WithStatement",
+                    ...uiStyleRestrictions(),
+                ],
+            },
+        },
         {
             // Disable for tests and React components
             files: ["*.test.ts*", "**/*.tsx"],

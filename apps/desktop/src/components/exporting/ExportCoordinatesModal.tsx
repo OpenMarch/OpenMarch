@@ -512,7 +512,7 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.preview" />
                     </h5>
                 </div>
-                <div className="mx-2 max-h-[28vh] overflow-auto rounded-md border border-gray-200 bg-white text-black">
+                <div className="rounded-6 mx-2 max-h-[28vh] overflow-auto border border-gray-200 bg-white text-black">
                     <MarcherCoordinateSheetPreview
                         terse={isTerse}
                         includeMeasures={includeMeasures}
@@ -1015,7 +1015,7 @@ function DrillChartExport() {
                 {/* Show Demo SVGs or Error if Export Requirement Not Met */}
                 {canExport ? (
                     <div className="flex flex-col items-center gap-8">
-                        <div className="max-h-[20rem] w-full max-w-[20rem] rounded-md border border-gray-200 bg-white px-8 py-4 text-black">
+                        <div className="rounded-6 max-h-[20rem] w-full max-w-[20rem] border border-gray-200 bg-white px-8 py-4 text-black">
                             <img
                                 src={
                                     individualCharts
@@ -2013,7 +2013,7 @@ function MobileExportOption({ onClick }: { onClick: () => void }) {
                             key={`${url}-${index}`}
                             src={url}
                             alt=""
-                            className="border-stroke shadow-fg-1 aspect-[9/19.5] w-[10rem] shrink-0 rounded-[1.25rem] border object-cover"
+                            className="border-stroke shadow-fg-1 rounded-20 aspect-[9/19.5] w-[10rem] shrink-0 border object-cover"
                             draggable={false}
                         />
                     ))}

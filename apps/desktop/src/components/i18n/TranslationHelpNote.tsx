@@ -12,7 +12,7 @@ function HelpLink({ children }: { children?: ReactNode }) {
             onClick={() =>
                 void window.electron.openExternal(HELP_TRANSLATE_URL)
             }
-            className="text-accent focus-visible:outline-accent rounded-2 underline-offset-2 outline-hidden hover:underline focus-visible:outline-2"
+            className="text-accent focus-visible:outline-accent rounded-4 underline-offset-2 outline-hidden hover:underline focus-visible:outline-2"
         >
             {children}
         </button>

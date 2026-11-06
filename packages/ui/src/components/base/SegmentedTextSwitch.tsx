@@ -38,7 +38,7 @@ export function SegmentedTextSwitch({
                 if (value) setSelected(value);
             }}
             className={clsx(
-                "bg-fg-1 border-stroke inline-flex flex-wrap items-center gap-2 rounded-[24px] border p-4",
+                "bg-fg-1 border-stroke inline-flex flex-wrap items-center gap-2 rounded-full border p-4",
                 "shadow-inner",
                 className,
             )}

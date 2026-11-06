@@ -44,7 +44,7 @@ export function TimelineLoopButton() {
                 isolated ? (
                     t("timeline.loop.hintIsolated")
                 ) : looping ? (
-                    <span className="text-text-subtitle flex items-center gap-4 text-[11px]">
+                    <span className="text-text-subtitle text-sub flex items-center gap-4">
                         <T
                             keyName="timeline.loop.hintOn"
                             params={{
@@ -161,7 +161,7 @@ export function TimelineSoundButton() {
             <Popover.Portal>
                 <Popover.Content
                     side="top"
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex w-232 flex-col gap-10 border px-16 py-12 backdrop-blur-sm"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-50 flex w-232 flex-col gap-10 border px-16 py-12"
                 >
                     <div className="flex items-center gap-8">
                         <button

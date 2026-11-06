@@ -159,7 +159,7 @@ export default function CanvasZoomControls({
     return (
         <div
             className={clsx(
-                "group border-stroke bg-bg-1 pointer-events-auto absolute right-6 bottom-6 z-10 flex w-160 flex-col overflow-hidden rounded-lg border shadow-lg",
+                "group border-stroke bg-bg-1 rounded-8 pointer-events-auto absolute right-6 bottom-6 z-10 flex w-160 flex-col overflow-hidden border shadow-lg",
             )}
         >
             <div className="border-stroke flex items-center border-b px-12 py-2">

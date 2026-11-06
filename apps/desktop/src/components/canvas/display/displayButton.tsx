@@ -6,5 +6,5 @@ export const DISPLAY_BUTTON_CLASS =
 
 /** In touch mode, where tooltips can't show, each button says what it is under its icon */
 export function DisplayCaption({ children }: { children: string }) {
-    return <TouchCaption className="text-[10px]">{children}</TouchCaption>;
+    return <TouchCaption>{children}</TouchCaption>;
 }

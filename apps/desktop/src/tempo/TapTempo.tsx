@@ -10,8 +10,10 @@ import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import tolgee from "@/global/singletons/Tolgee";
 import { tapBpm } from "./tapTempoMath";
-import { toolButton } from "./TempoToolbar";
+import { toolButton, withTextBody } from "./TempoToolbar";
 import { useTempoUi } from "./tempoUi";
+import { getButtonClassName } from "@openmarch/ui";
+import { POPOVER_CLASS } from "@/components/ui/popupClasses";
 
 export function TapTempo(props: {
     /** The counts "Use" sets, in words ("m. 3–12"), or null when there's nowhere to put it */
@@ -59,7 +61,7 @@ export function TapTempo(props: {
                     sideOffset={6}
                     collisionPadding={8}
                     data-testid="tap-tempo"
-                    className="border-stroke bg-modal text-text shadow-modal rounded-8 z-[100] flex w-[240px] flex-col gap-8 border px-12 py-10 backdrop-blur-md"
+                    className={`${POPOVER_CLASS} z-[100] flex w-320 flex-col gap-8`}
                     onPointerDown={(e) => e.stopPropagation()}
                     // the T key taps; focus stays where it was so Space still plays
                     onOpenAutoFocus={(e) => e.preventDefault()}
@@ -68,8 +70,8 @@ export function TapTempo(props: {
                     onInteractOutside={(e) => e.preventDefault()}
                 >
                     <div className="flex items-baseline justify-between">
-                        <span className="text-[12px] font-bold">{name}</span>
-                        <span className="text-text-subtitle text-[11px]">
+                        <span className="text-body font-bold">{name}</span>
+                        <span className="text-text-subtitle text-sub">
                             {taps.length === 0
                                 ? ""
                                 : tolgee.t(
@@ -81,12 +83,12 @@ export function TapTempo(props: {
                     </div>
                     <div
                         data-testid="tap-tempo-bpm"
-                        className="text-center text-[28px] leading-[32px] font-bold tabular-nums"
+                        className="text-h3 text-center leading-[32px] font-bold tabular-nums"
                     >
                         {/* i18n-ignore: a quarter note and a number (or a dash), the same in every language */}
                         {rounded === null ? "♩ –" : `♩${rounded}`}
                     </div>
-                    <div className="text-text-subtitle -mt-4 text-center text-[11px]">
+                    <div className="text-text-subtitle text-sub -mt-4 text-center">
                         {bpm === null ? (
                             <span className="inline-flex items-center gap-4">
                                 <T
@@ -108,7 +110,14 @@ export function TapTempo(props: {
                     <button
                         type="button"
                         aria-label={tolgee.t("tempoMode.tap.tap", "Tap")}
-                        className="border-accent text-accent hover:bg-accent/10 rounded-6 h-40 border text-[12px] font-medium select-none"
+                        // No press bounce: it would jump on every beat you tap
+                        className={withTextBody(
+                            getButtonClassName({
+                                variant: "secondary",
+                                className:
+                                    "border-accent text-accent w-full select-none enabled:hover:translate-y-0 enabled:focus-visible:translate-y-0 enabled:active:translate-y-0",
+                            }),
+                        )}
                         // on press, not on release: a click lands later than the beat it's for
                         onPointerDown={(e) => {
                             e.preventDefault();
@@ -117,7 +126,7 @@ export function TapTempo(props: {
                     >
                         {tolgee.t("tempoMode.tap.tap", "Tap")}
                     </button>
-                    <div className="flex gap-6">
+                    <div className="flex gap-8">
                         <button
                             type="button"
                             className={toolButton()}
@@ -158,7 +167,11 @@ export function TapTempo(props: {
                                 <button
                                     type="button"
                                     data-testid="tap-tempo-use"
-                                    className={`${toolButton(true)} flex-1 justify-center disabled:pointer-events-none`}
+                                    className={toolButton(
+                                        true,
+                                        false,
+                                        "flex-1 justify-center disabled:pointer-events-none",
+                                    )}
                                     disabled={rounded === null || !props.target}
                                     onClick={(e) => {
                                         e.currentTarget.blur();

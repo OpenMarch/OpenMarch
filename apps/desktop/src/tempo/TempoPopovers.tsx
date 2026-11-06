@@ -18,6 +18,12 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useOnScreen } from "./bandLayout";
 import { CountAsk, CountRange, Editor, Menu } from "./tempoBandTypes";
 import { CountAnswer, useTempoUi } from "./tempoUi";
+import {
+    MENU_BUTTON_CLASS,
+    MENU_CONTENT_CLASS,
+    MENU_SEPARATOR_CLASS,
+    POPOVER_CLASS,
+} from "@/components/ui/popupClasses";
 
 /**
  * The popovers are portals, so React hands their events on to the band they open from: stopped
@@ -135,8 +141,8 @@ export function CountAskPopover({
                 {icons[choice]}
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
-                <span className="text-[12px] font-bold">{title}</span>
-                <span className="text-text-subtitle text-[11px]">{text}</span>
+                <span className="text-body font-bold">{title}</span>
+                <span className="text-text-subtitle text-sub">{text}</span>
             </span>
             <span className="mt-1 shrink-0 self-center">
                 {choice === picked ? (
@@ -157,7 +163,7 @@ export function CountAskPopover({
             data-testid="tempo-count-ask"
             role="dialog"
             aria-label={ask.title}
-            className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-h-[calc(100vh-16px)] w-[380px] max-w-[calc(100vw-16px)] flex-col gap-6 overflow-y-auto border p-8 shadow-lg backdrop-blur-md"
+            className={`${POPOVER_CLASS} fixed z-[100] flex max-h-[calc(100vh-16px)] w-380 max-w-[calc(100vw-16px)] flex-col gap-8 overflow-y-auto`}
             style={position}
             {...keepEventsIn}
             onKeyDown={(e) => {
@@ -165,18 +171,18 @@ export function CountAskPopover({
                 if (e.key === "Escape") onClose();
             }}
         >
-            <div className="text-[12px] font-bold">{ask.title}</div>
+            <div className="text-body font-bold">{ask.title}</div>
             {ask.blocked ? (
                 <BlockedAsk blocked={ask.blocked} onClose={onClose} />
             ) : (
                 <>
-                    <div className="text-text-subtitle text-[11px]">
+                    <div className="text-text-subtitle text-sub">
                         {ask.intro}
                     </div>
                     {ask.warning && (
                         <div
                             data-testid="tempo-count-ask-warning"
-                            className="text-red flex items-start gap-6 text-[11px]"
+                            className="text-red text-sub flex items-start gap-6"
                         >
                             <WarningIcon
                                 size={13}
@@ -205,7 +211,7 @@ export function CountAskPopover({
                     )}
                     {ask.hold && (
                         <>
-                            <div className="text-text-subtitle pt-2 text-[11px]">
+                            <div className="text-text-subtitle text-sub pt-2">
                                 {tolgee.t(
                                     "tempoMode.popovers.countAsk.holdIntro",
                                     "The music has no extra beat, but the marchers need a breath here?",
@@ -224,7 +230,7 @@ export function CountAskPopover({
                             )}
                         </>
                     )}
-                    <div className="text-text-subtitle text-[10px]">
+                    <div className="text-text-subtitle text-sub">
                         <T
                             keyName="tempoMode.popovers.countAsk.footer"
                             defaultValue="Click one to do it. <enter></enter> does the one marked, your last choice; <escape></escape> cancels, and Undo takes any of them back."
@@ -281,8 +287,8 @@ function BlockedAsk({
                 run();
             }}
         >
-            <span className="text-[12px] font-bold">{label}</span>
-            <span className="text-text-subtitle text-[11px]">
+            <span className="text-body font-bold">{label}</span>
+            <span className="text-text-subtitle text-sub">
                 {disabled ?? hint}
             </span>
         </button>
@@ -291,7 +297,7 @@ function BlockedAsk({
         <>
             <div
                 data-testid="tempo-count-ask-blocked"
-                className="flex items-start gap-6 text-[11px]"
+                className="text-sub flex items-start gap-6"
             >
                 <WarningIcon
                     size={14}
@@ -326,7 +332,7 @@ function BlockedAsk({
                 )}
             <button
                 type="button"
-                className="text-text-subtitle hover:text-text self-end px-4 text-[11px]"
+                className="text-text-subtitle hover:text-text text-sub self-end px-4"
                 onClick={onClose}
             >
                 {tolgee.t(
@@ -356,17 +362,15 @@ export function InlineEditor({
     return (
         <div
             ref={boxRef}
-            className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-w-[280px] flex-col gap-4 border p-6 shadow-lg backdrop-blur-md"
+            className={`${POPOVER_CLASS} fixed z-[100] flex max-w-280 flex-col gap-8 p-8`}
             style={position}
             {...keepEventsIn}
         >
-            <span className="text-text-subtitle text-[11px]">
-                {editor.hint}
-            </span>
+            <span className="text-text-subtitle text-sub">{editor.hint}</span>
             <input
                 ref={ref}
                 data-testid="tempo-editor-input"
-                className="border-stroke bg-fg-1 rounded-4 border px-6 py-2 text-[13px]"
+                className="rounded-6 border-stroke bg-fg-2 text-body text-text focus:border-accent h-26 border px-8 outline-hidden"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => {
@@ -382,7 +386,7 @@ export function InlineEditor({
                 <button
                     type="button"
                     data-testid="tempo-editor-extra"
-                    className="text-accent self-start text-left text-[11px] hover:underline"
+                    className="text-accent text-sub self-start text-left hover:underline"
                     // keeps the focus in the field, so its blur doesn't close the box first
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
@@ -401,6 +405,7 @@ export function InlineEditor({
 export function MeterGlyph({ top, bottom }: { top: string; bottom: string }) {
     return (
         <span
+            // eslint-disable-next-line no-restricted-syntax -- a picture drawn in text, sized to the 16 px icon slot
             className="flex flex-col items-center text-[8px] leading-[7px] font-bold"
             aria-hidden
         >
@@ -414,6 +419,7 @@ export function MeterGlyph({ top, bottom }: { top: string; bottom: string }) {
 export function MarkGlyph({ letter }: { letter: string }) {
     return (
         <span
+            // eslint-disable-next-line no-restricted-syntax -- a picture drawn in text, sized to the 16 px icon slot
             className="flex h-[13px] min-w-[13px] items-center justify-center rounded-[2px] border border-current px-[1px] text-[8px] leading-none font-bold"
             aria-hidden
         >
@@ -425,7 +431,11 @@ export function MarkGlyph({ letter }: { letter: string }) {
 /** A measure number as a menu icon: "m34" */
 export function NumberGlyph({ n }: { n: number }) {
     return (
-        <span className="text-[9px] leading-none font-bold" aria-hidden>
+        <span
+            // eslint-disable-next-line no-restricted-syntax -- a picture drawn in text, sized to the 16 px icon slot
+            className="text-[9px] leading-none font-bold"
+            aria-hidden
+        >
             {tolgee.t("tempoMode.popovers.measureGlyph", "m{number}", {
                 number: String(n),
             })}
@@ -506,7 +516,7 @@ export function ContextMenu({
         <div
             ref={ref}
             data-testid="tempo-menu"
-            className="bg-modal shadow-modal text-text border-stroke rounded-6 fixed z-[100] flex max-h-[calc(100vh-16px)] w-max max-w-[min(440px,calc(100vw-16px))] min-w-[220px] flex-col overflow-y-auto border py-4 shadow-lg backdrop-blur-md"
+            className={`${MENU_CONTENT_CLASS} fixed z-[100] max-h-[calc(100vh-16px)] w-max max-w-[min(440px,calc(100vw-16px))] min-w-220 overflow-y-auto`}
             style={position}
             {...keepEventsIn}
             onContextMenu={(e) => {
@@ -516,25 +526,26 @@ export function ContextMenu({
             onPointerLeave={() => onHover(null)}
         >
             {menu.title && (
-                <div className="border-stroke mb-2 flex items-baseline justify-between gap-12 border-b px-10 py-4 text-[12px] font-bold">
+                <div className="text-body flex items-baseline justify-between gap-12 px-8 py-4 font-medium">
                     <span>{menu.title}</span>
                     {menu.subtitle && (
-                        <span className="text-text-subtitle font-medium">
+                        <span className="text-text-subtitle text-sub">
                             {menu.subtitle}
                         </span>
                     )}
                 </div>
             )}
+            {menu.title && <div className={MENU_SEPARATOR_CLASS} aria-hidden />}
             {menu.items.map((item) => (
                 <Fragment key={item.label}>
                     {item.separatorBefore && (
-                        <div className="bg-stroke mx-0 my-3 h-px" aria-hidden />
+                        <div className={MENU_SEPARATOR_CLASS} aria-hidden />
                     )}
                     <button
                         type="button"
                         disabled={item.disabled}
                         title={item.hint}
-                        className="hover:bg-fg-2 text-text flex items-center gap-8 px-10 py-3 text-left text-[12px] disabled:opacity-40"
+                        className={MENU_BUTTON_CLASS}
                         onPointerEnter={() => onHover(item.range ?? null)}
                         onFocus={() => onHover(item.range ?? null)}
                         onClick={() => {
@@ -547,7 +558,7 @@ export function ContextMenu({
                         </span>
                         <span className="flex-1">{item.label}</span>
                         {item.aside && (
-                            <span className="text-text-subtitle text-[11px]">
+                            <span className="text-text-subtitle text-sub">
                                 {item.aside}
                             </span>
                         )}

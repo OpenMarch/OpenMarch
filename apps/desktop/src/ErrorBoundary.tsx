@@ -46,7 +46,7 @@ export default class ErrorBoundary extends React.Component<
                                 {tolgee.t("errorBoundary.stoppedBecause")}
                             </div>
 
-                            <div className="border-stroke bg-bg-1 group relative my-4 flex w-full rounded border p-8 font-mono text-xs">
+                            <div className="border-stroke bg-bg-1 group rounded-4 relative my-4 flex w-full border p-8 font-mono text-xs">
                                 <div className="flex-grow text-center">
                                     {this.state.error?.message}
                                 </div>
@@ -64,7 +64,7 @@ export default class ErrorBoundary extends React.Component<
                                             2000,
                                         );
                                     }}
-                                    className="touch:min-h-44 touch:min-w-44 touch:justify-center flex items-center gap-4 rounded px-4"
+                                    className="touch:min-h-44 touch:min-w-44 touch:justify-center rounded-4 flex items-center gap-4 px-4"
                                     title={tolgee.t(
                                         "errorBoundary.copyErrorMessage",
                                     )}
@@ -78,7 +78,7 @@ export default class ErrorBoundary extends React.Component<
                                             className="text-text-subtitle hover:text-text"
                                         />
                                         {this.state.copied && (
-                                            <span className="text-green bg-bg-1 absolute right-0 mr-8 rounded p-2 text-xs">
+                                            <span className="text-green bg-bg-1 rounded-4 absolute right-0 mr-8 p-2 text-xs">
                                                 {tolgee.t(
                                                     "errorBoundary.errorCopied",
                                                 )}

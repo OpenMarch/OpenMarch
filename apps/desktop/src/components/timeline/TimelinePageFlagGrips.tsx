@@ -554,7 +554,7 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
                 <div
                     role="status"
                     data-testid="timeline-page-flag-readout"
-                    className="bg-bg-1 border-stroke rounded-6 text-text pointer-events-none absolute z-[60] flex flex-col gap-2 border px-6 py-4 font-mono text-[11px] leading-tight whitespace-nowrap shadow-sm"
+                    className="bg-bg-1 border-stroke rounded-6 text-text text-sub pointer-events-none absolute z-[60] flex flex-col gap-2 border px-6 py-4 font-mono leading-tight whitespace-nowrap shadow-sm"
                     style={{
                         left:
                             Math.round(beatToX(preview.beat, pixelsPerBeat)) +

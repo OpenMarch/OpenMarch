@@ -4,6 +4,7 @@
  * music file, metronome, Import (audio or MusicXML), help and Done.
  */
 import clsx from "clsx";
+import { getButtonClassName } from "@openmarch/ui";
 import {
     CheckIcon,
     MetronomeIcon,
@@ -21,13 +22,29 @@ import { TempoHelp } from "./TempoHelp";
 import { TempoImport } from "./TempoImport";
 import { TempoMusicFile } from "./TempoMusicFile";
 
-/** A tool button in tempo mode's header, lit when `on` (its colors are either/or, not overrides) */
-export const toolButton = (on = false, iconOnly = false) =>
-    clsx(
-        "pointer-events-auto rounded-6 bg-fg-1 hover:border-accent focus-visible:ring-accent flex h-22 shrink-0 items-center gap-4 border text-[11px] whitespace-nowrap outline-hidden focus-visible:ring-2 disabled:opacity-50",
-        iconOnly ? "px-4" : "px-8",
-        on ? "border-accent text-accent" : "border-stroke text-text",
+/**
+ * A tool button in tempo mode's header: the app's compact secondary button (a pill), lit when
+ * `on`. Extra classes go through `className` so they win over the button's own.
+ */
+export const toolButton = (on = false, iconOnly = false, className?: string) =>
+    withTextBody(
+        getButtonClassName({
+            variant: "secondary",
+            size: "compact",
+            content: iconOnly ? "icon" : "text",
+            className: clsx(
+                "pointer-events-auto shrink-0 whitespace-nowrap enabled:hover:border-accent focus-visible:ring-accent focus-visible:ring-2",
+                on && "border-accent text-accent",
+                className,
+            ),
+        }),
     );
+
+/**
+ * Adds `text-body` after getButtonClassName's twMerge, which reads `text-body` as a text color
+ * and drops it in favour of the variant's color. See docs/conventions/ui-styling.md.
+ */
+export const withTextBody = (className: string) => `${className} text-body`;
 
 /**
  * Tempo mode's header row: the mode's name, its tools, help and Done. Narrow, the tools drop
@@ -54,7 +71,7 @@ export function TempoToolbar(props: {
                 onDoubleClick={(e) => e.stopPropagation()}
                 onContextMenu={(e) => e.stopPropagation()}
             >
-                <span className="text-accent flex shrink-0 items-center gap-4 text-[12px] font-bold whitespace-nowrap">
+                <span className="text-accent text-body flex shrink-0 items-center gap-4 font-medium whitespace-nowrap">
                     <MusicNotesIcon size={14} weight="bold" aria-hidden />
                     <span className="@max-[640px]:hidden">
                         {tolgee.t("tempoMode.toolbar.title", "Editing music")}
@@ -116,7 +133,14 @@ export function TempoToolbar(props: {
                     <button
                         type="button"
                         aria-label={tolgee.t("tempoMode.toolbar.done", "Done")}
-                        className="bg-accent text-text-invert rounded-6 focus-visible:ring-accent pointer-events-auto flex h-22 shrink-0 items-center gap-4 px-10 text-[11px] font-bold whitespace-nowrap outline-hidden hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-1"
+                        className={withTextBody(
+                            getButtonClassName({
+                                variant: "primary",
+                                size: "compact",
+                                className:
+                                    "focus-visible:ring-accent pointer-events-auto shrink-0 whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-1",
+                            }),
+                        )}
                         onClick={() =>
                             useTempoModeStore.getState().setOn(false)
                         }

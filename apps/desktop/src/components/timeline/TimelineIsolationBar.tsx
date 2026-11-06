@@ -541,7 +541,7 @@ export default function TimelineIsolationBar() {
                     count,
                 })}
             </span>
-            <span className="text-text-subtitle flex min-w-0 items-center gap-4 truncate text-[11px]">
+            <span className="text-text-subtitle text-sub flex min-w-0 items-center gap-4 truncate">
                 <svg width="20" height="6" aria-hidden="true">
                     <line
                         x1="0"

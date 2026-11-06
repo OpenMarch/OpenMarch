@@ -574,9 +574,8 @@ const TimelineSelectionActions = memo(function TimelineSelectionActions({
                     data-testid="timeline-selection-count"
                     className={clsx(
                         "border-stroke bg-bg-1 text-text rounded-6 border font-mono whitespace-nowrap",
-                        expanded
-                            ? "px-8 py-2 text-[10px]"
-                            : "px-6 py-0 text-[9px]",
+                        "text-micro",
+                        expanded ? "px-8 py-2" : "px-6 py-0",
                     )}
                 >
                     {getWindowCountLabel(model, displayedRange)}
@@ -613,7 +612,7 @@ const TimelinePlayheadChip = memo(function TimelinePlayheadChip({
             onMouseDown={(event) => event.preventDefault()}
             onClick={onClick}
             className={clsx(
-                "bg-bg-1 border-stroke text-text hover:text-accent focus-visible:ring-accent absolute z-[70] flex items-center gap-2 rounded-full border px-8 py-2 text-[11px] leading-none whitespace-nowrap shadow-sm outline-hidden focus-visible:ring-2",
+                "bg-bg-1 border-stroke text-text hover:text-accent focus-visible:ring-accent text-sub absolute z-[70] flex items-center gap-2 rounded-full border px-8 py-2 leading-none whitespace-nowrap shadow-sm outline-hidden focus-visible:ring-2",
                 side === "left"
                     ? "left-12 flex-row"
                     : "right-12 flex-row-reverse",
@@ -1212,7 +1211,6 @@ const TimelineSurface = memo(function TimelineSurface({
                                     TIMELINE_PAGE_ROW_BOTTOM +
                                     (expanded ? 2 : 1)
                                 }
-                                compact={!expanded}
                                 onSeek={props.onSeek}
                             />
                         )}

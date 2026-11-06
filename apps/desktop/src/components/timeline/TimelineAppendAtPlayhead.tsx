@@ -108,7 +108,7 @@ export function TimelineAppendAtPlayhead({
                     onFocus={() => setPreviewing(true)}
                     onBlur={() => setPreviewing(false)}
                     className={clsx(
-                        "border-accent text-accent bg-bg-1 hover:bg-accent hover:text-text-invert focus-visible:ring-accent pointer-events-auto absolute top-0 flex h-16 items-center gap-2 rounded-full border px-6 text-[10px] leading-none font-medium whitespace-nowrap outline-hidden focus-visible:ring-2",
+                        "border-accent text-accent bg-bg-1 hover:bg-accent hover:text-text-invert focus-visible:ring-accent text-micro pointer-events-auto absolute top-0 flex h-16 items-center gap-2 rounded-full border px-6 leading-none font-medium whitespace-nowrap outline-hidden focus-visible:ring-2",
                         flipped ? "right-8" : "left-8",
                     )}
                 >

@@ -109,7 +109,7 @@ export function ShortcutTooltip({
                         className={TooltipClassName}
                     >
                         {!hideLabel && (
-                            <span className="flex items-center gap-8 text-[12px]">
+                            <span className="text-body flex items-center gap-8">
                                 {label}
                                 {action ? (
                                     <Shortcut action={action} />
@@ -119,7 +119,7 @@ export function ShortcutTooltip({
                             </span>
                         )}
                         {typeof hint === "string" ? (
-                            <span className="text-text-subtitle block text-[11px]">
+                            <span className="text-text-subtitle text-sub block">
                                 {hint}
                             </span>
                         ) : (
