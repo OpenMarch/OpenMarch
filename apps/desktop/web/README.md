@@ -79,10 +79,14 @@ API clients and Mobile export are the same code as on the desktop.
   The session is Clerk's own, shared by every app on openmarch.com, and the
   API gets Clerk's short-lived session token. om-online's editor API allows
   the editor's origins (CORS).
-- Only the stable, nightly and lab builds sign in: they're on openmarch.com,
-  where the production Clerk instance runs. The publishable key is
-  `VITE_CLERK_PUBLISHABLE_KEY` in `.env.production`. Dev and preview builds
-  have no key, so they hide mobile upload as before.
+- Only the stable, nightly and lab builds sign in, and only on openmarch.com,
+  where the production Clerk instance runs (so not on the `workers.dev`
+  preview URLs of a branch). The publishable key is
+  `VITE_CLERK_PUBLISHABLE_KEY` in `.env.production`; dev and preview builds
+  have none. Where sign-in can't run, the Mobile tab says mobile upload isn't
+  available there and links to editor.openmarch.com.
+- A Home Screen app (iPad) signs in in its own window, since iOS keeps its
+  cookies apart from Safari's.
 
 ### Tablets
 
@@ -211,7 +215,8 @@ These are hidden, or answer the way the app expects when they're
 unavailable:
 
 - PDF export (it uses Electron's `printToPDF`)
-- Mobile upload in dev and preview builds (no sign-in there; see "Sign-in")
+- Mobile upload off openmarch.com, such as dev and preview builds (no
+  sign-in there; see "Sign-in")
 - Automatic updates, analytics
 - Recent files, repairing a file, and backups before migrating
 
