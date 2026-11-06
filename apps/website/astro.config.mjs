@@ -20,6 +20,8 @@ const isPreview = siteChannel === "preview";
 const desktopVersion = JSON.parse(
     readFileSync(new URL("../desktop/package.json", import.meta.url), "utf8"),
 ).version;
+/** On the preview site, the release list shows pre-releases of this version. */
+const prereleaseTagPrefix = `v${desktopVersion.split(".").slice(0, 2).join(".")}.`;
 const downloadUrl = isPreview
     ? `https://github.com/OpenMarch/OpenMarch/releases/download/v${desktopVersion}`
     : "https://github.com/OpenMarch/OpenMarch/releases/latest/download";
@@ -135,6 +137,8 @@ export default defineConfig({
         define: {
             "import.meta.env.PUBLIC_SITE_CHANNEL": JSON.stringify(siteChannel),
             "import.meta.env.PUBLIC_DOWNLOAD_URL": JSON.stringify(downloadUrl),
+            "import.meta.env.PUBLIC_PRERELEASE_TAG_PREFIX":
+                JSON.stringify(prereleaseTagPrefix),
         },
     },
 });

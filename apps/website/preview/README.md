@@ -26,6 +26,15 @@ to openmarch.com.
   everything. It also adds a small "Preview · <version>" badge, linking to
   openmarch.com, to every website page.
 
+The download buttons need a release tagged exactly `v<apps/desktop version>`
+(`v0.2.0-beta.1`). The beta flow bumps the version and tags the same commit,
+so they match. A branch whose version has no release yet has broken download
+buttons until it's tagged.
+
+Every pre-release version links here, including fork builds (`0.2.0-alpha`,
+nightlies). Until the Worker is deployed, those builds' Help, guide and
+file-error links don't resolve.
+
 Links in the docs should be relative (`/guides/...`), so they stay on whichever
 site you're reading.
 

@@ -85,7 +85,12 @@ if (isLab && labMode !== "basic" && labMode !== "expert")
  * What names this build's browser storage (see `web/renderer/channel.ts`).
  * Lab tests all share one origin, so each test gets its own.
  */
-const storageNamespace = isLab ? `lab-${labTestId}` : channel;
+const storageNamespace = isLab
+    ? `lab-${labTestId}`
+    : // The examples channel was called "preview"; keep its stored shows.
+      channel === "examples"
+      ? "preview"
+      : channel;
 /**
  * Scripts the lab's feedback widget loads into a lab build's page, which the
  * content security policy must allow: Clerk's browser script, which signs
@@ -156,7 +161,7 @@ const writeHeaders = (): Plugin => ({
 });
 
 /**
- * Copies the example shows into the preview and lab builds, and serves them
+ * Copies the example shows into the examples and lab builds, and serves them
  * from the dev server; other builds leave them out.
  */
 const copyExamples = (): Plugin => {

@@ -384,7 +384,7 @@ async function closeShow() {
     return 200;
 }
 
-/** Opens one of a preview build's example shows. 404 if `path` isn't one. */
+/** Opens one of an examples build's example shows. 404 if `path` isn't one. */
 async function openExampleShow(path: string): Promise<number> {
     const example = webExampleShows.find((show) => show.file === path);
     if (!example) return 404;
@@ -449,7 +449,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         "recent-files:clear-missing",
     ])
         handleInPage(channel, () => undefined);
-    // A preview build's start page opens its example shows by path, the
+    // An examples build's start page opens its example shows by path, the
     // way a recent file opens (see ExampleShows.tsx).
     handleInPage("recent-files:open", (path: string) =>
         isSettingsTab ? 404 : openExampleShow(path),

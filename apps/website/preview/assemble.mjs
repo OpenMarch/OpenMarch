@@ -58,8 +58,12 @@ const walk = (dir) => {
             if (file !== editorTarget) walk(file);
         } else if (entry.name.endsWith(".html")) {
             const html = fs.readFileSync(file, "utf8");
-            if (!html.includes("</body>")) continue;
-            fs.writeFileSync(file, html.replace("</body>", `${badge}</body>`));
+            const end = html.lastIndexOf("</body>");
+            if (end === -1) continue;
+            fs.writeFileSync(
+                file,
+                html.slice(0, end) + badge + html.slice(end),
+            );
             pages++;
         }
     }

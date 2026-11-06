@@ -274,5 +274,5 @@ The OpenMarch lab (lab.openmarch.com) publishes this build for each test,
 with `WEB_CHANNEL=lab` and `LAB_TEST_ID=<test id>`: it opens straight into
 an example show (the one the test's manifest names), skipping the welcome
 flow and the "Web" notice, and has relative URLs so it runs from the lab's
-`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the preview build,
+`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the examples build,
 it is fork-only.
