@@ -1,5 +1,5 @@
 import { afterEach, expect } from "vitest";
-import { eq, getTableName } from "drizzle-orm";
+import { eq, getTableName, sql } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
@@ -18,6 +18,12 @@ import {
     type TimelineEditTarget,
 } from "../timelineMoves";
 import { readHeldMarks } from "../timelineHeldMarks";
+import {
+    arrivalHoldsLostInTransaction,
+    keepHeldMarksTrueInTransaction,
+    readHeldArrivalsBefore,
+    readHeldUpkeepBefore,
+} from "../timelineHeldUpkeep";
 import { holdFromPreviousPage } from "../timelineHoldFromPrevious";
 import { unsetMarchersAt } from "../timelineUnset";
 import { resizeTimeline } from "../timelineResize";
@@ -504,5 +510,69 @@ describeDbTests("A mark written by the edit is a new mark", (it) => {
         expect(await rowsOf(db, a)).toEqual([]);
         expect((await atFlags(db, a)).slice(1, 4)).toEqual([home, home, home]);
         await roundTrip(db, before, await snapshot(db));
+    });
+});
+
+describeDbTests("A row written by the edit is a new row", (it) => {
+    type Tx = Parameters<Parameters<DbConnection["transaction"]>[0]>[0];
+
+    /**
+     * `a` Held on page 3, and `c` moved over [9, 13). `reuse` deletes `a`'s arrival row and inserts
+     * a new row for `a` on `c`'s move, ending at 13, with the deleted row's id
+     * (`timeline_assignments` has no AUTOINCREMENT, so SQLite can hand an id back).
+     */
+    const reusedArrivalShow = async (db: DbConnection) => {
+        const { a, c } = await heldShow(db);
+        await move(db, { start: 9, end: 13 }, [{ marcherId: c, xy: FAR }]);
+        const arrival = (await rowsOf(db, a)).find(
+            (r) => r.end_beat === PAGE3.start,
+        )!;
+        const other = (await rowsOf(db, c)).find((r) => r.end_beat === 13)!;
+        expect(other.transition_id).not.toBe(arrival.transition_id);
+        const A = schema.timeline_assignments;
+        const T = schema.timeline_transitions;
+        const reuse = async (tx: Tx) => {
+            await tx.delete(A).where(eq(A.id, arrival.id));
+            await tx
+                .update(T)
+                .set({ slot_count: sql`${T.slot_count} + 1` })
+                .where(eq(T.id, other.transition_id));
+            await tx.insert(A).values({
+                ...arrival,
+                transition_id: other.transition_id,
+                slot_index: other.slot_index + 1,
+                start_beat: 9,
+                end_beat: 13,
+            });
+        };
+        return { a, reuse };
+    };
+
+    it("a deleted arrival whose id a new row of the marcher reuses is deleted, so the hold goes", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a, reuse } = await reusedArrivalShow(db);
+        const held = await db.transaction(async (tx) => {
+            const before = await readHeldUpkeepBefore(tx);
+            await reuse(tx);
+            await keepHeldMarksTrueInTransaction(tx, before);
+            return await readHeldMarks(tx, [a]);
+        });
+        // Not moved to [13, 25): the row ending at 13 is not the hold's arrival re-timed
+        expect(held).toEqual([]);
+    });
+
+    it("the edit names the hold as lost even though a new row reuses its arrival's id", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a, reuse } = await reusedArrivalShow(db);
+        const lost = await db.transaction(async (tx) => {
+            const before = await readHeldArrivalsBefore(tx);
+            await reuse(tx);
+            return await arrivalHoldsLostInTransaction(tx, before);
+        });
+        expect(lost).toEqual([{ marcherId: a, beat: PAGE3.start }]);
     });
 });
