@@ -56,6 +56,7 @@ import {
     useTimelinePointer,
 } from "./TimelinePrimitives";
 import { markedRangeAt, useTimelineRangeMenu } from "./TimelineRangeMenu";
+import { holdBarPageAt } from "./TimelineHoldBars";
 import { isTyping, overlayOpen } from "./timelineHotkeys";
 import { useLatestCallback } from "./useLatestCallback";
 import { TimelineAppendAtPlayhead } from "./TimelineAppendAtPlayhead";
@@ -900,6 +901,13 @@ const TimelineSurface = memo(function TimelineSurface({
         resolveRange: (event: MouseEvent<HTMLElement>) => {
             const marked = markedRangeAt(event.target);
             if (marked) return marked;
+            // #477: a hold bar opens the menu of the page box it's on, with Define as shown
+            const onBar = holdBarPageAt(
+                event.currentTarget,
+                event.clientX,
+                event.clientY,
+            );
+            if (onBar) return markedRangeAt(onBar);
             // Basic (UI-19): only page boxes have a menu; the window isn't drawn
             if (basic || selection?.kind !== "range" || !selectionRange)
                 return null;
@@ -1194,7 +1202,7 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             keyframes={props.keyframes}
                             keyframeMenu={props.keyframeMenu}
-                            heldBars={props.heldBars}
+                            holds={props.holds}
                             keepChains={props.keepChains}
                         />
                         <TimelinePastEndShade

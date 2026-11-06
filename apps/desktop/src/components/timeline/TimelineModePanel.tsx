@@ -83,7 +83,7 @@ import { useSplitMergeActions, useSplitMergeMoves } from "./useSplitMergeMoves";
 import { useTimelinePlayback } from "./useTimelinePlayback";
 import { jumpTimelinePlayback } from "@/timeline/timelineTransport";
 import { useSelectionKeyframes } from "@/timeline/useSelectionKeyframes";
-import { useSelectionHeldBars } from "@/timeline/useHeldMarks";
+import { useSelectionHolds } from "@/timeline/useHeldMarks";
 import { marcherNamesText } from "@/timeline/timelineKeepLater";
 import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
@@ -282,8 +282,9 @@ export default function TimelineModePanel() {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- language: the words are tolgee.t's
         [selectionKeyframes, keepNameOf, language],
     );
-    // #472: the selected marchers' Held holds, as solid bars from their arrivals' diamonds
-    const heldBars = useSelectionHeldBars(selectedIdList);
+    // #472, #477: the selected marchers' holds, as bars from their arrivals' diamonds to their
+    // departures: Held solid, Not defined dashed, lit where a drag or a follow-back would carry
+    const holds = useSelectionHolds(selectedIdList);
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
     // UI-18 keep later pages: the chains on the page boxes (named up to three)
@@ -586,7 +587,7 @@ export default function TimelineModePanel() {
                     }
                     keyframes={keyframes}
                     keyframeMenu={keyframeMenu}
-                    heldBars={heldBars}
+                    holds={holds}
                     keepChains={keepChains}
                     setAsShown={setAsShown}
                     holdFromPrevious={holdFromPrevious}

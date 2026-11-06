@@ -3,8 +3,22 @@ import { create } from "zustand";
 import type { DbConnection } from "@/db-functions/types";
 import { useTimelineDisplayStore } from "@/db-functions/timelineDisplay";
 import { readHeldMarks, type HeldMark } from "@/db-functions/timelineHeldMarks";
-import { selectionHeldBars, type SelectionHeldBar } from "./timelineHeldBars";
-import { useTimelineResolverStore } from "./timelineStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { usePlacedBoxStore } from "@/shapes/placed/placedBoxStore";
+import {
+    marcherHolds,
+    NO_HOLDS,
+    selectionHolds,
+    type SelectionHolds,
+} from "./timelineHoldBars";
+import { carriedStretches } from "./timelineCarried";
+import {
+    editingPositionAt,
+    useIsolationPlanStore,
+} from "./timelineIsolationPlan";
+import { useHoldLightStore } from "./holdLight";
+import { useFieldEditing } from "./useFieldEditing";
+import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 
 /**
  * The stored Held marks (`timeline_held_marks`) as the renderer sees them, for the timeline's Held
@@ -67,19 +81,89 @@ export function useHeldMarksHost(
     }, [database, enabled, version, display]);
 }
 
-export const NO_HELD_BARS: readonly SelectionHeldBar[] = [];
-
 /**
- * The selection's Held bars (`selectionHeldBars`), worked out once per selection and set of marks.
+ * The selection's hold bars and departure ticks (`selectionHolds`; fork #472, #477), worked out
+ * once per selection, resolver version, set of marks and shapes, and when a field drag starts or
+ * ends or a follow-back entry is hovered: never per scrubbed beat.
+ *
+ * During a field drag that moves, scales or rotates the selection, the bars the edit carries into
+ * light up: it edits the window's end (the playhead), or the starting spots on the home page.
  *
  * @param marcherIds the selected marchers; keep the array stable while the selection is
  */
-export function useSelectionHeldBars(
+export function useSelectionHolds(
     marcherIds: readonly number[],
-): readonly SelectionHeldBar[] {
+): SelectionHolds {
     const marks = useHeldMarksStore((s) => s.marks);
+    const resolver = useTimelineResolverStore((s) => s.resolver);
+    const version = useTimelineResolverStore((s) => s.version);
+    const showEnd = useTimelineSelectionStore((s) =>
+        s.pageBoxes.reduce((end, box) => Math.max(end, box.end), 0),
+    );
+    const recipes = usePlacedBoxStore((s) => s.recipes);
+    const ends = usePlacedBoxStore((s) => s.ends);
+    const editing = useFieldEditing();
+    const dragBeat = useTimelineSelectionStore((s) =>
+        !editing
+            ? null
+            : s.selection.kind === "home"
+              ? 0
+              : s.selection.kind === "range"
+                ? s.selection.end
+                : null,
+    );
+    const light = useHoldLightStore((s) => s.light);
+    const isolation = useIsolationPlanStore((s) => s.current);
+    // Where a shape carries the selected marchers: the field's rule (`carriedStretches`), worked
+    // out apart from the lit ranges, so starting a drag or hovering an entry doesn't redo it
+    const carried = useMemo(() => {
+        void version; // a new version means new spans
+        if (!resolver || marcherIds.length === 0 || recipes.length === 0)
+            return null;
+        const spansOf = (id: number) => resolverSpans(resolver, id);
+        return carriedStretches({
+            marcherIds,
+            within: marcherIds.flatMap((id) =>
+                marcherHolds(spansOf(id), showEnd),
+            ),
+            recipes,
+            endBeatOf: (id) => (id === null ? 0 : ends.get(id)),
+            spansOf,
+            positionAt: (id, beat) => {
+                try {
+                    const [x, y] = editingPositionAt(
+                        resolver,
+                        id,
+                        beat,
+                        isolation,
+                    );
+                    return { x, y };
+                } catch {
+                    return undefined;
+                }
+            },
+        });
+    }, [resolver, version, marcherIds, recipes, ends, showEnd, isolation]);
     return useMemo(() => {
-        const bars = selectionHeldBars(marks, marcherIds);
-        return bars.length === 0 ? NO_HELD_BARS : bars;
-    }, [marks, marcherIds]);
+        void version; // a new version means new spans
+        if (!resolver || marcherIds.length === 0) return NO_HOLDS;
+        return selectionHolds({
+            marcherIds,
+            spansOf: (id) => resolverSpans(resolver, id),
+            marks,
+            showEnd,
+            carriedOf: carried ? (id) => carried.get(id) : undefined,
+            dragBeat,
+            light,
+        });
+    }, [
+        resolver,
+        version,
+        marcherIds,
+        marks,
+        showEnd,
+        carried,
+        dragBeat,
+        light,
+    ]);
 }

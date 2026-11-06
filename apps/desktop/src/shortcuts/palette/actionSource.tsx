@@ -25,6 +25,7 @@ import {
     actionLabelNow,
     hasActionHandler,
     isActionEnabled,
+    previewAction,
     runAction,
 } from "../registry";
 import { isActionOffInWorkspace } from "../workspaceActions";
@@ -112,6 +113,7 @@ export function getActionPaletteItems(
                 disabledReason: isActionOffInWorkspace(id)
                     ? t("commandPalette.offInPreview")
                     : undefined,
+                preview: (on: boolean) => previewAction(id, on),
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)
                     : undefined,

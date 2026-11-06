@@ -38,6 +38,11 @@ interface HandlerOptions {
      * false.
      */
     checked?: boolean;
+    /**
+     * Shows what the action would change while the palette highlights it (true), and stops
+     * (false). It must not edit anything.
+     */
+    preview?: (on: boolean) => void;
 }
 
 export function useActionHandler(
@@ -73,12 +78,14 @@ export function useActionHandlerGroup(
     const releaseRef = useRef(options.onRelease);
     const labelRef = useRef(options.label);
     const checkedRef = useRef(options.checked ?? false);
+    const previewRef = useRef(options.preview);
     const hasRelease = options.onRelease !== undefined;
     useLayoutEffect(() => {
         runRef.current = run;
         ignoreRepeatRef.current = options.ignoreRepeat ?? false;
         pressRef.current = options.onPress;
         releaseRef.current = options.onRelease;
+        previewRef.current = options.preview;
     });
     // A function is read when asked, so a new one each render tells nobody
     useLayoutEffect(() => {
@@ -131,6 +138,7 @@ export function useActionHandlerGroup(
                     return typeof label === "function" ? label() : label;
                 },
                 checked: () => checkedRef.current,
+                preview: (on) => previewRef.current?.(on),
             }),
         );
         return () => unregister.forEach((off) => off());

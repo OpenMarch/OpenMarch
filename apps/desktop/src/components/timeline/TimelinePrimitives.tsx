@@ -109,8 +109,8 @@ import {
     type TimelineKeyframe,
     type TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
-import { TimelineHeldBars } from "./TimelineHeldBars";
-import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
+import { TimelineHoldBars } from "./TimelineHoldBars";
+import type { SelectionHolds } from "@/timeline/timelineHoldBars";
 import {
     chainFit,
     labelPaddingBeside,
@@ -821,7 +821,7 @@ export const TimelineRuler = memo(function TimelineRuler({
     positionBeat,
     keyframes,
     keyframeMenu,
-    heldBars,
+    holds,
     keepChains,
     scrubLine,
     pageFlagMove,
@@ -855,8 +855,8 @@ export const TimelineRuler = memo(function TimelineRuler({
     keyframes?: readonly TimelineKeyframe[];
     /** A diamond's right-click Unset actions (#306), by view beat; without it, no menu */
     keyframeMenu?: TimelineKeyframeMenu;
-    /** The selected marchers' Held holds (#472), view beats; none without a selection */
-    heldBars?: readonly SelectionHeldBar[];
+    /** The selected marchers' hold bars and departures (#472, #477), view beats */
+    holds?: SelectionHolds;
     /** The chains on the page boxes (UI-18 keep later pages), by page id */
     keepChains?: PageKeepChains;
 }) {
@@ -1015,9 +1015,9 @@ export const TimelineRuler = memo(function TimelineRuler({
                     onSelectPage={selectPage}
                 />
             )}
-            {heldBars && (
-                <TimelineHeldBars
-                    bars={heldBars}
+            {holds && (
+                <TimelineHoldBars
+                    holds={holds}
                     pages={pages}
                     pixelsPerBeat={pixelsPerBeat}
                 />
