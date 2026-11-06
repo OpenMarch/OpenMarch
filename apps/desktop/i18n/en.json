@@ -2205,6 +2205,7 @@
         "heldBar": {
             "borrowed": "Standing at Page {page}'s spot",
             "borrowedChip": "{held} · Page {page}'s spot",
+            "borrowedChipMixed": "{held} · borrowed spots",
             "detail": "{held} of {total} selected",
             "shape": "Its shape carries on here",
             "title": "{held} · Page {page}",

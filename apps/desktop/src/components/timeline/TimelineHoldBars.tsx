@@ -57,6 +57,8 @@ const HATCH = `repeating-linear-gradient(-45deg, currentColor 0 1px, transparent
 const SOURCE_LIFT = 7;
 /** The narrowest borrowed bar that still shows its chip (px) */
 const CHIP_MIN_WIDTH = 28;
+/** Half a chip's height (px), for finding the pointer over it (`hoveredGroupAt`) */
+const CHIP_HALF_HEIGHT = 6;
 
 /** Marks a hold bar, so a right-click on it can find the page box under it (`holdBarPageAt`) */
 const HOLD_BAR_ATTRIBUTE = "data-timeline-hold-bar";
@@ -73,7 +75,9 @@ const HOLD_BAR_ATTRIBUTE = "data-timeline-hold-bar";
  * A **borrowed** Held hold (nothing arrives at its start; fork #474, holds 04-anchors "Display")
  * draws lighter and hatched, with a small chip naming the spot it holds ("Held · Page 2's spot").
  * Its line back to that spot shows only while the bar is hovered, lit, or holds the count the
- * selected page or window ends on. In Basic it draws as plain Held, the spot named in its label.
+ * selected page or window ends on. Borrowed bars starting on the same count share one chip: when
+ * they borrow from different pages it says "Held · borrowed spots", and their lines back, one per
+ * source, show only on hover. In Basic it draws as plain Held, the spot named in its label.
  *
  * Under the diamonds and the flag grips, and they take no pointer: the page boxes under them still
  * select and scrub, and a right-click on one opens its page box's menu (`holdBarPageAt`), with
@@ -114,7 +118,9 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
                 : holds.bars.filter((bar) => bar.borrowedFrom !== undefined),
         [basic, holds.bars],
     );
-    const hovered = useHoveredBar(borrowed);
+    const groups = useMemo(() => borrowedGroups(borrowed), [borrowed]);
+    const anchor = useRef<HTMLDivElement>(null);
+    const hovered = useHoveredGroup(groups, anchor, pixelsPerBeat);
     if (holds.bars.length === 0 && holds.departures.length === 0) return null;
     // Unlit bars first, so a lit one overlapping them is drawn over them; then Not defined under
     // Held, whose dashes over a mixed stretch then show in the Held color
@@ -138,6 +144,12 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
     };
     return (
         <>
+            {/* Where the bars' coordinates start, for finding the pointer (`useHoveredGroup`) */}
+            <div
+                ref={anchor}
+                aria-hidden
+                className="pointer-events-none absolute top-0 left-0 size-0"
+            />
             {order.map(({ bar, index }) => (
                 <HoldBar
                     key={keyOf(bar)}
@@ -152,18 +164,23 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
                     pixelsPerBeat={pixelsPerBeat}
                 />
             ))}
-            {borrowed.map((bar) => (
+            {groups.map((group) => (
                 <BorrowedSource
-                    key={`source:${keyOf(bar)}`}
-                    bar={bar}
+                    key={`source:${group.start}`}
+                    group={group}
                     pages={pages}
                     pixelsPerBeat={pixelsPerBeat}
                     showLine={
-                        bar.lit ||
-                        hovered === bar ||
-                        (selectedEnd !== null &&
-                            bar.start < selectedEnd &&
-                            selectedEnd <= bar.end)
+                        hovered === group.start ||
+                        // One spot only: several lines back at rest would read as one
+                        (group.sources.length === 1 &&
+                            (group.lit ||
+                                (selectedEnd !== null &&
+                                    group.bars.some(
+                                        (bar) =>
+                                            bar.start < selectedEnd &&
+                                            selectedEnd <= bar.end,
+                                    ))))
                     }
                 />
             ))}
@@ -190,75 +207,143 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
 const NONE: readonly BeatRange[] = [];
 const NO_BARS: readonly SelectionHoldBar[] = [];
 
-/** Marks a borrowed hold's bar and chip, so the pointer over either finds it (`useHoveredBar`) */
-const BORROWED_ATTRIBUTE = "data-timeline-borrowed";
+/**
+ * The borrowed bars starting on one count, which share a chip there (fork #474): selected
+ * marchers Held over the same counts can borrow from different pages.
+ */
+export interface BorrowedGroup {
+    /** Where the bars start (view beats) */
+    readonly start: number;
+    /** Where the shortest of them ends: the chip stays within it */
+    readonly end: number;
+    /** Whose spots they hold (`borrowedFrom`), ascending, each once */
+    readonly sources: readonly number[];
+    /** Whether any of them is lit */
+    readonly lit: boolean;
+    readonly bars: readonly SelectionHoldBar[];
+}
+
+/** The borrowed bars, grouped by the count they start on, in order. */
+export function borrowedGroups(
+    bars: readonly SelectionHoldBar[],
+): BorrowedGroup[] {
+    const byStart = new Map<number, SelectionHoldBar[]>();
+    for (const bar of bars) {
+        const group = byStart.get(bar.start);
+        if (group) group.push(bar);
+        else byStart.set(bar.start, [bar]);
+    }
+    return [...byStart.entries()]
+        .sort(([x], [y]) => x - y)
+        .map(([start, group]) => ({
+            start,
+            end: Math.min(...group.map((bar) => bar.end)),
+            sources: [...new Set(group.map((bar) => bar.borrowedFrom!))].sort(
+                (x, y) => x - y,
+            ),
+            lit: group.some((bar) => bar.lit),
+            bars: group,
+        }));
+}
 
 /**
- * The borrowed bar under the pointer, if any. The bars take no pointer, so presses still reach the
- * page boxes under them: the pointer is followed on the window instead, and only while some
- * borrowed bar is drawn.
+ * The group (by its start) whose bar or chip is at `x`, `y`: pixels from where the bars'
+ * coordinates start. A bar's strip and the chip above it, over the bar's counts.
  */
-function useHoveredBar(
-    bars: readonly SelectionHoldBar[],
-): SelectionHoldBar | null {
-    const [hovered, setHovered] = useState<string | null>(null);
+export function hoveredGroupAt(
+    groups: readonly BorrowedGroup[],
+    x: number,
+    y: number,
+    pixelsPerBeat: number,
+): number | null {
+    const top = TIMELINE_PAGE_ROW_BOTTOM - SOURCE_LIFT - CHIP_HALF_HEIGHT;
+    const bottom = TIMELINE_PAGE_ROW_BOTTOM + HIT_HEIGHT / 2;
+    if (y < top || y > bottom) return null;
+    const group = groups.find((g) =>
+        g.bars.some(
+            (bar) =>
+                x >= beatToX(bar.start, pixelsPerBeat) &&
+                x <= beatToX(bar.end, pixelsPerBeat),
+        ),
+    );
+    return group?.start ?? null;
+}
+
+/**
+ * The borrowed group under the pointer (by its start), if any. The bars take no pointer, so
+ * presses still reach the page boxes under them: the pointer is followed on the window instead,
+ * only while some borrowed bar is drawn, at most once a frame, and not while a button is held (a
+ * field drag or a scrub). Each check reads one rect, `anchor`'s, and the bars' known counts.
+ */
+function useHoveredGroup(
+    groups: readonly BorrowedGroup[],
+    anchor: React.RefObject<HTMLDivElement | null>,
+    pixelsPerBeat: number,
+): number | null {
+    const [hovered, setHovered] = useState<number | null>(null);
     useEffect(() => {
-        if (bars.length === 0) {
+        if (groups.length === 0) {
             setHovered(null);
             return;
         }
+        let frame = 0;
+        let last: PointerEvent | null = null;
+        const check = () => {
+            frame = 0;
+            const el = anchor.current;
+            if (!last || !el) return;
+            const rect = el.getBoundingClientRect();
+            setHovered(
+                hoveredGroupAt(
+                    groups,
+                    last.clientX - rect.left,
+                    last.clientY - rect.top,
+                    pixelsPerBeat,
+                ),
+            );
+        };
         const onMove = (event: PointerEvent) => {
-            const over = [
-                ...document.querySelectorAll(`[${BORROWED_ATTRIBUTE}]`),
-            ].find((el) => {
-                const rect = el.getBoundingClientRect();
-                return (
-                    event.clientX >= rect.left &&
-                    event.clientX <= rect.right &&
-                    event.clientY >= rect.top &&
-                    event.clientY <= rect.bottom
-                );
-            });
-            setHovered(over?.getAttribute(BORROWED_ATTRIBUTE) ?? null);
+            if (event.buttons !== 0) return;
+            last = event;
+            if (frame === 0) frame = requestAnimationFrame(check);
         };
         window.addEventListener("pointermove", onMove, { passive: true });
-        return () => window.removeEventListener("pointermove", onMove);
-    }, [bars]);
-    return bars.find((bar) => borrowedId(bar) === hovered) ?? null;
+        return () => {
+            window.removeEventListener("pointermove", onMove);
+            if (frame !== 0) cancelAnimationFrame(frame);
+        };
+    }, [groups, anchor, pixelsPerBeat]);
+    return hovered;
 }
 
-const borrowedId = (bar: SelectionHoldBar) =>
-    `${bar.start}:${bar.end}:${bar.borrowedFrom}`;
-
 /**
- * A borrowed hold's source (fork #474): a chip at the bar's start naming the spot it holds, and,
- * with `showLine`, a dotted line back to where that spot was reached, ending at the chip. Both sit
- * above the bars, clear of the Not defined bar under the line.
+ * The source of the borrowed holds starting on one count (fork #474): a chip at their start
+ * naming the spot they hold, and, with `showLine`, a dotted line back to where each spot was
+ * reached, ending at the chip. Both sit above the bars, clear of the Not defined bar under the
+ * line.
  */
 function BorrowedSource({
-    bar,
+    group,
     pages,
     pixelsPerBeat,
     showLine,
 }: {
-    bar: SelectionHoldBar;
+    group: BorrowedGroup;
     pages: readonly TimelinePageMarker[];
     pixelsPerBeat: number;
     showLine: boolean;
 }) {
-    const from = bar.borrowedFrom!;
-    const left = beatToX(bar.start, pixelsPerBeat);
-    const width = beatToX(bar.end, pixelsPerBeat) - left;
-    const source = beatToX(from, pixelsPerBeat);
+    const left = beatToX(group.start, pixelsPerBeat);
+    const width = beatToX(group.end, pixelsPerBeat) - left;
     const top = TIMELINE_PAGE_ROW_BOTTOM - SOURCE_LIFT;
-    const color = bar.lit ? "text-accent" : "text-text-subtitle";
+    const color = group.lit ? "text-accent" : "text-text-subtitle";
+    const id = `${group.start}-${group.end}`;
     return (
         <>
             {width >= CHIP_MIN_WIDTH && (
                 <span
                     aria-hidden
-                    {...{ [BORROWED_ATTRIBUTE]: borrowedId(bar) }}
-                    data-testid={`timeline-borrowed-chip-${bar.start}-${bar.end}`}
+                    data-testid={`timeline-borrowed-chip-${id}`}
                     className={clsx(
                         "text-micro pointer-events-none absolute z-[34] -translate-y-1/2 truncate leading-none whitespace-nowrap",
                         color,
@@ -269,41 +354,64 @@ function BorrowedSource({
                         maxWidth: width - 6,
                     }}
                 >
-                    {borrowedChip(from, pages)}
+                    {borrowedChip(group.sources, pages)}
                 </span>
             )}
-            {showLine && source < left && (
-                <div
-                    aria-hidden
-                    data-testid={`timeline-borrowed-line-${bar.start}-${bar.end}`}
-                    className={clsx(
-                        "pointer-events-none absolute z-[34]",
-                        color,
-                    )}
-                    style={{
-                        left: source,
-                        width: left - source,
-                        top,
-                        height: 1,
-                    }}
-                >
-                    <div className="absolute inset-x-0 top-0 border-t border-dotted border-current" />
-                    <div className="absolute top-0 left-0 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
-                </div>
-            )}
+            {showLine &&
+                group.sources.map((from) => {
+                    const source = beatToX(from, pixelsPerBeat);
+                    if (source >= left) return null;
+                    return (
+                        <div
+                            key={from}
+                            aria-hidden
+                            data-testid={
+                                group.sources.length === 1
+                                    ? `timeline-borrowed-line-${id}`
+                                    : `timeline-borrowed-line-${id}-from-${from}`
+                            }
+                            className={clsx(
+                                "pointer-events-none absolute z-[34]",
+                                color,
+                            )}
+                            style={{
+                                left: source,
+                                width: left - source,
+                                top,
+                                height: 1,
+                            }}
+                        >
+                            <div className="absolute inset-x-0 top-0 border-t border-dotted border-current" />
+                            <div className="absolute top-0 left-0 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+                        </div>
+                    );
+                })}
         </>
     );
 }
 
-/** "Held · Page 2's spot": the page the borrowed spot was reached on (`from`, a count in it) */
+/**
+ * "Held · Page 2's spot": the page the borrowed spot was reached on (a count in it). Several
+ * sources: "Held · borrowed spots".
+ */
 const borrowedChip = (
-    from: number,
+    sources: readonly number[],
     pages: readonly TimelinePageMarker[],
 ): string =>
-    tolgee.t("timeline.heldBar.borrowedChip", "{held} · Page {page}'s spot", {
-        ...holdTerms(),
-        page: getPageCountAt({ pages }, from).pageLabel,
-    });
+    sources.length === 1
+        ? tolgee.t(
+              "timeline.heldBar.borrowedChip",
+              "{held} · Page {page}'s spot",
+              {
+                  ...holdTerms(),
+                  page: getPageCountAt({ pages }, sources[0]!).pageLabel,
+              },
+          )
+        : tolgee.t(
+              "timeline.heldBar.borrowedChipMixed",
+              "{held} · borrowed spots",
+              holdTerms(),
+          );
 
 /**
  * The dashes, as a background or mask: one dash per tile, the tiles pinned to the timeline's
@@ -381,7 +489,6 @@ function HoldBar({
             data-testid={`timeline-${solid ? "held" : "not-defined"}-bar-${bar.start}-${bar.end}`}
             data-held={solid ? bar.marcherIds.length : undefined}
             data-borrowed={borrowed || undefined}
-            {...(borrowed ? { [BORROWED_ATTRIBUTE]: borrowedId(bar) } : {})}
             data-shape={bar.shape || undefined}
             data-lit={bar.lit}
             data-mixed={mixed.length > 0 || undefined}

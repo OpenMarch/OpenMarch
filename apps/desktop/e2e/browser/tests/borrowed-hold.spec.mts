@@ -121,7 +121,8 @@ const lineHeight = (bar: Locator) =>
 
 /** A clip of the timeline around the bars, attached to the report, and saved under `SHOTS`. */
 async function shoot(page: Page, name: string) {
-    const bar = (await heldBar(page).boundingBox())!;
+    // Two marchers' bars over the same counts stack: either gives the clip
+    const bar = (await heldBar(page).first().boundingBox())!;
     // From the start of the timeline (page 1's flag) to past the hold
     const left = Math.max(0, bar.x - bar.width * 3 - 40);
     const clip = {
@@ -211,4 +212,91 @@ test("a drag inside the borrowed hold lights it, then adds a move on page 3 and 
     await expect(page.getByTestId("timeline-borrowed-chip-24-32")).toHaveCount(
         0,
     );
+});
+
+// Two marchers Held over the same counts, borrowing from different pages: T1
+// last moves on page 2, T2 on page 1, and nothing moves on pages 3 and 4. They
+// share one chip at the hold's start, which names no single spot, and their
+// lines back, one per spot, show only on hover.
+test.describe("two borrowed spots over the same counts", () => {
+    test.use({
+        seedSql: seedShowSql({
+            beats: 40,
+            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29, 33, 37],
+            pageStarts: [1, 9, 17, 25],
+            marchers: [1, 2].map((id) => ({
+                id,
+                section: "Trumpet",
+                prefix: "T",
+                order: id,
+            })),
+            positions: [
+                [
+                    [1, 400, 300],
+                    [2, 500, 300],
+                ],
+                [
+                    [1, 400, 340],
+                    [2, 500, 340],
+                ],
+                [[1, 400, 380]],
+                [],
+                [],
+            ],
+        }),
+    });
+
+    test("share one chip, and show a line back per spot on hover", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await waitForField(page);
+        await expect
+            .poll(async () => (await drawnMarchers(page)).length)
+            .toBe(2);
+        await goTo(page, "m9");
+        await clickMarcher(page, "T1");
+        await clickMarcher(page, "T2", { add: true });
+        await expect
+            .poll(async () => (await readField(page)).selection.length)
+            .toBe(2);
+        await waitForIdle(page);
+        await expect(async () => {
+            await pageBox(page, PAGE_4_BOX).click({ button: "right" });
+            await page
+                .getByTestId("timeline-range-menu-hold-from-previous")
+                .click({ timeout: 1000 });
+        }).toPass();
+        await expect
+            .poll(
+                async () =>
+                    (
+                        await show.query<{ n: number }>(
+                            "SELECT COUNT(*) AS n FROM timeline_held_marks WHERE start_beat = 25 AND end_beat = 33",
+                        )
+                    )[0]!.n,
+            )
+            .toBe(2);
+        const chips = page.getByTestId("timeline-borrowed-chip-24-32");
+        await expect(chips).toHaveCount(1);
+        await expect(chips).toHaveText("Held · borrowed spots");
+        const lines = page.getByTestId(/^timeline-borrowed-line-24-32/);
+        // The selected page ends inside the hold, but no one spot is the source
+        await expect(lines).toHaveCount(0);
+        for (const dark of [false, true]) {
+            await setTheme(page, dark);
+            await shoot(page, `borrowed-two-rest-${dark ? "dark" : "light"}`);
+        }
+        await setTheme(page, false);
+        const box = (await heldBar(page).first().boundingBox())!;
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await expect(lines).toHaveCount(2);
+        for (const dark of [false, true]) {
+            await setTheme(page, dark);
+            await shoot(page, `borrowed-two-hover-${dark ? "dark" : "light"}`);
+        }
+        await setTheme(page, false);
+        await page.mouse.move(box.x + box.width / 2, box.y - 60);
+        await expect(lines).toHaveCount(0);
+    });
 });
