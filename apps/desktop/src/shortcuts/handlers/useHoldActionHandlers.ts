@@ -9,6 +9,11 @@ import {
     holdActionOptions,
     useHoldCommands,
 } from "@/timeline/useHoldCommands";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import {
+    holdOverWindowOn,
+    makeSelectedHeldAt,
+} from "@/timeline/timelineExpertHolds";
 import { useActionHandler } from "../useActionHandler";
 
 /**
@@ -18,6 +23,11 @@ import { useActionHandler } from "../useActionHandler";
  * with the menu's toasts, and is off where the menu would say why not or shows it checked (every
  * selected marcher already in its state). Their labels count the marchers they'd change when it's
  * some of the selection (`holdActionOptions`), as the menus do.
+ *
+ * The Expert hold tools (#476): **Hold from start flag to playhead** holds the selection over the
+ * edit window, in Expert only, and **Make all selected Held** holds the selected marchers that
+ * aren't Held at the playhead like those that are, offered only then (`useExpertHolds`). Each is
+ * one undo step and toasts only about the marchers it left alone.
  */
 export function useHoldActionHandlers() {
     const selected = useSelectedMarchers()?.selectedMarchers;
@@ -36,6 +46,7 @@ export function useHoldActionHandlers() {
         nameOf,
     );
     const entries = entriesOn(pageId);
+    const expert = useExpertHolds(marcherIds);
 
     useActionHandler(
         "timelineDefineAsShown",
@@ -56,5 +67,21 @@ export function useHoldActionHandlers() {
             enabled: !isPlaying && canRunOn(holdFromPrevious, pageId),
             ...holdActionOptions(entries?.holdFromPrevious),
         },
+    );
+    useActionHandler(
+        "timelineHoldOverWindow",
+        () => {
+            if (expert.window)
+                void holdOverWindowOn(expert.window, marcherIds, nameOf);
+        },
+        { enabled: !isPlaying && expert.window !== null },
+    );
+    useActionHandler(
+        "timelineMakeSelectedHeld",
+        () => {
+            if (expert.beat !== null)
+                void makeSelectedHeldAt(expert.beat, marcherIds, nameOf);
+        },
+        { enabled: !isPlaying && expert.makeHeld > 0 },
     );
 }

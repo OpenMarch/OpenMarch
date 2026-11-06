@@ -135,6 +135,8 @@ describe("FieldContextMenu", () => {
         expect(groups).toEqual([
             [
                 "timelineHoldFromPrevious",
+                "timelineHoldOverWindow",
+                "timelineMakeSelectedHeld",
                 "setSelectedMarchersToPreviousPage",
                 "setSelectedMarchersToNextPage",
             ],
@@ -153,6 +155,22 @@ describe("FieldContextMenu", () => {
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (selected)",
         );
+        expect(item("timelineHoldOverWindow")).toHaveTextContent(
+            "Hold from start flag to playhead",
+        );
+        expect(item("timelineMakeSelectedHeld")).toHaveTextContent(
+            "Make all selected Held",
+        );
+    });
+
+    it("shows the Expert hold tools only while they're available (#476)", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        handle("timelineHoldOverWindow", { enabled: false });
+        handle("timelineMakeSelectedHeld", { enabled: false });
+        open();
+        expect(item("timelineHoldOverWindow")).toBeNull();
+        expect(item("timelineMakeSelectedHeld")).toBeNull();
+        expect(item("timelineHoldFromPrevious")).not.toBeNull();
     });
 
     it("runs the hold command through the actions layer, and greys it out where it can't run", () => {

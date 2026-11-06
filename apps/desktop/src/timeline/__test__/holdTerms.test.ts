@@ -37,6 +37,7 @@ describe("holdTerms", () => {
             notDefinedLower: "not defined",
             defineAsShown: "Define as shown",
             holdFromPrevious: "Hold from previous page",
+            holdOverWindow: "Hold from start flag to playhead",
             clearThisPage: "Clear this page",
             removeKeyframe: "Remove keyframe",
         });

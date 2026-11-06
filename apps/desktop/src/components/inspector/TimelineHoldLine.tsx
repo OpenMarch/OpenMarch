@@ -28,6 +28,10 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
+import { getButtonClassName } from "@openmarch/ui";
+import ActionButton from "@/shortcuts/ActionButton";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import type { DragOutcome, DragPreview } from "@/timeline/holdDragPreview";
 
 /**
  * The selection's state on the current page, in timeline mode (docs/timeline/ui.md UI-18):
@@ -114,6 +118,11 @@ const LINK_CLASS =
  * words (`holdTerms`, fork #478): "Not defined · showing Page 2", or "Held · since Page 3" for the
  * page its Held mark starts on (holds review R3); a carried
  * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
+ *
+ * With some selected marchers Held at the playhead (fork #476; holds review R1, 04-anchors
+ * "Display"), it also says, before a drag, what the drag will do (`DragPreviewLines`): how many
+ * are Held where only some are, with **Make all selected Held**, and what a drag does to each
+ * kind. No toast: a mixed drag edits each marcher by its own kind.
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -122,6 +131,7 @@ export default function TimelineHoldLine({
 }) {
     const { t } = useTranslate();
     const state = useSelectionHoldState(marcherIds);
+    const expert = useExpertHolds(marcherIds);
     let line: ReactNode = null;
     if (state?.kind === "movesHere")
         line = (
@@ -178,11 +188,98 @@ export default function TimelineHoldLine({
             </p>
         );
     }
-    if (!line) return null;
+    const preview = expert.preview && (
+        <DragPreviewLines
+            preview={expert.preview}
+            canMakeHeld={expert.makeHeld > 0}
+        />
+    );
+    if (!line && !preview) return null;
     return (
         <TransportTooltipProvider disableHoverableContent>
             {line}
+            {preview}
         </TransportTooltipProvider>
+    );
+}
+
+/** One thing a drag would do, as the inspector says it. */
+function outcomeText(t: Translate, outcome: DragOutcome): string {
+    if (outcome.kind === "addsMove")
+        return t("inspector.marcher.timeline.dragAddsMove", {
+            defaultValue: "adds a move on Page {page}",
+            page: outcome.page,
+        });
+    if (outcome.page === null)
+        return t("inspector.marcher.timeline.dragMovesStart", {
+            defaultValue: "moves the starting position",
+        });
+    return t("inspector.marcher.timeline.dragMovesPage", {
+        defaultValue: "moves Page {page}'s position",
+        page: outcome.page,
+    });
+}
+
+/**
+ * What a drag at the playhead will do, before it starts (fork #476): "1 of 2 selected Held" with
+ * **Make all selected Held** where only some are Held, then "Drag: moves Page 2's position · adds a
+ * move on Page 4".
+ */
+function DragPreviewLines({
+    preview,
+    canMakeHeld,
+}: {
+    preview: DragPreview;
+    canMakeHeld: boolean;
+}) {
+    const { t } = useTranslate();
+    const mixed = preview.held < preview.total;
+    return (
+        <div
+            className="flex flex-col gap-6 px-6"
+            data-testid="timeline-drag-preview"
+        >
+            {mixed && (
+                <div className="flex flex-wrap items-center gap-8">
+                    <p
+                        className="text-body text-text leading-none"
+                        data-testid="timeline-held-count"
+                    >
+                        {t("inspector.marcher.timeline.heldOfSelected", {
+                            defaultValue: "{count} of {total} selected {held}",
+                            ...holdTerms(),
+                            count: preview.held,
+                            total: preview.total,
+                        })}
+                    </p>
+                    {canMakeHeld && (
+                        <ActionButton
+                            action="timelineMakeSelectedHeld"
+                            className={getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            })}
+                        >
+                            {t("inspector.marcher.timeline.makeSelectedHeld", {
+                                defaultValue: "Make all selected {held}",
+                                ...holdTerms(),
+                            })}
+                        </ActionButton>
+                    )}
+                </div>
+            )}
+            <p
+                className="text-sub text-text-subtitle leading-none"
+                data-testid="timeline-drag-outcomes"
+            >
+                {t("inspector.marcher.timeline.dragPreview", {
+                    defaultValue: "Drag: {outcomes}",
+                    outcomes: preview.outcomes
+                        .map((o) => outcomeText(t, o))
+                        .join(" · "),
+                })}
+            </p>
+        </div>
     );
 }
 

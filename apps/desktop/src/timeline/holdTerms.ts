@@ -34,6 +34,10 @@ export const HOLD_TERM_KEYS = {
         "timeline.terms.holdFromPrevious",
         "Hold from previous page",
     ],
+    holdOverWindow: [
+        "timeline.terms.holdOverWindow",
+        "Hold from start flag to playhead",
+    ],
     clearThisPage: ["timeline.terms.clearThisPage", "Clear this page"],
     removeKeyframe: ["timeline.terms.removeKeyframe", "Remove keyframe"],
 } as const satisfies Record<string, readonly [string, string]>;

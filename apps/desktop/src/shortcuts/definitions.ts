@@ -428,6 +428,26 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["$mod+H", "Control+H"],
     },
+    // Holds, Expert (#476): the selected marchers are Held from the start flag to the playhead,
+    // their moves inside the window taken out (holds review R8). Unbound
+    timelineHoldOverWindow: {
+        labelKey: "actions.batchEdit.holdOverWindow",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Holds (#476, review R1): with some selected marchers Held at the playhead, the others are
+    // Held like them. The field menu and the inspector offer it only then. Unbound
+    timelineMakeSelectedHeld: {
+        labelKey: "actions.batchEdit.makeSelectedHeld",
+        labelHoldTerms: true,
+        keywordsKey: "actions.batchEdit.holdKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.setAllToNext",
         category: "batchEdit",

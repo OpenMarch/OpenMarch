@@ -14,6 +14,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { isTimelineOwnKey } from "@/components/timeline/timelineHotkeys";
 import TimelineHoldLine from "../TimelineHoldLine";
 
@@ -278,5 +279,64 @@ describe("TimelineHoldLine", () => {
         mocks.selectedPage = PAGES[2];
         show([]);
         expect(line()).toBeNull();
+    });
+});
+
+describe("TimelineHoldLine, before a drag (#476)", () => {
+    /** Marcher 1 Held from its page 2 arrival (9) through page 4; marcher 5 moves as 1 does */
+    const held = () =>
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
+        });
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+        });
+    const preview = () => screen.queryByTestId("timeline-drag-preview");
+    const outcomes = () =>
+        screen.queryByTestId("timeline-drag-outcomes")?.textContent;
+
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        held();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("B2: a mixed selection says how many are Held, offers Make all selected Held, and what a drag does to each", () => {
+        setWindow(9, 13);
+        show([1, 5]);
+        expect(screen.getByTestId("timeline-held-count").textContent).toBe(
+            "1 of 2 selected Held",
+        );
+        expect(
+            screen.getByRole("button", { name: /Make all selected Held/ }),
+        ).toBeTruthy();
+        expect(outcomes()).toBe(
+            "Drag: moves Page 2's position · adds a move on Page 3",
+        );
+    });
+
+    it("M6: a window starting inside the hold says the drag adds a move", () => {
+        setWindow(11, 13);
+        show([1]);
+        expect(outcomes()).toBe("Drag: adds a move on Page 3");
+        expect(screen.queryByTestId("timeline-held-count")).toBeNull();
+    });
+
+    it("all Held: no count, and the drag moves the hold's page", () => {
+        setWindow(9, 13);
+        show([1]);
+        expect(screen.queryByTestId("timeline-held-count")).toBeNull();
+        expect(outcomes()).toBe("Drag: moves Page 2's position");
+    });
+
+    it("says nothing extra when no selected marcher is Held at the playhead", () => {
+        setWindow(9, 13);
+        show([5]);
+        expect(preview()).toBeNull();
+        cleanup();
+        useHeldMarksStore.setState({ marks: [] });
+        show([1, 5]);
+        expect(preview()).toBeNull();
     });
 });

@@ -40,7 +40,9 @@
             "setSelectedToNext": "Copy positions from next page (selected)",
             "setSelectedToNextSuccess": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set all # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}",
-            "setSelectedToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
+            "setSelectedToPreviousDone": "{count, plural, one {Successfully set # marcher's coordinates on page {currentPage} to the coordinates of the previous page {previousPage}} other {Successfully set # marchers' coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}",
+            "holdOverWindow": "{holdOverWindow}",
+            "makeSelectedHeld": "Make all selected {held}"
         },
         "edit": {
             "noRedoAvailable": "No action to redo",
@@ -773,7 +775,13 @@
                 "holdFromStart": "No moves since the start",
                 "movesOnThisPage": "Moves on this page",
                 "notDefinedFromStart": "{notDefined} · showing the start",
-                "notDefinedShowing": "{notDefined} · showing Page {page}"
+                "notDefinedShowing": "{notDefined} · showing Page {page}",
+                "heldOfSelected": "{count} of {total} selected {held}",
+                "dragPreview": "Drag: {outcomes}",
+                "dragMovesPage": "moves Page {page}'s position",
+                "dragMovesStart": "moves the starting position",
+                "dragAddsMove": "adds a move on Page {page}",
+                "makeSelectedHeld": "Make all selected {held}"
             },
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}",
@@ -2285,7 +2293,8 @@
             "holdFromPrevious": "Hold from previous page",
             "notDefined": "Not defined",
             "notDefinedLower": "not defined",
-            "removeKeyframe": "Remove keyframe"
+            "removeKeyframe": "Remove keyframe",
+            "holdOverWindow": "Hold from start flag to playhead"
         },
         "startFlagPositions": {
             "always": "Always",
@@ -2674,6 +2683,20 @@
                 "wholePage": "Keep works on a whole page, not {counts}"
             },
             "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}"
+        },
+        "expertHolds": {
+            "held": "{names}: already {heldLower} from the start flag to the playhead",
+            "moving": "{names}: partway through a move at the playhead",
+            "defined": "{names}: {definedLower} at the playhead",
+            "shape": "{names}: in a shape between the start flag and the playhead",
+            "followLeader": "{names}: follows the leader between the start flag and the playhead",
+            "followLeaderOrder": "{names}: shares a curved move with a follow-the-leader order",
+            "arrivalShape": "{names}: the hold would start where a shape ends",
+            "arrivalFollowLeader": "{names}: the hold would start where a follow-the-leader move ends",
+            "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
+            "noArrival": "{names}: no move ends where the hold would start",
+            "count": "{count, plural, one {# marcher} other {# marchers}}",
+            "notHeld": "{count, plural, one {# marcher} other {# marchers}} not {heldLower}"
         }
     },
     "titlebar": {

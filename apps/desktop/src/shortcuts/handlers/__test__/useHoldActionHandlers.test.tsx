@@ -21,6 +21,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { holdOverWindow } from "@/db-functions/timelineHoldOverWindow";
+import { makeSelectedHeld } from "@/db-functions/timelineMakeHeld";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { isActionChecked, isActionEnabled, runAction } from "../../registry";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
 import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
@@ -78,6 +82,17 @@ vi.mock("@/db-functions/timelineHoldFromPrevious", () => ({
             skipped: [{ marcherId: 2, reason: "noArrival" }],
         }),
     ),
+}));
+vi.mock("@/db-functions/timelineHoldOverWindow", () => ({
+    holdOverWindow: vi.fn(() =>
+        Promise.resolve({
+            held: [1],
+            skipped: [{ marcherId: 2, reason: "followLeader" }],
+        }),
+    ),
+}));
+vi.mock("@/db-functions/timelineMakeHeld", () => ({
+    makeSelectedHeld: vi.fn(() => Promise.resolve({ held: [3], skipped: [] })),
 }));
 vi.mock("@/db-functions/timelineSetAsShown", () => ({
     setAsShownOnPage: vi.fn(() =>
@@ -216,6 +231,75 @@ describe("hold actions", () => {
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(setAsShownOnPage).not.toHaveBeenCalled();
         expect(holdFromPreviousPage).not.toHaveBeenCalled();
+    });
+});
+
+describe("Expert hold tools (#476)", () => {
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+            isolation: null,
+        });
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        setWindow(9, 13);
+        vi.mocked(holdOverWindow).mockClear();
+        vi.mocked(makeSelectedHeld).mockClear();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("Hold from start flag to playhead holds the selection over the window, and names only who it left alone", async () => {
+        mount([1, 2]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(true);
+        expect(runAction("timelineHoldOverWindow")).toBe(true);
+        await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+        expect(vi.mocked(holdOverWindow).mock.calls[0]![0]).toMatchObject({
+            window: { start: 9, end: 13 },
+            marcherIds: [1, 2],
+        });
+        expect(vi.mocked(toast.info).mock.calls[0]).toEqual([
+            "1 marcher not held",
+            {
+                description:
+                    "T2: follows the leader between the start flag and the playhead",
+            },
+        ]);
+    });
+
+    it("is off in Basic, without a selection, and while playing", () => {
+        useEditorModeStore.setState({ mode: "basic" });
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        useEditorModeStore.setState({ mode: "expert" });
+        mount([]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        expect(holdOverWindow).not.toHaveBeenCalled();
+    });
+
+    it("Make all selected Held is offered only for a selection mixed at the playhead, and says nothing when it holds everyone", async () => {
+        // Marcher 1 Held at the playhead (13); marcher 3 stands still there; marcher 2 walks
+        useHeldMarksStore.setState({ marks: [heldOnPage3(1)] });
+        mount([1, 3]);
+        expect(isActionEnabled("timelineMakeSelectedHeld")).toBe(true);
+        expect(runAction("timelineMakeSelectedHeld")).toBe(true);
+        await waitFor(() => expect(makeSelectedHeld).toHaveBeenCalledTimes(1));
+        expect(vi.mocked(makeSelectedHeld).mock.calls[0]![0]).toMatchObject({
+            beat: 13,
+            marcherIds: [1, 3],
+        });
+        expect(toast.info).not.toHaveBeenCalled();
+        cleanup();
+        mount([1, 2]);
+        expect(isActionEnabled("timelineMakeSelectedHeld")).toBe(false);
+        cleanup();
+        useHeldMarksStore.setState({ marks: [] });
+        mount([1, 3]);
+        expect(isActionEnabled("timelineMakeSelectedHeld")).toBe(false);
     });
 });
 
