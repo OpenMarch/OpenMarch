@@ -10,7 +10,6 @@ import {
 } from "electron";
 import * as DbServices from "@om-electron/database/database.services";
 
-import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
 import type {
@@ -413,18 +412,4 @@ const APP_API = {
 
 contextBridge.exposeInMainWorld("electron", APP_API);
 
-const PLUGINS_API = {
-    list: () => ipcRenderer.invoke("plugins:list") as Promise<string[]>,
-    get: (pluginPath: string) =>
-        ipcRenderer.invoke("plugins:get", pluginPath) as Promise<string>,
-    plugins: () => Plugin.getPlugins(),
-    install: (pluginUrl: string) =>
-        ipcRenderer.invoke("plugins:install", pluginUrl) as Promise<boolean>,
-    uninstall: (file: string) =>
-        ipcRenderer.invoke("plugins:uninstall", file) as Promise<boolean>,
-};
-
-contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
-
 export type ElectronApi = typeof APP_API;
-export type PluginsApi = typeof PLUGINS_API;

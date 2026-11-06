@@ -52,7 +52,7 @@ registered" error, so a test that wanders into these fails loudly:
 - opening, saving, closing and creating files, and the launch page
 - native dialogs and menus
 - PDF and video export, audio import
-- sign-in, plugins, updates
+- sign-in, updates
 
 Those stay in `e2e/tests/`, which runs the packaged app.
 

@@ -6,7 +6,6 @@ import {
     HandPointingIcon,
     KeyboardIcon,
     PaletteIcon,
-    PuzzlePieceIcon,
     ShieldCheckIcon,
     WrenchIcon,
     type Icon,
@@ -18,7 +17,6 @@ import AppearanceSettings from "@/components/launchpage/settings/AppearanceSetti
 import MouseSettings from "@/components/launchpage/settings/MouseSettings";
 import InputSettings from "@/components/launchpage/settings/InputSettings";
 import ShortcutSettings from "@/components/launchpage/settings/ShortcutSettings";
-import PluginsContents from "@/components/launchpage/settings/plugins/Plugins";
 import PrivacySettings from "@/components/launchpage/settings/PrivacySettings";
 import DeveloperSettings from "@/components/launchpage/settings/DeveloperSettings";
 import DatabaseRepairSettings from "@/components/launchpage/settings/DatabaseRepairSettings";
@@ -30,7 +28,6 @@ export type SettingsSectionId =
     | "input"
     | "mouse"
     | "shortcuts"
-    | "plugins"
     | "privacy"
     | "developer"
     | "database";
@@ -126,18 +123,6 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         ],
     },
     {
-        id: "plugins",
-        labelKey: "settings.plugins",
-        Icon: PuzzlePieceIcon,
-        Component: PluginsContents,
-        descriptionKey: "settings.plugins.description",
-        searchKeys: [
-            "settings.plugins.installed",
-            "settings.plugins.official",
-            "settings.plugins.community",
-        ],
-    },
-    {
         id: "privacy",
         labelKey: "settings.privacy",
         Icon: ShieldCheckIcon,
@@ -166,9 +151,8 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
     },
 ];
 
-/** Sections for things the web build doesn't have: plugins, analytics, Tolgee tools, file repair. */
+/** Sections for things the web build doesn't have: analytics, Tolgee tools, file repair. */
 const WEB_HIDDEN_SECTIONS: ReadonlySet<string> = new Set([
-    "plugins",
     "privacy",
     "developer",
     "database",

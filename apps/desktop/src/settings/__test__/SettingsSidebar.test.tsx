@@ -36,7 +36,6 @@ describe("SettingsSidebar", () => {
             "Appearance",
             "Mouse & Trackpad",
             "Keyboard shortcuts",
-            "Plugins",
             "Privacy",
             "Developer Settings",
             "Database",
