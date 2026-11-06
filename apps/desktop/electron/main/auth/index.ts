@@ -21,7 +21,8 @@ import {
     refreshAccessToken,
 } from "./oauth-flow";
 import {
-    storeTokens,
+    beginSession,
+    SESSION_EXPIRED,
     storePendingFlow,
     clearPendingFlow,
     validateState,
@@ -101,7 +102,7 @@ async function handleAuthCallback(url: string): Promise<void> {
         );
 
         // Store tokens securely
-        storeTokens(tokens);
+        beginSession(tokens);
 
         // Notify success
         notifyAuthStateChanged(getAuthState());
@@ -135,12 +136,12 @@ function handleSignedOut(): void {
         isAuthenticated: false,
         isLoading: false,
         user: null,
-        error: {
-            code: "TOKEN_EXPIRED",
-            message: "Your session has expired. Please sign in again.",
-        },
+        error: SESSION_EXPIRED,
     });
 }
+
+/** How long the state check waits on a token refresh before answering. */
+const STATE_REFRESH_WAIT_MS = 5000;
 
 /**
  * Initializes the auth module before app is ready.
@@ -227,8 +228,15 @@ export function initAuthAfterReady(
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.GET_STATE, async () => {
         // Refresh first if the token is due, so a session Clerk has ended
-        // shows as signed out rather than failing on the first upload.
-        await getValidAccessToken();
+        // shows as signed out rather than failing on the first upload. A
+        // slow network doesn't hold the answer up: a later rejection still
+        // reaches the renderer as a state change.
+        await Promise.race([
+            getValidAccessToken(),
+            new Promise((resolve) =>
+                setTimeout(resolve, STATE_REFRESH_WAIT_MS),
+            ),
+        ]);
         return getAuthState();
     });
 

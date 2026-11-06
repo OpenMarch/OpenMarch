@@ -122,7 +122,30 @@ describe("token manager", () => {
         expect(await tm.getValidAccessToken()).toBeNull();
         expect(tm.getStoredTokens()).toBeNull();
         expect(tm.getAuthState().isAuthenticated).toBe(false);
+        // Says why, until the next sign-in.
+        expect(tm.getAuthState().error?.code).toBe("TOKEN_EXPIRED");
         expect(signedOut).toHaveBeenCalledTimes(1);
+
+        tm.beginSession(tokensExpiringAt(Date.now() + HOUR, "new"));
+        expect(tm.getAuthState().error).toBeNull();
+    });
+
+    it("doesn't let an old session's rejected refresh end a new sign-in", async () => {
+        const tm = await loadTokenManager();
+        const { TokenRefreshRejectedError } = await import("../errors");
+        let rejectRefresh: (error: Error) => void = () => {};
+        tm.setTokenRefreshCallback(
+            () => new Promise((_resolve, reject) => (rejectRefresh = reject)),
+        );
+        tm.storeTokens(tokensExpiringAt(Date.now() + 60_000));
+
+        const pending = tm.getValidAccessToken();
+        const fresh = tokensExpiringAt(Date.now() + HOUR, "new");
+        tm.beginSession(fresh);
+        rejectRefresh(new TokenRefreshRejectedError(400));
+        await pending;
+
+        expect(tm.getStoredTokens()?.refreshToken).toBe("refresh-new");
     });
 
     it("stays signed in after the ID token expires while the app is closed", async () => {
@@ -168,5 +191,25 @@ describe("token manager", () => {
 
         expect(tm.validateState("forged")).toBeNull();
         expect(tm.validateState("expected")).toEqual(flow);
+    });
+});
+
+describe("isRefreshRejected", () => {
+    it("goes by the OAuth error code when the body has one", async () => {
+        const { isRefreshRejected } = await import("../errors");
+        expect(isRefreshRejected(400, '{"error":"invalid_grant"}')).toBe(true);
+        expect(isRefreshRejected(403, '{"error":"invalid_client"}')).toBe(true);
+        expect(
+            isRefreshRejected(400, '{"error":"temporarily_unavailable"}'),
+        ).toBe(false);
+    });
+
+    it("otherwise treats a 4xx as final, except timeouts and rate limits", async () => {
+        const { isRefreshRejected } = await import("../errors");
+        expect(isRefreshRejected(401, "")).toBe(true);
+        expect(isRefreshRejected(422, "<html>")).toBe(true);
+        expect(isRefreshRejected(429, "")).toBe(false);
+        expect(isRefreshRejected(408, "")).toBe(false);
+        expect(isRefreshRejected(503, "")).toBe(false);
     });
 });

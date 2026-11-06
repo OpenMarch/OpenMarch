@@ -223,7 +223,7 @@
         "api": {
             "requestFailed": "API request failed: {reason}",
             "requestFailedStatus": "API request failed: {status} {statusText}",
-            "tokenRequired": "Authentication token is required"
+            "tokenRequired": "Couldn't confirm your sign-in. Check your connection and try again."
         }
     },
     "colorPicker": {
@@ -1223,7 +1223,12 @@
             "setupAccount": "Set up your account",
             "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
         },
-        "title": "Export to Mobile"
+        "title": "Export to Mobile",
+        "unreachable": {
+            "description": "OpenMarch couldn't reach its online service or confirm your sign-in. Check your internet connection and try again.",
+            "retry": "Try again",
+            "title": "Can't reach OpenMarch"
+        }
     },
     "music": {
         "accent": "Accent first beat",

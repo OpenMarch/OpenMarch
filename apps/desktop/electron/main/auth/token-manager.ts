@@ -6,7 +6,13 @@
 
 import Store from "electron-store";
 import { safeStorage } from "electron";
-import type { AuthTokens, AuthUser, AuthState, PendingAuthFlow } from "./types";
+import type {
+    AuthError,
+    AuthTokens,
+    AuthUser,
+    AuthState,
+    PendingAuthFlow,
+} from "./types";
 import { TOKEN_REFRESH_BUFFER_MS } from "../../../src/global/auth/constants";
 import { TokenRefreshRejectedError } from "./errors";
 
@@ -47,6 +53,18 @@ let refreshInFlight: Promise<AuthTokens | null> | null = null;
 let tokenGeneration = 0;
 
 /**
+ * Why the last session ended, when it wasn't the user signing out; shown
+ * with the signed-out state until the next sign-in.
+ */
+let signedOutReason: AuthError | null = null;
+
+/** Clerk ended the session (rejected the refresh token). */
+export const SESSION_EXPIRED: AuthError = {
+    code: "TOKEN_EXPIRED",
+    message: "Your session has expired. Please sign in again.",
+};
+
+/**
  * Sets the token refresh callback function.
  * This is called by auth/index.ts to inject the refresh implementation.
  */
@@ -81,6 +99,16 @@ export function storeTokens(tokens: AuthTokens): void {
     const tokenString = JSON.stringify(tokens);
     const encrypted = safeStorage.encryptString(tokenString);
     authStore.set("encryptedTokens", encrypted.toString("base64"));
+}
+
+/**
+ * Starts a new session with the tokens from a sign-in. A refresh still
+ * running for an earlier session can't touch it.
+ */
+export function beginSession(tokens: AuthTokens): void {
+    tokenGeneration++;
+    signedOutReason = null;
+    storeTokens(tokens);
 }
 
 /**
@@ -129,6 +157,7 @@ export function clearTokens(): void {
 
     cachedTokens = null;
     tokenGeneration++;
+    signedOutReason = null;
     authStore.delete("encryptedTokens");
     authStore.delete("pendingAuthFlow");
 }
@@ -217,6 +246,7 @@ async function refreshTokens(tokens: AuthTokens): Promise<AuthTokens | null> {
             if (error instanceof TokenRefreshRejectedError) {
                 console.error("[Auth] Refresh token rejected; signing out");
                 clearTokens();
+                signedOutReason = SESSION_EXPIRED;
                 onSignedOut?.();
             } else {
                 console.error("[Auth] Failed to refresh token:", error);
@@ -347,7 +377,7 @@ export function getAuthState(): AuthState {
             isAuthenticated: false,
             isLoading: false,
             user: null,
-            error: null,
+            error: signedOutReason,
         };
     }
 
