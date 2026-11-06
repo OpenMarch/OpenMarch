@@ -48,6 +48,7 @@ import {
     type HeldHomeEdit,
 } from "./timelineHeldMarks";
 import {
+    arrivalHoldsLostInTransaction,
     readHeldArrivalsBefore,
     startHoldsLostInTransaction,
 } from "./timelineHeldUpkeep";
@@ -128,8 +129,9 @@ export interface TimelineMoveResult {
      */
     cleared?: number[];
     /**
-     * Clear this page on the first page of a Held hold that runs on: the marchers whose hold on
-     * the later pages went too (its arrival went), and those pages, for the toast
+     * Clear this page on the first page of a Held hold that runs on, or on the page a Held hold
+     * arrives from: the marchers whose hold on the later pages went too (its arrival went), and
+     * those pages, for the toast
      */
     clearedLaterHolds?: HeldConflict;
     /**
@@ -1398,6 +1400,17 @@ export const moveMarchersInTarget = async ({
                         moves.map((m) => m.marcherId),
                         pageBox,
                     );
+                    // A hold on a later page whose arrival the clear took away goes too (holds
+                    // decision 17, at the step after the edit): named with the rest (#566 review)
+                    const laterHolds = [
+                        ...clearedHolds.later,
+                        ...(heldBefore
+                            ? await arrivalHoldsLostInTransaction(
+                                  tx,
+                                  heldBefore,
+                              )
+                            : []),
+                    ];
                     if (clearedHolds.marchers.length > 0)
                         result.cleared = [
                             ...new Set([
@@ -1405,17 +1418,17 @@ export const moveMarchersInTarget = async ({
                                 ...clearedHolds.marchers,
                             ]),
                         ].sort((x, y) => x - y);
-                    if (clearedHolds.later.length > 0)
+                    if (laterHolds.length > 0)
                         result.clearedLaterHolds = await nameHeldConflict(
                             tx,
-                            clearedHolds.later,
+                            laterHolds,
                         );
                     // Only the marchers taken out of the page: a skipped one still has its move
                     const kept = await keepNextPageInTransaction(
                         tx,
                         later,
                         new Set([
-                            ...clearedHolds.later.map((h) => h.marcherId),
+                            ...laterHolds.map((h) => h.marcherId),
                             ...moves
                                 .map((m) => m.marcherId)
                                 .filter((id) => !result.cleared?.includes(id)),

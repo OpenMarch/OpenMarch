@@ -19,7 +19,7 @@ import {
 import { timelineHistoryFocus } from "./timelineHistoryFocus";
 import {
     keepHeldMarksTrueInTransaction,
-    readHeldArrivalsBefore,
+    readHeldUpkeepBefore,
 } from "./timelineHeldUpkeep";
 import {
     bumpTimelineDisplayVersion,
@@ -180,14 +180,16 @@ export const transactionWithHistory = async <T>(
                 }
                 assert(groupBefore != null, "Group before is undefined");
 
-                // Each Held mark's arrival, so the step after the edit can tell a deleted
-                // arrival from one moved in time (ADR 0012 amendment 2026-10-30)
-                const heldArrivals = await readHeldArrivalsBefore(tx);
+                // Each Held mark's arrival, and the counts of its marcher's rows, so the step
+                // after the edit can tell a deleted arrival from a re-timed one (ADR 0012
+                // amendment 2026-10-30, Upkeep)
+                const heldBefore = await readHeldUpkeepBefore(tx);
                 // Execute the function
                 result = await func(tx);
-                // Held marks whose arrival the edit deleted go with it, in its undo step; an
-                // arrival it moved in time is refused (E-H1). Never in undo or redo replay
-                await keepHeldMarksTrueInTransaction(tx, heldArrivals);
+                // Held marks follow a re-timed arrival, go with a deleted one and are trimmed
+                // where a re-timed row covers them, in the edit's undo step. Never in undo or
+                // redo replay
+                await keepHeldMarksTrueInTransaction(tx, heldBefore);
 
                 const groupAfter =
                     (
