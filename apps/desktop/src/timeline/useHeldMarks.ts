@@ -11,6 +11,7 @@ import {
     selectionHolds,
     type SelectionHolds,
 } from "./timelineHoldBars";
+import { useDraggedHoldMarks } from "./holdEdgeDragStore";
 import { carriedStretches } from "./timelineCarried";
 import {
     editingPositionAt,
@@ -112,7 +113,9 @@ export function useSelectionHolds(
                 ? s.selection.end
                 : null,
     );
-    const light = useHoldLightStore((s) => s.light);
+    const hoverLight = useHoldLightStore((s) => s.light);
+    // #475: a hold edge being dragged draws its holds where it would land, lit
+    const { shownMarks, light } = useDraggedHoldMarks(marks, hoverLight);
     const isolation = useIsolationPlanStore((s) => s.current);
     // Where a shape carries the selected marchers: the field's rule (`carriedStretches`), worked
     // out apart from the lit ranges, so starting a drag or hovering an entry doesn't redo it
@@ -150,7 +153,7 @@ export function useSelectionHolds(
         return selectionHolds({
             marcherIds,
             spansOf: (id) => resolverSpans(resolver, id),
-            marks,
+            marks: shownMarks,
             showEnd,
             carriedOf: carried ? (id) => carried.get(id) : undefined,
             dragBeat,
@@ -160,7 +163,7 @@ export function useSelectionHolds(
         resolver,
         version,
         marcherIds,
-        marks,
+        shownMarks,
         showEnd,
         carried,
         dragBeat,

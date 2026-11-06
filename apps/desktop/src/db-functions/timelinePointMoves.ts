@@ -298,6 +298,34 @@ const planMerge = async (
     });
 };
 
+/**
+ * The hold `[g0, g1)` a point at `beat` is in: from the last move's end (or the page's start) to
+ * the next move (or flag). A Held hold ending in it ends it there instead, so the move leaves
+ * where the hold ends (leaving early, holds decision 6), and one starting in it stops the stay
+ * where it starts. `layer` is the layer of the move before or after it.
+ */
+const holdAround = (
+    rows: readonly BasicRow[],
+    marks: readonly { start: number; end: number }[],
+    box: Box,
+    beat: number,
+): { g0: number; g1: number; layer: number } => {
+    const before = rows.filter((r) => r.end < beat);
+    const previous = before[before.length - 1];
+    const next = rows.find((r) => r.start >= beat);
+    return {
+        g0: Math.max(
+            previous?.end ?? box.start,
+            ...marks.filter((m) => m.end < beat).map((m) => m.end),
+        ),
+        g1: Math.min(
+            next?.start ?? box.end,
+            ...marks.filter((m) => m.start >= beat).map((m) => m.start),
+        ),
+        layer: previous?.layer ?? next?.layer ?? 0,
+    };
+};
+
 /** Plans one marcher's position at `beat` (see the module comment). */
 const planPoint = async (
     plan: PointPlan,
@@ -365,22 +393,12 @@ const planPoint = async (
         return;
     }
 
-    // A hold [g0, g1): from the last move's end (or the page's start) to the next move (or flag).
-    // A Held hold ending in it ends it there instead, so the move leaves where the hold ends
-    // (leaving early, holds decision 6), and one starting in it stops the stay where it starts
-    const before = rows.filter((r) => r.end < beat);
-    const previous = before[before.length - 1];
-    const next = rows.find((r) => r.start >= beat);
-    const marks = state.marksOf(marcherId);
-    const g0 = Math.max(
-        previous?.end ?? box.start,
-        ...marks.filter((m) => m.end < beat).map((m) => m.end),
+    const { g0, g1, layer } = holdAround(
+        rows,
+        state.marksOf(marcherId),
+        box,
+        beat,
     );
-    const g1 = Math.min(
-        next?.start ?? box.end,
-        ...marks.filter((m) => m.start >= beat).map((m) => m.start),
-    );
-    const layer = previous?.layer ?? next?.layer ?? 0;
     plan.added.push({ marcherId, start: g0, end: beat, point, layer });
     if (beat < g1)
         plan.added.push({

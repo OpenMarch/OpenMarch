@@ -39,6 +39,7 @@ describe("holdTerms", () => {
             holdFromPrevious: "Hold from previous page",
             clearThisPage: "Clear this page",
             removeKeyframe: "Remove keyframe",
+            splitHold: "Split hold here",
         });
     });
 

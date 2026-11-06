@@ -444,6 +444,18 @@ export interface TimelinePageMenu {
     readonly extraFor?: (
         pageId: string | number,
     ) => readonly TimelineMenuEntry[];
+    /**
+     * **Split hold here** on a Held bar's right-click (holds decision 5, fork #475), at the count
+     * under the pointer (view beats). Without it, the menu has no such entry.
+     */
+    readonly splitHold?: TimelineSplitHoldMenuView;
+}
+
+/** The menu's **Split hold here** entry (fork #475), by the right-clicked count (view beats). */
+export interface TimelineSplitHoldMenuView {
+    /** Whether a selected marcher's Held hold has the count strictly inside it */
+    readonly offeredAt: (beat: number) => boolean;
+    readonly onSplit: (beat: number) => void;
 }
 
 /** A page box menu entry for the selected marchers (holds), by page id. */
@@ -494,6 +506,8 @@ export interface TimelineMenuTarget {
     readonly range: TimelineBeatRange;
     readonly trackId?: string;
     readonly pageId?: string;
+    /** On a hold bar: the count under the pointer, for **Split hold here** (#475) */
+    readonly holdBeat?: number;
 }
 
 /**
@@ -580,7 +594,8 @@ export function useTimelineRangeMenu({
                 menu?.holdFromPrevious !== undefined ||
                 menu?.clearPage !== undefined ||
                 menu?.subset !== undefined ||
-                menu?.extraFor !== undefined) &&
+                menu?.extraFor !== undefined ||
+                menu?.splitHold !== undefined) &&
             target.pageId !== undefined;
         if (!canDelete && !movesOf(target)) return;
         event.preventDefault();
@@ -603,6 +618,11 @@ export function useTimelineRangeMenu({
         open && menu?.extraFor && open.target.pageId !== undefined
             ? menu.extraFor(open.target.pageId)
             : [];
+    const splitHoldBeat =
+        open?.target.holdBeat !== undefined &&
+        menu?.splitHold?.offeredAt(open.target.holdBeat)
+            ? open.target.holdBeat
+            : undefined;
     const element = open && (
         <DropdownMenu.Root
             open
@@ -629,6 +649,27 @@ export function useTimelineRangeMenu({
                     className={TIMELINE_MENU_CONTENT_CLASS}
                 >
                     <TimelineMenuClose.Provider value={() => setOpen(null)}>
+                        {splitHoldBeat !== undefined && (
+                            <>
+                                <DropdownMenu.Item
+                                    data-testid="timeline-range-menu-split-hold"
+                                    className={MENU_ITEM_CLASS}
+                                    onSelect={() =>
+                                        menu?.splitHold?.onSplit(splitHoldBeat)
+                                    }
+                                >
+                                    <ScissorsIcon size={14} />
+                                    {tolgee.t(
+                                        "timeline.rangeMenu.splitHold",
+                                        "{splitHold}",
+                                        holdTerms(),
+                                    )}
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                            </>
+                        )}
                         {pageExtra.length > 0 && (
                             <>
                                 <TimelineMenuEntries entries={pageExtra} />

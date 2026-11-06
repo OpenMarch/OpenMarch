@@ -36,6 +36,7 @@ export const HOLD_TERM_KEYS = {
     ],
     clearThisPage: ["timeline.terms.clearThisPage", "Clear this page"],
     removeKeyframe: ["timeline.terms.removeKeyframe", "Remove keyframe"],
+    splitHold: ["timeline.terms.splitHold", "Split hold here"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type HoldTerm = keyof typeof HOLD_TERM_KEYS;
