@@ -173,6 +173,7 @@
     "auth.signIn": "Button in the title bar for signing in to the user's OpenMarch online account (used for the mobile app and cloud features). Verb phrase. Visible text.",
     "auth.signInAriaLabel": "Screen-reader label of the title bar's sign-in button. Verb phrase; not shown.",
     "auth.signOut": "Menu item in the account menu that signs the user out of their OpenMarch online account. Verb phrase.",
+    "auth.signOutFailed": "Error toast when signing out of the user's OpenMarch account failed (usually no internet connection); they are still signed in.",
     "auth.userFallback": "Name shown for a signed-in user in the account button and its tooltip when their account has neither a full name nor an email address. Noun, one word; its first letter is also used in the round avatar.",
     "canvas.zoom.group": "Screen-reader label of the zoom slider in the zoom controls at the bottom right of the field.",
     "canvas.zoom.in": "Tooltip of the + button in the zoom controls at the bottom right of the field. Zooms the field view in.",

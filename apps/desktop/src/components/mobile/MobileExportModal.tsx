@@ -92,7 +92,9 @@ export default function MobileExportModal({
     const { t } = useTranslate();
 
     useEffect(() => {
-        if (productionId == null) return;
+        // Not on the web: asking the API means loading sign-in (ClerkJS),
+        // which waits until someone opens Mobile export.
+        if (productionId == null || isWebBuild) return;
 
         void queryClient.prefetchQuery(
             currentProductionQueryOptions(productionId),
@@ -100,6 +102,8 @@ export default function MobileExportModal({
     }, [productionId, queryClient]);
 
     const prefetchMobileExportData = useCallback(() => {
+        // A web build that can't sign in has nothing to fetch.
+        if (isWebBuild && !isSignInEnabled) return;
         void queryClient.prefetchQuery(
             getGetApiEditorV1EnsemblesAnyQueryOptions(),
         );

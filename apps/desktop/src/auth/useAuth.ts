@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/auth/AuthStore";
 import { isSignInEnabled } from "@/global/auth/constants";
 import type { AuthState } from "../../electron/main/auth/types";
+import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "auth";
 export const NEEDS_AUTH_BASE_QUERY_KEY = "needs-auth" as const;
@@ -155,6 +157,8 @@ export function useAuth() {
             return result;
         },
         onError: (error) => {
+            // Still signed in, so the signed-out panel's message can't show it.
+            toast.error(tolgee.t("auth.signOutFailed"));
             setError({
                 code: "LOGOUT_FAILED",
                 message:

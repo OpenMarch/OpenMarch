@@ -75,7 +75,8 @@ API clients and Mobile export are the same code as on the desktop.
   blocked, the editor's own tab goes, after the usual question about
   unsaved changes.
 - ClerkJS loads from the Clerk instance (`clerk.openmarch.com`), without its
-  UI, the first time something asks about sign-in (opening Mobile export).
+  UI, the first time something asks about sign-in (pointing at or opening
+  Mobile export), not when the editor starts.
   The session is Clerk's own, shared by every app on openmarch.com, and the
   API gets Clerk's short-lived session token. om-online's editor API allows
   the editor's origins (CORS).

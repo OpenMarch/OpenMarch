@@ -98,6 +98,12 @@ function leavePage(url: string) {
     window.location.assign(url);
 }
 
+// Back from the page `leavePage` went to, out of the back-forward cache: the
+// show is open again, so leaving should ask again.
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted) reloading = false;
+});
+
 /** Whether the page is reloading itself, so leaving loses nothing. */
 export const isReloadingOnPurpose = () => reloading;
 

@@ -218,6 +218,7 @@
         "signIn": "Sign In",
         "signInAriaLabel": "Sign in",
         "signOut": "Sign Out",
+        "signOutFailed": "Couldn't sign out. Check your internet connection and try again.",
         "userFallback": "User",
         "fullName": "{firstName} {lastName}",
         "api": {

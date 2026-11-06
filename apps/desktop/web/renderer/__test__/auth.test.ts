@@ -281,11 +281,37 @@ describe("web sign-in", () => {
             sharedLoad: true,
             loadClerk: async () => clerk as unknown as ClerkJs,
         });
+        // The widget's ClerkJS is on the page, still loading.
+        window.Clerk = clerk as unknown as ClerkJs;
         setTimeout(() => (clerk.loaded = true), 150);
+
+        try {
+            await handlers["auth:get-state"]();
+        } finally {
+            delete window.Clerk;
+        }
+
+        expect(clerk.load).not.toHaveBeenCalled();
+    });
+
+    it("loads ClerkJS at once when no other script has it", async () => {
+        const clerk = fakeClerk();
+        const handlers = createWebAuth({
+            publishableKey: PUBLISHABLE_KEY,
+            namespace: "own-load-test",
+            emit: vi.fn(),
+            doneUrl: DONE_URL,
+            confirmLeave: async () => true,
+            leave: vi.fn(),
+            sharedLoad: true,
+            loadClerk: async () => clerk as unknown as ClerkJs,
+        });
+        const started = Date.now();
 
         await handlers["auth:get-state"]();
 
-        expect(clerk.load).not.toHaveBeenCalled();
+        expect(clerk.load).toHaveBeenCalled();
+        expect(Date.now() - started).toBeLessThan(1000);
     });
 
     it("signs out of Clerk without navigating", async () => {

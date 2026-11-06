@@ -195,12 +195,19 @@ export function createWebAuth(options: WebAuthOptions) {
 
     function clerk(): Promise<ClerkJs> {
         clerkPromise ??= (async () => {
+            // Someone else (the lab widget) got here first if ClerkJS or its
+            // script is already on the page: let them finish its load rather
+            // than load it twice at once. Otherwise there's no one to wait for.
+            const othersLoading =
+                options.sharedLoad &&
+                (!!window.Clerk ||
+                    [...document.scripts].some((script) =>
+                        script.src.includes("/@clerk/clerk-js@"),
+                    ));
             const instance = await (options.loadClerk ?? loadClerkScript)(
                 publishableKey,
             );
-            // Someone else (the lab widget) may be loading it: let them finish
-            // rather than load it twice at once.
-            if (!instance.loaded && options.sharedLoad)
+            if (!instance.loaded && othersLoading)
                 await waitFor(() => instance.loaded, SHARED_LOAD_WAIT_MS);
             if (!instance.loaded)
                 await instance.load({
