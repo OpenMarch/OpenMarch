@@ -110,6 +110,10 @@ import {
     type TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
 import { TimelineHoldBars } from "./TimelineHoldBars";
+import {
+    TimelineHoldEdgeHandles,
+    type TimelineHoldEdges,
+} from "./TimelineHoldEdges";
 import type { SelectionHolds } from "@/timeline/timelineHoldBars";
 import {
     chainFit,
@@ -822,6 +826,7 @@ export const TimelineRuler = memo(function TimelineRuler({
     keyframes,
     keyframeMenu,
     holds,
+    holdEdges,
     keepChains,
     scrubLine,
     pageFlagMove,
@@ -857,6 +862,8 @@ export const TimelineRuler = memo(function TimelineRuler({
     keyframeMenu?: TimelineKeyframeMenu;
     /** The selected marchers' hold bars and departures (#472, #477), view beats */
     holds?: SelectionHolds;
+    /** The draggable ends of their Held bars (#475), view beats; without it, none */
+    holdEdges?: TimelineHoldEdges;
     /** The chains on the page boxes (UI-18 keep later pages), by page id */
     keepChains?: PageKeepChains;
 }) {
@@ -932,6 +939,14 @@ export const TimelineRuler = memo(function TimelineRuler({
     const pageRanges = useMemo(
         () => new Map(pageBoxes.map(({ page, range }) => [page.id, range])),
         [pageBoxes],
+    );
+    // A dragged hold edge lands on page lines too (#475)
+    const flagBeats = useMemo(
+        () =>
+            flagBoxes.flatMap(({ range }) =>
+                range ? [range.endBeatIndex] : [],
+            ),
+        [flagBoxes],
     );
     // The boxes only re-render when which of them is selected changes, not for every new window
     // (a scrub moves the window's end every beat)
@@ -1020,6 +1035,17 @@ export const TimelineRuler = memo(function TimelineRuler({
                     holds={holds}
                     pages={pages}
                     pixelsPerBeat={pixelsPerBeat}
+                />
+            )}
+            {holdEdges && (
+                <TimelineHoldEdgeHandles
+                    edges={holdEdges}
+                    pages={pages}
+                    beatCount={beatCount}
+                    pixelsPerBeat={pixelsPerBeat}
+                    pageBeats={flagBeats}
+                    downbeats={flagDownbeats}
+                    snapPlayhead={flagSnapPlayhead}
                 />
             )}
             {keyframes && (

@@ -2186,6 +2186,21 @@
             "transitionSpansTimeline": "A transition must span its whole timeline, starting and ending with it. Change the timeline's range instead, and its transitions move with it.",
             "unknown": "The timeline couldn't make that change."
         },
+        "holdEdge": {
+            "endLabel": "End of {held}. Drag to leave earlier or hold longer",
+            "startLabel": "Start of {held}. Drag to hold from earlier or later",
+            "readoutEnd": "{held} through Page {page}, count {count}",
+            "readoutStart": "{held} from Page {page}, count {count}",
+            "blocked": {
+                "minimum": "A hold lasts at least one count",
+                "nextMove": "Stops at the next move",
+                "showEnd": "Stops at the end of the show",
+                "arrival": "Stops where the move before it ends",
+                "showStart": "Stops at the start of the show"
+            },
+            "changeError": "Error changing the hold",
+            "splitError": "Error splitting the hold"
+        },
         "heldBar": {
             "detail": "{held} of {total} selected",
             "shape": "Its shape carries on here",
@@ -2274,7 +2289,8 @@
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
             "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
             "setAsShownError": "Error setting marchers as shown",
-            "deletePage": "Delete page"
+            "deletePage": "Delete page",
+            "splitHold": "{splitHold}"
         },
         "terms": {
             "clearThisPage": "Clear this page",
@@ -2286,7 +2302,8 @@
             "holdFromPrevious": "Hold from previous page",
             "notDefined": "Not defined",
             "notDefinedLower": "not defined",
-            "removeKeyframe": "Remove keyframe"
+            "removeKeyframe": "Remove keyframe",
+            "splitHold": "Split hold here"
         },
         "startFlagPositions": {
             "always": "Always",
@@ -2659,6 +2676,10 @@
             },
             "holdFromPrevious": {
                 "wholePage": "{holdFromPrevious} works on a whole page, not {counts}"
+            },
+            "holdEdge": {
+                "outside": "The hold can't reach that count: it stops at the marcher's next move, the end of the show, or one count from its other end.",
+                "noArrival": "Nothing arrives at that count, so the hold can't start there."
             },
             "moveTimeline": {
                 "tooEarly": "the timeline starts at beat {start}, so it can't move {count, plural, one {# beat} other {# beats}} earlier",

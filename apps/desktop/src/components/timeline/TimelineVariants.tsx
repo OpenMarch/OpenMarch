@@ -907,7 +907,23 @@ const TimelineSurface = memo(function TimelineSurface({
                 event.clientX,
                 event.clientY,
             );
-            if (onBar) return markedRangeAt(onBar);
+            if (onBar) {
+                const target = markedRangeAt(onBar);
+                // #475: the count under the pointer, for Split hold here
+                const surface = event.currentTarget.querySelector(
+                    '[data-testid="timeline-pointer-surface"]',
+                );
+                return target && surface
+                    ? {
+                          ...target,
+                          holdBeat: Math.round(
+                              (event.clientX -
+                                  surface.getBoundingClientRect().left) /
+                                  pixelsPerBeat,
+                          ),
+                      }
+                    : target;
+            }
             // Basic (UI-19): only page boxes have a menu; the window isn't drawn
             if (basic || selection?.kind !== "range" || !selectionRange)
                 return null;
@@ -1203,6 +1219,11 @@ const TimelineSurface = memo(function TimelineSurface({
                             keyframes={props.keyframes}
                             keyframeMenu={props.keyframeMenu}
                             holds={props.holds}
+                            holdEdges={
+                                props.isPlaying || bandFocus
+                                    ? undefined
+                                    : props.holdEdges
+                            }
                             keepChains={props.keepChains}
                         />
                         <TimelinePastEndShade
