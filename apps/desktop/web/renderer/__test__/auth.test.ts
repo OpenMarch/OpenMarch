@@ -68,17 +68,24 @@ function fakeClerk() {
 
 const DONE_URL = "https://editor.openmarch.com/auth-done.html?channel=stable";
 
-function setUp(clerk = fakeClerk(), confirmLeave = async () => true) {
+function setUp(
+    clerk = fakeClerk(),
+    confirmLeave = async () => true,
+    extra: { sameTabOnly?: boolean } = {},
+) {
     const emit = vi.fn();
+    const leave = vi.fn();
     const handlers = createWebAuth({
         publishableKey: PUBLISHABLE_KEY,
         namespace: `test-${Math.random()}`,
         emit,
         doneUrl: DONE_URL,
         confirmLeave,
+        leave,
         loadClerk: async () => clerk as unknown as ClerkJs,
+        ...extra,
     });
-    return { clerk, emit, handlers };
+    return { clerk, emit, handlers, leave };
 }
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -153,6 +160,7 @@ describe("web sign-in", () => {
             emit,
             doneUrl: DONE_URL,
             confirmLeave: async () => true,
+            leave: vi.fn(),
             loadClerk: async () => clerk as unknown as ClerkJs,
         });
         await handlers["auth:login"]();
@@ -196,17 +204,88 @@ describe("web sign-in", () => {
     it("stays on the show when pop-ups are blocked and the user says no", async () => {
         openSpy.mockReturnValue(null);
         const confirmLeave = vi.fn(async () => false);
-        const { emit, handlers } = setUp(fakeClerk(), confirmLeave);
-        const href = window.location.href;
+        const { emit, handlers, leave } = setUp(fakeClerk(), confirmLeave);
 
         expect(await handlers["auth:login"]()).toEqual({ success: true });
 
         expect(confirmLeave).toHaveBeenCalled();
-        expect(window.location.href).toBe(href);
+        expect(leave).not.toHaveBeenCalled();
         expect(emit).toHaveBeenCalledWith(
             "auth:state-changed",
             expect.objectContaining({ isLoading: false }),
         );
+    });
+
+    it("signs in in this tab when pop-ups are blocked and the user agrees", async () => {
+        openSpy.mockReturnValue(null);
+        const { handlers, leave } = setUp();
+
+        await handlers["auth:login"]();
+
+        expect(leave).toHaveBeenCalledWith(
+            expect.stringContaining("accounts.openmarch.com/sign-in"),
+        );
+    });
+
+    it("never opens a tab from a Home Screen app", async () => {
+        const { handlers, leave } = setUp(fakeClerk(), async () => true, {
+            sameTabOnly: true,
+        });
+
+        await handlers["auth:login"]();
+
+        expect(openSpy).not.toHaveBeenCalled();
+        expect(leave).toHaveBeenCalled();
+    });
+
+    it("keeps the user signed in when the check on return fails", async () => {
+        openSpy.mockReturnValue({
+            opener: null,
+            location: { href: "" },
+        } as unknown as Window);
+        const clerk = fakeClerk();
+        clerk.signIn();
+        const { emit, handlers } = setUp(clerk);
+        await handlers["auth:login"]();
+        clerk.client.reload.mockRejectedValueOnce(new Error("offline"));
+
+        window.dispatchEvent(new Event("focus"));
+
+        await vi.waitFor(() =>
+            expect(emit).toHaveBeenCalledWith(
+                "auth:state-changed",
+                expect.objectContaining({ isAuthenticated: true }),
+            ),
+        );
+    });
+
+    it("reports a failed sign-out instead of throwing", async () => {
+        const clerk = fakeClerk();
+        clerk.load.mockImplementation(async () => {});
+        const { handlers } = setUp(clerk);
+
+        const result = await handlers["auth:logout"]();
+        expect(result.success).toBe(false);
+        expect(result.error?.code).toBe("AUTH_UNAVAILABLE");
+    });
+
+    it("waits for another script's ClerkJS load instead of loading twice", async () => {
+        const clerk = fakeClerk();
+        const handlers = createWebAuth({
+            publishableKey: PUBLISHABLE_KEY,
+            namespace: "shared-load-test",
+            emit: vi.fn(),
+            doneUrl: DONE_URL,
+            confirmLeave: async () => true,
+            leave: vi.fn(),
+            sharedLoad: true,
+            loadClerk: async () => clerk as unknown as ClerkJs,
+        });
+        setTimeout(() => (clerk.loaded = true), 150);
+
+        await handlers["auth:get-state"]();
+
+        expect(clerk.load).not.toHaveBeenCalled();
     });
 
     it("signs out of Clerk without navigating", async () => {
@@ -272,6 +351,7 @@ describe("web sign-in", () => {
             emit: vi.fn(),
             doneUrl: DONE_URL,
             confirmLeave: async () => true,
+            leave: vi.fn(),
             loadClerk,
         });
 

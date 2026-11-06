@@ -26,6 +26,7 @@ import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensem
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { getClerkSignUpUrl, isSignInEnabled } from "@/global/auth/constants";
 import { T, useTranslate } from "@tolgee/react";
+import { isWebBuild } from "@/utilities/webBuild";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -272,8 +273,20 @@ function MobileExportAccessError() {
     );
 }
 
+/** What went wrong with signing in, in the user's language; null if nothing. */
+function signInErrorKey(code: string | undefined) {
+    if (!code) return null;
+    if (code === "TOKEN_EXPIRED")
+        return "mobileExport.signedOut.errors.sessionExpired";
+    if (code === "AUTH_UNAVAILABLE")
+        return "mobileExport.signedOut.errors.unavailable";
+    return "mobileExport.signedOut.errors.failed";
+}
+
 function SignedOutMobileExportContent() {
     const { t } = useTranslate();
+    const { error } = useAuth();
+    const errorKey = signInErrorKey(error?.code);
     const signUpUrl = isSignInEnabled ? getClerkSignUpUrl() : null;
     const handleSetupAccount = useCallback(() => {
         if (!signUpUrl) return;
@@ -323,9 +336,18 @@ function SignedOutMobileExportContent() {
                 {isSignInEnabled && (
                     <div className="flex w-[85%] flex-col items-center gap-12">
                         <p className="text-body text-text-subtitle">
-                            <T keyName="mobileExport.signedOut.signInPrompt" />
+                            {isWebBuild ? (
+                                <T keyName="mobileExport.signedOut.signInPromptWeb" />
+                            ) : (
+                                <T keyName="mobileExport.signedOut.signInPrompt" />
+                            )}
                         </p>
                         <SignInButton variant="secondary" />
+                        {errorKey && (
+                            <p role="alert" className="text-sub text-red">
+                                {t(errorKey)}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>

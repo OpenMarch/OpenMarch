@@ -18,7 +18,6 @@ import {
 } from "@/shortcuts/registry";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { useWebLibraryStore } from "@/stores/WebLibraryStore";
-import { isSignInEnabled } from "@/global/auth/constants";
 
 const itemClass =
     "rounded-4 text-body data-[highlighted]:bg-fg-2 flex cursor-pointer items-center justify-between gap-24 px-8 py-4 outline-hidden data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
@@ -88,7 +87,7 @@ export default function WebFileMenu() {
                     </DropdownMenuItem>
                 )}
                 {item("exportVideo")}
-                {isSignInEnabled && item("exportToMobile")}
+                {item("exportToMobile")}
                 {item("closeFile")}
                 <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
                 {item("openSettings")}

@@ -20,7 +20,7 @@ import {
     type PagePositionMap,
 } from "./utils/exportPagePositions";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@openmarch/ui";
-import { MoonIcon, SunIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, MoonIcon, SunIcon } from "@phosphor-icons/react";
 import InfoTip from "@/components/ui/InfoTip";
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
@@ -1983,6 +1983,35 @@ function WebFinishedVideo({
     );
 }
 
+/** Where OpenMarch can sign in, to upload to the mobile app. */
+const SIGN_IN_EDITOR_URL = "https://editor.openmarch.com";
+
+/**
+ * The Mobile tab in a web build that can't sign in: a test or development
+ * build off openmarch.com, where OpenMarch's sign-in doesn't run.
+ */
+function WebMobileUnavailable() {
+    return (
+        <div className="border-stroke bg-fg-1 rounded-6 text-body flex flex-col items-start gap-12 border p-24">
+            <h4 className="text-h4 leading-none">
+                <T keyName="exportCoordinates.webMobileUnavailable.title" />
+            </h4>
+            <p className="text-text-subtitle">
+                <T keyName="exportCoordinates.webMobileUnavailable.description" />
+            </p>
+            <Button
+                variant="secondary"
+                onClick={() =>
+                    window.open(SIGN_IN_EDITOR_URL, "_blank", "noopener")
+                }
+            >
+                <ArrowSquareOutIcon size={16} />{" "}
+                <T keyName="exportCoordinates.webMobileUnavailable.openEditor" />
+            </Button>
+        </div>
+    );
+}
+
 function MobileExportOption({ onClick }: { onClick: () => void }) {
     return (
         <button
@@ -2030,9 +2059,9 @@ function ExportModalContents({
     onMobileExportClick: () => void;
 }) {
     const { exportTab, setExportTab } = useAppDialogStore();
-    // The web build exports video, and uploads to the mobile app where it
-    // can sign in; the rest needs Electron (printToPDF, file streams).
-    if (isWebBuild && !isSignInEnabled) return <VideoExport />;
+    // The web build exports video and uploads to the mobile app; the rest
+    // needs Electron (printToPDF, file streams). Where the build can't sign
+    // in (dev, preview), the Mobile tab says so.
     if (isWebBuild)
         return (
             <Tabs
@@ -2049,7 +2078,11 @@ function ExportModalContents({
                     </TabItem>
                 </TabsList>
                 <TabContent value="mobile">
-                    <MobileExportOption onClick={onMobileExportClick} />
+                    {isSignInEnabled ? (
+                        <MobileExportOption onClick={onMobileExportClick} />
+                    ) : (
+                        <WebMobileUnavailable />
+                    )}
                 </TabContent>
                 <TabContent value="video">
                     <VideoExport />
@@ -2119,11 +2152,7 @@ export default function ExportCoordinatesModal() {
                 {/* Dialog Setup */}
                 <DialogContent className="export-coordinates-dialog touch:max-h-[calc(100dvh-2rem)]! max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
-                        {isWebBuild && !isSignInEnabled ? (
-                            <T keyName="exportCoordinates.exportVideoButton" />
-                        ) : (
-                            <T keyName="exportCoordinates.title" />
-                        )}
+                        <T keyName="exportCoordinates.title" />
                     </DialogTitle>
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}

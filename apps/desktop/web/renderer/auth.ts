@@ -71,8 +71,20 @@ export interface WebAuthOptions {
      * happens here); false stays.
      */
     confirmLeave: () => Promise<boolean>;
+    /** Leaves for the URL without the browser asking again. */
+    leave: (url: string) => void;
+    /**
+     * Sign in in this tab, never a new one: a Home Screen app on iOS keeps
+     * its own cookies and storage, so a sign-in in Safari wouldn't reach it.
+     */
+    sameTabOnly?: boolean;
     /** Loads ClerkJS; replaced in tests. */
     loadClerk?: (publishableKey: string) => Promise<ClerkJs>;
+    /**
+     * Another script on the page (the lab's feedback widget) may load the
+     * same ClerkJS: wait a little for its load before starting one.
+     */
+    sharedLoad?: boolean;
 }
 
 const SIGNED_OUT: AuthState = {
@@ -81,6 +93,18 @@ const SIGNED_OUT: AuthState = {
     user: null,
     error: null,
 };
+
+/** Sign-in couldn't start or load (offline, blocked, the instance said no). */
+function unavailable(error: unknown) {
+    return {
+        code: "AUTH_UNAVAILABLE",
+        message: "Sign-in couldn't load.",
+        details: error instanceof Error ? error.message : error,
+    };
+}
+
+/** How long to wait for a ClerkJS someone else is loading (the lab widget). */
+const SHARED_LOAD_WAIT_MS = 15_000;
 
 /** The Clerk Frontend API host a publishable key names (pk_live_<base64 host$>). */
 export function frontendApiHost(publishableKey: string): string {
@@ -94,8 +118,14 @@ function loadClerkScript(publishableKey: string): Promise<ClerkJs> {
     const host = frontendApiHost(publishableKey);
     const src = `https://${host}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`;
     return new Promise((resolve, reject) => {
-        // Or it's still loading it: wait for that script, don't add another.
+        // Or it's still loading it: wait for that script, don't add another
+        // (and don't wait forever if it already failed).
         const loading = [...document.scripts].find((s) => s.src === src);
+        if (loading)
+            setTimeout(
+                () => reject(new Error("ClerkJS didn't finish loading")),
+                SHARED_LOAD_WAIT_MS,
+            );
         const script = loading ?? document.createElement("script");
         script.addEventListener("load", () =>
             window.Clerk
@@ -113,6 +143,18 @@ function loadClerkScript(publishableKey: string): Promise<ClerkJs> {
         script.crossOrigin = "anonymous";
         script.dataset.clerkPublishableKey = publishableKey;
         document.head.append(script);
+    });
+}
+
+/** Resolves once `done()` is true, or after `ms` either way. */
+function waitFor(done: () => boolean, ms: number): Promise<void> {
+    return new Promise((resolve) => {
+        const start = Date.now();
+        const check = () =>
+            done() || Date.now() - start >= ms
+                ? resolve()
+                : setTimeout(check, 100);
+        check();
     });
 }
 
@@ -156,6 +198,10 @@ export function createWebAuth(options: WebAuthOptions) {
             const instance = await (options.loadClerk ?? loadClerkScript)(
                 publishableKey,
             );
+            // Someone else (the lab widget) may be loading it: let them finish
+            // rather than load it twice at once.
+            if (!instance.loaded && options.sharedLoad)
+                await waitFor(() => instance.loaded, SHARED_LOAD_WAIT_MS);
             if (!instance.loaded)
                 await instance.load({
                     // ClerkJS never navigates the editor away: a reload
@@ -211,7 +257,14 @@ export function createWebAuth(options: WebAuthOptions) {
     window.addEventListener("focus", () => {
         if (!waitingForSignIn) return;
         waitingForSignIn = false;
-        void refresh().catch(() => notify(SIGNED_OUT));
+        // A failed check leaves the state as it was, and ends "Signing in…".
+        void refresh().catch(() =>
+            clerk()
+                .then((instance) => notify(stateOf(instance)))
+                .catch((error) =>
+                    notify({ ...SIGNED_OUT, error: unavailable(error) }),
+                ),
+        );
     });
 
     return {
@@ -219,15 +272,7 @@ export function createWebAuth(options: WebAuthOptions) {
             try {
                 return stateOf(await clerk());
             } catch (error) {
-                return {
-                    ...SIGNED_OUT,
-                    error: {
-                        code: "AUTH_UNAVAILABLE",
-                        message:
-                            "Sign-in couldn't load. Check your connection.",
-                        details: error instanceof Error ? error.message : error,
-                    },
-                };
+                return { ...SIGNED_OUT, error: unavailable(error) };
             }
         },
 
@@ -243,7 +288,9 @@ export function createWebAuth(options: WebAuthOptions) {
         "auth:login": async () => {
             // Open the tab before anything waits, while the click still
             // counts as the user's (Safari blocks pop-ups after that).
-            const tab = window.open("about:blank", "_blank");
+            const tab = options.sameTabOnly
+                ? null
+                : window.open("about:blank", "_blank");
             try {
                 const instance = await clerk();
                 const signInUrl = (redirectUrl: string) =>
@@ -260,8 +307,9 @@ export function createWebAuth(options: WebAuthOptions) {
                     tab.location.href = signInUrl(options.doneUrl);
                     waitingForSignIn = true;
                 } else if (await options.confirmLeave()) {
-                    // Pop-ups blocked: sign in in this tab and come back.
-                    window.location.assign(signInUrl(window.location.href));
+                    // Pop-ups blocked, or a Home Screen app: sign in in this
+                    // tab and come back.
+                    options.leave(signInUrl(window.location.href));
                 } else {
                     // Stayed for the show: ends "Signing in…".
                     notify(stateOf(instance));
@@ -269,25 +317,21 @@ export function createWebAuth(options: WebAuthOptions) {
                 return { success: true };
             } catch (error) {
                 tab?.close();
-                return {
-                    success: false,
-                    error: {
-                        code: "OAUTH_INIT_FAILED",
-                        message:
-                            "Sign-in couldn't load. Check your connection.",
-                        details: error instanceof Error ? error.message : error,
-                    },
-                };
+                return { success: false, error: unavailable(error) };
             }
         },
 
         "auth:logout": async () => {
-            const instance = await clerk();
-            // Ends the Clerk session (every openmarch.com app). The callback
-            // stands in for ClerkJS's navigation to the sign-out page.
-            await instance.signOut(() => {});
-            notify(SIGNED_OUT);
-            return { success: true };
+            try {
+                const instance = await clerk();
+                // Ends the Clerk session (every openmarch.com app). The
+                // callback stands in for ClerkJS's navigation away.
+                await instance.signOut(() => {});
+                notify(SIGNED_OUT);
+                return { success: true };
+            } catch (error) {
+                return { success: false, error: unavailable(error) };
+            }
         },
     };
 }

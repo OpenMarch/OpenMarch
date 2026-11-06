@@ -19,7 +19,8 @@ import {
     isSignInEnabled,
 } from "../../src/global/auth/constants";
 import { handOffShow } from "./handoff";
-import { webExampleShows } from "../../src/utilities/webBuild";
+import { webChannel, webExampleShows } from "../../src/utilities/webBuild";
+import { isStandalone } from "../../src/utilities/homeScreen";
 import { GPU_CRASHED_CHANNEL } from "../../electron/main/gpu";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import { requestOpenSettings } from "../../src/utilities/settingsSheet";
@@ -86,6 +87,15 @@ let reloading = false;
 export function reloadPage() {
     reloading = true;
     window.location.reload();
+}
+
+/**
+ * Leaves for another page after the app already asked (`confirmLeave`), so
+ * the browser doesn't ask again.
+ */
+function leavePage(url: string) {
+    reloading = true;
+    window.location.assign(url);
 }
 
 /** Whether the page is reloading itself, so leaving loses nothing. */
@@ -369,10 +379,12 @@ async function confirmLeave(): Promise<{ go: boolean; force: boolean }> {
 
 /**
  * Sign-in (for Mobile export): Clerk's hosted pages in a new tab, see
- * `./auth.ts`. Builds without a Clerk key (dev, preview) stay signed out.
+ * `./auth.ts`. Builds or sites that can't sign in (dev, preview, a preview
+ * URL off openmarch.com) stay signed out, as does the Settings tab, which
+ * has no Mobile export.
  */
-function registerAuthHandlers() {
-    if (!isSignInEnabled) {
+function registerAuthHandlers(isSettingsTab: boolean) {
+    if (!isSignInEnabled || isSettingsTab) {
         handleInPage("auth:get-state", () => ({
             isAuthenticated: false,
             isLoading: false,
@@ -393,6 +405,10 @@ function registerAuthHandlers() {
         emit,
         doneUrl: doneUrl.href,
         confirmLeave: async () => (await confirmLeave()).go,
+        leave: leavePage,
+        sameTabOnly: isStandalone(),
+        // The lab's feedback widget loads the same ClerkJS.
+        sharedLoad: webChannel === "lab",
     });
     for (const [channel, handler] of Object.entries(handlers))
         handleInPage(channel, handler);
@@ -492,7 +508,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     );
     handleInPage("newShow:getPending", () => false);
     handleInPage("newShow:clearPending", () => undefined);
-    registerAuthHandlers();
+    registerAuthHandlers(isSettingsTab);
 
     if (isSettingsTab) return;
 

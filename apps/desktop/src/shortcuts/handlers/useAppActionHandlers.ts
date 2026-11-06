@@ -4,15 +4,17 @@ import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
 import { EXPORT_ACTION_IDS } from "../definitions";
 import { useActionHandler, useActionHandlerGroup } from "../useActionHandler";
 import { isWebBuild } from "@/utilities/webBuild";
-import { isSignInEnabled } from "@/global/auth/constants";
 
 /**
- * On the web only video export works, and mobile upload where the build can
- * sign in: the others need Electron (printToPDF, file streams).
+ * On the web only video export and mobile upload work: the others need
+ * Electron (printToPDF, file streams). Mobile upload says so in builds that
+ * can't sign in.
  */
-const WEB_EXPORT_ACTION_IDS = isSignInEnabled
-    ? (["openExportDialog", "exportVideo", "exportToMobile"] as const)
-    : (["openExportDialog", "exportVideo"] as const);
+const WEB_EXPORT_ACTION_IDS = [
+    "openExportDialog",
+    "exportVideo",
+    "exportToMobile",
+] as const;
 
 /** App-level commands: exporting and closing the show. */
 export function useAppActionHandlers() {
@@ -21,11 +23,16 @@ export function useAppActionHandlers() {
 
     useActionHandlerGroup(
         isWebBuild ? WEB_EXPORT_ACTION_IDS : EXPORT_ACTION_IDS,
-        (_id, args) => {
-            const tab = args?.tab as ExportTab | undefined;
-            // The web dialog opens on video unless mobile was asked for.
-            openExport(isWebBuild && tab !== "mobile" ? "video" : tab);
-        },
+        (id, args) =>
+            // The web dialog opens on video unless mobile was asked for
+            // (openExportDialog names mobile, the desktop app's first tab).
+            openExport(
+                isWebBuild
+                    ? id === "exportToMobile"
+                        ? "mobile"
+                        : "video"
+                    : (args?.tab as ExportTab | undefined),
+            ),
         { enabled: databaseReady },
     );
     useActionHandler("closeFile", () => void api.closeCurrentFile(), {

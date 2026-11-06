@@ -136,6 +136,8 @@ export interface LoginResult {
  */
 export interface LogoutResult {
     success: boolean;
+    /** Why signing out failed (the web build, if sign-in couldn't load). */
+    error?: AuthError;
 }
 
 /**

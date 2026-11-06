@@ -63,11 +63,31 @@ export const WEB_CLERK_PUBLISHABLE_KEY: string =
     import.meta.env.VITE_PUBLIC_WEB_CLERK_PUBLISHABLE_KEY ?? "";
 
 /**
- * True when sign-in is configured: both Clerk env vars in the desktop app,
- * a publishable key in the web build. Sign-in is disabled when false.
+ * Whether this page is on the site the Clerk instance serves: the domain its
+ * Frontend API host is under (clerk.openmarch.com → openmarch.com). A
+ * production instance turns other sites down, such as the `workers.dev`
+ * preview URLs Cloudflare gives each branch of the nightly build.
+ */
+export function isOnClerkSite(publishableKey: string, hostname: string) {
+    let host: string;
+    try {
+        host = atob(publishableKey.split("_")[2] ?? "").replace(/\$$/, "");
+    } catch {
+        return false;
+    }
+    const site = host.split(".").slice(1).join(".");
+    return site !== "" && (hostname === site || hostname.endsWith(`.${site}`));
+}
+
+/**
+ * True when sign-in is configured: both Clerk env vars in the desktop app;
+ * in the web build, a publishable key and a page on the instance's site.
+ * Sign-in is disabled when false.
  */
 export const isSignInEnabled = isWebBuild
-    ? WEB_CLERK_PUBLISHABLE_KEY !== ""
+    ? WEB_CLERK_PUBLISHABLE_KEY !== "" &&
+      typeof globalThis.location !== "undefined" &&
+      isOnClerkSite(WEB_CLERK_PUBLISHABLE_KEY, globalThis.location.hostname)
     : CLERK_CONFIG !== null;
 
 /**

@@ -150,7 +150,16 @@ export function useAuth() {
     const logoutMutation = useMutation({
         mutationFn: async () => {
             const result = await window.electron.auth.logout();
+            if (!result.success)
+                throw new Error(result.error?.message ?? "Sign out failed");
             return result;
+        },
+        onError: (error) => {
+            setError({
+                code: "LOGOUT_FAILED",
+                message:
+                    error instanceof Error ? error.message : "Sign out failed",
+            });
         },
         onSuccess: () => {
             const newState: AuthState = {

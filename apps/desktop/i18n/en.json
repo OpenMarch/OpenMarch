@@ -420,6 +420,11 @@
         "unsortedSection": "Unsorted",
         "useXYHeaders": "Use X/Y headers",
         "video": "Video",
+        "webMobileUnavailable": {
+            "description": "Uploading to the On the Move app needs your OpenMarch account, and this test build can't sign in. Use the OpenMarch editor at editor.openmarch.com, or the desktop app.",
+            "openEditor": "Open editor.openmarch.com",
+            "title": "Mobile upload isn't available here"
+        },
         "videoAudioTrack": "Audio track: {name}",
         "videoAudioNoData": "Audio file has no data",
         "videoBackground": "Video background",
@@ -1220,8 +1225,14 @@
         },
         "signedOut": {
             "createAccountPrompt": "Don't have an account yet? Create one now!",
+            "errors": {
+                "failed": "Signing in didn't work. Try again.",
+                "sessionExpired": "Your sign-in expired. Sign in again to keep uploading.",
+                "unavailable": "Sign-in couldn't load. Check your internet connection and try again."
+            },
             "setupAccount": "Set up your account",
-            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
+            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!",
+            "signInPromptWeb": "Already have an account? Sign in to start taking it On The Move!"
         },
         "title": "Export to Mobile"
     },
