@@ -52,11 +52,6 @@ const CASES = [
         file: "view3d-web/public/demos/part1-demo.dots",
         seedSql: IMAGE_SQL,
     },
-    {
-        name: "daft-punk",
-        file: "view3d-web/public/demos/lhb-daft-punk-pt2.dots",
-        seedSql: [],
-    },
 ];
 
 for (const c of CASES)

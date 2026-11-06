@@ -78,7 +78,7 @@ and questions) and, optionally, an intro video or GIF. Two front-matter
 fields are the build's, and the lab ignores them:
 
 ```yaml
-show: lhb-daft-punk # the example show it opens: an id in demos.ts (default: part1)
+show: part1 # the example show it opens: an id in demos.ts (default: part1)
 mode: basic # the editor mode: basic or expert (default: expert)
 ```
 

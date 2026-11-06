@@ -18,7 +18,7 @@ type Copy = { c: number; ids: Map<number, number>; dx: number; dy: number };
 
 /**
  * Writes the stress show of #189's parity gate to `dst`: every marcher of a
- * timeline show (the 385-marcher Daft Punk demo) cloned `copies` times, each
+ * timeline show (`LARGE_SHOW`; #189 used a 385-marcher show) cloned `copies` times, each
  * copy a step and a half off the original, with its own slots in every move.
  * 385 × 5 is the 1,925-marcher show the prototype benchmarked
  * (`proto/three-canvas`, `canvas-proto/bench/make-stress-show.mjs`; this is
