@@ -7,6 +7,7 @@ import {
     hasHeldMarksTable,
     isInsideHeldMark,
     readArrival,
+    readBorrowSource,
     readHeldMarkArrivals,
     readHeldMarks,
     HOME_ARRIVAL,
@@ -16,6 +17,7 @@ import {
 } from "./timelineHeldArrival";
 
 import type { HeldConflictSpot } from "./timelineHeldConflict";
+import { readPageGrid } from "./timelinePageGrid";
 
 export {
     heldConflictInTransaction,
@@ -72,6 +74,48 @@ export interface HeldHomeEdit<M extends { marcherId: number }> {
     readonly mark: HeldMark;
 }
 
+/**
+ * A Held marcher's edit inside a **borrowed hold** (fork #474; holds 04-anchors): nothing arrives
+ * at the hold's start, so the edit adds a move over `[from, mark.start)` ending where the marcher
+ * is dragged, and the hold then grows out of that move's diamond (an arrival hold).
+ */
+export interface HeldBorrowedEdit<M extends { marcherId: number }> {
+    readonly move: M;
+    readonly mark: HeldMark;
+    /**
+     * Where the added move starts (`borrowedMoveStart`): the latest of the marcher's last arrival,
+     * the end of an earlier hold of its own and the page flag before the hold's start
+     */
+    readonly from: number;
+}
+
+/**
+ * Where a move added by a drag inside a borrowed hold starting at `start` begins (holds
+ * 04-anchors, consistency review M2): the latest of `lastArrival` (where the marcher's last row
+ * before the hold ends), the end of an earlier mark of its own, and the page flag before `start`,
+ * so it never covers a neighboring hold or another page's move. `null` when that leaves no counts.
+ *
+ * @param flags every page flag (each page's end), any order
+ * @param marks the marcher's marks
+ */
+export function borrowedMoveStart({
+    start,
+    lastArrival,
+    marks,
+    flags,
+}: {
+    start: number;
+    lastArrival: number;
+    marks: readonly Pick<HeldMark, "end">[];
+    flags: readonly number[];
+}): number | null {
+    let from = lastArrival;
+    for (const mark of marks)
+        if (mark.end < start) from = Math.max(from, mark.end);
+    for (const flag of flags) if (flag < start) from = Math.max(from, flag);
+    return from < start ? from : null;
+}
+
 /** A Held marcher an edit inside its hold left alone, with why. */
 export type HeldEditSkip = Pick<MoveMemberSkip, "marcherId" | "reason">;
 
@@ -107,11 +151,15 @@ export async function dropShapeHomeHoldsInTransaction(
  * and the rest.
  *
  * A Held marcher's edit is the edit of the move that arrives at its hold's start (`readArrival`),
- * so setting that move's ending moves the arrival and the whole hold with it. A marcher Held at
- * `beat` with no such move (a borrowed hold, which only #474 makes) stays with the rest. One whose
- * arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
- * alone and named in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436):
- * a later edit, such as a shape placed on the arrival's page, can make it one.
+ * so setting that move's ending moves the arrival and the whole hold with it. One whose arrival is
+ * a shape's move or a follow-the-leader move, which the edit would rewrite, is left alone and named
+ * in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436): a later edit, such
+ * as a shape placed on the arrival's page, can make it one.
+ *
+ * A marcher Held at `beat` in a **borrowed hold** (nothing ends at its start, `readBorrowSource`;
+ * fork #474) goes in `borrowed`: its edit adds a move ending at the hold's start
+ * (`borrowedMoveStart`), and the hold then grows out of it. One whose hold has no room for that
+ * move (a row on a lower layer ends at its start) stays with the rest, as before.
  *
  * A marcher Held from its starting spot (`readArrival`, `HOME_ARRIVAL`) goes in `homes`: its edit
  * sets its starting spot. One whose starting spot a placed shape sets (`marchersWithShapeHome`) is
@@ -126,6 +174,7 @@ export async function splitHeldEditsInTransaction<
 ): Promise<{
     held: HeldArrivalEdit<M>[];
     homes: HeldHomeEdit<M>[];
+    borrowed: HeldBorrowedEdit<M>[];
     skipped: HeldEditSkip[];
     rest: M[];
 }> {
@@ -136,14 +185,39 @@ export async function splitHeldEditsInTransaction<
         )
     ).filter((mark) => isInsideHeldMark(mark, beat));
     if (marks.length === 0)
-        return { held: [], homes: [], skipped: [], rest: [...moves] };
+        return {
+            held: [],
+            homes: [],
+            borrowed: [],
+            skipped: [],
+            rest: [...moves],
+        };
     const markOf = new Map(marks.map((mark) => [mark.marcherId, mark]));
     const arrivals = new Map<number, HeldArrival>();
     const fromHome = new Set<number>();
+    /** Where a borrowed hold's added move starts, by marcher */
+    const borrowFrom = new Map<number, number>();
+    let flags: number[] | undefined;
     for (const mark of marks) {
         const arrival = await readArrival(tx, mark.marcherId, mark.start);
         if (arrival === HOME_ARRIVAL) fromHome.add(mark.marcherId);
         else if (arrival) arrivals.set(mark.marcherId, arrival);
+        else {
+            const source = await readBorrowSource(
+                tx,
+                mark.marcherId,
+                mark.start,
+            );
+            if (!source) continue;
+            flags ??= (await readPageGrid(tx)).pages.map((p) => p.end);
+            const from = borrowedMoveStart({
+                start: mark.start,
+                lastArrival: source.end,
+                marks: await readHeldMarks(tx, [mark.marcherId]),
+                flags,
+            });
+            if (from !== null) borrowFrom.set(mark.marcherId, from);
+        }
     }
     const shapeHome = await marchersWithShapeHome(tx, [...fromHome]);
     const inRecipe = await marcherRecipeTimelines(tx, [
@@ -151,6 +225,7 @@ export async function splitHeldEditsInTransaction<
     ]);
     const held: HeldArrivalEdit<M>[] = [];
     const homes: HeldHomeEdit<M>[] = [];
+    const borrowed: HeldBorrowedEdit<M>[] = [];
     const skipped: HeldEditSkip[] = [];
     const rest: M[] = [];
     for (const move of moves) {
@@ -159,6 +234,11 @@ export async function splitHeldEditsInTransaction<
             if (shapeHome.has(move.marcherId))
                 skipped.push({ marcherId: move.marcherId, reason: "shape" });
             else homes.push({ move, mark });
+            continue;
+        }
+        const from = borrowFrom.get(move.marcherId);
+        if (mark && from !== undefined) {
+            borrowed.push({ move, mark, from });
             continue;
         }
         const arrival = arrivals.get(move.marcherId);
@@ -173,7 +253,7 @@ export async function splitHeldEditsInTransaction<
         if (reason) skipped.push({ marcherId: move.marcherId, reason });
         else held.push({ move, mark, timelineId: arrival.timelineId });
     }
-    return { held, homes, skipped, rest };
+    return { held, homes, borrowed, skipped, rest };
 }
 
 /**

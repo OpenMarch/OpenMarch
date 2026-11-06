@@ -22,7 +22,11 @@ import {
     type HeldArrival,
     type HeldMark,
 } from "./timelineHeldMarks";
-import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
+import {
+    HOME_ARRIVAL,
+    marchersWithShapeHome,
+    readBorrowSource,
+} from "./timelineHeldArrival";
 
 /**
  * **Hold from previous page** on a page box, in timeline mode (holds, fork #472; holds README
@@ -46,10 +50,17 @@ import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
  * - **From the starting spots** (#619): a marcher with no row starting before `start` (Page 1, or
  *   a later page it reaches only by standing on its starting spot) is Held from its starting spot,
  *   and a drag inside the hold moves the starting spot (`readArrival`, `HOME_ARRIVAL`).
+ * - **Borrowed** (fork #474; holds 04-anchors): a marcher that nothing arrives at on `start`, and
+ *   whose last move ended before it (the previous page shows a spot it inherits), is Held too. The
+ *   hold borrows that spot: it holds wherever the marcher already is, and a drag inside it adds a
+ *   move ending at `start` (`splitHeldEditsInTransaction`). Nothing more is stored: which kind a
+ *   hold is follows from the rows. Its source move is checked as an arrival is: a shape's or
+ *   follow-the-leader move is skipped (`arrivalShape`, `arrivalFollowLeader`), since a carried
+ *   shape is the shape's hold (owner, 2026-11-01).
  *
  * Left alone and reported, with why:
- * - `noArrival`: no move of the marcher arrives at `start`, and it isn't on its starting spot there
- *   (`readArrival`; a borrowed hold, #474);
+ * - `noArrival`: a row of the marcher ends at `start` without arriving there (a lower layer's row,
+ *   or its part of a move that runs on), so the hold could neither grow out of it nor borrow;
  * - `homeShape`: it is held from its starting spot, and a placed shape sets that spot
  *   (`marchersWithShapeHome`): a shape gets no Held hold, the shape carried on is its hold (owner,
  *   2026-11-01). Ungroup it at the start of the show (Ungroup on a later page only marks that page) to hold its marchers one by one;
@@ -151,7 +162,10 @@ export async function holdFromPreviousPageInTransaction({
     const arrivals = new Map<number, HeldArrival>();
     const fromHome: number[] = [];
     for (const id of ids) {
-        const arrival = await readArrival(tx, id, pageBox.start);
+        // What the hold grows out of, or else the move whose spot it borrows
+        const arrival =
+            (await readArrival(tx, id, pageBox.start)) ??
+            (await readBorrowSource(tx, id, pageBox.start));
         if (arrival === HOME_ARRIVAL) fromHome.push(id);
         else if (arrival) arrivals.set(id, arrival);
     }

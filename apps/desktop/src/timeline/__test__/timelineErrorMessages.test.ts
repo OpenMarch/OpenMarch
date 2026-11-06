@@ -15,7 +15,6 @@ import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
     HELD_CONFLICT_MESSAGE,
-    HELD_DROPPED_MESSAGE,
     TIMELINE_LEGACY_CONVERSION_MESSAGE,
     TIMELINE_NOT_READY_MESSAGE,
     isLegacyConversionViolation,
@@ -423,7 +422,6 @@ describe("en.json", () => {
             NOT_JOINED_MESSAGE,
             ...Object.values(NOT_JOINED_REASONS),
             HELD_CONFLICT_MESSAGE,
-            HELD_DROPPED_MESSAGE,
         ])
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });

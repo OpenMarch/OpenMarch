@@ -11,7 +11,7 @@ import { pagesText, type PageKeepState } from "./timelineKeepLater";
 import { holdTerms } from "./holdTerms";
 import { holdEntryStates, marcherPageStates } from "./holdMenuState";
 import type { HeldMark } from "@/db-functions/timelineHeldMarks";
-import { toastDroppedHolds, toastTimelineError } from "./timelineErrorMessages";
+import { toastTimelineError } from "./timelineErrorMessages";
 
 /**
  * **Set as shown** as the UI runs it (holds, fork #466): one undo step, and a refusal is a toast,
@@ -33,8 +33,6 @@ export async function setAsShownOn(
             pageBox: box,
             marcherIds,
         });
-        // Holds from the starting spots on later pages the new moves left nothing to grow out of
-        toastDroppedHolds(result.droppedHolds);
         return result;
     } catch (error) {
         toastTimelineError(

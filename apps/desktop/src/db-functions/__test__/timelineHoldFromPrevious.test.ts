@@ -16,7 +16,6 @@ import {
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
 import {
-    heldDroppedMessage,
     timelineErrorCode,
     timelineErrorMessage,
 } from "@/timeline/timelineErrorMessages";
@@ -216,11 +215,10 @@ describeDbTests("Hold from previous page", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        const { a, b, c } = await show(db);
-        // b runs one move over pages 3 and 4; c's move ends mid-page 2, so nothing arrives at
-        // page 2's flag (and it isn't standing on its starting spot either)
+        const { a, b } = await show(db);
+        // b runs one move over pages 3 and 4 (a marcher whose move ends before the flag borrows
+        // its spot: timelineBorrowedHolds.test.ts)
         await move(db, { start: 17, end: 33 }, [{ marcherId: b, xy: FAR }]);
-        await move(db, { start: 9, end: 13 }, [{ marcherId: c, xy: LEFT }]);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
         const rows = await snapshot(db);
         const groups = await undoGroups(db);
@@ -228,14 +226,13 @@ describeDbTests("Hold from previous page", (it) => {
         const result = await holdFromPreviousPage({
             db,
             pageBox: PAGE3,
-            marcherIds: [a, b, c],
+            marcherIds: [a, b],
         });
         expect(result.held).toEqual([]);
         expect(result.skipped).toEqual(
             [
                 { marcherId: a, reason: "held" },
                 { marcherId: b, reason: "crossesFlag" },
-                { marcherId: c, reason: "noArrival" },
             ].sort((x, y) => x.marcherId - y.marcherId),
         );
         // Nobody held: nothing written, and no undo step
@@ -906,7 +903,7 @@ describeDbTests("Held marks at commit", (it) => {
     }) => {
         const { a, b } = await show(db);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
-        // Written straight, outside an edit: an edit drops a mark nothing arrives at (21) first
+        // Written straight, outside an edit, which would refuse it
         const write = (marcherId: number) =>
             db.insert(schema.timeline_held_marks).values({
                 marcher_id: marcherId,
@@ -1803,43 +1800,38 @@ describeDbTests(
 );
 
 describeDbTests(
-    "An edit of an earlier page that leaves a hold from the starting spots nothing to grow out of (#619 review)",
+    "An edit of an earlier page leaves a hold from the starting spots, now borrowed (#619, #474)",
     (it) => {
-        it("a move on Page 1 drops a Page 3 hold from the start, and says whose and where", async ({
+        it("a move on Page 1 keeps a Page 3 hold from the start: it now borrows that move's spot", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
             await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
             const before = await snapshot(db);
-            const result = await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
-            expect(await marksOf(db, c)).toEqual([]);
-            expect(result.droppedHolds).toEqual({
-                names: [await nameOf(db, c)],
-                pages: ["3"],
-            });
-            expect(heldDroppedMessage(result.droppedHolds)).toBe(
-                `${await nameOf(db, c)} is no longer Held on Page 3: it was held from the starting spot, and now a move before it ends somewhere else.`,
-            );
+            await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
+            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect((await atFlags(db, c)).slice(1, 4)).toEqual([
+                LEFT,
+                LEFT,
+                LEFT,
+            ]);
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("a Basic point edit on Page 1 says so too", async ({
+        it("a Basic point edit on Page 1 keeps it too", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
             await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
-            const result = await edit(
-                db,
-                { kind: "point", beat: 9, box: PAGE1 },
-                [{ marcherId: c, xy: LEFT }],
-            );
-            expect(await marksOf(db, c)).toEqual([]);
-            expect(result.droppedHolds?.pages).toEqual(["3"]);
+            await edit(db, { kind: "point", beat: 9, box: PAGE1 }, [
+                { marcherId: c, xy: LEFT },
+            ]);
+            expect(await marksOf(db, c)).toEqual([PAGE3]);
         });
 
-        it("Set as shown on Page 1 drops it and says so", async ({
+        it("Set as shown on Page 1 keeps it", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -1851,39 +1843,17 @@ describeDbTests(
                 marcherIds: [c],
             });
             expect(result.changed).toEqual([c]);
-            expect(await marksOf(db, c)).toEqual([]);
-            expect(result.droppedHolds).toEqual({
-                names: [await nameOf(db, c)],
-                pages: ["3"],
-            });
+            expect(await marksOf(db, c)).toEqual([PAGE3]);
         });
 
-        it("a move that arrives at the hold's start keeps it, and names nothing", async ({
+        it("a move that arrives at the hold's start keeps it, growing out of that move", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
             await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
-            const result = await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
+            await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
             expect(await marksOf(db, c)).toEqual([PAGE2]);
-            expect(result.droppedHolds).toBeUndefined();
-        });
-
-        it("a two-page names list: two marchers' holds on Pages 3 and 4", async ({
-            db,
-            marchersAndPages: _,
-        }) => {
-            const { c } = await show(db);
-            const d = resolver().marcherIds()[3]!;
-            await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
-            await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [d] });
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
-            const result = await move(db, PAGE1, [
-                { marcherId: c, xy: LEFT },
-                { marcherId: d, xy: FAR },
-            ]);
-            expect(result.droppedHolds?.names).toHaveLength(2);
-            expect(result.droppedHolds?.pages).toEqual(["3", "4"]);
         });
     },
 );
@@ -2165,22 +2135,18 @@ describeDbTests(
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("Add to move on Page 1 drops a Page 3 hold from the start, and says so", async ({
+        it("Add to move on Page 1 keeps a Page 3 hold from the start, now borrowed", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
             await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
-            const result = await addMarchersToTimeline({
+            await addMarchersToTimeline({
                 db,
                 range: PAGE1,
                 marcherIds: [c],
             });
-            expect(await marksOf(db, c)).toEqual([]);
-            expect(result.droppedHolds).toEqual({
-                names: [await nameOf(db, c)],
-                pages: ["3"],
-            });
+            expect(await marksOf(db, c)).toEqual([PAGE3]);
         });
     },
 );
