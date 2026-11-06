@@ -169,30 +169,14 @@ export async function splitHeldEditsInTransaction<
     const markOf = new Map(marks.map((mark) => [mark.marcherId, mark]));
     const arrivals = new Map<number, HeldArrival>();
     const fromHome = new Set<number>();
-    /** Where a borrowed hold's added move starts, by marcher */
-    const borrowFrom = new Map<number, number>();
-    let flags: number[] | undefined;
+    const borrowing: HeldMark[] = [];
     for (const mark of marks) {
         const arrival = await readArrival(tx, mark.marcherId, mark.start);
         if (arrival === HOME_ARRIVAL) fromHome.add(mark.marcherId);
         else if (arrival) arrivals.set(mark.marcherId, arrival);
-        else {
-            const source = await readBorrowSource(
-                tx,
-                mark.marcherId,
-                mark.start,
-            );
-            if (!source) continue;
-            flags ??= (await readPageGrid(tx)).pages.map((p) => p.end);
-            const from = borrowedMoveStart({
-                start: mark.start,
-                lastArrival: source.end,
-                marks: await readHeldMarks(tx, [mark.marcherId]),
-                flags,
-            });
-            if (from !== null) borrowFrom.set(mark.marcherId, from);
-        }
+        else borrowing.push(mark);
     }
+    const borrowFrom = await borrowedMoveStarts(tx, borrowing);
     const shapeHome = await marchersWithShapeHome(tx, [...fromHome]);
     const inRecipe = await marcherRecipeTimelines(tx, [
         ...new Set([...arrivals.values()].map((a) => a.timelineId)),
@@ -228,6 +212,32 @@ export async function splitHeldEditsInTransaction<
         else held.push({ move, mark, timelineId: arrival.timelineId });
     }
     return { held, homes, borrowed, skipped, rest };
+}
+
+/**
+ * Where a drag inside each of `marks` (marks nothing arrives at) adds its move
+ * (`borrowedMoveStart`), by marcher: none for a mark that doesn't borrow (`readBorrowSource`), or
+ * has no room for the move.
+ */
+async function borrowedMoveStarts(
+    tx: DbTransaction,
+    marks: readonly HeldMark[],
+): Promise<Map<number, number>> {
+    const out = new Map<number, number>();
+    if (marks.length === 0) return out;
+    const flags = (await readPageGrid(tx)).pages.map((p) => p.end);
+    for (const mark of marks) {
+        const source = await readBorrowSource(tx, mark.marcherId, mark.start);
+        if (!source) continue;
+        const from = borrowedMoveStart({
+            start: mark.start,
+            lastArrival: source.end,
+            marks: await readHeldMarks(tx, [mark.marcherId]),
+            flags,
+        });
+        if (from !== null) out.set(mark.marcherId, from);
+    }
+    return out;
 }
 
 /**
