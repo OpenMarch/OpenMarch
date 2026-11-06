@@ -267,6 +267,11 @@ export async function keepHeldMarksTrueInTransaction(
                     continue;
                 }
                 start = row.end;
+            } else if (row) {
+                // Its arrival row is still there, ending where it did, but no longer arrives (another
+                // row now arrives there too): refuse rather than drop the hold without a word
+                refused.push(mark);
+                continue;
                 // 4. Nothing to grow out of any more, unless the starting spot
             } else if (!mark.fromHome) continue;
         }
