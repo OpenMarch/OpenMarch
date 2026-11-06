@@ -1,4 +1,4 @@
-# 0003: Remove the plugin system
+# 0013: Remove the plugin system
 
 - Status: accepted
 - Date: 2026-10-29
