@@ -84,6 +84,7 @@ import { useTimelinePlayback } from "./useTimelinePlayback";
 import { jumpTimelinePlayback } from "@/timeline/timelineTransport";
 import { useSelectionKeyframes } from "@/timeline/useSelectionKeyframes";
 import { useSelectionHolds } from "@/timeline/useHeldMarks";
+import { useHoldExtentCommands } from "@/timeline/useHoldExtent";
 import { marcherNamesText } from "@/timeline/timelineKeepLater";
 import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
@@ -285,6 +286,11 @@ export default function TimelineModePanel() {
     // #472, #477: the selected marchers' holds, as bars from their arrivals' diamonds to their
     // departures: Held solid, Not defined dashed, lit where a drag or a follow-back would carry
     const holds = useSelectionHolds(selectedIdList);
+    // #475: drag a Held bar's end or start, and Split hold here on its right-click
+    const { holdEdges, splitHold } = useHoldExtentCommands(
+        selectedIdList,
+        !isPlaying,
+    );
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
     // UI-18 keep later pages: the chains on the page boxes (named up to three)
@@ -588,6 +594,8 @@ export default function TimelineModePanel() {
                     keyframes={keyframes}
                     keyframeMenu={keyframeMenu}
                     holds={holds}
+                    holdEdges={holdEdges}
+                    splitHold={splitHold}
                     keepChains={keepChains}
                     setAsShown={setAsShown}
                     holdFromPrevious={holdFromPrevious}

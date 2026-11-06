@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "No se pueden copiar las coordenadas de los integrantes desde la página siguiente. No hay página siguiente",
             "noPreviousPage": "No se pueden copiar las coordenadas de los integrantes desde la página anterior. No hay página anterior",
-            "setAllToNext": "Copiar posiciones de la página siguiente (todos)",
-            "setAllToNextSuccess": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página siguiente, {nextPage}} other {Se igualaron las coordenadas de los # integrantes en la página {currentPage} a las de la página siguiente, {nextPage}}}",
-            "setSelectedToNext": "Copiar posiciones de la página siguiente (selección)",
-            "setSelectedToNextSuccess": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página siguiente, {nextPage}} other {Se igualaron las coordenadas de # integrantes en la página {currentPage} a las de la página siguiente, {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página anterior, {previousPage}} other {Se igualaron las coordenadas de los # integrantes en la página {currentPage} a las de la página anterior, {previousPage}}}",
             "setSelectedToPreviousDone": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página anterior, {previousPage}} other {Se igualaron las coordenadas de # integrantes en la página {currentPage} a las de la página anterior, {previousPage}}}"
         },
@@ -2582,7 +2578,6 @@
             "placeAllMarchers": "Colocar a todos los integrantes",
             "placeSelectedMarchers": "Colocar integrantes seleccionados",
             "snapToggleCaption": "Ajuste",
-            "toNextPagePositions": "...en sus posiciones de la página siguiente",
             "setMarcherPositionsAriaLabel": "Establecer posiciones de integrantes",
             "toPreviousPagePositions": "...a posiciones en la página anterior"
         },

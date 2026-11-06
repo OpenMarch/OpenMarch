@@ -133,17 +133,14 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            [
-                "timelineHoldFromPrevious",
-                "setSelectedMarchersToPreviousPage",
-                "setSelectedMarchersToNextPage",
-            ],
+            ["timelineHoldFromPrevious", "setSelectedMarchersToPreviousPage"],
             [
                 "alignHorizontally",
                 "alignVertically",
                 "evenlyDistributeHorizontally",
                 "evenlyDistributeVertically",
                 "swapMarchers",
+                "setSelectedMarchersToNextPage",
             ],
             ["selectAllMarchers"],
         ]);
@@ -153,6 +150,23 @@ describe("FieldContextMenu", () => {
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (selected)",
         );
+        expect(item("setSelectedMarchersToNextPage")).toHaveTextContent(
+            "Move to next page's spots (selected)",
+        );
+    });
+
+    it("keeps room for a check only in front of the page state commands", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        open();
+        // The check slot is a fixed-width span ahead of the words
+        const hasCheckSlot = (id: ActionId) =>
+            item(id)!.firstElementChild?.classList.contains("w-[14px]") ??
+            false;
+        expect(hasCheckSlot("timelineHoldFromPrevious")).toBe(true);
+        expect(hasCheckSlot("setSelectedMarchersToPreviousPage")).toBe(true);
+        // Move to next page's spots is an edit, with the arranging commands
+        expect(hasCheckSlot("setSelectedMarchersToNextPage")).toBe(false);
+        expect(hasCheckSlot("alignHorizontally")).toBe(false);
     });
 
     it("runs the hold command through the actions layer, and greys it out where it can't run", () => {

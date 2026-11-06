@@ -7,6 +7,7 @@ import type {
 } from "./TimelineKeyframes";
 import type { TimelineClipPeel } from "./TimelineClipPeel";
 import type { SelectionHolds } from "@/timeline/timelineHoldBars";
+import type { TimelineHoldEdges } from "./TimelineHoldEdges";
 import type { ReactNode } from "react";
 import type {
     TimelinePageMenu,
@@ -361,6 +362,8 @@ export interface TimelineCommonProps
     readonly keyframeMenu?: TimelineKeyframeMenu;
     /** #472, #477: the selected marchers' hold bars and departures, view beats */
     readonly holds?: SelectionHolds;
+    /** #475: the draggable ends of their Held bars, view beats; none without */
+    readonly holdEdges?: TimelineHoldEdges;
     /** The chains on the page boxes (UI-18 keep later pages); none without a selection */
     readonly keepChains?: PageKeepChains;
     /**

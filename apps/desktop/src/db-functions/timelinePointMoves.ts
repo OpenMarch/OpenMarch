@@ -43,6 +43,11 @@ import {
  * | the next move's start)                        |                                                 |
  * | Nothing changes for the marcher               | nothing (UI-18)                                 |
  *
+ * A Held hold bounds the hold `[g0, g1)` too (fork #475): one ending in the box before P moves g0
+ * to its end, so the marcher **leaves early**, where its hold now ends (holds decision 6), and one
+ * starting after P moves g1 to its start. (P inside a Held hold edits its arrival instead,
+ * `splitHeldEditsInTransaction`.)
+ *
  * **Drag back:** on a move's end, a position equal to where that move starts removes the point:
  * the move merges with the next move starting at P (`[r.start, next.end)` → next's destination),
  * or, with none (a hold or the flag follows), the move is deleted, as UI-18's "back onto the start
@@ -120,6 +125,8 @@ interface BoxState {
     locked: Set<number>;
     /** Whether a Held mark of the marcher starts at the count */
     heldFrom: (marcherId: number, beat: number) => boolean;
+    /** The marcher's Held marks */
+    marksOf: (marcherId: number) => readonly { start: number; end: number }[];
 }
 
 const refuseBeat = (beat: number, box: Box, strict: boolean) => {
@@ -187,14 +194,12 @@ const readBoxState = async (
                       .all()
               ).map((t) => [t.id, { start: t.start_beat, end: t.end_beat }]),
     );
-    // Where the marchers' Held marks start, which Basic's sweep stops at
-    const heldStarts = new Set(
-        (await hasHeldMarksTable(tx))
-            ? (await readHeldMarks(tx, [...new Set(marcherIds)])).map(
-                  (m) => `${m.marcherId}:${m.start}`,
-              )
-            : [],
-    );
+    // The marchers' Held marks: Basic's sweep stops where one starts, and a point in a hold
+    // starts its move where one ends (leaving early)
+    const marks = (await hasHeldMarksTable(tx))
+        ? await readHeldMarks(tx, [...new Set(marcherIds)])
+        : [];
+    const heldStarts = new Set(marks.map((m) => `${m.marcherId}:${m.start}`));
     // Where the marchers are now, from the rows this edit sees: read once and only when needed,
     // always before the plan writes anything
     let resolver: ReturnType<typeof createResolver> | undefined;
@@ -210,6 +215,7 @@ const readBoxState = async (
         timelineRange,
         locked: new Set(locked),
         heldFrom: (id, beat) => heldStarts.has(`${id}:${beat}`),
+        marksOf: (id) => marks.filter((m) => m.marcherId === id),
     };
 };
 
@@ -292,6 +298,34 @@ const planMerge = async (
     });
 };
 
+/**
+ * The hold `[g0, g1)` a point at `beat` is in: from the last move's end (or the page's start) to
+ * the next move (or flag). A Held hold ending in it ends it there instead, so the move leaves
+ * where the hold ends (leaving early, holds decision 6), and one starting in it stops the stay
+ * where it starts. `layer` is the layer of the move before or after it.
+ */
+const holdAround = (
+    rows: readonly BasicRow[],
+    marks: readonly { start: number; end: number }[],
+    box: Box,
+    beat: number,
+): { g0: number; g1: number; layer: number } => {
+    const before = rows.filter((r) => r.end < beat);
+    const previous = before[before.length - 1];
+    const next = rows.find((r) => r.start >= beat);
+    return {
+        g0: Math.max(
+            previous?.end ?? box.start,
+            ...marks.filter((m) => m.end < beat).map((m) => m.end),
+        ),
+        g1: Math.min(
+            next?.start ?? box.end,
+            ...marks.filter((m) => m.start >= beat).map((m) => m.start),
+        ),
+        layer: previous?.layer ?? next?.layer ?? 0,
+    };
+};
+
 /** Plans one marcher's position at `beat` (see the module comment). */
 const planPoint = async (
     plan: PointPlan,
@@ -359,13 +393,12 @@ const planPoint = async (
         return;
     }
 
-    // A hold [g0, g1): from the last move's end (or the page's start) to the next move (or flag)
-    const before = rows.filter((r) => r.end < beat);
-    const previous = before[before.length - 1];
-    const next = rows.find((r) => r.start >= beat);
-    const g0 = previous?.end ?? box.start;
-    const g1 = next?.start ?? box.end;
-    const layer = previous?.layer ?? next?.layer ?? 0;
+    const { g0, g1, layer } = holdAround(
+        rows,
+        state.marksOf(marcherId),
+        box,
+        beat,
+    );
     plan.added.push({ marcherId, start: g0, end: beat, point, layer });
     if (beat < g1)
         plan.added.push({
