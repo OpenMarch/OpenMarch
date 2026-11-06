@@ -91,7 +91,6 @@ function registerHandlers() {
     ipcMain.handle("newShow:getDraftPath", () => null);
     ipcMain.handle("conversion:getPending", () => null);
     ipcMain.handle("load-file:takeRefusal", () => null);
-    ipcMain.handle("plugins:list", () => []);
     // A headless browser has no GPU process of the app's to crash
     ipcMain.handle(GPU_CRASHED_CHANNEL, () => false);
     ipcMain.handle("auth:get-state", () => ({
