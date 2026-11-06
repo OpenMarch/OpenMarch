@@ -3,7 +3,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import Page from "@/global/classes/Page";
 import Beat from "@/global/classes/Beat";
-import { ElectronApi } from "electron/preload";
+import type { ElectronApi } from "electron/preload";
 
 // Mock the hooks
 vi.mock("@/stores/UiSettingsStore");

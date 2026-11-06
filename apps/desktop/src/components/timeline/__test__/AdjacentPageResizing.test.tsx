@@ -13,7 +13,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
-import { ElectronApi } from "electron/preload";
+import type { ElectronApi } from "electron/preload";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
 import PageTimeline from "../TimelineContainer";

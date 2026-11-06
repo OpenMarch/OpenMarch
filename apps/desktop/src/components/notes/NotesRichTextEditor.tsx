@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import HardBreak from "@tiptap/extension-hard-break";
+import { HardBreak } from "@tiptap/extension-hard-break";
 import clsx from "clsx";
 import "./NotesRichTextEditor.css";
 
@@ -49,6 +49,13 @@ export function NotesRichTextEditor({
                 blockquote: false,
                 // We handle Enter as a hard break ourselves to avoid extra paragraph spacing.
                 hardBreak: false,
+                // StarterKit 3 adds these; notes never had them. Link and underline
+                // would add marks to stored HTML, and trailingNode would append an
+                // empty paragraph after a final heading or list on load.
+                link: false,
+                underline: false,
+                listKeymap: false,
+                trailingNode: false,
             }),
             HardBreak.extend({
                 addKeyboardShortcuts() {
@@ -99,7 +106,7 @@ export function NotesRichTextEditor({
         const current = editor.getHTML();
         if (value !== current) {
             // Use setContent with emitUpdate = false to avoid cascading updates.
-            editor.commands.setContent(value || "", false);
+            editor.commands.setContent(value || "", { emitUpdate: false });
         }
     }, [editor, value]);
 

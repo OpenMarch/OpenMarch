@@ -3,7 +3,7 @@ import {
     useSelectedPage,
     SelectedPageProvider,
 } from "@/context/SelectedPageContext";
-import { ElectronApi } from "electron/preload";
+import type { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 

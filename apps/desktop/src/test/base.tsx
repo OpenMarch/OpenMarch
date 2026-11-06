@@ -1,4 +1,4 @@
-import { it as baseTest, describe, TestAPI, vi } from "vitest";
+import { it as baseTest, describe, TestAPI } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
 import { DatabaseSync, type StatementResultingChanges } from "node:sqlite";
@@ -17,7 +17,6 @@ import {
     handleSqlProxyWithDbBetterSqlite,
     handleSqlProxyWithDbSqlJs,
 } from "./sqlProxyTestUtil";
-import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { JSX } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
@@ -311,25 +310,6 @@ function setUpGlobalMocks<T>(
             writable: true,
         });
     }
-    vi.mock("@global/database/db", () => ({
-        db: drizzleSqliteProxy(
-            async (
-                sql: string,
-                params: any[],
-                method: "all" | "run" | "get" | "values",
-            ) => {
-                try {
-                    const result = await queuedSqlProxy(sql, params, method);
-                    return result;
-                } catch (error: any) {
-                    console.error("Error from SQLite proxy:", error);
-                    throw error;
-                }
-            },
-            { schema, casing: "snake_case" },
-        ),
-        schema,
-    }));
 }
 
 const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({

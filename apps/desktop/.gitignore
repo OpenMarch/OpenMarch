@@ -5,3 +5,9 @@ playwright-report/
 test-results/*
 
 e2e/_temp/
+
+# tsc output of vite.config.mts (tsconfig.node.json emits under node_modules/.tmp). A copy next
+# to it would shadow vite.config.mts, since Vite loads .mjs first.
+vite.config.mjs
+vite.config.d.mts
+tsconfig.node.tsbuildinfo

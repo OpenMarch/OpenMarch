@@ -35,8 +35,7 @@ export default class MarcherVisualGroup {
     }: {
         marcher: Marcher;
         appearances?:
-            | AppearanceComponentOptional
-            | AppearanceComponentOptional[];
+            AppearanceComponentOptional | AppearanceComponentOptional[];
     }) {
         this.marcherId = marcher.id;
 

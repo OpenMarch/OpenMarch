@@ -233,11 +233,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private boundHandleAdvancedWheel: ((event: WheelEvent) => void) | null =
         null;
     private boundHandleAdvancedMouseDown:
-        | ((event: PointerEvent) => void)
-        | null = null;
+        ((event: PointerEvent) => void) | null = null;
     private boundHandleAdvancedMouseMove:
-        | ((event: PointerEvent) => void)
-        | null = null;
+        ((event: PointerEvent) => void) | null = null;
     private boundHandleAdvancedMouseUp: ((event: PointerEvent) => void) | null =
         null;
     private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
@@ -547,13 +545,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         clearTimeout(this._zoomTimeout);
         this._zoomTimeout = setTimeout(() => {
             this.getObjects().forEach((obj) => {
-                if (
-                    !(
-                        obj instanceof fabric.Text ||
-                        obj instanceof fabric.IText ||
-                        obj instanceof fabric.Textbox
-                    )
-                ) {
+                if (!(
+                    obj instanceof fabric.Text ||
+                    obj instanceof fabric.IText ||
+                    obj instanceof fabric.Textbox
+                )) {
                     obj.objectCaching = false;
                 }
             });

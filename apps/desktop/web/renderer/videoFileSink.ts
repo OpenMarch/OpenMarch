@@ -112,8 +112,7 @@ export type VideoFileRequest =
     | { id: number; op: "sweep"; olderThanMs: number; keep: string[] };
 
 export type VideoFileResponse =
-    | { id: number; ok: true }
-    | { id: number; ok: false; error: string };
+    { id: number; ok: true } | { id: number; ok: false; error: string };
 
 /** The OPFS folder that holds exports until they're saved. */
 export const VIDEO_FOLDER = "openmarch-video-export";

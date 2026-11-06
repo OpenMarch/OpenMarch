@@ -38,7 +38,7 @@
         "typescript": "catalog:"
     },
     "devDependencies": {
-        "vitest": "^3.2.3",
-        "tsup": "^8.5.0"
+        "tsup": "^9.0.0",
+        "vitest": "^5.0.5"
     }
 }

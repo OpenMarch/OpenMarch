@@ -110,13 +110,15 @@ test("Create tags on marchers", async ({ electronApp }) => {
     await page.getByRole("textbox", { name: "Rename tag" }).press("Enter");
     await expect(page.getByText("even cooler tag")).toBeVisible();
     await expect(page.getByText("cool tag")).not.toBeVisible();
+    // Inset from the corner: since Electron 43 the canvas sits at a
+    // fractional offset, so its (0, 0) pixel hit-tests as the parent.
     await page
         .locator("canvas")
         .nth(1)
         .click({
             position: {
-                x: 0,
-                y: 0,
+                x: 5,
+                y: 5,
             },
         });
     await page.locator("body").press("ControlOrMeta+a");

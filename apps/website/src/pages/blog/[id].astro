@@ -122,9 +122,7 @@ const { Content } = isContent
                 <LexicalContent
                     data={
                         (payloadPost as PayloadPost).content as
-                            | SerializedEditorState
-                            | null
-                            | undefined
+                            SerializedEditorState | null | undefined
                     }
                 />
             ) : null

@@ -479,6 +479,10 @@ export default function AudioPlayer() {
             interact: false,
             hideScrollbar: true,
             autoScroll: false,
+            // Display only; the audio plays through Web Audio in this file. With a
+            // media element, wavesurfer 8 defers seeks until it can play and can
+            // drop the seek back to the paused position after the per-frame seeks.
+            backend: "WebAudio",
         });
 
         const seekToPausedPosition = () => {

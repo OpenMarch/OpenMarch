@@ -143,8 +143,7 @@ export function connect() {
     }
     try {
         const sqlite = process.getBuiltinModule?.("node:sqlite") as
-            | typeof import("node:sqlite")
-            | undefined;
+            typeof import("node:sqlite") | undefined;
         if (!sqlite?.DatabaseSync) {
             throw new Error("node:sqlite module is unavailable");
         }
@@ -207,8 +206,7 @@ export async function handleSqlProxyWithDb(
                 // Drizzle's mapResultRow expects all results to be arrays
                 statement.setReturnArrays(true);
                 const rawValues = statement.get(...normalizedParams) as
-                    | any[]
-                    | undefined;
+                    any[] | undefined;
                 // Return the raw array directly - Drizzle's mapResultRow expects an array
                 rows = rawValues;
 
