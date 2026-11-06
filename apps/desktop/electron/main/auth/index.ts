@@ -231,12 +231,14 @@ export function initAuthAfterReady(
         // shows as signed out rather than failing on the first upload. A
         // slow network doesn't hold the answer up: a later rejection still
         // reaches the renderer as a state change.
+        let timer: NodeJS.Timeout | undefined;
         await Promise.race([
             getValidAccessToken(),
-            new Promise((resolve) =>
-                setTimeout(resolve, STATE_REFRESH_WAIT_MS),
-            ),
+            new Promise((resolve) => {
+                timer = setTimeout(resolve, STATE_REFRESH_WAIT_MS);
+            }),
         ]);
+        clearTimeout(timer);
         return getAuthState();
     });
 

@@ -143,8 +143,9 @@ describe("token manager", () => {
         const fresh = tokensExpiringAt(Date.now() + HOUR, "new");
         tm.beginSession(fresh);
         rejectRefresh(new TokenRefreshRejectedError(400));
-        await pending;
 
+        // The caller gets the new session's token, not the old one's.
+        expect(await pending).toBe(fresh.idToken);
         expect(tm.getStoredTokens()?.refreshToken).toBe("refresh-new");
     });
 

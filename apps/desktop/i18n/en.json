@@ -1218,6 +1218,11 @@
             "noProduction": "No production found",
             "title": "Mobile app settings"
         },
+        "signInRejected": {
+            "description": "OpenMarch's online service didn't accept your sign-in. Sign out, then sign in again.",
+            "signOut": "Sign out",
+            "title": "Your sign-in wasn't accepted"
+        },
         "signedOut": {
             "createAccountPrompt": "Don't have an account yet? Create one now!",
             "setupAccount": "Set up your account",

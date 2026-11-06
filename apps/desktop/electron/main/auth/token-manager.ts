@@ -286,10 +286,12 @@ export async function getValidAccessToken(): Promise<string | null> {
     const newTokens = await refreshTokens(tokens);
     if (newTokens) return newTokens.idToken;
 
-    // The refresh failed. A token that hasn't expired yet still works, as
-    // long as the session wasn't ended by the failed refresh.
-    if (getStoredTokens() && Date.now() < effectiveExpiry) {
-        return tokens.idToken;
+    // The refresh failed. The stored token (a new sign-in's, if one
+    // happened meanwhile) still works if it hasn't expired; none is left if
+    // the failed refresh ended the session.
+    const current = getStoredTokens();
+    if (current && Date.now() < getEffectiveTokenExpiry(current)) {
+        return current.idToken;
     }
     return null;
 }

@@ -36,8 +36,9 @@ type AlertState = {
     /**
      * "no-access": the server said this account can't see the production.
      * "unreachable": no answer, or no sign-in token right now (offline).
+     * "sign-in-rejected": the server turned down the sign-in token it got.
      */
-    type: "no-access" | "unreachable" | null;
+    type: "no-access" | "unreachable" | "sign-in-rejected" | null;
 };
 
 /**
@@ -68,12 +69,16 @@ function useMobileExportValidation(): AlertState {
             // Only the server turning the account down is "no access";
             // anything else (offline, sign-in not refreshed) is worth a retry
             // rather than detaching the show.
+            // A 401 came back for a token that was sent (no token, no
+            // request): signing in again is the way out, not a retry.
             const status = editorApiStatus(currentProductionError);
             output = {
                 type:
                     !hasError || status === 403 || status === 404
                         ? "no-access"
-                        : "unreachable",
+                        : status === 401
+                          ? "sign-in-rejected"
+                          : "unreachable",
             };
         }
 
@@ -229,6 +234,8 @@ export function MobileExportModalContents() {
                         <MobileExportAccessError />
                     ) : validationState.type === "unreachable" ? (
                         <MobileExportUnreachable />
+                    ) : validationState.type === "sign-in-rejected" ? (
+                        <MobileExportSignInRejected />
                     ) : isAuthLoading ? (
                         <MobileExportLoading
                             message={t("mobileExport.loading.checkingSignIn")}
@@ -311,6 +318,38 @@ function MobileExportUnreachable() {
                     onClick={() => void refetch()}
                 >
                     <T keyName="mobileExport.unreachable.retry" />
+                </Button>
+                <Button variant="secondary" onClick={toggleOpen}>
+                    <T keyName="mobileExport.close" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+/** The server didn't accept the sign-in: sign out, then sign in again. */
+function MobileExportSignInRejected() {
+    const { toggleOpen } = useSidebarModalStore();
+    const { logout, isLoggingOut } = useAuth();
+
+    return (
+        <div className="flex h-full flex-col justify-center gap-16 text-center">
+            <div className="flex flex-col items-center gap-8">
+                <WarningCircleIcon size={40} />
+                <h4 className="text-h4 leading-none">
+                    <T keyName="mobileExport.signInRejected.title" />
+                </h4>
+            </div>
+            <p className="text-body text-text-subtitle">
+                <T keyName="mobileExport.signInRejected.description" />
+            </p>
+            <div className="flex justify-center gap-8 align-middle">
+                <Button
+                    variant="primary"
+                    disabled={isLoggingOut}
+                    onClick={logout}
+                >
+                    <T keyName="mobileExport.signInRejected.signOut" />
                 </Button>
                 <Button variant="secondary" onClick={toggleOpen}>
                     <T keyName="mobileExport.close" />
