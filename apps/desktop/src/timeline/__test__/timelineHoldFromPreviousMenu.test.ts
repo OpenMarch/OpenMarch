@@ -101,7 +101,7 @@ describe("holdFromPreviousMessage", () => {
         ).toEqual({
             title: "T1 and T2 Held on Page 3",
             description:
-                "Not held: T3: no move ends where Page 3 starts; T4: in a shape on this page",
+                "Not held: T3: a move ends where Page 3 starts without arriving there; T4: in a shape on this page",
         });
     });
 

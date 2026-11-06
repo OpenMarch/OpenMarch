@@ -2218,11 +2218,11 @@
             "count": "{count, plural, one {# marcher} other {# marchers}}",
             "crossesFlag": "{names}: a move runs across one of the page's flags",
             "done": "{names} {held} on {page}",
+            "endsWithoutArriving": "{names}: a move ends where {page} starts without arriving there",
             "expertMoves": "{names}: Expert moves on this page",
             "followLeader": "{names}: follows the leader on this page",
             "held": "{names}: already {held} here",
             "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
-            "noArrival": "{names}: no move ends where {page} starts",
             "none": "Nobody {held} on {page}",
             "notHeldReasons": "Not {heldLower}: {reasons}",
             "shape": "{names}: in a shape on this page"
