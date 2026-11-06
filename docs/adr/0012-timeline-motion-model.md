@@ -546,7 +546,8 @@ holds to the resolver (spec R-6), so the mark is app data:
 - **Make all selected Held** (review R1, fork #476) gives each selected marcher standing still at
   the playhead without a hold one like the Held one's there. The Held one is the selected hold
   over the playhead that starts latest (ties: the lowest marcher id; `heldOneAt`), so the new
-  holds cover only counts where every selected Held marcher is holding. The new hold's end is the
+  holds start no earlier than any selected Held marcher's hold; they end where the Held one's
+  ends, which may be after another selected hold's end. The new hold's end is the
   earlier of that hold's end and the marcher's next move, and its start is the marcher's own last
   arrival (from the starting spot: the Held one's start). A marcher whose own last arrival is
   earlier than the Held one's start is left alone and named (`noArrival`), until borrowed holds

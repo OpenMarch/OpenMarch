@@ -28,8 +28,9 @@ export const windowWinsOverHold = (
  * **The Held one** of Make all selected Held (review R1): of `marks` over the count `beat`
  * (`start < beat <= end`), the one starting latest, the lowest marcher id's on a tie; undefined
  * when none is over `beat`. Every Held marcher among them already holds from its own start to
- * `beat`, so holds made like the latest-starting one cover only counts where all of them are
- * holding, whatever order the marchers were selected or stored in.
+ * `beat`, so holds made like the latest-starting one start no earlier than any of their starts,
+ * whatever order the marchers were selected or stored in. They end where that one ends, which may
+ * be after another's end.
  */
 export function heldOneAt<M extends Mark>(
     marks: readonly M[],

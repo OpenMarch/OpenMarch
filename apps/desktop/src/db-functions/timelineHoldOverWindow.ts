@@ -40,7 +40,9 @@ import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
  *   (the holds commands' rule, owner 2026-10-30, until #434 / #504);
  * - `arrivalShape`, `arrivalFollowLeader`, `homeShape`: the hold would grow out of a shape's move,
  *   a follow-the-leader move or a shape's starting spot, which a drag inside it would rewrite (as
- *   Hold from previous page skips it);
+ *   Hold from previous page skips it). That includes a move on a higher layer ending at `S` above
+ *   a move crossing `S`: after the cut it is the arrival (`arrivalRowSql`), so it is checked
+ *   before anything is cut;
  * - `noArrival`: nothing arrives at `S` (it stands still there since an earlier move, or a move
  *   cut short by a higher layer). A hold starting at `S` then is a borrowed hold (04-anchors),
  *   which only #474 stores. Starting it at the earlier arrival instead would make a hold reaching
@@ -110,7 +112,9 @@ export async function holdOverWindow({
 /**
  * What a marcher's hold over a window would grow out of at the window's start: the first part of
  * a hold of its own it joins, the first part of a move crossing it (the cut arrives there), its
- * starting spot, or the move arriving there (`null` when nothing does).
+ * starting spot, or the move arriving there (`null` when nothing does). Where a row on a layer at
+ * or above a crossing move's already ends at the start, that row is the arrival after the cut, so
+ * it is read as one (and a follow-the-leader or shape move skips the marcher, as without the cut).
  */
 type PlannedStart =
     | { from: "joined" }
@@ -131,8 +135,23 @@ async function plannedStart(
 ): Promise<PlannedStart> {
     if (own.some((m) => m.start < windowStart && windowStart <= m.end))
         return { from: "joined" };
-    if (rows.some((r) => r.start < windowStart && windowStart < r.end))
-        return { from: "cut" };
+    const crossing = rows.filter(
+        (r) => r.start < windowStart && windowStart < r.end,
+    );
+    if (crossing.length > 0) {
+        // After the cut its first part ends at the flag, but the arrival is the highest-layer row
+        // ending there (`arrivalRowSql`): a row on a layer above the cut's that already ends at
+        // the flag wins, and the hold would grow out of it. Read that one now, before any cut,
+        // since the takeout can't be undone for one marcher.
+        const cutLayer = Math.max(...crossing.map((r) => r.layer));
+        if (!rows.some((r) => r.end === windowStart && r.layer >= cutLayer))
+            return { from: "cut" };
+        const arrival = await readArrival(tx, marcherId, windowStart);
+        return {
+            from: "row",
+            arrival: arrival === HOME_ARRIVAL ? null : arrival,
+        };
+    }
     if (!rows.some((r) => r.start < windowStart)) return { from: "home" };
     const arrival = await readArrival(tx, marcherId, windowStart);
     return {

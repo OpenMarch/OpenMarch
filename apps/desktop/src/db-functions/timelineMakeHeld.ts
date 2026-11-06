@@ -25,8 +25,9 @@ import {
  * mixed drag never does this by itself (R1: each marcher by its own kind, no toast).
  *
  * - **The Held one** (`heldOneAt`) is the selected marchers' hold over `beat` that starts latest
- *   (ties: the lowest marcher id), so the others' new holds cover only counts where every Held one
- *   is holding, whatever order the marchers were selected or stored in.
+ *   (ties: the lowest marcher id), so the others' new holds start no earlier than any selected
+ *   Held one's start, whatever order the marchers were selected or stored in. They end where that
+ *   one ends (or earlier), which may be after another Held one's end.
  * - A marcher on its starting spot until `beat` is Held from the Held one's start (#619).
  * - A marcher whose own last arrival is **earlier** than the Held one's start is left alone
  *   (`noArrival`): a hold starting where nothing arrives is a borrowed hold (04-anchors), which

@@ -491,6 +491,30 @@ describeDbTests("Hold over the window (R8)", (it) => {
         expect(await marksOf(db, c)).toEqual([]);
         expect(await marksOf(db, a)).toEqual([PAGE3]);
     });
+
+    it("a move crossing the start flag under a higher-layer follow-the-leader move ending there: the hold would grow out of that one, so the marcher is left alone before any cut", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        // c walks page 3 to FAR (layer 0) and follows the leader over [17, 21] on layer 1
+        await move(db, PAGE3, [{ marcherId: c, xy: FAR }]);
+        await followTheLeader(db, c, { start: 17, end: 21 });
+        await timelineResolverSettled();
+        const before = await snapshot(db);
+        const result = await holdOverWindow({
+            db,
+            window: { start: 21, end: 29 },
+            marcherIds: [c],
+        });
+        // As without the crossing move: after its cut the follow-the-leader move would be the
+        // arrival, which a drag inside the hold would rewrite
+        expect(result).toEqual({
+            held: [],
+            skipped: [{ marcherId: c, reason: "arrivalFollowLeader" }],
+        });
+        expect(await snapshot(db)).toEqual(before);
+    });
 });
 
 describeDbTests("Make all selected Held (R1, B2)", (it) => {
