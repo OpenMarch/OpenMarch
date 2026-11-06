@@ -5,7 +5,7 @@
  * native open dialogs, downloads in place of "Save As", and links.
  *
  * Electron features with no web equivalent answer the way the app expects
- * when they are unavailable (no recent files, no plugins, signed out), and
+ * when they are unavailable (no recent files, signed out), and
  * window controls do nothing. Everything else goes to the worker.
  */
 import { WEB_CHANNELS, type FlushResult } from "../protocol";
@@ -454,7 +454,6 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     handleInPage("recent-files:open", (path: string) =>
         isSettingsTab ? 404 : openExampleShow(path),
     );
-    handleInPage("plugins:list", () => []);
     handleInPage("newShow:getPending", () => false);
     handleInPage("newShow:clearPending", () => undefined);
     handleInPage("auth:get-state", () => ({

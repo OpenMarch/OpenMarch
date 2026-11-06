@@ -9,14 +9,7 @@ import StateInitializer from "@/components/singletons/StateInitializer";
 import { View3dPublisher } from "@/view3d/sync/useView3dPublisher";
 import TimelineResolverHost from "@/timeline/TimelineResolverHost";
 import LaunchPage from "@/components/launchpage/LaunchPage";
-import {
-    lazy,
-    Suspense,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import CommandPalette from "@/shortcuts/palette/CommandPalette";
 import LongPressGuard from "@/components/ui/LongPressGuard";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
@@ -37,7 +30,6 @@ import { useSnapOnWhenFileOpens } from "./hooks/useSnapOnWhenFileOpens";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import FieldDisplayBar from "@/components/canvas/display/FieldDisplayBar";
 import View3dButton from "@/components/toolbar/View3dButton";
-import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
@@ -124,7 +116,6 @@ function App() {
             analytics: analyticsQuestion,
         });
     const fetchUiSettings = useUiSettingsStore((s) => s.fetchUiSettings);
-    const pluginsLoadedRef = useRef(false);
     // Preview watches the show: no toolbar, sidebar or inspector
     const preview = useIsPreviewMode();
     const isTouchMode = useIsTouchMode();
@@ -161,55 +152,6 @@ function App() {
         // eslint-disable-next-line no-console
         console.log("🎭 React app running in Playwright Codegen mode");
     }
-
-    useEffect(() => {
-        if (pluginsLoadedRef.current) return;
-        // Only load plugins after database is ready and canvas is available
-        if (!databaseIsReady) return;
-        pluginsLoadedRef.current = true;
-        console.debug("Loading plugins...");
-        void window.plugins
-            ?.list()
-            .then(async (pluginPaths: string[]) => {
-                for (const path of pluginPaths) {
-                    const pluginName =
-                        path.split(/[/\\]/).pop() || "Unknown Plugin";
-                    console.debug(`Loading plugin: ${pluginName}`);
-                    try {
-                        const code = await window.plugins.get(path);
-
-                        let metadata = Plugin.getMetadata(code);
-
-                        if (!metadata) {
-                            throw new Error(
-                                `Plugin ${pluginName} is missing metadata.`,
-                            );
-                        }
-
-                        new Plugin(
-                            metadata.name,
-                            metadata.version,
-                            metadata.description,
-                            metadata.author,
-                            pluginName,
-                        );
-
-                        const script = document.createElement("script");
-                        script.type = "text/javascript";
-                        script.text = code;
-                        document.body.appendChild(script);
-                    } catch (error) {
-                        console.error(
-                            `Failed to load plugin ${pluginName}:`,
-                            error,
-                        );
-                    }
-                }
-            })
-            .then(() => {
-                console.debug("All plugins loaded.");
-            });
-    }, [databaseIsReady]);
 
     useEffect(() => {
         // Check if database is ready

@@ -69,7 +69,7 @@ registered" error, so a test that wanders into these fails loudly:
 - PDF export (the host's drill chart handlers only save each chart's SVG
   pages for `render/export-compare.spec.mts`; no PDF is made, so a scenario
   about the PDF itself belongs in Electron), audio import
-- sign-in, plugins, updates
+- sign-in, updates
 
 Those stay in `e2e/tests/`, which runs the packaged app.
 
