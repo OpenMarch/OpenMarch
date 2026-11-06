@@ -764,9 +764,11 @@
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "timeline": {
+                "goToBorrowedPage": "Go to Page {page}, whose spot this hold keeps",
                 "goToHeldPage": "Go to Page {page}, where this hold starts",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
+                "heldBorrowed": "{held} · Page {page}'s spot",
                 "heldFromStart": "{held} · since the start",
                 "heldSince": "{held} · since Page {page}",
                 "holdFrom": "Last moved on Page {page}",
@@ -2186,6 +2188,8 @@
             "unknown": "The timeline couldn't make that change."
         },
         "heldBar": {
+            "borrowed": "Standing at Page {page}'s spot",
+            "borrowedChip": "{held} · Page {page}'s spot",
             "detail": "{held} of {total} selected",
             "shape": "Its shape carries on here",
             "title": "{held} · Page {page}",

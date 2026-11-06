@@ -22,8 +22,9 @@ import type { CarrySpan } from "./timelineCarryForward";
  * (`marcherDecided`) and looked up per count (`isDecidedAt`, `notDefinedAt`), as the Set beats
  * are (`timelineSetFollowing.ts`).
  *
- * Seam for borrowed holds (#474): a borrowed hold is decided as a Held one is. When #474 stores
- * them, pass them in with the marks; naming a borrowed hold's source on hover belongs to #474.
+ * A **borrowed hold** (fork #474) is a Held mark like any other, so it is decided the same way;
+ * what it grows out of, or borrows, is `heldMarkSource`, the one rule the timeline's bars and the
+ * inspector name it by.
  */
 
 /** A stretch of counts `(start, end]` where a marcher is decided. */
@@ -128,3 +129,39 @@ export function notDefinedAt(
 }
 
 const NOBODY: ReadonlySet<number> = new Set();
+
+/**
+ * What a Held mark grows out of (holds 04-anchors; fork #474), from the marcher's resolver spans,
+ * as the database's arrival rule reads it from the rows (`arrivalRowSql`, `homeArrivalSql`,
+ * `readBorrowSource`):
+ *
+ * - `arrival`: a move of the marcher ends at the mark's start, its keyframe diamond;
+ * - `home`: no move of the marcher before the mark, so it grows out of the starting spot (#619);
+ * - `borrowed`: neither. It holds wherever the marcher already is, which is where its last move
+ *   before the mark ends (`from`), so it names that spot ("Held · Page 2's spot"). A drag inside
+ *   it adds a move ending at its start.
+ */
+export type HeldMarkSource =
+    | { readonly kind: "arrival" }
+    | { readonly kind: "home" }
+    | { readonly kind: "borrowed"; readonly from: number };
+
+/**
+ * What `mark` grows out of, or borrows (`HeldMarkSource`).
+ *
+ * @param spans the marcher's resolver spans (`resolverSpans`)
+ */
+export function heldMarkSource(
+    spans: readonly CarrySpan[],
+    mark: Pick<DecidedMark, "start">,
+): HeldMarkSource {
+    let from = -Infinity;
+    for (const s of spans) {
+        if (s.kind === "hold" || !Number.isFinite(s.end)) continue;
+        if (s.end === mark.start) return { kind: "arrival" };
+        if (s.end < mark.start && s.end > from) from = s.end;
+    }
+    return Number.isFinite(from)
+        ? { kind: "borrowed", from }
+        : { kind: "home" };
+}

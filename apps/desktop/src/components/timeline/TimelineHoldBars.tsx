@@ -1,6 +1,15 @@
-import { memo, useLayoutEffect, useMemo, useRef } from "react";
+import {
+    memo,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
+import { useIsBasicMode } from "@/stores/EditorModeStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { holdTerms } from "@/timeline/holdTerms";
 import {
     notDefinedOver,
@@ -36,6 +45,15 @@ const GAP = 3;
 /** A departure tick (px) */
 const TICK_WIDTH = 2;
 const TICK_HEIGHT = 8;
+/**
+ * A borrowed hold's hatching (px): thin stripes over a lighter fill of the same color, so at rest
+ * it reads as a lighter line, and lit, as a hatched one
+ */
+const HATCH = `repeating-linear-gradient(-45deg, currentColor 0 1.5px, transparent 1.5px 4px), color-mix(in srgb, currentColor 40%, transparent)`;
+/** How far above the bars a borrowed hold's chip and its line back to the source sit (px) */
+const SOURCE_LIFT = 4;
+/** The narrowest borrowed bar that still shows its chip (px) */
+const CHIP_MIN_WIDTH = 28;
 
 /** Marks a hold bar, so a right-click on it can find the page box under it (`holdBarPageAt`) */
 const HOLD_BAR_ATTRIBUTE = "data-timeline-hold-bar";
@@ -48,6 +66,11 @@ const HOLD_BAR_ATTRIBUTE = "data-timeline-hold-bar";
  * **departure**, where the next move takes over. At rest each is a thin, quiet line. A bar an edit
  * would carry into is lit: it grows thicker, in the accent, during a field drag and while
  * **Remove keyframe, Pages N–M move back too** is hovered or focused.
+ *
+ * A **borrowed** Held hold (nothing arrives at its start; fork #474, holds 04-anchors "Display")
+ * draws lighter and hatched, with a small chip naming the spot it holds ("Held · Page 2's spot").
+ * Its line back to that spot shows only while the bar is hovered, lit, or holds the count the
+ * selected page or window ends on. In Basic it draws as plain Held, the spot named in its label.
  *
  * Under the diamonds and the flag grips, and they take no pointer: the page boxes under them still
  * select and scrub, and a right-click on one opens its page box's menu (`holdBarPageAt`), with
@@ -74,6 +97,19 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
             ),
         [holds.departures, pages],
     );
+    const basic = useIsBasicMode();
+    // The count a drag would edit: the selected page box's or window's end
+    const selectedEnd = useTimelineSelectionStore((s) =>
+        s.selection.kind === "range" ? s.selection.end : null,
+    );
+    const borrowed = useMemo(
+        () =>
+            basic
+                ? NO_BARS
+                : holds.bars.filter((bar) => bar.borrowedFrom !== undefined),
+        [basic, holds.bars],
+    );
+    const hovered = useHoveredBar(borrowed);
     if (holds.bars.length === 0 && holds.departures.length === 0) return null;
     // Unlit bars first, so a lit one overlapping them is drawn over them; then Not defined under
     // Held, whose dashes over a mixed stretch then show in the Held color
@@ -107,7 +143,23 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
                             : NONE
                     }
                     label={labels[index]!}
+                    borrowed={!basic && bar.borrowedFrom !== undefined}
                     pixelsPerBeat={pixelsPerBeat}
+                />
+            ))}
+            {borrowed.map((bar) => (
+                <BorrowedSource
+                    key={`source:${keyOf(bar)}`}
+                    bar={bar}
+                    pages={pages}
+                    pixelsPerBeat={pixelsPerBeat}
+                    showLine={
+                        bar.lit ||
+                        hovered === bar ||
+                        (selectedEnd !== null &&
+                            bar.start < selectedEnd &&
+                            selectedEnd <= bar.end)
+                    }
                 />
             ))}
             {holds.departures.map((departure, index) => (
@@ -131,6 +183,117 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
 });
 
 const NONE: readonly BeatRange[] = [];
+const NO_BARS: readonly SelectionHoldBar[] = [];
+
+/** Marks a borrowed hold's bar and chip, so the pointer over either finds it (`useHoveredBar`) */
+const BORROWED_ATTRIBUTE = "data-timeline-borrowed";
+
+/**
+ * The borrowed bar under the pointer, if any. The bars take no pointer, so presses still reach the
+ * page boxes under them: the pointer is followed on the window instead, and only while some
+ * borrowed bar is drawn.
+ */
+function useHoveredBar(
+    bars: readonly SelectionHoldBar[],
+): SelectionHoldBar | null {
+    const [hovered, setHovered] = useState<string | null>(null);
+    useEffect(() => {
+        if (bars.length === 0) {
+            setHovered(null);
+            return;
+        }
+        const onMove = (event: PointerEvent) => {
+            const over = [
+                ...document.querySelectorAll(`[${BORROWED_ATTRIBUTE}]`),
+            ].find((el) => {
+                const rect = el.getBoundingClientRect();
+                return (
+                    event.clientX >= rect.left &&
+                    event.clientX <= rect.right &&
+                    event.clientY >= rect.top &&
+                    event.clientY <= rect.bottom
+                );
+            });
+            setHovered(over?.getAttribute(BORROWED_ATTRIBUTE) ?? null);
+        };
+        window.addEventListener("pointermove", onMove, { passive: true });
+        return () => window.removeEventListener("pointermove", onMove);
+    }, [bars]);
+    return bars.find((bar) => borrowedId(bar) === hovered) ?? null;
+}
+
+const borrowedId = (bar: SelectionHoldBar) =>
+    `${bar.start}:${bar.end}:${bar.borrowedFrom}`;
+
+/**
+ * A borrowed hold's source (fork #474): a chip at the bar's start naming the spot it holds, and,
+ * with `showLine`, a dotted line back to where that spot was reached, above the row so it never
+ * sits alongside the Not defined bar under it.
+ */
+function BorrowedSource({
+    bar,
+    pages,
+    pixelsPerBeat,
+    showLine,
+}: {
+    bar: SelectionHoldBar;
+    pages: readonly TimelinePageMarker[];
+    pixelsPerBeat: number;
+    showLine: boolean;
+}) {
+    const from = bar.borrowedFrom!;
+    const left = beatToX(bar.start, pixelsPerBeat);
+    const width = beatToX(bar.end, pixelsPerBeat) - left;
+    const source = beatToX(from, pixelsPerBeat);
+    const top = TIMELINE_PAGE_ROW_BOTTOM - SOURCE_LIFT;
+    const color = bar.lit ? "text-accent" : "text-text-subtitle";
+    return (
+        <>
+            {width >= CHIP_MIN_WIDTH && (
+                <span
+                    aria-hidden
+                    {...{ [BORROWED_ATTRIBUTE]: borrowedId(bar) }}
+                    data-testid={`timeline-borrowed-chip-${bar.start}-${bar.end}`}
+                    className={clsx(
+                        "text-micro pointer-events-none absolute z-[34] -translate-y-full truncate leading-none whitespace-nowrap",
+                        color,
+                    )}
+                    style={{
+                        left: left + 2,
+                        top: top - 1,
+                        maxWidth: width - 4,
+                    }}
+                >
+                    {borrowedChip(from, pages)}
+                </span>
+            )}
+            {showLine && source < left && (
+                <div
+                    aria-hidden
+                    data-testid={`timeline-borrowed-line-${bar.start}-${bar.end}`}
+                    className={clsx(
+                        "pointer-events-none absolute z-[34]",
+                        color,
+                    )}
+                    style={{ left: source, width: left - source, top }}
+                >
+                    <div className="absolute inset-x-0 top-0 border-t border-dotted border-current" />
+                    <div className="absolute top-0 left-0 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+                </div>
+            )}
+        </>
+    );
+}
+
+/** "Held · Page 2's spot": the page the borrowed spot was reached on (`from`, a count in it) */
+const borrowedChip = (
+    from: number,
+    pages: readonly TimelinePageMarker[],
+): string =>
+    tolgee.t("timeline.heldBar.borrowedChip", "{held} · Page {page}'s spot", {
+        ...holdTerms(),
+        page: getPageCountAt({ pages }, from).pageLabel,
+    });
 
 /**
  * The dashes, as a background or mask: one dash per tile, the tiles pinned to the timeline's
@@ -155,11 +318,14 @@ function HoldBar({
     bar,
     mixed,
     label,
+    borrowed,
     pixelsPerBeat,
 }: {
     bar: SelectionHoldBar;
     mixed: readonly BeatRange[];
     label: string;
+    /** Draw it as a borrowed hold: lighter and hatched (Expert only) */
+    borrowed: boolean;
     pixelsPerBeat: number;
 }) {
     const line = useRef<HTMLDivElement>(null);
@@ -204,6 +370,8 @@ function HoldBar({
             {...{ [HOLD_BAR_ATTRIBUTE]: "" }}
             data-testid={`timeline-${solid ? "held" : "not-defined"}-bar-${bar.start}-${bar.end}`}
             data-held={solid ? bar.marcherIds.length : undefined}
+            data-borrowed={borrowed || undefined}
+            {...(borrowed ? { [BORROWED_ATTRIBUTE]: borrowedId(bar) } : {})}
             data-shape={bar.shape || undefined}
             data-lit={bar.lit}
             data-mixed={mixed.length > 0 || undefined}
@@ -231,7 +399,10 @@ function HoldBar({
                     height: bar.lit ? LIT_LINE_HEIGHT : LINE_HEIGHT,
                     transitionDuration: `${GROW_MS}ms`,
                     ...(solid
-                        ? { background: "currentColor", ...mask }
+                        ? {
+                              background: borrowed ? HATCH : "currentColor",
+                              ...mask,
+                          }
                         : {
                               backgroundImage: dash.image,
                               backgroundSize: dash.size,
@@ -334,6 +505,22 @@ function holdBarLabel(
                 "{notDefined} · Pages {first}–{last}",
                 params,
             );
+    if (bar.borrowedFrom !== undefined)
+        title = tolgee.t(
+            "timeline.heldBar.titleWithDetail",
+            "{title}. {detail}",
+            {
+                title,
+                detail: tolgee.t(
+                    "timeline.heldBar.borrowed",
+                    "Standing at Page {page}'s spot",
+                    {
+                        page: getPageCountAt({ pages }, bar.borrowedFrom)
+                            .pageLabel,
+                    },
+                ),
+            },
+        );
     if (bar.shape)
         title = tolgee.t(
             "timeline.heldBar.titleWithDetail",

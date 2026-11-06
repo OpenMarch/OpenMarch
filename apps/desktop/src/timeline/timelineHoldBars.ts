@@ -1,12 +1,14 @@
 import type { HeldMark } from "@/db-functions/timelineHeldArrival";
 import type { CarrySpan } from "./timelineCarryForward";
+import { heldMarkSource } from "./timelineDecided";
 
 /**
  * The selection's holds on the timeline (holds README decisions 10 and 11; fork #472, #477): for
  * each selected marcher, every stretch where it stands still, as a bar at exact counts from its
  * arrival (where the keyframe diamond is) to its departure (where its next move takes over).
  *
- * - **Held** (a stored mark, `timeline_held_marks`) draws solid.
+ * - **Held** (a stored mark, `timeline_held_marks`) draws solid. A **borrowed** one (nothing
+ *   arrives at its start, `heldMarkSource`; fork #474) says whose spot it holds (`borrowedFrom`).
  * - **Not defined** (nothing decided: the marcher shows the last spot, and moves with edits to
  *   it) draws light and dashed.
  * - A **shape carried on** draws solid too: the shape carried onto later pages is the shape's
@@ -36,6 +38,11 @@ export interface SelectionHoldBar extends BeatRange {
     readonly shape: boolean;
     /** An edit would carry here (a drag, or a hovered follow-back) */
     readonly lit: boolean;
+    /**
+     * A borrowed Held hold's (`heldMarkSource`): where the move whose spot it borrows ends. Absent
+     * on every other bar
+     */
+    readonly borrowedFrom?: number;
     /** The selected marchers holding over exactly these counts, in selection order */
     readonly marcherIds: readonly number[];
     /** How many marchers are selected */
@@ -97,6 +104,12 @@ export interface MarcherHoldPiece extends BeatRange {
     readonly kind: HoldBarKind;
     readonly shape: boolean;
     readonly lit: boolean;
+    readonly borrowedFrom?: number;
+}
+
+/** A marcher's Held mark as the bars read it: a borrowed one says whose spot it holds. */
+export interface BarMark extends BeatRange {
+    readonly borrowedFrom?: number;
 }
 
 /**
@@ -105,7 +118,7 @@ export interface MarcherHoldPiece extends BeatRange {
  * where the marcher's shape is carried on (`carried`, from `carriedStretches`), then split again
  * where `lit` starts and ends.
  *
- * @param marks this marcher's Held marks
+ * @param marks this marcher's Held marks, a borrowed one with whose spot it holds
  * @param carried where a shape carries this marcher, ascending
  * @param lit the ranges an edit would carry into for this marcher
  */
@@ -116,7 +129,7 @@ export function marcherHoldPieces({
     lit = [],
 }: {
     holds: readonly MarcherHold[];
-    marks: readonly BeatRange[];
+    marks: readonly BarMark[];
     carried?: readonly BeatRange[];
     lit?: readonly BeatRange[];
 }): MarcherHoldPiece[] {
@@ -124,8 +137,16 @@ export function marcherHoldPieces({
     const sortedMarks = [...marks].sort((a, b) => a.start - b.start);
     const sortedCarried = [...carried].sort((a, b) => a.start - b.start);
     for (const hold of holds) {
-        for (const mark of intersect(hold, sortedMarks))
-            pieces.push({ ...mark, kind: "held", shape: false });
+        for (const mark of sortedMarks)
+            for (const part of intersect(hold, [mark]))
+                pieces.push({
+                    ...part,
+                    kind: "held",
+                    shape: false,
+                    ...(mark.borrowedFrom === undefined
+                        ? {}
+                        : { borrowedFrom: mark.borrowedFrom }),
+                });
         for (const free of subtract(hold, sortedMarks)) {
             for (const part of intersect(free, sortedCarried))
                 pieces.push(piece(part.start, part.end, true));
@@ -291,7 +312,7 @@ export function selectionHolds({
 }): SelectionHolds {
     if (marcherIds.length === 0) return NO_HOLDS;
     const total = marcherIds.length;
-    const marksOf = new Map<number, BeatRange[]>();
+    const marksOf = new Map<number, HeldMark[]>();
     for (const mark of marks) {
         const list = marksOf.get(mark.marcherId);
         if (list) list.push(mark);
@@ -303,8 +324,14 @@ export function selectionHolds({
     >();
     const departures = new Map<number, number[]>();
     for (const id of marcherIds) {
-        const holds = marcherHolds(spansOf(id), showEnd);
-        const own = marksOf.get(id) ?? [];
+        const spans = spansOf(id);
+        const holds = marcherHolds(spans, showEnd);
+        const own: BarMark[] = (marksOf.get(id) ?? []).map(({ start, end }) => {
+            const source = heldMarkSource(spans, { start });
+            return source.kind === "borrowed"
+                ? { start, end, borrowedFrom: source.from }
+                : { start, end };
+        });
         const lit = [
             ...(dragBeat === null ? [] : dragLitRanges(holds, own, dragBeat)),
             ...(light?.byMarcher.get(id) ?? []),
@@ -316,7 +343,7 @@ export function selectionHolds({
             lit,
         });
         for (const p of pieces) {
-            const key = `${p.kind}:${p.start}:${p.end}:${p.shape}:${p.lit}`;
+            const key = `${p.kind}:${p.start}:${p.end}:${p.shape}:${p.lit}:${p.borrowedFrom}`;
             const bar = bars.get(key);
             if (bar) bar.marcherIds.push(id);
             else bars.set(key, { ...p, marcherIds: [id] });

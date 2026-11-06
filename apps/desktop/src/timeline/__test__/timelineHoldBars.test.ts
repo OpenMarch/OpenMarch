@@ -319,3 +319,78 @@ describe("notDefinedOver", () => {
         expect(notDefinedOver(held, [held])).toEqual([]);
     });
 });
+
+describe("borrowed holds (fork #474)", () => {
+    // Moves on page 1 (0–8), then stands still to the end; Held on page 4 (24–32), where nothing
+    // arrives: it borrows page 1's spot
+    const spans = [move(0, 8), hold(8, Infinity)];
+
+    it("a Held bar nothing arrives at names the spot it borrows", () => {
+        expect(
+            selectionHolds({
+                marcherIds: [1],
+                spansOf: () => spans,
+                marks: [mark(1, 1, 24, 32)],
+                showEnd: SHOW_END,
+            }).bars,
+        ).toEqual([
+            {
+                start: 8,
+                end: 24,
+                kind: "notDefined",
+                shape: false,
+                lit: false,
+                marcherIds: [1],
+                total: 1,
+            },
+            {
+                start: 24,
+                end: 32,
+                kind: "held",
+                shape: false,
+                lit: false,
+                borrowedFrom: 8,
+                marcherIds: [1],
+                total: 1,
+            },
+        ]);
+    });
+
+    it("an arrival hold, or one from the starting spot, names nothing", () => {
+        const bars = selectionHolds({
+            marcherIds: [1, 2],
+            spansOf: (id) => (id === 1 ? spans : [hold(-Infinity, Infinity)]),
+            marks: [mark(1, 1, 8, 16), mark(2, 2, 16, 24)],
+            showEnd: SHOW_END,
+        }).bars.filter((b) => b.kind === "held");
+        expect(bars.map((b) => b.borrowedFrom)).toEqual([undefined, undefined]);
+    });
+
+    it("marchers borrowing different spots over the same counts get a bar each", () => {
+        const bars = selectionHolds({
+            marcherIds: [1, 2],
+            spansOf: (id) =>
+                id === 1 ? spans : [move(0, 4), hold(4, Infinity)],
+            marks: [mark(1, 1, 24, 32), mark(2, 2, 24, 32)],
+            showEnd: SHOW_END,
+        }).bars.filter((b) => b.kind === "held");
+        // In selection order
+        expect(bars.map((b) => [b.borrowedFrom, b.marcherIds])).toEqual([
+            [8, [1]],
+            [4, [2]],
+        ]);
+    });
+
+    it("a drag inside a borrowed hold lights the whole hold", () => {
+        const bars = selectionHolds({
+            marcherIds: [1],
+            spansOf: () => spans,
+            marks: [mark(1, 1, 24, 32)],
+            showEnd: SHOW_END,
+            dragBeat: 28,
+        }).bars;
+        expect(bars.filter((b) => b.lit).map((b) => [b.start, b.end])).toEqual([
+            [24, 32],
+        ]);
+    });
+});

@@ -13,6 +13,7 @@ import {
     type NamedFlag,
 } from "@/timeline/timelineHoldState";
 import { holdTerms } from "@/timeline/holdTerms";
+import { heldMarkSource } from "@/timeline/timelineDecided";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
 import {
     placedBoxesAt,
@@ -67,7 +68,8 @@ export function useSelectionHoldState(
             );
             return carried.has(id);
         };
-        // Where the Held mark over the flag starts (Hold from previous page: this page only, R3)
+        // Where the Held mark over the flag starts (Hold from previous page: this page only, R3),
+        // or, for a borrowed one (#474), the page whose spot it holds
         const heldOnFlag = (id: number) => {
             const mark = marks.find(
                 (m) =>
@@ -75,7 +77,11 @@ export function useSelectionHoldState(
                     m.start < current.flag &&
                     current.flag <= m.end,
             );
-            return mark ? heldSince(mark.start, flags) : null;
+            if (!mark) return null;
+            const source = heldMarkSource(resolverSpans(resolver, id), mark);
+            if (source.kind !== "borrowed") return heldSince(mark.start, flags);
+            const since = heldSince(source.from, flags);
+            return since && { ...since, borrowed: true };
         };
         return sharedHoldState(
             marcherIds.map((id) =>
@@ -112,7 +118,8 @@ const LINK_CLASS =
  * move on the current page or hold there, with a link to the page they last moved on
  * (defined-coordinates 08: readable, and visibly a link). A hold names its state in the working
  * words (`holdTerms`, fork #478): "Not defined · showing Page 2", or "Held · since Page 3" for the
- * page its Held mark starts on (holds review R3); a carried
+ * page its Held mark starts on (holds review R3), or "Held · Page 2's spot" for a borrowed hold,
+ * naming the page whose spot it holds (fork #474); a carried
  * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
  */
 export default function TimelineHoldLine({
@@ -135,29 +142,13 @@ export default function TimelineHoldLine({
             </p>
         );
     else if (state) {
-        const { page: holdPage, fromStart } = state;
+        const { page: holdPage } = state;
         line = (
             <p className="flex flex-wrap items-center gap-6 px-6 leading-none">
                 <ShortcutTooltip
                     side="bottom"
                     closeOnPress
-                    label={
-                        fromStart
-                            ? t("inspector.marcher.timeline.goToStart", {
-                                  defaultValue: "Go to the start",
-                              })
-                            : state.how === "held"
-                              ? t("inspector.marcher.timeline.goToHeldPage", {
-                                    defaultValue:
-                                        "Go to Page {page}, where this hold starts",
-                                    page: holdPage.name,
-                                })
-                              : t("inspector.marcher.timeline.goToPage", {
-                                    defaultValue:
-                                        "Go to Page {page}, where these marchers last moved",
-                                    page: holdPage.name,
-                                })
-                    }
+                    label={linkLabel(t, state)}
                 >
                     <button
                         type="button"
@@ -188,6 +179,32 @@ export default function TimelineHoldLine({
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
+/** Where the hold link goes, as its tooltip says it. */
+function linkLabel(
+    t: Translate,
+    state: Extract<HoldState, { kind: "holding" }>,
+): string {
+    const { page, fromStart, how } = state;
+    if (fromStart)
+        return t("inspector.marcher.timeline.goToStart", {
+            defaultValue: "Go to the start",
+        });
+    if (how === "held")
+        return t("inspector.marcher.timeline.goToHeldPage", {
+            defaultValue: "Go to Page {page}, where this hold starts",
+            page: page.name,
+        });
+    if (how === "borrowed")
+        return t("inspector.marcher.timeline.goToBorrowedPage", {
+            defaultValue: "Go to Page {page}, whose spot this hold keeps",
+            page: page.name,
+        });
+    return t("inspector.marcher.timeline.goToPage", {
+        defaultValue: "Go to Page {page}, where these marchers last moved",
+        page: page.name,
+    });
+}
+
 /** The hold link's words: the state that decides the hold, where known, and the page it shows. */
 function holdText(
     t: Translate,
@@ -205,6 +222,12 @@ function holdText(
                   ...holdTerms(),
                   page: page.name,
               });
+    if (how === "borrowed")
+        return t("inspector.marcher.timeline.heldBorrowed", {
+            defaultValue: "{held} · Page {page}'s spot",
+            ...holdTerms(),
+            page: page.name,
+        });
     if (how === "held")
         return fromStart
             ? t("inspector.marcher.timeline.heldFromStart", {

@@ -30,10 +30,12 @@ export type HoldState =
 
 /**
  * What a hold at the current flag is (holds decisions 2 and 8, fork #478): **Held** on purpose (a
- * Held mark over the flag), a shape **carried** there (the shape's hold, owner 2026-11-01 on #477),
- * or **Not defined** (nothing decided yet; it shows the last position for now).
+ * Held mark over the flag), **borrowed** (a Held mark nothing arrives at, which holds the spot of
+ * the last set before it, `heldMarkSource`; fork #474), a shape **carried** there (the shape's
+ * hold, owner 2026-11-01 on #477), or **Not defined** (nothing decided yet; it shows the last
+ * position for now).
  */
-export type HoldKind = "held" | "carried" | "notDefined";
+export type HoldKind = "held" | "borrowed" | "carried" | "notDefined";
 
 /**
  * `state` with what decides its hold (`HoldKind`), for a marcher holding at the flag `current`.
@@ -42,7 +44,8 @@ export type HoldKind = "held" | "carried" | "notDefined";
  * between the arrival and the mark.
  *
  * @param held where the Held mark of the marcher covering `current` (`start < current <= end`)
- *   starts (`heldSince`), or `null` for none
+ *   starts (`heldSince`), or `null` for none; for a borrowed mark (`borrowed`), the page whose
+ *   spot it holds instead
  * @param carried whether a shape the marcher is in is carried onto `current`
  */
 export function withHoldKind(
@@ -51,12 +54,22 @@ export function withHoldKind(
         held,
         carried,
     }: {
-        held: { page: NamedFlag; fromStart: boolean } | null;
+        held: {
+            page: NamedFlag;
+            fromStart: boolean;
+            borrowed?: boolean;
+        } | null;
         carried: boolean;
     },
 ): HoldState | null {
     if (state?.kind !== "holding") return state;
-    if (held) return { ...state, ...held, how: "held" };
+    if (held)
+        return {
+            ...state,
+            page: held.page,
+            fromStart: held.fromStart,
+            how: held.borrowed ? "borrowed" : "held",
+        };
     return { ...state, how: carried ? "carried" : "notDefined" };
 }
 
