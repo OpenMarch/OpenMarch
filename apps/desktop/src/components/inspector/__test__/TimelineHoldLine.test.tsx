@@ -42,6 +42,8 @@ const PAGES = [
 const mocks = vi.hoisted(() => ({
     selectedPage: null as unknown,
     pages: [] as unknown[],
+    /** The placed shapes carried onto the flag asked: members and the beat each was placed at */
+    carried: [] as { members: number[]; endBeat: number }[],
 }));
 
 vi.mock("@/context/SelectedPageContext", () => ({
@@ -49,6 +51,17 @@ vi.mock("@/context/SelectedPageContext", () => ({
 }));
 vi.mock("@/hooks", () => ({
     useTimingObjects: () => ({ pages: mocks.pages }),
+}));
+// Which shapes are carried is boxesAt's rule (tested with it); here, what the line makes of them
+vi.mock("@/shapes/placed/placedBoxStore", async (importOriginal) => ({
+    ...(await importOriginal<
+        typeof import("@/shapes/placed/placedBoxStore")
+    >()),
+    placedBoxesAt: () =>
+        mocks.carried.map(({ members, endBeat }) => ({
+            recipe: { members: members.map((marcherId) => ({ marcherId })) },
+            endBeat,
+        })),
 }));
 // Set as shown writes through the real API (tested on a database elsewhere); here, who asks
 
@@ -116,6 +129,7 @@ beforeEach(() => {
     useTimelineResolverStore.setState({ resolver, version: 1 });
     useTimelineSelectionStore.getState().reset();
     useHeldMarksStore.setState({ marks: [] });
+    mocks.carried = [];
 });
 
 const show = (marcherIds: number[]) =>
@@ -245,6 +259,47 @@ describe("TimelineHoldLine", () => {
             marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
         });
         // Both hold since page 2: marcher 1 Held, marcher 5 Not defined
+        show([1, 5]);
+        expect(line()?.textContent).toBe("Last moved on Page 2");
+    });
+
+    it("says a carried shape's members are Held since the page the shape was placed on, and jumps there", async () => {
+        // Marcher 1 arrives on page 2 into a shape placed there, carried onto page 4
+        mocks.selectedPage = PAGES[3];
+        mocks.carried = [{ members: [1], endBeat: 9 }];
+        show([1]);
+        expect(line()?.textContent).toBe("Held · since Page 2");
+        fireEvent.focus(line()!);
+        expect(
+            (await screen.findAllByText("Go to Page 2, where this hold starts"))
+                .length,
+        ).toBeGreaterThan(0);
+        fireEvent.click(line()!);
+        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
+        cleanup();
+        // Marcher 3 never moves, but the shape around it was laid out on page 3: Held since then
+        mocks.carried = [{ members: [3], endBeat: 17 }];
+        show([3]);
+        expect(line()?.textContent).toBe("Held · since Page 3");
+        cleanup();
+        // A shape placed on the first page holds from the start
+        mocks.carried = [{ members: [3], endBeat: 0 }];
+        show([3]);
+        expect(line()?.textContent).toBe("Held · since the start");
+    });
+
+    it("reads Held for Held and carried marchers together, and names neither with Not defined ones", () => {
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
+        });
+        mocks.carried = [{ members: [5], endBeat: 9 }];
+        // Marcher 1 Held, marcher 5 carried, both since page 2
+        show([1, 5]);
+        expect(line()?.textContent).toBe("Held · since Page 2");
+        cleanup();
+        useHeldMarksStore.setState({ marks: [] });
+        // Marcher 1 Not defined, marcher 5 carried
         show([1, 5]);
         expect(line()?.textContent).toBe("Last moved on Page 2");
     });
