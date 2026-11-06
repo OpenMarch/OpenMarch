@@ -29,6 +29,7 @@ import {
     getAuthState,
     getValidAccessToken,
     setTokenRefreshCallback,
+    setSignedOutCallback,
 } from "./token-manager";
 import type { AuthState, AuthError, AuthTokens } from "./types";
 
@@ -81,6 +82,9 @@ async function handleAuthCallback(url: string): Promise<void> {
         return;
     }
 
+    // One use only: a repeated callback link can't start a second exchange.
+    clearPendingFlow();
+
     // Notify loading state
     notifyAuthStateChanged({
         isAuthenticated: false,
@@ -99,9 +103,6 @@ async function handleAuthCallback(url: string): Promise<void> {
         // Store tokens securely
         storeTokens(tokens);
 
-        // Clear pending flow
-        clearPendingFlow();
-
         // Notify success
         notifyAuthStateChanged(getAuthState());
 
@@ -114,26 +115,31 @@ async function handleAuthCallback(url: string): Promise<void> {
             message: "Failed to complete authentication. Please try again.",
             details: error instanceof Error ? error.message : error,
         });
-
-        clearPendingFlow();
     }
 }
 
 /**
  * Token refresh callback for automatic token refresh.
+ * A refresh keeps the same user, so the renderer isn't told: a state change
+ * makes it reload every signed-in query.
  */
 async function handleTokenRefresh(tokens: AuthTokens): Promise<AuthTokens> {
-    const newTokens = await refreshAccessToken(tokens.refreshToken);
+    return refreshAccessToken(tokens.refreshToken);
+}
 
-    // Notify renderer of updated auth state
+/**
+ * Clerk rejected the refresh token, so the session is over.
+ */
+function handleSignedOut(): void {
     notifyAuthStateChanged({
-        isAuthenticated: true,
+        isAuthenticated: false,
         isLoading: false,
-        user: getAuthState().user,
-        error: null,
+        user: null,
+        error: {
+            code: "TOKEN_EXPIRED",
+            message: "Your session has expired. Please sign in again.",
+        },
     });
-
-    return newTokens;
 }
 
 /**
@@ -156,6 +162,7 @@ export function initAuthAfterReady(
 
     // Set up token refresh callback
     setTokenRefreshCallback(handleTokenRefresh);
+    setSignedOutCallback(handleSignedOut);
 
     // Set up protocol listeners for OAuth callbacks
     setupProtocolListeners(getWindow, handleAuthCallback);
@@ -219,6 +226,9 @@ export function initAuthAfterReady(
      * Get current auth state handler.
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.GET_STATE, async () => {
+        // Refresh first if the token is due, so a session Clerk has ended
+        // shows as signed out rather than failing on the first upload.
+        await getValidAccessToken();
         return getAuthState();
     });
 
