@@ -17,6 +17,7 @@ import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { readPageGrid } from "./timelineRipple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitions";
 import { clearOwnPageMoves } from "./timelineMoveHelpers";
+import { hasHeldMarksTable, readHeldMarks } from "./timelineHeldArrival";
 import {
     isPageBox,
     marcherLabel,
@@ -52,7 +53,10 @@ import {
  * the hold as it was, with no move ending at the hold's end (no tick there), and a page it held
  * through follows earlier pages again; moves right after it that go nowhere either go with it,
  * since their only tick was its end. A point set inside a move writes both halves even when the
- * second goes nowhere: it is the user's point, with a tick that Remove takes out.
+ * second goes nowhere: it is the user's point, with a tick that Remove takes out. **The sweep
+ * stops at a Held hold** (holds 04-anchors; fork #473): a move a hold grows out of stays, and a
+ * merge ending where a hold starts is written even though it goes nowhere, so the hold the
+ * designer made keeps its arrival.
  *
  * Positions ("r's end", "the held position", "where r starts") are the resolver's, read once
  * from the rows the edit sees before anything is written, and only when an edit reads one. New
@@ -114,6 +118,8 @@ interface BoxState {
     timelineRange: Map<number, BeatRange>;
     /** Marchers that aren't simple on the box, when they weren't refused (`refuseLocked` off) */
     locked: Set<number>;
+    /** Whether a Held mark of the marcher starts at the count */
+    heldFrom: (marcherId: number, beat: number) => boolean;
 }
 
 const refuseBeat = (beat: number, box: Box, strict: boolean) => {
@@ -181,6 +187,14 @@ const readBoxState = async (
                       .all()
               ).map((t) => [t.id, { start: t.start_beat, end: t.end_beat }]),
     );
+    // Where the marchers' Held marks start, which Basic's sweep stops at
+    const heldStarts = new Set(
+        (await hasHeldMarksTable(tx))
+            ? (await readHeldMarks(tx, [...new Set(marcherIds)])).map(
+                  (m) => `${m.marcherId}:${m.start}`,
+              )
+            : [],
+    );
     // Where the marchers are now, from the rows this edit sees: read once and only when needed,
     // always before the plan writes anything
     let resolver: ReturnType<typeof createResolver> | undefined;
@@ -195,6 +209,7 @@ const readBoxState = async (
         },
         timelineRange,
         locked: new Set(locked),
+        heldFrom: (id, beat) => heldStarts.has(`${id}:${beat}`),
     };
 };
 
@@ -235,7 +250,9 @@ const setEnding = (
  *
  * A merge that would go nowhere (arriving where `first` starts) is deleted instead, so the marcher
  * holds there as it did before the point was set, and the hold's end isn't left as a tick. Moves
- * right after it that go nowhere either are deleted with it: their start was that tick.
+ * right after it that go nowhere either are deleted with it: their start was that tick. Never a
+ * move a Held hold grows out of: the sweep stops before it, and a merge ending where a hold starts
+ * is written, going nowhere, so the hold keeps its arrival (fork #473).
  */
 const planMerge = async (
     plan: PointPlan,
@@ -247,15 +264,16 @@ const planMerge = async (
     const point = await state.positionAt(marcherId, second.end);
     plan.removed.push(first, second);
     const from = await state.positionAt(marcherId, first.start);
-    if (samePosition(point, from)) {
+    if (samePosition(point, from) && !state.heldFrom(marcherId, second.end)) {
         // Moves right after it that go nowhere either had their only tick at its end: they go
-        // too, so the marcher holds until its next real move (or the flag)
+        // too, so the marcher holds until its next real move (or the flag), or a Held hold
         let end = second.end;
         // Sorted by start and not overlapping, so each next one starts where the last ended
         for (const next of state.rowsOf(marcherId)) {
             if (next.start < end) continue;
             if (
                 next.start > end ||
+                state.heldFrom(marcherId, next.end) ||
                 !samePosition(await state.positionAt(marcherId, next.end), from)
             )
                 break;

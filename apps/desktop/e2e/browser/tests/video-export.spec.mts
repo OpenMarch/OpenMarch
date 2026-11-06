@@ -15,7 +15,8 @@ import { drawnMarchers, goTo, waitForField } from "../app.mjs";
  */
 
 // T1 walks from (400, 300) to (600, 300) over page 1, beats 1 to 9 at half a
-// second a beat; T2 stands at (400, 500). The show is 4 s long.
+// second a beat; T2 stands at (400, 500), with no move of its own (Not
+// defined). The show is 4 s long.
 const seed = seedShowSql({
     beats: 16,
     measureStarts: [1, 5, 9, 13],
@@ -31,10 +32,8 @@ const seed = seedShowSql({
             [1, 400, 300],
             [2, 400, 500],
         ],
-        [
-            [1, 600, 300],
-            [2, 400, 500],
-        ],
+        // T2 has no move on page 1: it's Not defined there, standing at home
+        [[1, 600, 300]],
     ],
 });
 const SHOW_SECONDS = 4;
@@ -128,18 +127,24 @@ test("saves a video of the show with the marchers where the show puts them", asy
     show,
 }) => {
     const { page } = show;
-    // Paused at 2 s (measure 2) in the editor, T1 is partway through its move
-    // and T2 is on a stay move: both are Following there, drawn dashed (#300)
+    // Paused at 2 s (measure 2) in the editor, T1 is partway through its move:
+    // decided, drawn solid with its label off a keyframe. T2 has no move: Not
+    // defined, drawn dashed (#478)
     await waitForField(page);
     await goTo(page, "m2");
-    await expect
-        .poll(async () =>
-            (await drawnMarchers(page))
-                .filter((m) => m.following)
+    const drawn = async () => {
+        const marchers = await drawnMarchers(page);
+        const ids = (keep: (m: (typeof marchers)[number]) => boolean) =>
+            marchers
+                .filter(keep)
                 .map((m) => m.drillNumber)
-                .sort(),
-        )
-        .toEqual(["T1", "T2"]);
+                .sort();
+        return {
+            notDefined: ids((m) => m.notDefined),
+            walking: ids((m) => !m.notDefined && !m.labelBold),
+        };
+    };
+    await expect.poll(drawn).toEqual({ notDefined: ["T2"], walking: ["T1"] });
     await openVideoExport(page);
     await page.getByRole("combobox", { name: /^\d+ fps$/ }).click();
     await page.getByRole("option", { name: "30 fps" }).click();
@@ -165,9 +170,9 @@ test("saves a video of the show with the marchers where the show puts them", asy
     const middle = frameAt(file, 2);
     const last = frameAt(file, 3.9);
     // T2 never moves: its dot's color, in every frame. On the first frame
-    // everyone is Set; later frames draw T2 and T1 just as solid, though the
-    // editor draws them dashed there (#302): a dashed dot's middle is at most a
-    // 60% fill, far outside `close`
+    // everyone is on a keyframe; later frames draw T2 just as solid, though the
+    // editor draws it dashed there (exports draw nobody dashed, #302, #478): a
+    // dashed dot's middle is at most a 60% fill, far outside `close`
     const marcher = first(pixel(400, 500));
     expect(close(middle(pixel(400, 500)), marcher)).toBe(true);
     expect(close(last(pixel(400, 500)), marcher)).toBe(true);

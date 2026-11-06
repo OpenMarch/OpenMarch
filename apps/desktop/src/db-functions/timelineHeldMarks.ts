@@ -48,11 +48,11 @@ export {
  * too (`arrivalRowSql`, the one rule), which a drag inside the mark edits.
  *
  * - Page and beat edits move marks with the rows (`planTimelineRipple`).
- * - Every edit, after its own statements and before the commit check, drops the marks whose
- *   arrival row it deleted, and refuses one that left a mark's arrival row ending elsewhere
+ * - Every edit, after its own statements and before the commit check, keeps the marks true
  *   (`keepHeldMarksTrueInTransaction`, run by `transactionWithHistory`, never by undo or redo
- *   replay, which restore the marks the edit dropped). This is the first step of the upkeep #473
- *   completes (trim, keep, follow an arrival moved in time, drop).
+ *   replay, which restore what the edit changed; #473): a mark follows an arrival the edit
+ *   re-timed, goes with one it deleted, is trimmed where a row it re-timed now covers it, and
+ *   merges with a mark it now touches.
  */
 
 /** A Held marcher's edit, routed to the move that arrives at its hold's start (decision 4). */

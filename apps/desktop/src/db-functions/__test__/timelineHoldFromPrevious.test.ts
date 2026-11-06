@@ -40,8 +40,6 @@ import { holdFromPreviousPage } from "../timelineHoldFromPrevious";
 import { setAsShownOnPage } from "../timelineSetAsShown";
 import { unsetMarchersAt } from "../timelineUnset";
 import { setMarchersToNeighborPage } from "@/utilities/setMarchersToNeighborPage";
-import { resizeTimeline } from "../timelineResize";
-import { shiftTimeline } from "../timelineCommands";
 
 keepFixturesInPageMode(
     "its tests trim the show, write timeline rows and set the flag themselves",
@@ -1212,63 +1210,8 @@ describeDbTests("A Held mark goes when its arrival goes", (it) => {
     });
 });
 
-describeDbTests(
-    "Editing the arrival in time is refused while it has a hold (E-H1, until #473)",
-    (it) => {
-        /** The move (timeline) of `marcherId`'s arrival at page 3's flag. */
-        const arrivalMove = async (db: DbConnection, marcherId: number) => {
-            const arrival = (await rowsOf(db, marcherId)).find(
-                (r) => r.end_beat === PAGE3.start,
-            )!;
-            return (await db
-                .select()
-                .from(schema.timeline_transitions)
-                .where(
-                    eqId(schema.timeline_transitions.id, arrival.transition_id),
-                )
-                .get())!.timeline_id;
-        };
-        for (const [what, run] of [
-            [
-                "a resize into the hold",
-                (db: DbConnection, id: number) =>
-                    resizeTimeline({ db, timelineId: id, start: 9, end: 21 }),
-            ],
-            [
-                "a resize away from it",
-                (db: DbConnection, id: number) =>
-                    resizeTimeline({ db, timelineId: id, start: 9, end: 13 }),
-            ],
-            [
-                "a clip drag into the hold",
-                (db: DbConnection, id: number) =>
-                    shiftTimeline({ db, timelineId: id, delta: 2 }),
-            ],
-            [
-                "a clip drag away from it",
-                (db: DbConnection, id: number) =>
-                    shiftTimeline({ db, timelineId: id, delta: -2 }),
-            ],
-        ] as const)
-            it(`${what} is refused, writing nothing`, async ({
-                db,
-                marchersAndPages: _,
-            }) => {
-                const { a } = await show(db);
-                await holdFromPreviousPage({
-                    db,
-                    pageBox: PAGE3,
-                    marcherIds: [a],
-                });
-                const rows = await snapshot(db);
-                const error = await run(db, await arrivalMove(db, a)).catch(
-                    (e: unknown) => e,
-                );
-                expect(timelineErrorCode(error)).toBe("E-H1");
-                expect(await snapshot(db)).toEqual(rows);
-            });
-    },
-);
+// Re-timing the arrival (clip drag, resize, merge refit) moves the hold with it since #473:
+// `timelineHeldUpkeep.test.ts`
 
 describeDbTests("The E-H1 refusal names who and where", (it) => {
     it("names the marcher and the page, and points to Clear this page", async ({

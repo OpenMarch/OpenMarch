@@ -42,8 +42,10 @@ export type ThreeFieldState = {
     /** How opaque a marcher's dot is drawn, and whether its label is (#417) */
     opacity(id: number): number;
     labelShown(id: number): boolean;
-    /** Whether a marcher is drawn as Following (a dashed edge) (#300): never while dimmed or playing. */
-    following(id: number): boolean;
+    /** Whether a marcher is drawn Not defined (a dashed edge) (#478): never while dimmed or playing. */
+    notDefined(id: number): boolean;
+    /** Whether a marcher's label is drawn bold: on a keyframe, playing or dimmed (#478). */
+    labelBold(id: number): boolean;
     /** The app's selection, as the editor reads it. */
     selection(): readonly number[];
     activeGesture(): FieldTestGesture | null;
@@ -94,7 +96,8 @@ export function createThreeFieldTestApi(field: ThreeFieldState): FieldTestApi {
                     dimmed: field.dimmed(id),
                     opacity: field.opacity(id),
                     labelShown: field.labelShown(id),
-                    following: field.following(id),
+                    notDefined: field.notDefined(id),
+                    labelBold: field.labelBold(id),
                 };
             });
         },
