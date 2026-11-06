@@ -4,9 +4,9 @@ import {
     dragLitRanges,
     marcherHoldPieces,
     marcherHolds,
-    marcherShapeChanges,
+    notDefinedOver,
     selectionHolds,
-    type HoldShapeRecipe,
+    type SelectionHoldBar,
 } from "../timelineHoldBars";
 
 /**
@@ -90,18 +90,16 @@ describe("marcherHoldPieces", () => {
         ]);
     });
 
-    it("draws a shape carried on as Held, from where the shape takes the marcher until it lets go", () => {
+    it("draws Held where a shape carries the marcher (`carriedStretches`), Not defined around it", () => {
         expect(
             marcherHoldPieces({
                 holds,
                 marks: [],
-                shapeChanges: [
-                    { beat: 8, shaped: true },
-                    { beat: 24, shaped: false },
-                ],
+                carried: [{ start: 12, end: 24 }],
             }),
         ).toEqual([
-            { start: 8, end: 24, kind: "held", shape: true, lit: false },
+            { start: 8, end: 12, kind: "notDefined", shape: false, lit: false },
+            { start: 12, end: 24, kind: "held", shape: true, lit: false },
             {
                 start: 24,
                 end: 32,
@@ -112,16 +110,32 @@ describe("marcherHoldPieces", () => {
         ]);
     });
 
-    it("ignores a shape placed before the hold: the marcher has moved since", () => {
+    it("a Held mark wins over a shape carried over the same counts", () => {
         expect(
             marcherHoldPieces({
                 holds,
-                marks: [],
-                shapeChanges: [{ beat: 4, shaped: true }],
+                marks: [{ start: 16, end: 24 }],
+                carried: [{ start: 8, end: 32 }],
+            }).map((p) => [p.start, p.end, p.kind, p.shape]),
+        ).toEqual([
+            [8, 16, "held", true],
+            [16, 24, "held", false],
+            [24, 32, "held", true],
+        ]);
+    });
+
+    it("cuts a Held mark to the holds: a mark read before an undo reached the resolver draws nothing over a move", () => {
+        expect(
+            marcherHoldPieces({
+                holds: [{ start: 8, end: 16, departs: true }],
+                marks: [{ start: 8, end: 24 }],
             }),
         ).toEqual([
-            { start: 8, end: 32, kind: "notDefined", shape: false, lit: false },
+            { start: 8, end: 16, kind: "held", shape: false, lit: false },
         ]);
+        expect(
+            marcherHoldPieces({ holds: [], marks: [{ start: 8, end: 24 }] }),
+        ).toEqual([]);
     });
 
     it("splits where an edit would carry, and marks those parts lit", () => {
@@ -137,32 +151,6 @@ describe("marcherHoldPieces", () => {
             { start: 24, end: 28, kind: "held", shape: false, lit: true },
             { start: 28, end: 32, kind: "held", shape: false, lit: false },
         ]);
-    });
-});
-
-describe("marcherShapeChanges", () => {
-    const recipes: HoldShapeRecipe[] = [
-        { timelineId: null, ungrouped: false, memberIds: [1, 2] },
-        { timelineId: 7, ungrouped: true, memberIds: [1] },
-        { timelineId: 9, ungrouped: false, memberIds: [2] },
-        { timelineId: 99, ungrouped: false, memberIds: [1] },
-    ];
-    const ends = new Map([
-        [7, 16],
-        [9, 24],
-    ]);
-    const endBeatOf = (id: number | null) => (id === null ? 0 : ends.get(id));
-
-    it("lists where a shape takes the marcher and where it's ungrouped, skipping moves that are gone", () => {
-        expect(marcherShapeChanges(recipes, endBeatOf, 1)).toEqual([
-            { beat: 0, shaped: true },
-            { beat: 16, shaped: false },
-        ]);
-        expect(marcherShapeChanges(recipes, endBeatOf, 2)).toEqual([
-            { beat: 0, shaped: true },
-            { beat: 24, shaped: true },
-        ]);
-        expect(marcherShapeChanges(recipes, endBeatOf, 3)).toEqual([]);
     });
 });
 
@@ -276,7 +264,7 @@ describe("selectionHolds", () => {
             spansOf,
             marks: [],
             showEnd: SHOW_END,
-            light: { marcherIds: [1], ranges: [{ start: 8, end: 16 }] },
+            light: { byMarcher: new Map([[1, [{ start: 8, end: 16 }]]]) },
         });
         expect(bars.map((b) => [b.start, b.end, b.lit, b.marcherIds])).toEqual([
             [8, 16, true, [1]],
@@ -295,5 +283,39 @@ describe("selectionHolds", () => {
                 showEnd: SHOW_END,
             }),
         ).toEqual({ bars: [], departures: [] });
+    });
+});
+
+describe("notDefinedOver", () => {
+    const bar = (
+        start: number,
+        end: number,
+        kind: SelectionHoldBar["kind"],
+    ): SelectionHoldBar => ({
+        start,
+        end,
+        kind,
+        shape: false,
+        lit: false,
+        marcherIds: [1],
+        total: 2,
+    });
+
+    it("finds where a Held bar has Not defined over the same counts, joined and cut to the bar", () => {
+        const held = bar(8, 24, "held");
+        expect(
+            notDefinedOver(held, [
+                held,
+                bar(4, 12, "notDefined"),
+                bar(10, 16, "notDefined"),
+                bar(20, 28, "notDefined"),
+                bar(24, 32, "notDefined"),
+                bar(8, 24, "held"),
+            ]),
+        ).toEqual([
+            { start: 8, end: 16 },
+            { start: 20, end: 24 },
+        ]);
+        expect(notDefinedOver(held, [held])).toEqual([]);
     });
 });

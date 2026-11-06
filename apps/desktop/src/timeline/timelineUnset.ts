@@ -21,6 +21,7 @@ import { toastBasicLock } from "./basicLockToast";
 import { notJoinedMessage, toastTimelineError } from "./timelineErrorMessages";
 import {
     followingPages,
+    followingRuns,
     pageKeepStates,
     type KeepTranslate,
 } from "./timelineKeepLater";
@@ -28,7 +29,7 @@ import { keepPagesOfBoxes } from "./timelineOnlyThisPage";
 import { isSetAt, marcherSetBeats } from "./timelineSetFollowing";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 import { holdTerms } from "./holdTerms";
-import type { HoldLight } from "./timelineHoldBars";
+import type { BeatRange, HoldLight } from "./timelineHoldBars";
 import { clearHoldLight, setHoldLight } from "./holdLight";
 
 /**
@@ -115,16 +116,15 @@ export function unsetReader({ resolver, marcherIds, boxes = [] }: UnsetReads): {
         });
         const names = followingPages(states, holding.id)?.names;
         if (!names) return null;
-        const named = new Set(names);
-        return {
-            names,
-            light: {
-                marcherIds: lastInPage,
-                ranges: states
-                    .filter((s) => named.has(s.pageName))
-                    .map((s) => ({ start: s.box.start, end: s.box.end })),
-            },
-        };
+        // Each marcher lights only its own run: one with a move of its own partway through the
+        // pages named keeps the pages after that move where they are
+        const byMarcher = new Map<number, BeatRange[]>();
+        for (const [id, run] of followingRuns(states, holding.id))
+            byMarcher.set(
+                id,
+                run.map((s) => ({ start: s.box.start, end: s.box.end })),
+            );
+        return { names, light: { byMarcher } };
     };
     return {
         targets,

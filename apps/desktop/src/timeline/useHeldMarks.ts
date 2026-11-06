@@ -5,13 +5,17 @@ import { useTimelineDisplayStore } from "@/db-functions/timelineDisplay";
 import { readHeldMarks, type HeldMark } from "@/db-functions/timelineHeldMarks";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { usePlacedBoxStore } from "@/shapes/placed/placedBoxStore";
-import { isUngrouped } from "@/shapes/placed/placedBox";
 import {
-    marcherShapeChanges,
+    marcherHolds,
     NO_HOLDS,
     selectionHolds,
     type SelectionHolds,
 } from "./timelineHoldBars";
+import { carriedStretches } from "./timelineCarried";
+import {
+    editingPositionAt,
+    useIsolationPlanStore,
+} from "./timelineIsolationPlan";
 import { useHoldLightStore } from "./holdLight";
 import { useFieldEditing } from "./useFieldEditing";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
@@ -109,29 +113,46 @@ export function useSelectionHolds(
                 : null,
     );
     const light = useHoldLightStore((s) => s.light);
-    const shapeRecipes = useMemo(
-        () =>
-            recipes.map((r) => ({
-                timelineId: r.timelineId,
-                ungrouped: isUngrouped(r),
-                memberIds: r.members.map((m) => m.marcherId),
-            })),
-        [recipes],
-    );
+    const isolation = useIsolationPlanStore((s) => s.current);
+    // Where a shape carries the selected marchers: the field's rule (`carriedStretches`), worked
+    // out apart from the lit ranges, so starting a drag or hovering an entry doesn't redo it
+    const carried = useMemo(() => {
+        void version; // a new version means new spans
+        if (!resolver || marcherIds.length === 0 || recipes.length === 0)
+            return null;
+        const spansOf = (id: number) => resolverSpans(resolver, id);
+        return carriedStretches({
+            marcherIds,
+            within: marcherIds.flatMap((id) =>
+                marcherHolds(spansOf(id), showEnd),
+            ),
+            recipes,
+            endBeatOf: (id) => (id === null ? 0 : ends.get(id)),
+            spansOf,
+            positionAt: (id, beat) => {
+                try {
+                    const [x, y] = editingPositionAt(
+                        resolver,
+                        id,
+                        beat,
+                        isolation,
+                    );
+                    return { x, y };
+                } catch {
+                    return undefined;
+                }
+            },
+        });
+    }, [resolver, version, marcherIds, recipes, ends, showEnd, isolation]);
     return useMemo(() => {
         void version; // a new version means new spans
         if (!resolver || marcherIds.length === 0) return NO_HOLDS;
-        const endBeatOf = (id: number | null) =>
-            id === null ? 0 : ends.get(id);
         return selectionHolds({
             marcherIds,
             spansOf: (id) => resolverSpans(resolver, id),
             marks,
             showEnd,
-            shapeChangesOf:
-                shapeRecipes.length === 0
-                    ? undefined
-                    : (id) => marcherShapeChanges(shapeRecipes, endBeatOf, id),
+            carriedOf: carried ? (id) => carried.get(id) : undefined,
             dragBeat,
             light,
         });
@@ -141,8 +162,7 @@ export function useSelectionHolds(
         marcherIds,
         marks,
         showEnd,
-        shapeRecipes,
-        ends,
+        carried,
         dragBeat,
         light,
     ]);

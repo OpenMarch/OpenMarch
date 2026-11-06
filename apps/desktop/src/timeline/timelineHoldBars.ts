@@ -10,7 +10,8 @@ import type { CarrySpan } from "./timelineCarryForward";
  * - **Not defined** (nothing decided: the marcher shows the last spot, and moves with edits to
  *   it) draws light and dashed.
  * - A **shape carried on** draws solid too: the shape carried onto later pages is the shape's
- *   hold, and it stays until changed (owner, 2026-11-01, on #477).
+ *   hold, and it stays until changed (owner, 2026-11-01, on #477). Where it's carried is the
+ *   field's rule (`carriedStretches`, `boxesAt`): only while every member stands on its spot.
  * - A **departure** tick marks where the next move takes over.
  *
  * Bars light up where an edit would carry: during a field drag, the stretch the drag moves
@@ -91,38 +92,6 @@ export function marcherHolds(
     });
 }
 
-/** A placed shape's recipe, as far as holds read it. */
-export interface HoldShapeRecipe {
-    /** The move it was placed in; null for the starting spots (beat 0) */
-    readonly timelineId: number | null;
-    /** Whether it marks its members ungrouped rather than describing a shape */
-    readonly ungrouped: boolean;
-    readonly memberIds: readonly number[];
-}
-
-/**
- * Where a placed shape takes `marcherId` (true) or lets it go (false, an ungrouped mark), by the
- * beat its recipe is placed at, ascending. A later recipe at the same beat wins.
- *
- * @param endBeatOf the end beat of a recipe's move (0 for null), undefined for a move that's gone
- */
-export function marcherShapeChanges(
-    recipes: readonly HoldShapeRecipe[],
-    endBeatOf: (timelineId: number | null) => number | undefined,
-    marcherId: number,
-): { beat: number; shaped: boolean }[] {
-    const changes = new Map<number, boolean>();
-    for (const recipe of recipes) {
-        if (!recipe.memberIds.includes(marcherId)) continue;
-        const beat = endBeatOf(recipe.timelineId);
-        if (beat === undefined) continue;
-        changes.set(beat, !recipe.ungrouped);
-    }
-    return [...changes]
-        .map(([beat, shaped]) => ({ beat, shaped }))
-        .sort((a, b) => a.beat - b.beat);
-}
-
 /** A piece of one marcher's hold, before the selection's pieces are joined into bars. */
 export interface MarcherHoldPiece extends BeatRange {
     readonly kind: HoldBarKind;
@@ -131,52 +100,37 @@ export interface MarcherHoldPiece extends BeatRange {
 }
 
 /**
- * One marcher's hold pieces: its Held marks as they are, then the rest of each hold, split where
- * a shape carried on starts or ends (`shapeChanges` inside the hold; one before it doesn't count,
- * since the marcher has moved since), then split again where `lit` starts and ends.
+ * One marcher's hold pieces: its Held marks, cut to its holds (a mark read before the resolver
+ * took an undo or redo can reach over a move for a moment), then the rest of each hold, split
+ * where the marcher's shape is carried on (`carried`, from `carriedStretches`), then split again
+ * where `lit` starts and ends.
  *
  * @param marks this marcher's Held marks
- * @param shapeChanges `marcherShapeChanges` for this marcher
+ * @param carried where a shape carries this marcher, ascending
  * @param lit the ranges an edit would carry into for this marcher
  */
 export function marcherHoldPieces({
     holds,
     marks,
-    shapeChanges = [],
+    carried = [],
     lit = [],
 }: {
     holds: readonly MarcherHold[];
     marks: readonly BeatRange[];
-    shapeChanges?: readonly { beat: number; shaped: boolean }[];
+    carried?: readonly BeatRange[];
     lit?: readonly BeatRange[];
 }): MarcherHoldPiece[] {
-    const pieces: Omit<MarcherHoldPiece, "lit">[] = marks.map((m) => ({
-        start: m.start,
-        end: m.end,
-        kind: "held",
-        shape: false,
-    }));
+    const pieces: Omit<MarcherHoldPiece, "lit">[] = [];
     const sortedMarks = [...marks].sort((a, b) => a.start - b.start);
+    const sortedCarried = [...carried].sort((a, b) => a.start - b.start);
     for (const hold of holds) {
+        for (const mark of intersect(hold, sortedMarks))
+            pieces.push({ ...mark, kind: "held", shape: false });
         for (const free of subtract(hold, sortedMarks)) {
-            // Where a shape takes the marcher or lets it go inside this hold
-            const inside = shapeChanges.filter(
-                (c) => c.beat >= hold.start && c.beat < free.end,
-            );
-            let shaped = false;
-            const cuts: { beat: number; shaped: boolean }[] = [];
-            for (const change of inside) {
-                if (change.beat <= free.start) shaped = change.shaped;
-                else cuts.push(change);
-            }
-            let from = free.start;
-            for (const cut of cuts) {
-                if (cut.shaped === shaped) continue;
-                pieces.push(piece(from, cut.beat, shaped));
-                from = cut.beat;
-                shaped = cut.shaped;
-            }
-            pieces.push(piece(from, free.end, shaped));
+            for (const part of intersect(free, sortedCarried))
+                pieces.push(piece(part.start, part.end, true));
+            for (const part of subtract(free, sortedCarried))
+                pieces.push(piece(part.start, part.end, false));
         }
     }
     const out: MarcherHoldPiece[] = [];
@@ -185,6 +139,15 @@ export function marcherHoldPieces({
         out.push(...splitLit(p, lit));
     }
     return out.sort((a, b) => a.start - b.start || a.end - b.end);
+}
+
+/** The parts of `range` inside `over` */
+function intersect(range: BeatRange, over: readonly BeatRange[]): BeatRange[] {
+    return over.flatMap((r) => {
+        const start = Math.max(r.start, range.start);
+        const end = Math.min(r.end, range.end);
+        return end > start ? [{ start, end }] : [];
+    });
 }
 
 const piece = (start: number, end: number, shaped: boolean) => ({
@@ -263,10 +226,39 @@ export function dragLitRanges(
     return hold ? [{ start: beat, end: hold.end }] : [];
 }
 
-/** What lights the bars, for some of the selected marchers. */
+/**
+ * Where a Held bar has a Not defined bar over the same counts (a mixed selection), ascending and
+ * joined. The Held bar draws dashed there, so the stretch never reads as solid while some selected
+ * marcher is Not defined (fork #477).
+ */
+export function notDefinedOver(
+    bar: BeatRange,
+    bars: readonly SelectionHoldBar[],
+): BeatRange[] {
+    const over = bars
+        .filter(
+            (b) =>
+                b.kind === "notDefined" &&
+                b.start < bar.end &&
+                b.end > bar.start,
+        )
+        .map((b) => ({
+            start: Math.max(b.start, bar.start),
+            end: Math.min(b.end, bar.end),
+        }))
+        .sort((a, b) => a.start - b.start);
+    const joined: { start: number; end: number }[] = [];
+    for (const r of over) {
+        const last = joined[joined.length - 1];
+        if (last && r.start <= last.end) last.end = Math.max(last.end, r.end);
+        else joined.push({ ...r });
+    }
+    return joined;
+}
+
+/** What lights the bars besides a drag: for each marcher it lights, its own ranges. */
 export interface HoldLight {
-    readonly marcherIds: readonly number[];
-    readonly ranges: readonly BeatRange[];
+    readonly byMarcher: ReadonlyMap<number, readonly BeatRange[]>;
 }
 
 /**
@@ -276,7 +268,7 @@ export interface HoldLight {
  * @param spansOf a marcher's resolver spans
  * @param marks every Held mark
  * @param showEnd the last page flag
- * @param shapeChangesOf `marcherShapeChanges` for a marcher; none without shapes
+ * @param carriedOf where a shape carries a marcher (`carriedStretches`); nowhere without shapes
  * @param dragBeat the count a field drag edits, while one runs; lights what it carries into
  * @param light other lit ranges (a hovered follow-back)
  */
@@ -285,7 +277,7 @@ export function selectionHolds({
     spansOf,
     marks,
     showEnd,
-    shapeChangesOf,
+    carriedOf,
     dragBeat = null,
     light = null,
 }: {
@@ -293,7 +285,7 @@ export function selectionHolds({
     spansOf: (marcherId: number) => readonly CarrySpan[];
     marks: readonly HeldMark[];
     showEnd: number;
-    shapeChangesOf?: (marcherId: number) => { beat: number; shaped: boolean }[];
+    carriedOf?: (marcherId: number) => readonly BeatRange[] | undefined;
     dragBeat?: number | null;
     light?: HoldLight | null;
 }): SelectionHolds {
@@ -305,7 +297,6 @@ export function selectionHolds({
         if (list) list.push(mark);
         else marksOf.set(mark.marcherId, [mark]);
     }
-    const lightOn = new Set(light?.marcherIds ?? []);
     const bars = new Map<
         string,
         Omit<SelectionHoldBar, "total"> & { marcherIds: number[] }
@@ -316,12 +307,12 @@ export function selectionHolds({
         const own = marksOf.get(id) ?? [];
         const lit = [
             ...(dragBeat === null ? [] : dragLitRanges(holds, own, dragBeat)),
-            ...(lightOn.has(id) ? light!.ranges : []),
+            ...(light?.byMarcher.get(id) ?? []),
         ];
         const pieces = marcherHoldPieces({
             holds,
             marks: own,
-            shapeChanges: shapeChangesOf?.(id),
+            carried: carriedOf?.(id),
             lit,
         });
         for (const p of pieces) {

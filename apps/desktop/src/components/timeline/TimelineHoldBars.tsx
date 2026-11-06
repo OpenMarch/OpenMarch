@@ -2,10 +2,12 @@ import { memo, useMemo } from "react";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
 import { holdTerms } from "@/timeline/holdTerms";
-import type {
-    SelectionDeparture,
-    SelectionHoldBar,
-    SelectionHolds,
+import {
+    notDefinedOver,
+    type BeatRange,
+    type SelectionDeparture,
+    type SelectionHoldBar,
+    type SelectionHolds,
 } from "@/timeline/timelineHoldBars";
 import type { TimelinePageMarker } from "./TimelineViewModel";
 import {
@@ -31,7 +33,8 @@ const HOLD_BAR_ATTRIBUTE = "data-timeline-hold-bar";
 /**
  * The selection's holds (holds README decisions 10 and 11; fork #472, #477), at exact counts on
  * the page row's bottom edge, where the keyframe diamonds are: **Held** solid, **Not defined**
- * light and dashed, a shape carried on solid (it is the shape's hold), and a tick at each
+ * light and dashed, a shape carried on solid (it is the shape's hold), Held dashed where some of
+ * the selection is Not defined over the same counts, and a tick at each
  * **departure**, where the next move takes over. A bar an edit would carry into is lit in the
  * accent and drawn thicker: during a field drag, and while **Remove keyframe, Pages N–M move back
  * too** is hovered or focused.
@@ -62,16 +65,26 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
         [holds.departures, pages],
     );
     if (holds.bars.length === 0 && holds.departures.length === 0) return null;
-    // Unlit bars first, so a lit one overlapping them is drawn over them
+    // Unlit bars first, so a lit one overlapping them is drawn over them; then Not defined under
+    // Held, whose dashes over a mixed stretch then show in the Held color
     const order = holds.bars
         .map((bar, index) => ({ bar, index }))
-        .sort((a, b) => Number(a.bar.lit) - Number(b.bar.lit));
+        .sort(
+            (a, b) =>
+                Number(a.bar.lit) - Number(b.bar.lit) ||
+                Number(a.bar.kind === "held") - Number(b.bar.kind === "held"),
+        );
     return (
         <>
             {order.map(({ bar, index }) => (
                 <HoldBar
                     key={`${bar.kind}:${bar.start}:${bar.end}:${bar.shape}:${bar.lit}`}
                     bar={bar}
+                    mixed={
+                        bar.kind === "held"
+                            ? notDefinedOver(bar, holds.bars)
+                            : NONE
+                    }
                     label={labels[index]!}
                     pixelsPerBeat={pixelsPerBeat}
                 />
@@ -96,18 +109,50 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
     );
 });
 
-/** One bar: solid (Held, or a shape carried on) or dashed (Not defined), lit or not */
+const NONE: readonly BeatRange[] = [];
+
+/**
+ * The dashes, as a background or mask: one dash per tile, the tiles pinned to the timeline's
+ * start (`position`), so overlapping bars of different marchers dash in step and never fill each
+ * other's gaps.
+ */
+const dashes = (color: string, left: number) => ({
+    image: `linear-gradient(to right, ${color} 0 ${DASH}px, transparent ${DASH}px)`,
+    size: `${DASH + GAP}px 100%`,
+    position: `${-left}px 0`,
+});
+
+/**
+ * One bar: solid (Held, or a shape carried on) or dashed (Not defined), lit or not. A Held bar
+ * draws dashed, in its own color, over `mixed` (`notDefinedOver`): where some of the selection is
+ * Not defined over the same counts, the stretch mustn't read as solid.
+ */
 function HoldBar({
     bar,
+    mixed,
     label,
     pixelsPerBeat,
 }: {
     bar: SelectionHoldBar;
+    mixed: readonly BeatRange[];
     label: string;
     pixelsPerBeat: number;
 }) {
     const left = beatToX(bar.start, pixelsPerBeat);
+    const width = beatToX(bar.end, pixelsPerBeat) - left;
     const solid = bar.kind === "held";
+    const dash = dashes(solid ? "black" : "currentColor", left);
+    // Over a mixed stretch, a Held bar keeps only its dashes: a mask, solid outside those stretches
+    // (the first layer) and dashed inside them (the second)
+    const mask =
+        solid && mixed.length > 0
+            ? {
+                  maskImage: `${solidOutside(mixed, pixelsPerBeat, left)}, ${dash.image}`,
+                  maskSize: `100% 100%, ${dash.size}`,
+                  maskPosition: `0 0, ${dash.position}`,
+                  maskRepeat: "no-repeat, repeat-x",
+              }
+            : {};
     return (
         <div
             role="img"
@@ -117,6 +162,7 @@ function HoldBar({
             data-held={solid ? bar.marcherIds.length : undefined}
             data-shape={bar.shape || undefined}
             data-lit={bar.lit}
+            data-mixed={mixed.length > 0 || undefined}
             // Under the diamonds (z-36) and the flag grips (z-35)
             className={clsx(
                 "pointer-events-none absolute z-[34] -translate-y-1/2 rounded-full",
@@ -128,15 +174,39 @@ function HoldBar({
             )}
             style={{
                 left,
-                width: beatToX(bar.end, pixelsPerBeat) - left,
+                width,
                 top: TIMELINE_PAGE_ROW_BOTTOM,
                 height: bar.lit ? LIT_HEIGHT : BAR_HEIGHT,
-                background: solid
-                    ? "currentColor"
-                    : `repeating-linear-gradient(to right, currentColor 0 ${DASH}px, transparent ${DASH}px ${DASH + GAP}px)`,
+                ...(solid
+                    ? { background: "currentColor", ...mask }
+                    : {
+                          backgroundImage: dash.image,
+                          backgroundSize: dash.size,
+                          backgroundPosition: dash.position,
+                          backgroundRepeat: "repeat-x",
+                      }),
             }}
         />
     );
+}
+
+/**
+ * A mask layer that's opaque across a bar starting at `left` px except over `mixed`, which it
+ * leaves clear for the dashes
+ */
+function solidOutside(
+    mixed: readonly BeatRange[],
+    pixelsPerBeat: number,
+    left: number,
+): string {
+    const x = (beat: number) => beatToX(beat, pixelsPerBeat) - left;
+    const stops = mixed.flatMap((r) => [
+        `black ${x(r.start)}px`,
+        `transparent ${x(r.start)}px`,
+        `transparent ${x(r.end)}px`,
+        `black ${x(r.end)}px`,
+    ]);
+    return `linear-gradient(to right, black 0, ${stops.join(", ")}, black 100%)`;
 }
 
 /**

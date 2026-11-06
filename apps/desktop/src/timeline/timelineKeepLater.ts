@@ -238,6 +238,34 @@ export function followingPages(
     return names.length === 0 ? null : { names, all };
 }
 
+/**
+ * Each marcher's own run of `followingPages`: the page boxes after `currentPageId`, in a row,
+ * that it follows into from a page (not its starting spot), up to the first it doesn't. Only the
+ * marchers that follow the first of them are in it. `followingPages` names the union of these.
+ */
+export function followingRuns(
+    states: readonly PageKeepState[],
+    currentPageId: number,
+    homePageId: number | null = null,
+): Map<number, PageKeepState[]> {
+    const runs = new Map<number, PageKeepState[]>();
+    const first = nextBoxIndex(states, currentPageId, homePageId);
+    if (first < 0 || first >= states.length) return runs;
+    const moved = (s: PageKeepState) => {
+        const start = new Set(s.fromStart);
+        return new Set(s.follows.filter((id) => !start.has(id)));
+    };
+    for (const id of moved(states[first]!)) {
+        const run: PageKeepState[] = [];
+        for (let i = first; i < states.length; i++) {
+            if (!moved(states[i]!).has(id)) break;
+            run.push(states[i]!);
+        }
+        runs.set(id, run);
+    }
+    return runs;
+}
+
 /** "Page 3" or "Pages 3–4" (first to last of `names`, in page order). */
 export function pagesText(names: readonly string[]): string {
     if (names.length === 0) return "";
