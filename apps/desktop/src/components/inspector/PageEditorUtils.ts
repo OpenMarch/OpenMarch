@@ -64,16 +64,19 @@ const useSplitPageMutation = <TArgs>(
     return useMutation({
         mutationFn,
         onSuccess: async () => {
-            // Invalidate all timing object queries
+            // Invalidate all timing object queries. Wait for every refetch so the
+            // mutation stays pending until the selected page reflects the split.
             await queryClient.invalidateQueries({
                 queryKey: allDatabaseBeatsQueryOptions().queryKey,
             });
-            void queryClient.invalidateQueries({
-                queryKey: allDatabasePagesQueryOptions().queryKey,
-            });
-            void queryClient.invalidateQueries({
-                queryKey: allDatabaseMeasuresQueryOptions().queryKey,
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: allDatabasePagesQueryOptions().queryKey,
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: allDatabaseMeasuresQueryOptions().queryKey,
+                }),
+            ]);
         },
         onError: (error) => {
             conToastError(tolgee.t(errorKey), error);

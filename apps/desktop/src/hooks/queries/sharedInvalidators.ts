@@ -16,6 +16,14 @@ export const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
     void qc.invalidateQueries({
         queryKey: pageKeys.inOrder(),
     });
+    // The whole-show query is not a prefix match of the per-page keys, so mark it
+    // stale explicitly. Exports refetch it when they mount; skip the refetch here so
+    // the always-mounted preview handler doesn't reload every marcher page per edit.
+    void qc.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+        exact: true,
+        refetchType: "none",
+    });
     // Invalidate marcherPage queries for each affected page
     for (const pageId of pageIds) {
         void qc

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button, Switch } from "@openmarch/ui";
@@ -18,7 +18,22 @@ function PageEditor() {
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
-    const splitPage = useSplitPage().mutate;
+    const { mutate: splitPage, isPending: isSplitting } = useSplitPage();
+    // isPending only lands on the next render, so a fast second click would split
+    // the same stale page again and hit the pages.start_beat unique constraint.
+    const splitInFlight = useRef(false);
+    const handleSplitPage = (page: NonNullable<typeof selectedPage>) => {
+        if (splitInFlight.current) return;
+        splitInFlight.current = true;
+        splitPage(
+            { page },
+            {
+                onSettled: () => {
+                    splitInFlight.current = false;
+                },
+            },
+        );
+    };
     const isFirstPage = selectedPage?.previousPageId === null;
     // Tablet layout: fold the page section while marchers are selected so their
     // coordinates fit; it goes back to how it was when the selection clears
@@ -112,8 +127,10 @@ function PageEditor() {
                     <Button
                         variant="secondary"
                         size="compact"
-                        onClick={() => splitPage({ page: selectedPage })}
-                        disabled={selectedPage?.beats.length <= 1}
+                        onClick={() => handleSplitPage(selectedPage)}
+                        disabled={
+                            isSplitting || selectedPage?.beats.length <= 1
+                        }
                     >
                         <T keyName="inspector.page.splitPage" />
                     </Button>

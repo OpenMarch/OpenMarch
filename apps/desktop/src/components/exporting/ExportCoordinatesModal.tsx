@@ -6,7 +6,7 @@ import MarcherCoordinateSheetPreview, {
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import {
-    allMarcherPagesQueryOptions,
+    useExportReadyMarcherPages,
     allSectionAppearancesQueryOptions,
     allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
@@ -117,11 +117,12 @@ function CoordinateSheetExport() {
         allMarchersQueryOptions(),
     );
     const { pages } = useTimingObjects();
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+    // Edits mark these stale; wait for the refetch so the export uses current positions
+    const {
+        data: marcherPages,
+        isSuccess: marcherPagesLoaded,
+        isReady: marcherPagesReady,
+    } = useExportReadyMarcherPages();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -613,7 +614,9 @@ function CoordinateSheetExport() {
                 <Button
                     size="compact"
                     onClick={handleExport}
-                    disabled={isLoading || !marchersLoaded}
+                    disabled={
+                        isLoading || !marchersLoaded || !marcherPagesReady
+                    }
                 >
                     {isLoading ? (
                         <T keyName="exportCoordinates.exporting" />
@@ -695,11 +698,12 @@ function CoordinateSheetExport() {
 function DrillChartExport() {
     const { pages } = useTimingObjects()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+    // Edits mark these stale; wait for the refetch so the export uses current positions
+    const {
+        data: marcherPages,
+        isSuccess: marcherPagesLoaded,
+        isReady: marcherPagesReady,
+    } = useExportReadyMarcherPages();
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
@@ -871,7 +875,8 @@ function DrillChartExport() {
         fieldProperties &&
         pages.length > 1 &&
         marchers &&
-        marchers.length > 0
+        marchers.length > 0 &&
+        marcherPagesReady
     );
 
     /**
@@ -1225,11 +1230,9 @@ function VideoExport() {
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );
-    const { data: marcherPages } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
+    // Edits mark these stale; wait for the refetch so the export uses current positions
+    const { data: marcherPages, isReady: marcherPagesReady } =
+        useExportReadyMarcherPages();
     const { data: marcherIdsByTagId } = useQuery(
         marcherIdsForAllTagIdsQueryOptions(),
     );
@@ -1487,7 +1490,8 @@ function VideoExport() {
             fieldProperties &&
             pages.length > 1 &&
             marchers &&
-            marchers.length > 0
+            marchers.length > 0 &&
+            marcherPagesReady
         ) &&
         (!isWebBuild || encodingSupport.state === "ok");
 

@@ -5,6 +5,7 @@ import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { T, useTolgee } from "@tolgee/react";
+import { compactMeasureRange } from "./utils/compactMeasureRange";
 
 // Common props for all coordinate sheet templates
 interface CoordinateSheetProps {
@@ -209,21 +210,6 @@ export function QuarterPageCoordinateSheet({
         borderLeft: "1px dotted #888",
     };
 
-    const compactMeasureFormat = (measureStr: string): string => {
-        const match = measureStr.match(
-            // eslint-disable-next-line no-useless-escape
-            /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
-        );
-        if (match) {
-            return `${match[1]}-${match[2]}`.slice(0, 11);
-        }
-        const match2 = measureStr.match(/([A-Za-z0-9]+)\(\d+\)/);
-        if (match2) {
-            return match2[1];
-        }
-        return measureStr;
-    };
-
     return (
         <div style={{ fontFamily: "sans-serif" }}>
             <div
@@ -296,7 +282,7 @@ export function QuarterPageCoordinateSheet({
                             ? readableCoords.toTerseStringY()
                             : readableCoords.toVerboseStringY();
                         const counts = page.counts;
-                        const msValue = compactMeasureFormat(
+                        const msValue = compactMeasureRange(
                             measureRangeString(page),
                         );
 

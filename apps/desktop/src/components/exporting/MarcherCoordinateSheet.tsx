@@ -14,6 +14,7 @@ import Beat from "@/global/classes/Beat";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { useQuery } from "@tanstack/react-query";
+import { compactMeasureRange } from "./utils/compactMeasureRange";
 
 const FullPageSheetColumnWidths = {
     pageNumber: "10%",
@@ -618,26 +619,6 @@ interface StaticQuarterMarcherSheetProps {
     includeMeasures: boolean;
 }
 
-/**
- * Format measure as X-X (e.g. 12A-14), max 11 chars.
- * Discards count of the measure.
- * Accepts strings like "12A(9) → 14(16)" or "12(9)".
- */
-function compactMeasureFormat(measureStr: string): string {
-    const match = measureStr.match(
-        /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
-    );
-    if (match) {
-        return `${match[1]}-${match[2]}`.slice(0, 11);
-    }
-    const match2 = measureStr.match(/([A-Za-z0-9]+)\(\d+\)/);
-    if (match2) {
-        return match2[1];
-    }
-
-    return measureStr;
-}
-
 export function StaticQuarterMarcherSheet({
     marcher,
     fieldProperties,
@@ -882,7 +863,7 @@ export function StaticQuarterMarcherSheet({
 
                             // Measure (format as X-X)
                             const origMeasure = measureRangeString(page);
-                            const msValue = compactMeasureFormat(origMeasure);
+                            const msValue = compactMeasureRange(origMeasure);
 
                             const isEven = index % 2 === 0;
 
