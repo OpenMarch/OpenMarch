@@ -1,0 +1,99 @@
+---
+title: How shapes work
+description: What a shape is, the kinds you can draw, and how the selected marchers take their spots on it.
+type: concept
+covers:
+  - apps/desktop/src/shapes
+  - action:shapeBlock
+  - action:shapeCircle
+  - action:shapeLine
+  - action:shapeCurve
+  - action:shapeArc
+  - action:openShapeRing
+  - action:applyShape
+  - i18n:shapes
+sidebar:
+  order: 0
+  label: How shapes work
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+A shape places the selected marchers at one moment: the count the playhead is on. You draw a box, circle, line, curve or arc on the field, the shape shows a spot for every selected marcher, and when you place it each marcher stands on a spot.
+
+<Media
+  id="shapes-open-box"
+  alt="A box drawn on the field above a row of trumpets and not yet placed: a grid of spots inside a purple outline, square handles on its corners and sides, a round knob above it, and a bar of numbers under it ending in a Place button."
+/>
+
+Placing writes ordinary positions, the same as dragging the marchers there yourself, so the timeline moves them into the shape like any other move. The shape is kept with them, so you can select it again later and change it. A shape sets where the marchers stand at that count, not the way they get there.
+
+## Kinds
+
+| Kind                               | Key                        | What it makes                                                          |
+| ---------------------------------- | -------------------------- | ---------------------------------------------------------------------- |
+| <Ui k="shapes.kinds.block.label" plain />  | <Kbd action="shapeBlock" />  | A block of marchers, in rows and files, round its edge, or spread inside it |
+| <Ui k="shapes.kinds.circle.label" plain /> | <Kbd action="shapeCircle" /> | A ring of marchers an even interval apart, or a filled circle          |
+| <Ui k="shapes.kinds.line.label" plain />   | <Kbd action="shapeLine" />   | A straight line, or a line with corners through points you click       |
+| <Ui k="shapes.kinds.curve.label" plain />  |                            | A line that bends smoothly through its points                          |
+| <Ui k="shapes.kinds.arc.label" plain />    |                            | Part of a circle or an ellipse, open or closed                         |
+
+Every kind is in the toolbar's <Ui k="inspector.shape.shapesTab" /> tab, as a small picture of the shape; point at one to see its name. Curve and Arc have no key of their own, but you can give them one in Settings.
+
+<Media
+  id="shapes-tab"
+  alt="The toolbar's Shapes tab: five small pictures for Box, Circle, Line, Curve and Arc, and the hint that holding R on the field opens the shape ring."
+/>
+
+You can also pick a kind three other ways:
+
+- Hold <Kbd action="openShapeRing" /> with the pointer over the field to open the shape ring around it, slide toward a shape and let go. Tap <Kbd action="openShapeRing" /> instead to keep the ring open until you click.
+- Press <Kbd action="openCommandBar" /> and type the shape's name, such as "box". The command bar then asks for the shape's numbers one at a time, and places the shape after the last one. See [Draw a box](/guides/shapes/draw-a-box/).
+- Search for "Shape" in the command palette (<Kbd action="openCommandPalette" />).
+
+Shapes need marchers to place, so select them first. With nobody selected the kinds are greyed out and say <Ui k="shapes.tool.selectMarchersFirst" />. The shape tools are the same in Basic and Expert; only where marchers start from differs, as below.
+
+## A shape on the field
+
+Once it's drawn, a shape stays open until you place it or discard it. While it's open, the field shows:
+
+- the shape's outline and its spots, each labeled with the marcher who will stand there;
+- a faint dot in each of its marchers' colors where they start: at the start flag in Expert, at the start of the page in Basic;
+- everyone else faded, so the shape stands out;
+- handles on the shape's corners, sides or points to reshape it, a round knob to turn it, and a dot in the middle to move it;
+- the floating editor under the shape, with its numbers and buttons.
+
+Press <Kbd action="applyShape" /> or select <Ui k="shapes.edit.place" /> to place it, as one step you can undo. Press <Kbd action="cancelAlignmentUpdates" /> to discard it; undo brings it back.
+
+The shape stays open while you scrub the timeline or go to another page. Away from its count it waits behind a small notice on the field, <Ui k="shapes.edit.away.text" values={{ moment: "count 16" }} />, with <Ui k="shapes.edit.away.goBack" /> to return to it and <Ui k="shapes.edit.away.dismiss" /> to drop it.
+
+To see the outline on its own, hold <Kbd action="shapeHideMarchers" /> to hide the spots and their labels for a moment, or tap it to keep them hidden until you tap it again.
+
+## Spots, intervals and steps
+
+Every spot sits on the field's half-step grid unless you ask for something finer. Spacings are intervals in steps between neighbors: "2 steps" means each marcher is two steps from the next. You can type any interval, including fractions such as 1⅔, and the shape keeps it exactly.
+
+How the spots fill a shape depends on its kind:
+
+- A box or circle is filled. Its <Ui k="shapes.edit.mode.label" /> menu picks <Ui k="shapes.edit.mode.files" /> (rows and files), <Ui k="shapes.edit.mode.outline" /> (round the edge, the middle empty) or <Ui k="shapes.edit.mode.spread" /> (evenly over the whole shape, in no rows). A circle has Outline and Spread.
+- A line, curve or arc is a path: its marchers stand along it. A line passes through points. A point is either a corner, where the line turns sharply, or smooth, where it bends round. The two ends always hold a marcher, and so does every corner unless you turn that off. A path can be closed, and a closed path can be filled like a box.
+
+## Who goes where
+
+When a shape is drawn, OpenMarch gives each marcher the spot that makes the total walk shortest, measured from where they start: the start flag in Expert, the start of the page in Basic. Paths don't cross. Moving, turning, stretching or flipping the shape keeps each marcher on their own spot, so a flipped form is the same form mirrored. Select <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) to work out the shortest walks again after a change.
+
+A line, curve or arc also has a <Ui k="shapes.edit.order.label" /> menu. <Ui k="shapes.edit.order.reverse" /> turns the order along the line end for end, and when the marchers all come from one placed line, <Ui k="shapes.edit.order.keep" /> keeps them in the same order along the new one.
+
+## Placed shapes
+
+A placed shape remembers its kind and its numbers. Click any of its marchers to select the whole shape, with its handles and floating editor back; every change you make then saves as soon as you let go. If a marcher is later moved off its spot, they leave the shape and the rest stay in it. See [Place marchers in a shape](/guides/shapes/place-marchers/).
+
+## Related
+
+- [Draw a box](/guides/shapes/draw-a-box/): the most common shape, step by step.
+- [Draw a circle](/guides/shapes/draw-a-circle/), [Draw a line](/guides/shapes/draw-a-line/) and [Draw an arc](/guides/shapes/draw-an-arc/): the other kinds.
+- [Place marchers in a shape](/guides/shapes/place-marchers/): order, spacing, fit and editing a placed shape.
+- [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): half steps, yard lines, and the keys you hold while drawing.
+- [Select marchers](/guides/marchers/select-marchers/): choose who goes in the shape.

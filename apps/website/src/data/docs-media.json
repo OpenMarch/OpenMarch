@@ -1,0 +1,506 @@
+{
+    "3d-camera-menu": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 476,
+        "height": 568
+    },
+    "3d-cameras-panel": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 752,
+        "height": 836
+    },
+    "3d-marchers": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 586
+    },
+    "3d-move-view": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 780,
+        "seconds": 7.7
+    },
+    "3d-props-block": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 934
+    },
+    "3d-props-draw": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 1252,
+        "seconds": 6.3
+    },
+    "3d-props-edit": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1436
+    },
+    "3d-props-handles": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 636,
+        "height": 604,
+        "seconds": 6.2
+    },
+    "3d-props-panel": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1436
+    },
+    "3d-settings": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 752,
+        "height": 1784
+    },
+    "3d-window": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 1000
+    },
+    "field-checkpoints": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 1152,
+        "height": 1224
+    },
+    "field-panel": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 1176,
+        "height": 1416
+    },
+    "field-show-settings": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 1012,
+        "height": 768
+    },
+    "field-step-warnings": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 1600,
+        "height": 920
+    },
+    "field-template": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 1152,
+        "height": 408
+    },
+    "files-export-charts": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1552,
+        "height": 876
+    },
+    "files-export-sheets": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1552,
+        "height": 1168
+    },
+    "files-export-video": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1552,
+        "height": 1168
+    },
+    "files-file-tab": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1600,
+        "height": 148
+    },
+    "files-launch": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1600,
+        "height": 1000
+    },
+    "files-mobile-panel": {
+        "chapter": "files",
+        "kind": "still",
+        "width": 1060,
+        "height": 1440
+    },
+    "marchers-add-form": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1012,
+        "height": 940
+    },
+    "marchers-align": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1120,
+        "height": 520,
+        "seconds": 5.6
+    },
+    "marchers-alignment-tab": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1600,
+        "height": 118
+    },
+    "marchers-appearance": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1012,
+        "height": 840
+    },
+    "marchers-coordinate-rounding": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 768,
+        "height": 916
+    },
+    "marchers-inspector": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 644,
+        "height": 1116
+    },
+    "marchers-move-drag": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1280,
+        "height": 674,
+        "seconds": 6.4
+    },
+    "marchers-panel": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1012,
+        "height": 1040
+    },
+    "marchers-rotate": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1240,
+        "height": 840,
+        "seconds": 4.5
+    },
+    "marchers-select-box": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1280,
+        "height": 606,
+        "seconds": 6
+    },
+    "marchers-select-lasso": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1120,
+        "height": 720,
+        "seconds": 5.1
+    },
+    "marchers-select-tab": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1600,
+        "height": 118
+    },
+    "music-count-menu": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1156,
+        "height": 572
+    },
+    "music-edit-music": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1600,
+        "height": 478
+    },
+    "music-file-menu": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1072,
+        "height": 372
+    },
+    "music-import-checks": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1136,
+        "height": 820
+    },
+    "music-import-score": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 928,
+        "height": 552
+    },
+    "music-metronome": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 964,
+        "height": 708
+    },
+    "music-sound": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 512,
+        "height": 284
+    },
+    "music-tempo-drag": {
+        "chapter": "music",
+        "kind": "clip",
+        "width": 1280,
+        "height": 382,
+        "seconds": 4.8
+    },
+    "music-time-signature": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1268,
+        "height": 1068
+    },
+    "music-timeline-waveform": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 1600,
+        "height": 226
+    },
+    "reference-settings-window": {
+        "chapter": "reference",
+        "kind": "still",
+        "width": 1600,
+        "height": 1138
+    },
+    "reference-shortcut-settings": {
+        "chapter": "reference",
+        "kind": "still",
+        "width": 1600,
+        "height": 1138
+    },
+    "shapes-draw-arc": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 8.4
+    },
+    "shapes-draw-box": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 6.8
+    },
+    "shapes-draw-circle": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 6.5
+    },
+    "shapes-draw-line": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 7.3
+    },
+    "shapes-edit-placed": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 6.4
+    },
+    "shapes-fill-menu": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1296,
+        "height": 388
+    },
+    "shapes-modifier-keys": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 7.3
+    },
+    "shapes-open-box": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1404,
+        "height": 876
+    },
+    "shapes-snap-guide": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 5.8
+    },
+    "shapes-tab": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 940,
+        "height": 172
+    },
+    "start-convert-dialog": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 880,
+        "height": 872
+    },
+    "start-editor-mode-setting": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1600,
+        "height": 1138
+    },
+    "start-timeline-basic": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1600,
+        "height": 188
+    },
+    "start-timeline-expert": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1600,
+        "height": 216
+    },
+    "timeline-add-page": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 176
+    },
+    "timeline-cross-pages": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 448,
+        "seconds": 5.9
+    },
+    "timeline-held": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 216
+    },
+    "timeline-isolate": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 1106
+    },
+    "timeline-loop": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 174,
+        "seconds": 5.5
+    },
+    "timeline-make-move": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 564,
+        "seconds": 6.8
+    },
+    "timeline-move-menu": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 816,
+        "height": 556
+    },
+    "timeline-not-defined": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 1354
+    },
+    "timeline-page-flag": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 174,
+        "seconds": 5.6
+    },
+    "timeline-page-menu": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 608,
+        "height": 616
+    },
+    "timeline-parts": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 216
+    },
+    "timeline-paths": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 920
+    },
+    "timeline-play-guide": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 868,
+        "height": 276
+    },
+    "timeline-resize-move": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 174,
+        "seconds": 7.2
+    },
+    "timeline-scrub": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 886,
+        "seconds": 5.5
+    },
+    "timeline-start-flag-positions": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 528,
+        "height": 588
+    },
+    "window-overview": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1600,
+        "height": 1000
+    },
+    "workspace-pan-zoom": {
+        "chapter": "workspace",
+        "kind": "clip",
+        "width": 1280,
+        "height": 736,
+        "seconds": 7.23
+    },
+    "workspace-preview": {
+        "chapter": "workspace",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 4.3
+    },
+    "workspace-zoom-controls": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 360,
+        "height": 136
+    }
+}

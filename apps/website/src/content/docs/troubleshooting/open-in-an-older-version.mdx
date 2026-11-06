@@ -1,0 +1,61 @@
+---
+title: Open a show in an older version
+description: Find the copies OpenMarch keeps before it changes a show's file, and open one in an earlier version of the app.
+type: how-to
+covers:
+  - apps/desktop/electron/main/index.ts
+  - apps/desktop/electron/main/openShow.ts
+  - apps/desktop/electron/database/backup.ts
+  - i18n:convertShow
+sidebar:
+  order: 3
+---
+
+import Ui from "@/components/docs/Ui.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+A show opened in a newer version of OpenMarch is often changed so that it works with that version's features, and older versions can't open it afterwards. Before OpenMarch changes a show's file, it saves a copy of it. To go back to an older version, open that copy in it.
+
+If something broke after an update, please [tell us](/guides/start/get-help/), so it gets fixed.
+
+<Aside type="caution">
+Don't open a show saved by OpenMarch 0.2 in 0.1.7. 0.1.7 can't read it, and saving it there can leave a file that 0.2 can't open either. Open a copy from before the conversion instead.
+</Aside>
+
+## Find the copy
+
+### Shows from OpenMarch 0.1.7
+
+When the desktop app converts a 0.1.7 show, it saves an untouched copy in the same folder as the show, named `<name>.pre-conversion.dots`: `Fall Show.dots` gets `Fall Show.pre-conversion.dots`. It stays there until you delete it. See [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/).
+
+### Shows made in 0.2
+
+When a newer version of OpenMarch has to update a show's file to open it, it first saves a copy in its backups folder. The copy's name starts with `backup_` and the time it was made, in UTC, then the show's name: `Fall Show.dots` opened on 5 November 2026 at 22:42 UTC becomes `backup_2026-11-05T22-42-59-856Z_Fall Show.dots`. Copies older than 30 days are deleted.
+
+The backups folder is in OpenMarch's own folder:
+
+| System | Backups folder |
+| --- | --- |
+| Windows | `%APPDATA%\OpenMarch\backups` |
+| macOS | `~/Library/Application Support/OpenMarch/backups` |
+| Linux | `~/.config/OpenMarch/backups` |
+
+These folders are hidden by default. To open one, copy its path, then paste it into the File Explorer address bar on Windows, into **Go › Go to Folder** in the Finder on a Mac, or into your file manager's location bar on Linux.
+
+### In the web editor
+
+The web editor doesn't change the `.dots` file you opened, so that file is still the version it was. It also keeps the last 20 versions of each show: select the save status in the title bar, then <Ui k="web.versionsMenu" />, and restore the one you want. Restoring keeps the current state as a version too.
+
+## Open the copy in an older version
+
+1. Copy the file to a folder of your own, such as Documents, and work on that copy. The one OpenMarch saved stays as it is, in case you need it again.
+2. Download the version the show came from. The [download page](/download/) lists earlier releases, and every release is on [GitHub](https://github.com/OpenMarch/OpenMarch/releases).
+3. Install it and open the copy.
+
+Installing an older version usually replaces the one you have, so install the current version again when you're done. OpenMarch 0.1.7 downloads the newest version by itself and installs it when you quit, so the next time you open OpenMarch you may be on the newest version again.
+
+## Related
+
+- [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/): what the conversion keeps and loses.
+- [Repair a show file](/troubleshooting/repair-a-file/): when a show opens but edits fail.
+- [Get help](/guides/start/get-help/): report a problem with an update.

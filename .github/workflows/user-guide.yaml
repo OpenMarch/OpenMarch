@@ -1,0 +1,103 @@
+# cspell:words startswith
+name: User guide
+
+# Keeps the user guide (openmarch.com/guides) in step with the app. See apps/website/AGENTS.md.
+# - check: every page's labels, shortcuts, pictures and links exist; the generated shortcut
+#   data matches the app; the site builds. Fails the PR when the guide is broken.
+# - impact: comments on the PR with the guide pages the change may affect. Advisory only:
+#   it never fails, and the `no-docs-needed` label silences it.
+
+on:
+  pull_request:
+    branches: ["main", "field-renderer"]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'apps/desktop/src/**'
+              - 'apps/desktop/electron/**'
+              - 'apps/desktop/i18n/en.json'
+              - 'apps/desktop/scripts/docs-media/**'
+              - 'apps/desktop/scripts/docs-reference/**'
+              - 'apps/website/**'
+              - 'packages/ui/**'
+              - '.github/workflows/user-guide.yaml'
+
+  check:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install project dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Check every page (labels, shortcuts, pictures, links, wording)
+        run: pnpm --dir apps/website check:guide
+
+      - name: Build workspace packages
+        run: pnpm turbo run build --filter=@openmarch/desktop^...
+
+      - name: Shortcut data matches the app
+        run: pnpm --dir apps/desktop docs:reference --check
+
+      - name: Build the website
+        run: pnpm --dir apps/website run build
+
+  impact:
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true' && !contains(github.event.pull_request.labels.*.name, 'no-docs-needed')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Find the guide pages this change may affect
+        run: node apps/website/scripts/docs-impact.mjs --base "origin/${{ github.base_ref }}" --markdown > impact.md
+
+      - name: Comment on the pull request
+        # A PR from another repository gets a read-only token; the report is in the job log then
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          cat impact.md
+          existing=$(gh api "repos/${{ github.repository }}/issues/$PR/comments" --paginate \
+            --jq '[.[] | select(.body | startswith("<!-- docs-impact -->"))][0].id // empty')
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/${{ github.repository }}/issues/comments/$existing" -F body=@impact.md >/dev/null
+          else
+            gh pr comment "$PR" --repo "${{ github.repository }}" --body-file impact.md
+          fi

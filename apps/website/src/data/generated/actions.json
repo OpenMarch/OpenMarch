@@ -1,0 +1,2286 @@
+{
+    "launchLoadFileDialogue": {
+        "label": "Open file…",
+        "category": "file",
+        "bindings": []
+    },
+    "launchSaveFileDialogue": {
+        "label": "Save a copy…",
+        "category": "file",
+        "bindings": []
+    },
+    "launchNewFileDialogue": {
+        "label": "New file…",
+        "category": "file",
+        "bindings": []
+    },
+    "launchInsertAudioFileDialogue": {
+        "label": "Add audio file…",
+        "category": "file",
+        "bindings": []
+    },
+    "closeFile": {
+        "label": "Close file",
+        "category": "file",
+        "bindings": []
+    },
+    "openExportDialog": {
+        "label": "Export…",
+        "category": "file",
+        "bindings": []
+    },
+    "exportCoordinateSheets": {
+        "label": "Export coordinate sheets…",
+        "category": "file",
+        "bindings": []
+    },
+    "exportDrillCharts": {
+        "label": "Export drill charts…",
+        "category": "file",
+        "bindings": []
+    },
+    "exportVideo": {
+        "label": "Export video…",
+        "category": "file",
+        "bindings": []
+    },
+    "exportToMobile": {
+        "label": "Export to OpenMarch Mobile…",
+        "category": "file",
+        "bindings": []
+    },
+    "launchImportMusicXmlFileDialogue": {
+        "label": "Import MusicXML…",
+        "category": "file",
+        "bindings": []
+    },
+    "performUndo": {
+        "label": "Undo",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "Z"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Z"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "Z"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Z"
+                    ]
+                }
+            }
+        ]
+    },
+    "performRedo": {
+        "label": "Redo",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "Z"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "Z"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "Z"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "Z"
+                    ]
+                }
+            }
+        ]
+    },
+    "nextPage": {
+        "label": "Next page",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "E"
+                    ]
+                }
+            }
+        ]
+    },
+    "lastPage": {
+        "label": "Last page",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "E"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "End"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "End"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "E"
+                    ]
+                }
+            }
+        ]
+    },
+    "previousPage": {
+        "label": "Previous page",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Q"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Q"
+                    ]
+                }
+            }
+        ]
+    },
+    "firstPage": {
+        "label": "First page",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "Q"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Q"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "Home"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Home"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "Q"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "Q"
+                    ]
+                }
+            }
+        ]
+    },
+    "nextBeat": {
+        "label": "Next beat",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "E"
+                    ]
+                }
+            }
+        ]
+    },
+    "previousBeat": {
+        "label": "Previous beat",
+        "category": "navigation",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "Q"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "Q"
+                    ]
+                }
+            }
+        ]
+    },
+    "playPause": {
+        "label": "Play / stop",
+        "category": "playback",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Space"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Space"
+                    ]
+                }
+            }
+        ]
+    },
+    "playPage": {
+        "label": "Play from playhead / pause",
+        "category": "playback",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "Space"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "Space"
+                    ]
+                }
+            }
+        ]
+    },
+    "playOn": {
+        "label": "Play on from the start flag",
+        "category": "playback",
+        "expertOnly": true,
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "Space"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Space"
+                    ]
+                }
+            }
+        ]
+    },
+    "toggleLoop": {
+        "label": "Loop on / off",
+        "category": "playback",
+        "expertOnly": true,
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "C"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "C"
+                    ]
+                }
+            }
+        ]
+    },
+    "holdFasterPlayback": {
+        "label": "Double speed while held",
+        "category": "playback",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "]"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "]"
+                    ]
+                }
+            }
+        ]
+    },
+    "holdSlowerPlayback": {
+        "label": "Half speed while held",
+        "category": "playback",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "["
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "["
+                    ]
+                }
+            }
+        ]
+    },
+    "nextPlaybackSpeed": {
+        "label": "Next playback speed",
+        "category": "playback",
+        "bindings": []
+    },
+    "previousPlaybackSpeed": {
+        "label": "Previous playback speed",
+        "category": "playback",
+        "bindings": []
+    },
+    "resetPlaybackSpeed": {
+        "label": "Normal playback speed",
+        "category": "playback",
+        "bindings": []
+    },
+    "toggleMetronome": {
+        "label": "Toggle metronome",
+        "category": "playback",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "M"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "M"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "M"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "M"
+                    ]
+                }
+            }
+        ]
+    },
+    "setAllMarchersToPreviousPage": {
+        "label": "Clear this page (all marchers)",
+        "category": "batchEdit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "P"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "P"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "P"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "P"
+                    ]
+                }
+            }
+        ]
+    },
+    "setSelectedMarchersToPreviousPage": {
+        "label": "Clear this page (selected)",
+        "category": "batchEdit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "P"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "P"
+                    ]
+                }
+            }
+        ]
+    },
+    "setAllMarchersToPreviousPageAndFollowing": {
+        "label": "Clear this page (all marchers), later pages move back too",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "setSelectedMarchersToPreviousPageAndFollowing": {
+        "label": "Clear this page (selected), later pages move back too",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineDefineAsShown": {
+        "label": "Define as shown",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldFromPrevious": {
+        "label": "Hold from previous page",
+        "category": "batchEdit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "H"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "H"
+                    ]
+                }
+            }
+        ]
+    },
+    "setAllMarchersToNextPage": {
+        "label": "Copy positions from next page (all marchers)",
+        "category": "batchEdit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "N"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "N"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "N"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "N"
+                    ]
+                }
+            }
+        ]
+    },
+    "setSelectedMarchersToNextPage": {
+        "label": "Copy positions from next page (selected)",
+        "category": "batchEdit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "N"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "N"
+                    ]
+                }
+            }
+        ]
+    },
+    "snapToNearestCustomFraction": {
+        "label": "Snap to grid",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "1"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "1"
+                    ]
+                }
+            }
+        ]
+    },
+    "lockX": {
+        "label": "Lock X axis",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Y"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Y"
+                    ]
+                }
+            }
+        ]
+    },
+    "lockY": {
+        "label": "Lock Y axis",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "X"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "X"
+                    ]
+                }
+            }
+        ]
+    },
+    "toggleSnap": {
+        "label": "Toggle Snap",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "M"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "M"
+                    ]
+                }
+            }
+        ]
+    },
+    "alignVertically": {
+        "label": "Align vertically",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
+    "alignHorizontally": {
+        "label": "Align horizontally",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "H"
+                    ]
+                }
+            }
+        ]
+    },
+    "evenlyDistributeVertically": {
+        "label": "Distribute vertically",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
+    "evenlyDistributeHorizontally": {
+        "label": "Distribute horizontally",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "H"
+                    ]
+                }
+            }
+        ]
+    },
+    "flipHorizontal": {
+        "label": "Flip horizontally",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "F"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "F"
+                    ]
+                }
+            }
+        ]
+    },
+    "flipVertical": {
+        "label": "Flip vertically",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "F"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "F"
+                    ]
+                }
+            }
+        ]
+    },
+    "swapMarchers": {
+        "label": "Swap two marchers",
+        "category": "alignment",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "S"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "S"
+                    ]
+                }
+            }
+        ]
+    },
+    "toggleStartFlagPositions": {
+        "label": "Toggle start flag positions",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "N"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "N"
+                    ]
+                }
+            }
+        ]
+    },
+    "toggleNextPagePaths": {
+        "label": "Toggle next page paths",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "M"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "M"
+                    ]
+                }
+            }
+        ]
+    },
+    "openFieldMenu": {
+        "label": "Open the field menu",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "ContextMenu"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "ContextMenu"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "F10"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "F10"
+                    ]
+                }
+            }
+        ]
+    },
+    "openSettings": {
+        "label": "Settings…",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        ","
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        ","
+                    ]
+                }
+            }
+        ]
+    },
+    "openView3d": {
+        "label": "Open 3D View",
+        "category": "ui",
+        "bindings": []
+    },
+    "togglePreview": {
+        "label": "Preview the show",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "P"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "P"
+                    ]
+                }
+            }
+        ]
+    },
+    "showShortcuts": {
+        "label": "Keyboard shortcuts",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "/"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "/"
+                    ]
+                }
+            }
+        ]
+    },
+    "openCommandPalette": {
+        "label": "Command palette",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "K"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "K"
+                    ]
+                }
+            }
+        ]
+    },
+    "openCommandBar": {
+        "label": "Command bar",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "/"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "/"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeBlock": {
+        "label": "Shape: Box",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "B"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "B"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeCircle": {
+        "label": "Shape: Circle",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "O"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "O"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeLine": {
+        "label": "Shape: Line",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "L"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "L"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeCurve": {
+        "label": "Shape: Curve",
+        "category": "shape",
+        "bindings": []
+    },
+    "shapeArc": {
+        "label": "Shape: Arc",
+        "category": "shape",
+        "bindings": []
+    },
+    "openShapeRing": {
+        "label": "Favorites ring: hold to pick a shape, tap to keep it open",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "R"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "R"
+                    ]
+                }
+            }
+        ]
+    },
+    "applyShape": {
+        "label": "Place marchers on the shape",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "↩"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Enter"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeRemoveLastPoint": {
+        "label": "Shape: Remove the last point while drawing",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌫"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Backspace"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌦"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Del"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeQuarterTurn": {
+        "label": "Shape: Turn 90° clockwise",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "R"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "R"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeEvenOut": {
+        "label": "Shape: Even out the outline",
+        "category": "shape",
+        "bindings": []
+    },
+    "shapeExpand": {
+        "label": "Shape: Expand, keeping the proportions",
+        "category": "shape",
+        "bindings": []
+    },
+    "shapeShrink": {
+        "label": "Shape: Shrink, keeping the proportions",
+        "category": "shape",
+        "bindings": []
+    },
+    "shapeRecalculate": {
+        "label": "Shape: Recalculate who goes where",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "R"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "R"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeHideMarchers": {
+        "label": "Shape: Hide the marchers (hold to peek, tap to keep hidden)",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "H"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeGroup": {
+        "label": "Group selection",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "G"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "G"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "G"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "G"
+                    ]
+                }
+            }
+        ]
+    },
+    "shapeUngroup": {
+        "label": "Shape: Ungroup",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "G"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "G"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "G"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "G"
+                    ]
+                }
+            }
+        ]
+    },
+    "cancelAlignmentUpdates": {
+        "label": "Cancel or deselect",
+        "category": "cursor",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Esc"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Esc"
+                    ]
+                }
+            }
+        ]
+    },
+    "selectAllMarchers": {
+        "label": "Select all",
+        "category": "select",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "A"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "A"
+                    ]
+                }
+            }
+        ]
+    },
+    "timelineUnsetHere": {
+        "label": "Remove keyframe",
+        "category": "timeline",
+        "bindings": []
+    },
+    "timelineUnsetHereAndFollowing": {
+        "label": "Remove keyframe, later pages move back too",
+        "category": "timeline",
+        "bindings": []
+    },
+    "timelineGoTo": {
+        "label": "Go to a page, measure or rehearsal mark",
+        "category": "timeline",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "G"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "G"
+                    ]
+                }
+            }
+        ]
+    },
+    "timelineCreatePageAtPlayhead": {
+        "label": "Create page at playhead",
+        "category": "timeline",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "F"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F"
+                    ]
+                }
+            }
+        ]
+    },
+    "timelineCreateSubsetAtPlayhead": {
+        "label": "Create subset at playhead",
+        "category": "timeline",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "F"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "F"
+                    ]
+                }
+            }
+        ]
+    },
+    "timelineSplitMoveAtPlayhead": {
+        "label": "Split the move at the playhead",
+        "category": "timeline",
+        "bindings": []
+    },
+    "splitSelectedIntoNewMove": {
+        "label": "Split selected marchers into a new move",
+        "category": "timeline",
+        "bindings": []
+    },
+    "mergeMoveIntoPage": {
+        "label": "Merge this move into its page",
+        "category": "timeline",
+        "bindings": []
+    },
+    "moveSelectedMarchersUp": {
+        "label": "Nudge up",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "W"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "W"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersUpFree": {
+        "label": "Nudge up (no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "W"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "W"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersUpFine": {
+        "label": "Nudge up (¼ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "W"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "W"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "↑"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "W"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "W"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersUpCoarse": {
+        "label": "Nudge up (4 steps)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersUpCoarseFree": {
+        "label": "Nudge up (4 steps, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersUpTenth": {
+        "label": "Nudge up (⅒ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "↑"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "⌘",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "Shift",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDown": {
+        "label": "Nudge down",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "S"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDownFree": {
+        "label": "Nudge down (no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "S"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDownFine": {
+        "label": "Nudge down (¼ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "S"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "↓"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "S"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "S"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDownCoarse": {
+        "label": "Nudge down (4 steps)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDownCoarseFree": {
+        "label": "Nudge down (4 steps, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersDownTenth": {
+        "label": "Nudge down (⅒ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "↓"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "⌘",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "Shift",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeft": {
+        "label": "Nudge left",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "A"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeftFree": {
+        "label": "Nudge left (no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "A"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeftFine": {
+        "label": "Nudge left (¼ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "A"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "←"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "A"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "A"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeftCoarse": {
+        "label": "Nudge left (4 steps)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeftCoarseFree": {
+        "label": "Nudge left (4 steps, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersLeftTenth": {
+        "label": "Nudge left (⅒ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "←"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "⌘",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "Shift",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRight": {
+        "label": "Nudge right",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "D"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "D"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRightFree": {
+        "label": "Nudge right (no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "D"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "D"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRightFine": {
+        "label": "Nudge right (¼ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "D"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "D"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "→"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "D"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "D"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "Shift",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRightCoarse": {
+        "label": "Nudge right (4 steps)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRightCoarseFree": {
+        "label": "Nudge right (4 steps, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "moveSelectedMarchersRightTenth": {
+        "label": "Nudge right (⅒ step, no snap)",
+        "category": "movement",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "→"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "⌘",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "Shift",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    }
+}

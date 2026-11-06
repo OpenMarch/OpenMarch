@@ -1,0 +1,178 @@
+---
+title: Glossary
+description: The words this guide and the app use, for drill and for OpenMarch, in plain terms.
+type: reference
+covers:
+  - docs/conventions/user-docs.md
+  - i18n:timeline.terms
+sidebar:
+  order: 3
+---
+
+import Ui from "@/components/docs/Ui.astro";
+
+The words this guide uses, in alphabetical order. Each one means the same thing on every page.
+
+## 3D View
+
+A window that shows the show from the stands, with marchers in uniform on a field in a stadium. You watch in it; you write drill in the editor. See [Open the 3D View](/guides/3d-view/open-the-3d-view/).
+
+## 8 to 5
+
+A step size: eight steps for every five yards, so each step is 22.5 inches. Most drill is written in 8 to 5. A larger step size, such as 6 to 5, covers the same distance in fewer, longer steps.
+
+## Arc
+
+A shape that places marchers along part of a circle. See [Draw an arc](/guides/shapes/draw-an-arc/).
+
+## Back sideline
+
+The sideline farthest from the audience. Its opposite is the front sideline.
+
+## Basic
+
+The editor mode that works in pages, like a drill chart: you set each page, and marchers hold until you move them again. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+## Box
+
+A shape that places marchers in rows and columns, given as across × deep, such as 8 × 4. See [Draw a box](/guides/shapes/draw-a-box/).
+
+## Count
+
+One beat of the show's music. Moves, pages and the playhead all fall on counts.
+
+## Defined
+
+A marcher's state on a page where you've set its position: a move of its own ends there, at a keyframe. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+## Drill number
+
+A marcher's label on the field and in charts, such as T3 or F12: the section's prefix and a number.
+
+## Editor
+
+The view for making changes to the show. Its opposite is Preview.
+
+## Expert
+
+The editor mode with the full timeline: moves that cross pages, overlapping moves, the start flag and the loop. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+## Field
+
+The playing surface and its markings: sidelines, yard lines, hashes and numbers. Each show has its own field, which you can change. See [Edit the field](/guides/field/edit-the-field/).
+
+## Front sideline
+
+The sideline nearest the audience. Front and back on the field are measured from it.
+
+## Hash
+
+A row of short marks across each yard line that divides the field front to back. Where the hashes sit depends on the kind of field: high school, college and pro fields put them at different distances from the sidelines.
+
+## Held
+
+A marcher's state on a page where you've chosen to keep it where it arrived on an earlier page, with <Ui k="timeline.terms.holdFromPrevious" />. If you change where it arrived, it holds at the new spot. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+## Home
+
+The start of the show, before the first move: where every marcher stands at the beginning. It's the set of the first page.
+
+## Inspector
+
+The panel at the side of the window that shows the details of what you've selected: the page, or the selected marchers and their positions.
+
+## Keyframe
+
+A position you set for a marcher at a count. Marchers move from one keyframe to the next.
+
+## Line
+
+A shape that places marchers evenly along a straight line. See [Draw a line](/guides/shapes/draw-a-line/).
+
+## Loop
+
+In Expert, a stretch of the show that playback repeats while you work on it. See [Play the show](/guides/timeline/play-the-show/).
+
+## Marcher
+
+Anyone on the field, in any section, including the color guard. The guide doesn't say performer or dot.
+
+## Measure
+
+A group of counts in the music, as numbered in the score. The timeline shows measure numbers above the counts.
+
+## Move
+
+A stretch of time on the timeline in which marchers go from one place to another. A page usually has one move across it; in Expert, a move can also start or end in the middle of a page, or run across several pages. See [Moves](/guides/timeline/moves/).
+
+## Not defined
+
+A marcher's state on a page where nothing has been decided for it. It shows the last position you set, and moves with any edit to that position. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+## Page
+
+A numbered stretch of counts that ends at a set the marchers reach. Pages are numbered as on a drill chart. See [Pages](/guides/timeline/pages/).
+
+## Playhead
+
+The line on the timeline that marks the count you're looking at. The field shows where every marcher is at that count.
+
+## Preview
+
+The view for watching the show without changing it. Its opposite is Editor. See [Editor and Preview](/guides/workspace/editor-and-preview/).
+
+## Prop
+
+An object on the field, such as a riser or a backdrop, that you draw and move on the timeline like marchers. See [Props](/guides/3d-view/props/).
+
+## Rehearsal mark
+
+A letter or name for a place in the music, such as A or Letter B, shown with the measures. You can go to one by name.
+
+## Section
+
+A group of marchers by instrument or role, such as Trumpet or Color guard. Each section has a prefix for its drill numbers.
+
+## Set
+
+Where the marchers stand at the end of a page: the picture a drill chart shows for that page.
+
+## Shape
+
+A box, line or arc you draw on the field to place the selected marchers in it. See [Shapes](/guides/shapes/).
+
+## Show
+
+One `.dots` file: its marchers, music, field and drill.
+
+## Side 1 and Side 2
+
+The two halves of the field, split at the 50 yard line. Side 1 is on the audience's left and Side 2 on the right, unless the show's field names them differently.
+
+## Snap
+
+Moving marchers and shape points onto the nearest step, yard line or hash as you drag. See [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/).
+
+## Start flag
+
+In Expert, the flag on the timeline that marks where playback starts.
+
+## Step size
+
+How far a marcher travels on each count, given as steps per five yards, such as 8 to 5. OpenMarch can mark moves whose steps are too large to march. See [Step size warnings](/guides/field/step-size-warnings/).
+
+## Subset
+
+A page added inside another page and numbered after it with a letter, such as 2A after page 2, so the pages after it keep their numbers.
+
+## Tempo
+
+The speed of the music, in beats per minute. A show can change tempo, all at once or gradually. See [Tempo](/guides/music/tempo/).
+
+## Timeline
+
+The strip along the bottom of the window that holds the show's counts, measures, pages, moves and music, with the playback controls. See [How the timeline works](/guides/timeline/how-the-timeline-works/).
+
+## Yard line
+
+One of the lines across the field every five yards, numbered from each goal line to the 50. Drill positions are often given as steps from the nearest yard line.
