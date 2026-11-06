@@ -4,11 +4,10 @@ import {
     holdFromPreviousMenu,
     holdFromPreviousMessage,
 } from "../timelineHoldFromPrevious";
-import { selectionHeldBars } from "../timelineHeldBars";
 
 /**
  * The page box menu's **Hold from previous page** entry and what its toast says (holds, fork
- * #472), and the selection's Held bars.
+ * #472). The selection's hold bars are in timelineHoldBars.test.ts.
  */
 
 const state = (pageId: number): PageKeepState => ({
@@ -120,37 +119,5 @@ describe("holdFromPreviousMessage", () => {
         expect(
             holdFromPreviousMessage({ held: [], skipped: [] }, "2", nameOf),
         ).toBeNull();
-    });
-});
-
-describe("selectionHeldBars", () => {
-    const mark = (
-        id: number,
-        marcherId: number,
-        start: number,
-        end: number,
-    ) => ({
-        id,
-        marcherId,
-        start,
-        end,
-    });
-
-    it("one bar per stretch for the selected marchers, in selection order", () => {
-        const marks = [
-            mark(1, 1, 17, 25),
-            mark(2, 2, 17, 25),
-            mark(3, 3, 9, 25),
-            mark(4, 4, 17, 25),
-        ];
-        expect(selectionHeldBars(marks, [2, 1, 3])).toEqual([
-            { start: 9, end: 25, marcherIds: [3], total: 3 },
-            { start: 17, end: 25, marcherIds: [2, 1], total: 3 },
-        ]);
-    });
-
-    it("draws nothing without a selection or marks", () => {
-        expect(selectionHeldBars([mark(1, 1, 17, 25)], [])).toEqual([]);
-        expect(selectionHeldBars([], [1])).toEqual([]);
     });
 });

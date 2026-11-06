@@ -32,7 +32,7 @@ import type {
     TimelineKeyframe,
     TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
-import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
+import type { SelectionHolds } from "@/timeline/timelineHoldBars";
 import type {
     TimelinePageMenu,
     TimelineSetAsShownMenu,
@@ -267,8 +267,8 @@ export interface TimelineProps {
     readonly keyframes?: readonly TimelineKeyframe[];
     /** #306: a keyframe diamond's right-click Unset actions, by spec beat; without it, no menu */
     readonly keyframeMenu?: TimelineKeyframeMenu;
-    /** #472: the selected marchers' Held holds, spec beats; none without a selection */
-    readonly heldBars?: readonly SelectionHeldBar[];
+    /** #472, #477: the selected marchers' hold bars and departures, spec beats */
+    readonly holds?: SelectionHolds;
     /** The chains on the page boxes (UI-18 keep later pages), by page id; none without a selection */
     readonly keepChains?: PageKeepChains;
     /**
@@ -958,16 +958,22 @@ export function Timeline(props: TimelineProps) {
             })),
         [axis, keyframes],
     );
-    // #472: the selection's Held bars on the view axis
-    const { heldBars } = props;
-    const viewHeldBars = useMemo(
+    // #472, #477: the selection's hold bars and departures on the view axis
+    const { holds } = props;
+    const viewHolds = useMemo<SelectionHolds | undefined>(
         () =>
-            heldBars?.map((bar) => ({
-                ...bar,
-                start: axis.toView(bar.start),
-                end: axis.toView(bar.end),
-            })),
-        [axis, heldBars],
+            holds && {
+                bars: holds.bars.map((bar) => ({
+                    ...bar,
+                    start: axis.toView(bar.start),
+                    end: axis.toView(bar.end),
+                })),
+                departures: holds.departures.map((departure) => ({
+                    ...departure,
+                    beat: axis.toView(departure.beat),
+                })),
+            },
+        [axis, holds],
     );
     // #306: their menu acts on spec beats
     const { keyframeMenu } = props;
@@ -978,6 +984,8 @@ export function Timeline(props: TimelineProps) {
                 onUnset: (beat) => keyframeMenu.onUnset(axis.toSpec(beat)),
                 onUnsetAndFollowing: (beat) =>
                     keyframeMenu.onUnsetAndFollowing(axis.toSpec(beat)),
+                // Its light is in spec beats, as the hold bars it lights are
+                onFollowingPreview: keyframeMenu.onFollowingPreview,
             },
         [axis, keyframeMenu],
     );
@@ -1027,7 +1035,7 @@ export function Timeline(props: TimelineProps) {
         transportAccessories: props.transportAccessories,
         keyframes: viewKeyframes,
         keyframeMenu: viewKeyframeMenu,
-        heldBars: viewHeldBars,
+        holds: viewHolds,
         keepChains: props.keepChains,
         pageMoves: props.pageMoves,
         basicPoints: viewBasicPoints,

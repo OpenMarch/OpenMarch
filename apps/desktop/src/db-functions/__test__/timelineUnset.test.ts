@@ -543,14 +543,24 @@ describeDbTests(
             expect(at(PAGE2.end)).toEqual({
                 canUnset: true,
                 followingLabel: "Remove keyframe, Pages 3–4 move back too",
+                // Hovering it lights the Set marchers' bars on exactly those pages (#477)
+                followingLight: {
+                    marcherIds: [a],
+                    ranges: [PAGE3, BOXES[3]].map(({ start, end }) => ({
+                        start,
+                        end,
+                    })),
+                },
             });
             expect(at(PAGE3.end)).toEqual({
                 canUnset: false,
                 followingLabel: null,
+                followingLight: null,
             });
             expect(at(PAGE2.end, true)).toEqual({
                 canUnset: false,
                 followingLabel: null,
+                followingLight: null,
             });
         });
 

@@ -2183,6 +2183,7 @@
         },
         "heldBar": {
             "detail": "{held} of {total} selected",
+            "shape": "Its shape carries on here",
             "title": "{held} · Page {page}",
             "titleRange": "{held} · Pages {first}–{last}",
             "titleWithDetail": "{title}. {detail}"
@@ -2669,6 +2670,13 @@
                 "wholePage": "Keep works on a whole page, not {counts}"
             },
             "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · Page {page}",
+            "titleRange": "{notDefined} · Pages {first}–{last}"
+        },
+        "departure": {
+            "title": "Moves again · Page {page}, count {count}"
         }
     },
     "titlebar": {
