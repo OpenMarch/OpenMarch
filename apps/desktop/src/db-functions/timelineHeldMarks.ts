@@ -305,8 +305,8 @@ export async function marcherRecipeTimelines(
 /**
  * **Clear this page** for Held marchers (#472): the part of each of `marcherIds`' marks over `box`
  * goes, so the page is Not set for them. A part before the box stays (its arrival is unchanged); a
- * part after it would have nothing arriving at its start, so it goes too (dropped when its
- * arrival is gone, `keepHeldMarksTrueInTransaction`), and is reported in `later` so the toast
+ * part after it goes too, though with nothing arriving at its start it could stay as a borrowed
+ * hold (#474): clearing a page clears the hold (#472, #566), and `later` reports it so the toast
  * can say so.
  *
  * @returns `marchers`, those whose marks changed, ascending, and `later`, the marchers whose
