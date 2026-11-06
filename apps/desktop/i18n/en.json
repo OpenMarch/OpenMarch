@@ -764,6 +764,7 @@
             "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "timeline": {
+                "goToHeldPage": "Go to Page {page}, where this hold starts",
                 "goToPage": "Go to Page {page}, where these marchers last moved",
                 "goToStart": "Go to the start",
                 "heldFromStart": "{held} · since the start",

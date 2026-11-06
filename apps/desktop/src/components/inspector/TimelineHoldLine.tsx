@@ -5,6 +5,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "@/hooks";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
+    heldSince,
     marcherHoldState,
     sharedHoldState,
     withHoldKind,
@@ -66,6 +67,16 @@ export function useSelectionHoldState(
             );
             return carried.has(id);
         };
+        // Where the Held mark over the flag starts (Hold from previous page: this page only, R3)
+        const heldOnFlag = (id: number) => {
+            const mark = marks.find(
+                (m) =>
+                    m.marcherId === id &&
+                    m.start < current.flag &&
+                    current.flag <= m.end,
+            );
+            return mark ? heldSince(mark.start, flags) : null;
+        };
         return sharedHoldState(
             marcherIds.map((id) =>
                 withHoldKind(
@@ -75,12 +86,7 @@ export function useSelectionHoldState(
                         flags,
                     ),
                     {
-                        held: marks.some(
-                            (m) =>
-                                m.marcherId === id &&
-                                m.start < current.flag &&
-                                current.flag <= m.end,
-                        ),
+                        held: heldOnFlag(id),
                         carried: carriedOnFlag(id),
                     },
                 ),
@@ -105,7 +111,8 @@ const LINK_CLASS =
  * The marcher inspector's line for the selected marchers (UI-18), under Step Size: whether they
  * move on the current page or hold there, with a link to the page they last moved on
  * (defined-coordinates 08: readable, and visibly a link). A hold names its state in the working
- * words (`holdTerms`, fork #478): "Not defined · showing Page 2", "Held · since Page 2"; a carried
+ * words (`holdTerms`, fork #478): "Not defined · showing Page 2", or "Held · since Page 3" for the
+ * page its Held mark starts on (holds review R3); a carried
  * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
  */
 export default function TimelineHoldLine({
@@ -139,11 +146,17 @@ export default function TimelineHoldLine({
                             ? t("inspector.marcher.timeline.goToStart", {
                                   defaultValue: "Go to the start",
                               })
-                            : t("inspector.marcher.timeline.goToPage", {
-                                  defaultValue:
-                                      "Go to Page {page}, where these marchers last moved",
-                                  page: holdPage.name,
-                              })
+                            : state.how === "held"
+                              ? t("inspector.marcher.timeline.goToHeldPage", {
+                                    defaultValue:
+                                        "Go to Page {page}, where this hold starts",
+                                    page: holdPage.name,
+                                })
+                              : t("inspector.marcher.timeline.goToPage", {
+                                    defaultValue:
+                                        "Go to Page {page}, where these marchers last moved",
+                                    page: holdPage.name,
+                                })
                     }
                 >
                     <button

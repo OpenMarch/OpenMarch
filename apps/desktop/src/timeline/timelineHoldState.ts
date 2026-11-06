@@ -37,19 +37,41 @@ export type HoldKind = "held" | "carried" | "notDefined";
 
 /**
  * `state` with what decides its hold (`HoldKind`), for a marcher holding at the flag `current`.
+ * A Held hold names the page its Held mark starts on, not the marcher's last arrival: Hold from
+ * previous page holds that page only (holds review R3, demo M7), so Not defined pages may lie
+ * between the arrival and the mark.
  *
- * @param held whether a Held mark of the marcher covers `current` (`start < current <= end`)
+ * @param held where the Held mark of the marcher covering `current` (`start < current <= end`)
+ *   starts (`heldSince`), or `null` for none
  * @param carried whether a shape the marcher is in is carried onto `current`
  */
 export function withHoldKind(
     state: HoldState | null,
-    { held, carried }: { held: boolean; carried: boolean },
+    {
+        held,
+        carried,
+    }: {
+        held: { page: NamedFlag; fromStart: boolean } | null;
+        carried: boolean;
+    },
 ): HoldState | null {
     if (state?.kind !== "holding") return state;
-    return {
-        ...state,
-        how: held ? "held" : carried ? "carried" : "notDefined",
-    };
+    if (held) return { ...state, ...held, how: "held" };
+    return { ...state, how: carried ? "carried" : "notDefined" };
+}
+
+/**
+ * The page a Held mark starting at `start` holds from: the first flag at or after it (the first
+ * page's for a hold from the starting spot), as `marcherHoldState` names an arrival.
+ *
+ * @param flags every page flag, ascending, the first page's (beat 0) first
+ */
+export function heldSince(
+    start: number,
+    flags: readonly NamedFlag[],
+): { page: NamedFlag; fromStart: boolean } | null {
+    const since = flags.findIndex((f) => f.beat >= start);
+    return since < 0 ? null : { page: flags[since]!, fromStart: since === 0 };
 }
 
 /**

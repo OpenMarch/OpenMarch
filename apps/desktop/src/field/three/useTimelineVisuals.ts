@@ -219,11 +219,15 @@ function useFieldDecidedLook(
         played.current = false;
         let read: DecidedRead | null = null;
         const update = () => {
-            const { resolver } = useTimelineResolverStore.getState();
+            const { resolver, version } = useTimelineResolverStore.getState();
             if (!resolver) {
                 look.set(null);
                 return;
             }
+            // The Held marks are read after each resolver version (`useHeldMarksHost`): until
+            // they arrive, keep the look as it is, so a Held marcher doesn't flash Not defined
+            // (after Hold from previous page, undo, redo or opening a file)
+            if (useHeldMarksStore.getState().version !== version) return;
             read ??= readDecided(resolver);
             const beat = fieldBeat(useTimelineSelectionStore.getState());
             look.set(
@@ -256,7 +260,11 @@ function useFieldDecidedLook(
                     safely(true);
             }),
             useHeldMarksStore.subscribe((state, previous) => {
-                if (state.marks !== previous.marks) safely(true);
+                if (
+                    state.marks !== previous.marks ||
+                    state.version !== previous.version
+                )
+                    safely(true);
             }),
             usePlacedBoxStore.subscribe((state, previous) => {
                 if (

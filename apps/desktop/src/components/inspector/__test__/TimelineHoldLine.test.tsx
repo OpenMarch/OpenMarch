@@ -208,6 +208,37 @@ describe("TimelineHoldLine", () => {
         expect(line()?.textContent).toBe("Held · since Page 2");
     });
 
+    it("says a Held marcher is Held since the page its mark starts on, past Not defined pages (R3, demo M7)", async () => {
+        // Marcher 1 arrives on page 2; page 3 is Not defined; Hold from previous page on page 4
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 17, end: 25 }],
+        });
+        show([1]);
+        expect(line()?.textContent).toBe("Held · since Page 3");
+        fireEvent.focus(line()!);
+        expect(
+            (await screen.findAllByText("Go to Page 3, where this hold starts"))
+                .length,
+        ).toBeGreaterThan(0);
+        fireEvent.click(line()!);
+        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(17);
+        cleanup();
+        // Page 3 itself is still Not defined, showing page 2
+        mocks.selectedPage = PAGES[2];
+        show([1]);
+        expect(line()?.textContent).toBe("Not defined · showing Page 2");
+    });
+
+    it("says a never-moved marcher held on this page only is Held since that page, not the start", () => {
+        mocks.selectedPage = PAGES[3];
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 3, start: 17, end: 25 }],
+        });
+        show([3]);
+        expect(line()?.textContent).toBe("Held · since Page 3");
+    });
+
     it("names neither state when Held and Not defined marchers share the page", () => {
         mocks.selectedPage = PAGES[3];
         useHeldMarksStore.setState({

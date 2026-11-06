@@ -7,22 +7,23 @@ import { field, OUT, LABEL, settle } from "./compare.mjs";
 import { isolate } from "../timeline.mjs";
 
 /**
- * Set vs Following's look on the field (#300, #301): a Following marcher's
- * edge is dashed at full strength: an outline round its fill at 60%, a shape
+ * The Not defined look on the field (#300, #301, #478): a Not defined
+ * marcher's edge is dashed at full strength: an outline round its fill at 60%, a shape
  * without one with nothing inside. An X dashes its
  * own lines. The field test API's `notDefined` says what the field means to
  * draw; this checks the pixels.
  *
  * - The tests on white assert the dashes (at the opening zoom and 3×) and
  *   the fill (3×) for every shape and style.
- * - A Following label is checked to be lighter in weight than a Set one,
- *   not fainter (#324).
- * - The contact sheet captures every shape and style, Set beside Following,
+ * - A label off a keyframe is checked to be lighter in weight than one on a
+ *   keyframe, not fainter (#324).
+ * - The contact sheet captures every shape and style, Defined beside Not
+ *   defined,
  *   on white, a dark theme and turf (with `TURF_IMAGE` naming a field image;
  *   skipped without), at the opening zoom and at 3×, plus an isolated move.
- *   Captures go to `OUT/<LABEL>/following-*.png` for a person to review.
+ *   Captures go to `OUT/<LABEL>/not-defined-*.png` for a person to review.
  *
- *     TURF_IMAGE=~/turf.png pnpm exec playwright test --project=render following-look
+ *     TURF_IMAGE=~/turf.png pnpm exec playwright test --project=render not-defined-look
  */
 
 const SHAPES = ["circle", "square", "triangle", "x"] as const;
@@ -33,32 +34,33 @@ const STYLES = [
 ] as const;
 
 /**
- * One section per shape and style, two marchers each: Set (moves over page 1) and Following (no
- * move over page 1: it holds, its slot left vacant, since a stay move's end is a keyframe, #468).
+ * One section per shape and style, two marchers each: Defined (moves over page 1, so page 1's flag
+ * is its keyframe) and Not defined (no move over page 1: it shows its home, its slot left vacant,
+ * since a stay move would decide it, #468, #478).
  */
 const sections = SHAPES.flatMap((shape, row) =>
     STYLES.map((style, column) => ({
         shape,
         style,
         name: `${shape}-${style.name}`,
-        set: row * 6 + column * 2 + 1,
-        following: row * 6 + column * 2 + 2,
+        defined: row * 6 + column * 2 + 1,
+        notDefined: row * 6 + column * 2 + 2,
         // Clear of the yard lines (every 90 field units), which would fill a gap
         x: 310 + column * 120,
         y: 300 + row * 55,
     })),
 );
 const marchers = sections.flatMap((s) => [
-    { id: s.set, section: s.name, prefix: "S", order: s.set },
-    { id: s.following, section: s.name, prefix: "F", order: s.following },
+    { id: s.defined, section: s.name, prefix: "S", order: s.defined },
+    { id: s.notDefined, section: s.name, prefix: "F", order: s.notDefined },
 ]);
 const home: SeedPosition[] = sections.flatMap((s) => [
-    [s.set, s.x, s.y - 16] as const,
-    [s.following, s.x + 40, s.y] as const,
+    [s.defined, s.x, s.y - 16] as const,
+    [s.notDefined, s.x + 40, s.y] as const,
 ]);
 const page1: SeedPosition[] = sections.flatMap((s) => [
-    [s.set, s.x, s.y] as const,
-    [s.following, s.x + 40, s.y] as const,
+    [s.defined, s.x, s.y] as const,
+    [s.notDefined, s.x + 40, s.y] as const,
 ]);
 
 const SHOW_SQL = [
@@ -70,7 +72,7 @@ const SHOW_SQL = [
         positions: [home, page1],
     }),
     `DELETE FROM timeline_assignments WHERE transition_id = 1 AND marcher_id IN (${sections
-        .map((s) => s.following)
+        .map((s) => s.notDefined)
         .join(", ")})`,
     `INSERT INTO section_appearances (section, fill_color, outline_color, shape_type, visible, label_visible) VALUES ${sections
         .map(
@@ -96,7 +98,7 @@ const turfSql = (file: string) => [
             '$.imageFillOrFit', 'fill', '$.backgroundImageOpacity', 1)`,
 ];
 
-/** Waits until page 1's flag is shown with every Following marcher marked so. */
+/** Waits until page 1's flag is shown with every Not defined marcher marked so. */
 async function onPage1(page: Page) {
     await page.setViewportSize({ width: 2000, height: 1400 });
     await page.waitForFunction(
@@ -206,21 +208,21 @@ async function capture(page: Page, name: string, margin = 30) {
     );
 }
 
-test.describe("following look", () => {
+test.describe("Not defined look", () => {
     test.use({ seedSql: SHOW_SQL });
 
     test("contact sheet on white", async ({ show }) => {
         const { page } = show;
         await onPage1(page);
-        await capture(page, "following-white-fit");
+        await capture(page, "not-defined-white-fit");
         await zoomBy(page, 3);
-        await capture(page, "following-white-3x");
+        await capture(page, "not-defined-white-3x");
     });
 });
 
 // Measured without labels: at the opening zoom a label touches its shape's
 // top edge and would fill a gap there
-test.describe("following look, measured", () => {
+test.describe("Not defined look, measured", () => {
     test.use({
         seedSql: [
             ...SHOW_SQL,
@@ -232,7 +234,7 @@ test.describe("following look, measured", () => {
         { name: "the opening zoom", times: 1 },
         { name: "3×", times: 3 },
     ])
-        test(`a Following edge is dashed at full strength at ${zoom.name}`, async ({
+        test(`a Not defined edge is dashed at full strength at ${zoom.name}`, async ({
             show,
         }) => {
             const { page } = show;
@@ -245,36 +247,36 @@ test.describe("following look, measured", () => {
     test("Stop after Play ends at the full dashed look", async ({ show }) => {
         const { page } = show;
         await onPage1(page);
-        const following = () =>
+        const notDefined = () =>
             page.evaluate(
                 () =>
                     window.fieldTest!.marchers().filter((m) => m.notDefined)
                         .length,
             );
         await page.keyboard.press("Space");
-        await expect.poll(following).toBe(0);
+        await expect.poll(notDefined).toBe(0);
         await page.keyboard.press("Space");
-        // Who's Following is known at once, before the ease is done
-        await expect.poll(following).toBe(sections.length);
+        // Who's Not defined is known at once, before the ease is done
+        await expect.poll(notDefined).toBe(sections.length);
         await settle(page);
         await page.waitForTimeout(300);
         await expectDashed(page);
     });
 });
 
-test.describe("following look, dark", () => {
+test.describe("Not defined look, dark", () => {
     test.use({ seedSql: [...SHOW_SQL, DARK_SQL] });
     test("contact sheet on a dark theme", async ({ show }) => {
         const { page } = show;
         await onPage1(page);
-        await capture(page, "following-dark-fit");
+        await capture(page, "not-defined-dark-fit");
         await zoomBy(page, 3);
-        await capture(page, "following-dark-3x");
+        await capture(page, "not-defined-dark-3x");
     });
 });
 
 const TURF = process.env.TURF_IMAGE;
-test.describe("following look, turf", () => {
+test.describe("Not defined look, turf", () => {
     test.skip(!TURF, "Set TURF_IMAGE to a field image to capture on turf");
     test.use({ seedSql: TURF ? [...SHOW_SQL, ...turfSql(TURF)] : SHOW_SQL });
     test("contact sheet on turf", async ({ show }) => {
@@ -283,17 +285,18 @@ test.describe("following look, turf", () => {
             () => window.fieldTest?.fieldImage() != null,
         );
         await onPage1(page);
-        await capture(page, "following-turf-fit");
+        await capture(page, "not-defined-turf-fit");
         await zoomBy(page, 3);
-        await capture(page, "following-turf-3x");
+        await capture(page, "not-defined-turf-3x");
     });
 });
 
 // Over page 2 (beats 9–17) T1 and T2 move (T1 with a detour), T3 has a stay
-// move (its end is a keyframe, so it's Set, #468) and T4 holds.
-// Isolating that move on its flag: T1, T2 and T3 Set, T4 dimmed outside it;
-// mid-move they follow, beside the move's gray dashed ghosts
-test.describe("following look, isolated", () => {
+// move (its end is a keyframe, #468) and T4 has no move (Not defined).
+// Isolating that move on its flag: T1, T2 and T3 Defined, T4 dimmed outside
+// it, not dashed; mid-move they're walking, so still solid (#478), beside the
+// move's gray dashed ghosts
+test.describe("Not defined look, isolated", () => {
     test.use({
         seedSql: [
             ...seedShowSql({
@@ -327,7 +330,7 @@ test.describe("following look, isolated", () => {
                     ],
                 ],
             }),
-            // T4 (slot 3) has no move over page 2: it holds there
+            // T4 (slot 3) has no move over page 2: it's Not defined there
             "DELETE FROM timeline_assignments WHERE transition_id = 2 AND marcher_id = 4",
             "DELETE FROM timeline_slot_destinations WHERE transition_id = 2 AND slot_index = 3",
             "UPDATE timeline_transitions SET slot_count = 3 WHERE id = 2",
@@ -342,7 +345,7 @@ test.describe("following look, isolated", () => {
             "DELETE FROM timeline_change_log",
         ],
     });
-    test("an isolated move beside Following marchers", async ({ show }) => {
+    test("an isolated move beside a Not defined marcher", async ({ show }) => {
         const { page } = show;
         await page.setViewportSize({ width: 2000, height: 1400 });
         await page.waitForFunction(
@@ -358,27 +361,28 @@ test.describe("following look, isolated", () => {
                             m.dimmed
                                 ? "dimmed"
                                 : m.notDefined
-                                  ? "following"
-                                  : "set",
+                                  ? "notDefined"
+                                  : "defined",
                         ),
                 ),
             )
-            .toEqual(["set", "set", "set", "dimmed"]);
+            .toEqual(["defined", "defined", "defined", "dimmed"]);
         await zoomBy(page, 3);
-        await capture(page, "following-isolated-3x", 60);
+        await capture(page, "not-defined-isolated-3x", 60);
         // Mid-move, where the move's ghosts show
         await page.keyboard.press("Shift+Q");
         await settle(page);
         await page.waitForTimeout(400);
-        await capture(page, "following-isolated-mid-move-3x", 60);
+        await capture(page, "not-defined-isolated-mid-move-3x", 60);
     });
 });
 
-// #324: a Following label is lighter in weight than a Set one, at full
-// opacity. S12 moves over page 1 (Set), F12 holds (Following); their "12"s
+// #324: a label off a keyframe is lighter in weight than one on a keyframe,
+// at full opacity. S12 moves over page 1 (its flag is a keyframe), F12 has no
+// move there (Not defined, off a keyframe); their "12"s
 // are the same glyphs at the same size, so the thinner one has less ink but
 // the same darkest stroke
-test.describe("following label weight", () => {
+test.describe("label weight off a keyframe", () => {
     test.use({
         seedSql: [
             ...seedShowSql({
@@ -405,7 +409,7 @@ test.describe("following label weight", () => {
         ],
     });
 
-    test("a Following label is drawn thinner than a Set one, as dark", async ({
+    test("a label off a keyframe is drawn thinner than one on a keyframe, as dark", async ({
         show,
     }) => {
         const { page } = show;
@@ -422,12 +426,12 @@ test.describe("following label weight", () => {
             )
             .toEqual([false, true]);
         await zoomBy(page, 3);
-        const [set, following] = await labelInk(page, [1, 2]);
+        const [keyframe, offKeyframe] = await labelInk(page, [1, 2]);
         // Less ink: the strokes are thinner
-        expect(following!.ink / set!.ink).toBeLessThan(0.85);
-        expect(following!.ink / set!.ink).toBeGreaterThan(0.4);
-        // Full opacity: the strokes' middles are as dark as a Set label's
-        expect(following!.peak).toBeGreaterThan(set!.peak * 0.9);
+        expect(offKeyframe!.ink / keyframe!.ink).toBeLessThan(0.85);
+        expect(offKeyframe!.ink / keyframe!.ink).toBeGreaterThan(0.4);
+        // Full opacity: the strokes' middles are as dark as a keyframe label's
+        expect(offKeyframe!.peak).toBeGreaterThan(keyframe!.peak * 0.9);
     });
 });
 
@@ -503,7 +507,7 @@ async function labelInk(page: Page, ids: readonly number[]) {
 type ShapeName = (typeof SHAPES)[number];
 
 /**
- * Checks the full Following look in a field capture: every Following shape's
+ * Checks the full Not defined look in a field capture: every Not defined shape's
  * edge dashed at full strength (fewer, longer dashes on a small shape), and
  * its fill 60% inside an outline, nothing without one.
  */
@@ -530,8 +534,8 @@ async function expectDashed(page: Page) {
         sections.map((s) => ({
             shape: s.shape,
             style: s.style,
-            set: at(s.set),
-            following: at(s.following),
+            defined: at(s.defined),
+            notDefined: at(s.notDefined),
         })),
     );
     for (const [i, s] of sections.entries()) {
@@ -616,7 +620,7 @@ function around(corners: readonly [number, number][], steps: number) {
 }
 
 /**
- * Points, in shape units from the marcher, along the middle of a Following
+ * Points, in shape units from the marcher, along the middle of a Not defined
  * shape's dashed edge (inset by half its width), or along an X's four arms.
  */
 function edgePath(shape: ShapeName, inset: number): [number, number][] {
@@ -723,11 +727,11 @@ async function strongestAcross(
 const rgbOf = (css: string) => css.match(/\d+/g)!.slice(0, 3).map(Number);
 
 /**
- * For each Following shape, in a field capture at device-pixel centers: how
+ * For each Not defined shape, in a field capture at device-pixel centers: how
  * many gaps its dashed edge (or an X's lines) has, its dashes' contrast as a
  * share of its own color's, whether it's small on screen (the shader's fewer
  * dashes), and its middle's contrast as a share of its fill's. Shapes are
- * measured in the Set filled circle's scale.
+ * measured in the Defined filled circle's scale.
  */
 async function edgeProfiles(
     page: Page,
@@ -735,14 +739,14 @@ async function edgeProfiles(
     pairs: readonly {
         shape: ShapeName;
         style: (typeof STYLES)[number];
-        set: Point;
-        following: Point;
+        defined: Point;
+        notDefined: Point;
     }[],
 ) {
-    // Pixels per shape unit: the Set filled circle's radius along its middle row
+    // Pixels per shape unit: the Defined filled circle's radius along its middle row
     const circle = pairs.find(
         (p) => p.shape === "circle" && p.style.name === "filled",
-    )!.set;
+    )!.defined;
     const row = await pixelsAt(
         page,
         png,
@@ -763,7 +767,7 @@ async function edgeProfiles(
     // The dashed edge's width, and the middle of its band from the shape's edge
     const width = Math.max(1.75, 2 / unit);
     const profiles = [];
-    for (const { shape, style, following } of pairs) {
+    for (const { shape, style, notDefined } of pairs) {
         const outlined = style.outline !== "NULL" && shape !== "x";
         const color = rgbOf(outlined ? style.outline : style.fill);
         const full = contrast(color, field);
@@ -773,7 +777,7 @@ async function edgeProfiles(
                 page,
                 png,
                 edgePath(shape, inset),
-                following,
+                notDefined,
                 unit,
             )
         ).map((c) => c / full);
@@ -786,8 +790,8 @@ async function edgeProfiles(
             .sort((a, b) => a - b);
         const [middle] = await pixelsAt(page, png, [
             {
-                x: following.x,
-                y: following.y + (shape === "triangle" ? 1.732 * unit : 0),
+                x: notDefined.x,
+                y: notDefined.y + (shape === "triangle" ? 1.732 * unit : 0),
             },
         ]);
         profiles.push({
