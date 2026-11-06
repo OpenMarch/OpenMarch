@@ -6,7 +6,8 @@
 export const isWebBuild = import.meta.env.VITE_PUBLIC_WEB_BUILD === "true";
 
 /**
- * "stable", "nightly" or "dev" in the web build (the fork adds "preview", and
+ * "stable", "nightly", "preview" (preview.openmarch.com) or "dev" in the web
+ * build (the fork adds "examples", and
  * "lab" for lab.openmarch.com test builds); undefined in Electron.
  */
 export const webChannel: string | undefined = import.meta.env

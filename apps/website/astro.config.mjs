@@ -7,6 +7,22 @@ import yeskunallumami from "@yeskunall/astro-umami";
 import starlightImageZoom from "starlight-image-zoom";
 
 import tailwindcss from "@tailwindcss/vite";
+import { readFileSync } from "node:fs";
+
+/**
+ * Which site this build is. "stable" is openmarch.com. "preview" is
+ * preview.openmarch.com, built from a `prerelease/*` branch with the web
+ * editor under /editor/ (see preview/README.md): its downloads point at the
+ * matching pre-release, and it has no analytics.
+ */
+const siteChannel = process.env.SITE_CHANNEL ?? "stable";
+const isPreview = siteChannel === "preview";
+const desktopVersion = JSON.parse(
+    readFileSync(new URL("../desktop/package.json", import.meta.url), "utf8"),
+).version;
+const downloadUrl = isPreview
+    ? `https://github.com/OpenMarch/OpenMarch/releases/download/v${desktopVersion}`
+    : "https://github.com/OpenMarch/OpenMarch/releases/latest/download";
 
 // https://astro.build/config
 export default defineConfig({
@@ -86,13 +102,17 @@ export default defineConfig({
         }),
         mdx(),
         sitemap(),
-        yeskunallumami({
-            id: "ca4e77b2-a0e0-4b5a-8ac9-1e629dc8fe42",
-            endpointUrl: "https://umami.openmarch.com",
-        }),
+        ...(isPreview
+            ? []
+            : [
+                  yeskunallumami({
+                      id: "ca4e77b2-a0e0-4b5a-8ac9-1e629dc8fe42",
+                      endpointUrl: "https://umami.openmarch.com",
+                  }),
+              ]),
     ],
 
-    site: "https://openmarch.com",
+    site: isPreview ? "https://preview.openmarch.com" : "https://openmarch.com",
 
     image: {
         domains: ["localhost", "cms.openmarch.com"],
@@ -112,5 +132,9 @@ export default defineConfig({
 
     vite: {
         plugins: [tailwindcss()],
+        define: {
+            "import.meta.env.PUBLIC_SITE_CHANNEL": JSON.stringify(siteChannel),
+            "import.meta.env.PUBLIC_DOWNLOAD_URL": JSON.stringify(downloadUrl),
+        },
     },
 });

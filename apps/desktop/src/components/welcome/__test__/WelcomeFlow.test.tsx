@@ -13,7 +13,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { useAnalyticsQuestionStore } from "@/stores/AnalyticsQuestionStore";
-import { WHATS_NEW_SLIDES } from "../whatsNewSlides";
+import { GUIDES_URL, WHATS_NEW_SLIDES } from "../whatsNewSlides";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 import { APP_LANGUAGES } from "@/utilities/languages";
 import WelcomeFlow from "../WelcomeFlow";
@@ -575,7 +575,7 @@ describe("WelcomeFlow", () => {
         );
         expect(screen.getByTestId("whats-new-guides")).toHaveAttribute(
             "href",
-            "https://openmarch.com/guides",
+            GUIDES_URL,
         );
         expect(screen.getByTestId("whats-new-next")).toHaveTextContent(
             "Continue",

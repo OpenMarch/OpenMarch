@@ -22,6 +22,7 @@ import { CheckpointsTab } from "./customizer/CheckpointsTab";
 import { ImageTab } from "./customizer/ImageTab";
 import { ThemeTab } from "./customizer/ThemeTab";
 import { blurOnEnterFunc } from "./customizer/utils";
+import { siteUrl } from "@/global/siteUrl";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -282,7 +283,7 @@ export default function FieldPropertiesCustomizer() {
                     <T keyName="fieldProperties.customField" />
                 </h4>
                 <a
-                    href="https://openmarch.com/guides/editing-the-grid"
+                    href={siteUrl("/guides/editing-the-grid")}
                     target="_blank"
                     rel="noreferrer"
                     className="h-fit w-fit"

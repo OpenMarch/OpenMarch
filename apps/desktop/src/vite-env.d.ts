@@ -13,7 +13,7 @@ interface ImportMetaEnv {
     readonly VITE_EDITOR_API_URL?: string;
     /** "true" in the web build (vite.web.config.mts). */
     readonly VITE_PUBLIC_WEB_BUILD?: string;
-    /** The web build's channel: "stable", "nightly", "dev", "preview" or "lab". */
+    /** The web build's channel: "stable", "nightly", "preview", "dev", "examples" or "lab". */
     readonly VITE_PUBLIC_WEB_CHANNEL?: string;
     /** Names the web build's browser storage: the channel, or "lab-<test id>". */
     readonly VITE_PUBLIC_WEB_STORAGE_NAMESPACE?: string;
