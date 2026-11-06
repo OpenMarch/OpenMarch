@@ -963,11 +963,14 @@ export function Timeline(props: TimelineProps) {
     const viewHolds = useMemo<SelectionHolds | undefined>(
         () =>
             holds && {
-                bars: holds.bars.map((bar) => ({
-                    ...bar,
-                    start: axis.toView(bar.start),
-                    end: axis.toView(bar.end),
-                })),
+                bars: holds.bars
+                    .map((bar) => ({
+                        ...bar,
+                        start: axis.toView(bar.start),
+                        end: axis.toView(bar.end),
+                    }))
+                    // The lead-in before page 1's first count has no width on the view axis
+                    .filter((bar) => bar.end > bar.start),
                 departures: holds.departures.map((departure) => ({
                     ...departure,
                     beat: axis.toView(departure.beat),

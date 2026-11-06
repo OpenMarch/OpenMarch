@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { test, expect, type Show } from "../fixtures.mjs";
 import {
     clickMarcher,
@@ -102,6 +102,7 @@ test("Not defined is dashed from its diamond, a departure has a tick, and nothin
     await expect(bar).toBeVisible();
     await expect(bar).toHaveAttribute("data-lit", "false");
     await expect(bar).toHaveAccessibleName("Not defined · Page 2");
+    await attachAround(page, bar, "not-defined-alone");
     await expect(page.getByTestId("timeline-keyframe-8-filled")).toBeVisible();
     const tick = page.getByTestId("timeline-departure-16");
     await expect(tick).toBeVisible();
@@ -201,4 +202,104 @@ test("a right-click on a Not defined bar offers Define as shown for its page", a
     await page.getByTestId("timeline-range-menu-set-as-shown").click();
     // T2 now has a move of its own over page 3: no Not defined bar there
     await expect(page3Bar(page)).toHaveCount(0);
+});
+
+/** A clip of the timeline around `bar`, attached to the test's report for review */
+async function attachAround(page: Page, bar: Locator, name: string) {
+    const box = (await bar.boundingBox())!;
+    await test.info().attach(name, {
+        body: await page.screenshot({
+            clip: {
+                x: Math.max(0, box.x - 120),
+                y: Math.max(0, box.y - 60),
+                width: box.width + 240,
+                height: 110,
+            },
+        }),
+        contentType: "image/png",
+    });
+}
+
+test.describe("a mixed selection over the same counts", () => {
+    // Over page 3 only T1 moves: T2 and T3 both hold there, T2 Held (a
+    // stored mark) and T3 Not defined
+    test.use({
+        seedSql: [
+            ...seedShowSql({
+                beats: 32,
+                measureStarts: [1, 5, 9, 13, 17, 21, 25, 29],
+                pageStarts: [1, 9, 17],
+                marchers: [1, 2, 3].map((id) => ({
+                    id,
+                    section: "Trumpet",
+                    prefix: "T",
+                    order: id,
+                })),
+                positions: [
+                    [
+                        [1, 400, 300],
+                        [2, 500, 300],
+                        [3, 600, 300],
+                    ],
+                    [
+                        [1, 400, 340],
+                        [2, 500, 340],
+                        [3, 600, 340],
+                    ],
+                    [
+                        [1, 400, 380],
+                        [2, 500, 380],
+                        [3, 600, 380],
+                    ],
+                    [
+                        [1, 400, 420],
+                        [2, 500, 380],
+                        [3, 600, 380],
+                    ],
+                ],
+            }),
+            "DELETE FROM timeline_assignments WHERE transition_id = 3 AND marcher_id IN (2, 3)",
+            "DELETE FROM timeline_slot_destinations WHERE transition_id = 3 AND slot_index IN (1, 2)",
+            "UPDATE timeline_transitions SET slot_count = 1 WHERE id = 3",
+            // Stored in the show's beats, one more than the timeline's
+            "INSERT INTO timeline_held_marks (marcher_id, start_beat, end_beat) VALUES (2, 17, 25)",
+            "DELETE FROM timeline_change_log",
+        ],
+    });
+
+    test("the Held bar draws dashed where the rest are Not defined, the dashes in step", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await atPage2With(show, ["T2", "T3"]);
+        const held = page.getByTestId("timeline-held-bar-16-24");
+        const notDefined = page.getByTestId("timeline-not-defined-bar-16-24");
+        await expect(held).toBeVisible();
+        await expect(notDefined).toBeVisible();
+        await expect(held).toHaveAttribute("data-mixed", "true");
+        // Both dash in step with the timeline's start, not their own left edge
+        const dashStart = (bar: Locator) =>
+            bar.evaluate((el) => {
+                const style = getComputedStyle(el);
+                const layers = (
+                    el.dataset.held
+                        ? style.maskPosition
+                        : style.backgroundPosition
+                ).split(",");
+                const x = parseFloat(layers[layers.length - 1]!.trim());
+                return x + parseFloat((el as HTMLElement).style.left);
+            });
+        expect(await dashStart(held)).toBe(0);
+        expect(await dashStart(notDefined)).toBe(0);
+        await attachAround(page, held, "mixed-held-and-not-defined");
+
+        // T2 alone: solid again
+        await clickMarcher(page, "T2");
+        await expect
+            .poll(async () => (await readField(page)).selection.length)
+            .toBe(1);
+        await expect(held).not.toHaveAttribute("data-mixed", "true");
+        await expect(notDefined).toHaveCount(0);
+        await attachAround(page, held, "held-alone");
+    });
 });
