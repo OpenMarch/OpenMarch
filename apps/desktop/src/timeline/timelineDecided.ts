@@ -165,3 +165,30 @@ export function heldMarkSource(
         ? { kind: "borrowed", from }
         : { kind: "home" };
 }
+
+/**
+ * Where a move added by a drag inside a borrowed hold starting at `start` begins (holds
+ * 04-anchors, consistency review M2): the latest of `lastArrival` (where the marcher's last row
+ * before the hold ends), the end of an earlier mark of its own, and the page flag before `start`,
+ * so it never covers a neighboring hold or another page's move. `null` when that leaves no counts.
+ *
+ * @param flags every page flag (each page's end), any order
+ * @param marks the marcher's marks
+ */
+export function borrowedMoveStart({
+    start,
+    lastArrival,
+    marks,
+    flags,
+}: {
+    start: number;
+    lastArrival: number;
+    marks: readonly Pick<DecidedMark, "end">[];
+    flags: readonly number[];
+}): number | null {
+    let from = lastArrival;
+    for (const mark of marks)
+        if (mark.end < start) from = Math.max(from, mark.end);
+    for (const flag of flags) if (flag < start) from = Math.max(from, flag);
+    return from < start ? from : null;
+}

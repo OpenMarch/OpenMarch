@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+    borrowedMoveStart,
     heldMarkSource,
     isDecidedAt,
     marcherDecided,
@@ -183,5 +184,38 @@ describe("borrowed holds (fork #474)", () => {
         expect(decidedOn(stretches, [8, 12, 24, 32, 33, 36, 40, 41])).toEqual([
             8, 33, 36, 40,
         ]);
+    });
+});
+
+describe("borrowedMoveStart (#474; 04-anchors, consistency review M2)", () => {
+    const flags = [8, 16, 24, 32, 40];
+
+    it("starts at the page flag before the hold, after an earlier last arrival", () => {
+        expect(
+            borrowedMoveStart({ start: 32, lastArrival: 8, marks: [], flags }),
+        ).toBe(24);
+    });
+
+    it("starts at the last arrival, or an earlier hold's end, when later than that flag", () => {
+        expect(
+            borrowedMoveStart({ start: 32, lastArrival: 28, marks: [], flags }),
+        ).toBe(28);
+        expect(
+            borrowedMoveStart({
+                start: 32,
+                lastArrival: 8,
+                marks: [{ end: 30 }, { end: 40 }],
+                flags,
+            }),
+        ).toBe(30);
+    });
+
+    it("a hold mid-page starts it at the flag before, and none fits before a hold at count 0", () => {
+        expect(
+            borrowedMoveStart({ start: 28, lastArrival: 8, marks: [], flags }),
+        ).toBe(24);
+        expect(
+            borrowedMoveStart({ start: 0, lastArrival: 0, marks: [], flags }),
+        ).toBeNull();
     });
 });
