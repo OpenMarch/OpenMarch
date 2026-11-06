@@ -2660,6 +2660,10 @@
             "holdFromPrevious": {
                 "wholePage": "{holdFromPrevious} works on a whole page, not {counts}"
             },
+            "holdEdge": {
+                "outside": "The hold can't reach that count: it stops at the marcher's next move, the end of the show, or one count from its other end.",
+                "noArrival": "Nothing arrives at that count, so the hold can't start there."
+            },
             "moveTimeline": {
                 "tooEarly": "the timeline starts at beat {start}, so it can't move {count, plural, one {# beat} other {# beats}} earlier",
                 "tooLate": "the timeline can't move past beat {max}"
