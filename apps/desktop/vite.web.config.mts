@@ -97,8 +97,9 @@ const storageNamespace = isLab
  * files (`.env.production` has the production instance's).
  *
  * - The sites (stable, nightly, preview, lab) sign in with the production
- *   instance, which only runs on openmarch.com. A development key there
- *   would send real users to the test accounts, so the build refuses one.
+ *   instance, which only runs on openmarch.com. The build refuses anything
+ *   else: no key would leave real users unable to sign in, and a development
+ *   key would send them to the test accounts.
  * - A dev build (`web:dev`) signs in only with a development key
  *   (`pk_test_…`, say in `.env.development.local`), whose instance accepts
  *   localhost. Point `VITE_EDITOR_API_URL` at an API that trusts it.
@@ -107,14 +108,20 @@ const storageNamespace = isLab
 const siteChannels = ["stable", "nightly", "preview", "lab"];
 function webClerkPublishableKey(mode: string): string {
     if (!siteChannels.includes(channel) && channel !== "dev") return "";
+    // An empty variable counts as unset, so the .env files decide (loadEnv
+    // would otherwise prefer the empty environment value).
+    if (process.env.VITE_CLERK_PUBLISHABLE_KEY === "")
+        delete process.env.VITE_CLERK_PUBLISHABLE_KEY;
     const key =
-        process.env.VITE_CLERK_PUBLISHABLE_KEY ??
-        loadEnv(mode, __dirname, "VITE_CLERK_").VITE_CLERK_PUBLISHABLE_KEY ??
+        process.env.VITE_CLERK_PUBLISHABLE_KEY ||
+        loadEnv(mode, __dirname, "VITE_CLERK_").VITE_CLERK_PUBLISHABLE_KEY ||
         "";
     const isDevelopmentKey = key.startsWith("pk_test_");
-    if (siteChannels.includes(channel) && isDevelopmentKey)
+    if (siteChannels.includes(channel) && !key.startsWith("pk_live_"))
         throw new Error(
-            `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…), not a development key (pk_test_…)`,
+            isDevelopmentKey
+                ? `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…), not a development key (pk_test_…)`
+                : `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…) in VITE_CLERK_PUBLISHABLE_KEY (.env.production has it)`,
         );
     // Only a development instance runs on localhost.
     if (channel === "dev" && !isDevelopmentKey) return "";

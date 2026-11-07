@@ -62,9 +62,9 @@ Attaching ties this `.dots` file to the production, so the panel opens on that p
 
 OpenMarch remembers your sign-in, so you sign in once. In the web editor, the sign-in is shared with app.openmarch.com: if you're signed in there, the web editor already knows, and <Ui k="auth.signOut" /> in the panel's account menu signs you out of both. The desktop app keeps its own sign-in, so signing out in the browser doesn't sign it out.
 
-If your browser blocks pop-ups, the web editor asks before it leaves your show, then signs you in in the same tab and comes back to it.
+If your browser blocks pop-ups, or you opened OpenMarch from your Home Screen, the web editor signs you in in the same tab and comes back to your show. It keeps your latest changes first, and asks before leaving only if it can't.
 
-If the panel says <Ui k="exportCoordinates.webMobileUnavailable.title" plain />, you're in a test version of the web editor that can't sign in. Select <Ui k="exportCoordinates.webMobileUnavailable.openEditor" /> and open the show there, or use the desktop app.
+If the panel says <Ui k="exportCoordinates.webMobileUnavailable.title" plain />, you're in a test version of the web editor that can't sign in. Each version keeps its own shows, so select <Ui k="web.backUp" /> to save a `.dots` copy, then select <Ui k="exportCoordinates.webMobileUnavailable.openEditor" /> and open that file there, or open it in the desktop app.
 
 ## Send changes
 
