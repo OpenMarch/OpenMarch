@@ -98,7 +98,7 @@ const storageNamespace = isLab
  *
  * - The sites (stable, nightly, preview, lab) sign in with the production
  *   instance, which only runs on openmarch.com. The build refuses anything
- *   else: no key would leave real users unable to sign in, and a development
+ *   else (a dev server for one starts with sign-in off): no key would leave real users unable to sign in, and a development
  *   key would send them to the test accounts.
  * - A dev build (`web:dev`) signs in only with a development key
  *   (`pk_test_…`, say in `.env.development.local`), whose instance accepts
@@ -106,7 +106,7 @@ const storageNamespace = isLab
  * - The examples build leaves sign-in out.
  */
 const siteChannels = ["stable", "nightly", "preview", "lab"];
-function webClerkPublishableKey(mode: string): string {
+function webClerkPublishableKey(mode: string, command: string): string {
     if (!siteChannels.includes(channel) && channel !== "dev") return "";
     // An empty variable counts as unset, so the .env files decide (loadEnv
     // would otherwise prefer the empty environment value).
@@ -117,12 +117,17 @@ function webClerkPublishableKey(mode: string): string {
         loadEnv(mode, __dirname, "VITE_CLERK_").VITE_CLERK_PUBLISHABLE_KEY ||
         "";
     const isDevelopmentKey = key.startsWith("pk_test_");
-    if (siteChannels.includes(channel) && !key.startsWith("pk_live_"))
+    if (siteChannels.includes(channel) && !key.startsWith("pk_live_")) {
+        // A dev server for a site channel (LAB.md's local lab run) runs on
+        // localhost, where the production instance can't sign in anyway:
+        // it starts with sign-in off. Only a build for the site must have it.
+        if (command !== "build") return "";
         throw new Error(
             isDevelopmentKey
                 ? `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…), not a development key (pk_test_…)`
                 : `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…) in VITE_CLERK_PUBLISHABLE_KEY (.env.production has it)`,
         );
+    }
     // Only a development instance runs on localhost.
     if (channel === "dev" && !isDevelopmentKey) return "";
     return key;
@@ -330,8 +335,8 @@ const HOME_SCREEN_TAGS = [
 ].join("\n        ");
 
 // eslint-disable-next-line max-lines-per-function
-export default defineConfig(({ mode }) => {
-    const clerkPublishableKey = webClerkPublishableKey(mode);
+export default defineConfig(({ mode, command }) => {
+    const clerkPublishableKey = webClerkPublishableKey(mode, command);
     return {
         // A lab build is served from a folder, so its URLs are relative.
         base: isLab ? "./" : webBase,
