@@ -1,0 +1,96 @@
+---
+title: Print coordinate sheets and drill charts
+description: Export PDFs of each marcher's coordinates and of the drill on every page, for rehearsal and for your staff.
+type: how-to
+covers:
+  - apps/desktop/src/components/exporting/ExportCoordinatesModal.tsx
+  - apps/desktop/src/components/exporting/MarcherCoordinateSheet.tsx
+  - apps/desktop/src/components/exporting/MovesPastEndWarning.tsx
+  - apps/desktop/src/components/exporting/utils
+  - apps/desktop/electron/main/services/export-service.ts
+  - action:openExportDialog
+  - i18n:exportCoordinates
+  - i18n:coordinateSheet
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Coordinate sheets list where each marcher stands on every page, measured from the yard lines and hashes. Drill charts draw the field on every page with every marcher on it. Both are PDFs you can print or send to your marchers and staff. They need the desktop app; the web editor exports only video.
+
+Both show each marcher's position at the end of each page, the set they reach on the page's last count. Where a marcher is partway through a page isn't on them, so if a move ends partway through a page and you want that spot on paper, add a page there (see [Pages](/guides/timeline/pages/)). Props aren't on either.
+
+## Export coordinate sheets
+
+<Steps>
+
+1. In the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab, select <Ui k="exportCoordinates.exportButton" />.
+
+2. Select the <Ui k="exportCoordinates.coordinateSheets" /> tab.
+
+3. Choose the options (below). The preview shows a sheet for an example marcher with your choices.
+
+4. Select <Ui k="exportCoordinates.export" /> and choose where to save.
+
+</Steps>
+
+When the export is done, select the message that appears to open the file or folder.
+
+<Media
+  id="files-export-sheets"
+  alt="The Export dialog on the Coordinate Sheets tab: checkboxes for Include measures, Abbreviate coordinate descriptions, Use X/Y headers, Quarter-page layout and Organize by Section, the Coordinate rounding menu, and a preview of a coordinate sheet."
+/>
+
+### Coordinate sheet options
+
+- <Ui k="exportCoordinates.includeMeasures" />: adds a column with the measures each page covers.
+- <Ui k="exportCoordinates.abbreviateCoordinateDescriptions" />: writes coordinates in short form, such as "S1: 2 out 45", instead of "Side 1: 2 steps outside 45 yard line".
+- <Ui k="exportCoordinates.useXYHeaders" />: heads the columns X and Y instead of <Ui k="exportCoordinates.sideToSideHeader" plain /> and <Ui k="exportCoordinates.frontToBackHeader" plain />.
+- <Ui k="exportCoordinates.quarterPageLayout" />: fits four marchers' sheets on each sheet of paper, to cut into quarters. It turns on short coordinates.
+- <Ui k="exportCoordinates.organizeBySection" />: makes a PDF for each marcher, in a folder for each section. Without it, you get one PDF with every marcher's sheet in score order.
+- <Ui k="exportCoordinates.roundingDenominator" plain />: rounds coordinates to the nearest whole, half, quarter, eighth or tenth of a step.
+
+## Export drill charts
+
+<Steps>
+
+1. In the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab, select <Ui k="exportCoordinates.exportButton" />.
+
+2. Select the <Ui k="exportCoordinates.drillCharts" /> tab.
+
+3. Choose the options (below).
+
+4. Select <Ui k="exportCoordinates.export" /> and choose a folder to export to.
+
+</Steps>
+
+<Media
+  id="files-export-charts"
+  alt="The Export dialog on the Drill Charts tab: the Individual Drill Charts and Include notes appendix pages checkboxes, and a preview of a drill chart page."
+/>
+
+### Drill chart options
+
+- <Ui k="exportCoordinates.individualCharts" />: makes a chart PDF for each marcher. Each page shows the whole band with that marcher picked out, a box on where they were on the previous page, a circle on where they go next, the paths between them, and their coordinates. Without it, you get one overview PDF with every marcher on every page and no paths.
+- <Ui k="exportCoordinates.includeNotesAppendix" />: each page's notes are always printed under its chart, cut short if they're long. Turn this on to add pages at the end with the full notes for every page that has notes.
+
+The charts draw your show's field, with its markings and field image, and the grid lines you have turned on for the field in the editor.
+
+## Moves past the end of the show
+
+The exports end at the last page. If a move runs past it, the dialog says how many moves won't be in the export. Select <Ui k="exportCoordinates.addPagesToEnd" /> to add pages up to the end of the last move, then export; or export as it is, without them. Adding pages is one step you can undo.
+
+## If you can't export
+
+For drill charts, the <Ui k="exportCoordinates.export" plain /> button stays off until the show has at least one marcher, at least one page after the first, and its field settings, and the preview area says which one is missing. Coordinate sheets can be exported as soon as the marchers have loaded.
+
+## Related
+
+- [Export a video](/guides/files/export-video/): a video of the show with its music, for staff and students.
+- [Export to On the Move](/guides/files/on-the-move/): send the show to your marchers' phones.
+- [Pages](/guides/timeline/pages/): the sets the charts and sheets show.
+- [Edit the field](/guides/field/edit-the-field/): the field the charts are drawn on.

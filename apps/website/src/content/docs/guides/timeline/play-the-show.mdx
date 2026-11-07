@@ -1,0 +1,128 @@
+---
+title: Play the show
+description: Play, stop, pause and loop the show, change the playback speed, and jump to a page, measure or rehearsal mark.
+type: how-to
+covers:
+  - apps/desktop/src/components/timeline/TransportButtons.tsx
+  - apps/desktop/src/components/timeline/TimelineControls.tsx
+  - apps/desktop/src/components/timeline/PlaybackSpeedButton.tsx
+  - apps/desktop/src/components/timeline/TimelineLoopBar.tsx
+  - apps/desktop/src/components/timeline/timelineFollow.ts
+  - apps/desktop/src/timeline/timelineTransport.ts
+  - action:playPause
+  - action:playPage
+  - action:playOn
+  - action:toggleLoop
+  - action:holdFasterPlayback
+  - action:holdSlowerPlayback
+  - action:timelineGoTo
+  - action:nextPage
+  - action:previousPage
+  - action:nextBeat
+  - action:previousBeat
+  - action:firstPage
+  - action:lastPage
+  - i18n:timeline.transport
+  - i18n:timeline.loop
+  - i18n:timeline.playbackSpeed
+  - i18n:timeline.goTo
+  - i18n:timeline.playheadChip
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+The playback controls are at the left end of the bar above the timeline. Play starts at the start flag; Stop takes you back to where you pressed Play, so you can watch a passage as many times as you like without losing your place. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains the start flag and the playhead.
+
+## Play and stop
+
+1. Put the playhead where you want to look: select a page's box, or drag the playhead.
+2. Select Play, or press <Kbd action="playPause" />.
+3. To stop, select Stop or press <Kbd action="playPause" /> again. The playhead goes back to where it was when you pressed Play.
+
+What Play plays depends on the mode:
+
+- In Expert, Play plays from the start flag to the playhead and stops there. When the start flag and the playhead are on the same count, it plays on to the end of the show.
+- In Basic, Play plays from the start of the page the playhead is on to the end of the show.
+
+Point at Play to see a list of what each way of pressing it does, with its keys. Holding <Kbd keys="Shift" /> over Play changes its icon to match, and in Expert so does holding <Kbd keys="Alt" />.
+
+<Media
+  id="timeline-play-guide"
+  alt="The tooltip over Play in Expert, listing three ways to play: Play from start flag and stop at playhead with Space, Play from start flag and continue with Alt and Space, and Play from playhead and continue with Shift and Space."
+/>
+
+## Other ways to play
+
+| To | Press | Or |
+| --- | --- | --- |
+| Play from the start flag and keep going past the playhead (Expert) | <Kbd action="playOn" /> | <Kbd keys="Alt" gesture="click" /> Play |
+| Play from the playhead and keep going | <Kbd action="playPage" /> | <Kbd keys="Shift" gesture="click" /> Play |
+| Stop and go back to where you pressed Play | <Kbd action="playPause" /> | Select Stop |
+| Pause where you are | <Kbd action="playPage" /> while playing | <Kbd keys="Shift" gesture="click" /> Stop |
+
+Pausing leaves the playhead on the last whole count played, so the next Play starts from there. On Windows and Linux, the system can take <Kbd keys="Alt+Space" /> for the window menu; <Kbd keys="Alt" gesture="click" /> on Play always works.
+
+Playback also stops by itself at the end of the show, and goes back to where you pressed Play.
+
+While the show plays, the timeline scrolls to keep the playhead in view, a page at a time. If you scroll the timeline away from the playhead, it stops following; a <Ui k="timeline.playheadChip.text" /> button at the edge of the timeline brings the view back and follows again.
+
+## Loop a passage
+
+This needs Expert mode: Basic has no loop. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+1. Set the stretch you want to repeat: select a page's box, or drag the start flag and the playhead to its ends.
+2. Select <Ui k="timeline.loop.label" /> (the two arrows next to Play), or press <Kbd action="toggleLoop" />.
+3. Press <Kbd action="playPause" />. The passage plays over and over until you stop it.
+
+The loop shows as a bar along the top of the page row, in the start flag's color. Drag either end of the bar to change what loops; the start flag and the playhead move with it. Press <Kbd action="playPage" /> to play the loop once.
+
+<Media
+  id="timeline-loop"
+  alt="Page 3 is selected and Loop is turned on with the C key: a bar appears along the top of Page 3's box. Its right end is then dragged to the end of Page 4, and the loop grows to cover both pages."
+/>
+
+To turn the loop off, select <Ui k="timeline.loop.label" /> again or press <Kbd action="toggleLoop" />. While you're working on one move by itself, the loop is always on; see [Moves](/guides/timeline/moves/#work-on-one-move-alone).
+
+## Change the playback speed
+
+The speed button shows the current speed, such as 1×.
+
+- Select it to go to the next speed.
+- Right-click it for a slider from 0.1× to 8×, with the common speeds as buttons.
+- Hold <Kbd action="holdFasterPlayback" /> to play at double speed, or <Kbd action="holdSlowerPlayback" /> for half speed, while the key is down.
+
+The music plays at the new speed without changing its pitch. The speed stays as you set it until you change it, and the 3D View plays at the same speed.
+
+## Go to a page, measure or rehearsal mark
+
+1. Select the readout (the page and count above the timeline), or press <Kbd action="timelineGoTo" />.
+2. Type where to go: a page number such as 12, a measure such as m23, or a rehearsal mark such as C.
+3. Press <Kbd keys="Enter" />.
+
+A page puts the playhead on that page's set; a measure or rehearsal mark puts it on the measure's first count.
+
+## Move the playhead with the keyboard
+
+| Keys | Moves the playhead to |
+| --- | --- |
+| <Kbd action="nextPage" /> | The next page |
+| <Kbd action="previousPage" /> | The previous page |
+| <Kbd action="nextBeat" /> | The next count |
+| <Kbd action="previousBeat" /> | The previous count |
+| <Kbd action="lastPage" /> or <Kbd keys="End" /> | The end of the show |
+| <Kbd action="firstPage" /> or <Kbd keys="Home" /> | The start of the show (home) |
+
+The previous and next buttons beside Play do the same: on their own they step a page, with <Kbd keys="Shift" /> held they step a count, and with <Kbd keys="Alt" /> held they go to the start or end of the show.
+
+In Expert, going to a page moves the start flag to the start of that page. Stepping by counts, clicking the timeline and dragging the playhead move only the playhead while it stays after the start flag. Put it on or before the start flag and the two swap: that count becomes the start flag, and the old start flag's count becomes the playhead.
+
+## Related
+
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): the start flag, the playhead and pages.
+- [Metronome](/guides/music/metronome/): hear the counts while the show plays.
+- [Editor and Preview](/guides/workspace/editor-and-preview/): watch the show without the editing tools.
+- [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/): every shortcut in one list.

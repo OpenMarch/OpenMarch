@@ -1,0 +1,97 @@
+---
+title: Select marchers
+description: Select marchers on the field by clicking, with a box or a lasso, or by section, tag, family or drill prefix from the Select tab.
+type: how-to
+covers:
+  - apps/desktop/src/field/editor/selectionRules.ts
+  - apps/desktop/src/field/editor/areaGestures.ts
+  - apps/desktop/src/field/editor/selectionArea.ts
+  - apps/desktop/src/components/toolbar/tabs/SelectTab.tsx
+  - apps/desktop/src/components/toolbar/tabs/ChipSelector.tsx
+  - action:selectAllMarchers
+  - action:cancelAlignmentUpdates
+  - i18n:toolbar.select
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+Most tools act on the selected marchers: moving, aligning, placing them on a shape, holding them on a page. Selected marchers are highlighted on the field, and the inspector lists their drill numbers.
+
+## Click to select
+
+- Click a marcher to select only that marcher, even if others were selected.
+- <Kbd keys="Shift" gesture="click" /> a marcher to add it to the selection, or to take it out if it's already selected.
+- Click empty field to clear the selection, or press <Kbd action="cancelAlignmentUpdates" />.
+
+## Drag a box
+
+Drag on empty field to draw a box. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
+
+<Media
+  id="marchers-select-box"
+  alt="A box is dragged around a row of eight marchers, which become selected. Then a marcher in the row behind them is clicked with Shift held and joins the selection."
+/>
+
+- Hold <Kbd keys="Shift" gesture="drag" /> as you start the box to add to the selection.
+- Hold <Kbd keys="Alt" gesture="drag" /> as you start the box to take the marchers it touches out of the selection.
+
+A drag that starts inside the frame around several selected marchers moves them instead of drawing a box. Start the box outside the frame, or click empty field first to clear the selection.
+
+## Draw a lasso
+
+For a group that isn't a rectangle, such as a curved line or a block with marchers close around it, draw a lasso:
+
+1. Double-click empty field, and hold the button down on the second click.
+2. Drag around the marchers you want.
+3. Bring the pointer back near where you started. The line turns green when letting go will close it.
+4. Let go.
+
+<Media
+  id="marchers-select-lasso"
+  alt="A double-click and drag on empty field draws a freehand line around a ring of marchers. The line closes back at its start, and every marcher inside it is selected."
+/>
+
+Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
+
+## Select everyone
+
+Press <Kbd action="selectAllMarchers" />, or right-click empty field and choose <Ui k="actions.select.selectAll" />. Props aren't included; select them on the field.
+
+## Select by section, tag, family or drill prefix
+
+The <Ui k="inspector.shape.selectTab" /> tab in the toolbar selects groups of marchers by what they are rather than where they stand.
+
+<Media
+  id="marchers-select-tab"
+  alt="The Select tab: a Select by menu set to Section, a button for each section in the show, and Select all."
+/>
+
+1. Select the <Ui k="inspector.shape.selectTab" /> tab.
+2. Open <Ui k="toolbar.select.selectByText" /> and choose <Ui k="toolbar.select.selectBy.section" />, <Ui k="toolbar.select.selectBy.tag" />, <Ui k="toolbar.select.selectBy.family" /> or <Ui k="toolbar.select.selectBy.drillPrefix" />.
+3. Select a group to select all of its marchers.
+
+Choosing a group replaces the selection. Hold <Kbd keys="Shift" gesture="click" /> to add the group to it instead, for example to select the trumpets and the mellophones together.
+
+- <Ui k="toolbar.select.selectBy.family" /> groups sections by family: Woodwind, Brass, Battery, Guard, Other and Pit.
+- <Ui k="toolbar.select.selectBy.tag" /> lists the tags you've made in the inspector. To make one, select marchers and use the tag buttons at the bottom of the inspector.
+- With many groups, a search box appears after the first few. For sections, tags and drill prefixes, the ones you used last come first.
+
+OpenMarch remembers which kind of group you chose. <Ui k="actions.select.selectAll" /> at the end of the tab selects every marcher.
+
+## Shapes you've placed
+
+Marchers placed on a box are selected together: clicking one of them selects the whole box. Double-click a marcher in it to select only that marcher. See [Shapes](/guides/shapes/).
+
+## On a tablet
+
+In the tablet layout, fingers move the view and don't select marchers on the field. Select with a pen, or use the <Ui k="inspector.shape.selectTab" /> tab: there, a switch beside <Ui k="toolbar.select.selectByText" /> chooses whether a tapped group replaces the selection or adds to it.
+
+## Related
+
+- [Move marchers](/guides/marchers/move-marchers/): drag and nudge the selection.
+- [Align and space marchers](/guides/marchers/align-and-space/): line the selection up and space it evenly.
+- [Change how marchers look](/guides/marchers/appearance/): tags also set colors and shapes.

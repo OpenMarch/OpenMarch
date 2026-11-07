@@ -2,7 +2,7 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: ["main", "field-renderer"]
+    branches: ["main", "field-renderer", "prerelease/**"]
 
 permissions:
   contents: read

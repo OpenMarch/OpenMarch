@@ -1,33 +1,37 @@
 ---
-title: "Welcome"
-description: "Welcome to our guides/docs"
+title: OpenMarch user guide
+description: How to write marching band drill in OpenMarch, from your first show to printed drill charts.
+type: concept
+covers:
+  - apps/desktop/src/components/launchpage
 sidebar:
-  order: -1
+  order: 0
+  label: Welcome
 ---
 
-import { LinkCard } from "@astrojs/starlight/components";
+import Media from "@/components/docs/Media.astro";
+import { LinkCard, CardGrid } from "@astrojs/starlight/components";
 
-![Banner](../../../assets/home/editor-dark.png)
+OpenMarch is a free, open-source app for writing marching band drill. You place marchers on the field, set where they go on each page of the show, and play it back with the music, on the field or in 3D. This guide describes OpenMarch 0.2: what each part of the app does, and how to get things done with it.
 
-Welcome to the OpenMarch docs, a collection of guides, tips, and tutorials to help you learn the app, build shows, and get the most out of every feature.
+<Media
+  id="window-overview"
+  alt="The OpenMarch window with a show open: the toolbar across the top, the sidebar down the left edge, the field in the middle, the inspector on the right and the timeline along the bottom."
+/>
 
-<LinkCard
-  title="Getting Started"
-  href="/guides/getting-started/"
-  description="Learn how to setup your file in OpenMarch."
-/>
-<LinkCard
-  title="Writing Drill"
-  href="/guides/writing-drill/"
-  description="How to use the alignment tools and the shape editor."
-/>
-<LinkCard
-  title="Submitting Feedback"
-  href="/guides/submitting-feedback/"
-  description="Where you should submit feedback & bug reports."
-/>
-<LinkCard
-  title="Developers"
-  href="/developers/codebase/"
-  description="Learn how to contribute and how the app is made."
-/>
+## Start here
+
+<CardGrid>
+  <LinkCard title="Write your first show" href="/guides/start/first-show/" description="From an empty file to a few sets playing on the field, in about twenty minutes." />
+  <LinkCard title="Install OpenMarch" href="/guides/start/install/" description="The desktop app, the web editor and tablets." />
+  <LinkCard title="Coming from OpenMarch 0.1" href="/guides/start/coming-from-0-1/" description="What happens to your shows, and how pages work now." />
+  <LinkCard title="Basic and Expert" href="/guides/start/basic-and-expert/" description="Two ways to work: page by page, or the full timeline." />
+</CardGrid>
+
+## How the guide is organized
+
+The chapters follow the app. [The window](/guides/workspace/the-window/) names each part of it. [Marchers](/guides/marchers/add-marchers/) covers adding, selecting, moving and lining up marchers. [Timeline](/guides/timeline/how-the-timeline-works/) explains pages, moves and counts, the heart of writing drill in OpenMarch. [Shapes](/guides/shapes/) covers boxes, lines, arcs and circles. Then come [music](/guides/music/counts-and-music/), the [field](/guides/field/edit-the-field/), the [3D View and props](/guides/3d-view/open-the-3d-view/), and [saving, printing and exporting](/guides/files/save-and-open/).
+
+Every shortcut is in [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/), shown with your computer's own keys, and every term the guide uses is in the [glossary](/guides/reference/glossary/).
+
+If something isn't working, see [Troubleshooting](/troubleshooting/file-errors/) and [Known issues](/troubleshooting/known-issues/), or [ask for help](/guides/start/get-help/).

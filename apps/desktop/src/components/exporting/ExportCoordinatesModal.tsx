@@ -2033,7 +2033,7 @@ function ExportModalContents({
     const { exportTab, setExportTab } = useAppDialogStore();
     // The web build exports video and uploads to the mobile app; the rest
     // needs Electron (printToPDF, file streams). Where the build can't sign
-    // in (dev, preview), the Mobile tab says so.
+    // in (examples, a branch's preview URL), the Mobile tab says so.
     if (isWebBuild)
         return (
             <Tabs

@@ -8,6 +8,7 @@ import {
     PLAYBACK_MENU_ACTIONS,
     type MenuAction,
 } from "../../src/global/menuActions";
+import { SITE_URL, siteUrl } from "../../src/global/siteUrl";
 
 const isMacOS = process.platform === "darwin";
 
@@ -215,8 +216,8 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             submenu: [
                 ...HELP_MENU_ACTIONS.map(rendererActionItem),
                 { type: "separator" },
-                linkItem(t("menu.help.website"), "https://openmarch.com"),
-                linkItem(t("menu.help.guides"), "https://openmarch.com/guides"),
+                linkItem(t("menu.help.website"), SITE_URL),
+                linkItem(t("menu.help.guides"), siteUrl("/guides")),
                 // i18n-ignore: brand name, the same in every language
                 linkItem("Discord", "https://discord.gg/eTsQ98uZzq"),
                 // i18n-ignore: brand name, the same in every language

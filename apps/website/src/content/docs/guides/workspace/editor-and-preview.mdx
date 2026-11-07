@@ -1,0 +1,59 @@
+---
+title: Watch the show in Preview
+description: Switch from the Editor to Preview to watch the show with the field filling the window and nothing to edit by accident.
+type: how-to
+covers:
+  - apps/desktop/src/components/toolbar/WorkspaceViewSwitch.tsx
+  - apps/desktop/src/components/preview
+  - apps/desktop/src/stores/PreviewModeStore.ts
+  - apps/desktop/src/shortcuts/workspaceActions.ts
+  - action:togglePreview
+  - i18n:workspace
+sidebar:
+  order: 3
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+OpenMarch has two ways to look at a show. The <Ui k="workspace.editor" /> is where you write drill. <Ui k="workspace.preview" /> is for watching it: the editing panels go away, the field gets the room, and nothing you click changes the show. Use it to check how a section flows, or to show the drill to staff and students without anyone moving a marcher by mistake.
+
+<Media
+  id="workspace-preview"
+  alt="Selecting Preview in the switch at the end of the toolbar. The toolbar, sidebar and inspector disappear and the field grows to fill the window, with a simpler timeline under it."
+/>
+
+## Switch to Preview
+
+<Steps>
+
+1. Select <Ui k="workspace.preview" /> in the <Ui k="workspace.editor" /> and <Ui k="workspace.preview" /> switch at the end of the toolbar, or press <Kbd action="togglePreview" />.
+
+2. Play the show (<Kbd action="playPause" />), or select a page on the timeline to go to it.
+
+</Steps>
+
+To go back to editing, select <Ui k="workspace.editor" />, or press <Kbd action="togglePreview" /> or <Kbd keys="Esc" />.
+
+Preview isn't saved with the show or the app: OpenMarch always opens in the Editor.
+
+## What changes in Preview
+
+- The toolbar's tabs, the sidebar, the inspector and Undo and Redo are hidden. <Ui k="view3d.open" /> and the Editor and Preview switch stay, at the top. Entering Preview also clears the selection. The field is fitted to the larger space, and the zoom percentage fits it the same way.
+- The timeline shows only the music, the pages and the playhead, as one row of pages in both Basic and Expert. Selecting a page goes to it; nothing on the timeline can be changed.
+- Nothing on the field edits. You can pan and zoom as usual, and dragging with the left mouse button pans the field too.
+- Play always plays on from where the playhead is, through the rest of the show. Looping and the start flag don't apply. Stopping pauses where the show is, and playing again after the end starts over from the beginning.
+- Shortcuts that don't change the show still work: moving between pages and counts, playback and its speed, the metronome, <Ui k="actions.timeline.goTo" />, opening, saving and exporting, the 3D View, settings, and the command palette. The rest are turned off until you go back to the Editor.
+
+If you were in the middle of something when you switched, such as an isolated move, Preview leaves it first.
+
+Preview is the same in Basic and Expert.
+
+## Related
+
+- [Play the show](/guides/timeline/play-the-show/): playback, speed and the start flag in the Editor.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show from the stands.
+- [Export a video](/guides/files/export-video/): share the show as a video file.
+- [The window](/guides/workspace/the-window/): what each part of the Editor is for.

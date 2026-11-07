@@ -1,9 +1,11 @@
 import { T } from "@tolgee/react";
 import type { ReactNode } from "react";
+import { siteUrl } from "@/global/siteUrl";
 
 /** Where someone who wants to help translate OpenMarch finds out how to join. */
-export const HELP_TRANSLATE_URL =
-    "https://openmarch.com/developers/translating/#for-translators-non-coders";
+export const HELP_TRANSLATE_URL = siteUrl(
+    "/developers/translating/#for-translators-non-coders",
+);
 
 function HelpLink({ children }: { children?: ReactNode }) {
     return (

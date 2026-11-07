@@ -54,9 +54,9 @@ export const CLERK_CONFIG: { DOMAIN: string; CLIENT_ID: string } | null =
         : null;
 
 /**
- * The web build's Clerk publishable key (`pk_live_…`); empty where the
- * production Clerk instance can't run (dev and preview builds, which aren't
- * on openmarch.com). The web build signs in with ClerkJS (web/renderer/auth.ts)
+ * The web build's Clerk publishable key: the production instance's
+ * (`pk_live_…`) on the sites, a development instance's (`pk_test_…`) in
+ * local development, or empty (the examples build, or dev without one). The web build signs in with ClerkJS (web/renderer/auth.ts)
  * instead of the desktop app's OAuth flow.
  */
 export const WEB_CLERK_PUBLISHABLE_KEY: string =
@@ -80,14 +80,26 @@ export function isOnClerkSite(publishableKey: string, hostname: string) {
 }
 
 /**
+ * Whether the web build can sign in with this key on this site: a
+ * development instance's key (`pk_test_…`, local development) runs anywhere,
+ * a production key only on its own site.
+ */
+export function canSignInHere(publishableKey: string, hostname: string) {
+    if (publishableKey === "") return false;
+    return (
+        publishableKey.startsWith("pk_test_") ||
+        isOnClerkSite(publishableKey, hostname)
+    );
+}
+
+/**
  * True when sign-in is configured: both Clerk env vars in the desktop app;
- * in the web build, a publishable key and a page on the instance's site.
+ * in the web build, a publishable key that works on this site.
  * Sign-in is disabled when false.
  */
 export const isSignInEnabled = isWebBuild
-    ? WEB_CLERK_PUBLISHABLE_KEY !== "" &&
-      typeof globalThis.location !== "undefined" &&
-      isOnClerkSite(WEB_CLERK_PUBLISHABLE_KEY, globalThis.location.hostname)
+    ? typeof globalThis.location !== "undefined" &&
+      canSignInHere(WEB_CLERK_PUBLISHABLE_KEY, globalThis.location.hostname)
     : CLERK_CONFIG !== null;
 
 /**

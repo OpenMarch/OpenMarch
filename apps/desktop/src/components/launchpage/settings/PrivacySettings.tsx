@@ -7,6 +7,7 @@ import { T } from "@tolgee/react";
 import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
+import { siteUrl } from "@/global/siteUrl";
 
 export default function PrivacySettings() {
     const posthog = usePostHog();
@@ -34,7 +35,7 @@ export default function PrivacySettings() {
                             params={{
                                 a: (content) => (
                                     <a
-                                        href="https://openmarch.com/privacy"
+                                        href={siteUrl("/privacy")}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-accent underline"

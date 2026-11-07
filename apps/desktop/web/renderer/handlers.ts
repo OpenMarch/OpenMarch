@@ -385,9 +385,9 @@ async function confirmLeave(): Promise<{ go: boolean; force: boolean }> {
 
 /**
  * Sign-in (for Mobile export): Clerk's hosted pages in a new tab, see
- * `./auth.ts`. Builds or sites that can't sign in (dev, preview, a preview
- * URL off openmarch.com) stay signed out, as does the Settings tab, which
- * has no Mobile export.
+ * `./auth.ts`. Builds or sites that can't sign in (examples, dev without a
+ * development key, a branch's URL off openmarch.com) stay signed out, as
+ * does the Settings tab, which has no Mobile export.
  */
 function registerAuthHandlers(isSettingsTab: boolean) {
     if (!isSignInEnabled || isSettingsTab) {
@@ -442,7 +442,7 @@ async function closeShow() {
     return 200;
 }
 
-/** Opens one of a preview build's example shows. 404 if `path` isn't one. */
+/** Opens one of an examples build's example shows. 404 if `path` isn't one. */
 async function openExampleShow(path: string): Promise<number> {
     const example = webExampleShows.find((show) => show.file === path);
     if (!example) return 404;
@@ -507,7 +507,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         "recent-files:clear-missing",
     ])
         handleInPage(channel, () => undefined);
-    // A preview build's start page opens its example shows by path, the
+    // An examples build's start page opens its example shows by path, the
     // way a recent file opens (see ExampleShows.tsx).
     handleInPage("recent-files:open", (path: string) =>
         isSettingsTab ? 404 : openExampleShow(path),

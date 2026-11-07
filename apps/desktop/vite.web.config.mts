@@ -15,10 +15,12 @@ import { DEMOS } from "./web/demos";
  *   pnpm run web:build   # static site in dist-web/
  *
  * Environment:
- * `WEB_CHANNEL` ("stable" or "nightly"; "dev" if unset) names the release
- * channel; the nightly build says so next to the version. The fork's
- * "preview" channel also offers the example shows in `web/public/demos/` on
- * the start page.
+ * `WEB_CHANNEL` ("stable", "nightly" or "preview"; "dev" if unset) names the
+ * release channel; the nightly build says so next to the version. "preview"
+ * is the editor on preview.openmarch.com, built from a `prerelease/*` branch
+ * and served from `WEB_BASE` (`/editor/` there; see
+ * `apps/website/preview/README.md`). The fork's "examples" channel also
+ * offers the example shows in `web/public/demos/` on the start page.
  *
  * The fork's "lab" channel is a test build for lab.openmarch.com (see
  * `web/LAB.md`): it offers the example shows too, loads everything relative
@@ -30,12 +32,20 @@ import { DEMOS } from "./web/demos";
 
 const channel = process.env.WEB_CHANNEL ?? "dev";
 const isLab = channel === "lab";
+/**
+ * Where the site serves the editor: "/" on its own domain, "/editor/" on
+ * preview.openmarch.com, next to the website. Lab builds ignore it and load
+ * everything relative to their folder.
+ */
+const webBase = process.env.WEB_BASE ?? "/";
+if (!webBase.startsWith("/") || !webBase.endsWith("/"))
+    throw new Error(`WEB_BASE must start and end with "/", not "${webBase}"`);
 const labTestId = process.env.LAB_TEST_ID ?? "";
 if (isLab && !/^[a-z0-9-]+$/.test(labTestId))
     throw new Error(
         "WEB_CHANNEL=lab needs LAB_TEST_ID, the lab test's id (a-z, 0-9 and -)",
     );
-const examples = channel === "preview" || isLab ? DEMOS : [];
+const examples = channel === "examples" || isLab ? DEMOS : [];
 
 /**
  * A field from the front matter of the lab test's manifest, the path in
@@ -75,22 +85,40 @@ if (isLab && labMode !== "basic" && labMode !== "expert")
  * What names this build's browser storage (see `web/renderer/channel.ts`).
  * Lab tests all share one origin, so each test gets its own.
  */
-const storageNamespace = isLab ? `lab-${labTestId}` : channel;
+const storageNamespace = isLab
+    ? `lab-${labTestId}`
+    : // The examples channel was called "preview"; keep its stored shows.
+      channel === "examples"
+      ? "preview"
+      : channel;
 /**
- * Sign-in (web/renderer/auth.ts): ClerkJS with the production Clerk
- * instance's publishable key, `VITE_CLERK_PUBLISHABLE_KEY` from
- * `.env.production` (a build) or the environment. The instance only runs on
- * openmarch.com, so the stable, nightly and lab builds sign in; dev and
- * preview builds leave it out.
+ * Sign-in (web/renderer/auth.ts): ClerkJS with a Clerk publishable key,
+ * `VITE_CLERK_PUBLISHABLE_KEY` from the environment or the mode's `.env`
+ * files (`.env.production` has the production instance's).
+ *
+ * - The sites (stable, nightly, preview, lab) sign in with the production
+ *   instance, which only runs on openmarch.com. A development key there
+ *   would send real users to the test accounts, so the build refuses one.
+ * - A dev build (`web:dev`) signs in only with a development key
+ *   (`pk_test_…`, say in `.env.development.local`), whose instance accepts
+ *   localhost. Point `VITE_EDITOR_API_URL` at an API that trusts it.
+ * - The examples build leaves sign-in out.
  */
-const signInChannels = ["stable", "nightly", "lab"];
+const siteChannels = ["stable", "nightly", "preview", "lab"];
 function webClerkPublishableKey(mode: string): string {
-    if (!signInChannels.includes(channel)) return "";
-    return (
+    if (!siteChannels.includes(channel) && channel !== "dev") return "";
+    const key =
         process.env.VITE_CLERK_PUBLISHABLE_KEY ??
         loadEnv(mode, __dirname, "VITE_CLERK_").VITE_CLERK_PUBLISHABLE_KEY ??
-        ""
-    );
+        "";
+    const isDevelopmentKey = key.startsWith("pk_test_");
+    if (siteChannels.includes(channel) && isDevelopmentKey)
+        throw new Error(
+            `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…), not a development key (pk_test_…)`,
+        );
+    // Only a development instance runs on localhost.
+    if (channel === "dev" && !isDevelopmentKey) return "";
+    return key;
 }
 
 /** The Clerk Frontend API host a publishable key names (pk_live_<base64 host$>). */
@@ -152,19 +180,29 @@ const writeHeaders = (): Plugin => ({
         fs.writeFileSync(
             path.join(outDir, "_headers"),
             [
-                "/assets/*",
+                `${webBase}assets/*`,
                 "  Cache-Control: public, max-age=31536000, immutable",
-                "/*",
+                `${webBase}*`,
                 "  X-Content-Type-Options: nosniff",
                 "  Referrer-Policy: strict-origin-when-cross-origin",
                 "",
             ].join("\n"),
         );
+        // The home-screen manifest's paths are written for "/".
+        if (webBase !== "/") {
+            const file = path.join(outDir, "manifest.webmanifest");
+            const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
+            manifest.start_url = webBase;
+            manifest.scope = webBase;
+            for (const icon of manifest.icons)
+                icon.src = webBase + icon.src.replace(/^\//, "");
+            fs.writeFileSync(file, JSON.stringify(manifest, null, 4) + "\n");
+        }
     },
 });
 
 /**
- * Copies the example shows into the preview and lab builds, and serves them
+ * Copies the example shows into the examples and lab builds, and serves them
  * from the dev server; other builds leave them out.
  */
 const copyExamples = (): Plugin => {
@@ -274,8 +312,8 @@ const WEB_VIEWPORT =
  * Screen, so a change needs the app removed and added again.
  */
 const HOME_SCREEN_TAGS = [
-    '<link rel="manifest" href="/manifest.webmanifest" />',
-    '<link rel="apple-touch-icon" href="/apple-touch-icon.png" />',
+    `<link rel="manifest" href="${webBase}manifest.webmanifest" />`,
+    `<link rel="apple-touch-icon" href="${webBase}apple-touch-icon.png" />`,
     '<meta name="mobile-web-app-capable" content="yes" />',
     '<meta name="apple-mobile-web-app-capable" content="yes" />',
     '<meta name="apple-mobile-web-app-title" content="OpenMarch" />',
@@ -289,7 +327,7 @@ export default defineConfig(({ mode }) => {
     const clerkPublishableKey = webClerkPublishableKey(mode);
     return {
         // A lab build is served from a folder, so its URLs are relative.
-        base: isLab ? "./" : "/",
+        base: isLab ? "./" : webBase,
         resolve: {
             alias: [
                 {

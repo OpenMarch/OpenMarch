@@ -1,0 +1,75 @@
+---
+title: Export a video
+description: Make an MP4 of the drill playing on the field with the show's music, to share with staff and marchers.
+type: how-to
+covers:
+  - apps/desktop/src/components/exporting/ExportCoordinatesModal.tsx
+  - apps/desktop/src/components/exporting/video
+  - apps/desktop/web/renderer/videoExport.ts
+  - action:openExportDialog
+  - action:exportVideo
+  - i18n:exportCoordinates.video
+sidebar:
+  order: 3
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+A video export plays the whole show on the field from above, from the first count to the end of the last page, with the music. It's a quick way to let marchers and staff watch the drill without OpenMarch. It works in the desktop app and in the web editor.
+
+<Steps>
+
+1. In the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab, select <Ui k="exportCoordinates.exportButton" />, then the <Ui k="exportCoordinates.video" /> tab. In the web editor, select <Ui k="exportCoordinates.exportVideoButton" /> instead.
+
+2. Choose the video's settings and what it shows (below).
+
+3. Select <Ui k="exportCoordinates.export" />. In the desktop app, choose where to save the video. In the web editor, the video is made first; select <Ui k="exportCoordinates.videoWebSave" /> when it's finished.
+
+</Steps>
+
+OpenMarch draws the video frame by frame, which can take several minutes for a long show. When it's done, select the message that appears to open the video.
+
+<Media
+  id="files-export-video"
+  alt="The Export dialog on the Video tab: Resolution, Frame rate and Video background, a preview of the field with the on-screen information box, the field framing sliders, and checkboxes for what the box shows."
+/>
+
+## Video settings
+
+- <Ui k="exportCoordinates.videoResolution" />: 720p, 1080p or 4K. The desktop app starts on 1080p. The web editor offers 720p and 1080p and starts on 720p.
+- <Ui k="exportCoordinates.videoFrameRate" />: 30 or 60 frames a second. 60 makes smoother motion and takes longer to make. The desktop app starts on 60 and the web editor on 30.
+- <Ui k="exportCoordinates.videoBackground" />: a light or dark field.
+
+## What the video shows
+
+The preview shows one frame of the video. A box over the field carries the on-screen information; choose what it shows under <Ui k="exportCoordinates.videoOverlay" plain />:
+
+- <Ui k="exportCoordinates.videoOverlaySetCounts" />: the page, or the two pages a move is between, and the count.
+- <Ui k="exportCoordinates.videoOverlayMeasures" />: the measure number and rehearsal mark. It's off when the show has no measures.
+- <Ui k="exportCoordinates.videoOverlayTempo" />: the tempo in beats per minute.
+- <Ui k="exportCoordinates.videoOverlayClock" />: the time since the start of the show.
+
+In the preview, drag the box to move it, drag its side handle to change its width, and drag its corner to change its size. Drag an empty part of the preview to move the field, and scroll to zoom. The <Ui k="exportCoordinates.videoFieldFraming" plain /> sliders (<Ui k="exportCoordinates.videoFieldScale" plain />, <Ui k="exportCoordinates.videoFieldOffsetX" plain /> and <Ui k="exportCoordinates.videoFieldOffsetY" plain />) do the same in small steps, and <Ui k="exportCoordinates.videoFieldResetFraming" /> puts the field back.
+
+The video uses the music file selected in the show's music; the line under the options names it. With no music file, the video is silent. A small OpenMarch mark sits in a corner of the video. Props aren't drawn in the video.
+
+If a move runs past the last page, the dialog says so; select <Ui k="exportCoordinates.addPagesToEnd" /> to include it. See [Moves past the end of the show](/guides/files/print-charts/#moves-past-the-end-of-the-show).
+
+## In the web editor
+
+Making a video in a browser depends on the browser:
+
+- It needs Safari 16.4 or later, Chrome or Edge. In some browsers the video has no sound; the dialog says so before you start.
+- Keep OpenMarch open and the screen on until the video is done. Switching apps or locking the screen may stop it.
+- When it's done, select <Ui k="exportCoordinates.videoWebSave" /> to download it. On an iPad or iPhone, choose **Save Video** to put it in Photos, or **Save to Files**.
+
+If the dialog says video export needs WebGL, your computer or browser isn't drawing graphics with the graphics card. Turn on hardware acceleration (in Chrome or Edge, **Use graphics acceleration when available** in the browser's System settings) or update your graphics drivers, then try again.
+
+## Related
+
+- [Print coordinate sheets and drill charts](/guides/files/print-charts/): PDFs of the same drill.
+- [Audio](/guides/music/audio/): choose the music file the video uses.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show in 3D.

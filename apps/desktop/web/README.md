@@ -80,14 +80,32 @@ API clients and Mobile export are the same code as on the desktop.
   The session is Clerk's own, shared by every app on openmarch.com, and the
   API gets Clerk's short-lived session token. om-online's editor API allows
   the editor's origins (CORS).
-- Only the stable, nightly and lab builds sign in, and only on openmarch.com,
-  where the production Clerk instance runs (so not on the `workers.dev`
-  preview URLs of a branch). The publishable key is
-  `VITE_CLERK_PUBLISHABLE_KEY` in `.env.production`; dev and preview builds
-  have none. Where sign-in can't run, the Mobile tab says mobile upload isn't
-  available there and links to editor.openmarch.com.
+- The sites (stable, nightly, preview.openmarch.com and lab) sign in with
+  the production Clerk instance, which only runs on openmarch.com (so not on
+  the `workers.dev` URL of a branch). Its publishable key is
+  `VITE_CLERK_PUBLISHABLE_KEY` in `.env.production`, and their builds refuse
+  a development key. The examples build has none. Where sign-in can't run,
+  the Mobile tab says mobile upload isn't available there and links to
+  editor.openmarch.com.
 - A Home Screen app (iPad) signs in in its own window, since iOS keeps its
   cookies apart from Safari's.
+
+#### Signing in during development
+
+The production instance won't run on localhost, so `pnpm run web:dev` signs
+in only with a Clerk **development** instance's key (`pk_test_…`). Its
+accounts are test accounts, separate from real ones, and only an API that
+trusts that instance accepts its tokens: om-online running locally, not
+dev-app.openmarch.com or app.openmarch.com. In
+`apps/desktop/.env.development.local` (git ignores it):
+
+```bash
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_…   # om-online's local CLERK_PUBLISHABLE_KEY
+VITE_EDITOR_API_URL=http://localhost:3000/api/editor/
+```
+
+Without a development key, a dev build can't sign in and the Mobile tab
+says so.
 
 ### Tablets
 
@@ -216,8 +234,9 @@ These are hidden, or answer the way the app expects when they're
 unavailable:
 
 - PDF export (it uses Electron's `printToPDF`)
-- Mobile upload off openmarch.com, such as dev and preview builds (no
-  sign-in there; see "Sign-in")
+- Mobile upload where sign-in can't run: off openmarch.com (the examples
+  build, a branch's `workers.dev` URL) and in dev without a development key
+  (see "Sign-in")
 - Automatic updates, analytics
 - Recent files, repairing a file, and backups before migrating
 
@@ -265,13 +284,15 @@ pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.j
 ```
 
 `WEB_CHANNEL` (`stable`, `nightly`, or `dev` by default) names a build's
-channel. The fork adds `preview` and `lab` (below).
+channel. `preview` is the editor on preview.openmarch.com, at `/editor/`, next to
+the website (`apps/website/preview/README.md`). The fork adds `examples` and
+`lab` (below).
 
-### The fork's preview build
+### The fork's examples build
 
-This fork also deploys a preview of the editor, with a few changes:
+This fork also deploys a build of the editor with example shows, with a few changes:
 
-- `WEB_CHANNEL=preview` adds an "Or open an example show" list to the start
+- `WEB_CHANNEL=examples` adds an "Or open an example show" list to the start
   page, with the shows in `web/public/demos/` (listed in `web/demos.ts`),
   so a tester doesn't need a `.dots` file of their own. The `lab` channel
   offers them too; other channels leave the shows out of the build.
@@ -292,7 +313,8 @@ pnpm --filter @openmarch/desktop exec wrangler deploy -c web/wrangler.preview.js
 pnpm --filter @openmarch/desktop exec wrangler versions upload -c web/wrangler.preview.jsonc
 ```
 
-with the build variables `WEB_CHANNEL=preview` and `NODE_VERSION=24`. The
+with the build variables `WEB_CHANNEL=examples` and `NODE_VERSION=24`.
+(This channel was called `preview` until preview.openmarch.com took the name.) The
 Worker's name in the dashboard must match `openmarch-editor-preview`.
 
 ### The fork's lab builds
@@ -301,5 +323,5 @@ The OpenMarch lab (lab.openmarch.com) publishes this build for each test,
 with `WEB_CHANNEL=lab` and `LAB_TEST_ID=<test id>`: it opens straight into
 an example show (the one the test's manifest names), skipping the welcome
 flow and the "Web" notice, and has relative URLs so it runs from the lab's
-`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the preview build,
+`/x/<test id>/` folder, and storage of its own on the lab's shared origin. See `LAB.md`. Like the examples build,
 it is fork-only.

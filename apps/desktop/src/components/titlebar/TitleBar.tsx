@@ -223,6 +223,7 @@ function EditorTitleBar({
                                     {currentVersion}
                                     {(webChannel === "nightly" ||
                                         webChannel === "preview" ||
+                                        webChannel === "examples" ||
                                         webChannel === "lab") &&
                                         ` ${webChannel}`}
                                 </p>

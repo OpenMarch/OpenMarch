@@ -1,0 +1,62 @@
+---
+title: Step size warnings
+description: Turn on the warnings for steps too large to march, read the red paths, and set the largest step allowed.
+type: how-to
+covers:
+  - apps/desktop/src/timeline/stepSizeWarning.ts
+  - apps/desktop/src/components/inspector/StepSizeWarningBadge.tsx
+  - apps/desktop/src/components/field/customizer/GeneralTab.tsx
+  - apps/desktop/src/shapes/validate.ts
+  - action:toggleNextPagePaths
+  - i18n:fieldProperties.labels.stepSizeWarningThreshold
+  - i18n:inspector.marcher.stepSizeWarning
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+A step size warning means a marcher has to take steps longer than your field allows to get through a move on time. They're warnings, not errors: the show still plays and exports. Use them to find moves you'll want to give more counts or a shorter path.
+
+The red paths on the field are off until you turn them on. The inspector and the shape tools warn whatever the setting.
+
+## Turn on the red paths
+
+Open settings (<Kbd action="openSettings" />), choose <Ui k="settings.field" />, and turn on Step size warnings. The setting applies to every show on this computer. Turn it off the same way.
+
+## What a warning looks like
+
+- On the field, the marcher's path for the move is drawn red, dashed and thicker. It shows even when paths are turned off (<Kbd action="toggleNextPagePaths" />), so a long step can't hide.
+- With start flag positions showing, any stretch of a drawn path that's over the limit is red and dashed, and the rest stays thin and gray.
+- In the inspector, the selected marcher's step size has a red warning icon: <Ui k="inspector.marcher.stepSizeWarning" />. <Ui k="inspector.marcher.maxStepSize" /> names the marcher with the longest step; select it to select that marcher.
+- When you place marchers in a shape, marchers who would need too long a step are drawn in orange, and the shape's notes say how many.
+
+<Media
+  id="field-step-warnings"
+  alt="The field with several marchers' paths drawn as red dashed lines, where their moves need steps longer than the limit."
+/>
+
+## Set the largest step allowed
+
+The limit belongs to the field, so every show on that field uses the same one.
+
+<Steps>
+
+1. Select <Ui k="sidebar.field" /> in the sidebar.
+2. If the field is a template, select <Ui k="fieldProperties.customize" />.
+3. On the <Ui k="fieldProperties.tabs.general" /> tab, enter the longest step in <Ui k="fieldProperties.labels.stepSizeWarningThreshold" />, in inches or centimeters.
+
+</Steps>
+
+The label also shows the limit the way drill writers say it: 45 inches is (4 to 5), four steps every five yards, and 22.5 inches is (8 to 5). A step counts as too long when it's more than half an inch over the limit. The default is 45 inches.
+
+Enter 0 to turn the warnings off for this field, whatever the setting.
+
+## Related
+
+- [Edit the field](/guides/field/edit-the-field/): the step size and the rest of the field's settings.
+- [See where marchers go](/guides/timeline/see-where-marchers-go/): paths and start flag positions.
+- [Moves](/guides/timeline/moves/): give a move more counts.

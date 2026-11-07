@@ -1,0 +1,105 @@
+---
+title: Save and open shows
+description: Start a new show, open one, and keep your work safe in the desktop app and the web editor.
+type: how-to
+covers:
+  - apps/desktop/src/components/launchpage
+  - apps/desktop/src/components/toolbar/tabs/FileTab.tsx
+  - apps/desktop/src/components/titlebar/WebFileMenu.tsx
+  - apps/desktop/src/components/web
+  - apps/desktop/electron/main/application-menu.ts
+  - action:launchNewFileDialogue
+  - action:launchLoadFileDialogue
+  - action:launchSaveFileDialogue
+  - action:closeFile
+  - i18n:fileTab
+  - i18n:launchpage.files
+  - i18n:web.library
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+A show is one file, ending in `.dots`. It holds everything: the marchers and sections, the music and tempo, the field, the drill on the timeline, props, and the 3D View's venue and cameras. OpenMarch saves every change to it as you make it, so there's no Save button to remember.
+
+## The start page
+
+When no show is open, OpenMarch shows the start page. Select <Ui k="launchpage.files.createNew" /> to start a show, or <Ui k="launchpage.files.openFile" /> to open one.
+
+<Media
+  id="files-launch"
+  alt="The start page: New File and Open File at the top of the sidebar, and Recent Files listing a show with a preview of its field."
+/>
+
+In the desktop app, <Ui k="launchpage.files.title" plain /> lists the shows you've opened, with a preview of each field. Select one to open it. A show that was moved or deleted is marked <Ui k="launchpage.files.movedOrMissing" plain />. Each show has a button to <Ui k="launchpage.files.removeFile" plain />, and <Ui k="launchpage.files.clearMissingRecentFiles" /> and <Ui k="launchpage.files.clearAllRecentFiles" /> tidy the list. None of these delete files from your computer.
+
+## Start a new show
+
+<Steps>
+
+1. Select <Ui k="launchpage.files.createNew" /> on the start page, or <Ui k="fileTab.newFile" /> in the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab when a show is open.
+
+2. Choose <Ui k="launchpage.newShow.steps.start.blank" />, or <Ui k="launchpage.newShow.steps.start.importPrevious" /> to start from another show's marchers, field and last set of positions.
+
+3. Enter a <Ui k="launchpage.newShow.showName" plain /> and choose where to save the file. Then work through the remaining steps, or select <Ui k="launchpage.newShow.skip" /> on any you want to do later: the activity, the field, the marchers, the music, and the tempo.
+
+4. Select <Ui k="launchpage.newShow.create" />.
+
+</Steps>
+
+[Write your first show](/guides/start/first-show/) walks through each step.
+
+## Open a show
+
+Select <Ui k="fileTab.openFile" /> in the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab, or <Ui k="launchpage.files.openFile" /> on the start page, and choose a `.dots` file. In the desktop app you can also choose **File › Open File** in the app menu (<Kbd keys="Mod+O" />): the menu bar on a Mac, or the <Ui k="titlebar.menu" plain /> button in the title bar on Windows and Linux.
+
+A show made in OpenMarch 0.1 opens after you confirm that it can be converted to timelines; see [Coming from 0.1](/guides/start/coming-from-0-1/). If a show won't open, see [File errors](/troubleshooting/file-errors/).
+
+## Saving
+
+Every change you make is saved to the show's file straight away. To take a change back, use Undo (<Kbd action="performUndo" />).
+
+<Media
+  id="files-file-tab"
+  alt="The toolbar's File tab: Open File, New File and Save Copy, then Exit File, Export and App Settings."
+/>
+
+To keep a separate copy, for example before trying something big or to send to another staff member, select <Ui k="fileTab.saveFile" /> in the <Ui k="inspector.shape.fileTab" plain /> tab and choose where to save it. The copy is a whole show; the file you're working in stays open.
+
+To close the show and go back to the start page, select <Ui k="fileTab.exitFile" />.
+
+### Sharing a show
+
+Send the `.dots` file itself, by email, a shared drive or a USB stick. The music is inside it, so the person you send it to doesn't need the audio file. They need the same version of OpenMarch or a newer one; see [Open in an older version](/troubleshooting/open-in-an-older-version/).
+
+## In the web editor
+
+The web editor keeps your shows in your browser on this device. There's no account, and nothing is uploaded.
+
+- The start page's **Your shows** tab lists the shows kept in this browser. Select one to open it. Its menu has <Ui k="web.backUp" />, <Ui k="web.versionsMenu" />, **Rename**, **Duplicate** and **Delete**.
+- Every change is saved in the browser as you work. The title bar shows <Ui k="web.savedInBrowser" plain /> and when you last backed up.
+- The <Ui k="web.fileMenu" plain /> menu (the menu button at the left of the title bar) has the commands for files: new show, open a file, <Ui k="web.backUp" />, <Ui k="web.versionsMenu" />, export a video, close, and settings.
+- <Ui k="launchpage.files.openFile" plain /> copies a `.dots` file from your device into the browser. Changes after that are saved in the browser, not to the file you picked.
+- <Ui k="web.versionsMenu" /> lists earlier versions of the show: one is kept every couple of minutes while you edit and when you open the show, up to the last 20. Restoring one keeps the current state as a version too.
+
+<Aside type="caution">
+A browser can delete what it keeps for a site, for example when space runs low or when you clear your browsing data, and Private Browsing keeps nothing after you close the tab. Select <Ui k="web.backUp" /> often: it downloads the show as a `.dots` file, or on a phone or tablet lets you save it to Files, a cloud drive or email. OpenMarch reminds you when a show has several days of changes that aren't backed up.
+</Aside>
+
+A backup is an ordinary `.dots` file: you can open it in the desktop app, or in the web editor on another device.
+
+The web editor can only have a show open in one tab at a time. If you open OpenMarch in a second tab, that tab can't keep shows; use the first tab.
+
+### On an iPad
+
+Add OpenMarch to the Home Screen before you make shows: in Safari, select Share, then **Add to Home Screen**, and open OpenMarch from there from now on. A show kept by Safari in a tab can be deleted if you don't visit for about a week; the Home Screen app keeps its shows. The Home Screen app and Safari keep separate lists, so back up any show you made in Safari and open the backup in the Home Screen app.
+
+## Related
+
+- [Write your first show](/guides/start/first-show/): the new show steps in detail.
+- [Print coordinate sheets and drill charts](/guides/files/print-charts/): PDFs for your marchers and staff.
+- [Repair a file](/troubleshooting/repair-a-file/): when a show won't open or behaves strangely.

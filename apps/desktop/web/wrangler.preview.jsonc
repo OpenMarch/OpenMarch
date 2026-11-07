@@ -1,5 +1,5 @@
 // The fork's preview of the web editor: one static-asset Worker on
-// workers.dev, with the example shows on the start page (WEB_CHANNEL=preview).
+// workers.dev, with the example shows on the start page (WEB_CHANNEL=examples).
 // Cloudflare Workers Builds deploys `main` and uploads a preview version, with
 // its own URL, for every other branch and pull request (see web/README.md):
 //
