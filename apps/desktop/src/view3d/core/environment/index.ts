@@ -19,14 +19,15 @@
  *   kit build and dispose it in the kit's `dispose()`.
  * - `lightPole(height, lookAt, shared)` -> `{ object, setOn(on, k), dispose }`.
  *   Place `object` at the pole's base; `lookAt` is relative to the base.
- * - `videoBoard(w, h, legHeight, title, sub, shared)` -> `{ object, setTexture,
- *   dispose }`, facing +Z.
+ * - `videoBoard(w, h, legHeight, shared)` -> `{ object, setCredits, dispose }`,
+ *   facing +Z: the screen shows the show's credits card (`signage.ts`).
  * - `buildCrowd(seatRows, { density, palette, aisleEvery, quality })` ->
  *   `{ mesh, count, clearAround(point, radius), reset(), visibleCount(),
  *   dispose }`: one `InstancedMesh`. `defaultCrowdPalette(params)` builds
  *   the palette from `VenueParams` colors. Point and radius share the frame
  *   of the seat rows (kit-root space).
- * - Textures: `boardTexture`, `ribbonTexture(text)`, `paintCanvasTexture`.
+ * - Signage (`signage.ts`): credits cards, the On The Move ad, the quiet LED
+ *   ribbon and logo banners. Textures: `paintCanvasTexture`.
  *   Tests call `setTexturePainting(false)` because jsdom has no 2D context.
  * - `ft()` and `FT`, and `createRng(seed)`.
  */
@@ -38,6 +39,8 @@ export * from "./envMap";
 export * from "./rig";
 export * from "./materials";
 export * from "./textures";
+export * from "./brand";
+export * from "./signage";
 export * from "./lightPole";
 export * from "./videoBoard";
 export * from "./crowd";

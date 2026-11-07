@@ -6,6 +6,8 @@ covers:
   - apps/desktop/src/view3d/window/overlay/SettingsPanel.tsx
   - apps/desktop/src/view3d/window/overlay/VenueControls.tsx
   - apps/desktop/src/view3d/core/venueSettings.ts
+  - apps/desktop/src/view3d/core/field/regulation.ts
+  - apps/desktop/src/view3d/window/useKitShowCredits.ts
   - apps/desktop/src/view3d/core/marchers
   - apps/desktop/src/view3d/core/instruments/catalog.ts
   - packages/core/src/cues
@@ -22,7 +24,7 @@ import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-The venue is where the 3D View puts your show: a high school stadium, a college bowl, a gym and so on, with its lighting and crowd. It and the uniforms are part of the show, so everyone who opens the show sees the same thing.
+The venue is where the 3D View puts your show: a high school stadium, a college bowl, an indoor arena and so on, with its lighting and crowd. It and the uniforms are part of the show, so everyone who opens the show sees the same thing.
 
 ## Change the venue
 
@@ -30,17 +32,17 @@ The venue is where the 3D View puts your show: a high school stadium, a college 
 
 1. In the 3D View, select <Ui k="view3d.settings.title" /> (the gear at the top right). The panel opens on the right.
 
-2. Under <Ui k="view3d.settings.venueSection" plain />, choose a <Ui k="view3d.overlay.venue" plain />: <Ui k="view3d.kit.hs" />, <Ui k="view3d.kit.bighs" />, <Ui k="view3d.kit.college" />, <Ui k="view3d.kit.pro" />, <Ui k="view3d.kit.gym" /> or <Ui k="view3d.kit.blank" />.
+2. Under <Ui k="view3d.settings.venueSection" plain />, choose a <Ui k="view3d.overlay.venue" plain />: <Ui k="view3d.kit.hs" />, <Ui k="view3d.kit.bighs" />, <Ui k="view3d.kit.college" />, <Ui k="view3d.kit.pro" />, <Ui k="view3d.kit.gym" />, <Ui k="view3d.kit.arena" /> or <Ui k="view3d.kit.blank" />.
 
-3. Choose the <Ui k="view3d.overlay.lighting" plain />. Each venue has its own choices: <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.dusk" /> and <Ui k="view3d.lighting.night" /> in the outdoor stadiums, <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.night" /> and <Ui k="view3d.lighting.roofClosed" /> in the Pro dome, and <Ui k="view3d.lighting.house" /> or <Ui k="view3d.lighting.show" /> lights in the gym.
+3. Choose the <Ui k="view3d.overlay.lighting" plain />. Each venue has its own choices: <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.dusk" /> and <Ui k="view3d.lighting.night" /> in the outdoor stadiums, <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.night" /> and <Ui k="view3d.lighting.roofClosed" /> in the Pro dome, and <Ui k="view3d.lighting.house" /> or <Ui k="view3d.lighting.show" /> lights in the gym and the arena.
 
 </Steps>
 
-The field in every venue is your show's field, with its yard lines, hashes and field image (see [Edit the field](/guides/field/edit-the-field/)). Each venue has its own cameras; see [Move the camera](/guides/3d-view/cameras/).
+The field in every venue is your show's field, with its yard lines, hashes and field image (see [Edit the field](/guides/field/edit-the-field/)). In the stadiums, a football field always has both end zones, even when your show's field stops at the goal lines: the 3D View paints the end zones past them, and the marchers stay where you put them. Other fields, such as an indoor floor, never get end zones. Each venue has its own cameras; see [Move the camera](/guides/3d-view/cameras/).
 
 <Media
   id="3d-settings"
-  alt="The View settings panel: under This show, the venue choices, lighting, band uniform and guard uniform presets, the crowd switch with home and visitor colors, and the end-zone lettering; under it, the 3D View's keyboard and mouse controls."
+  alt="The View settings panel: under This show, the seven venue choices with High school selected, lighting, band uniform and guard uniform presets, the crowd switch with home and visitor colors, and the end-zone lettering; under it, the 3D View's keyboard and mouse controls."
   maxWidth={420}
 />
 
@@ -51,7 +53,11 @@ Everything under <Ui k="view3d.settings.venueSection" plain /> is saved in the s
 In a venue with stands:
 
 - <Ui k="view3d.overlay.crowd" /> fills the stands with spectators. Press <Kbd keys="C" /> in the 3D View to turn them on or off. With the crowd on, <Ui k="view3d.settings.crowdColors" plain /> sets the colors the <Ui k="view3d.settings.homeColor" plain /> and <Ui k="view3d.settings.awayColor" plain /> sides wear.
-- <Ui k="view3d.settings.endZones" /> paints lettering in both end zones, up to 24 characters, in the color you choose. Leave it empty for no lettering. The gym has no end zones.
+- <Ui k="view3d.settings.endZones" /> paints lettering in both end zones, up to 24 characters, in the color you choose. Leave it empty for no lettering. The gym and the arena have no end zones.
+
+## The video boards
+
+The video boards in the <Ui k="view3d.kit.bighs" plain />, <Ui k="view3d.kit.college" plain /> and <Ui k="view3d.kit.pro" plain /> venues, and the scoreboard in the <Ui k="view3d.kit.arena" plain />, show your show's name, with its designer and client when you've entered them. Set these in [Show settings](/guides/field/show-settings/). Without a show name, the boards show the file's name.
 
 ## Uniforms
 

@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>3D View venue gallery</title>
+        <style>
+            html,
+            body {
+                margin: 0;
+                height: 100%;
+                background: #000;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+                width: 100vw;
+                height: 100vh;
+            }
+            #hud {
+                position: fixed;
+                left: 8px;
+                top: 8px;
+                color: #fff;
+                font: 12px monospace;
+                text-shadow: 0 0 3px #000;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="hud"></div>
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

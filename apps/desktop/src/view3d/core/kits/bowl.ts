@@ -107,17 +107,21 @@ export function outlineOffset(
     return outside + inside - rc;
 }
 
-/** Two rings to join, and how many meters of ring one texture tile spans. */
+/**
+ * Two rings to join, how many meters of ring one texture tile spans, and
+ * where along the tile (in tiles) the band's first point starts.
+ */
 export interface RingPair {
     a: Ring;
     b: Ring;
     tile?: number;
+    uOffset?: number;
 }
 
 /**
  * Appends quads between two closed rings with matching point counts. `u`
- * runs along the ring in units of `tile` meters; `v` runs from `a` (0) to
- * `b` (1).
+ * runs along the ring in units of `tile` meters, starting at `uOffset`; `v`
+ * runs from `a` (0) to `b` (1).
  */
 export function ringBand(
     a: Ring,
@@ -125,9 +129,10 @@ export function ringBand(
     pos: number[],
     uv: number[],
     tile: number,
+    uOffset = 0,
 ): void {
     if (a.length !== b.length) throw new Error("ringBand: ring sizes differ");
-    let u = 0;
+    let u = uOffset * tile;
     for (let i = 0; i < a.length; i++) {
         const j = (i + 1) % a.length;
         const seg = a[i].distanceTo(a[j]);
@@ -151,8 +156,8 @@ export const DEFAULT_BAND_TILE = ft(40);
 export function bandGeometry(pairs: RingPair[]): BufferGeometry {
     const pos: number[] = [];
     const uv: number[] = [];
-    for (const { a, b, tile } of pairs)
-        ringBand(a, b, pos, uv, tile ?? DEFAULT_BAND_TILE);
+    for (const { a, b, tile, uOffset } of pairs)
+        ringBand(a, b, pos, uv, tile ?? DEFAULT_BAND_TILE, uOffset);
     const geo = new BufferGeometry();
     geo.setAttribute("position", new Float32BufferAttribute(pos, 3));
     geo.setAttribute("uv", new Float32BufferAttribute(uv, 2));

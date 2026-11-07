@@ -2776,14 +2776,17 @@
             "floor": "On the floor",
             "frontRow": "Front row",
             "geJudge": "GE judge",
+            "judgesTable": "Judges' table",
             "lowerBowl": "Lower bowl",
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
             "topDown": "Top down",
+            "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
         },
         "kit": {
+            "arena": "Indoor arena",
             "bighs": "Big high school",
             "blank": "Field only",
             "college": "College bowl",
@@ -3118,7 +3121,14 @@
         "unsavedChanges": "You have unsaved changes",
         "close": "Close",
         "saved": "Show settings saved",
-        "updateFailed": "Failed to update workspace settings"
+        "updateFailed": "Failed to update workspace settings",
+        "showInfo": {
+            "projectName": "Show name",
+            "projectNamePlaceholder": "Uses the file name",
+            "designer": "Designer",
+            "client": "Client",
+            "optional": "Optional"
+        }
     },
     "canvas": {
         "zoom": {

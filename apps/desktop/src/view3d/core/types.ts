@@ -11,7 +11,14 @@ import type { FieldFootprint } from "@openmarch/core";
 import type { Object3D, Vector3Tuple } from "three";
 
 /** Venue kits shipped in the MVP. `blank` is the field on a plain ground. */
-export type VenueKitId = "hs" | "bighs" | "college" | "pro" | "gym" | "blank";
+export type VenueKitId =
+    | "hs"
+    | "bighs"
+    | "college"
+    | "pro"
+    | "gym"
+    | "arena"
+    | "blank";
 
 /** Lighting presets. Each kit lists the ones it supports. */
 export type LightingPreset =
@@ -21,6 +28,14 @@ export type LightingPreset =
     | "roofClosed"
     | "house"
     | "show";
+
+/** The show's credits for video boards. Blank fields are left off. */
+export interface ShowCredits {
+    /** The show's project name, or the file name when it has none. */
+    title: string;
+    designer?: string;
+    client?: string;
+}
 
 /** Small per-show settings stored with the venue (ADR 0010 D-5). */
 export interface VenueParams {
@@ -100,6 +115,11 @@ export interface KitResult {
     defaultLighting: LightingPreset;
     /** Applies a preset; ignores ones not in `lightingPresets`. */
     setLighting(preset: LightingPreset): void;
+    /**
+     * Shows the show's credits on the kit's video boards, if it has any.
+     * Called after the build and whenever the credits change; cheap to repeat.
+     */
+    setShowCredits?(credits: ShowCredits): void;
     /** Per-frame hook, e.g. hide the roof when the camera is above it. */
     onFrame?(ctx: FrameContext): void;
     dispose(): void;

@@ -22,6 +22,7 @@ import {
 } from "./plan";
 import { planTarp } from "./tarpPlan";
 import { planTheme } from "./themePlan";
+import { withFootballEndZones } from "./regulation";
 import { planTurf } from "./turfPlan";
 
 /**
@@ -44,6 +45,7 @@ export type {
 } from "./plan";
 export { END_ZONE_STYLES } from "./plan";
 export { paintPlan, textureLayout, textureLongSide } from "./paint";
+export { venueFootprint, withFootballEndZones } from "./regulation";
 export type { TextureLayout } from "./paint";
 
 /** Height of the surface above the kits' ground and floors. */
@@ -96,8 +98,13 @@ export function planField(input: FieldSurfaceInput): FieldPlan {
         input.image && imageSize(input.image).width > 0
             ? imageSize(input.image)
             : null;
+    // Stadium turf always shows a football field's end zones (see
+    // `withFootballEndZones`); the other styles paint the grid as it is.
     const ctx = createPlanContext({
-        fieldProperties: input.fieldProperties,
+        fieldProperties:
+            input.style === "turf"
+                ? withFootballEndZones(input.fieldProperties)
+                : input.fieldProperties,
         theme: input.theme ?? input.fieldProperties.theme,
         style: input.style,
         params: input.params,
