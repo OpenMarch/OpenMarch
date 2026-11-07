@@ -5,9 +5,10 @@ import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
 import yeskunallumami from "@yeskunall/astro-umami";
 import starlightImageZoom from "starlight-image-zoom";
+import starlightLlmsTxt from "starlight-llms-txt";
 
 import tailwindcss from "@tailwindcss/vite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 /**
  * Which site this build is. "stable" is openmarch.com. "preview" is
@@ -25,6 +26,87 @@ const prereleaseTagPrefix = `v${desktopVersion.split(".").slice(0, 2).join(".")}
 const downloadUrl = isPreview
     ? `https://github.com/OpenMarch/OpenMarch/releases/download/v${desktopVersion}`
     : "https://github.com/OpenMarch/OpenMarch/releases/latest/download";
+
+/**
+ * The user guide's chapters, in the order the sidebar and the llms.txt files show them. Each is a
+ * folder in src/content/docs. See apps/website/AGENTS.md before adding or moving a page.
+ */
+const guideChapters = [
+    {
+        label: "Start here",
+        dir: "guides/start",
+        about: "installing OpenMarch, a first show, Basic and Expert modes, and what's new in 0.2",
+    },
+    {
+        label: "The workspace",
+        dir: "guides/workspace",
+        about: "the window, the Editor and Preview, and moving around the field",
+    },
+    {
+        label: "Marchers",
+        dir: "guides/marchers",
+        about: "adding, selecting, moving, aligning and styling marchers",
+    },
+    {
+        label: "Timeline",
+        dir: "guides/timeline",
+        about: "how pages, moves and the timeline work, and playing the show",
+    },
+    {
+        label: "Shapes",
+        dir: "guides/shapes",
+        about: "drawing lines, arcs, boxes and circles and placing marchers in them",
+    },
+    {
+        label: "Music",
+        dir: "guides/music",
+        about: "audio, counts, tempo, the metronome and MusicXML scores",
+    },
+    {
+        label: "Field",
+        dir: "guides/field",
+        about: "the field's markings, show settings and step size warnings",
+    },
+    {
+        label: "3D View and props",
+        dir: "guides/3d-view",
+        about: "the 3D View, cameras, venues, uniforms and props",
+    },
+    {
+        label: "Files and export",
+        dir: "guides/files",
+        about: "saving and opening shows, printing charts, video and On the Move",
+    },
+    {
+        label: "Reference",
+        dir: "guides/reference",
+        about: "the glossary, every keyboard shortcut and every setting",
+    },
+    {
+        label: "Troubleshooting",
+        dir: "troubleshooting",
+        about: "file errors, known issues and repairing files",
+    },
+];
+
+/** A chapter's page ids in sidebar order (`sidebar.order`, then id), for the llms.txt files. */
+function chapterPageIds(dir) {
+    const folder = new URL(`./src/content/docs/${dir}/`, import.meta.url);
+    return readdirSync(folder)
+        .filter((name) => /\.mdx?$/.test(name))
+        .map((name) => {
+            const order = /^\s+order:\s*(-?\d+)/m.exec(
+                readFileSync(new URL(name, folder), "utf8"),
+            );
+            const base = name.replace(/\.mdx?$/, "");
+            return {
+                id: base === "index" ? dir : `${dir}/${base}`,
+                order: order ? Number(order[1]) : Infinity,
+            };
+        })
+        .sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+        .map((page) => page.id);
+}
 
 // https://astro.build/config
 export default defineConfig({
@@ -53,7 +135,61 @@ export default defineConfig({
     integrations: [
         react(),
         starlight({
-            plugins: [starlightImageZoom()],
+            plugins: [
+                starlightImageZoom(),
+                starlightLlmsTxt({
+                    description:
+                        "OpenMarch is free, open-source drill writing software for marching bands: you place marchers on a field, set where they go on each page of the show, and play it back with the music.",
+                    details: [
+                        "These files are the OpenMarch user guide, the same pages people read at openmarch.com/guides. They describe the desktop app as it is meant to behave: what each part of the window does and how to get things done with it.",
+                        "",
+                        "- Labels in **bold** are the app's own text, exactly as it shows them.",
+                        "- Shortcuts are written in Windows and Linux keys, with the Mac keys after them: `Ctrl+Shift+Z (Mac: ⇧⌘Z)`.",
+                        "- Pictures are screenshots and short clips from the app; their alt text says what they show.",
+                        '- Concept pages such as "How the timeline works" explain how a part of the app works; the Glossary defines terms such as page, set, move and keyframe.',
+                    ].join("\n"),
+                    customSets: guideChapters.map((chapter) => ({
+                        label: chapter.label,
+                        description: chapter.about,
+                        paths: [
+                            ...(chapter.dir === "guides/start"
+                                ? ["guides"]
+                                : []),
+                            chapter.dir,
+                            `${chapter.dir}/**`,
+                        ],
+                    })),
+                    // In reading order: the guide's front page and glossary, then each chapter
+                    // as the sidebar orders it. On The Move and developer pages go last.
+                    promote: [
+                        "guides",
+                        "guides/reference/glossary",
+                        ...guideChapters.flatMap((chapter) =>
+                            chapterPageIds(chapter.dir),
+                        ),
+                    ],
+                    demote: ["otm/**", "developers/**"],
+                    // The plugin always minifies the chapter files; keep them whole and readable,
+                    // asides included. llms-small.txt is then about the same as llms-full.txt.
+                    minify: {
+                        note: false,
+                        tip: false,
+                        details: false,
+                        whitespace: false,
+                    },
+                    // Keep one copy of each shortcut and picture, as plain text, and drop the
+                    // "Section titled" links. Kbd.astro writes the text shortcut.
+                    customSelectors: {
+                        all: [
+                            ".sl-anchor-link",
+                            ".docs-media-dark",
+                            ".docs-kbd-other",
+                            ".docs-kbd-mac",
+                            ".docs-kbd-gesture",
+                        ],
+                    },
+                }),
+            ],
             title: "OpenMarch",
             logo: {
                 light: "./public/openmarch-black.svg",
@@ -98,60 +234,16 @@ export default defineConfig({
                 "./src/styles/starlight.css",
             ],
             sidebar: [
-                // The user guide, ordered the way the app is laid out. Each group is a folder in
-                // src/content/docs/guides; pages order themselves with `sidebar.order`.
-                // See apps/website/AGENTS.md before adding or moving a page.
-                {
-                    label: "Start here",
+                // The user guide (guideChapters above); pages order themselves with `sidebar.order`.
+                ...guideChapters.map((chapter) => ({
+                    label: chapter.label,
                     items: [
-                        { slug: "guides" },
-                        { autogenerate: { directory: "guides/start" } },
+                        ...(chapter.dir === "guides/start"
+                            ? [{ slug: "guides" }]
+                            : []),
+                        { autogenerate: { directory: chapter.dir } },
                     ],
-                },
-                {
-                    label: "The workspace",
-                    items: [
-                        { autogenerate: { directory: "guides/workspace" } },
-                    ],
-                },
-                {
-                    label: "Marchers",
-                    items: [{ autogenerate: { directory: "guides/marchers" } }],
-                },
-                {
-                    label: "Timeline",
-                    items: [{ autogenerate: { directory: "guides/timeline" } }],
-                },
-                {
-                    label: "Shapes",
-                    items: [{ autogenerate: { directory: "guides/shapes" } }],
-                },
-                {
-                    label: "Music",
-                    items: [{ autogenerate: { directory: "guides/music" } }],
-                },
-                {
-                    label: "Field",
-                    items: [{ autogenerate: { directory: "guides/field" } }],
-                },
-                {
-                    label: "3D View and props",
-                    items: [{ autogenerate: { directory: "guides/3d-view" } }],
-                },
-                {
-                    label: "Files and export",
-                    items: [{ autogenerate: { directory: "guides/files" } }],
-                },
-                {
-                    label: "Reference",
-                    items: [
-                        { autogenerate: { directory: "guides/reference" } },
-                    ],
-                },
-                {
-                    label: "Troubleshooting",
-                    items: [{ autogenerate: { directory: "troubleshooting" } }],
-                },
+                })),
                 {
                     label: "On The Move",
                     collapsed: true,

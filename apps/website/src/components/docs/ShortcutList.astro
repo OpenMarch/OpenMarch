@@ -5,6 +5,7 @@
  * it can't drift; shortcuts that Basic mode hides are marked Expert.
  */
 import data from "../../data/generated/shortcuts.json";
+import { shortcutText } from "./shortcutText";
 
 type Shortcut = { keys: string[]; gesture?: string };
 type Row = { label: string; mac: Shortcut[]; other: Shortcut[] };
@@ -36,7 +37,12 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                                 {row.label}
                                 {!inBasic.has(
                                     `${group.title}|${row.label}`,
-                                ) && <span class="expert-tag">Expert</span>}
+                                ) && (
+                                    <>
+                                        {" "}
+                                        <span class="expert-tag">Expert</span>
+                                    </>
+                                )}
                             </td>
                             <td>
                                 {row.other.map((s, i) => (
@@ -63,6 +69,9 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                                                     {s.gesture}
                                                 </span>
                                             )}
+                                            <span class="docs-kbd-text">
+                                                {shortcutText(s, row.mac[i])}
+                                            </span>
                                         </kbd>
                                     </>
                                 ))}
@@ -77,7 +86,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
 <style>
     .expert-tag {
-        margin-left: 0.5em;
+        margin-left: 0.25em;
         padding: 0 0.4em;
         border-radius: 4px;
         font-size: 0.75em;

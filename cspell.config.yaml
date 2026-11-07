@@ -71,6 +71,7 @@ words:
   - frameless
   - headlessly
   - llvmpipe
+  - llms
   - softpipe
   - jank
   - janky
