@@ -5,6 +5,11 @@ type: how-to
 covers:
   - apps/desktop/src/components/mobile
   - apps/desktop/src/components/exporting/ExportCoordinatesModal.tsx
+  - apps/desktop/src/auth
+  - apps/desktop/web/renderer/auth.ts
+  - action:exportToMobile
+  - i18n:auth
+  - i18n:exportCoordinates.webMobileUnavailable
   - i18n:mobileExport
   - i18n:ensembles
   - i18n:sidebar.mobile
@@ -16,7 +21,7 @@ import Media from "@/components/docs/Media.astro";
 import Ui from "@/components/docs/Ui.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-OpenMarch: On the Move is the phone app your marchers use to see their drill, coordinates and music. You send a show to it from the desktop app; the web editor can't. You need an OpenMarch account and an ensemble with a production to send it to; [Getting started with On the Move](/otm/getting-started/) explains how to set those up.
+OpenMarch: On the Move is the phone app your marchers use to see their drill, coordinates and music. You send a show to it from the desktop app or the web editor. You need an OpenMarch account and an ensemble with a production to send it to; [Getting started with On the Move](/otm/getting-started/) explains how to set those up.
 
 ## What the phone app shows
 
@@ -31,11 +36,11 @@ When your show has motion like this, the <Ui k="sidebar.mobile" plain /> panel s
 
 <Steps>
 
-1. Open the show in the desktop app.
+1. Open the show.
 
-2. Select <Ui k="sidebar.mobile" /> (the phone) in the sidebar. You can also select <Ui k="exportCoordinates.exportButton" /> in the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab and then the <Ui k="exportCoordinates.mobile" /> tab.
+2. Select <Ui k="sidebar.mobile" /> (the phone) in the sidebar. You can also select <Ui k="exportCoordinates.exportButton" /> in the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab and then the <Ui k="exportCoordinates.mobile" /> tab, or in the web editor, <Ui k="web.fileMenu" /> › <Ui k="actions.file.exportToMobile" />.
 
-3. Select <Ui k="auth.signIn" /> and sign in with your OpenMarch account. If you don't have one, select <Ui k="mobileExport.signedOut.setupAccount" />.
+3. Select <Ui k="auth.signIn" />. OpenMarch's sign-in page opens in your browser (in the web editor, in a new tab). Sign in with your OpenMarch account, the same one you use on app.openmarch.com; if you don't have one, select <Ui k="mobileExport.signedOut.setupAccount" /> first. When you've signed in, go back to OpenMarch: the panel shows your account.
 
 4. Choose the production for this show in your ensemble, and select <Ui k="ensembles.attachToProduction" />, then <Ui k="ensembles.attachDialog.attach" />. To make a new production, select <Ui k="ensembles.createProduction" />.
 
@@ -52,6 +57,18 @@ The show appears straight away for everyone in the ensemble.
 />
 
 Attaching ties this `.dots` file to the production, so the panel opens on that production next time.
+
+## Signing in and out
+
+OpenMarch remembers your sign-in, so you sign in once. In the web editor, the sign-in is shared with app.openmarch.com: if you're signed in there, the web editor already knows, and <Ui k="auth.signOut" /> in the panel's account menu signs you out of both. The desktop app keeps its own sign-in, so signing out in the browser doesn't sign it out.
+
+If your browser blocks pop-ups, or you opened OpenMarch from your Home Screen, the web editor signs you in in the same tab and comes back to your show. It keeps your latest changes first, and asks before leaving only if it can't.
+
+If the panel says <Ui k="exportCoordinates.webMobileUnavailable.title" plain />, you're in a test version of the web editor that can't sign in. Each version keeps its own shows, so select <Ui k="web.backUp" /> to save a `.dots` copy, then select <Ui k="exportCoordinates.webMobileUnavailable.openEditor" /> and open that file there, or open it in the desktop app.
+
+If the panel says <Ui k="mobileExport.unreachable.title" plain />, OpenMarch couldn't reach its online service or confirm your sign-in. You stay signed in. Check your internet connection and select <Ui k="mobileExport.unreachable.retry" />.
+
+If it says <Ui k="mobileExport.signInRejected.title" plain />, the online service turned your sign-in down. Select <Ui k="mobileExport.signInRejected.signOut" />, then sign in again.
 
 ## Send changes
 

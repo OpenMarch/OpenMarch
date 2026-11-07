@@ -90,7 +90,9 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+import WebMobileUnavailable from "@/components/mobile/WebMobileUnavailable";
 import { isWebBuild } from "@/utilities/webBuild";
+import { isSignInEnabled } from "@/global/auth/constants";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { hasOpfs, isAppleTouchDevice } from "@/utilities/device";
 import {
@@ -2029,8 +2031,36 @@ function ExportModalContents({
     onMobileExportClick: () => void;
 }) {
     const { exportTab, setExportTab } = useAppDialogStore();
-    // The web build can only export video (the rest needs Electron)
-    if (isWebBuild) return <VideoExport />;
+    // The web build exports video and uploads to the mobile app; the rest
+    // needs Electron (printToPDF, file streams). Where the build can't sign
+    // in (examples, a branch's preview URL), the Mobile tab says so.
+    if (isWebBuild)
+        return (
+            <Tabs
+                value={exportTab === "mobile" ? "mobile" : "video"}
+                onValueChange={(tab) => setExportTab(tab as ExportTab)}
+                className="gap-12"
+            >
+                <TabsList>
+                    <TabItem value="mobile">
+                        <T keyName="exportCoordinates.mobile" />
+                    </TabItem>
+                    <TabItem value="video">
+                        <T keyName="exportCoordinates.video" />
+                    </TabItem>
+                </TabsList>
+                <TabContent value="mobile">
+                    {isSignInEnabled ? (
+                        <MobileExportOption onClick={onMobileExportClick} />
+                    ) : (
+                        <WebMobileUnavailable />
+                    )}
+                </TabContent>
+                <TabContent value="video">
+                    <VideoExport />
+                </TabContent>
+            </Tabs>
+        );
     return (
         <Tabs
             value={exportTab}
@@ -2094,11 +2124,7 @@ export default function ExportCoordinatesModal() {
                 {/* Dialog Setup */}
                 <DialogContent className="export-coordinates-dialog touch:max-h-[calc(100dvh-2rem)]! max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
-                        {isWebBuild ? (
-                            <T keyName="exportCoordinates.exportVideoButton" />
-                        ) : (
-                            <T keyName="exportCoordinates.title" />
-                        )}
+                        <T keyName="exportCoordinates.title" />
                     </DialogTitle>
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}

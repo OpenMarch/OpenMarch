@@ -5,7 +5,16 @@ import { EXPORT_ACTION_IDS } from "../definitions";
 import { useActionHandler, useActionHandlerGroup } from "../useActionHandler";
 import { isWebBuild } from "@/utilities/webBuild";
 
-const WEB_EXPORT_ACTION_IDS = ["openExportDialog", "exportVideo"] as const;
+/**
+ * On the web only video export and mobile upload work: the others need
+ * Electron (printToPDF, file streams). Mobile upload says so in builds that
+ * can't sign in.
+ */
+const WEB_EXPORT_ACTION_IDS = [
+    "openExportDialog",
+    "exportVideo",
+    "exportToMobile",
+] as const;
 
 /** App-level commands: exporting and closing the show. */
 export function useAppActionHandlers() {
@@ -13,12 +22,16 @@ export function useAppActionHandlers() {
     const openExport = useAppDialogStore((s) => s.openExport);
 
     useActionHandlerGroup(
-        // On the web only video export works: the others need Electron
-        // (printToPDF, file streams, sign-in).
         isWebBuild ? WEB_EXPORT_ACTION_IDS : EXPORT_ACTION_IDS,
-        (_id, args) =>
+        (id, args) =>
+            // The web dialog opens on video unless mobile was asked for
+            // (openExportDialog names mobile, the desktop app's first tab).
             openExport(
-                isWebBuild ? "video" : (args?.tab as ExportTab | undefined),
+                isWebBuild
+                    ? id === "exportToMobile"
+                        ? "mobile"
+                        : "video"
+                    : (args?.tab as ExportTab | undefined),
             ),
         { enabled: databaseReady },
     );

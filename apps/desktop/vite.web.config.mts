@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { parse as parseYaml } from "yaml";
@@ -92,11 +92,64 @@ const storageNamespace = isLab
       ? "preview"
       : channel;
 /**
- * Scripts the lab's feedback widget loads into a lab build's page, which the
- * content security policy must allow: Clerk's browser script, which signs
- * the widget's requests to the lab's API in.
+ * Sign-in (web/renderer/auth.ts): ClerkJS with a Clerk publishable key,
+ * `VITE_CLERK_PUBLISHABLE_KEY` from the environment or the mode's `.env`
+ * files (`.env.production` has the production instance's).
+ *
+ * - The sites (stable, nightly, preview, lab) sign in with the production
+ *   instance, which only runs on openmarch.com. The build refuses anything
+ *   else (a dev server for one starts with sign-in off): no key would leave real users unable to sign in, and a development
+ *   key would send them to the test accounts.
+ * - A dev build (`web:dev`) signs in only with a development key
+ *   (`pk_test_…`, say in `.env.development.local`), whose instance accepts
+ *   localhost. Point `VITE_EDITOR_API_URL` at an API that trusts it.
+ * - The examples build leaves sign-in out.
  */
-const labScriptHosts = isLab ? ["https://clerk.openmarch.com"] : [];
+const siteChannels = ["stable", "nightly", "preview", "lab"];
+function webClerkPublishableKey(mode: string, command: string): string {
+    if (!siteChannels.includes(channel) && channel !== "dev") return "";
+    // An empty variable counts as unset, so the .env files decide (loadEnv
+    // would otherwise prefer the empty environment value).
+    if (process.env.VITE_CLERK_PUBLISHABLE_KEY === "")
+        delete process.env.VITE_CLERK_PUBLISHABLE_KEY;
+    const key =
+        process.env.VITE_CLERK_PUBLISHABLE_KEY ||
+        loadEnv(mode, __dirname, "VITE_CLERK_").VITE_CLERK_PUBLISHABLE_KEY ||
+        "";
+    const isDevelopmentKey = key.startsWith("pk_test_");
+    if (siteChannels.includes(channel) && !key.startsWith("pk_live_")) {
+        // A dev server for a site channel (LAB.md's local lab run) runs on
+        // localhost, where the production instance can't sign in anyway:
+        // it starts with sign-in off. Only a build for the site must have it.
+        if (command !== "build") return "";
+        throw new Error(
+            isDevelopmentKey
+                ? `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…), not a development key (pk_test_…)`
+                : `WEB_CHANNEL=${channel} is a site real users sign in to: it needs the production Clerk key (pk_live_…) in VITE_CLERK_PUBLISHABLE_KEY (.env.production has it)`,
+        );
+    }
+    // Only a development instance runs on localhost.
+    if (channel === "dev" && !isDevelopmentKey) return "";
+    return key;
+}
+
+/** The Clerk Frontend API host a publishable key names (pk_live_<base64 host$>). */
+function clerkHost(publishableKey: string): string {
+    const encoded = publishableKey.split("_")[2] ?? "";
+    return Buffer.from(encoded, "base64").toString("utf8").replace(/\$$/, "");
+}
+
+/**
+ * Scripts from elsewhere the page's content security policy must allow:
+ * ClerkJS, from the Clerk instance, for sign-in. (A lab build's feedback
+ * widget loads it too, to sign its requests to the lab's API in.)
+ */
+function scriptHosts(publishableKey: string): string[] {
+    const hosts = new Set<string>();
+    if (publishableKey) hosts.add(`https://${clerkHost(publishableKey)}`);
+    if (isLab) hosts.add("https://clerk.openmarch.com");
+    return [...hosts];
+}
 
 /**
  * The versions a lab test compares (web/LAB.md, "Comparing versions"): the
@@ -221,7 +274,7 @@ const resolveElectron = (): Plugin => ({
  * the app once the worker is ready, and lets the page compile SQLite's
  * WebAssembly under the app's content security policy.
  */
-const webEntry = (): Plugin => ({
+const webEntry = (extraScriptHosts: string[]): Plugin => ({
     name: "openmarch-web-entry",
     transformIndexHtml: {
         order: "pre",
@@ -235,7 +288,7 @@ const webEntry = (): Plugin => ({
                     "script-src 'self'",
                     [
                         "script-src 'self' 'wasm-unsafe-eval'",
-                        ...labScriptHosts,
+                        ...extraScriptHosts,
                     ].join(" "),
                 )
                 .replace(/<title>[^<]*<\/title>/, "<title>OpenMarch</title>")
@@ -281,81 +334,96 @@ const HOME_SCREEN_TAGS = [
     '<meta name="theme-color" content="#0f0e13" media="(prefers-color-scheme: dark)" />',
 ].join("\n        ");
 
-export default defineConfig({
-    // A lab build is served from a folder, so its URLs are relative.
-    base: isLab ? "./" : webBase,
-    resolve: {
-        alias: [
-            { find: /^@\//, replacement: path.join(__dirname, "src") + "/" },
-            {
-                find: /^@om-electron\//,
-                replacement: path.join(__dirname, "electron") + "/",
-            },
-            // Only the worker's main-process code imports these.
-            { find: /^(node:)?fs$/, replacement: web("worker/fs.ts") },
-            { find: /^(node:)?path$/, replacement: web("worker/path.ts") },
-            { find: /^(node:)?sqlite$/, replacement: web("worker/sqlite.ts") },
-            { find: /^(node:)?crypto$/, replacement: web("worker/crypto.ts") },
-            // @mediabunny/aac-encoder imports it only under Node. Left to Vite's shared
-            // browser-external stub, it ties the main chunk and the app chunk into a
-            // cycle and the app fails to start.
-            {
-                find: /^(node:)?worker_threads$/,
-                replacement: web("renderer/workerThreads.ts"),
-            },
-            {
-                find: "@sentry/electron/renderer",
-                replacement: web("renderer/sentry.ts"),
-            },
+// eslint-disable-next-line max-lines-per-function
+export default defineConfig(({ mode, command }) => {
+    const clerkPublishableKey = webClerkPublishableKey(mode, command);
+    return {
+        // A lab build is served from a folder, so its URLs are relative.
+        base: isLab ? "./" : webBase,
+        resolve: {
+            alias: [
+                {
+                    find: /^@\//,
+                    replacement: path.join(__dirname, "src") + "/",
+                },
+                {
+                    find: /^@om-electron\//,
+                    replacement: path.join(__dirname, "electron") + "/",
+                },
+                // Only the worker's main-process code imports these.
+                { find: /^(node:)?fs$/, replacement: web("worker/fs.ts") },
+                { find: /^(node:)?path$/, replacement: web("worker/path.ts") },
+                {
+                    find: /^(node:)?sqlite$/,
+                    replacement: web("worker/sqlite.ts"),
+                },
+                {
+                    find: /^(node:)?crypto$/,
+                    replacement: web("worker/crypto.ts"),
+                },
+                // @mediabunny/aac-encoder imports it only under Node. Left to Vite's shared
+                // browser-external stub, it ties the main chunk and the app chunk into a
+                // cycle and the app fails to start.
+                {
+                    find: /^(node:)?worker_threads$/,
+                    replacement: web("renderer/workerThreads.ts"),
+                },
+                {
+                    find: "@sentry/electron/renderer",
+                    replacement: web("renderer/sentry.ts"),
+                },
+            ],
+            extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
+        },
+        plugins: [
+            resolveElectron(),
+            tailwindcss(),
+            react(),
+            webEntry(scriptHosts(clerkPublishableKey)),
+            writeHeaders(),
+            copyExamples(),
         ],
-        extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
-    },
-    plugins: [
-        resolveElectron(),
-        tailwindcss(),
-        react(),
-        webEntry(),
-        writeHeaders(),
-        copyExamples(),
-    ],
-    worker: {
-        format: "es",
-        plugins: () => [resolveElectron()],
-    },
-    define: {
-        // The preload reads these from Node's `process` under Electron.
-        "process.platform": "globalThis.__openmarchPlatform",
-        "process.env.PLAYWRIGHT_CODEGEN": JSON.stringify(""),
-        "process.env.PLAYWRIGHT_SESSION": JSON.stringify(""),
-        "import.meta.env.VITE_PUBLIC_WEB_BUILD": JSON.stringify("true"),
-        "import.meta.env.VITE_PUBLIC_WEB_CHANNEL": JSON.stringify(channel),
-        "import.meta.env.VITE_PUBLIC_WEB_STORAGE_NAMESPACE":
-            JSON.stringify(storageNamespace),
-        "import.meta.env.VITE_PUBLIC_APP_VERSION": JSON.stringify(version),
-        __LAB_VARIANTS__: JSON.stringify(labVariants()),
-        "import.meta.env.VITE_PUBLIC_WEB_EXAMPLES": JSON.stringify(
-            JSON.stringify(examples),
-        ),
-        "import.meta.env.VITE_PUBLIC_LAB_SHOW": JSON.stringify(labShow),
-        "import.meta.env.VITE_PUBLIC_LAB_MODE": JSON.stringify(labMode),
-        // No analytics on the web (PostHog stays uninitialized; Sentry is
-        // stubbed in renderer/sentry.ts).
-        "import.meta.env.VITE_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
-    },
-    optimizeDeps: {
-        // Loads its .wasm next to itself, which pre-bundling breaks.
-        // The migrator reads files with `fs`, which must reach worker/fs.ts.
-        exclude: ["@sqlite.org/sqlite-wasm", "drizzle-orm/migrator"],
-    },
-    // Home-screen icons and manifest (see HOME_SCREEN_TAGS), and the favicon.
-    publicDir: web("public"),
-    build: {
-        outDir,
-        emptyOutDir: true,
-        sourcemap: true,
-        target: "es2022",
-        chunkSizeWarningLimit: 8000,
-    },
-    server: { port: 7780 },
-    clearScreen: false,
+        worker: {
+            format: "es",
+            plugins: () => [resolveElectron()],
+        },
+        define: {
+            // The preload reads these from Node's `process` under Electron.
+            "process.platform": "globalThis.__openmarchPlatform",
+            "process.env.PLAYWRIGHT_CODEGEN": JSON.stringify(""),
+            "process.env.PLAYWRIGHT_SESSION": JSON.stringify(""),
+            "import.meta.env.VITE_PUBLIC_WEB_BUILD": JSON.stringify("true"),
+            "import.meta.env.VITE_PUBLIC_WEB_CHANNEL": JSON.stringify(channel),
+            "import.meta.env.VITE_PUBLIC_WEB_STORAGE_NAMESPACE":
+                JSON.stringify(storageNamespace),
+            "import.meta.env.VITE_PUBLIC_APP_VERSION": JSON.stringify(version),
+            "import.meta.env.VITE_PUBLIC_WEB_CLERK_PUBLISHABLE_KEY":
+                JSON.stringify(clerkPublishableKey),
+            __LAB_VARIANTS__: JSON.stringify(labVariants()),
+            "import.meta.env.VITE_PUBLIC_WEB_EXAMPLES": JSON.stringify(
+                JSON.stringify(examples),
+            ),
+            "import.meta.env.VITE_PUBLIC_LAB_SHOW": JSON.stringify(labShow),
+            "import.meta.env.VITE_PUBLIC_LAB_MODE": JSON.stringify(labMode),
+            // No analytics on the web (PostHog stays uninitialized; Sentry is
+            // stubbed in renderer/sentry.ts).
+            "import.meta.env.VITE_PUBLIC_POSTHOG_KEY": JSON.stringify(""),
+        },
+        optimizeDeps: {
+            // Loads its .wasm next to itself, which pre-bundling breaks.
+            // The migrator reads files with `fs`, which must reach worker/fs.ts.
+            exclude: ["@sqlite.org/sqlite-wasm", "drizzle-orm/migrator"],
+        },
+        // Home-screen icons and manifest (see HOME_SCREEN_TAGS), and the favicon.
+        publicDir: web("public"),
+        build: {
+            outDir,
+            emptyOutDir: true,
+            sourcemap: true,
+            target: "es2022",
+            chunkSizeWarningLimit: 8000,
+        },
+        server: { port: 7780 },
+        clearScreen: false,
+    };
 });

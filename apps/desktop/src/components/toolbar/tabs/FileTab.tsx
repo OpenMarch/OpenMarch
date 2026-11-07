@@ -9,7 +9,6 @@ import {
 } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import { T } from "@tolgee/react";
-import { isWebBuild } from "@/utilities/webBuild";
 
 export function FileTab() {
     // Undo and Redo are in the title bar
@@ -47,18 +46,14 @@ export function FileTab() {
                     <T keyName="fileTab.exitFile" />
                 </ActionButton>
             </ToolbarSection>
-            {/* On the web the export dialog offers only video. */}
+            {/* On the web the export dialog offers video and mobile upload. */}
             <ToolbarSection>
                 <ActionButton
                     action="openExportDialog"
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <ArrowSquareOutIcon size={24} />
-                    {isWebBuild ? (
-                        <T keyName="exportCoordinates.exportVideoButton" />
-                    ) : (
-                        <T keyName="exportCoordinates.exportButton" />
-                    )}
+                    <T keyName="exportCoordinates.exportButton" />
                 </ActionButton>
             </ToolbarSection>
             <ToolbarSection>
