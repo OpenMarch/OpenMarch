@@ -224,7 +224,7 @@
         "api": {
             "requestFailed": "API request failed: {reason}",
             "requestFailedStatus": "API request failed: {status} {statusText}",
-            "tokenRequired": "Authentication token is required"
+            "tokenRequired": "Couldn't confirm your sign-in. Check your connection and try again."
         }
     },
     "colorPicker": {
@@ -1224,6 +1224,11 @@
             "noProduction": "No production found",
             "title": "Mobile app settings"
         },
+        "signInRejected": {
+            "description": "OpenMarch's online service didn't accept your sign-in. Sign out, then sign in again.",
+            "signOut": "Sign out",
+            "title": "Your sign-in wasn't accepted"
+        },
         "signedOut": {
             "createAccountPrompt": "Don't have an account yet? Create one now!",
             "errors": {
@@ -1235,7 +1240,12 @@
             "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!",
             "signInPromptWeb": "Already have an account? Sign in to start taking it On The Move!"
         },
-        "title": "Export to Mobile"
+        "title": "Export to Mobile",
+        "unreachable": {
+            "description": "OpenMarch couldn't reach its online service or confirm your sign-in. Check your internet connection and try again.",
+            "retry": "Try again",
+            "title": "Can't reach OpenMarch"
+        }
     },
     "music": {
         "accent": "Accent first beat",
@@ -2788,14 +2798,17 @@
             "floor": "On the floor",
             "frontRow": "Front row",
             "geJudge": "GE judge",
+            "judgesTable": "Judges' table",
             "lowerBowl": "Lower bowl",
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
             "topDown": "Top down",
+            "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
         },
         "kit": {
+            "arena": "Indoor arena",
             "bighs": "Big high school",
             "blank": "Field only",
             "college": "College bowl",
@@ -3130,7 +3143,14 @@
         "unsavedChanges": "You have unsaved changes",
         "close": "Close",
         "saved": "Show settings saved",
-        "updateFailed": "Failed to update workspace settings"
+        "updateFailed": "Failed to update workspace settings",
+        "showInfo": {
+            "projectName": "Show name",
+            "projectNamePlaceholder": "Uses the file name",
+            "designer": "Designer",
+            "client": "Client",
+            "optional": "Optional"
+        }
     },
     "canvas": {
         "zoom": {

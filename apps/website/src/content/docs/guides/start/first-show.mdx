@@ -14,7 +14,7 @@ import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 
-This tutorial takes you from an empty file to a short stretch of drill you can play back: an opening set, two more sets, and the marchers walking between them. It takes about twenty minutes. It uses Basic mode, where you work page by page the way a drill chart does; everything here works the same in Expert.
+This tutorial takes you from an empty file to a short stretch of drill you can play back: an opening set, two more sets, and the marchers walking between them. It uses Basic mode, where you work page by page the way a drill chart does; everything here works the same in Expert.
 
 You'll need OpenMarch installed ([Install OpenMarch](/guides/start/install/)). Music is optional: an audio file of the show, a MusicXML score, or a tempo.
 
@@ -23,11 +23,13 @@ You'll need OpenMarch installed ([Install OpenMarch](/guides/start/install/)). M
 1. On the start page, select <Ui k="launchpage.files.createNew" />.
 2. Choose <Ui k="launchpage.newShow.steps.start.blank" />, then select <Ui k="launchpage.newShow.next" />.
 3. Enter a <Ui k="launchpage.newShow.showName" plain /> and choose a folder to save it in. The show is one `.dots` file, and OpenMarch saves every change to it as you work, so you never need to save. (<Ui k="fileTab.saveFile" /> in the <Ui k="inspector.shape.fileTab" plain /> tab makes a copy under another name.)
-4. Choose your <Ui k="launchpage.newShow.steps.ensemble.typeLabel" plain />, then a field template that matches where you perform, such as a high school football field.
-5. On <Ui k="launchpage.newShow.steps.performers.title" plain />, add the marchers one section at a time: choose a section, enter how many, and select the create button, which names what it makes (for example **Create 8 Trumpet Marchers**). Each marcher gets a drill number from the section's prefix, such as T1 to T8 for eight trumpets.
-6. On <Ui k="launchpage.newShow.steps.audio.title" plain />, choose your show's audio file, or select <Ui k="launchpage.newShow.skip" />.
-7. On <Ui k="launchpage.newShow.steps.tempo.title" plain />, choose <Ui k="launchpage.newShow.steps.tempo.tempoOnly" plain /> and enter the tempo and time signature, or choose <Ui k="launchpage.newShow.steps.tempo.musicXml" plain /> to read the counts from a score.
-8. Select <Ui k="launchpage.newShow.create" />.
+4. On <Ui k="launchpage.newShow.steps.ensemble.title" plain />, choose your activity.
+5. On <Ui k="launchpage.newShow.steps.field.title" plain />, choose a field template that matches where you perform, such as a high school football field.
+6. On <Ui k="launchpage.newShow.steps.performers.title" plain />, choose a section and enter how many marchers it has.
+7. Select the create button, which names what it makes (for example **Create 8 Trumpet Marchers**). Each marcher gets a drill number from the section's prefix, such as T1 to T8 for eight trumpets. Repeat this step and the one before it for each section.
+8. On <Ui k="launchpage.newShow.steps.audio.title" plain />, choose your show's audio file, or select <Ui k="launchpage.newShow.skip" />.
+9. On <Ui k="launchpage.newShow.steps.tempo.title" plain />, choose <Ui k="launchpage.newShow.steps.tempo.tempoOnly" plain /> and enter the tempo and time signature, or choose <Ui k="launchpage.newShow.steps.tempo.musicXml" plain /> to read the counts from a score.
+10. Select <Ui k="launchpage.newShow.create" />.
 
 <Media
   id="marchers-add-form"
@@ -39,11 +41,11 @@ The show opens with your marchers standing in rows near a corner of the field. Y
 
 ## 2. Set the opening set
 
-The start of the show is called home: it's where every marcher stands before the first move. The field's top corner says "Editing home positions" while you're there.
+The start of the show is called home: it's where every marcher stands before the first move. While you're there, the line of text on the field says "Editing home positions".
 
 1. Make sure the playhead, the line on the timeline, is at the very start. Press <Kbd action="firstPage" /> if it isn't.
 2. Select a section: drag a box around its marchers on the field, or choose the section in the <Ui k="inspector.shape.selectTab" /> tab.
-3. Put them in a block. Press <Kbd keys="B" />, drag on the field where the block should go, and select <Ui k="shapes.edit.place" /> under it. The marchers walk to the box's spots.
+3. Put them in a block. Press <Kbd keys="B" />, drag on the field where the block should go, and select <Ui k="shapes.edit.place" />. The marchers walk to the box's spots.
 
 <Media
   id="shapes-draw-box"
@@ -56,7 +58,7 @@ Do the same for the other sections, or drag marchers one by one. [Place marchers
 
 A page is a stretch of counts that ends at a set, like a page of a drill chart. Each page is a box on the timeline, and its right end is the count where marchers arrive at the set.
 
-1. Click the timeline eight counts after the start. The counts past the last page are shaded, and a button such as <Ui k="timeline.appendAtPlayhead.label" values={{ counts: 8 }} /> appears over them.
+1. Put the playhead eight counts after the start: select that count on the timeline. The counts past the last page are shaded, and a button such as <Ui k="timeline.appendAtPlayhead.label" values={{ counts: 8 }} /> appears over them.
 2. Select it. Page 1 is added, eight counts long, and selected.
 
 <Media
@@ -102,7 +104,7 @@ Add Page 2 the same way, past the end of Page 1, and set it. Repeat for as many 
 - Undo anything with <Kbd action="performUndo" />.
 - Select <Ui k="view3d.open" /> in the toolbar to watch the show from the stands.
 
-When you have a few sets, print coordinate sheets or drill charts for your marchers from the <Ui k="inspector.shape.fileTab" /> tab.
+When you have a few sets, print coordinate sheets or drill charts for your marchers: select <Ui k="exportCoordinates.exportButton" /> in the <Ui k="inspector.shape.fileTab" plain /> tab.
 
 ## Where to go next
 

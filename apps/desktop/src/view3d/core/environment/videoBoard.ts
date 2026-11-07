@@ -1,12 +1,7 @@
-import {
-    Group,
-    Mesh,
-    MeshStandardMaterial,
-    PlaneGeometry,
-    type CanvasTexture,
-} from "three";
+import { Group, Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
+import type { ShowCredits } from "../types";
 import type { SharedMaterials } from "./materials";
-import { boardTexture } from "./textures";
+import { creditsBoardTexture } from "./signage";
 import { ft } from "./units";
 
 export interface VideoBoard {
@@ -15,21 +10,20 @@ export interface VideoBoard {
      * below the screen, so place the origin at screen center height.
      */
     object: Group;
-    /** Replaces the screen texture (the caller owns the new texture). */
-    setTexture(texture: CanvasTexture): void;
+    /** Shows the show's credits on the screen (cheap to repeat). */
+    setCredits(credits: ShowCredits): void;
     dispose(): void;
 }
 
 /**
- * A video board: dark frame, emissive screen showing `title` and `sub`, and
+ * A video board: dark frame, an emissive screen with the show's credits card
+ * (blank until `setCredits`), and
  * optional legs. `w`, `h` and `legHeight` are meters (the screen size).
  */
 export function videoBoard(
     w: number,
     h: number,
     legHeight: number,
-    title: string,
-    sub: string,
     shared: SharedMaterials,
 ): VideoBoard {
     const object = new Group();
@@ -40,12 +34,12 @@ export function videoBoard(
     frame.scale.set(w + margin, h + margin, ft(3));
     frame.castShadow = true;
 
-    let map = boardTexture(title, sub);
+    const { texture: map, setCredits } = creditsBoardTexture(w / h);
     const screenMat = new MeshStandardMaterial({
         color: 0x000000,
         emissive: 0xffffff,
         emissiveMap: map,
-        emissiveIntensity: 1.1,
+        emissiveIntensity: 0.9,
     });
     const screenGeo = new PlaneGeometry(w, h);
     const screen = new Mesh(screenGeo, screenMat);
@@ -65,12 +59,7 @@ export function videoBoard(
 
     return {
         object,
-        setTexture(texture) {
-            map.dispose();
-            map = texture;
-            screenMat.emissiveMap = texture;
-            screenMat.needsUpdate = true;
-        },
+        setCredits,
         dispose() {
             screenGeo.dispose();
             map.dispose();

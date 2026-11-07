@@ -14,7 +14,7 @@ import {
     WorkspaceSettings,
     defaultWorkspaceSettings,
 } from "@/settings/workspaceSettings";
-import { Button, UnitInput } from "@openmarch/ui";
+import { Button, Input, UnitInput } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { SidebarModalLauncher } from "./SidebarModal";
 import FormField from "../ui/FormField";
@@ -26,6 +26,10 @@ import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
 
 const inputClassname = clsx("col-span-6 self-center");
+
+/** The text fields that describe the show (shown on the 3D View's video boards). */
+const SHOW_INFO_FIELDS = ["projectName", "designer", "client"] as const;
+type ShowInfoField = (typeof SHOW_INFO_FIELDS)[number];
 
 const blurOnEnterFunc = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -124,6 +128,18 @@ function WorkspaceSettingsModalContents() {
         [localSettings],
     );
 
+    const handleTextChange = useCallback(
+        (field: ShowInfoField, value: string) => {
+            if (!localSettings) return;
+            // Blank means unset, so the 3D View falls back (to the file name for the show name)
+            setLocalSettings({
+                ...localSettings,
+                [field]: value.trim() === "" ? undefined : value,
+            });
+        },
+        [localSettings],
+    );
+
     const settingsChanged =
         !!localSettings &&
         JSON.stringify(localSettings) !== JSON.stringify(settings);
@@ -168,6 +184,10 @@ function WorkspaceSettingsModalContents() {
         // the default as an undo step of its own
         const reset = {
             ...defaultWorkspaceSettings,
+            // The show's name and credits describe it; they aren't defaults to reset
+            projectName: settings?.projectName,
+            designer: settings?.designer,
+            client: settings?.client,
             audioOffsetSeconds:
                 settings?.audioOffsetSeconds ??
                 defaultWorkspaceSettings.audioOffsetSeconds,
@@ -317,6 +337,30 @@ function WorkspaceSettingsModalContents() {
                     onSubmit={(e) => e.preventDefault()}
                     className="flex flex-col gap-12"
                 >
+                    {SHOW_INFO_FIELDS.map((key) => (
+                        <FormField
+                            key={key}
+                            label={t(`workspaceSettings.showInfo.${key}`)}
+                        >
+                            <Input
+                                className={inputClassname}
+                                value={localSettings[key] ?? ""}
+                                placeholder={
+                                    key === "projectName"
+                                        ? t(
+                                              "workspaceSettings.showInfo.projectNamePlaceholder",
+                                          )
+                                        : t(
+                                              "workspaceSettings.showInfo.optional",
+                                          )
+                                }
+                                onChange={(e) =>
+                                    handleTextChange(key, e.target.value)
+                                }
+                                onKeyDown={blurOnEnter}
+                            />
+                        </FormField>
+                    ))}
                     {fieldConfigs.map(
                         ({
                             key,

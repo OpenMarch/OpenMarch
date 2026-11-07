@@ -14,6 +14,12 @@ import tolgee from "@/global/singletons/Tolgee";
 const KEY_BASE = "auth";
 export const NEEDS_AUTH_BASE_QUERY_KEY = "needs-auth" as const;
 
+/** The editor API's generated queries are keyed by their path. */
+export function isEditorApiQuery(query: { queryKey: readonly unknown[] }) {
+    const [first] = query.queryKey;
+    return typeof first === "string" && first.startsWith("/api/editor/");
+}
+
 /**
  * Query key factory for auth queries.
  */
@@ -111,6 +117,10 @@ export function useAuth() {
                 void queryClient.invalidateQueries({
                     queryKey: [NEEDS_AUTH_BASE_QUERY_KEY],
                 });
+                // And drop every editor API answer, errors included: one
+                // fetched under the old sign-in (a 401, say) mustn't outlive
+                // it. Open panels fetch again under the new one.
+                void queryClient.resetQueries({ predicate: isEditorApiQuery });
             },
         );
 

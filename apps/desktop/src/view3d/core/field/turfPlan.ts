@@ -12,6 +12,7 @@ import {
     type EndZoneStyle,
     type PlanContext,
 } from "./plan";
+import { fieldFamily } from "../venueSettings";
 import { OPENMARCH_LOGO } from "./brandMark";
 
 /** Turf colors, from the reference demo's `fieldTexture`. */
@@ -70,9 +71,11 @@ interface PlayingRegion {
 }
 
 /**
- * The field of play between the goal lines. An end zone is the outermost
- * gap between visible x checkpoints when that gap is at least 8 m deep and
- * its outer line has no field label (a football field's 10 yards).
+ * The field of play between the goal lines. Only football fields have end
+ * zones: on one, an end zone is the outermost gap between visible x
+ * checkpoints when that gap is at least 8 m deep and its outer line has no
+ * field label (a football field's 10 yards). `withFootballEndZones` adds the
+ * lines a grid without end zones is missing.
  */
 export function playingRegion(
     ctx: PlanContext,
@@ -80,7 +83,8 @@ export function playingRegion(
 ): PlayingRegion {
     const f = ctx.footprint;
     const region: PlayingRegion = { minX: f.minX, maxX: f.maxX, endZones: [] };
-    if (!ctx.fieldProperties.useHashes || xs.length < 3) return region;
+    if (fieldFamily(ctx.fieldProperties) !== "football" || xs.length < 3)
+        return region;
     const at = (i: number) => checkpointWorld(ctx, xs[i]);
     const last = xs.length - 1;
     if (at(1) - at(0) >= MIN_END_ZONE && !xs[0].fieldLabel) {
@@ -136,8 +140,8 @@ function planEndZones(ctx: PlanContext, play: PlayingRegion): void {
     }
 }
 
-/** Widest midfield logo: fifteen yards, like a large college logo. */
-const LOGO_MAX_WIDTH = 3 * FIVE_YARDS;
+/** Widest midfield logo: twenty yards, like a large college logo. */
+const LOGO_MAX_WIDTH = 4 * FIVE_YARDS;
 /** Narrower than this, the logo is skipped. */
 const LOGO_MIN_WIDTH = FIVE_YARDS;
 

@@ -1,5 +1,5 @@
 import type { CanvasTexture } from "three";
-import { paintCanvasTexture, TEXTURE_FONT } from "../../environment";
+import { paintCanvasTexture, paintLogoBanner } from "../../environment";
 
 /** Basketball court size in meters (28.65 x 15.24, the demo's 94 x 50 ft). */
 export const COURT_LENGTH = 28.65;
@@ -92,16 +92,9 @@ export function floorTexture(o: FloorTextureOptions): CanvasTexture {
     );
 }
 
-/** A back-wall banner: a colored field, up to three lines and a white strip. */
-export function bannerTexture(lines: string[], color: string): CanvasTexture {
-    return paintCanvasTexture(256, 360, (g) => {
-        g.fillStyle = color;
-        g.fillRect(0, 0, 256, 360);
-        g.fillStyle = "rgba(255,255,255,0.9)";
-        g.fillRect(0, 300, 256, 18);
-        g.fillStyle = "#fff";
-        g.textAlign = "center";
-        g.font = `700 34px ${TEXTURE_FONT}`;
-        lines.forEach((l, i) => g.fillText(l, 128, 90 + i * 48));
-    });
+/** A back-wall banner: a fabric field with the OpenMarch logo near the top. */
+export function logoBannerTexture(color: string): CanvasTexture {
+    return paintCanvasTexture(256, 360, (g, w, h) =>
+        paintLogoBanner(g, w, h, color, false),
+    );
 }

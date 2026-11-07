@@ -31,7 +31,7 @@ A box puts the selected marchers in rows and files, round the edge of a rectangl
 
 2. Drag on the field from one corner of the box to the opposite corner. A marcher stands on the corner you pressed, and the box picks how many files across suit the shape you drag.
 
-3. Change the box if you need to: drag its handles, or use the floating editor under it (below).
+3. Change the box if you need to: drag its handles, or use its floating editor (below).
 
 4. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />.
 
@@ -48,7 +48,7 @@ The marchers take their spots, as one step you can undo. Until you place it, nob
 
 - Drag a side or corner handle to stretch the box. The rows and files stay the same and the spacing between them changes.
 - Drag inside the box, or the dot in its middle, to move it.
-- Drag the round knob above it to turn it. It turns in 15° steps.
+- Drag the round knob to turn it. It turns in 15° steps.
 
 The handles, the knob and the editor fade while the pointer is away from the box, so you can see the field under them.
 
@@ -76,7 +76,7 @@ The second row says how the box is filled. Its <Ui k="shapes.edit.mode.label" />
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <Ui k="shapes.edit.mode.files" plain />   | Rows and files. The <Ui k="shapes.edit.layout.label" plain /> menu beside it lays the block out <Ui k="shapes.distribute.layout.full" plain />, <Ui k="shapes.distribute.layout.stagger" plain />, <Ui k="shapes.distribute.layout.rounded" plain />, <Ui k="shapes.distribute.layout.shortBack" plain /> or <Ui k="shapes.distribute.layout.notched" plain />, and says how many marchers to add or remove for a layout that can't take this many. |
 | <Ui k="shapes.edit.mode.outline" plain /> | Round the edge, with a marcher on every corner and the middle empty. When the count doesn't go round evenly, the Leftover menu picks the side that has one fewer marcher, and whether it leaves a gap or spreads its marchers wider. <Ui k="shapes.edit.evenOut.label" plain /> spaces everyone as evenly as the box allows. |
-| <Ui k="shapes.edit.mode.spread" plain />  | Evenly over the whole box, in no rows. <Ui k="shapes.edit.reshuffle.label" plain /> gives another even layout in the same box. <Ui k="shapes.edit.edge.label" plain /> stands some marchers along the outline and spreads the rest inside. |
+| <Ui k="shapes.edit.mode.spread" plain />  | Evenly over the whole box, in no rows. <Ui k="shapes.edit.reshuffle.label" plain /> gives another even layout in the same box; the arrow beside it shows the layout's <Ui k="shapes.edit.seed.label" plain />, which you can copy, or type back in to get that exact spread again. <Ui k="shapes.edit.edge.label" plain /> stands some marchers along the outline and spreads the rest inside. |
 
 Switching between them keeps the box where you drew it, and each fill remembers its own numbers, so switching back gives you what you had.
 
@@ -84,9 +84,11 @@ Switching between them keeps the box where you drew it, and each fill remembers 
 
 <Steps>
 
-1. With the marchers selected, press <Kbd action="openCommandBar" /> and type "box", then press <Kbd keys="Enter" />.
+1. With the marchers selected, press <Kbd action="openCommandBar" /> to open the command bar.
 
-2. Answer each question at the top of the field: the fill, the size (such as 6x4), the side-to-side spacing, the front-to-back spacing and the layout. Each answer starts with a default, so <Kbd keys="Enter" /> keeps it. The box shows on the field as you type.
+2. Type "box", then press <Kbd keys="Enter" />.
+
+3. Answer each question in the command bar: the fill, the size (such as 6x4), the side-to-side spacing, the front-to-back spacing and the layout. Each answer starts with a default, so <Kbd keys="Enter" /> keeps it. The box shows on the field as you type.
 
 </Steps>
 

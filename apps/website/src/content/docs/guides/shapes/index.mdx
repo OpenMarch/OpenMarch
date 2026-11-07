@@ -63,7 +63,7 @@ Once it's drawn, a shape stays open until you place it or discard it. While it's
 - a faint dot in each of its marchers' colors where they start: at the start flag in Expert, at the start of the page in Basic;
 - everyone else faded, so the shape stands out;
 - handles on the shape's corners, sides or points to reshape it, a round knob to turn it, and a dot in the middle to move it;
-- the floating editor under the shape, with its numbers and buttons.
+- the shape's floating editor, with its numbers and buttons.
 
 Press <Kbd action="applyShape" /> or select <Ui k="shapes.edit.place" /> to place it, as one step you can undo. Press <Kbd action="cancelAlignmentUpdates" /> to discard it; undo brings it back.
 
@@ -82,7 +82,7 @@ How the spots fill a shape depends on its kind:
 
 ## Who goes where
 
-When a shape is drawn, OpenMarch gives each marcher the spot that makes the total walk shortest, measured from where they start: the start flag in Expert, the start of the page in Basic. Paths don't cross. Moving, turning, stretching or flipping the shape keeps each marcher on their own spot, so a flipped form is the same form mirrored. Select <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) to work out the shortest walks again after a change.
+When a shape is drawn, OpenMarch gives each marcher a spot by least travel, so the walks are as short and as even as they can be, measured from where they start (the start flag in Expert, the start of the page in Basic). Paths don't cross. Moving, turning, stretching or flipping the shape keeps each marcher on their own spot, so a flipped form is the same form mirrored. Select <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) to work out who goes where by least travel again after a change.
 
 A line, curve or arc also has a <Ui k="shapes.edit.order.label" /> menu. <Ui k="shapes.edit.order.reverse" /> turns the order along the line end for end, and when the marchers all come from one placed line, <Ui k="shapes.edit.order.keep" /> keeps them in the same order along the new one.
 

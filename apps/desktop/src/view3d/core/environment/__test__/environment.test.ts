@@ -161,9 +161,9 @@ describe("lightPole", () => {
 describe("videoBoard", () => {
     it("builds frame, screen and legs", () => {
         const shared = createSharedMaterials();
-        const withLegs = videoBoard(29, 16, 10, "TITLE", "sub", shared);
+        const withLegs = videoBoard(29, 16, 10, shared);
         expect(withLegs.object.children).toHaveLength(4);
-        const noLegs = videoBoard(33.5, 17.7, 0, "TITLE", "sub", shared);
+        const noLegs = videoBoard(33.5, 17.7, 0, shared);
         expect(noLegs.object.children).toHaveLength(2);
         const meshes: Mesh[] = [];
         withLegs.object.traverse((o) => {

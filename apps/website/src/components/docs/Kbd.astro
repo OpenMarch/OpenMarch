@@ -11,6 +11,7 @@
  * An unknown action fails the build. Action ids are in apps/website/src/data/generated/actions.json.
  */
 import actions from "../../data/generated/actions.json";
+import { shortcutText } from "./shortcutText";
 
 interface Props {
     action?: string;
@@ -134,7 +135,9 @@ const spoken = (s: Shortcut) =>
         }</span
     ><span class="docs-kbd-mac" aria-label={spoken(mac)}
         >{mac.keys.join("")}</span
-    >{word && <span class="docs-kbd-gesture">{word}</span>}</kbd
+    >{word && <span class="docs-kbd-gesture">{word}</span>}<span
+        class="docs-kbd-text">{shortcutText(other, mac, word)}</span
+    ></kbd
 >
 
 <style>

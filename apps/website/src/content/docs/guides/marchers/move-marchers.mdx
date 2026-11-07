@@ -26,7 +26,7 @@ import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 
-Move marchers by dragging them on the field, or by exact numbers of steps with the keyboard, or with the move pad on a tablet. A move changes where the marchers are at the playhead's page: the line in the field's top corner says what you're editing, for example "Editing Page 1's move". [How the timeline works](/guides/timeline/how-the-timeline-works/) explains pages and moves.
+Move marchers by dragging them on the field, or by exact numbers of steps with the keyboard, or with the move pad on a tablet. A move changes where the marchers are at the playhead's page: a line on the field says what you're editing, for example "Editing Page 1's move". [How the timeline works](/guides/timeline/how-the-timeline-works/) explains pages and moves.
 
 ## Drag marchers
 
@@ -53,15 +53,15 @@ Select marchers, then press an arrow key or <Kbd keys="W" />, <Kbd keys="A" />, 
 | <Kbd keys="Up" /> or <Kbd keys="W" />    | One step, or one grid step when coordinate rounding is on, snapped to the grid |
 | <Kbd keys="Alt+Up" />                    | The same distance, without snapping                              |
 | <Kbd keys="Shift+Up" />                  | ¼ step, without snapping                                         |
-| <Kbd keys="Mod+Up" />                    | 4 steps                                                          |
+| <Kbd keys="Mod+Up" />                    | 4 steps, snapped to the grid                                     |
 | <Kbd keys="Mod+Alt+Up" />                | 4 steps, without snapping                                        |
 | <Kbd keys="Mod+Shift+Up" />              | ⅒ step, without snapping                                         |
 
-The same keys work with the other arrows and with <Kbd keys="A" />, <Kbd keys="S" /> and <Kbd keys="D" />.
+The same keys work with the other arrows. <Kbd keys="W" />, <Kbd keys="A" />, <Kbd keys="S" /> and <Kbd keys="D" /> work on their own and with <Kbd keys="Alt" /> or <Kbd keys="Shift" />, but not with <Kbd keys="Mod" />: use the arrows for 4 steps and ⅒ step.
 
 ## Nudge with the move pad
 
-In the tablet layout, where there's often no keyboard, the inspector shows a <Ui k="inspector.marcher.move.title" /> pad above the selected marchers. Choose how far each press goes, <Ui k="inspector.marcher.move.quarterStep" />, <Ui k="inspector.marcher.move.oneStep" /> or <Ui k="inspector.marcher.move.fourSteps" />, then select an arrow. The pad always moves exactly that far and never snaps. Press and hold an arrow to see which way it goes, toward the front or back sideline or toward a side.
+In the tablet layout, where there's often no keyboard, the inspector shows a <Ui k="inspector.marcher.move.title" /> pad for the selected marchers. Choose how far each press goes, <Ui k="inspector.marcher.move.quarterStep" />, <Ui k="inspector.marcher.move.oneStep" /> or <Ui k="inspector.marcher.move.fourSteps" />, then select an arrow. The pad always moves exactly that far and never snaps. Each arrow is labeled with the way it goes: <Ui k="inspector.marcher.move.back" plain />, <Ui k="inspector.marcher.move.front" plain />, or the name of a side.
 
 ## Snap to a step grid
 

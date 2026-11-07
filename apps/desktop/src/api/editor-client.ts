@@ -18,6 +18,26 @@ function getBaseURL(): string {
     }
 }
 
+/**
+ * An editor API request that failed. `status` is the server's HTTP status;
+ * undefined when the server never answered (offline) or no request went out
+ * because there was no sign-in token.
+ */
+export class EditorApiError extends Error {
+    constructor(
+        message: string,
+        readonly status?: number,
+    ) {
+        super(message);
+        this.name = "EditorApiError";
+    }
+}
+
+/** The HTTP status of an editor API failure, if the server answered. */
+export function editorApiStatus(error: unknown): number | undefined {
+    return error instanceof EditorApiError ? error.status : undefined;
+}
+
 export const AXIOS_INSTANCE = Axios.create({
     baseURL: getBaseURL(),
     validateStatus: () => true,
@@ -26,9 +46,12 @@ export const AXIOS_INSTANCE = Axios.create({
 AXIOS_INSTANCE.interceptors.request.use(
     async (config) => {
         const { token } = await window.electron.auth.getAccessToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
+        // Signed in but no token right now (offline, or the refresh failed):
+        // don't send a request the server can only turn down as if the
+        // account had no access.
+        if (!token)
+            throw new EditorApiError(tolgee.t("auth.api.tokenRequired"));
+        config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
     (error) => Promise.reject(error),
@@ -49,18 +72,17 @@ AXIOS_INSTANCE.interceptors.response.use(
                     statusText: response.statusText ?? "",
                 })
                 .trim();
-        return Promise.reject(new Error(message));
+        return Promise.reject(new EditorApiError(message, response.status));
     },
     (error: AxiosError) => {
-        if (error.response?.data) {
-            const data = error.response.data as {
-                error?: string;
-                message?: string;
-            };
-            const message = data?.error || data?.message || error.message;
-            return Promise.reject(new Error(message));
-        }
-        return Promise.reject(error);
+        if (error instanceof EditorApiError) return Promise.reject(error);
+        const data = error.response?.data as
+            | { error?: string; message?: string }
+            | undefined;
+        const message = data?.error || data?.message || error.message;
+        return Promise.reject(
+            new EditorApiError(message, error.response?.status),
+        );
     },
 );
 

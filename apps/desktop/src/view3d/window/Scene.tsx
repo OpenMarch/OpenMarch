@@ -30,7 +30,7 @@ import DrawWhenNeeded from "./DrawWhenNeeded";
 import { requestDraw } from "./drawWake";
 import { frameCapped } from "./drawPolicy";
 import { useQuery } from "@tanstack/react-query";
-import { fieldFootprint, type FieldProperties } from "@openmarch/core";
+import type { FieldProperties } from "@openmarch/core";
 import {
     ACESFilmicToneMapping,
     PCFShadowMap,
@@ -51,7 +51,7 @@ import {
     defaultCrowdPalette,
     type Environment,
 } from "@/view3d/core/environment";
-import { buildFieldSurface } from "@/view3d/core/field";
+import { buildFieldSurface, venueFootprint } from "@/view3d/core/field";
 import {
     DEFAULT_CROWD_DENSITY,
     KIT_BUILDERS,
@@ -213,14 +213,14 @@ function SceneContents({
         fieldPropertiesIn,
         JSON.stringify(fieldPropertiesIn),
     );
-    const footprintKey = useMemo(
-        () => JSON.stringify(fieldFootprint(fieldProperties)),
-        [fieldProperties],
-    );
     const paramsKey = JSON.stringify(settings.params);
     const params = useStable<VenueParams>(settings.params, paramsKey);
     const kitId = settings.kit;
     const fieldStyle = KIT_FIELD_STYLE[kitId];
+    const footprintKey = useMemo(
+        () => JSON.stringify(venueFootprint(fieldProperties, fieldStyle)),
+        [fieldProperties, fieldStyle],
+    );
     const { homeColor, awayColor } = params;
 
     // Renderer settings that follow quality. Kits and the crowd rebuild on a

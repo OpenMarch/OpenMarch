@@ -27,7 +27,7 @@ import type {
     LightingPreset,
     SeatRow,
 } from "../types";
-import { bannerTexture, floorTexture } from "./gym/textures";
+import { floorTexture, logoBannerTexture } from "./gym/textures";
 
 /** Room and bleacher dimensions in meters (design.md section 6, "gym"). */
 export const GYM_ROOM_MARGIN = 9;
@@ -42,12 +42,8 @@ export const GYM_BLEACHER_GAP = 3;
 const BLEACHER_WALL_GAP = 0.6;
 const EYE_ABOVE_TREAD = 1.22;
 
-const BANNERS: [string[], string][] = [
-    [["REGIONAL", "FINALIST", "2024"], "#6442ff"],
-    [["STATE", "CHAMPIONS", "2025"], "#1f2a5c"],
-    [["WINTER", "GUARD", "A CLASS"], "#a33a3a"],
-    [["INDOOR", "PERCUSSION", "2025"], "#1f5c46"],
-];
+/** Wall banner fabrics, each with the OpenMarch logo (`logoBannerTexture`). */
+const BANNERS: string[] = ["#1b1834", "#1b1834", "#1b1834", "#1b1834"];
 
 const m4 = new Matrix4();
 const quat = new Quaternion();
@@ -230,10 +226,10 @@ export const buildGym: KitBuilder = ({ footprint, quality }) => {
     const bannerGeo = new PlaneGeometry(2.7, 3.84);
     geometries.push(bannerGeo);
     const spacing = Math.min(7.3, (roomW - 4) / BANNERS.length);
-    BANNERS.forEach(([lines, color], i) => {
+    BANNERS.forEach((color, i) => {
         const m = new Mesh(
             bannerGeo,
-            std(0xffffff, { map: bannerTexture(lines, color), roughness: 0.9 }),
+            std(0xffffff, { map: logoBannerTexture(color), roughness: 0.9 }),
         );
         m.name = `gym-banner-${i}`;
         m.position.set(

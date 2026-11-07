@@ -14,9 +14,11 @@ import {
     createSharedMaterials,
     ft,
     lightingValues,
-    ribbonTexture,
+    SIGN_RIBBON,
+    signRibbonTexture,
     setLightIntensity,
     videoBoard,
+    type VideoBoard,
     type SharedMaterials,
 } from "../environment";
 import type {
@@ -24,7 +26,6 @@ import type {
     FieldFootprint,
     KitBuilder,
     LightingPreset,
-    VenueParams,
 } from "../types";
 import {
     bandGeometry,
@@ -68,6 +69,9 @@ export const PRO_TIERS: BowlTier[] = [
         side: "home",
     },
 ];
+
+/** The upper tier's front riser (the LED fascia): base minus bottom. */
+const PRO_FASCIA_HEIGHT = ft(58) - ft(52);
 
 /** Suite glass, between the decks just behind the lower tier. */
 export const PRO_SUITE_GLASS = { bottom: ft(37), top: ft(49), inset: ft(2) };
@@ -113,7 +117,7 @@ interface ProContext {
     own(dispose: () => void): void;
 }
 
-export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
+export const buildProKit: KitBuilder = ({ footprint, quality }) => {
     const shadows = quality === "high";
     const shared = createSharedMaterials();
     const disposers: (() => void)[] = [];
@@ -154,9 +158,9 @@ export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
     };
 
     addGround(ctx);
-    const bowl = addBowl(ctx, params);
+    const bowl = addBowl(ctx);
     const roof = addRoof(ctx, bowl.upper);
-    addBoards(ctx, bowl.upper, params);
+    const boards = addBoards(ctx, bowl.upper);
     const defaultLighting: LightingPreset = "roofClosed";
     roof.setLighting(defaultLighting, true);
 
@@ -170,6 +174,9 @@ export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
         lightingPresets: [...PRESETS],
         defaultLighting,
         setLighting: (preset) => roof.setLighting(preset, false),
+        setShowCredits(credits) {
+            boards.forEach((b) => b.setCredits(credits));
+        },
         onFrame({ cameraPosition, dt }) {
             const below = cameraPosition[1] < PRO_ROOF_Y - ft(2);
             roof.group.visible = below;
@@ -209,15 +216,19 @@ function addGround(ctx: ProContext): void {
  * The bowl: treads, concrete (risers, walls, soffits, suite ledge and
  * ceiling), the LED fascia, the suite glass and the clerestory.
  */
-function addBowl(ctx: ProContext, params: VenueParams) {
+function addBowl(ctx: ProContext) {
     const { ring, shared } = ctx;
-    const bowl = bowlTiers(ring, PRO_TIERS);
+    // One ribbon tile per SIGN_RIBBON.tileHeights fascia heights, so the
+    // logos keep their shape on the band.
+    const bowl = bowlTiers(ring, PRO_TIERS, {
+        fasciaTile: PRO_FASCIA_HEIGHT * SIGN_RIBBON.tileHeights,
+    });
     const [lower, upper] = bowl.tiers as [BuiltTier, BuiltTier];
     const ribbonMat = new MeshStandardMaterial({
         color: 0x000000,
         emissive: 0xffffff,
-        emissiveMap: ribbonTexture(params.endZoneText || "OPENMARCH"),
-        emissiveIntensity: 1.2,
+        emissiveMap: signRibbonTexture(),
+        emissiveIntensity: 1,
         side: DoubleSide,
     });
     const clerestoryMat = new MeshStandardMaterial({
@@ -394,24 +405,20 @@ function addRoofLights(ctx: ProContext, roof: Group, ox: number, oz: number) {
 }
 
 /** End-zone video boards hung under the roof, kept clear of the seats. */
-function addBoards(ctx: ProContext, upper: BuiltTier, params: VenueParams) {
+function addBoards(ctx: ProContext, upper: BuiltTier): VideoBoard[] {
     const offset = boardClearOffset(upper);
+    const boards: VideoBoard[] = [];
     for (const sx of [-1, 1]) {
-        const b = videoBoard(
-            PRO_BOARD.width,
-            PRO_BOARD.height,
-            0,
-            params.endZoneText || "OPENMARCH",
-            "3D View",
-            ctx.shared,
-        );
+        const b = videoBoard(PRO_BOARD.width, PRO_BOARD.height, 0, ctx.shared);
         const x = ctx.cx + sx * (ctx.ax + offset);
         b.object.position.set(x, PRO_BOARD.y, ctx.cz);
         b.object.rotation.y = (-sx * Math.PI) / 2;
         b.object.traverse((o) => (o.castShadow = ctx.shadows && o.castShadow));
         ctx.root.add(b.object);
         ctx.own(() => b.dispose());
+        boards.push(b);
     }
+    return boards;
 }
 
 /** Named cameras (design.md section 6), from the demo's seats. */

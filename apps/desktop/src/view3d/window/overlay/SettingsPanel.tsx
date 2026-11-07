@@ -86,7 +86,8 @@ export function SettingsPanel({
                         <GuardUniformPicker />
                     </Row>
                     {hasStands && <CrowdRows />}
-                    {kitId !== "gym" && <EndZoneRow />}
+                    {/* Indoor floors have no end zones */}
+                    {kitId !== "gym" && kitId !== "arena" && <EndZoneRow />}
                 </Section>
                 {/* Graphics live in the Settings window; the web preview has none */}
                 {!HAS_SETTINGS_WINDOW && (

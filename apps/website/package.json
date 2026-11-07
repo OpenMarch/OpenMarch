@@ -17,6 +17,7 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "check:guide": "node scripts/check-guide.mjs",
+        "check:media": "node scripts/check-media-size.mjs",
         "docs:impact": "node scripts/docs-impact.mjs",
         "docs:pages": "node scripts/page-shots.mjs"
     },
@@ -48,6 +49,7 @@
         "react-dom": "^19.0.0",
         "react-markdown": "^10.1.0",
         "starlight-image-zoom": "^0.14.2",
+        "starlight-llms-txt": "^0.10.0",
         "tailwind-merge": "^2.6.0",
         "tailwindcss": "^4.1.11",
         "typescript": "catalog:",
