@@ -23,6 +23,7 @@ import {
     getClerkTokenEndpoint,
     getRedirectUri,
 } from "../../../src/global/auth/constants";
+import { TokenRefreshRejectedError, isRefreshRejected } from "./errors";
 
 /**
  * Gets the Clerk OAuth configuration.
@@ -220,6 +221,10 @@ export async function refreshAccessToken(
             response.status,
             errorText,
         );
+        // invalid_grant (refresh token revoked or expired) or a rejected
+        // client: signing in again is the only way back.
+        if (isRefreshRejected(response.status, errorText))
+            throw new TokenRefreshRejectedError(response.status);
         throw new Error(`Token refresh failed: ${response.status}`);
     }
 
