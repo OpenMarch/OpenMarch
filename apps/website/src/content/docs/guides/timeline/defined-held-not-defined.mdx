@@ -57,7 +57,7 @@ Select marchers, and the timeline shows their states:
 - A link mark in a page's box means some of the selected marchers have no position of their own on that page and show an earlier one. Point at it to see who. Marchers that haven't moved since the start of the show don't get one.
 - A solid bar along the bottom of a page's box marks where the selected marchers are Held. Point at it to see how many.
 
-On the field, a marcher with no position of its own on the playhead's page is drawn with a dashed outline. In the inspector, the selected marchers' section says <Ui k="inspector.marcher.timeline.movesOnThisPage" /> when they're Defined on the page, or names the page where they last moved, as a link that takes you there.
+On the field, a marcher with no position of its own on the playhead's page is drawn with a dashed outline. In the inspector, the selected marchers' section says <Ui k="inspector.marcher.timeline.movesOnThisPage" /> when they're Defined on the page, names the page where they last moved, or says <Ui k="inspector.marcher.timeline.holdFromStart" /> when they haven't moved since home. The page or the start is a link that takes you there.
 
 <Media
   id="timeline-not-defined"
@@ -92,9 +92,9 @@ A marcher that had its own move on the page loses it and stays still for the pag
 <Ui k="timeline.terms.clearThisPage" /> takes the marchers' positions off the page, so they're Not defined there again and stand where the page before left them.
 
 1. Select the marchers. To clear the page for everyone, select nobody.
-2. Right-click the page's box and select **Clear Page 3** (with the page's number), or press <Kbd action="setSelectedMarchersToPreviousPage" /> for the selected marchers or <Kbd action="setAllMarchersToPreviousPage" /> for everyone.
+2. Right-click the page's box and select <Ui k="actions.batchEdit.clearPage" values={{ page: 3 }} /> (with the page's number, and "(all marchers)" after it when nobody is selected), or press <Kbd action="setSelectedMarchersToPreviousPage" /> for the selected marchers or <Kbd action="setAllMarchersToPreviousPage" /> for everyone.
 
-The pages after it keep the marchers where they were. Where a later page showed the cleared position, the menu also offers **Clear Page 3, Page 4 moves back too**, which lets those later pages go back with it.
+The pages after it keep the marchers where they were. Where a later page showed the cleared position, the menu also offers an item such as "Clear Page 3, Page 4 moves back too", which lets those later pages go back with it.
 
 <Media
   id="timeline-page-menu"

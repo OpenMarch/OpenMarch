@@ -80,13 +80,13 @@ Every point of a line is a handle, and so is the middle of each part between two
 
 A new line is drawn to fit: you choose where its ends go, and the floating editor shows the interval that spaces the marchers between them. Typing an interval there makes the line longer or shorter to match. Dragging an end changes the interval, in whole steps, or half steps when you're zoomed in far.
 
-To keep the interval while you drag the ends, select the lock beside it. The <Ui k="shapes.kinds.line.spacing.label" /> menu has the same three choices:
+To keep the interval while you drag the ends, select the lock beside it. The <Ui k="shapes.kinds.line.spacing.label" /> menu has these choices:
 
 | Spacing                                              | What stays fixed                                                                                            |
 | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | <Ui k="shapes.kinds.line.spacing.fit" plain />           | The line as drawn. The interval is whatever spaces the marchers along it.                                    |
 | <Ui k="shapes.kinds.line.spacing.keep" plain />          | The interval, and so the line's length. Dragging an end swings the line round its other end.               |
-| Interval on the path                                 | Both the line and the interval. The marchers run from the start, the center or the end of the line, and whatever line they don't need stays empty. |
+| <Ui k="shapes.kinds.line.spacing.pathStart" plain />, <Ui k="shapes.kinds.line.spacing.pathCenter" plain />, <Ui k="shapes.kinds.line.spacing.pathEnd" plain /> | Both the line and the interval. The marchers run from the start of the line, from its center out, or from its end, and whatever line they don't need stays empty. |
 
 The <Ui k="shapes.kinds.line.measured.label" /> menu says what the interval measures. <Ui k="shapes.kinds.line.measured.along" /> is the length of line between neighbors. <Ui k="shapes.kinds.line.measured.straight" /> is the straight distance from marcher to marcher. <Ui k="shapes.kinds.line.measured.x" /> and <Ui k="shapes.kinds.line.measured.y" /> measure only across or only up and down the field. <Ui k="shapes.kinds.line.measured.offset" />, on a line with no corners, sets both: how far each marcher is across and up the field from the one before.
 
@@ -96,7 +96,7 @@ Type a list instead of one interval to space groups of marchers differently. Eac
 
 ## Who goes where
 
-Marchers take the spots that make the total walk shortest. The <Ui k="shapes.edit.order.label" /> menu on the editor's second row changes that: <Ui k="shapes.edit.order.reverse" /> turns the order along the line end for end, and when the marchers all come from one placed line, <Ui k="shapes.edit.order.keep" /> keeps them in the same order along the new one.
+Marchers take their spots by least travel, so the walks are as short and even as they can be. The <Ui k="shapes.edit.order.label" /> menu on the editor's second row changes that: <Ui k="shapes.edit.order.reverse" /> turns the order along the line end for end, and when the marchers all come from one placed line, <Ui k="shapes.edit.order.keep" /> keeps them in the same order along the new one.
 
 ## Close and fill a line
 

@@ -87,6 +87,8 @@ Select two or more marchers. The frame around them has square handles on its cor
 
 Only positions change: dots and drill numbers stay upright and the same size. Dragging a handle past the opposite side stops the group at its smallest size instead of flipping it. One marcher on its own has no handles.
 
+To turn the group by an exact angle, use <Ui k="shapes.transform.title" /> in the inspector. Choose the point to turn around in its grid, then type an angle in the <Ui k="inspector.marcher.rotation" plain /> box or drag across it. The group turns on the field as you change the angle, and the turn is saved when you leave the box.
+
 ## Swap two marchers
 
 Select exactly two marchers, then select <Ui k="inspector.marcher.swapMarchers" /> in the inspector, or press <Kbd action="swapMarchers" />. Each takes the other's position on this page.
@@ -96,7 +98,7 @@ Select exactly two marchers, then select <Ui k="inspector.marcher.swapMarchers" 
 The <Ui k="toolbar.alignment.placeSelectedMarchers" /> menu at the bottom of the inspector, and <Ui k="toolbar.alignment.placeAllMarchers" /> in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab for every marcher at once, put marchers back where they stand on a neighboring page:
 
 - <Ui k="toolbar.alignment.toNextPagePositions" /> copies the marchers' positions from the next page onto this one (<Kbd action="setSelectedMarchersToNextPage" /> for the selected marchers, <Kbd action="setAllMarchersToNextPage" /> for all).
-- <Ui k="toolbar.alignment.toPreviousPagePositions" /> in the inspector, and **Clear Page** in the toolbar menu, run <Ui k="timeline.terms.clearThisPage" />: the marchers stay where the previous page left them, and the page no longer has positions of its own for them. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains what that means for later pages.
+- <Ui k="toolbar.alignment.toPreviousPagePositions" /> in the inspector, and <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} /> in the toolbar menu, run <Ui k="timeline.terms.clearThisPage" />: the marchers stay where the previous page left them, and the page no longer has positions of its own for them. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains what that means for later pages. Later pages keep where they were; when some of them showed this page's positions, the toolbar menu also offers a second item ending in "move back too", which lets those pages move back with it.
 
 <Steps>
 

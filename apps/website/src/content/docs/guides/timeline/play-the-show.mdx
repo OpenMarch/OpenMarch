@@ -35,13 +35,13 @@ import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 
-The playback controls are at the left end of the bar above the timeline. Play starts at the start flag; Stop takes you back to where you pressed Play, so you can watch a passage as many times as you like without losing your place. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains the start flag and the playhead.
+The playback controls are on the timeline, next to the readout that shows the page and count. Play starts at the start flag; Stop takes you back to where you pressed Play, so you can watch a passage as many times as you like without losing your place. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains the start flag and the playhead.
 
 ## Play and stop
 
 1. Put the playhead where you want to look: select a page's box, or drag the playhead.
-2. Select Play, or press <Kbd action="playPause" />.
-3. To stop, select Stop or press <Kbd action="playPause" /> again. The playhead goes back to where it was when you pressed Play.
+2. Select <Ui k="actions.playback.play" />, or press <Kbd action="playPause" />.
+3. To stop, select the same button again (its tip now reads <Ui k="timeline.transport.stopAndGoBack" plain />), or press <Kbd action="playPause" /> again. The playhead goes back to where it was when you pressed Play.
 
 What Play plays depends on the mode:
 

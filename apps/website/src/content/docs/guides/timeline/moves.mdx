@@ -57,7 +57,7 @@ A move you make takes over from the page's move for its marchers, on its counts.
 
 ## Move marchers across several pages
 
-1. Select the first page's box, then <Kbd keys="Shift" gesture="click" /> the box of the last page. The start flag and the playhead now span all of them, and the line in the field's corner says which sets are in between, for example "through set 5".
+1. Select the first page's box, then <Kbd keys="Shift" gesture="click" /> the box of the last page. The start flag and the playhead now span all of them, and the line of text over the field says which sets are in between, for example "through set 5".
 2. Drag the selected marchers to where they should be at the end.
 
 The marchers walk straight from where they were to the new spot, through the pages in between, instead of stopping at each page's set. A message says which pages are no longer keyframes for them, and offers to keep those pages as keyframes. If you keep them, the marchers stop at each page's set on the way, as before.
@@ -74,7 +74,7 @@ To change the timing of some of the marchers in a move without changing the othe
 1. Select those marchers on the field.
 2. Right-click the move's bar, or the page's box for a page's move, and select <Ui k="timeline.split.menuNone" />. The menu shows how many marchers are selected, for example "Split 4 selected into new move".
 
-The selected marchers get a new move with the same counts and the same motion, and nothing moves on the field. The new move opens on its own (see [Work on one move alone](#work-on-one-move-alone)); press <Kbd keys="Escape" /> to go back. Now resize or split the new move without touching the others.
+The selected marchers get a new move with the same counts and the same motion, and nothing moves on the field. The new move opens on its own (see [Work on one move alone](#work-on-one-move-alone)), so you can resize or split it without touching the others. Press <Kbd keys="Escape" /> when you're done.
 
 ## Change when a move starts and ends
 
@@ -121,7 +121,7 @@ The command palette (<Kbd action="openCommandPalette" />) has the same command a
 
 To put the marchers of one move into another, drag the move's bar onto the other move's bar, or onto a page's box. The target is outlined with what will happen, for example "Merge into Page 3", and releasing merges them. A move's menu also has <Ui k="timeline.merge.menuInto" values={{ target: "Page 3" }} /> for each page it overlaps.
 
-If the two moves have different counts, the merged marchers are fitted to the target's counts: they reach the same spots, at the target's end. The menu says so with "fit to its counts". A merge is refused, with the reason, when a marcher is in both moves.
+If the two moves have different counts, the merged marchers are fitted to the target's counts: they reach the same spots, at the target's end. The menu item says so: <Ui k="timeline.merge.menuIntoFit" values={{ target: "Page 3" }} />. A merge is refused, with the reason, when a marcher is in both moves.
 
 ## Work on one move alone
 

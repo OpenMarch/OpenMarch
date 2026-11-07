@@ -48,9 +48,9 @@ The shape is drawn for the marchers selected when you drew it. If you change the
 
 ## Who stands where
 
-OpenMarch gives each marcher the spot that makes everyone's walk, all added up, as short as it can, measured from where they stand at the start flag (in Basic, the start of the page). This keeps paths from crossing and keeps a line that moves into another line in order.
+OpenMarch gives each marcher a spot by least travel, so everyone's walks are as short and as even as they can be, measured from where they stand at the start flag (in Basic, the start of the page). This keeps paths from crossing and keeps a line that moves into another line in order.
 
-That choice is made when you draw the shape, and again when you change how many across or deep it is. Moving, turning, stretching or flipping it keeps everyone on their own spot, so the form stays the same form. After such changes, <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) works out the shortest walks again; it lights up only when it would change something.
+That choice is made when you draw the shape, and again when you change how many across or deep it is. Moving, turning, stretching or flipping it keeps everyone on their own spot, so the form stays the same form. After such changes, <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) works out who goes where by least travel again; it lights up only when it would change something.
 
 For a line, curve or arc, the <Ui k="shapes.edit.order.label" /> menu on the editor's second row also has <Ui k="shapes.edit.order.reverse" />, which turns the order along the line end for end, and, when every marcher comes from one placed line, <Ui k="shapes.edit.order.keep" />.
 
@@ -81,7 +81,7 @@ A spacing can be any number of steps, typed as a whole number, a decimal or a fr
 
 If you move a marcher out of a placed shape, they leave it, and a notice says so. Their spot stays empty. In a closed shape, <Ui k="shapes.box.left.closeUp" /> in that notice, or in the floating editor while the shape is selected, spaces the marchers left over the shape again; a box also offers <Ui k="shapes.box.left.resplit" />, which lays it out again for the marchers left. Undo puts the marchers back.
 
-To stop treating the marchers as a shape, select it and choose Ungroup in the floating editor, or press <Kbd action="shapeUngroup" />. Nobody moves.
+To stop treating the marchers as a shape, select it and select the ungroup button in the floating editor, whose tip reads <Ui k="shapes.edit.ungroup" />, or press <Kbd action="shapeUngroup" />. Nobody moves.
 
 ## Make a shape from where marchers stand
 
