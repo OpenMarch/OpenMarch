@@ -3,6 +3,7 @@
 // - every <Ui k>, <Kbd action> and <Media id> names something that exists,
 // - every page has title, description and type,
 // - every link to another guide page points at a page (or a redirect),
+// - every setting in the Settings window (settings.json) is named with <Ui k> on a guide page,
 // - no banned words or emoji (docs/conventions/user-docs.md), no hard-wrapped lines that
 //   start with a component.
 //
@@ -21,6 +22,7 @@ const DOCS = path.join(WEBSITE, "src/content/docs");
 const read = (p) => JSON.parse(fs.readFileSync(p, "utf8"));
 const en = read(path.join(WEBSITE, "../desktop/i18n/en.json"));
 const actions = read(path.join(WEBSITE, "src/data/generated/actions.json"));
+const settings = read(path.join(WEBSITE, "src/data/generated/settings.json"));
 const media = read(path.join(WEBSITE, "src/data/docs-media.json"));
 const config = fs.readFileSync(path.join(WEBSITE, "astro.config.mjs"), "utf8");
 const redirects = new Set(
@@ -119,7 +121,7 @@ for (const file of files) {
             );
     }
     // A component used but not imported fails only at build time
-    for (const c of ["Ui", "Kbd", "Media", "ShortcutList"])
+    for (const c of ["Ui", "Kbd", "Media", "ShortcutList", "MenuList"])
         if (
             new RegExp(`<${c}[\\s/>]`).test(text) &&
             !new RegExp(`^import ${c}\\b`, "m").test(text)
@@ -186,6 +188,26 @@ for (const file of files) {
             );
     });
 }
+// Every setting the app's Settings window has is described somewhere: whichever pages were named,
+// look for each setting's label on all of them (a setting's description stays hand-written)
+const named = new Set(
+    guideDirs
+        .flatMap(walk)
+        .flatMap((p) =>
+            [...fs.readFileSync(p, "utf8").matchAll(/<Ui\s+k="([^"]+)"/g)].map(
+                (m) => m[1],
+            ),
+        ),
+);
+for (const section of settings)
+    for (const setting of section.settings)
+        if (!named.has(setting.key)) {
+            errors++;
+            console.log(
+                `Settings › ${section.label} › ${setting.label}: no guide page describes it (name it with <Ui k="${setting.key}" plain />, usually in guides/reference/settings.mdx)`,
+            );
+        }
+
 console.log(
     errors
         ? `${errors} problem(s) in the guide`

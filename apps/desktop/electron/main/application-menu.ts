@@ -10,33 +10,33 @@ import {
 } from "../../src/global/menuActions";
 import { SITE_URL, siteUrl } from "../../src/global/siteUrl";
 
-const isMacOS = process.platform === "darwin";
-
 /**
  * A menu item that runs a renderer action (docs/adr/0003-menu-actions-ipc.md). The shortcut is
  * shown but never registered: the renderer's keyboard handler owns the key, so Space and single
  * letters still type in text fields. macOS always registers a menu accelerator, so there the
  * shortcut goes in the label instead.
  */
-const rendererActionItem = ({
-    action,
-    labelKey,
-    accelerator,
-}: MenuAction): MenuItemConstructorOptions =>
-    isMacOS
-        ? {
-              label: t("menu.withShortcut", {
+const rendererActionItem =
+    (isMacOS: boolean) =>
+    ({
+        action,
+        labelKey,
+        accelerator,
+    }: MenuAction): MenuItemConstructorOptions =>
+        isMacOS
+            ? {
+                  label: t("menu.withShortcut", {
+                      label: t(labelKey),
+                      shortcut: accelerator.replace("Shift+/", "?"),
+                  }),
+                  click: () => mainProcess.sendMenuAction(action),
+              }
+            : {
                   label: t(labelKey),
-                  shortcut: accelerator.replace("Shift+/", "?"),
-              }),
-              click: () => mainProcess.sendMenuAction(action),
-          }
-        : {
-              label: t(labelKey),
-              accelerator,
-              registerAccelerator: false,
-              click: () => mainProcess.sendMenuAction(action),
-          };
+                  accelerator,
+                  registerAccelerator: false,
+                  click: () => mainProcess.sendMenuAction(action),
+              };
 
 /** A link in the Help menu. */
 const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
@@ -52,8 +52,27 @@ const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
  * Basic the Playback menu leaves out the items whose actions Basic turns off. Role items get their
  * labels here too: Electron's own role labels are English only.
  */
-// eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
 export function buildApplicationMenu({ basic = false } = {}): Menu {
+    return Menu.buildFromTemplate(
+        applicationMenuTemplate({
+            basic,
+            isMacOS: process.platform === "darwin",
+        }),
+    );
+}
+
+/**
+ * The menu's template for one system. Exported for the user guide's Menus page, which shows the
+ * macOS and the Windows/Linux menus (`scripts/docs-reference/generate.mts`).
+ */
+// eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
+export function applicationMenuTemplate({
+    basic,
+    isMacOS,
+}: {
+    basic: boolean;
+    isMacOS: boolean;
+}): MenuItemConstructorOptions[] {
     const appName = app.name;
     const template: MenuItemConstructorOptions[] = [];
 
@@ -188,7 +207,7 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             label: t("menu.playback.title"),
             submenu: PLAYBACK_MENU_ACTIONS.filter(
                 (item) => !(basic && item.expertOnly),
-            ).map(rendererActionItem),
+            ).map(rendererActionItem(isMacOS)),
         },
         isMacOS
             ? {
@@ -214,7 +233,7 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             role: "help",
             label: t("menu.help.title"),
             submenu: [
-                ...HELP_MENU_ACTIONS.map(rendererActionItem),
+                ...HELP_MENU_ACTIONS.map(rendererActionItem(isMacOS)),
                 { type: "separator" },
                 linkItem(t("menu.help.website"), SITE_URL),
                 linkItem(t("menu.help.guides"), siteUrl("/guides")),
@@ -226,5 +245,5 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
         },
     );
 
-    return Menu.buildFromTemplate(template);
+    return template;
 }

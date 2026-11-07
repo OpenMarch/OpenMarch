@@ -1,0 +1,30 @@
+---
+title: Menus
+description: Every item in the desktop app's menus, with its shortcut, on macOS and on Windows and Linux.
+type: reference
+covers:
+  - apps/desktop/electron/main/application-menu.ts
+  - apps/desktop/src/global/menuActions.ts
+  - apps/desktop/src/components/titlebar/TitleBar.tsx
+  - i18n:menu
+  - i18n:titlebar.menu
+sidebar:
+  order: 3
+---
+
+import Ui from "@/components/docs/Ui.astro";
+import MenuList from "@/components/docs/MenuList.astro";
+
+These menus are in the desktop app. On a Mac they're in the menu bar at the top of the screen. On Windows and Linux, select <Ui k="titlebar.menu" /> at the start of the title bar to open them. The web editor doesn't have these menus; its own <Ui k="web.fileMenu" /> menu, at the start of the title bar, holds creating, opening and backing up shows, and Settings.
+
+The two systems' menus differ: a Mac has an OpenMarch menu with About, Hide and Quit, more items in Edit, and its own Window menu. The page shows your system's menus; use the switch to see the other one. Keys are shown the way each system writes them: on a Mac, ⌘ is Command, ⌥ is Option, ⇧ is Shift and ⌃ is Control.
+
+Items marked Expert are left out of the <Ui k="menu.playback.title" /> menu in [Basic mode](/guides/start/basic-and-expert/). The menus hold only some of the app's commands: [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/) lists every shortcut, and <Ui k="menu.help.title" /> › <Ui k="menu.help.showShortcuts" /> shows them in the app.
+
+<MenuList />
+
+## Related
+
+- [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/): every shortcut, and how to change one.
+- [Settings](/guides/reference/settings/): every setting in the Settings window.
+- [Save and open shows](/guides/files/save-and-open/): what the File menu's items do.

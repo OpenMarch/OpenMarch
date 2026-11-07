@@ -20,7 +20,7 @@ like its tests. Whoever makes the change, person or agent, does all of it:
    A new feature gets its section or page.
 3. **Re-record the pictures** that show what changed (`node scripts/docs-media/capture.mjs <shot>`
    from `apps/desktop`, below), and add shots for anything new.
-4. **Regenerate the reference** if an action, shortcut or hold term changed:
+4. **Regenerate the reference** if an action, shortcut, hold term, menu item or setting changed:
    `pnpm --dir apps/desktop docs:reference`.
 5. **Check:** `pnpm --dir apps/website check:guide`, then build the site.
 6. **Review what you changed as a reader would**, before pushing:
@@ -69,6 +69,7 @@ import { Steps, Aside } from "@astrojs/starlight/components";
 | `<Kbd keys="Mod+Shift+Z" />`       | Any keys. `Mod` is ⌘ on a Mac and Ctrl elsewhere. Add `gesture="drag"` for a held key.       |
 | `<Media id="shot-id" alt="..." />` | A screenshot or clip recorded from the app (below). `caption` and `maxWidth` optional.       |
 | `<ShortcutList />`                 | The full shortcut list (Reference only).                                                     |
+| `<MenuList />`                     | Every menu and its items, for macOS and Windows/Linux (Reference only).                      |
 | `<Steps>`                          | Wraps a numbered list of steps.                                                              |
 | `<Aside type="caution">`           | Rarely: something the reader would regret missing.                                           |
 
@@ -155,13 +156,19 @@ export default shots;
 
 `pnpm --dir apps/desktop docs:reference` writes `src/data/generated/`: every shortcut the app's
 Shortcuts dialog lists (`shortcuts.json`, Expert and Basic), every action with its label and
-default keys (`actions.json`), and the hold terms (`terms.json`). Never edit these by hand.
-`--check` fails if they're out of date.
+default keys (`actions.json`), the hold terms (`terms.json`), the application menu as macOS and
+as Windows/Linux build it (`menus.json`, from `electron/main/application-menu.ts`), and every
+setting in the Settings window by section (`settings.json`, from `ALL_SETTINGS_SECTIONS` in
+`src/settings/sections.ts`). Never edit these by hand. `--check` fails if they're out of date.
+
+Settings descriptions stay hand-written: `check:guide` fails on a setting that no guide page
+names with `<Ui k>`. A new setting gets its label key in its section's `searchKeys` (which also
+makes it searchable) and a row in `guides/reference/settings.mdx`.
 
 ## Checks
 
 ```sh
-pnpm --dir apps/website check:guide                     # one second: labels, shortcuts, media, links, banned words
+pnpm --dir apps/website check:guide                     # one second: labels, shortcuts, media, links, settings, banned words
 pnpm --dir apps/website check:media                     # each WebP under 150 KB, each MP4 under 1.5 MB
 pnpm --dir apps/website docs:impact                     # the pages your change may affect
 pnpm --dir apps/website run build                       # builds every page; fails on bad <Ui>, <Kbd>, <Media>
