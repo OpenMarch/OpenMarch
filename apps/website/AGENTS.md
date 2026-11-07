@@ -156,6 +156,7 @@ default keys (`actions.json`), and the hold terms (`terms.json`). Never edit the
 
 ```sh
 pnpm --dir apps/website check:guide                     # one second: labels, shortcuts, media, links, banned words
+pnpm --dir apps/website check:media                     # each WebP under 150 KB, each MP4 under 1.5 MB
 pnpm --dir apps/website docs:impact                     # the pages your change may affect
 pnpm --dir apps/website run build                       # builds every page; fails on bad <Ui>, <Kbd>, <Media>
 pnpm --dir apps/desktop docs:reference --check          # generated data is current

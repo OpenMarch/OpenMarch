@@ -3,7 +3,7 @@ name: User guide
 
 # Keeps the user guide (openmarch.com/guides) in step with the app. See apps/website/AGENTS.md.
 # - check: every page's labels, shortcuts, pictures and links exist; the generated shortcut
-#   data matches the app; the site builds. Fails the PR when the guide is broken.
+#   data matches the app; pictures and clips are within their size limits; the site builds. Fails the PR when the guide is broken.
 # - impact: comments on the PR with the guide pages the change may affect. Advisory only:
 #   it never fails, and the `no-docs-needed` label silences it.
 
@@ -56,6 +56,9 @@ jobs:
 
       - name: Check every page (labels, shortcuts, pictures, links, wording)
         run: pnpm --dir apps/website check:guide
+
+      - name: Pictures and clips are within their size limits
+        run: pnpm --dir apps/website check:media
 
       - name: Build workspace packages
         run: pnpm turbo run build --filter=@openmarch/desktop^...

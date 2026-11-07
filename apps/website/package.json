@@ -17,6 +17,7 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "check:guide": "node scripts/check-guide.mjs",
+        "check:media": "node scripts/check-media-size.mjs",
         "docs:impact": "node scripts/docs-impact.mjs",
         "docs:pages": "node scripts/page-shots.mjs"
     },

@@ -162,6 +162,8 @@ so it can be recorded again when the app changes. See apps/website/AGENTS.md for
   see it: "The timeline with Move 2 selected and its right edge dragged two counts later." Not
   "screenshot of the timeline".
 - Light and dark versions are recorded together and the page shows the reader's theme.
+- Keep files small: a still stays under 150 KB and a clip under 1.5 MB. The User guide check fails
+  when one is bigger; shorten the clip or crop tighter and record it again.
 - No arrows, circles or text drawn into images. If something needs pointing out, say where it is
   in the caption or the text.
 
