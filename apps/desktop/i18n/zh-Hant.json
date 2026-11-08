@@ -2658,14 +2658,17 @@
             "floor": "場內地面",
             "frontRow": "第一排",
             "geJudge": "GE 評審",
+            "judgesTable": "評審席",
             "lowerBowl": "下層看台",
             "podium": "指揮台",
             "pressBox": "記者席",
             "sideline": "邊線",
             "topDown": "俯視",
+            "tunnel": "入場通道",
             "upperDeck": "上層看台"
         },
         "kit": {
+            "arena": "室內競技場",
             "bighs": "大型高中",
             "blank": "僅場地",
             "college": "大學體育場",
@@ -2793,6 +2796,12 @@
         },
         "venue": {
             "updateFailed": "無法更新3D 檢視的場館"
+        },
+        "board": {
+            "designedBy": "設計：{name}",
+            "forClient": "演出單位：{name}",
+            "nowPerforming": "正在表演",
+            "untitled": "未命名表演"
         }
     },
     "web": {
@@ -2948,7 +2957,14 @@
         "unsavedChanges": "你有尚未儲存的變更",
         "close": "關閉",
         "saved": "表演設定已儲存",
-        "updateFailed": "無法更新表演設定"
+        "updateFailed": "無法更新表演設定",
+        "showInfo": {
+            "projectName": "表演名稱",
+            "projectNamePlaceholder": "使用檔案名稱",
+            "designer": "設計者",
+            "client": "客戶",
+            "optional": "選填"
+        }
     },
     "canvas": {
         "zoom": {

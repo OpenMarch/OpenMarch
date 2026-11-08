@@ -1,5 +1,5 @@
 import type { CanvasTexture } from "three";
-import type { ShowCredits } from "../types";
+import type { CreditsText, ShowCredits } from "../types";
 import {
     drawOpenMarchLogo,
     drawOtmLogo,
@@ -78,6 +78,16 @@ export function screenGround(
     g.fillRect(0, 0, w, h);
 }
 
+/** The board's words in English, for callers without translations. */
+function englishText(credits: ShowCredits): CreditsText {
+    return {
+        heading: "Now performing",
+        untitled: "Untitled show",
+        designer: credits.designer && `Designed by ${credits.designer}`,
+        client: credits.client && `For ${credits.client}`,
+    };
+}
+
 /**
  * The credits card, set like a title card: "NOW PERFORMING", the title, a
  * short purple rule, "Designed by" and "For" (when set), and the
@@ -95,21 +105,30 @@ export function paintCreditsCard(
     // Sizes follow the face height, so short and tall boards look alike.
     const s = h / 512;
     const cx = w / 2;
-    const lines = [
-        credits.designer && `Designed by ${credits.designer}`,
-        credits.client && `For ${credits.client}`,
-    ].filter((l): l is string => !!l);
+    const text = credits.text ?? englishText(credits);
+    const lines = [text.designer, text.client].filter((l): l is string => !!l);
     // Label, title, rule, then the lines; centered as a block.
     const block = (46 + 104 + 44 + lines.length * 52) * s;
     let y = (h - 104 * s - block) / 2 + 12 * s;
     g.fillStyle = SIGN.label;
     g.font = `600 ${24 * s}px ${TEXTURE_FONT}`;
     tracking(g, 6 * s);
-    g.fillText("NOW PERFORMING", cx, y);
+    g.fillText(
+        fitText(
+            g,
+            text.heading.toLocaleUpperCase(),
+            600,
+            24 * s,
+            16 * s,
+            w - 200 * s,
+        ),
+        cx,
+        y,
+    );
     tracking(g, 0);
     y += (46 + 52) * s;
     g.fillStyle = SIGN.text;
-    const title = credits.title || "Untitled show";
+    const title = credits.title || text.untitled;
     g.fillText(fitText(g, title, 600, 92 * s, 40 * s, w - 160 * s), cx, y);
     y += (52 + 34) * s;
     g.fillStyle = SIGN.purple;

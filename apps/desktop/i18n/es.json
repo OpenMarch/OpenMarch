@@ -2662,14 +2662,17 @@
             "floor": "En el piso",
             "frontRow": "Primera fila",
             "geJudge": "Juez de GE",
+            "judgesTable": "Mesa de jueces",
             "lowerBowl": "Tribuna baja",
             "podium": "Podio",
             "pressBox": "Cabina de prensa",
             "sideline": "Línea lateral",
             "topDown": "Vista cenital",
+            "tunnel": "Túnel",
             "upperDeck": "Tribuna alta"
         },
         "kit": {
+            "arena": "Arena cubierta",
             "bighs": "Estadio escolar grande",
             "blank": "Solo el campo",
             "college": "Estadio universitario",
@@ -2797,6 +2800,12 @@
         },
         "venue": {
             "updateFailed": "No se pudo actualizar el recinto de la Vista 3D"
+        },
+        "board": {
+            "designedBy": "Diseñado por {name}",
+            "forClient": "Para {name}",
+            "nowPerforming": "Ahora en escena",
+            "untitled": "Show sin título"
         }
     },
     "web": {
@@ -2952,7 +2961,14 @@
         "unsavedChanges": "Tienes cambios sin guardar",
         "close": "Cerrar",
         "saved": "Configuración del show guardada",
-        "updateFailed": "No se pudo actualizar la configuración del show"
+        "updateFailed": "No se pudo actualizar la configuración del show",
+        "showInfo": {
+            "projectName": "Nombre del show",
+            "projectNamePlaceholder": "Usa el nombre del archivo",
+            "designer": "Diseñador",
+            "client": "Cliente",
+            "optional": "Opcional"
+        }
     },
     "canvas": {
         "zoom": {

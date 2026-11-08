@@ -2662,14 +2662,17 @@
             "floor": "Au sol",
             "frontRow": "Premier rang",
             "geJudge": "Juge GE",
+            "judgesTable": "Table des juges",
             "lowerBowl": "Tribune basse",
             "podium": "Podium",
             "pressBox": "Tribune de presse",
             "sideline": "Bord de touche",
             "topDown": "Vue de dessus",
+            "tunnel": "Tunnel",
             "upperDeck": "Tribune haute"
         },
         "kit": {
+            "arena": "Aréna couverte",
             "bighs": "Grand lycée",
             "blank": "Terrain seul",
             "college": "Stade universitaire",
@@ -2797,6 +2800,12 @@
         },
         "venue": {
             "updateFailed": "Échec de la mise à jour du lieu de la vue 3D"
+        },
+        "board": {
+            "designedBy": "Conçu par {name}",
+            "forClient": "Pour {name}",
+            "nowPerforming": "En piste",
+            "untitled": "Spectacle sans titre"
         }
     },
     "web": {
@@ -2952,7 +2961,14 @@
         "unsavedChanges": "Vous avez des modifications non enregistrées",
         "close": "Fermer",
         "saved": "Paramètres du spectacle enregistrés",
-        "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail"
+        "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail",
+        "showInfo": {
+            "projectName": "Nom du spectacle",
+            "projectNamePlaceholder": "Utilise le nom du fichier",
+            "designer": "Concepteur",
+            "client": "Client",
+            "optional": "Facultatif"
+        }
     },
     "canvas": {
         "zoom": {

@@ -2791,6 +2791,12 @@
             "title": "Open the 3D View on launch?",
             "yes": "Yes"
         },
+        "board": {
+            "designedBy": "Designed by {name}",
+            "forClient": "For {name}",
+            "nowPerforming": "Now performing",
+            "untitled": "Untitled show"
+        },
         "camera": {
             "blimp": "Blimp",
             "corner": "Corner",

@@ -35,6 +35,23 @@ export interface ShowCredits {
     title: string;
     designer?: string;
     client?: string;
+    /**
+     * The board's words in the app's language, from the window (the core
+     * can't translate). English when absent, as in the gallery and tests.
+     */
+    text?: CreditsText;
+}
+
+/** Translated words on a credits board. */
+export interface CreditsText {
+    /** Above the title, e.g. "Now performing"; the board sets it in capitals. */
+    heading: string;
+    /** The title when the show has no name. */
+    untitled: string;
+    /** The whole designer line, e.g. "Designed by Sam Rivera". */
+    designer?: string;
+    /** The whole client line, e.g. "For Lincoln High School". */
+    client?: string;
 }
 
 /** Small per-show settings stored with the venue (ADR 0010 D-5). */
