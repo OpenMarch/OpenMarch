@@ -126,7 +126,6 @@ export function applicationMenuTemplate({
                 },
                 {
                     label: t("menu.file.closeFile"),
-                    accelerator: "CommandOrControl+Q",
                     click() {
                         void mainProcess.closeCurrentFile();
                     },

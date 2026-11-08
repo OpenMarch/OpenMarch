@@ -69,11 +69,7 @@
                     "label": "Save As Copy"
                 },
                 {
-                    "label": "Close File",
-                    "keys": [
-                        "⌘",
-                        "Q"
-                    ]
+                    "label": "Close File"
                 }
             ]
         },
@@ -322,11 +318,7 @@
                     "label": "Save As Copy"
                 },
                 {
-                    "label": "Close File",
-                    "keys": [
-                        "Ctrl",
-                        "Q"
-                    ]
+                    "label": "Close File"
                 }
             ]
         },
