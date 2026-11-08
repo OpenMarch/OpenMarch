@@ -76,6 +76,8 @@ The push to `prerelease/0.2` also rebuilds preview.openmarch.com; its badge show
 
 ### 6. Publish it as a pre-release
 
+First check that there's only one draft for the tag and that it has every platform: macOS (Apple Silicon and Intel), Windows and Linux (x64 and arm64), each with its `latest-*.yml` file. See [When something goes wrong](#when-something-goes-wrong) if not.
+
 On the [releases page](https://github.com/OpenMarch/OpenMarch/releases), edit the draft:
 
 - Write the notes: what changed since the last beta, what to test, known problems.
@@ -94,6 +96,8 @@ The draft starts as a normal release. **If it's published without the pre-releas
 ## When something goes wrong
 
 - **A build job failed on a flaky step:** rerun the failed jobs from the Actions page. To rebuild some platforms of an existing tag, run `desktop-release.yaml` by hand ("Run workflow") with the tag and only those platforms ticked.
+- **macOS fails with "HTTP status code: 403. A required agreement is missing or has expired":** Apple published a new developer agreement. Signing still works, but notarization is refused until the account holder accepts it at developer.apple.com (or App Store Connect, under Business). Then rebuild just the two macOS platforms by hand, as above. The Intel job is usually cancelled rather than failed when Apple Silicon fails, so tick both.
+- **The release is split across two drafts:** the build jobs run at the same time, and two of them can each create a draft for the same tag. Before publishing, check the releases page for a second draft with that tag. Move its files into the main draft (download them, then upload them to the main draft) and delete the empty one. Every platform needs its installer and its `latest-*.yml` update file on the one published release, or that platform's installs won't find the update.
 - **The build is broken, or the beta has a bad bug:** fix it on fork main and ship the next beta number. Don't move or delete the tag. Delete the draft if it was never published. A published beta stays up: installs can't move back to an older version, so the fix has to be a newer one.
 - **The script says `prerelease/0.2` can't fast-forward:** the commit doesn't contain the branch's current commit. Usually a sync pull request's branch was a feature branch that was later squash-merged into fork main, so the commit on `prerelease/0.2` isn't on main. Ship from a main commit that contains it, or ask before force-pushing the branch.
 - **You need a fix in testers' hands without the rest of main:** there's no hotfix branch. Either hold the other work off main until after the beta, or wait until main is ready. If this keeps happening, it's time for a real release branch on the fork.
