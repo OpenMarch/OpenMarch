@@ -178,12 +178,16 @@ export function holdFromPreviousLight({
     const known = marcherPageStates(state, marks);
     const byMarcher = new Map<number, readonly BeatRange[]>();
     for (const id of marcherIds) {
-        const now = known.get(id);
-        if (now === "held" || now === "midMove") continue;
+        const own = marks.filter((m) => m.marcherId === id);
+        // Held over any of the box, the command leaves them alone, a move of their own or not
+        const heldThere = own.some(
+            (m) => m.start < state.box.end && m.end > state.box.start,
+        );
+        if (heldThere || known.get(id) === "midMove") continue;
         const { beat } = holdReachBack({
             start: state.box.start,
             rows: rowsOf(id),
-            marks: marks.filter((m) => m.marcherId === id),
+            marks: own,
             showStart,
         });
         byMarcher.set(id, [{ start: beat, end: state.box.end }]);

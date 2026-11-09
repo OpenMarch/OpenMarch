@@ -67,6 +67,12 @@ describe("holdFromPreviousLight", () => {
         expect(shown?.byMarcher.get(2)).toEqual([{ start: 9, end: 33 }]);
     });
 
+    it("leaves out a marcher Held over part of the page with a move of its own after", () => {
+        expect(
+            light({}, [1], [{ id: 1, marcherId: 1, start: 25, end: 29 }]),
+        ).toBeNull();
+    });
+
     it("leaves out who it wouldn't change, and shows nothing when that's everyone", () => {
         const heldThere = [{ id: 1, marcherId: 1, start: 25, end: 33 }];
         const shown = light({ follows: [1], midMove: [2] }, [1, 2], heldThere);
