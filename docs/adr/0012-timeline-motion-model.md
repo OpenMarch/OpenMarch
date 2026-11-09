@@ -396,10 +396,16 @@ holds to the resolver (spec R-6), so the mark is app data:
     what refreshes views after an edit that only writes marks (Hold from previous page on a page
     where the marchers are Not set, and its undo). The query invalidation map gets an entry, as the
     kept table had.
-- **Two kinds, which follow from the rows** (no stored anchor):
-  - An **arrival hold** has a row of the marcher ending at its start. It follows that row when the
-    row is retimed, and goes when the row goes.
-  - A **borrowed hold** has nothing ending at its start. It holds wherever the marcher is there.
+- **Every hold grows out of what last put the marcher there** (owner decision, 2026-11-09,
+  replacing the borrowed holds of 2026-10-26): a move ending at the hold's start, or the starting
+  spot. Which one follows from the rows (no stored anchor). It follows that row when the row is
+  retimed, and goes when the row goes. There is no hold with nothing to grow out of: a marcher in a
+  Not defined gap already stands at its last spot, so a hold starting later than the marcher's last
+  arrival would never differ in playback, and a hold that a drag inside could not move whole would
+  break the rule that editing inside a hold moves the whole hold, including where it arrives.
+  The command that makes one is named **Hold from last keyframe** for that reason (it was Hold
+  from previous page), and while it's highlighted in a menu or the palette the hold it would make
+  sweeps out from that keyframe across the page row, then pulses.
 - **Invariants, checked at commit time.** They are plain SQL over `timeline_assignments`, so they
   need no layer derivation:
   - **H-1:** no row of the marcher overlaps the mark (`E-H1`).
@@ -421,8 +427,12 @@ holds to the resolver (spec R-6), so the mark is app data:
   grows over the box, and a mark starting at its end is taken in, so holding Page 2 then Page 3
   gives what Page 3 then Page 2 does. The arrival is found by the rule a drag inside the hold uses
   (the marcher's highest-layer row ending at the flag, whose move ends there too), so every hold it
-  makes is one its drags can reach. Marchers it can't hold are left alone and named, with why:
-  nothing arrives at the previous flag (a borrowed hold, #474), already Held there, a move
+  makes is one its drags can reach. Where nothing arrives at the previous flag the hold **reaches
+  back** (owner decision, 2026-11-09; fork #474) over the Not defined pages to the latest of the
+  marcher's last row end before the page, the end of its own earlier hold (touching holds merge
+  into one), or the start of the show for a marcher who never moved. Marchers it can't hold are
+  left alone and named, with why: the row it would grow out of ends without arriving there (a lower
+  layer's, or its part of a move that runs on), already Held there, a move
   crossing one of the box's flags, Expert moves in the box, a shape or placed shape's recipe on
   the page, following the leader on the page, or an arrival that is a shape's move or a
   follow-the-leader move, which a drag inside the hold would rewrite (shape and follow-the-leader
@@ -434,10 +444,9 @@ holds to the resolver (spec R-6), so the mark is app data:
   moving the whole hold. The mark stays while no row of the marcher starts before it, or once a
   move arrives at its start (that move becomes its arrival). A mark whose arrival row an edit
   deleted doesn't become one. An edit that gives the marcher a move starting before the mark
-  without ending at its start (a move on an earlier page, or Set as shown there) leaves it nothing
-  to grow out of, so the mark is deleted: holding from where that move ends is a borrowed hold
-  (#474). The edit names the holds it dropped in its warning ("T1 is no longer Held on Page 3"),
-  for point and range moves, Set as shown and Add to move. Placing a shape at the starting spots
+  without ending at its start (a move on an earlier page, or Set as shown there) reaches the mark
+  back to that move's end, so it grows out of that move (owner decision, 2026-11-09; before that
+  such a mark was deleted and the edit named it). Placing a shape at the starting spots
   drops its marchers' holds from the starting spots in the same edit. Starting spots a placed shape
   sets (a recipe with no move, other than an ungrouped mark) are skipped and named: the shape
   carried on is its hold, so
@@ -485,7 +494,10 @@ holds to the resolver (spec R-6), so the mark is app data:
     3. Move a mark's start to the new end of a row that ended there before (a retime), then trim
        again.
     4. Delete a mark whose row ended there before and is gone (Remove keyframe, Delete move).
-    5. Otherwise leave it as a borrowed hold.
+    5. Otherwise reach it back to what last put the marcher there, as Hold from previous page
+       does: the marcher's last row end, the end of its own earlier hold, or the start of the show
+       (owner decision, 2026-11-09). A row ending there that doesn't arrive leaves it nothing to
+       grow out of, and it goes.
     6. Merge marks that touch.
 
     As built (#473), the trim is done once, after steps 2–5, and only by rows the edit
@@ -494,8 +506,8 @@ holds to the resolver (spec R-6), so the mark is app data:
     an edit **writes** over a hold is still refused at commit with `E-H1`, as decision 6's Expert
     windows are #476's to build (holds 04-anchors: the trim applies only to retimes). A re-timed
     arrival that no longer arrives by the rule above (a higher layer ends there too) is refused
-    with `E-H1` instead of leaving a hold nothing arrives at. Until a borrowed hold exists (#474),
-    step 5 keeps only a hold from the starting spot; a mark with nothing to grow out of is deleted.
+    with `E-H1` instead of leaving a hold nothing arrives at. A row the edit re-timed over a mark's
+    start trims it from the start, to that row's end.
     A changed mark is deleted and inserted again with its id, so undo restores the same row.
   - **Writers that delete and re-insert a row with a new end** pass an explicit old→new row map,
     which step 3 uses. Basic's set-ending was the known case; as built it re-inserts rows with
@@ -509,8 +521,7 @@ holds to the resolver (spec R-6), so the mark is app data:
     can't fail every later edit (not built yet).
 - **Page and beat edits** (`planTimelineRipple`, so previews match commits; #472):
   - An arrival hold's start takes its row's planned new end.
-  - Any other mark edge that sits on a page flag follows that flag. That covers a borrowed hold's
-    start and any hold's end.
+  - Any other mark edge that sits on a page flag follows that flag. That covers any hold's end.
   - An edge in the middle of a page stays on its beat, as a row edge does.
   - A deleted flag leaves an edge on its count.
   - The end of the last page counts as a flag, when the same page is last before and after.
@@ -518,14 +529,19 @@ holds to the resolver (spec R-6), so the mark is app data:
     no counts (its page deleted) is deleted.
 - **Removing the keyframe a hold grows out of** removes the hold, and writes no next-page move
   inside it. The pages become Not set (fork #473).
+- **A drag inside any hold** (a range edit whose end, or a Basic point edit whose count, is inside
+  it) moves the whole hold, including where it arrives (owner decision, 2026-11-09). The timeline
+  draws every Held hold plain, in Basic and Expert, and the whole bar lights during a drag.
+- **A hold's start is fixed by this rule,** so a hold's bar has no start handle (fork #475's start
+  drag, including from the starting spots, is removed); its end can still be dragged and split.
 - **Hold over the window** removes the selected marchers' moves inside the window, cuts a move that
   crosses its start flag there, and starts a move that crosses the playhead at the playhead, with
   the same destination (fork #476).
 - **The converter writes no marks.**
 - **Display:** the selected marchers' Held holds are solid bars at exact counts on the keyframe
   diamonds' row, each from its start (an arrival's diamond) to its end.
-- **The rules per write path** are in `docs/timeline/research/holds/01-edit-rules.md`. The rules
-  for arrival and borrowed holds are in `04-anchors.md`.
+- **The rules per write path** are in `docs/timeline/research/holds/01-edit-rules.md`. `04-anchors.md`
+  records the borrowed holds this amendment replaced.
 
 **Scope.** Holds rely on transitions only through two operations: cut a move in time at a count,
 and remove a marcher from a move for a range of counts. How shapes and transitions provide them is

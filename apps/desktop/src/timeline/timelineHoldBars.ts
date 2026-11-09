@@ -36,6 +36,8 @@ export interface SelectionHoldBar extends BeatRange {
     readonly shape: boolean;
     /** An edit would carry here (a drag, or a hovered follow-back) */
     readonly lit: boolean;
+    /** Not there yet: the Held bar a hovered command would make, drawn over what's there */
+    readonly preview?: boolean;
     /** The selected marchers holding over exactly these counts, in selection order */
     readonly marcherIds: readonly number[];
     /** How many marchers are selected */
@@ -259,6 +261,12 @@ export function notDefinedOver(
 /** What lights the bars besides a drag: for each marcher it lights, its own ranges. */
 export interface HoldLight {
     readonly byMarcher: ReadonlyMap<number, readonly BeatRange[]>;
+    /**
+     * The ranges are the holds a hovered command would make, not bars already there: each draws
+     * whole as a Held bar with the page row filled above it, even over a move the command would
+     * replace
+     */
+    readonly wouldHold?: boolean;
 }
 
 /**
@@ -305,9 +313,10 @@ export function selectionHolds({
     for (const id of marcherIds) {
         const holds = marcherHolds(spansOf(id), showEnd);
         const own = marksOf.get(id) ?? [];
+        const lightRanges = light?.byMarcher.get(id) ?? [];
         const lit = [
             ...(dragBeat === null ? [] : dragLitRanges(holds, own, dragBeat)),
-            ...(light?.byMarcher.get(id) ?? []),
+            ...(light?.wouldHold ? [] : lightRanges),
         ];
         const pieces = marcherHoldPieces({
             holds,
@@ -315,8 +324,18 @@ export function selectionHolds({
             carried: carriedOf?.(id),
             lit,
         });
-        for (const p of pieces) {
-            const key = `${p.kind}:${p.start}:${p.end}:${p.shape}:${p.lit}`;
+        const previews: (MarcherHoldPiece & { preview?: true })[] =
+            light?.wouldHold
+                ? lightRanges.map((r) => ({
+                      ...r,
+                      kind: "held",
+                      shape: false,
+                      lit: true,
+                      preview: true,
+                  }))
+                : [];
+        for (const p of [...pieces, ...previews]) {
+            const key = `${p.kind}:${p.start}:${p.end}:${p.shape}:${p.lit}:${"preview" in p}`;
             const bar = bars.get(key);
             if (bar) bar.marcherIds.push(id);
             else bars.set(key, { ...p, marcherIds: [id] });

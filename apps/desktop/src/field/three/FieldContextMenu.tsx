@@ -20,6 +20,7 @@ import {
     actionLabelNow,
     isActionChecked,
     isActionEnabled,
+    previewAction,
     runAction,
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
@@ -40,10 +41,10 @@ import {
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The commands that set the selection's state on the current page (holds):
- *   **Hold from previous page** (timeline mode only), then **Clear this page**. Each says what it
+ *   **Hold from last keyframe** (timeline mode only), then **Clear this page**. Each says what it
  *   would do for the selection on the current page (`holdEntryStates`, through its handler):
  *   checked and unavailable when every selected marcher is already in the state it sets, and with
- *   a count, "Hold from previous page (3 of 5)", when it would change only some of them.
+ *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
  * - Arranging the selection: align and distribute, Swap (two marchers), and **Move to next
  *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
@@ -116,6 +117,12 @@ export default function FieldContextMenu({
         const block = (event: Event) => event.preventDefault();
         document.addEventListener("contextmenu", block, true);
         return () => document.removeEventListener("contextmenu", block, true);
+    }, [open]);
+    // The menu closing takes the entry away without a blur
+    useEffect(() => {
+        if (!open) return;
+        return () =>
+            FIELD_MENU_ACTIONS.forEach((id) => previewAction(id, false));
     }, [open]);
     if (!at) return null;
 
@@ -201,6 +208,8 @@ export default function FieldContextMenu({
                                         data-testid={`field-menu-${id}`}
                                         disabled={!enabled(id)}
                                         onSelect={() => runAction(id)}
+                                        onFocus={() => previewAction(id, true)}
+                                        onBlur={() => previewAction(id, false)}
                                         className={MENU_ITEM_CLASS}
                                     >
                                         {CHECKABLE.has(id) && (

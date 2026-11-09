@@ -27,13 +27,13 @@ import type { BeatPosition, TimelinePageMarker } from "./TimelineViewModel";
 
 /**
  * The draggable ends of the selected marchers' **Held** bars (holds README decisions 3 and 6; fork
- * #475). The bars stay thin and quiet (#477); each edge that can move gets an invisible handle
- * over the bar's end, as tall as the bar's hit strip and a little wider than the line, so the thin
+ * #475). The bars stay thin and quiet (#477); each end that can move gets an invisible handle
+ * over it, as tall as the bar's hit strip and a little wider than the line, so the thin
  * line is still easy to grab. On hover the cursor turns into the resize arrows and a small knob
  * shows on the edge; while dragging it is in the accent.
  *
  * - **Drag the end** to leave earlier or hold longer, up to the marcher's next move and the show's
- *   end; **drag the start** back to the last arrival (or, from the starting spots, to any count).
+ *   end. A hold's start is fixed by what last put the marcher there, so it has no handle.
  *   The limits are worked out with the bars (`holdEdgeHandles`); the bars draw the hold where it
  *   would land while dragging, and two holds that would touch draw as one.
  * - **Snapping** is every dragged edge's rule (`snapEdgeBeat`, UI-15): page lines and the playhead
@@ -94,22 +94,12 @@ function blockWords(block: HoldEdgeBlock): string {
                 "timeline.holdEdge.blocked.showEnd",
                 "Stops at the end of the show",
             );
-        case "arrival":
-            return tolgee.t(
-                "timeline.holdEdge.blocked.arrival",
-                "Stops where the move before it ends",
-            );
-        case "showStart":
-            return tolgee.t(
-                "timeline.holdEdge.blocked.showStart",
-                "Stops at the start of the show",
-            );
     }
 }
 
 /**
- * Each handle's identity, which stays the same when its edge moves: the edge, the marchers and
- * which of their holds' edges it is, left to right. So a stepped handle keeps its element, and
+ * Each handle's identity, which stays the same when its end moves: the marchers and which of
+ * their holds' ends it is, left to right. So a stepped handle keeps its element, and
  * with it the keyboard focus.
  */
 export function holdEdgeHandleKeys(
@@ -121,7 +111,7 @@ export function holdEdgeHandleKeys(
     const seen = new Map<string, number>();
     const keys: string[] = new Array(handles.length);
     for (const { handle, index } of sorted) {
-        const group = `${handle.edge}:${handle.marcherIds.join(",")}`;
+        const group = handle.marcherIds.join(",");
         const nth = seen.get(group) ?? 0;
         seen.set(group, nth + 1);
         keys[index] = `${group}#${nth}`;
@@ -129,30 +119,18 @@ export function holdEdgeHandleKeys(
     return keys;
 }
 
-/** What the readout says while dragging: where the hold now ends or starts, and what stops it. */
+/** What the readout says while dragging: where the hold now ends, and what stops it. */
 export function holdEdgeReadout(
-    handle: HoldEdgeHandle,
     landing: Landing,
     pages: readonly TimelinePageMarker[],
 ): { where: string; blocked: string | null } {
-    // The end is the hold's last count; the start's first count inside is the one after it
-    const at = getPageCountAt(
-        { pages },
-        handle.edge === "end" ? landing.beat : landing.beat + 1,
+    // The end is the hold's last count
+    const at = getPageCountAt({ pages }, landing.beat);
+    const where = tolgee.t(
+        "timeline.holdEdge.readoutEnd",
+        "{held} through Page {page}, count {count}",
+        { ...holdTerms(), page: at.pageLabel, count: at.count },
     );
-    const params = { ...holdTerms(), page: at.pageLabel, count: at.count };
-    const where =
-        handle.edge === "end"
-            ? tolgee.t(
-                  "timeline.holdEdge.readoutEnd",
-                  "{held} through Page {page}, count {count}",
-                  params,
-              )
-            : tolgee.t(
-                  "timeline.holdEdge.readoutStart",
-                  "{held} from Page {page}, count {count}",
-                  params,
-              );
     const blocked = landing.blocked ? blockWords(landing.blocked) : null;
     return { where, blocked };
 }
@@ -372,32 +350,23 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
             ? edges.handles[keys.indexOf(dragging.key)]
             : undefined;
     const readout =
-        shown && dragging
-            ? holdEdgeReadout(shown, dragging.landing, pages)
-            : null;
+        shown && dragging ? holdEdgeReadout(dragging.landing, pages) : null;
     return (
         <>
             {edges.handles.map((handle, index) => {
                 const key = keys[index]!;
                 const active = dragging?.key === key;
                 const beat = active ? dragging.landing.beat : handle.beat;
-                const label =
-                    handle.edge === "end"
-                        ? tolgee.t(
-                              "timeline.holdEdge.endLabel",
-                              "End of {held}. Drag to leave earlier or hold longer",
-                              holdTerms(),
-                          )
-                        : tolgee.t(
-                              "timeline.holdEdge.startLabel",
-                              "Start of {held}. Drag to hold from earlier or later",
-                              holdTerms(),
-                          );
+                const label = tolgee.t(
+                    "timeline.holdEdge.endLabel",
+                    "End of {held}. Drag to leave earlier or hold longer",
+                    holdTerms(),
+                );
                 return (
                     <button
                         key={key}
                         type="button"
-                        data-testid={`timeline-hold-${handle.edge}-${handle.beat}`}
+                        data-testid={`timeline-hold-end-${handle.beat}`}
                         data-timeline-interactive="true"
                         data-timeline-own-keys="true"
                         data-dragging={active || undefined}

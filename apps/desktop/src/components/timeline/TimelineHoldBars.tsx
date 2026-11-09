@@ -14,6 +14,7 @@ import {
     beatToX,
     getPageCountAt,
     TIMELINE_PAGE_ROW_BOTTOM,
+    TIMELINE_PAGE_ROW_HEIGHT,
 } from "./TimelineGeometry";
 
 /**
@@ -30,6 +31,13 @@ const LIT_LINE_HEIGHT = 6;
 const HIT_HEIGHT = 10;
 /** How long a line takes to grow or shrink as it lights (ms) */
 const GROW_MS = 120;
+/** How long a previewed hold takes to sweep out from its keyframe (ms) */
+const PREVIEW_SWEEP_MS = 350;
+/** Half a pulse of a previewed hold's fill, after the sweep (ms) */
+const PREVIEW_HALF_PULSE_MS = 600;
+/** A previewed hold's fill over the page row: its opacity at the top and bottom of a pulse */
+const PREVIEW_FILL_OPACITY = 0.62;
+const PREVIEW_FILL_DIM = 0.2;
 /** A Not defined bar's dashes and the gaps between them (px) */
 const DASH = 5;
 const GAP = 3;
@@ -102,7 +110,7 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
                     key={keyOf(bar)}
                     bar={bar}
                     mixed={
-                        bar.kind === "held"
+                        bar.kind === "held" && !bar.preview
                             ? notDefinedOver(bar, holds.bars)
                             : NONE
                     }
@@ -144,6 +152,27 @@ const dashes = (color: string, left: number) => ({
 });
 
 /**
+ * A previewed hold takes the eye off the menu: its fill and line sweep out once from the keyframe
+ * it grows out of, then the fill pulses for as long as the command is highlighted.
+ */
+function sweepThenPulse(fill: HTMLElement, line: HTMLElement) {
+    const sweep = { duration: PREVIEW_SWEEP_MS, easing: "ease-out" };
+    const grow = { scale: ["0 1", "1 1"] };
+    line.animate(grow, sweep);
+    fill.animate(grow, sweep);
+    fill.animate(
+        { opacity: [PREVIEW_FILL_OPACITY, PREVIEW_FILL_DIM] },
+        {
+            duration: PREVIEW_HALF_PULSE_MS,
+            delay: PREVIEW_SWEEP_MS,
+            iterations: Infinity,
+            direction: "alternate",
+            easing: "ease-in-out",
+        },
+    );
+}
+
+/**
  * One bar: solid (Held, or a shape carried on) or dashed (Not defined), lit or not. A Held bar
  * draws dashed, in its own color, over `mixed` (`notDefinedOver`): where some of the selection is
  * Not defined over the same counts, the stretch mustn't read as solid.
@@ -163,6 +192,7 @@ function HoldBar({
     pixelsPerBeat: number;
 }) {
     const line = useRef<HTMLDivElement>(null);
+    const fill = useRef<HTMLDivElement>(null);
     // A bar that mounts lit (lighting split it off a longer one) grows in, like one that lights in
     // place does through its transition
     useLayoutEffect(() => {
@@ -172,6 +202,7 @@ function HoldBar({
             window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
         )
             return;
+        if (fill.current) return sweepThenPulse(fill.current, line.current);
         line.current.animate(
             [
                 { height: `${LINE_HEIGHT}px` },
@@ -206,6 +237,7 @@ function HoldBar({
             data-held={solid ? bar.marcherIds.length : undefined}
             data-shape={bar.shape || undefined}
             data-lit={bar.lit}
+            data-preview={bar.preview || undefined}
             data-mixed={mixed.length > 0 || undefined}
             // Under the diamonds (z-36) and the flag grips (z-35)
             className="pointer-events-none absolute z-[34] -translate-y-1/2"
@@ -216,11 +248,24 @@ function HoldBar({
                 height: HIT_HEIGHT,
             }}
         >
+            {bar.preview && (
+                // Up from the bar over the page row, so the pages it would hold can't be missed
+                <div
+                    ref={fill}
+                    data-preview-fill=""
+                    className="bg-accent absolute inset-x-0 bottom-1/2 origin-left"
+                    style={{
+                        height: TIMELINE_PAGE_ROW_HEIGHT,
+                        opacity: PREVIEW_FILL_OPACITY,
+                    }}
+                />
+            )}
             <div
                 ref={line}
                 data-hold-line=""
                 className={clsx(
                     "absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-full transition-[height,color] ease-out motion-reduce:transition-none",
+                    bar.preview && "origin-left",
                     bar.lit
                         ? "text-accent"
                         : solid

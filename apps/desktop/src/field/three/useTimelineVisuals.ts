@@ -227,7 +227,7 @@ function useFieldDecidedLook(
             }
             // The Held marks are read after each resolver version (`useHeldMarksHost`): until
             // they arrive, keep the look as it is, so a Held marcher doesn't flash Not defined
-            // (after Hold from previous page, undo, redo or opening a file)
+            // (after Hold from last keyframe, undo, redo or opening a file)
             if (useHeldMarksStore.getState().version !== version) return;
             read ??= readDecided(resolver);
             const beat = fieldBeat(useTimelineSelectionStore.getState());

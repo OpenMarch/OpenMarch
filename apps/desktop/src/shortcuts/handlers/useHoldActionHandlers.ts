@@ -12,7 +12,7 @@ import {
 import { useActionHandler } from "../useActionHandler";
 
 /**
- * Holds: **Define as shown** and **Hold from previous page** for the selected marchers on the
+ * Holds: **Define as shown** and **Hold from last keyframe** for the selected marchers on the
  * current page box, the one the field shows (the selected page, which follows the paused
  * playhead). They run the page box menu's commands (`useHoldCommands`), so each is one undo step
  * with the menu's toasts, and is off where the menu would say why not or shows it checked (every
@@ -55,6 +55,10 @@ export function useHoldActionHandlers() {
         {
             enabled: !isPlaying && canRunOn(holdFromPrevious, pageId),
             ...holdActionOptions(entries?.holdFromPrevious),
+            preview: (on) => {
+                if (pageId !== undefined)
+                    holdFromPrevious.onPreview(pageId, on);
+            },
         },
     );
 }

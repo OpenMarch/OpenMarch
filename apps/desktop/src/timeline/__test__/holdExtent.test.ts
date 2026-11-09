@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     applyHoldEdgeDrag,
-    holdEdgeAllows,
+    holdReachBack,
     holdEdgeHandles,
     holdEdgeLimits,
     intersectHoldEdgeLimits,
@@ -9,7 +9,7 @@ import {
     mergeTouchingMarks,
 } from "../holdExtent";
 
-/** Shaping a hold (fork #475): where a Held hold's edges may go, and touching holds joining. */
+/** Shaping a hold (fork #475): where a Held hold's end may go, and touching holds joining. */
 
 const mark = (marcherId: number, start: number, end: number, id = start) => ({
     id: marcherId * 1000 + id,
@@ -22,7 +22,6 @@ describe("holdEdgeLimits", () => {
     it("lets the end go from one count after the start to the next move", () => {
         expect(
             holdEdgeLimits({
-                edge: "end",
                 mark: { start: 17, end: 25 },
                 moves: [
                     { start: 9, end: 17 },
@@ -42,61 +41,60 @@ describe("holdEdgeLimits", () => {
     it("stops the end at the show's end when no move follows", () => {
         expect(
             holdEdgeLimits({
-                edge: "end",
                 mark: { start: 17, end: 25 },
                 moves: [{ start: 9, end: 17 }],
                 showEnd: 33,
             }),
         ).toMatchObject({ max: 33, maxBlock: "showEnd" });
     });
+});
 
-    it("can't move the start of a hold that grows out of its arrival", () => {
+describe("holdReachBack", () => {
+    const start = 33;
+    const showStart = 1;
+    const reach = (
+        rows: { start: number; end: number }[],
+        marks: { start: number; end: number }[] = [],
+    ) => holdReachBack({ start, rows, marks, showStart });
+
+    it("reaches the marcher's last row end before the hold", () => {
         expect(
-            holdEdgeLimits({
-                edge: "start",
-                mark: { start: 17, end: 25 },
-                moves: [{ start: 9, end: 17 }],
-                showEnd: 33,
-            }),
-        ).toBeNull();
+            reach([
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ]),
+        ).toEqual({ kind: "row", beat: 17 });
     });
 
-    it("moves a start from the starting spots anywhere back to the show's start", () => {
+    it("stops at its own earlier hold when that ends later", () => {
         expect(
-            holdEdgeLimits({
-                edge: "start",
-                mark: { start: 17, end: 25 },
-                moves: [{ start: 29, end: 33 }],
-                showEnd: 33,
-            }),
-        ).toEqual({
-            from: 17,
-            min: 0,
-            max: 24,
-            minBlock: "showStart",
-            maxBlock: "minimum",
-        });
+            reach([{ start: 9, end: 17 }], [{ start: 17, end: 25 }]),
+        ).toEqual({ kind: "hold", beat: 25 });
     });
 
-    it("moves a start that borrows its spot back to the last arrival only", () => {
-        const limits = holdEdgeLimits({
-            edge: "start",
-            mark: { start: 25, end: 33 },
-            moves: [{ start: 9, end: 17 }],
-            showEnd: 33,
-        })!;
-        expect(limits).toMatchObject({ min: 17, max: 25, only: [17, 25] });
-        expect(holdEdgeAllows(limits, 17)).toBe(true);
-        expect(holdEdgeAllows(limits, 21)).toBe(false);
-        expect(landHoldEdge(limits, 20)).toEqual({ beat: 17, blocked: null });
-        expect(landHoldEdge(limits, 23)).toEqual({ beat: 25, blocked: null });
+    it("stops at the last row end when that is later than an earlier hold's", () => {
+        expect(
+            reach([{ start: 21, end: 29 }], [{ start: 9, end: 17 }]),
+        ).toEqual({ kind: "row", beat: 29 });
+    });
+
+    it("reaches the start of the show for a marcher who never moved", () => {
+        expect(reach([])).toEqual({ kind: "show", beat: 1 });
+        expect(
+            holdReachBack({ start: 0, rows: [], marks: [], showStart: 1 }),
+        ).toEqual({ kind: "show", beat: 0 });
+    });
+
+    it("ignores rows and holds that end after it", () => {
+        expect(
+            reach([{ start: 41, end: 49 }], [{ start: 41, end: 49 }]),
+        ).toEqual({ kind: "show", beat: 1 });
     });
 });
 
 describe("landHoldEdge", () => {
     it("clamps to the limits and says what stopped it", () => {
         const limits = holdEdgeLimits({
-            edge: "end",
             mark: { start: 17, end: 25 },
             moves: [{ start: 29, end: 33 }],
             showEnd: 33,
@@ -116,13 +114,11 @@ describe("landHoldEdge", () => {
 describe("intersectHoldEdgeLimits", () => {
     it("keeps the tightest of several holds' limits, with what stops each side", () => {
         const a = holdEdgeLimits({
-            edge: "end",
             mark: { start: 17, end: 25 },
             moves: [{ start: 29, end: 33 }],
             showEnd: 40,
         });
         const b = holdEdgeLimits({
-            edge: "end",
             mark: { start: 21, end: 25 },
             moves: [],
             showEnd: 40,
@@ -138,7 +134,6 @@ describe("intersectHoldEdgeLimits", () => {
 
     it("gives null when one of them can't move", () => {
         const end = holdEdgeLimits({
-            edge: "end",
             mark: { start: 17, end: 25 },
             moves: [],
             showEnd: 40,
@@ -163,7 +158,6 @@ describe("mergeTouchingMarks and applyHoldEdgeDrag", () => {
         const marks = [mark(1, 9, 17), mark(1, 25, 33), mark(2, 9, 17)];
         expect(
             applyHoldEdgeDrag(marks, {
-                edge: "end",
                 from: 17,
                 to: 25,
                 marcherIds: [1],
@@ -173,7 +167,7 @@ describe("mergeTouchingMarks and applyHoldEdgeDrag", () => {
 });
 
 describe("holdEdgeHandles", () => {
-    it("one handle per edge and beat for the selected marchers, none where an edge can't move", () => {
+    it("one handle per end for the selected marchers, none where an end can't move", () => {
         const handles = holdEdgeHandles({
             marcherIds: [2, 1],
             // Both arrive at 17 and stand still to the end; 3 isn't selected
@@ -183,7 +177,6 @@ describe("holdEdgeHandles", () => {
         });
         expect(handles).toEqual([
             {
-                edge: "end",
                 beat: 33,
                 marcherIds: [2, 1],
                 limits: {

@@ -188,7 +188,7 @@ describe("withHoldKind (#478)", () => {
             { beat: 17, name: "3" },
             { beat: 25, name: "4" },
         ];
-        // Arrived on page 2; page 3 Not defined; Hold from previous page on page 4: (17, 25]
+        // Arrived on page 2; page 3 Not defined; Hold from last keyframe on page 4: (17, 25]
         expect(
             withHoldKind(holding, {
                 held: heldSince(17, flags),

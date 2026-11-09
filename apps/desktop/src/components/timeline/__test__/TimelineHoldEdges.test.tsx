@@ -67,11 +67,9 @@ const PAGES = [
 
 /** Marcher 7's hold's end at spec `end` */
 const endAt = (end: number): HoldEdgeHandle => ({
-    edge: "end",
     beat: end,
     marcherIds: [7],
     limits: holdEdgeLimits({
-        edge: "end",
         mark: { start: 9, end },
         moves: [
             { start: 1, end: 9 },
@@ -166,7 +164,6 @@ describe("Held bar edges", () => {
         pointer(handle()!, "pointermove", 141);
         // View 14 is spec 15: page 2's count 6
         expect(preview).toHaveBeenLastCalledWith({
-            edge: "end",
             from: 13,
             to: 15,
             marcherIds: [7],
@@ -178,7 +175,6 @@ describe("Held bar edges", () => {
         });
         expect(commit).toHaveBeenCalledTimes(1);
         expect(commit).toHaveBeenCalledWith({
-            edge: "end",
             from: 13,
             to: 15,
             marcherIds: [7],
@@ -220,7 +216,7 @@ describe("Held bar edges", () => {
         pointer(handle()!, "pointermove", 122);
         pointer(handle()!, "pointerup", 122);
         expect(preview).not.toHaveBeenCalledWith(
-            expect.objectContaining({ edge: "end" }),
+            expect.objectContaining({ marcherIds: [7] }),
         );
         expect(commit).not.toHaveBeenCalled();
     });

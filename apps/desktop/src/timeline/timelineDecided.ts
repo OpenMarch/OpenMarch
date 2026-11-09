@@ -21,9 +21,6 @@ import type { CarrySpan } from "./timelineCarryForward";
  * Each marcher's decided stretches are worked out once per resolver version and set of marks
  * (`marcherDecided`) and looked up per count (`isDecidedAt`, `notDefinedAt`), as the Set beats
  * are (`timelineSetFollowing.ts`).
- *
- * Seam for borrowed holds (#474): a borrowed hold is decided as a Held one is. When #474 stores
- * them, pass them in with the marks; naming a borrowed hold's source on hover belongs to #474.
  */
 
 /** A stretch of counts `(start, end]` where a marcher is decided. */

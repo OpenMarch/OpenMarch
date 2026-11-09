@@ -32,7 +32,7 @@ export const HOLD_TERM_KEYS = {
     defineAsShown: ["timeline.terms.defineAsShown", "Define as shown"],
     holdFromPrevious: [
         "timeline.terms.holdFromPrevious",
-        "Hold from previous page",
+        "Hold from last keyframe",
     ],
     clearThisPage: ["timeline.terms.clearThisPage", "Clear this page"],
     removeKeyframe: ["timeline.terms.removeKeyframe", "Remove keyframe"],

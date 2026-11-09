@@ -30,6 +30,10 @@ export interface PageGrid {
     pages: GridPage[];
 }
 
+/** Where the show starts: the first page after page 0's one beat. */
+export const showStartBeat = (grid: PageGrid): number =>
+    grid.pages.find((p) => p.id !== 0)?.start ?? 0;
+
 /**
  * Reads the page grid. It mirrors `fromDatabasePages` (`src/global/classes/Page.ts`): pages in
  * start-beat order; page 0 is its one beat; a page runs to the next page's start, and the last

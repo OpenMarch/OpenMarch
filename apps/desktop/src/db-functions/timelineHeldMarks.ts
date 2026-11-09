@@ -107,10 +107,10 @@ export async function dropShapeHomeHoldsInTransaction(
  * and the rest.
  *
  * A Held marcher's edit is the edit of the move that arrives at its hold's start (`readArrival`),
- * so setting that move's ending moves the arrival and the whole hold with it. A marcher Held at
- * `beat` with no such move (a borrowed hold, which only #474 makes) stays with the rest. One whose
- * arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
- * alone and named in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436):
+ * so setting that move's ending moves the arrival and the whole hold with it. Every hold grows out
+ * of a move or the starting spot (owner, 2026-11-09), and the upkeep keeps it so; a marcher Held
+ * at `beat` with neither stays with the rest. One whose arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
+ * alone and named in `skipped`, as Hold from last keyframe skips it (owner's rule, #434 / #436):
  * a later edit, such as a shape placed on the arrival's page, can make it one.
  *
  * A marcher Held from its starting spot (`readArrival`, `HOME_ARRIVAL`) goes in `homes`: its edit
@@ -225,9 +225,8 @@ export async function marcherRecipeTimelines(
 /**
  * **Clear this page** for Held marchers (#472): the part of each of `marcherIds`' marks over `box`
  * goes, so the page is Not set for them. A part before the box stays (its arrival is unchanged); a
- * part after it would have nothing arriving at its start, so it goes too (dropped when its
- * arrival is gone, `keepHeldMarksTrueInTransaction`), and is reported in `later` so the toast
- * can say so.
+ * part after it goes too, since clearing a page clears the hold (#472, #566), and is reported in
+ * `later` so the toast can say so.
  *
  * @returns `marchers`, those whose marks changed, ascending, and `later`, the marchers whose
  *   hold on later pages went too, each at the box's end

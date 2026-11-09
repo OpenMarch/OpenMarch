@@ -285,7 +285,7 @@ export interface TimelineProps {
     readonly pageMoves?: ReadonlySet<string | number>;
     /** The page box menu's **Set as shown** (holds, fork #466) */
     readonly setAsShown?: TimelineSetAsShownMenu;
-    /** **Hold from previous page** on a page box (holds, fork #472) */
+    /** **Hold from last keyframe** on a page box (holds, fork #472) */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
     /** **Clear Page N** on a page box (#573) */
     readonly clearPage?: TimelineClearPageMenu;
@@ -1006,7 +1006,6 @@ export function Timeline(props: TimelineProps) {
         const dragOf = (index: number, beat: number, from?: number) => {
             const handle = holdEdges.handles[index]!;
             return {
-                edge: handle.edge,
                 from: from === undefined ? handle.beat : axis.toSpec(from),
                 to: axis.toSpec(beat),
                 marcherIds: handle.marcherIds,
@@ -1021,9 +1020,6 @@ export function Timeline(props: TimelineProps) {
                     from: toView(handle.limits.from),
                     min: toView(handle.limits.min),
                     max: toView(handle.limits.max),
-                    ...(handle.limits.only
-                        ? { only: handle.limits.only.map(toView) }
-                        : {}),
                 },
             })),
             onPreview: (index, beat) =>

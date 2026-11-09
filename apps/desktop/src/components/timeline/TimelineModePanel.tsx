@@ -292,7 +292,7 @@ export default function TimelineModePanel() {
     );
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
-    // Holds: Define as shown (#466) and Hold from previous page (#472) on a page box, the same
+    // Holds: Define as shown (#466) and Hold from last keyframe (#472) on a page box, the same
     // commands the timelineDefineAsShown and timelineHoldFromPrevious actions run on the current page
     const {
         defineAsShown: setAsShown,

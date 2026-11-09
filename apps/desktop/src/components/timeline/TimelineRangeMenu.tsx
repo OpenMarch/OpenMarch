@@ -1,6 +1,7 @@
 import {
     createContext,
     useContext,
+    useEffect,
     useId,
     useState,
     type MouseEvent,
@@ -79,6 +80,7 @@ export function MenuItemWithReason({
     reason,
     reasonTestId,
     onSelect,
+    onHighlight,
     className = MENU_ITEM_CLASS,
     checked,
     children,
@@ -87,6 +89,8 @@ export function MenuItemWithReason({
     reason: string | null;
     reasonTestId: string;
     onSelect: () => void;
+    /** The pointer or keys came onto the entry (true) or left it (false) */
+    onHighlight?: (on: boolean) => void;
     className?: string;
     checked?: boolean;
     children: ReactNode;
@@ -113,8 +117,14 @@ export function MenuItemWithReason({
                     event.preventDefault();
                     setOpen(true);
                 }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setOpen(false)}
+                onFocus={() => {
+                    setOpen(true);
+                    onHighlight?.(true);
+                }}
+                onBlur={() => {
+                    setOpen(false);
+                    onHighlight?.(false);
+                }}
                 className={className}
             >
                 {unavailable ? (
@@ -193,6 +203,12 @@ function HoldCommandItem({
 }) {
     const entry = menu.entryOn?.(pageId);
     const label = name;
+    const preview = reason === null ? menu.onPreview : undefined;
+    // The menu closing takes the entry away without a blur
+    useEffect(
+        () => (preview ? () => preview(pageId, false) : undefined),
+        [preview, pageId],
+    );
     if (entry?.checked)
         return (
             <DropdownMenu.CheckboxItem
@@ -213,6 +229,7 @@ function HoldCommandItem({
             reason={reason}
             reasonTestId={`${testId}-reason`}
             onSelect={() => menu.onSet(pageId)}
+            onHighlight={preview && ((on) => preview(pageId, on))}
         >
             {icon}
             {label}
@@ -423,7 +440,7 @@ export interface TimelinePageMenu {
      */
     readonly setAsShown?: TimelineSetAsShownMenu;
     /**
-     * **Hold from previous page** on a page box (holds, fork #472). Without it, the menu has no
+     * **Hold from last keyframe** on a page box (holds, fork #472). Without it, the menu has no
      * such entry.
      */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
@@ -472,6 +489,8 @@ export interface TimelinePageCommandMenu {
      * would change for its label
      */
     readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
+    /** Shows (`on`) or stops what the entry would do on the page, while it's highlighted */
+    readonly onPreview?: (pageId: string | number, on: boolean) => void;
 }
 
 /** The page box menu's **Clear Page N** entries (#573), by page id. */

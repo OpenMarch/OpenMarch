@@ -36,7 +36,7 @@ describe("holdTerms", () => {
             notDefined: "Not defined",
             notDefinedLower: "not defined",
             defineAsShown: "Define as shown",
-            holdFromPrevious: "Hold from previous page",
+            holdFromPrevious: "Hold from last keyframe",
             clearThisPage: "Clear this page",
             removeKeyframe: "Remove keyframe",
             splitHold: "Split hold here",

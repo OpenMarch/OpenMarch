@@ -157,7 +157,7 @@ afterEach(() => {
 });
 
 describe("hold actions", () => {
-    it("Hold from previous page: the action on the current page does what the page box menu does there", async () => {
+    it("Hold from last keyframe: the action on the current page does what the page box menu does there", async () => {
         const ids = [1, 2];
         mount(ids);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(true);
@@ -256,14 +256,14 @@ const heldOnPage3 = (marcherId: number) => ({
 });
 
 describe("the field menu shows the selection's state on the current page", () => {
-    it("all Held: Hold from previous page is checked, and off for the palette and H too", () => {
+    it("all Held: Hold from last keyframe is checked, and off for the palette and H too", () => {
         // Marcher 1 has no move on page 3; its mark makes it Held there
         useHeldMarksStore.setState({ marks: [heldOnPage3(1)] });
         openFieldMenu([1]);
         const hold = entry("timelineHoldFromPrevious");
         expect(hold).toHaveAttribute("aria-checked", "true");
         expect(hold).toHaveAttribute("data-disabled");
-        expect(hold).toHaveTextContent(/^Hold from previous page/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe/);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(isActionChecked("timelineHoldFromPrevious")).toBe(true);
         expect(runAction("timelineHoldFromPrevious")).toBe(false);
@@ -286,7 +286,7 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(isActionEnabled("timelineDefineAsShown")).toBe(true);
         // Ctrl+H after it is its shortcut (the test runs as Windows/Linux)
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
-            /^Hold from previous page.*Ctrl\+H$/,
+            /^Hold from last keyframe.*Ctrl\+H$/,
         );
         // #573: it names the page
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(
