@@ -600,14 +600,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
                 file = null;
             }
         }
-        if (!file)
-            return {
-                success: false,
-                error: {
-                    message:
-                        "insertAudioFile: Operation was cancelled or no audio file was provided",
-                },
-            };
+        if (!file) return { success: false, cancelled: true };
         const response = await invokeWorker<{
             success: boolean;
             error?: { message?: string };

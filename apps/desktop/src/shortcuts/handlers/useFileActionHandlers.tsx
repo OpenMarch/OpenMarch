@@ -125,6 +125,7 @@ export function useFileActionHandlers() {
 
                 const response =
                     await window.electron.launchInsertAudioFileDialogue();
+                if (response?.cancelled) return;
                 if (response?.success) {
                     AudioFile.getSelectedAudioFile().then((audioFile) => {
                         const selectedAudioFileWithoutAudio = {

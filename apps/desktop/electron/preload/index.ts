@@ -477,9 +477,9 @@ const APP_API = {
 
     // Audio File
     launchInsertAudioFileDialogue: () =>
-        ipcRenderer.invoke("audio:insert") as Promise<
-            DbServices.LegacyDatabaseResponse<AudioFile[]>
-        >,
+        ipcRenderer.invoke(
+            "audio:insert",
+        ) as Promise<DbServices.AudioInsertResponse>,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,
     getSelectedAudioFile: () =>
