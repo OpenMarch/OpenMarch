@@ -7,6 +7,7 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     heldSince,
     marcherHoldState,
+    readsHeld,
     sharedHoldState,
     withHoldKind,
     type HoldState,
@@ -14,6 +15,7 @@ import {
 } from "@/timeline/timelineHoldState";
 import { holdTerms } from "@/timeline/holdTerms";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { carriedSince } from "@/timeline/timelineCarried";
 import {
     placedBoxesAt,
     usePlacedBoxStore,
@@ -28,10 +30,7 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
-import { getButtonClassName } from "@openmarch/ui";
-import ActionButton from "@/shortcuts/ActionButton";
 import { useExpertHolds } from "@/timeline/useExpertHolds";
-import type { DragOutcome, DragPreview } from "@/timeline/holdDragPreview";
 
 /**
  * The selection's state on the current page, in timeline mode (docs/timeline/ui.md UI-18):
@@ -62,16 +61,14 @@ export function useSelectionHoldState(
             name: f.page.name,
         }));
         void ends; // placedBoxesAt reads the end beats from the store
-        let carried: Set<number> | null = null;
+        // Where the shape carried onto the flag with the marcher in it was placed or last laid out
+        let carried: Map<number, number> | null = null;
         const carriedOnFlag = (id: number) => {
-            carried ??= new Set(
-                placedBoxesAt(current.flag, recipes).flatMap((box) =>
-                    box.recipe.members.map((m) => m.marcherId),
-                ),
-            );
-            return carried.has(id);
+            carried ??= carriedSince(placedBoxesAt(current.flag, recipes));
+            const placed = carried.get(id);
+            return placed === undefined ? null : heldSince(placed, flags);
         };
-        // Where the Held mark over the flag starts (Hold from previous page: this page only, R3)
+        // Where the Held mark over the flag starts (Hold from last keyframe: this page only, R3)
         const heldOnFlag = (id: number) => {
             const mark = marks.find(
                 (m) =>
@@ -116,13 +113,13 @@ const LINK_CLASS =
  * move on the current page or hold there, with a link to the page they last moved on
  * (defined-coordinates 08: readable, and visibly a link). A hold names its state in the working
  * words (`holdTerms`, fork #478): "Not defined · showing Page 2", or "Held · since Page 3" for the
- * page its Held mark starts on (holds review R3); a carried
- * shape, or a mix, keeps "Last moved on Page 2". Nothing where they don't agree.
+ * page its Held mark starts on (holds review R3). A carried shape's members read Held too, since
+ * the page the shape was placed or last laid out on (owner, holds wave 2), and the link goes
+ * there. A mix of Held and Not defined keeps "Last moved on Page 2". Nothing where they don't
+ * agree.
  *
- * With some selected marchers Held at the playhead (fork #476; holds review R1, 04-anchors
- * "Display"), it also says, before a drag, what the drag will do (`DragPreviewLines`): how many
- * are Held where only some are, with **Make all selected Held**, and what a drag does to each
- * kind. No toast: a mixed drag edits each marcher by its own kind.
+ * Where only some of the selection is Held at the playhead (fork #476; holds review R1), it also
+ * says how many: "1 of 2 selected Held". A mixed drag edits each marcher by its own kind.
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -156,7 +153,7 @@ export default function TimelineHoldLine({
                             ? t("inspector.marcher.timeline.goToStart", {
                                   defaultValue: "Go to the start",
                               })
-                            : state.how === "held"
+                            : readsHeld(state.how)
                               ? t("inspector.marcher.timeline.goToHeldPage", {
                                     defaultValue:
                                         "Go to Page {page}, where this hold starts",
@@ -188,103 +185,25 @@ export default function TimelineHoldLine({
             </p>
         );
     }
-    const preview = expert.preview && (
-        <DragPreviewLines
-            preview={expert.preview}
-            canMakeHeld={expert.makeHeld > 0}
-        />
+    const heldCount = expert.partlyHeld && (
+        <p
+            className="text-body text-text px-6 leading-none"
+            data-testid="timeline-held-count"
+        >
+            {t("inspector.marcher.timeline.heldOfSelected", {
+                defaultValue: "{count} of {total} selected {held}",
+                ...holdTerms(),
+                count: expert.partlyHeld.held,
+                total: expert.partlyHeld.total,
+            })}
+        </p>
     );
-    if (!line && !preview) return null;
+    if (!line && !heldCount) return null;
     return (
         <TransportTooltipProvider disableHoverableContent>
             {line}
-            {preview}
+            {heldCount}
         </TransportTooltipProvider>
-    );
-}
-
-/** One thing a drag would do, as the inspector says it. */
-function outcomeText(t: Translate, outcome: DragOutcome): string {
-    if (outcome.kind === "endsHold")
-        return t("inspector.marcher.timeline.dragEndsHold", {
-            defaultValue: "adds a move on Page {page} · ends the hold",
-            page: outcome.page,
-        });
-    if (outcome.kind === "addsMove")
-        return t("inspector.marcher.timeline.dragAddsMove", {
-            defaultValue: "adds a move on Page {page}",
-            page: outcome.page,
-        });
-    if (outcome.page === null)
-        return t("inspector.marcher.timeline.dragMovesStart", {
-            defaultValue: "moves the starting position",
-        });
-    return t("inspector.marcher.timeline.dragMovesPage", {
-        defaultValue: "moves Page {page}'s position",
-        page: outcome.page,
-    });
-}
-
-/**
- * What a drag at the playhead will do, before it starts (fork #476): "1 of 2 selected Held" with
- * **Make all selected Held** where only some are Held, then "Drag: moves Page 2's position · adds a
- * move on Page 4".
- */
-function DragPreviewLines({
-    preview,
-    canMakeHeld,
-}: {
-    preview: DragPreview;
-    canMakeHeld: boolean;
-}) {
-    const { t } = useTranslate();
-    const mixed = preview.held < preview.total;
-    return (
-        <div
-            className="flex flex-col gap-6 px-6"
-            data-testid="timeline-drag-preview"
-        >
-            {mixed && (
-                <div className="flex flex-wrap items-center gap-8">
-                    <p
-                        className="text-body text-text leading-none"
-                        data-testid="timeline-held-count"
-                    >
-                        {t("inspector.marcher.timeline.heldOfSelected", {
-                            defaultValue: "{count} of {total} selected {held}",
-                            ...holdTerms(),
-                            count: preview.held,
-                            total: preview.total,
-                        })}
-                    </p>
-                    {canMakeHeld && (
-                        <ActionButton
-                            action="timelineMakeSelectedHeld"
-                            className={getButtonClassName({
-                                variant: "secondary",
-                                size: "compact",
-                            })}
-                        >
-                            {t("inspector.marcher.timeline.makeSelectedHeld", {
-                                defaultValue: "Make all selected {held}",
-                                ...holdTerms(),
-                            })}
-                        </ActionButton>
-                    )}
-                </div>
-            )}
-            <p
-                className="text-sub text-text-subtitle leading-none"
-                data-testid="timeline-drag-outcomes"
-            >
-                {t("inspector.marcher.timeline.dragPreview", {
-                    defaultValue: "Drag: {outcomes}",
-                    outcomes: preview.outcomes
-                        .map((o) => outcomeText(t, o))
-                        .join(" · "),
-                })}
-            </p>
-        </div>
     );
 }
 
@@ -307,7 +226,7 @@ function holdText(
                   ...holdTerms(),
                   page: page.name,
               });
-    if (how === "held")
+    if (readsHeld(how))
         return fromStart
             ? t("inspector.marcher.timeline.heldFromStart", {
                   defaultValue: "{held} · since the start",

@@ -997,20 +997,7 @@ from it. The spec still wins on the model; this file decides presentation.
     on the field are gone, and a file's kept table is dropped (its undo and redo history too, where
     that history named the table). Pages after a set page follow it. Marchers that have never moved
     follow the start, so they can be set too, ahead of any move (wp19): a later first move then
-    doesn't reach that page. They get no chain on the page boxes (lead, wp19: it showed on every
-    box); the inspector and the page box menu offer Set as shown.
-    - **Chains on the page boxes.** With marchers selected, a page box they follow into (Not set)
-      can show a chain as a quiet outline. Nothing shows without a selection (owner). It shows only
-      on the selected page and while its box is hovered (V-223). The chain sits at the bottom left of
-      its box, 14 px in from the flag before it (past the start flag's pennant; the playhead's **+**
-      moves past any chain it would cover, also from a beat before the flag zoomed out): 16 px where
-      the page number leaves room, else 12 px. It never covers the number (owner, 2026-10-12). Where
-      it can't fit, the box's tooltip takes its words, ending "Right-click the page to …" (V-222).
-      Its tooltip names the marchers a click changes, up to three ("OT1, OT2 and 4 others" past
-      that): "OT1 and OT8 hold where Page 2 left them · Changes to Page 2 carry onto Page 3. Click to
-      set them as shown here instead". It counts the selection only. A click sets exactly those
-      marchers as shown, as one undo step. A press never selects, scrubs or drags the box, and a
-      right-click opens the box's menu. The Not-set bars of #477 replace the chain.
+    doesn't reach that page. The inspector and the page box menu offer Set as shown.
     - **The inspector line** on a page they follow into: "Hold from Page 2 → · **Set as shown**" (or
       "Hold from the start → · **Set as shown**"). The link's tooltip says "Go to Page 2, where these
       marchers last moved". Mixed selections say "Some of these marchers hold here", with the button
@@ -1020,6 +1007,9 @@ from it. The spec still wins on the model; this file decides presentation.
       follow from this page: "Pages 3–4 follow these marchers" ("…some of these marchers" when not
       all follow into all of them). Marchers that haven't moved yet don't count there: every later
       page follows them.
+    - **No chains on the page boxes** (owner, holds decision 12; removed 2026-11-09, ADR 0012
+      amendment). The dashed Not-set bars of #477 show where the selected marchers have no position
+      of their own, and right-clicking a bar or a page box offers **Define as shown**.
     - **The page box menu** has **Set as shown** (holds, #466) above the deletes. It doesn't show
       without a selection.
     - **After an edit: "Pages 3–4 followed" · Only Page 2.** When an edit changes an existing move on
@@ -1030,14 +1020,12 @@ from it. The spec still wins on the model; this file decides presentation.
       silent, because its later pages following is what the designer meant. Consecutive nudges share
       one toast, and Only Page 2 goes back to before the first (V-184). The pass-through and **Move
       them too** toasts win.
-  - **The page box's words are a tooltip** (a narrow box's chain words: a label and a hint, after a
-    short hover or on keyboard focus; a press closes it), like the transport's tooltips (UI-17).
   - **Page mode** (until the flip) gets the same rule on its dense rows. An edit on page N also
     moves the run of later pages that still equal the old position, per marcher, compared within
     1e-6. The run stops at a different value, a page shape or the marcher's own pathway. Shape edits
     carry forward too (owner). A new page no longer shares the previous page's curved pathway.
   - Deferred: a stored "lock here" for every later page (an Eos-style block), look-preserving
-    ripple delete, live return links, hold marks and chains without a selection, and
+    ripple delete, live return links, hold marks without a selection, and
     "Hold" on coordinate sheets. Marchers are never "pinned": the start flag owns that word.
 - **UI-19: Basic and Expert modes (project owner, 2026-10-11).** The page-box timeline becomes a
   first-class **Basic** mode beside the full timeline (**Expert**). Basic is a UI over timeline data,

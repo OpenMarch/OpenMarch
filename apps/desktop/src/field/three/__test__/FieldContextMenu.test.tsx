@@ -108,6 +108,26 @@ describe("FieldContextMenu", () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    it("previews an entry while highlighted, and stops on leaving it or the menu closing", () => {
+        const preview = vi.fn();
+        handlers.push(
+            registerActionHandler("timelineHoldFromPrevious", {
+                run: vi.fn(),
+                isEnabled: () => true,
+                preview,
+            }),
+        );
+        open({ timelineMode: true });
+        const entry = item("timelineHoldFromPrevious")!;
+        fireEvent.focus(entry);
+        expect(preview).toHaveBeenLastCalledWith(true);
+        fireEvent.blur(entry);
+        expect(preview).toHaveBeenLastCalledWith(false);
+        fireEvent.focus(entry);
+        cleanup();
+        expect(preview).toHaveBeenLastCalledWith(false);
+    });
+
     it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
         const run = handle("alignHorizontally", { enabled: false });
         open();
@@ -136,9 +156,7 @@ describe("FieldContextMenu", () => {
             [
                 "timelineHoldFromPrevious",
                 "timelineHoldOverWindow",
-                "timelineMakeSelectedHeld",
                 "setSelectedMarchersToPreviousPage",
-                "setSelectedMarchersToNextPage",
             ],
             [
                 "alignHorizontally",
@@ -146,11 +164,12 @@ describe("FieldContextMenu", () => {
                 "evenlyDistributeHorizontally",
                 "evenlyDistributeVertically",
                 "swapMarchers",
+                "setSelectedMarchersToNextPage",
             ],
             ["selectAllMarchers"],
         ]);
         expect(item("timelineHoldFromPrevious")).toHaveTextContent(
-            "Hold from previous page",
+            "Hold from last keyframe",
         );
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (selected)",
@@ -158,18 +177,30 @@ describe("FieldContextMenu", () => {
         expect(item("timelineHoldOverWindow")).toHaveTextContent(
             "Hold from start flag to playhead",
         );
-        expect(item("timelineMakeSelectedHeld")).toHaveTextContent(
-            "Make all selected Held",
+        expect(item("setSelectedMarchersToNextPage")).toHaveTextContent(
+            "Move to next page's spots (selected)",
         );
     });
 
-    it("shows the Expert hold tools only while they're available (#476)", () => {
+    it("keeps room for a check only in front of the page state commands", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        open();
+        // The check slot is a fixed-width span ahead of the words
+        const hasCheckSlot = (id: ActionId) =>
+            item(id)!.firstElementChild?.classList.contains("w-[14px]") ??
+            false;
+        expect(hasCheckSlot("timelineHoldFromPrevious")).toBe(true);
+        expect(hasCheckSlot("setSelectedMarchersToPreviousPage")).toBe(true);
+        // Move to next page's spots is an edit, with the arranging commands
+        expect(hasCheckSlot("setSelectedMarchersToNextPage")).toBe(false);
+        expect(hasCheckSlot("alignHorizontally")).toBe(false);
+    });
+
+    it("shows Hold from start flag to playhead only while it's available (#476)", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("timelineHoldOverWindow", { enabled: false });
-        handle("timelineMakeSelectedHeld", { enabled: false });
         open();
         expect(item("timelineHoldOverWindow")).toBeNull();
-        expect(item("timelineMakeSelectedHeld")).toBeNull();
         expect(item("timelineHoldFromPrevious")).not.toBeNull();
     });
 
@@ -204,7 +235,7 @@ describe("FieldContextMenu", () => {
         expect(entry).toHaveAttribute("role", "menuitemcheckbox");
         expect(entry).toHaveAttribute("aria-checked", "true");
         expect(entry).toHaveAttribute("data-disabled");
-        expect(entry).toHaveTextContent(/^Hold from previous page/);
+        expect(entry).toHaveTextContent(/^Hold from last keyframe/);
         fireEvent.click(entry);
         expect(hold).not.toHaveBeenCalled();
         expect(item("setSelectedMarchersToPreviousPage")).not.toHaveAttribute(
@@ -214,14 +245,14 @@ describe("FieldContextMenu", () => {
 
     it("shows a mixed selection's count in the label, and runs", () => {
         const hold = handle("timelineHoldFromPrevious", {
-            label: "Hold from previous page (3 of 5)",
+            label: "Hold from last keyframe (3 of 5)",
         });
         handle("setSelectedMarchersToPreviousPage", {
             label: "Clear this page (2 of 5 selected)",
         });
         open();
         const entry = item("timelineHoldFromPrevious")!;
-        expect(entry).toHaveTextContent("Hold from previous page (3 of 5)");
+        expect(entry).toHaveTextContent("Hold from last keyframe (3 of 5)");
         expect(entry).not.toHaveAttribute("data-disabled");
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (2 of 5 selected)",

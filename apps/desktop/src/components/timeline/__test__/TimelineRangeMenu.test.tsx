@@ -172,6 +172,7 @@ describe("the page box menu's hold commands", () => {
     ) => {
         const runHold = vi.fn(async () => ({ held: [], skipped: [] }));
         const runDefine = vi.fn();
+        const onPreview = vi.fn();
         render(
             <Timeline
                 mode="expanded"
@@ -183,25 +184,41 @@ describe("the page box menu's hold commands", () => {
                 selection={null}
                 onSelectionChange={vi.fn()}
                 setAsShown={setAsShownMenu(states, runDefine, marks)}
-                holdFromPrevious={holdFromPreviousMenu(
-                    states,
-                    marcherIds,
-                    undefined,
-                    runHold,
-                    marks,
-                )}
+                holdFromPrevious={{
+                    ...holdFromPreviousMenu(
+                        states,
+                        marcherIds,
+                        undefined,
+                        runHold,
+                        marks,
+                    ),
+                    onPreview,
+                }}
             />,
         );
         fireEvent.contextMenu(screen.getByRole("button", { name: "Page 2" }));
         return {
             runHold,
             runDefine,
+            onPreview,
             define: screen.getByTestId("timeline-range-menu-set-as-shown"),
             hold: screen.getByTestId("timeline-range-menu-hold-from-previous"),
         };
     };
 
-    it("all Held: Hold from previous page is checked and does nothing", () => {
+    it("Hold from last keyframe previews while highlighted, and stops on leaving it", () => {
+        const { hold, onPreview } = openMenu(
+            [state({ follows: [1], selected: 1 })],
+            [1],
+            [],
+        );
+        fireEvent.focus(hold);
+        expect(onPreview).toHaveBeenLastCalledWith("3", true);
+        fireEvent.blur(hold);
+        expect(onPreview).toHaveBeenLastCalledWith("3", false);
+    });
+
+    it("all Held: Hold from last keyframe is checked and does nothing", () => {
         const { hold, define, runHold, runDefine } = openMenu(
             [state({ follows: [1, 2], selected: 2 })],
             [1, 2],
@@ -210,7 +227,7 @@ describe("the page box menu's hold commands", () => {
         expect(hold).toHaveAttribute("role", "menuitemcheckbox");
         expect(hold).toHaveAttribute("aria-checked", "true");
         expect(hold).toHaveAttribute("data-disabled");
-        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe$/);
         fireEvent.click(hold);
         expect(runHold).not.toHaveBeenCalled();
         // Define as shown leaves Held marchers alone: unavailable, saying why, not checked
@@ -232,7 +249,7 @@ describe("the page box menu's hold commands", () => {
             [1, 2, 3, 4, 5],
             [mark(1)],
         );
-        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe$/);
         expect(hold).not.toHaveAttribute("aria-disabled");
         expect(define).toHaveTextContent(/^Define as shown$/);
         expect(define).not.toHaveAttribute("aria-disabled");
@@ -250,7 +267,7 @@ describe("the page box menu's hold commands", () => {
             [1, 2],
             [],
         );
-        expect(hold).toHaveTextContent(/^Hold from previous page$/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe$/);
         expect(define).toHaveTextContent(/^Define as shown$/);
         expect(hold).not.toHaveAttribute("aria-disabled");
         expect(define).not.toHaveAttribute("aria-disabled");

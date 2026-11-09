@@ -32,7 +32,7 @@ export const HOLD_TERM_KEYS = {
     defineAsShown: ["timeline.terms.defineAsShown", "Define as shown"],
     holdFromPrevious: [
         "timeline.terms.holdFromPrevious",
-        "Hold from previous page",
+        "Hold from last keyframe",
     ],
     holdOverWindow: [
         "timeline.terms.holdOverWindow",
@@ -40,6 +40,7 @@ export const HOLD_TERM_KEYS = {
     ],
     clearThisPage: ["timeline.terms.clearThisPage", "Clear this page"],
     removeKeyframe: ["timeline.terms.removeKeyframe", "Remove keyframe"],
+    splitHold: ["timeline.terms.splitHold", "Split hold here"],
 } as const satisfies Record<string, readonly [string, string]>;
 
 export type HoldTerm = keyof typeof HOLD_TERM_KEYS;

@@ -7,24 +7,22 @@ import {
     type HoldOverWindowResult,
     type HoldOverWindowSkipReason,
 } from "@/db-functions/timelineHoldOverWindow";
-import {
-    makeSelectedHeld,
-    type MakeHeldResult,
-    type MakeHeldSkipReason,
-} from "@/db-functions/timelineMakeHeld";
 import { marcherNamesText, type MarcherNameOf } from "./timelineKeepLater";
 import { toastTimelineError } from "./timelineErrorMessages";
 import { holdTerms } from "./holdTerms";
+import { holdOverWindowStart } from "./holdExtent";
+import type { BeatRange, HoldLight } from "./timelineHoldBars";
+import type { HeldMark } from "@/db-functions/timelineHeldMarks";
 
 /**
- * The Expert hold tools as the UI runs them (holds, fork #476): **Hold over the window** (the
- * start flag to the playhead) and **Make all selected Held**. Each is one undo step and says
- * nothing when it holds everyone it was given: the timeline and the field show the hold. Only the
- * marchers it left alone get a toast, naming them and why (a shape or follow-the-leader member
- * keeps refusing, with a reason, until #434 / #504). A refusal is a toast, never thrown.
+ * **Hold over the window** (the start flag to the playhead; holds, fork #476) as the UI runs it.
+ * One undo step, and it says nothing when it holds everyone it was given: the timeline and the
+ * field show the hold. Only the marchers it left alone get a toast, naming them and why (a shape
+ * or follow-the-leader member keeps refusing, with a reason, until #434 / #504). A refusal is a
+ * toast, never thrown.
  */
 
-type SkipReason = HoldOverWindowSkipReason | MakeHeldSkipReason;
+type SkipReason = HoldOverWindowSkipReason;
 
 /** Why a marcher wasn't held, as the toast says it, by reason. */
 const SKIP_WORDS: Record<SkipReason, { key: string; defaultValue: string }> = {
@@ -32,14 +30,6 @@ const SKIP_WORDS: Record<SkipReason, { key: string; defaultValue: string }> = {
         key: "timeline.expertHolds.held",
         defaultValue:
             "{names}: already {heldLower} from the start flag to the playhead",
-    },
-    moving: {
-        key: "timeline.expertHolds.moving",
-        defaultValue: "{names}: partway through a move at the playhead",
-    },
-    defined: {
-        key: "timeline.expertHolds.defined",
-        defaultValue: "{names}: {definedLower} at the playhead",
     },
     shape: {
         key: "timeline.expertHolds.shape",
@@ -70,18 +60,19 @@ const SKIP_WORDS: Record<SkipReason, { key: string; defaultValue: string }> = {
         defaultValue:
             "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
     },
-    noArrival: {
-        key: "timeline.expertHolds.noArrival",
-        defaultValue: "{names}: no move ends where the hold would start",
+    endsWithoutArriving: {
+        key: "timeline.expertHolds.endsWithoutArriving",
+        defaultValue:
+            "{names}: the last move before the start flag ends without arriving there",
     },
 };
 
 /**
- * What the toast after an Expert hold tool says about the marchers it left alone, or null when it
+ * What the toast after Hold over the window says about the marchers it left alone, or null when it
  * held everyone (no toast).
  */
 export function expertHoldSkipMessage(
-    result: HoldOverWindowResult | MakeHeldResult,
+    result: HoldOverWindowResult,
     nameOf: MarcherNameOf | undefined,
 ): { title: string; description: string } | null {
     if (result.skipped.length === 0) return null;
@@ -114,16 +105,6 @@ export function expertHoldSkipMessage(
     };
 }
 
-const say = <R extends HoldOverWindowResult | MakeHeldResult>(
-    result: R,
-    nameOf: MarcherNameOf | undefined,
-): R => {
-    const message = expertHoldSkipMessage(result, nameOf);
-    if (message)
-        toast.info(message.title, { description: message.description });
-    return result;
-};
-
 /** **Hold over the window** `[start, end)` for `marcherIds` (`holdOverWindow`). */
 export async function holdOverWindowOn(
     window: { start: number; end: number },
@@ -132,30 +113,55 @@ export async function holdOverWindowOn(
     database: DbConnection = db,
 ): Promise<HoldOverWindowResult> {
     try {
-        return say(
-            await holdOverWindow({ db: database, window, marcherIds }),
-            nameOf,
-        );
+        const result = await holdOverWindow({
+            db: database,
+            window,
+            marcherIds,
+        });
+        const message = expertHoldSkipMessage(result, nameOf);
+        if (message)
+            toast.info(message.title, { description: message.description });
+        return result;
     } catch (error) {
         toastTimelineError(error, "Error holding marchers");
         return { held: [], skipped: [] };
     }
 }
 
-/** **Make all selected Held** at `beat` for `marcherIds` (`makeSelectedHeld`). */
-export async function makeSelectedHeldAt(
-    beat: number,
-    marcherIds: readonly number[],
-    nameOf: MarcherNameOf | undefined,
-    database: DbConnection = db,
-): Promise<MakeHeldResult> {
-    try {
-        return say(
-            await makeSelectedHeld({ db: database, beat, marcherIds }),
-            nameOf,
-        );
-    } catch (error) {
-        toastTimelineError(error, "Error holding marchers");
-        return { held: [], skipped: [] };
+/**
+ * What **Hold over the window** would make, for the bars while it's highlighted: for each selected
+ * marcher it would change, from where the write would start it (`holdOverWindowStart`) to the
+ * playhead. Null when it would change no one. A marcher only the command can rule out (a shape's
+ * move, say) shows here and is skipped, and named, on the click.
+ *
+ * @param rowsOf a marcher's moves
+ * @param showStart where the show's first page starts
+ */
+export function holdOverWindowLight({
+    window,
+    marcherIds,
+    marks,
+    rowsOf,
+    showStart,
+}: {
+    window: BeatRange;
+    marcherIds: readonly number[];
+    marks: readonly HeldMark[];
+    rowsOf: (marcherId: number) => readonly BeatRange[];
+    showStart: number;
+}): HoldLight | null {
+    const byMarcher = new Map<number, readonly BeatRange[]>();
+    for (const id of marcherIds) {
+        const own = marks.filter((m) => m.marcherId === id);
+        if (own.some((m) => m.start <= window.start && window.end <= m.end))
+            continue;
+        const start = holdOverWindowStart({
+            windowStart: window.start,
+            rows: rowsOf(id),
+            marks: own,
+            showStart,
+        });
+        byMarcher.set(id, [{ start, end: window.end }]);
     }
+    return byMarcher.size > 0 ? { byMarcher, wouldHold: true } : null;
 }

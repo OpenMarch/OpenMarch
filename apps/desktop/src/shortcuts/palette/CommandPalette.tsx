@@ -250,6 +250,15 @@ export default function CommandPalette() {
         } else row.scrollIntoView?.({ block: "nearest" });
     }, [activeIndex, items, selectable, inner]);
 
+    // The highlighted row shows what it would change (`PaletteItem.preview`) until another row
+    // is highlighted or the palette closes
+    const previewed = open ? items[activeIndex] : undefined;
+    useEffect(() => {
+        if (!previewed?.preview || previewed.disabled) return;
+        previewed.preview(true);
+        return () => previewed.preview?.(false);
+    }, [previewed]);
+
     // Animate the list height as results change (heights can't transition from `auto`).
     useLayoutEffect(() => {
         const list = listRef.current;

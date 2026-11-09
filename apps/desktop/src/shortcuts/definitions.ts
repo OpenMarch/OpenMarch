@@ -438,24 +438,14 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: [],
     },
-    // Holds (#476, review R1): with some selected marchers Held at the playhead, the others are
-    // Held like them. The field menu and the inspector offer it only then. Unbound
-    timelineMakeSelectedHeld: {
-        labelKey: "actions.batchEdit.makeSelectedHeld",
-        labelHoldTerms: true,
-        keywordsKey: "actions.batchEdit.holdKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-    },
     setAllMarchersToNextPage: {
-        labelKey: "actions.batchEdit.setAllToNext",
+        labelKey: "actions.batchEdit.moveAllToNextSpots",
         category: "batchEdit",
         scope: "canvas",
         defaultBindings: ["$mod+Shift+N", "Control+Shift+N"],
     },
     setSelectedMarchersToNextPage: {
-        labelKey: "actions.batchEdit.setSelectedToNext",
+        labelKey: "actions.batchEdit.moveSelectedToNextSpots",
         category: "batchEdit",
         scope: "canvas",
         defaultBindings: ["Shift+N"],

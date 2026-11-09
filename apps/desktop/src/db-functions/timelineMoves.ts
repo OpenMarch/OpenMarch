@@ -51,7 +51,6 @@ import {
 import {
     arrivalHoldsLostInTransaction,
     readHeldArrivalsBefore,
-    startHoldsLostInTransaction,
 } from "./timelineHeldUpkeep";
 import {
     rowsIn,
@@ -135,12 +134,6 @@ export interface TimelineMoveResult {
      * those pages, for the toast
      */
     clearedLaterHolds?: HeldConflict;
-    /**
-     * Holds from the starting spots (#619) on later pages that the edit left with nothing to grow
-     * out of, so they went (`startHoldsLostInTransaction`): it gave the marcher a move starting
-     * before the hold that doesn't end at its start. For the edit's warning
-     */
-    droppedHolds?: HeldConflict;
     /**
      * Clear this page: the shape and follow-the-leader members it left in their move, named in
      * the refusal's message (`skippedRefusal`), for the toast after the rest was written
@@ -1147,8 +1140,12 @@ async function refuseLockedArrivals(
     });
     const locked: number[] = [];
     for (const { move, mark } of held) {
+        // The page its arrival ends on, a mid-page end included
         const box = grid.pages.find(
-            (p) => p.id !== FIRST_PAGE_ID && p.end === mark.start,
+            (p) =>
+                p.id !== FIRST_PAGE_ID &&
+                p.start < mark.start &&
+                mark.start <= p.end,
         );
         const own = rows.filter((r) => r.marcherId === move.marcherId);
         if (box && !marcherSimpleOnBox(own, box).simple)
@@ -1320,18 +1317,11 @@ export const moveMarchersInTarget = async ({
     try {
         return await transactionWithHistory(db, "moveMarchers", async (tx) => {
             onStart?.();
+            // Clear this page names a later hold whose arrival it takes away
             const heldBefore =
-                target.kind === "home"
-                    ? null
-                    : await readHeldArrivalsBefore(tx);
-            /** Names the holds from the starting spots the edit leaves nothing to grow out of */
-            const withDroppedHolds = async (result: TimelineMoveResult) => {
-                const dropped =
-                    heldBefore &&
-                    (await startHoldsLostInTransaction(tx, heldBefore));
-                if (dropped) result.droppedHolds = dropped;
-                return result;
-            };
+                clearPage && target.kind !== "home"
+                    ? await readHeldArrivalsBefore(tx)
+                    : null;
             if (target.kind === "timeline") {
                 const result = await moveMarchersInTimelineInTransaction({
                     tx,
@@ -1340,7 +1330,7 @@ export const moveMarchersInTarget = async ({
                     ghosts: target.ghosts ?? false,
                 });
                 await afterWrite?.(tx, target.timelineId);
-                return withDroppedHolds(result);
+                return result;
             }
             if (target.kind === "range" || target.kind === "point") {
                 const pageBox = target.kind === "range" ? target : target.box;
@@ -1510,7 +1500,7 @@ export const moveMarchersInTarget = async ({
                 // An edit that writes nothing (and no app data beside it) can't be an undo step
                 if (!wroteAppData && !wroteSomething(result))
                     throw new NothingWritten(result);
-                return withDroppedHolds(result);
+                return result;
             }
             refuseDuplicateMarchers(moves);
             for (const m of moves)

@@ -22,6 +22,7 @@ import {
     type DecidedStretch,
 } from "@/timeline/timelineDecided";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { carriedMembers } from "@/timeline/timelineCarried";
 import {
     placedBoxesAt,
     usePlacedBoxStore,
@@ -226,7 +227,7 @@ function useFieldDecidedLook(
             }
             // The Held marks are read after each resolver version (`useHeldMarksHost`): until
             // they arrive, keep the look as it is, so a Held marcher doesn't flash Not defined
-            // (after Hold from previous page, undo, redo or opening a file)
+            // (after Hold from last keyframe, undo, redo or opening a file)
             if (useHeldMarksStore.getState().version !== version) return;
             read ??= readDecided(resolver);
             const beat = fieldBeat(useTimelineSelectionStore.getState());
@@ -307,10 +308,7 @@ function readDecided(resolver: Resolver): DecidedRead {
  * is the shape's hold (owner, 2026-11-01 on #477), so they draw decided.
  */
 function carriedAt(beat: number): Set<number> {
-    const carried = new Set<number>();
-    for (const box of placedBoxesAt(beat))
-        for (const member of box.recipe.members) carried.add(member.marcherId);
-    return carried;
+    return carriedMembers(placedBoxesAt(beat));
 }
 
 const prefersReducedMotion = () =>
