@@ -19,6 +19,7 @@ import {
 } from "three";
 import {
     calmTeamColor,
+    createRng,
     createSharedMaterials,
     ft,
     lightingValues,
@@ -61,7 +62,9 @@ import {
     FACADE_LAYOUT,
     facadeTextures,
     interiorWallTextures,
-    roofTopTexture,
+    panelCeilingTexture,
+    roofDeckTexture,
+    ROOF_TILE,
     seatTexture,
     siteTextures,
     suiteTexture,
@@ -83,7 +86,8 @@ import {
  * Roof steel, frame and panels never cast shadows, so no hard roof line ever
  * crosses the field. From above, the roof sides between the camera and the
  * field are cut away (`roofCutaway`) so the drill stays visible while the
- * structure on the far side still reads.
+ * structure on the far side still reads; straight overhead the whole roof is
+ * cut, because top-down is a drill-reading camera.
  */
 
 /** Gap between the footprint and the bowl's first row, on every side. */
@@ -168,9 +172,15 @@ const DARK = 0x16171b;
 const RAIL = 0x3a3d44;
 const CONCRETE = 0x8e8f8d;
 /** How dark the underside of the roof is against its top. */
-const ROOF_UNDERSIDE_TINT: Vector3Tuple = [0.86, 0.66, 0.76];
+/** Weak in green, to cancel what the turf bounces up onto the underside. */
+const ROOF_UNDERSIDE_TINT: Vector3Tuple = [0.9, 0.52, 0.92];
 
 const NO_TINT: Vector3Tuple = [1, 1, 1];
+/** The roof's edge coping and the steel rails and ribs on top of the roof. */
+const COPING_TINT: Vector3Tuple = [0.52, 0.53, 0.55];
+const ROOF_RIB = 0x777b7f;
+const ROOF_RAIL = 0x4c4f55;
+const ROOF_UNIT = 0x63666a;
 
 /** Which roof side a member or a piece of frame belongs to ("all" when low). */
 type RoofBucket = RoofSide | "all";
@@ -294,6 +304,7 @@ export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
     const roof = addRoof(ctx);
     const boards = addBoards(ctx, bowl.upper);
     addTrusses(ctx, boards.xs);
+    addRoofTop(ctx);
     addEntrances(ctx);
     const steel = buildSteel(ctx, roof.group);
     buildStructure(ctx);
@@ -329,12 +340,15 @@ export const buildProKit: KitBuilder = ({ footprint, params, quality }) => {
         },
         onFrame({ cameraPosition, dt }) {
             const above = cameraPosition[1] >= PRO_ROOF_Y - ft(2);
-            const cut = roofCutaway(ctx, cameraPosition, above);
+            const nearSide = roofCutaway(ctx, cameraPosition, above);
+            const overhead = above && isOverField(ctx, cameraPosition);
+            const cut = (b: RoofBucket) => overhead || nearSide(b);
             roof.frames.forEach((m, b) => (m.visible = !cut(b)));
             steel.forEach((m, b) => (m.visible = !cut(b)));
             roof.setAbove(above);
+            // The boards stand clear of the field, so only the near one goes.
             boards.items.forEach((b) => {
-                b.board.object.visible = !cut(ctx.bucket(b.side));
+                b.board.object.visible = !nearSide(b.side);
             });
             roof.step(dt);
         },
@@ -373,6 +387,11 @@ function roofCutaway(
                 return dz < -ctx.az;
         }
     };
+}
+
+/** Whether a camera is over the bowl's floor, looking down on the field. */
+function isOverField(ctx: ProContext, [x, , z]: Vector3Tuple): boolean {
+    return Math.abs(x - ctx.cx) <= ctx.ax && Math.abs(z - ctx.cz) <= ctx.az;
 }
 
 /**
@@ -783,8 +802,9 @@ function addRoof(ctx: ProContext) {
         cornerRadius: 0,
     });
     const n = shell(0, 0).length;
+    const planar = { tile: ROOF_TILE, x: cx, z: cz };
     const frameMat = ctx.mat({
-        map: roofTopTexture(false),
+        map: roofDeckTexture(),
         roughness: 0.75,
         vertexColors: true,
         side: DoubleSide,
@@ -796,15 +816,11 @@ function addRoof(ctx: ProContext) {
     const frames = new Map<RoofBucket, Mesh>();
     for (const b of ctx.steel.keys()) {
         const builder = new BandBuilder(true);
-        for (const [i0, i1] of ranges[b])
+        for (const [i0, i1] of ranges[b]) {
             builder
-                .slice(shell(0, top), opening(0, top), i0, i1, {
-                    tile: 30,
-                    v1: 2,
-                })
+                .slice(shell(0, top), opening(0, top), i0, i1, { planar })
                 .slice(opening(0, bottom), shell(0, bottom), i0, i1, {
-                    tile: 24,
-                    v1: 3,
+                    planar,
                     tint: ROOF_UNDERSIDE_TINT,
                 })
                 .slice(opening(0, top), opening(0, bottom), i0, i1, {
@@ -812,6 +828,17 @@ function addRoof(ctx: ProContext) {
                     v1: 0.05,
                     tint: ROOF_UNDERSIDE_TINT,
                 });
+            // A dark coping around the roof's edge. Only seen from above, so
+            // low quality, which hides its roof from above, leaves it off.
+            if (ctx.quality === "high") {
+                const coping = top + 0.9;
+                const edge = { tile: 24, v1: 0.05, tint: COPING_TINT };
+                builder
+                    .slice(shell(0, top), shell(0, coping), i0, i1, edge)
+                    .slice(shell(0, coping), shell(-1.8, coping), i0, i1, edge)
+                    .slice(shell(-1.8, coping), shell(-1.8, top), i0, i1, edge);
+            }
+        }
         const geo = builder.build();
         ctx.own(() => geo.dispose());
         const frame = new Mesh(geo, frameMat);
@@ -821,21 +848,18 @@ function addRoof(ctx: ProContext) {
         frames.set(b, frame);
     }
 
-    // Panels: a unit box scaled to size, dark on its underside. UVs are
-    // scaled so the standing seams keep their size.
+    // Panels: a unit box scaled to size, tinted on its underside, with the
+    // ceiling texture mapped once across each. They hide from above, so the
+    // underside is the only face anyone sees.
     const panelGeo = new BoxGeometry(1, 1, 1);
     ctx.own(() => panelGeo.dispose());
-    const uv = panelGeo.getAttribute("uv");
-    for (const face of [2, 3])
-        for (let k = face * 4; k < face * 4 + 4; k++)
-            uv.setXY(k, (uv.getX(k) * ox) / 24, (uv.getY(k) * 2 * oz) / 24);
     const tints: number[] = [];
     for (let face = 0; face < 6; face++)
         for (let k = 0; k < 4; k++) {
             tints.push(...(face === 3 ? ROOF_UNDERSIDE_TINT : NO_TINT));
         }
     panelGeo.setAttribute("color", new Float32BufferAttribute(tints, 3));
-    const panelMap = roofTopTexture(true);
+    const panelMap = panelCeilingTexture();
     const panelMat = ctx.mat({
         map: panelMap,
         roughness: 0.6,
@@ -844,7 +868,7 @@ function addRoof(ctx: ProContext) {
         // The panels are only seen from below (they hide from above). A faint
         // glow in the same seam pattern lifts the underside out of the env
         // map's green turf bounce and keeps the standing seams readable.
-        emissive: 0xc8c4bc,
+        emissive: 0xc4c2c6,
         emissiveMap: panelMap,
         emissiveIntensity: 0,
     });
@@ -885,7 +909,7 @@ function addRoof(ctx: ProContext) {
             const shade = k.lampsOn ? 0.5 : 1;
             frameMat.color.setScalar(shade);
             panelMat.color.setScalar(shade);
-            panelMat.emissiveIntensity = k.roofOpen ? 0.12 : 0.34;
+            panelMat.emissiveIntensity = k.roofOpen ? 0.12 : 0.3;
             target = k.roofOpen ? 1 : 0;
             if (snap) {
                 open = target;
@@ -1134,6 +1158,116 @@ function addTrusses(ctx: ProContext, boardXs: number[]): void {
             P(sx * xLine, rz - 22, walkY),
             "z",
         );
+}
+
+/**
+ * What breaks up the roof from the air, as boxes in the steel's draw calls:
+ * a rib over every cross truss, the rails the panels ride on, a ring beam at
+ * each end of the opening and a few mechanical units. Each piece belongs to
+ * the frame side it stands on, so it disappears with it in the cutaway. Low
+ * quality never shows its roof from above and leaves these off.
+ */
+function addRoofTop(ctx: ProContext): void {
+    if (ctx.quality === "low") return;
+    const { cx, cz, rx, rz, ox, oz } = ctx;
+    const y = PRO_ROOF_Y + ROOF_THICKNESS / 2;
+    const c = FACADE_CORNER;
+    const steel = (side: RoofSide) => ctx.steel.get(ctx.bucket(side))!;
+    const zSide = (s: number): RoofSide => (s > 0 ? "zp" : "zn");
+    const xSide = (s: number): RoofSide => (s > 0 ? "xp" : "xn");
+    /** The roof's edge at x: straight, then following the rounded corner. */
+    const edgeZ = (x: number) => {
+        const over = Math.abs(x) - (rx - c);
+        return (
+            (over <= 0
+                ? rz
+                : rz - c + Math.sqrt(Math.max(0, c * c - over * over))) - 1.5
+        );
+    };
+    /** Where the frame's diagonal corner seam crosses x, past the opening. */
+    const cornerX = rx - c * (1 - Math.SQRT1_2);
+    const cornerZ = rz - c * (1 - Math.SQRT1_2);
+    const seamZ = (x: number) =>
+        oz + ((Math.abs(x) - ox) * (cornerZ - oz)) / (cornerX - ox);
+    const rib = (m: Members, x: number, z0: number, z1: number) => {
+        if (z1 - z0 < 1) return;
+        m.box(
+            new Vector3(cx + x, y + 0.3, cz + (z0 + z1) / 2),
+            [1.2, 0.6, z1 - z0],
+            ROOF_RIB,
+        );
+    };
+    for (let x = -18 * Math.floor((rx - 2) / 18); x < rx - 2; x += 18) {
+        const edge = edgeZ(x);
+        if (Math.abs(x) < ox) {
+            for (const s of [-1, 1])
+                rib(
+                    steel(zSide(s)),
+                    x,
+                    Math.min(s * (oz + 2), s * edge),
+                    Math.max(s * (oz + 2), s * edge),
+                );
+            continue;
+        }
+        const seam = Math.min(seamZ(x), edge);
+        rib(steel(xSide(x)), x, -seam, seam);
+        for (const s of [-1, 1])
+            rib(
+                steel(zSide(s)),
+                x,
+                Math.min(s * seam, s * edge),
+                Math.max(s * seam, s * edge),
+            );
+    }
+    // The rails along the opening's long edges, and its ring beams.
+    const railZ = oz + 0.9;
+    const beam = (
+        m: Members,
+        x0: number,
+        x1: number,
+        z: number,
+        size: [number, number] = [1.1, 1.8],
+    ) =>
+        m.box(
+            new Vector3(cx + (x0 + x1) / 2, y + size[0] / 2, cz + z),
+            [x1 - x0, size[0], size[1]],
+            ROOF_RAIL,
+        );
+    for (const s of [-1, 1]) {
+        beam(steel(zSide(s)), -ox, ox, s * railZ);
+        for (const e of [-1, 1]) {
+            const [x0, x1] = e > 0 ? [ox, rx - 4] : [-(rx - 4), -ox];
+            beam(steel(xSide(e)), x0, x1, s * railZ);
+        }
+        steel(xSide(s)).box(
+            new Vector3(cx + s * ox, y + 0.5, cz),
+            [2.2, 1, 2 * oz],
+            ROOF_RAIL,
+        );
+    }
+    // Mechanical units, each in the middle of a bay so no rib runs through.
+    const rnd = createRng(29);
+    const unit = (m: Members, x: number, z: number) => {
+        const base = new Vector3(cx + x, y + 1.1, cz + z);
+        m.box(base, [8, 2.2, 5 + rnd() * 3], ROOF_UNIT);
+        m.box(base.clone().setY(y + 2.35), [5, 0.3, 3], ROOF_RAIL);
+    };
+    const bay = (k: number) => 9 + 18 * k;
+    for (const s of [-1, 1]) {
+        for (const k of [-3, -1, 1, 2]) {
+            const x = bay(k);
+            const near = oz + 6;
+            unit(
+                steel(zSide(s)),
+                x,
+                s * (near + rnd() * (edgeZ(x) - 8 - near)),
+            );
+        }
+        for (const z of [-0.45, 0.4]) {
+            const x = Math.min(bay(Math.floor((ox + 6) / 18)), rx - 14);
+            unit(steel(xSide(s)), s * x, z * oz);
+        }
+    }
 }
 
 /** Builds the roof steel, one instanced mesh per bucket, in the roof group. */
