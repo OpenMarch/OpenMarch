@@ -39,12 +39,31 @@ export const DEFAULT_AISLE_EVERY = 18;
 /**
  * Levels of detail, by distance from the camera in meters. Everyone exists in
  * the far tier; people inside `CROWD_MID_RADIUS` are drawn with a better
- * figure instead, up to a fixed number, so the triangle cost has a ceiling.
+ * figure instead, up to `crowdTierCaps`, so the triangle cost has a ceiling.
  */
 export const CROWD_NEAR_RADIUS = 18;
 export const CROWD_MID_RADIUS = 60;
-export const CROWD_NEAR_CAP = 650;
-export const CROWD_MID_CAP = 4200;
+const NEAR_FIGURE_TRIANGLES = 160;
+const MID_FIGURE_TRIANGLES = 36;
+
+/**
+ * How many people the close tiers may draw: a triangle allowance that grows
+ * with the crowd, since big venues have the budget for it and small ones
+ * don't, split 60/40 between the near and mid figures.
+ */
+export function crowdTierCaps(total: number): { near: number; mid: number } {
+    const triangles = Math.max(60000, Math.min(200000, total * 6));
+    return {
+        near: Math.min(
+            total,
+            Math.floor((triangles * 0.6) / NEAR_FIGURE_TRIANGLES),
+        ),
+        mid: Math.min(
+            total,
+            Math.floor((triangles * 0.4) / MID_FIGURE_TRIANGLES),
+        ),
+    };
+}
 /** How far the camera moves before the tiers are chosen again, meters. */
 const LOD_MOVE_THRESHOLD = 2;
 
@@ -496,23 +515,14 @@ export function buildCrowd(
     let closeMaterial: MeshStandardMaterial | null = null;
     let near: Tier | null = null;
     let mid: Tier | null = null;
+    const caps = crowdTierCaps(total);
     if (!lowQuality && total > 0) {
         const nearGeometry = nearFigureGeometry();
         const midGeometry = midFigureGeometry();
         closeGeometries.push(nearGeometry, midGeometry);
         closeMaterial = crowdMaterial(uniforms, "close");
-        near = closeTier(
-            "crowd.near",
-            nearGeometry,
-            closeMaterial,
-            Math.min(CROWD_NEAR_CAP, total),
-        );
-        mid = closeTier(
-            "crowd.mid",
-            midGeometry,
-            closeMaterial,
-            Math.min(CROWD_MID_CAP, total),
-        );
+        near = closeTier("crowd.near", nearGeometry, closeMaterial, caps.near);
+        mid = closeTier("crowd.mid", midGeometry, closeMaterial, caps.mid);
         mesh.add(near.mesh, mid.mesh);
     }
 
@@ -577,12 +587,12 @@ export function buildCrowd(
         let nearCount = 0;
         while (
             nearCount < found &&
-            nearCount < CROWD_NEAR_CAP &&
+            nearCount < caps.near &&
             distances[order[nearCount]] < nearR2
         ) {
             nearCount++;
         }
-        const midEnd = Math.min(found, nearCount + CROWD_MID_CAP);
+        const midEnd = Math.min(found, nearCount + caps.mid);
         copyTier(near, order, 0, nearCount);
         copyTier(mid, order, nearCount, midEnd);
         if (midEnd === found) return CROWD_MID_RADIUS;

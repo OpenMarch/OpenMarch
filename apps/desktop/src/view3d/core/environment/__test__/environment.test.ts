@@ -12,8 +12,7 @@ import {
     calmTeamColor,
     createEnvironment,
     createSharedMaterials,
-    CROWD_MID_CAP,
-    CROWD_NEAR_CAP,
+    crowdTierCaps,
     defaultCrowdPalette,
     FT,
     landGeometry,
@@ -388,9 +387,22 @@ describe("buildCrowd", () => {
         const { near, mid } = crowd.tierCounts();
         expect(near).toBeGreaterThan(0);
         expect(mid).toBeGreaterThan(near);
-        expect(near).toBeLessThanOrEqual(CROWD_NEAR_CAP);
-        expect(mid).toBeLessThanOrEqual(CROWD_MID_CAP);
+        const caps = crowdTierCaps(crowd.count);
+        expect(near).toBeLessThanOrEqual(caps.near);
+        expect(mid).toBeLessThanOrEqual(caps.mid);
         crowd.dispose();
+    });
+
+    it("gives big crowds more close figures, within a fixed ceiling", () => {
+        const triangles = (t: number) => {
+            const c = crowdTierCaps(t);
+            return c.near * 160 + c.mid * 36;
+        };
+        expect(crowdTierCaps(3000).near).toBeLessThan(
+            crowdTierCaps(40000).near,
+        );
+        expect(triangles(3000)).toBeLessThanOrEqual(60000);
+        expect(triangles(1e6)).toBeLessThanOrEqual(200000);
     });
 
     it("never gives a person hidden around the camera to a close tier", () => {
