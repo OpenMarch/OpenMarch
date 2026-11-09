@@ -55,6 +55,11 @@ export interface SliceOptions {
     v1?: number;
     /** Vertex color (linear 0..1). Only used by builders in `tinted` mode. */
     tint?: [number, number, number];
+    /**
+     * Maps the texture in plan instead of along the ring: `u` from world x
+     * and `v` from world z, relative to (x, z), one tile per `tile` meters.
+     */
+    planar?: { tile: number; x: number; z: number };
 }
 
 /** Accumulates non-indexed triangles with UVs, like `bandGeometry`. */
@@ -76,7 +81,13 @@ export class BandBuilder {
         b: Ring,
         i0: number,
         i1: number,
-        { tile = 12, v0 = 0, v1 = 1, tint = [1, 1, 1] }: SliceOptions = {},
+        {
+            tile = 12,
+            v0 = 0,
+            v1 = 1,
+            tint = [1, 1, 1],
+            planar,
+        }: SliceOptions = {},
     ): this {
         const n = a.length;
         let u = 0;
@@ -103,7 +114,13 @@ export class BandBuilder {
                     return;
                 this.pos.push(a0.x, a0.y, a0.z, a1.x, a1.y, a1.z);
                 this.pos.push(a2.x, a2.y, a2.z);
-                this.uv.push(...uvs);
+                if (planar)
+                    for (const c of [a0, a1, a2])
+                        this.uv.push(
+                            (c.x - planar.x) / planar.tile,
+                            (c.z - planar.z) / planar.tile,
+                        );
+                else this.uv.push(...uvs);
                 if (this.tinted)
                     for (let k = 0; k < 3; k++) this.color.push(...tint);
             };

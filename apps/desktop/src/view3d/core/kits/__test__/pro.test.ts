@@ -134,7 +134,9 @@ describe("pro dome kit", () => {
         const roof = new Box3().setFromObject(
             byName(kit.root, "pro.roofFrame")[0],
         );
-        expect((roof.min.y + roof.max.y) / 2).toBeCloseTo(51.2, 1);
+        // The deck is centered on 51.2 m; a 0.9 m coping stands on its edge.
+        expect(roof.min.y).toBeCloseTo(51.2 - ft(2), 1);
+        expect(roof.max.y).toBeCloseTo(51.2 + ft(2) + 0.9, 1);
         const suites = new Box3().setFromObject(
             byName(kit.root, "pro.suites")[0],
         );
@@ -384,11 +386,18 @@ describe("pro dome kit", () => {
             expect(m.visible).toBe(true),
         );
 
-        // Straight overhead: the frame stays, the moving parts go.
-        kit.onFrame!({ cameraPosition: [0, PRO_ROOF_Y + 50, cz], dt: 1 / 60 });
-        frames.forEach((m) => expect(m.visible).toBe(true));
-        panels.forEach((m) => expect(m.visible).toBe(false));
-        expect(bars.visible).toBe(false);
+        // Straight overhead the whole roof goes, and both boards stay.
+        const top = kit.cameras.find((c) => c.id === "topDown")!;
+        for (const preset of ["day", "night", "roofClosed"] as const) {
+            kit.setLighting(preset);
+            kit.onFrame!({ cameraPosition: top.position, dt: 1 / 60 });
+            [...frames, ...steel, ...panels, bars].forEach((m) =>
+                expect(m.visible).toBe(false),
+            );
+            byName(kit.root, "videoBoard").forEach((b) =>
+                expect(b.visible).toBe(true),
+            );
+        }
 
         // Blimp, from the side-1 audience corner: the near sides are cut.
         kit.onFrame!({ cameraPosition: [-190, 195, 160], dt: 1 / 60 });

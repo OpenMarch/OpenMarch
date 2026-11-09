@@ -1,3 +1,4 @@
+// cspell:ignore purlins
 import type { CanvasTexture } from "three";
 import { createRng, paintCanvasTexture } from "../../environment";
 
@@ -395,40 +396,119 @@ export function windowWallTextures(): TexturePair {
     );
 }
 
+/** Meters of roof one `roofDeckTexture` tile spans, four truss bays wide. */
+export const ROOF_TILE = 72;
+
 /**
- * Roof tops: the fixed roof's gray membrane panels with seams (`panels`
- * false), or the sliding panels' standing-seam metal (`panels` true).
+ * The fixed roof's top, mapped in plan: four 18 m bays that line up with the
+ * cross trusses, each a slightly different metal tone with a gutter, faint
+ * standing seams, cross joints and weathering, and a row of skylights in
+ * every other bay. Long parallel bays read as one roof, not a quilt.
  */
-export function roofTopTexture(panels: boolean): CanvasTexture {
-    const rnd = createRng(panels ? 5 : 3);
+export function roofDeckTexture(): CanvasTexture {
+    const rnd = createRng(3);
+    const size = 1024;
+    const bay = size / 4;
     return paintCanvasTexture(
-        256,
-        256,
-        (g, w, h) => {
-            g.fillStyle = panels ? "#7d848b" : "#858a8d";
-            g.fillRect(0, 0, w, h);
-            if (panels) {
-                for (let x = 0; x < w; x += 8) {
-                    g.fillStyle = "rgba(255,255,255,0.14)";
-                    g.fillRect(x, 0, 2, h);
-                    g.fillStyle = "rgba(20,24,30,0.35)";
-                    g.fillRect(x + 2, 0, 1, h);
-                }
-                return;
-            }
-            for (let y = 0; y < h; y += 64)
-                for (let x = 0; x < w; x += 64) {
-                    const t = rnd();
-                    const c = t > 0.5 ? "255,255,255" : "40,44,50";
+        size,
+        size,
+        (g) => {
+            const tones = ["#83878a", "#8d9193", "#7b8084", "#888c8d"];
+            tones.forEach((tone, i) => {
+                g.fillStyle = tone;
+                g.fillRect(i * bay, 0, bay, size);
+            });
+            // Sheets across each bay, a little uneven in tone.
+            for (let i = 0; i < 4; i++)
+                for (let y = 0; y < size; y += bay / 2) {
+                    const c = rnd() > 0.5 ? "255,255,255" : "40,44,50";
                     g.fillStyle = `rgba(${c},${0.02 + rnd() * 0.05})`;
-                    g.fillRect(x, y, 64, 64);
+                    g.fillRect(i * bay, y, bay, bay / 2);
                 }
-            g.fillStyle = "rgba(60,64,70,0.55)";
-            for (let y = 0; y < h; y += 64) g.fillRect(0, y, w, 2);
-            for (let x = 0; x < w; x += 64) g.fillRect(x, 0, 2, h);
+            g.fillStyle = "rgba(20,24,30,0.1)";
+            for (let x = 0; x < size; x += 16) g.fillRect(x, 0, 1, size);
+            // Weathering that runs the length of the bays.
+            for (let i = 0; i < 40; i++) {
+                const x = rnd() * size;
+                const w = 6 + rnd() * 34;
+                const y = rnd() * size;
+                const len = 120 + rnd() * 380;
+                const run = g.createLinearGradient(0, y, 0, y + len);
+                run.addColorStop(0, "rgba(46,46,44,0)");
+                run.addColorStop(0.5, "rgba(46,46,44,0.09)");
+                run.addColorStop(1, "rgba(46,46,44,0)");
+                g.fillStyle = run;
+                g.fillRect(x, y, w, len);
+            }
+            // Skylights: glazed strips along every other bay, with curbs.
+            for (const i of [1, 3])
+                for (let y = 0; y < size; y += bay) {
+                    const x = (i + 0.5) * bay - 24;
+                    g.fillStyle = "#c2c5c6";
+                    g.fillRect(x - 3, y + 33, 54, bay - 66);
+                    g.fillStyle = "#3a4656";
+                    g.fillRect(x, y + 36, 48, bay - 72);
+                }
+            // Cross joints, then the gutters over the trusses.
+            g.fillStyle = "rgba(44,48,54,0.34)";
+            for (let y = 0; y < size; y += bay) g.fillRect(0, y, size, 2);
+            for (let i = 0; i < 4; i++) {
+                g.fillStyle = "rgba(30,33,38,0.72)";
+                g.fillRect(i * bay - 3, 0, 6, size);
+                g.fillStyle = "rgba(226,228,226,0.3)";
+                g.fillRect(i * bay + 3, 0, 2, size);
+            }
         },
         { repeat: true },
     );
+}
+
+/**
+ * The underside of one sliding panel, mapped once across it: corrugated deck
+ * between purlins, with primary girders across the panel. Only seen from
+ * below, so it also feeds the panel's faint glow, which keeps it legible.
+ */
+export function panelCeilingTexture(): CanvasTexture {
+    const size = 1024;
+    return paintCanvasTexture(size, size, (g) => {
+        g.fillStyle = "#8f8f8b";
+        g.fillRect(0, 0, size, size);
+        // Corrugated deck: fine ribs along the slide.
+        g.fillStyle = "rgba(30,30,28,0.22)";
+        for (let y = 0; y < size; y += 6) g.fillRect(0, y, size, 2);
+        // Purlins, about every 5 m: a lit flange with a shadow beside it.
+        const purlins = 14;
+        for (let i = 0; i <= purlins; i++) {
+            const y = (i / purlins) * size;
+            g.fillStyle = "rgba(14,14,14,0.42)";
+            g.fillRect(0, y + 6, size, 9);
+            g.fillStyle = "#b6b4b0";
+            g.fillRect(0, y - 3, size, 9);
+        }
+        // Girders across the panel, about every 13 m, with cross bracing.
+        const girders = 5;
+        const span = size / girders;
+        g.strokeStyle = "rgba(20,20,20,0.34)";
+        g.lineWidth = 5;
+        g.beginPath();
+        for (let i = 0; i < girders; i++)
+            for (let k = 0; k < 2; k++) {
+                const x = i * span;
+                const y = (k * size) / 2;
+                g.moveTo(x, y);
+                g.lineTo(x + span, y + size / 2);
+                g.moveTo(x + span, y);
+                g.lineTo(x, y + size / 2);
+            }
+        g.stroke();
+        for (let i = 0; i <= girders; i++) {
+            const x = i * span;
+            g.fillStyle = "rgba(10,10,10,0.4)";
+            g.fillRect(x + 7, 0, 12, size);
+            g.fillStyle = "#bdbbb6";
+            g.fillRect(x - 7, 0, 14, size);
+        }
+    });
 }
 
 /** The plan of the grounds, in meters from the field center (see `siteTextures`). */
