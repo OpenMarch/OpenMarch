@@ -26,6 +26,8 @@ import { createTimelineShapesInTransaction } from "../timelineShapes";
 import { createTimelineTransitionsInTransaction } from "../timelineTransitionsInTransaction";
 import { createTimelineAssignmentsInTransaction } from "../timelineAssignments";
 
+import { showEndBeat, readPageGrid } from "../timelinePageGrid";
+
 keepFixturesInPageMode(
     "its tests trim the show, write timeline rows and set the flag themselves",
 );
@@ -429,6 +431,41 @@ describeDbTests("Hold over the window (R8)", (it) => {
         });
         expect(result).toEqual({ held: [a], skipped: [] });
         expect(await marksOf(db, a)).toEqual([{ start: 17, end: 33 }]);
+    });
+
+    it("a window from page 0's beat starts the hold at the show's start, so its first page moves it whole", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        await holdOverWindow({
+            db,
+            window: { start: 0, end: 17 },
+            marcherIds: [c],
+        });
+        expect(await marksOf(db, c)).toEqual([{ start: 1, end: 17 }]);
+    });
+
+    it("a hold over the window stops at the last flag, and past it there's nothing to hold", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        const end = showEndBeat(await db.transaction(readPageGrid));
+        expect(
+            await holdOverWindow({
+                db,
+                window: { start: end, end: end + 8 },
+                marcherIds: [c],
+            }),
+        ).toEqual({ held: [], skipped: [] });
+        expect(await marksOf(db, c)).toEqual([]);
+        await holdOverWindow({
+            db,
+            window: { start: end - 8, end: end + 8 },
+            marcherIds: [c],
+        });
+        expect((await marksOf(db, c)).at(-1)?.end).toBe(end);
     });
 
     it("a marcher who never moved is Held from the start of the show", async ({

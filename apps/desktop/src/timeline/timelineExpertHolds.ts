@@ -10,7 +10,7 @@ import {
 import { marcherNamesText, type MarcherNameOf } from "./timelineKeepLater";
 import { toastTimelineError } from "./timelineErrorMessages";
 import { holdTerms } from "./holdTerms";
-import { holdOverWindowStart } from "./holdExtent";
+import { holdOverWindowStart, holdWindowInShow } from "./holdExtent";
 import type { BeatRange, HoldLight } from "./timelineHoldBars";
 import type { HeldMark } from "@/db-functions/timelineHeldMarks";
 
@@ -136,20 +136,25 @@ export async function holdOverWindowOn(
  *
  * @param rowsOf a marcher's moves
  * @param showStart where the show's first page starts
+ * @param showEnd the last page flag
  */
 export function holdOverWindowLight({
-    window,
+    window: asked,
     marcherIds,
     marks,
     rowsOf,
     showStart,
+    showEnd,
 }: {
     window: BeatRange;
     marcherIds: readonly number[];
     marks: readonly HeldMark[];
     rowsOf: (marcherId: number) => readonly BeatRange[];
     showStart: number;
+    showEnd: number;
 }): HoldLight | null {
+    const window = holdWindowInShow(asked, showStart, showEnd);
+    if (!window) return null;
     const byMarcher = new Map<number, readonly BeatRange[]>();
     for (const id of marcherIds) {
         const own = marks.filter((m) => m.marcherId === id);

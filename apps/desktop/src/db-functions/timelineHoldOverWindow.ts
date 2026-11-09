@@ -16,8 +16,8 @@ import {
 import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
 import { readHoldGrowth, type HoldGrowth } from "./timelineHoldFromPrevious";
 import { readPageGrid } from "./timelineRipple";
-import { showStartBeat } from "./timelinePageGrid";
-import { holdOverWindowStart } from "@/timeline/holdExtent";
+import { showEndBeat, showStartBeat } from "./timelinePageGrid";
+import { holdOverWindowStart, holdWindowInShow } from "@/timeline/holdExtent";
 
 /**
  * **Hold over the window** (holds, fork #476; holds README decision 3, review R8, 01-edit-rules
@@ -158,7 +158,7 @@ async function plannedSource(
 /** `holdOverWindow` inside the caller's edit. Refused (E-ARGS) for an empty window. */
 export async function holdOverWindowInTransaction({
     tx,
-    window,
+    window: asked,
     marcherIds,
 }: {
     tx: DbTransaction;
@@ -166,18 +166,21 @@ export async function holdOverWindowInTransaction({
     marcherIds: readonly number[];
 }): Promise<HoldOverWindowResult> {
     if (
-        !Number.isInteger(window.start) ||
-        !Number.isInteger(window.end) ||
-        window.start < 0 ||
-        window.end <= window.start
+        !Number.isInteger(asked.start) ||
+        !Number.isInteger(asked.end) ||
+        asked.start < 0 ||
+        asked.end <= asked.start
     )
         refuse(
-            `Hold over the window needs a window of whole beats, got [${window.start}, ${window.end})`,
+            `Hold over the window needs a window of whole beats, got [${asked.start}, ${asked.end})`,
         );
+    const grid = await readPageGrid(tx);
+    const showStart = showStartBeat(grid);
+    const window = holdWindowInShow(asked, showStart, showEndBeat(grid));
+    if (!window) return { held: [], skipped: [] };
     const ids = [...new Set(marcherIds)].sort((x, y) => x - y);
     const rows = await readBasicRows(tx, { marcherIds: ids });
     const marks = await readHeldMarks(tx, ids);
-    const showStart = showStartBeat(await readPageGrid(tx));
     const result: HoldOverWindowResult = { held: [], skipped: [] };
     const fromHome: number[] = [];
     const planned = new Map<number, PlannedSource>();

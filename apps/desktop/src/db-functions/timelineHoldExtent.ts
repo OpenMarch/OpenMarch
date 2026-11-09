@@ -10,7 +10,7 @@ import { text } from "@/timeline/timelineText";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { NothingToDo, refuse } from "./timelineErrors";
-import { readPageGrid } from "./timelinePageGrid";
+import { readPageGrid, showEndBeat } from "./timelinePageGrid";
 import { readHeldMarks } from "./timelineHeldArrival";
 
 /**
@@ -68,8 +68,7 @@ async function readMoves(
 
 /** The show's end: the last page's flag. */
 async function readShowEnd(tx: DbTransaction): Promise<number> {
-    const { pages } = await readPageGrid(tx);
-    return pages.reduce((end, page) => Math.max(end, page.end), 0);
+    return showEndBeat(await readPageGrid(tx));
 }
 
 /**

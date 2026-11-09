@@ -117,6 +117,21 @@ export function holdReachBack({
 }
 
 /**
+ * The part of a window **Hold over the window** can hold, or null for none: a hold can't start on
+ * page 0's one beat (it's the same moment as the show's start, and a drag on the hold's first page
+ * must still count as starting at the hold) or run past the last flag.
+ */
+export function holdWindowInShow(
+    window: BeatRange,
+    showStart: number,
+    showEnd: number,
+): BeatRange | null {
+    const start = Math.max(window.start, showStart);
+    const end = Math.min(window.end, showEnd);
+    return start < end ? { start, end } : null;
+}
+
+/**
  * Where **Hold over the window** (fork #476) starts a marcher's hold, for a window starting at
  * `windowStart`: there, when the marcher is partway through a move there (the cut arrives there)
  * or inside a hold of its own (which it joins); otherwise what last put it there

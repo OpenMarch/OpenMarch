@@ -20,7 +20,24 @@ describe("holdOverWindowLight (#476)", () => {
             marks,
             rowsOf: (id) => rows[id]!,
             showStart: 1,
+            showEnd: 33,
         });
+
+    it("stays inside the show: from its first page's start to the last flag", () => {
+        const inShow = (window: { start: number; end: number }) =>
+            holdOverWindowLight({
+                window,
+                marcherIds: [1],
+                marks: [],
+                rowsOf: () => [],
+                showStart: 1,
+                showEnd: 33,
+            });
+        expect(inShow({ start: 0, end: 41 })?.byMarcher.get(1)).toEqual([
+            { start: 1, end: 33 },
+        ]);
+        expect(inShow({ start: 33, end: 41 })).toBeNull();
+    });
 
     it("draws a would-be hold from where the write would start it: the window, or what it reaches back to", () => {
         const out = light({

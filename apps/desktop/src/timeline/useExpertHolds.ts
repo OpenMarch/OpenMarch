@@ -46,6 +46,9 @@ export function useExpertHolds(marcherIds: readonly number[]): ExpertHolds {
     const version = useTimelineResolverStore((s) => s.version);
     const marks = useHeldMarksStore((s) => s.marks);
     const pages = useTimingObjects()?.pages;
+    const showEnd = useTimelineSelectionStore((s) =>
+        s.pageBoxes.reduce((end, box) => Math.max(end, box.end), 0),
+    );
     return useMemo(() => {
         void version; // a new version means new spans
         const none = { window: null, partlyHeld: null, onPreview: stopPreview };
@@ -80,6 +83,7 @@ export function useExpertHolds(marcherIds: readonly number[]): ExpertHolds {
                         showStart:
                             pageFlags(pages).find((f) => f.range)?.range
                                 ?.start ?? 0,
+                        showEnd,
                     }),
                 );
             },
@@ -92,6 +96,7 @@ export function useExpertHolds(marcherIds: readonly number[]): ExpertHolds {
         version,
         marks,
         pages,
+        showEnd,
         marcherIds,
     ]);
 }
