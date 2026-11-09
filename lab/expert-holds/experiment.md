@@ -20,11 +20,12 @@ lines on the bottom edge of the page row.
 **What to try**
 
 - Hold a marcher over two or three pages: right-click a page box a few pages
-  after their last move and choose **Hold from last keyframe**. Go to the
-  **last** page of that hold and drag the marcher on the field. While you drag,
+  after their last move and choose **Hold from last keyframe**. Click the
+  **last** page of that hold on the timeline, which sets the start flag and
+  playhead around it, and drag the marcher on the field. While you drag,
   only that page's part of the bar lights up. Let go: the hold ends where that
   page starts, and the marcher now walks to the new spot on that page.
-- Undo. Go to the hold's **first** page and drag the marcher again. Now the
+- Undo. Click the hold's **first** page and drag the marcher again. Now the
   whole bar lights. Let go: the whole hold moves to the new spot, and no move
   is added.
 - Undo. Put the start flag partway through a page of the hold and the playhead

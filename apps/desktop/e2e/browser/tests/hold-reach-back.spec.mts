@@ -66,6 +66,7 @@ test.use({
     ],
 });
 
+const PAGE_2_BOX = 8;
 const PAGE_4_BOX = 24;
 
 /** Where screenshots for review go, when set (`HOLD_REACH_SHOTS=/mnt/data/...`) */
@@ -221,7 +222,7 @@ test("a drag on the hold's first page lights the whole bar and moves the arrival
     const { page } = show;
     await reachedBackHold(show);
     // Page 2's window starts where the hold does, so the drag moves the whole hold
-    await goTo(page, "m5");
+    await pageBox(page, PAGE_2_BOX).click();
     await waitForIdle(page);
     const before = await t2Arrival(show);
     const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
@@ -251,6 +252,9 @@ test("an Expert drag on a later page ends the hold there, lighting only what cha
 }) => {
     const { page } = show;
     await reachedBackHold(show);
+    // Go-to moves only the playhead; a click on the page's box sets its window
+    await pageBox(page, PAGE_4_BOX).click();
+    await waitForIdle(page);
     const before = await t2Arrival(show);
     const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
     await page.mouse.move(t2.screen.x, t2.screen.y);
@@ -282,6 +286,9 @@ test("Hold from start flag to playhead reaches back over Not defined pages, and 
     await expect
         .poll(async () => (await readField(page)).selection.length)
         .toBe(1);
+    await waitForIdle(page);
+    // The window is page 4; T2 last arrived at page 1's flag, so the hold reaches back there
+    await pageBox(page, PAGE_4_BOX).click();
     await waitForIdle(page);
     const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
     await page.mouse.click(t2.screen.x, t2.screen.y, { button: "right" });
