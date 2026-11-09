@@ -20,12 +20,14 @@ import {
 } from "@/timeline/timelineStore";
 import {
     levelDraws,
+    inShape,
     planStartFlagMarcher,
     startFlagOverlayOf,
     type StartFlagMarcherPlan,
     type StartFlagOverlay,
     type StartFlagWindow,
 } from "@/field/startFlagOverlay";
+import type { MarkerShape } from "@/field/markerShape";
 
 const sameDeps = (a: readonly unknown[], b: readonly unknown[] | null) =>
     b !== null &&
@@ -52,6 +54,8 @@ class StartFlagPieces {
         levels: StartFlagLevels;
         /** Dots only: no route is sampled (a scrub or a line drag) */
         dotsOnly: boolean;
+        /** Each marcher's shape, for its dot */
+        shapeOf?: (marcherId: number) => MarkerShape;
     }): StartFlagOverlay {
         const { window, levels, selectedIds } = input;
         const setBeatsContext = [window.resolver, input.version];
@@ -90,7 +94,9 @@ class StartFlagPieces {
                 );
                 this.pieces.set(key, piece);
             }
-            if (piece) marchers.push(piece);
+            // In the marcher's shape as it is now, which a look change can change without a new route
+            if (piece)
+                marchers.push(inShape(piece, input.shapeOf?.(marcherId)));
         }
         return startFlagOverlayOf(marchers);
     }
@@ -149,6 +155,7 @@ export function useStartFlagOverlay({
     marcherIds,
     selectedIds,
     fieldProperties,
+    shapeOf,
 }: {
     /** The resolver is ready */
     enabled: boolean;
@@ -156,6 +163,8 @@ export function useStartFlagOverlay({
     marcherIds: readonly number[] | undefined;
     selectedIds: readonly number[];
     fieldProperties: FieldProperties | undefined;
+    /** Each marcher's shape, for its dot; circles without it */
+    shapeOf?: (marcherId: number) => MarkerShape;
 }): StartFlagOverlay | null {
     const resolver = useTimelineResolverStore((s) => s.resolver);
     const version = useTimelineResolverStore((s) => s.version);
@@ -198,6 +207,7 @@ export function useStartFlagOverlay({
                       selectedIds: selected,
                       levels,
                       dotsOnly: gesture,
+                      shapeOf,
                   })
                 : null,
         [
@@ -214,6 +224,7 @@ export function useStartFlagOverlay({
             gesture,
             stepSizeWarnings,
             fieldProperties,
+            shapeOf,
         ],
     );
     let drawnPlan: StartFlagOverlay | null;

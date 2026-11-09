@@ -117,6 +117,7 @@ import {
     useShapeMarchersHidden,
 } from "@/shapes/field/marchersHidden";
 import { useTimelineVisuals } from "./useTimelineVisuals";
+import { useMarcherShapeOf } from "./useMarcherShapes";
 import { drawnFollowing } from "./fieldFollowing";
 import {
     currentFieldQuality,
@@ -315,6 +316,8 @@ function ThreeFieldView() {
     );
     // #558: the edited shape's marchers, while it's seen on its own
     const hiddenIds = useShapeMarchersHidden();
+    // Isolation's start and end marks take the marchers' shapes
+    const shapeOf = useMarcherShapeOf(marchers, fieldProperties?.theme);
     const timeline = useTimelineVisuals({
         isPlaying,
         selectedPage,
@@ -322,6 +325,7 @@ function ThreeFieldView() {
         marcherIds,
         fieldProperties,
         hiddenIds,
+        shapeOf,
     });
     const { dimming, following } = timeline;
     useShapeFocus(dimming);
@@ -652,6 +656,7 @@ function ThreeFieldView() {
                             renderOrder={PATHS_ORDER}
                         />
                         <StartFlagLayers
+                            marchers={marchers}
                             enabled={timeline.ready}
                             isPlaying={isPlaying}
                             marcherIds={marcherIds}

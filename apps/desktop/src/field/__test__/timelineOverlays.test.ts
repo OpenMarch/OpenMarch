@@ -220,6 +220,36 @@ describe("planFocusOverlay", () => {
         ]);
     });
 
+    it("draws the marks of where marchers are in their shapes, and forks round", () => {
+        const shapes = new Map([
+            [1, "square" as const],
+            [2, "cross" as const],
+        ]);
+        const plan = planFocusOverlay(
+            scene,
+            gray,
+            null,
+            (id) => shapes.get(id)!,
+        );
+        expect(plan.dots.map((d) => d.shape)).toEqual([
+            // Where member 1's context move ends
+            "square",
+            // Member 1: start ring, ghost end, then the fork stays round
+            "square",
+            "square",
+            "circle",
+            // Member 2 is an X: a ring can't follow its lines, so its ring is round
+            "circle",
+        ]);
+    });
+
+    it("draws every mark round without shapes", () => {
+        const plan = planFocusOverlay(scene, gray, null);
+        expect(plan.dots.every((d) => (d.shape ?? "circle") === "circle")).toBe(
+            true,
+        );
+    });
+
     it("steps back the members that aren't selected", () => {
         const plan = planFocusOverlay(scene, gray, new Set([2]));
         // Member 1's performed path, at a quarter strength

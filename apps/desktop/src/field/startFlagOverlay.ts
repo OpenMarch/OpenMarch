@@ -1,5 +1,6 @@
 import type { FieldProperties, Resolver } from "@openmarch/core";
 import { SELECTION_RGBA01 } from "./three/selectionRing";
+import { markerShapeOf, type MarkerShape } from "./markerShape";
 import type {
     StartFlagLevel,
     StartFlagLevels,
@@ -29,7 +30,10 @@ import {
  * timeline overlay plans.
  */
 
-/** Marchers are drawn with radius 5 field units; a dot is a third of that across. */
+/**
+ * Marchers are drawn with radius 5 field units; a dot is a third of that across, in the marcher's
+ * shape (`markerShape.ts`).
+ */
 export const START_FLAG_DOT_RADIUS = 5 / 3;
 /** Solid black: the field stays white in the dark theme too. */
 export const START_FLAG_DOT_COLOR: Rgba = [0, 0, 0, 1];
@@ -89,6 +93,8 @@ export type StartFlagOverlayInput = {
      * keyframes), for the squares on the selected marchers' routes. Without it, no squares.
      */
     readonly setBeatsOf?: (marcherId: number) => readonly number[];
+    /** A marcher's shape, so its dot is drawn in it (`markerShape.ts`); circles without it. */
+    readonly shapeOf?: (marcherId: number) => MarkerShape;
 };
 
 /**
@@ -104,7 +110,7 @@ export type StartFlagOverlay = {
 /** The window and drawing inputs every marcher shares. */
 export type StartFlagWindow = Omit<
     StartFlagOverlayInput,
-    "marcherIds" | "selectedIds" | "levels" | "setBeatsOf"
+    "marcherIds" | "selectedIds" | "levels" | "setBeatsOf" | "shapeOf"
 >;
 
 /** One marcher's share of the overlay. */
@@ -407,6 +413,17 @@ export function planStartFlagMarcher(
     };
 }
 
+/** The marcher's share with its dot in `shape` (`markerShape.ts`): a circle when markers don't follow shapes. */
+export function inShape(
+    plan: StartFlagMarcherPlan,
+    shape: MarkerShape | undefined,
+): StartFlagMarcherPlan {
+    const drawn = markerShapeOf(shape);
+    return drawn === "circle"
+        ? plan
+        : { ...plan, dot: { ...plan.dot, shape: drawn } };
+}
+
 /** The overlay's two plans from each drawn marcher's share, in draw order. */
 export function startFlagOverlayOf(
     marchers: Iterable<StartFlagMarcherPlan>,
@@ -463,7 +480,8 @@ export function planStartFlagOverlay(
                     ? (input.setBeatsOf?.(marcherId) ?? null)
                     : null,
             );
-            if (marcher) marchers.push(marcher);
+            if (marcher)
+                marchers.push(inShape(marcher, input.shapeOf?.(marcherId)));
         }
     return startFlagOverlayOf(marchers);
 }

@@ -136,6 +136,28 @@ describe("planStartFlagOverlay dots", () => {
         expect(START_FLAG_DOT_RADIUS).toBeCloseTo(5 / 3, 5);
     });
 
+    it("draws each dot in its marcher's shape", () => {
+        const resolver = resolverFor("G6");
+        const [a, b, c] = resolver.marcherIds();
+        const shapes = new Map([
+            [a!, "square" as const],
+            [b!, "triangle" as const],
+            [c!, "cross" as const],
+        ]);
+        const plan = planStartFlagOverlay(
+            input(resolver, { shapeOf: (id) => shapes.get(id) ?? "circle" }),
+        );
+        expect(plan.dots.dots.map((d) => d.shape ?? "circle")).toEqual([
+            "square",
+            "triangle",
+            "cross",
+            "circle",
+        ]);
+        // The same size step: a third of the marcher it stands for
+        for (const dot of plan.dots.dots)
+            expect(dot.radius).toBe(START_FLAG_DOT_RADIUS);
+    });
+
     it("draws nothing for a marcher who doesn't move across the window", () => {
         // G4 holds still over [8, 12]
         const g4 = resolverFor("G4");

@@ -8,6 +8,7 @@ import {
     ShaderMaterial,
 } from "three";
 import type { DotPlan, StrokePlan } from "@/field/timelineOverlays";
+import { MARCHER_SHAPE } from "./marcherLooks";
 
 /**
  * The timeline overlays' two primitives (fork #201): polylines and dots, each
@@ -160,6 +161,7 @@ const DOT_VERTEX = /* glsl */ `
 attribute vec4 aDot;    // x, y, radius, outline width
 attribute vec4 aFill;
 attribute vec4 aStroke;
+attribute float aShape;
 uniform float uUnit;
 uniform float uPixel;
 varying vec2 vLocal;
@@ -167,7 +169,9 @@ varying float vRadius;
 varying float vHalfStroke;
 varying vec4 vFill;
 varying vec4 vStroke;
+varying float vShape;
 void main() {
+    vShape = aShape;
     float radius = aDot.z * uUnit;
     float stroke = aDot.w * uUnit;
     float drawnStroke = stroke > 0.0 ? max(stroke, uPixel) : 0.0;
@@ -175,7 +179,8 @@ void main() {
     vHalfStroke = drawnStroke * 0.5;
     vFill = aFill;
     vStroke = vec4(aStroke.rgb, aStroke.a * (stroke > 0.0 ? min(1.0, stroke / uPixel) : 0.0));
-    float extent = radius + vHalfStroke + uPixel;
+    // A square or triangle reaches past the radius to 1.2 times it, the corners of an X's line ends to 1.35
+    float extent = radius * (aShape > 2.5 ? 1.35 : aShape > 0.5 ? 1.2 : 1.0) + vHalfStroke + uPixel;
     vLocal.x = (position.x * 2.0 - 1.0) * extent;
     vLocal.y = position.y * extent;
     gl_Position = projectionMatrix * viewMatrix * vec4(aDot.xy + vLocal, 0.0, 1.0);
@@ -188,8 +193,32 @@ varying float vRadius;
 varying float vHalfStroke;
 varying vec4 vFill;
 varying vec4 vStroke;
+varying float vShape;
+
+// The marker shapes of markerShape.ts, as signed distances for a marcher of radius r (y down)
+float squareD(vec2 p, float r) {
+    vec2 q = abs(p);
+    return max(q.x, q.y) - r * 1.7724539 * 0.6;
+}
+float triangleD(vec2 p, float r) {
+    float hw = r * 1.2;
+    float hh = hw * 0.8660254;
+    float slant = dot(vec2(abs(p.x), p.y + hh), normalize(vec2(2.0 * hh, -hw)));
+    return max(slant, p.y - hh);
+}
+float crossD(vec2 p, float r) {
+    vec2 q = abs(p);
+    float along = (q.x + q.y) * 0.70710678;
+    float across = abs(q.x - q.y) * 0.70710678;
+    return max(along - r * 1.2 * 1.41421356, across - r * 0.2);
+}
+
 void main() {
-    float d = length(vLocal) - vRadius;
+    float d;
+    if (vShape < 0.5) d = length(vLocal) - vRadius;
+    else if (vShape < 1.5) d = squareD(vLocal, vRadius);
+    else if (vShape < 2.5) d = triangleD(vLocal, vRadius);
+    else d = crossD(vLocal, vRadius);
     float fillA = vFill.a * clamp(-d / uPixel + 0.5, 0.0, 1.0);
     float strokeA = vHalfStroke > 0.0
         ? vStroke.a * clamp((vHalfStroke - abs(d)) / uPixel + 0.5, 0.0, 1.0)
@@ -289,7 +318,7 @@ export class StrokeBatch {
     }
 }
 
-/** Dots: a fill, and an outline centered on the edge. */
+/** Dots: a fill, and an outline centered on the edge; circles, or markers in a marcher's shape. */
 export class DotBatch {
     readonly mesh: Mesh<InstancedBufferGeometry, ShaderMaterial>;
     private readonly attributes: Attributes;
@@ -302,17 +331,17 @@ export class DotBatch {
             aDot: 4,
             aFill: 4,
             aStroke: 4,
+            aShape: 1,
         });
     }
 
     /** Draws `dots` instead of what was drawn. */
     set(dots: readonly DotPlan[]) {
         this.attributes.reserve(dots.length);
-        const { aDot, aFill, aStroke } = this.attributes.arrays as Record<
-            string,
-            Float32Array
-        >;
+        const { aDot, aFill, aStroke, aShape } = this.attributes
+            .arrays as Record<string, Float32Array>;
         dots.forEach((dot, i) => {
+            aShape![i] = MARCHER_SHAPE[dot.shape ?? "circle"];
             aDot!.set([dot.x, dot.y, dot.radius, dot.strokeWidth], i * 4);
             aFill!.set(dot.fill ?? NONE, i * 4);
             aStroke!.set(dot.stroke ?? NONE, i * 4);
