@@ -370,7 +370,8 @@ export function buildSchoolStand(input: SchoolStandInput): SchoolStand {
 
     const seatRows: SeatRow[] = [];
     for (let i = 0; i < rows; i++) {
-        const h = base + i * rise;
+        // People sit on the bench, not on the tread below it.
+        const h = base + i * rise + BENCH_LIFT;
         const z = i * depth + depth * 0.42;
         seatRows.push({
             points: [toKit([-length / 2, h, z]), toKit([length / 2, h, z])],

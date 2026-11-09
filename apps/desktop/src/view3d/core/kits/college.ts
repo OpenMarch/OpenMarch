@@ -131,7 +131,7 @@ export const COLLEGE_BOARD = { w: 46, h: 19, y: 27, back: 24 };
 /** Rows of the band block (in the side-2 back corner). */
 export const COLLEGE_BAND_ROWS: [number, number] = [1, 21];
 /** Crowd density at high quality; the low path thins it to hold its budget. */
-const COLLEGE_CROWD_DENSITY = { high: 0.7, low: 0.35 };
+const COLLEGE_CROWD_DENSITY = { high: 0.7, low: 0.5 };
 const SEATED_EYE = 1.2;
 const LAMP_SPOT = 1.6;
 

@@ -158,7 +158,7 @@ export function standTexture(kind: StandKind): CanvasTexture {
                 g.fillRect(x, riser.top + riser.hgt * 0.2, 4, 4);
             }
             // seat plank: brightest, with a seam and a worn middle
-            plank(bench.top, bench.hgt, "#d3d6dc");
+            plank(bench.top, bench.hgt, "#8a8d93");
             g.fillStyle = "rgba(255,255,255,0.14)";
             g.fillRect(0, bench.top + bench.hgt * 0.3, w, bench.hgt * 0.4);
             g.fillStyle = "rgba(22,24,30,0.5)";
@@ -253,7 +253,7 @@ export function standTexture(kind: StandKind): CanvasTexture {
             g.fillRect(0, riser.top, 2, riser.hgt);
             g.fillRect(w / 2, riser.top, 2, riser.hgt);
             // aluminum seat planks bolted to the concrete
-            plank(bench.top, bench.hgt, "#cfd2d8");
+            plank(bench.top, bench.hgt, "#85888e");
             g.fillStyle = "rgba(22,24,30,0.5)";
             g.fillRect(0, bench.top + bench.hgt * 0.5, w, 2);
             // aisle step: painted nosing

@@ -187,7 +187,7 @@ export const buildBighs: KitBuilder = (input) =>
                 endZone: { sx: -1, dx: ft(150), y: ft(40), dz: 5 },
                 topDownHeight: ft(700),
             },
-            crowdDensity: 0.56,
+            crowdDensity: 0.75,
             defaultLighting: "night",
             dress: (ctx) =>
                 schoolDress({ kind: "concrete", site: BIGHS_SITE }, ctx),

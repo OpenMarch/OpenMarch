@@ -333,7 +333,8 @@ describe("stand kit proportions (meters)", () => {
         expect(first.depth).toBeCloseTo(0.79, 2);
         // the first tread's seat line is 15.8 m + 0.42 tread in front of the sideline
         expect(first.points[0][2]).toBeCloseTo(15.85 + 0.33, 0);
-        expect(first.points[0][1]).toBeCloseTo(1.22, 1);
+        // people sit on the bench: the 1.22 m first tread plus the 0.41 m bench lift
+        expect(first.points[0][1]).toBeCloseTo(1.63, 1);
         kit.dispose();
     });
 

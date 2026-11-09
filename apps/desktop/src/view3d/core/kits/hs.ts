@@ -170,7 +170,7 @@ export const buildHs: KitBuilder = (input) =>
                 endZone: { sx: 1, dx: ft(70), y: ft(28), dz: 5 },
                 topDownHeight: ft(620),
             },
-            crowdDensity: 0.5,
+            crowdDensity: 0.72,
             defaultLighting: "day",
             dress: (ctx) =>
                 schoolDress({ kind: "aluminum", site: HS_SITE }, ctx),
