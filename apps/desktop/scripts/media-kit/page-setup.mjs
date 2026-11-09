@@ -8,6 +8,8 @@ import { OVERLAY } from "./overlay.mjs";
 //   it instead of real time. The app's playback reads its time from the AudioContext, and the
 //   3D View extrapolates from performance.now(), so stepping this clock in every window moves
 //   the show by exactly that much, and animations step with it.
+// - The 3D View on High quality. On Auto (the default) it drops to Low once if frames are slow,
+//   which in software drawing happens on some runs and not others (#766).
 // - The field draws a simpler view when WebGL runs in software (SwiftShader); recordings should
 //   show the full view, so a software renderer is reported as a GPU and its notice is hidden.
 export const PAGE_SETUP = `(() => {
@@ -32,6 +34,10 @@ export const PAGE_SETUP = `(() => {
             return anchor.real + (wallMs - anchor.wall) / 1000;
         },
     });
+    try {
+        if (localStorage.getItem("view3d.quality") === null)
+            localStorage.setItem("view3d.quality", "high");
+    } catch {}
     for (const C of [WebGLRenderingContext, WebGL2RenderingContext]) {
         const get = C.prototype.getParameter;
         C.prototype.getParameter = function (p) {

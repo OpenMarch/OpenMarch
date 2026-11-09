@@ -154,7 +154,55 @@ export async function launch({
     );
     await keepWindowsLive(app);
     await wait(1500);
+    await fitField(page, log);
     return { app, page, show };
+}
+
+/**
+ * Fits the field to its pane again, as the zoom readout's reset does, and waits for it to
+ * land. The app fits the field only while the panels around it are still laying out as the
+ * show opens; on a slow machine the timeline can finish sizing after that, and the field
+ * keeps the old fit (about 18 points off, #767). So this waits for the panes to stop resizing
+ * first, because a resize after the fit keeps the field's zoom and top-left instead of fitting.
+ */
+async function fitField(page, log) {
+    const layout = () =>
+        page
+            .evaluate(() =>
+                JSON.stringify(
+                    [
+                        ...document.querySelectorAll(
+                            'canvas, [data-testid="timeline-pane"]',
+                        ),
+                    ].map((el) => el.getBoundingClientRect()),
+                ),
+            )
+            .catch(() => "");
+    let before = "";
+    for (let same = 0, i = 0; same < 3 && i < 40; i++) {
+        await wait(250);
+        const now = await layout();
+        same = now === before ? same + 1 : 0;
+        before = now;
+    }
+    const reset = page.getByRole("button", { name: /reset zoom and center/i });
+    try {
+        await reset.click({ timeout: 5000 });
+    } catch (error) {
+        log(`   warning: couldn't fit the field to its pane: ${error.message}`);
+        return;
+    }
+    await page.mouse.move(0, 0);
+    await page.evaluate(() => document.activeElement?.blur?.());
+    let last = "";
+    for (let same = 0, i = 0; same < 3 && i < 40; i++) {
+        await wait(250);
+        const now = await page
+            .evaluate(() => JSON.stringify(window.fieldTest?.viewport()))
+            .catch(() => "");
+        same = now === last ? same + 1 : 0;
+        last = now;
+    }
 }
 
 /**
@@ -177,6 +225,68 @@ export async function capture(app, target, rect) {
     return Buffer.from(png, "base64");
 }
 
+/** Waits two frames in every open window, so each one draws what it has now. */
+async function drawEveryWindow(app) {
+    await Promise.all(
+        app
+            .windows()
+            .map((w) =>
+                w
+                    .evaluate(
+                        () =>
+                            new Promise((r) =>
+                                requestAnimationFrame(() =>
+                                    requestAnimationFrame(r),
+                                ),
+                            ),
+                    )
+                    .catch(() => {}),
+            ),
+    );
+}
+
+/**
+ * Waits until `rect` of `target` stops changing: two captures `gapMs` apart give the same
+ * pixels. A view still easing into place (the field fitting itself to its pane, the 3D View's
+ * camera arriving) would otherwise be caught at a different point on each run. Returns false
+ * (and the picture is taken anyway) if it's still changing after `seconds`.
+ */
+export async function waitUntilSteady(
+    app,
+    target,
+    rect,
+    { gapMs = 500, seconds = 20 } = {},
+) {
+    const end = Date.now() + seconds * 1000;
+    let last = await capture(app, target, rect);
+    while (Date.now() < end) {
+        await wait(gapMs);
+        const next = await capture(app, target, rect);
+        if (next.equals(last)) return true;
+        last = next;
+    }
+    return false;
+}
+
+/**
+ * Stops the clock in every open window (the 3D View's too) and lets each draw once, so nothing
+ * the clock drives moves between here and the capture. Time stays stopped until the app closes.
+ */
+export async function freezeClocks(app) {
+    const ms = Date.now();
+    await Promise.all(
+        app
+            .windows()
+            .map((w) =>
+                w
+                    .evaluate((t) => window.__whatsNewClock?.set(t), ms)
+                    .catch(() => {}),
+            ),
+    );
+    await drawEveryWindow(app);
+    await drawEveryWindow(app);
+}
+
 /**
  * Films `box` of `target` into `framesDir`: `film.frame()` steps the virtual clock 1/fps
  * seconds in every window, waits for them to draw, and saves a screenshot of the region.
@@ -196,21 +306,7 @@ export function makeFilm({ app, target, box, framesDir, fps, maxFrames }) {
                     .catch(() => {}),
             ),
         );
-    const settle = () =>
-        Promise.all(
-            windows().map((w) =>
-                w
-                    .evaluate(
-                        () =>
-                            new Promise((r) =>
-                                requestAnimationFrame(() =>
-                                    requestAnimationFrame(r),
-                                ),
-                            ),
-                    )
-                    .catch(() => {}),
-            ),
-        );
+    const settle = () => drawEveryWindow(app);
     const film = {
         fps,
         get frames() {

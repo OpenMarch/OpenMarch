@@ -24,10 +24,12 @@ import {
     DESKTOP,
     capture,
     even,
+    freezeClocks,
     launch,
     makeFilm,
     wait,
     waitInPage,
+    waitUntilSteady,
 } from "../media-kit/app.mjs";
 import { contactSheet, encodeClip, toWebp } from "../media-kit/encode.mjs";
 import { writePreload } from "../media-kit/page-setup.mjs";
@@ -186,18 +188,27 @@ for (const shot of chosen) {
         log(`>> ${shot.chapter}/${shot.id} (${theme})`);
         const source =
             SHOWS[shot.show ?? "demo"] ?? path.join(DESKTOP, shot.show);
-        const { app, page } = await launch({
-            source,
-            work: WORK,
-            preload: PRELOAD,
-            window: WINDOW,
-            theme,
-            softwareGl: options.softwareGl,
-            uiSettings: shot.uiSettings,
-            mode: shot.mode ?? "expert",
-            scale: SCALE,
-            log,
-        });
+        // One show that won't open costs that shot, not the rest of the run
+        let launched;
+        try {
+            launched = await launch({
+                source,
+                work: WORK,
+                preload: PRELOAD,
+                window: WINDOW,
+                theme,
+                softwareGl: options.softwareGl,
+                uiSettings: shot.uiSettings,
+                mode: shot.mode ?? "expert",
+                scale: SCALE,
+                log,
+            });
+        } catch (error) {
+            failed++;
+            log(`!! ${shot.id} (${theme}): ${error.stack ?? error}`);
+            continue;
+        }
+        const { app, page } = launched;
         let frameBox = WHOLE;
         const overlay = {
             enable: () =>
@@ -239,6 +250,12 @@ for (const shot of chosen) {
             frameBox = box;
             const base = path.join(outDir, `${shot.id}.${theme}`);
             const target = prepared.target ?? page;
+            // The view settles before anything is filmed (#766, #767)
+            const steady = () =>
+                waitUntilSteady(app, target, box).then(
+                    (ok) =>
+                        ok || log("   warning: the view never stopped moving"),
+                );
             if (shot.kind === "clip") {
                 const framesDir = path.join(WORK, `${shot.id}-${theme}-frames`);
                 fs.rmSync(framesDir, { recursive: true, force: true });
@@ -251,6 +268,7 @@ for (const shot of chosen) {
                     fps: FPS,
                     maxFrames: options.maxFrames,
                 });
+                await steady();
                 await film.freeze();
                 await shot.perform({ ...ctx, film, box });
                 const width = Math.min(shot.width ?? 1280, box.width * SCALE);
@@ -284,6 +302,8 @@ for (const shot of chosen) {
             } else {
                 await shot.perform?.(ctx);
                 await wait(shot.settle ?? 400);
+                await steady();
+                await freezeClocks(app);
                 const png = path.join(WORK, `${shot.id}-${theme}.png`);
                 fs.writeFileSync(png, await capture(app, target, box));
                 const width = Math.min(shot.width ?? 1600, box.width * SCALE);
