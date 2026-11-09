@@ -35,11 +35,11 @@ bottom edge of the page row, with the keyframe diamonds.
 - Select one marcher of a group and shorten only its hold: each marcher can
   leave at its own time.
 - Pick a marcher that never moves, and hold it on two pages with a page
-  between them. The hold reaches back, so they make one hold from the start
-  of the show, with no gap to drag across.
+  between them. Drag the first hold's end onto the second: they become one
+  hold.
 
 **Good to know**
 
-- A hold's start is where the marchers got there, or the starting spot, so
-  it has no handle; drag its end instead.
+- A hold that starts where the marchers arrive can't move its start; drag
+  its end instead. A hold from the starting spots can start earlier or later.
 - Undo puts back each drag and split in one step.
