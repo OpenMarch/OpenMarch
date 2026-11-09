@@ -36,7 +36,7 @@ export interface SelectionHoldBar extends BeatRange {
     readonly shape: boolean;
     /** An edit would carry here (a drag, or a hovered follow-back) */
     readonly lit: boolean;
-    /** Not there yet: the Held bar a hovered command would make, drawn over what's there and pulsing */
+    /** Not there yet: the Held bar a hovered command would make, drawn over what's there */
     readonly preview?: boolean;
     /** The selected marchers holding over exactly these counts, in selection order */
     readonly marcherIds: readonly number[];
@@ -263,7 +263,8 @@ export interface HoldLight {
     readonly byMarcher: ReadonlyMap<number, readonly BeatRange[]>;
     /**
      * The ranges are the holds a hovered command would make, not bars already there: each draws
-     * whole as a pulsing Held bar, even over a move the command would replace
+     * whole as a Held bar with the page row filled above it, even over a move the command would
+     * replace
      */
     readonly wouldHold?: boolean;
 }

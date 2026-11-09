@@ -195,9 +195,20 @@ test("hovering Hold from last keyframe pulses the whole hold it would make, and 
     const pulsing = page.locator("[data-preview]");
     await expect(pulsing).toHaveCount(1);
     await expect(heldBar(page).and(pulsing)).toHaveCount(1);
-    await expect(pulsing.locator("[data-hold-line]")).toHaveClass(
-        /animate-pulse/,
-    );
+    // It fills the page row above the bar, sweeping out and then pulsing
+    const fill = pulsing.locator("[data-preview-fill]");
+    await expect(fill).toHaveCount(1);
+    await expect
+        .poll(() => fill.evaluate((el) => el.getBoundingClientRect().height))
+        .toBeCloseTo(28, 0);
+    expect(
+        await fill.evaluate((el) =>
+            el
+                .getAnimations()
+                .some((a) => a.effect?.getTiming().iterations === Infinity),
+        ),
+    ).toBe(true);
+    await shoot(page, "reach-back-preview-light");
     await page.keyboard.press("Escape");
     await expect(pulsing).toHaveCount(0);
     // Only a preview: nothing written

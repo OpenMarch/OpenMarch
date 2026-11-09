@@ -19,8 +19,9 @@ edge of the page row, with the keyframe diamonds.
 
 - Pick a marcher that last moves on, say, Page 2. Right-click a page box a
   few pages later (Page 5, say) and point at **Hold from last keyframe**
-  without clicking. The hold it would make pulses on the timeline, from Page
-  2's diamond to the end of Page 5. Move off it and the pulse stops.
+  without clicking. The hold it would make sweeps out from Page 2's diamond
+  across the page row to the end of Page 5, then pulses. Move off it and it
+  goes away.
 - Now click it. Pages 3
   to 5 become one plain Held bar, growing out of Page 2's diamond, and the
   toast names those pages.
