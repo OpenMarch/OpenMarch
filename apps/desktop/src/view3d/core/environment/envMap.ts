@@ -1,9 +1,11 @@
+// cspell:ignore tonemap
 /**
  * An environment map for reflective surfaces (docs/3d/instruments.md §4,
- * fidelity.md "sky-baked environment lighting"): the lighting preset's sky
- * gradient over a turf-colored ground, rendered to a PMREM. Brass, chrome
- * and anything glossy reflects it. The scene builder is pure three and
- * testable; `createEnvironmentMap` needs a renderer.
+ * fidelity.md "sky-baked environment lighting"): the lighting preset's
+ * procedural sky over its ground (turf outdoors, a room's floor indoors),
+ * rendered to a PMREM. Brass, chrome and anything glossy reflects it. The
+ * scene builder is pure three and testable; `createEnvironmentMap` needs a
+ * renderer.
  */
 import {
     BackSide,
@@ -20,23 +22,28 @@ import {
 } from "three";
 import type { LightingPreset } from "../types";
 import { lightingValues } from "./lighting";
+import {
+    applySkyPreset,
+    createSkyUniforms,
+    SKY_VERTEX,
+    skyFragmentShader,
+} from "./skyShader";
 
-/** Turf as the ground sees it from the field: a mid green. */
-const GROUND = 0x3f6b2e;
-
-/** The sky gradient shader, as `sky.ts` draws it, on a small sphere. */
-function skyMaterial(top: number, bottom: number): ShaderMaterial {
+/** The procedural sky (`skyShader.ts`), untouched by tone mapping, on a small sphere. */
+function skyMaterial(preset: LightingPreset): ShaderMaterial {
+    const uniforms = createSkyUniforms();
+    applySkyPreset(uniforms, preset);
     return new ShaderMaterial({
         side: BackSide,
         depthWrite: false,
-        uniforms: {
-            top: { value: new Color(top) },
-            bottom: { value: new Color(bottom) },
-        },
-        vertexShader:
-            "varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
-        fragmentShader:
-            "uniform vec3 top; uniform vec3 bottom; varying vec3 vP; void main(){ float h = clamp(vP.y * 1.5 + 0.06, 0.0, 1.0); gl_FragColor = vec4(mix(bottom, top, pow(h, 0.65)), 1.0); }",
+        uniforms,
+        vertexShader: SKY_VERTEX,
+        fragmentShader: skyFragmentShader({
+            octaves: 3,
+            cloudLighting: false,
+            tonemap: false,
+            landBand: false,
+        }),
     });
 }
 
@@ -44,15 +51,14 @@ function skyMaterial(top: number, bottom: number): ShaderMaterial {
 export function environmentScene(preset: LightingPreset): Scene {
     const v = lightingValues(preset);
     const scene = new Scene();
-    const sky = new Mesh(
-        new SphereGeometry(50, 32, 16),
-        skyMaterial(v.skyTop, v.skyBottom),
-    );
+    const sky = new Mesh(new SphereGeometry(50, 32, 16), skyMaterial(preset));
     sky.name = "env-sky";
     const ground = new Mesh(
         new CircleGeometry(60, 32),
         new MeshBasicMaterial({
-            color: new Color(GROUND).multiplyScalar(v.hemisphere.intensity),
+            color: new Color(v.envGround).multiplyScalar(
+                v.hemisphere.intensity,
+            ),
         }),
     );
     ground.name = "env-ground";
