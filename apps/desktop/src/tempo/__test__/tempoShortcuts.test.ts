@@ -1,5 +1,7 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { registerActionHandler } from "@/shortcuts/registry";
 import { isActionOffInWorkspace } from "@/shortcuts/workspaceActions";
+import { importAudioFile } from "../TempoMusicFile";
 import { installTempoKeyGuard } from "../tempoShortcuts";
 import { useTempoModeStore } from "../tempoModeStore";
 
@@ -27,6 +29,18 @@ describe("tempo mode shortcuts", () => {
             expect(isActionOffInWorkspace(id)).toBe(true);
         useTempoModeStore.getState().setOn(false);
         expect(isActionOffInWorkspace("selectAllMarchers")).toBe(false);
+    });
+
+    it("runs the audio import from tempo mode's own buttons (#774)", () => {
+        const run = vi.fn();
+        const unregister = registerActionHandler(
+            "launchInsertAudioFileDialogue",
+            { run, isEnabled: () => true },
+        );
+        useTempoModeStore.getState().setOn(true);
+        expect(importAudioFile()).toBe(true);
+        expect(run).toHaveBeenCalledTimes(1);
+        unregister();
     });
 
     it("stops other keys before the field's own handlers, and lets navigation and tempo keys through", () => {
