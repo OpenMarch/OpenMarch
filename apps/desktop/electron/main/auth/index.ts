@@ -19,6 +19,7 @@ import {
     initiateOAuthFlow,
     exchangeCodeForTokens,
     refreshAccessToken,
+    revokeRefreshToken,
 } from "./oauth-flow";
 import {
     beginSession,
@@ -27,10 +28,12 @@ import {
     clearPendingFlow,
     validateState,
     clearTokens,
+    getStoredTokens,
     getAuthState,
     getValidAccessToken,
     setTokenRefreshCallback,
     setSignedOutCallback,
+    setTokensDiscardedCallback,
 } from "./token-manager";
 import type { AuthState, AuthError, AuthTokens } from "./types";
 
@@ -164,6 +167,9 @@ export function initAuthAfterReady(
     // Set up token refresh callback
     setTokenRefreshCallback(handleTokenRefresh);
     setSignedOutCallback(handleSignedOut);
+    setTokensDiscardedCallback(
+        (tokens) => void revokeRefreshToken(tokens.refreshToken),
+    );
 
     // Set up protocol listeners for OAuth callbacks
     setupProtocolListeners(getWindow, handleAuthCallback);
@@ -206,12 +212,17 @@ export function initAuthAfterReady(
     });
 
     /**
-     * Logout handler - clears tokens and session.
+     * Logout handler - clears tokens and session, and revokes the refresh
+     * token at Clerk.
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.LOGOUT, async () => {
         console.log("[Auth] Logout requested");
 
+        const refreshToken = getStoredTokens()?.refreshToken;
         clearTokens();
+        // Signed out here at once; Clerk hears about it in the background
+        // (offline, the token just runs out at Clerk instead).
+        if (refreshToken) void revokeRefreshToken(refreshToken);
 
         notifyAuthStateChanged({
             isAuthenticated: false,

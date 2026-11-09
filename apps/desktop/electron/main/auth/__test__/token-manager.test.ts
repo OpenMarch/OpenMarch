@@ -180,6 +180,39 @@ describe("token manager", () => {
         expect(storeData.has("encryptedTokens")).toBe(false);
     });
 
+    it("hands over tokens a refresh got after a sign-out, to be revoked", async () => {
+        const tm = await loadTokenManager();
+        const discarded = vi.fn();
+        tm.setTokensDiscardedCallback(discarded);
+        let finishRefresh: (tokens: AuthTokens) => void = () => {};
+        tm.setTokenRefreshCallback(
+            () => new Promise((resolve) => (finishRefresh = resolve)),
+        );
+        tm.storeTokens(tokensExpiringAt(Date.now() + 60_000));
+
+        const pending = tm.getValidAccessToken();
+        tm.clearTokens();
+        const late = tokensExpiringAt(Date.now() + HOUR, "new");
+        finishRefresh(late);
+        await pending;
+
+        expect(discarded).toHaveBeenCalledExactlyOnceWith(late);
+    });
+
+    it("doesn't discard the tokens of an ordinary refresh", async () => {
+        const tm = await loadTokenManager();
+        const discarded = vi.fn();
+        tm.setTokensDiscardedCallback(discarded);
+        tm.setTokenRefreshCallback(async () =>
+            tokensExpiringAt(Date.now() + HOUR, "new"),
+        );
+        tm.storeTokens(tokensExpiringAt(Date.now() + 60_000));
+
+        await tm.getValidAccessToken();
+
+        expect(discarded).not.toHaveBeenCalled();
+    });
+
     it("keeps the pending sign-in when a callback has the wrong state", async () => {
         const tm = await loadTokenManager();
         const flow: PendingAuthFlow = {
