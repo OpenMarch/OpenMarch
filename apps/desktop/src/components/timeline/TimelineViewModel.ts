@@ -1,5 +1,4 @@
 import type { TimelineBand } from "./TimelineBand";
-import type { PageKeepChains } from "./PageKeepChain";
 import type { TimelineClipResizeCommands } from "./TimelineClipResize";
 import type {
     TimelineKeyframe,
@@ -364,8 +363,6 @@ export interface TimelineCommonProps
     readonly holds?: SelectionHolds;
     /** #475: the draggable ends of their Held bars, view beats; none without */
     readonly holdEdges?: TimelineHoldEdges;
-    /** The chains on the page boxes (UI-18 keep later pages); none without a selection */
-    readonly keepChains?: PageKeepChains;
     /**
      * The moves a page box stands for, so they have no clip (`timelinesOffPages`), by track id.
      * One that gets a clip (its box was split, or a flag deleted) drops out of the page row

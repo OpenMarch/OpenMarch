@@ -89,7 +89,7 @@ export function useHoldCommands(
             },
         [keepStates, marcherIds, marks],
     );
-    return { keepStates, defineAsShown, holdFromPrevious, entriesOn };
+    return { defineAsShown, holdFromPrevious, entriesOn };
 }
 
 /**

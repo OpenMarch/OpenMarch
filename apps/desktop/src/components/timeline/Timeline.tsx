@@ -27,7 +27,6 @@ import {
     ExpandedTimeline,
 } from "./TimelineVariants";
 import type { TimelineBand } from "./TimelineBand";
-import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineKeyframe,
     TimelineKeyframeMenu,
@@ -278,8 +277,6 @@ export interface TimelineProps {
     readonly holdEdges?: TimelineHoldEdgesInput;
     /** #475: **Split hold here** on a Held bar's right-click, spec beats */
     readonly splitHold?: TimelineSplitHoldMenu;
-    /** The chains on the page boxes (UI-18 keep later pages), by page id; none without a selection */
-    readonly keepChains?: PageKeepChains;
     /**
      * The moves a page box stands for, so they have no clip (`timelinesOffPages`), by track id.
      * One that gets a clip (its box was split, or a flag deleted) drops out of the page row
@@ -467,7 +464,6 @@ const READ_ONLY_EDITS = {
     onUnpinStart: undefined,
     holdMarks: undefined,
     holdEdges: undefined,
-    keepChains: undefined,
     pageMoves: undefined,
     basicPoints: undefined,
     onRemoveBasicPoint: undefined,
@@ -1094,7 +1090,6 @@ export function Timeline(props: TimelineProps) {
         keyframeMenu: viewKeyframeMenu,
         holds: viewHolds,
         holdEdges: viewHoldEdges,
-        keepChains: props.keepChains,
         pageMoves: props.pageMoves,
         basicPoints: viewBasicPoints,
         onRemoveBasicPoint: removeBasicPoint,

@@ -171,8 +171,8 @@ export function useUnsetTargets(marcherIds: readonly number[]): number[] {
 /**
  * The pages that follow the spot `marcherIds` have at `beat`, in page order: for the ones Set
  * there (`unsetTargets`), the page boxes after the one holding `beat`, in a row, that some of them
- * follow into without a move of their own (`followingPages`, as the keep chains and **Only Page
- * N** read it). What **Unset here and on Pages N–M** lets follow back; null when none follow.
+ * follow into without a move of their own (`followingPages`, as **Only Page N** reads
+ * it). What **Unset here and on Pages N–M** lets follow back; null when none follow.
  */
 export function unsetFollowingPages({
     beat,

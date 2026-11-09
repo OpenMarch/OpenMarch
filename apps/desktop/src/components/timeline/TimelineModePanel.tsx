@@ -90,7 +90,6 @@ import tolgee from "@/global/singletons/Tolgee";
 import type { TimelineKeyframe } from "./TimelineKeyframes";
 import { useKeyframeUnsetMenu } from "@/timeline/timelineUnset";
 import { useMarcherNameOf } from "@/timeline/useKeepLaterPages";
-import { usePageKeepChains } from "./PageKeepChain";
 import { useHoldCommands } from "@/timeline/useHoldCommands";
 import { clearPageMenu } from "@/timeline/timelineClearPage";
 import { describeMoveClips } from "./moveClipText";
@@ -293,16 +292,13 @@ export default function TimelineModePanel() {
     );
     // #306: a diamond's right-click Unset actions at its count
     const keyframeMenu = useKeyframeUnsetMenu(selectedIdList, isPlaying);
-    // UI-18 keep later pages: the chains on the page boxes (named up to three)
     // Holds: Define as shown (#466) and Hold from last keyframe (#472) on a page box, the same
     // commands the timelineDefineAsShown and timelineHoldFromPrevious actions run on the current page
     const {
-        keepStates,
         defineAsShown: setAsShown,
         holdFromPrevious,
         entriesOn,
     } = useHoldCommands(pages, selectedIdList, keepNameOf);
-    const keepChains = usePageKeepChains(keepStates, keepNameOf);
     // #573: Clear Page N, for the selected marchers or every performer when none is selected;
     // ticked when every selected marcher is already Not defined on the page (`entriesOn`)
     const { data: performers } = useQuery(allMarchersQueryOptions());
@@ -596,7 +592,6 @@ export default function TimelineModePanel() {
                     holds={holds}
                     holdEdges={holdEdges}
                     splitHold={splitHold}
-                    keepChains={keepChains}
                     setAsShown={setAsShown}
                     holdFromPrevious={holdFromPrevious}
                     clearPage={clearPage}
