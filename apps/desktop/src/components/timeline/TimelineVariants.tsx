@@ -1224,7 +1224,6 @@ const TimelineSurface = memo(function TimelineSurface({
                                     ? undefined
                                     : props.holdEdges
                             }
-                            keepChains={props.keepChains}
                         />
                         <TimelinePastEndShade
                             pages={model.pages}

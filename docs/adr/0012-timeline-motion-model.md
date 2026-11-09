@@ -314,7 +314,8 @@ removed by the next amendment (#467); Clear this page lands with #469.
   longer clear or carry kept markers, a drag back treats every own move alike, and **Move them
   too** may offer any later own move.
 - **Set as shown replaces them.** It is in the page box menu (and the chain on a Not-set page box,
-  and the inspector, until the Not-set bars of #477). It writes an ordinary one-slot move over the
+  and the inspector, until the Not-set bars of #477; _the amendment of 2026-11-09 removes the
+  chain_). It writes an ordinary one-slot move over the
   page box, ending at the spot the marcher shows there, so the page becomes Set.
 - **The other writers of kept rows write the same ordinary move.** Remove keyframe's next-page
   move (Unset here) and the after-edit **Only Page N** write it, ending where the marchers stood
@@ -544,6 +545,11 @@ beat ordinals: beat `n` is the start of the `n`th row of `beats` ordered by
 `position`, counting from 0. Mapping a wall-clock time to a real beat position
 is the app's tempo map (spec Q-9), built in Phase 5 from the `timing_objects`
 view, which has no time-to-beat function today.
+
+**Amendment (2026-11-09, project owner): the chain on Not-set page boxes is removed.** The
+2026-10-29 amendment kept it only until the Not-set bars of #477, which have merged (holds
+decision 12). **Define as shown** stays in the page box menu, on right-click of a Not defined
+bar, in the inspector and in the palette. No stored data or format changes.
 
 ### 3. Undo and redo compatibility (C-1, C-2, C-6)
 

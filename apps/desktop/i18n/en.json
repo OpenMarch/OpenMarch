@@ -2224,17 +2224,6 @@
             "shape": "{names}: in a shape on this page"
         },
         "keep": {
-            "chain": {
-                "ariaLabel": "Page {page}: {label}. {hint}",
-                "notOwn": "{count, plural, one {# marcher has no position of its own here, shown where Page {from} left it} other {# marchers have no position of their own here, shown where Page {from} left them}}",
-                "notOwnEarlier": "{count, plural, one {# marcher has no position of its own here, shown where earlier pages left it} other {# marchers have no position of their own here, shown where earlier pages left them}}",
-                "notOwnHint": "Changes to Page {from} carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
-                "notOwnHintEarlier": "Changes to earlier pages carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
-                "notOwnMenuHint": "Changes to Page {from} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
-                "notOwnMenuHintEarlier": "Changes to earlier pages carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
-                "notOwnNamed": "{count, plural, =1 {{names} has no position of its own here, shown where Page {from} left it} other {{names} have no position of their own here, shown where Page {from} left them}}",
-                "notOwnNamedEarlier": "{count, plural, =1 {{names} has no position of its own here, shown where earlier pages left it} other {{names} have no position of their own here, shown where earlier pages left them}}"
-            },
             "followed": {
                 "hadNoPositions": "{count, plural, =1 {Page {first} had no positions of its own for these marchers, so it changed too} other {Pages {first}–{last} had no positions of their own for these marchers, so they changed too}}",
                 "keepAsBefore": "{count, plural, =1 {Keep Page {first} as before} other {Keep Pages {first}–{last} as before}}",
