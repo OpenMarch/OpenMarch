@@ -24,8 +24,7 @@
  *   facing +Z: the screen shows the show's credits card (`signage.ts`).
  * - `buildCrowd(seatRows, { density, palette, aisleEvery, quality })` ->
  *   `{ mesh, count, clearAround(point, radius), reset(), visibleCount(),
- *   tierCounts(), dispose }`: seated people with a level of detail by camera
- *   distance. Add `mesh` (the close tiers are its children).
+ *   dispose }`: one `InstancedMesh` of seated blocks.
  *   `defaultCrowdPalette(params)` builds the palette from `VenueParams`
  *   colors. Point and radius share the frame of the seat rows (kit-root
  *   space).
