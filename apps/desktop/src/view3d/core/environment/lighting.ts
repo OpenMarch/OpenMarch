@@ -24,10 +24,61 @@ export interface LightingValues {
         intensity: number;
         /** Offset from the focus point, in meters. */
         offset: Vector3Tuple;
+        /** False for a moon too faint to be worth a shadow map. Default true. */
+        castShadow?: boolean;
     };
     /** Apply to `renderer.toneMappingExposure`. */
     exposure: number;
+    /** Fog range in meters (linear fog, `env.fog.near` and `far`). */
+    fogNear: number;
+    fogFar: number;
+    /** The procedural sky and the land around the venue. */
+    sky: SkyLook;
+    /** What the environment map sees below the horizon, sRGB hex. */
+    envGround: number;
     kit: KitLightingValues;
+}
+
+/**
+ * How the procedural sky and the land look under a preset. `skyTop` is the
+ * zenith and `fog` the color right at the horizon, so distant fogged ground
+ * meets the sky without a seam. Colors are sRGB hex.
+ */
+export interface SkyLook {
+    /** Sky color about 15 degrees up, between the horizon haze and the zenith. */
+    mid: number;
+    /** Band a few degrees above the horizon, strongest away from the sun. */
+    band: number;
+    bandStrength: number;
+    /** Glow around the sun (or moon) and its strength. */
+    glow: number;
+    glowStrength: number;
+    /** Sun disc brightness; 0 hides it. The disc sits along `sun.offset`. */
+    sunDisc: number;
+    cloudCover: number;
+    cloudLit: number;
+    cloudShade: number;
+    cloudOpacity: number;
+    /** Star brightness; 0 hides them. */
+    stars: number;
+    /** Moon brightness and direction; 0 hides it. */
+    moon: number;
+    moonDirection: Vector3Tuple;
+    /** Warm light-pollution glow of a town on the horizon toward -Z. */
+    cityGlow: number;
+    cityGlowStrength: number;
+    /** Horizon silhouettes: treeline and town, then far hills. */
+    nearLand: number;
+    farLand: number;
+    /** How far each silhouette fades toward the horizon color, 0..1. */
+    nearHaze: number;
+    farHaze: number;
+    /** Lit windows, street lights and porch lights; 0 is off (daytime). */
+    windows: number;
+    /** Multiplies the land's daytime colors. */
+    landLight: number;
+    /** Warm light the stadium throws on the ground around it. */
+    landSpill: number;
 }
 
 /** Values for lights and emissive parts that kits own. */
@@ -67,25 +118,87 @@ const sunOffset = (x: number, y: number, z: number): Vector3Tuple => [
     ft(z),
 ];
 
+/** The moon hangs low behind the far stand, right of the press box view. */
+const MOON_DIRECTION: Vector3Tuple = [0.52, 0.34, -0.78];
+
+/** Turf as the ground sees it from the field: a mid green. */
+const TURF_GROUND = 0x3f6b2e;
+
+const daySky: SkyLook = {
+    mid: 0x8fbbe8,
+    band: 0xdbe8f5,
+    bandStrength: 0.25,
+    glow: 0xfff3d8,
+    glowStrength: 0.6,
+    sunDisc: 6,
+    cloudCover: 0.42,
+    cloudLit: 0xffffff,
+    cloudShade: 0x9eacc0,
+    cloudOpacity: 0.92,
+    stars: 0,
+    moon: 0,
+    moonDirection: MOON_DIRECTION,
+    cityGlow: 0x000000,
+    cityGlowStrength: 0,
+    nearLand: 0x3a4d33,
+    farLand: 0x627a6c,
+    nearHaze: 0.34,
+    farHaze: 0.66,
+    windows: 0,
+    landLight: 1,
+    landSpill: 0,
+};
+
 const day: LightingValues = {
     skyVisible: true,
-    skyTop: 0x3d7fd6,
-    skyBottom: 0xcfe2f5,
-    fog: 0xcfe2f5,
+    skyTop: 0x2f6fc9,
+    skyBottom: 0xcfe0ef,
+    fog: 0xcfe0ef,
     hemisphere: { sky: 0xcfe3ff, ground: 0x4a5d33, intensity: 1.1 },
     sun: { color: 0xffffff, intensity: 2.3, offset: sunOffset(300, 520, 260) },
     exposure: 1,
+    fogNear: 140,
+    fogFar: 1700,
+    sky: daySky,
+    envGround: TURF_GROUND,
     kit: { ...kitOff },
 };
 
 const dusk: LightingValues = {
     skyVisible: true,
-    skyTop: 0x27306a,
-    skyBottom: 0xf2995a,
-    fog: 0xf2995a,
+    skyTop: 0x1c2a66,
+    skyBottom: 0xf0a878,
+    fog: 0xf0a878,
     hemisphere: { sky: 0xffc49a, ground: 0x3a3440, intensity: 0.55 },
     sun: { color: 0xffa860, intensity: 1.4, offset: sunOffset(-700, 120, -60) },
     exposure: 1.05,
+    fogNear: 120,
+    fogFar: 1600,
+    sky: {
+        mid: 0x8c94c0,
+        band: 0xe59aa8,
+        bandStrength: 0.45,
+        glow: 0xffb45e,
+        glowStrength: 1.6,
+        sunDisc: 5,
+        cloudCover: 0.36,
+        cloudLit: 0xffa070,
+        cloudShade: 0x5a4a78,
+        cloudOpacity: 0.9,
+        stars: 0.12,
+        moon: 0,
+        moonDirection: MOON_DIRECTION,
+        cityGlow: 0xffb070,
+        cityGlowStrength: 0.15,
+        nearLand: 0x2b2940,
+        farLand: 0x4f4468,
+        nearHaze: 0.2,
+        farHaze: 0.46,
+        windows: 0.6,
+        landLight: 0.42,
+        landSpill: 0.05,
+    },
+    envGround: TURF_GROUND,
     kit: {
         ...kitOff,
         lampsOn: true,
@@ -95,14 +208,56 @@ const dusk: LightingValues = {
     },
 };
 
+/**
+ * A lit stadium in a town: the sky is dark but the world isn't black. The
+ * hemisphere stays low enough to leave the pole-lit field brightest, a faint
+ * moon gives walls a lit side (the sun slot, without a shadow map), and light
+ * bouncing off the turf comes up from below.
+ */
 const night: LightingValues = {
     skyVisible: true,
-    skyTop: 0x04060d,
-    skyBottom: 0x17203a,
-    fog: 0x17203a,
-    hemisphere: { sky: 0x1b2440, ground: 0x0a0a0c, intensity: 0.3 },
-    sun: { color: 0x8899cc, intensity: 0, offset: sunOffset(0, 500, 0) },
+    skyTop: 0x050812,
+    skyBottom: 0x1c2540,
+    fog: 0x1c2540,
+    hemisphere: { sky: 0x5f7199, ground: 0x4c4c3e, intensity: 1.25 },
+    sun: {
+        color: 0xa5b8ea,
+        intensity: 0.75,
+        offset: [
+            MOON_DIRECTION[0] * 500,
+            MOON_DIRECTION[1] * 500,
+            MOON_DIRECTION[2] * 500,
+        ],
+        castShadow: false,
+    },
     exposure: 1.15,
+    fogNear: 100,
+    fogFar: 1500,
+    sky: {
+        mid: 0x0d1428,
+        band: 0x1f2b4e,
+        bandStrength: 0.4,
+        glow: 0x8aa0d0,
+        glowStrength: 0.2,
+        sunDisc: 0,
+        cloudCover: 0.22,
+        cloudLit: 0x3a4664,
+        cloudShade: 0x10162a,
+        cloudOpacity: 0.65,
+        stars: 1,
+        moon: 1.3,
+        moonDirection: MOON_DIRECTION,
+        cityGlow: 0xc9874a,
+        cityGlowStrength: 0.34,
+        nearLand: 0x0b0f1a,
+        farLand: 0x141b30,
+        nearHaze: 0.14,
+        farHaze: 0.42,
+        windows: 1,
+        landLight: 0.16,
+        landSpill: 0.05,
+    },
+    envGround: 0x6f8058,
     kit: {
         ...kitOff,
         lampsOn: true,
@@ -121,6 +276,17 @@ const roofClosed: LightingValues = {
     kit: { ...kitOff, barEmissive: 2, roofSpotIntensity: 1.4, roofOpen: false },
 };
 
+/** Indoors there is no sky to see; the map is a dim room. */
+const indoorSky: SkyLook = {
+    ...daySky,
+    mid: 0x1a1a1f,
+    band: 0x1a1a1f,
+    bandStrength: 0,
+    glowStrength: 0,
+    sunDisc: 0,
+    cloudCover: 0,
+};
+
 const house: LightingValues = {
     skyVisible: false,
     skyTop: 0x1a1a1f,
@@ -129,6 +295,10 @@ const house: LightingValues = {
     hemisphere: { sky: 0xfff4e0, ground: 0x6b5a44, intensity: 0.9 },
     sun: { color: 0xffffff, intensity: 0, offset: sunOffset(0, 500, 0) },
     exposure: 1,
+    fogNear: ft(1800),
+    fogFar: ft(5000),
+    sky: indoorSky,
+    envGround: 0x54483c,
     kit: { ...kitOff, panelEmissive: 1.4, overheadIntensity: 1.1 },
 };
 

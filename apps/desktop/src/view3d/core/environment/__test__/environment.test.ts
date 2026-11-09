@@ -1,12 +1,22 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { InstancedMesh, Mesh, SpotLight } from "three";
+import {
+    InstancedMesh,
+    Mesh,
+    SpotLight,
+    Vector3,
+    type BufferGeometry,
+} from "three";
 import type { LightingPreset, SeatRow } from "../../types";
 import {
     buildCrowd,
+    calmTeamColor,
     createEnvironment,
     createSharedMaterials,
+    CROWD_MID_CAP,
+    CROWD_NEAR_CAP,
     defaultCrowdPalette,
     FT,
+    landGeometry,
     LIGHTING_PRESET_IDS,
     lightingValues,
     lightPole,
@@ -14,8 +24,17 @@ import {
     setTexturePainting,
     videoBoard,
 } from "..";
+import {
+    farFigureGeometry,
+    lowFigureGeometry,
+    midFigureGeometry,
+    nearFigureGeometry,
+} from "../crowdFigures";
 
 beforeAll(() => setTexturePainting(false));
+
+const triangles = (g: BufferGeometry) =>
+    (g.index ? g.index.count : g.getAttribute("position").count) / 3;
 
 /** A straight stand: `rows` rows of `length` meters along X, rising in Y and Z. */
 function straightRows(
@@ -37,8 +56,8 @@ function straightRows(
 describe("lighting presets", () => {
     it("ports the demo's SKY table in meters", () => {
         const day = lightingValues("day");
-        expect(day.skyTop).toBe(0x3d7fd6);
-        expect(day.skyBottom).toBe(0xcfe2f5);
+        expect(day.skyTop).toBe(0x2f6fc9);
+        expect(day.skyBottom).toBe(0xcfe0ef);
         expect(day.hemisphere).toEqual({
             sky: 0xcfe3ff,
             ground: 0x4a5d33,
@@ -55,7 +74,9 @@ describe("lighting presets", () => {
         expect(dusk.kit.lampScale).toBe(0.6);
         const night = lightingValues("night");
         expect(night.exposure).toBe(1.15);
-        expect(night.sun.intensity).toBe(0);
+        // A faint moon, not the sun: no shadow map.
+        expect(night.sun.intensity).toBeGreaterThan(0);
+        expect(night.sun.castShadow).toBe(false);
         expect(night.kit.lampsOn).toBe(true);
     });
 
@@ -100,18 +121,21 @@ describe("createEnvironment", () => {
         expect(env.hemisphere.intensity).toBe(v.hemisphere.intensity);
         expect(env.sun.color.getHex()).toBe(0xffa860);
         expect(env.sun.castShadow).toBe(true);
-        expect(env.fog.color.getHex()).toBe(0xf2995a);
+        expect(env.fog.color.getHex()).toBe(v.fog);
+        expect(env.fog.near).toBe(v.fogNear);
         expect(env.exposure).toBe(1.05);
         expect(env.sun.position.z).toBeCloseTo(-24 + -60 * FT);
         expect(env.sun.target.position.z).toBe(-24);
         env.dispose();
     });
 
-    it("turns the sun and shadows off at night and indoors", () => {
+    it("leaves a faint moon at night, and no sun or shadows indoors", () => {
         const env = createEnvironment();
         env.setLighting("night");
+        // The moon gives walls a lit side; it isn't worth a shadow map.
         expect(env.sun.castShadow).toBe(false);
-        expect(env.sun.visible).toBe(false);
+        expect(env.sun.visible).toBe(true);
+        expect(env.sun.intensity).toBeLessThan(1);
         env.setLighting("house");
         expect(env.sky.mesh.visible).toBe(false);
         expect(env.sun.visible).toBe(false);
@@ -129,11 +153,56 @@ describe("createEnvironment", () => {
         env.dispose();
     });
 
-    it("disposes the sky", () => {
+    it("disposes the sky, horizon and land", () => {
         const env = createEnvironment();
-        const geo = vi.spyOn(env.sky.mesh.geometry, "dispose");
+        const spies = [
+            vi.spyOn(env.sky.mesh.geometry, "dispose"),
+            vi.spyOn(env.horizon!.mesh.geometry, "dispose"),
+            vi.spyOn(env.land!.mesh.geometry, "dispose"),
+        ];
         env.dispose();
-        expect(geo).toHaveBeenCalled();
+        for (const spy of spies) expect(spy).toHaveBeenCalled();
+    });
+
+    it("builds no horizon or land at low quality, to add no draw calls", () => {
+        const env = createEnvironment({ quality: "low" });
+        expect(env.horizon).toBeNull();
+        expect(env.land).toBeNull();
+        env.dispose();
+    });
+
+    it("shows the horizon and land only with the sky", () => {
+        const env = createEnvironment();
+        env.setLighting("house");
+        expect(env.horizon!.mesh.visible).toBe(false);
+        expect(env.land!.mesh.visible).toBe(false);
+        env.setLighting("night");
+        expect(env.horizon!.mesh.visible).toBe(true);
+        expect(env.land!.mesh.visible).toBe(true);
+        env.dispose();
+    });
+
+    it("faces the land upward", () => {
+        const g = landGeometry(8);
+        const pos = g.getAttribute("position");
+        const index = g.getIndex()!;
+        // Skips the first ring's zero-area triangles at the center.
+        for (let t = 0; t < index.count; t += 3) {
+            const a = new Vector3().fromBufferAttribute(pos, index.getX(t));
+            const b = new Vector3().fromBufferAttribute(pos, index.getX(t + 1));
+            const c = new Vector3().fromBufferAttribute(pos, index.getX(t + 2));
+            const n = b.sub(a).cross(c.sub(a));
+            if (n.lengthSq() > 1e-6) expect(n.y).toBeGreaterThan(0);
+        }
+        g.dispose();
+    });
+
+    it("keeps the land between the kits' ground plane and their paint", () => {
+        const env = createEnvironment();
+        const y = env.land!.mesh.position.y;
+        expect(y).toBeGreaterThan(-0.3 * FT);
+        expect(y).toBeLessThan(-0.3 * FT + 0.02);
+        env.dispose();
     });
 });
 
@@ -261,8 +330,8 @@ describe("buildCrowd", () => {
             homeColor: "#112233",
             awayColor: "bad",
         });
-        expect(p.home[0]).toBe(0x112233);
-        expect(p.away[0]).toBe(0xc23b3b);
+        expect(p.home[0]).toBe(calmTeamColor(0x112233));
+        expect(p.away[0]).toBe(calmTeamColor(0xc23b3b));
     });
 
     it("clearAround hides people in range and the latest call wins", () => {
@@ -293,6 +362,61 @@ describe("buildCrowd", () => {
         expect(crowd.visibleCount()).toBe(total);
         expect(crowd.clearAround([1000, 0, 0], 5)).toBe(0);
         crowd.dispose();
+    });
+
+    it("faces down the rake, wherever the rows run", () => {
+        // Rows rising toward +Z face -Z whichever way they were drawn.
+        const forward = straightRows(4, 20);
+        const backward = forward.map((r) => ({
+            ...r,
+            points: [...r.points].reverse(),
+        }));
+        for (const rows of [forward, backward]) {
+            const crowd = buildCrowd(rows, { density: 1 });
+            const arr = crowd.mesh.instanceMatrix.array;
+            for (let k = 0; k < crowd.count; k++) {
+                // The figure's +Z axis, in the matrix's third column.
+                expect(arr[k * 16 + 10]).toBeLessThan(0);
+            }
+            crowd.dispose();
+        }
+    });
+
+    it("gives far people to the close tiers without exceeding the caps", () => {
+        const crowd = buildCrowd(straightRows(40, 200), { density: 1 });
+        crowd.clearAround([0, 5, 20], 1);
+        const { near, mid } = crowd.tierCounts();
+        expect(near).toBeGreaterThan(0);
+        expect(mid).toBeGreaterThan(near);
+        expect(near).toBeLessThanOrEqual(CROWD_NEAR_CAP);
+        expect(mid).toBeLessThanOrEqual(CROWD_MID_CAP);
+        crowd.dispose();
+    });
+
+    it("never gives a person hidden around the camera to a close tier", () => {
+        const crowd = buildCrowd(straightRows(20, 60), { density: 1 });
+        const allNear = crowd.clearAround([0, 5, 14], 1000);
+        expect(allNear).toBe(crowd.count);
+        expect(crowd.tierCounts()).toEqual({ near: 0, mid: 0 });
+        crowd.dispose();
+    });
+
+    it("has no close tiers at low quality", () => {
+        const crowd = buildCrowd(straightRows(4, 20), {
+            density: 1,
+            quality: "low",
+        });
+        expect(crowd.mesh.children).toHaveLength(0);
+        crowd.clearAround([0, 1, 10], 2);
+        expect(crowd.tierCounts()).toEqual({ near: 0, mid: 0 });
+        crowd.dispose();
+    });
+
+    it("keeps its figures within the brief's triangle budgets", () => {
+        expect(triangles(nearFigureGeometry())).toBeLessThanOrEqual(160);
+        expect(triangles(midFigureGeometry())).toBeLessThanOrEqual(36);
+        expect(triangles(farFigureGeometry())).toBeLessThanOrEqual(8);
+        expect(triangles(lowFigureGeometry())).toBeLessThanOrEqual(12);
     });
 
     it("clearAround keeps the matrix finite", () => {
