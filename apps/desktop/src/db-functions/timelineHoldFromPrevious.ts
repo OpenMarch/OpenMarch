@@ -229,7 +229,9 @@ export async function holdFromPreviousPageInTransaction({
         if (reason) {
             const atPage =
                 reason === "noArrival" && growth.from !== pageBox.start
-                    ? grid.pages.find((p) => p.start === growth.from)?.name
+                    ? grid.pages.find(
+                          (p) => p.start <= growth.from && growth.from < p.end,
+                      )?.name
                     : undefined;
             result.skipped.push({
                 marcherId,
@@ -277,7 +279,10 @@ export async function holdFromPreviousPageInTransaction({
 interface HoldGrowth {
     /** Where the counts it newly holds start */
     readonly from: number;
-    /** The move, the starting spot, the earlier hold it joins, or nothing it can grow out of */
+    /**
+     * The move or starting spot it grows out of (through the earlier hold it joins, if any),
+     * "joined" when that hold has neither, or nothing it can grow out of
+     */
     readonly source: HeldArrival | typeof HOME_ARRIVAL | "joined" | null;
     /** The earlier hold it joins, if any */
     readonly joins?: HeldMark;
@@ -311,12 +316,15 @@ async function readHoldGrowth(
         marks,
         showStart,
     });
-    if (reach.kind === "hold")
+    if (reach.kind === "hold") {
+        const joins = marks.find((m) => m.end === reach.beat)!;
+        // A later edit can have made what that hold grows out of a shape's move: judged as if new
         return {
             from: reach.beat,
-            source: "joined",
-            joins: marks.find((m) => m.end === reach.beat)!,
+            source: (await readArrival(tx, marcherId, joins.start)) ?? "joined",
+            joins,
         };
+    }
     if (arrival === HOME_ARRIVAL)
         return { from: reach.beat, source: HOME_ARRIVAL };
     if (reach.kind === "show") return { from: box.start, source: null };
@@ -349,7 +357,7 @@ function skipReason({
     inShapeRecipe: boolean;
     /**
      * The move the hold grows out of, the starting spot (`home`, with whether a shape sets it), or
-     * "joined" when it joins the marcher's earlier hold (which was checked when made)
+     * "joined" when it joins an earlier hold of the marcher that has neither (the upkeep's to mend)
      */
     arrival:
         | (HeldArrival & { inRecipe: boolean })

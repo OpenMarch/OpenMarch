@@ -1139,8 +1139,12 @@ async function refuseLockedArrivals(
     });
     const locked: number[] = [];
     for (const { move, mark } of held) {
+        // The page its arrival ends on, a mid-page end included
         const box = grid.pages.find(
-            (p) => p.id !== FIRST_PAGE_ID && p.end === mark.start,
+            (p) =>
+                p.id !== FIRST_PAGE_ID &&
+                p.start < mark.start &&
+                mark.start <= p.end,
         );
         const own = rows.filter((r) => r.marcherId === move.marcherId);
         if (box && !marcherSimpleOnBox(own, box).simple)

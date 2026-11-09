@@ -35,8 +35,7 @@ const SKIP_WORDS: Record<
 > = {
     noArrival: {
         key: "timeline.holdFromPrevious.endsWithoutArriving",
-        defaultValue:
-            "{names}: a move ends where {page} starts without arriving there",
+        defaultValue: "{names}: a move ends at {page} without arriving there",
     },
     held: {
         key: "timeline.holdFromPrevious.held",

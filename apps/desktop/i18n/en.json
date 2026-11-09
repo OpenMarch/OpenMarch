@@ -2209,7 +2209,7 @@
             "count": "{count, plural, one {# marcher} other {# marchers}}",
             "crossesFlag": "{names}: a move runs across one of the page's flags",
             "done": "{names} {held} on {page}",
-            "endsWithoutArriving": "{names}: a move ends where {page} starts without arriving there",
+            "endsWithoutArriving": "{names}: a move ends at {page} without arriving there",
             "expertMoves": "{names}: Expert moves on this page",
             "followLeader": "{names}: follows the leader on this page",
             "held": "{names}: already {held} here",

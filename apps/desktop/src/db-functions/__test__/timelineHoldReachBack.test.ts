@@ -283,8 +283,8 @@ const leftover = (
 
 const OVER = (start: number, end: number) => ({ start, end });
 
-/** `c`'s part of a move over `[9, 25)` ends at page 2's flag; the move doesn't. */
-const partOfALongerMove = (db: DbConnection, c: number) =>
+/** `c`'s part of a move over `[9, 25)` ends at `end` (page 2's flag by default); the move doesn't. */
+const partOfALongerMove = (db: DbConnection, c: number, end = 17) =>
     transactionWithHistory(db, "test", async (tx) => {
         const [line] = await tx
             .insert(schema.timelines)
@@ -311,7 +311,7 @@ const partOfALongerMove = (db: DbConnection, c: number) =>
             slot_index: 0,
             layer: 0,
             start_beat: 9,
-            end_beat: 17,
+            end_beat: end,
         });
     });
 
@@ -528,6 +528,63 @@ describeDbTests("Hold from previous page skips what it can't hold", (it) => {
         expect(await marksOf(db, c)).toEqual([]);
     });
 
+    it("a row ending mid-page without arriving, naming the page it ended on", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        await partOfALongerMove(db, c, 13);
+        const result = await holdFromPreviousPage({
+            db,
+            pageBox: PAGE5,
+            marcherIds: [c],
+        });
+        expect(result).toEqual({
+            held: [],
+            skipped: [{ marcherId: c, reason: "noArrival", atPage: "2" }],
+        });
+    });
+
+    it("joining an earlier hold whose arrival has since become a shape's move", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { a } = await show(db);
+        await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
+        await shapeRecipeIn(db, await moveEndingAt(db, a, PAGE2.end), a, TWO);
+        for (const pageBox of [PAGE4, PAGE5]) {
+            const result = await holdFromPreviousPage({
+                db,
+                pageBox,
+                marcherIds: [a],
+            });
+            expect(result).toEqual({
+                held: [],
+                skipped: [{ marcherId: a, reason: "arrivalShape" }],
+            });
+        }
+        expect(await marksOf(db, a)).toEqual([PAGE3]);
+    });
+
+    it("joining an earlier hold whose arrival follows the leader", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        await followTheLeader(db, c, 9, 13);
+        await leftover(db, c, 13, 17);
+        const result = await holdFromPreviousPage({
+            db,
+            pageBox: PAGE4,
+            marcherIds: [c],
+        });
+        expect(result).toEqual({
+            held: [],
+            skipped: [{ marcherId: c, reason: "arrivalFollowLeader" }],
+        });
+        expect(await marksOf(db, c)).toEqual([OVER(13, 17)]);
+    });
+
     it("a move running across the page's flag, whatever came before", async ({
         db,
         marchersAndPages: _,
@@ -586,6 +643,29 @@ describeDbTests("A drag inside a reached-back hold", (it) => {
             ]);
             await roundTrip(db, before, await snapshot(db));
         });
+
+    it("Basic refuses when the hold reaches back to a mid-page end of an Expert move", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const { c } = await show(db);
+        // Over [5, 13): it crosses page 2's flag at 9, and ends mid-page
+        await move(db, { start: 5, end: 13 }, [{ marcherId: c, xy: FAR }]);
+        const held = await holdFromPreviousPage({
+            db,
+            pageBox: PAGE4,
+            marcherIds: [c],
+        });
+        expect(held.held).toEqual([c]);
+        expect(await marksOf(db, c)).toEqual([OVER(13, PAGE4.end)]);
+        const before = await snapshot(db);
+        const error = await edit(db, { kind: "point", beat: 29, box: PAGE4 }, [
+            { marcherId: c, xy: AWAY },
+        ]).catch((e: unknown) => e);
+        expect((error as Error).name).toBe("TimelineEditRefusedError");
+        expect((error as Error).message).toMatch(/is Held from an Expert move/);
+        expect(await snapshot(db)).toEqual(before);
+    });
 
     it("from the starting spot, moves the starting spot", async ({
         db,
