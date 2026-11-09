@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
-    classifyWheel,
     damp,
     groundHit,
     wheelPixels,
@@ -11,68 +10,6 @@ import {
     zoomAbout,
     zoomRatioLimits,
 } from "../inputMath";
-
-describe("classifyWheel", () => {
-    it("reads a ctrl wheel as a pinch (how macOS reports a trackpad pinch)", () => {
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: -3.2,
-                deltaMode: 0,
-                ctrlKey: true,
-            }),
-        ).toBe("pinch");
-    });
-
-    it("reads a notched wheel as a mouse", () => {
-        // Chromium: a notch is deltaY 100 and wheelDeltaY -120
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 100,
-                deltaMode: 0,
-                ctrlKey: false,
-                wheelDeltaY: -120,
-            }),
-        ).toBe("mouse");
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 3,
-                deltaMode: 1,
-                ctrlKey: false,
-            }),
-        ).toBe("mouse");
-    });
-
-    it("reads fine-grained two-finger scrolls as a trackpad", () => {
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 4,
-                deltaMode: 0,
-                ctrlKey: false,
-                wheelDeltaY: -12,
-            }),
-        ).toBe("trackpad");
-        expect(
-            classifyWheel({
-                deltaX: 6,
-                deltaY: 0,
-                deltaMode: 0,
-                ctrlKey: false,
-            }),
-        ).toBe("trackpad");
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 2.5,
-                deltaMode: 0,
-                ctrlKey: false,
-            }),
-        ).toBe("trackpad");
-    });
-});
 
 describe("wheelPixels", () => {
     it("converts lines and pages to pixels", () => {

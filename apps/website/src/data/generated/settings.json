@@ -156,8 +156,12 @@
     {
         "id": "view3d",
         "label": "3D View",
-        "description": "How the 3D View draws on this computer. Not saved in the show.",
+        "description": "How the 3D View draws and moves on this computer. Not saved in the show.",
         "settings": [
+            {
+                "key": "settings.view3d.controls",
+                "label": "Controls"
+            },
             {
                 "key": "settings.view3d.quality",
                 "label": "Quality"

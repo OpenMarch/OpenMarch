@@ -158,8 +158,12 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.view3d",
         Icon: CubeIcon,
         Component: View3dSettings,
-        descriptionKey: "settings.view3d.description",
-        searchKeys: ["settings.view3d.quality", "settings.view3d.resolution"],
+        descriptionKey: "settings.view3d.summary",
+        searchKeys: [
+            "settings.view3d.controls",
+            "settings.view3d.quality",
+            "settings.view3d.resolution",
+        ],
     },
     {
         id: "shortcuts",

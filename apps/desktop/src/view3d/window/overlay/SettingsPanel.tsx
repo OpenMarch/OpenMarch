@@ -7,7 +7,8 @@
  *   which saves it with undo.
  * - Graphics: quality and resolution live in the app's Settings window (3D View section). Where
  *   there is no Settings window (the web preview), they are here too.
- * - The keyboard and mouse controls, so they can be found.
+ * - The keyboard and mouse: the control scheme (also in the app's Settings
+ *   window) and the controls it gives, so they can be found.
  *
  * It floats at the right and doesn't block the scene, so the viewer can
  * orbit while trying a look.
@@ -21,6 +22,7 @@ import Shortcut from "@/components/ui/Shortcut";
 import { useView3dSceneStore } from "../sceneStore";
 import { QUALITY_MODES } from "../qualityPreference";
 import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
+import { CONTROL_SCHEMES, type ControlScheme } from "../camera/controlScheme";
 import { Segmented } from "./Panel";
 import {
     LightingControl,
@@ -100,6 +102,7 @@ export function SettingsPanel({
                     </Section>
                 )}
                 <Section title={t("view3d.settings.keysSection")}>
+                    <ControlsRow />
                     <ShortcutList />
                 </Section>
             </div>
@@ -380,6 +383,30 @@ function ResolutionRow() {
     );
 }
 
+/** What dragging and scrolling do. Above the key list, which follows it. */
+function ControlsRow() {
+    const { t } = useTranslate();
+    const scheme = useView3dSceneStore((s) => s.controlScheme);
+    const setScheme = useView3dSceneStore((s) => s.setControlScheme);
+    return (
+        <Row label={t("settings.view3d.controls")} stacked>
+            <Segmented
+                value={scheme}
+                options={CONTROL_SCHEMES.map((value) => ({
+                    value,
+                    label: t(`settings.view3d.controls.${value}`),
+                }))}
+                onChange={setScheme}
+                label={t("settings.view3d.controls")}
+                testId="view3d-controls-picker"
+            />
+            <p className="text-sub text-text/60">
+                {t(`settings.view3d.controls.${scheme}.description`)}
+            </p>
+        </Row>
+    );
+}
+
 /**
  * The window's keyboard and mouse controls (ui.md UI-3, UI-4), in display
  * order. Each has `view3d.keys.<name>` for what it does; its keys are a
@@ -391,7 +418,23 @@ type ShortcutKeys =
     | { readonly keys: readonly string[] }
     | { readonly pair: readonly [first: string, second: string] };
 
-const SHORTCUTS: readonly (readonly [string, ShortcutKeys])[] = [
+type ShortcutRows = readonly (readonly [string, ShortcutKeys])[];
+
+/** The rows that follow the viewer's control scheme. */
+const MOVE_SHORTCUTS: Record<ControlScheme, ShortcutRows> = {
+    map: [
+        ["panPlain", { binding: "drag" }],
+        ["orbitOrRight", { binding: "Alt+drag" }],
+        ["zoom", { binding: "scroll" }],
+    ],
+    trackpad: [
+        ["orbit", { binding: "scroll" }],
+        ["pan", { binding: "Shift+drag" }],
+        ["zoomOrPinch", { binding: "Ctrl+scroll" }],
+    ],
+};
+
+const SHORTCUTS: ShortcutRows = [
     ["playPause", { binding: "Space" }],
     ["previousNext", { pair: ["Q", "E"] }],
     ["firstLast", { pair: ["Alt+Q", "Alt+E"] }],
@@ -399,9 +442,6 @@ const SHORTCUTS: readonly (readonly [string, ShortcutKeys])[] = [
     ["fullscreen", { binding: "F" }],
     ["crowd", { binding: "C" }],
     ["escape", { binding: "Escape" }],
-    ["orbit", { binding: "drag" }],
-    ["pan", { binding: "Shift+drag" }],
-    ["zoom", { binding: "scroll" }],
 ];
 
 function ShortcutKeysCell({ keys }: { keys: ShortcutKeys }) {
@@ -420,9 +460,10 @@ function ShortcutKeysCell({ keys }: { keys: ShortcutKeys }) {
 
 function ShortcutList() {
     const { t } = useTranslate();
+    const scheme = useView3dSceneStore((s) => s.controlScheme);
     return (
         <dl className="text-sub grid grid-cols-[auto_1fr] items-baseline gap-x-12 gap-y-4">
-            {SHORTCUTS.map(([name, keys]) => (
+            {[...SHORTCUTS, ...MOVE_SHORTCUTS[scheme]].map(([name, keys]) => (
                 <div key={name} className="contents">
                     <dt className="flex items-center gap-4 whitespace-nowrap">
                         <ShortcutKeysCell keys={keys} />

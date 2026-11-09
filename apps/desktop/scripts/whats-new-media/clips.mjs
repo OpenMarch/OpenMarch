@@ -176,18 +176,18 @@ async function open3dView(app, page, keepWindowsLive, windowSize) {
 
 /**
  * Lifts the 3D View's camera, off camera, to a higher box angle than the press box seat: an
- * orbit drag of `tilt` px tilts it down onto the field, then a Shift-drag of `pan` px pans it
+ * orbit (Shift) drag of `tilt` px tilts it down onto the field, then a plain drag of `pan` px pans it
  * back, so the whole band sits mid-field. Each drag is slow, so the orbit's momentum is small.
  */
 async function higherBoxAngle(view, { tilt = 65, pan = 90 } = {}) {
     const scene = await box(view.getByTestId("view3d-scene"));
     const c = { x: scene.x + scene.width / 2, y: scene.y + scene.height / 2 };
+    await view.keyboard.down("Shift");
     await quickDrag(view, c, { x: c.x, y: c.y + tilt }, 40);
+    await view.keyboard.up("Shift");
     await view.waitForTimeout(2500);
     if (!pan) return;
-    await view.keyboard.down("Shift");
     await quickDrag(view, c, { x: c.x, y: c.y - pan }, 30);
-    await view.keyboard.up("Shift");
     await view.waitForTimeout(2500);
 }
 
