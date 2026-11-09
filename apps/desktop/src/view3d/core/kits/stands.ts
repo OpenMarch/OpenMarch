@@ -99,8 +99,8 @@ export interface Stand {
     group: Group;
     /** One polyline per row, in the kit root's frame (placement applied). */
     seatRows: SeatRow[];
-    /** The instanced tread boxes: what pick-a-seat raycasts against. */
-    pickTarget: InstancedMesh;
+    /** The seating surface: what pick-a-seat raycasts against. */
+    pickTarget: Object3D;
     /** Eye position in front of the press box glass, kit frame. */
     pressEye?: Vector3Tuple;
     /** Eye position above row `i`, kit frame. */
@@ -383,6 +383,8 @@ export function topDownCamera(frame: Frame, height: number): CameraSeat {
 
 export const OUTDOOR_PRESETS: LightingPreset[] = ["day", "dusk", "night"];
 
+export const PODIUM = { w: ft(6), h: ft(8), d: ft(6), z: ft(26) };
+
 export interface PoleSpot {
     /** -1 for the side-1 end, 1 for side 2. */
     sx: -1 | 1;
@@ -392,6 +394,33 @@ export interface PoleSpot {
     front: boolean;
     /** Meters past that sideline. */
     dz: number;
+}
+
+/** What a kit's `dress` hook is given. */
+export interface DressContext {
+    frame: Frame;
+    shared: SharedMaterials;
+    input: KitBuildInput;
+}
+
+/**
+ * Replaces the plain stands, track and apron with a kit's own pieces (`hs` and
+ * `bighs` build these in `kits/hs/`). Kits without it keep the plain builders.
+ */
+export interface KitDress {
+    /** Builds one stand, in place of `buildStand`. */
+    buildStand(spec: StandSpec, placement: StandPlacement): Stand;
+    /** Builds the track, in place of `buildTrack`. */
+    buildTrack(): TrackResult;
+    /** Builds the podium, standing at `position`, in place of the plain box. */
+    buildPodium(position: Vector3Tuple, size: typeof PODIUM): void;
+    /**
+     * Called once every stand is built. Returns what goes in the kit root,
+     * which is the place to draw batches shared by the stands.
+     */
+    finish(): Object3D[];
+    setLighting(preset: LightingPreset): void;
+    dispose(): void;
 }
 
 export interface StandsKitConfig {
@@ -422,15 +451,16 @@ export interface StandsKitConfig {
         /** The press box camera aims this far behind the field center. */
         pressTargetBack: number;
         /** End-zone camera: end, distance past the end edge and height. */
-        endZone: { sx: -1 | 1; dx: number; y: number };
+        endZone: { sx: -1 | 1; dx: number; y: number; dz?: number };
         topDownHeight: number;
     };
     crowdDensity: number;
     defaultLighting: LightingPreset;
+    /** The kit's own stands, track and surroundings. */
+    dress?: (ctx: DressContext) => KitDress;
 }
 
 const FRONT_ROW_OFFSET = -ft(36);
-const PODIUM = { w: ft(6), h: ft(8), d: ft(6), z: ft(26) };
 
 /**
  * Shared builder for the three rectangular-stand kits. Builds the ground, the
@@ -447,6 +477,7 @@ export function buildStandsKit(
     root.name = `kit:${cfg.id}`;
     const geometries: { dispose(): void }[] = [];
     const disposables: { dispose(): void }[] = [];
+    const dress = cfg.dress?.({ frame: f, shared, input });
 
     const ground = groundPlane(
         GROUND_SIZE,
@@ -459,7 +490,7 @@ export function buildStandsKit(
     );
     root.add(ground.mesh);
     geometries.push(ground.geometry);
-    if (cfg.infield) {
+    if (cfg.infield && !dress) {
         const lawn = groundPlane(
             f.halfW * 2 + cfg.infield.extraW,
             f.halfD * 2 + cfg.infield.extraD,
@@ -472,20 +503,22 @@ export function buildStandsKit(
         root.add(lawn.mesh);
         geometries.push(lawn.geometry);
     }
-    const apron = groundPlane(
-        f.halfW * 2 + ft(40),
-        f.halfD * 2 + ft(40),
-        shared.std(0x3a7330, { roughness: 1 }),
-        f.cx,
-        APRON_Y,
-        f.cz,
-        "apron",
-    );
-    root.add(apron.mesh);
-    geometries.push(apron.geometry);
+    if (!dress) {
+        const apron = groundPlane(
+            f.halfW * 2 + ft(40),
+            f.halfD * 2 + ft(40),
+            shared.std(0x3a7330, { roughness: 1 }),
+            f.cx,
+            APRON_Y,
+            f.cz,
+            "apron",
+        );
+        root.add(apron.mesh);
+        geometries.push(apron.geometry);
+    }
 
     if (cfg.track) {
-        const track = buildTrack(f, shared);
+        const track = dress ? dress.buildTrack() : buildTrack(f, shared);
         root.add(...track.objects);
         disposables.push(track);
     }
@@ -496,7 +529,10 @@ export function buildStandsKit(
         side: SeatRow["side"],
         placement: StandPlacement,
     ) => {
-        const stand = buildStand({ ...spec, side }, placement, shared);
+        const full = { ...spec, side };
+        const stand = dress
+            ? dress.buildStand(full, placement)
+            : buildStand(full, placement, shared);
         root.add(stand.group);
         stands.push(stand);
         return stand;
@@ -545,7 +581,9 @@ export function buildStandsKit(
         boards.push(board);
     }
 
-    if (cfg.podium) {
+    if (cfg.podium && dress) {
+        dress.buildPodium([f.cx, 0, f.maxZ + PODIUM.z], PODIUM);
+    } else if (cfg.podium) {
         const podium = new Mesh(shared.unitBox, shared.std(0xe6e3dc));
         podium.name = "podium";
         podium.scale.set(PODIUM.w, PODIUM.h, PODIUM.d);
@@ -568,6 +606,11 @@ export function buildStandsKit(
         root.add(pole.object);
         return pole;
     });
+
+    if (dress) {
+        root.add(...dress.finish());
+        disposables.push(dress);
+    }
 
     const seatRows = stands.flatMap((s) => s.seatRows);
 
@@ -605,7 +648,7 @@ export function buildStandsKit(
         cameraSeat(
             "endZone",
             "seat",
-            [f.cx + ez.sx * (f.halfW + ez.dx), ez.y, f.cz],
+            [f.cx + ez.sx * (f.halfW + ez.dx), ez.y, f.cz + (ez.dz ?? 0)],
             [f.cx, 0, f.cz],
         ),
         blimpCamera(f),
@@ -622,6 +665,7 @@ export function buildStandsKit(
         if (!OUTDOOR_PRESETS.includes(preset)) return;
         const k = lightingValues(preset).kit;
         poles.forEach((p) => p.setOn(k.lampsOn, k.lampScale));
+        dress?.setLighting(preset);
     };
     setLighting(cfg.defaultLighting);
 

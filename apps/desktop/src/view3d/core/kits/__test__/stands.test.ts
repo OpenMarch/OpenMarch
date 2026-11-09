@@ -365,6 +365,30 @@ describe("stand kit proportions (meters)", () => {
         kit.dispose();
     });
 
+    it("hs and bighs drop the campus on the low path", () => {
+        for (const kit of [buildHs, buildBighs]) {
+            const high = build(kit);
+            const low = build(kit, FOOTBALL, "low");
+            for (const name of ["trees", "cars", "buildings", "fence"]) {
+                expect(high.root.getObjectByName(name), name).toBeDefined();
+                expect(low.root.getObjectByName(name), name).toBeUndefined();
+            }
+            high.dispose();
+            low.dispose();
+        }
+    });
+
+    it("hs is an aluminum stand on a frame; bighs is concrete", () => {
+        const hs = build(buildHs);
+        const bighs = build(buildBighs);
+        expect(hs.root.getObjectByName("standRear")).toBeUndefined();
+        expect(bighs.root.getObjectByName("standRear")).toBeDefined();
+        expect(hs.root.getObjectByName("scoreboard")).toBeDefined();
+        expect(bighs.root.getObjectByName("videoBoard")).toBeDefined();
+        hs.dispose();
+        bighs.dispose();
+    });
+
     it("hs and bighs have a track; college and blank do not", () => {
         expect(build(buildHs).root.getObjectByName("track")).toBeDefined();
         expect(build(buildBighs).root.getObjectByName("track")).toBeDefined();
