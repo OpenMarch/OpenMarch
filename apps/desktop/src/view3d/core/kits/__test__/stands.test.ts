@@ -22,7 +22,6 @@ import type {
 } from "../../types";
 import { buildBighs } from "../bighs";
 import { buildBlank } from "../blank";
-import { buildCollege } from "../college";
 import { buildHs } from "../hs";
 
 beforeAll(() => setTexturePainting(false));
@@ -44,7 +43,7 @@ const PARAMS: VenueParams = {
 };
 
 const KITS: {
-    id: Extract<VenueKitId, "hs" | "bighs" | "college" | "blank">;
+    id: Extract<VenueKitId, "hs" | "bighs" | "blank">;
     build: KitBuilder;
     cameras: string[];
     defaultLighting: LightingPreset;
@@ -75,13 +74,6 @@ const KITS: {
             "blimp",
             "topDown",
         ],
-        defaultLighting: "night",
-        stands: true,
-    },
-    {
-        id: "college",
-        build: buildCollege,
-        cameras: ["pressBox", "frontRow", "endZone", "blimp", "topDown"],
         defaultLighting: "night",
         stands: true,
     },
@@ -354,17 +346,6 @@ describe("stand kit proportions (meters)", () => {
         kit.dispose();
     });
 
-    it("college: 50 rows each side, 34 on each end, 122 m long", () => {
-        const kit = build(buildCollege);
-        expect(rowCount(kit, "home")).toBe(50);
-        expect(rowCount(kit, "away")).toBe(50);
-        expect(rowCount(kit, "neutral")).toBe(68);
-        expect(length(kit, "home")).toBeCloseTo(121.9, 0);
-        const track = kit.root.getObjectByName("track");
-        expect(track).toBeUndefined();
-        kit.dispose();
-    });
-
     it("hs and bighs drop the campus on the low path", () => {
         for (const kit of [buildHs, buildBighs]) {
             const high = build(kit);
@@ -389,7 +370,7 @@ describe("stand kit proportions (meters)", () => {
         bighs.dispose();
     });
 
-    it("hs and bighs have a track; college and blank do not", () => {
+    it("hs and bighs have a track; blank does not", () => {
         expect(build(buildHs).root.getObjectByName("track")).toBeDefined();
         expect(build(buildBighs).root.getObjectByName("track")).toBeDefined();
         expect(build(buildBlank).root.getObjectByName("track")).toBeUndefined();
