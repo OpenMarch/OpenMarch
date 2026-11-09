@@ -1,5 +1,13 @@
 <!-- cspell:disable -->
 
+> **Superseded by an owner decision on 2026-11-09.** Borrowed holds are removed: every hold grows
+> out of whatever last put the marcher there, a move ending at the hold's start or the starting
+> spot. A hold from Hold from previous page, or left by an edit, reaches back over the Not defined
+> pages to it, and a drag inside any hold moves the whole hold, including where it arrives. See
+> [ADR 0012](../../../adr/0012-timeline-motion-model.md). What follows is the 2026-10-26 reasoning,
+> kept for the record. The "Anchors · Borrowed hold" scenario in the
+> [demo](demo/holds-demo.html) is out of date.
+
 # Hold anchors: arrival and borrowed holds (2026-10-26)
 
 Status: **accepted with the review's fixes**. The owner agreed in principle on 2026-10-26, "if

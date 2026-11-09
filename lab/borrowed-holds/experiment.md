@@ -2,14 +2,14 @@
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
 id: borrowed-holds
-title: Hold a page that nothing arrives at, and see where its spot comes from
-summary: Hold from previous page now works on a page after Not defined pages. The hold keeps the spot an earlier page left the marchers on. Its bar is lighter and hatched, with a small label naming that page ("Held · Page 2's spot"), and dragging inside it adds a move on the page before.
+title: Hold a page after some Not defined pages, and see the hold reach back
+summary: Hold from previous page now works on a page after Not defined pages. The marchers already stand at their last spot there, so the hold reaches back over those pages to whatever last put them there, and draws as one plain Held bar. Dragging inside any hold moves the whole hold, including where it arrives.
 status: open
 questions:
-  - Could you tell this lighter, hatched Held bar from a plain Held one, and from a dashed Not defined one? Did the label ("Held · Page 2's spot") tell you where the marchers stand?
-  - Did the dotted line back to the page whose spot it keeps help, or was it in the way?
-  - When you dragged inside the hold, did you expect a move to be added on the page before? Did the hold then do what you expected?
-  - After you removed the keyframe the hold keeps its spot from, was it clear the hold stayed, now keeping an earlier page's spot?
+  - When you held a page after Not defined pages, did you expect the hold to take in those earlier pages too? Did the bar make that clear?
+  - Was the toast naming the pages (for example "Held on Pages 3–5") what you expected?
+  - When you dragged inside the hold, did the whole hold moving, including where it arrives, feel right?
+  - Held on two pages with a gap between them makes one hold. Was that what you expected?
 ---
 
 Open a demo show and select a marcher. The bars are thin lines on the bottom
@@ -19,24 +19,23 @@ edge of the page row, with the keyframe diamonds.
 
 - Pick a marcher that last moves on, say, Page 2. Right-click a page box a
   few pages later (Page 5, say) and pick **Hold from previous page**. Pages 3
-  and 4 stay dashed (Not defined); Page 5 turns Held, drawn lighter and
-  hatched, with a label naming the page whose spot it keeps.
-- Go to that page. A dotted line runs back from the label to the diamond
-  where that spot was set. It also shows while you point at the bar, and
-  while a drag lights it. The marcher inspector says the same: "Held · Page
-  2's spot".
-- Drag the marcher on the held page. While you drag, the hold lights up.
-  When you let go, a move is added on the page before the hold (Page 4), and
-  the hold now grows out of its diamond: a plain Held bar.
-- Undo, then remove the keyframe the hold keeps its spot from (right-click
-  that diamond, **Remove keyframe, Pages N–M move back too**). The hold
-  stays, now naming the earlier page.
-- Switch to Basic: the same hold draws as plain Held, without the label or
-  the line.
+  to 5 become one plain Held bar, growing out of Page 2's diamond, and the
+  toast names those pages.
+- Point at the bar's end: you can still drag it to hold longer or leave
+  earlier. The start of the bar has no handle, since it starts where the
+  marcher got there.
+- Drag the marcher on a held page. The whole bar lights. When you let go, the
+  marcher stands at the new spot from Page 2's diamond on: the whole hold
+  moved, including where it arrives.
+- Hold a marcher on Page 3, then on Page 6. The two holds and the pages
+  between them make one Held bar.
+- Hold a marcher that never moved. It's Held from the start of the show, and
+  a drag inside it moves its starting spot.
+- Undo, then remove the diamond the hold grows out of (right-click it,
+  **Remove keyframe, Pages N–M move back too**). The hold goes with it.
 
 **Good to know**
 
-- A marcher who never moved before the hold is Held from its starting spot
-  instead. Dragging inside that hold moves its starting spot, as before.
-- Deleting the page flag where a hold starts leaves the hold on the same
-  counts, now starting partway through a page.
+- A marcher whose last move is a shape's or a follow-the-leader move is
+  skipped and named in the toast: the shape carried on is its own hold.
+- Basic and Expert draw the same plain Held bar.
