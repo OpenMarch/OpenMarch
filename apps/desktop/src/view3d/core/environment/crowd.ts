@@ -1,28 +1,19 @@
 // cspell:ignore fract beginnormal emissivemap
 import {
+    BufferGeometry,
     Color,
     DoubleSide,
-    DynamicDrawUsage,
-    FrontSide,
-    InstancedBufferAttribute,
+    Float32BufferAttribute,
     InstancedMesh,
     Matrix4,
     MeshStandardMaterial,
     Quaternion,
     Vector3,
-    type BufferGeometry,
     type IUniform,
     type Vector3Tuple,
     type WebGLProgramParametersWithUniforms,
 } from "three";
 import type { SeatRow, VenueParams } from "../types";
-import {
-    farFigureGeometry,
-    FIGURE_HEIGHT,
-    lowFigureGeometry,
-    midFigureGeometry,
-    nearFigureGeometry,
-} from "./crowdFigures";
 import { createRng } from "./random";
 
 /** One person's nominal size (design.md section 5). */
@@ -36,37 +27,6 @@ export const PERSON_SPACING = 0.64;
 /** Default people between aisles. */
 export const DEFAULT_AISLE_EVERY = 18;
 
-/**
- * Levels of detail, by distance from the camera in meters. Everyone exists in
- * the far tier; people inside `CROWD_MID_RADIUS` are drawn with a better
- * figure instead, up to `crowdTierCaps`, so the triangle cost has a ceiling.
- */
-export const CROWD_NEAR_RADIUS = 18;
-export const CROWD_MID_RADIUS = 60;
-const NEAR_FIGURE_TRIANGLES = 160;
-const MID_FIGURE_TRIANGLES = 36;
-
-/**
- * How many people the close tiers may draw: a triangle allowance that grows
- * with the crowd, since big venues have the budget for it and small ones
- * don't, split 60/40 between the near and mid figures.
- */
-export function crowdTierCaps(total: number): { near: number; mid: number } {
-    const triangles = Math.max(60000, Math.min(200000, total * 6));
-    return {
-        near: Math.min(
-            total,
-            Math.floor((triangles * 0.6) / NEAR_FIGURE_TRIANGLES),
-        ),
-        mid: Math.min(
-            total,
-            Math.floor((triangles * 0.4) / MID_FIGURE_TRIANGLES),
-        ),
-    };
-}
-/** How far the camera moves before the tiers are chosen again, meters. */
-const LOD_MOVE_THRESHOLD = 2;
-
 /** Shirt colors (hex numbers) per seat-row side. */
 export type CrowdPalette = Record<SeatRow["side"], number[]>;
 
@@ -79,17 +39,14 @@ export interface CrowdOptions {
     aisleEvery?: number;
     /** People-wide gap at each aisle. Default 2. */
     aisleWidth?: number;
-    /** "low" halves the density and draws everyone with one figure. Default "high". */
+    /** "low" halves the density. Default "high". */
     quality?: "low" | "high";
     /** Seed for the deterministic layout. Default 7. */
     seed?: number;
 }
 
 export interface Crowd {
-    /**
-     * Everyone's far-tier `InstancedMesh`, in the same frame as the seat rows.
-     * The closer tiers are its children, so adding this adds the whole crowd.
-     */
+    /** One `InstancedMesh` for everyone, in the same frame as the seat rows. */
     mesh: InstancedMesh;
     /** Number of people placed (before any `clearAround`). */
     count: number;
@@ -103,8 +60,6 @@ export interface Crowd {
     reset(): void;
     /** Number of people currently shown. */
     visibleCount(): number;
-    /** How many people the near and mid tiers currently draw. */
-    tierCounts(): { near: number; mid: number };
     dispose(): void;
 }
 
@@ -131,11 +86,8 @@ const STREET_CLOTHES = [
     0x343a46, 0x3f3a36, 0x6f6a5f,
 ];
 
-/** Skin, hair and trousers, linear RGB, picked per person in the shader. */
-const SKIN = [0xc9a184, 0xa87c5e, 0x7d553c, 0x54392a];
-const HAIR = [0x1d1a18, 0x3b2c22, 0x6b5a48, 0x8d8b88];
-const PANTS = [0x2d3442, 0x3a3d44, 0x4e4a42, 0x23262c];
-const SEAT_COLOR = 0x3d4048;
+/** Muted head tones, picked per person in the shader. */
+const HEADS = [0x8a6a55, 0x5e4737, 0x3d312a, 0x9a8c7c];
 
 /**
  * Default shirt colors: home and away rows lean toward their team color,
@@ -273,43 +225,142 @@ function rowFacingSigns(seatRows: SeatRow[]): number[] {
     });
 }
 
-/** Uniforms shared by every tier's material. */
-interface CrowdUniforms {
-    uCrowdSkin: IUniform<Color[]>;
-    uCrowdHair: IUniform<Color[]>;
-    uCrowdPants: IUniform<Color[]>;
-    uCrowdSeat: IUniform<Color>;
-    uCrowdLodCenter: IUniform<Vector3>;
-    uCrowdLodRadius: IUniform<number>;
+/** One block: body 0.54 m wide and 0.46 m tall on the seat, and a small head. */
+const BLOCK_HALF_WIDTH = 0.27;
+const BLOCK_FRONT = 0.12;
+const BLOCK_BACK = -0.2;
+const BLOCK_BODY_TOP = 0.46;
+/** A little below the seat, so no gap shows where the block meets it. */
+const BLOCK_FOOT = -0.12;
+const HEAD_HALF_WIDTH = 0.125;
+const HEAD_Z = -0.04;
+/** Top of the head above the seat, for a person of `PERSON_HEIGHT`. */
+const BLOCK_HEIGHT = 0.76;
+/** Shading baked into the block: darker at the foot, lighter on the top. */
+const SHADE_FOOT = 0.72;
+const SHADE_TOP_FACE = 1.12;
+
+/**
+ * The block every spectator is drawn with: front, back and top of a body, and
+ * a flat head tipped back so it still has area from above (8 triangles, no
+ * side faces: neighbors hide them and a two-sided body reads the same). The
+ * origin is the middle of the seat, +Z is the way it faces. `aPart` is 1 on
+ * the head; `aShade` multiplies the body's color.
+ */
+export function crowdBlockGeometry(): BufferGeometry {
+    const positions: number[] = [];
+    const normals: number[] = [];
+    const parts: number[] = [];
+    const shades: number[] = [];
+    type P = readonly [number, number, number, number];
+    const tri = (a: P, b: P, c: P, n: Vector3, part: number) => {
+        const ab = new Vector3(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        const ac = new Vector3(c[0] - a[0], c[1] - a[1], c[2] - a[2]);
+        const order = ab.cross(ac).dot(n) < 0 ? [a, c, b] : [a, b, c];
+        for (const p of order) {
+            positions.push(p[0], p[1], p[2]);
+            normals.push(n.x, n.y, n.z);
+            parts.push(part);
+            shades.push(p[3]);
+        }
+    };
+    const quad = (a: P, b: P, c: P, d: P, normal: Vector3, part = 0) => {
+        const n = normal.clone().normalize();
+        tri(a, b, c, n, part);
+        tri(a, c, d, n, part);
+    };
+
+    const w = BLOCK_HALF_WIDTH;
+    const y0 = BLOCK_FOOT;
+    const y1 = BLOCK_BODY_TOP;
+    const f = BLOCK_FRONT;
+    const b = BLOCK_BACK;
+    quad(
+        [-w, y0, f, SHADE_FOOT],
+        [w, y0, f, SHADE_FOOT],
+        [w, y1, f, 1],
+        [-w, y1, f, 1],
+        new Vector3(0, 0, 1),
+    );
+    quad(
+        [w, y0, b, SHADE_FOOT],
+        [-w, y0, b, SHADE_FOOT],
+        [-w, y1, b, 1],
+        [w, y1, b, 1],
+        new Vector3(0, 0, -1),
+    );
+    const t = SHADE_TOP_FACE;
+    quad(
+        [-w, y1, f, t],
+        [w, y1, f, t],
+        [w, y1, b, t],
+        [-w, y1, b, t],
+        new Vector3(0, 1, 0),
+    );
+
+    const h = HEAD_HALF_WIDTH;
+    const tip = 0.09;
+    quad(
+        [-h, y1 - 0.02, HEAD_Z, 1],
+        [h, y1 - 0.02, HEAD_Z, 1],
+        [h, BLOCK_HEIGHT, HEAD_Z - tip, 1],
+        [-h, BLOCK_HEIGHT, HEAD_Z - tip, 1],
+        new Vector3(0, tip, BLOCK_HEIGHT - y1),
+        1,
+    );
+
+    const g = new BufferGeometry();
+    g.setAttribute("position", new Float32BufferAttribute(positions, 3));
+    g.setAttribute("normal", new Float32BufferAttribute(normals, 3));
+    g.setAttribute("aPart", new Float32BufferAttribute(parts, 1));
+    g.setAttribute("aShade", new Float32BufferAttribute(shades, 1));
+    return g;
 }
 
-const PARTS_GLSL = /* glsl */ `
+interface CrowdUniforms {
+    uCrowdHead: IUniform<Color[]>;
+    uCrowdMean: IUniform<Color>;
+}
+
+const CROWD_VERTEX_GLSL = /* glsl */ `
 attribute float aPart;
-uniform vec3 uCrowdSkin[4];
-uniform vec3 uCrowdHair[4];
-uniform vec3 uCrowdPants[4];
-uniform vec3 uCrowdSeat;
-uniform vec3 uCrowdLodCenter;
-uniform float uCrowdLodRadius;
+attribute float aShade;
+uniform vec3 uCrowdHead[4];
+uniform vec3 uCrowdMean;
 float crowdHash(vec3 p) {
     p = fract(p * 0.1031);
     p += dot(p, p.yzx + 33.33);
     return fract((p.x + p.y) * p.z);
 }
+// 0 near the camera, 1 far away, where one person is about a pixel.
+float crowdFar() {
+    vec3 seat = (modelMatrix * vec4(instanceMatrix[3].xyz, 1.0)).xyz;
+    return smoothstep(45.0, 130.0, distance(seat, cameraPosition));
+}
 `;
 
-const PARTS_COLOR_GLSL = /* glsl */ `
+const CROWD_COLOR_GLSL = /* glsl */ `
 #ifdef USE_INSTANCING_COLOR
     {
-        // Skin, hair and trousers follow the person's place in the stand, so
-        // every tier agrees without a per-instance attribute.
+        // Tone and head follow the person's place in the stand. Far away,
+        // everyone drifts to the crowd's average so neighbors don't shimmer.
         float crowdH = crowdHash(instanceMatrix[3].xyz);
-        if (aPart > 3.5) vColor.rgb = uCrowdSeat;
-        else if (aPart > 2.5) vColor.rgb = uCrowdPants[int(fract(crowdH * 7.3) * 4.0)];
-        else if (aPart > 1.5) vColor.rgb = uCrowdHair[int(fract(crowdH * 3.7) * 4.0)];
-        else if (aPart > 0.5) vColor.rgb = uCrowdSkin[int(crowdH * 4.0)];
+        float crowdFade = crowdFar();
+        if (aPart > 0.5) {
+            vColor.rgb = uCrowdHead[int(crowdH * 4.0)];
+            vColor.rgb = mix(vColor.rgb, uCrowdMean * 1.05, crowdFade * 0.85);
+        } else {
+            vColor.rgb *= (0.88 + 0.24 * fract(crowdH * 5.1))
+                * mix(aShade, 1.0, crowdFade);
+            vColor.rgb = mix(vColor.rgb, uCrowdMean, crowdFade * 0.8);
+        }
     }
 #endif
+`;
+
+/** Far blocks widen until they touch, closing the bright gaps between them. */
+const CROWD_WIDEN_GLSL = /* glsl */ `
+    if (aPart < 0.5) transformed.x *= 1.0 + 0.3 * crowdFar();
 `;
 
 /** Softens hard shading: a little always-on fill, and normals lifted skyward. */
@@ -320,91 +371,44 @@ const LIFT_NORMAL_GLSL = /* glsl */ `
     objectNormal = normalize(objectNormal + vec3(0.0, 0.45, 0.0));
 `;
 
-const FAR_COLLAPSE_GLSL = /* glsl */ `
-    // A closer tier draws this person.
-    if (distance(instanceMatrix[3].xyz, uCrowdLodCenter) < uCrowdLodRadius) {
-        transformed = vec3(0.0);
-    }
-`;
-
-function crowdMaterial(
-    uniforms: CrowdUniforms,
-    tier: "far" | "close",
-): MeshStandardMaterial {
+function crowdMaterial(uniforms: CrowdUniforms): MeshStandardMaterial {
     const material = new MeshStandardMaterial({
         color: 0xd2d2d2,
         roughness: 0.92,
         metalness: 0,
-        side: tier === "far" ? DoubleSide : FrontSide,
+        side: DoubleSide,
     });
     material.onBeforeCompile = (shader: WebGLProgramParametersWithUniforms) => {
         Object.assign(shader.uniforms, uniforms);
         shader.vertexShader =
-            PARTS_GLSL +
+            CROWD_VERTEX_GLSL +
             shader.vertexShader
                 .replace(
                     "#include <color_vertex>",
-                    `#include <color_vertex>\n${PARTS_COLOR_GLSL}`,
+                    `#include <color_vertex>\n${CROWD_COLOR_GLSL}`,
                 )
                 .replace(
                     "#include <beginnormal_vertex>",
                     `#include <beginnormal_vertex>\n${LIFT_NORMAL_GLSL}`,
+                )
+                .replace(
+                    "#include <begin_vertex>",
+                    `#include <begin_vertex>\n${CROWD_WIDEN_GLSL}`,
                 );
         shader.fragmentShader = shader.fragmentShader.replace(
             "#include <emissivemap_fragment>",
             `#include <emissivemap_fragment>\n${FILL_GLSL}`,
         );
-        if (tier === "far") {
-            shader.vertexShader = shader.vertexShader.replace(
-                "#include <begin_vertex>",
-                `#include <begin_vertex>\n${FAR_COLLAPSE_GLSL}`,
-            );
-        }
     };
-    material.customProgramCacheKey = () => `crowd-${tier}`;
+    material.customProgramCacheKey = () => "crowd-block";
     return material;
 }
 
-interface Tier {
-    mesh: InstancedMesh;
-    colors: InstancedBufferAttribute;
-}
-
-function closeTier(
-    name: string,
-    geometry: BufferGeometry,
-    material: MeshStandardMaterial,
-    capacity: number,
-): Tier {
-    const mesh = new InstancedMesh(geometry, material, capacity);
-    mesh.name = name;
-    mesh.frustumCulled = false;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    // Drawn after the far tier, whose render hook chooses who goes here.
-    mesh.renderOrder = 1;
-    mesh.instanceMatrix.setUsage(DynamicDrawUsage);
-    const colors = new InstancedBufferAttribute(
-        new Float32Array(capacity * 3),
-        3,
-    );
-    colors.setUsage(DynamicDrawUsage);
-    mesh.instanceColor = colors;
-    mesh.count = 0;
-    return { mesh, colors };
-}
-
 /**
- * Builds the crowd: people on each seat row's polyline, spaced 0.64 m apart,
- * with an aisle every 18 people and a random subset skipped to reach
- * `density`, all facing down the rake. Colors come from the row's `side`.
- *
- * At high quality everyone is an 8-triangle far figure in one `InstancedMesh`.
- * The mesh's render hook keeps two small instanced tiers around the camera (a
- * 36-triangle and a 160-triangle figure) and collapses those people out of
- * the far tier in the vertex shader, so moving the camera never re-uploads the
- * big buffer. At low quality everyone is a single 12-triangle figure in one
- * draw call and there are no tiers.
+ * Builds the crowd as one `InstancedMesh` (one draw call): a block per person
+ * on each seat row's polyline, spaced 0.64 m apart, with an aisle every 18
+ * people and a random subset skipped to reach `density`, all facing down the
+ * rake. Colors come from the row's `side`.
  */
 export function buildCrowd(
     seatRows: SeatRow[],
@@ -458,22 +462,15 @@ export function buildCrowd(
         });
     });
 
-    const toLinear = (list: number[]) => list.map((c) => new Color(c));
+    const geometry = crowdBlockGeometry();
     const uniforms: CrowdUniforms = {
-        uCrowdSkin: { value: toLinear(SKIN) },
-        uCrowdHair: { value: toLinear(HAIR) },
-        uCrowdPants: { value: toLinear(PANTS) },
-        uCrowdSeat: { value: new Color(SEAT_COLOR) },
-        uCrowdLodCenter: { value: new Vector3() },
-        uCrowdLodRadius: { value: 0 },
+        uCrowdHead: { value: HEADS.map((c) => new Color(c)) },
+        uCrowdMean: { value: new Color(0, 0, 0) },
     };
-
-    const lowQuality = quality === "low";
-    const farGeometry = lowQuality ? lowFigureGeometry() : farFigureGeometry();
-    const farMaterial = crowdMaterial(uniforms, "far");
+    const material = crowdMaterial(uniforms);
     const mesh = new InstancedMesh(
-        farGeometry,
-        farMaterial,
+        geometry,
+        material,
         Math.max(1, placed.length),
     );
     mesh.name = "crowd";
@@ -488,144 +485,26 @@ export function buildCrowd(
     const scale = new Vector3();
     const translate = new Vector3();
     const color = new Color();
-    const shirts = new Float32Array(total * 3);
+    const mean = uniforms.uCrowdMean.value;
     placed.forEach((p, i) => {
         q.setFromAxisAngle(up, p.yaw);
         m.compose(
             translate.set(p.x, p.y, p.z),
             q,
-            scale.set(p.scale, (p.scale * p.height) / FIGURE_HEIGHT, p.scale),
+            scale.set(p.scale, (p.scale * p.height) / PERSON_HEIGHT, p.scale),
         );
         mesh.setMatrixAt(i, m);
         color.setHex(p.color);
         mesh.setColorAt(i, color);
-        shirts[i * 3] = color.r;
-        shirts[i * 3 + 1] = color.g;
-        shirts[i * 3 + 2] = color.b;
+        mean.r += color.r / total;
+        mean.g += color.g / total;
+        mean.b += color.b / total;
     });
     mesh.count = total;
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 
     const base = new Float32Array(mesh.instanceMatrix.array); // copy
-    const cleared = new Uint8Array(total);
-
-    // The close tiers exist only at high quality.
-    const closeGeometries: BufferGeometry[] = [];
-    let closeMaterial: MeshStandardMaterial | null = null;
-    let near: Tier | null = null;
-    let mid: Tier | null = null;
-    const caps = crowdTierCaps(total);
-    if (!lowQuality && total > 0) {
-        const nearGeometry = nearFigureGeometry();
-        const midGeometry = midFigureGeometry();
-        closeGeometries.push(nearGeometry, midGeometry);
-        closeMaterial = crowdMaterial(uniforms, "close");
-        near = closeTier("crowd.near", nearGeometry, closeMaterial, caps.near);
-        mid = closeTier("crowd.mid", midGeometry, closeMaterial, caps.mid);
-        mesh.add(near.mesh, mid.mesh);
-    }
-
-    const distances = new Float32Array(total);
-    const candidates = new Uint32Array(total);
-    const lodCenter = new Vector3(Infinity, 0, 0);
-    let lodDirty = true;
-    /** Radius to apply once the close tiers' buffers have been uploaded. */
-    let pendingRadius: number | null = null;
-    const pendingCenter = new Vector3();
-
-    const copyTier = (
-        tier: Tier,
-        order: Uint32Array,
-        from: number,
-        to: number,
-    ): void => {
-        const matrices = tier.mesh.instanceMatrix.array as Float32Array;
-        const rgb = tier.colors.array as Float32Array;
-        for (let k = from; k < to; k++) {
-            const person = order[k];
-            const slot = k - from;
-            matrices.set(
-                base.subarray(person * 16, person * 16 + 16),
-                slot * 16,
-            );
-            rgb[slot * 3] = shirts[person * 3];
-            rgb[slot * 3 + 1] = shirts[person * 3 + 1];
-            rgb[slot * 3 + 2] = shirts[person * 3 + 2];
-        }
-        tier.mesh.count = to - from;
-        tier.mesh.instanceMatrix.needsUpdate = true;
-        tier.colors.needsUpdate = true;
-    };
-
-    /**
-     * Chooses who the near and mid tiers draw around `center` and returns the
-     * radius inside which the far tier should collapse: people past the caps
-     * stay in the far tier, so nobody ever disappears.
-     */
-    const selectTiers = (center: Vector3): number => {
-        if (!near || !mid) return 0;
-        lodCenter.copy(center);
-        lodDirty = false;
-        const midR2 = CROWD_MID_RADIUS * CROWD_MID_RADIUS;
-        let found = 0;
-        for (let k = 0; k < total; k++) {
-            if (cleared[k]) continue;
-            const i = k * 16;
-            const dx = base[i + 12] - center.x;
-            const dy = base[i + 13] - center.y;
-            const dz = base[i + 14] - center.z;
-            const d2 = dx * dx + dy * dy + dz * dz;
-            if (d2 >= midR2) continue;
-            distances[k] = d2;
-            candidates[found++] = k;
-        }
-        const order = candidates.subarray(0, found);
-        order.sort((a, b) => distances[a] - distances[b]);
-
-        const nearR2 = CROWD_NEAR_RADIUS * CROWD_NEAR_RADIUS;
-        let nearCount = 0;
-        while (
-            nearCount < found &&
-            nearCount < caps.near &&
-            distances[order[nearCount]] < nearR2
-        ) {
-            nearCount++;
-        }
-        const midEnd = Math.min(found, nearCount + caps.mid);
-        copyTier(near, order, 0, nearCount);
-        copyTier(mid, order, nearCount, midEnd);
-        if (midEnd === found) return CROWD_MID_RADIUS;
-        // The cap cut the mid tier short: only those drawn leave the far tier.
-        return Math.sqrt(distances[order[midEnd]]);
-    };
-
-    const setFarHole = (center: Vector3, radius: number): void => {
-        uniforms.uCrowdLodCenter.value.copy(center);
-        uniforms.uCrowdLodRadius.value = radius;
-    };
-
-    const cameraWorld = new Vector3();
-    if (near) {
-        mesh.onBeforeRender = (_renderer, _scene, camera) => {
-            // Buffers filled last frame have been uploaded by now, so the far
-            // tier can let go of those people without a one-frame hole.
-            if (pendingRadius !== null) {
-                setFarHole(pendingCenter, pendingRadius);
-                pendingRadius = null;
-            }
-            cameraWorld.setFromMatrixPosition(camera.matrixWorld);
-            mesh.worldToLocal(cameraWorld);
-            if (
-                lodDirty ||
-                cameraWorld.distanceToSquared(lodCenter) >
-                    LOD_MOVE_THRESHOLD * LOD_MOVE_THRESHOLD
-            ) {
-                pendingRadius = selectTiers(cameraWorld);
-                pendingCenter.copy(cameraWorld);
-            }
-        };
-    }
 
     let hidden = 0;
     const apply = (point: Vector3Tuple | null, radius: number): number => {
@@ -641,7 +520,6 @@ export function buildCrowd(
                 const dz = base[i + 14] - point[2];
                 isNear = dx * dx + dy * dy + dz * dz < r2;
             }
-            cleared[k] = isNear ? 1 : 0;
             if (isNear) hidden++;
             for (let e = 0; e < 16; e++) {
                 arr[i + e] = isNear && e !== 15 ? 0 : base[i + e];
@@ -654,32 +532,13 @@ export function buildCrowd(
     return {
         mesh,
         count: total,
-        clearAround: (point, radius) => {
-            const count = apply(point, radius);
-            // This runs before a render, so the new tiers upload in time for
-            // the same frame and the hole can move straight away.
-            pendingCenter.set(point[0], point[1], point[2]);
-            setFarHole(pendingCenter, selectTiers(pendingCenter));
-            pendingRadius = null;
-            return count;
-        },
-        reset: () => {
-            apply(null, 0);
-            lodDirty = true;
-        },
+        clearAround: (point, radius) => apply(point, radius),
+        reset: () => void apply(null, 0),
         visibleCount: () => total - hidden,
-        tierCounts: () => ({
-            near: near?.mesh.count ?? 0,
-            mid: mid?.mesh.count ?? 0,
-        }),
         dispose() {
-            farGeometry.dispose();
-            farMaterial.dispose();
+            geometry.dispose();
+            material.dispose();
             mesh.dispose();
-            closeGeometries.forEach((g) => g.dispose());
-            closeMaterial?.dispose();
-            near?.mesh.dispose();
-            mid?.mesh.dispose();
         },
     };
 }

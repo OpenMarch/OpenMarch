@@ -1,18 +1,21 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
+    Color,
     InstancedMesh,
     Mesh,
+    Object3D,
     SpotLight,
     Vector3,
     type BufferGeometry,
+    type MeshStandardMaterial,
 } from "three";
 import type { LightingPreset, SeatRow } from "../../types";
 import {
     buildCrowd,
     calmTeamColor,
     createEnvironment,
+    crowdBlockGeometry,
     createSharedMaterials,
-    crowdTierCaps,
     defaultCrowdPalette,
     FT,
     landGeometry,
@@ -23,12 +26,6 @@ import {
     setTexturePainting,
     videoBoard,
 } from "..";
-import {
-    farFigureGeometry,
-    lowFigureGeometry,
-    midFigureGeometry,
-    nearFigureGeometry,
-} from "../crowdFigures";
 
 beforeAll(() => setTexturePainting(false));
 
@@ -381,54 +378,43 @@ describe("buildCrowd", () => {
         }
     });
 
-    it("gives far people to the close tiers without exceeding the caps", () => {
-        const crowd = buildCrowd(straightRows(40, 200), { density: 1 });
-        crowd.clearAround([0, 5, 20], 1);
-        const { near, mid } = crowd.tierCounts();
-        expect(near).toBeGreaterThan(0);
-        expect(mid).toBeGreaterThan(near);
-        const caps = crowdTierCaps(crowd.count);
-        expect(near).toBeLessThanOrEqual(caps.near);
-        expect(mid).toBeLessThanOrEqual(caps.mid);
-        crowd.dispose();
+    it("draws everyone in one mesh, with no tiers beneath it", () => {
+        for (const quality of ["high", "low"] as const) {
+            const crowd = buildCrowd(straightRows(4, 20), {
+                density: 1,
+                quality,
+            });
+            expect(crowd.mesh.children).toHaveLength(0);
+            crowd.dispose();
+        }
     });
 
-    it("gives big crowds more close figures, within a fixed ceiling", () => {
-        const triangles = (t: number) => {
-            const c = crowdTierCaps(t);
-            return c.near * 160 + c.mid * 36;
-        };
-        expect(crowdTierCaps(3000).near).toBeLessThan(
-            crowdTierCaps(40000).near,
+    it("does no per-frame work of its own", () => {
+        const crowd = buildCrowd(straightRows(4, 20), { density: 1 });
+        expect(crowd.mesh.onBeforeRender).toBe(
+            Object3D.prototype.onBeforeRender,
         );
-        expect(triangles(3000)).toBeLessThanOrEqual(60000);
-        expect(triangles(1e6)).toBeLessThanOrEqual(200000);
-    });
-
-    it("never gives a person hidden around the camera to a close tier", () => {
-        const crowd = buildCrowd(straightRows(20, 60), { density: 1 });
-        const allNear = crowd.clearAround([0, 5, 14], 1000);
-        expect(allNear).toBe(crowd.count);
-        expect(crowd.tierCounts()).toEqual({ near: 0, mid: 0 });
         crowd.dispose();
     });
 
-    it("has no close tiers at low quality", () => {
-        const crowd = buildCrowd(straightRows(4, 20), {
-            density: 1,
-            quality: "low",
-        });
-        expect(crowd.mesh.children).toHaveLength(0);
-        crowd.clearAround([0, 1, 10], 2);
-        expect(crowd.tierCounts()).toEqual({ near: 0, mid: 0 });
+    it("averages the crowd's clothes for the far drift", () => {
+        const palette = { home: [0xff0000], away: [0], neutral: [0] };
+        const crowd = buildCrowd(straightRows(2, 10), { density: 1, palette });
+        const material = crowd.mesh.material as MeshStandardMaterial;
+        const shader = {
+            uniforms: {},
+            vertexShader: "",
+            fragmentShader: "",
+        } as unknown as Parameters<typeof material.onBeforeCompile>[0];
+        material.onBeforeCompile(shader, undefined as never);
+        const mean = shader.uniforms.uCrowdMean.value as Color;
+        expect(mean.r).toBeCloseTo(1, 5);
+        expect(mean.g).toBeCloseTo(0, 5);
         crowd.dispose();
     });
 
-    it("keeps its figures within the brief's triangle budgets", () => {
-        expect(triangles(nearFigureGeometry())).toBeLessThanOrEqual(160);
-        expect(triangles(midFigureGeometry())).toBeLessThanOrEqual(36);
-        expect(triangles(farFigureGeometry())).toBeLessThanOrEqual(8);
-        expect(triangles(lowFigureGeometry())).toBeLessThanOrEqual(12);
+    it("keeps its block within the triangle budget", () => {
+        expect(triangles(crowdBlockGeometry())).toBeLessThanOrEqual(12);
     });
 
     it("clearAround keeps the matrix finite", () => {
