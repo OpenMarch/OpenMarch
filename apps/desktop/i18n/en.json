@@ -2294,7 +2294,7 @@
             "definedLower": "defined",
             "held": "Held",
             "heldLower": "held",
-            "holdFromPrevious": "Hold from previous page",
+            "holdFromPrevious": "Hold from last keyframe",
             "notDefined": "Not defined",
             "notDefinedLower": "not defined",
             "removeKeyframe": "Remove keyframe",

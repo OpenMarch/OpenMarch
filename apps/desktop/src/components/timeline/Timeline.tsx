@@ -288,7 +288,7 @@ export interface TimelineProps {
     readonly pageMoves?: ReadonlySet<string | number>;
     /** The page box menu's **Set as shown** (holds, fork #466) */
     readonly setAsShown?: TimelineSetAsShownMenu;
-    /** **Hold from previous page** on a page box (holds, fork #472) */
+    /** **Hold from last keyframe** on a page box (holds, fork #472) */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
     /** **Clear Page N** on a page box (#573) */
     readonly clearPage?: TimelineClearPageMenu;

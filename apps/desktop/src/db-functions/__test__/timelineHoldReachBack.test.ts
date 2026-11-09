@@ -35,7 +35,7 @@ keepFixturesInPageMode(
 /**
  * **Every hold grows out of what last put the marcher there** (owner, 2026-11-09; ADR 0012): a move
  * ending at the hold's start, or the starting spot. A marcher in a Not defined gap already stands
- * at its last spot, so Hold from previous page, and the upkeep after any edit, reach back over the
+ * at its last spot, so Hold from last keyframe, and the upkeep after any edit, reach back over the
  * gap to the marcher's last row end, the end of its own earlier hold, or the start of the show.
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33), page 5
@@ -315,7 +315,7 @@ const partOfALongerMove = (db: DbConnection, c: number, end = 17) =>
         });
     });
 
-describeDbTests("Hold from previous page reaches back", (it) => {
+describeDbTests("Hold from last keyframe reaches back", (it) => {
     it("from a move: one Held hold over Pages 3–5, growing out of Page 2's diamond", async ({
         db,
         marchersAndPages: _,
@@ -457,7 +457,7 @@ describeDbTests("Hold from previous page reaches back", (it) => {
     });
 });
 
-describeDbTests("Hold from previous page skips what it can't hold", (it) => {
+describeDbTests("Hold from last keyframe skips what it can't hold", (it) => {
     it("a marcher whose last move is a placed shape's move", async ({
         db,
         marchersAndPages: _,

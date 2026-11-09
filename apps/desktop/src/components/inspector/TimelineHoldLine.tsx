@@ -67,7 +67,7 @@ export function useSelectionHoldState(
             const placed = carried.get(id);
             return placed === undefined ? null : heldSince(placed, flags);
         };
-        // Where the Held mark over the flag starts (Hold from previous page: this page only, R3)
+        // Where the Held mark over the flag starts (Hold from last keyframe: this page only, R3)
         const heldOnFlag = (id: number) => {
             const mark = marks.find(
                 (m) =>

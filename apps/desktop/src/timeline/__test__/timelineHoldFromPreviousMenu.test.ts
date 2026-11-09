@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type { PageKeepState } from "../timelineKeepLater";
 import {
+    holdFromPreviousLight,
     holdFromPreviousMenu,
     holdFromPreviousMessage,
 } from "../timelineHoldFromPrevious";
 
 /**
- * The page box menu's **Hold from previous page** entry and what its toast says (holds, fork
+ * The page box menu's **Hold from last keyframe** entry and what its toast says (holds, fork
  * #472). The selection's hold bars are in timelineHoldBars.test.ts.
  */
 
@@ -28,6 +29,50 @@ const names = new Map([
     [4, "T4"],
 ]);
 const nameOf = (id: number) => names.get(id);
+
+describe("holdFromPreviousLight", () => {
+    const light = (
+        patch: Partial<PageKeepState>,
+        marcherIds: number[],
+        marks: { id: number; marcherId: number; start: number; end: number }[],
+    ) =>
+        holdFromPreviousLight({
+            state: { ...state(3), ...patch },
+            marcherIds,
+            marks,
+            rowsOf: (id) => (id === 3 ? [] : [{ start: 1, end: 9 }]),
+            showStart: 1,
+        });
+
+    it("shows the hold whole: from the last arrival over the Not defined pages to the page's end", () => {
+        const shown = light({ follows: [1] }, [1], []);
+        expect(shown?.wouldHold).toBe(true);
+        expect(shown?.byMarcher.get(1)).toEqual([{ start: 9, end: 33 }]);
+    });
+
+    it("a marcher that never moved shows from the start of the show", () => {
+        expect(light({ follows: [3] }, [3], [])?.byMarcher.get(3)).toEqual([
+            { start: 1, end: 33 },
+        ]);
+    });
+
+    it("joins the marcher's earlier hold, and shows a page with its own move too", () => {
+        const shown = light(
+            { follows: [1] },
+            [1, 2],
+            [{ id: 1, marcherId: 1, start: 9, end: 17 }],
+        );
+        expect(shown?.byMarcher.get(1)).toEqual([{ start: 17, end: 33 }]);
+        // Marcher 2 isn't in follows: a move of its own there, which the hold would replace
+        expect(shown?.byMarcher.get(2)).toEqual([{ start: 9, end: 33 }]);
+    });
+
+    it("leaves out who it wouldn't change, and shows nothing when that's everyone", () => {
+        const heldThere = [{ id: 1, marcherId: 1, start: 25, end: 33 }];
+        const shown = light({ follows: [1], midMove: [2] }, [1, 2], heldThere);
+        expect(shown).toBeNull();
+    });
+});
 
 describe("holdFromPreviousMenu", () => {
     it("runs for every selected marcher on the page box", () => {

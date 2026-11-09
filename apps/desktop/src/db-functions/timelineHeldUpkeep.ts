@@ -40,7 +40,7 @@ import { readPageGrid, showStartBeat } from "./timelinePageGrid";
  *    decision 17). The edits that can do this as a side effect name it
  *    (`arrivalHoldsLostInTransaction`).
  * 4. Else nothing arrives at its start, and it had no arrival to lose. It **reaches back** to what
- *    last put the marcher there (`holdReachBack`, as Hold from previous page does; owner,
+ *    last put the marcher there (`holdReachBack`, as Hold from last keyframe does; owner,
  *    2026-11-09): the marcher's last row end, the end of its own earlier hold, or the start of the
  *    show. A row ending there that doesn't arrive leaves it nothing to grow out of, and it goes.
  * 5. **Trim** what is left of it where a row the edit re-timed now covers it (H-1). A row over its

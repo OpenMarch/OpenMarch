@@ -108,6 +108,26 @@ describe("FieldContextMenu", () => {
         expect(onClose).toHaveBeenCalled();
     });
 
+    it("previews an entry while highlighted, and stops on leaving it or the menu closing", () => {
+        const preview = vi.fn();
+        handlers.push(
+            registerActionHandler("timelineHoldFromPrevious", {
+                run: vi.fn(),
+                isEnabled: () => true,
+                preview,
+            }),
+        );
+        open({ timelineMode: true });
+        const entry = item("timelineHoldFromPrevious")!;
+        fireEvent.focus(entry);
+        expect(preview).toHaveBeenLastCalledWith(true);
+        fireEvent.blur(entry);
+        expect(preview).toHaveBeenLastCalledWith(false);
+        fireEvent.focus(entry);
+        cleanup();
+        expect(preview).toHaveBeenLastCalledWith(false);
+    });
+
     it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
         const run = handle("alignHorizontally", { enabled: false });
         open();
@@ -145,7 +165,7 @@ describe("FieldContextMenu", () => {
             ["selectAllMarchers"],
         ]);
         expect(item("timelineHoldFromPrevious")).toHaveTextContent(
-            "Hold from previous page",
+            "Hold from last keyframe",
         );
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (selected)",
@@ -200,7 +220,7 @@ describe("FieldContextMenu", () => {
         expect(entry).toHaveAttribute("role", "menuitemcheckbox");
         expect(entry).toHaveAttribute("aria-checked", "true");
         expect(entry).toHaveAttribute("data-disabled");
-        expect(entry).toHaveTextContent(/^Hold from previous page/);
+        expect(entry).toHaveTextContent(/^Hold from last keyframe/);
         fireEvent.click(entry);
         expect(hold).not.toHaveBeenCalled();
         expect(item("setSelectedMarchersToPreviousPage")).not.toHaveAttribute(
@@ -210,14 +230,14 @@ describe("FieldContextMenu", () => {
 
     it("shows a mixed selection's count in the label, and runs", () => {
         const hold = handle("timelineHoldFromPrevious", {
-            label: "Hold from previous page (3 of 5)",
+            label: "Hold from last keyframe (3 of 5)",
         });
         handle("setSelectedMarchersToPreviousPage", {
             label: "Clear this page (2 of 5 selected)",
         });
         open();
         const entry = item("timelineHoldFromPrevious")!;
-        expect(entry).toHaveTextContent("Hold from previous page (3 of 5)");
+        expect(entry).toHaveTextContent("Hold from last keyframe (3 of 5)");
         expect(entry).not.toHaveAttribute("data-disabled");
         expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
             "Clear this page (2 of 5 selected)",

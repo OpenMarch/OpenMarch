@@ -14,7 +14,7 @@ import { savedPositions } from "../positions.mjs";
 import { seedShowSql } from "../seed.mjs";
 import { pageBox } from "../timeline.mjs";
 
-// Hold from previous page and a drag inside the hold (holds, fork #472): the
+// Hold from last keyframe and a drag inside the hold (holds, fork #472): the
 // page box menu makes a Held hold over that page for the selected marchers,
 // growing out of the move that arrives at the previous page's flag, drawn as a
 // solid bar from that arrival's diamond. A drag on a count inside the hold
@@ -123,7 +123,7 @@ const marks = async (show: Show) => {
     return out;
 };
 
-/** Right-clicks the page box at `startBeat` and picks Hold from previous page. */
+/** Right-clicks the page box at `startBeat` and picks Hold from last keyframe. */
 async function holdFromPrevious(page: Page, startBeat: number) {
     // The selection's page states settle after the field shows the selection
     await expect(async () => {
@@ -134,7 +134,7 @@ async function holdFromPrevious(page: Page, startBeat: number) {
     }).toPass();
 }
 
-test("Hold from previous page on page 3 draws a solid bar from page 2's diamond; a drag inside it moves page 2's spot and the hold, and Undo takes each back", async ({
+test("Hold from last keyframe on page 3 draws a solid bar from page 2's diamond; a drag inside it moves page 2's spot and the hold, and Undo takes each back", async ({
     show,
 }) => {
     const { page } = show;

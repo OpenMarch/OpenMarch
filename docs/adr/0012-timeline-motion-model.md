@@ -402,6 +402,9 @@ holds to the resolver (spec R-6), so the mark is app data:
   Not defined gap already stands at its last spot, so a hold starting later than the marcher's last
   arrival would never differ in playback, and a hold that a drag inside could not move whole would
   break the rule that editing inside a hold moves the whole hold, including where it arrives.
+  The command that makes one is named **Hold from last keyframe** for that reason (it was Hold
+  from previous page), and while it's highlighted in a menu or the palette the hold it would make
+  pulses on the timeline.
 - **Invariants, checked at commit time.** They are plain SQL over `timeline_assignments`, so they
   need no layer derivation:
   - **H-1:** no row of the marcher overlaps the mark (`E-H1`).

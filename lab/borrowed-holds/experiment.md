@@ -3,7 +3,7 @@
 # Keep `id` stable: feedback is filed under it.
 id: borrowed-holds
 title: Hold a page after some Not defined pages, and see the hold reach back
-summary: Hold from previous page now works on a page after Not defined pages. The marchers already stand at their last spot there, so the hold reaches back over those pages to whatever last put them there, and draws as one plain Held bar. Dragging inside any hold moves the whole hold, including where it arrives.
+summary: Hold from last keyframe now works on a page after Not defined pages. The marchers already stand at their last spot there, so the hold reaches back over those pages to whatever last put them there, and draws as one plain Held bar. Dragging inside any hold moves the whole hold, including where it arrives.
 status: open
 questions:
   - When you held a page after Not defined pages, did you expect the hold to take in those earlier pages too? Did the bar make that clear?
@@ -18,7 +18,10 @@ edge of the page row, with the keyframe diamonds.
 **What to try**
 
 - Pick a marcher that last moves on, say, Page 2. Right-click a page box a
-  few pages later (Page 5, say) and pick **Hold from previous page**. Pages 3
+  few pages later (Page 5, say) and point at **Hold from last keyframe**
+  without clicking. The hold it would make pulses on the timeline, from Page
+  2's diamond to the end of Page 5. Move off it and the pulse stops.
+- Now click it. Pages 3
   to 5 become one plain Held bar, growing out of Page 2's diamond, and the
   toast names those pages.
 - Point at the bar's end: you can still drag it to hold longer or leave

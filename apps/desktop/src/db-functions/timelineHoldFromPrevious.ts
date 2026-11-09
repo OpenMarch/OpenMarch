@@ -27,7 +27,7 @@ import { holdReachBack } from "@/timeline/holdExtent";
 import { showStartBeat, type PageGrid } from "./timelinePageGrid";
 
 /**
- * **Hold from previous page** on a page box, in timeline mode (holds, fork #472; holds README
+ * **Hold from last keyframe** on a page box, in timeline mode (holds, fork #472; holds README
  * decisions 2 and 3, review R3; ADR 0012 amendment 2026-10-30).
  *
  * For each selected marcher, the page box `[start, end)` becomes one **Held** hold
@@ -74,7 +74,7 @@ import { showStartBeat, type PageGrid } from "./timelinePageGrid";
  * One undo step; a run that holds nobody opens no edit.
  */
 
-/** Why Hold from previous page left a marcher alone. */
+/** Why Hold from last keyframe left a marcher alone. */
 export type HoldFromPreviousSkipReason =
     | "noArrival"
     | "held"
@@ -86,7 +86,7 @@ export type HoldFromPreviousSkipReason =
     | "arrivalFollowLeader"
     | "homeShape";
 
-/** A marcher Hold from previous page left alone, with why. */
+/** A marcher Hold from last keyframe left alone, with why. */
 export interface HoldFromPreviousSkip {
     marcherId: number;
     reason: HoldFromPreviousSkipReason;
@@ -97,7 +97,7 @@ export interface HoldFromPreviousSkip {
     atPage?: string;
 }
 
-/** What **Hold from previous page** did, marcher ids ascending. */
+/** What **Hold from last keyframe** did, marcher ids ascending. */
 export interface HoldFromPreviousResult {
     /** The marchers now Held over the box */
     held: number[];
@@ -108,7 +108,7 @@ export interface HoldFromPreviousResult {
 }
 
 /**
- * **Hold from previous page**: each of `marcherIds` that can be is Held over the page box
+ * **Hold from last keyframe**: each of `marcherIds` that can be is Held over the page box
  * `pageBox` (see the module comment). Refused (E-ARGS) when `pageBox` isn't a page's box.
  */
 export async function holdFromPreviousPage({

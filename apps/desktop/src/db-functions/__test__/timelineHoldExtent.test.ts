@@ -155,7 +155,7 @@ const show = async (db: DbConnection) => {
 /** Marcher `c` Held from the start through page 2 and over page 4, as a file can hold (see below). */
 const HOME_TO_PAGE2 = { start: 1, end: 17 };
 const twoHolds = async (db: DbConnection, c: number) => {
-    // Written straight to the file: Hold from previous page would join them over the gap
+    // Written straight to the file: Hold from last keyframe would join them over the gap
     for (const { start, end } of [HOME_TO_PAGE2, PAGE4])
         await db
             .insert(schema.timeline_held_marks)

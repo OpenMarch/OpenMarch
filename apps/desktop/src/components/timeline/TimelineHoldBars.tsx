@@ -102,7 +102,7 @@ export const TimelineHoldBars = memo(function TimelineHoldBars({
                     key={keyOf(bar)}
                     bar={bar}
                     mixed={
-                        bar.kind === "held"
+                        bar.kind === "held" && !bar.preview
                             ? notDefinedOver(bar, holds.bars)
                             : NONE
                     }
@@ -206,6 +206,7 @@ function HoldBar({
             data-held={solid ? bar.marcherIds.length : undefined}
             data-shape={bar.shape || undefined}
             data-lit={bar.lit}
+            data-preview={bar.preview || undefined}
             data-mixed={mixed.length > 0 || undefined}
             // Under the diamonds (z-36) and the flag grips (z-35)
             className="pointer-events-none absolute z-[34] -translate-y-1/2"
@@ -221,6 +222,7 @@ function HoldBar({
                 data-hold-line=""
                 className={clsx(
                     "absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-full transition-[height,color] ease-out motion-reduce:transition-none",
+                    bar.preview && "motion-safe:animate-pulse",
                     bar.lit
                         ? "text-accent"
                         : solid

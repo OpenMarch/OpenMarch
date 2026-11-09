@@ -181,6 +181,57 @@ describe("dragLitRanges", () => {
     });
 });
 
+describe("a hovered command's would-be hold", () => {
+    const spansOf = () => [move(0, 8), hold(8, Infinity)];
+    const byMarcher = new Map([[1, [{ start: 8, end: 24 }]]]);
+
+    it("draws whole as one pulsing Held bar, over the Not defined bar left as it was", () => {
+        const { bars } = selectionHolds({
+            marcherIds: [1],
+            spansOf,
+            marks: [],
+            showEnd: SHOW_END,
+            light: { byMarcher, wouldHold: true },
+        });
+        expect(bars.filter((b) => b.preview)).toEqual([
+            expect.objectContaining({
+                start: 8,
+                end: 24,
+                kind: "held",
+                lit: true,
+                marcherIds: [1],
+            }),
+        ]);
+        expect(bars.filter((b) => !b.preview).map((b) => b.lit)).toEqual([
+            false,
+        ]);
+    });
+
+    it("draws even where nothing holds yet: over a move the command would replace", () => {
+        const { bars } = selectionHolds({
+            marcherIds: [1],
+            spansOf: () => [move(0, 24), hold(24, Infinity)],
+            marks: [],
+            showEnd: 24,
+            light: { byMarcher, wouldHold: true },
+        });
+        expect(bars).toEqual([
+            expect.objectContaining({ start: 8, end: 24, preview: true }),
+        ]);
+    });
+
+    it("a follow-back's light still only lights bars already there", () => {
+        const { bars } = selectionHolds({
+            marcherIds: [1],
+            spansOf,
+            marks: [],
+            showEnd: SHOW_END,
+            light: { byMarcher },
+        });
+        expect(bars.some((b) => b.preview)).toBe(false);
+    });
+});
+
 describe("selectionHolds", () => {
     const spans = new Map<number, CarrySpan[]>([
         // T1: moves on page 1, holds to page 3's flag, moves on, holds to the end

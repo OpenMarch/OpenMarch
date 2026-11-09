@@ -17,11 +17,13 @@ import {
 } from "./timelineKeepLater";
 import { toastTimelineError } from "./timelineErrorMessages";
 import { holdTerms } from "./holdTerms";
-import { holdEntryStates } from "./holdMenuState";
+import { holdEntryStates, marcherPageStates } from "./holdMenuState";
+import { holdReachBack } from "./holdExtent";
+import type { BeatRange, HoldLight } from "./timelineHoldBars";
 import type { HeldMark } from "@/db-functions/timelineHeldMarks";
 
 /**
- * **Hold from previous page** as the UI runs it (holds, fork #472): one undo step, and a refusal
+ * **Hold from last keyframe** as the UI runs it (holds, fork #472): one undo step, and a refusal
  * is a toast, never thrown. The page box menu offers it whenever marchers are selected; the
  * command holds those it can and the toast names the others, with why.
  */
@@ -73,7 +75,7 @@ const SKIP_WORDS: Record<
 };
 
 /**
- * What the toast after **Hold from previous page** says: who is Held now, and who wasn't and why,
+ * What the toast after **Hold from last keyframe** says: who is Held now, and who wasn't and why,
  * or null when it has nothing to say.
  */
 export function holdFromPreviousMessage(
@@ -133,7 +135,7 @@ export function holdFromPreviousMessage(
     };
 }
 
-/** **Hold from previous page** for `marcherIds` on the page box `box` (`holdFromPreviousPage`). */
+/** **Hold from last keyframe** for `marcherIds` on the page box `box` (`holdFromPreviousPage`). */
 export async function holdFromPreviousOn(
     box: PageBoxRange,
     marcherIds: readonly number[],
@@ -152,7 +154,45 @@ export async function holdFromPreviousOn(
 }
 
 /**
- * The page box menu's **Hold from previous page** entry from the selection's states on each page
+ * What **Hold from last keyframe** would make on a page, for the pulsing bars while it's hovered:
+ * for each selected marcher it would change, from what last put them there (`holdReachBack`, as
+ * the command reaches) to the end of the page. Null when it would change no one. A marcher only
+ * the command can rule out (a shape's move, say) shows here and is skipped, and named, on the click.
+ *
+ * @param rowsOf a marcher's rows
+ * @param showStart where the show's first page starts
+ */
+export function holdFromPreviousLight({
+    state,
+    marcherIds,
+    marks,
+    rowsOf,
+    showStart,
+}: {
+    state: PageKeepState;
+    marcherIds: readonly number[];
+    marks: readonly HeldMark[];
+    rowsOf: (marcherId: number) => readonly BeatRange[];
+    showStart: number;
+}): HoldLight | null {
+    const known = marcherPageStates(state, marks);
+    const byMarcher = new Map<number, readonly BeatRange[]>();
+    for (const id of marcherIds) {
+        const now = known.get(id);
+        if (now === "held" || now === "midMove") continue;
+        const { beat } = holdReachBack({
+            start: state.box.start,
+            rows: rowsOf(id),
+            marks: marks.filter((m) => m.marcherId === id),
+            showStart,
+        });
+        byMarcher.set(id, [{ start: beat, end: state.box.end }]);
+    }
+    return byMarcher.size > 0 ? { byMarcher, wouldHold: true } : null;
+}
+
+/**
+ * The page box menu's **Hold from last keyframe** entry from the selection's states on each page
  * box (`usePageKeepStates`) and the Held marks: it runs for every selected marcher and says what
  * it did, and is unavailable, saying why, where no selected marcher could become Held
  * (`holdEntryStates`). With nothing selected the states are empty, so the entry doesn't show.

@@ -223,7 +223,7 @@ describe("TimelineHoldLine", () => {
     });
 
     it("says a Held marcher is Held since the page its mark starts on, past Not defined pages (R3, demo M7)", async () => {
-        // Marcher 1 arrives on page 2; page 3 is Not defined; Hold from previous page on page 4
+        // Marcher 1 arrives on page 2; page 3 is Not defined; Hold from last keyframe on page 4
         mocks.selectedPage = PAGES[3];
         useHeldMarksStore.setState({
             marks: [{ id: 1, marcherId: 1, start: 17, end: 25 }],

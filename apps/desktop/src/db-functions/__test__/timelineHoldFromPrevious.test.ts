@@ -45,7 +45,7 @@ keepFixturesInPageMode(
 );
 
 /**
- * **Hold from previous page** and the drag inside a Held hold (holds, fork #472; holds README
+ * **Hold from last keyframe** and the drag inside a Held hold (holds, fork #472; holds README
  * decisions 2, 3 and 4; ADR 0012 amendment 2026-10-30).
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33); beat ids equal
@@ -174,7 +174,7 @@ const leftoverMark = (
         end_beat: box.end,
     });
 
-describeDbTests("Hold from previous page", (it) => {
+describeDbTests("Hold from last keyframe", (it) => {
     it("holds this page only, growing out of the previous page's arrival", async ({
         db,
         marchersAndPages: _,
@@ -435,7 +435,7 @@ describeDbTests("Hold from previous page", (it) => {
         }).catch((e: unknown) => e);
         expect(timelineErrorCode(notABox)).toBe("E-ARGS");
         expect(refusalText(notABox)).toContain(
-            "Hold from previous page works on a whole page, not Page 3, counts 1–4",
+            "Hold from last keyframe works on a whole page, not Page 3, counts 1–4",
         );
         expect(await snapshot(db)).toEqual(rows);
     });
@@ -482,7 +482,7 @@ const homeRecipe = (db: DbConnection, marcherId: number, kind: string) =>
     });
 
 describeDbTests(
-    "Hold from previous page from the starting spots (#619)",
+    "Hold from last keyframe from the starting spots (#619)",
     (it) => {
         it("holds plain marchers on Page 1 at their starting spots", async ({
             db,
@@ -1017,7 +1017,7 @@ describeDbTests("Held marks: history round trips", (it) => {
     const testWithHistory = getTestWithHistory(it, TABLES);
 
     testWithHistory(
-        "Hold from previous page, then a drag inside the hold: one undo group each",
+        "Hold from last keyframe, then a drag inside the hold: one undo group each",
         async ({ db, marchersAndPages: _, expectNumberOfChanges }) => {
             const { a, b } = await show(db);
             await move(db, PAGE3, [{ marcherId: b, xy: ELSEWHERE }]);
@@ -1531,7 +1531,7 @@ const ungroupedOn = async (db: DbConnection, timelineId: number) =>
 describeDbTests(
     "Holds and a shape ungrouped on a page it was carried onto (#618 review)",
     (it) => {
-        it("Hold from previous page still skips a marcher whose arrival is the real shape", async ({
+        it("Hold from last keyframe still skips a marcher whose arrival is the real shape", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -1780,7 +1780,7 @@ describeDbTests(
             expect(await snapshotWithHomes(db)).toEqual(after);
         });
 
-        it("a later Hold from previous page then skips them as homeShape", async ({
+        it("a later Hold from last keyframe then skips them as homeShape", async ({
             db,
             marchersAndPages: _,
         }) => {

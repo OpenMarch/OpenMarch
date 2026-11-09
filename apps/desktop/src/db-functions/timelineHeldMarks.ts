@@ -110,7 +110,7 @@ export async function dropShapeHomeHoldsInTransaction(
  * so setting that move's ending moves the arrival and the whole hold with it. Every hold grows out
  * of a move or the starting spot (owner, 2026-11-09), and the upkeep keeps it so; a marcher Held
  * at `beat` with neither stays with the rest. One whose arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
- * alone and named in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436):
+ * alone and named in `skipped`, as Hold from last keyframe skips it (owner's rule, #434 / #436):
  * a later edit, such as a shape placed on the arrival's page, can make it one.
  *
  * A marcher Held from its starting spot (`readArrival`, `HOME_ARRIVAL`) goes in `homes`: its edit

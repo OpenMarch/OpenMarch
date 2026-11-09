@@ -13,7 +13,7 @@ import { seedShowSql } from "../seed.mjs";
 import { pageBox } from "../timeline.mjs";
 
 // Every hold grows out of what last put the marcher there (owner, 2026-11-09;
-// ADR 0012). Hold from previous page on a page after Not defined pages reaches
+// ADR 0012). Hold from last keyframe on a page after Not defined pages reaches
 // back over them to the marcher's last arrival: one plain Held bar. A drag
 // inside it moves the whole hold, including where it arrives.
 //
@@ -157,7 +157,7 @@ const setTheme = (page: Page, dark: boolean) =>
         dark,
     );
 
-test("Hold from previous page after Not defined pages reaches back: one plain Held bar from the last arrival", async ({
+test("Hold from last keyframe after Not defined pages reaches back: one plain Held bar from the last arrival", async ({
     show,
 }) => {
     const { page } = show;
@@ -174,6 +174,34 @@ test("Hold from previous page after Not defined pages reaches back: one plain He
         await shoot(page, `reach-back-rest-${dark ? "dark" : "light"}`);
     }
     await setTheme(page, false);
+});
+
+test("hovering Hold from last keyframe pulses the whole hold it would make, and leaving stops it", async ({
+    show,
+}) => {
+    const { page } = show;
+    await waitForField(page);
+    await expect.poll(async () => (await drawnMarchers(page)).length).toBe(2);
+    await goTo(page, "m9");
+    await expectCanvasMatchesShow(show);
+    await clickMarcher(page, "T2");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(1);
+    await waitForIdle(page);
+    await pageBox(page, PAGE_4_BOX).click({ button: "right" });
+    const entry = page.getByTestId("timeline-range-menu-hold-from-previous");
+    await entry.hover();
+    const pulsing = page.locator("[data-preview]");
+    await expect(pulsing).toHaveCount(1);
+    await expect(heldBar(page).and(pulsing)).toHaveCount(1);
+    await expect(pulsing.locator("[data-hold-line]")).toHaveClass(
+        /animate-pulse/,
+    );
+    await page.keyboard.press("Escape");
+    await expect(pulsing).toHaveCount(0);
+    // Only a preview: nothing written
+    expect(await t2Marks(show)).toEqual([]);
 });
 
 test("a drag inside the hold lights the whole bar and moves the arrival, not a page of its own", async ({
