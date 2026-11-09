@@ -5,7 +5,7 @@ import { applyHoldEdgeDrag, type HoldEdgeDrag } from "./holdExtent";
 import type { BeatRange, HoldLight } from "./timelineHoldBars";
 
 /**
- * A Held hold's edge being dragged on the timeline (fork #475), as it would land: the hold bars
+ * A Held hold's end being dragged on the timeline (fork #475), as it would land: the hold bars
  * draw it there (`useSelectionHolds`) until the drag ends and the marks it wrote are read.
  */
 export const useHoldEdgeDragStore = create<{ drag: HoldEdgeDrag | null }>(
@@ -13,7 +13,7 @@ export const useHoldEdgeDragStore = create<{ drag: HoldEdgeDrag | null }>(
 );
 
 /**
- * `marks` as the bars draw them: while a hold edge is dragged, where it would land
+ * `marks` as the bars draw them: while a hold's end is dragged, where it would land
  * (`applyHoldEdgeDrag`, touching holds joined), with the dragged holds lit instead of `light`;
  * otherwise `marks` and `light` as they are.
  */
@@ -29,11 +29,8 @@ export function useDraggedHoldMarks(
         const byMarcher = new Map<number, readonly BeatRange[]>();
         for (const mark of shown) {
             if (!dragged.has(mark.marcherId)) continue;
-            const edgeIn =
-                drag.edge === "end"
-                    ? mark.start < drag.to && drag.to <= mark.end
-                    : mark.start <= drag.to && drag.to < mark.end;
-            if (edgeIn) byMarcher.set(mark.marcherId, [mark]);
+            if (mark.start < drag.to && drag.to <= mark.end)
+                byMarcher.set(mark.marcherId, [mark]);
         }
         return { shownMarks: shown, light: { byMarcher } };
     }, [marks, drag, light]);

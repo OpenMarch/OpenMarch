@@ -28,8 +28,8 @@ keepFixturesInPageMode(
 );
 
 /**
- * **Shaping a hold** (holds README decisions 3, 5 and 6; fork #475): dragging a Held hold's end or
- * start, Split hold here, leaving early, and touching holds becoming one.
+ * **Shaping a hold** (holds README decisions 3, 5 and 6; fork #475): dragging a Held hold's end,
+ * Split hold here, leaving early, and touching holds becoming one.
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33); beat ids equal
  * their ordinals. Marchers `a` and `b` move on page 2 and are Held over pages 3 and 4 (the demo's
@@ -152,6 +152,16 @@ const show = async (db: DbConnection) => {
     return { a: a!, b: b!, c: c! };
 };
 
+/** Marcher `c` Held from the start through page 2 and over page 4, as a file can hold (see below). */
+const HOME_TO_PAGE2 = { start: 1, end: 17 };
+const twoHolds = async (db: DbConnection, c: number) => {
+    // Written straight to the file: Hold from previous page would join them over the gap
+    for (const { start, end } of [HOME_TO_PAGE2, PAGE4])
+        await db
+            .insert(schema.timeline_held_marks)
+            .values({ marcher_id: c, start_beat: start, end_beat: end });
+};
+
 const refusalOf = async (run: Promise<unknown>) => {
     try {
         await run;
@@ -174,7 +184,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         const result = await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 33,
             to: 21,
         });
@@ -203,7 +212,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 33,
             to: 21,
         });
@@ -212,7 +220,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 21,
             to: 29,
         });
@@ -221,7 +228,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 29,
             to: 24,
         });
@@ -232,7 +238,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
                 setHoldEdge({
                     db,
                     marcherIds: [a],
-                    edge: "end",
                     from: 24,
                     to: 30,
                 }),
@@ -250,7 +255,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 33,
             to: 25,
         });
@@ -259,7 +263,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
                 setHoldEdge({
                     db,
                     marcherIds: [a],
-                    edge: "end",
                     from: 25,
                     to: SHOW_END + 1,
                 }),
@@ -270,7 +273,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
                 setHoldEdge({
                     db,
                     marcherIds: [a],
-                    edge: "end",
                     from: 25,
                     to: 17,
                 }),
@@ -279,7 +281,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
         await setHoldEdge({
             db,
             marcherIds: [a],
-            edge: "end",
             from: 25,
             to: 18,
         });
@@ -298,7 +299,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
                 await setHoldEdge({
                     db,
                     marcherIds: [a],
-                    edge: "end",
                     from: 33,
                     to: 33,
                 })
@@ -309,7 +309,6 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
                 await setHoldEdge({
                     db,
                     marcherIds: [c],
-                    edge: "end",
                     from: 33,
                     to: 29,
                 })
@@ -320,90 +319,23 @@ describeDbTests("Dragging a Held hold's end (#475)", (it) => {
     });
 });
 
-describeDbTests("Dragging a Held hold's start (#475)", (it) => {
-    it("can't move the start of a hold that grows out of its arrival", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { a } = await show(db);
-        const before = await snapshot(db);
-        for (const to of [9, 21])
-            expect(
-                await refusalOf(
-                    setHoldEdge({
-                        db,
-                        marcherIds: [a],
-                        edge: "start",
-                        from: 17,
-                        to,
-                    }),
-                ),
-            ).toBe("E-ARGS");
-        expect(await snapshot(db)).toEqual(before);
-    });
-
-    it("moves the start of a hold from the starting spots back to an earlier flag, or later", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { c } = await show(db);
-        await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
-        expect(await marksOf(db, c)).toEqual([PAGE3]);
-        const before = await snapshot(db);
-
-        await setHoldEdge({
-            db,
-            marcherIds: [c],
-            edge: "start",
-            from: 17,
-            to: 9,
-        });
-        expect(await marksOf(db, c)).toEqual([{ start: 9, end: 25 }]);
-        await setHoldEdge({
-            db,
-            marcherIds: [c],
-            edge: "start",
-            from: 9,
-            to: 21,
-        });
-        expect(await marksOf(db, c)).toEqual([{ start: 21, end: 25 }]);
-        expect(
-            await refusalOf(
-                setHoldEdge({
-                    db,
-                    marcherIds: [c],
-                    edge: "start",
-                    from: 21,
-                    to: 25,
-                }),
-            ),
-        ).toBe("E-ARGS");
-
-        expect((await performUndo(db)).success).toBe(true);
-        expect((await performUndo(db)).success).toBe(true);
-        expect(await snapshot(db)).toEqual(before);
-    });
-});
-
 describeDbTests("Touching holds become one (#475)", (it) => {
     it("an end dragged onto the next hold's start joins them, and undo splits them again", async ({
         db,
         marchersAndPages: _,
     }) => {
         const { c } = await show(db);
-        await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
-        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [c] });
-        expect(await marksOf(db, c)).toEqual([PAGE2, PAGE4]);
+        await twoHolds(db, c);
+        expect(await marksOf(db, c)).toEqual([HOME_TO_PAGE2, PAGE4]);
         const before = await snapshot(db);
 
         await setHoldEdge({
             db,
             marcherIds: [c],
-            edge: "end",
             from: 17,
             to: 25,
         });
-        expect(await marksOf(db, c)).toEqual([{ start: 9, end: 33 }]);
+        expect(await marksOf(db, c)).toEqual([{ start: 1, end: 33 }]);
         const joined = await snapshot(db);
 
         expect((await performUndo(db)).success).toBe(true);
@@ -412,40 +344,20 @@ describeDbTests("Touching holds become one (#475)", (it) => {
         expect(await snapshot(db)).toEqual(joined);
     });
 
-    it("a start dragged back onto the previous hold's end joins them", async ({
-        db,
-        marchersAndPages: _,
-    }) => {
-        const { c } = await show(db);
-        await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
-        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [c] });
-
-        await setHoldEdge({
-            db,
-            marcherIds: [c],
-            edge: "start",
-            from: 25,
-            to: 17,
-        });
-        expect(await marksOf(db, c)).toEqual([{ start: 9, end: 33 }]);
-    });
-
     it("an end dragged past the next hold's start takes it in", async ({
         db,
         marchersAndPages: _,
     }) => {
         const { c } = await show(db);
-        await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
-        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [c] });
+        await twoHolds(db, c);
 
         await setHoldEdge({
             db,
             marcherIds: [c],
-            edge: "end",
             from: 17,
             to: 29,
         });
-        expect(await marksOf(db, c)).toEqual([{ start: 9, end: 33 }]);
+        expect(await marksOf(db, c)).toEqual([{ start: 1, end: 33 }]);
     });
 });
 
@@ -556,17 +468,12 @@ describeDbTests("Leaving early in Basic (#475)", (it) => {
         marchersAndPages: _,
     }) => {
         const { c } = await show(db);
-        // c holds from its starting spot over [29, 33)
+        // c's last move ends mid-page 3, and the hold on page 4 reaches back to it
+        await move(db, { start: 17, end: 21 }, [{ marcherId: c, xy: FAR }]);
         await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [c] });
-        await setHoldEdge({
-            db,
-            marcherIds: [c],
-            edge: "start",
-            from: 25,
-            to: 29,
-        });
-        await point(db, PAGE4, 27, [{ marcherId: c, xy: ELSEWHERE }]);
+        expect(await marksOf(db, c)).toEqual([{ start: 21, end: 33 }]);
+        await point(db, PAGE3, 19, [{ marcherId: c, xy: ELSEWHERE }]);
         const rows = await rowsOf(db, c);
-        expect(rows.every((r) => r.end <= 29)).toBe(true);
+        expect(rows.every((r) => r.end <= 21)).toBe(true);
     });
 });

@@ -44,7 +44,6 @@ import {
     splitHeldEditsInTransaction,
     type HeldConflict,
     type HeldArrivalEdit,
-    type HeldBorrowedEdit,
     type HeldEditSkip,
     type HeldHomeEdit,
 } from "./timelineHeldMarks";
@@ -1104,53 +1103,6 @@ async function moveHeldArrivalsInTransaction(
 }
 
 /**
- * Held marchers' edits inside **borrowed holds** (`HeldBorrowedEdit`, fork #474; holds 04-anchors):
- * each adds a move over `[from, mark.start)` ending where the marcher is dragged, as a drag over
- * that window would, so the hold then grows out of that move's diamond and moves with it. Marchers
- * with the same window share one move. Adds what it wrote to `result`.
- *
- * @returns for each marcher written, the move (timeline) its added move is in
- */
-async function moveBorrowedHoldsInTransaction(
-    tx: DbTransaction,
-    borrowed: readonly HeldBorrowedEdit<TimelineMarcherMove>[],
-    result: TimelineMoveResult,
-): Promise<number[]> {
-    const byWindow = new Map<
-        string,
-        { range: BeatRange; moves: TimelineMarcherMove[] }
-    >();
-    for (const { move, mark, from } of borrowed) {
-        const key = `${from}:${mark.start}`;
-        const window = byWindow.get(key);
-        if (window) window.moves.push(move);
-        else
-            byWindow.set(key, {
-                range: { start: from, end: mark.start },
-                moves: [move],
-            });
-    }
-    const timelines: number[] = [];
-    for (const { range, moves } of byWindow.values()) {
-        const written = await moveMarchersInRangeInTransaction({
-            tx,
-            range,
-            moves,
-        });
-        result.slots.push(...written.slots);
-        result.convertedTransitionIds.push(...written.convertedTransitionIds);
-        const timelineId = await timelineHoldingMost(
-            tx,
-            moves.map((m) => m.marcherId),
-            range.end,
-            range.start,
-        );
-        if (timelineId !== null) timelines.push(...moves.map(() => timelineId));
-    }
-    return timelines;
-}
-
-/**
  * Held marchers' edits whose hold grows out of the starting spot (`HeldHomeEdit`, #619): each sets
  * the marcher's starting spot, as a drag at the start of the show would, so the whole hold moves
  * with it. Adds the marchers to `result.homes`.
@@ -1389,14 +1341,8 @@ export const moveMarchersInTarget = async ({
                 // A marcher Held at the edited count edits the move arriving at its hold
                 // instead, so the whole hold moves (holds decision 4); one whose arrival is a
                 // shape's or follow-the-leader move is skipped and named
-                const { held, homes, borrowed, skipped, rest } = clearPage
-                    ? {
-                          held: [],
-                          homes: [],
-                          borrowed: [],
-                          skipped: [],
-                          rest: [...moves],
-                      }
+                const { held, homes, skipped, rest } = clearPage
+                    ? { held: [], homes: [], skipped: [], rest: [...moves] }
                     : await splitHeldEditsInTransaction(
                           tx,
                           target.kind === "range" ? target.end : target.beat,
@@ -1484,30 +1430,20 @@ export const moveMarchersInTarget = async ({
                     keepUnchanged,
                 });
                 await moveHeldHomesInTransaction(tx, homes, result);
-                const borrowedTimelines = await moveBorrowedHoldsInTransaction(
-                    tx,
-                    borrowed,
-                    result,
-                );
                 // The selected move, else the one the marchers are in, since a move split off
                 // the page's shares its counts (UI-25). With only Held marchers, the move their
                 // edit went to (the most of them arrive in), so app data about their positions (a
-                // shape recipe) is saved with it (a borrowed hold's added move counts as one);
-                // with only marchers Held from their starting spots, the homes (`null`), where
-                // their edit went
+                // shape recipe) is saved with it; with only marchers Held from their starting
+                // spots, the homes (`null`), where their edit went
                 const marcherIds = rest.map((m) => m.marcherId);
                 const onlyHomes =
                     marcherIds.length === 0 &&
                     held.length === 0 &&
-                    borrowed.length === 0 &&
                     homes.length > 0;
                 const timelineId = !afterWrite
                     ? null
                     : marcherIds.length === 0
-                      ? mostCommon([
-                            ...held.map((h) => h.timelineId),
-                            ...borrowedTimelines,
-                        ])
+                      ? mostCommon(held.map((h) => h.timelineId))
                       : target.kind === "range"
                         ? (target.timelineId ??
                           (await timelineHoldingMost(

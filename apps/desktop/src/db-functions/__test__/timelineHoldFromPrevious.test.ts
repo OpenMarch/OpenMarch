@@ -158,6 +158,22 @@ const show = async (db: DbConnection) => {
     return { a: a!, b: b!, c: c! };
 };
 
+/**
+ * A mark over `box` written straight to the file, as a file from before the rule that a hold grows
+ * out of what last put the marcher there (owner, 2026-11-09) can hold: the next edit's upkeep
+ * reaches it back.
+ */
+const leftoverMark = (
+    db: DbConnection,
+    marcherId: number,
+    box: { start: number; end: number },
+) =>
+    db.insert(schema.timeline_held_marks).values({
+        marcher_id: marcherId,
+        start_beat: box.start,
+        end_beat: box.end,
+    });
+
 describeDbTests("Hold from previous page", (it) => {
     it("holds this page only, growing out of the previous page's arrival", async ({
         db,
@@ -216,8 +232,8 @@ describeDbTests("Hold from previous page", (it) => {
         marchersAndPages: _,
     }) => {
         const { a, b } = await show(db);
-        // b runs one move over pages 3 and 4 (a marcher whose move ends before the flag borrows
-        // its spot: timelineBorrowedHolds.test.ts)
+        // b runs one move over pages 3 and 4 (a marcher whose move ends before the flag reaches
+        // back to it: timelineHoldReachBack.test.ts)
         await move(db, { start: 17, end: 33 }, [{ marcherId: b, xy: FAR }]);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
         const rows = await snapshot(db);
@@ -501,8 +517,14 @@ describeDbTests(
                 pageBox: PAGE3,
                 marcherIds: [c],
             });
-            expect(result).toEqual({ held: [c], skipped: [] });
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect(result).toEqual({
+                held: [c],
+                skipped: [],
+                pagesCovered: ["1", "2", "3"],
+            });
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.start, end: PAGE3.end },
+            ]);
         });
 
         it("the hold survives later edits that leave it standing on its starting spot", async ({
@@ -520,35 +542,52 @@ describeDbTests(
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
-            await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
+            await leftoverMark(db, c, PAGE2);
             await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
             expect(await marksOf(db, c)).toEqual([PAGE2]);
             expect((await atFlags(db, c)).slice(1, 3)).toEqual([LEFT, LEFT]);
         });
 
-        for (const order of [
-            [PAGE1, PAGE2],
-            [PAGE2, PAGE1],
-        ] as const)
-            it(`touching holds join into one from the start (Page ${order[0] === PAGE1 ? "1 then 2" : "2 then 1"})`, async ({
-                db,
-                marchersAndPages: _,
-            }) => {
-                const { c } = await show(db);
-                for (const pageBox of order)
-                    expect(
-                        (
-                            await holdFromPreviousPage({
-                                db,
-                                pageBox,
-                                marcherIds: [c],
-                            })
-                        ).held,
-                    ).toEqual([c]);
-                expect(await marksOf(db, c)).toEqual([
-                    { start: PAGE1.start, end: PAGE2.end },
-                ]);
+        it("touching holds join into one from the start: Page 1 then Page 2", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { c } = await show(db);
+            for (const pageBox of [PAGE1, PAGE2])
+                expect(
+                    (
+                        await holdFromPreviousPage({
+                            db,
+                            pageBox,
+                            marcherIds: [c],
+                        })
+                    ).held,
+                ).toEqual([c]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.start, end: PAGE2.end },
+            ]);
+        });
+
+        it("Page 2 first already reaches back over Page 1", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { c } = await show(db);
+            await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
+            expect(
+                await holdFromPreviousPage({
+                    db,
+                    pageBox: PAGE1,
+                    marcherIds: [c],
+                }),
+            ).toEqual({
+                held: [],
+                skipped: [{ marcherId: c, reason: "held" }],
             });
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.start, end: PAGE2.end },
+            ]);
+        });
 
         it("skips, and names, a marcher whose starting spot a shape sets; an ungrouped mark isn't a shape", async ({
             db,
@@ -665,7 +704,9 @@ describeDbTests("A drag inside a hold from the starting spots (#619)", (it) => {
         ]);
         expect(await homeOf(db, c)).toEqual(FAR);
         expect(await atFlags(db, c)).toEqual([FAR, FAR, FAR, FAR, FAR]);
-        expect(await marksOf(db, c)).toEqual([PAGE3]);
+        expect(await marksOf(db, c)).toEqual([
+            { start: PAGE1.start, end: PAGE3.end },
+        ]);
         expect(await rowsOf(db, c)).toEqual([]);
     });
 
@@ -1800,17 +1841,19 @@ describeDbTests(
 );
 
 describeDbTests(
-    "An edit of an earlier page leaves a hold from the starting spots, now borrowed (#619, #474)",
+    "An edit of an earlier page: a hold from the starting spots reaches back to it (#619, owner 2026-11-09)",
     (it) => {
-        it("a move on Page 1 keeps a Page 3 hold from the start: it now borrows that move's spot", async ({
+        it("a move on Page 1 before a Page 3 hold: it now grows out of that move", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
-            await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
+            await leftoverMark(db, c, PAGE3);
             const before = await snapshot(db);
             await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.end, end: PAGE3.end },
+            ]);
             expect((await atFlags(db, c)).slice(1, 4)).toEqual([
                 LEFT,
                 LEFT,
@@ -1819,7 +1862,21 @@ describeDbTests(
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("a Basic point edit on Page 1 keeps it too", async ({
+        it("a Basic point edit on Page 1 does too", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { c } = await show(db);
+            await leftoverMark(db, c, PAGE3);
+            await edit(db, { kind: "point", beat: 9, box: PAGE1 }, [
+                { marcherId: c, xy: LEFT },
+            ]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.end, end: PAGE3.end },
+            ]);
+        });
+
+        it("a drag inside a hold from the start moves the starting spot, on any page it covers", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -1828,22 +1885,28 @@ describeDbTests(
             await edit(db, { kind: "point", beat: 9, box: PAGE1 }, [
                 { marcherId: c, xy: LEFT },
             ]);
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect(await homeOf(db, c)).toEqual(LEFT);
+            expect(await rowsOf(db, c)).toEqual([]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.start, end: PAGE3.end },
+            ]);
         });
 
-        it("Set as shown on Page 1 keeps it", async ({
+        it("Set as shown on Page 1 leaves it growing out of the new move", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
-            await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
+            await leftoverMark(db, c, PAGE3);
             const result = await setAsShownOnPage({
                 db,
                 pageBox: PAGE1,
                 marcherIds: [c],
             });
             expect(result.changed).toEqual([c]);
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.end, end: PAGE3.end },
+            ]);
         });
 
         it("a move that arrives at the hold's start keeps it, growing out of that move", async ({
@@ -1851,7 +1914,7 @@ describeDbTests(
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
-            await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
+            await leftoverMark(db, c, PAGE2);
             await move(db, PAGE1, [{ marcherId: c, xy: LEFT }]);
             expect(await marksOf(db, c)).toEqual([PAGE2]);
         });
@@ -2135,18 +2198,20 @@ describeDbTests(
             await roundTrip(db, before, await snapshot(db));
         });
 
-        it("Add to move on Page 1 keeps a Page 3 hold from the start, now borrowed", async ({
+        it("Add to move on Page 1 before a Page 3 hold: it reaches back to that move", async ({
             db,
             marchersAndPages: _,
         }) => {
             const { c } = await show(db);
-            await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
+            await leftoverMark(db, c, PAGE3);
             await addMarchersToTimeline({
                 db,
                 range: PAGE1,
                 marcherIds: [c],
             });
-            expect(await marksOf(db, c)).toEqual([PAGE3]);
+            expect(await marksOf(db, c)).toEqual([
+                { start: PAGE1.end, end: PAGE3.end },
+            ]);
         });
     },
 );

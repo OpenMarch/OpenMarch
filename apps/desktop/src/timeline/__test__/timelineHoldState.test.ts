@@ -136,15 +136,6 @@ describe("withHoldKind (#478)", () => {
         ).toMatchObject({ how: "notDefined" });
     });
 
-    it("names a borrowed hold by the page whose spot it keeps (#474)", () => {
-        expect(
-            withHoldKind(
-                { ...holding, page: { beat: 25, name: "4" } },
-                { held: { ...since2, borrowed: true }, carried: false },
-            ),
-        ).toEqual({ ...holding, how: "borrowed" });
-    });
-
     it("leaves a move on the page, or no state, as it is", () => {
         const moves = { kind: "movesHere" } as const;
         expect(withHoldKind(moves, { held: since2, carried: null })).toBe(

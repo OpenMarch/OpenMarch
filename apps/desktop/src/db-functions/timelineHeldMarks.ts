@@ -7,7 +7,6 @@ import {
     hasHeldMarksTable,
     isInsideHeldMark,
     readArrival,
-    readBorrowSource,
     readHeldMarkArrivals,
     readHeldMarks,
     HOME_ARRIVAL,
@@ -17,8 +16,6 @@ import {
 } from "./timelineHeldArrival";
 
 import type { HeldConflictSpot } from "./timelineHeldConflict";
-import { readPageGrid } from "./timelinePageGrid";
-import { borrowedMoveStart } from "@/timeline/timelineDecided";
 
 export {
     heldConflictInTransaction,
@@ -75,21 +72,6 @@ export interface HeldHomeEdit<M extends { marcherId: number }> {
     readonly mark: HeldMark;
 }
 
-/**
- * A Held marcher's edit inside a **borrowed hold** (fork #474; holds 04-anchors): nothing arrives
- * at the hold's start, so the edit adds a move over `[from, mark.start)` ending where the marcher
- * is dragged, and the hold then grows out of that move's diamond (an arrival hold).
- */
-export interface HeldBorrowedEdit<M extends { marcherId: number }> {
-    readonly move: M;
-    readonly mark: HeldMark;
-    /**
-     * Where the added move starts (`borrowedMoveStart`): the latest of the marcher's last arrival,
-     * the end of an earlier hold of its own and the page flag before the hold's start
-     */
-    readonly from: number;
-}
-
 /** A Held marcher an edit inside its hold left alone, with why. */
 export type HeldEditSkip = Pick<MoveMemberSkip, "marcherId" | "reason">;
 
@@ -125,15 +107,11 @@ export async function dropShapeHomeHoldsInTransaction(
  * and the rest.
  *
  * A Held marcher's edit is the edit of the move that arrives at its hold's start (`readArrival`),
- * so setting that move's ending moves the arrival and the whole hold with it. One whose arrival is
- * a shape's move or a follow-the-leader move, which the edit would rewrite, is left alone and named
- * in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436): a later edit, such
- * as a shape placed on the arrival's page, can make it one.
- *
- * A marcher Held at `beat` in a **borrowed hold** (nothing ends at its start, `readBorrowSource`;
- * fork #474) goes in `borrowed`: its edit adds a move ending at the hold's start
- * (`borrowedMoveStart`), and the hold then grows out of it. One whose hold has no room for that
- * move (a row on a lower layer ends at its start) stays with the rest, as before.
+ * so setting that move's ending moves the arrival and the whole hold with it. Every hold grows out
+ * of a move or the starting spot (owner, 2026-11-09), and the upkeep keeps it so; a marcher Held
+ * at `beat` with neither stays with the rest. One whose arrival is a shape's move or a follow-the-leader move, which the edit would rewrite, is left
+ * alone and named in `skipped`, as Hold from previous page skips it (owner's rule, #434 / #436):
+ * a later edit, such as a shape placed on the arrival's page, can make it one.
  *
  * A marcher Held from its starting spot (`readArrival`, `HOME_ARRIVAL`) goes in `homes`: its edit
  * sets its starting spot. One whose starting spot a placed shape sets (`marchersWithShapeHome`) is
@@ -148,7 +126,6 @@ export async function splitHeldEditsInTransaction<
 ): Promise<{
     held: HeldArrivalEdit<M>[];
     homes: HeldHomeEdit<M>[];
-    borrowed: HeldBorrowedEdit<M>[];
     skipped: HeldEditSkip[];
     rest: M[];
 }> {
@@ -159,31 +136,21 @@ export async function splitHeldEditsInTransaction<
         )
     ).filter((mark) => isInsideHeldMark(mark, beat));
     if (marks.length === 0)
-        return {
-            held: [],
-            homes: [],
-            borrowed: [],
-            skipped: [],
-            rest: [...moves],
-        };
+        return { held: [], homes: [], skipped: [], rest: [...moves] };
     const markOf = new Map(marks.map((mark) => [mark.marcherId, mark]));
     const arrivals = new Map<number, HeldArrival>();
     const fromHome = new Set<number>();
-    const borrowing: HeldMark[] = [];
     for (const mark of marks) {
         const arrival = await readArrival(tx, mark.marcherId, mark.start);
         if (arrival === HOME_ARRIVAL) fromHome.add(mark.marcherId);
         else if (arrival) arrivals.set(mark.marcherId, arrival);
-        else borrowing.push(mark);
     }
-    const borrowFrom = await borrowedMoveStarts(tx, borrowing);
     const shapeHome = await marchersWithShapeHome(tx, [...fromHome]);
     const inRecipe = await marcherRecipeTimelines(tx, [
         ...new Set([...arrivals.values()].map((a) => a.timelineId)),
     ]);
     const held: HeldArrivalEdit<M>[] = [];
     const homes: HeldHomeEdit<M>[] = [];
-    const borrowed: HeldBorrowedEdit<M>[] = [];
     const skipped: HeldEditSkip[] = [];
     const rest: M[] = [];
     for (const move of moves) {
@@ -192,11 +159,6 @@ export async function splitHeldEditsInTransaction<
             if (shapeHome.has(move.marcherId))
                 skipped.push({ marcherId: move.marcherId, reason: "shape" });
             else homes.push({ move, mark });
-            continue;
-        }
-        const from = borrowFrom.get(move.marcherId);
-        if (mark && from !== undefined) {
-            borrowed.push({ move, mark, from });
             continue;
         }
         const arrival = arrivals.get(move.marcherId);
@@ -211,33 +173,7 @@ export async function splitHeldEditsInTransaction<
         if (reason) skipped.push({ marcherId: move.marcherId, reason });
         else held.push({ move, mark, timelineId: arrival.timelineId });
     }
-    return { held, homes, borrowed, skipped, rest };
-}
-
-/**
- * Where a drag inside each of `marks` (marks nothing arrives at) adds its move
- * (`borrowedMoveStart`), by marcher: none for a mark that doesn't borrow (`readBorrowSource`), or
- * has no room for the move.
- */
-async function borrowedMoveStarts(
-    tx: DbTransaction,
-    marks: readonly HeldMark[],
-): Promise<Map<number, number>> {
-    const out = new Map<number, number>();
-    if (marks.length === 0) return out;
-    const flags = (await readPageGrid(tx)).pages.map((p) => p.end);
-    for (const mark of marks) {
-        const source = await readBorrowSource(tx, mark.marcherId, mark.start);
-        if (!source) continue;
-        const from = borrowedMoveStart({
-            start: mark.start,
-            lastArrival: source.end,
-            marks: await readHeldMarks(tx, [mark.marcherId]),
-            flags,
-        });
-        if (from !== null) out.set(mark.marcherId, from);
-    }
-    return out;
+    return { held, homes, skipped, rest };
 }
 
 /**
@@ -289,9 +225,8 @@ export async function marcherRecipeTimelines(
 /**
  * **Clear this page** for Held marchers (#472): the part of each of `marcherIds`' marks over `box`
  * goes, so the page is Not set for them. A part before the box stays (its arrival is unchanged); a
- * part after it goes too, though with nothing arriving at its start it could stay as a borrowed
- * hold (#474): clearing a page clears the hold (#472, #566), and `later` reports it so the toast
- * can say so.
+ * part after it goes too, since clearing a page clears the hold (#472, #566), and is reported in
+ * `later` so the toast can say so.
  *
  * @returns `marchers`, those whose marks changed, ascending, and `later`, the marchers whose
  *   hold on later pages went too, each at the box's end

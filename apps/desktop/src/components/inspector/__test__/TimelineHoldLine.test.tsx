@@ -222,56 +222,26 @@ describe("TimelineHoldLine", () => {
         expect(line()?.textContent).toBe("Held · since Page 2");
     });
 
-    it("names a hold nothing arrives at by the spot it borrows, past Not defined pages (#474; R3, demo M7)", async () => {
-        // Marcher 1 arrives on page 2; page 3 is Not defined; Hold from previous page on page 4:
-        // nothing arrives at page 3's flag, so the hold borrows page 2's spot
+    it("says a Held marcher is Held since the page its mark starts on, past Not defined pages (R3, demo M7)", async () => {
+        // Marcher 1 arrives on page 2; page 3 is Not defined; Hold from previous page on page 4
         mocks.selectedPage = PAGES[3];
         useHeldMarksStore.setState({
             marks: [{ id: 1, marcherId: 1, start: 17, end: 25 }],
         });
         show([1]);
-        expect(line()?.textContent).toBe("Held · Page 2's spot");
+        expect(line()?.textContent).toBe("Held · since Page 3");
         fireEvent.focus(line()!);
         expect(
-            (
-                await screen.findAllByText(
-                    "Go to Page 2, whose spot this hold keeps",
-                )
-            ).length,
+            (await screen.findAllByText("Go to Page 3, where this hold starts"))
+                .length,
         ).toBeGreaterThan(0);
         fireEvent.click(line()!);
-        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
+        expect(useTimelineSelectionStore.getState().playheadBeat).toBe(17);
         cleanup();
         // Page 3 itself is still Not defined, showing page 2
         mocks.selectedPage = PAGES[2];
         show([1]);
         expect(line()?.textContent).toBe("Not defined · showing Page 2");
-    });
-
-    it("names the new source once the set a borrowed hold borrows from is gone (#474)", () => {
-        // Marcher 2 last moves on page 3 (9–17); held on page 4 [17, 25) it arrives there, so
-        // hold page 4 from a later flag instead: marcher 4's moves end at 17, held from 17 is an
-        // arrival hold. Marcher 2 without its page 3 move borrows page 2's spot.
-        mocks.selectedPage = PAGES[3];
-        useHeldMarksStore.setState({
-            marks: [{ id: 1, marcherId: 2, start: 17, end: 25 }],
-        });
-        show([2]);
-        expect(line()?.textContent).toBe("Held · since Page 3");
-        cleanup();
-        const was = SPANS[2]!;
-        SPANS[2] = [
-            span(2, -Infinity, 1, "hold"),
-            span(2, 1, 9, "founding"),
-            span(2, 9, Infinity, "hold"),
-        ];
-        try {
-            useTimelineResolverStore.setState({ resolver, version: 2 });
-            show([2]);
-            expect(line()?.textContent).toBe("Held · Page 2's spot");
-        } finally {
-            SPANS[2] = was;
-        }
     });
 
     it("says a never-moved marcher held on this page only is Held since that page, not the start", () => {

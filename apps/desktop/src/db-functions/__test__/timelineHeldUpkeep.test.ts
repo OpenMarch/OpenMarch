@@ -510,8 +510,12 @@ describeDbTests("A mark written by the edit is a new mark", (it) => {
             pageBox: PAGE2,
             marcherIds: [a],
         });
-        expect(result).toEqual({ held: [a], skipped: [] });
-        expect(await marksOf(db, a)).toEqual([{ start: 9, end: 25 }]);
+        expect(result).toEqual({
+            held: [a],
+            skipped: [],
+            pagesCovered: ["1", "2"],
+        });
+        expect(await marksOf(db, a)).toEqual([{ start: 1, end: 25 }]);
         expect(await rowsOf(db, a)).toEqual([]);
         expect((await atFlags(db, a)).slice(1, 4)).toEqual([home, home, home]);
         await roundTrip(db, before, await snapshot(db));

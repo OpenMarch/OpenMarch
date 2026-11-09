@@ -2,8 +2,10 @@ import { inArray, sql } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import type { DbTransaction } from "./types";
 import { TimelineCommitViolationError } from "./timelineChanges";
+import { holdReachBack } from "@/timeline/holdExtent";
 import {
     arrivalRowSql,
+    readArrival,
     readHeldMarkArrivals,
     type HeldMarkArrival,
 } from "./timelineHeldArrival";
@@ -11,6 +13,7 @@ import {
     nameHeldConflict,
     type HeldConflictSpot,
 } from "./timelineHeldConflict";
+import { readPageGrid, showStartBeat } from "./timelinePageGrid";
 
 /**
  * **Keeping Held marks true after an edit** (ADR 0012 amendment 2026-10-30, Upkeep; holds
@@ -36,15 +39,13 @@ import {
  *    out), **delete** it: the hold meant "stand at this spot", and the spot is gone (holds
  *    decision 17). The edits that can do this as a side effect name it
  *    (`arrivalHoldsLostInTransaction`).
- * 4. Else it had no arrival row, and it stays: it grows out of the marcher's **starting spot**
- *    (`homeArrivalSql`, #619: no row of the marcher starts before it), or it is a **borrowed
- *    hold** (#474; holds 04-anchors), which holds wherever the marcher already is there. So an
- *    edit that takes away the set a borrowed hold borrows from, or gives a hold from the starting
- *    spot a move on an earlier page that doesn't end at its start, leaves the hold, now borrowing
- *    from the set before it: the hold says "stand still here", not "stand at that spot".
+ * 4. Else nothing arrives at its start, and it had no arrival to lose. It **reaches back** to what
+ *    last put the marcher there (`holdReachBack`, as Hold from previous page does; owner,
+ *    2026-11-09): the marcher's last row end, the end of its own earlier hold, or the start of the
+ *    show. A row ending there that doesn't arrive leaves it nothing to grow out of, and it goes.
  * 5. **Trim** what is left of it where a row the edit re-timed now covers it (H-1). A row over its
  *    start trims it from the start: it now starts where that row ends, and grows out of that end
- *    (04-anchors; a resize or clip drag of the move before a borrowed hold into it). A row starting
+ *    (04-anchors; a resize or clip drag of a move into it). A row starting
  *    inside it ends it where that row starts, and a part after the row is dropped (excursions are
  *    deferred, holds decision 7). A mark left with no counts is deleted. Only **re-timed** rows trim: a move an edit writes
  *    over a hold is still refused at commit (`E-H1`, `timeline_held_violations`), since that is an
@@ -279,6 +280,7 @@ export async function keepHeldMarksTrueInTransaction(
 
     const kept: KeptMark[] = [];
     const refused: HeldMarkArrival[] = [];
+    let showStart: number | undefined;
     for (const mark of marks) {
         let start = mark.start;
         if (mark.arrivalId === null) {
@@ -307,8 +309,28 @@ export async function keepHeldMarksTrueInTransaction(
                 // row now arrives there too): refuse rather than drop the hold without a word
                 refused.push(mark);
                 continue;
+            } else {
+                // 4. Nothing arrives here: it reaches back to what last put the marcher there,
+                // unless a row now covers its start (trimmed below, or refused at commit)
+                const own = rows.filter((r) => r.marcherId === mark.marcherId);
+                if (!own.some((r) => r.start <= start && start < r.end)) {
+                    showStart ??= showStartBeat(await readPageGrid(tx));
+                    const reach = holdReachBack({
+                        start,
+                        rows: own,
+                        marks: kept.filter(
+                            (m) => m.marcherId === mark.marcherId,
+                        ),
+                        showStart,
+                    });
+                    if (
+                        reach.kind === "row" &&
+                        !(await readArrival(tx, mark.marcherId, reach.beat))
+                    )
+                        continue;
+                    start = reach.beat;
+                }
             }
-            // 4. Else it grows out of the starting spot, or borrows its spot: it stays
         }
         // 5. Trimmed where a re-timed row now covers it. A row over its start trims it from the
         // start, so it grows out of that row's end (holds 04-anchors; demo `normalize`); then a

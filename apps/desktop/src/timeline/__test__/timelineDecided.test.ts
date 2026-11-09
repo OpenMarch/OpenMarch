@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    borrowedMoveStart,
-    heldMarkSource,
     isDecidedAt,
     marcherDecided,
     marksByMarcher,
@@ -144,78 +142,5 @@ describe("marksByMarcher", () => {
         ]);
         expect(byMarcher.get(1)?.map((m) => m.start)).toEqual([0, 16]);
         expect(byMarcher.get(2)?.length).toBe(1);
-    });
-});
-
-// The holds demo's "Anchors · Borrowed hold": pages flag at 8, 16, 24, 32 and 40. B1 last moves on
-// Page 2 (0–8); Hold from previous page on Page 6 holds 32–40, where nothing arrives.
-describe("borrowed holds (fork #474)", () => {
-    const b1 = [move(0, 8), hold(8, Infinity)];
-
-    it("names what a mark grows out of: its arrival, the starting spot, or the spot it borrows", () => {
-        expect(heldMarkSource(b1, { start: 8 })).toEqual({ kind: "arrival" });
-        expect(
-            heldMarkSource([hold(-Infinity, Infinity)], { start: 32 }),
-        ).toEqual({ kind: "home" });
-        expect(heldMarkSource(b1, { start: 32 })).toEqual({
-            kind: "borrowed",
-            from: 8,
-        });
-    });
-
-    it("borrows from the last move before the hold, whichever ends latest", () => {
-        expect(
-            heldMarkSource(
-                [move(0, 8), hold(8, 12), move(12, 14), hold(14, Infinity)],
-                { start: 32 },
-            ),
-        ).toEqual({ kind: "borrowed", from: 14 });
-    });
-
-    it("once the set it borrows from goes, names the set before", () => {
-        // Page 2's keyframe removed: B1 now last moves on Page 1 (0–4, say)
-        expect(
-            heldMarkSource([move(0, 4), hold(4, Infinity)], { start: 32 }),
-        ).toEqual({ kind: "borrowed", from: 4 });
-    });
-
-    it("draws a borrowed Held marcher solid through its hold, and Not defined between", () => {
-        const stretches = marcherDecided(b1, [{ start: 32, end: 40 }]);
-        expect(decidedOn(stretches, [8, 12, 24, 32, 33, 36, 40, 41])).toEqual([
-            8, 33, 36, 40,
-        ]);
-    });
-});
-
-describe("borrowedMoveStart (#474; 04-anchors, consistency review M2)", () => {
-    const flags = [8, 16, 24, 32, 40];
-
-    it("starts at the page flag before the hold, after an earlier last arrival", () => {
-        expect(
-            borrowedMoveStart({ start: 32, lastArrival: 8, marks: [], flags }),
-        ).toBe(24);
-    });
-
-    it("starts at the last arrival, or an earlier hold's end, when later than that flag", () => {
-        expect(
-            borrowedMoveStart({ start: 32, lastArrival: 28, marks: [], flags }),
-        ).toBe(28);
-        expect(
-            borrowedMoveStart({
-                start: 32,
-                lastArrival: 8,
-                marks: [{ end: 30 }, { end: 40 }],
-                flags,
-            }),
-        ).toBe(30);
-    });
-
-    it("a hold mid-page starts it at the flag before, and none fits before a hold at count 0", () => {
-        expect(
-            borrowedMoveStart({ start: 28, lastArrival: 8, marks: [], flags }),
-        ).toBe(24);
-        expect(
-            borrowedMoveStart({ start: 0, lastArrival: 0, marks: [], flags }),
-        ).toBeNull();
     });
 });

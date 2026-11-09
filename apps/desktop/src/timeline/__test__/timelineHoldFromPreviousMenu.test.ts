@@ -105,6 +105,38 @@ describe("holdFromPreviousMessage", () => {
         });
     });
 
+    it("names the pages covered when the hold reaches back beyond the page", () => {
+        expect(
+            holdFromPreviousMessage(
+                {
+                    held: [1],
+                    skipped: [],
+                    pagesCovered: ["3", "4", "5"],
+                },
+                "5",
+                nameOf,
+            ),
+        ).toEqual({ title: "T1 Held on Pages 3–5", description: null });
+    });
+
+    it("names the page a move ended at when it ended further back without arriving", () => {
+        expect(
+            holdFromPreviousMessage(
+                {
+                    held: [],
+                    skipped: [
+                        { marcherId: 3, reason: "noArrival", atPage: "3" },
+                        { marcherId: 4, reason: "noArrival" },
+                    ],
+                },
+                "5",
+                nameOf,
+            )?.description,
+        ).toBe(
+            "Not held: T3: a move ends where Page 3 starts without arriving there; T4: a move ends where Page 5 starts without arriving there",
+        );
+    });
+
     it("says nobody was held when everyone was skipped, and nothing for nothing", () => {
         expect(
             holdFromPreviousMessage(

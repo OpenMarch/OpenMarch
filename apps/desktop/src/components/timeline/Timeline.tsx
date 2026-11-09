@@ -992,9 +992,6 @@ export function Timeline(props: TimelineProps) {
                         ...bar,
                         start: axis.toView(bar.start),
                         end: axis.toView(bar.end),
-                        ...(bar.borrowedFrom === undefined
-                            ? {}
-                            : { borrowedFrom: axis.toView(bar.borrowedFrom) }),
                     }))
                     // The lead-in before page 1's first count has no width on the view axis
                     .filter((bar) => bar.end > bar.start),
@@ -1013,7 +1010,6 @@ export function Timeline(props: TimelineProps) {
         const dragOf = (index: number, beat: number, from?: number) => {
             const handle = holdEdges.handles[index]!;
             return {
-                edge: handle.edge,
                 from: from === undefined ? handle.beat : axis.toSpec(from),
                 to: axis.toSpec(beat),
                 marcherIds: handle.marcherIds,
@@ -1028,9 +1024,6 @@ export function Timeline(props: TimelineProps) {
                     from: toView(handle.limits.from),
                     min: toView(handle.limits.min),
                     max: toView(handle.limits.max),
-                    ...(handle.limits.only
-                        ? { only: handle.limits.only.map(toView) }
-                        : {}),
                 },
             })),
             onPreview: (index, beat) =>

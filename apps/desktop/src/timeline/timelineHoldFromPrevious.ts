@@ -95,19 +95,28 @@ export function holdFromPreviousMessage(
     const reasons = (
         Object.keys(SKIP_WORDS) as HoldFromPreviousSkipReason[]
     ).flatMap((reason) => {
-        const ids = result.skipped
-            .filter((s) => s.reason === reason)
-            .map((s) => s.marcherId);
-        if (ids.length === 0) return [];
+        const skips = result.skipped.filter((s) => s.reason === reason);
         const words = SKIP_WORDS[reason];
-        return [t(words.key, words.defaultValue, { names: names(ids), page })];
+        // A move that ended without arriving, further back, names the page it ended at
+        return [...new Set(skips.map((s) => s.atPage))].map((atPage) =>
+            t(words.key, words.defaultValue, {
+                names: names(
+                    skips
+                        .filter((s) => s.atPage === atPage)
+                        .map((s) => s.marcherId),
+                ),
+                page: atPage === undefined ? page : pagesText([atPage]),
+            }),
+        );
     });
     if (result.held.length === 0 && reasons.length === 0) return null;
     const title =
         result.held.length > 0
             ? t("timeline.holdFromPrevious.done", "{names} {held} on {page}", {
                   names: names(result.held),
-                  page,
+                  page: result.pagesCovered
+                      ? pagesText(result.pagesCovered)
+                      : page,
               })
             : t("timeline.holdFromPrevious.none", "Nobody {held} on {page}", {
                   page,

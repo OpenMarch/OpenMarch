@@ -21,10 +21,6 @@ import type { CarrySpan } from "./timelineCarryForward";
  * Each marcher's decided stretches are worked out once per resolver version and set of marks
  * (`marcherDecided`) and looked up per count (`isDecidedAt`, `notDefinedAt`), as the Set beats
  * are (`timelineSetFollowing.ts`).
- *
- * A **borrowed hold** (fork #474) is a Held mark like any other, so it is decided the same way;
- * what it grows out of, or borrows, is `heldMarkSource`, the one rule the timeline's bars and the
- * inspector name it by.
  */
 
 /** A stretch of counts `(start, end]` where a marcher is decided. */
@@ -129,66 +125,3 @@ export function notDefinedAt(
 }
 
 const NOBODY: ReadonlySet<number> = new Set();
-
-/**
- * What a Held mark grows out of (holds 04-anchors; fork #474), from the marcher's resolver spans,
- * as the database's arrival rule reads it from the rows (`arrivalRowSql`, `homeArrivalSql`,
- * `readBorrowSource`):
- *
- * - `arrival`: a move of the marcher ends at the mark's start, its keyframe diamond;
- * - `home`: no move of the marcher before the mark, so it grows out of the starting spot (#619);
- * - `borrowed`: neither. It holds wherever the marcher already is, which is where its last move
- *   before the mark ends (`from`), so it names that spot ("Held · Page 2's spot"). A drag inside
- *   it adds a move ending at its start.
- */
-export type HeldMarkSource =
-    | { readonly kind: "arrival" }
-    | { readonly kind: "home" }
-    | { readonly kind: "borrowed"; readonly from: number };
-
-/**
- * What `mark` grows out of, or borrows (`HeldMarkSource`).
- *
- * @param spans the marcher's resolver spans (`resolverSpans`)
- */
-export function heldMarkSource(
-    spans: readonly CarrySpan[],
-    mark: Pick<DecidedMark, "start">,
-): HeldMarkSource {
-    let from = -Infinity;
-    for (const s of spans) {
-        if (s.kind === "hold" || !Number.isFinite(s.end)) continue;
-        if (s.end === mark.start) return { kind: "arrival" };
-        if (s.end < mark.start && s.end > from) from = s.end;
-    }
-    return Number.isFinite(from)
-        ? { kind: "borrowed", from }
-        : { kind: "home" };
-}
-
-/**
- * Where a move added by a drag inside a borrowed hold starting at `start` begins (holds
- * 04-anchors, consistency review M2): the latest of `lastArrival` (where the marcher's last row
- * before the hold ends), the end of an earlier mark of its own, and the page flag before `start`,
- * so it never covers a neighboring hold or another page's move. `null` when that leaves no counts.
- *
- * @param flags every page flag (each page's end), any order
- * @param marks the marcher's marks
- */
-export function borrowedMoveStart({
-    start,
-    lastArrival,
-    marks,
-    flags,
-}: {
-    start: number;
-    lastArrival: number;
-    marks: readonly Pick<DecidedMark, "end">[];
-    flags: readonly number[];
-}): number | null {
-    let from = lastArrival;
-    for (const mark of marks)
-        if (mark.end < start) from = Math.max(from, mark.end);
-    for (const flag of flags) if (flag < start) from = Math.max(from, flag);
-    return from < start ? from : null;
-}

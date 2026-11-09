@@ -175,39 +175,6 @@ export async function readArrival(
 }
 
 /**
- * Where a **borrowed hold** of `marcherId` starting at `beat` borrows its spot (fork #474; holds
- * 04-anchors): the marcher's last row ending before `beat`, the highest layer's where several end
- * there, with its move. A hold borrows when nothing ends at its start (no row of the marcher, on
- * any layer) and a row starts before it (else it grows out of the starting spot,
- * `homeArrivalSql`). `null` when the hold doesn't borrow: something ends at `beat`, or nothing
- * ends before it.
- */
-export async function readBorrowSource(
-    db: DbConnection | DbTransaction,
-    marcherId: number,
-    beat: number,
-): Promise<(HeldArrival & { readonly end: number }) | null> {
-    const rows = (await db.all(sql`
-        SELECT a.end_beat, t.timeline_id, t.id, t.dest_shape_id, t.path_style
-          FROM timeline_assignments a
-          JOIN timeline_transitions t ON t.id = a.transition_id
-         WHERE a.marcher_id = ${marcherId} AND a.end_beat <= ${beat}
-         ORDER BY a.end_beat DESC, a.layer DESC
-         LIMIT 1`)) as unknown[];
-    const [row] = rows;
-    if (row === undefined) return null;
-    const end = Number(rowValue(row, 0, "end_beat"));
-    if (end >= beat) return null;
-    return {
-        end,
-        timelineId: Number(rowValue(row, 1, "timeline_id")),
-        transitionId: Number(rowValue(row, 2, "id")),
-        shapeId: numberOrNull(rowValue(row, 3, "dest_shape_id")),
-        pathStyle: String(rowValue(row, 4, "path_style")),
-    };
-}
-
-/**
  * Those of `marcherIds` whose starting spot a placed shape sets: a member of a recipe with no move
  * (`timeline_id` NULL), other than an ungrouped mark (`shapeRecipesOnly`), which stores no shape.
  * A shape's starting spots get no Held hold: the shape carried on is its hold (owner, 2026-11-01;

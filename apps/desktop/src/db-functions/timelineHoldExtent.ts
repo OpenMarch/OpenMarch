@@ -4,7 +4,6 @@ import {
     applyHoldEdgeDrag,
     holdEdgeAllows,
     holdEdgeLimits,
-    type HoldEdge,
     type HoldMark,
 } from "@/timeline/holdExtent";
 import { text } from "@/timeline/timelineText";
@@ -12,19 +11,17 @@ import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { NothingToDo, refuse } from "./timelineErrors";
 import { readPageGrid } from "./timelinePageGrid";
-import { readArrival, readHeldMarks } from "./timelineHeldArrival";
+import { readHeldMarks } from "./timelineHeldArrival";
 
 /**
- * **Shaping a hold** (holds README decisions 3, 5 and 6; 01-edit-rules "Bar-end drag", "Bar-start
- * drag", "Split hold here"; fork #475). Both commands write only Held marks
- * (`timeline_held_marks`): nobody moves, since the marcher stands still over a hold whether it is
- * Held or Not defined. They change what an edit there does, and what the timeline draws.
+ * **Shaping a hold** (holds README decisions 3, 5 and 6; 01-edit-rules "Bar-end drag", "Split hold
+ * here"; fork #475). Both commands write only Held marks (`timeline_held_marks`): nobody moves,
+ * since the marcher stands still over a hold whether it is Held or Not defined. They change what
+ * an edit there does, and what the timeline draws.
  *
- * - `setHoldEdge`: a Held hold's end or start dragged to a count, within `holdEdgeLimits` (the end
- *   up to the marcher's next move and the show's end; the start back to the last arrival, or for
- *   a hold from the starting spots anywhere back to the show's start). The new start must still
- *   grow out of something (`readArrival`), else the upkeep would drop the hold (borrowed holds are
- *   #474).
+ * - `setHoldEdge`: a Held hold's end dragged to a count, within `holdEdgeLimits` (up to the
+ *   marcher's next move and the show's end). A hold's start is fixed by what last put the marcher
+ *   there (`holdReachBack`).
  * - `splitHoldAt`: **Split hold here** ends the selected marchers' holds at a count strictly
  *   inside them. What follows is Not defined: an edit there starts a new move where the hold now
  *   ends (leaving early, decision 6).
@@ -112,20 +109,18 @@ async function writeMarks(
 }
 
 /**
- * Drags `edge` of the Held holds of `marcherIds` that have it at `from` to `to` (see the module
- * comment). Refused (`E-ARGS`), writing nothing, when `to` is past where any of them may go, or a
- * start would grow out of nothing. Marchers with no such edge at `from` are left alone.
+ * Drags the end of the Held holds of `marcherIds` that end at `from` to `to` (see the module
+ * comment). Refused (`E-ARGS`), writing nothing, when `to` is past where any of them may go.
+ * Marchers with no hold ending at `from` are left alone.
  */
 export async function setHoldEdge({
     db,
     marcherIds,
-    edge,
     from,
     to,
 }: {
     db: DbConnection;
     marcherIds: readonly number[];
-    edge: HoldEdge;
     from: number;
     to: number;
 }): Promise<SetHoldEdgeResult> {
@@ -136,7 +131,7 @@ export async function setHoldEdge({
         return await transactionWithHistory(db, "setHoldEdge", async (tx) => {
             const ids = [...new Set(marcherIds)];
             const marks = await readHeldMarks(tx, ids);
-            const dragged = marks.filter((m) => m[edge] === from);
+            const dragged = marks.filter((m) => m.end === from);
             if (dragged.length === 0) throw new NothingToDo({ changed: [] });
             const moves = await readMoves(
                 tx,
@@ -145,7 +140,6 @@ export async function setHoldEdge({
             const showEnd = await readShowEnd(tx);
             for (const mark of dragged) {
                 const limits = holdEdgeLimits({
-                    edge,
                     mark,
                     moves: moves.get(mark.marcherId) ?? [],
                     showEnd,
@@ -156,18 +150,10 @@ export async function setHoldEdge({
             const draggedIds = [...new Set(dragged.map((m) => m.marcherId))];
             const own = marks.filter((m) => draggedIds.includes(m.marcherId));
             const after = applyHoldEdgeDrag(own, {
-                edge,
                 from,
                 to,
                 marcherIds: draggedIds,
             });
-            // A start must still grow out of a move's end or the starting spot (#474: borrowed)
-            for (const mark of after) {
-                const was = own.find((m) => m.id === mark.id);
-                if (was && was.start === mark.start) continue;
-                if (!(await readArrival(tx, mark.marcherId, mark.start)))
-                    refuse(text.t("timeline.refusals.holdEdge.noArrival"));
-            }
             const changed = await writeMarks(tx, own, after);
             if (changed.length === 0) throw new NothingToDo({ changed: [] });
             return { changed };
