@@ -15,8 +15,9 @@
 //   --list               list the shots and exit
 // Output: apps/website/public/docs/media/<chapter>/<id>.<theme>.(webp|mp4), and
 // apps/website/src/data/docs-media.json (sizes and kinds, read by the site's <Shot>).
-// Each run's work folder (log, contact sheet, failures) is scripts/docs-media/runs/<time>/
-// (git-ignored), or DOCS_MEDIA_WORK=<dir>.
+// Each run's work folder (log, contact sheet, failures, and results.json: one entry per shot
+// and theme, with its outcome) is scripts/docs-media/runs/<time>/ (git-ignored), or
+// DOCS_MEDIA_WORK=<dir>.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,16 +34,12 @@ import {
 } from "../media-kit/app.mjs";
 import { contactSheet, encodeClip, toWebp } from "../media-kit/encode.mjs";
 import { writePreload } from "../media-kit/page-setup.mjs";
+import { loadShots, showPath } from "./shot-list.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const WEBSITE = path.resolve(DESKTOP, "../website");
 const MEDIA = path.join(WEBSITE, "public/docs/media");
 const MANIFEST = path.join(WEBSITE, "src/data/docs-media.json");
-
-/** Shows a shot can open (`shot.show`); anything else is a path from apps/desktop. */
-export const SHOWS = {
-    demo: path.join(DESKTOP, "web/public/demos/part1-demo.dots"),
-};
 
 /** The app window every shot uses, in points. */
 const WINDOW = { width: 1600, height: 1000 };
@@ -70,22 +67,6 @@ function parseArgs(argv) {
     return options;
 }
 
-async function loadShots() {
-    const dir = path.join(HERE, "shots");
-    const all = [];
-    for (const file of fs.readdirSync(dir).sort()) {
-        if (!file.endsWith(".mjs")) continue;
-        const chapter = file.replace(/\.mjs$/, "");
-        const { default: shots } = await import(path.join(dir, file));
-        for (const shot of shots) {
-            if (all.some((s) => s.id === shot.id))
-                throw new Error(`two shots are called "${shot.id}"`);
-            all.push({ chapter, ...shot });
-        }
-    }
-    return all;
-}
-
 /** The box around `locator` (window points), grown by `pad`, kept inside the window. */
 async function around(locator, pad = 12) {
     const b = await locator.boundingBox();
@@ -109,7 +90,7 @@ function union(...boxes) {
 const WHOLE = { x: 0, y: 0, ...WINDOW };
 
 /** Merges this run's entries into the manifest, under a lock (runs can overlap). */
-function writeManifest() {
+function writeManifest({ prune = false } = {}) {
     const lock = `${MANIFEST}.lock`;
     fs.mkdirSync(path.dirname(MANIFEST), { recursive: true });
     for (let i = 0; ; i++) {
@@ -127,7 +108,7 @@ function writeManifest() {
             : {};
         const next = { ...current, ...manifest };
         // Shots that no longer exist leave the manifest (their files are reported, not deleted)
-        if (pruneMissing)
+        if (prune && pruneMissing)
             for (const id of Object.keys(next))
                 if (!shots.some((s) => s.id === id)) {
                     log(
@@ -180,14 +161,22 @@ log(
 );
 let failed = 0;
 const clips = [];
+/** One entry per shot and theme, for scripts (refresh.mjs): what was written, or the error. */
+const results = [];
+/** Saves what's done so far, so a crash or a time limit doesn't lose the shots already recorded. */
+function saveProgress() {
+    writeManifest();
+    const file = path.join(WORK, "results.json");
+    fs.writeFileSync(`${file}.tmp`, `${JSON.stringify(results, null, 2)}\n`);
+    fs.renameSync(`${file}.tmp`, file);
+}
 for (const shot of chosen) {
     const outDir = path.join(MEDIA, shot.chapter);
     fs.mkdirSync(outDir, { recursive: true });
     for (const theme of shot.themes ?? options.themes) {
         if (!options.themes.includes(theme)) continue;
         log(`>> ${shot.chapter}/${shot.id} (${theme})`);
-        const source =
-            SHOWS[shot.show ?? "demo"] ?? path.join(DESKTOP, shot.show);
+        const source = showPath(shot);
         // One show that won't open costs that shot, not the rest of the run
         let launched;
         try {
@@ -206,6 +195,15 @@ for (const shot of chosen) {
         } catch (error) {
             failed++;
             log(`!! ${shot.id} (${theme}): ${error.stack ?? error}`);
+            results.push({
+                id: shot.id,
+                chapter: shot.chapter,
+                theme,
+                kind: shot.kind,
+                ok: false,
+                error: String(error.stack ?? error),
+            });
+            saveProgress();
             continue;
         }
         const { app, page } = launched;
@@ -249,6 +247,12 @@ for (const shot of chosen) {
             };
             frameBox = box;
             const base = path.join(outDir, `${shot.id}.${theme}`);
+            const result = {
+                id: shot.id,
+                chapter: shot.chapter,
+                theme,
+                kind: shot.kind,
+            };
             const target = prepared.target ?? page;
             // The view settles before anything is filmed (#766, #767)
             const steady = () =>
@@ -296,6 +300,11 @@ for (const shot of chosen) {
                     height: size.height,
                     seconds: Number(seconds.toFixed(2)),
                 };
+                results.push({
+                    ...result,
+                    ok: true,
+                    files: [`${base}.mp4`, `${base}.webp`],
+                });
                 log(
                     `   ${film.frames} frames → ${base}.mp4 (${fs.statSync(`${base}.mp4`).size} bytes)`,
                 );
@@ -314,6 +323,7 @@ for (const shot of chosen) {
                     width: even(width),
                     height: even((width * box.height) / box.width),
                 };
+                results.push({ ...result, ok: true, files: [`${base}.webp`] });
                 log(
                     `   → ${base}.webp (${fs.statSync(`${base}.webp`).size} bytes)`,
                 );
@@ -324,12 +334,22 @@ for (const shot of chosen) {
             const failure = path.join(WORK, `${shot.id}-${theme}-failed.png`);
             await page.screenshot({ path: failure }).catch(() => {});
             log(`   screenshot: ${failure}`);
+            results.push({
+                id: shot.id,
+                chapter: shot.chapter,
+                theme,
+                kind: shot.kind,
+                ok: false,
+                error: String(error.stack ?? error),
+                screenshot: fs.existsSync(failure) ? failure : undefined,
+            });
         } finally {
             await app.close().catch(() => {});
         }
+        saveProgress();
     }
 }
-writeManifest();
+writeManifest({ prune: true });
 if (clips.length)
     log(
         `Contact sheet: ${contactSheet(clips, path.join(WORK, "contact-sheet.png"))}`,
