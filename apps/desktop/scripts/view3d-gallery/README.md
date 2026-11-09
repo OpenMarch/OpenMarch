@@ -18,3 +18,16 @@ Output: `<out>/<kit>/<lighting>--<camera>.png`, a labelled contact sheet `<out>/
 `<out>/report.json` (cameras, presets, draw calls, triangles, shader programs, console errors).
 
 Rendering is SwiftShader (CPU), so it shows looks, not frame rates. Check performance on a real GPU.
+
+## Front ensemble models
+
+`shoot-pit.mjs` stands the models from `src/view3d/assets/pit` in front of the `hs` venue and
+renders them in day and night lighting.
+
+```bash
+node scripts/view3d-gallery/shoot-pit.mjs /mnt/data/om-capture/venues/pit [--dir <glb dir>] [--bench] [--gpu]
+```
+
+`--bench` writes draw calls, triangles and frame time to `report.json`, comparing the detailed
+and distant models, with and without shadows, loaded per part or merged to one mesh per model.
+Frame times only mean anything with `--gpu`, on an otherwise idle machine.
