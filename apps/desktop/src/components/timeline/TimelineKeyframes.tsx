@@ -59,7 +59,7 @@ const TARGET_SIZE = 13;
 /**
  * The selection's keyframes (#303, `useSelectionKeyframes`): a diamond at every count where a
  * selected marcher is Set, filled where all of them are, hollow where only some are. Drawn on the
- * page row's bottom edge, half over the measure row, so it covers no page label, keep chain or the
+ * page row's bottom edge, half over the measure row, so it covers no page label or the
  * playhead's handle, and only the bottom few pixels of a flag's grip (above it there, so a
  * diamond on a flag still seeks). Only the diamond takes the pointer: the page boxes around it
  * still select and scrub. Nothing selected, no diamonds. With `menu`, a right-click (or the

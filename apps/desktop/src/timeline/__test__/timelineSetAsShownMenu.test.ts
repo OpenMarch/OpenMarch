@@ -60,6 +60,13 @@ describe("setAsShownMenu", () => {
         });
     });
 
+    it("sets marchers that haven't moved yet too", () => {
+        const run = vi.fn();
+        const notMoved = { ...state(3, [1, 4]), fromStart: [4] };
+        setAsShownMenu([notMoved], run).onSet(3);
+        expect(run).toHaveBeenLastCalledWith(notMoved.box, [1, 4]);
+    });
+
     it("hides the entry when nothing is selected (no states)", () => {
         const menu = setAsShownMenu([], vi.fn());
         expect(menu.reasonFor(3)).toBeUndefined();
