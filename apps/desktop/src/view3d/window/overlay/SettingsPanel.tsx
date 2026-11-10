@@ -22,7 +22,8 @@ import Shortcut from "@/components/ui/Shortcut";
 import { useView3dSceneStore } from "../sceneStore";
 import { QUALITY_MODES } from "../qualityPreference";
 import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
-import { CONTROL_SCHEMES, type ControlScheme } from "../camera/controlScheme";
+import { type ControlScheme } from "../camera/controlScheme";
+import ControlSchemePicker from "../camera/ControlSchemePicker";
 import { Segmented } from "./Panel";
 import {
     LightingControl,
@@ -390,14 +391,9 @@ function ControlsRow() {
     const setScheme = useView3dSceneStore((s) => s.setControlScheme);
     return (
         <Row label={t("settings.view3d.controls")} stacked>
-            <Segmented
+            <ControlSchemePicker
                 value={scheme}
-                options={CONTROL_SCHEMES.map((value) => ({
-                    value,
-                    label: t(`settings.view3d.controls.${value}`),
-                }))}
                 onChange={setScheme}
-                label={t("settings.view3d.controls")}
                 testId="view3d-controls-picker"
             />
             <p className="text-sub text-text/60">
@@ -422,6 +418,11 @@ type ShortcutRows = readonly (readonly [string, ShortcutKeys])[];
 
 /** The rows that follow the viewer's control scheme. */
 const MOVE_SHORTCUTS: Record<ControlScheme, ShortcutRows> = {
+    orbit: [
+        ["orbit", { binding: "drag" }],
+        ["pan", { binding: "Shift+drag" }],
+        ["zoom", { binding: "scroll" }],
+    ],
     map: [
         ["panPlain", { binding: "drag" }],
         ["orbitOrRight", { binding: "Alt+drag" }],

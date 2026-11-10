@@ -52,11 +52,14 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
     3D View, because a
     browser can't reliably tell a mouse wheel from a two-finger scroll
     (owner, 2026-11-09);
-  - Map, the default: drag to pan; the ground point under the pointer stays
-    under it; Ctrl, Alt (Option), Shift or right-drag to orbit; scroll to
-    zoom toward the cursor, eased over a few frames;
+  - Orbit, the default (owner, 2026-11-10): drag to orbit; right-drag or
+    Shift+drag to pan; scroll to zoom toward the cursor, eased over a few
+    frames;
+  - Map: drag to pan; Ctrl, Alt (Option), Shift or right-drag to orbit;
+    scroll to zoom;
   - Trackpad: scroll or drag to orbit; Shift or right-drag to pan;
-  - in both, a flung orbit coasts to a stop, Ctrl or Alt + drag orbits, Shift
+  - a pan keeps the ground point under the pointer under it;
+  - in all three, a flung orbit coasts to a stop, Ctrl or Alt + drag orbits, Shift
     or Option plus scroll pans, and a pinch zooms toward the cursor; touch
     and pen orbit with one finger, and two fingers pan and pinch;
   - zooming works as in CAD tools (owner, 2026-10-09): the camera and the
