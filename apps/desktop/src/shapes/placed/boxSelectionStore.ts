@@ -60,4 +60,15 @@ export function clearReleasedPreview(params?: unknown): void {
  */
 export const useSavingBoxStore = create<{
     readonly box: PlacedBox | null;
-}>(() => ({ box: null }));
+    /** The beats it's saved for: a page it isn't on shows what's stored there (#776) */
+    readonly beats: readonly number[];
+}>(() => ({ box: null, beats: [] }));
+
+/** The shape being saved, if the field showing `beat` shows it as saved */
+export const savingBoxAt = (
+    saving: {
+        readonly box: PlacedBox | null;
+        readonly beats: readonly number[];
+    },
+    beat: number,
+): PlacedBox | null => (saving.beats.includes(beat) ? saving.box : null);
