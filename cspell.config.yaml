@@ -331,6 +331,8 @@ ignorePaths:
   # Verbatim license text of the vendored pit instrument models
   - "**/view3d/assets/pit/LICENSE"
   - "**/view3d/assets/om-pose/**"
+  # Verbatim third-party license for the vendored front ensemble models
+  - "**/view3d/assets/pit/LICENSE"
   - "**/view3d/assets/instruments/*.json"
   - "**/node_modules/**"
   - "**/dist/**"

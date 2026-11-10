@@ -22,7 +22,7 @@ import {
     TransportNavigationButton,
     TransportPlayButton,
 } from "./TransportButtons";
-import { ShortcutTooltip, TransportTooltipProvider } from "./ShortcutTooltip";
+import { TransportTooltipProvider } from "./ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import { T, useTranslate } from "@tolgee/react";
 import { formatBinding } from "@/shortcuts/bindings";
@@ -109,15 +109,12 @@ import {
     type TimelineKeyframe,
     type TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
-import { TimelineHeldBars } from "./TimelineHeldBars";
-import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
+import { TimelineHoldBars } from "./TimelineHoldBars";
 import {
-    chainFit,
-    labelPaddingBeside,
-    PageKeepChainButton,
-    type PageKeepChain,
-    type PageKeepChains,
-} from "./PageKeepChain";
+    TimelineHoldEdgeHandles,
+    type TimelineHoldEdges,
+} from "./TimelineHoldEdges";
+import type { SelectionHolds } from "@/timeline/timelineHoldBars";
 import type {
     BeatPosition,
     TimelineBeatRange,
@@ -775,7 +772,7 @@ type RulerScrub = ReturnType<typeof useRulerScrub>;
  * scrolled out of view, so a long page always shows its name. Set heavier than the counts and
  * measure numbers under it, so the box and the weight tell them apart. Hidden when the box is too
  * narrow to read it, when zoomed far out (UI-12). It slides no further left than its box's
- * padding, which ends before a keep chain (`labelPaddingBeside`).
+ * padding.
  */
 const PageBoxLabel = memo(function PageBoxLabel({
     label,
@@ -821,8 +818,8 @@ export const TimelineRuler = memo(function TimelineRuler({
     positionBeat,
     keyframes,
     keyframeMenu,
-    heldBars,
-    keepChains,
+    holds,
+    holdEdges,
     scrubLine,
     pageFlagMove,
     height = TIMELINE_PAGE_ROW_BOTTOM,
@@ -855,10 +852,10 @@ export const TimelineRuler = memo(function TimelineRuler({
     keyframes?: readonly TimelineKeyframe[];
     /** A diamond's right-click Unset actions (#306), by view beat; without it, no menu */
     keyframeMenu?: TimelineKeyframeMenu;
-    /** The selected marchers' Held holds (#472), view beats; none without a selection */
-    heldBars?: readonly SelectionHeldBar[];
-    /** The chains on the page boxes (UI-18 keep later pages), by page id */
-    keepChains?: PageKeepChains;
+    /** The selected marchers' hold bars and departures (#472, #477), view beats */
+    holds?: SelectionHolds;
+    /** The draggable ends of their Held bars (#475), view beats; without it, none */
+    holdEdges?: TimelineHoldEdges;
 }) {
     // A dragged flag snaps to downbeats, never to page lines (`flagSnapBeat`)
     const flagDownbeats = useMemo(
@@ -910,7 +907,6 @@ export const TimelineRuler = memo(function TimelineRuler({
         });
         return [...plain, ...beside];
     }, [measures, pixelsPerBeat]);
-    const wordsId = useId();
     const scrub = useRulerScrub(
         onSeek,
         beatCount,
@@ -932,6 +928,14 @@ export const TimelineRuler = memo(function TimelineRuler({
     const pageRanges = useMemo(
         () => new Map(pageBoxes.map(({ page, range }) => [page.id, range])),
         [pageBoxes],
+    );
+    // A dragged hold edge lands on page lines too (#475)
+    const flagBeats = useMemo(
+        () =>
+            flagBoxes.flatMap(({ range }) =>
+                range ? [range.endBeatIndex] : [],
+            ),
+        [flagBoxes],
     );
     // The boxes only re-render when which of them is selected changes, not for every new window
     // (a scrub moves the window's end every beat)
@@ -997,8 +1001,6 @@ export const TimelineRuler = memo(function TimelineRuler({
                 initialPageWidth={initialPageWidth}
                 scrub={scrub}
                 onSelectPage={selectPage}
-                wordsId={wordsId}
-                keepChains={keepChains}
             />
             {pageFlagMove && (
                 <TimelinePageFlagGrips
@@ -1015,11 +1017,22 @@ export const TimelineRuler = memo(function TimelineRuler({
                     onSelectPage={selectPage}
                 />
             )}
-            {heldBars && (
-                <TimelineHeldBars
-                    bars={heldBars}
+            {holds && (
+                <TimelineHoldBars
+                    holds={holds}
                     pages={pages}
                     pixelsPerBeat={pixelsPerBeat}
+                />
+            )}
+            {holdEdges && (
+                <TimelineHoldEdgeHandles
+                    edges={holdEdges}
+                    pages={pages}
+                    beatCount={beatCount}
+                    pixelsPerBeat={pixelsPerBeat}
+                    pageBeats={flagBeats}
+                    downbeats={flagDownbeats}
+                    snapPlayhead={flagSnapPlayhead}
                 />
             )}
             {keyframes && (
@@ -1054,8 +1067,6 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     initialPageWidth,
     scrub,
     onSelectPage,
-    wordsId,
-    keepChains,
 }: {
     initialPage: TimelinePageMarker | undefined;
     pageBoxes: readonly {
@@ -1070,69 +1081,61 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     initialPageWidth: number;
     scrub: RulerScrub;
     onSelectPage: (page: TimelinePageMarker, extend?: boolean) => void;
-    /** The prefix of each box's description id (`TimelinePageBox`'s chain words) */
-    wordsId: string;
-    /** The chains on the page boxes (UI-18 keep later pages), by page id */
-    keepChains?: PageKeepChains;
 }) {
     const { t } = useTranslate();
     const selectedIds = new Set(selectedBoxIds.split("\n"));
     return (
-        <TransportTooltipProvider disableHoverableContent>
-            <div
-                data-testid="timeline-page-ruler"
-                // Clipped without being a scroll container, so labels can stick to the viewport
-                className="border-stroke bg-fg-2 rounded-6 absolute overflow-clip border font-mono"
-                style={{
-                    top: TIMELINE_PAGE_ROW_TOP,
-                    height: TIMELINE_PAGE_ROW_HEIGHT,
-                    left: -initialPageWidth,
-                    width: beatCount * pixelsPerBeat + initialPageWidth,
-                }}
-            >
-                {initialPage && (
-                    <button
-                        type="button"
-                        data-timeline-interactive="true"
-                        data-testid="timeline-initial-page"
-                        aria-label={t("timeline.page.label", {
-                            pageName: initialPage.label,
-                        })}
-                        title={t("timeline.page.homeTooltip", {
-                            page: initialPage.label,
-                        })}
-                        aria-pressed={homeSelected}
-                        {...scrub.handlers}
-                        onClick={(event) => {
-                            if (!scrub.consumeClick(event))
-                                onSelectPage(initialPage);
-                        }}
-                        // eslint-disable-next-line no-restricted-syntax -- the inner corner of the rounded-6 page row inside its 1 px border
-                        className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 left-0 flex h-full items-center justify-center rounded-l-[5px] border-r outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
-                        style={{ width: initialPageWidth }}
-                    >
-                        {/* UI-13: a house, so home's "0" isn't read as a count or a measure */}
-                        {HOUSE_ICON}
-                    </button>
-                )}
-                {pageBoxes.map(({ page, range }) =>
-                    range ? (
-                        <TimelinePageBox
-                            key={page.id}
-                            page={page}
-                            range={range}
-                            selected={selectedIds.has(String(page.id))}
-                            pixelsPerBeat={pixelsPerBeat}
-                            initialPageWidth={initialPageWidth}
-                            scrub={scrub}
-                            onSelectPage={onSelectPage}
-                            descriptionId={`${wordsId}-${page.id}`}
-                            chain={keepChains?.get(page.id)}
-                        />
-                    ) : null,
-                )}
-            </div>
-        </TransportTooltipProvider>
+        <div
+            data-testid="timeline-page-ruler"
+            // Clipped without being a scroll container, so labels can stick to the viewport
+            className="border-stroke bg-fg-2 rounded-6 absolute overflow-clip border font-mono"
+            style={{
+                top: TIMELINE_PAGE_ROW_TOP,
+                height: TIMELINE_PAGE_ROW_HEIGHT,
+                left: -initialPageWidth,
+                width: beatCount * pixelsPerBeat + initialPageWidth,
+            }}
+        >
+            {initialPage && (
+                <button
+                    type="button"
+                    data-timeline-interactive="true"
+                    data-testid="timeline-initial-page"
+                    aria-label={t("timeline.page.label", {
+                        pageName: initialPage.label,
+                    })}
+                    title={t("timeline.page.homeTooltip", {
+                        page: initialPage.label,
+                    })}
+                    aria-pressed={homeSelected}
+                    {...scrub.handlers}
+                    onClick={(event) => {
+                        if (!scrub.consumeClick(event))
+                            onSelectPage(initialPage);
+                    }}
+                    // eslint-disable-next-line no-restricted-syntax -- the inner corner of the rounded-6 page row inside its 1 px border
+                    className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 left-0 flex h-full items-center justify-center rounded-l-[5px] border-r outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+                    style={{ width: initialPageWidth }}
+                >
+                    {/* UI-13: a house, so home's "0" isn't read as a count or a measure */}
+                    {HOUSE_ICON}
+                </button>
+            )}
+            {pageBoxes.map(({ page, range }) =>
+                range ? (
+                    <TimelinePageBox
+                        key={page.id}
+                        page={page}
+                        range={range}
+                        selected={selectedIds.has(String(page.id))}
+                        pixelsPerBeat={pixelsPerBeat}
+                        initialPageWidth={initialPageWidth}
+                        scrub={scrub}
+                        onSelectPage={onSelectPage}
+                    />
+                ) : null,
+            )}
+        </div>
     );
 });
 
@@ -1145,8 +1148,6 @@ const TimelinePageBox = memo(function TimelinePageBox({
     initialPageWidth,
     scrub,
     onSelectPage,
-    descriptionId,
-    chain,
 }: {
     page: TimelinePageMarker;
     range: TimelineBeatRange;
@@ -1155,10 +1156,6 @@ const TimelinePageBox = memo(function TimelinePageBox({
     initialPageWidth: number;
     scrub: RulerScrub;
     onSelectPage: (page: TimelinePageMarker, extend?: boolean) => void;
-    /** The id of the box's chain words, for its `aria-describedby` */
-    descriptionId: string;
-    /** The box's chain for the selected marchers (UI-18 keep later pages) */
-    chain?: PageKeepChain;
 }) {
     const { t } = useTranslate();
     const boxWidth =
@@ -1166,70 +1163,27 @@ const TimelinePageBox = memo(function TimelinePageBox({
     const boxLeft =
         initialPageWidth + beatToX(range.startBeatIndex, pixelsPerBeat);
     const labelShown = pageLabelFits(page.label, boxWidth);
-    const labelChars = labelShown ? page.label.length : 0;
-    const fit = chain ? chainFit(boxWidth, labelChars) : null;
-    // The sticky label stops before the chain (`labelPaddingBeside`)
-    const labelPadding = fit
-        ? labelPaddingBeside(fit.offset, fit.size)
-        : undefined;
-    // A chain with no room for its button: its words go on the box, as its tooltip and accessible
-    // description, naming whom the box's menu changes
-    const words =
-        chain && !fit
-            ? { label: chain.menuLabel, hint: chain.menuHint }
-            : undefined;
-    const box = (
-        <ShortcutTooltip
-            label={words?.label}
-            hint={words?.hint}
-            side="top"
-            closeOnPress
-        >
-            <button
-                type="button"
-                data-timeline-interactive="true"
-                {...timelineRangeTargetProps(range, undefined, page.id)}
-                aria-label={t("timeline.page.label", { pageName: page.label })}
-                aria-describedby={words ? descriptionId : undefined}
-                aria-pressed={selected}
-                {...scrub.handlers}
-                onClick={(event) => {
-                    if (scrub.consumeClick(event)) return;
-                    // macOS ctrl+click opens the context menu (UI-9: no selection change)
-                    if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
-                }}
-                className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 flex h-full items-center justify-end border-r px-8 outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
-                style={{
-                    left: boxLeft,
-                    width: boxWidth,
-                    paddingLeft: labelShown ? labelPadding : undefined,
-                }}
-            >
-                <PageBoxLabel label={page.label} shown={labelShown} />
-                {words && (
-                    <span id={descriptionId} className="sr-only">
-                        {words.label}. {words.hint}
-                    </span>
-                )}
-            </button>
-        </ShortcutTooltip>
-    );
-    if (!chain || !fit) return box;
-    // A sibling right after the box, not inside it: a button can't hold a button, and hovering
-    // the box shows a linked chain (`PageKeepChainButton`)
     return (
-        <>
-            {box}
-            <PageKeepChainButton
-                chain={chain}
-                pageId={page.id}
-                pageLabel={page.label}
-                range={range}
-                left={boxLeft + fit.offset}
-                size={fit.size}
-                always={selected}
-            />
-        </>
+        <button
+            type="button"
+            data-timeline-interactive="true"
+            {...timelineRangeTargetProps(range, undefined, page.id)}
+            aria-label={t("timeline.page.label", { pageName: page.label })}
+            aria-pressed={selected}
+            {...scrub.handlers}
+            onClick={(event) => {
+                if (scrub.consumeClick(event)) return;
+                // macOS ctrl+click opens the context menu (UI-9: no selection change)
+                if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
+            }}
+            className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 flex h-full items-center justify-end border-r px-8 outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+            style={{
+                left: boxLeft,
+                width: boxWidth,
+            }}
+        >
+            <PageBoxLabel label={page.label} shown={labelShown} />
+        </button>
     );
 });
 

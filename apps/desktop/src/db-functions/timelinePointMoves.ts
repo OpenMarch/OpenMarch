@@ -17,6 +17,7 @@ import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { readPageGrid } from "./timelineRipple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitions";
 import { clearOwnPageMoves } from "./timelineMoveHelpers";
+import { hasHeldMarksTable, readHeldMarks } from "./timelineHeldArrival";
 import {
     isPageBox,
     marcherLabel,
@@ -42,6 +43,11 @@ import {
  * | the next move's start)                        |                                                 |
  * | Nothing changes for the marcher               | nothing (UI-18)                                 |
  *
+ * A Held hold bounds the hold `[g0, g1)` too (fork #475): one ending in the box before P moves g0
+ * to its end, so the marcher **leaves early**, where its hold now ends (holds decision 6), and one
+ * starting after P moves g1 to its start. (P inside a Held hold edits its arrival instead,
+ * `splitHeldEditsInTransaction`.)
+ *
  * **Drag back:** on a move's end, a position equal to where that move starts removes the point:
  * the move merges with the next move starting at P (`[r.start, next.end)` → next's destination),
  * or, with none (a hold or the flag follows), the move is deleted, as UI-18's "back onto the start
@@ -52,7 +58,10 @@ import {
  * the hold as it was, with no move ending at the hold's end (no tick there), and a page it held
  * through follows earlier pages again; moves right after it that go nowhere either go with it,
  * since their only tick was its end. A point set inside a move writes both halves even when the
- * second goes nowhere: it is the user's point, with a tick that Remove takes out.
+ * second goes nowhere: it is the user's point, with a tick that Remove takes out. **The sweep
+ * stops at a Held hold** (holds 04-anchors; fork #473): a move a hold grows out of stays, and a
+ * merge ending where a hold starts is written even though it goes nowhere, so the hold the
+ * designer made keeps its arrival.
  *
  * Positions ("r's end", "the held position", "where r starts") are the resolver's, read once
  * from the rows the edit sees before anything is written, and only when an edit reads one. New
@@ -114,6 +123,10 @@ interface BoxState {
     timelineRange: Map<number, BeatRange>;
     /** Marchers that aren't simple on the box, when they weren't refused (`refuseLocked` off) */
     locked: Set<number>;
+    /** Whether a Held mark of the marcher starts at the count */
+    heldFrom: (marcherId: number, beat: number) => boolean;
+    /** The marcher's Held marks */
+    marksOf: (marcherId: number) => readonly { start: number; end: number }[];
 }
 
 const refuseBeat = (beat: number, box: Box, strict: boolean) => {
@@ -181,6 +194,12 @@ const readBoxState = async (
                       .all()
               ).map((t) => [t.id, { start: t.start_beat, end: t.end_beat }]),
     );
+    // The marchers' Held marks: Basic's sweep stops where one starts, and a point in a hold
+    // starts its move where one ends (leaving early)
+    const marks = (await hasHeldMarksTable(tx))
+        ? await readHeldMarks(tx, [...new Set(marcherIds)])
+        : [];
+    const heldStarts = new Set(marks.map((m) => `${m.marcherId}:${m.start}`));
     // Where the marchers are now, from the rows this edit sees: read once and only when needed,
     // always before the plan writes anything
     let resolver: ReturnType<typeof createResolver> | undefined;
@@ -195,6 +214,8 @@ const readBoxState = async (
         },
         timelineRange,
         locked: new Set(locked),
+        heldFrom: (id, beat) => heldStarts.has(`${id}:${beat}`),
+        marksOf: (id) => marks.filter((m) => m.marcherId === id),
     };
 };
 
@@ -235,7 +256,9 @@ const setEnding = (
  *
  * A merge that would go nowhere (arriving where `first` starts) is deleted instead, so the marcher
  * holds there as it did before the point was set, and the hold's end isn't left as a tick. Moves
- * right after it that go nowhere either are deleted with it: their start was that tick.
+ * right after it that go nowhere either are deleted with it: their start was that tick. Never a
+ * move a Held hold grows out of: the sweep stops before it, and a merge ending where a hold starts
+ * is written, going nowhere, so the hold keeps its arrival (fork #473).
  */
 const planMerge = async (
     plan: PointPlan,
@@ -247,15 +270,16 @@ const planMerge = async (
     const point = await state.positionAt(marcherId, second.end);
     plan.removed.push(first, second);
     const from = await state.positionAt(marcherId, first.start);
-    if (samePosition(point, from)) {
+    if (samePosition(point, from) && !state.heldFrom(marcherId, second.end)) {
         // Moves right after it that go nowhere either had their only tick at its end: they go
-        // too, so the marcher holds until its next real move (or the flag)
+        // too, so the marcher holds until its next real move (or the flag), or a Held hold
         let end = second.end;
         // Sorted by start and not overlapping, so each next one starts where the last ended
         for (const next of state.rowsOf(marcherId)) {
             if (next.start < end) continue;
             if (
                 next.start > end ||
+                state.heldFrom(marcherId, next.end) ||
                 !samePosition(await state.positionAt(marcherId, next.end), from)
             )
                 break;
@@ -272,6 +296,34 @@ const planMerge = async (
         point,
         layer: first.layer,
     });
+};
+
+/**
+ * The hold `[g0, g1)` a point at `beat` is in: from the last move's end (or the page's start) to
+ * the next move (or flag). A Held hold ending in it ends it there instead, so the move leaves
+ * where the hold ends (leaving early, holds decision 6), and one starting in it stops the stay
+ * where it starts. `layer` is the layer of the move before or after it.
+ */
+const holdAround = (
+    rows: readonly BasicRow[],
+    marks: readonly { start: number; end: number }[],
+    box: Box,
+    beat: number,
+): { g0: number; g1: number; layer: number } => {
+    const before = rows.filter((r) => r.end < beat);
+    const previous = before[before.length - 1];
+    const next = rows.find((r) => r.start >= beat);
+    return {
+        g0: Math.max(
+            previous?.end ?? box.start,
+            ...marks.filter((m) => m.end < beat).map((m) => m.end),
+        ),
+        g1: Math.min(
+            next?.start ?? box.end,
+            ...marks.filter((m) => m.start >= beat).map((m) => m.start),
+        ),
+        layer: previous?.layer ?? next?.layer ?? 0,
+    };
 };
 
 /** Plans one marcher's position at `beat` (see the module comment). */
@@ -341,13 +393,12 @@ const planPoint = async (
         return;
     }
 
-    // A hold [g0, g1): from the last move's end (or the page's start) to the next move (or flag)
-    const before = rows.filter((r) => r.end < beat);
-    const previous = before[before.length - 1];
-    const next = rows.find((r) => r.start >= beat);
-    const g0 = previous?.end ?? box.start;
-    const g1 = next?.start ?? box.end;
-    const layer = previous?.layer ?? next?.layer ?? 0;
+    const { g0, g1, layer } = holdAround(
+        rows,
+        state.marksOf(marcherId),
+        box,
+        beat,
+    );
     plan.added.push({ marcherId, start: g0, end: beat, point, layer });
     if (beat < g1)
         plan.added.push({

@@ -1,6 +1,6 @@
 ---
 title: Align and space marchers
-description: Line selected marchers up, space them evenly or a set number of steps apart, flip, turn and resize a group, swap two marchers, and copy positions from the next page.
+description: Line selected marchers up, space them evenly or a set number of steps apart, flip, turn and resize a group, swap two marchers, and move marchers to their spots on the next page.
 type: how-to
 covers:
   - apps/desktop/src/components/inspector/MarcherEditor.tsx
@@ -93,11 +93,11 @@ To turn the group by an exact angle, use <Ui k="shapes.transform.title" /> in th
 
 Select exactly two marchers, then select <Ui k="inspector.marcher.swapMarchers" /> in the inspector, or press <Kbd action="swapMarchers" />. Each takes the other's position on this page.
 
-## Copy positions from another page
+## Place marchers where they stand on another page
 
 The <Ui k="toolbar.alignment.placeSelectedMarchers" /> menu at the bottom of the inspector, and <Ui k="toolbar.alignment.placeAllMarchers" /> in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab for every marcher at once, put marchers back where they stand on a neighboring page:
 
-- <Ui k="toolbar.alignment.toNextPagePositions" /> copies the marchers' positions from the next page onto this one (<Kbd action="setSelectedMarchersToNextPage" /> for the selected marchers, <Kbd action="setAllMarchersToNextPage" /> for all).
+- <Ui k="toolbar.alignment.toNextPageSpots" /> moves the marchers to where they stand on the next page (<Kbd action="setSelectedMarchersToNextPage" /> for the selected marchers, <Kbd action="setAllMarchersToNextPage" /> for all). It's an ordinary move of the marchers, like a drag: on a page where they're [Held](/guides/timeline/defined-held-not-defined/), it moves the whole hold. It's also in the field's right-click menu, as <Ui k="actions.batchEdit.moveSelectedToNextSpots" />.
 - <Ui k="toolbar.alignment.toPreviousPagePositions" /> in the inspector, and <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} /> in the toolbar menu, run <Ui k="timeline.terms.clearThisPage" />: the marchers stay where the previous page left them, and the page no longer has positions of its own for them. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains what that means for later pages. Later pages keep where they were; when some of them showed this page's positions, the toolbar menu also offers a second item ending in "move back too", which lets those pages move back with it.
 
 <Steps>
@@ -106,7 +106,7 @@ The <Ui k="toolbar.alignment.placeSelectedMarchers" /> menu at the bottom of the
 
 2. Select the marchers, or skip this to change every marcher with the toolbar menu.
 
-3. Open <Ui k="toolbar.alignment.placeSelectedMarchers" /> in the inspector, or <Ui k="toolbar.alignment.placeAllMarchers" /> in the <Ui k="inspector.shape.alignmentTab" /> tab, and choose where to copy from.
+3. Open <Ui k="toolbar.alignment.placeSelectedMarchers" /> in the inspector, or <Ui k="toolbar.alignment.placeAllMarchers" /> in the <Ui k="inspector.shape.alignmentTab" /> tab, and choose the page.
 
 </Steps>
 

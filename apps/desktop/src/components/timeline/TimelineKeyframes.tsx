@@ -1,10 +1,11 @@
-import { memo, useMemo } from "react";
+import { memo, useEffect, useMemo } from "react";
 import type { KeyboardEvent } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
 import { holdTerms } from "@/timeline/holdTerms";
 import type { SelectionKeyframe } from "@/timeline/timelineSetFollowing";
+import type { HoldLight } from "@/timeline/timelineHoldBars";
 import type { TimelinePageMarker } from "./TimelineViewModel";
 import {
     beatToX,
@@ -39,9 +40,16 @@ export interface TimelineKeyframeMenu {
     readonly stateFor: (beat: number) => {
         readonly canUnset: boolean;
         readonly followingLabel: string | null;
+        /** The hold bars the second entry lights while hovered or focused (#477), spec beats */
+        readonly followingLight?: HoldLight | null;
     };
     readonly onUnset: (beat: number) => void;
     readonly onUnsetAndFollowing: (beat: number) => void;
+    /**
+     * Lights the hold bars that would follow back (`followingLight`) while the second entry is
+     * hovered or focused, and stops (null) on leave or when the menu closes
+     */
+    readonly onFollowingPreview?: (light: HoldLight | null) => void;
 }
 
 /** A diamond's size (px), and the press target around it */
@@ -51,7 +59,7 @@ const TARGET_SIZE = 13;
 /**
  * The selection's keyframes (#303, `useSelectionKeyframes`): a diamond at every count where a
  * selected marcher is Set, filled where all of them are, hollow where only some are. Drawn on the
- * page row's bottom edge, half over the measure row, so it covers no page label, keep chain or the
+ * page row's bottom edge, half over the measure row, so it covers no page label or the
  * playhead's handle, and only the bottom few pixels of a flag's grip (above it there, so a
  * diamond on a flag still seeks). Only the diamond takes the pointer: the page boxes around it
  * still select and scrub. Nothing selected, no diamonds. With `menu`, a right-click (or the
@@ -232,7 +240,10 @@ function KeyframeMenuItems({
     beat: number;
     menu: TimelineKeyframeMenu;
 }) {
-    const { canUnset, followingLabel } = menu.stateFor(beat);
+    const { canUnset, followingLabel, followingLight } = menu.stateFor(beat);
+    const preview = menu.onFollowingPreview;
+    // The menu closing (an entry picked, Escape, a click away) ends the lighting
+    useEffect(() => () => preview?.(null), [preview]);
     return (
         <>
             <ContextMenu.Item
@@ -249,7 +260,11 @@ function KeyframeMenuItems({
             {followingLabel && (
                 <ContextMenu.Item
                     className={MENU_ITEM_CLASS}
+                    data-testid="timeline-keyframe-menu-follow-back"
                     onSelect={() => menu.onUnsetAndFollowing(beat)}
+                    // Radix focuses the entry under the pointer, so this is hover and keys
+                    onFocus={() => preview?.(followingLight ?? null)}
+                    onBlur={() => preview?.(null)}
                 >
                     {followingLabel}
                 </ContextMenu.Item>

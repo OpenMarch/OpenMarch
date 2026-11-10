@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Impossible de reprendre les coordonnées des marcheurs de la page suivante : il n'y a pas de page suivante",
             "noPreviousPage": "Impossible de reprendre les coordonnées des marcheurs de la page précédente : il n'y a pas de page précédente",
-            "setAllToNext": "Copier les positions de la page suivante (tous les marcheurs)",
-            "setAllToNextSuccess": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page suivante ({nextPage})} other {Les # marcheurs de la page {currentPage} ont repris les coordonnées de la page suivante ({nextPage})}}",
-            "setSelectedToNext": "Copier les positions de la page suivante (sélection)",
-            "setSelectedToNextSuccess": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page suivante ({nextPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page suivante ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {Les # marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}"
         },
@@ -2582,7 +2578,6 @@
             "placeAllMarchers": "Placer tous les marcheurs",
             "placeSelectedMarchers": "Placer les marcheurs sélectionnés",
             "snapToggleCaption": "Magnétisme",
-            "toNextPagePositions": "...aux positions de la page suivante",
             "setMarcherPositionsAriaLabel": "Définir les positions des marcheurs",
             "toPreviousPagePositions": "...aux positions précédentes de la page"
         },

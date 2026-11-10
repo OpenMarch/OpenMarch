@@ -55,12 +55,12 @@ The counts between the start flag and the playhead are shaded. They're the stret
 
 When you drag marchers on the field, you set where they are at the playhead's count. They leave from where they were at the start flag and walk to the new spot over the counts in between, in a straight line at an even step size. You don't place them on the counts in between: OpenMarch works out every count from the positions you set.
 
-A position you set for a marcher at a count is a keyframe. Select marchers and the timeline marks their keyframes with diamonds along the bottom edge of the page row: filled where every selected marcher has one, hollow where only some do.
+A position you set for a marcher at a count is a keyframe. Select marchers and the timeline marks their keyframes with diamonds along the bottom edge of the page row: filled where every selected marcher has one, hollow where only some do. Between the diamonds, a thin line marks where they stand still: solid where they're Held, dashed where they're Not defined.
 
 On each page, a marcher is in one of three states:
 
 - <Ui k="timeline.terms.defined" />: you've set its position on this page.
-- <Ui k="timeline.terms.held" />: you've chosen to keep it where it was on the page before.
+- <Ui k="timeline.terms.held" />: you've chosen to keep it still, where its last keyframe put it.
 - <Ui k="timeline.terms.notDefined" />: nothing is decided yet, so it stays where it last was, and follows any change to that earlier position.
 
 [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) explains the difference and how to change a marcher's state.

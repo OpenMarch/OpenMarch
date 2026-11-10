@@ -90,8 +90,8 @@ const MESSAGES = {
     },
     next: {
         none: "actions.batchEdit.noNextPage",
-        all: "actions.batchEdit.setAllToNextSuccess",
-        selected: "actions.batchEdit.setSelectedToNextSuccess",
+        all: "actions.batchEdit.movedAllToNextSpots",
+        selected: "actions.batchEdit.movedSelectedToNextSpots",
         param: "nextPage",
     },
 } as const;

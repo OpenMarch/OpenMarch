@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าถัดไปได้ เนื่องจากไม่มีหน้าถัดไป",
             "noPreviousPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าก่อนหน้าได้ เนื่องจากไม่มีหน้าก่อนหน้า",
-            "setAllToNext": "คัดลอกตำแหน่งจากหน้าถัดไป (ผู้แสดงทั้งหมด)",
-            "setAllToNextSuccess": "{count, plural, other {ตั้งพิกัดของผู้แสดงทั้งหมด # คนในหน้า {currentPage} ตามพิกัดของหน้าถัดไป ({nextPage}) เรียบร้อยแล้ว}}",
-            "setSelectedToNext": "คัดลอกตำแหน่งจากหน้าถัดไป (ที่เลือก)",
-            "setSelectedToNextSuccess": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าถัดไป ({nextPage}) เรียบร้อยแล้ว}}",
             "setAllToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดงทั้งหมด # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}",
             "setSelectedToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}"
         },
@@ -2579,7 +2575,6 @@
             "placeAllMarchers": "วางผู้แสดงทั้งหมด",
             "placeSelectedMarchers": "วางผู้แสดงที่เลือก",
             "snapToggleCaption": "สแนป",
-            "toNextPagePositions": "...ตามตำแหน่งในหน้าถัดไป",
             "setMarcherPositionsAriaLabel": "กำหนดตำแหน่งผู้แสดง"
         },
         "collisions": {

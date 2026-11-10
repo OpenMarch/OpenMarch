@@ -36,9 +36,11 @@ describe("holdTerms", () => {
             notDefined: "Not defined",
             notDefinedLower: "not defined",
             defineAsShown: "Define as shown",
-            holdFromPrevious: "Hold from previous page",
+            holdFromPrevious: "Hold from last keyframe",
+            holdOverWindow: "Hold from start flag to playhead",
             clearThisPage: "Clear this page",
             removeKeyframe: "Remove keyframe",
+            splitHold: "Split hold here",
         });
     });
 
