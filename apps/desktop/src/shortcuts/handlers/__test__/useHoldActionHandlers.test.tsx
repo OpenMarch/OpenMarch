@@ -284,6 +284,13 @@ describe("Expert hold tools (#476)", () => {
 
     it("highlighting it shows the hold it would make, reaching back like the write", () => {
         setWindow(11, 13);
+        // The show's page boxes: the preview stays inside the show, which ends at page 3's end
+        useTimelineSelectionStore.setState({
+            pageBoxes: [
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ],
+        });
         useHeldMarksStore.setState({ marks: [] });
         mount([3]);
         previewAction("timelineHoldOverWindow", true);
