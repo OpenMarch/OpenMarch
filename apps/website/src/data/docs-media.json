@@ -394,6 +394,13 @@
         "width": 1600,
         "height": 216
     },
+    "timeline-hold-end": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 174,
+        "seconds": 6.1
+    },
     "timeline-isolate": {
         "chapter": "timeline",
         "kind": "still",
