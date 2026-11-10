@@ -17,7 +17,8 @@ Options: `--lighting all|day,night`, `--cameras all|pressBox,frontRow`, `--quali
 Output: `<out>/<kit>/<lighting>--<camera>.png`, a labelled contact sheet `<out>/<kit>/sheet.png` and
 `<out>/report.json` (cameras, presets, draw calls, triangles, shader programs, console errors).
 
-Rendering is SwiftShader (CPU), so it shows looks, not frame rates. Check performance on a real GPU.
+Rendering is on the GPU (ANGLE/Vulkan) when the machine has an NVIDIA one, and SwiftShader (CPU)
+otherwise or with `--software`. Under SwiftShader it shows looks, not frame rates.
 
 ## Front ensemble models
 

@@ -1,11 +1,13 @@
-// Renders venue kits to PNGs in headless Chromium (SwiftShader). See README.md.
+// Renders venue kits to PNGs in headless Chromium: on the GPU (ANGLE/Vulkan) when the machine has an
+// NVIDIA one, else SwiftShader. --software forces SwiftShader. See README.md.
 // usage (from apps/desktop):
 //   node scripts/view3d-gallery/shoot.mjs --kits hs,gym --out /mnt/data/om-capture/venues/run1
 //     [--lighting all|day,night] [--cameras all|pressBox,frontRow] [--quality high|low]
 //     [--size 1280x720] [--no-crowd] [--poses poses.json]
-//     [--field football|footballNoEndZones|college|collegeNoEndZones|pro|indoor]
+//     [--field football|footballNoEndZones|college|collegeNoEndZones|pro|indoor] [--software]
 // poses.json: [{ "name": "x", "position": [x,y,z], "target": [x,y,z], "fov": 45 }]
 // Writes <out>/<kit>/<lighting>--<camera>.png, <out>/<kit>/sheet.png and <out>/report.json.
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -30,6 +32,15 @@ const quality = opt("quality", "high");
 const [W, H] = opt("size", "1280x720").split("x").map(Number);
 const crowd = !args.includes("--no-crowd");
 const field = opt("field");
+const hasGpu = () => {
+    try {
+        execSync("nvidia-smi -L", { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+};
+const gpu = !args.includes("--software") && hasGpu();
 const poses = opt("poses")
     ? JSON.parse(fs.readFileSync(opt("poses"), "utf8"))
     : [];
@@ -46,11 +57,13 @@ const browser = await chromium.launch({
     args: [
         "--no-sandbox",
         "--use-gl=angle",
-        "--use-angle=swiftshader",
-        "--enable-unsafe-swiftshader",
         "--ignore-gpu-blocklist",
+        ...(gpu
+            ? ["--use-angle=vulkan", "--enable-features=Vulkan"]
+            : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
     ],
 });
+console.log(`drawing with ${gpu ? "the GPU (ANGLE/Vulkan)" : "SwiftShader"}`);
 const page = await browser.newPage({ viewport: { width: W, height: H } });
 const errors = [];
 page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
