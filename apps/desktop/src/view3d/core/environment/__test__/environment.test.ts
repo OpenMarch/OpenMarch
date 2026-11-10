@@ -1,12 +1,23 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { InstancedMesh, Mesh, SpotLight } from "three";
+import {
+    Color,
+    InstancedMesh,
+    Mesh,
+    Object3D,
+    SpotLight,
+    Vector3,
+    type BufferGeometry,
+    type MeshStandardMaterial,
+} from "three";
 import type { LightingPreset, SeatRow } from "../../types";
 import {
     buildCrowd,
     createEnvironment,
+    crowdBlockGeometry,
     createSharedMaterials,
     defaultCrowdPalette,
     FT,
+    landGeometry,
     LIGHTING_PRESET_IDS,
     lightingValues,
     lightPole,
@@ -16,6 +27,9 @@ import {
 } from "..";
 
 beforeAll(() => setTexturePainting(false));
+
+const triangles = (g: BufferGeometry) =>
+    (g.index ? g.index.count : g.getAttribute("position").count) / 3;
 
 /** A straight stand: `rows` rows of `length` meters along X, rising in Y and Z. */
 function straightRows(
@@ -37,8 +51,8 @@ function straightRows(
 describe("lighting presets", () => {
     it("ports the demo's SKY table in meters", () => {
         const day = lightingValues("day");
-        expect(day.skyTop).toBe(0x3d7fd6);
-        expect(day.skyBottom).toBe(0xcfe2f5);
+        expect(day.skyTop).toBe(0x2f6fc9);
+        expect(day.skyBottom).toBe(0xcfe0ef);
         expect(day.hemisphere).toEqual({
             sky: 0xcfe3ff,
             ground: 0x4a5d33,
@@ -55,7 +69,9 @@ describe("lighting presets", () => {
         expect(dusk.kit.lampScale).toBe(0.6);
         const night = lightingValues("night");
         expect(night.exposure).toBe(1.15);
-        expect(night.sun.intensity).toBe(0);
+        // A faint moon, not the sun: no shadow map.
+        expect(night.sun.intensity).toBeGreaterThan(0);
+        expect(night.sun.castShadow).toBe(false);
         expect(night.kit.lampsOn).toBe(true);
     });
 
@@ -100,18 +116,21 @@ describe("createEnvironment", () => {
         expect(env.hemisphere.intensity).toBe(v.hemisphere.intensity);
         expect(env.sun.color.getHex()).toBe(0xffa860);
         expect(env.sun.castShadow).toBe(true);
-        expect(env.fog.color.getHex()).toBe(0xf2995a);
+        expect(env.fog.color.getHex()).toBe(v.fog);
+        expect(env.fog.near).toBe(v.fogNear);
         expect(env.exposure).toBe(1.05);
         expect(env.sun.position.z).toBeCloseTo(-24 + -60 * FT);
         expect(env.sun.target.position.z).toBe(-24);
         env.dispose();
     });
 
-    it("turns the sun and shadows off at night and indoors", () => {
+    it("leaves a faint moon at night, and no sun or shadows indoors", () => {
         const env = createEnvironment();
         env.setLighting("night");
+        // The moon gives walls a lit side; it isn't worth a shadow map.
         expect(env.sun.castShadow).toBe(false);
-        expect(env.sun.visible).toBe(false);
+        expect(env.sun.visible).toBe(true);
+        expect(env.sun.intensity).toBeLessThan(1);
         env.setLighting("house");
         expect(env.sky.mesh.visible).toBe(false);
         expect(env.sun.visible).toBe(false);
@@ -129,11 +148,56 @@ describe("createEnvironment", () => {
         env.dispose();
     });
 
-    it("disposes the sky", () => {
+    it("disposes the sky, horizon and land", () => {
         const env = createEnvironment();
-        const geo = vi.spyOn(env.sky.mesh.geometry, "dispose");
+        const spies = [
+            vi.spyOn(env.sky.mesh.geometry, "dispose"),
+            vi.spyOn(env.horizon!.mesh.geometry, "dispose"),
+            vi.spyOn(env.land!.mesh.geometry, "dispose"),
+        ];
         env.dispose();
-        expect(geo).toHaveBeenCalled();
+        for (const spy of spies) expect(spy).toHaveBeenCalled();
+    });
+
+    it("builds no horizon or land at low quality, to add no draw calls", () => {
+        const env = createEnvironment({ quality: "low" });
+        expect(env.horizon).toBeNull();
+        expect(env.land).toBeNull();
+        env.dispose();
+    });
+
+    it("shows the horizon and land only with the sky", () => {
+        const env = createEnvironment();
+        env.setLighting("house");
+        expect(env.horizon!.mesh.visible).toBe(false);
+        expect(env.land!.mesh.visible).toBe(false);
+        env.setLighting("night");
+        expect(env.horizon!.mesh.visible).toBe(true);
+        expect(env.land!.mesh.visible).toBe(true);
+        env.dispose();
+    });
+
+    it("faces the land upward", () => {
+        const g = landGeometry(8);
+        const pos = g.getAttribute("position");
+        const index = g.getIndex()!;
+        // Skips the first ring's zero-area triangles at the center.
+        for (let t = 0; t < index.count; t += 3) {
+            const a = new Vector3().fromBufferAttribute(pos, index.getX(t));
+            const b = new Vector3().fromBufferAttribute(pos, index.getX(t + 1));
+            const c = new Vector3().fromBufferAttribute(pos, index.getX(t + 2));
+            const n = b.sub(a).cross(c.sub(a));
+            if (n.lengthSq() > 1e-6) expect(n.y).toBeGreaterThan(0);
+        }
+        g.dispose();
+    });
+
+    it("keeps the land between the kits' ground plane and their paint", () => {
+        const env = createEnvironment();
+        const y = env.land!.mesh.position.y;
+        expect(y).toBeGreaterThan(-0.3 * FT);
+        expect(y).toBeLessThan(-0.3 * FT + 0.02);
+        env.dispose();
     });
 });
 
@@ -293,6 +357,63 @@ describe("buildCrowd", () => {
         expect(crowd.visibleCount()).toBe(total);
         expect(crowd.clearAround([1000, 0, 0], 5)).toBe(0);
         crowd.dispose();
+    });
+
+    it("faces down the rake, wherever the rows run", () => {
+        // Rows rising toward +Z face -Z whichever way they were drawn.
+        const forward = straightRows(4, 20);
+        const backward = forward.map((r) => ({
+            ...r,
+            points: [...r.points].reverse(),
+        }));
+        for (const rows of [forward, backward]) {
+            const crowd = buildCrowd(rows, { density: 1 });
+            const arr = crowd.mesh.instanceMatrix.array;
+            for (let k = 0; k < crowd.count; k++) {
+                // The figure's +Z axis, in the matrix's third column.
+                expect(arr[k * 16 + 10]).toBeLessThan(0);
+            }
+            crowd.dispose();
+        }
+    });
+
+    it("draws everyone in one mesh, with no tiers beneath it", () => {
+        for (const quality of ["high", "low"] as const) {
+            const crowd = buildCrowd(straightRows(4, 20), {
+                density: 1,
+                quality,
+            });
+            expect(crowd.mesh.children).toHaveLength(0);
+            crowd.dispose();
+        }
+    });
+
+    it("does no per-frame work of its own", () => {
+        const crowd = buildCrowd(straightRows(4, 20), { density: 1 });
+        expect(crowd.mesh.onBeforeRender).toBe(
+            Object3D.prototype.onBeforeRender,
+        );
+        crowd.dispose();
+    });
+
+    it("averages the crowd's clothes for the far drift", () => {
+        const palette = { home: [0xff0000], away: [0], neutral: [0] };
+        const crowd = buildCrowd(straightRows(2, 10), { density: 1, palette });
+        const material = crowd.mesh.material as MeshStandardMaterial;
+        const shader = {
+            uniforms: {},
+            vertexShader: "",
+            fragmentShader: "",
+        } as unknown as Parameters<typeof material.onBeforeCompile>[0];
+        material.onBeforeCompile(shader, undefined as never);
+        const mean = shader.uniforms.uCrowdMean.value as Color;
+        expect(mean.r).toBeCloseTo(1, 5);
+        expect(mean.g).toBeCloseTo(0, 5);
+        crowd.dispose();
+    });
+
+    it("keeps its block within the triangle budget", () => {
+        expect(triangles(crowdBlockGeometry())).toBeLessThanOrEqual(12);
     });
 
     it("clearAround keeps the matrix finite", () => {

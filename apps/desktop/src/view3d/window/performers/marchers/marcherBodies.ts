@@ -41,6 +41,7 @@ import {
     type PerformerBody,
     type UniformLook,
 } from "@/view3d/core/marchers/looks";
+import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import { holdId } from "@/view3d/core/instruments/holds";
 import type { LoadedBody } from "./marcherAssets";
@@ -165,16 +166,17 @@ function createContactMesh(n: number): THREE.InstancedMesh {
     disc.rotateX(-Math.PI / 2);
     const mesh = new THREE.InstancedMesh(
         disc,
-        new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            alphaMap: contactAlpha(),
-            transparent: true,
-            opacity: CONTACT_OPACITY,
-            depthWrite: false,
-            polygonOffset: true,
-            polygonOffsetFactor: -1,
-            polygonOffsetUnits: -1,
-        }),
+        // Over the field at any distance (the field has a ground layer too).
+        setGroundLayer(
+            new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                alphaMap: contactAlpha(),
+                transparent: true,
+                opacity: CONTACT_OPACITY,
+                depthWrite: false,
+            }),
+            GROUND_LAYER.contact,
+        ),
         n,
     );
     mesh.name = "view3d-marcher-contact";

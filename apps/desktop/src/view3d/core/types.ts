@@ -128,6 +128,11 @@ export interface KitResult {
      * and recolor it without rebuilding the kit. Defaults to 0.6.
      */
     crowdDensity?: number;
+    /**
+     * Whether the shared land and horizon (fields, woods, a town) surround
+     * the venue at high quality. Defaults to true; the blank venue stays bare.
+     */
+    surroundings?: boolean;
     lightingPresets: LightingPreset[];
     defaultLighting: LightingPreset;
     /** Applies a preset; ignores ones not in `lightingPresets`. */

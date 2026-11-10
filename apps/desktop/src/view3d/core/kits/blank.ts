@@ -57,6 +57,8 @@ export const buildBlank: KitBuilder = (input) => {
         ],
         seatRows: [],
         pickTargets: [],
+        // A bare field: no farmland or town around it.
+        surroundings: false,
         lightingPresets: [...OUTDOOR_PRESETS],
         defaultLighting: "day",
         setLighting() {},
