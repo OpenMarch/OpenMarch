@@ -85,15 +85,33 @@ export interface ReportContext {
     readonly posthogSessionId?: string;
 }
 
-/** The report's text as sent; the files are uploaded beside it. */
+/** Each answer's name in the API (om-online `POST /api/editor/v1/reports`) */
+export const API_ANSWER_KEYS: Readonly<Record<AnswerKey, string>> = {
+    whatWentWrong: "what_went_wrong",
+    expected: "expected",
+    steps: "steps_to_reproduce",
+    feature: "feature",
+    ideas: "ideas",
+    feedback: "message",
+};
+
+/** The API's `report` object, without `files` (the main process adds those after uploading). */
 export interface ReportPayload {
-    readonly report_type: ReportType;
+    readonly kind: ReportType;
+    readonly channel: "desktop" | "web";
     readonly title: string;
-    readonly answers: Partial<Record<AnswerKey, string>>;
-    readonly context: ReportContext;
-    readonly consent_video_public: boolean;
-    readonly consent_show_file_public: boolean;
-    readonly consent_credit_by_name: boolean;
+    readonly answers: Record<string, string>;
+    readonly context: {
+        readonly app_version: string;
+        readonly platform: string;
+        readonly sentry_event_id?: string;
+        readonly posthog_session_id?: string;
+    };
+    readonly consent: {
+        readonly video_public: boolean;
+        readonly show_file_public: boolean;
+        readonly credit_name: boolean;
+    };
 }
 
 /**
@@ -107,19 +125,31 @@ export function buildPayload(
 ): ReportPayload {
     if (draftProblems(draft).length > 0 || !draft.type)
         throw new Error("The report isn't ready to send");
-    const answers: Partial<Record<AnswerKey, string>> = {};
+    const answers: Record<string, string> = {};
     for (const q of QUESTIONS[draft.type]) {
         const value = draft.answers[q.key]?.trim();
-        if (value) answers[q.key] = value;
+        if (value) answers[API_ANSWER_KEYS[q.key]] = value;
     }
     return {
-        report_type: draft.type,
+        kind: draft.type,
+        channel: context.channel,
         title: draft.title.trim().slice(0, TITLE_MAX_LENGTH),
         answers,
-        context,
-        consent_video_public: hasVideo && draft.consent.videoPublic,
-        consent_show_file_public: hasShowFile && draft.consent.showFilePublic,
-        consent_credit_by_name: draft.consent.creditByName,
+        context: {
+            app_version: context.appVersion,
+            platform: context.platform,
+            ...(context.sentryEventId
+                ? { sentry_event_id: context.sentryEventId }
+                : {}),
+            ...(context.posthogSessionId
+                ? { posthog_session_id: context.posthogSessionId }
+                : {}),
+        },
+        consent: {
+            video_public: hasVideo && draft.consent.videoPublic,
+            show_file_public: hasShowFile && draft.consent.showFilePublic,
+            credit_name: draft.consent.creditByName,
+        },
     };
 }
 

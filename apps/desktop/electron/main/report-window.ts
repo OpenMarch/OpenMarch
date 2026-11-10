@@ -22,6 +22,12 @@ import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { fitBounds, type Rectangle } from "./settings-window-bounds";
 import { getDbPath } from "../database/database.services";
 import { writeReportCopy } from "../database/reportCopy";
+import { getValidAccessToken } from "./auth/token-manager";
+import {
+    ReportSubmitError,
+    submitReportFromMain,
+    type ReportFileToSend,
+} from "./reportSubmit";
 
 const BOUNDS_KEY = "reportWindowBounds";
 const DEFAULT_SIZE = { width: 640, height: 780 };
@@ -29,20 +35,32 @@ const DEFAULT_SIZE = { width: 640, height: 780 };
 export const REPORT_CHANNELS = {
     open: "report:open",
     showInfo: "report:show-info",
-    showCopy: "report:show-copy",
-    diagnostics: "report:diagnostics",
+    submit: "report:submit",
+    /** Main → report window: which step of sending is under way */
+    progress: "report:progress",
     /** Main → main window: send your diagnostics back on `diagnosticsReply` */
     collectDiagnostics: "report:collect-diagnostics",
     diagnosticsReply: "report:diagnostics-reply",
 } as const;
 
-export interface ReportShowCopy {
-    /** Where the scrubbed copy was written (a temp file) */
-    readonly path: string;
-    /** The show's own file name, for display */
-    readonly fileName: string;
-    readonly bytes: number;
+/** What the report window sends; main adds the show copy and diagnostics. */
+export interface ReportSubmitRequest {
+    /** The API's `report` object, without `files` */
+    readonly report: Record<string, unknown>;
+    readonly sendShowFile: boolean;
+    readonly includeAudio: boolean;
+    readonly recording?: {
+        readonly bytes: ArrayBuffer;
+        readonly mimeType: string;
+        readonly seconds: number;
+    };
 }
+
+const ensureSlash = (url: string) => (url.endsWith("/") ? url : `${url}/`);
+const EDITOR_API_BASE = ensureSlash(
+    import.meta.env.VITE_EDITOR_API_URL ??
+        "https://app.openmarch.com/api/editor/",
+);
 
 let reportWindow: BrowserWindow | null = null;
 /** Scrubbed copies written for the open window; deleted when it closes. */
@@ -158,6 +176,55 @@ function collectDiagnostics(main: BrowserWindow | null): Promise<unknown[]> {
     });
 }
 
+/** The show copy, the recording and the diagnostics, written to temp files for upload. */
+async function gatherReportFiles(
+    request: ReportSubmitRequest,
+    temp: (name: string) => string,
+    getMainWindow: () => BrowserWindow | null,
+): Promise<ReportFileToSend[]> {
+    const out: ReportFileToSend[] = [];
+    if (request.sendShowFile) {
+        const source = getDbPath();
+        if (source && fs.existsSync(source)) {
+            const copy = temp("show.dots");
+            writeReportCopy(source, copy, {
+                includeAudio: !!request.includeAudio,
+            });
+            out.push({
+                slot: "show_file",
+                path: copy,
+                filename: path.basename(source),
+                contentType: "application/octet-stream",
+            });
+        }
+    }
+    if (request.recording) {
+        const ext = request.recording.mimeType.includes("mp4") ? "mp4" : "webm";
+        const file = temp(`recording.${ext}`);
+        fs.writeFileSync(file, Buffer.from(request.recording.bytes));
+        out.push({
+            slot: "recording",
+            path: file,
+            filename: `screen-recording.${ext}`,
+            contentType: request.recording.mimeType.split(";")[0],
+            durationSeconds: request.recording.seconds,
+        });
+    }
+    const diagnostics = temp("diagnostics.json");
+    fs.writeFileSync(
+        diagnostics,
+        JSON.stringify(await collectDiagnostics(getMainWindow())),
+    );
+    out.push({
+        slot: "diagnostics",
+        path: diagnostics,
+        filename: "diagnostics.json",
+        contentType: "application/json",
+    });
+
+    return out;
+}
+
 export function registerReportWindow(options: FeedbackOptions) {
     ipcMain.handle(REPORT_CHANNELS.open, () => openReportWindow(options));
 
@@ -171,31 +238,57 @@ export function registerReportWindow(options: FeedbackOptions) {
     });
 
     ipcMain.handle(
-        REPORT_CHANNELS.showCopy,
-        (event, { includeAudio }: { includeAudio: boolean }) => {
-            if (!isReportWindow(event.sender)) return null;
-            const source = getDbPath();
-            if (!source || !fs.existsSync(source)) return null;
-            const destination = path.join(
-                os.tmpdir(),
-                `openmarch-report-${Date.now()}.dots`,
-            );
-            tempCopies.add(destination);
-            writeReportCopy(source, destination, {
-                includeAudio: !!includeAudio,
-            });
-            return {
-                path: destination,
-                fileName: path.basename(source),
-                bytes: fs.statSync(destination).size,
-            } satisfies ReportShowCopy;
+        REPORT_CHANNELS.submit,
+        async (event, request: ReportSubmitRequest) => {
+            if (!isReportWindow(event.sender))
+                throw new Error("Only the report window can send reports");
+            const files: ReportFileToSend[] = [];
+            const stamp = Date.now();
+            const temp = (name: string) => {
+                const file = path.join(
+                    os.tmpdir(),
+                    `openmarch-report-${stamp}-${name}`,
+                );
+                tempCopies.add(file);
+                return file;
+            };
+            try {
+                files.push(
+                    ...(await gatherReportFiles(
+                        request,
+                        temp,
+                        options.getMainWindow,
+                    )),
+                );
+                const { id } = await submitReportFromMain(
+                    {
+                        apiBase: EDITOR_API_BASE,
+                        getToken: getValidAccessToken,
+                        fetch,
+                        onProgress: (step) =>
+                            event.sender.send(REPORT_CHANNELS.progress, step),
+                    },
+                    request.report,
+                    files,
+                );
+                return { ok: true as const, id };
+            } catch (error) {
+                return {
+                    ok: false as const,
+                    status:
+                        error instanceof ReportSubmitError
+                            ? error.status
+                            : undefined,
+                    message:
+                        error instanceof Error ? error.message : String(error),
+                };
+            } finally {
+                for (const file of files) {
+                    fs.rmSync(file.path, { force: true });
+                    tempCopies.delete(file.path);
+                }
+            }
         },
-    );
-
-    ipcMain.handle(REPORT_CHANNELS.diagnostics, (event) =>
-        isReportWindow(event.sender)
-            ? collectDiagnostics(options.getMainWindow())
-            : [],
     );
 
     // Recording: the report window asks for the screen and gets only the

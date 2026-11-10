@@ -32,11 +32,11 @@ import {
     type ReportDraft,
 } from "./reportForm";
 import { useReportRecording } from "./useReportRecording";
-import { ReportsNotConnectedError, submitReport } from "./reportsApi";
+import { ReportSendError, submitReport } from "./reportsApi";
 
 interface ReportFormProps {
     context: ReportContext;
-    onSent: () => void;
+    onSent: (reportUrl: string) => void;
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -67,38 +67,52 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
     const hasVideo = recording.state.status === "done";
     const sendsShowFile = draft.sendShowFile && showFileName !== null;
 
+    const [step, setStep] = useState<string | null>(null);
+    useEffect(
+        () =>
+            window.electron.report.onProgress((p) =>
+                setStep(
+                    p.kind === "creating"
+                        ? "feedback.sending.creating"
+                        : `feedback.sending.${p.slot}`,
+                ),
+            ),
+        [],
+    );
+
     async function send() {
         setSending(true);
+        setStep(null);
         try {
             const payload = buildPayload(draft, context, {
                 hasVideo,
                 hasShowFile: sendsShowFile,
             });
-            const [copy, diagnostics] = await Promise.all([
-                sendsShowFile
-                    ? window.electron.report.showCopy({
-                          includeAudio: draft.includeMusic,
-                      })
-                    : Promise.resolve(null),
-                window.electron.report.diagnostics(),
-            ]);
-            await submitReport(payload, {
-                showFilePath: copy?.path,
+            const { url } = await submitReport(payload, {
+                sendShowFile: sendsShowFile,
+                includeAudio: draft.includeMusic,
                 recording:
                     recording.state.status === "done"
-                        ? recording.state.blob
+                        ? {
+                              blob: recording.state.blob,
+                              seconds: recording.state.seconds,
+                          }
                         : undefined,
-                diagnostics,
             });
-            onSent();
+            onSent(url);
         } catch (error) {
+            const status =
+                error instanceof ReportSendError ? error.status : undefined;
             toast.error(
-                error instanceof ReportsNotConnectedError
-                    ? t("feedback.error.notConnected")
-                    : t("feedback.error.failed"),
+                status === 401
+                    ? t("feedback.error.signedOut")
+                    : status === 429
+                      ? t("feedback.error.tooMany")
+                      : t("feedback.error.failed"),
             );
         } finally {
             setSending(false);
+            setStep(null);
         }
     }
 
@@ -265,7 +279,7 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
                             <T
                                 keyName={
                                     sending
-                                        ? "feedback.sending"
+                                        ? (step ?? "feedback.sending")
                                         : "feedback.send"
                                 }
                             />

@@ -3803,9 +3803,15 @@
         "send": "Send report",
         "sending": "Sending…",
         "retention": "Files you send with a report are deleted from our servers after 2 months.",
-        "error.notConnected": "Sending reports isn't available yet.",
         "error.failed": "Your report couldn't be sent. Check your connection and try again.",
         "attach.music.off": "The music isn't sent.",
-        "attach.music.on": "The music is sent too."
+        "attach.music.on": "The music is sent too.",
+        "sending.recording": "Uploading the recording…",
+        "sending.show_file": "Uploading your show…",
+        "sending.diagnostics": "Uploading diagnostics…",
+        "sending.creating": "Sending…",
+        "sent.view": "View this report",
+        "error.signedOut": "You've been signed out. Sign in again and send the report.",
+        "error.tooMany": "You've sent a lot of reports today. Please try again tomorrow."
     }
 }

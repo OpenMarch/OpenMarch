@@ -17,7 +17,6 @@ import {
     githubBugReportUrl,
     type ReportContext,
 } from "./reportForm";
-import { MY_REPORTS_URL } from "./reportsApi";
 
 const queryClient = new QueryClient();
 
@@ -63,13 +62,11 @@ export default function ReportWindow() {
 
 function ReportBody() {
     const { isAuthenticated, isLoading } = useAuth();
-    const [sent, setSent] = useState(false);
+    const [sent, setSent] = useState<string | null>(null);
     if (isLoading) return null;
     if (!isAuthenticated) return <SignInGate />;
-    if (sent) return <Sent onAnother={() => setSent(false)} />;
-    return (
-        <ReportForm context={reportContext()} onSent={() => setSent(true)} />
-    );
+    if (sent) return <Sent url={sent} onAnother={() => setSent(null)} />;
+    return <ReportForm context={reportContext()} onSent={setSent} />;
 }
 
 function SignInGate() {
@@ -116,7 +113,7 @@ function SignInGate() {
     );
 }
 
-function Sent({ onAnother }: { onAnother: () => void }) {
+function Sent({ url, onAnother }: { url: string; onAnother: () => void }) {
     return (
         <section className="mx-auto flex max-w-[28rem] flex-col gap-16 px-24 py-48">
             <h1 className="text-h4">
@@ -128,11 +125,11 @@ function Sent({ onAnother }: { onAnother: () => void }) {
             <div className="flex gap-8">
                 <a
                     className="text-accent text-body underline"
-                    href={MY_REPORTS_URL}
+                    href={url}
                     target="_blank"
                     rel="noreferrer"
                 >
-                    <T keyName="feedback.viewMyReports" />
+                    <T keyName="feedback.sent.view" />
                 </a>
                 <Button variant="secondary" size="compact" onClick={onAnother}>
                     <T keyName="feedback.sent.another" />

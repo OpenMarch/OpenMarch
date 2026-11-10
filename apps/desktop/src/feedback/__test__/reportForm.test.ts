@@ -46,10 +46,16 @@ describe("buildPayload", () => {
             hasVideo: false,
             hasShowFile: true,
         });
+        expect(payload.kind).toBe("broken");
+        expect(payload.channel).toBe("desktop");
         expect(payload.title).toBe("Undo skips a step");
         expect(payload.answers).toEqual({
-            whatWentWrong: "Undo jumped back two moves",
+            what_went_wrong: "Undo jumped back two moves",
             expected: "One move",
+        });
+        expect(payload.context).toEqual({
+            app_version: "0.2.0",
+            platform: "darwin-arm64",
         });
     });
 
@@ -66,9 +72,11 @@ describe("buildPayload", () => {
             hasVideo: false,
             hasShowFile: true,
         });
-        expect(payload.consent_video_public).toBe(false);
-        expect(payload.consent_show_file_public).toBe(true);
-        expect(payload.consent_credit_by_name).toBe(true);
+        expect(payload.consent).toEqual({
+            video_public: false,
+            show_file_public: true,
+            credit_name: true,
+        });
     });
 
     it("refuses a draft that isn't ready", () => {

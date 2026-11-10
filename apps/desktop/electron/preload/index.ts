@@ -162,16 +162,41 @@ const APP_API = {
             ipcRenderer.invoke("report:show-info") as Promise<{
                 fileName: string;
             } | null>,
-        /** Writes a scrubbed copy of the open show; null when no show is open */
-        showCopy: (options: { includeAudio: boolean }) =>
-            ipcRenderer.invoke("report:show-copy", options) as Promise<{
-                path: string;
-                fileName: string;
-                bytes: number;
-            } | null>,
-        /** The editor window's recent actions, errors and console lines */
-        diagnostics: () =>
-            ipcRenderer.invoke("report:diagnostics") as Promise<unknown[]>,
+        /** Sends the report: main scrubs the show, collects diagnostics and uploads */
+        submit: (request: {
+            report: Record<string, unknown>;
+            sendShowFile: boolean;
+            includeAudio: boolean;
+            recording?: {
+                bytes: ArrayBuffer;
+                mimeType: string;
+                seconds: number;
+            };
+        }) =>
+            ipcRenderer.invoke("report:submit", request) as Promise<
+                | { ok: true; id: number }
+                | { ok: false; status?: number; message: string }
+            >,
+        /** Which step of sending is under way */
+        onProgress: (
+            callback: (
+                step:
+                    | {
+                          kind: "uploading";
+                          slot: "recording" | "show_file" | "diagnostics";
+                      }
+                    | { kind: "creating" },
+            ) => void,
+        ) => {
+            const listener = (
+                _e: Electron.IpcRendererEvent,
+                step: Parameters<typeof callback>[0],
+            ) => callback(step);
+            ipcRenderer.on("report:progress", listener);
+            return () => {
+                ipcRenderer.removeListener("report:progress", listener);
+            };
+        },
         /** In the editor window: answer requests for its diagnostics */
         answerDiagnostics: (collect: () => unknown[]) => {
             const listener = (
