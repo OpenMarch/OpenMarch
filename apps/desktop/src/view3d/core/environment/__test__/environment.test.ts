@@ -12,7 +12,6 @@ import {
 import type { LightingPreset, SeatRow } from "../../types";
 import {
     buildCrowd,
-    calmTeamColor,
     createEnvironment,
     crowdBlockGeometry,
     createSharedMaterials,
@@ -326,8 +325,8 @@ describe("buildCrowd", () => {
             homeColor: "#112233",
             awayColor: "bad",
         });
-        expect(p.home[0]).toBe(calmTeamColor(0x112233));
-        expect(p.away[0]).toBe(calmTeamColor(0xc23b3b));
+        expect(p.home[0]).toBe(0x112233);
+        expect(p.away[0]).toBe(0xc23b3b);
     });
 
     it("clearAround hides people in range and the latest call wins", () => {

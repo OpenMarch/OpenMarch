@@ -22,7 +22,9 @@ import {
     createRng,
     createSharedMaterials,
     ft,
+    GROUND_LAYER,
     lightingValues,
+    setGroundLayer,
     SIGN_RIBBON,
     signRibbonTexture,
     setLightIntensity,
@@ -396,31 +398,47 @@ function isOverField(ctx: ProContext, [x, , z]: Vector3Tuple): boolean {
 
 /**
  * The ground: one plane under everything with the floor inside the bowl, in a
- * single draw. High quality adds the plaza and lots as a site plane that
+ * single draw, as rings that never overlap. High quality adds the plaza and lots as a site plane that
  * fades into the shared land layer; low quality has no land, so the plaza is
  * a plain slab in the same draw.
  */
 function addGround(ctx: ProContext) {
     const { shared, cx, cz, ax, az, rx, rz, quality } = ctx;
+    // The layers don't overlap: each is a ring around the next one in, so
+    // nothing on the ground can flash through another at range.
+    type Rect = [x0: number, x1: number, z0: number, z1: number];
     const pos: number[] = [];
     const col: number[] = [];
-    const quad = (
-        hx: number,
-        hz: number,
-        y: number,
-        hex: number,
-        [ox, oz]: [number, number] = [cx, cz],
-    ) => {
-        const c = new Color(hex);
-        const [x0, x1, z0, z1] = [ox - hx, ox + hx, oz - hz, oz + hz];
+    const rect = ([x0, x1, z0, z1]: Rect, y: number, c: Color) => {
+        if (x1 - x0 < 1e-6 || z1 - z0 < 1e-6) return;
         pos.push(x0, y, z0, x0, y, z1, x1, y, z1);
         pos.push(x0, y, z0, x1, y, z1, x1, y, z0);
         for (let i = 0; i < 6; i++) col.push(c.r, c.g, c.b);
     };
-    quad(ft(4500), ft(4500), -ft(0.3), 0x55575c, [0, 0]);
-    if (quality === "low")
-        quad(rx + PLAZA_DEPTH, rz + PLAZA_DEPTH, -ft(0.2), 0x7f7c75);
-    quad(ax + ft(5), az + ft(5), -ft(0.1), 0x2f6328);
+    /** `outer` minus `inner` (which lies inside it), as up to four rects. */
+    const ring = (outer: Rect, inner: Rect | null, y: number, hex: number) => {
+        const c = new Color(hex);
+        if (!inner) return rect(outer, y, c);
+        const [ox0, ox1, oz0, oz1] = outer;
+        const [ix0, ix1, iz0, iz1] = inner;
+        rect([ox0, ox1, oz0, iz0], y, c);
+        rect([ox0, ox1, iz1, oz1], y, c);
+        rect([ox0, ix0, iz0, iz1], y, c);
+        rect([ix1, ox1, iz0, iz1], y, c);
+    };
+    const around = (hx: number, hz: number): Rect => [
+        cx - hx,
+        cx + hx,
+        cz - hz,
+        cz + hz,
+    ];
+    const floor = around(ax + ft(5), az + ft(5));
+    const plaza =
+        quality === "low" ? around(rx + PLAZA_DEPTH, rz + PLAZA_DEPTH) : null;
+    const g = ft(4500);
+    ring([-g, g, -g, g], plaza ?? floor, -ft(0.3), 0x55575c);
+    if (plaza) ring(plaza, floor, -ft(0.2), 0x7f7c75);
+    ring(floor, null, -ft(0.1), 0x2f6328);
     const geo = new BufferGeometry();
     geo.setAttribute("position", new Float32BufferAttribute(pos, 3));
     geo.setAttribute("color", new Float32BufferAttribute(col, 3));
@@ -450,6 +468,7 @@ function addGround(ctx: ProContext) {
         depthWrite: false,
         alphaTest: 0.01,
     });
+    setGroundLayer(siteMat, GROUND_LAYER.site);
     const site = ctx.addMesh(
         new PlaneGeometry(2 * halfSize, 2 * halfSize),
         siteMat,

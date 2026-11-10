@@ -80,10 +80,9 @@ export function calmTeamColor(color: number): number {
     return c.getHex();
 }
 
-/** Everyday clothes: muted, and nothing close to white. */
+/** Everyday clothes: whites, darks and a few clear colors, as before blocks. */
 const STREET_CLOTHES = [
-    0x8a877d, 0x2c2f36, 0x434b5c, 0x5e443d, 0x7a705a, 0x485046, 0x62646a,
-    0x343a46, 0x3f3a36, 0x6f6a5f,
+    0xffffff, 0x22252c, 0x3b5b92, 0xb04a3a, 0xd9c48a, 0x5a6e4e,
 ];
 
 /** Muted head tones, picked per person in the shader. */
@@ -96,8 +95,8 @@ const HEADS = [0x8a6a55, 0x5e4737, 0x3d312a, 0x9a8c7c];
 export function defaultCrowdPalette(
     params?: Pick<VenueParams, "homeColor" | "awayColor">,
 ): CrowdPalette {
-    const home = calmTeamColor(hex(params?.homeColor ?? "", 0x6442ff));
-    const away = calmTeamColor(hex(params?.awayColor ?? "", 0xc23b3b));
+    const home = hex(params?.homeColor ?? "", 0x6442ff);
+    const away = hex(params?.awayColor ?? "", 0xc23b3b);
     return {
         home: [home, home, ...STREET_CLOTHES],
         away: [away, away, ...STREET_CLOTHES],
@@ -343,16 +342,17 @@ const CROWD_COLOR_GLSL = /* glsl */ `
 #ifdef USE_INSTANCING_COLOR
     {
         // Tone and head follow the person's place in the stand. Far away,
-        // everyone drifts to the crowd's average so neighbors don't shimmer.
+        // everyone drifts partway to the crowd's average so neighbors don't
+        // shimmer, but the stand keeps its colors.
         float crowdH = crowdHash(instanceMatrix[3].xyz);
         float crowdFade = crowdFar();
         if (aPart > 0.5) {
             vColor.rgb = uCrowdHead[int(crowdH * 4.0)];
-            vColor.rgb = mix(vColor.rgb, uCrowdMean * 1.05, crowdFade * 0.85);
+            vColor.rgb = mix(vColor.rgb, uCrowdMean * 1.05, crowdFade * 0.5);
         } else {
             vColor.rgb *= (0.88 + 0.24 * fract(crowdH * 5.1))
                 * mix(aShade, 1.0, crowdFade);
-            vColor.rgb = mix(vColor.rgb, uCrowdMean, crowdFade * 0.8);
+            vColor.rgb = mix(vColor.rgb, uCrowdMean, crowdFade * 0.35);
         }
     }
 #endif

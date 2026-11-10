@@ -5,7 +5,11 @@ import {
     PlaneGeometry,
     type CanvasTexture,
 } from "three";
-import { paintCanvasTexture } from "../environment";
+import {
+    GROUND_LAYER,
+    paintCanvasTexture,
+    setGroundLayer,
+} from "../environment";
 import type { VenueParams } from "../types";
 import {
     paintPlan,
@@ -135,6 +139,7 @@ export function buildFieldSurface(input: FieldSurfaceInput): FieldSurface {
         map: texture,
         roughness: ROUGHNESS[input.style],
     });
+    setGroundLayer(material, GROUND_LAYER.field);
     const geometry = new PlaneGeometry(f.maxX - f.minX, f.maxZ - f.minZ);
     const mesh = new Mesh(geometry, material);
     mesh.name = "fieldSurface";

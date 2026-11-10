@@ -40,6 +40,7 @@ export * from "./skyShader";
 export * from "./sky";
 export * from "./horizon";
 export * from "./land";
+export * from "./groundLayers";
 export * from "./envMap";
 export * from "./rig";
 export * from "./materials";

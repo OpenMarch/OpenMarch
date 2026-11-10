@@ -12,7 +12,7 @@ import {
     type BufferGeometry,
     type Object3D,
 } from "three";
-import { ft } from "../../environment";
+import { ft, GROUND_LAYER, setGroundLayer } from "../../environment";
 import type { Frame } from "../stands";
 import { mergeGeometries, QuadBuilder } from "./geometry";
 import {
@@ -133,7 +133,10 @@ export function buildTrackRibbon(f: Frame, high: boolean): Built {
     }
     const geometry = q.build();
     const map = trackTexture(TRACK_LANES);
-    const material = new MeshStandardMaterial({ map, roughness: 0.92 });
+    const material = setGroundLayer(
+        new MeshStandardMaterial({ map, roughness: 0.92 }),
+        GROUND_LAYER.track,
+    );
     const track = new Mesh(geometry, material);
     track.name = "track";
     track.receiveShadow = true;
@@ -147,6 +150,7 @@ export function buildTrackRibbon(f: Frame, high: boolean): Built {
             roughness: 0.9,
             depthWrite: false,
         });
+        setGroundLayer(finishMat, GROUND_LAYER.decal);
         const finishGeo = new PlaneGeometry(3.2, TRACK_WIDTH);
         const finish = new Mesh(finishGeo, finishMat);
         finish.name = "finishLine";

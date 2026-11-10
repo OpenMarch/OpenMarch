@@ -21,6 +21,7 @@ import {
     type Vector3Tuple,
 } from "three";
 import type { LightingPreset } from "../types";
+import { GROUND_LAYER, setGroundLayer } from "./groundLayers";
 import { lightingValues } from "./lighting";
 import { NOISE_GLSL } from "./skyShader";
 import { ft } from "./units";
@@ -205,8 +206,6 @@ export interface Land {
 export function createLand(): Land {
     const geometry = landGeometry();
     const material = new ShaderMaterial({
-        polygonOffset: true,
-        polygonOffsetUnits: -1,
         fog: false,
         uniforms: {
             uCenter: { value: new Vector2() },
@@ -220,6 +219,7 @@ export function createLand(): Land {
         vertexShader: VERTEX,
         fragmentShader: FRAGMENT,
     });
+    setGroundLayer(material, GROUND_LAYER.land);
     const mesh = new Mesh(geometry, material);
     mesh.name = "land";
     mesh.frustumCulled = false;

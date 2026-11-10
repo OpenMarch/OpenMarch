@@ -17,7 +17,12 @@ import {
     type Material,
     type Object3D,
 } from "three";
-import { createRng, type SharedMaterials } from "../../environment";
+import {
+    createRng,
+    GROUND_LAYER,
+    setGroundLayer,
+    type SharedMaterials,
+} from "../../environment";
 import type { LightingPreset, VenueParams } from "../../types";
 import type { Frame } from "../stands";
 import { BoxBatch, mergeGeometries, QuadBuilder } from "./geometry";
@@ -625,6 +630,7 @@ export function buildSite(
         emissiveMap: nightMap,
         emissiveIntensity: 0,
     });
+    setGroundLayer(siteMat, GROUND_LAYER.site);
     const siteGeo = new PlaneGeometry(layout.size, layout.size);
     siteGeo.setAttribute("uv1", siteGeo.getAttribute("uv").clone());
     const site = new Mesh(siteGeo, siteMat);
@@ -675,6 +681,7 @@ export function buildSite(
                 emissiveMap: nightMap,
                 emissiveIntensity: 0,
             });
+            setGroundLayer(mat, GROUND_LAYER.lots);
             const mesh = new Mesh(geo, mat);
             mesh.name = "lots";
             mesh.receiveShadow = true;

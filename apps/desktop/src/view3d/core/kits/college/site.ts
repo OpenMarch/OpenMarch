@@ -11,7 +11,12 @@ import {
     type CanvasTexture,
     type Object3D,
 } from "three";
-import { createRng, paintCanvasTexture } from "../../environment";
+import {
+    createRng,
+    GROUND_LAYER,
+    paintCanvasTexture,
+    setGroundLayer,
+} from "../../environment";
 import type { Frame } from "../stands";
 import type { Extents, Gate } from "./exterior";
 
@@ -407,6 +412,7 @@ export function buildCollegeSite(
         emissiveMap: nightMap,
         emissiveIntensity: 0,
     });
+    setGroundLayer(mat, GROUND_LAYER.site);
     const geo = new PlaneGeometry(layout.size, layout.size);
     const site = new Mesh(geo, mat);
     site.name = "college.site";

@@ -21,8 +21,10 @@ import {
 import {
     createSharedMaterials,
     ft,
+    GROUND_LAYER,
     lightingValues,
     setLightIntensity,
+    setGroundLayer,
     SIGN_RIBBON,
     signRibbonTexture,
     videoBoard,
@@ -359,11 +361,17 @@ export const buildCollege: KitBuilder = ({ footprint, params, quality }) => {
         color: number,
         at: Vector3Tuple,
         name: string,
+        level: number,
     ) => {
         const geo = new PlaneGeometry(w, d);
         const m = add(
             geo,
-            mat(new MeshStandardMaterial({ color, roughness: 1 })),
+            mat(
+                setGroundLayer(
+                    new MeshStandardMaterial({ color, roughness: 1 }),
+                    level,
+                ),
+            ),
             name,
             false,
         )!;
@@ -372,8 +380,22 @@ export const buildCollege: KitBuilder = ({ footprint, params, quality }) => {
         m.userData.ground = true;
         return m;
     };
-    plane(GROUND_SIZE, GROUND_SIZE, 0x565c4c, [f.cx, GROUND_Y, f.cz], "ground");
-    plane(2 * halfX, 2 * halfZ, 0x2f6a2b, [f.cx, 0.004, f.cz], "apron");
+    plane(
+        GROUND_SIZE,
+        GROUND_SIZE,
+        0x565c4c,
+        [f.cx, GROUND_Y, f.cz],
+        "ground",
+        GROUND_LAYER.ground,
+    );
+    plane(
+        2 * halfX,
+        2 * halfZ,
+        0x2f6a2b,
+        [f.cx, 0.004, f.cz],
+        "apron",
+        GROUND_LAYER.track,
+    );
 
     // Seating.
     const buckets: SeatingBuckets = {
