@@ -20,12 +20,13 @@ bottom edge of the page row, with the keyframe diamonds.
 - Make a page Not defined: right-click a page box and pick **Clear Page N**.
   A dashed bar runs from the diamond where the marchers last arrived to the
   tick where they move again.
-- Right-click a dashed page and pick **Hold from previous page**. That page
+- Right-click a dashed page and pick **Hold from last keyframe**. That page
   turns solid: it's Held.
 - Drag the selected marchers on the page before a dashed page. While you
   drag, the bars the edit will carry into grow thicker in the accent color.
   Then drag on a Held page. The whole hold lights up, back to where it
-  starts.
+  starts. (In Expert, click the hold's first page box first: a window that
+  starts later in the hold ends the hold there instead.)
 - Right-click a keyframe diamond and point at **Remove keyframe, Pages N–M
   move back too**. The pages that would move back light up. Point at plain
   **Remove keyframe** and they go dark. Do the same in the command palette
