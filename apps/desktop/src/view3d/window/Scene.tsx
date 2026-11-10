@@ -309,6 +309,7 @@ function SceneContents({
         const preset = kit.lightingPresets.includes(settings.lighting)
             ? settings.lighting
             : kit.defaultLighting;
+        env.setSurroundings(kit.surroundings !== false);
         env.setLighting(preset, kit.focus);
         gl.toneMappingExposure = env.exposure;
         kit.setLighting(preset);

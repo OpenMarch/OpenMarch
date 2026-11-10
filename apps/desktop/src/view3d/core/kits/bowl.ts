@@ -108,6 +108,59 @@ export function outlineOffset(
 }
 
 /**
+ * Which of a bowl outline's segments belong to each part of the rounded
+ * rectangle, in ring order: front straight, side-2 corner, side-2 end,
+ * back corner, back straight, back corner, side-1 end, side-1 corner.
+ */
+export const RING_PARTS: { kind: "x" | "z" | "arc"; segments: number }[] = [
+    { kind: "x", segments: NX },
+    { kind: "arc", segments: NA },
+    { kind: "z", segments: NZ },
+    { kind: "arc", segments: NA },
+    { kind: "x", segments: NX },
+    { kind: "arc", segments: NA },
+    { kind: "z", segments: NZ },
+    { kind: "arc", segments: NA },
+];
+
+/** Segments per seating section on each kind of ring part. */
+export interface SectionLayout {
+    x: number;
+    z: number;
+    arc: number;
+}
+
+/**
+ * Splits every ring of a bowl outline into seating sections whose aisles run
+ * straight down the bowl: parallel on the straights, fanning out radially in
+ * the corners. Returns the point index where each section starts (ascending,
+ * the first is 0) and a texture `u` per point (length `RING_POINTS + 1`, so
+ * the closing segment has its own end value) that counts sections: section k
+ * spans u = k to k + 1.
+ */
+export function ringSections(layout: SectionLayout): {
+    starts: number[];
+    u: number[];
+} {
+    const starts: number[] = [];
+    const u: number[] = [0];
+    let index = 0;
+    for (const part of RING_PARTS) {
+        const per = layout[part.kind];
+        if (per < 1 || part.segments % per !== 0)
+            throw new Error(
+                `ringSections: ${part.segments} ${part.kind} segments don't split into ${per}`,
+            );
+        for (let s = 0; s < part.segments; s++) {
+            if (s % per === 0) starts.push(index);
+            u.push(u[u.length - 1] + 1 / per);
+            index++;
+        }
+    }
+    return { starts, u };
+}
+
+/**
  * Two rings to join, how many meters of ring one texture tile spans, and
  * where along the tile (in tiles) the band's first point starts.
  */
@@ -116,6 +169,11 @@ export interface RingPair {
     b: Ring;
     tile?: number;
     uOffset?: number;
+    /**
+     * Texture `u` per ring point (length `a.length + 1`; the last value ends
+     * the closing segment). Overrides `tile` and `uOffset` when set.
+     */
+    u?: number[];
 }
 
 /**
@@ -130,8 +188,11 @@ export function ringBand(
     uv: number[],
     tile: number,
     uOffset = 0,
+    uAt?: number[],
 ): void {
     if (a.length !== b.length) throw new Error("ringBand: ring sizes differ");
+    if (uAt && uAt.length !== a.length + 1)
+        throw new Error("ringBand: u needs one value per point plus one");
     let u = uOffset * tile;
     for (let i = 0; i < a.length; i++) {
         const j = (i + 1) % a.length;
@@ -140,8 +201,8 @@ export function ringBand(
         const q = a[j];
         const r = b[j];
         const s = b[i];
-        const u0 = u / tile;
-        const u1 = (u + seg) / tile;
+        const u0 = uAt ? uAt[i] : u / tile;
+        const u1 = uAt ? uAt[i + 1] : (u + seg) / tile;
         pos.push(p.x, p.y, p.z, q.x, q.y, q.z, r.x, r.y, r.z);
         pos.push(p.x, p.y, p.z, r.x, r.y, r.z, s.x, s.y, s.z);
         uv.push(u0, 0, u1, 0, u1, 1, u0, 0, u1, 1, u0, 1);
@@ -156,8 +217,8 @@ export const DEFAULT_BAND_TILE = ft(40);
 export function bandGeometry(pairs: RingPair[]): BufferGeometry {
     const pos: number[] = [];
     const uv: number[] = [];
-    for (const { a, b, tile, uOffset } of pairs)
-        ringBand(a, b, pos, uv, tile ?? DEFAULT_BAND_TILE, uOffset);
+    for (const { a, b, tile, uOffset, u } of pairs)
+        ringBand(a, b, pos, uv, tile ?? DEFAULT_BAND_TILE, uOffset, u);
     const geo = new BufferGeometry();
     geo.setAttribute("position", new Float32BufferAttribute(pos, 3));
     geo.setAttribute("uv", new Float32BufferAttribute(uv, 2));
@@ -182,6 +243,11 @@ export interface BowlTier {
     fascia?: boolean;
     /** Crowd side for this tier's seat rows. */
     side?: SeatRow["side"];
+    /**
+     * Seating sections: when set, tread `u` counts sections (`ringSections`)
+     * instead of meters, so one texture tile spans one section and its aisles.
+     */
+    sections?: SectionLayout;
 }
 
 /** Where a built tier ends. */
@@ -239,6 +305,7 @@ export function bowlTiers(
     };
     for (const t of tiers) {
         let prevH = t.bottom;
+        const treadU = t.sections ? ringSections(t.sections).u : undefined;
         for (let i = 0; i < t.rows; i++) {
             const o = t.offset + i * t.depth;
             const h = t.base + i * t.rise;
@@ -250,7 +317,11 @@ export function bowlTiers(
                     tile: fasciaTile,
                 });
             else out.risers.push({ a: outline(o, prevH), b: front });
-            out.treads.push({ a: front, b: outline(o + t.depth, h) });
+            out.treads.push({
+                a: front,
+                b: outline(o + t.depth, h),
+                u: treadU,
+            });
             out.seatRows.push({
                 points: outline(o + t.depth * 0.45, h + seatHeight).map(
                     (p): Vector3Tuple => [p.x, p.y, p.z],
