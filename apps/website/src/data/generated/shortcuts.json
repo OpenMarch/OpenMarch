@@ -1068,7 +1068,7 @@
                     ]
                 },
                 {
-                    "label": "Hold from previous page",
+                    "label": "Hold from last keyframe",
                     "other": [
                         {
                             "keys": [
@@ -1087,7 +1087,7 @@
                     ]
                 },
                 {
-                    "label": "Copy positions from next page (all marchers)",
+                    "label": "Move to next page's spots (all marchers)",
                     "other": [
                         {
                             "keys": [
@@ -1108,7 +1108,7 @@
                     ]
                 },
                 {
-                    "label": "Copy positions from next page (selected)",
+                    "label": "Move to next page's spots (selected)",
                     "other": [
                         {
                             "keys": [
@@ -2331,7 +2331,7 @@
                     ]
                 },
                 {
-                    "label": "Hold from previous page",
+                    "label": "Hold from last keyframe",
                     "other": [
                         {
                             "keys": [
@@ -2350,7 +2350,7 @@
                     ]
                 },
                 {
-                    "label": "Copy positions from next page (all marchers)",
+                    "label": "Move to next page's spots (all marchers)",
                     "other": [
                         {
                             "keys": [
@@ -2371,7 +2371,7 @@
                     ]
                 },
                 {
-                    "label": "Copy positions from next page (selected)",
+                    "label": "Move to next page's spots (selected)",
                     "other": [
                         {
                             "keys": [

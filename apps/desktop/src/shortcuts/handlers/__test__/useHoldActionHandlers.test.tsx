@@ -21,7 +21,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
-import { isActionChecked, isActionEnabled, runAction } from "../../registry";
+import { holdOverWindow } from "@/db-functions/timelineHoldOverWindow";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import {
+    isActionChecked,
+    isActionEnabled,
+    previewAction,
+    runAction,
+} from "../../registry";
+import { useHoldLightStore } from "@/timeline/holdLight";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
 import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
 
@@ -76,6 +85,14 @@ vi.mock("@/db-functions/timelineHoldFromPrevious", () => ({
         Promise.resolve({
             held: [1],
             skipped: [{ marcherId: 2, reason: "noArrival" }],
+        }),
+    ),
+}));
+vi.mock("@/db-functions/timelineHoldOverWindow", () => ({
+    holdOverWindow: vi.fn(() =>
+        Promise.resolve({
+            held: [1],
+            skipped: [{ marcherId: 2, reason: "followLeader" }],
         }),
     ),
 }));
@@ -157,7 +174,7 @@ afterEach(() => {
 });
 
 describe("hold actions", () => {
-    it("Hold from previous page: the action on the current page does what the page box menu does there", async () => {
+    it("Hold from last keyframe: the action on the current page does what the page box menu does there", async () => {
         const ids = [1, 2];
         mount(ids);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(true);
@@ -219,6 +236,73 @@ describe("hold actions", () => {
     });
 });
 
+describe("Expert hold tools (#476)", () => {
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+            isolation: null,
+        });
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        setWindow(9, 13);
+        vi.mocked(holdOverWindow).mockClear();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("Hold from start flag to playhead holds the selection over the window, and names only who it left alone", async () => {
+        mount([1, 2]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(true);
+        expect(runAction("timelineHoldOverWindow")).toBe(true);
+        await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+        expect(vi.mocked(holdOverWindow).mock.calls[0]![0]).toMatchObject({
+            window: { start: 9, end: 13 },
+            marcherIds: [1, 2],
+        });
+        expect(vi.mocked(toast.info).mock.calls[0]).toEqual([
+            "1 marcher not held",
+            {
+                description:
+                    "T2: follows the leader between the start flag and the playhead",
+            },
+        ]);
+    });
+
+    it("is off in Basic, without a selection, and while playing", () => {
+        useEditorModeStore.setState({ mode: "basic" });
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        useEditorModeStore.setState({ mode: "expert" });
+        mount([]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        expect(holdOverWindow).not.toHaveBeenCalled();
+    });
+
+    it("highlighting it shows the hold it would make, reaching back like the write", () => {
+        setWindow(11, 13);
+        // The show's page boxes: the preview stays inside the show, which ends at page 3's end
+        useTimelineSelectionStore.setState({
+            pageBoxes: [
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ],
+        });
+        useHeldMarksStore.setState({ marks: [] });
+        mount([3]);
+        previewAction("timelineHoldOverWindow", true);
+        const light = useHoldLightStore.getState().light;
+        expect(light?.wouldHold).toBe(true);
+        // Marcher 3 stands on its starting spot: reaches back to the show's first page
+        expect(light?.byMarcher.get(3)).toEqual([{ start: 1, end: 13 }]);
+        previewAction("timelineHoldOverWindow", false);
+        expect(useHoldLightStore.getState().light).toBeNull();
+    });
+});
+
 /** The field menu with the real handlers: the hold actions and Clear this page */
 function FieldMenuHarness() {
     useHoldActionHandlers();
@@ -256,14 +340,14 @@ const heldOnPage3 = (marcherId: number) => ({
 });
 
 describe("the field menu shows the selection's state on the current page", () => {
-    it("all Held: Hold from previous page is checked, and off for the palette and H too", () => {
+    it("all Held: Hold from last keyframe is checked, and off for the palette and H too", () => {
         // Marcher 1 has no move on page 3; its mark makes it Held there
         useHeldMarksStore.setState({ marks: [heldOnPage3(1)] });
         openFieldMenu([1]);
         const hold = entry("timelineHoldFromPrevious");
         expect(hold).toHaveAttribute("aria-checked", "true");
         expect(hold).toHaveAttribute("data-disabled");
-        expect(hold).toHaveTextContent(/^Hold from previous page/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe/);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(isActionChecked("timelineHoldFromPrevious")).toBe(true);
         expect(runAction("timelineHoldFromPrevious")).toBe(false);
@@ -286,7 +370,7 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(isActionEnabled("timelineDefineAsShown")).toBe(true);
         // Ctrl+H after it is its shortcut (the test runs as Windows/Linux)
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
-            /^Hold from previous page.*Ctrl\+H$/,
+            /^Hold from last keyframe.*Ctrl\+H$/,
         );
         // #573: it names the page
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(

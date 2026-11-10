@@ -1,6 +1,7 @@
 import {
     createContext,
     useContext,
+    useEffect,
     useId,
     useState,
     type MouseEvent,
@@ -79,6 +80,7 @@ export function MenuItemWithReason({
     reason,
     reasonTestId,
     onSelect,
+    onHighlight,
     className = MENU_ITEM_CLASS,
     checked,
     children,
@@ -87,6 +89,8 @@ export function MenuItemWithReason({
     reason: string | null;
     reasonTestId: string;
     onSelect: () => void;
+    /** The pointer or keys came onto the entry (true) or left it (false) */
+    onHighlight?: (on: boolean) => void;
     className?: string;
     checked?: boolean;
     children: ReactNode;
@@ -113,8 +117,14 @@ export function MenuItemWithReason({
                     event.preventDefault();
                     setOpen(true);
                 }}
-                onFocus={() => setOpen(true)}
-                onBlur={() => setOpen(false)}
+                onFocus={() => {
+                    setOpen(true);
+                    onHighlight?.(true);
+                }}
+                onBlur={() => {
+                    setOpen(false);
+                    onHighlight?.(false);
+                }}
                 className={className}
             >
                 {unavailable ? (
@@ -193,6 +203,12 @@ function HoldCommandItem({
 }) {
     const entry = menu.entryOn?.(pageId);
     const label = name;
+    const preview = reason === null ? menu.onPreview : undefined;
+    // The menu closing takes the entry away without a blur
+    useEffect(
+        () => (preview ? () => preview(pageId, false) : undefined),
+        [preview, pageId],
+    );
     if (entry?.checked)
         return (
             <DropdownMenu.CheckboxItem
@@ -213,6 +229,7 @@ function HoldCommandItem({
             reason={reason}
             reasonTestId={`${testId}-reason`}
             onSelect={() => menu.onSet(pageId)}
+            onHighlight={preview && ((on) => preview(pageId, on))}
         >
             {icon}
             {label}
@@ -423,7 +440,7 @@ export interface TimelinePageMenu {
      */
     readonly setAsShown?: TimelineSetAsShownMenu;
     /**
-     * **Hold from previous page** on a page box (holds, fork #472). Without it, the menu has no
+     * **Hold from last keyframe** on a page box (holds, fork #472). Without it, the menu has no
      * such entry.
      */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
@@ -444,6 +461,18 @@ export interface TimelinePageMenu {
     readonly extraFor?: (
         pageId: string | number,
     ) => readonly TimelineMenuEntry[];
+    /**
+     * **Split hold here** on a Held bar's right-click (holds decision 5, fork #475), at the count
+     * under the pointer (view beats). Without it, the menu has no such entry.
+     */
+    readonly splitHold?: TimelineSplitHoldMenuView;
+}
+
+/** The menu's **Split hold here** entry (fork #475), by the right-clicked count (view beats). */
+export interface TimelineSplitHoldMenuView {
+    /** Whether a selected marcher's Held hold has the count strictly inside it */
+    readonly offeredAt: (beat: number) => boolean;
+    readonly onSplit: (beat: number) => void;
 }
 
 /** A page box menu entry for the selected marchers (holds), by page id. */
@@ -460,6 +489,8 @@ export interface TimelinePageCommandMenu {
      * would change for its label
      */
     readonly entryOn?: (pageId: string | number) => HoldEntryState | undefined;
+    /** Shows (`on`) or stops what the entry would do on the page, while it's highlighted */
+    readonly onPreview?: (pageId: string | number, on: boolean) => void;
 }
 
 /** The page box menu's **Clear Page N** entries (#573), by page id. */
@@ -494,6 +525,8 @@ export interface TimelineMenuTarget {
     readonly range: TimelineBeatRange;
     readonly trackId?: string;
     readonly pageId?: string;
+    /** On a hold bar: the count under the pointer, for **Split hold here** (#475) */
+    readonly holdBeat?: number;
 }
 
 /**
@@ -580,7 +613,8 @@ export function useTimelineRangeMenu({
                 menu?.holdFromPrevious !== undefined ||
                 menu?.clearPage !== undefined ||
                 menu?.subset !== undefined ||
-                menu?.extraFor !== undefined) &&
+                menu?.extraFor !== undefined ||
+                menu?.splitHold !== undefined) &&
             target.pageId !== undefined;
         if (!canDelete && !movesOf(target)) return;
         event.preventDefault();
@@ -603,6 +637,11 @@ export function useTimelineRangeMenu({
         open && menu?.extraFor && open.target.pageId !== undefined
             ? menu.extraFor(open.target.pageId)
             : [];
+    const splitHoldBeat =
+        open?.target.holdBeat !== undefined &&
+        menu?.splitHold?.offeredAt(open.target.holdBeat)
+            ? open.target.holdBeat
+            : undefined;
     const element = open && (
         <DropdownMenu.Root
             open
@@ -629,6 +668,27 @@ export function useTimelineRangeMenu({
                     className={TIMELINE_MENU_CONTENT_CLASS}
                 >
                     <TimelineMenuClose.Provider value={() => setOpen(null)}>
+                        {splitHoldBeat !== undefined && (
+                            <>
+                                <DropdownMenu.Item
+                                    data-testid="timeline-range-menu-split-hold"
+                                    className={MENU_ITEM_CLASS}
+                                    onSelect={() =>
+                                        menu?.splitHold?.onSplit(splitHoldBeat)
+                                    }
+                                >
+                                    <ScissorsIcon size={14} />
+                                    {tolgee.t(
+                                        "timeline.rangeMenu.splitHold",
+                                        "{splitHold}",
+                                        holdTerms(),
+                                    )}
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                            </>
+                        )}
                         {pageExtra.length > 0 && (
                             <>
                                 <TimelineMenuEntries entries={pageExtra} />

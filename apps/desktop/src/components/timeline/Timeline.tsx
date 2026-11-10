@@ -27,12 +27,16 @@ import {
     ExpandedTimeline,
 } from "./TimelineVariants";
 import type { TimelineBand } from "./TimelineBand";
-import type { PageKeepChains } from "./PageKeepChain";
 import type {
     TimelineKeyframe,
     TimelineKeyframeMenu,
 } from "./TimelineKeyframes";
-import type { SelectionHeldBar } from "@/timeline/timelineHeldBars";
+import type { SelectionHolds } from "@/timeline/timelineHoldBars";
+import type {
+    TimelineHoldEdgesInput,
+    TimelineSplitHoldMenu,
+} from "@/timeline/useHoldExtent";
+import type { TimelineHoldEdges } from "./TimelineHoldEdges";
 import type {
     TimelinePageMenu,
     TimelineSetAsShownMenu,
@@ -267,10 +271,12 @@ export interface TimelineProps {
     readonly keyframes?: readonly TimelineKeyframe[];
     /** #306: a keyframe diamond's right-click Unset actions, by spec beat; without it, no menu */
     readonly keyframeMenu?: TimelineKeyframeMenu;
-    /** #472: the selected marchers' Held holds, spec beats; none without a selection */
-    readonly heldBars?: readonly SelectionHeldBar[];
-    /** The chains on the page boxes (UI-18 keep later pages), by page id; none without a selection */
-    readonly keepChains?: PageKeepChains;
+    /** #472, #477: the selected marchers' hold bars and departures, spec beats */
+    readonly holds?: SelectionHolds;
+    /** #475: the draggable ends of their Held bars, spec beats; without it, none */
+    readonly holdEdges?: TimelineHoldEdgesInput;
+    /** #475: **Split hold here** on a Held bar's right-click, spec beats */
+    readonly splitHold?: TimelineSplitHoldMenu;
     /**
      * The moves a page box stands for, so they have no clip (`timelinesOffPages`), by track id.
      * One that gets a clip (its box was split, or a flag deleted) drops out of the page row
@@ -279,7 +285,7 @@ export interface TimelineProps {
     readonly pageMoves?: ReadonlySet<string | number>;
     /** The page box menu's **Set as shown** (holds, fork #466) */
     readonly setAsShown?: TimelineSetAsShownMenu;
-    /** **Hold from previous page** on a page box (holds, fork #472) */
+    /** **Hold from last keyframe** on a page box (holds, fork #472) */
     readonly holdFromPrevious?: TimelinePageCommandMenu;
     /** **Clear Page N** on a page box (#573) */
     readonly clearPage?: TimelineClearPageMenu;
@@ -457,7 +463,7 @@ const READ_ONLY_EDITS = {
     clipResize: undefined,
     onUnpinStart: undefined,
     holdMarks: undefined,
-    keepChains: undefined,
+    holdEdges: undefined,
     pageMoves: undefined,
     basicPoints: undefined,
     onRemoveBasicPoint: undefined,
@@ -651,6 +657,7 @@ export function Timeline(props: TimelineProps) {
         holdFromPrevious,
         clearPage,
         pageMenuExtra,
+        splitHold,
     } = props;
     // A clip's stored spec range, else the view range mapped back
     const specRangeOf = ({ range, trackId }: TimelineMenuTarget) => {
@@ -727,8 +734,19 @@ export function Timeline(props: TimelineProps) {
             ? (pageId: string | number) => pageMenuExtra(Number(pageId))
             : undefined,
     );
+    // #475: Split hold here at the right-clicked count, mapped back to spec beats
+    const viewSplitHold = useMemo(
+        () =>
+            splitHold && {
+                offeredAt: (beat: number) =>
+                    splitHold.offeredAt(axis.toSpec(beat)),
+                onSplit: (beat: number) => splitHold.onSplit(axis.toSpec(beat)),
+            },
+        [axis, splitHold],
+    );
     const hasPageMenu = !!(
         pageMenuExtra ||
+        splitHold ||
         pageMenu ||
         onDeletePageFlag ||
         onDeletePageWithMoves ||
@@ -750,9 +768,11 @@ export function Timeline(props: TimelineProps) {
                       ...(clearPage ? { clearPage } : {}),
                       ...(subsetMenu ? { subset: subsetMenu } : {}),
                       ...(pageExtra ? { extraFor: pageExtra } : {}),
+                      ...(viewSplitHold ? { splitHold: viewSplitHold } : {}),
                   }
                 : undefined,
         [
+            viewSplitHold,
             deleteFlag,
             deleteWithMoves,
             hasPageMenu,
@@ -958,17 +978,56 @@ export function Timeline(props: TimelineProps) {
             })),
         [axis, keyframes],
     );
-    // #472: the selection's Held bars on the view axis
-    const { heldBars } = props;
-    const viewHeldBars = useMemo(
+    // #472, #477: the selection's hold bars and departures on the view axis
+    const { holds } = props;
+    const viewHolds = useMemo<SelectionHolds | undefined>(
         () =>
-            heldBars?.map((bar) => ({
-                ...bar,
-                start: axis.toView(bar.start),
-                end: axis.toView(bar.end),
-            })),
-        [axis, heldBars],
+            holds && {
+                bars: holds.bars
+                    .map((bar) => ({
+                        ...bar,
+                        start: axis.toView(bar.start),
+                        end: axis.toView(bar.end),
+                    }))
+                    // The lead-in before page 1's first count has no width on the view axis
+                    .filter((bar) => bar.end > bar.start),
+                departures: holds.departures.map((departure) => ({
+                    ...departure,
+                    beat: axis.toView(departure.beat),
+                })),
+            },
+        [axis, holds],
     );
+    // #475: the Held bars' draggable ends on the view axis; their drags go back in spec beats
+    const { holdEdges } = props;
+    const viewHoldEdges = useMemo<TimelineHoldEdges | undefined>(() => {
+        if (!holdEdges) return undefined;
+        const toView = (beat: number) => axis.toView(beat);
+        const dragOf = (index: number, beat: number, from?: number) => {
+            const handle = holdEdges.handles[index]!;
+            return {
+                from: from === undefined ? handle.beat : axis.toSpec(from),
+                to: axis.toSpec(beat),
+                marcherIds: handle.marcherIds,
+            };
+        };
+        return {
+            handles: holdEdges.handles.map((handle) => ({
+                ...handle,
+                beat: toView(handle.beat),
+                limits: {
+                    ...handle.limits,
+                    from: toView(handle.limits.from),
+                    min: toView(handle.limits.min),
+                    max: toView(handle.limits.max),
+                },
+            })),
+            onPreview: (index, beat) =>
+                holdEdges.preview(beat === null ? null : dragOf(index, beat)),
+            onCommit: (index, beat, from) =>
+                holdEdges.commit(dragOf(index, beat, from)),
+        };
+    }, [axis, holdEdges]);
     // #306: their menu acts on spec beats
     const { keyframeMenu } = props;
     const viewKeyframeMenu = useMemo<TimelineKeyframeMenu | undefined>(
@@ -978,6 +1037,8 @@ export function Timeline(props: TimelineProps) {
                 onUnset: (beat) => keyframeMenu.onUnset(axis.toSpec(beat)),
                 onUnsetAndFollowing: (beat) =>
                     keyframeMenu.onUnsetAndFollowing(axis.toSpec(beat)),
+                // Its light is in spec beats, as the hold bars it lights are
+                onFollowingPreview: keyframeMenu.onFollowingPreview,
             },
         [axis, keyframeMenu],
     );
@@ -1027,8 +1088,8 @@ export function Timeline(props: TimelineProps) {
         transportAccessories: props.transportAccessories,
         keyframes: viewKeyframes,
         keyframeMenu: viewKeyframeMenu,
-        heldBars: viewHeldBars,
-        keepChains: props.keepChains,
+        holds: viewHolds,
+        holdEdges: viewHoldEdges,
         pageMoves: props.pageMoves,
         basicPoints: viewBasicPoints,
         onRemoveBasicPoint: removeBasicPoint,

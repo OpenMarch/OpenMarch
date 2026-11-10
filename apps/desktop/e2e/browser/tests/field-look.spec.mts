@@ -13,10 +13,11 @@ import {
 import { seedShowSql } from "../seed.mjs";
 import { isolate } from "../timeline.mjs";
 
-// Set vs Following (#300, #301): on the playhead's exact count, a marcher with
-// a coordinate of its own (a move of its own ends there, moved or not, #468) is
-// Set and drawn solid; every other marcher is Following and drawn with a dashed
-// edge.
+// The field look (#478, holds decisions 8 and 9): a marcher draws solid whenever
+// its position is decided (walking in a move, arriving, Held, or in a carried
+// shape) and dashed only when Not defined. Its label is bold only on a keyframe,
+// the count where a coordinate of its own is set (a move of its own ends there,
+// moved or not, #468).
 //
 // Pages flag at beats 9, 17 and 25, four beats a measure. Over page 1 (1–9)
 // everyone moves. Over page 2 (9–17) T1 moves, T2 has a stay move (it ends
@@ -65,10 +66,17 @@ test.use({
     ],
 });
 
-/** Who's drawn as Following, by drill number. */
-const following = async (page: Page) =>
+/** Who's drawn Not defined (dashed), by drill number. */
+const notDefined = async (page: Page) =>
     (await drawnMarchers(page))
-        .filter((m) => m.following)
+        .filter((m) => m.notDefined)
+        .map((m) => m.drillNumber)
+        .sort();
+
+/** Whose label isn't bold (off a keyframe), by drill number. */
+const plainLabels = async (page: Page) =>
+    (await drawnMarchers(page))
+        .filter((m) => !m.labelBold)
         .map((m) => m.drillNumber)
         .sort();
 
@@ -82,36 +90,43 @@ async function open(page: Page) {
     await expect.poll(async () => (await drawnMarchers(page)).length).toBe(3);
 }
 
-test("Following marchers are the ones with no coordinate on the count", async ({
+test("only Not defined marchers are dashed, and labels are bold only on a keyframe", async ({
     show,
 }) => {
     const { page } = show;
     await open(page);
 
-    // The first page is always Set
-    await expect.poll(() => following(page)).toEqual([]);
+    // The first page is always decided, and a keyframe
+    await expect.poll(() => notDefined(page)).toEqual([]);
+    await expect.poll(() => plainLabels(page)).toEqual([]);
 
     // Page 1's flag: everyone's move ends here
     await goTo(page, "m3");
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual([]);
+    await expect.poll(() => notDefined(page)).toEqual([]);
+    await expect.poll(() => plainLabels(page)).toEqual([]);
 
-    // One beat before, everyone is partway through their move
+    // One beat before, everyone is partway through their move: solid, plain labels
     await step(page, "Shift+Q");
-    await expect.poll(() => following(page)).toEqual(["T1", "T2", "T3"]);
-    // And one beat after, everyone holds
+    await expect.poll(() => notDefined(page)).toEqual([]);
+    await expect.poll(() => plainLabels(page)).toEqual(["T1", "T2", "T3"]);
+    // One beat after, T1 walks and T2 is on its stay move; T3 has no move there
     await step(page, "Shift+E");
     await step(page, "Shift+E");
-    await expect.poll(() => following(page)).toEqual(["T1", "T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
+    await expect.poll(() => plainLabels(page)).toEqual(["T1", "T2", "T3"]);
 
-    // Page 2's flag: T1 moved here; T2's stay move ends here, so it's Set though
-    // it never moved; T3 holds
+    // Page 2's flag: T1 moved here; T2's stay move ends here, so it's a keyframe
+    // though it never moved; T3 holds, Not defined
     await goTo(page, "m5");
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
+    await expect.poll(() => plainLabels(page)).toEqual(["T3"]);
 });
 
-test("a page added mid-move shows everyone Following", async ({ show }) => {
+test("a page added mid-move shows everyone walking: solid, with plain labels", async ({
+    show,
+}) => {
     const { page } = show;
     await open(page);
     // Halfway through page 3's moves
@@ -120,24 +135,26 @@ test("a page added mid-move shows everyone Following", async ({ show }) => {
         .poll(async () => (await show.query("SELECT id FROM pages")).length)
         .toBe(5);
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T1", "T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual([]);
+    await expect.poll(() => plainLabels(page)).toEqual(["T1", "T2", "T3"]);
 });
 
-test("a Following marcher can be dragged, and becomes Set on that count", async ({
+test("a Not defined marcher can be dragged, and becomes a keyframe on that count", async ({
     show,
 }) => {
     const { page } = show;
     await open(page);
     await goTo(page, "m5");
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
 
     await dragMarcher(page, "T3", { x: 0, y: 40 });
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual([]);
+    await expect.poll(() => notDefined(page)).toEqual([]);
+    await expect.poll(() => plainLabels(page)).toEqual([]);
 });
 
-test("selecting a Following marcher keeps its look", async ({ show }) => {
+test("selecting a Not defined marcher keeps its look", async ({ show }) => {
     const { page } = show;
     await open(page);
     await goTo(page, "m5");
@@ -147,10 +164,12 @@ test("selecting a Following marcher keeps its look", async ({ show }) => {
     await expect
         .poll(async () => (await readField(page)).selection)
         .toEqual([3]);
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
 });
 
-test("isolation's dim takes over from the Following look", async ({ show }) => {
+test("isolation's dim takes over from the Not defined look", async ({
+    show,
+}) => {
     const { page } = show;
     await open(page);
     // Page 2's move (its box starts at beat index 8) has T1 and T2; T3,
@@ -164,17 +183,19 @@ test("isolation's dim takes over from the Following look", async ({ show }) => {
         )
         .toEqual(["T3"]);
     const t3 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T3")!;
-    expect(t3.following).toBe(false);
+    expect(t3.notDefined).toBe(false);
+    expect(t3.labelBold).toBe(true);
 });
 
-test("everyone is solid while playing, and Following again after Stop", async ({
+test("everyone is solid and bold while playing, and Not defined again after Stop", async ({
     show,
 }) => {
     const { page } = show;
     await open(page);
-    // Partway through page 2: everyone follows
+    // Partway through page 2: T1 and T2 walk, T3 has no move
     await goTo(page, "m4");
-    await expect.poll(() => following(page)).toEqual(["T1", "T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
+    await expect.poll(() => plainLabels(page)).toEqual(["T1", "T2", "T3"]);
     const paused = (await drawnMarchers(page)).find(
         (m) => m.drillNumber === "T1",
     )!;
@@ -188,11 +209,12 @@ test("everyone is solid while playing, and Following again after Stop", async ({
                     .y,
         )
         .not.toBe(paused.y);
-    expect(await following(page)).toEqual([]);
+    expect(await notDefined(page)).toEqual([]);
+    expect(await plainLabels(page)).toEqual([]);
 
-    // Stop goes back to where Play was pressed, where everyone follows
+    // Stop goes back to where Play was pressed
     await page.keyboard.press("Space");
-    await expect.poll(() => following(page)).toEqual(["T1", "T2", "T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
 });
 
 test("selecting and dragging right after Stop don't wait for the dashed look", async ({
@@ -200,9 +222,9 @@ test("selecting and dragging right after Stop don't wait for the dashed look", a
 }) => {
     const { page } = show;
     await open(page);
-    // Page 2's flag: T3 follows
+    // Page 2's flag: T3 is Not defined
     await goTo(page, "m5");
-    await expect.poll(() => following(page)).toEqual(["T3"]);
+    await expect.poll(() => notDefined(page)).toEqual(["T3"]);
     const flag = (await drawnMarchers(page)).find(
         (m) => m.drillNumber === "T1",
     )!;
@@ -220,7 +242,7 @@ test("selecting and dragging right after Stop don't wait for the dashed look", a
     await page.keyboard.press("Space");
     await dragMarcher(page, "T3", { x: 0, y: 40 });
     await expectCanvasMatchesShow(show);
-    await expect.poll(() => following(page)).toEqual([]);
+    await expect.poll(() => notDefined(page)).toEqual([]);
     await clickMarcher(page, "T2");
     await expect
         .poll(async () => (await readField(page)).selection)

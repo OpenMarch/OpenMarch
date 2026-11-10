@@ -9,15 +9,21 @@ import {
     holdActionOptions,
     useHoldCommands,
 } from "@/timeline/useHoldCommands";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import { holdOverWindowOn } from "@/timeline/timelineExpertHolds";
 import { useActionHandler } from "../useActionHandler";
 
 /**
- * Holds: **Define as shown** and **Hold from previous page** for the selected marchers on the
+ * Holds: **Define as shown** and **Hold from last keyframe** for the selected marchers on the
  * current page box, the one the field shows (the selected page, which follows the paused
  * playhead). They run the page box menu's commands (`useHoldCommands`), so each is one undo step
  * with the menu's toasts, and is off where the menu would say why not or shows it checked (every
  * selected marcher already in its state). Their labels count the marchers they'd change when it's
  * some of the selection (`holdActionOptions`), as the menus do.
+ *
+ * **Hold from start flag to playhead** (#476) holds the selection over the edit window, in Expert
+ * only: one undo step, a toast only about the marchers it left alone, and highlighting it shows
+ * the hold it would make.
  */
 export function useHoldActionHandlers() {
     const selected = useSelectedMarchers()?.selectedMarchers;
@@ -36,6 +42,7 @@ export function useHoldActionHandlers() {
         nameOf,
     );
     const entries = entriesOn(pageId);
+    const expert = useExpertHolds(marcherIds);
 
     useActionHandler(
         "timelineDefineAsShown",
@@ -55,6 +62,21 @@ export function useHoldActionHandlers() {
         {
             enabled: !isPlaying && canRunOn(holdFromPrevious, pageId),
             ...holdActionOptions(entries?.holdFromPrevious),
+            preview: (on) => {
+                if (pageId !== undefined)
+                    holdFromPrevious.onPreview(pageId, on);
+            },
+        },
+    );
+    useActionHandler(
+        "timelineHoldOverWindow",
+        () => {
+            if (expert.window)
+                void holdOverWindowOn(expert.window, marcherIds, nameOf);
+        },
+        {
+            enabled: !isPlaying && expert.window !== null,
+            preview: expert.onPreview,
         },
     );
 }

@@ -16,13 +16,16 @@ export const POPOVER_CLASS =
 export const MENU_CONTENT_CLASS =
     "bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 flex flex-col gap-2 border p-4";
 
-/** One Radix entry: Radix sets `data-highlighted` and `data-disabled` */
+/**
+ * One Radix entry: Radix sets `data-highlighted` and `data-disabled`. The highlight is the text
+ * color, faint: `bg-fg-2` is a near-white wash that barely shows on the menu's own surface.
+ */
 export const MENU_ITEM_CLASS =
-    "rounded-4 text-body data-[highlighted]:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-4 text-left outline-hidden select-none data-[disabled]:opacity-50";
+    "rounded-4 text-body data-[highlighted]:bg-text/10 flex cursor-default items-center gap-8 px-8 py-4 text-left outline-hidden select-none data-[disabled]:opacity-50";
 
 /** One entry of a menu drawn by hand, a plain `<button>`: the same look from hover and focus */
 export const MENU_BUTTON_CLASS =
-    "rounded-4 text-body enabled:hover:bg-fg-2 focus-visible:bg-fg-2 flex cursor-default items-center gap-8 px-8 py-4 text-left outline-hidden select-none disabled:opacity-50";
+    "rounded-4 text-body enabled:hover:bg-text/10 focus-visible:bg-text/10 flex cursor-default items-center gap-8 px-8 py-4 text-left outline-hidden select-none disabled:opacity-50";
 
 /** A heading row at the top of a menu (what the menu acts on) */
 export const MENU_LABEL_CLASS =

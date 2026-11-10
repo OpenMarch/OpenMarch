@@ -131,15 +131,12 @@ test("Set as shown on page 4, then an edit of page 2: page 3 follows, page 4 kee
     await expect.poll(async () => (await rows(show))[2]).toContain("25-33");
     expect((await rows(show))[1]).toEqual(before[1]);
     expect(await spot(show, 4, 2)).toBe("500,380");
-    // No kept table, no kept chain or dot (#467)
+    // No kept table, no kept dot (#467)
     expect(
         await show.query(
             "SELECT name FROM sqlite_schema WHERE name = 'timeline_kept_assignments'",
         ),
     ).toEqual([]);
-    await expect(
-        page.locator('[data-testid="page-keep-chain"][data-chain="kept"]'),
-    ).toHaveCount(0);
     await expect(page.getByTestId("page-keep-dot")).toHaveCount(0);
 
     // Edit page 2 (the playhead is on its flag): page 3 follows, page 4 doesn't

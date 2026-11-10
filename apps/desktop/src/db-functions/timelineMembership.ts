@@ -30,11 +30,6 @@ import {
     countsText,
     moveInSentence,
 } from "@/timeline/timelineRangeWords";
-import type { HeldConflict } from "./timelineHeldConflict";
-import {
-    readHeldArrivalsBefore,
-    startHoldsLostInTransaction,
-} from "./timelineHeldUpkeep";
 import { text } from "@/timeline/timelineText";
 
 export { findTimelineByRange, marcherLabels };
@@ -205,11 +200,6 @@ export interface AddMarchersToTimelineResult {
      * resumes at the range's end and catches up to its own destination (R-5 rebase)
      */
     caughtUp: PassedMove[];
-    /**
-     * Holds from the starting spots the edit left nothing to grow out of, so they went (#619):
-     * the new move starts before the hold and doesn't end at its start
-     */
-    droppedHolds?: HeldConflict;
 }
 
 /** One marcher's move that an add over a range passes through or runs into. */
@@ -424,16 +414,16 @@ export const addMarchersToTimeline = async ({
     range: BeatRange;
     marcherIds: readonly number[];
 }): Promise<AddMarchersToTimelineResult> =>
-    await transactionWithHistory(db, "addMarchersToTimeline", async (tx) => {
-        const heldBefore = await readHeldArrivalsBefore(tx);
-        const result = await addMarchersToTimelineInTransaction({
-            tx,
-            range,
-            marcherIds,
-        });
-        const dropped = await startHoldsLostInTransaction(tx, heldBefore);
-        return dropped ? { ...result, droppedHolds: dropped } : result;
-    });
+    await transactionWithHistory(
+        db,
+        "addMarchersToTimeline",
+        async (tx) =>
+            await addMarchersToTimelineInTransaction({
+                tx,
+                range,
+                marcherIds,
+            }),
+    );
 
 // ---------------------------------------------------------------------------
 // Removing assignments

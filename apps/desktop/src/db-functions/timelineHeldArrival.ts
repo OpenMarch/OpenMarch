@@ -6,7 +6,7 @@ import { shapeRecipesOnly } from "./shapeRecipes";
 /**
  * The Held marks as stored, and the one rule for a mark's **arrival** (ADR 0012 amendment
  * 2026-10-30, part 2). Kept apart from `timelineHeldMarks` so the page ripple
- * (`timelineRipple`), Hold from previous page, a drag inside a hold and the upkeep after each
+ * (`timelineRipple`), Hold from last keyframe, a drag inside a hold and the upkeep after each
  * edit (`timelineHeldUpkeep`) all find an arrival the same way, from one SQL fragment
  * (`arrivalRowSql`), and the ripple needn't import the commands that read its page grid.
  */

@@ -1,7 +1,12 @@
 import { useMemo } from "react";
 import type { TimelinePageCommandMenu } from "@/components/timeline/TimelineRangeMenu";
-import { holdFromPreviousMenu } from "./timelineHoldFromPrevious";
-import type { MarcherNameOf } from "./timelineKeepLater";
+import {
+    holdFromPreviousLight,
+    holdFromPreviousMenu,
+} from "./timelineHoldFromPrevious";
+import { clearHoldLight, setHoldLight } from "./holdLight";
+import { movesFromSpans, type MarcherNameOf } from "./timelineKeepLater";
+import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 import { setAsShownMenu } from "./timelineSetAsShown";
 import { usePageKeepStates } from "./useKeepLaterPages";
 import { useHeldMarksStore } from "./useHeldMarks";
@@ -11,12 +16,15 @@ import {
     type HoldEntryState,
 } from "./holdMenuState";
 
+/** Who lights the hold bars while **Hold from last keyframe** is hovered (`setHoldLight`) */
+const HOLD_PREVIEW_LIGHT = "hold-from-previous";
+
 /** The page box name type `usePageKeepStates` reads */
 type Pages = Parameters<typeof usePageKeepStates>[0];
 
 /**
  * The two hold commands for the selected marchers, by page id: **Define as shown** (#466) and
- * **Hold from previous page** (#472). The page box menu runs them on the page right-clicked, and
+ * **Hold from last keyframe** (#472). The page box menu runs them on the page right-clicked, and
  * the `timelineDefineAsShown` and `timelineHoldFromPrevious` actions on the current page
  * (`useHoldActionHandlers`), so both run the same commands with the same refusals and toasts.
  *
@@ -34,21 +42,39 @@ export function useHoldCommands(
 ) {
     const keepStates = usePageKeepStates(pages, marcherIds);
     const marks = useHeldMarksStore((s) => s.marks);
+    const resolver = useTimelineResolverStore((s) => s.resolver);
     const defineAsShown = useMemo(
         () => setAsShownMenu(keepStates, undefined, marks),
         [keepStates, marks],
     );
-    const holdFromPrevious = useMemo(
-        () =>
-            holdFromPreviousMenu(
+    const holdFromPrevious = useMemo(() => {
+        const lightOn = (pageId: string | number) => {
+            const state = keepStates.find(
+                (s) => String(s.pageId) === String(pageId),
+            );
+            if (!state || !resolver) return null;
+            return holdFromPreviousLight({
+                state,
+                marcherIds,
+                marks,
+                rowsOf: (id) => movesFromSpans(resolverSpans(resolver, id)),
+                showStart: keepStates[0]!.box.start,
+            });
+        };
+        return {
+            ...holdFromPreviousMenu(
                 keepStates,
                 marcherIds,
                 nameOf,
                 undefined,
                 marks,
             ),
-        [keepStates, marcherIds, nameOf, marks],
-    );
+            onPreview: (pageId: string | number, on: boolean) =>
+                on
+                    ? setHoldLight(HOLD_PREVIEW_LIGHT, lightOn(pageId))
+                    : clearHoldLight(HOLD_PREVIEW_LIGHT),
+        };
+    }, [keepStates, marcherIds, nameOf, marks, resolver]);
     const entriesOn = useMemo(
         () =>
             (
@@ -63,7 +89,7 @@ export function useHoldCommands(
             },
         [keepStates, marcherIds, marks],
     );
-    return { keepStates, defineAsShown, holdFromPrevious, entriesOn };
+    return { defineAsShown, holdFromPrevious, entriesOn };
 }
 
 /**

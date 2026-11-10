@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "次のページの座標をメンバーに設定できません。次のページがありません。",
             "noPreviousPage": "前のページの座標をメンバーに設定できません。前のページがありません。",
-            "setAllToNext": "次のページの位置をコピー（全員）",
-            "setAllToNextSuccess": "{count, plural, other {ページ{currentPage}の全メンバー#人の座標を次のページ{nextPage}の座標に設定しました}}",
-            "setSelectedToNext": "次のページの位置をコピー（選択中）",
-            "setSelectedToNextSuccess": "{count, plural, other {ページ{currentPage}のメンバー#人の座標を次のページ{nextPage}の座標に設定しました}}",
             "setAllToPreviousDone": "{count, plural, other {ページ{currentPage}の全メンバー#人の座標を前のページ{previousPage}の座標に設定しました}}",
             "setSelectedToPreviousDone": "{count, plural, other {ページ{currentPage}のメンバー#人の座標を前のページ{previousPage}の座標に設定しました}}"
         },
@@ -2582,7 +2578,6 @@
             "placeAllMarchers": "全メンバーを配置",
             "placeSelectedMarchers": "選択したメンバーを配置",
             "snapToggleCaption": "スナップ",
-            "toNextPagePositions": "...次のページの位置へ",
             "setMarcherPositionsAriaLabel": "メンバーの位置を設定",
             "toPreviousPagePositions": "...前のページ位置へ"
         },
