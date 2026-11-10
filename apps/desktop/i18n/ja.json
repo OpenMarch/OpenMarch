@@ -2657,14 +2657,17 @@
             "floor": "フロア",
             "frontRow": "最前列",
             "geJudge": "GE審査員",
+            "judgesTable": "審査員席",
             "lowerBowl": "下段スタンド",
             "podium": "指揮台",
             "pressBox": "プレスボックス",
             "sideline": "サイドライン",
             "topDown": "真上",
+            "tunnel": "トンネル",
             "upperDeck": "上段スタンド"
         },
         "kit": {
+            "arena": "屋内アリーナ",
             "bighs": "大規模高校",
             "blank": "フィールドのみ",
             "college": "大学スタジアム",
@@ -2792,6 +2795,12 @@
         },
         "venue": {
             "updateFailed": "3Dビューの会場を更新できませんでした"
+        },
+        "board": {
+            "designedBy": "デザイン：{name}",
+            "forClient": "出演：{name}",
+            "nowPerforming": "ただいまの演技",
+            "untitled": "無題のショー"
         }
     },
     "web": {
@@ -2947,7 +2956,14 @@
         "unsavedChanges": "保存されていない変更があります",
         "close": "閉じる",
         "saved": "ショー設定を保存しました",
-        "updateFailed": "ショー設定を更新できませんでした"
+        "updateFailed": "ショー設定を更新できませんでした",
+        "showInfo": {
+            "projectName": "ショー名",
+            "projectNamePlaceholder": "ファイル名を使用",
+            "designer": "デザイナー",
+            "client": "クライアント",
+            "optional": "任意"
+        }
     },
     "canvas": {
         "zoom": {

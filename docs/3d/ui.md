@@ -48,13 +48,17 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - **Selecting a camera** flies to it over 1.1 s, ease-in-out, with a small
   upward arc on long moves. With reduced motion, it jumps.
 - **Moving freely:**
-  - drag to orbit; a flung drag coasts to a stop;
-  - right-drag or Shift+drag to pan; the ground point under the pointer
-    stays under it;
-  - mouse wheel to zoom toward the cursor, eased over a few frames;
-  - on a trackpad: two-finger scroll orbits, Shift or Option plus scroll
-    pans, pinch zooms toward the cursor (owner, 2026-10-09: the controls
-    should feel good on a trackpad and a mouse alike);
+  - the viewer picks a control scheme in the View settings panel or Settings >
+    3D View, because a
+    browser can't reliably tell a mouse wheel from a two-finger scroll
+    (owner, 2026-11-09);
+  - Map, the default: drag to pan; the ground point under the pointer stays
+    under it; Ctrl, Alt (Option), Shift or right-drag to orbit; scroll to
+    zoom toward the cursor, eased over a few frames;
+  - Trackpad: scroll or drag to orbit; Shift or right-drag to pan;
+  - in both, a flung orbit coasts to a stop, Ctrl or Alt + drag orbits, Shift
+    or Option plus scroll pans, and a pinch zooms toward the cursor; touch
+    and pen orbit with one finger, and two fingers pan and pinch;
   - zooming works as in CAD tools (owner, 2026-10-09): the camera and the
     orbit center scale about the point under the cursor (the nearest
     performer, else the ground, else a point at the orbit's distance), so

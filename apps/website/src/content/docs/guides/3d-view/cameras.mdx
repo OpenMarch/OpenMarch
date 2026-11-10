@@ -1,0 +1,119 @@
+---
+title: Move the camera
+description: Orbit, pan and zoom in the 3D View, jump between cameras, sit in the stands, and save your own camera positions.
+type: how-to
+covers:
+  - apps/desktop/src/view3d/window/camera
+  - apps/desktop/src/view3d/window/overlay/CameraBar.tsx
+  - apps/desktop/src/view3d/window/overlay/CamerasPanel.tsx
+  - apps/desktop/src/view3d/core/cameraList.ts
+  - i18n:view3d.cameras
+  - i18n:view3d.camera
+  - i18n:view3d.overlay
+  - i18n:settings.view3d.controls
+sidebar:
+  order: 2
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+In the 3D View you can look at the show from anywhere: move the view with the mouse, jump to one of the venue's cameras, or sit in a seat in the stands. Cameras you add or change are saved with the show, so the views you rehearse with are there next time.
+
+## Move the view
+
+| Do this                                                      | To                                              |
+| ------------------------------------------------------------ | ----------------------------------------------- |
+| Drag                                                         | Pan across the field                            |
+| <Kbd keys="Alt" gesture="drag" />, <Kbd keys="Ctrl" gesture="drag" />, <Kbd keys="Shift" gesture="drag" />, or drag with the right mouse button | Orbit around the field |
+| Scroll or pinch                                              | Zoom toward the pointer                         |
+| Hold <Kbd keys="Shift" /> or <Kbd keys="Alt" /> while scrolling | Pan                                          |
+| Double-click a spot on the field                             | Orbit around that spot from now on              |
+
+The camera never goes below the ground.
+
+If you'd rather orbit by scrolling, open <Ui k="view3d.settings.title" /> in the 3D View and set <Ui k="settings.view3d.controls" /> to <Ui k="settings.view3d.controls.trackpad" />. The same choice is in Settings › <Ui k="settings.view3d" />. Then scrolling and dragging orbit, a pinch zooms, and <Kbd keys="Shift" gesture="drag" /> or the right mouse button pans.
+
+On a touch screen, one finger orbits and two fingers pan and zoom, whichever you choose.
+
+<Media
+  id="3d-move-view"
+  alt="The 3D View: a Shift-drag orbits the camera around the field, a drag pans it, and the mouse wheel zooms in toward the band."
+/>
+
+As soon as you move the view, the camera menu reads <Ui k="view3d.overlay.freeCamera" />. Choose a camera to go back to a set position.
+
+## Go to a camera
+
+Every venue comes with its own cameras, such as the press box, the sideline and a view from straight above.
+
+<Steps>
+
+1. In the 3D View, select the camera menu. It shows the name of the camera you're on.
+
+2. Choose a camera. The view flies there.
+
+</Steps>
+
+You can also press <Kbd keys="1" /> to <Kbd keys="9" /> for the first nine cameras in the menu. Choosing the camera you're already on brings the view back to it after you've moved away.
+
+<Media
+  id="3d-camera-menu"
+  alt="The camera menu open in the 3D View, listing the venue's cameras with their number keys, and Edit cameras at the bottom."
+  maxWidth={420}
+/>
+
+## Sit in the stands
+
+In a venue with stands, <Ui k="view3d.overlay.pickSeat" /> (the armchair button next to the camera menu) puts you in a seat:
+
+<Steps>
+
+1. Select <Ui k="view3d.overlay.pickSeat" />.
+
+2. Click a seat in the stands. The view flies there and looks at the field from that seat's height.
+
+</Steps>
+
+Press <Kbd keys="Escape" /> to stop picking without moving. Crowd members around your seat step aside so they don't block the view.
+
+## Save your own cameras
+
+The cameras are a list you can change. Your list is saved in the show, one list for each venue, and the 3D View opens on the first camera in it.
+
+<Steps>
+
+1. Select the camera menu, then <Ui k="view3d.cameras.edit" />. The <Ui k="view3d.cameras.title" plain /> panel opens under the menu.
+
+2. Move the view to where you want a camera.
+
+3. Select <Ui k="view3d.cameras.addView" />. A new camera is added at the end of the list, with its name ready to type.
+
+4. Type a name and press <Kbd keys="Enter" />.
+
+</Steps>
+
+<Media
+  id="3d-cameras-panel"
+  alt="The Cameras panel under the camera menu: a row for each camera with its number, name and buttons to set it to the current view, move it up or down, or remove it, and Add current view and Reset to defaults at the bottom."
+  maxWidth={480}
+/>
+
+Each row in the panel has the camera's number key, then its name, which you can change in place. Its buttons:
+
+- <Ui k="view3d.cameras.setView" />: moves the camera to where the view is now.
+- <Ui k="view3d.cameras.moveUp" /> and <Ui k="view3d.cameras.moveDown" />: change the order, and with it the number keys. The camera at the top is the one the 3D View opens on.
+- <Ui k="view3d.cameras.remove" />: removes the camera. Select <Ui k="view3d.cameras.undo" /> in the panel within a few seconds to bring it back.
+
+Select the number at the start of a row to fly to that camera. A venue can have up to 30 cameras.
+
+<Ui k="view3d.cameras.reset" /> replaces your list with the venue's own cameras. If you've changed the list, it asks first, because your list isn't kept anywhere else.
+
+Changes to cameras are saved in the show straight away, but undo in the editor doesn't undo them.
+
+## Related
+
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): the window, playback and fullscreen.
+- [Venue and uniforms](/guides/3d-view/venue-and-uniforms/): each venue has its own cameras.

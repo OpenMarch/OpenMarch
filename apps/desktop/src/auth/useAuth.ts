@@ -8,9 +8,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/auth/AuthStore";
 import { isSignInEnabled } from "@/global/auth/constants";
 import type { AuthState } from "../../electron/main/auth/types";
+import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "auth";
 export const NEEDS_AUTH_BASE_QUERY_KEY = "needs-auth" as const;
+
+/** The editor API's generated queries are keyed by their path. */
+export function isEditorApiQuery(query: { queryKey: readonly unknown[] }) {
+    const [first] = query.queryKey;
+    return typeof first === "string" && first.startsWith("/api/editor/");
+}
 
 /**
  * Query key factory for auth queries.
@@ -109,6 +117,10 @@ export function useAuth() {
                 void queryClient.invalidateQueries({
                     queryKey: [NEEDS_AUTH_BASE_QUERY_KEY],
                 });
+                // And drop every editor API answer, errors included: one
+                // fetched under the old sign-in (a 401, say) mustn't outlive
+                // it. Open panels fetch again under the new one.
+                void queryClient.resetQueries({ predicate: isEditorApiQuery });
             },
         );
 
@@ -150,7 +162,18 @@ export function useAuth() {
     const logoutMutation = useMutation({
         mutationFn: async () => {
             const result = await window.electron.auth.logout();
+            if (!result.success)
+                throw new Error(result.error?.message ?? "Sign out failed");
             return result;
+        },
+        onError: (error) => {
+            // Still signed in, so the signed-out panel's message can't show it.
+            toast.error(tolgee.t("auth.signOutFailed"));
+            setError({
+                code: "LOGOUT_FAILED",
+                message:
+                    error instanceof Error ? error.message : "Sign out failed",
+            });
         },
         onSuccess: () => {
             const newState: AuthState = {

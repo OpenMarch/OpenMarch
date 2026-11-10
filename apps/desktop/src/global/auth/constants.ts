@@ -3,6 +3,8 @@
  * Used by both main and renderer processes.
  */
 
+import { isWebBuild } from "../../utilities/webBuild";
+
 /**
  * IPC channel names for auth communication between main and renderer.
  */
@@ -51,8 +53,54 @@ export const CLERK_CONFIG: { DOMAIN: string; CLIENT_ID: string } | null =
         ? { DOMAIN: domain, CLIENT_ID: clientId }
         : null;
 
-/** True when both Clerk env vars are set; sign-in is disabled when false. */
-export const isSignInEnabled = CLERK_CONFIG !== null;
+/**
+ * The web build's Clerk publishable key: the production instance's
+ * (`pk_live_…`) on the sites, a development instance's (`pk_test_…`) in
+ * local development, or empty (the examples build, or dev without one). The web build signs in with ClerkJS (web/renderer/auth.ts)
+ * instead of the desktop app's OAuth flow.
+ */
+export const WEB_CLERK_PUBLISHABLE_KEY: string =
+    import.meta.env.VITE_PUBLIC_WEB_CLERK_PUBLISHABLE_KEY ?? "";
+
+/**
+ * Whether this page is on the site the Clerk instance serves: the domain its
+ * Frontend API host is under (clerk.openmarch.com → openmarch.com). A
+ * production instance turns other sites down, such as the `workers.dev`
+ * preview URLs Cloudflare gives each branch of the nightly build.
+ */
+export function isOnClerkSite(publishableKey: string, hostname: string) {
+    let host: string;
+    try {
+        host = atob(publishableKey.split("_")[2] ?? "").replace(/\$$/, "");
+    } catch {
+        return false;
+    }
+    const site = host.split(".").slice(1).join(".");
+    return site !== "" && (hostname === site || hostname.endsWith(`.${site}`));
+}
+
+/**
+ * Whether the web build can sign in with this key on this site: a
+ * development instance's key (`pk_test_…`, local development) runs anywhere,
+ * a production key only on its own site.
+ */
+export function canSignInHere(publishableKey: string, hostname: string) {
+    if (publishableKey === "") return false;
+    return (
+        publishableKey.startsWith("pk_test_") ||
+        isOnClerkSite(publishableKey, hostname)
+    );
+}
+
+/**
+ * True when sign-in is configured: both Clerk env vars in the desktop app;
+ * in the web build, a publishable key that works on this site.
+ * Sign-in is disabled when false.
+ */
+export const isSignInEnabled = isWebBuild
+    ? typeof globalThis.location !== "undefined" &&
+      canSignInHere(WEB_CLERK_PUBLISHABLE_KEY, globalThis.location.hostname)
+    : CLERK_CONFIG !== null;
 
 /**
  * Gets the Clerk OAuth authorization endpoint URL.
@@ -70,6 +118,16 @@ export function getClerkAuthorizationEndpoint(): string {
 export function getClerkTokenEndpoint(): string {
     if (!CLERK_CONFIG) return "";
     return `https://${CLERK_CONFIG.DOMAIN}/oauth/token`;
+}
+
+/**
+ * Gets the Clerk OAuth revocation endpoint URL (RFC 7009), as the instance's
+ * OpenID configuration lists it.
+ * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
+ */
+export function getClerkRevocationEndpoint(): string {
+    if (!CLERK_CONFIG) return "";
+    return `https://${CLERK_CONFIG.DOMAIN}/oauth/token/revoke`;
 }
 
 /**

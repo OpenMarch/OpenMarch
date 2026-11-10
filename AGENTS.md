@@ -34,6 +34,19 @@
 - Read [verification](docs/conventions/verification.md) and run its scoped checks for the changed area.
 - Lint commands ending in `:check` are non-mutating; `lint` and `fix` may rewrite files.
 
+## User guide
+
+- The user guide (openmarch.com/guides, `apps/website/src/content/docs/guides`) describes how
+  the app behaves. Read it to learn how a feature is meant to work for users.
+- To read it as plain text, with labels and shortcuts filled in, build the site
+  (`pnpm turbo run build --filter=@openmarch/website`) and read `apps/website/dist/llms.txt`: it lists
+  one file per chapter in `dist/_llms-txt/`, and `dist/llms-full.txt` holds the whole guide.
+- A change to what users see or do isn't finished until the guide says so. Before pushing it,
+  update the guide's pages and recorded pictures and read the result as it renders, following
+  "When the app changes" in [apps/website/AGENTS.md](apps/website/AGENTS.md); agents use the
+  `user-docs` skill (`.claude/skills/user-docs`). Fill in the pull request's User guide section.
+- Start with `pnpm --dir apps/website docs:impact`, which lists the pages a change may affect.
+
 ## Durable decisions and generated files
 
 - Read [architecture decisions](docs/conventions/architecture-decisions.md) before changing persistent data, file formats, IPC contracts, public package APIs, security boundaries, or package ownership.

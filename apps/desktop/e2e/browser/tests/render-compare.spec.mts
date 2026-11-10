@@ -56,11 +56,6 @@ const SHOWS = [
         file: "view3d-web/public/demos/part1-demo.dots",
         seedSql: VARIETY_SQL,
     },
-    {
-        name: "daft-punk",
-        file: "view3d-web/public/demos/lhb-daft-punk-pt2.dots",
-        seedSql: [],
-    },
 ];
 
 for (const show of SHOWS)

@@ -2653,14 +2653,17 @@
             "floor": "Di lantai",
             "frontRow": "Barisan hadapan",
             "geJudge": "Hakim GE",
+            "judgesTable": "Meja hakim",
             "lowerBowl": "Aras bawah",
             "podium": "Podium",
             "pressBox": "Bilik akhbar",
             "sideline": "Garisan tepi",
             "topDown": "Dari atas",
+            "tunnel": "Terowong",
             "upperDeck": "Aras atas"
         },
         "kit": {
+            "arena": "Arena tertutup",
             "bighs": "Sekolah menengah besar",
             "blank": "Padang sahaja",
             "college": "Stadium kolej",
@@ -2788,6 +2791,12 @@
         },
         "venue": {
             "updateFailed": "Gagal mengemas kini lokasi Paparan 3D"
+        },
+        "board": {
+            "designedBy": "Direka oleh {name}",
+            "forClient": "Untuk {name}",
+            "nowPerforming": "Sedang membuat persembahan",
+            "untitled": "Persembahan tanpa tajuk"
         }
     },
     "web": {
@@ -2943,7 +2952,14 @@
         "unsavedChanges": "Anda mempunyai perubahan yang belum disimpan",
         "close": "Tutup",
         "saved": "Tetapan persembahan disimpan",
-        "updateFailed": "Gagal mengemas kini tetapan ruang kerja"
+        "updateFailed": "Gagal mengemas kini tetapan ruang kerja",
+        "showInfo": {
+            "projectName": "Nama persembahan",
+            "projectNamePlaceholder": "Menggunakan nama fail",
+            "designer": "Pereka",
+            "client": "Klien",
+            "optional": "Pilihan"
+        }
     },
     "canvas": {
         "zoom": {

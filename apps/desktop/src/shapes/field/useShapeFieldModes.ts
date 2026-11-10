@@ -9,7 +9,11 @@ import {
     previewPlacedBox,
     useBoxSelectionStore,
 } from "../placed/boxSelectionStore";
-import { LiveBoxMode, setActiveLiveBox } from "../placed/liveBoxMode";
+import {
+    LiveBoxMode,
+    liveBoxHolding,
+    setActiveLiveBox,
+} from "../placed/liveBoxMode";
 import { closeHandleMenu } from "./handleMenu";
 import {
     closeShapeTool,
@@ -45,7 +49,10 @@ export function useShapeFieldModes(
     // One live mode per box, told when the box is saved or read again
     const boxId = box?.recipe.id ?? null;
     const live = useMemo(
-        () => (box ? new LiveBoxMode(box, queryClient) : null),
+        () =>
+            box
+                ? (liveBoxHolding(box) ?? new LiveBoxMode(box, queryClient))
+                : null,
         // A new mode only for another box
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [boxId, queryClient],

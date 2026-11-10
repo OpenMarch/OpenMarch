@@ -20,6 +20,7 @@ export const VENUE_KIT_IDS = [
     "college",
     "pro",
     "gym",
+    "arena",
     "blank",
 ] as const satisfies readonly VenueKitId[];
 
@@ -104,6 +105,7 @@ export const KIT_LIGHTING: Readonly<
         defaultLighting: "roofClosed",
     },
     gym: { presets: ["house", "show"], defaultLighting: "house" },
+    arena: { presets: ["house", "show"], defaultLighting: "show" },
     blank: { presets: ["day", "dusk", "night"], defaultLighting: "day" },
 };
 

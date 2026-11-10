@@ -1,0 +1,71 @@
+---
+title: The window
+description: What each part of the OpenMarch window is for, and where to find things.
+type: concept
+covers:
+  - apps/desktop/src/components/titlebar
+  - apps/desktop/src/components/toolbar
+  - apps/desktop/src/components/sidebar
+  - apps/desktop/src/components/inspector
+  - apps/desktop/src/components/timeline
+  - action:openCommandPalette
+  - action:togglePreview
+  - action:openView3d
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+When a show is open, the field takes up most of the window. You arrange marchers on it, and the timeline holds the show's counts, pages and moves, so you can see and change when everything happens.
+
+<Media
+  id="window-overview"
+  alt="The OpenMarch window with a show open: the toolbar across the top, the sidebar down the left edge, the field in the middle, the inspector on the right and the timeline along the bottom."
+/>
+
+## The field
+
+The field shows where every marcher is at the playhead's count. Select marchers by clicking them or dragging a box around them, and drag them to move them. The yard lines, hashes and grid come from the field's settings, which you can change to match the field you rehearse on.
+
+A line on the field says what your next edit changes, for example "Editing Page 1's move". The field display buttons on the field choose what's drawn on it, such as drill number labels, and the zoom controls zoom in and out and fit the field again. To pan and zoom, see [Move around the field](/guides/workspace/move-around-the-field/).
+
+## The timeline
+
+The timeline has the playback controls, the pages of the show, its counts and measures, and the music's waveform. The playhead marks the count the field is showing: drag it, or play the show, and the marchers move.
+
+Pages and moves are how you shape the drill over time. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains them.
+
+## The toolbar
+
+The toolbar's tabs hold:
+
+- <Ui k="inspector.shape.fileTab" />: open, create, save and close shows, export charts, coordinate sheets and video, and open the app's settings.
+- <Ui k="inspector.shape.alignmentTab" />: coordinate rounding (the step grid marchers snap to), locking movement to one axis, and placing all marchers where they stand on the previous or next page.
+- <Ui k="inspector.shape.shapesTab" />: drawing a box, circle, line, curve or arc and placing marchers in it.
+- <Ui k="inspector.shape.selectTab" />: selecting marchers by section, tag, family or drill prefix, or selecting all of them.
+
+After the toolbar's tabs, <Ui k="view3d.open" /> opens the show in the 3D View, and the <Ui k="workspace.editor" /> and <Ui k="workspace.preview" /> switch changes between editing the show and watching it (<Kbd action="togglePreview" />).
+
+## The sidebar
+
+The sidebar's icons open panels for the show as a whole: <Ui k="sidebar.marchers" />, <Ui k="sidebar.field" />, <Ui k="sidebar.metronome" />, marchers' <Ui k="sidebar.appearance" />, and <Ui k="props.title" />. Set apart from them are the <Ui k="sidebar.mobile" /> export and <Ui k="sidebar.settings" />, such as the default tempo and the number the first page starts at. Hold the pointer over an icon to see its name.
+
+The music has no panel in the sidebar. It lives on the timeline, where <Ui k="tempoMode.button.text" /> changes it; see [Audio](/guides/music/audio/).
+
+## The inspector
+
+The inspector shows the details of what you've selected: a page's counts and measures when no marchers are selected, or the selected marchers, their positions and the tools for arranging them (<Ui k="inspector.marcher.alignHeading" />, <Ui k="inspector.marcher.distributeHeading" /> and, for two or more marchers, <Ui k="shapes.transform.title" />). Each page's notes are at the end of the inspector.
+
+## Finding a command
+
+Every command in OpenMarch can be found by name in the command palette. Select the magnifying glass in the title bar, or press <Kbd action="openCommandPalette" />, and start typing what you want to do. Commands that can't run right now are listed but dimmed. The list shows each command's shortcut, so it's also a quick way to learn them (in the tablet layout, once you've used a keyboard). All shortcuts are listed in [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/), and the app shows them too with <Kbd action="showShortcuts" />.
+
+## Related
+
+- [Move around the field](/guides/workspace/move-around-the-field/): pan, zoom and fit the field.
+- [Editor and Preview](/guides/workspace/editor-and-preview/): watch the show without the editing panels.
+- [Basic and Expert](/guides/start/basic-and-expert/): what each editor mode shows.
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, moves and counts.

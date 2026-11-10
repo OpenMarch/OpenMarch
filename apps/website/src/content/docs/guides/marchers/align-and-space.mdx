@@ -1,0 +1,117 @@
+---
+title: Align and space marchers
+description: Line selected marchers up, space them evenly or a set number of steps apart, flip, turn and resize a group, swap two marchers, and copy positions from the next page.
+type: how-to
+covers:
+  - apps/desktop/src/components/inspector/MarcherEditor.tsx
+  - apps/desktop/src/utilities/CoordinateActions.ts
+  - apps/desktop/src/shortcuts/handlers/useAlignmentActionHandlers.ts
+  - apps/desktop/src/field/editor/groupTransform.ts
+  - apps/desktop/src/field/editor/transformGestures.ts
+  - apps/desktop/src/field/three/FieldContextMenu.tsx
+  - apps/desktop/src/components/toolbar/ClearPageMenuItems.tsx
+  - action:alignVertically
+  - action:alignHorizontally
+  - action:evenlyDistributeHorizontally
+  - action:evenlyDistributeVertically
+  - action:flipHorizontal
+  - action:flipVertical
+  - action:swapMarchers
+  - action:setSelectedMarchersToNextPage
+  - action:setAllMarchersToNextPage
+  - i18n:inspector.marcher
+  - i18n:toolbar.alignment
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+When several marchers are selected, the inspector shows tools that arrange them as a group: line them up, space them evenly, flip them, and swap two of them. The frame around the selection on the field has handles to turn and resize it. To place marchers in a box, line or arc instead, use [Shapes](/guides/shapes/).
+
+<Media
+  id="marchers-inspector"
+  alt="The inspector's tools for eight selected marchers: four Align buttons, two Distribute buttons each with a Steps box, and the Place selected marchers menu."
+  maxWidth={340}
+/>
+
+Every tool here changes the marchers' positions on the page at the playhead, and each one is a single step you can undo with <Kbd action="performUndo" />. The same commands are on the field's right-click menu and in the command palette.
+
+## Line marchers up
+
+Select the marchers, then use one of the <Ui k="inspector.marcher.alignHeading" /> buttons in the inspector:
+
+- <Ui k="actions.alignment.alignVertically" /> (<Kbd action="alignVertically" />) moves every marcher to the same front-to-back position, the average of theirs, so they stand in one line across the field. Nobody moves sideways.
+- <Ui k="actions.alignment.alignHorizontally" /> (<Kbd action="alignHorizontally" />) moves every marcher to the same side-to-side position, so they stand in one line from front to back. Nobody moves forward or back.
+
+<Media
+  id="marchers-align"
+  alt="An arc of twelve selected marchers. Alt+V pulls them into one straight line across the field, then Shift+H spaces them evenly along it."
+/>
+
+## Space marchers evenly
+
+Distributing changes the spacing between three or more marchers along one direction. The marchers at the two ends stay where they are, and the others are spaced evenly between them, in the order they already stand.
+
+- To space them side to side, select the first button under <Ui k="inspector.marcher.distributeHeading" />, or press <Kbd action="evenlyDistributeHorizontally" />.
+- To space them front to back, select the second button, or press <Kbd action="evenlyDistributeVertically" />.
+
+To space them a set distance apart instead, type the number of steps in the <Ui k="inspector.marcher.distributeStepsPlaceholder" /> box next to the button before you select it. The marcher furthest to the left of the field as you see it (for side to side), or furthest toward the back sideline (for front to back), stays put, and the others are placed that many steps apart from it. Clear the box to go back to spacing them between the ends.
+
+Distributing doesn't straighten a line: marchers keep their other coordinate. Line them up first if they aren't already.
+
+## Flip a group
+
+The last two <Ui k="inspector.marcher.alignHeading" /> buttons mirror the selection about its own middle:
+
+- <Ui k="actions.alignment.flipHorizontal" /> (<Kbd action="flipHorizontal" />) swaps the left and right of the group.
+- <Ui k="actions.alignment.flipVertical" /> (<Kbd action="flipVertical" />) swaps its front and back.
+
+## Turn and resize a group
+
+Select two or more marchers. The frame around them has square handles on its corners and sides, and a round one above the top edge.
+
+<Media
+  id="marchers-rotate"
+  alt="A selected block of marchers with a frame and handles around it. The handle above the frame is dragged around, and the block turns about its center."
+/>
+
+- Drag the round handle above the frame to turn the group about its center. It turns in 15° steps. Hold <Kbd keys="Shift" gesture="drag" /> to turn in whole degrees, or turn <Ui k="toolbar.alignment.snapToggleCaption" /> off in the <Ui k="inspector.shape.alignmentTab" /> tab to turn freely.
+- Drag a corner handle to stretch or shrink the group in both directions. Hold <Kbd keys="Mod" gesture="drag" /> to keep its proportions.
+- Drag a side handle to stretch or shrink it in one direction only. Hold <Kbd keys="Mod" gesture="drag" /> to scale the other direction along with it.
+- Hold <Kbd keys="Alt" gesture="drag" /> while resizing to resize from the group's center instead of the opposite edge.
+- Hold <Kbd keys="Shift" gesture="drag" /> while resizing for fine control.
+
+Only positions change: dots and drill numbers stay upright and the same size. Dragging a handle past the opposite side stops the group at its smallest size instead of flipping it. One marcher on its own has no handles.
+
+To turn the group by an exact angle, use <Ui k="shapes.transform.title" /> in the inspector. Choose the point to turn around in its grid, then type an angle in the <Ui k="inspector.marcher.rotation" plain /> box or drag across it. The group turns on the field as you change the angle, and the turn is saved when you leave the box.
+
+## Swap two marchers
+
+Select exactly two marchers, then select <Ui k="inspector.marcher.swapMarchers" /> in the inspector, or press <Kbd action="swapMarchers" />. Each takes the other's position on this page.
+
+## Copy positions from another page
+
+The <Ui k="toolbar.alignment.placeSelectedMarchers" /> menu at the bottom of the inspector, and <Ui k="toolbar.alignment.placeAllMarchers" /> in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab for every marcher at once, put marchers back where they stand on a neighboring page:
+
+- <Ui k="toolbar.alignment.toNextPagePositions" /> copies the marchers' positions from the next page onto this one (<Kbd action="setSelectedMarchersToNextPage" /> for the selected marchers, <Kbd action="setAllMarchersToNextPage" /> for all).
+- <Ui k="toolbar.alignment.toPreviousPagePositions" /> in the inspector, and <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} /> in the toolbar menu, run <Ui k="timeline.terms.clearThisPage" />: the marchers stay where the previous page left them, and the page no longer has positions of its own for them. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains what that means for later pages. Later pages keep where they were; when some of them showed this page's positions, the toolbar menu also offers a second item ending in "move back too", which lets those pages move back with it.
+
+<Steps>
+
+1. Go to the page you want to change.
+
+2. Select the marchers, or skip this to change every marcher with the toolbar menu.
+
+3. Open <Ui k="toolbar.alignment.placeSelectedMarchers" /> in the inspector, or <Ui k="toolbar.alignment.placeAllMarchers" /> in the <Ui k="inspector.shape.alignmentTab" /> tab, and choose where to copy from.
+
+</Steps>
+
+## Related
+
+- [Move marchers](/guides/marchers/move-marchers/): drag, nudge, snap to the grid and lock an axis.
+- [Shapes](/guides/shapes/): place marchers in a box, line or arc.
+- [Pages](/guides/timeline/pages/): go to the page you want to arrange.

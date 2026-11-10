@@ -1,0 +1,12 @@
+{
+    "defined": "Defined",
+    "definedLower": "defined",
+    "held": "Held",
+    "heldLower": "held",
+    "notDefined": "Not defined",
+    "notDefinedLower": "not defined",
+    "defineAsShown": "Define as shown",
+    "holdFromPrevious": "Hold from previous page",
+    "clearThisPage": "Clear this page",
+    "removeKeyframe": "Remove keyframe"
+}

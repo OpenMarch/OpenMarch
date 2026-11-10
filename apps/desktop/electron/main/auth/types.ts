@@ -85,6 +85,8 @@ export interface ClerkOAuthConfig {
     authorizationEndpoint: string;
     /** Clerk token endpoint URL */
     tokenEndpoint: string;
+    /** Clerk revocation endpoint URL (ends a refresh token at sign-out) */
+    revocationEndpoint: string;
     /** OAuth redirect URI (openmarch://auth/callback) */
     redirectUri: string;
     /** OAuth scopes to request */
@@ -136,6 +138,8 @@ export interface LoginResult {
  */
 export interface LogoutResult {
     success: boolean;
+    /** Why signing out failed (the web build, if sign-in couldn't load). */
+    error?: AuthError;
 }
 
 /**

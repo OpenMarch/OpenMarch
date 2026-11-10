@@ -219,12 +219,13 @@
         "signIn": "Sign In",
         "signInAriaLabel": "Sign in",
         "signOut": "Sign Out",
+        "signOutFailed": "Couldn't sign out. Check your internet connection and try again.",
         "userFallback": "User",
         "fullName": "{firstName} {lastName}",
         "api": {
             "requestFailed": "API request failed: {reason}",
             "requestFailedStatus": "API request failed: {status} {statusText}",
-            "tokenRequired": "Authentication token is required"
+            "tokenRequired": "Couldn't confirm your sign-in. Check your connection and try again."
         }
     },
     "colorPicker": {
@@ -421,6 +422,11 @@
         "unsortedSection": "Unsorted",
         "useXYHeaders": "Use X/Y headers",
         "video": "Video",
+        "webMobileUnavailable": {
+            "description": "Uploading to the On the Move app needs your OpenMarch account, and this test build can't sign in. Use the OpenMarch editor at editor.openmarch.com, or the desktop app.",
+            "openEditor": "Open editor.openmarch.com",
+            "title": "Mobile upload isn't available here"
+        },
         "videoAudioTrack": "Audio track: {name}",
         "videoAudioNoData": "Audio file has no data",
         "videoBackground": "Video background",
@@ -1225,12 +1231,28 @@
             "noProduction": "No production found",
             "title": "Mobile app settings"
         },
+        "signInRejected": {
+            "description": "OpenMarch's online service didn't accept your sign-in. Sign out, then sign in again.",
+            "signOut": "Sign out",
+            "title": "Your sign-in wasn't accepted"
+        },
         "signedOut": {
             "createAccountPrompt": "Don't have an account yet? Create one now!",
+            "errors": {
+                "failed": "Signing in didn't work. Try again.",
+                "sessionExpired": "Your sign-in expired. Sign in again to keep uploading.",
+                "unavailable": "Sign-in couldn't load. Check your internet connection and try again."
+            },
             "setupAccount": "Set up your account",
-            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
+            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!",
+            "signInPromptWeb": "Already have an account? Sign in to start taking it On The Move!"
         },
-        "title": "Export to Mobile"
+        "title": "Export to Mobile",
+        "unreachable": {
+            "description": "OpenMarch couldn't reach its online service or confirm your sign-in. Check your internet connection and try again.",
+            "retry": "Try again",
+            "title": "Can't reach OpenMarch"
+        }
     },
     "music": {
         "accent": "Accent first beat",
@@ -1570,7 +1592,11 @@
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
         "view3d": "3D View",
-        "view3d.description": "How the 3D View draws on this computer. Not saved in the show.",
+        "view3d.controls": "Controls",
+        "view3d.controls.map": "Map",
+        "view3d.controls.map.description": "Dragging moves across the field and scrolling zooms. Hold a modifier key or use the right mouse button to orbit.",
+        "view3d.controls.trackpad": "Trackpad",
+        "view3d.controls.trackpad.description": "Scrolling and dragging orbit, and a pinch zooms. The right mouse button pans.",
         "view3d.quality": "Quality",
         "view3d.quality.auto": "Automatic",
         "view3d.quality.auto.description": "Starts on High and switches to Low if the view stutters.",
@@ -1585,6 +1611,7 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
+        "view3d.summary": "How the 3D View draws and moves on this computer. Not saved in the show.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -2801,6 +2828,12 @@
             "title": "Open the 3D View on launch?",
             "yes": "Yes"
         },
+        "board": {
+            "designedBy": "Designed by {name}",
+            "forClient": "For {name}",
+            "nowPerforming": "Now performing",
+            "untitled": "Untitled show"
+        },
         "camera": {
             "blimp": "Blimp",
             "corner": "Corner",
@@ -2808,14 +2841,17 @@
             "floor": "On the floor",
             "frontRow": "Front row",
             "geJudge": "GE judge",
+            "judgesTable": "Judges' table",
             "lowerBowl": "Lower bowl",
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
             "topDown": "Top down",
+            "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
         },
         "kit": {
+            "arena": "Indoor arena",
             "bighs": "Big high school",
             "blank": "Field only",
             "college": "College bowl",
@@ -2898,6 +2934,9 @@
             "crowd": "Show or hide the crowd",
             "escape": "Cancel a seat pick, close settings, leave fullscreen",
             "orbit": "Orbit",
+            "orbitOrRight": "Orbit, or drag with the right mouse button",
+            "panPlain": "Pan",
+            "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom"
         },
@@ -3150,7 +3189,14 @@
         "unsavedChanges": "You have unsaved changes",
         "close": "Close",
         "saved": "Show settings saved",
-        "updateFailed": "Failed to update workspace settings"
+        "updateFailed": "Failed to update workspace settings",
+        "showInfo": {
+            "projectName": "Show name",
+            "projectNamePlaceholder": "Uses the file name",
+            "designer": "Designer",
+            "client": "Client",
+            "optional": "Optional"
+        }
     },
     "canvas": {
         "zoom": {

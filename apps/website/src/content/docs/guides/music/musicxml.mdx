@@ -1,0 +1,91 @@
+---
+title: Import a MusicXML score
+description: Take a score's tempos, time signatures, measures and rehearsal marks into the show, and check what the importer guessed.
+type: how-to
+covers:
+  - apps/desktop/src/tempo/TempoImport.tsx
+  - apps/desktop/src/tempo/scoreImport.ts
+  - apps/desktop/src/components/music/MusicXmlChecksDialog.tsx
+  - apps/desktop/src/components/music/musicXmlImportChecks.ts
+  - packages/musicxml-parser
+  - i18n:tempoMode.importScore
+  - i18n:music.importChecksTitle
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+If you have the score in a notation program, export it as MusicXML and import it: OpenMarch reads the tempos, time signatures, measures and rehearsal marks and sets the show's counts to match. It's usually faster than setting each tempo by hand, and you then fix the spots where the recording differs from the score.
+
+Export from Finale, Sibelius, Dorico, MuseScore or any program that writes MusicXML. OpenMarch opens `.musicxml`, `.xml` and compressed `.mxl` files.
+
+## Import a score into a show
+
+<Steps>
+
+1. Select <Ui k="tempoMode.button.text" /> in the timeline's controls (<Kbd keys="Shift+T" />).
+2. Select <Ui k="tempoMode.import.button" />, then <Ui k="tempoMode.import.score" />.
+3. Read what the import replaces, then select <Ui k="tempoMode.importScore.choose" />.
+4. Choose the file.
+
+</Steps>
+
+<Media
+  id="music-import-score"
+  alt="The dialog Use a score's timing?, saying the score's tempos, time signatures, measures and rehearsal marks replace the show's, and that pages, drill and props stay on their counts. Buttons: Cancel and Choose a file."
+  maxWidth={560}
+/>
+
+The score's timing replaces the show's: its tempos, time signatures, measures and rehearsal marks, including any holds and tempo changes you made in Edit music. Pages, moves and props stay on their counts, so they now play at the score's tempos. One undo (<Kbd action="performUndo" />) puts everything back.
+
+When you create a new show, you can also start from a score; see [Write your first show](/guides/start/first-show/).
+
+## What the importer reads
+
+- Every part of the score. A measure takes its tempo marks, rehearsal marks and repeats from whichever part has them, and its length from the longest part.
+- Tempo marks: metronome marks (including dotted beat units), tempo words with a number, and rit. or accel. up to the next tempo marking. "a tempo" and "Tempo I" go back to the earlier tempo.
+- Time signatures, counted the way a conductor beats them: 6/8 is two counts, 7/8 is three (2+2+3, unless the score says otherwise).
+- Pickups and short measures get only the counts their music fills.
+- Repeats, first and second endings, D.C., D.S., To Coda and Fine are played out, so the counts follow the music as it's performed. A strain that repeats takes its measures twice on the timeline.
+- Rehearsal marks. In a section that's played more than once, each pass gets its own mark: A, then A-2 on the repeat.
+
+A score with no tempo marking at all gets a tempo of 120 throughout. A fermata in the score is counted as an ordinary count; make it a hold yourself afterwards (see [Hold a count](/guides/music/tempo/#hold-a-count-fermata)).
+
+Because repeats are played out, the timeline's measure numbers count every measure as it's played, and can differ from the score's after the first repeat. To match the score's numbers in a section, use <Ui k="tempoMode.band.menu.renumber" /> (see [Renumber measures](/guides/music/tempo/#renumber-measures)).
+
+## Check what the importer guessed
+
+When the importer had to guess, or couldn't read something, a notice says how many things there are to check. Select <Ui k="music.importChecksShow" /> to see the list. The notice stays until you close it.
+
+<Media
+  id="music-import-checks"
+  alt="The Check these in the score dialog for RepeatsTest Finale.musicxml, listing five jumps read from their words (D.C. al Fine at m12, D.C. al Coda at m13, D.S. al Fine at m14, D.S. al Coda and Fine at m19), each to check where it goes."
+  maxWidth={560}
+/>
+
+Each line names what to check and the measures it's in, numbered as the score numbers them. Common ones:
+
+- A jump such as "D.S. al Coda" read from its words only: check that the music goes where the importer sent it.
+- A tempo word such as "Allegro" with no metronome number: the tempo doesn't change there; set it in Edit music.
+- A rit. or accel. with no tempo marking after it: it isn't applied; make the gradual change yourself.
+- A measure longer or shorter than its time signature, or a pickup that isn't a whole number of counts: check that the counts match the music.
+- A time signature OpenMarch can't count, or one with no grouping (such as 7/8): check the counts in those measures, and fix them with the time signature menu.
+
+## After importing
+
+The score is how the music is written; the recording is how it was played. Before you write drill on the imported counts:
+
+1. Set the music offset so count 1 lands on the first note ([Add the show's music](/guides/music/audio/#set-where-the-music-starts)).
+2. Play through with the metronome on (<Kbd action="toggleMetronome" />) and listen for spots where the clicks drift from the recording, especially at tempo changes, fermatas and the ends of rit.s.
+3. Fix those spots in Edit music: [Line the counts up with the music](/guides/music/tempo/).
+
+<Aside type="caution">Importing a score again replaces everything you fixed by hand. Import first, then fix.</Aside>
+
+## Related
+
+- [How counts and the music fit together](/guides/music/counts-and-music/): what the import changes.
+- [Line the counts up with the music](/guides/music/tempo/): fix tempos, holds and measures after the import.

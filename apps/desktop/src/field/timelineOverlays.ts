@@ -7,6 +7,7 @@ import {
 } from "@/timeline/stepSizeWarning";
 import type { CollisionData } from "@/global/classes/CollisionDetection";
 import type { TimelinePath } from "@/timeline/timelinePaths";
+import { markerShapeOf, ringShapeOf, type MarkerShape } from "./markerShape";
 import type {
     FocusPoint,
     FocusPolyline,
@@ -42,7 +43,11 @@ export type StrokePlan = {
     readonly round: boolean;
 };
 
-/** A circle: a fill with an outline centered on its edge. */
+/**
+ * A dot: a fill with an outline centered on its edge. A circle of `radius`, or with `shape`, a
+ * marker in a marcher's shape sized as a marcher of that radius (`markerShape.ts`); an X is its
+ * lines in the fill color.
+ */
 export type DotPlan = {
     readonly x: number;
     readonly y: number;
@@ -50,6 +55,7 @@ export type DotPlan = {
     readonly fill: Rgba | null;
     readonly stroke: Rgba | null;
     readonly strokeWidth: number;
+    readonly shape?: MarkerShape;
 };
 
 /** A text label, centered on its point. */
@@ -195,14 +201,19 @@ export const FOCUS = {
  * The isolated timeline's scene (`buildFocusScene`), as `TimelineFocusLayer`
  * draws it: context moves, gray dashed ghosts, performed paths, then the start
  * rings, destinations, ghost ends and forks. With marchers selected
- * (`emphasis`), the others step back.
+ * (`emphasis`), the others step back. With `shapeOf`, every mark that stands for where a marcher
+ * is (start rings, destinations, ghost ends, the ends of context moves) takes that marcher's
+ * shape; forks, which are points on paths, stay round.
  */
 // eslint-disable-next-line max-lines-per-function
 export function planFocusOverlay(
     scene: FocusScene,
     ghostColor: string,
     emphasis: ReadonlySet<number> | null,
+    shapeOf?: (marcherId: number) => MarkerShape,
 ): OverlayPlan {
+    const markOf = (marcherId: number) => markerShapeOf(shapeOf?.(marcherId));
+    const ringOf = (marcherId: number) => ringShapeOf(shapeOf?.(marcherId));
     const alphaOf = (marcherId: number) =>
         emphasis === null || emphasis.has(marcherId)
             ? 1
@@ -235,6 +246,7 @@ export function planFocusOverlay(
                     end,
                     FOCUS.dotRadius,
                     hexRgba(path.color, alphaOf(path.marcherId)),
+                    markOf(path.marcherId),
                 ),
             );
     }
@@ -266,11 +278,17 @@ export function planFocusOverlay(
             fill: null,
             stroke: sceneColor(slot.holds ? FOCUS.holdAlpha * alpha : alpha),
             strokeWidth: FOCUS.ringWidth,
+            shape: ringOf(slot.marcherId),
         });
         if (slot.holds) continue;
         if (slot.destination)
             dots.push(
-                filled(slot.destination, FOCUS.dotRadius, sceneColor(alpha)),
+                filled(
+                    slot.destination,
+                    FOCUS.dotRadius,
+                    sceneColor(alpha),
+                    markOf(slot.marcherId),
+                ),
             );
         if (slot.ghostEnd)
             dots.push({
@@ -279,6 +297,7 @@ export function planFocusOverlay(
                 fill: hexRgba(ghostColor, FOCUS.ghostDotFillAlpha * alpha),
                 stroke: hexRgba(ghostColor, alpha),
                 strokeWidth: FOCUS.ringWidth,
+                shape: ringOf(slot.marcherId),
             });
         for (const fork of slot.forks)
             dots.push(
@@ -288,13 +307,19 @@ export function planFocusOverlay(
     return { units: "screen", strokes, dots, labels: [] };
 }
 
-const filled = (p: FocusPoint, radius: number, color: Rgba): DotPlan => ({
+const filled = (
+    p: FocusPoint,
+    radius: number,
+    color: Rgba,
+    shape: MarkerShape = "circle",
+): DotPlan => ({
     x: p.x,
     y: p.y,
     radius,
     fill: color,
     stroke: null,
     strokeWidth: 0,
+    shape,
 });
 
 // ---------------------------------------------------------------------------

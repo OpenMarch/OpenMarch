@@ -1,0 +1,220 @@
+[
+    {
+        "id": "general",
+        "label": "General",
+        "description": "Editor mode, language and other app-wide preferences.",
+        "settings": [
+            {
+                "key": "settings.general.language",
+                "label": "Language"
+            },
+            {
+                "key": "settings.general.automaticUpdates",
+                "label": "Automatically download and install updates"
+            },
+            {
+                "key": "settings.general.openView3dWithShow",
+                "label": "Open 3D View when a show opens"
+            }
+        ]
+    },
+    {
+        "id": "appearance",
+        "label": "Appearance",
+        "description": "How OpenMarch looks.",
+        "settings": [
+            {
+                "key": "settings.general.appearance",
+                "label": "Appearance",
+                "options": [
+                    {
+                        "key": "settings.general.appearance.light",
+                        "label": "Light"
+                    },
+                    {
+                        "key": "settings.general.appearance.dark",
+                        "label": "Dark"
+                    }
+                ]
+            },
+            {
+                "key": "settings.general.showFullDatabasePath",
+                "label": "Show full file path"
+            },
+            {
+                "key": "settings.general.performanceMode",
+                "label": "Performance mode"
+            }
+        ]
+    },
+    {
+        "id": "input",
+        "label": "Touch & Input",
+        "description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
+        "settings": [
+            {
+                "key": "settings.input.interface",
+                "label": "Layout",
+                "options": [
+                    {
+                        "key": "settings.input.interface.touch",
+                        "label": "Tablet"
+                    },
+                    {
+                        "key": "settings.input.interface.mouse",
+                        "label": "Desktop"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "mouse",
+        "label": "Mouse & Trackpad",
+        "description": "How the mouse and trackpad move around the field.",
+        "settings": [
+            {
+                "key": "settings.mouse.zoomSensitivity",
+                "label": "Zoom sensitivity"
+            },
+            {
+                "key": "settings.mouse.trackpadMode",
+                "label": "Trackpad mode (recommended for macOS)"
+            },
+            {
+                "key": "settings.mouse.trackpadPanSensitivity",
+                "label": "Trackpad pan sensitivity"
+            }
+        ]
+    },
+    {
+        "id": "timeline",
+        "label": "Timeline",
+        "description": "How the timeline looks.",
+        "settings": [
+            {
+                "key": "settings.general.editorMode",
+                "label": "Editor mode",
+                "options": [
+                    {
+                        "key": "settings.general.editorMode.basic",
+                        "label": "Basic"
+                    },
+                    {
+                        "key": "settings.general.editorMode.expert",
+                        "label": "Expert"
+                    }
+                ]
+            },
+            {
+                "key": "settings.timeline.waveformStyle",
+                "label": "Waveform",
+                "options": [
+                    {
+                        "key": "settings.timeline.waveformStyle.simplified",
+                        "label": "Simplified"
+                    },
+                    {
+                        "key": "settings.timeline.waveformStyle.precise",
+                        "label": "Precise"
+                    },
+                    {
+                        "key": "settings.timeline.waveformStyle.hidden",
+                        "label": "Hidden"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "field",
+        "label": "Field",
+        "description": "How the field looks.",
+        "settings": [
+            {
+                "key": "settings.field.gridLines",
+                "label": "Grid lines"
+            },
+            {
+                "key": "settings.field.halfLines",
+                "label": "Half lines"
+            },
+            {
+                "key": "settings.field.labelSize",
+                "label": "Label size"
+            },
+            {
+                "key": "settings.field.labelPosition",
+                "label": "Label position"
+            },
+            {
+                "key": "settings.field.stepSizeWarnings",
+                "label": "Step size warnings"
+            }
+        ]
+    },
+    {
+        "id": "view3d",
+        "label": "3D View",
+        "description": "How the 3D View draws and moves on this computer. Not saved in the show.",
+        "settings": [
+            {
+                "key": "settings.view3d.controls",
+                "label": "Controls"
+            },
+            {
+                "key": "settings.view3d.quality",
+                "label": "Quality"
+            },
+            {
+                "key": "settings.view3d.resolution",
+                "label": "Resolution"
+            }
+        ]
+    },
+    {
+        "id": "shortcuts",
+        "label": "Keyboard shortcuts",
+        "description": "Change the keys for any action. Changes apply right away.",
+        "settings": []
+    },
+    {
+        "id": "privacy",
+        "label": "Privacy",
+        "description": "Choose what OpenMarch shares to help improve the app.",
+        "settings": [
+            {
+                "key": "settings.privacy.analytics",
+                "label": "Share usage analytics",
+                "options": [
+                    {
+                        "key": "settings.privacy.analytics.toggle",
+                        "label": "Enable analytics"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "developer",
+        "label": "Developer Settings",
+        "description": "Tools for translating and debugging OpenMarch.",
+        "settings": [
+            {
+                "key": "settings.tolgeeDevToolsToggle",
+                "label": "Tolgee In-Context Translating"
+            }
+        ]
+    },
+    {
+        "id": "database",
+        "label": "Database",
+        "description": "Repair the file of the show that's open.",
+        "settings": [
+            {
+                "key": "settings.repairDotsFile.title",
+                "label": "Repair DOTS file"
+            }
+        ]
+    }
+]

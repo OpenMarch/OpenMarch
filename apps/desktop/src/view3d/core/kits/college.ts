@@ -46,12 +46,11 @@ export const buildCollege: KitBuilder = (input) =>
                 },
             },
             board: {
-                w: ft(90),
-                h: ft(34),
+                w: ft(126),
+                h: ft(48),
                 legs: 0,
                 dx: ft(150.8),
-                y: ft(70),
-                title: "SPRING SHOW",
+                y: ft(77),
             },
             podium: false,
             poles: {

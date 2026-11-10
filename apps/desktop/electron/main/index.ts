@@ -819,23 +819,6 @@ app.on("activate", () => {
     }
 });
 
-// New window example arg: new windows url
-ipcMain.handle("open-win", (_, arg) => {
-    const childWindow = new BrowserWindow({
-        webPreferences: {
-            preload,
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
-
-    if (process.env.VITE_DEV_SERVER_URL) {
-        void childWindow.loadURL(`${url}#${arg}`);
-    } else {
-        void childWindow.loadFile(indexHtml, { hash: arg });
-    }
-});
-
 /************************************** FILE SYSTEM INTERACTIONS **************************************/
 /**
  * Creates a new database file at the specified path.
@@ -1424,9 +1407,7 @@ function bufferToArrayBuffer(data: Buffer): ArrayBuffer {
  *
  * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
-export async function insertAudioFile(): Promise<
-    DatabaseServices.LegacyDatabaseResponse<AudioFile[]>
-> {
+export async function insertAudioFile(): Promise<DatabaseServices.AudioInsertResponse> {
     console.log("insertAudioFile");
 
     if (!win) return audioInsertError("insertAudioFile: window not loaded");
@@ -1438,11 +1419,7 @@ export async function insertAudioFile(): Promise<
 
     try {
         const filePath = await pickAudioFilePath();
-        if (!filePath) {
-            return audioInsertError(
-                "insertAudioFile: Operation was cancelled or no audio file was provided",
-            );
-        }
+        if (!filePath) return { success: false, cancelled: true };
 
         console.log("loading audio file into buffer:", filePath);
         const data = await readAudioFileBuffer(filePath);

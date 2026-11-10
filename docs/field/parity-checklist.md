@@ -27,7 +27,7 @@ numbers) is in [parity-gate-results.md](parity-gate-results.md).
 ## Setup
 
 1. Open the new-field link and open "Part 1 Demo" from the launch page → the field draws; no error. (Checked headless on the preview build, 2026-10-15.)
-2. Open "LHB '26 – Daft Punk pt. 2" too, for the larger show (385 marchers).
+2. Open a larger show of your own too (a few hundred marchers), with Open file.
 3. If the field shows a one-time note about software graphics, read it → it explains low-quality mode and how to turn graphics acceleration on, and doesn't show again after a reload.
 
 ## Viewing the field

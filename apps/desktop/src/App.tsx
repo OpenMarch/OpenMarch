@@ -79,6 +79,7 @@ import {
 import InspectorDock from "@/components/layout/InspectorDock";
 import WindowTooSmallNotice from "@/components/layout/WindowTooSmallNotice";
 import { useWindowSize } from "./hooks/useWindowSize";
+import { siteUrl } from "@/global/siteUrl";
 
 // The field's own chunk, so the launch page doesn't load three.js
 const ThreeField = lazy(() => import("@/field/three/ThreeField"));
@@ -171,7 +172,7 @@ function App() {
                     label: tolgee.t("app.releaseNotes"),
                     onClick: () =>
                         window.electron.openExternal(
-                            "https://openmarch.com/download/#releases",
+                            siteUrl("/download/#releases"),
                         ),
                 },
             });

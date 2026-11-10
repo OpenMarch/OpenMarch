@@ -1,0 +1,67 @@
+---
+title: Install OpenMarch
+description: Get the desktop app for macOS, Windows or Linux, or use the web editor in a browser, on a computer or a tablet.
+type: how-to
+covers:
+  - apps/website/src/pages/download.astro
+  - apps/desktop/web
+  - apps/desktop/src/stores/InputModeStore.ts
+  - apps/desktop/src/components/launchpage/settings/InputSettings.tsx
+  - i18n:web
+  - i18n:settings.input
+sidebar:
+  order: 1
+---
+
+import Ui from "@/components/docs/Ui.astro";
+
+OpenMarch is free. You can install the desktop app on a Mac, Windows or Linux computer, or open the web editor in a browser without installing anything. Both open the same `.dots` show files.
+
+## The desktop app
+
+1. Go to [openmarch.com/download](/download/).
+2. Choose the download for your computer:
+   - Windows: the `.exe` installer.
+   - macOS: **Download for Apple Silicon** for a Mac with an M-series chip, or **Download for Intel** for an older Mac. Open the `.dmg` and drag OpenMarch into the Applications folder.
+   - Linux: the AppImage for your processor (x64 or ARM), or OpenMarch from the Snap Store. Before you run an AppImage, allow it to run as a program in its file properties, or run `chmod +x` on it.
+3. Open OpenMarch. The first time, it asks for your language and light or dark, shows what's new, and asks how you want to work: Basic or Expert. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+The desktop app checks for a new version when it starts, downloads it, and installs it when you quit. The Snap Store version updates through the Snap Store instead. To turn automatic updates off, open <Ui k="settings.title" /> › <Ui k="settings.general" /> and turn off <Ui k="settings.general.automaticUpdates" />.
+
+The download page also lists earlier releases, if you need to open a show in an older version. See [Open a show in an older version](/troubleshooting/open-in-an-older-version/).
+
+## The web editor
+
+Open [editor.openmarch.com](https://editor.openmarch.com) in a browser. You don't need an account, and your shows stay in that browser, on that device. You sign in only to [send a show to On the Move](/guides/files/on-the-move/).
+
+- Every change is saved in the browser as you work, and the last 20 versions of each show are kept. Your shows are listed on the start page.
+- Select <Ui k="web.backUp" /> to save a `.dots` copy of the show somewhere else: a folder, Files, Google Drive or email. If the browser's data is cleared, or you lose the device, your backups are the only copies. Back up often.
+- Shows in one browser don't appear in another browser or on another device. To move a show, back it up and open the `.dots` file there.
+- Use one tab. While OpenMarch is open in another tab, a second tab doesn't keep its show once you close it.
+- In a private window the browser may not keep anything. The editor tells you when that's the case, and you need to download your work before you close the tab.
+
+The web editor has most of the desktop app. It doesn't have PDF exports (drill charts and coordinate sheets) or <Ui k="settings.repairDotsFile" />. Video export and [sending the show to On the Move](/guides/files/on-the-move/) work. The 3D View, and signing in to your OpenMarch account, open in a pop-up window or a new tab, so allow pop-ups for the site if your browser blocks them.
+
+Opening a show from OpenMarch 0.1.7 in the web editor converts the copy in the browser; your `.dots` file isn't changed. See [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/).
+
+How shows are kept and backed up is in [Save and open shows](/guides/files/save-and-open/).
+
+## Tablets
+
+OpenMarch has a tablet layout, with larger controls for fingers and a pen.
+
+- iPad: use the web editor in Safari. The first time, OpenMarch asks you to add it to your Home Screen. Do that and open it from there: in a Safari tab, Safari can delete your shows if you don't visit for about a week, and the Home Screen app keeps them. The Home Screen app keeps its own shows, apart from Safari's, so back up anything you made in Safari and open the file in the Home Screen app.
+- Android tablets: use the web editor in Chrome.
+- Windows tablets: install the desktop app.
+
+Phones are too small for now. If the window is too small for OpenMarch, it says so; make the window bigger or turn the tablet sideways.
+
+OpenMarch picks the layout from the device: the tablet layout on a tablet, the desktop layout on a computer. To choose it yourself, for example on a laptop with a touch screen, open <Ui k="settings.title" /> › <Ui k="settings.input" /> and choose a <Ui k="settings.input.interface" />: <Ui k="settings.input.interface.auto" />, <Ui k="settings.input.interface.touch" /> or <Ui k="settings.input.interface.mouse" />.
+
+In 0.2, a finger on the field moves and zooms the view, but doesn't select or drag marchers yet. To write drill on a tablet, connect a mouse or trackpad. See [Known issues](/troubleshooting/known-issues/).
+
+## Related
+
+- [Write your first show](/guides/start/first-show/): start a show and add marchers.
+- [Basic and Expert](/guides/start/basic-and-expert/): the choice the app asks for the first time it opens.
+- [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/): what happens to shows made in 0.1.7.

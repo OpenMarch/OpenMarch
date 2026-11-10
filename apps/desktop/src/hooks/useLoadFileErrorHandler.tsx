@@ -6,15 +6,17 @@ import {
     NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
 } from "@om-electron/database/convertOnOpenGate";
+import { siteUrl } from "@/global/siteUrl";
 
 const FILE_ERROR_GUIDE_URLS = {
-    forbidden:
-        "https://www.openmarch.com/troubleshooting/file-errors/#invalid-file-permissions-error",
-    notFound:
-        "https://www.openmarch.com/troubleshooting/file-errors/#file-not-found-error",
-    server: "https://www.openmarch.com/troubleshooting/file-errors/#server-error",
-    default:
-        "https://www.openmarch.com/troubleshooting/file-errors/#unable-to-open-file-error-or-render-failure",
+    forbidden: siteUrl(
+        "/troubleshooting/file-errors/#invalid-file-permissions-error",
+    ),
+    notFound: siteUrl("/troubleshooting/file-errors/#file-not-found-error"),
+    server: siteUrl("/troubleshooting/file-errors/#server-error"),
+    default: siteUrl(
+        "/troubleshooting/file-errors/#unable-to-open-file-error-or-render-failure",
+    ),
 } as const;
 
 function ReferToGuide({ guideUrl }: { guideUrl: string }) {

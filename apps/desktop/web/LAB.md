@@ -5,7 +5,7 @@
 > `LAB_MANIFEST` and the `VITE_PUBLIC_LAB_*` values) and its wording in the
 > app (`webChannel === "lab"`), `renderer/lab.ts` and its calls in
 > `renderer/index.ts`, the version switch (`variants.ts`, `src/lab/`), the
-> example shows (`demos.ts`, `public/demos/`, which the fork's `preview`
+> example shows (`demos.ts`, `public/demos/`, which the fork's `examples`
 > channel uses too), `lab/` and
 > `.github/workflows/lab-deploy.yaml`. They exist so testers can try features
 > that are still in development, in a browser, and give feedback. They live
@@ -31,7 +31,7 @@ with these differences:
     editor; the start page also offers the example shows.
   - The "Web" notice still opens from the title bar's "Web" badge.
 - **Example shows.** The start page offers the shows in `public/demos/`
-  (listed in `demos.ts`), as the `preview` channel does, so a tester doesn't
+  (listed in `demos.ts`), as the `examples` channel does, so a tester doesn't
   need a `.dots` file of their own.
 - **Served from a folder.** The lab serves each test at
   `https://lab.openmarch.com/x/<test id>/`, so the build's URLs are relative
@@ -78,7 +78,7 @@ and questions) and, optionally, an intro video or GIF. Two front-matter
 fields are the build's, and the lab ignores them:
 
 ```yaml
-show: lhb-daft-punk # the example show it opens: an id in demos.ts (default: part1)
+show: part1 # the example show it opens: an id in demos.ts (default: part1)
 mode: basic # the editor mode: basic or expert (default: expert)
 ```
 
@@ -140,6 +140,6 @@ Locally, point the build at the manifest:
 ## Demo shows
 
 `public/demos/` holds the demo `.dots` files, listed in `demos.ts`. To add
-one, copy the file there and add an entry. The preview Worker's Cloudflare
+one, copy the file there and add an entry. The examples Worker's Cloudflare
 static assets reject files over 25 MiB, which includes a show's embedded
 music.

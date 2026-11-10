@@ -62,7 +62,12 @@ export const SETTINGS_SECTION_STORAGE_KEY = "openmarch:settingsSection";
  * render each group as a collapsible heading above its sections. Not implemented yet
  * because there are only a few sections.
  */
-const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
+/**
+ * Every section, as in the desktop app. The user guide's settings data is generated from this
+ * list (`scripts/docs-reference/generate.mts`), and its check fails on a setting in `searchKeys`
+ * that no guide page describes, so list each setting's label key here.
+ */
+export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
     {
         id: "general",
         labelKey: "settings.general",
@@ -72,7 +77,12 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         searchKeys: [
             "settings.general.language",
             // Not in the web build, where there's nothing to update
-            ...(isWebBuild ? [] : ["settings.general.automaticUpdates"]),
+            ...(isWebBuild
+                ? []
+                : [
+                      "settings.general.automaticUpdates",
+                      "settings.general.openView3dWithShow",
+                  ]),
         ],
     },
     {
@@ -86,6 +96,7 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.general.appearance.light",
             "settings.general.appearance.dark",
             "settings.general.showFullDatabasePath",
+            "settings.general.performanceMode",
         ],
     },
     {
@@ -110,7 +121,6 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.mouse.zoomSensitivity",
             "settings.mouse.trackpadMode",
             "settings.mouse.trackpadPanSensitivity",
-            "settings.mouse.panSensitivity",
         ],
     },
     {
@@ -148,8 +158,12 @@ const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         labelKey: "settings.view3d",
         Icon: CubeIcon,
         Component: View3dSettings,
-        descriptionKey: "settings.view3d.description",
-        searchKeys: ["settings.view3d.quality", "settings.view3d.resolution"],
+        descriptionKey: "settings.view3d.summary",
+        searchKeys: [
+            "settings.view3d.controls",
+            "settings.view3d.quality",
+            "settings.view3d.resolution",
+        ],
     },
     {
         id: "shortcuts",

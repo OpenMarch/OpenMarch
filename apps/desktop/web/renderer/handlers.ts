@@ -12,9 +12,15 @@ import { WEB_CHANNELS, type FlushResult } from "../protocol";
 import { leaveDecision, leaveQuestion } from "./leave";
 import { workerErrorText } from "./workerErrors";
 import { emit, handleInPage, invokeWorker, listenInPage } from "./ipc";
-import { storageKey } from "./channel";
+import { STORAGE_NAMESPACE, storageKey } from "./channel";
+import { createWebAuth } from "./auth";
+import {
+    WEB_CLERK_PUBLISHABLE_KEY,
+    isSignInEnabled,
+} from "../../src/global/auth/constants";
 import { handOffShow } from "./handoff";
-import { webExampleShows } from "../../src/utilities/webBuild";
+import { webChannel, webExampleShows } from "../../src/utilities/webBuild";
+import { isStandalone } from "../../src/utilities/homeScreen";
 import { GPU_CRASHED_CHANNEL } from "../../electron/main/gpu";
 import { useWebLibraryStore } from "../../src/stores/WebLibraryStore";
 import { requestOpenSettings } from "../../src/utilities/settingsSheet";
@@ -82,6 +88,21 @@ export function reloadPage() {
     reloading = true;
     window.location.reload();
 }
+
+/**
+ * Leaves for another page after the app already asked (`confirmLeave`), so
+ * the browser doesn't ask again.
+ */
+function leavePage(url: string) {
+    reloading = true;
+    window.location.assign(url);
+}
+
+// Back from the page `leavePage` went to, out of the back-forward cache: the
+// show is open again, so leaving should ask again.
+window.addEventListener("pageshow", (event) => {
+    if (event.persisted) reloading = false;
+});
 
 /** Whether the page is reloading itself, so leaving loses nothing. */
 export const isReloadingOnPurpose = () => reloading;
@@ -362,6 +383,43 @@ async function confirmLeave(): Promise<{ go: boolean; force: boolean }> {
     return { go, force: go };
 }
 
+/**
+ * Sign-in (for Mobile export): Clerk's hosted pages in a new tab, see
+ * `./auth.ts`. Builds or sites that can't sign in (examples, dev without a
+ * development key, a branch's URL off openmarch.com) stay signed out, as
+ * does the Settings tab, which has no Mobile export.
+ */
+function registerAuthHandlers(isSettingsTab: boolean) {
+    if (!isSignInEnabled || isSettingsTab) {
+        handleInPage("auth:get-state", () => ({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error: null,
+        }));
+        handleInPage("auth:get-access-token", () => ({ token: null }));
+        return;
+    }
+    const doneUrl = new URL(
+        `${import.meta.env.BASE_URL}auth-done.html`,
+        window.location.href,
+    );
+    doneUrl.searchParams.set("channel", STORAGE_NAMESPACE);
+    const handlers = createWebAuth({
+        publishableKey: WEB_CLERK_PUBLISHABLE_KEY,
+        namespace: STORAGE_NAMESPACE,
+        emit,
+        doneUrl: doneUrl.href,
+        confirmLeave: async () => (await confirmLeave()).go,
+        leave: leavePage,
+        sameTabOnly: isStandalone(),
+        // The lab's feedback widget loads the same ClerkJS.
+        sharedLoad: webChannel === "lab",
+    });
+    for (const [channel, handler] of Object.entries(handlers))
+        handleInPage(channel, handler);
+}
+
 async function closeShow() {
     const { go, force } = await confirmLeave();
     if (!go) {
@@ -384,7 +442,7 @@ async function closeShow() {
     return 200;
 }
 
-/** Opens one of a preview build's example shows. 404 if `path` isn't one. */
+/** Opens one of an examples build's example shows. 404 if `path` isn't one. */
 async function openExampleShow(path: string): Promise<number> {
     const example = webExampleShows.find((show) => show.file === path);
     if (!example) return 404;
@@ -449,20 +507,14 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
         "recent-files:clear-missing",
     ])
         handleInPage(channel, () => undefined);
-    // A preview build's start page opens its example shows by path, the
+    // An examples build's start page opens its example shows by path, the
     // way a recent file opens (see ExampleShows.tsx).
     handleInPage("recent-files:open", (path: string) =>
         isSettingsTab ? 404 : openExampleShow(path),
     );
     handleInPage("newShow:getPending", () => false);
     handleInPage("newShow:clearPending", () => undefined);
-    handleInPage("auth:get-state", () => ({
-        isAuthenticated: false,
-        isLoading: false,
-        user: null,
-        error: null,
-    }));
-    handleInPage("auth:get-access-token", () => ({ token: null }));
+    registerAuthHandlers(isSettingsTab);
 
     if (isSettingsTab) return;
 
@@ -548,14 +600,7 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
                 file = null;
             }
         }
-        if (!file)
-            return {
-                success: false,
-                error: {
-                    message:
-                        "insertAudioFile: Operation was cancelled or no audio file was provided",
-                },
-            };
+        if (!file) return { success: false, cancelled: true };
         const response = await invokeWorker<{
             success: boolean;
             error?: { message?: string };

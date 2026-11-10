@@ -2653,14 +2653,17 @@
             "floor": "Sa sahig",
             "frontRow": "Unang hanay",
             "geJudge": "Hurado ng GE",
+            "judgesTable": "Mesa ng mga hurado",
             "lowerBowl": "Ibabang palapag",
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
             "topDown": "Mula sa itaas",
+            "tunnel": "Tunnel",
             "upperDeck": "Itaas na palapag"
         },
         "kit": {
+            "arena": "Indoor arena",
             "bighs": "Malaking high school",
             "blank": "Field lang",
             "college": "Stadium ng kolehiyo",
@@ -2788,6 +2791,12 @@
         },
         "venue": {
             "updateFailed": "Hindi na-update ang venue ng 3D View"
+        },
+        "board": {
+            "designedBy": "Disenyo ni {name}",
+            "forClient": "Para sa {name}",
+            "nowPerforming": "Nagtatanghal ngayon",
+            "untitled": "Palabas na walang pamagat"
         }
     },
     "web": {
@@ -2943,7 +2952,14 @@
         "unsavedChanges": "May mga pagbabago kang hindi pa naka-save",
         "close": "Isara",
         "saved": "Na-save ang mga setting ng palabas",
-        "updateFailed": "Hindi na-update ang mga setting ng workspace"
+        "updateFailed": "Hindi na-update ang mga setting ng workspace",
+        "showInfo": {
+            "projectName": "Pangalan ng palabas",
+            "projectNamePlaceholder": "Gagamitin ang pangalan ng file",
+            "designer": "Designer",
+            "client": "Kliyente",
+            "optional": "Opsyonal"
+        }
     },
     "canvas": {
         "zoom": {

@@ -2653,14 +2653,17 @@
             "floor": "บนพื้น",
             "frontRow": "แถวหน้า",
             "geJudge": "กรรมการ GE",
+            "judgesTable": "โต๊ะกรรมการ",
             "lowerBowl": "อัฒจันทร์ชั้นล่าง",
             "podium": "โพเดียม",
             "pressBox": "ห้องสื่อมวลชน",
             "sideline": "ข้างสนาม",
             "topDown": "มุมมองด้านบน",
+            "tunnel": "อุโมงค์",
             "upperDeck": "อัฒจันทร์ชั้นบน"
         },
         "kit": {
+            "arena": "อารีน่าในร่ม",
             "bighs": "โรงเรียนมัธยมขนาดใหญ่",
             "blank": "เฉพาะสนาม",
             "college": "สนามมหาวิทยาลัย",
@@ -2788,6 +2791,12 @@
         },
         "venue": {
             "updateFailed": "อัปเดตสถานที่ของมุมมอง 3D ไม่สำเร็จ"
+        },
+        "board": {
+            "designedBy": "ออกแบบโดย {name}",
+            "forClient": "สำหรับ {name}",
+            "nowPerforming": "กำลังแสดง",
+            "untitled": "โชว์ไม่มีชื่อ"
         }
     },
     "web": {
@@ -2943,7 +2952,14 @@
         "unsavedChanges": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
         "close": "ปิด",
         "saved": "บันทึกการตั้งค่าโชว์แล้ว",
-        "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ"
+        "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ",
+        "showInfo": {
+            "projectName": "ชื่อโชว์",
+            "projectNamePlaceholder": "ใช้ชื่อไฟล์",
+            "designer": "ผู้ออกแบบ",
+            "client": "ลูกค้า",
+            "optional": "ไม่บังคับ"
+        }
     },
     "canvas": {
         "zoom": {

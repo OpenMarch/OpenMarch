@@ -43,42 +43,19 @@ export function paintCanvasTexture(
     return tex;
 }
 
-/** Video board face: purple-to-dark gradient, a title and a subtitle. */
-export function boardTexture(title: string, sub: string): CanvasTexture {
-    return paintCanvasTexture(1024, 560, (g) => {
-        const bg = g.createLinearGradient(0, 0, 1024, 560);
-        bg.addColorStop(0, "#2a1880");
-        bg.addColorStop(1, "#0b0b1e");
-        g.fillStyle = bg;
-        g.fillRect(0, 0, 1024, 560);
-        g.fillStyle = "#fff";
-        g.textAlign = "center";
-        g.font = `700 120px ${TEXTURE_FONT}`;
-        g.fillText(title, 512, 300);
-        g.font = `500 48px ${TEXTURE_FONT}`;
-        g.fillStyle = "rgba(255,255,255,0.75)";
-        g.fillText(sub, 512, 390);
-        g.fillStyle = "#6442ff";
-        g.fillRect(0, 520, 1024, 40);
-    });
-}
-
 /**
- * LED fascia ribbon (the pro dome's upper fascia). Repeats along U. Pass
- * `params.endZoneText || "OPENMARCH"` as `text`.
+ * Clears and repaints a texture made by `paintCanvasTexture` (when painting is
+ * enabled), then flags it for upload.
  */
-export function ribbonTexture(text: string): CanvasTexture {
-    return paintCanvasTexture(
-        1024,
-        64,
-        (g) => {
-            g.fillStyle = "#120c3a";
-            g.fillRect(0, 0, 1024, 64);
-            g.fillStyle = "#b9a8ff";
-            g.font = `700 40px ${TEXTURE_FONT}`;
-            g.textBaseline = "middle";
-            g.fillText(`${text}  ·`, 16, 34);
-        },
-        { repeat: true },
-    );
+export function repaintCanvasTexture(
+    texture: CanvasTexture,
+    paint: (g: CanvasRenderingContext2D, width: number, height: number) => void,
+): void {
+    if (!paintingEnabled) return;
+    const canvas = texture.image as HTMLCanvasElement | undefined;
+    const g = canvas?.getContext("2d");
+    if (!canvas || !g) return;
+    g.clearRect(0, 0, canvas.width, canvas.height);
+    paint(g, canvas.width, canvas.height);
+    texture.needsUpdate = true;
 }

@@ -1,0 +1,84 @@
+---
+title: Coming from OpenMarch 0.1
+description: What happens when you open a show from OpenMarch 0.1.7 in 0.2, what the conversion keeps and loses, and how its pages become pages and moves.
+type: concept
+covers:
+  - apps/desktop/electron/database/convertOnOpen.ts
+  - apps/desktop/electron/database/convertOnOpenGate.ts
+  - apps/desktop/electron/database/backup.ts
+  - apps/desktop/src/components/ConvertShowDialog.tsx
+  - apps/desktop/src/timeline/convert
+  - apps/desktop/web/worker/index.ts
+  - i18n:convertShow
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Aside } from "@astrojs/starlight/components";
+
+OpenMarch 0.2 stores a show as a timeline instead of a list of pages. A show saved by 0.1.7 has to be converted once before 0.2 can open it. The conversion keeps your marchers' positions on every page exactly, and the desktop app saves an untouched copy first, so you can always go back.
+
+The first time 0.2 opens on a computer that had 0.1.7, it says <Ui k="welcomeFlow.welcomeBack.title" /> and shows what's new, then asks you to choose [Basic or Expert](/guides/start/basic-and-expert/).
+
+## Converting a show
+
+When you open a 0.1.7 show in the desktop app, OpenMarch asks before it changes anything.
+
+<Media
+  id="start-convert-dialog"
+  alt="The dialog Convert this show to timelines?, saying the show was made with an older version, naming the copy Fall Show.pre-conversion.dots that will be saved in the show's folder, with Cancel and Confirm buttons."
+/>
+
+- <Ui k="convertShow.confirm" /> saves the copy, converts the show and opens it. A long show shows its progress page by page.
+- <Ui k="convertShow.cancel" /> leaves the file as it was and opens nothing.
+
+The copy goes in the same folder as the show, named after it: `Fall Show.dots` gets `Fall Show.pre-conversion.dots`. If that name is taken, the copy is `Fall Show.pre-conversion-2.dots`, and so on. OpenMarch 0.1.7 can open the copy; it can't open the converted show.
+
+<Aside type="caution">
+Don't open a converted show in OpenMarch 0.1.7. It can't read the show, and saving it there can leave a file that 0.2 can't open either. Keep the `.pre-conversion.dots` copy until you're sure you don't need 0.1.7 any more. See [Open a show in an older version](/troubleshooting/open-in-an-older-version/).
+</Aside>
+
+If OpenMarch can't save the copy, it doesn't convert anything and says why. The usual causes are a folder you can't write to (such as a shared or read-only folder) and a full disk: move the show to a folder of your own, or free some space, and open it again. If the conversion itself fails, the show is left exactly as it was, and the message names the copy.
+
+### In the web editor
+
+The web editor converts a 0.1.7 show without asking. It converts the copy it keeps in the browser; the `.dots` file you opened isn't changed, so that file is your 0.1.7 version. When you back the show up, the backup is the converted show.
+
+## What the conversion keeps
+
+- Marchers and sections, the field, the music and its counts, measures and tempos.
+- Every page, with the same counts.
+- Every marcher's position at the end of every page, exactly.
+- The page notes.
+
+Marchers still move in straight lines from one page's set to the next. Where the tempo changes inside a page, marchers now move the same distance on each count, rather than the same distance each second, so their motion in the middle of that page can look slightly different. Their positions at each page are the same.
+
+## What it loses
+
+Some per-page details from 0.1.7 have no place in 0.2 and are dropped:
+
+- A marcher's facing (rotation) set on one page.
+- Notes on a marcher for one page.
+- Appearance changed for a marcher on one page: its color, its shape or its equipment. Appearance set for a whole section is kept.
+- The editable curve of a shape you drew to place marchers on a page. The marchers stay where it put them; only the curve can't be edited any more.
+
+If you need any of these, they're still in the `.pre-conversion.dots` copy, which you can open in 0.1.7.
+
+## Pages become pages and moves
+
+In 0.1.7, each page was a set and the marchers walked straight to it. In 0.2, the pages are still there, and the walking is a move: a stretch of time in which marchers go from one place to another.
+
+- The first page, where the show starts, becomes the home positions: where every marcher stands before the first move.
+- Every later page becomes a page of the same length with one move across it, for the marchers who change position on that page.
+- A marcher who stays in place on a page gets no move there, and nothing is decided for it on that page: it's Not defined, and shows where it last stood. If you later change where it stands on an earlier page, it stands there on this page too, instead of walking back to the old spot as it would have in 0.1.7.
+
+A converted show is all pages and page-length moves, so everything in it can be edited in Basic. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains the three states a marcher can have on a page.
+
+## Related
+
+- [Basic and Expert](/guides/start/basic-and-expert/): Basic works in pages, as 0.1.7 did.
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, moves and counts in 0.2.
+- [What's new in 0.2](/guides/start/whats-new/): what 0.2 adds.
+- [Open a show in an older version](/troubleshooting/open-in-an-older-version/): going back to 0.1.7.

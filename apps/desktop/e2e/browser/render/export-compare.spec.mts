@@ -33,7 +33,6 @@ const IMAGE_PNG = fs
 
 const SHOWS = [
     { name: "part1-demo", file: "part1-demo.dots", seedSql: [] as string[] },
-    { name: "lhb-daft-punk-pt2", file: "lhb-daft-punk-pt2.dots", seedSql: [] },
     {
         // Part 1 with a field image, fitted at 60% opacity
         name: "part1-image",
@@ -55,7 +54,7 @@ for (const show of SHOWS)
 
             test("exports drill charts", async ({ show: app }, testInfo) => {
                 // Individual charts are slow: builds before #206 took minutes
-                // for Part 1's 95 and didn't finish Daft Punk's 385 in 28
+                // for Part 1's 95 and didn't finish a 385-marcher show in 28
                 // minutes (#208)
                 test.setTimeout(1_800_000);
                 const { page } = app;

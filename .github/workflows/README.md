@@ -21,3 +21,15 @@ snapcraft export-login <credentials-filename>
 ## Nightly builds (fork)
 
 `nightly.yaml` builds unsigned installers for every push to `main` and replaces the rolling `nightly` prerelease. Nightlies use `apps/desktop/electron-builder-nightly.json5`, so they install as "OpenMarch Nightly" next to the released app and never auto-update.
+
+## Public betas
+
+Betas are built by `desktop-release.yaml` from `v*-beta.N` tags on `prerelease/<major>.<minor>`, which only ever receives fork `main`. `pr-checks.yaml` and `codeql.yaml` also run for pull requests into `prerelease/**`, because the "Branch Protections" ruleset requires their results there.
+
+The whole process (version numbers, the sync pull request, landing, tagging, publishing as a pre-release, and what to do when something goes wrong) is in [docs/releases/beta.md](../../docs/releases/beta.md). `scripts/release-beta.sh` lands and tags a beta.
+
+## User guide media refresh
+
+`docs-media.yaml` records the user guide's pictures and clips again every Monday, on pushes to `prerelease/**` that touch the app, and by hand (Actions → User guide media refresh → Run workflow, optionally with "all" or a list of shots). It runs only on the fork. It records the shots whose files changed since each was last recorded and the ones the last refresh couldn't finish, except on the first Monday of the month, when it records all of them. Runs on `main` open one pull request (`docs/media-refresh/main`) with the pictures that visibly changed, and issues for the shots that no longer record. Pushes to `prerelease/**`, other branches and runs of chosen shots only report, in the run summary and artifacts. How it decides is in `apps/desktop/scripts/docs-media/refresh.mjs` and `apps/website/AGENTS.md`.
+
+It needs the repository setting "Allow GitHub Actions to create and approve pull requests". Pull requests opened with the workflow's own token don't start the PR checks; add a `DOCS_MEDIA_TOKEN` secret (a fine-grained token with contents, pull requests and issues write) to have them run without a manual push.

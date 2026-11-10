@@ -33,6 +33,11 @@ export class LegacyDatabaseResponse<T> {
     }
 }
 
+/** `cancelled`: the person closed the file picker, so there's nothing to report. */
+export type AudioInsertResponse = LegacyDatabaseResponse<AudioFile[]> & {
+    readonly cancelled?: true;
+};
+
 /* ============================ DATABASE ============================ */
 /** The `user_version` a new show file starts with. */
 export const DB_USER_VERSION = 7;

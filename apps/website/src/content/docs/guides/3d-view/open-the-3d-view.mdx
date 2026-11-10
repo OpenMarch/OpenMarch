@@ -1,0 +1,81 @@
+---
+title: Open the 3D View
+description: Watch the show in 3D in a window of its own, in step with the editor.
+type: how-to
+covers:
+  - apps/desktop/src/view3d/window
+  - apps/desktop/src/view3d/sync
+  - apps/desktop/src/components/toolbar/View3dButton.tsx
+  - action:openView3d
+  - i18n:view3d
+  - i18n:settings.view3d
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+The 3D View shows the show from the stands: the band in uniform on a lit field, with instruments, flags and a crowd. It opens in a window of its own and plays along with the editor, so you can keep writing drill in one window and watch the result in the other.
+
+<Steps>
+
+1. Open a show.
+
+2. Select <Ui k="view3d.open" /> in the toolbar.
+
+</Steps>
+
+The 3D View opens on the venue's first camera and shows the same moment as the editor. While it's open, the <Ui k="view3d.open" /> button leaves the toolbar; to bring the window forward again, use your system's window switcher. In the desktop app it's also in the app menu, **View › Open 3D View** (the menu bar on a Mac, the <Ui k="titlebar.menu" plain /> button in the title bar on Windows and Linux), and in any version you can find it by name in the command palette (<Kbd action="openCommandPalette" />).
+
+<Media
+  id="3d-window"
+  alt="The 3D View window: the band on a high school field seen from the press box, with the camera menu at the top left, the fullscreen and View settings buttons at the top right, and the playback controls and page and count readout at the bottom left."
+/>
+
+In the web editor the 3D View opens in a new browser window. If nothing opens, your browser blocked the pop-up: allow pop-ups for the site and select <Ui k="view3d.open" /> again.
+
+## Open it with every show
+
+The first time the 3D View opens with a show, it asks <Ui k="view3d.autoOpenPrompt.title" />. Choose <Ui k="view3d.autoOpenPrompt.yes" /> to have it open whenever you open a show, or <Ui k="view3d.autoOpenPrompt.no" /> to open it yourself each time. To change your answer later, open <Ui k="settings.title" /> (<Kbd action="openSettings" />) and turn <Ui k="settings.general.openView3dWithShow" /> on or off under <Ui k="settings.general" />. The web editor never opens the 3D View by itself, because browsers block windows that open without a click.
+
+## Play the show
+
+The 3D View has no playback of its own: it follows the editor. Play, pause, scrub or step through pages in either window and both move together.
+
+The 3D View has the editor's <Ui k="view3d.playback.label" plain /> controls: previous, play and next, and the playback speed. The editor's playback keys work in the 3D View too:
+
+| Keys                                                     | What they do                                        |
+| -------------------------------------------------------- | --------------------------------------------------- |
+| <Kbd action="playPause" />                               | Play or stop                                        |
+| <Kbd action="playPage" />                                | Play from the playhead, or pause                    |
+| <Kbd action="previousPage" /> and <Kbd action="nextPage" /> | Previous or next page                            |
+| <Kbd action="previousBeat" /> and <Kbd action="nextBeat" /> | Previous or next count                           |
+| <Kbd action="firstPage" /> and <Kbd action="lastPage" />    | First or last page                               |
+| <Kbd action="holdFasterPlayback" /> and <Kbd action="holdSlowerPlayback" /> held | Double or half speed while held |
+
+Next to the controls, the readout shows the page, the count within the page and the show time. Past the last page it shows how many counts past the end the playhead is.
+
+How playback works in the editor is in [Play the show](/guides/timeline/play-the-show/).
+
+## Fullscreen
+
+In the 3D View, select <Ui k="view3d.overlay.enterFullscreen" />, or press <Kbd keys="F" />, to fill the screen with it. In fullscreen the controls fade out after a few seconds without moving the pointer and the readout grows, which suits a projector at rehearsal. Move the pointer to bring the controls back, and press <Kbd keys="F" /> or <Kbd keys="Escape" /> to leave fullscreen.
+
+## If the 3D View is slow
+
+How detailed the 3D View is depends on your computer, so its graphics settings are kept on each computer, not in the show. Open <Ui k="settings.title" /> (<Kbd action="openSettings" />) and go to the <Ui k="settings.view3d" /> section:
+
+- <Ui k="settings.view3d.quality" />: <Ui k="settings.view3d.quality.auto" /> starts on <Ui k="settings.view3d.quality.high" /> and switches to <Ui k="settings.view3d.quality.low" /> if the view stutters. <Ui k="settings.view3d.quality.high" /> draws shadows and a full crowd. <Ui k="settings.view3d.quality.low" /> draws no shadows and a lighter crowd, for older or battery-powered computers.
+- <Ui k="settings.view3d.resolution" />: <Ui k="settings.view3d.resolution.sharp" /> draws full detail on high-resolution screens. <Ui k="settings.view3d.resolution.balanced" /> draws three-quarters of that detail, so it's a little softer and the graphics card has less to do. <Ui k="settings.view3d.resolution.fast" /> draws half the detail and is softest, for older computers. On a screen that isn't high-resolution, all three look the same.
+
+When the 3D View switches to Low by itself, a notice in the 3D View says so. If your computer draws graphics in software (no graphics card, or drivers that need an update), the 3D View stays on Low and is still slow; update your graphics drivers and restart OpenMarch. In the web editor, turn on your browser's graphics acceleration and restart the browser.
+
+## Related
+
+- [Move the camera](/guides/3d-view/cameras/): orbit, pan and zoom, and save your own camera positions.
+- [Venue and uniforms](/guides/3d-view/venue-and-uniforms/): the stadium, lighting, crowd and uniforms, and how the marchers move.
+- [Props](/guides/3d-view/props/): draw props on the field; they show as blocks in the 3D View.
+- [Play the show](/guides/timeline/play-the-show/): playback in the editor, which the 3D View follows.

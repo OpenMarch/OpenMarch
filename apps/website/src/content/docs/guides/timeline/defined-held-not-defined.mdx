@@ -1,0 +1,120 @@
+---
+title: Defined, Held, Not defined
+description: A marcher's state on each page, what it means when you change an earlier page, and the commands that change it.
+type: concept
+covers:
+  - apps/desktop/src/timeline/holdTerms.ts
+  - apps/desktop/src/timeline/timelineHoldState.ts
+  - apps/desktop/src/timeline/timelineSetAsShown.ts
+  - apps/desktop/src/timeline/timelineHoldFromPrevious.ts
+  - apps/desktop/src/timeline/timelineClearPage.ts
+  - apps/desktop/src/timeline/timelineUnset.ts
+  - apps/desktop/src/components/timeline/TimelineKeyframes.tsx
+  - apps/desktop/src/components/timeline/TimelineHeldBars.tsx
+  - apps/desktop/src/components/timeline/PageKeepChain.tsx
+  - action:timelineDefineAsShown
+  - action:timelineHoldFromPrevious
+  - action:setSelectedMarchersToPreviousPage
+  - action:setAllMarchersToPreviousPage
+  - action:timelineUnsetHere
+  - i18n:timeline.terms
+  - i18n:timeline.keep
+  - i18n:timeline.keyframes
+  - i18n:timeline.heldBar
+  - i18n:timeline.holdFromPrevious
+  - i18n:inspector.marcher.timeline
+sidebar:
+  order: 5
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+On every page, each marcher is <Ui k="timeline.terms.defined" />, <Ui k="timeline.terms.held" /> or <Ui k="timeline.terms.notDefined" />. The state decides what happens to the marcher on this page when you change an earlier one. Most of the time you don't need to think about it: a marcher you move on a page is Defined there, and one you haven't moved yet is Not defined.
+
+## The three states
+
+### <Ui k="timeline.terms.defined" plain />
+
+You've set the marcher's position on this page. It reaches that spot at the page's flag, wherever it was before. Changing an earlier page changes how it gets here, not where it ends up.
+
+### <Ui k="timeline.terms.notDefined" plain />
+
+Nothing has been decided for the marcher on this page. It stands where it last was, and when you change that earlier position, it moves here too. Every marcher on a new page is Not defined.
+
+### <Ui k="timeline.terms.held" plain />
+
+You've chosen to keep the marcher where it was on the page before. Like a Not defined marcher, it follows changes to the earlier page. The difference shows when you drag it on this page: dragging a Held marcher moves the whole hold, including where it stands on the page before.
+
+Use Held when the marcher's standing still is part of the drill and should stay that way. Use Not defined, the default, for marchers you haven't got to yet.
+
+## How you can tell
+
+Select marchers, and the timeline shows their states:
+
+- A diamond at the bottom edge of the page row marks each count where the selected marchers have a keyframe, a position you set. It's filled when every selected marcher has a keyframe there, and hollow when only some do. A Defined marcher has a diamond at the page's flag.
+- A link mark in a page's box means some of the selected marchers have no position of their own on that page and show an earlier one. Point at it to see who. Marchers that haven't moved since the start of the show don't get one.
+- A solid bar along the bottom of a page's box marks where the selected marchers are Held. Point at it to see how many.
+
+On the field, a marcher with no position of its own on the playhead's page is drawn with a dashed outline. In the inspector, the selected marchers' section says <Ui k="inspector.marcher.timeline.movesOnThisPage" /> when they're Defined on the page, names the page where they last moved, or says <Ui k="inspector.marcher.timeline.holdFromStart" /> when they haven't moved since home. The page or the start is a link that takes you there.
+
+<Media
+  id="timeline-not-defined"
+  alt="A new Page 19 at the end of the show, zoomed in on the trumpets with T1 and T2 selected. Every marcher on the field is drawn with a dashed outline. The inspector says Last moved on Page 9, and Page 19's box on the timeline shows a link mark."
+/>
+
+## Define as shown
+
+<Ui k="timeline.terms.defineAsShown" /> makes Not defined marchers Defined where they stand now, so later changes to earlier pages no longer move them on this page. Held marchers stay Held.
+
+1. Select the marchers.
+2. Right-click the page's box and select <Ui k="timeline.terms.defineAsShown" />, or select the link mark in the page's box.
+
+Dragging a Not defined marcher on a page also makes it Defined, at the spot you drag it to.
+
+## Hold from previous page
+
+<Ui k="timeline.terms.holdFromPrevious" /> keeps marchers on this page exactly where they are on the page before.
+
+1. Go to the page and select the marchers.
+2. Right-click the page's box and select <Ui k="timeline.terms.holdFromPrevious" />, or press <Kbd action="timelineHoldFromPrevious" />.
+
+A marcher that had its own move on the page loses it and stays still for the page. A message says who is now Held, and lists anyone who couldn't be, with the reason: for example a marcher with no position of its own on the page before, or one in the middle of a move that crosses the page's start.
+
+<Media
+  id="timeline-held"
+  alt="The timeline with Page 4 selected and trumpet marchers held there. A solid bar runs along the bottom of Page 4's box, which also shows a link mark, and diamonds mark the flags of the pages where they're Defined."
+/>
+
+## Clear this page
+
+<Ui k="timeline.terms.clearThisPage" /> takes the marchers' positions off the page, so they're Not defined there again and stand where the page before left them.
+
+1. Select the marchers. To clear the page for everyone, select nobody.
+2. Right-click the page's box and select <Ui k="actions.batchEdit.clearPage" values={{ page: 3 }} /> (with the page's number, and "(all marchers)" after it when nobody is selected), or press <Kbd action="setSelectedMarchersToPreviousPage" /> for the selected marchers or <Kbd action="setAllMarchersToPreviousPage" /> for everyone.
+
+The pages after it keep the marchers where they were. Where a later page showed the cleared position, the menu also offers an item such as "Clear Page 3, Page 4 moves back too", which lets those later pages go back with it.
+
+<Media
+  id="timeline-page-menu"
+  alt="The right-click menu of Page 4's box with three trumpet marchers selected: Split 3 selected into new move, Define as shown (greyed out, because they're already Defined), Hold from previous page, Clear Page 4, Subset, Delete page, and Delete page and its moves."
+/>
+
+## Remove keyframe
+
+<Ui k="timeline.terms.removeKeyframe" /> takes away one position at one count, where Clear this page works on a whole page. Use it on a keyframe in the middle of a page.
+
+1. Select the marchers.
+2. Right-click the diamond at the count and select <Ui k="timeline.terms.removeKeyframe" />.
+
+The marchers no longer stop at that spot: they walk from the keyframe before it to the keyframe after it. As with Clear this page, later pages keep where they were, unless you choose the second item, which lets the later pages that showed that position move back too.
+
+In Basic, a position in the middle of a page shows as a tick in the page's box; right-click it and select <Ui k="timeline.basic.point.remove" />.
+
+## Related
+
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): keyframes, pages and moves.
+- [Move marchers](/guides/marchers/move-marchers/): drag and nudge marchers, which makes them Defined.
+- [Pages](/guides/timeline/pages/): add pages, where everyone starts Not defined.
+- [See where marchers go](/guides/timeline/see-where-marchers-go/): see each marcher's path to its next keyframe.

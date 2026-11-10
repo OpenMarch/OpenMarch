@@ -87,6 +87,7 @@ export default function WebFileMenu() {
                     </DropdownMenuItem>
                 )}
                 {item("exportVideo")}
+                {item("exportToMobile")}
                 {item("closeFile")}
                 <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
                 {item("openSettings")}

@@ -1,0 +1,518 @@
+{
+    "mac": [
+        {
+            "label": "OpenMarch",
+            "items": [
+                {
+                    "label": "About OpenMarch"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Services"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Hide OpenMarch",
+                    "keys": [
+                        "⌘",
+                        "H"
+                    ]
+                },
+                {
+                    "label": "Hide Others",
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "H"
+                    ]
+                },
+                {
+                    "label": "Show All"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Quit OpenMarch",
+                    "keys": [
+                        "⌘",
+                        "Q"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "File",
+            "items": [
+                {
+                    "label": "Open File",
+                    "keys": [
+                        "⌘",
+                        "O"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Create New",
+                    "keys": [
+                        "⌘",
+                        "N"
+                    ]
+                },
+                {
+                    "label": "Save As Copy"
+                },
+                {
+                    "label": "Close File"
+                }
+            ]
+        },
+        {
+            "label": "Edit",
+            "items": [
+                {
+                    "label": "Cut",
+                    "keys": [
+                        "⌘",
+                        "X"
+                    ]
+                },
+                {
+                    "label": "Copy",
+                    "keys": [
+                        "⌘",
+                        "C"
+                    ]
+                },
+                {
+                    "label": "Paste",
+                    "keys": [
+                        "⌘",
+                        "V"
+                    ]
+                },
+                {
+                    "label": "Paste and Match Style",
+                    "keys": [
+                        "⌥",
+                        "⇧",
+                        "⌘",
+                        "V"
+                    ]
+                },
+                {
+                    "label": "Delete"
+                },
+                {
+                    "label": "Select All",
+                    "keys": [
+                        "⌘",
+                        "A"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Speech",
+                    "items": [
+                        {
+                            "label": "Start Speaking"
+                        },
+                        {
+                            "label": "Stop Speaking"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "View",
+            "items": [
+                {
+                    "label": "Open 3D View"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Reload",
+                    "keys": [
+                        "⌘",
+                        "R"
+                    ]
+                },
+                {
+                    "label": "Force Reload",
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "R"
+                    ]
+                },
+                {
+                    "label": "Toggle Developer Tools",
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "I"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Actual Size",
+                    "keys": [
+                        "⌘",
+                        "0"
+                    ]
+                },
+                {
+                    "label": "Zoom In",
+                    "keys": [
+                        "⌘",
+                        "+"
+                    ]
+                },
+                {
+                    "label": "Zoom Out",
+                    "keys": [
+                        "⌘",
+                        "-"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Toggle Full Screen",
+                    "keys": [
+                        "⌃",
+                        "⌘",
+                        "F"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Playback",
+            "items": [
+                {
+                    "label": "Play / Stop",
+                    "keys": [
+                        "Space"
+                    ],
+                    "action": "playPause"
+                },
+                {
+                    "label": "Play from Playhead / Pause",
+                    "keys": [
+                        "⇧",
+                        "Space"
+                    ],
+                    "action": "playPage"
+                },
+                {
+                    "label": "Play On from Start Flag",
+                    "keys": [
+                        "⌥",
+                        "Space"
+                    ],
+                    "action": "playOn",
+                    "expertOnly": true
+                },
+                {
+                    "label": "Loop On / Off",
+                    "keys": [
+                        "C"
+                    ],
+                    "action": "toggleLoop",
+                    "expertOnly": true
+                }
+            ]
+        },
+        {
+            "label": "Window",
+            "items": [
+                {
+                    "label": "Minimize",
+                    "keys": [
+                        "⌘",
+                        "M"
+                    ]
+                },
+                {
+                    "label": "Zoom"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Bring All to Front"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Window"
+                }
+            ]
+        },
+        {
+            "label": "Help",
+            "items": [
+                {
+                    "label": "Keyboard Shortcuts",
+                    "keys": [
+                        "?"
+                    ],
+                    "action": "showShortcuts"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Website"
+                },
+                {
+                    "label": "Docs/Guides"
+                },
+                {
+                    "label": "Discord"
+                },
+                {
+                    "label": "GitHub"
+                }
+            ]
+        }
+    ],
+    "other": [
+        {
+            "label": "File",
+            "items": [
+                {
+                    "label": "Open File",
+                    "keys": [
+                        "Ctrl",
+                        "O"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Create New",
+                    "keys": [
+                        "Ctrl",
+                        "N"
+                    ]
+                },
+                {
+                    "label": "Save As Copy"
+                },
+                {
+                    "label": "Close File"
+                }
+            ]
+        },
+        {
+            "label": "Edit",
+            "items": [
+                {
+                    "label": "Cut",
+                    "keys": [
+                        "Ctrl",
+                        "X"
+                    ]
+                },
+                {
+                    "label": "Copy",
+                    "keys": [
+                        "Ctrl",
+                        "C"
+                    ]
+                },
+                {
+                    "label": "Paste",
+                    "keys": [
+                        "Ctrl",
+                        "V"
+                    ]
+                },
+                {
+                    "label": "Delete"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Select All",
+                    "keys": [
+                        "Ctrl",
+                        "A"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "View",
+            "items": [
+                {
+                    "label": "Open 3D View"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Reload",
+                    "keys": [
+                        "Ctrl",
+                        "R"
+                    ]
+                },
+                {
+                    "label": "Force Reload",
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "R"
+                    ]
+                },
+                {
+                    "label": "Toggle Developer Tools",
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "I"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Actual Size",
+                    "keys": [
+                        "Ctrl",
+                        "0"
+                    ]
+                },
+                {
+                    "label": "Zoom In",
+                    "keys": [
+                        "Ctrl",
+                        "+"
+                    ]
+                },
+                {
+                    "label": "Zoom Out",
+                    "keys": [
+                        "Ctrl",
+                        "-"
+                    ]
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Toggle Full Screen",
+                    "keys": [
+                        "F11"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Playback",
+            "items": [
+                {
+                    "label": "Play / Stop",
+                    "keys": [
+                        "Space"
+                    ],
+                    "action": "playPause"
+                },
+                {
+                    "label": "Play from Playhead / Pause",
+                    "keys": [
+                        "Shift",
+                        "Space"
+                    ],
+                    "action": "playPage"
+                },
+                {
+                    "label": "Play On from Start Flag",
+                    "keys": [
+                        "Alt",
+                        "Space"
+                    ],
+                    "action": "playOn",
+                    "expertOnly": true
+                },
+                {
+                    "label": "Loop On / Off",
+                    "keys": [
+                        "C"
+                    ],
+                    "action": "toggleLoop",
+                    "expertOnly": true
+                }
+            ]
+        },
+        {
+            "label": "Window",
+            "items": [
+                {
+                    "label": "Minimize",
+                    "keys": [
+                        "Ctrl",
+                        "M"
+                    ]
+                },
+                {
+                    "label": "Zoom"
+                },
+                {
+                    "label": "Close",
+                    "keys": [
+                        "Ctrl",
+                        "W"
+                    ]
+                }
+            ]
+        },
+        {
+            "label": "Help",
+            "items": [
+                {
+                    "label": "Keyboard Shortcuts",
+                    "keys": [
+                        "?"
+                    ],
+                    "action": "showShortcuts"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Website"
+                },
+                {
+                    "label": "Docs/Guides"
+                },
+                {
+                    "label": "Discord"
+                },
+                {
+                    "label": "GitHub"
+                }
+            ]
+        }
+    ]
+}

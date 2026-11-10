@@ -2,7 +2,7 @@
     "name": "@openmarch/desktop",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.2.0-alpha",
+    "version": "0.2.0-beta.1",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC <contact@openmarch.com>",
     "url": "https://openmarch.com",
@@ -48,7 +48,9 @@
         "web:build": "pnpm run apply-styles && rimraf dist-web && vite build -c vite.web.config.mts",
         "web:preview": "vite preview -c vite.web.config.mts",
         "check:gate": "tsc --noEmit && pnpm run test && pnpm run build:browser && pnpm run e2e:browser",
-        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts"
+        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts",
+        "docs:reference": "vite-node --config scripts/docs-reference/vite.config.mts scripts/docs-reference/generate.mts",
+        "docs:media": "node scripts/docs-media/capture.mjs"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

@@ -50,9 +50,23 @@ export default function GithubReleases() {
                     600, // Cache for 10 minutes
                 );
 
-                // Filter out drafts & prereleases and sort by published date
+                // Filter out drafts and prereleases (on the preview site, keep
+                // the pre-releases of the version it previews) and sort by
+                // published date
+                const showPrereleases =
+                    import.meta.env.PUBLIC_SITE_CHANNEL === "preview";
+                const prereleasePrefix = import.meta.env
+                    .PUBLIC_PRERELEASE_TAG_PREFIX;
                 const publishedReleases = data
-                    .filter((release) => !release.draft && !release.prerelease)
+                    .filter(
+                        (release) =>
+                            !release.draft &&
+                            (!release.prerelease ||
+                                (showPrereleases &&
+                                    release.tag_name.startsWith(
+                                        prereleasePrefix,
+                                    ))),
+                    )
                     .sort(
                         (a, b) =>
                             new Date(b.published_at).getTime() -

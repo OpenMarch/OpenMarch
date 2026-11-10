@@ -413,7 +413,6 @@ export interface StandsKitConfig {
         dx: number;
         /** Height of the screen center. */
         y: number;
-        title: string;
     };
     /** Paved plaza behind the side-1 end zone. */
     plaza?: { dx: number; w: number; d: number };
@@ -539,14 +538,7 @@ export function buildStandsKit(
     const boards: VideoBoard[] = [];
     if (cfg.board) {
         const b = cfg.board;
-        const board = videoBoard(
-            b.w,
-            b.h,
-            b.legs,
-            b.title,
-            "OpenMarch",
-            shared,
-        );
+        const board = videoBoard(b.w, b.h, b.legs, shared);
         board.object.position.set(f.maxX + b.dx, b.y, f.cz);
         board.object.rotation.y = -Math.PI / 2;
         root.add(board.object);
@@ -643,6 +635,9 @@ export function buildStandsKit(
         lightingPresets: [...OUTDOOR_PRESETS],
         defaultLighting: cfg.defaultLighting,
         setLighting,
+        setShowCredits(credits) {
+            boards.forEach((b) => b.setCredits(credits));
+        },
         dispose() {
             stands.forEach((s) => s.dispose());
             boards.forEach((b) => b.dispose());

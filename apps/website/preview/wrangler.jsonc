@@ -1,0 +1,13 @@
+// preview.openmarch.com: the website and the web editor (/editor/) for the
+// current pre-release, built from a `prerelease/*` branch. See README.md.
+{
+    "$schema": "../../../node_modules/wrangler/config-schema.json",
+    "name": "openmarch-preview",
+    "compatibility_date": "2026-05-01",
+    "assets": {
+        "directory": "../dist",
+        "not_found_handling": "404-page",
+    },
+    "routes": [{ "pattern": "preview.openmarch.com", "custom_domain": true }],
+    "workers_dev": false,
+}

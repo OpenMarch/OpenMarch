@@ -1,0 +1,97 @@
+---
+title: How the timeline works
+description: Counts, pages, moves, the playhead and the start flag, and how marchers get from one set to the next.
+type: concept
+covers:
+  - apps/desktop/src/components/timeline
+  - apps/desktop/src/timeline
+  - docs/adr/0012-timeline-motion-model.md
+  - action:playPause
+  - action:nextPage
+  - action:previousPage
+  - i18n:timeline.readout
+  - i18n:timeline.windowLine
+  - i18n:timeline.terms
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+The timeline is the show in time. You set where marchers are at a count, and OpenMarch works out where they are on every count in between, so the field always shows the drill at the playhead's count.
+
+<Media
+  id="timeline-parts"
+  alt="The timeline in Expert, with Page 3 being edited: the page boxes numbered along the top, the start flag partway into Page 3 and the playhead at its end with the counts between them shaded, a bar named Move 1 under them, the measure numbers and the music's waveform."
+/>
+
+## Counts and measures
+
+A count is one beat of the show's music. The row under the pages numbers the measures, with a tick for each count, and shows rehearsal marks in small boxes. The waveform of the music runs under them.
+
+Above the timeline, the readout says where the playhead is, for example "Pg 3 · ct 4/10" (count 4 of Page 3's 10 counts) and "m9 beat 4". The clock beside it gives the time into the music.
+
+Counts come from the music: its tempo and its measures. [How counts and the music fit together](/guides/music/counts-and-music/) explains them, and [Line the counts up with the music](/guides/music/tempo/) shows how to change them.
+
+## Pages
+
+A page is a numbered stretch of counts that ends at a set, the picture a drill chart shows for that page. Each page is a box in the top row of the timeline, as long as its counts, with its number at its right end. That end is the page's flag: the count where marchers reach the page's set.
+
+The box with a house at the start of the row is home, the start of the show, where every marcher stands before the first move.
+
+Pages are labels on the music. They don't have to start on a downbeat, and you can add, split, lengthen and delete them without changing the music. See [Pages](/guides/timeline/pages/).
+
+## The playhead and the start flag
+
+The playhead is the line that marks the count the field shows. Drag it, or click the timeline, and the field follows. <Kbd action="previousPage" /> and <Kbd action="nextPage" /> step a page back or forward.
+
+The start flag is the second line, with a pennant on top. It marks two things: where Play starts, and where marchers leave from when you move them.
+
+The counts between the start flag and the playhead are shaded. They're the stretch you're editing, and the line of text over the field names it, for example "Editing Page 3's move". Select a page's box and the start flag goes to the start of the page and the playhead to its end, so you're editing that page.
+
+## How marchers get from one set to the next
+
+When you drag marchers on the field, you set where they are at the playhead's count. They leave from where they were at the start flag and walk to the new spot over the counts in between, in a straight line at an even step size. You don't place them on the counts in between: OpenMarch works out every count from the positions you set.
+
+A position you set for a marcher at a count is a keyframe. Select marchers and the timeline marks their keyframes with diamonds along the bottom edge of the page row: filled where every selected marcher has one, hollow where only some do.
+
+On each page, a marcher is in one of three states:
+
+- <Ui k="timeline.terms.defined" />: you've set its position on this page.
+- <Ui k="timeline.terms.held" />: you've chosen to keep it where it was on the page before.
+- <Ui k="timeline.terms.notDefined" />: nothing is decided yet, so it stays where it last was, and follows any change to that earlier position.
+
+[Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) explains the difference and how to change a marcher's state.
+
+## Moves
+
+A move is a stretch of time in which marchers go from one place to another. Each page has a move of its own, which takes everyone who moves on that page from the page before to the page's set. You don't see it as a bar: the page box stands for it.
+
+In Expert, a move can also start or end in the middle of a page, run across several pages, or overlap another move. Those moves have bars of their own under the music, with a name such as "Move 1", and you can resize, split, merge and rename them. A move you make over part of a page takes over from the page's move for its marchers and counts; the page's move still covers everyone else. See [Moves](/guides/timeline/moves/).
+
+## Basic and Expert
+
+Both modes show the same show. They differ in where Play starts and in what the timeline lets you change:
+
+| | Basic | Expert |
+| --- | --- | --- |
+| Start flag | Not shown. Play starts at the start of the page the playhead is on. | Shown. You drag it to where Play should start; it lands on measures and page flags when it's near one, or on any count with <Kbd keys="Alt" gesture="drag" /> held. It stays there until you go to another page. |
+| Moves | Each page has its move. A position in the middle of a page splits the page's move at that count. | Moves can start and end on any count, cross pages and overlap, and each has a bar. |
+| Dragging the playhead | Lands on every count. | Lands on measures and page flags when it's near one. |
+| Loop, isolating a move, resizing the timeline | Not available. | Available. |
+
+The mode is a setting of the app, not of the show, so you can open any show in either mode. Basic plays everything made in Expert but locks what it can't edit. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+<Media
+  id="timeline-scrub"
+  alt="The playhead is dragged from the end of Page 2 to the end of Page 3, and the marchers on the field walk from Page 2's set to Page 3's set as it moves."
+/>
+
+## Related
+
+- [Play the show](/guides/timeline/play-the-show/): play, stop, loop and jump to a page or measure.
+- [Pages](/guides/timeline/pages/): add, lengthen, split and delete pages.
+- [Moves](/guides/timeline/moves/): make moves that start mid-page or cross pages.
+- [Move marchers](/guides/marchers/move-marchers/): drag and nudge marchers on the field.

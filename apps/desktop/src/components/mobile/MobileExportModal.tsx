@@ -26,13 +26,21 @@ import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensem
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { getClerkSignUpUrl, isSignInEnabled } from "@/global/auth/constants";
 import { T, useTranslate } from "@tolgee/react";
+import { isWebBuild } from "@/utilities/webBuild";
+import WebMobileUnavailable from "./WebMobileUnavailable";
+import { editorApiStatus } from "@/api/editor-client";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
 );
 
 type AlertState = {
-    type: "no-access" | null;
+    /**
+     * "no-access": the server said this account can't see the production.
+     * "unreachable": no answer, or no sign-in token right now (offline).
+     * "sign-in-rejected": the server turned down the sign-in token it got.
+     */
+    type: "no-access" | "unreachable" | "sign-in-rejected" | null;
 };
 
 /**
@@ -60,7 +68,20 @@ function useMobileExportValidation(): AlertState {
             hasProductionId &&
             (hasError || (hasFetchedCurrentProduction && !hasAccess))
         ) {
-            output = { type: "no-access" };
+            // Only the server turning the account down is "no access";
+            // anything else (offline, sign-in not refreshed) is worth a retry
+            // rather than detaching the show.
+            // A 401 came back for a token that was sent (no token, no
+            // request): signing in again is the way out, not a retry.
+            const status = editorApiStatus(currentProductionError);
+            output = {
+                type:
+                    !hasError || status === 403 || status === 404
+                        ? "no-access"
+                        : status === 401
+                          ? "sign-in-rejected"
+                          : "unreachable",
+            };
         }
 
         return output;
@@ -90,7 +111,9 @@ export default function MobileExportModal({
     const { t } = useTranslate();
 
     useEffect(() => {
-        if (productionId == null) return;
+        // Not on the web: asking the API means loading sign-in (ClerkJS),
+        // which waits until someone opens Mobile export.
+        if (productionId == null || isWebBuild) return;
 
         void queryClient.prefetchQuery(
             currentProductionQueryOptions(productionId),
@@ -98,6 +121,8 @@ export default function MobileExportModal({
     }, [productionId, queryClient]);
 
     const prefetchMobileExportData = useCallback(() => {
+        // A web build that can't sign in has nothing to fetch.
+        if (isWebBuild && !isSignInEnabled) return;
         void queryClient.prefetchQuery(
             getGetApiEditorV1EnsemblesAnyQueryOptions(),
         );
@@ -211,8 +236,14 @@ export function MobileExportModalContents() {
                         !isSignedInView && "min-h-0 flex-1",
                     )}
                 >
-                    {validationState.type === "no-access" ? (
+                    {isWebBuild && !isSignInEnabled ? (
+                        <WebMobileUnavailable />
+                    ) : validationState.type === "no-access" ? (
                         <MobileExportAccessError />
+                    ) : validationState.type === "unreachable" ? (
+                        <MobileExportUnreachable />
+                    ) : validationState.type === "sign-in-rejected" ? (
+                        <MobileExportSignInRejected />
                     ) : isAuthLoading ? (
                         <MobileExportLoading
                             message={t("mobileExport.loading.checkingSignIn")}
@@ -272,8 +303,84 @@ function MobileExportAccessError() {
     );
 }
 
+/** What went wrong with signing in, in the user's language; null if nothing. */
+function signInErrorKey(code: string | undefined) {
+    if (!code) return null;
+    if (code === "TOKEN_EXPIRED")
+        return "mobileExport.signedOut.errors.sessionExpired";
+    if (code === "AUTH_UNAVAILABLE")
+        return "mobileExport.signedOut.errors.unavailable";
+    return "mobileExport.signedOut.errors.failed";
+}
+
+/** The server couldn't be reached, or the sign-in couldn't be refreshed. */
+function MobileExportUnreachable() {
+    const { toggleOpen } = useSidebarModalStore();
+    const { refetch, isFetching } = useCurrentProduction();
+
+    return (
+        <div className="flex h-full flex-col justify-center gap-16 text-center">
+            <div className="flex flex-col items-center gap-8">
+                <WarningCircleIcon size={40} />
+                <h4 className="text-h4 leading-none">
+                    <T keyName="mobileExport.unreachable.title" />
+                </h4>
+            </div>
+            <p className="text-body text-text-subtitle">
+                <T keyName="mobileExport.unreachable.description" />
+            </p>
+            <div className="flex justify-center gap-8 align-middle">
+                <Button
+                    variant="primary"
+                    disabled={isFetching}
+                    onClick={() => void refetch()}
+                >
+                    <T keyName="mobileExport.unreachable.retry" />
+                </Button>
+                <Button variant="secondary" onClick={toggleOpen}>
+                    <T keyName="mobileExport.close" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+/** The server didn't accept the sign-in: sign out, then sign in again. */
+function MobileExportSignInRejected() {
+    const { toggleOpen } = useSidebarModalStore();
+    const { logout, isLoggingOut } = useAuth();
+
+    return (
+        <div className="flex h-full flex-col justify-center gap-16 text-center">
+            <div className="flex flex-col items-center gap-8">
+                <WarningCircleIcon size={40} />
+                <h4 className="text-h4 leading-none">
+                    <T keyName="mobileExport.signInRejected.title" />
+                </h4>
+            </div>
+            <p className="text-body text-text-subtitle">
+                <T keyName="mobileExport.signInRejected.description" />
+            </p>
+            <div className="flex justify-center gap-8 align-middle">
+                <Button
+                    variant="primary"
+                    disabled={isLoggingOut}
+                    onClick={logout}
+                >
+                    <T keyName="mobileExport.signInRejected.signOut" />
+                </Button>
+                <Button variant="secondary" onClick={toggleOpen}>
+                    <T keyName="mobileExport.close" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function SignedOutMobileExportContent() {
     const { t } = useTranslate();
+    const { error } = useAuth();
+    const errorKey = signInErrorKey(error?.code);
     const signUpUrl = isSignInEnabled ? getClerkSignUpUrl() : null;
     const handleSetupAccount = useCallback(() => {
         if (!signUpUrl) return;
@@ -323,9 +430,18 @@ function SignedOutMobileExportContent() {
                 {isSignInEnabled && (
                     <div className="flex w-[85%] flex-col items-center gap-12">
                         <p className="text-body text-text-subtitle">
-                            <T keyName="mobileExport.signedOut.signInPrompt" />
+                            {isWebBuild ? (
+                                <T keyName="mobileExport.signedOut.signInPromptWeb" />
+                            ) : (
+                                <T keyName="mobileExport.signedOut.signInPrompt" />
+                            )}
                         </p>
                         <SignInButton variant="secondary" />
+                        {errorKey && (
+                            <p role="alert" className="text-sub text-red">
+                                {t(errorKey)}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>

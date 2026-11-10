@@ -1,0 +1,95 @@
+---
+title: Venue and uniforms
+description: Choose the stadium, lighting, crowd and uniforms the 3D View shows, and see how the marchers in it look and move.
+type: how-to
+covers:
+  - apps/desktop/src/view3d/window/overlay/SettingsPanel.tsx
+  - apps/desktop/src/view3d/window/overlay/VenueControls.tsx
+  - apps/desktop/src/view3d/core/venueSettings.ts
+  - apps/desktop/src/view3d/core/field/regulation.ts
+  - apps/desktop/src/view3d/window/useKitShowCredits.ts
+  - apps/desktop/src/view3d/core/marchers
+  - apps/desktop/src/view3d/core/instruments/catalog.ts
+  - packages/core/src/cues
+  - i18n:view3d.settings
+  - i18n:view3d.kit
+  - i18n:view3d.lighting
+  - i18n:view3d.uniformPreset
+sidebar:
+  order: 3
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+The venue is where the 3D View puts your show: a high school stadium, a college bowl, an indoor arena and so on, with its lighting and crowd. It and the uniforms are part of the show, so everyone who opens the show sees the same thing.
+
+## Change the venue
+
+<Steps>
+
+1. In the 3D View, select <Ui k="view3d.settings.title" /> (the gear). The <Ui k="view3d.settings.title" plain /> panel opens.
+
+2. Under <Ui k="view3d.settings.venueSection" plain />, choose a <Ui k="view3d.overlay.venue" plain />: <Ui k="view3d.kit.hs" />, <Ui k="view3d.kit.bighs" />, <Ui k="view3d.kit.college" />, <Ui k="view3d.kit.pro" />, <Ui k="view3d.kit.gym" />, <Ui k="view3d.kit.arena" /> or <Ui k="view3d.kit.blank" />.
+
+3. Choose the <Ui k="view3d.overlay.lighting" plain />. Each venue has its own choices: <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.dusk" /> and <Ui k="view3d.lighting.night" /> in the outdoor stadiums, <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.night" /> and <Ui k="view3d.lighting.roofClosed" /> in the Pro dome, and <Ui k="view3d.lighting.house" /> or <Ui k="view3d.lighting.show" /> lights in the gym and the arena.
+
+</Steps>
+
+The field in every venue is your show's field, with its yard lines, hashes and field image (see [Edit the field](/guides/field/edit-the-field/)). In the stadiums, a football field always has both end zones, even when your show's field stops at the goal lines: the 3D View paints the end zones past them, and the marchers stay where you put them. Other fields, such as an indoor floor, never get end zones. Each venue has its own cameras; see [Move the camera](/guides/3d-view/cameras/).
+
+<Media
+  id="3d-settings"
+  alt="The View settings panel: under This show, the seven venue choices with High school selected, lighting, band uniform and guard uniform presets, the crowd switch with home and visitor colors, and the end-zone lettering; under it, the 3D View's keyboard and mouse controls."
+  maxWidth={420}
+/>
+
+Everything under <Ui k="view3d.settings.venueSection" plain /> is saved in the show file. Each change is a step in the editor's undo history, so <Kbd action="performUndo" /> in the editor window takes it back.
+
+## Crowd and end zones
+
+In a venue with stands:
+
+- <Ui k="view3d.overlay.crowd" /> fills the stands with spectators. Press <Kbd keys="C" /> in the 3D View to turn them on or off. With the crowd on, <Ui k="view3d.settings.crowdColors" plain /> sets the colors the <Ui k="view3d.settings.homeColor" plain /> and <Ui k="view3d.settings.awayColor" plain /> sides wear.
+- <Ui k="view3d.settings.endZones" /> paints lettering in both end zones, up to 24 characters, in the color you choose. Leave it empty for no lettering. The gym and the arena have no end zones.
+
+## The video boards
+
+The video boards in the <Ui k="view3d.kit.bighs" plain />, <Ui k="view3d.kit.college" plain /> and <Ui k="view3d.kit.pro" plain /> venues, and the scoreboard in the <Ui k="view3d.kit.arena" plain />, show your show's name, with its designer and client when you've entered them. Set these in [Show settings](/guides/field/show-settings/). Without a show name, the boards show the file's name.
+
+## Uniforms
+
+<Ui k="view3d.settings.uniforms" /> dresses the band and <Ui k="view3d.settings.guardUniforms" /> dresses the color guard. Choose one of the built-in uniforms for each, such as <Ui k="view3d.uniformPreset.westPoint" /> or <Ui k="view3d.uniformPreset.sash" />. Marchers in guard sections (Color Guard, Flag, Rifle and the other guard sections) wear the guard uniform; everyone else wears the band uniform.
+
+You can't design your own uniform in this version.
+
+## How the marchers look
+
+<Media
+  id="3d-marchers"
+  alt="A closer view in the 3D View: brass players in uniform with their horns up, drummers with drums, and color guard with flags, standing in their drill positions."
+/>
+
+- Each marcher's body and skin tone are chosen from their marcher number, so the same marcher looks the same every time you open the show. At **High** quality, heights vary a little too.
+- What a marcher carries comes from their section's name: trumpets, mellophones, baritones, euphoniums, trombones and tubas carry their horns, woodwind sections their instruments, the battery its drums and cymbals, Color Guard and Flag sections a 6-foot flag, and Rifle sections a rifle. Sections the 3D View doesn't know, such as Pit or Other, carry nothing.
+- The section's color from [Appearance](/guides/marchers/appearance/) colors drum shells and flag silks. It doesn't change the uniform.
+- Marchers you've hidden in Appearance are hidden in the 3D View too.
+- Marchers you select in the editor get a ring at their feet, so you can find them in the 3D View.
+
+## How the marchers move
+
+The marchers march the drill as it's written: every move, at the counts it takes, at the tempo of the music.
+
+- While moving, they step on every count and keep facing the front. Moving sideways, they slide; moving toward the back sideline, they march backward.
+- Brass play with horns up, the battery plays, and the guard holds their equipment at set.
+- While a marcher holds still and other marchers are moving, they mark time. When the whole band is still, everyone stands.
+
+The 3D View doesn't let you change these: there are no settings for horn moves, facings, equipment work or choreography in this version.
+
+## Related
+
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): the window, playback, and graphics settings for slower computers.
+- [Move the camera](/guides/3d-view/cameras/): the venue's cameras, and your own.
+- [Props](/guides/3d-view/props/): props show in the venue as blocks.
