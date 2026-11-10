@@ -2,7 +2,10 @@
 // usage (from apps/desktop):
 //   node scripts/view3d-gallery/shoot.mjs --kits hs,gym --out /mnt/data/om-capture/venues/run1
 //     [--lighting all|day,night] [--cameras all|pressBox,frontRow] [--quality high|low]
-//     [--size 1280x720] [--no-crowd] [--poses poses.json]
+//     [--size 1280x720] [--no-crowd] [--poses poses.json] [--gpu] [--bench 60]
+//
+// --gpu draws on the machine's GPU (ANGLE over EGL) instead of SwiftShader;
+// --bench N then also times N frames of each shot (ms per frame, in report.json).
 //     [--field football|footballNoEndZones|college|collegeNoEndZones|pro|indoor]
 // poses.json: [{ "name": "x", "position": [x,y,z], "target": [x,y,z], "fov": 45, "near": 0.5 }]
 // Writes <out>/<kit>/<lighting>--<camera>.png, <out>/<kit>/sheet.png and <out>/report.json.
@@ -29,6 +32,8 @@ const camerasArg = opt("cameras", "all");
 const quality = opt("quality", "high");
 const [W, H] = opt("size", "1280x720").split("x").map(Number);
 const crowd = !args.includes("--no-crowd");
+const gpu = args.includes("--gpu");
+const benchFrames = Number(opt("bench", "0"));
 const field = opt("field");
 const poses = opt("poses")
     ? JSON.parse(fs.readFileSync(opt("poses"), "utf8"))
@@ -46,8 +51,9 @@ const browser = await chromium.launch({
     args: [
         "--no-sandbox",
         "--use-gl=angle",
-        "--use-angle=swiftshader",
-        "--enable-unsafe-swiftshader",
+        ...(gpu
+            ? ["--use-angle=gl-egl"]
+            : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"]),
         "--ignore-gpu-blocklist",
     ],
 });
@@ -62,7 +68,12 @@ await page.addInitScript(() => {
         () => (window.__galleryError = true),
     );
 });
-const report = { url, kits: {}, errors };
+const report = {
+    url,
+    gpu: "",
+    kits: {},
+    errors,
+};
 try {
     await page.goto(url, { timeout: 180000 });
     await page
@@ -78,6 +89,8 @@ try {
         });
     if (errors.length && !(await page.title()).includes("ready"))
         throw new Error(`gallery did not start: ${errors.join(" | ")}`);
+    report.gpu = await page.evaluate(() => window.gallery.gpu());
+    console.log(`drawing on ${report.gpu}`);
     for (const kitId of kits) {
         const dir = path.join(out, kitId);
         fs.mkdirSync(dir, { recursive: true });
@@ -118,8 +131,12 @@ try {
                     errors.push(`${kitId} ${name}: ${ok}`);
                     continue;
                 }
-                const shotStats = await page.evaluate(() =>
-                    window.gallery.info(),
+                const shotStats = await page.evaluate(
+                    (n) => ({
+                        ...window.gallery.info(),
+                        ...(n ? { msPerFrame: window.gallery.bench(n) } : {}),
+                    }),
+                    benchFrames,
                 );
                 const file = path.join(dir, `${lighting}--${name}.png`);
                 await page.locator("canvas").screenshot({ path: file });
