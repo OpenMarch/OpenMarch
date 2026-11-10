@@ -376,7 +376,13 @@ declare global {
             bench: typeof bench;
             front(): { x: number; z: number };
             gpu(): string;
-            info(): { programs: number; calls: number; triangles: number };
+            info(): {
+                programs: number;
+                calls: number;
+                triangles: number;
+                textures: number;
+                textureMB: number;
+            };
         };
     }
 }
@@ -403,6 +409,29 @@ window.gallery = {
         programs: renderer.info.programs?.length ?? 0,
         calls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
+        textures: renderer.info.memory.textures,
+        /** Texture memory (MB): every map's pixels, with mipmaps. */
+        textureMB: (() => {
+            const seen = new Set<unknown>();
+            let bytes = 0;
+            scene.traverse((o) => {
+                const mats = (o as { material?: unknown }).material;
+                for (const m of ([] as unknown[]).concat(mats ?? [])) {
+                    for (const v of Object.values(m as object)) {
+                        const t = v as {
+                            isTexture?: boolean;
+                            image?: { width?: number; height?: number };
+                        };
+                        if (!t?.isTexture || seen.has(t)) continue;
+                        seen.add(t);
+                        const w = t.image?.width ?? 0;
+                        const h = t.image?.height ?? 0;
+                        bytes += w * h * 4 * 1.33;
+                    }
+                }
+            });
+            return Math.round(bytes / 1e5) / 10;
+        })(),
     }),
 };
 document.title = "gallery-ready";

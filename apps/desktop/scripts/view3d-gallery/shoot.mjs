@@ -118,9 +118,12 @@ try {
                     errors.push(`${kitId} ${name}: ${ok}`);
                     continue;
                 }
+                const shotStats = await page.evaluate(() =>
+                    window.gallery.info(),
+                );
                 const file = path.join(dir, `${lighting}--${name}.png`);
                 await page.locator("canvas").screenshot({ path: file });
-                shots.push({ lighting, camera: name, file });
+                shots.push({ lighting, camera: name, file, ...shotStats });
             }
         }
         const stats = await page.evaluate(() => window.gallery.info());
@@ -128,6 +131,7 @@ try {
             ...info,
             shots: shots.length,
             stats,
+            perShot: shots.map(({ file: _f, ...rest }) => rest),
             seconds: (Date.now() - t0) / 1000,
         };
         // Contact sheet: every shot in a grid with labels.
