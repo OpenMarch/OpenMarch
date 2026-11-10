@@ -36,7 +36,10 @@ MOUNTS=(-v "$REPO:$REPO")
 [ -n "${DOCS_MEDIA_WORK:-}" ] && MOUNTS+=(-v "$DOCS_MEDIA_WORK:$DOCS_MEDIA_WORK") &&
     ENV_WORK=(-e "DOCS_MEDIA_WORK=$DOCS_MEDIA_WORK") || ENV_WORK=()
 GPU=(); GL=--software-gl
-if [ "${MEDIA_GPU:-1}" != 0 ] && nvidia-smi -L >/dev/null 2>&1; then
+# Needs the NVIDIA driver and the NVIDIA Container Toolkit's CDI spec (`nvidia-ctk cdi generate`);
+# a machine with only the driver draws in software rather than failing at `docker run`
+if [ "${MEDIA_GPU:-1}" != 0 ] && nvidia-smi -L >/dev/null 2>&1 &&
+    grep -qs 'nvidia.com/gpu' /etc/cdi/* /var/run/cdi/*; then
     # CDI device: `docker run --gpus all` fails on some Docker versions
     GPU=(--device nvidia.com/gpu=all -e NVIDIA_DRIVER_CAPABILITIES=all); GL=--gpu-gl
 fi
