@@ -8,6 +8,7 @@ import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { isWebBuild } from "@/utilities/webBuild";
 import { useActionHandler } from "../useActionHandler";
+import { MY_REPORTS_URL } from "@/feedback/reportsApi";
 
 // eslint-disable-next-line max-lines-per-function
 export function useFileActionHandlers() {
@@ -24,6 +25,16 @@ export function useFileActionHandlers() {
 
     useActionHandler("openSettings", () => {
         void window.electron.openSettingsWindow();
+    });
+
+    // The web editor gets the report form later (fork #801); hide it there until then
+    useActionHandler(
+        "reportFeedback",
+        () => void window.electron.report?.open(),
+        { enabled: !isWebBuild },
+    );
+    useActionHandler("viewMyReports", () => {
+        window.open(MY_REPORTS_URL, "_blank", "noopener,noreferrer");
     });
 
     useActionHandler("launchLoadFileDialogue", () => {

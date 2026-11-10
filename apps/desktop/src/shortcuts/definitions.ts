@@ -557,6 +557,21 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Opens the bug and feedback report window (fork #801). Desktop only for now.
+    reportFeedback: {
+        labelKey: "actions.ui.reportFeedback",
+        keywordsKey: "actions.ui.reportFeedbackKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Opens the reporter's "My reports" page on app.openmarch.com
+    viewMyReports: {
+        labelKey: "actions.ui.viewMyReports",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
     // Opens the 3D View window, or focuses it (3D View UI-1). Unbound by default.
     openView3d: {
         labelKey: "actions.ui.openView3d",

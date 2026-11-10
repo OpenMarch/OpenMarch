@@ -1,0 +1,118 @@
+/**
+ * Records the editor for a bug report (fork #801). In the desktop app the
+ * main process answers the screen request with the editor window itself
+ * (`report-window.ts`), so nothing else on screen is captured and there is
+ * no picker. The microphone is optional and mixed in as the audio track.
+ */
+import { useCallback, useEffect, useRef, useState } from "react";
+import { MAX_RECORDING_BYTES, MAX_RECORDING_SECONDS } from "./reportForm";
+
+export type RecordingState =
+    | { readonly status: "idle" }
+    | { readonly status: "recording"; readonly startedAt: number }
+    | {
+          readonly status: "done";
+          readonly blob: Blob;
+          readonly seconds: number;
+      }
+    | { readonly status: "failed"; readonly reason: "denied" | "unsupported" };
+
+/** MP4 where Chromium can write it (plays everywhere), WebM otherwise. */
+export function pickMimeType(
+    isSupported: (type: string) => boolean = (type) =>
+        typeof MediaRecorder !== "undefined" &&
+        MediaRecorder.isTypeSupported(type),
+): string | undefined {
+    return [
+        "video/mp4;codecs=avc1,opus",
+        "video/mp4",
+        "video/webm;codecs=vp9,opus",
+        "video/webm",
+    ].find(isSupported);
+}
+
+export function useReportRecording() {
+    const [state, setState] = useState<RecordingState>({ status: "idle" });
+    const recorder = useRef<MediaRecorder | null>(null);
+    const streams = useRef<MediaStream[]>([]);
+    const limit = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const release = useCallback(() => {
+        if (limit.current) clearTimeout(limit.current);
+        limit.current = null;
+        streams.current.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+        streams.current = [];
+    }, []);
+
+    const stop = useCallback(() => {
+        if (recorder.current?.state === "recording") recorder.current.stop();
+    }, []);
+
+    const start = useCallback(
+        async ({ microphone }: { microphone: boolean }) => {
+            const mimeType = pickMimeType();
+            if (!navigator.mediaDevices?.getDisplayMedia || !mimeType) {
+                setState({ status: "failed", reason: "unsupported" });
+                return;
+            }
+            try {
+                const screen = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: 30 },
+                    audio: false,
+                });
+                streams.current.push(screen);
+                const tracks: MediaStreamTrack[] = [...screen.getVideoTracks()];
+                if (microphone) {
+                    const mic = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                    });
+                    streams.current.push(mic);
+                    tracks.push(...mic.getAudioTracks());
+                }
+                const chunks: Blob[] = [];
+                let bytes = 0;
+                const startedAt = Date.now();
+                const rec = new MediaRecorder(new MediaStream(tracks), {
+                    mimeType,
+                    videoBitsPerSecond: 2_500_000,
+                });
+                rec.ondataavailable = (event) => {
+                    if (event.data.size === 0) return;
+                    chunks.push(event.data);
+                    bytes += event.data.size;
+                    if (bytes >= MAX_RECORDING_BYTES * 0.95) stop();
+                };
+                rec.onstop = () => {
+                    release();
+                    setState({
+                        status: "done",
+                        blob: new Blob(chunks, { type: mimeType }),
+                        seconds: Math.round((Date.now() - startedAt) / 1000),
+                    });
+                };
+                // Ending the share from outside (window closed) ends the recording
+                screen.getVideoTracks()[0]?.addEventListener("ended", stop);
+                recorder.current = rec;
+                rec.start(1000);
+                limit.current = setTimeout(stop, MAX_RECORDING_SECONDS * 1000);
+                setState({ status: "recording", startedAt });
+            } catch {
+                release();
+                setState({ status: "failed", reason: "denied" });
+            }
+        },
+        [release, stop],
+    );
+
+    const discard = useCallback(() => {
+        // Stopping fires onstop later; don't let it bring the clip back
+        if (recorder.current) recorder.current.onstop = null;
+        stop();
+        release();
+        setState({ status: "idle" });
+    }, [release, stop]);
+
+    useEffect(() => release, [release]);
+
+    return { state, start, stop, discard };
+}

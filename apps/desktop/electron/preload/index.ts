@@ -154,6 +154,44 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     openSettingsWindow: () => ipcRenderer.invoke("settings:open"),
     reloadMainWindow: () => ipcRenderer.send("main-window:reload"),
+    /** Bug and feedback reports (fork #801) */
+    report: {
+        open: () => ipcRenderer.invoke("report:open") as Promise<void>,
+        /** The open show's file name; null when no show is open */
+        showInfo: () =>
+            ipcRenderer.invoke("report:show-info") as Promise<{
+                fileName: string;
+            } | null>,
+        /** Writes a scrubbed copy of the open show; null when no show is open */
+        showCopy: (options: { includeAudio: boolean }) =>
+            ipcRenderer.invoke("report:show-copy", options) as Promise<{
+                path: string;
+                fileName: string;
+                bytes: number;
+            } | null>,
+        /** The editor window's recent actions, errors and console lines */
+        diagnostics: () =>
+            ipcRenderer.invoke("report:diagnostics") as Promise<unknown[]>,
+        /** In the editor window: answer requests for its diagnostics */
+        answerDiagnostics: (collect: () => unknown[]) => {
+            const listener = (
+                _event: Electron.IpcRendererEvent,
+                requestId: string,
+            ) =>
+                ipcRenderer.send(
+                    "report:diagnostics-reply",
+                    requestId,
+                    collect(),
+                );
+            ipcRenderer.on("report:collect-diagnostics", listener);
+            return () =>
+                ipcRenderer.removeListener(
+                    "report:collect-diagnostics",
+                    listener,
+                );
+        },
+    },
+
     onSettingsChanged: (
         callback: (change: Record<string, unknown>) => void,
     ) => {

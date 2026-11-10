@@ -18,6 +18,7 @@ import { buildApplicationMenu } from "./application-menu";
 import { onMainLanguageChange, setMainLanguage, t } from "./i18n";
 import { textContextMenuTemplate } from "./textContextMenu";
 import { openSettingsWindow } from "./settings-window";
+import { registerReportWindow } from "./report-window";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { handleWindowOpen } from "./window-open-policy";
 import { PDFExportService } from "./services/export-service";
@@ -715,6 +716,17 @@ ipcMain.handle("settings:open", () => {
                 ? void settings.loadURL(`${url}#settings`)
                 : void settings.loadFile(indexHtml, { hash: "settings" }),
     });
+});
+
+registerReportWindow({
+    store,
+    getMainWindow: () => win,
+    preload,
+    frame: isCodegen,
+    load: (report) =>
+        url
+            ? void report.loadURL(`${url}#report`)
+            : void report.loadFile(indexHtml, { hash: "report" }),
 });
 
 ipcMain.on("main-window:reload", () => win?.reload());

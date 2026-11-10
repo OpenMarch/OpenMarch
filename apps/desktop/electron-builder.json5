@@ -29,6 +29,10 @@
         entitlements: "./build/entitlements.mac.plist",
         notarize: true,
         category: "public.app-category.graphics-design",
+        // Asked when someone records their voice with a bug report (fork #801)
+        extendInfo: {
+            NSMicrophoneUsageDescription: "OpenMarch records your voice only when you choose to narrate a bug report recording.",
+        },
         fileAssociations: [
             {
                 ext: "dots",

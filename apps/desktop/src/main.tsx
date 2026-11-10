@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import SettingsWindow from "@/settings/SettingsWindow";
+import ReportWindow from "@/feedback/ReportWindow";
+import { installEditorDiagnostics } from "@/feedback/editorDiagnostics";
 import "./styles/index.css";
 // Load every weight the UI uses, or Chromium fakes medium/semibold/bold by smearing 400.
 import "@fontsource/dm-sans/400.css";
@@ -25,6 +27,7 @@ import { startInputModeTracking } from "@/stores/InputModeStore";
 installClickFocusMarker();
 
 const isSettingsWindow = window.location.hash === "#settings";
+const isReportWindow = window.location.hash === "#report";
 
 // The 3D View window loads this bundle with `?view=3d` (ADR 0010 D-3). It
 // renders its own root, loaded on demand so the editor doesn't pay for
@@ -85,6 +88,9 @@ function mountEditor() {
             console.warn("Failed to load saved language:", error);
         });
 
+    // Recent actions and errors, sent only with a bug report (fork #801)
+    if (!isSettingsWindow && !isReportWindow) installEditorDiagnostics();
+
     // Basic or Expert (UI-19): read it and keep it in sync with the Settings window
     initEditorModeStore();
     // Whether the welcome flow still has to ask about analytics
@@ -111,7 +117,13 @@ function mountEditor() {
                     fallback="Loading..." // loading fallback
                 >
                     <ThemeProvider>
-                        {isSettingsWindow ? <SettingsWindow /> : <App />}
+                        {isSettingsWindow ? (
+                            <SettingsWindow />
+                        ) : isReportWindow ? (
+                            <ReportWindow />
+                        ) : (
+                            <App />
+                        )}
                     </ThemeProvider>
                 </TolgeeProvider>
             </PostHogProvider>
