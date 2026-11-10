@@ -11,8 +11,15 @@ import {
     Input,
     RadioGroup,
     RadioGroupItem,
+    Switch,
     TextArea,
 } from "@openmarch/ui";
+import clsx from "clsx";
+import {
+    FileIcon,
+    MusicNotesIcon,
+    ShieldCheckIcon,
+} from "@phosphor-icons/react";
 import {
     buildPayload,
     draftProblems,
@@ -182,45 +189,15 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
                     <Field label={<T keyName="feedback.attach.label" />}>
                         <div className="flex flex-col gap-12">
                             {showFileName !== null ? (
-                                <>
-                                    <CheckRow
-                                        id="report-show-file"
-                                        checked={draft.sendShowFile}
-                                        onChange={(v) =>
-                                            update({ sendShowFile: v })
-                                        }
-                                        label={
-                                            <T
-                                                keyName="feedback.attach.showFile"
-                                                params={{
-                                                    name: showFileName,
-                                                    file: (content) => (
-                                                        <code className="rounded-4 border-stroke bg-bg-1 text-sub border px-6 py-2 font-mono break-all">
-                                                            {content}
-                                                        </code>
-                                                    ),
-                                                }}
-                                            />
-                                        }
-                                        hint={
-                                            <T keyName="feedback.attach.showFile.scrubbed" />
-                                        }
-                                    />
-                                    {draft.sendShowFile && (
-                                        <div className="pl-40">
-                                            <CheckRow
-                                                id="report-music"
-                                                checked={draft.includeMusic}
-                                                onChange={(v) =>
-                                                    update({ includeMusic: v })
-                                                }
-                                                label={
-                                                    <T keyName="feedback.attach.music" />
-                                                }
-                                            />
-                                        </div>
-                                    )}
-                                </>
+                                <ShowFileCard
+                                    fileName={showFileName}
+                                    send={draft.sendShowFile}
+                                    onSend={(v) => update({ sendShowFile: v })}
+                                    includeMusic={draft.includeMusic}
+                                    onIncludeMusic={(v) =>
+                                        update({ includeMusic: v })
+                                    }
+                                />
                             ) : (
                                 <p className="text-sub text-text-subtitle">
                                     <T keyName="feedback.attach.noShow" />
@@ -352,6 +329,91 @@ function CheckRow({
                     <span className="text-sub text-text-subtitle">{hint}</span>
                 )}
             </label>
+        </div>
+    );
+}
+
+/** The show copy: whether to send it, which file, and whether its music goes too. */
+function ShowFileCard({
+    fileName,
+    send,
+    onSend,
+    includeMusic,
+    onIncludeMusic,
+}: {
+    fileName: string;
+    send: boolean;
+    onSend: (send: boolean) => void;
+    includeMusic: boolean;
+    onIncludeMusic: (include: boolean) => void;
+}) {
+    return (
+        <div
+            className={clsx(
+                "rounded-6 border-stroke bg-fg-1 flex flex-col border",
+                send && "border-accent/60",
+            )}
+        >
+            <div className="flex items-center gap-12 p-12">
+                <Checkbox
+                    id="report-show-file"
+                    checked={send}
+                    onCheckedChange={(v) => onSend(v === true)}
+                />
+                <label
+                    htmlFor="report-show-file"
+                    className="flex min-w-0 flex-1 cursor-pointer flex-col gap-2"
+                >
+                    <span className="text-body">
+                        <T keyName="feedback.attach.showFile" />
+                    </span>
+                    <span
+                        className={clsx(
+                            "flex min-w-0 items-center gap-6",
+                            !send && "opacity-50",
+                        )}
+                    >
+                        <FileIcon size={18} className="text-accent shrink-0" />
+                        <span className="text-body truncate font-mono font-medium">
+                            {fileName}
+                        </span>
+                    </span>
+                </label>
+            </div>
+            {send && (
+                <div className="border-stroke text-sub flex flex-col gap-8 border-t px-12 py-10 pl-52">
+                    <span className="text-text-subtitle flex items-center gap-6">
+                        <ShieldCheckIcon size={16} className="shrink-0" />
+                        <T keyName="feedback.attach.showFile.scrubbed" />
+                    </span>
+                    <div className="flex items-center gap-6">
+                        <MusicNotesIcon
+                            size={16}
+                            className="text-text-subtitle shrink-0"
+                        />
+                        <span className="flex-1">
+                            <T
+                                keyName={
+                                    includeMusic
+                                        ? "feedback.attach.music.on"
+                                        : "feedback.attach.music.off"
+                                }
+                            />
+                        </span>
+                        <label
+                            htmlFor="report-music"
+                            className="text-text-subtitle cursor-pointer"
+                        >
+                            <T keyName="feedback.attach.music" />
+                        </label>
+                        <Switch
+                            id="report-music"
+                            checked={includeMusic}
+                            onCheckedChange={onIncludeMusic}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

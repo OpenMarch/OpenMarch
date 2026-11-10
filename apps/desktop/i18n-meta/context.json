@@ -2824,10 +2824,10 @@
     "actions.ui.viewMyReports": "Name of an action in the command palette and Help menu. Opens the person's list of bug reports and feedback they sent, on the OpenMarch website, in their browser.",
     "feedback.attach.diagnostics": "Note in the bug and feedback report window (Help → Report a bug or send feedback) that a short log of recent activity is always sent with the report.",
     "feedback.attach.label": "Label of the section in the bug and feedback report window (Help → Report a bug or send feedback) where the person chooses what to send along with their report.",
-    "feedback.attach.music": "Checkbox under \"Send a copy of my show\" in the bug and feedback report window (Help → Report a bug or send feedback), not ticked by default: also send the show's music file. Without it the music is removed from the copy.",
+    "feedback.attach.music": "Label of a switch under the show file in the bug and feedback report window (Help → Report a bug or send feedback), off by default: also send the show's music.",
     "feedback.attach.noShow": "Shown in the bug and feedback report window (Help → Report a bug or send feedback) when no show is open, where the \"Send a copy of my show\" checkbox would be.",
-    "feedback.attach.showFile": "Checkbox in the bug and feedback report window (Help → Report a bug or send feedback), ticked by default: send a copy of the open show file with the report. {name} is the show's file name, shown in a monospace box; keep the <file></file> tags around {name}.",
-    "feedback.attach.showFile.scrubbed": "Smaller text under the \"Send a copy of my show\" checkbox in the bug and feedback report window (Help → Report a bug or send feedback).",
+    "feedback.attach.showFile": "Checkbox in the bug and feedback report window (Help → Report a bug or send feedback), ticked by default: send a copy of the open show file with the report. The show's file name is shown on its own line below.",
+    "feedback.attach.showFile.scrubbed": "Shown under the show file in the bug and feedback report window (Help → Report a bug or send feedback) while it will be sent: the copy has performer names and notes taken out before it leaves the computer.",
     "feedback.error.failed": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when sending failed.",
     "feedback.error.notConnected": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the person presses Send in a build where sending isn't connected to the website yet.",
     "feedback.optional": "Shown after a question's label in the bug and feedback report window (Help → Report a bug or send feedback) when it may be left empty.",
@@ -2879,5 +2879,7 @@
     "feedback.viewMyReports": "Link in the bug and feedback report window (Help → Report a bug or send feedback) that opens the person's list of sent reports on the OpenMarch website.",
     "feedback.window.title": "Title of the bug and feedback report window (Help → Report a bug or send feedback): its window title and the heading at the top of the form.",
     "menu.help.reportFeedback": "Help menu item (title case, as menus use). Opens the bug and feedback report window (Help → Report a bug or send feedback).",
-    "menu.help.viewMyReports": "Help menu item (title case, as menus use). Opens the person's list of sent reports on the OpenMarch website in their browser."
+    "menu.help.viewMyReports": "Help menu item (title case, as menus use). Opens the person's list of sent reports on the OpenMarch website in their browser.",
+    "feedback.attach.music.off": "Shown under the show file in the bug and feedback report window (Help → Report a bug or send feedback) while the \"Include music\" switch is off (the default): the copy is sent without its music.",
+    "feedback.attach.music.on": "Shown under the show file in the bug and feedback report window (Help → Report a bug or send feedback) after the person turned on \"Include music\": the show's music goes with the copy."
 }

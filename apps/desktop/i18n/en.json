@@ -3781,9 +3781,9 @@
         "question.feedback.placeholder": "Your feedback",
         "optional": "(optional)",
         "attach.label": "Attachments",
-        "attach.showFile": "Send a copy of my show <file>{name}</file>",
-        "attach.showFile.scrubbed": "Performer names and notes are removed before sending.",
-        "attach.music": "Include the music",
+        "attach.showFile": "Send a copy of my show",
+        "attach.showFile.scrubbed": "Performer names and notes are removed first.",
+        "attach.music": "Include music",
         "attach.noShow": "Open a show to send a copy of it with your report.",
         "attach.diagnostics": "Your app's recent actions and errors are sent too, to help us find the problem.",
         "record.start": "Record the screen",
@@ -3804,6 +3804,8 @@
         "sending": "Sending…",
         "retention": "Files you send with a report are deleted from our servers after 2 months.",
         "error.notConnected": "Sending reports isn't available yet.",
-        "error.failed": "Your report couldn't be sent. Check your connection and try again."
+        "error.failed": "Your report couldn't be sent. Check your connection and try again.",
+        "attach.music.off": "The music isn't sent.",
+        "attach.music.on": "The music is sent too."
     }
 }
