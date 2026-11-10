@@ -24,6 +24,7 @@ import {
     ft,
     GROUND_LAYER,
     lightingValues,
+    setFlushBacking,
     setGroundLayer,
     SIGN_RIBBON,
     signRibbonTexture,
@@ -751,6 +752,8 @@ function addShell(ctx: ProContext, upper: BuiltTier) {
         emissiveIntensity: 0,
         roughness: 0.85,
     });
+    // Behind the beams, ledges and roof edge that sit flush on it.
+    setFlushBacking(outsideMat);
     // Only the outer wall casts: it grounds the building on the site.
     ctx.addMesh(wall, outsideMat, "pro.facade", ctx.shadows);
     let glassMat: MeshStandardMaterial | null = null;
@@ -765,6 +768,7 @@ function addShell(ctx: ProContext, upper: BuiltTier) {
             roughness: 0.8,
             side: BackSide,
         });
+        setFlushBacking(insideMat);
         // The same geometry seen from inside (addMesh would free it twice).
         const interior = new Mesh(wall, insideMat);
         interior.name = "pro.interiorWall";
@@ -828,6 +832,8 @@ function addRoof(ctx: ProContext) {
         vertexColors: true,
         side: DoubleSide,
     });
+    // Behind its girders and sliding panels, and behind the wall it meets.
+    setFlushBacking(frameMat, 2);
     const ranges: Record<RoofBucket, [number, number][]> = {
         ...roofSideRanges(),
         all: [[0, n]],

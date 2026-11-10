@@ -35,3 +35,16 @@ export function setGroundLayer<M extends Material>(
     material.polygonOffsetUnits = -2 * level;
     return material;
 }
+
+/**
+ * Draws `material` just behind anything lying flush on it: a wall behind the
+ * trim, doors and beams set into it, a roof frame behind its girders. Without
+ * this, two surfaces in the same plane flash through each other as the camera
+ * moves. A higher `level` sits further back, for a backing behind a backing.
+ */
+export function setFlushBacking<M extends Material>(material: M, level = 1): M {
+    material.polygonOffset = true;
+    material.polygonOffsetFactor = level;
+    material.polygonOffsetUnits = 2 * level;
+    return material;
+}

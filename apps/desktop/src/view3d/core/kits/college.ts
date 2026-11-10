@@ -24,6 +24,7 @@ import {
     GROUND_LAYER,
     lightingValues,
     setLightIntensity,
+    setFlushBacking,
     setGroundLayer,
     SIGN_RIBBON,
     signRibbonTexture,
@@ -473,6 +474,11 @@ export const buildCollege: KitBuilder = ({ footprint, params, quality }) => {
     const seating = add(buckets.seating.build(), seatingMat, "college.seating");
     const seatBacks = add(buckets.seatBacks.build(), seatMat, "college.seats");
     add(buckets.ribbon.build(), ribbonMat, "college.ribbon", false);
+    // Flush pieces win over what they're mounted on: lights and trim over
+    // the structure, the structure over the facade, frames over the glass.
+    setFlushBacking(structureMat, 1);
+    setFlushBacking(facadeMat, 2);
+    setFlushBacking(glassMat, 1);
     add(buckets.structure.build(), structureMat, "college.structure");
     add(facade.build(), facadeMat, "college.facade");
     add(glass.build(), glassMat, "college.glass", false);
