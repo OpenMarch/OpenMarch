@@ -7,7 +7,7 @@ import {
     type Object3D,
     type Vector3Tuple,
 } from "three";
-import { ft } from "../../environment";
+import { ft, setFlushBacking } from "../../environment";
 import type { LightingPreset } from "../../types";
 import type {
     DressContext,
@@ -227,11 +227,14 @@ export function schoolDress(
                 props.append(steel.fill(steelTint));
             }
 
-            const propMat = new MeshStandardMaterial({
-                color: 0xffffff,
-                roughness: 0.78,
-                metalness: 0.05,
-            });
+            // Behind the press box face and scoreboards mounted on these boxes.
+            const propMat = setFlushBacking(
+                new MeshStandardMaterial({
+                    color: 0xffffff,
+                    roughness: 0.78,
+                    metalness: 0.05,
+                }),
+            );
             const propMesh = props.build(shared.unitBox, propMat, "props");
             propMesh.castShadow = propMesh.receiveShadow = true;
             objects.push(propMesh);

@@ -44,6 +44,7 @@ import {
     guardUniformPresetOf,
     uniformPresetOf,
 } from "@/view3d/core/marchers/uniformPresets";
+import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { marcherHeading } from "@/view3d/core/marchers/facing";
 import {
@@ -389,16 +390,17 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 roughness: 0.6,
                 metalness: 0,
             }),
-            ringMaterial: new MeshBasicMaterial({
-                color: new Color(readAccentColor()),
-                side: DoubleSide,
-                transparent: true,
-                opacity: 0.85,
-                depthWrite: false,
-                polygonOffset: true,
-                polygonOffsetFactor: -2,
-                polygonOffsetUnits: -2,
-            }),
+            // Over the field and the marchers' shadows, at any distance.
+            ringMaterial: setGroundLayer(
+                new MeshBasicMaterial({
+                    color: new Color(readAccentColor()),
+                    side: DoubleSide,
+                    transparent: true,
+                    opacity: 0.85,
+                    depthWrite: false,
+                }),
+                GROUND_LAYER.selection,
+            ),
         };
     }, []);
     useEffect(

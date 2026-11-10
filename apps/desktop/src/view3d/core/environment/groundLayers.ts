@@ -23,6 +23,10 @@ export const GROUND_LAYER = {
     decal: 5,
     /** The field surface, over everything else on the ground. */
     field: 6,
+    /** Marchers' soft contact shadows, on the field. */
+    contact: 7,
+    /** Selection rings at marchers' feet, over their shadows. */
+    selection: 8,
 } as const;
 
 /** Draws `material` at a ground layer's level (see `GROUND_LAYER`). */

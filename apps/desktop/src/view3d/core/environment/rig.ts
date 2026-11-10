@@ -47,6 +47,11 @@ export interface Environment {
      */
     setLighting(preset: LightingPreset, focus?: Vector3Tuple): LightingValues;
     setFocus(focus: Vector3Tuple): void;
+    /**
+     * Shows or hides the land and horizon around the venue (they also hide
+     * with the sky). Set it from `KitResult.surroundings` when the kit changes.
+     */
+    setSurroundings(on: boolean): void;
     dispose(): void;
 }
 
@@ -86,6 +91,12 @@ export function createEnvironment(
     const fog = new Fog(0xcfe2f5, ft(1800), ft(5000));
 
     let exposure = 1;
+    let surroundings = true;
+    let skyVisible = true;
+    const showSurroundings = () => {
+        if (horizon) horizon.mesh.visible = surroundings && skyVisible;
+        if (land) land.mesh.visible = surroundings && skyVisible;
+    };
     const env: Environment = {
         root,
         sky,
@@ -105,6 +116,8 @@ export function createEnvironment(
             horizon?.setCenter(focus);
             land?.setPreset(preset);
             land?.setCenter(focus);
+            skyVisible = v.skyVisible;
+            showSurroundings();
             fog.color.setHex(v.fog);
             fog.near = v.fogNear;
             fog.far = v.fogFar;
@@ -125,6 +138,10 @@ export function createEnvironment(
                 v.sun.castShadow !== false;
             exposure = v.exposure;
             return v;
+        },
+        setSurroundings(on) {
+            surroundings = on;
+            showSurroundings();
         },
         setFocus(f) {
             focus = f;

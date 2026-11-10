@@ -213,6 +213,7 @@ let current: {
 
 function setLighting(preset: LightingPreset): void {
     if (!kit || !current) return;
+    current.env.setSurroundings(kit.surroundings !== false);
     current.env.setLighting(preset, kit.focus);
     renderer.toneMappingExposure = current.env.exposure;
     kit.setLighting(preset);

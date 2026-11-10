@@ -474,11 +474,12 @@ export const buildCollege: KitBuilder = ({ footprint, params, quality }) => {
     const seating = add(buckets.seating.build(), seatingMat, "college.seating");
     const seatBacks = add(buckets.seatBacks.build(), seatMat, "college.seats");
     add(buckets.ribbon.build(), ribbonMat, "college.ribbon", false);
-    // Flush pieces win over what they're mounted on: lights and trim over
-    // the structure, the structure over the facade, frames over the glass.
-    setFlushBacking(structureMat, 1);
+    // Flush pieces win over what they're mounted on: the structure over the
+    // lights and facade, the scoreboard over its metal, metal over glass.
+    setFlushBacking(litMat, 1);
+    setFlushBacking(metalMat, 1);
     setFlushBacking(facadeMat, 2);
-    setFlushBacking(glassMat, 1);
+    setFlushBacking(glassMat, 2);
     add(buckets.structure.build(), structureMat, "college.structure");
     add(facade.build(), facadeMat, "college.facade");
     add(glass.build(), glassMat, "college.glass", false);

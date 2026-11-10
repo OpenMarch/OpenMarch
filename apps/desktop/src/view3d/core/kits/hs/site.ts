@@ -20,6 +20,7 @@ import {
 import {
     createRng,
     GROUND_LAYER,
+    setFlushBacking,
     setGroundLayer,
     type SharedMaterials,
 } from "../../environment";
@@ -1048,6 +1049,8 @@ export function buildSite(
             emissiveIntensity: 0,
             roughness: 0.9,
         });
+        // Behind the roofs, which sit a few centimeters above the walls' tops.
+        setFlushBacking(mat);
         const mesh = new Mesh(geo, mat);
         mesh.name = "buildings";
         mesh.castShadow = mesh.receiveShadow = true;

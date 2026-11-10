@@ -398,8 +398,8 @@ function isOverField(ctx: ProContext, [x, , z]: Vector3Tuple): boolean {
 }
 
 /**
- * The ground: one plane under everything with the floor inside the bowl, in a
- * single draw, as rings that never overlap. High quality adds the plaza and lots as a site plane that
+ * The ground: one plane under everything with the floor inside the bowl, as
+ * rings that never overlap. High quality adds the plaza and lots as a site plane that
  * fades into the shared land layer; low quality has no land, so the plaza is
  * a plain slab in the same draw.
  */
@@ -437,17 +437,31 @@ function addGround(ctx: ProContext) {
     const plaza =
         quality === "low" ? around(rx + PLAZA_DEPTH, rz + PLAZA_DEPTH) : null;
     const g = ft(4500);
+    const flush = (name: string, level: number) => {
+        const geo = new BufferGeometry();
+        geo.setAttribute("position", new Float32BufferAttribute(pos, 3));
+        geo.setAttribute("color", new Float32BufferAttribute(col, 3));
+        geo.computeVertexNormals();
+        const opts = { roughness: 1, vertexColors: true };
+        ctx.addMesh(
+            geo,
+            level === GROUND_LAYER.ground
+                ? shared.std(0xffffff, opts)
+                : setGroundLayer(ctx.mat({ color: 0xffffff, ...opts }), level),
+            name,
+        );
+        pos.length = 0;
+        col.length = 0;
+    };
     ring([-g, g, -g, g], plaza ?? floor, -ft(0.3), 0x55575c);
     if (plaza) ring(plaza, floor, -ft(0.2), 0x7f7c75);
+    // High quality draws the land over the outer ground; the floor inside
+    // the bowl is its own layer so the land never shows through it.
+    if (quality === "high") flush("pro.ground", GROUND_LAYER.ground);
     ring(floor, null, -ft(0.1), 0x2f6328);
-    const geo = new BufferGeometry();
-    geo.setAttribute("position", new Float32BufferAttribute(pos, 3));
-    geo.setAttribute("color", new Float32BufferAttribute(col, 3));
-    geo.computeVertexNormals();
-    ctx.addMesh(
-        geo,
-        shared.std(0xffffff, { roughness: 1, vertexColors: true }),
-        "pro.ground",
+    flush(
+        quality === "high" ? "pro.floor" : "pro.ground",
+        quality === "high" ? GROUND_LAYER.site : GROUND_LAYER.ground,
     );
     if (quality === "low") return { setNight() {} };
 
@@ -469,7 +483,8 @@ function addGround(ctx: ProContext) {
         depthWrite: false,
         alphaTest: 0.01,
     });
-    setGroundLayer(siteMat, GROUND_LAYER.site);
+    // Over the floor ring (site level) it fades into at the bowl's edge.
+    setGroundLayer(siteMat, GROUND_LAYER.lots);
     const site = ctx.addMesh(
         new PlaneGeometry(2 * halfSize, 2 * halfSize),
         siteMat,

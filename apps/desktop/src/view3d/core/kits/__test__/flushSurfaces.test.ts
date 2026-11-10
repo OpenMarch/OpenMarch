@@ -3,7 +3,8 @@
  * Two surfaces in the same plane, both facing the camera, flash through each
  * other as it moves (z-fighting). This scans each stadium, with the shared
  * land, for large triangles lying within 5 cm of another one that a camera
- * could see at the same time and that no polygon offset separates.
+ * could see at the same time and that no polygon offset separates, or that
+ * an offset draws behind a surface it actually lies in front of.
  */
 import { beforeAll, describe, expect, it } from "vitest";
 import {
@@ -162,8 +163,18 @@ function flushPairs(triangles: Tri[]): Map<string, number> {
         ];
         for (const p of list) {
             for (const q of near) {
-                if (p === q || p.offset !== q.offset) continue;
-                if (p.mesh === q.mesh) continue;
+                if (p === q || p.mesh === q.mesh) continue;
+                // Different offsets settle which one wins; that's only right
+                // if the one in front (further along the normal) wins.
+                let label = "";
+                if (p.offset !== q.offset) {
+                    if (p.n.dot(q.n) <= 0) continue;
+                    const ahead = p.d - q.d;
+                    if (Math.abs(ahead) < 0.002) continue;
+                    const [front, back] = ahead > 0 ? [p, q] : [q, p];
+                    if (front.offset < back.offset) continue;
+                    label = ` (${front.mesh} is in front but drawn behind)`;
+                }
                 if (Math.abs(Math.abs(p.d) - Math.abs(q.d)) > MAX_GAP) continue;
                 if (!visibleTogether(p, q)) continue;
                 const apart = [0, 1, 2].some(
@@ -173,11 +184,11 @@ function flushPairs(triangles: Tri[]): Map<string, number> {
                                 p.min.getComponent(i),
                                 q.min.getComponent(i),
                             ) <
-                        -0.01,
+                        -MAX_GAP - 0.01,
                 );
                 if (apart) continue;
                 const ov = overlap(p, q);
-                const pair = [p.mesh, q.mesh].sort().join(" ~ ");
+                const pair = [p.mesh, q.mesh].sort().join(" ~ ") + label;
                 if (ov > (found.get(pair) ?? 0)) found.set(pair, ov);
             }
         }

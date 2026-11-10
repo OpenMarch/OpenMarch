@@ -10,7 +10,12 @@ import {
     type BufferGeometry,
     type Vector3Tuple,
 } from "three";
-import { createRng, ft, type SharedMaterials } from "../../environment";
+import {
+    createRng,
+    ft,
+    setFlushBacking,
+    type SharedMaterials,
+} from "../../environment";
 import type { SeatRow } from "../../types";
 import type { Stand, StandPlacement, StandSpec } from "../stands";
 import { BoxBatch, QuadBuilder } from "./geometry";
@@ -362,6 +367,8 @@ export function buildSchoolStand(input: SchoolStandInput): SchoolStand {
         metalness: kind === "aluminum" ? 0.4 : 0,
         side: kind === "aluminum" ? DoubleSide : FrontSide,
     });
+    // Behind the stand's front and rear walls, a few centimeters in front.
+    setFlushBacking(surfaceMat);
     owned.push(surfaceGeo, surfaceMap, surfaceMat);
     const treads = new Mesh(surfaceGeo, surfaceMat);
     treads.name = "treads";
