@@ -3,8 +3,8 @@
  *
  * People send their show so we can reproduce a bug, not so we can read their
  * roster. The copy is scrubbed here, before it leaves the computer:
- * - performer names become "Performer <id>" (kept non-empty, so bugs that
- *   need names still show up), and performer and page notes are cleared;
+ * - every notes, description and nickname column is cleared, and names
+ *   (performers, tags, timelines, shapes, …) become "<label> <id>";
  * - the undo/redo history and the timeline change log are emptied, because
  *   they keep old copies of rows, names included;
  * - the music is dropped unless the person asks to include it, and an audio
@@ -13,6 +13,7 @@
  *
  * Tables or columns an older file lacks are skipped.
  */
+// cspell:ignore notnull
 import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 
@@ -34,24 +35,73 @@ function columnsOf(db: ScrubbableDatabase, table: string): Set<string> {
     return new Set(rows.map((r) => r.name));
 }
 
+/** Free-text columns cleared in every table that has them. */
+const CLEARED_COLUMNS = new Set(["notes", "description", "nickname"]);
+/** What a table's `name` becomes, "<label> <rowid>"; other tables use their own name. */
+const NAME_LABELS: Readonly<Record<string, string>> = {
+    marchers: "Performer",
+    tags: "Tag",
+    timelines: "Timeline",
+    timeline_shapes: "Shape",
+    shapes: "Shape",
+};
+
+const quote = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
+
 /**
- * Scrubs an already-made copy in place. Runs the changes first and empties
- * the history last, so rows the undo and change-log triggers write while
+ * Scrubs an already-made copy in place. Works from the file's own tables
+ * rather than a fixed list, so older and fork-only tables are covered too:
+ * every `notes`, `description` and `nickname` column is cleared, and every
+ * nullable `name` column becomes "<label> <rowid>" (kept non-empty, so bugs
+ * that need names still show up). Runs the changes first and empties the
+ * history last, so rows the undo and change-log triggers write while
  * scrubbing are removed too.
  */
 export function scrubReportCopy(
     db: ScrubbableDatabase,
     { includeAudio }: ReportCopyOptions,
 ) {
-    const marchers = columnsOf(db, "marchers");
-    if (marchers.has("name"))
-        db.exec(
-            "UPDATE marchers SET name = 'Performer ' || id WHERE name IS NOT NULL AND name != ''",
-        );
-    if (marchers.has("notes")) db.exec("UPDATE marchers SET notes = NULL");
+    const tables = (
+        db
+            .prepare(
+                "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '__drizzle%'",
+            )
+            .all() as { name: string }[]
+    ).map((t) => t.name);
 
-    if (columnsOf(db, "pages").has("notes"))
-        db.exec("UPDATE pages SET notes = NULL");
+    // Guard triggers (e.g. "no changes to the first beat") would refuse the
+    // scrub, and undo triggers would copy the old values into the history.
+    // Set them aside and put them back exactly as they were.
+    const triggers = db
+        .prepare(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' AND sql IS NOT NULL",
+        )
+        .all() as { name: string; sql: string }[];
+    for (const { name } of triggers) db.exec(`DROP TRIGGER ${quote(name)}`);
+
+    for (const table of tables) {
+        const columns = db
+            .prepare(
+                `SELECT name, "notnull" AS required FROM pragma_table_info(?)`,
+            )
+            .all(table) as { name: string; required: number }[];
+        for (const { name: column, required } of columns) {
+            if (required) continue;
+            if (CLEARED_COLUMNS.has(column))
+                db.exec(
+                    `UPDATE ${quote(table)} SET ${quote(column)} = NULL WHERE ${quote(column)} IS NOT NULL`,
+                );
+            else if (column === "name") {
+                const label = (NAME_LABELS[table] ?? table).replaceAll(
+                    "'",
+                    "''",
+                );
+                db.exec(
+                    `UPDATE ${quote(table)} SET name = '${label} ' || rowid WHERE name IS NOT NULL AND name != ''`,
+                );
+            }
+        }
+    }
 
     const audio = columnsOf(db, "audio_files");
     if (audio.has("path")) {
@@ -69,6 +119,8 @@ export function scrubReportCopy(
     }
     if (!includeAudio && audio.has("data"))
         db.exec("UPDATE audio_files SET data = NULL");
+
+    for (const { sql } of triggers) db.exec(sql);
 
     for (const table of [
         "history_undo",

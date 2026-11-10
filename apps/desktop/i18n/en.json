@@ -3812,6 +3812,8 @@
         "sending.creating": "Sending…",
         "sent.view": "View this report",
         "error.signedOut": "You've been signed out. Sign in again and send the report.",
-        "error.tooMany": "You've sent a lot of reports today. Please try again tomorrow."
+        "error.tooMany": "You've sent a lot of reports today. Please try again tomorrow.",
+        "error.showChanged": "A different show is open now. Check the attachment and send again.",
+        "sent.showTooLarge": "Your show was too large to attach (over 1 GB), so the report was sent without it."
     }
 }

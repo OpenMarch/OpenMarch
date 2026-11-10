@@ -51,10 +51,15 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
 
     // Whether a show is open decides whether "Send my show file" is offered
     useEffect(() => {
-        void window.electron.report
-            .showInfo()
-            .then((info) => setShowFileName(info?.fileName ?? null))
-            .catch(() => setShowFileName(null));
+        // Again whenever the window comes back to the front: the open show may have changed
+        const refresh = () =>
+            void window.electron.report
+                .showInfo()
+                .then((info) => setShowFileName(info?.fileName ?? null))
+                .catch(() => setShowFileName(null));
+        refresh();
+        window.addEventListener("focus", refresh);
+        return () => window.removeEventListener("focus", refresh);
     }, []);
 
     const update = (change: Partial<ReportDraft>) =>
@@ -88,8 +93,9 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
                 hasVideo,
                 hasShowFile: sendsShowFile,
             });
-            const { url } = await submitReport(payload, {
+            const { url, showFileTooLarge } = await submitReport(payload, {
                 sendShowFile: sendsShowFile,
+                expectedShowFileName: showFileName ?? undefined,
                 includeAudio: draft.includeMusic,
                 recording:
                     recording.state.status === "done"
@@ -99,16 +105,24 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
                           }
                         : undefined,
             });
+            if (showFileTooLarge)
+                toast.warning(t("feedback.sent.showTooLarge"));
             onSent(url);
         } catch (error) {
             const status =
                 error instanceof ReportSendError ? error.status : undefined;
+            if (status === 409)
+                void window.electron.report
+                    .showInfo()
+                    .then((info) => setShowFileName(info?.fileName ?? null));
             toast.error(
                 status === 401
                     ? t("feedback.error.signedOut")
-                    : status === 429
-                      ? t("feedback.error.tooMany")
-                      : t("feedback.error.failed"),
+                    : status === 409
+                      ? t("feedback.error.showChanged")
+                      : status === 429
+                        ? t("feedback.error.tooMany")
+                        : t("feedback.error.failed"),
             );
         } finally {
             setSending(false);

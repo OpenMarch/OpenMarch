@@ -75,7 +75,11 @@ export default defineConfig(({ command }) => {
                 {
                     // The convert-on-open worker thread (P9.8). The main process starts it from
                     // `dist-electron/worker/convertOnOpenWorker.js` (`convertWorkerHost.ts`).
-                    entry: "electron/database/convertOnOpenWorker.ts",
+                    // Also the bug report's show-copy worker (fork #801), reportCopyWorker.js.
+                    entry: [
+                        "electron/database/convertOnOpenWorker.ts",
+                        "electron/database/reportCopyWorker.ts",
+                    ],
                     onstart() {
                         // Each conversion starts a fresh worker, so a rebuild needs no restart.
                     },

@@ -14,6 +14,8 @@ export const reportUrl = (id: number) => `${MY_REPORTS_URL}/${id}`;
 
 export interface ReportAttachments {
     readonly sendShowFile: boolean;
+    /** The show the window showed; main refuses (409) if another is open now */
+    readonly expectedShowFileName?: string;
     readonly includeAudio: boolean;
     readonly recording?: { readonly blob: Blob; readonly seconds: number };
 }
@@ -21,7 +23,7 @@ export interface ReportAttachments {
 export async function submitReport(
     report: ReportPayload,
     attachments: ReportAttachments,
-): Promise<{ id: number; url: string }> {
+): Promise<{ id: number; url: string; showFileTooLarge: boolean }> {
     const recording = attachments.recording
         ? {
               bytes: await attachments.recording.blob.arrayBuffer(),
@@ -32,17 +34,22 @@ export async function submitReport(
     const result = await window.electron.report.submit({
         report: { ...report },
         sendShowFile: attachments.sendShowFile,
+        expectedShowFileName: attachments.expectedShowFileName,
         includeAudio: attachments.includeAudio,
         recording,
     });
     if (!result.ok) throw new ReportSendError(result.message, result.status);
-    return { id: result.id, url: reportUrl(result.id) };
+    return {
+        id: result.id,
+        url: reportUrl(result.id),
+        showFileTooLarge: result.showFileTooLarge,
+    };
 }
 
 export class ReportSendError extends Error {
     constructor(
         message: string,
-        /** The API's HTTP status: 401 signed out, 429 too many today, 422 rejected */
+        /** 401 signed out, 409 the open show changed, 429 too many today, 422 rejected */
         readonly status?: number,
     ) {
         super(message);

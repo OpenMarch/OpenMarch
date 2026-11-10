@@ -5,7 +5,10 @@
  * no picker. The microphone is optional and mixed in as the audio track.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MAX_RECORDING_BYTES, MAX_RECORDING_SECONDS } from "./reportForm";
+import { MAX_RECORDING_SECONDS } from "./reportForm";
+
+/** Stop by this size; 5 minutes at 2.5 megabits a second is about 95 MB, so this is only a safety net. */
+const RECORDING_STOP_BYTES = 200 * 1024 * 1024;
 
 export type RecordingState =
     | { readonly status: "idle" }
@@ -80,14 +83,19 @@ export function useReportRecording() {
                     if (event.data.size === 0) return;
                     chunks.push(event.data);
                     bytes += event.data.size;
-                    if (bytes >= MAX_RECORDING_BYTES * 0.95) stop();
+                    // Well under the server's cap: the clip crosses to the main process in one message
+                    if (bytes >= RECORDING_STOP_BYTES) stop();
                 };
                 rec.onstop = () => {
                     release();
                     setState({
                         status: "done",
                         blob: new Blob(chunks, { type: mimeType }),
-                        seconds: Math.round((Date.now() - startedAt) / 1000),
+                        // The encoder can finish a moment after the 5-minute stop
+                        seconds: Math.min(
+                            MAX_RECORDING_SECONDS,
+                            Math.round((Date.now() - startedAt) / 1000),
+                        ),
                     });
                 };
                 // Ending the share from outside (window closed) ends the recording

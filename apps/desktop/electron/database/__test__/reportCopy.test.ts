@@ -13,6 +13,11 @@ import { createNewTimelineShow } from "./convertOnOpenFixtures";
 import { writeReportCopy } from "../reportCopy";
 
 const SECRETS = [
+    "Sarah's squad",
+    "Seniors only",
+    "Opener mix v3 for Mr. Hayes",
+    "Count off from Jordan",
+    "Mr. Hayes solo",
     "Jordan Quill",
     "Avery Morrison",
     "Needs braces check",
@@ -39,11 +44,15 @@ async function makeShow() {
                    ('Avery Morrison', 'Snare', NULL, 'S', 1),
                    (NULL, 'Tuba', NULL, 'U', 1);
             UPDATE pages SET notes = 'Talk to Avery''s parents';
+            INSERT INTO tags (name, description) VALUES ('Sarah''s squad', 'Seniors only');
+            -- A table this version doesn't know (older fork files have cues, sketches, …)
+            CREATE TABLE cues (id INTEGER PRIMARY KEY, name TEXT, notes TEXT);
+            INSERT INTO cues (name, notes) VALUES ('Mr. Hayes solo', 'Count off from Jordan');
             INSERT INTO timeline_change_log (tbl, row_id, before, after)
             VALUES ('marchers', 1, NULL, '{"name":"Jordan Quill"}');
         `);
         db.prepare(
-            "INSERT INTO audio_files (path, nickname, data) VALUES (?, 'Opener', ?)",
+            "INSERT INTO audio_files (path, nickname, data) VALUES (?, 'Opener mix v3 for Mr. Hayes', ?)",
         ).run("/Users/student/Music/opener.mp3", AUDIO);
     } finally {
         db.close();
@@ -96,6 +105,30 @@ describe("writeReportCopy", () => {
             ).toBe(0);
     });
 
+    it("clears every notes, description and nickname column, in any table", () => {
+        writeReportCopy(showPath, copyPath, { includeAudio: true });
+        const tables = read<{ name: string }>(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+        );
+        for (const { name: table } of tables)
+            for (const { name: column } of read<{ name: string }>(
+                `SELECT name FROM pragma_table_info('${table}')`,
+            ))
+                if (["notes", "description", "nickname"].includes(column))
+                    expect(
+                        read<{ n: number }>(
+                            `SELECT count(*) AS n FROM "${table}" WHERE "${column}" IS NOT NULL`,
+                        )[0].n,
+                        `${table}.${column}`,
+                    ).toBe(0);
+        expect(read<{ name: string }>("SELECT name FROM tags")).toEqual([
+            { name: "Tag 1" },
+        ]);
+        expect(read<{ name: string }>("SELECT name FROM cues")).toEqual([
+            { name: "cues 1" },
+        ]);
+    });
+
     it("leaves no original name, note or path anywhere in the file", () => {
         writeReportCopy(showPath, copyPath, { includeAudio: false });
         const bytes = fs.readFileSync(copyPath).toString("latin1");
@@ -116,6 +149,24 @@ describe("writeReportCopy", () => {
         );
         expect(row.path).toBe("opener.mp3");
         expect(Uint8Array.from(row.data)).toEqual(AUDIO);
+    });
+
+    it("puts every trigger back as it was", () => {
+        const triggerSql = (file: string) => {
+            const db = new DatabaseSync(file, { readOnly: true });
+            try {
+                return db
+                    .prepare(
+                        "SELECT name, sql FROM sqlite_master WHERE type = 'trigger' ORDER BY name",
+                    )
+                    .all();
+            } finally {
+                db.close();
+            }
+        };
+        writeReportCopy(showPath, copyPath, { includeAudio: false });
+        expect(triggerSql(copyPath).length).toBeGreaterThan(0);
+        expect(triggerSql(copyPath)).toEqual(triggerSql(showPath));
     });
 
     it("never changes the open show", () => {

@@ -21,7 +21,8 @@ import { t } from "./i18n";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { fitBounds, type Rectangle } from "./settings-window-bounds";
 import { getDbPath } from "../database/database.services";
-import { writeReportCopy } from "../database/reportCopy";
+import { MAX_SHOW_FILE_BYTES } from "../../src/feedback/reportForm";
+import { Worker } from "node:worker_threads";
 import { getValidAccessToken } from "./auth/token-manager";
 import {
     ReportSubmitError,
@@ -48,6 +49,8 @@ export interface ReportSubmitRequest {
     /** The API's `report` object, without `files` */
     readonly report: Record<string, unknown>;
     readonly sendShowFile: boolean;
+    /** The show file name the window showed; sending is refused if another show is open now */
+    readonly expectedShowFileName?: string;
     readonly includeAudio: boolean;
     readonly recording?: {
         readonly bytes: ArrayBuffer;
@@ -63,12 +66,50 @@ const EDITOR_API_BASE = ensureSlash(
 );
 
 let reportWindow: BrowserWindow | null = null;
-/** Scrubbed copies written for the open window; deleted when it closes. */
-const tempCopies = new Set<string>();
+/** Each send's private temp folder (0700), deleted when the send ends. */
+const TEMP_PREFIX = "openmarch-report-";
+const sendDirs = new Set<string>();
 
-function deleteTempCopies() {
-    for (const file of tempCopies) fs.rmSync(file, { force: true });
-    tempCopies.clear();
+function deleteSendDirs() {
+    for (const dir of sendDirs)
+        fs.rmSync(dir, { recursive: true, force: true });
+    sendDirs.clear();
+}
+
+/** Removes leftovers from a send the app didn't finish (a crash, a kill). */
+function sweepOldTempFiles() {
+    try {
+        for (const entry of fs.readdirSync(os.tmpdir()))
+            if (entry.startsWith(TEMP_PREFIX))
+                fs.rmSync(path.join(os.tmpdir(), entry), {
+                    recursive: true,
+                    force: true,
+                });
+    } catch {
+        // Nothing to sweep, or the folder isn't readable; try again next start
+    }
+}
+
+/** Writes the scrubbed copy on a worker thread so the app stays responsive. */
+function writeReportCopyInWorker(
+    source: string,
+    destination: string,
+    includeAudio: boolean,
+): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const worker = new Worker(
+            path.join(__dirname, "../worker", "reportCopyWorker.js"),
+            { workerData: { source, destination, includeAudio } },
+        );
+        worker.once("message", (result: { ok: boolean; message?: string }) =>
+            result.ok ? resolve() : reject(new Error(result.message)),
+        );
+        worker.once("error", reject);
+        worker.once("exit", (code) => {
+            if (code !== 0)
+                reject(new Error(`The show copy stopped (exit ${code})`));
+        });
+    });
 }
 
 interface FeedbackOptions {
@@ -141,8 +182,8 @@ function openReportWindow({
     created.once("ready-to-show", () => created.show());
     created.on("close", () => store.set(BOUNDS_KEY, created.getNormalBounds()));
     created.on("closed", () => {
+        // A send still under way keeps its files until it finishes
         reportWindow = null;
-        deleteTempCopies();
     });
     load(created);
 }
@@ -176,33 +217,50 @@ function collectDiagnostics(main: BrowserWindow | null): Promise<unknown[]> {
     });
 }
 
-/** The show copy, the recording and the diagnostics, written to temp files for upload. */
+/** The open show isn't the one the report window showed (409, like the API's conflicts). */
+export const SHOW_CHANGED_STATUS = 409;
+
+/**
+ * The show copy, the recording and the diagnostics, written into `dir` for
+ * upload. A copy over the server's 1 GB cap is left out (`showFileTooLarge`)
+ * rather than failing the whole report.
+ */
 async function gatherReportFiles(
     request: ReportSubmitRequest,
-    temp: (name: string) => string,
+    dir: string,
     getMainWindow: () => BrowserWindow | null,
-): Promise<ReportFileToSend[]> {
-    const out: ReportFileToSend[] = [];
+): Promise<{ files: ReportFileToSend[]; showFileTooLarge: boolean }> {
+    const files: ReportFileToSend[] = [];
+    let showFileTooLarge = false;
     if (request.sendShowFile) {
         const source = getDbPath();
-        if (source && fs.existsSync(source)) {
-            const copy = temp("show.dots");
-            writeReportCopy(source, copy, {
-                includeAudio: !!request.includeAudio,
-            });
-            out.push({
+        if (
+            !source ||
+            !fs.existsSync(source) ||
+            path.basename(source) !== request.expectedShowFileName
+        )
+            throw new ReportSubmitError(
+                "The open show changed",
+                SHOW_CHANGED_STATUS,
+            );
+        const copy = path.join(dir, "show.dots");
+        await writeReportCopyInWorker(source, copy, !!request.includeAudio);
+        if (fs.statSync(copy).size > MAX_SHOW_FILE_BYTES)
+            showFileTooLarge = true;
+        else
+            files.push({
                 slot: "show_file",
                 path: copy,
-                filename: path.basename(source),
+                // Not the real file name: it often holds the school's name
+                filename: "show.dots",
                 contentType: "application/octet-stream",
             });
-        }
     }
     if (request.recording) {
         const ext = request.recording.mimeType.includes("mp4") ? "mp4" : "webm";
-        const file = temp(`recording.${ext}`);
+        const file = path.join(dir, `recording.${ext}`);
         fs.writeFileSync(file, Buffer.from(request.recording.bytes));
-        out.push({
+        files.push({
             slot: "recording",
             path: file,
             filename: `screen-recording.${ext}`,
@@ -210,25 +268,68 @@ async function gatherReportFiles(
             durationSeconds: request.recording.seconds,
         });
     }
-    const diagnostics = temp("diagnostics.json");
+    const diagnostics = path.join(dir, "diagnostics.json");
     fs.writeFileSync(
         diagnostics,
         JSON.stringify(await collectDiagnostics(getMainWindow())),
     );
-    out.push({
+    files.push({
         slot: "diagnostics",
         path: diagnostics,
         filename: "diagnostics.json",
         contentType: "application/json",
     });
+    return { files, showFileTooLarge };
+}
 
-    return out;
+async function handleSubmit(
+    event: Electron.IpcMainInvokeEvent,
+    request: ReportSubmitRequest,
+    options: FeedbackOptions,
+) {
+    // Private (0700) and unique, so other users of a shared /tmp can't read it
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), TEMP_PREFIX));
+    sendDirs.add(dir);
+    const sender = event.sender;
+    try {
+        const { files, showFileTooLarge } = await gatherReportFiles(
+            request,
+            dir,
+            options.getMainWindow,
+        );
+        const { id } = await submitReportFromMain(
+            {
+                apiBase: EDITOR_API_BASE,
+                getToken: getValidAccessToken,
+                fetch,
+                onProgress: (step) => {
+                    // The window may be closed mid-send; the send carries on
+                    if (!sender.isDestroyed())
+                        sender.send(REPORT_CHANNELS.progress, step);
+                },
+            },
+            request.report,
+            files,
+        );
+        return { ok: true as const, id, showFileTooLarge };
+    } catch (error) {
+        return {
+            ok: false as const,
+            status:
+                error instanceof ReportSubmitError ? error.status : undefined,
+            message: error instanceof Error ? error.message : String(error),
+        };
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+        sendDirs.delete(dir);
+    }
 }
 
 export function registerReportWindow(options: FeedbackOptions) {
     ipcMain.handle(REPORT_CHANNELS.open, () => openReportWindow(options));
 
-    app.on("will-quit", deleteTempCopies);
+    sweepOldTempFiles();
+    app.on("will-quit", deleteSendDirs);
 
     ipcMain.handle(REPORT_CHANNELS.showInfo, (event) => {
         const source = getDbPath();
@@ -239,55 +340,10 @@ export function registerReportWindow(options: FeedbackOptions) {
 
     ipcMain.handle(
         REPORT_CHANNELS.submit,
-        async (event, request: ReportSubmitRequest) => {
+        (event, request: ReportSubmitRequest) => {
             if (!isReportWindow(event.sender))
                 throw new Error("Only the report window can send reports");
-            const files: ReportFileToSend[] = [];
-            const stamp = Date.now();
-            const temp = (name: string) => {
-                const file = path.join(
-                    os.tmpdir(),
-                    `openmarch-report-${stamp}-${name}`,
-                );
-                tempCopies.add(file);
-                return file;
-            };
-            try {
-                files.push(
-                    ...(await gatherReportFiles(
-                        request,
-                        temp,
-                        options.getMainWindow,
-                    )),
-                );
-                const { id } = await submitReportFromMain(
-                    {
-                        apiBase: EDITOR_API_BASE,
-                        getToken: getValidAccessToken,
-                        fetch,
-                        onProgress: (step) =>
-                            event.sender.send(REPORT_CHANNELS.progress, step),
-                    },
-                    request.report,
-                    files,
-                );
-                return { ok: true as const, id };
-            } catch (error) {
-                return {
-                    ok: false as const,
-                    status:
-                        error instanceof ReportSubmitError
-                            ? error.status
-                            : undefined,
-                    message:
-                        error instanceof Error ? error.message : String(error),
-                };
-            } finally {
-                for (const file of files) {
-                    fs.rmSync(file.path, { force: true });
-                    tempCopies.delete(file.path);
-                }
-            }
+            return handleSubmit(event, request, options);
         },
     );
 

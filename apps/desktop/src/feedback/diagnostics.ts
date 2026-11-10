@@ -2,15 +2,16 @@
  * What the app did just before someone reported a bug (fork #801): the last
  * few hundred actions, errors and console lines, kept in memory and sent only
  * with a report. Actions are recorded by id, never with their arguments,
- * which can hold typed text.
+ * which can hold typed text. Only errors and warnings are kept from the
+ * console, and every entry is redacted (`redact`): home-folder paths, database
+ * query parameters and name/notes-like fields never leave the computer.
  */
 export type DiagnosticKind =
     | "action"
     | "error"
     | "rejection"
     | "console.error"
-    | "console.warn"
-    | "console.log";
+    | "console.warn";
 
 export interface DiagnosticEntry {
     /** Milliseconds since the epoch */
@@ -57,19 +58,44 @@ export function createDiagnosticsLog(
     };
 }
 
-/** One console argument or thrown value as text. */
+/** Object keys whose values may hold people's names or free text. */
+const PRIVATE_KEYS =
+    /^(name|names|notes?|nickname|description|title|email|path|filePath|firstName|lastName|label|text|value)$/i;
+
+/**
+ * Removes what could identify someone from a diagnostics line:
+ * - database errors' bound values (Drizzle's "params: …" tail), which can be
+ *   the very names being saved;
+ * - home-folder paths, in any form (`/Users/x`, `/home/x`, `C:\Users\x`,
+ *   `file:///C:/Users/x`), which carry the OS user name.
+ */
+export function redact(text: string): string {
+    return text
+        .replace(/params: [^\n]*/g, "params: [removed]")
+        .replace(
+            /(file:\/\/\/?)?([A-Za-z]:)?[\\/]+(Users|home)[\\/]+[^\\/\s'"`)]+/g,
+            "~",
+        );
+}
+
+/** One console argument or thrown value as text, redacted. */
 export function describeValue(value: unknown): string {
     if (value instanceof Error)
-        return value.stack ?? `${value.name}: ${value.message}`;
-    if (typeof value === "string") return value;
+        return redact(value.stack ?? `${value.name}: ${value.message}`);
+    if (typeof value === "string") return redact(value);
     try {
-        return JSON.stringify(value) ?? String(value);
+        const json = JSON.stringify(value, (key, v: unknown) =>
+            key && PRIVATE_KEYS.test(key) && typeof v === "string"
+                ? "[removed]"
+                : v,
+        );
+        return redact(json ?? String(value));
     } catch {
-        return String(value);
+        return redact(String(value));
     }
 }
 
-type ConsoleLike = Pick<Console, "error" | "warn" | "log">;
+type ConsoleLike = Pick<Console, "error" | "warn">;
 
 export interface DiagnosticsSources {
     console: ConsoleLike;
@@ -91,9 +117,8 @@ export function installDiagnostics(
     const originals = {
         error: target.error,
         warn: target.warn,
-        log: target.log,
     };
-    for (const method of ["error", "warn", "log"] as const) {
+    for (const method of ["error", "warn"] as const) {
         const original = originals[method];
         target[method] = (...args: unknown[]) => {
             log.push(`console.${method}`, args.map(describeValue).join(" "));

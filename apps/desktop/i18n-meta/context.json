@@ -2887,5 +2887,7 @@
     "feedback.sending.creating": "Shown on the send button in the bug and feedback report window (Help → Report a bug or send feedback) while the report itself is being created, after the files uploaded.",
     "feedback.sent.view": "Link after a report was sent, in the bug and feedback report window (Help → Report a bug or send feedback): opens that report's page on the OpenMarch website.",
     "feedback.error.signedOut": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the account's sign-in ended before sending.",
-    "feedback.error.tooMany": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the person reached the daily limit of reports."
+    "feedback.error.tooMany": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the person reached the daily limit of reports.",
+    "feedback.error.showChanged": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the person switched or closed the open show after the window showed it; the attachment line has been updated.",
+    "feedback.sent.showTooLarge": "Warning in the bug and feedback report window (Help → Report a bug or send feedback) after sending, when the copy of the show was too large and left out."
 }

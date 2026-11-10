@@ -166,6 +166,7 @@ const APP_API = {
         submit: (request: {
             report: Record<string, unknown>;
             sendShowFile: boolean;
+            expectedShowFileName?: string;
             includeAudio: boolean;
             recording?: {
                 bytes: ArrayBuffer;
@@ -174,7 +175,7 @@ const APP_API = {
             };
         }) =>
             ipcRenderer.invoke("report:submit", request) as Promise<
-                | { ok: true; id: number }
+                | { ok: true; id: number; showFileTooLarge: boolean }
                 | { ok: false; status?: number; message: string }
             >,
         /** Which step of sending is under way */
