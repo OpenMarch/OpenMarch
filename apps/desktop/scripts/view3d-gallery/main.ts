@@ -5,9 +5,13 @@
  */
 import {
     ACESFilmicToneMapping,
+    BufferAttribute,
+    Color,
     CylinderGeometry,
+    Group,
     InstancedMesh,
     Matrix4,
+    Mesh,
     MeshStandardMaterial,
     PCFShadowMap,
     PerspectiveCamera,
@@ -15,6 +19,8 @@ import {
     SRGBColorSpace,
     WebGLRenderer,
 } from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { fieldFootprint, type FieldProperties } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import {
@@ -80,6 +86,7 @@ const camera = new PerspectiveCamera(
 );
 
 let scene = new Scene();
+let fieldBox: ReturnType<typeof fieldFootprint> | null = null;
 let kit: KitResult | null = null;
 let cleanup: (() => void) | null = null;
 
@@ -178,6 +185,7 @@ async function load(options: LoadOptions): Promise<LoadResult> {
     if (crowd) built.root.add(crowd.mesh);
     const block = performers(fp);
     scene.add(block.mesh);
+    fieldBox = fieldFootprint(fp);
 
     let envMap: ReturnType<typeof createEnvironmentMap> | null = null;
     current = { env, crowd, setEnvMap: (m) => (envMap = m) };
@@ -252,12 +260,118 @@ function shot(
     if (hud) hud.textContent = typeof view === "string" ? view : "custom";
 }
 
+/** Where a model stands: meters right of the 50, and in front of the front sideline. */
+export interface ModelPlacement {
+    url: string;
+    x: number;
+    front: number;
+    turnDeg?: number;
+}
+
+const gltf = new GLTFLoader();
+const modelCache = new Map<string, Promise<Group>>();
+let models: Group | null = null;
+
+/** One mesh for the whole model, its part colors baked into the vertices. */
+function mergedModel(source: Group): Mesh {
+    source.updateMatrixWorld(true);
+    const parts: Mesh["geometry"][] = [];
+    source.traverse((o) => {
+        const mesh = o as Mesh;
+        if (!mesh.isMesh) return;
+        const g = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
+        for (const name of Object.keys(g.attributes))
+            if (name !== "position" && name !== "normal")
+                g.deleteAttribute(name);
+        const c =
+            (mesh.material as MeshStandardMaterial).color ?? new Color(1, 1, 1);
+        const tint = (mesh.material as MeshStandardMaterial).map
+            ? new Color(0.25, 0.08, 0.04)
+            : c;
+        const colors = new Float32Array(g.attributes.position.count * 3);
+        for (let i = 0; i < colors.length; i += 3)
+            colors.set([tint.r, tint.g, tint.b], i);
+        g.setAttribute("color", new BufferAttribute(colors, 3));
+        parts.push(g);
+    });
+    return new Mesh(
+        mergeGeometries(parts),
+        new MeshStandardMaterial({ vertexColors: true, roughness: 0.55 }),
+    );
+}
+
+/**
+ * Stands glTF models in front of the field, for looking at props and
+ * equipment in the 3D View's own lighting. `merge` draws each model as one
+ * mesh with vertex colors, to compare draw-call costs.
+ */
+async function addModels(
+    list: ModelPlacement[],
+    options: { shadows?: boolean; merge?: boolean } = {},
+): Promise<void> {
+    clearModels();
+    if (!fieldBox) throw new Error("load a kit first");
+    const group = new Group();
+    const cx = (fieldBox.minX + fieldBox.maxX) / 2;
+    const merged = new Map<string, Mesh>();
+    for (const item of list) {
+        let loading = modelCache.get(item.url);
+        if (!loading)
+            modelCache.set(
+                item.url,
+                (loading = gltf.loadAsync(item.url).then((g) => g.scene)),
+            );
+        const source = await loading;
+        let object;
+        if (options.merge) {
+            let one = merged.get(item.url);
+            if (!one) merged.set(item.url, (one = mergedModel(source)));
+            object = one.clone();
+        } else object = source.clone();
+        object.position.set(cx + item.x, 0.02, fieldBox.maxZ + item.front);
+        object.rotation.y = ((item.turnDeg ?? 0) * Math.PI) / 180;
+        object.traverse((o) => {
+            o.castShadow = options.shadows !== false;
+            o.receiveShadow = options.shadows !== false;
+        });
+        group.add(object);
+    }
+    models = group;
+    scene.add(group);
+    renderer.shadowMap.needsUpdate = true;
+}
+
+function clearModels(): void {
+    if (models) scene.remove(models);
+    models = null;
+}
+
+/** Milliseconds per frame over `frames` draws of the current view, GPU work included. */
+function bench(frames = 60): number {
+    const gl = renderer.getContext();
+    const pixel = new Uint8Array(4);
+    renderer.render(scene, camera);
+    gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    const start = performance.now();
+    for (let i = 0; i < frames; i++) {
+        renderer.shadowMap.needsUpdate = true;
+        renderer.render(scene, camera);
+        gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
+    }
+    return (performance.now() - start) / frames;
+}
+
 declare global {
     interface Window {
         gallery: {
             load: typeof load;
             setLighting: typeof setLighting;
             shot: typeof shot;
+            addModels: typeof addModels;
+            clearModels: typeof clearModels;
+            bench: typeof bench;
+            front(): { x: number; z: number };
+            gpu(): string;
             info(): { programs: number; calls: number; triangles: number };
         };
     }
@@ -267,6 +381,20 @@ window.gallery = {
     load,
     setLighting,
     shot,
+    addModels,
+    clearModels,
+    bench,
+    front: () => ({
+        x: fieldBox ? (fieldBox.minX + fieldBox.maxX) / 2 : 0,
+        z: fieldBox?.maxZ ?? 0,
+    }),
+    gpu: () => {
+        const gl = renderer.getContext();
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        return ext
+            ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))
+            : "unknown";
+    },
     info: () => ({
         programs: renderer.info.programs?.length ?? 0,
         calls: renderer.info.render.calls,

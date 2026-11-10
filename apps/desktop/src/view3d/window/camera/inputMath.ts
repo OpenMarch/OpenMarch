@@ -1,36 +1,9 @@
 /**
- * Pure input math for the 3D View camera: telling a trackpad from a mouse,
- * where the pointer meets the ground, zooming toward a point, and
+ * Pure input math for the 3D View camera: wheel distances, where the pointer
+ * meets the ground, zooming toward a point, and
  * frame-rate-independent damping. No React and no scene access.
  */
 import type { Vector3Tuple } from "three";
-
-/** The wheel fields the classifier reads (a `WheelEvent` satisfies it). */
-export interface WheelLike {
-    deltaX: number;
-    deltaY: number;
-    deltaMode: number;
-    ctrlKey: boolean;
-    /** Chromium's legacy field: −3 × deltaY for trackpads, ±120 per notch for a mouse. */
-    wheelDeltaY?: number;
-}
-
-export type WheelKind = "pinch" | "trackpad" | "mouse";
-
-/**
- * What produced a wheel event. macOS reports a trackpad pinch as a wheel
- * with `ctrlKey`; a trackpad's two-finger scroll is pixel-mode with
- * fine-grained or horizontal deltas; a mouse wheel moves in notches.
- */
-export function classifyWheel(e: WheelLike): WheelKind {
-    if (e.ctrlKey) return "pinch";
-    if (e.deltaMode !== 0) return "mouse";
-    if (e.deltaX !== 0) return "trackpad";
-    if (!Number.isInteger(e.deltaY)) return "trackpad";
-    if (e.wheelDeltaY !== undefined && e.wheelDeltaY !== 0)
-        return e.wheelDeltaY === -3 * e.deltaY ? "trackpad" : "mouse";
-    return Math.abs(e.deltaY) < 50 ? "trackpad" : "mouse";
-}
 
 /** A wheel delta in pixels, whatever its mode. */
 export function wheelPixels(delta: number, deltaMode: number): number {

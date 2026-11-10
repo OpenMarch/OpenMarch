@@ -32,7 +32,10 @@
  *   mounts. Then `quality` stays `low` whatever the mode, like the 2D field's
  *   low-quality mode (`fieldQuality.ts`); `low` also draws at 1x.
  *
- * The app's Settings window saves the quality, power and resolution choices;
+ * - `controlScheme`: what dragging and scrolling do (`controlScheme.ts`),
+ *   saved per computer. Set it with `setControlScheme`.
+ *
+ * The app's Settings window saves the quality, power, resolution and controls choices;
  * `startPrefsSync()` picks them up while the window is open.
  *
  * Read it in React with `useView3dSceneStore(selector)`, and in `useFrame` or
@@ -67,6 +70,12 @@ import {
     saveResolution,
     type Resolution,
 } from "./renderPrefs";
+import {
+    CONTROL_SCHEME_STORAGE_KEY,
+    loadControlScheme,
+    saveControlScheme,
+    type ControlScheme,
+} from "./camera/controlScheme";
 
 /** People within this many meters of a seat camera are hidden (ui.md UI-3). */
 export const CROWD_CLEAR_RADIUS = 4.9;
@@ -97,6 +106,9 @@ export interface View3dSceneState {
     resolution: Resolution;
     /** Saves the choice and applies it. */
     setResolution: (resolution: Resolution) => void;
+    controlScheme: ControlScheme;
+    /** Saves the choice and applies it. */
+    setControlScheme: (scheme: ControlScheme) => void;
     /** True when WebGL draws in software: the scene stays on `low`. */
     softwareGl: boolean;
     /** Window only, before the scene mounts: what the WebGL probe found. */
@@ -164,6 +176,11 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
         saveResolution(resolution);
         set({ resolution });
     },
+    controlScheme: loadControlScheme(),
+    setControlScheme: (controlScheme) => {
+        saveControlScheme(controlScheme);
+        set({ controlScheme });
+    },
     softwareGl: false,
     _setSoftwareGl: (softwareGl) =>
         set({
@@ -183,6 +200,8 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
         }
         if (key === null || key === RESOLUTION_STORAGE_KEY)
             set({ resolution: loadResolution() });
+        if (key === null || key === CONTROL_SCHEME_STORAGE_KEY)
+            set({ controlScheme: loadControlScheme() });
     },
     _setKit: (kitId, kit) =>
         set({
@@ -201,7 +220,7 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
 }));
 
 /**
- * Applies the quality, power and resolution choices the Settings window
+ * Applies the quality, power, resolution and controls choices the Settings window
  * saves, as it saves them. Returns the function that stops listening.
  */
 export function startPrefsSync(): () => void {

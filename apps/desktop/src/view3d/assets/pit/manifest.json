@@ -1,0 +1,1214 @@
+{
+    "amp-bass": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 76932,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.432,
+                "height": 0.78,
+                "width": 0.6
+            },
+            "triangles": 2028
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.02,
+            "bytes": 7592,
+            "parts": 3,
+            "sizeM": {
+                "depth": 0.362,
+                "height": 0.76,
+                "width": 0.6
+            },
+            "triangles": 96
+        }
+    },
+    "amp-guitar": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 18040,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.292,
+                "height": 0.534,
+                "width": 0.62
+            },
+            "triangles": 340
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.02,
+            "bytes": 6936,
+            "parts": 3,
+            "sizeM": {
+                "depth": 0.272,
+                "height": 0.5,
+                "width": 0.62
+            },
+            "triangles": 84
+        }
+    },
+    "aux-rack-accessories": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 70900,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.72,
+                "height": 1.55,
+                "width": 1.56
+            },
+            "triangles": 1580
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 35464,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.72,
+                "height": 1.543,
+                "width": 1.56
+            },
+            "triangles": 696
+        }
+    },
+    "aux-rack-mixed": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 125384,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.72,
+                "height": 1.982,
+                "width": 1.629
+            },
+            "triangles": 3360
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 56428,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.72,
+                "height": 1.973,
+                "width": 1.629
+            },
+            "triangles": 1308
+        }
+    },
+    "aux-rack-toms": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 160376,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 1.982,
+                "width": 1.56
+            },
+            "triangles": 4372
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 67488,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 1.973,
+                "width": 1.56
+            },
+            "triangles": 1676
+        }
+    },
+    "bongos": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 52436,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.388,
+                "height": 0.92,
+                "width": 0.456
+            },
+            "triangles": 1632
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0053,
+            "bytes": 17564,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.375,
+                "height": 0.915,
+                "width": 0.441
+            },
+            "triangles": 424
+        }
+    },
+    "chimes": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 75676,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.6,
+                "height": 1.82,
+                "width": 0.91
+            },
+            "triangles": 2252
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0047,
+            "bytes": 35944,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.6,
+                "height": 1.815,
+                "width": 0.91
+            },
+            "triangles": 908
+        }
+    },
+    "concert-bass-32": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 64668,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.66,
+                "height": 1.208,
+                "width": 1.093
+            },
+            "triangles": 1652
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0054,
+            "bytes": 30204,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.66,
+                "height": 1.202,
+                "width": 1.093
+            },
+            "triangles": 708
+        }
+    },
+    "concert-bass-36": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 64668,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.66,
+                "height": 1.309,
+                "width": 1.194
+            },
+            "triangles": 1652
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0054,
+            "bytes": 30208,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.66,
+                "height": 1.304,
+                "width": 1.194
+            },
+            "triangles": 708
+        }
+    },
+    "conductor-podium": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 18860,
+            "parts": 3,
+            "sizeM": {
+                "depth": 1.5,
+                "height": 1.386,
+                "width": 1.2
+            },
+            "triangles": 412
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 7884,
+            "parts": 3,
+            "sizeM": {
+                "depth": 1.5,
+                "height": 1.386,
+                "width": 1.2
+            },
+            "triangles": 120
+        }
+    },
+    "conductor-podium-tall": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": -0.0062,
+            "bytes": 26416,
+            "parts": 3,
+            "sizeM": {
+                "depth": 1.767,
+                "height": 2.472,
+                "width": 1.2
+            },
+            "triangles": 620
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": -0.0062,
+            "bytes": 16888,
+            "parts": 3,
+            "sizeM": {
+                "depth": 1.767,
+                "height": 2.472,
+                "width": 1.2
+            },
+            "triangles": 312
+        }
+    },
+    "congas": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 58936,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.392,
+                "height": 0.89,
+                "width": 0.771
+            },
+            "triangles": 1816
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0059,
+            "bytes": 19048,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.377,
+                "height": 0.884,
+                "width": 0.76
+            },
+            "triangles": 460
+        }
+    },
+    "drum-set": {
+        "high": {
+            "artworkSlots": {
+                "front-head": [0.5388, 0.5388]
+            },
+            "bottom": 0.0,
+            "bytes": 244672,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.703,
+                "height": 1.313,
+                "width": 2.117
+            },
+            "triangles": 6874
+        },
+        "low": {
+            "artworkSlots": {
+                "front-head": [0.5388, 0.5388]
+            },
+            "bottom": 0.0035,
+            "bytes": 84348,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.69,
+                "height": 1.303,
+                "width": 2.105
+            },
+            "triangles": 2114
+        }
+    },
+    "drum-set-cage": {
+        "high": {
+            "artworkSlots": {
+                "front-head": [0.5388, 0.5388]
+            },
+            "bottom": 0.0,
+            "bytes": 229756,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.681,
+                "height": 1.37,
+                "width": 1.757
+            },
+            "triangles": 6406
+        },
+        "low": {
+            "artworkSlots": {
+                "front-head": [0.5388, 0.5388]
+            },
+            "bottom": 0.0,
+            "bytes": 84464,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.663,
+                "height": 1.369,
+                "width": 1.757
+            },
+            "triangles": 2090
+        }
+    },
+    "glockenspiel-2.5": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 111524,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.533,
+                "height": 0.982,
+                "width": 0.813
+            },
+            "triangles": 2356
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0033,
+            "bytes": 44664,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.533,
+                "height": 0.979,
+                "width": 0.813
+            },
+            "triangles": 748
+        }
+    },
+    "gong-32": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 27908,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.533,
+                "width": 1.153
+            },
+            "triangles": 912
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0054,
+            "bytes": 17832,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.527,
+                "width": 1.153
+            },
+            "triangles": 448
+        }
+    },
+    "gong-36": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 27912,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.634,
+                "width": 1.254
+            },
+            "triangles": 912
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0054,
+            "bytes": 17832,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.629,
+                "width": 1.254
+            },
+            "triangles": 448
+        }
+    },
+    "gong-40": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 27908,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.736,
+                "width": 1.356
+            },
+            "triangles": 912
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0054,
+            "bytes": 17828,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.76,
+                "height": 1.731,
+                "width": 1.356
+            },
+            "triangles": 448
+        }
+    },
+    "marimba-4.3": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.0852, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 542148,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.899,
+                "height": 0.982,
+                "width": 2.129
+            },
+            "triangles": 9890
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.0844, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 244448,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.899,
+                "height": 0.976,
+                "width": 2.129
+            },
+            "triangles": 2444
+        }
+    },
+    "marimba-4.3-synthetic-black": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.0852, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 456308,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.899,
+                "height": 0.982,
+                "width": 2.129
+            },
+            "triangles": 9890
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.0844, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 158608,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.899,
+                "height": 0.976,
+                "width": 2.129
+            },
+            "triangles": 2444
+        }
+    },
+    "marimba-4.6": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.3456, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 571592,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.982,
+                "width": 2.38
+            },
+            "triangles": 10558
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.3439, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 251236,
+            "parts": 5,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.976,
+                "width": 2.38
+            },
+            "triangles": 2592
+        }
+    },
+    "marimba-4.6-synthetic-black": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.3456, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 485752,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.982,
+                "width": 2.38
+            },
+            "triangles": 10558
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.3439, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 165396,
+            "parts": 5,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.976,
+                "width": 2.38
+            },
+            "triangles": 2592
+        }
+    },
+    "marimba-5.0": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.5031, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 594640,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.982,
+                "width": 2.54
+            },
+            "triangles": 11102
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.5024, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 257768,
+            "parts": 5,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.976,
+                "width": 2.54
+            },
+            "triangles": 2720
+        }
+    },
+    "marimba-5.0-synthetic-black": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [2.5031, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 508800,
+            "parts": 6,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.982,
+                "width": 2.54
+            },
+            "triangles": 11102
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [2.5024, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 171924,
+            "parts": 5,
+            "sizeM": {
+                "depth": 1.207,
+                "height": 0.976,
+                "width": 2.54
+            },
+            "triangles": 2720
+        }
+    },
+    "mixer-cart": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 141320,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.852,
+                "height": 1.53,
+                "width": 1.36
+            },
+            "triangles": 4240
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0073,
+            "bytes": 32008,
+            "parts": 4,
+            "sizeM": {
+                "depth": 0.852,
+                "height": 1.523,
+                "width": 1.36
+            },
+            "triangles": 772
+        }
+    },
+    "mixer-cart-covered": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 71560,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.838,
+                "height": 1.18,
+                "width": 1.2
+            },
+            "triangles": 2340
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0073,
+            "bytes": 30460,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.838,
+                "height": 1.173,
+                "width": 1.2
+            },
+            "triangles": 724
+        }
+    },
+    "speaker-square": {
+        "high": {
+            "artworkSlots": {
+                "side-panel": [0.51, 0.56]
+            },
+            "bottom": 0.0,
+            "bytes": 38440,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.625,
+                "height": 0.745,
+                "width": 0.716
+            },
+            "triangles": 1002
+        },
+        "low": {
+            "artworkSlots": {
+                "side-panel": [0.51, 0.56]
+            },
+            "bottom": 0.0067,
+            "bytes": 18940,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.625,
+                "height": 0.738,
+                "width": 0.701
+            },
+            "triangles": 400
+        }
+    },
+    "speaker-tall": {
+        "high": {
+            "artworkSlots": {
+                "side-panel": [0.38, 0.98]
+            },
+            "bottom": 0.0,
+            "bytes": 73948,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.636,
+                "height": 1.785,
+                "width": 0.616
+            },
+            "triangles": 1958
+        },
+        "low": {
+            "artworkSlots": {
+                "side-panel": [0.38, 0.98]
+            },
+            "bottom": 0.0067,
+            "bytes": 29944,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.636,
+                "height": 1.778,
+                "width": 0.6
+            },
+            "triangles": 680
+        }
+    },
+    "speaker-wide": {
+        "high": {
+            "artworkSlots": {
+                "side-panel": [0.46, 0.46]
+            },
+            "bottom": 0.0,
+            "bytes": 52980,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.576,
+                "height": 0.645,
+                "width": 1.216
+            },
+            "triangles": 1420
+        },
+        "low": {
+            "artworkSlots": {
+                "side-panel": [0.46, 0.46]
+            },
+            "bottom": 0.0067,
+            "bytes": 23720,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.576,
+                "height": 0.638,
+                "width": 1.201
+            },
+            "triangles": 528
+        }
+    },
+    "synth-61": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 70108,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.6,
+                "height": 1.21,
+                "width": 1.326
+            },
+            "triangles": 1304
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 18452,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.54,
+                "height": 1.21,
+                "width": 1.326
+            },
+            "triangles": 252
+        }
+    },
+    "synth-61-double": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 119908,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.613,
+                "height": 1.24,
+                "width": 1.326
+            },
+            "triangles": 2336
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 21320,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.583,
+                "height": 1.238,
+                "width": 1.326
+            },
+            "triangles": 312
+        }
+    },
+    "synth-88": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 87604,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.6,
+                "height": 1.21,
+                "width": 1.702
+            },
+            "triangles": 1628
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 18452,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.54,
+                "height": 1.21,
+                "width": 1.702
+            },
+            "triangles": 252
+        }
+    },
+    "synth-88-double": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 154896,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.613,
+                "height": 1.24,
+                "width": 1.702
+            },
+            "triangles": 2984
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 21320,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.583,
+                "height": 1.238,
+                "width": 1.702
+            },
+            "triangles": 312
+        }
+    },
+    "timpani-23": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 65044,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.803,
+                "height": 0.89,
+                "width": 0.814
+            },
+            "triangles": 1972
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 25368,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.796,
+                "height": 0.846,
+                "width": 0.814
+            },
+            "triangles": 608
+        }
+    },
+    "timpani-26": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 65044,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.866,
+                "height": 0.89,
+                "width": 0.88
+            },
+            "triangles": 1972
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 25364,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.862,
+                "height": 0.846,
+                "width": 0.88
+            },
+            "triangles": 608
+        }
+    },
+    "timpani-29": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 65044,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.928,
+                "height": 0.89,
+                "width": 0.946
+            },
+            "triangles": 1972
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 25364,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.927,
+                "height": 0.846,
+                "width": 0.946
+            },
+            "triangles": 608
+        }
+    },
+    "timpani-32": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 65040,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.993,
+                "height": 0.89,
+                "width": 1.012
+            },
+            "triangles": 1972
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0067,
+            "bytes": 25364,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.993,
+                "height": 0.846,
+                "width": 1.012
+            },
+            "triangles": 608
+        }
+    },
+    "trap-table": {
+        "high": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 35144,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.606,
+                "height": 0.922,
+                "width": 1.208
+            },
+            "triangles": 810
+        },
+        "low": {
+            "artworkSlots": {},
+            "bottom": 0.0,
+            "bytes": 16832,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.606,
+                "height": 0.922,
+                "width": 1.208
+            },
+            "triangles": 270
+        }
+    },
+    "vibraphone-3.0": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.4767, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 334508,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.841,
+                "height": 0.979,
+                "width": 1.529
+            },
+            "triangles": 8034
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.4759, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 100328,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.841,
+                "height": 0.972,
+                "width": 1.529
+            },
+            "triangles": 2044
+        }
+    },
+    "vibraphone-3.0-gold": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.4767, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 334512,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.841,
+                "height": 0.979,
+                "width": 1.529
+            },
+            "triangles": 8034
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.4759, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 100332,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.841,
+                "height": 0.972,
+                "width": 1.529
+            },
+            "triangles": 2044
+        }
+    },
+    "vibraphone-3.5": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.6022, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 361892,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.914,
+                "height": 0.979,
+                "width": 1.651
+            },
+            "triangles": 8662
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.6011, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 107836,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.914,
+                "height": 0.972,
+                "width": 1.651
+            },
+            "triangles": 2200
+        }
+    },
+    "vibraphone-3.5-gold": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.6022, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 361896,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.914,
+                "height": 0.979,
+                "width": 1.651
+            },
+            "triangles": 8662
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.6011, 0.08]
+            },
+            "bottom": 0.0061,
+            "bytes": 107844,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.914,
+                "height": 0.972,
+                "width": 1.651
+            },
+            "triangles": 2200
+        }
+    },
+    "xylophone-3.5": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.4013, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 486240,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 0.94,
+                "width": 1.448
+            },
+            "triangles": 8522
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.4006, 0.08]
+            },
+            "bottom": 0.0049,
+            "bytes": 232480,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 0.935,
+                "width": 1.448
+            },
+            "triangles": 2196
+        }
+    },
+    "xylophone-3.5-synthetic-black": {
+        "high": {
+            "artworkSlots": {
+                "front-fascia": [1.4013, 0.08]
+            },
+            "bottom": 0.0,
+            "bytes": 400400,
+            "parts": 6,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 0.94,
+                "width": 1.448
+            },
+            "triangles": 8522
+        },
+        "low": {
+            "artworkSlots": {
+                "front-fascia": [1.4006, 0.08]
+            },
+            "bottom": 0.0049,
+            "bytes": 146640,
+            "parts": 5,
+            "sizeM": {
+                "depth": 0.721,
+                "height": 0.935,
+                "width": 1.448
+            },
+            "triangles": 2196
+        }
+    }
+}

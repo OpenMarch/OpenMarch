@@ -21,6 +21,7 @@ import {
     CLERK_CONFIG,
     getClerkAuthorizationEndpoint,
     getClerkTokenEndpoint,
+    getClerkRevocationEndpoint,
     getRedirectUri,
 } from "../../../src/global/auth/constants";
 import { TokenRefreshRejectedError, isRefreshRejected } from "./errors";
@@ -39,6 +40,7 @@ function getClerkConfig(): ClerkOAuthConfig {
         clientId: CLERK_CONFIG.CLIENT_ID,
         authorizationEndpoint: getClerkAuthorizationEndpoint(),
         tokenEndpoint: getClerkTokenEndpoint(),
+        revocationEndpoint: getClerkRevocationEndpoint(),
         redirectUri: getRedirectUri(),
         scopes: OAUTH_SCOPES,
     };
@@ -238,4 +240,42 @@ export async function refreshAccessToken(
         expiresAt: Date.now() + data.expires_in * 1000,
         tokenType: data.token_type,
     };
+}
+
+/**
+ * Tells Clerk to revoke the refresh token, so a copy of it (from a backup of
+ * the app's storage, say) can't keep getting new tokens after sign-out.
+ * The desktop app is a public client, so the request carries only its
+ * client ID. Best effort: offline, the token stays valid at Clerk until it
+ * expires, and sign-out on this computer goes ahead either way.
+ * Quitting the app straight after sign-out can drop the request too.
+ */
+export async function revokeRefreshToken(refreshToken: string): Promise<void> {
+    try {
+        const config = getClerkConfig();
+        const response = await fetchWithTimeout(
+            config.revocationEndpoint,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: new URLSearchParams({
+                    client_id: config.clientId,
+                    token: refreshToken,
+                    token_type_hint: "refresh_token",
+                }),
+            },
+            OAUTH_TOKEN_REQUEST_TIMEOUT_MS,
+        );
+        if (!response.ok) {
+            console.warn(
+                "[Auth] Clerk didn't revoke the refresh token:",
+                response.status,
+                await response.text(),
+            );
+        }
+    } catch (error) {
+        console.warn("[Auth] Couldn't revoke the refresh token:", error);
+    }
 }

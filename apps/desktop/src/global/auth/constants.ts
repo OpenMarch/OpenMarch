@@ -121,6 +121,16 @@ export function getClerkTokenEndpoint(): string {
 }
 
 /**
+ * Gets the Clerk OAuth revocation endpoint URL (RFC 7009), as the instance's
+ * OpenID configuration lists it.
+ * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
+ */
+export function getClerkRevocationEndpoint(): string {
+    if (!CLERK_CONFIG) return "";
+    return `https://${CLERK_CONFIG.DOMAIN}/oauth/token/revoke`;
+}
+
+/**
  * Gets the Clerk accounts sign-up URL.
  * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
  * Returns null when VITE_SIGN_UP_URL is unset.

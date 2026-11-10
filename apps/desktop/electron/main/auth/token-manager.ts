@@ -43,6 +43,9 @@ let onTokenRefresh: ((tokens: AuthTokens) => Promise<AuthTokens>) | null = null;
 /** Called when Clerk rejects the refresh token and the tokens are cleared */
 let onSignedOut: (() => void) | null = null;
 
+/** Called with tokens a refresh got for a session that has since ended */
+let onTokensDiscarded: ((tokens: AuthTokens) => void) | null = null;
+
 /** The refresh in progress, shared so only one runs at a time */
 let refreshInFlight: Promise<AuthTokens | null> | null = null;
 
@@ -80,6 +83,16 @@ export function setTokenRefreshCallback(
  */
 export function setSignedOutCallback(callback: () => void): void {
     onSignedOut = callback;
+}
+
+/**
+ * Sets the callback for tokens a refresh returned after their session ended
+ * (signed out, or signed in again, while it was running).
+ */
+export function setTokensDiscardedCallback(
+    callback: (tokens: AuthTokens) => void,
+): void {
+    onTokensDiscarded = callback;
 }
 
 /**
@@ -237,8 +250,12 @@ async function refreshTokens(tokens: AuthTokens): Promise<AuthTokens | null> {
     refreshInFlight = (async () => {
         try {
             const newTokens = await refresh(tokens);
-            // Signed out while the refresh was running: drop the new tokens.
-            if (generation !== tokenGeneration) return null;
+            // Signed out while the refresh was running: drop the new tokens,
+            // and don't leave them live at Clerk.
+            if (generation !== tokenGeneration) {
+                onTokensDiscarded?.(newTokens);
+                return null;
+            }
             storeTokens(newTokens);
             return newTokens;
         } catch (error) {
