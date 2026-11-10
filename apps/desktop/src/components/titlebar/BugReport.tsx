@@ -1,10 +1,17 @@
 import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useTranslate } from "@tolgee/react";
 import { siteUrl } from "@/global/siteUrl";
+import { runAction } from "@/shortcuts/registry";
+import { isWebBuild } from "@/utilities/webBuild";
 
 export default function BugReport() {
     const { t } = useTranslate();
     const handleClick = () => {
+        // Desktop: the report window (fork #801). The web editor keeps the guide until it gets the form.
+        if (!isWebBuild) {
+            runAction("reportFeedback");
+            return;
+        }
         const url = siteUrl("/guides/submitting-feedback/");
         if (window.electron?.openExternal) {
             // recommended way to open external links in the default browser in electron
