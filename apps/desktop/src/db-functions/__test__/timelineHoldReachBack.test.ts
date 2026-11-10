@@ -667,13 +667,15 @@ describeDbTests("A drag inside a reached-back hold", (it) => {
         expect(await snapshot(db)).toEqual(before);
     });
 
-    it("from the starting spot, moves the starting spot", async ({
+    it("from the starting spot, a drag on the hold's first page moves the starting spot", async ({
         db,
         marchersAndPages: _,
     }) => {
         const { c } = await show(db);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [c] });
-        const result = await edit(db, { kind: "range", ...PAGE2 }, [
+        // The hold starts at count 1, and so does Page 1's window: it moves the hold. A later
+        // page's window would start inside the hold and win (#476)
+        const result = await edit(db, { kind: "range", start: 1, end: 9 }, [
             { marcherId: c, xy: FAR },
         ]);
         expect(result.homes).toEqual([c]);

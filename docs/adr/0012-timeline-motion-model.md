@@ -417,8 +417,8 @@ holds to the resolver (spec R-6), so the mark is app data:
   `(code, transition_id, detail)` like the first view's; mark violations set `transition_id` to
   NULL and name the marcher and counts in `detail`. `TimelineCommitViolationError` and the error
   messages accept that.
-- **Holds are always explicit.** Only Hold from previous page (this page only), bar-end and
-  bar-start drags, hold over the window, and Make all selected Held write marks. Nothing infers a
+- **Holds are always explicit.** Only Hold from last keyframe (this page only), bar-end
+  drags and hold over the window write marks. Nothing infers a
   hold from a selection or from positions.
 - **Hold from previous page** (page box menu): for each selected marcher, a mark over the page box,
   from the previous page's flag, where a move of the marcher must end. The marcher's own moves
@@ -464,6 +464,18 @@ holds to the resolver (spec R-6), so the mark is app data:
   dragged is Held from the starting spot, it gets the homes (`null`), so a shape placed there is
   stored at the starting spots, and in the same edit those marchers' holds from the starting spot
   go: a starting spot a shape sets can't be held.
+- **An Expert window over a hold** (decision 6, review R2; fork #476). The rule above applies to a
+  window that starts at or before the hold's start and ends inside it. A window that starts
+  **inside** a hold wins: the marcher's edit becomes the window's move, and the hold ends at the
+  start flag; the part after the playhead goes too (excursions are deferred). A window that starts
+  at or before a hold's start and ends past it takes the hold away. The range edit does this right
+  after its write, for the marchers it wrote (`trimHeldMarksUnderRowsInTransaction`), so it is in
+  the same undo step. One predicate (`windowWinsOverHold`) decides it for the write and for what
+  the timeline's bars light during the drag (`dragLitRanges`).
+  - **Owner confirmed, 2026-11-09:** this holds for every window, including a page's ordinary
+    window on a later page of a hold over several pages. That window starts inside the hold, so the
+    drag adds a move on that page and ends the hold at the page's start, rather than moving the
+    whole hold. A drag on the hold's first page starts at the hold's start, so it moves the hold.
 - **Set as shown** (with Only Page N's and Remove keyframe's stays, which share its write) treats a
   Held marcher as decided: it is skipped and reported (`held`), and nothing is written inside the
   hold.
@@ -503,8 +515,9 @@ holds to the resolver (spec R-6), so the mark is app data:
     As built (#473), the trim is done once, after steps 2–5, and only by rows the edit
     **re-timed** (a row that existed before with other counts: a clip drag, resize or merge refit
     of a later move): a mark ends where such a row starts, and a part after it is dropped. A move
-    an edit **writes** over a hold is still refused at commit with `E-H1`, as decision 6's Expert
-    windows are #476's to build (holds 04-anchors: the trim applies only to retimes). A re-timed
+    an edit **writes** over a hold is still refused at commit with `E-H1` (holds 04-anchors: the
+    trim applies only to retimes), except an Expert window's, which trims the holds it overlaps
+    itself (above, #476). A re-timed
     arrival that no longer arrives by the rule above (a higher layer ends there too) is refused
     with `E-H1` instead of leaving a hold nothing arrives at. A row the edit re-timed over a mark's
     start trims it from the start, to that row's end.
@@ -530,13 +543,25 @@ holds to the resolver (spec R-6), so the mark is app data:
 - **Removing the keyframe a hold grows out of** removes the hold, and writes no next-page move
   inside it. The pages become Not set (fork #473).
 - **A drag inside any hold** (a range edit whose end, or a Basic point edit whose count, is inside
-  it) moves the whole hold, including where it arrives (owner decision, 2026-11-09). The timeline
-  draws every Held hold plain, in Basic and Expert, and the whole bar lights during a drag.
+  it) moves the whole hold, including where it arrives (owner decision, 2026-11-09). Basic always
+  does. Expert does unless the window starts inside the hold, when the window wins (above, "An
+  Expert window over a hold"). The timeline draws every Held hold plain, in Basic and Expert. During
+  a drag the bars light what the edit changes (`dragLitRanges`): the whole bar for a drag that moves
+  the hold, and from the start flag on where the window wins.
 - **A hold's start is fixed by this rule,** so a hold's bar has no start handle (fork #475's start
   drag, including from the starting spots, is removed); its end can still be dragged and split.
-- **Hold over the window** removes the selected marchers' moves inside the window, cuts a move that
-  crosses its start flag there, and starts a move that crosses the playhead at the playhead, with
-  the same destination (fork #476).
+- **Hold over the window** (Expert, "Hold from start flag to playhead"; review R8, fork #476) takes
+  the selected marchers out of their moves inside the window with the cut and remove operations
+  below: a move crossing the start flag is cut there, so its first part arrives at the flag, and
+  one crossing the playhead is cut there and keeps its destination, so the marcher walks the rest
+  of it from where it holds, faster; the step-size warning shows it. Then it writes one mark over
+  the window, joined with marks of the marcher it overlaps or touches. Where nothing arrives at the
+  start flag because the marcher stands in Not defined pages, the hold reaches back to what last
+  put the marcher there, as Hold from last keyframe does (`holdReachBack`;
+  `holdOverWindowStart` decides the start for the write and for the highlighted preview). A row
+  that ends there without arriving leaves it nothing to grow out of, so the marcher is left alone
+  and named. Shape and follow-the-leader members, and marchers whose hold would grow out of a
+  shape's or follow-the-leader move, are left alone and named.
 - **The converter writes no marks.**
 - **Display:** the selected marchers' Held holds are solid bars at exact counts on the keyframe
   diamonds' row, each from its start (an arrival's diamond) to its end.

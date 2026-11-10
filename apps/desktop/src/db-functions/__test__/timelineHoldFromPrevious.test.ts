@@ -25,6 +25,7 @@ import { createLastPage, deletePages, updatePages } from "../page";
 import { createBeats, deleteBeats, updateBeats } from "../beat";
 import { updateUtility } from "../utility";
 import {
+    moveMarchersInRangeInTransaction,
     moveMarchersInTarget,
     type TimelineEditTarget,
 } from "../timelineMoves";
@@ -120,6 +121,27 @@ const move = (
     range: { start: number; end: number },
     moves: { marcherId: number; xy: XY }[],
 ) => edit(db, { kind: "range", ...range }, moves);
+
+/**
+ * A move written straight over a hold by the range writer alone, so only the commit check (E-H1)
+ * sees it: an Expert window drag would end or take away the hold instead (#476).
+ */
+const writeOver = (
+    db: DbConnection,
+    range: { start: number; end: number },
+    moves: { marcherId: number; xy: XY }[],
+) =>
+    transactionWithHistory(db, "writeOver", (tx) =>
+        moveMarchersInRangeInTransaction({
+            tx,
+            range,
+            moves: moves.map(({ marcherId, xy: [x, y] }) => ({
+                marcherId,
+                x,
+                y,
+            })),
+        }),
+    );
 
 const rowsOf = async (db: DbConnection, marcherId: number) =>
     (await db.select().from(schema.timeline_assignments).all()).filter(
@@ -930,8 +952,8 @@ describeDbTests("Held marks at commit", (it) => {
         const { a } = await show(db);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
         const rows = await snapshot(db);
-        // A window over pages 3 and 4 ends outside the hold, so it writes a move over it
-        const error = await move(db, { start: 17, end: 33 }, [
+        // A move over pages 3 and 4, written over the hold
+        const error = await writeOver(db, { start: 17, end: 33 }, [
             { marcherId: a, xy: FAR },
         ]).catch((e: unknown) => e);
         expect(timelineErrorCode(error)).toBe("E-H1");
@@ -1258,7 +1280,7 @@ describeDbTests("The E-H1 refusal names who and where", (it) => {
     }) => {
         const { a } = await show(db);
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
-        const error = await move(db, { start: 17, end: 33 }, [
+        const error = await writeOver(db, { start: 17, end: 33 }, [
             { marcherId: a, xy: FAR },
         ]).catch((e: unknown) => e);
         expect(timelineErrorCode(error)).toBe("E-H1");
@@ -1280,8 +1302,8 @@ describeDbTests("The E-H1 refusal names the page of the conflict", (it) => {
         await holdFromPreviousPage({ db, pageBox: PAGE3, marcherIds: [a] });
         await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [a] });
         expect(await marksOf(db, a)).toEqual([{ start: 17, end: 33 }]);
-        // Ends past the hold, so it isn't a drag inside it
-        const error = await move(db, { start: 25, end: 37 }, [
+        // A move over page 4 and on, written over the hold
+        const error = await writeOver(db, { start: 25, end: 37 }, [
             { marcherId: a, xy: FAR },
         ]).catch((e: unknown) => e);
         expect(timelineErrorCode(error)).toBe("E-H1");
@@ -2041,7 +2063,7 @@ describeDbTests(
 describeDbTests(
     "Holds from the starting spots with other edits (#619 review)",
     (it) => {
-        it("a mixed drag: a plain marcher, one Held from an arrival and one Held from its starting spot", async ({
+        it("a mixed drag: a plain marcher, one Held from an arrival, and one Held from its starting spot since before the window, which the window wins over (R2)", async ({
             db,
             marchersAndPages: _,
         }) => {
@@ -2055,6 +2077,7 @@ describeDbTests(
             await holdFromPreviousPage({ db, pageBox: PAGE2, marcherIds: [c] });
             await holdFromPreviousPage({ db, pageBox: PAGE1, marcherIds: [c] });
             expect(await marksOf(db, c)).toEqual([{ start: 1, end: 25 }]);
+            const home = await homeOf(db, c);
             const before = await snapshotWithHomes(db);
             const groups = await undoGroups(db);
             const result = await edit(db, { kind: "range", ...PAGE3 }, [
@@ -2062,8 +2085,10 @@ describeDbTests(
                 { marcherId: b, xy: ELSEWHERE },
                 { marcherId: c, xy: LEFT },
             ]);
-            expect(result.homes).toEqual([c]);
-            expect(await homeOf(db, c)).toEqual(LEFT);
+            // c's hold starts before the window's start flag: the window wins (#476), so c gets
+            // a move on Page 3 and its hold ends at the flag; its starting spot stays
+            expect(result.homes).toEqual([]);
+            expect(await homeOf(db, c)).toEqual(home);
             // a's Page 2 move ends at FAR, so it stands there over its hold; b moves on Page 3
             expect((await atFlags(db, a)).slice(2)).toEqual([FAR, FAR, FAR]);
             expect((await atFlags(db, b)).slice(2)).toEqual([
@@ -2072,14 +2097,14 @@ describeDbTests(
                 ELSEWHERE,
             ]);
             expect(await atFlags(db, c)).toEqual([
-                LEFT,
-                LEFT,
-                LEFT,
+                home,
+                home,
+                home,
                 LEFT,
                 LEFT,
             ]);
             expect(await marksOf(db, a)).toEqual([PAGE3]);
-            expect(await marksOf(db, c)).toEqual([{ start: 1, end: 25 }]);
+            expect(await marksOf(db, c)).toEqual([{ start: 1, end: 17 }]);
             expect(await undoGroups(db)).toBe(groups + 1);
             const after = await snapshotWithHomes(db);
             expect((await performUndo(db)).success).toBe(true);
@@ -2150,8 +2175,8 @@ describeDbTests(
             const { c } = await show(db);
             await holdFromPreviousPage({ db, pageBox: PAGE1, marcherIds: [c] });
             const rows = await snapshotWithHomes(db);
-            // A window over pages 1 and 2 ends outside the hold, so it writes a move over it
-            const error = await move(db, { start: 1, end: 17 }, [
+            // A move over pages 1 and 2, written over the hold
+            const error = await writeOver(db, { start: 1, end: 17 }, [
                 { marcherId: c, xy: FAR },
             ]).catch((e: unknown) => e);
             expect(timelineErrorCode(error)).toBe("E-H1");

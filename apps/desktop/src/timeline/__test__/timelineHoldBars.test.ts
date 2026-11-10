@@ -179,6 +179,59 @@ describe("dragLitRanges", () => {
         expect(dragLitRanges(holds, [], 26)).toEqual([]);
         expect(dragLitRanges(holds, [], 24)).toEqual([]);
     });
+
+    describe("an Expert window (#476)", () => {
+        const mark = [{ start: 8, end: 24 }];
+
+        it("that starts inside the hold wins: lights from the start flag, not the part that stays", () => {
+            expect(dragLitRanges(holds, mark, 20, 16)).toEqual([
+                { start: 16, end: 24 },
+                { start: 20, end: 24 },
+            ]);
+        });
+
+        it("at the hold's start moves the whole hold", () => {
+            expect(dragLitRanges(holds, mark, 20, 8)).toEqual([
+                { start: 8, end: 24 },
+            ]);
+        });
+
+        it("from before the hold's start, ending inside it, moves the whole hold", () => {
+            expect(dragLitRanges(holds, mark, 20, 4)).toEqual([
+                { start: 8, end: 24 },
+            ]);
+        });
+
+        it("that covers the hold's start and ends past it lights the hold it replaces", () => {
+            expect(
+                dragLitRanges(holds, [{ start: 8, end: 16 }], 22, 4),
+            ).toEqual([
+                { start: 8, end: 16 },
+                { start: 22, end: 24 },
+            ]);
+        });
+
+        it("that starts inside the hold and ends past it lights from the start flag", () => {
+            expect(
+                dragLitRanges(holds, [{ start: 8, end: 16 }], 22, 12),
+            ).toEqual([
+                { start: 12, end: 16 },
+                { start: 22, end: 24 },
+            ]);
+        });
+
+        it("leaves a drag with no hold under it as it was", () => {
+            expect(dragLitRanges(holds, [], 16, 8)).toEqual([
+                { start: 16, end: 24 },
+            ]);
+        });
+
+        it("without a window (Basic), a drag inside the hold moves all of it", () => {
+            expect(dragLitRanges(holds, mark, 20, null)).toEqual([
+                { start: 8, end: 24 },
+            ]);
+        });
+    });
 });
 
 describe("a hovered command's would-be hold", () => {
@@ -305,6 +358,36 @@ describe("selectionHolds", () => {
         expect(bars.map((b) => [b.start, b.end, b.kind, b.lit])).toEqual([
             [8, 16, "notDefined", false],
             [16, 24, "notDefined", true],
+            [28, 32, "notDefined", false],
+        ]);
+    });
+
+    it("during an Expert drag on a later page of a hold, lights only from the start flag on", () => {
+        const { bars } = selectionHolds({
+            marcherIds: [2],
+            spansOf,
+            marks: [{ id: 1, marcherId: 2, start: 8, end: 24 }],
+            showEnd: SHOW_END,
+            dragBeat: 24,
+            dragWindowStart: 16,
+        });
+        expect(bars.map((b) => [b.start, b.end, b.kind, b.lit])).toEqual([
+            [8, 16, "held", false],
+            [16, 24, "held", true],
+            [28, 32, "notDefined", false],
+        ]);
+    });
+
+    it("the same drag with no window (Basic) lights the whole hold", () => {
+        const { bars } = selectionHolds({
+            marcherIds: [2],
+            spansOf,
+            marks: [{ id: 1, marcherId: 2, start: 8, end: 24 }],
+            showEnd: SHOW_END,
+            dragBeat: 24,
+        });
+        expect(bars.map((b) => [b.start, b.end, b.kind, b.lit])).toEqual([
+            [8, 24, "held", true],
             [28, 32, "notDefined", false],
         ]);
     });

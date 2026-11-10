@@ -3,6 +3,7 @@ import { create } from "zustand";
 import type { DbConnection } from "@/db-functions/types";
 import { useTimelineDisplayStore } from "@/db-functions/timelineDisplay";
 import { readHeldMarks, type HeldMark } from "@/db-functions/timelineHeldMarks";
+import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { usePlacedBoxStore } from "@/shapes/placed/placedBoxStore";
 import {
@@ -87,8 +88,9 @@ export function useHeldMarksHost(
  * once per selection, resolver version, set of marks and shapes, and when a field drag starts or
  * ends or a follow-back entry is hovered: never per scrubbed beat.
  *
- * During a field drag that moves, scales or rotates the selection, the bars the edit carries into
- * light up: it edits the window's end (the playhead), or the starting spots on the home page.
+ * During a field drag that moves, scales or rotates the selection, the bars the edit changes
+ * light up: it edits the window's end (the playhead), or the starting spots on the home page. An
+ * Expert drag has a window, and one that starts inside a hold ends that hold (`dragLitRanges`).
  *
  * @param marcherIds the selected marchers; keep the array stable while the selection is
  */
@@ -112,6 +114,13 @@ export function useSelectionHolds(
               : s.selection.kind === "range"
                 ? s.selection.end
                 : null,
+    );
+    const basic = useIsBasicMode();
+    // The write's rule (`planCanvasEdit`): Basic edits a point, Expert the window
+    const dragWindowStart = useTimelineSelectionStore((s) =>
+        editing && !basic && !s.isolation && s.selection.kind === "range"
+            ? s.selection.start
+            : null,
     );
     const hoverLight = useHoldLightStore((s) => s.light);
     // #475: a hold edge being dragged draws its holds where it would land, lit
@@ -157,6 +166,7 @@ export function useSelectionHolds(
             showEnd,
             carriedOf: carried ? (id) => carried.get(id) : undefined,
             dragBeat,
+            dragWindowStart,
             light,
         });
     }, [
@@ -167,6 +177,7 @@ export function useSelectionHolds(
         showEnd,
         carried,
         dragBeat,
+        dragWindowStart,
         light,
     ]);
 }

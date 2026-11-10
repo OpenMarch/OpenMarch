@@ -14,6 +14,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { isTimelineOwnKey } from "@/components/timeline/timelineHotkeys";
 import TimelineHoldLine from "../TimelineHoldLine";
 
@@ -333,5 +334,41 @@ describe("TimelineHoldLine", () => {
         mocks.selectedPage = PAGES[2];
         show([]);
         expect(line()).toBeNull();
+    });
+});
+
+describe("TimelineHoldLine, how many are Held (#476)", () => {
+    /** Marcher 1 Held from its page 2 arrival (9) through page 4; marcher 5 moves as 1 does */
+    const held = () =>
+        useHeldMarksStore.setState({
+            marks: [{ id: 1, marcherId: 1, start: 9, end: 25 }],
+        });
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+        });
+    const count = () => screen.queryByTestId("timeline-held-count");
+
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        held();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("says how many are Held when only some of the selection is, and no drag line", () => {
+        setWindow(9, 13);
+        show([1, 5]);
+        expect(count()?.textContent).toBe("1 of 2 selected Held");
+        expect(screen.queryByText(/^Drag:/)).toBeNull();
+        expect(screen.queryByRole("button", { name: /Make all/ })).toBeNull();
+    });
+
+    it("says nothing when all or none of the selection is Held", () => {
+        setWindow(9, 13);
+        show([1]);
+        expect(count()).toBeNull();
+        cleanup();
+        show([5]);
+        expect(count()).toBeNull();
     });
 });

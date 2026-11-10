@@ -9,6 +9,8 @@ import {
     holdActionOptions,
     useHoldCommands,
 } from "@/timeline/useHoldCommands";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import { holdOverWindowOn } from "@/timeline/timelineExpertHolds";
 import { useActionHandler } from "../useActionHandler";
 
 /**
@@ -18,6 +20,10 @@ import { useActionHandler } from "../useActionHandler";
  * with the menu's toasts, and is off where the menu would say why not or shows it checked (every
  * selected marcher already in its state). Their labels count the marchers they'd change when it's
  * some of the selection (`holdActionOptions`), as the menus do.
+ *
+ * **Hold from start flag to playhead** (#476) holds the selection over the edit window, in Expert
+ * only: one undo step, a toast only about the marchers it left alone, and highlighting it shows
+ * the hold it would make.
  */
 export function useHoldActionHandlers() {
     const selected = useSelectedMarchers()?.selectedMarchers;
@@ -36,6 +42,7 @@ export function useHoldActionHandlers() {
         nameOf,
     );
     const entries = entriesOn(pageId);
+    const expert = useExpertHolds(marcherIds);
 
     useActionHandler(
         "timelineDefineAsShown",
@@ -59,6 +66,17 @@ export function useHoldActionHandlers() {
                 if (pageId !== undefined)
                     holdFromPrevious.onPreview(pageId, on);
             },
+        },
+    );
+    useActionHandler(
+        "timelineHoldOverWindow",
+        () => {
+            if (expert.window)
+                void holdOverWindowOn(expert.window, marcherIds, nameOf);
+        },
+        {
+            enabled: !isPlaying && expert.window !== null,
+            preview: expert.onPreview,
         },
     );
 }

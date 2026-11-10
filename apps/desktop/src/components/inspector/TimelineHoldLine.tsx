@@ -30,6 +30,7 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
 
 /**
  * The selection's state on the current page, in timeline mode (docs/timeline/ui.md UI-18):
@@ -116,6 +117,9 @@ const LINK_CLASS =
  * the page the shape was placed or last laid out on (owner, holds wave 2), and the link goes
  * there. A mix of Held and Not defined keeps "Last moved on Page 2". Nothing where they don't
  * agree.
+ *
+ * Where only some of the selection is Held at the playhead (fork #476; holds review R1), it also
+ * says how many: "1 of 2 selected Held". A mixed drag edits each marcher by its own kind.
  */
 export default function TimelineHoldLine({
     marcherIds,
@@ -124,6 +128,7 @@ export default function TimelineHoldLine({
 }) {
     const { t } = useTranslate();
     const state = useSelectionHoldState(marcherIds);
+    const expert = useExpertHolds(marcherIds);
     let line: ReactNode = null;
     if (state?.kind === "movesHere")
         line = (
@@ -180,10 +185,24 @@ export default function TimelineHoldLine({
             </p>
         );
     }
-    if (!line) return null;
+    const heldCount = expert.partlyHeld && (
+        <p
+            className="text-body text-text px-6 leading-none"
+            data-testid="timeline-held-count"
+        >
+            {t("inspector.marcher.timeline.heldOfSelected", {
+                defaultValue: "{count} of {total} selected {held}",
+                ...holdTerms(),
+                count: expert.partlyHeld.held,
+                total: expert.partlyHeld.total,
+            })}
+        </p>
+    );
+    if (!line && !heldCount) return null;
     return (
         <TransportTooltipProvider disableHoverableContent>
             {line}
+            {heldCount}
         </TransportTooltipProvider>
     );
 }

@@ -21,7 +21,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
-import { isActionChecked, isActionEnabled, runAction } from "../../registry";
+import { holdOverWindow } from "@/db-functions/timelineHoldOverWindow";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import {
+    isActionChecked,
+    isActionEnabled,
+    previewAction,
+    runAction,
+} from "../../registry";
+import { useHoldLightStore } from "@/timeline/holdLight";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
 import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
 
@@ -76,6 +85,14 @@ vi.mock("@/db-functions/timelineHoldFromPrevious", () => ({
         Promise.resolve({
             held: [1],
             skipped: [{ marcherId: 2, reason: "noArrival" }],
+        }),
+    ),
+}));
+vi.mock("@/db-functions/timelineHoldOverWindow", () => ({
+    holdOverWindow: vi.fn(() =>
+        Promise.resolve({
+            held: [1],
+            skipped: [{ marcherId: 2, reason: "followLeader" }],
         }),
     ),
 }));
@@ -216,6 +233,66 @@ describe("hold actions", () => {
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(setAsShownOnPage).not.toHaveBeenCalled();
         expect(holdFromPreviousPage).not.toHaveBeenCalled();
+    });
+});
+
+describe("Expert hold tools (#476)", () => {
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+            isolation: null,
+        });
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        setWindow(9, 13);
+        vi.mocked(holdOverWindow).mockClear();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("Hold from start flag to playhead holds the selection over the window, and names only who it left alone", async () => {
+        mount([1, 2]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(true);
+        expect(runAction("timelineHoldOverWindow")).toBe(true);
+        await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+        expect(vi.mocked(holdOverWindow).mock.calls[0]![0]).toMatchObject({
+            window: { start: 9, end: 13 },
+            marcherIds: [1, 2],
+        });
+        expect(vi.mocked(toast.info).mock.calls[0]).toEqual([
+            "1 marcher not held",
+            {
+                description:
+                    "T2: follows the leader between the start flag and the playhead",
+            },
+        ]);
+    });
+
+    it("is off in Basic, without a selection, and while playing", () => {
+        useEditorModeStore.setState({ mode: "basic" });
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        useEditorModeStore.setState({ mode: "expert" });
+        mount([]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        expect(holdOverWindow).not.toHaveBeenCalled();
+    });
+
+    it("highlighting it shows the hold it would make, reaching back like the write", () => {
+        setWindow(11, 13);
+        useHeldMarksStore.setState({ marks: [] });
+        mount([3]);
+        previewAction("timelineHoldOverWindow", true);
+        const light = useHoldLightStore.getState().light;
+        expect(light?.wouldHold).toBe(true);
+        // Marcher 3 stands on its starting spot: reaches back to the show's first page
+        expect(light?.byMarcher.get(3)).toEqual([{ start: 1, end: 13 }]);
+        previewAction("timelineHoldOverWindow", false);
+        expect(useHoldLightStore.getState().light).toBeNull();
     });
 });
 

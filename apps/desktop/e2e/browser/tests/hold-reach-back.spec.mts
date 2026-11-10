@@ -66,6 +66,7 @@ test.use({
     ],
 });
 
+const PAGE_2_BOX = 8;
 const PAGE_4_BOX = 24;
 
 /** Where screenshots for review go, when set (`HOLD_REACH_SHOTS=/mnt/data/...`) */
@@ -215,11 +216,14 @@ test("hovering Hold from last keyframe pulses the whole hold it would make, and 
     expect(await t2Marks(show)).toEqual([]);
 });
 
-test("a drag inside the hold lights the whole bar and moves the arrival, not a page of its own", async ({
+test("a drag on the hold's first page lights the whole bar and moves the arrival, not a page of its own", async ({
     show,
 }) => {
     const { page } = show;
     await reachedBackHold(show);
+    // Page 2's window starts where the hold does, so the drag moves the whole hold
+    await pageBox(page, PAGE_2_BOX).click();
+    await waitForIdle(page);
     const before = await t2Arrival(show);
     const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
     await page.mouse.move(t2.screen.x, t2.screen.y);
@@ -237,5 +241,65 @@ test("a drag inside the hold lights the whole bar and moves the arrival, not a p
     // No move added: the same row, and the same hold
     expect(await t2Rows(show)).toEqual(["1-9"]);
     expect(await t2Marks(show)).toEqual(["9-33"]);
+    await expect(heldBar(page)).toHaveCount(1);
+});
+
+// In Expert, a page's window on a later page of a hold starts inside it, so it wins (owner,
+// 2026-11-09): the hold ends at the page's start and the drag adds a move. The bars show that
+// during the drag.
+test("an Expert drag on a later page ends the hold there, lighting only what changes", async ({
+    show,
+}) => {
+    const { page } = show;
+    await reachedBackHold(show);
+    // Go-to moves only the playhead; a click on the page's box sets its window
+    await pageBox(page, PAGE_4_BOX).click();
+    await waitForIdle(page);
+    const before = await t2Arrival(show);
+    const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
+    await page.mouse.move(t2.screen.x, t2.screen.y);
+    await page.mouse.down();
+    await page.mouse.move(t2.screen.x + 40, t2.screen.y + 30, { steps: 8 });
+    // Page 4's window is [25, 33): view [24, 32) lights, the part before it stays
+    const stays = page.getByTestId("timeline-held-bar-8-24");
+    const goes = page.getByTestId("timeline-held-bar-24-32");
+    await expect(goes).toHaveAttribute("data-lit", "true");
+    await expect(stays).not.toHaveAttribute("data-lit", "true");
+    await page.mouse.up();
+    await expect.poll(() => t2Marks(show)).toEqual(["9-25"]);
+    expect(await t2Rows(show)).toEqual(["1-9", "25-33"]);
+    // The hold's arrival wasn't edited
+    expect(await t2Arrival(show)).toEqual(before);
+});
+
+// Hold from start flag to playhead with Not defined pages before the flag: the hold reaches back
+// to what last put T2 there, the same as the highlighted preview says.
+test("Hold from start flag to playhead reaches back over Not defined pages, and highlighting it previews that hold", async ({
+    show,
+}) => {
+    const { page } = show;
+    await waitForField(page);
+    await expect.poll(async () => (await drawnMarchers(page)).length).toBe(2);
+    await goTo(page, "m9");
+    await expectCanvasMatchesShow(show);
+    await clickMarcher(page, "T2");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(1);
+    await waitForIdle(page);
+    // The window is page 4; T2 last arrived at page 1's flag, so the hold reaches back there
+    await pageBox(page, PAGE_4_BOX).click();
+    await waitForIdle(page);
+    const t2 = (await drawnMarchers(page)).find((m) => m.drillNumber === "T2")!;
+    await page.mouse.click(t2.screen.x, t2.screen.y, { button: "right" });
+    const entry = page.getByTestId("field-menu-timelineHoldOverWindow");
+    await entry.hover();
+    const pulsing = page.locator("[data-preview]");
+    await expect(heldBar(page).and(pulsing)).toHaveCount(1);
+    // Only a preview: nothing written
+    expect(await t2Marks(show)).toEqual([]);
+    await entry.click();
+    await expect.poll(() => t2Marks(show)).toEqual(["9-33"]);
+    await expect(pulsing).toHaveCount(0);
     await expect(heldBar(page)).toHaveCount(1);
 });

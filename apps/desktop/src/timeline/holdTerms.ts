@@ -34,6 +34,10 @@ export const HOLD_TERM_KEYS = {
         "timeline.terms.holdFromPrevious",
         "Hold from last keyframe",
     ],
+    holdOverWindow: [
+        "timeline.terms.holdOverWindow",
+        "Hold from start flag to playhead",
+    ],
     clearThisPage: ["timeline.terms.clearThisPage", "Clear this page"],
     removeKeyframe: ["timeline.terms.removeKeyframe", "Remove keyframe"],
     splitHold: ["timeline.terms.splitHold", "Split hold here"],

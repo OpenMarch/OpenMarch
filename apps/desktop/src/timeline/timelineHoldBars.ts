@@ -1,5 +1,6 @@
 import type { HeldMark } from "@/db-functions/timelineHeldArrival";
 import type { CarrySpan } from "./timelineCarryForward";
+import { windowWinsOverHold } from "./heldRules";
 
 /**
  * The selection's holds on the timeline (holds README decisions 10 and 11; fork #472, #477): for
@@ -204,28 +205,42 @@ function splitLit(
 }
 
 /**
- * What a drag at `beat` would carry into for one marcher (holds decision 4, and the carry forward
- * of UI-18): inside a Held mark (`start < beat <= end`), the whole hold the mark is in, from its
- * arrival on, since the drag moves where it arrives; in any other hold that `beat` starts or is
- * inside, the rest of that hold. Partway through a move, nothing: the move goes on from the new
- * spot.
+ * What a drag at `beat` would change for one marcher, for the bars to light (holds decision 4,
+ * and the carry forward of UI-18). Inside a Held mark (`start < beat <= end`), the whole hold the
+ * mark is in, from its arrival on, since the drag moves where it arrives. In any other hold that
+ * `beat` starts or is inside, the rest of that hold. Partway through a move, nothing: the move
+ * goes on from the new spot.
+ *
+ * In Expert, `windowStart` is the window's start flag, and a window that starts inside the mark
+ * wins (`windowWinsOverHold`): the drag becomes the window's move instead, as it does for a
+ * marcher Held at no count of the window. That lights the marks the move ends or replaces, from
+ * the start flag on (the part of a hold before it stays, unlit), and the rest of the stretch after
+ * `beat`.
  *
  * @param marks this marcher's Held marks
+ * @param windowStart the window's start flag; undefined for a Basic edit, which has no window
  */
 export function dragLitRanges(
     holds: readonly MarcherHold[],
     marks: readonly BeatRange[],
     beat: number,
+    windowStart?: number | null,
 ): BeatRange[] {
     const mark = marks.find((m) => m.start < beat && beat <= m.end);
-    if (mark) {
+    const hasWindow = windowStart !== undefined && windowStart !== null;
+    if (mark && !(hasWindow && windowWinsOverHold(windowStart, mark))) {
         const hold = holds.find(
             (h) => h.start <= mark.start && mark.start < h.end,
         );
         return [{ start: mark.start, end: Math.max(mark.end, hold?.end ?? 0) }];
     }
     const hold = holds.find((h) => h.start <= beat && beat < h.end);
-    return hold ? [{ start: beat, end: hold.end }] : [];
+    const after = hold ? [{ start: beat, end: hold.end }] : [];
+    if (!hasWindow) return after;
+    const underMove = marks
+        .filter((m) => m.start < beat && windowStart < m.end)
+        .map((m) => ({ start: Math.max(windowStart, m.start), end: m.end }));
+    return [...underMove, ...after];
 }
 
 /**
@@ -277,7 +292,8 @@ export interface HoldLight {
  * @param marks every Held mark
  * @param showEnd the last page flag
  * @param carriedOf where a shape carries a marcher (`carriedStretches`); nowhere without shapes
- * @param dragBeat the count a field drag edits, while one runs; lights what it carries into
+ * @param dragBeat the count a field drag edits, while one runs; lights what it changes
+ * @param dragWindowStart the start flag of the window that drag edits; null for a Basic edit
  * @param light other lit ranges (a hovered follow-back)
  */
 export function selectionHolds({
@@ -287,6 +303,7 @@ export function selectionHolds({
     showEnd,
     carriedOf,
     dragBeat = null,
+    dragWindowStart = null,
     light = null,
 }: {
     marcherIds: readonly number[];
@@ -295,6 +312,7 @@ export function selectionHolds({
     showEnd: number;
     carriedOf?: (marcherId: number) => readonly BeatRange[] | undefined;
     dragBeat?: number | null;
+    dragWindowStart?: number | null;
     light?: HoldLight | null;
 }): SelectionHolds {
     if (marcherIds.length === 0) return NO_HOLDS;
@@ -315,7 +333,9 @@ export function selectionHolds({
         const own = marksOf.get(id) ?? [];
         const lightRanges = light?.byMarcher.get(id) ?? [];
         const lit = [
-            ...(dragBeat === null ? [] : dragLitRanges(holds, own, dragBeat)),
+            ...(dragBeat === null
+                ? []
+                : dragLitRanges(holds, own, dragBeat, dragWindowStart)),
             ...(light?.wouldHold ? [] : lightRanges),
         ];
         const pieces = marcherHoldPieces({

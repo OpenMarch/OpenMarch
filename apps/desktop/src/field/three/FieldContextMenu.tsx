@@ -41,7 +41,8 @@ import {
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The commands that set the selection's state on the current page (holds):
- *   **Hold from last keyframe** (timeline mode only), then **Clear this page**. Each says what it
+ *   **Hold from last keyframe** (timeline mode only), **Hold from start flag to playhead** while
+ *   it's available (Expert with a window, #476), then **Clear this page**. Each says what it
  *   would do for the selection on the current page (`holdEntryStates`, through its handler):
  *   checked and unavailable when every selected marcher is already in the state it sets, and with
  *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
@@ -53,6 +54,7 @@ import {
 /** The page state commands: the group whose entries can show checked */
 const STATE_GROUP: readonly ActionId[] = [
     "timelineHoldFromPrevious",
+    "timelineHoldOverWindow",
     "setSelectedMarchersToPreviousPage",
 ];
 
@@ -75,6 +77,13 @@ export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
 
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
 const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
+
+/** Shown only while available, as Group is: Hold over the window in Expert with a window (#476) */
+const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
+    "shapeGroup",
+    "shapeUngroup",
+    "timelineHoldOverWindow",
+]);
 
 /** The entries that can show checked: each keeps room for the check, so the words line up */
 const CHECKABLE: ReadonlySet<ActionId> = new Set(STATE_GROUP);
@@ -127,7 +136,7 @@ export default function FieldContextMenu({
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeGroup" || id === "shapeUngroup"
+        WHILE_AVAILABLE.has(id)
             ? isActionEnabled(id)
             : HOLDS.has(id)
               ? timelineMode

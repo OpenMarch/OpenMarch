@@ -7,6 +7,7 @@ import {
     intersectHoldEdgeLimits,
     landHoldEdge,
     mergeTouchingMarks,
+    holdOverWindowStart,
 } from "../holdExtent";
 
 /** Shaping a hold (fork #475): where a Held hold's end may go, and touching holds joining. */
@@ -202,5 +203,31 @@ describe("holdEdgeHandles", () => {
                 showEnd: 33,
             }),
         ).toEqual([]);
+    });
+});
+
+describe("holdOverWindowStart (#476)", () => {
+    const at = (
+        windowStart: number,
+        rows: { start: number; end: number }[],
+        marks: { start: number; end: number }[] = [],
+    ) => holdOverWindowStart({ windowStart, rows, marks, showStart: 1 });
+
+    it("starts at the window where a move crosses it or ends there", () => {
+        expect(at(13, [{ start: 9, end: 17 }])).toBe(13);
+        expect(at(17, [{ start: 9, end: 17 }])).toBe(17);
+    });
+
+    it("starts at the window inside or touching a hold of its own", () => {
+        expect(at(13, [], [{ start: 9, end: 17 }])).toBe(13);
+        expect(at(17, [], [{ start: 9, end: 17 }])).toBe(17);
+    });
+
+    it("reaches back over Not defined counts to the last move, the last hold, or the show's start", () => {
+        expect(at(21, [{ start: 9, end: 17 }])).toBe(17);
+        expect(at(21, [{ start: 9, end: 13 }], [{ start: 13, end: 17 }])).toBe(
+            17,
+        );
+        expect(at(21, [])).toBe(1);
     });
 });

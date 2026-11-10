@@ -276,7 +276,7 @@ export async function holdFromPreviousPageInTransaction({
 }
 
 /** What a new hold over a box grows out of, for one marcher. */
-interface HoldGrowth {
+export interface HoldGrowth {
     /** Where the counts it newly holds start */
     readonly from: number;
     /**
@@ -292,7 +292,7 @@ const isHeldArrival = (source: HoldGrowth["source"]): source is HeldArrival =>
     typeof source === "object" && source !== null;
 
 /** What a hold of one marcher over `box` grows out of (see the module comment). */
-async function readHoldGrowth(
+export async function readHoldGrowth(
     tx: DbTransaction,
     {
         marcherId,
