@@ -465,7 +465,7 @@ const shots = [
     {
         id: "timeline-page-menu",
         kind: "still",
-        // A page box's menu with marchers selected: Define as shown, Hold from previous page,
+        // A page box's menu with marchers selected: Define as shown, Hold from last keyframe,
         // Clear Page N
         async setup({ page, wait, around, union }) {
             await ready(page, wait);
@@ -489,25 +489,77 @@ const shots = [
     {
         id: "timeline-held",
         kind: "still",
-        // T1–T4 held on Page 4 (Hold from previous page): the Held bar under Page 4, the
-        // keyframe diamonds at the flags where they're defined
+        // T1–T4 held on Page 4 (Hold from last keyframe): the solid Held line under Page 4 from
+        // Page 3's diamond, the keyframe diamonds at the flags where they're defined, and the
+        // departure ticks where they move again. Page 2 is selected afterwards, so Page 4's box
+        // isn't outlined over the line
         async setup({ page, wait, around }) {
             await ready(page, wait);
             await selectPage(page, 12, wait);
             await select(page, range("T", 1, 4), wait);
             await page.keyboard.press("Control+KeyH");
             await wait(1500);
+            await selectPage(page, 10, wait);
             await tidy(page);
             await page.mouse.move(800, 990);
             return { box: await pane(around, page) };
         },
     },
     {
+        id: "timeline-hold-end",
+        kind: "clip",
+        // T1–T4 held over Pages 4 and 5 (Hold from last keyframe on each), then the end of the
+        // solid line dragged back to the middle of Page 5: the rest turns dashed (Not defined)
+        // and the readout says where the hold ends
+        async setup({ page, wait, around }) {
+            await ready(page, wait);
+            await selectPage(page, 12, wait);
+            await select(page, range("T", 1, 4), wait);
+            await page.keyboard.press("Control+KeyH");
+            await wait(1500);
+            await selectPage(page, 13, wait);
+            await page.keyboard.press("Control+KeyH");
+            await wait(1500);
+            // The start flag and the playhead away from the hold's end, so the handle takes the
+            // drag
+            await selectPage(page, 10, wait);
+            await tidy(page);
+            await page.mouse.move(800, 990);
+            await wait(500);
+            return { box: await pane(around, page) };
+        },
+        async perform({ page, film, overlay, box }) {
+            await overlay.enable();
+            const { perCount, box: page5 } = await countWidth(page, 13);
+            const handle = await page
+                .locator('[data-testid^="timeline-hold-end-"]')
+                .first()
+                .boundingBox();
+            const end = {
+                x: handle.x + handle.width / 2,
+                y: handle.y + handle.height / 2,
+            };
+            const counts = Math.max(1, Math.round(page5.width / perCount / 2));
+            const rest = { x: end.x + 80, y: box.y + 30 };
+            await page.mouse.move(rest.x, rest.y);
+            await film.moveTo(page, rest, end, 0.7);
+            await film.hold(0.5);
+            // Pressed through the drag and a moment after it, so the readout shows
+            const to = { x: end.x - perCount * counts, y: end.y };
+            await page.mouse.move(end.x, end.y);
+            await page.mouse.down();
+            await film.moveTo(page, end, to, 1.4);
+            await film.hold(0.8);
+            await page.mouse.up();
+            await film.hold(1.5);
+        },
+    },
+    {
         id: "timeline-not-defined",
         kind: "still",
         // A new page past the end: everyone is Not defined there (dashed outlines on the field,
-        // zoomed in on the trumpets), two of them selected (the link mark on the page box, and
-        // the inspector's "Last moved on Page 9")
+        // zoomed in on the trumpets), two of them selected (the dashed Not defined line on the
+        // page box, and the inspector's "Not defined · showing Page 9")
         async setup({ page, wait }) {
             await ready(page, wait);
             await page.keyboard.press("End");
