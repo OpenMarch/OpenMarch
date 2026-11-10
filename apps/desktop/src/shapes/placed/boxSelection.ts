@@ -10,6 +10,7 @@ import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useShapeToolStore } from "../tool/shapeToolStore";
 import { clickOnMarcher } from "./boxClick";
 import {
+    savingBoxAt,
     setInsideBox,
     useBoxSelectionStore,
     useSavingBoxStore,
@@ -123,7 +124,7 @@ export function useBoxSelection({ isPlaying }: { isPlaying: boolean }): void {
     const version = useTimelineResolverStore((s) => s.version);
     const beat = usePlacedBoxBeat();
     const ends = usePlacedBoxStore((s) => s.ends);
-    const saving = useSavingBoxStore((s) => s.box);
+    const saving = useSavingBoxStore((s) => savingBoxAt(s, beat));
     useEffect(() => {
         const ids = new Set((selected ?? []).map((m) => m.id));
         const boxes = enabled ? placedBoxesAt(beat, recipes) : [];

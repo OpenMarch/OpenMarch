@@ -99,12 +99,17 @@ export function commitBox(
         origins,
         order,
     );
-    useSavingBoxStore.setState({ box: savedAs(box, params, shown) });
     const at: SaveAt = {
         plan: planCanvasEdit(),
         beat: displayedBeat(useTimelineSelectionStore.getState()),
         waits: unsaved > 0 || historyStepsPending(),
     };
+    useSavingBoxStore.setState({
+        // As it's stored now: a kept drag's box may be from before this page got its own copy
+        box: savedAs(storedBox(box, at.beat), params, shown),
+        // Isolation takes the playhead to the edit's end as it writes, so it's shown there too
+        beats: at.plan.ok ? [at.beat, at.plan.beat] : [at.beat],
+    });
     unsaved++;
     return queueHistoryStep(async () => {
         try {
@@ -127,7 +132,8 @@ export function commitBox(
         } finally {
             unsaved--;
             // The box read back is the one selected again
-            if (unsaved === 0) useSavingBoxStore.setState({ box: null });
+            if (unsaved === 0)
+                useSavingBoxStore.setState({ box: null, beats: [] });
         }
     }, undefined);
 }
@@ -219,8 +225,11 @@ async function saveBox(
         },
         queryClient,
         tolgee.t("shapes.placed.editError", "Error editing the shape"),
-        // One that waited goes where it was made, and leaves the playhead where it was moved to
-        at.waits ? at.plan : null,
+        // Every save goes where it was made, even when the page changed before it ran (#776)
+        at.plan,
+        // One that waited or was overtaken leaves the playhead where it was moved to
+        at.waits ||
+            displayedBeat(useTimelineSelectionStore.getState()) !== at.beat,
     );
     // Read back, positions and recipe both, before the next save starts from it
     await timelinePositionsSettled();
