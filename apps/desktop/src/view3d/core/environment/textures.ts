@@ -29,6 +29,13 @@ export function paintCanvasTexture(
     paint: (g: CanvasRenderingContext2D, width: number, height: number) => void,
     options: { repeat?: boolean; anisotropy?: number } = {},
 ): CanvasTexture {
+    // Without a DOM (node tests) the texture has no image to paint.
+    if (typeof document === "undefined") {
+        const tex = new CanvasTexture(undefined as never);
+        tex.colorSpace = SRGBColorSpace;
+        if (options.repeat) tex.wrapS = tex.wrapT = RepeatWrapping;
+        return tex;
+    }
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
