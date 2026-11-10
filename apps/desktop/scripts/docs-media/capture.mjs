@@ -10,7 +10,8 @@
 //
 // Options:
 //   --theme light|dark   only one theme (default: both)
-//   --software-gl        draw with SwiftShader (Docker; in-docker.sh adds it)
+//   --software-gl        draw with SwiftShader (Docker without a GPU, CI; in-docker.sh adds it)
+//   --gpu-gl             draw on the GPU via ANGLE/Vulkan (Docker with an NVIDIA GPU; in-docker.sh adds it)
 //   --max-frames <n>     stop each clip after n frames (quick tests)
 //   --list               list the shots and exit
 // Output: apps/website/public/docs/media/<chapter>/<id>.<theme>.(webp|mp4), and
@@ -52,6 +53,7 @@ function parseArgs(argv) {
         names: [],
         themes: ["light", "dark"],
         softwareGl: false,
+        gpuGl: false,
         maxFrames: Infinity,
         list: false,
     };
@@ -59,6 +61,7 @@ function parseArgs(argv) {
         const arg = argv[i];
         if (arg === "--theme") options.themes = [argv[++i]];
         else if (arg === "--software-gl") options.softwareGl = true;
+        else if (arg === "--gpu-gl") options.gpuGl = true;
         else if (arg === "--max-frames") options.maxFrames = Number(argv[++i]);
         else if (arg === "--list") options.list = true;
         else if (arg.startsWith("--")) throw new Error(`unknown option ${arg}`);
@@ -187,6 +190,7 @@ for (const shot of chosen) {
                 window: WINDOW,
                 theme,
                 softwareGl: options.softwareGl,
+                gpuGl: options.gpuGl,
                 uiSettings: shot.uiSettings,
                 mode: shot.mode ?? "expert",
                 scale: SCALE,

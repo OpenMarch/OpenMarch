@@ -1,14 +1,17 @@
-// Renders venue kits to PNGs in headless Chromium (SwiftShader). See README.md.
+// Renders venue kits to PNGs in headless Chromium: on the GPU where the machine has an NVIDIA one,
+// else SwiftShader. See README.md.
 // usage (from apps/desktop):
 //   node scripts/view3d-gallery/shoot.mjs --kits hs,gym --out /mnt/data/om-capture/venues/run1
 //     [--lighting all|day,night] [--cameras all|pressBox,frontRow] [--quality high|low]
-//     [--size 1280x720] [--no-crowd] [--poses poses.json] [--gpu] [--bench 60]
+//     [--size 1280x720] [--no-crowd] [--poses poses.json] [--gpu|--software] [--bench 60]
 //
-// --gpu draws on the machine's GPU (ANGLE over EGL) instead of SwiftShader;
+// --gpu draws on the machine's GPU (ANGLE over EGL) instead of SwiftShader, the default where
+// `nvidia-smi` works; --software forces SwiftShader;
 // --bench N then also times N frames of each shot (ms per frame, in report.json).
 //     [--field football|footballNoEndZones|college|collegeNoEndZones|pro|indoor]
 // poses.json: [{ "name": "x", "position": [x,y,z], "target": [x,y,z], "fov": 45, "near": 0.5 }]
 // Writes <out>/<kit>/<lighting>--<camera>.png, <out>/<kit>/sheet.png and <out>/report.json.
+import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -32,7 +35,16 @@ const camerasArg = opt("cameras", "all");
 const quality = opt("quality", "high");
 const [W, H] = opt("size", "1280x720").split("x").map(Number);
 const crowd = !args.includes("--no-crowd");
-const gpu = args.includes("--gpu");
+const hasNvidiaGpu = () => {
+    try {
+        execSync("nvidia-smi -L", { stdio: "ignore" });
+        return true;
+    } catch {
+        return false;
+    }
+};
+const gpu =
+    args.includes("--gpu") || (!args.includes("--software") && hasNvidiaGpu());
 const benchFrames = Number(opt("bench", "0"));
 const field = opt("field");
 const poses = opt("poses")
