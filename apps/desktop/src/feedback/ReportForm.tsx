@@ -194,6 +194,11 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
                                                 keyName="feedback.attach.showFile"
                                                 params={{
                                                     name: showFileName,
+                                                    file: (content) => (
+                                                        <code className="rounded-4 border-stroke bg-bg-1 text-sub border px-6 py-2 font-mono break-all">
+                                                            {content}
+                                                        </code>
+                                                    ),
                                                 }}
                                             />
                                         }

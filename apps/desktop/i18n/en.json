@@ -3781,7 +3781,7 @@
         "question.feedback.placeholder": "Your feedback",
         "optional": "(optional)",
         "attach.label": "Attachments",
-        "attach.showFile": "Send a copy of my show ({name})",
+        "attach.showFile": "Send a copy of my show <file>{name}</file>",
         "attach.showFile.scrubbed": "Performer names and notes are removed before sending.",
         "attach.music": "Include the music",
         "attach.noShow": "Open a show to send a copy of it with your report.",

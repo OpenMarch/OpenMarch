@@ -2826,7 +2826,7 @@
     "feedback.attach.label": "Label of the section in the bug and feedback report window (Help → Report a bug or send feedback) where the person chooses what to send along with their report.",
     "feedback.attach.music": "Checkbox under \"Send a copy of my show\" in the bug and feedback report window (Help → Report a bug or send feedback), not ticked by default: also send the show's music file. Without it the music is removed from the copy.",
     "feedback.attach.noShow": "Shown in the bug and feedback report window (Help → Report a bug or send feedback) when no show is open, where the \"Send a copy of my show\" checkbox would be.",
-    "feedback.attach.showFile": "Checkbox in the bug and feedback report window (Help → Report a bug or send feedback), ticked by default: send a copy of the open show file with the report. {name} is the show's file name.",
+    "feedback.attach.showFile": "Checkbox in the bug and feedback report window (Help → Report a bug or send feedback), ticked by default: send a copy of the open show file with the report. {name} is the show's file name, shown in a monospace box; keep the <file></file> tags around {name}.",
     "feedback.attach.showFile.scrubbed": "Smaller text under the \"Send a copy of my show\" checkbox in the bug and feedback report window (Help → Report a bug or send feedback).",
     "feedback.error.failed": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when sending failed.",
     "feedback.error.notConnected": "Error in the bug and feedback report window (Help → Report a bug or send feedback) when the person presses Send in a build where sending isn't connected to the website yet.",
