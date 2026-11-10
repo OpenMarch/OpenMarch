@@ -229,7 +229,9 @@ function setLighting(preset: LightingPreset): void {
  * with a large dt first so animated parts (the pro roof) settle.
  */
 function shot(
-    view: string | { position: number[]; target: number[]; fov?: number },
+    view:
+        | string
+        | { position: number[]; target: number[]; fov?: number; near?: number },
 ): void {
     if (!kit) throw new Error("load a kit first");
     const seat =
@@ -244,6 +246,8 @@ function shot(
     camera.position.set(...(seat.position as [number, number, number]));
     camera.lookAt(...(seat.target as [number, number, number]));
     camera.fov = seat.fovDeg ?? 45;
+    // A pose may set the near plane, like the app's close-ups (0.05 m).
+    camera.near = (typeof view !== "string" && view.near) || 0.5;
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     const p = camera.position;

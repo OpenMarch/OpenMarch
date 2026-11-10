@@ -4,7 +4,7 @@
 //     [--lighting all|day,night] [--cameras all|pressBox,frontRow] [--quality high|low]
 //     [--size 1280x720] [--no-crowd] [--poses poses.json]
 //     [--field football|footballNoEndZones|college|collegeNoEndZones|pro|indoor]
-// poses.json: [{ "name": "x", "position": [x,y,z], "target": [x,y,z], "fov": 45 }]
+// poses.json: [{ "name": "x", "position": [x,y,z], "target": [x,y,z], "fov": 45, "near": 0.5 }]
 // Writes <out>/<kit>/<lighting>--<camera>.png, <out>/<kit>/sheet.png and <out>/report.json.
 import fs from "node:fs";
 import path from "node:path";
