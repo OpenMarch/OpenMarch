@@ -5,7 +5,7 @@
  * no picker. The microphone is optional and mixed in as the audio track.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MAX_RECORDING_SECONDS } from "./reportForm";
+import { MAX_RECORDING_SECONDS } from "./reportDraft";
 
 /** Stop by this size; 5 minutes at 2.5 megabits a second is about 95 MB, so this is only a safety net. */
 const RECORDING_STOP_BYTES = 200 * 1024 * 1024;

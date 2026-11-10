@@ -944,6 +944,16 @@
             }
         ]
     },
+    "reportFeedback": {
+        "label": "Report a bug or send feedback",
+        "category": "ui",
+        "bindings": []
+    },
+    "viewMyReports": {
+        "label": "View my reports",
+        "category": "ui",
+        "bindings": []
+    },
     "openView3d": {
         "label": "Open 3D View",
         "category": "ui",

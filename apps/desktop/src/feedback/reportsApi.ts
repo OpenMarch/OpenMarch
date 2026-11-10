@@ -6,7 +6,7 @@
  * creates the report.
  */
 import { OPENMARCH_APP_BASE_URL } from "@/global/Constants";
-import type { ReportPayload } from "./reportForm";
+import type { ReportPayload } from "./reportDraft";
 
 /** The reporter's list of their reports on app.openmarch.com */
 export const MY_REPORTS_URL = `${OPENMARCH_APP_BASE_URL}reports`;

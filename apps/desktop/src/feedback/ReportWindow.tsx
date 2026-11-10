@@ -16,7 +16,7 @@ import {
     DISCORD_URL,
     githubBugReportUrl,
     type ReportContext,
-} from "./reportForm";
+} from "./reportDraft";
 
 const queryClient = new QueryClient();
 

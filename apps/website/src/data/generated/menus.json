@@ -276,6 +276,14 @@
                     "action": "showShortcuts"
                 },
                 {
+                    "label": "Report a Bug or Send Feedback…",
+                    "action": "reportFeedback"
+                },
+                {
+                    "label": "View My Reports",
+                    "action": "viewMyReports"
+                },
+                {
                     "separator": true
                 },
                 {
@@ -496,6 +504,14 @@
                         "?"
                     ],
                     "action": "showShortcuts"
+                },
+                {
+                    "label": "Report a Bug or Send Feedback…",
+                    "action": "reportFeedback"
+                },
+                {
+                    "label": "View My Reports",
+                    "action": "viewMyReports"
                 },
                 {
                     "separator": true

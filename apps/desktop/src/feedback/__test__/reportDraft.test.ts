@@ -5,7 +5,7 @@ import {
     EMPTY_DRAFT,
     type ReportContext,
     type ReportDraft,
-} from "../reportForm";
+} from "../reportDraft";
 
 const context: ReportContext = {
     appVersion: "0.2.0",

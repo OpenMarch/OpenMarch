@@ -21,7 +21,7 @@ import { t } from "./i18n";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { fitBounds, type Rectangle } from "./settings-window-bounds";
 import { getDbPath } from "../database/database.services";
-import { MAX_SHOW_FILE_BYTES } from "../../src/feedback/reportForm";
+import { MAX_SHOW_FILE_BYTES } from "../../src/feedback/reportDraft";
 import { Worker } from "node:worker_threads";
 import { getValidAccessToken } from "./auth/token-manager";
 import {
