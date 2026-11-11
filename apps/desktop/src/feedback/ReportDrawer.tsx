@@ -50,7 +50,7 @@ export default function ReportDrawer({
             onClick={() => setCollapsed(false)}
             aria-label={t("feedback.drawer.show")}
             title={t("feedback.drawer.show")}
-            className="border-stroke bg-fg-1 text-text hover:text-accent focus-visible:outline-accent touch:w-44 touch:h-88 rounded-l-8 fixed top-1/2 right-0 z-50 flex h-56 w-24 -translate-y-1/2 items-center justify-center border border-r-0 shadow-sm transition-colors"
+            className="border-stroke bg-bg-1 text-text hover:text-accent focus-visible:outline-accent touch:w-44 touch:h-88 rounded-l-8 fixed top-1/2 right-0 z-50 flex h-56 w-24 -translate-y-1/2 items-center justify-center border border-r-0 shadow-sm transition-colors"
         >
             <BugBeetleIcon size={16} />
         </button>
