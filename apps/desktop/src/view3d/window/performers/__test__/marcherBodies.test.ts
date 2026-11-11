@@ -162,7 +162,7 @@ describe("horns as their own meshes", () => {
         return { bake, set: new MarcherBodies(bodies, bake, looks, quality) };
     }
 
-    it("draws both in one body mesh (they differ only in the horn), plus a metallic horn mesh", async () => {
+    it("draws both in one body mesh (they differ only in the horn), plus a metallic horn mesh and a plume mesh", async () => {
         const { set } = await trumpetAndDrumMajor("high");
         const bodiesMeshes = set.group.children.filter((o) =>
             o.name.startsWith("view3d-marchers-"),
@@ -173,7 +173,8 @@ describe("horns as their own meshes", () => {
         expect(bodiesMeshes.length).toBe(1);
         // one instrument group for the trumpet look: full and low detail
         expect(horns.length).toBe(2);
-        expect(set.drawCalls).toBe(3);
+        // the body, the two horn tiers and the plumes
+        expect(set.drawCalls).toBe(4);
         const horn = horns.find((h) => h.name.endsWith("-high"))!;
         expect(horn.geometry.getAttribute("color")).toBeDefined();
         expect(horn.geometry.index!.count / 3).toBeGreaterThan(8000);
@@ -202,13 +203,14 @@ describe("horns as their own meshes", () => {
         set.dispose();
     });
 
-    it("keeps the body mesh free of horn triangles", async () => {
+    it("keeps the body mesh free of horn and plume triangles", async () => {
         const { set } = await trumpetAndDrumMajor("high");
         const bodiesMeshes = set.group.children.filter((o) =>
             o.name.startsWith("view3d-marchers-"),
         ) as THREE.InstancedMesh[];
         for (const m of bodiesMeshes)
-            expect(m.geometry.index!.count / 3).toBe(1256);
+            // 1,256 visible less the body's own 24-triangle plume
+            expect(m.geometry.index!.count / 3).toBe(1232);
         set.dispose();
     });
 
@@ -219,7 +221,7 @@ describe("horns as their own meshes", () => {
         ) as THREE.InstancedMesh[];
         expect(horns.length).toBe(1);
         expect(horns[0].geometry.index!.count / 3).toBeLessThan(3500);
-        expect(set.drawCalls).toBe(2); // one block mesh (the bodies match) plus the horn
+        expect(set.drawCalls).toBe(3); // one block mesh (the bodies match), the horn and the plumes
         set.dispose();
     });
 
@@ -330,7 +332,7 @@ describe("horns as their own meshes", () => {
         set.dispose();
     });
 
-    it("gives a drum-major-only set no horn and one draw call", async () => {
+    it("gives a drum-major-only set no horn: the body and the plume", async () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
         const bake = bakeForBodies(bodies, { "8to5": clip });
@@ -348,7 +350,7 @@ describe("horns as their own meshes", () => {
             ],
             "high",
         );
-        expect(set.drawCalls).toBe(1);
+        expect(set.drawCalls).toBe(2);
         expect(
             set.group.children.some((o) => o.name.startsWith("view3d-horn-")),
         ).toBe(false);
