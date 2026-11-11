@@ -31,16 +31,28 @@ import {
     type ReportContext,
     type ReportDraft,
 } from "./reportDraft";
+import { isWebBuild } from "@/utilities/webBuild";
 import { useReportRecording } from "./useReportRecording";
 import { ReportSendError, submitReport } from "./reportsApi";
+
+export interface RecordingInProgress {
+    readonly startedAt: number;
+    readonly stop: () => void;
+}
 
 interface ReportFormProps {
     context: ReportContext;
     onSent: (reportUrl: string) => void;
+    /** Told when a recording starts (with how to stop it) and ends (null) */
+    onRecordingChange?: (recording: RecordingInProgress | null) => void;
 }
 
 // eslint-disable-next-line max-lines-per-function
-export default function ReportForm({ context, onSent }: ReportFormProps) {
+export default function ReportForm({
+    context,
+    onSent,
+    onRecordingChange,
+}: ReportFormProps) {
     const { t } = useTranslate();
     const [draft, setDraft] = useState<ReportDraft>(EMPTY_DRAFT);
     const [sending, setSending] = useState(false);
@@ -48,6 +60,20 @@ export default function ReportForm({ context, onSent }: ReportFormProps) {
     const [microphone, setMicrophone] = useState(false);
     const recording = useReportRecording();
     const problems = draftProblems(draft);
+
+    const recordingStartedAt =
+        recording.state.status === "recording"
+            ? recording.state.startedAt
+            : null;
+    const stopRecording = recording.stop;
+    useEffect(() => {
+        if (!onRecordingChange) return;
+        onRecordingChange(
+            recordingStartedAt === null
+                ? null
+                : { startedAt: recordingStartedAt, stop: stopRecording },
+        );
+    }, [onRecordingChange, recordingStartedAt, stopRecording]);
 
     // Whether a show is open decides whether "Send my show file" is offered
     useEffect(() => {
@@ -528,16 +554,34 @@ function RecordingControls({
                 </div>
             </div>
             <p className="text-sub text-text-subtitle">
-                <T keyName="feedback.record.hint" />
+                <T
+                    keyName={
+                        isWebBuild
+                            ? "feedback.record.webHint"
+                            : "feedback.record.hint"
+                    }
+                />
             </p>
             {state.status === "failed" && (
                 <p className="text-sub text-red">
-                    <T keyName={`feedback.record.failed.${state.reason}`} />
+                    <T
+                        keyName={
+                            isWebBuild
+                                ? WEB_RECORDING_FAILED[state.reason]
+                                : `feedback.record.failed.${state.reason}`
+                        }
+                    />
                 </p>
             )}
         </div>
     );
 }
 
-const formatSeconds = (s: number) =>
+/** In a browser the picker and the permissions are the browser's own */
+const WEB_RECORDING_FAILED = {
+    denied: "feedback.record.failed.webDenied",
+    unsupported: "feedback.record.failed.webUnsupported",
+} as const;
+
+export const formatSeconds = (s: number) =>
     `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;

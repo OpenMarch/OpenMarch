@@ -58,6 +58,8 @@ import ShortcutsDialog from "./components/ShortcutsDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
+import WebReportSheet from "./feedback/WebReportSheet";
+import { canSendReports } from "./feedback/openReport";
 import WebHomeScreenPrompt from "./components/web/WebHomeScreenPrompt";
 import WebVersionsDialog from "./components/web/WebVersionsDialog";
 import { isWebBuild } from "./utilities/webBuild";
@@ -267,6 +269,7 @@ function App() {
                     {isWebBuild && <WebWelcomeModal />}
                     <ConvertShowDialog />
                     {isWebBuild && <WebSettingsSheet />}
+                    {isWebBuild && canSendReports && <WebReportSheet />}
                     {isWebBuild && <WebHomeScreenPrompt />}
                     {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />

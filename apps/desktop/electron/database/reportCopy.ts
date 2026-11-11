@@ -153,16 +153,28 @@ export function writeReportCopy(
     const copy = new DatabaseSync(destinationPath);
     try {
         copy.exec("PRAGMA journal_mode = DELETE");
-        copy.exec("BEGIN");
-        try {
-            scrubReportCopy(copy, options);
-            copy.exec("COMMIT");
-        } catch (error) {
-            copy.exec("ROLLBACK");
-            throw error;
-        }
-        copy.exec("VACUUM");
+        scrubAndCompact(copy, options);
     } finally {
         copy.close();
     }
+}
+
+/**
+ * Scrubs a copy in one transaction, then rebuilds it with VACUUM so nothing
+ * scrubbed survives in free pages. The web editor runs this on an in-memory
+ * copy in its worker (`web/worker/index.ts`).
+ */
+export function scrubAndCompact(
+    copy: ScrubbableDatabase,
+    options: ReportCopyOptions,
+) {
+    copy.exec("BEGIN");
+    try {
+        scrubReportCopy(copy, options);
+        copy.exec("COMMIT");
+    } catch (error) {
+        copy.exec("ROLLBACK");
+        throw error;
+    }
+    copy.exec("VACUUM");
 }

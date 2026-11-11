@@ -2,13 +2,13 @@ import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useTranslate } from "@tolgee/react";
 import { siteUrl } from "@/global/siteUrl";
 import { runAction } from "@/shortcuts/registry";
-import { isWebBuild } from "@/utilities/webBuild";
+import { canSendReports } from "@/feedback/openReport";
 
 export default function BugReport() {
     const { t } = useTranslate();
     const handleClick = () => {
-        // Desktop: the report window (fork #801). The web editor keeps the guide until it gets the form.
-        if (!isWebBuild) {
+        // The report form (fork #801); web builds that can't sign in keep the guide
+        if (canSendReports) {
             runAction("reportFeedback");
             return;
         }

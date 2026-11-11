@@ -3755,7 +3755,7 @@
         "signIn.button": "Sign in",
         "signIn.alternatives": "Rather not sign in? <github>Report it on GitHub</github> or <discord>ask on Discord</discord>.",
         "sent.heading": "Thanks for your report",
-        "sent.body": "We've emailed you a copy. We'll let you know when it's been looked at.",
+        "sent.body": "We've emailed you a copy. If it becomes a GitHub issue, we'll email you the link so you can follow it.",
         "sent.another": "Send another",
         "viewMyReports": "View my reports",
         "type.label": "What's this about?",
@@ -3814,6 +3814,11 @@
         "error.signedOut": "You've been signed out. Sign in again and send the report.",
         "error.tooMany": "You've sent a lot of reports today. Please try again tomorrow.",
         "error.showChanged": "A different show is open now. Check the attachment and send again.",
-        "sent.showTooLarge": "Your show was too large to attach (over 1 GB), so the report was sent without it."
+        "sent.showTooLarge": "Your show was too large to attach (over 1 GB), so the report was sent without it.",
+        "close": "Close",
+        "record.stopAndReturn": "Stop and go back to the report",
+        "record.webHint": "Your browser asks what to share: choose this tab. The report steps aside while you record, for up to 5 minutes. Show us the problem while you talk us through it.",
+        "record.failed.webDenied": "Recording didn't start. Choose this tab when your browser asks, and allow the microphone if you turned it on.",
+        "record.failed.webUnsupported": "Recording isn't available in this browser."
     }
 }

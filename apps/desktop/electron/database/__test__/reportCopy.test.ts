@@ -8,56 +8,14 @@ import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { getOrm } from "../db";
-import { createNewTimelineShow } from "./convertOnOpenFixtures";
 import { writeReportCopy } from "../reportCopy";
-
-const SECRETS = [
-    "Sarah's squad",
-    "Seniors only",
-    "Opener mix v3 for Mr. Hayes",
-    "Count off from Jordan",
-    "Mr. Hayes solo",
-    "Jordan Quill",
-    "Avery Morrison",
-    "Needs braces check",
-    "Talk to Avery's parents",
-    "/Users/student/Music",
-];
-const AUDIO = Uint8Array.from({ length: 4096 }, (_, i) => (i * 37) % 251);
+import { AUDIO, SECRETS, makeShowWithSecrets } from "./reportCopyFixture";
 
 let dir: string;
 let showPath: string;
 let copyPath: string;
 
-async function makeShow() {
-    await createNewTimelineShow(showPath);
-    const db = new DatabaseSync(showPath);
-    try {
-        // The renderer creates the undo triggers on every open.
-        const { createAllUndoTriggers } =
-            await import("@/db-functions/history");
-        await createAllUndoTriggers(getOrm(db) as never);
-        db.exec(`
-            INSERT INTO marchers (name, section, notes, drill_prefix, drill_order)
-            VALUES ('Jordan Quill', 'Trumpet', 'Needs braces check', 'T', 1),
-                   ('Avery Morrison', 'Snare', NULL, 'S', 1),
-                   (NULL, 'Tuba', NULL, 'U', 1);
-            UPDATE pages SET notes = 'Talk to Avery''s parents';
-            INSERT INTO tags (name, description) VALUES ('Sarah''s squad', 'Seniors only');
-            -- A table this version doesn't know (older fork files have cues, sketches, …)
-            CREATE TABLE cues (id INTEGER PRIMARY KEY, name TEXT, notes TEXT);
-            INSERT INTO cues (name, notes) VALUES ('Mr. Hayes solo', 'Count off from Jordan');
-            INSERT INTO timeline_change_log (tbl, row_id, before, after)
-            VALUES ('marchers', 1, NULL, '{"name":"Jordan Quill"}');
-        `);
-        db.prepare(
-            "INSERT INTO audio_files (path, nickname, data) VALUES (?, 'Opener mix v3 for Mr. Hayes', ?)",
-        ).run("/Users/student/Music/opener.mp3", AUDIO);
-    } finally {
-        db.close();
-    }
-}
+const makeShow = () => makeShowWithSecrets(showPath);
 
 function read<T>(sql: string): T[] {
     const db = new DatabaseSync(copyPath, { readOnly: true });

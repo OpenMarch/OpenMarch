@@ -19,6 +19,7 @@ import { runAction } from "@/shortcuts/registry";
 import FilesContent from "./files/FilesContent";
 import WebShowLibrary from "../web/WebShowLibrary";
 import { isWebBuild } from "@/utilities/webBuild";
+import { canSendReports } from "@/feedback/openReport";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
 import NewShowDialog from "./NewShowDialog";
@@ -236,7 +237,7 @@ function Sidebar({
             </section>
             <section className="flex flex-col gap-8">
                 <div className="flex flex-col">
-                    {!isWebBuild && (
+                    {canSendReports && (
                         <button
                             type="button"
                             onClick={() => runAction("reportFeedback")}

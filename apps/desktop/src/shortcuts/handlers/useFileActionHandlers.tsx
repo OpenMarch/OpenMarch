@@ -7,6 +7,7 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { isWebBuild } from "@/utilities/webBuild";
+import { canSendReports } from "@/feedback/openReport";
 import { useActionHandler } from "../useActionHandler";
 import { MY_REPORTS_URL } from "@/feedback/reportsApi";
 
@@ -27,11 +28,11 @@ export function useFileActionHandlers() {
         void window.electron.openSettingsWindow();
     });
 
-    // The web editor gets the report form later (fork #801); hide it there until then
+    // Web builds that can't sign in have no report form (fork #801)
     useActionHandler(
         "reportFeedback",
         () => void window.electron.report?.open(),
-        { enabled: !isWebBuild },
+        { enabled: canSendReports },
     );
     useActionHandler("viewMyReports", () => {
         window.open(MY_REPORTS_URL, "_blank", "noopener,noreferrer");

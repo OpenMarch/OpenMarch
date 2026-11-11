@@ -11,7 +11,8 @@ import TitleBar from "@/components/titlebar/TitleBar";
 import Toaster from "@/components/ui/Toaster";
 import { useAuth } from "@/auth/useAuth";
 import { version as appVersion } from "../../package.json";
-import ReportForm from "./ReportForm";
+import { isWebBuild } from "@/utilities/webBuild";
+import ReportForm, { type RecordingInProgress } from "./ReportForm";
 import {
     DISCORD_URL,
     githubBugReportUrl,
@@ -23,7 +24,7 @@ const queryClient = new QueryClient();
 export const reportContext = (): ReportContext => ({
     appVersion,
     platform: navigator.platform,
-    channel: "desktop",
+    channel: isWebBuild ? "web" : "desktop",
 });
 
 export default function ReportWindow() {
@@ -60,13 +61,25 @@ export default function ReportWindow() {
     );
 }
 
-function ReportBody() {
+/** Sign-in, the form, or the thanks once sent: the window's content, and the web editor's sheet */
+export function ReportBody({
+    onRecordingChange,
+}: {
+    /** Told when a recording starts (with how to stop it) and ends (null) */
+    onRecordingChange?: (recording: RecordingInProgress | null) => void;
+} = {}) {
     const { isAuthenticated, isLoading } = useAuth();
     const [sent, setSent] = useState<string | null>(null);
     if (isLoading) return null;
     if (!isAuthenticated) return <SignInGate />;
     if (sent) return <Sent url={sent} onAnother={() => setSent(null)} />;
-    return <ReportForm context={reportContext()} onSent={setSent} />;
+    return (
+        <ReportForm
+            context={reportContext()}
+            onSent={setSent}
+            onRecordingChange={onRecordingChange}
+        />
+    );
 }
 
 function SignInGate() {

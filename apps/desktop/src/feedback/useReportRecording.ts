@@ -2,10 +2,29 @@
  * Records the editor for a bug report (fork #801). In the desktop app the
  * main process answers the screen request with the editor window itself
  * (`report-window.ts`), so nothing else on screen is captured and there is
- * no picker. The microphone is optional and mixed in as the audio track.
+ * no picker. In the web editor the browser's picker offers this tab first.
+ * The microphone is optional and mixed in as the audio track.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isWebBuild } from "@/utilities/webBuild";
 import { MAX_RECORDING_SECONDS } from "./reportDraft";
+
+/**
+ * In a browser the person picks what to share. Offer this tab first and
+ * leave out whole screens (Chromium; other browsers ignore these).
+ */
+const WEB_PICKER_HINTS = {
+    preferCurrentTab: true,
+    selfBrowserSurface: "include",
+    monitorTypeSurfaces: "exclude",
+    surfaceSwitching: "exclude",
+};
+
+const DISPLAY_OPTIONS = {
+    video: { frameRate: 30 },
+    audio: false,
+    ...(isWebBuild ? WEB_PICKER_HINTS : {}),
+} as DisplayMediaStreamOptions;
 
 /** Stop by this size; 5 minutes at 2.5 megabits a second is about 95 MB, so this is only a safety net. */
 const RECORDING_STOP_BYTES = 200 * 1024 * 1024;
@@ -59,10 +78,10 @@ export function useReportRecording() {
                 return;
             }
             try {
-                const screen = await navigator.mediaDevices.getDisplayMedia({
-                    video: { frameRate: 30 },
-                    audio: false,
-                });
+                const screen =
+                    await navigator.mediaDevices.getDisplayMedia(
+                        DISPLAY_OPTIONS,
+                    );
                 streams.current.push(screen);
                 const tracks: MediaStreamTrack[] = [...screen.getVideoTracks()];
                 if (microphone) {
