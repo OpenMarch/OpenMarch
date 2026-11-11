@@ -1,7 +1,7 @@
 /**
  * Records the editor for a bug report (fork #801). In the desktop app the
  * main process answers the screen request with the editor window itself
- * (`report-window.ts`), so nothing else on screen is captured and there is
+ * (`electron/main/reports.ts`), so nothing else on screen is captured and there is
  * no picker. In the web editor the browser's picker offers this tab first.
  * The microphone is optional and mixed in as the audio track.
  */

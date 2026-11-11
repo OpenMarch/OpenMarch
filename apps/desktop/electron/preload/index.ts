@@ -156,13 +156,12 @@ const APP_API = {
     reloadMainWindow: () => ipcRenderer.send("main-window:reload"),
     /** Bug and feedback reports (fork #801) */
     report: {
-        open: () => ipcRenderer.invoke("report:open") as Promise<void>,
         /** The open show's file name; null when no show is open */
         showInfo: () =>
             ipcRenderer.invoke("report:show-info") as Promise<{
                 fileName: string;
             } | null>,
-        /** Sends the report: main scrubs the show, collects diagnostics and uploads */
+        /** Sends the report: main scrubs the show and uploads it with the rest */
         submit: (request: {
             report: Record<string, unknown>;
             sendShowFile: boolean;
@@ -173,6 +172,8 @@ const APP_API = {
                 mimeType: string;
                 seconds: number;
             };
+            /** The editor's recent actions and errors */
+            diagnostics: readonly unknown[];
         }) =>
             ipcRenderer.invoke("report:submit", request) as Promise<
                 | { ok: true; id: number; showFileTooLarge: boolean }
@@ -197,24 +198,6 @@ const APP_API = {
             return () => {
                 ipcRenderer.removeListener("report:progress", listener);
             };
-        },
-        /** In the editor window: answer requests for its diagnostics */
-        answerDiagnostics: (collect: () => unknown[]) => {
-            const listener = (
-                _event: Electron.IpcRendererEvent,
-                requestId: string,
-            ) =>
-                ipcRenderer.send(
-                    "report:diagnostics-reply",
-                    requestId,
-                    collect(),
-                );
-            ipcRenderer.on("report:collect-diagnostics", listener);
-            return () =>
-                ipcRenderer.removeListener(
-                    "report:collect-diagnostics",
-                    listener,
-                );
         },
     },
 

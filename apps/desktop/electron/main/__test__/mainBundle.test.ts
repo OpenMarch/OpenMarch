@@ -110,7 +110,7 @@ describe("the app build", () => {
             path.join(root, "vite.config.mts"),
             "utf-8",
         );
-        // One worker entry list; report-window.ts starts ../worker/reportCopyWorker.js
+        // One worker entry list; reports.ts starts ../worker/reportCopyWorker.js
         expect(config).toContain('"electron/database/convertOnOpenWorker.ts"');
         expect(config).toContain('"electron/database/reportCopyWorker.ts"');
         expect(config).toContain('outDir: "dist-electron/worker"');

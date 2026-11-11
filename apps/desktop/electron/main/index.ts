@@ -18,7 +18,7 @@ import { buildApplicationMenu } from "./application-menu";
 import { onMainLanguageChange, setMainLanguage, t } from "./i18n";
 import { textContextMenuTemplate } from "./textContextMenu";
 import { openSettingsWindow } from "./settings-window";
-import { registerReportWindow } from "./report-window";
+import { registerReports } from "./reports";
 import { TRAFFIC_LIGHT_POSITION } from "./traffic-lights";
 import { handleWindowOpen } from "./window-open-policy";
 import { PDFExportService } from "./services/export-service";
@@ -718,16 +718,7 @@ ipcMain.handle("settings:open", () => {
     });
 });
 
-registerReportWindow({
-    store,
-    getMainWindow: () => win,
-    preload,
-    frame: isCodegen,
-    load: (report) =>
-        url
-            ? void report.loadURL(`${url}#report`)
-            : void report.loadFile(indexHtml, { hash: "report" }),
-});
+registerReports({ getMainWindow: () => win });
 
 ipcMain.on("main-window:reload", () => win?.reload());
 

@@ -58,7 +58,7 @@ import ShortcutsDialog from "./components/ShortcutsDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
-import WebReportSheet from "./feedback/WebReportSheet";
+import ReportDrawer, { ReportRecordingBar } from "./feedback/ReportDrawer";
 import { canSendReports } from "./feedback/openReport";
 import WebHomeScreenPrompt from "./components/web/WebHomeScreenPrompt";
 import WebVersionsDialog from "./components/web/WebVersionsDialog";
@@ -134,6 +134,8 @@ function App() {
         inspectorChoices,
     );
     const drawerShown = inspector.presentation === "drawer";
+    // The editor (rather than the launch page or the welcome screen) is showing
+    const editorShown = databaseIsReady && !welcomeBeforeShow;
     const setInspectorOpen = useCallback(
         (open: boolean) =>
             setInspectorChoices((choices) =>
@@ -269,7 +271,13 @@ function App() {
                     {isWebBuild && <WebWelcomeModal />}
                     <ConvertShowDialog />
                     {isWebBuild && <WebSettingsSheet />}
-                    {isWebBuild && canSendReports && <WebReportSheet />}
+                    {canSendReports && <ReportRecordingBar />}
+                    {/* Beside the editor once a show is open (below); over the page before that */}
+                    {canSendReports && !editorShown && (
+                        <ReportDrawer
+                            placement={drawerShown ? "sheet" : "overlay"}
+                        />
+                    )}
                     {isWebBuild && <WebHomeScreenPrompt />}
                     {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />
@@ -376,6 +384,15 @@ function App() {
                                                         >
                                                             <Inspector />
                                                         </InspectorDock>
+                                                    )}
+                                                    {canSendReports && (
+                                                        <ReportDrawer
+                                                            placement={
+                                                                drawerShown
+                                                                    ? "sheet"
+                                                                    : "dock"
+                                                            }
+                                                        />
                                                     )}
                                                 </div>
                                             </>

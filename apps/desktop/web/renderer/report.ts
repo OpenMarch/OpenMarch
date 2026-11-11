@@ -1,23 +1,19 @@
 /**
  * Bug reports in the web editor (fork #801): the channels the desktop main
- * process answers (`electron/main/report-window.ts`), answered in the page.
- *
- * The form is a sheet over the editor (`src/feedback/WebReportSheet.tsx`)
- * instead of a window. The worker makes the scrubbed show copy, the page has
- * the diagnostics, and the files go from the page straight to the reports
- * bucket, the same steps the desktop app takes (`src/feedback/reportUpload.ts`).
+ * process answers (`electron/main/reports.ts`), answered in the page. The
+ * worker makes the scrubbed show copy, and the files go from the page
+ * straight to the reports bucket, the same steps the desktop app takes
+ * (`src/feedback/reportUpload.ts`).
  */
 import { md5 } from "@noble/hashes/legacy";
 import { OPENMARCH_API_ENDPOINT } from "../../src/global/Constants";
 import { MAX_SHOW_FILE_BYTES } from "../../src/feedback/reportDraft";
-import { editorDiagnosticsEntries } from "../../src/feedback/editorDiagnostics";
-import { requestOpenReport } from "../../src/feedback/openReport";
 import {
     ReportSubmitError,
     uploadReport,
     type ReportUploadSource,
 } from "../../src/feedback/reportUpload";
-import type { ReportSubmitRequest } from "../../electron/main/report-window";
+import type { ReportSubmitRequest } from "../../electron/main/reports";
 import { WEB_CHANNELS } from "../protocol";
 import { emit, handleInPage, invokeWorker, ipcRenderer } from "./ipc";
 
@@ -105,7 +101,7 @@ async function submit(request: ReportSubmitRequest) {
         files.push(
             blobSource(
                 "diagnostics",
-                new Blob([JSON.stringify(editorDiagnosticsEntries())], {
+                new Blob([JSON.stringify(request.diagnostics ?? [])], {
                     type: "application/json",
                 }),
                 "diagnostics.json",
@@ -133,7 +129,6 @@ async function submit(request: ReportSubmitRequest) {
 }
 
 export function registerReportHandlers() {
-    handleInPage("report:open", () => requestOpenReport());
     handleInPage("report:show-info", () =>
         invokeWorker(WEB_CHANNELS.reportShowInfo),
     );

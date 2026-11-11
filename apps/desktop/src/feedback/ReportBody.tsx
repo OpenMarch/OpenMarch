@@ -1,14 +1,11 @@
 /**
- * Root of the #report window: "Report a bug or send feedback" (fork #801).
- * Signed out, it asks people to sign in and offers GitHub and Discord instead.
- * Signed in, it shows the report form.
+ * What the report drawer shows (fork #801). Signed out, it asks people to
+ * sign in and offers GitHub and Discord instead. Signed in, it shows the
+ * report form, then thanks once it's sent.
  */
-import { useEffect, useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { T, useTranslate } from "@tolgee/react";
+import { useState } from "react";
+import { T } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
-import TitleBar from "@/components/titlebar/TitleBar";
-import Toaster from "@/components/ui/Toaster";
 import { useAuth } from "@/auth/useAuth";
 import { version as appVersion } from "../../package.json";
 import { isWebBuild } from "@/utilities/webBuild";
@@ -19,49 +16,13 @@ import {
     type ReportContext,
 } from "./reportDraft";
 
-const queryClient = new QueryClient();
-
 export const reportContext = (): ReportContext => ({
     appVersion,
     platform: navigator.platform,
     channel: isWebBuild ? "web" : "desktop",
 });
 
-export default function ReportWindow() {
-    const { t } = useTranslate();
-    const title = t("feedback.window.title");
-    useEffect(() => {
-        document.title = title;
-    }, [title]);
-
-    // No app menu in this window, so close it with Cmd/Ctrl+W here
-    useEffect(() => {
-        const onKeyDown = (event: globalThis.KeyboardEvent) => {
-            if (event.defaultPrevented || event.key.toLowerCase() !== "w")
-                return;
-            const mod = window.electron.isMacOS ? event.metaKey : event.ctrlKey;
-            if (!mod) return;
-            event.preventDefault();
-            window.electron.closeWindow();
-        };
-        window.addEventListener("keydown", onKeyDown);
-        return () => window.removeEventListener("keydown", onKeyDown);
-    }, []);
-
-    return (
-        <QueryClientProvider client={queryClient}>
-            <main className="bg-bg-1 text-text flex h-screen w-screen min-w-0 flex-col overflow-hidden font-sans">
-                <TitleBar variant="settings" />
-                <div className="min-h-0 flex-1 overflow-y-auto">
-                    <ReportBody />
-                </div>
-                <Toaster />
-            </main>
-        </QueryClientProvider>
-    );
-}
-
-/** Sign-in, the form, or the thanks once sent: the window's content, and the web editor's sheet */
+/** Sign-in, the form, or the thanks once sent: the report drawer's content */
 export function ReportBody({
     onRecordingChange,
 }: {

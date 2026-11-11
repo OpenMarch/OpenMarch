@@ -1,6 +1,6 @@
 /**
- * Starts the diagnostics log in the editor window and answers the report
- * window's request for it (through the main process). Fork #801.
+ * Starts the diagnostics log in the editor; the report drawer sends its
+ * entries with a report. Fork #801.
  */
 import { subscribeToActionRuns } from "@/shortcuts/registry";
 import {
@@ -19,9 +19,8 @@ export function installEditorDiagnostics() {
         events: window,
         subscribeToActions: subscribeToActionRuns,
     });
-    window.electron?.report?.answerDiagnostics(() => log.entries());
 }
 
-/** The log's entries, for the web editor, whose report form is in the same page */
+/** The log's entries, sent with a report */
 export const editorDiagnosticsEntries = (): readonly DiagnosticEntry[] =>
     editorLog?.entries() ?? [];
