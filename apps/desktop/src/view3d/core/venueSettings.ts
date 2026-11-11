@@ -11,6 +11,22 @@ import {
     GUARD_UNIFORM_PRESET_IDS,
     UNIFORM_PRESET_IDS,
 } from "./marchers/uniformPresets";
+import {
+    FINISHES,
+    TUBA_MODELS,
+    type Finish,
+    type TubaModelId,
+} from "./instruments/catalog";
+
+/** The brass finish a show's settings name; lacquer when they name none. */
+export const brassFinishOf = (value: unknown): Finish =>
+    FINISHES.includes(value as Finish) ? (value as Finish) : "brass";
+
+/** The Tuba section's horn a show's settings name; marching tubas by default. */
+export const tubaModelOf = (value: unknown): TubaModelId =>
+    TUBA_MODELS.includes(value as TubaModelId)
+        ? (value as TubaModelId)
+        : "contra";
 
 export const VENUE_SETTINGS_VERSION = 1;
 
@@ -60,6 +76,18 @@ export const venueSettingsSchema = z.object({
     uniforms: z.enum(UNIFORM_PRESET_IDS).optional(),
     /** The preset the guard wears, as `uniforms`; absent means Royal Sash. */
     guardUniforms: z.enum(GUARD_UNIFORM_PRESET_IDS).optional(),
+    /**
+     * The brass line's finish: clear gold lacquer ("brass") or silver
+     * plate; absent means lacquer. Added 2026-11-09 without a version
+     * bump, like `uniforms`: older builds ignore it.
+     */
+    brassFinish: z.enum(FINISHES).optional(),
+    /**
+     * What the Tuba section carries: marching tubas on the shoulder
+     * ("contra") or sousaphones; absent means marching tubas. Added
+     * 2026-11-09 without a version bump.
+     */
+    tuba: z.enum(TUBA_MODELS).optional(),
 });
 
 export type VenueSettings = z.infer<typeof venueSettingsSchema>;

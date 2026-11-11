@@ -13,7 +13,8 @@ export type BrassModelId =
     | "euphonium"
     | "trombone"
     | "bassTrombone"
-    | "contra";
+    | "contra"
+    | "sousaphone";
 export type WoodwindModelId =
     | "piccolo"
     | "flute"
@@ -42,7 +43,7 @@ export interface ModelOptions {
 }
 
 /** The bones instrument pieces ride: the hands, or the chest for a carrier. */
-export type InstrumentBone = "handR" | "handL" | "spine002";
+export type InstrumentBone = "handR" | "handL" | "spine002" | "head";
 
 export type Detail = "high" | "low";
 

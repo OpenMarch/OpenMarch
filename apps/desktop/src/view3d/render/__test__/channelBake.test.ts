@@ -89,13 +89,13 @@ describe("bakeChannels", () => {
 
     it("bakes a hold as one Horn row whose prop bone holds the instrument where the hold places it", async () => {
         const f = await fixture();
-        const h = hold("brass", "carry");
+        const h = hold("trumpet", "carry");
         const bake = bakeChannels(f.scene, {
             feet: { attention: f.clips.get("attention")! },
             horn: [
                 {
                     name: holdRowName("brass:carry"),
-                    from: armHold(f.mesh.skeleton, "brass", "carry"),
+                    from: armHold(f.mesh.skeleton, "trumpet", "carry"),
                 },
             ],
         });
@@ -121,7 +121,7 @@ describe("bakeChannels", () => {
 
     it("bakes a prop path in body space as the prop bone, in place of the hand and grip", async () => {
         const f = await fixture();
-        const up = armHold(f.mesh.skeleton, "brass", "up");
+        const up = armHold(f.mesh.skeleton, "trumpet", "up");
         // a prop rising 2 m over the row, in body space
         const bake = bakeChannels(f.scene, {
             feet: { attention: f.clips.get("attention")! },
@@ -187,13 +187,13 @@ describe("a hold row composed onto a Feet clip", () => {
             feet: { "8to5": clip },
             horn: [
                 {
-                    name: "hold:brass:up",
-                    from: armHold(f.mesh.skeleton, "brass", "up"),
+                    name: "hold:trumpet:up",
+                    from: armHold(f.mesh.skeleton, "trumpet", "up"),
                 },
             ],
         });
         // the independent source: today's clip baked with the hold's arms
-        const pose = poseArms(f.mesh.skeleton, hold("brass", "up"));
+        const pose = poseArms(f.mesh.skeleton, hold("trumpet", "up"));
         const theirs = bakeClips(THREE, f.scene, {
             held: holdClip(clip, pose, "held"),
         });
@@ -204,7 +204,7 @@ describe("a hold row composed onto a Feet clip", () => {
             rowsPerColumn: ours.rowsPerColumn,
         };
         const state = emptyState(1);
-        const h = ours.rows["hold:brass:up"];
+        const h = ours.rows["hold:trumpet:up"];
         writeChannelState(state, 0, "horn", {
             row: h.row,
             frames: h.frames,

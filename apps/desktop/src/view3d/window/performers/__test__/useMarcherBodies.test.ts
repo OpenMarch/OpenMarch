@@ -72,7 +72,7 @@ describe("useMarcherBodies", () => {
                     "high",
                     "left",
                     undefined,
-                    [holdRowName(`brass:${hold}`)],
+                    [holdRowName(`trumpet:${hold}`)],
                 ),
             { initialProps: { hold: "up" } },
         );
@@ -80,7 +80,7 @@ describe("useMarcherBodies", () => {
         expect(Object.keys(first.bake.rows).sort()).toEqual([
             "8to5",
             "attention",
-            "hold:brass:up",
+            "hold:trumpet:up",
         ]);
         const textureDispose = vi.spyOn(first.bake.texture, "dispose");
         const bodiesDispose = vi.spyOn(first, "dispose");
@@ -91,7 +91,7 @@ describe("useMarcherBodies", () => {
         expect(Object.keys(second.bake.rows).sort()).toEqual([
             "8to5",
             "attention",
-            "hold:brass:carry",
+            "hold:trumpet:carry",
         ]);
         expect(textureDispose).toHaveBeenCalledTimes(1);
         expect(bodiesDispose).toHaveBeenCalledTimes(1);

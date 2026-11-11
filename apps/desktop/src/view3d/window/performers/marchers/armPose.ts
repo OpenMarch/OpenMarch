@@ -1,15 +1,22 @@
 /**
- * Poses the v4 skeleton's arms to a hold (docs/3d/instruments.md §5) and
+ * Poses the v4 skeleton's arms and head to a hold (docs/3d/instruments.md §5) and
  * writes that pose into clips before the bake, so the recorded legs march
  * while the arms hold the instrument.
  *
  * Each arm is aimed, not solved: the upper arm's +Y points at the elbow
  * target, the forearm's at the wrist target, the hand's along the fingers.
  * Bone lengths are the skeleton's, so a target just out of reach lands
- * short along the same line. The clavicles stay at bind.
+ * short along the same line. The clavicles stay at bind. The head turns
+ * about its own joint by the hold's `head` (pitched up, rolled); the neck
+ * stays at bind.
  */
 import * as THREE from "three";
-import type { ArmTargets, Hold } from "@/view3d/core/instruments/holds";
+import {
+    headQuaternion,
+    type ArmTargets,
+    type Hold,
+} from "@/view3d/core/instruments/holds";
+import { HEAD_BONES } from "@/view3d/render/composeMath";
 
 /** GLTFLoader drops the dots from bone names (PropertyBinding.sanitizeNodeName). */
 export const ARM_BONES: readonly string[] = [
@@ -105,12 +112,27 @@ function poseArm(bones: THREE.Bone[], side: "L" | "R", t: ArmTargets): void {
     aimBone(hand, new THREE.Vector3(...t.fingers), normal);
 }
 
+/** Turns the head bone in world space by the hold's head pitch and roll. */
+function poseHead(bones: THREE.Bone[], hold: Hold): void {
+    const head = bones.find((b) => b.name === "DEF-spine006");
+    if (!head) return;
+    const [x, y, z, w] = headQuaternion(hold.head);
+    const world = new THREE.Quaternion();
+    head.getWorldQuaternion(world);
+    const turned = new THREE.Quaternion(x, y, z, w).multiply(world);
+    const parentWorld = new THREE.Quaternion();
+    (head.parent as THREE.Object3D).getWorldQuaternion(parentWorld);
+    head.quaternion.copy(parentWorld.invert().multiply(turned));
+    head.updateMatrixWorld(true);
+}
+
 export function poseArms(skeleton: THREE.Skeleton, hold: Hold): ArmPose {
     const bones = bindRig(skeleton);
+    poseHead(bones, hold);
     poseArm(bones, "R", hold.right);
     poseArm(bones, "L", hold.left);
     const local = new Map<string, THREE.Quaternion>();
-    for (const name of ARM_BONES)
+    for (const name of [...ARM_BONES, ...HEAD_BONES])
         local.set(name, bones.find((b) => b.name === name)!.quaternion.clone());
     return {
         local,

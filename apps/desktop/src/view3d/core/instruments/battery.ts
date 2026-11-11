@@ -591,8 +591,12 @@ const MALLET_HEAD = 0.045;
 /** The mallet head's center sits this far outside the drum head's plane. */
 const MALLET_OFF_HEAD = 0.025;
 
-/** No bass drum's top rises above this, over the hold's origin (1.6 m on the body). */
-const BASS_TOP = 0.6;
+/**
+ * No bass drum's top rises above this, over the hold's origin (1.85 m on
+ * the body): the big drums reach about the top of the head (photos,
+ * 2026-11-10).
+ */
+const BASS_TOP = 0.85;
 
 /**
  * A marching bass on its side, carried high: heads along ±Z, the carrier

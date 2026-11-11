@@ -95,7 +95,7 @@ async function clip8to5() {
 describe("rows per channel", () => {
     it("names each slot's hold, or none for a performer who carries nothing", () => {
         expect(slotHoldId(sectionUniform("Trumpet", "carry"))).toBe(
-            "brass:carry",
+            "trumpet:carry",
         );
         expect(slotHoldId(sectionUniform("Drum Major"))).toBe(NO_HOLD);
     });
@@ -105,16 +105,16 @@ describe("rows per channel", () => {
         const clip = await clip8to5();
         const skeleton = skeletonOf(bodies);
         const bake = bakeForBodies(bodies, { "8to5": clip }, "left", [
-            hornRowSpec("hold:brass:up", skeleton)!,
-            hornRowSpec("hold:brass:carry", skeleton)!,
+            hornRowSpec("hold:trumpet:up", skeleton)!,
+            hornRowSpec("hold:trumpet:carry", skeleton)!,
         ]);
         expect(Object.keys(bake.rows).sort()).toEqual([
             "8to5",
-            "hold:brass:carry",
-            "hold:brass:up",
+            "hold:trumpet:carry",
+            "hold:trumpet:up",
         ]);
         expect(bake.rows["8to5"].channel).toBe("feet");
-        expect(bake.rows["hold:brass:up"]).toMatchObject({
+        expect(bake.rows["hold:trumpet:up"]).toMatchObject({
             channel: "horn",
             frames: 1,
         });
@@ -141,7 +141,7 @@ describe("horns as their own meshes", () => {
         const bodies = await loadedBodies();
         const clip = await clip8to5();
         const bake = bakeForBodies(bodies, { "8to5": clip }, "left", [
-            hornRowSpec("hold:brass:up", skeletonOf(bodies))!,
+            hornRowSpec("hold:trumpet:up", skeletonOf(bodies))!,
         ]);
         const looks = [
             {

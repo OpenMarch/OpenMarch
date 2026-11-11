@@ -55,19 +55,20 @@ reference pages during the build.
 
 ### Brass (`FAMILIES.Brass`)
 
-| Section       | Model                                                                    | Working dimensions          | Hold     |
-| ------------- | ------------------------------------------------------------------------ | --------------------------- | -------- |
-| Trumpet       | Bb trumpet, 3 piston valves; a modeled mesh (Kagelok, CC BY 4.0)         | length 0.48, bell 0.125     | brass    |
-| Mellophone    | marching mellophone, front bell                                          | length 0.55, bell 0.26      | brass    |
-| Baritone      | marching baritone, front bell                                            | length 0.62, bell 0.25      | brass    |
-| Euphonium     | marching euphonium, front bell                                           | length 0.66, bell 0.28      | brass    |
-| Trombone      | tenor trombone, slide                                                    | length 1.18, bell 0.21      | trombone |
-| Bass Trombone | same with larger bell and a second rotor                                 | bell 0.24                   | trombone |
-| Tuba          | marching contra: a long horizontal loop on the left shoulder, front bell | body 0.95 × 0.40, bell 0.50 | contra   |
+| Section       | Model                                                     | As built (rim to bell, bell) | Open length | Hold       |
+| ------------- | --------------------------------------------------------- | ---------------------------- | ----------- | ---------- |
+| Trumpet       | B♭ trumpet, 3 piston valves                               | 0.56, bell 0.125             | 1.48        | brass      |
+| Mellophone    | marching mellophone in F, front bell                      | 0.48, bell 0.264             | 1.97        | brass      |
+| Baritone      | marching baritone, front bell                             | 0.585, bell 0.254            | 2.9         | brass      |
+| Euphonium     | marching euphonium, front bell                            | 0.61, bell 0.28              | 2.9         | brass      |
+| Trombone      | tenor trombone, slide                                     | 1.18, bell 0.21              | 2.75        | trombone   |
+| Bass Trombone | larger bell and bore, one rotor with an F attachment      | 1.17, bell 0.24              | 2.75        | trombone   |
+| Tuba          | marching tuba (contra): the loop on the left shoulder, or | 1.07, bell 0.50              | 5.6         | contra     |
+|               | a sousaphone: the hoop round the body, the bell overhead  | hoop 0.9, bell 0.66          | 5.6         | sousaphone |
 
-The Tuba section renders the marching contra. A sousaphone (circular wrap,
-bell overhead) becomes a per-section choice on Tuba later (owner,
-2026-10-08); the catalog's `Carry.model` is where that choice lands.
+The Tuba section carries the marching tuba unless the show's venue settings
+say `tuba: "sousaphone"` (ADR 0010, amendment 2026-11-09; `tubaCarry` in
+`catalog.ts`).
 
 The app has no French horn section; mellophone covers it. If one is added
 later it gets its own hold (bell under the right arm, left hand on the
@@ -161,40 +162,71 @@ geometry instances with the body for free, and a dimension change is a
 number. Hand-modeled GLB assets are the alternative if the result reads as
 too simple; the attachment and paint path below is the same either way.
 
-**Modeled meshes (2026-10-09).** The trumpet is the first instrument from a
-modeled mesh rather than code: "Trumpet" by Kagelok on Sketchfab, CC BY 4.0
-(credit and changes in `src/view3d/assets/instruments/CREDITS.md`). The
-owner picked it as the look every horn should match. Blender bakes it into
-the instrument frame with `apps/desktop/scripts/view3d-assets/export-horn.py`
-and a per-horn config (scale, grip origin, material-to-part map, a decimate
-ratio per detail), writing quantized JSON that `core/instruments/meshAsset.ts`
-turns back into pieces. The trumpet keeps the procedural trumpet's mouthpiece
-rim, (0, 0.018, −0.168), so the brass holds are unchanged. The mellophone,
-baritone, euphonium and contra followed the same day: no licensed models
-were found, so `build-horns.py` builds them in Blender from the trumpet's
-valve block and mouthpiece, with tubing and bells to the reference photos'
-proportions (oval wrap behind the valves, leadpipe across the top into an
-inner loop, slides below, bell forward on the wrap's top line; the contra
-the same layout, its valves low by the bell). Each keeps its procedural
-predecessor's mouthpiece and left grip, so the holds are unchanged too. The
-trombones stay procedural. Only meshes whose
-license allows redistribution under AGPL, such as CC0 or CC BY with credit,
-can ship here.
+**Brass rebuilt in code (2026-11-09).** The owner asked for the winds to be
+greatly improved against the reference pages. Every brass horn is now built
+in code from `core/instruments/hornKit.ts`: tubing bent through true arcs
+(`bentPath`, `pipe`), bells lathed from a horn flare (`bellFlare`), piston
+valves with caps, stems and pearl buttons, slides with their sleeves,
+braces, water keys and a mouthpiece. The third-party trumpet mesh and the
+Blender scripts that derived four horns from it are gone, with their
+credits; nothing third-party ships. One file per layout:
+`marchingBrass.ts` (the oval-wrap builder and the mellophone),
+`lowBrass.ts` (baritone, euphonium), `trumpet.ts`, `trombones.ts`,
+`contra.ts`, `sousaphone.ts`. Three rules hold for all of them, and
+`__test__/brass.test.ts` enforces the second and third:
 
-**Material (revised 2026-10-08).** The first pass painted horns through the
-uniform shader: flat-shaded, no metalness, one color. It cannot read as
-brass. Instruments are instead their own instanced mesh per look group,
-driven by the same bake texture through `instancedSkinning`, with a smooth
-metallic `MeshStandardMaterial` (metalness about 1, roughness about 0.25) in
-the look's finish color, with chrome and black hardware by part. Metal needs
-something to reflect, so the scene gains an environment map generated from
-the sky gradient over a bright ground, applied scene-wide (the fidelity
-brief's "sky-baked environment lighting"). One extra draw call per brass
-group. The part ids below remain the mesh's own attribute for the material
-to color by. Parts that aren't metal (the rifle's painted stock, silks,
-rubber and plastic, drum heads: `MATTE_PARTS` in `instrumentGeometry.ts`)
-draw non-metallic at roughness 0.65, because a fully metallic white stock
-shows only reflections and reads as chrome (owner, 2026-10-09).
+1. **Laid out over the photo.** Each horn is drawn orthographically at the
+   reference photo's scale and compared with it, tube by tube, then checked
+   from several other angles for parts that float or end in air.
+2. **One air path, held to pitch.** Mouthpiece, leadpipe, valve block,
+   wrap, bell: one centerline, within a few percent of the open length for
+   the horn's key (`BRASS_OPEN_LENGTH`).
+3. **Valve loops by interval, not by eye.** Each valve has exactly one loop,
+   leaving and returning to its own casing, and its length is solved from
+   `VALVE_SLIDE_RATIO`: the second valve adds a half step (5.9 % of the open
+   length), the first a whole step (12.2 %), the third a step and a half
+   (18.9 %). The bass trombone's F attachment adds a fourth (33.5 %).
+
+A bell is not a cone: it stays slim through its throat and opens fast in its
+last few centimeters, the rim turned almost flat (owner, 2026-11-09).
+`bellFlare` is that curve, fixed by the bell's two ends; read the rim's
+position at its plane, which in a product photo taken a little from the
+front is the center of the rim's ellipse, not its far edge.
+
+Known gaps: tubing hidden behind a valve block in the photos is a
+consistent reading, not a trace; the contra's mouthpiece sits where its
+hold needs it rather than where the photo has it; the sousaphone's valve
+loops are narrower than the real horn's and its neck is probably long; the
+bell-front horns' bells are level where the photos tilt them a few degrees.
+
+**Woodwinds rebuilt (2026-11-09).** The woodwinds are rebuilt the same way,
+against the reference pages' angled views and front-on photos of marching
+players: `woodwindKit.ts` holds the shared parts (cups on chimneys, hinge
+rods with posts, key guards, mouthpieces with reed and ligature, flared
+tubes), `woodwinds.ts` the flute, piccolo and clarinets, `saxophones.ts`
+the saxophones. The curved saxes have a true U bow, a bell that leans as it
+flares to a rolled rim with its low cups under guards, a bell-to-body brace
+and a neck with its octave key; the bari has its top loop. The flute's lip
+plate lines up with its keys; the bass clarinet has a swan-neck crook and a
+forward-leaning bell. Key work is simplified: it reads at the 30-yard line,
+less so close up.
+
+**Material (revised 2026-11-09).** Instruments are their own instanced mesh
+per look group, driven by the same bake texture, in one
+`MeshPhysicalMaterial` whose surface is set per vertex (`surfaceOf` in
+`instrumentGeometry.ts`, the `_surface` attribute): lacquered brass is
+polished metal (roughness 0.2) under a glossy clear coat, which gives it a
+second, sharper highlight; silver plate is bare and sharper (0.11); nickel
+trim is a mirror (0.1); the parts that aren't metal (`MATTE_PARTS`: the
+rifle's painted stock, silks, rubber and plastic, drum heads) draw
+non-metallic at roughness 0.65, because a fully metallic white stock shows
+only reflections and reads as chrome (owner, 2026-10-09). A metal's color is
+its reflectance, paler than the color the eye names, and most of what a lit
+horn shows is what it reflects. So the environment map (`envMap.ts`) holds
+more than a sky gradient: a dark band of stands round the horizon, a sun
+many times brighter than white, clouds, the light towers at night and a
+hall's ceiling panels, and instruments take it `ENVIRONMENT_BOOST` times as
+brightly as the turf and uniforms do. One extra draw call per brass group.
 
 **Silks** are not instrument pieces (C4.4, props-spec.md section 7). A flag
 model lists its silks as `SilkSpec`s (size, frame in the instrument frame,
@@ -216,10 +248,11 @@ the catalog's flat-bottomed swing Cut and the 6 ft flag stays a rectangle.
 
 **Parts and finish.** The uniform shader paints parts by id; it knows ids 0
 to 15 today. Instruments take new ids from 16 upward: 16 brass finish (gold
-lacquer by default, silver lacquer as the alternative), 17 reserved, 18 chrome, 19 drum shell (section color), 20 drum head, 21 bar
+lacquer by default, silver plate as the alternative), 17 reserved, 18 chrome, 19 drum shell (section color), 20 drum head, 21 bar
 (rosewood), 22 black hardware, 23 wood (clarinet), 24 speaker grille. The
-finish choice per section (lacquer or silver) is a look option like the hat
-today. Painting new ids needs a change in the vendored
+finish (lacquer or silver) is the show's choice for its whole brass line
+(venue settings `brassFinish`, ADR 0010 amendment 2026-11-09); woodwinds
+keep the finish they are made in (`finishFor`). Painting new ids needs a change in the vendored
 `uniform-shader.js`: that change goes to om-pose first, then is copied back,
 as the vendor README requires. Until then the app patches the shader's
 `onBeforeCompile` chain locally, which is allowed and already how the window
@@ -242,48 +275,92 @@ Bake rows scale with holds, so §8 measures the budget first.
 
 The holds, from the owner's reference photos (kept outside the repo) and
 notes. Two rules hold across every state: **the hands never leave their
-playing grip** (right hand on the valve caps, left hand behind the valves;
+playing grip** (right hand over the valve buttons, left hand on the valve
+casings;
 woodwind hands on their stacks), and at carry **the mouthpiece sits at eye
 level** (for the flutes, clarinets and soprano sax, the first key; see the
 woodwind bullets). The states differ by where the bell
 points and where the elbows go.
 
-- **brass, horns up.** The bell is front: forward at face height, horizontal. Upper arms
-  out to the sides near horizontal, forearms up and in: a triangle slightly
-  wider than equilateral from shoulder to shoulder to the hands. Baritone
-  and euphonium: the same with the bell above eye line.
+- **Every hold, the head (owner, 2026-11-10).** The head is up 15 degrees
+  (`HEAD_UP`), and a hold may lean or turn it as well. The neck and head ride
+  the Horn/Equipment channel with the arms, so the hold sets them. Lips
+  are at (0, 1.588, 0.088) with the head at bind (`LIPS`), and the hold's
+  head turn carries them. Brass rims sit at the turned lips. The reed
+  woodwinds' mouthpiece tips sit 1 cm inside them, and the flutes' lip
+  plates sit just under them.
+- **brass, horns up (owner, 2026-11-10).** Trumpet, mellophone, baritone
+  and euphonium: the horn 15 degrees above level, bell forward, the
+  mouthpiece's rim at the lips. The right hand comes over the valves from the
+  performer's right, its knuckles beside the buttons and the fingers across
+  them; the left hand holds the valve casings from the horn's left side.
+  Each horn's hold is built from its own geometry (`valvedUp` in
+  `holds.ts`: the rim and each valve's casing and button), so a rebuilt
+  horn keeps its hands on its valves. Elbows out, each solved from the
+  arm's bone lengths.
 - **brass, carry (set and down are the same hold; owner, 2026-10-08).**
   Instrument vertical in front of the torso, mouthpiece at eye level, bell
   toward the ground, elbows in.
 - **brass, trail.** Instrument in the right hand only, bell backward, valve
   block perpendicular to the ground, arm straight down the side. Left arm
   straight down, closed fist, thumb on top, along the leg.
-- **trombone, horns up.** As brass with the left hand at the bell brace and
-  the right hand on the slide at first position.
-- **contra, horns up and carry.** The loop lies along the left shoulder,
-  its plane outside the head and its bottom tube resting on the shoulder,
-  bell forward and a little above the head. The valves sit at chin height
-  in front, left of center; the right hand reaches across to them and the
-  left supports the bottom tube at the front. (Placed by reasoning from the
-  instrument's layout, 2026-10-08; the owner checks it against a photo of a
-  player.)
-- **flute.** Horizontal to the player's right, lips at the head joint,
-  angled a little forward and down. Both hands sit under the tube, wrists
+- **trombone, horns up (owner, 2026-11-10).** 15 degrees above level with
+  the rim at the lips; the right hand on the slide at first position, the
+  left on the bell section by the mouthpiece.
+- **contra, horns up and carry (owner, 2026-11-10; photos).** 15 degrees
+  above level with the rim at the lips. The rim sits 0.12 m behind the
+  valves, so they stand in front of the face at forehead height. The loop
+  lies back over the left shoulder, its plane outside the head. The right
+  hand comes across from the right, fingers across and down onto the
+  pistons, the elbow up toward shoulder height. The left hand holds the
+  front bow, the tube coming down the front of the loops on the horn's left
+  side. The head is up 15 degrees, leaned 12 toward the right shoulder and
+  turned 18 toward the mouthpiece (`CONTRA_HEAD`).
+- **sousaphone (owner, 2026-11-10).** Its players wear a beret, not the
+  shako and plume: a black beret pulled down toward the right, built with
+  the horn and riding the head bone (`beret.ts`). The bell rides low over
+  the beret, its axis at 1.96 m: its center about 0.34 m above the eyes,
+  its lower rim across the brow from the front, and its rim plane about
+  0.18 m in front of the nose (side-on photos, 2026-11-10). The left hand
+  holds the mouthpiece in place at the lips.
+- **Woodwind hands (wrist study, 2026-11-10).** A stiff mitt reads as a hand
+  only when it carries straight on from the forearm. So every woodwind hand
+  bends at most 30 degrees at the wrist, toward where the fingers would
+  curl, and the tube lies across the knuckles, 0.1 m up the fingers. The
+  targets are in `WOODWIND_HANDS`. The flutes' right forearm rises nearly
+  straight from an elbow at the side, and the left crosses the chest from
+  an elbow low in front. The clarinets' and saxes' elbows hang at the sides,
+  and their forearms come forward and in. These supersede the hand
+  positions in the bullets below.
+- **Percussion arms (drum corps photos, 2026-11-10).** The upper arms hang
+  10 to 20 degrees off vertical against the ribs and the forearms reach
+  forward. The snare rides 0.45 m out on its carrier, the tenor hands sit
+  about shoulder width apart, and the cymbal plates are held at the chest
+  0.26 m apart.
+- **flute.** Level and parallel to the shoulders, running straight out to
+  the player's right from the lips (owner, 2026-11-10). Up (photos,
+  2026-11-10): each wrist just under and behind the tube, the fingers
+  draped over it pointing forward. The left elbow is low and out to the
+  left, the forearm rising to the hand. Before that change, both hands sit under the tube, wrists
   0.12 m below it so the stiff hands' fingertips just reach over the top
   onto the keys: the left hand 0.2 m
   along by the face, its forearm across the chest and the elbow in front;
-  the right hand 0.42 m along with the elbow down and out. The lip plate
-  faces back at the lips and the keys face forward. Carry (owner,
+  the right hand 0.42 m along with the elbow down and out. As on a real
+  flute the embouchure hole lines up with the keys, and both face up,
+  tipped 14 degrees back toward the lips; the tube sits just under the
+  lower lip, its lip plate at the lips (owner, 2026-11-09). Carry (owner,
   2026-10-09): vertical in front of the face, head joint up, keys forward,
   the first key (0.2 m along) at eye level; the hands make a triangle, the
   left wrist 0.25 m along and the right 0.43 m, each a hand's length out and
   below, elbows out. Trail: vertical in the right fist at the side, head
   joint to the ground, held 0.5 m along; the arms are the brass trail's.
-- **piccolo.** The flute's line with both hands brought in to the short
-  body: the left 0.12 m along, the right 0.24 m. Carry: as the flute, the
+- **piccolo.** The flute's line, level and parallel to the shoulders, with
+  both hands brought in to the short body: the left 0.12 m along, the right 0.24 m. Carry: as the flute, the
   first key 0.101 m along at eye level, the hands at 0.14 and 0.24 m.
   Trail: as the flute, held 0.18 m along.
-- **clarinet.** Down the center line, angled 28 degrees out. The hands wrap
+- **clarinet.** Down the center line, angled 37 degrees out (photos and The
+  Instrumentalist, 2026-11-10; it was 28), with the elbows down and in near
+  the body. The hands wrap
   the joints from the sides, fingers across the front onto the holes: left
   hand on the upper joint, right hand on the lower, elbows a little out.
   The soprano sax shares this hold. Carry (owner, 2026-10-09): as the
@@ -299,37 +376,48 @@ points and where the elbows go.
   carry the crook and bell sit low at the right side, at trail the keys
   face the ground so the crook and bell hang below the tube behind the
   leg.
-- **sax.** On the strap in front of the body, as front-on photos of marching
-  saxes show: the neck brings the body out in front of the mouth and the
-  body runs straight down to the bow at the stomach (lower for the tenor and
-  bari). The keys face forward and the bell sits on the player's left of the
-  body tube, its flare leaning toward the keys so it opens forward and up.
-  The hands wrap the body from the sides, fingers across the front: left
-  hand on the upper stack, right hand on the lower, elbows out. Carry
-  (owner, 2026-10-09): vertical just in front of the body, turned a quarter
-  so the keys face the performer's right and the bell stands out in front
-  of the body tube (the model's bell is on its +X = +Y × +Z; the other
-  quarter turn would put it in the chest). The mouthpiece sits at eye
-  level, 0.11 m left of center so the body tube hangs on the center line,
-  0.21 m out. The hands stay where they play: left wrist on the upper
-  stack from the left, right wrist on the lower stack from the right.
-  Trail: level along front to back through the right fist, the mouthpiece
-  forward, the keys facing out so the bow and bell hang below the tube with
-  the flare leaning away from the leg; the arms are the brass trail's.
-- **snare, tenors.** Drum at waist height on the carrier, its shell clear
+- **sax.** Up (photos, 2026-11-10): the bottom kicked forward 12 degrees
+  and the left hand up on the upper stack at the chest, 0.11 m higher than
+  before, the elbows relaxed near the body. On the strap in front of the body, as front-on photos of marching
+  saxes show: the neck runs straight back to the mouth, reed underneath,
+  and the body hangs straight down, parallel to the player, to the bow at
+  the stomach (lower for the tenor and bari). The body is turned 65 degrees
+  about its own axis under the neck (`SAX_BODY_TURN` in `saxophones.ts`),
+  so the bell stands in front of the body tube, a little to the player's
+  left, opening forward and up, and the pearls face the player's
+  front-right where the fingers go (owner, 2026-11-09). The hands wrap the
+  body from the sides, fingers across the front: left hand on the upper
+  stack, right hand on the lower, elbows out. Carry: the playing
+  orientation raised so the mouthpiece is at eye level, on the center line
+  0.13 m out. The hands stay where they play. Trail: level along front to
+  back through the right fist, the mouthpiece forward, turned about the body
+  tube so the bow and bell still hang below it, clear of the leg; the arms
+  are the brass trail's.
+- **snare, tenors.** Elbows at the sides, a little forward, not winged
+  (photos, 2026-11-10). Drum at waist height on the carrier, its shell clear
   of the belly plate. Matched grip: the hands just behind the back rim
   (wider on the tenors), palms down, forearms forward and level, elbows
   relaxed at the sides. Each stick runs through the hand a third of the way
   up (the butt behind the fist) and angles in from each side: on the snare
   the tips meet near the center a little above the head without crossing;
   on the tenors each hand reaches over the shots to drum 1 or drum 2.
-- **bass.** Drum sideways on the carrier, carried high. Upper arms down,
+- **bass.** Drum sideways on the carrier, carried high: its center about the
+  shoulders, the biggest drums' tops at the top of the head (no higher than
+  1.85 m). The hands are at the lower ribs (1.12 m) with steep mallets
+  (photos, 2026-11-10). Upper arms down,
   forearms forward at the hips, the hands beside the heads below the
   center, the mallets angled up and forward to each head's center for
   every size from 18 to 32 in.
-- **cymbals.** Pair held at chest height, plates vertical.
-- **flag.** Up (present): the pole vertical in front of the body, right
-  hand at the chest, left hand low on the pole, the silk overhead toward
+- **cymbals.** Pair held at chest height, plates vertical, elbows closer to
+  the body (photos, 2026-11-10). Photos show two other positions, low at the
+  sides while marching and a diagonal "gumption" to play. Which one to use
+  is the owner's call.
+- **flag.** Up (present; instruction pages and parade photos, 2026-11-10):
+  the left hand covers the butt at the belly button, and the right hand
+  grips the pole 0.6 m up it at about nose height. The pole leans 25
+  degrees forward and out to the right (`FLAG_PRESENT`). Before that
+  change: the pole vertical in front of the body, right hand at the chest,
+  left hand low on the pole, the silk overhead toward
   the performer's right (instrument +X under this hold; seen from the
   audience it flies to the camera's left). Carry and trail: the pole
   vertical at the right side, left arm down. Which side a guard presents

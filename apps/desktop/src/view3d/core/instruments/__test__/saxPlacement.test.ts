@@ -1,8 +1,9 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { hold, type HoldFamily, type HoldState } from "../holds";
+import { hold, playingLips, type HoldFamily, type HoldState } from "../holds";
 import { bounds, PART_METAL, type Vec3 } from "../mesh";
 import type { WoodwindModelId } from "../model";
+import { SAX_BODY_TURN, saxTurned } from "../saxophones";
 import {
     SAX_BELL_TILT,
     SAX_SHAPES,
@@ -84,7 +85,9 @@ function bellRim(id: SaxId): Vec3 {
 // the torso, front at z 0.12 (holds.ts landmarks), between hips and shoulders
 const inTorso = (w: Vec3) =>
     Math.abs(w[0]) < 0.17 && w[1] > 0.85 && w[1] < 1.35 && w[2] < 0.12;
-const LIPS: Vec3 = [0, 1.52, 0.13];
+// the mouthpiece's tip a centimeter inside the lips, the head up (`withMouth` in holds.ts)
+const MOUTH: Vec3 = playingLips();
+const LIPS: Vec3 = [MOUTH[0], MOUTH[1], MOUTH[2] - 0.01];
 
 describe("sax placement under the sax hold", () => {
     for (const id of SAXES)
@@ -109,13 +112,15 @@ describe("sax placement under the sax hold", () => {
                 });
 
                 it.runIf(state === "up")(
-                    "puts the bell on the performer's left of the body, opening forward and up",
+                    "puts the bell in front of the body tube, a little to the performer's left, opening forward and up",
                     () => {
                         const [, yb] = woodwindModel(id).leftGrip;
                         const rimLocal = bellRim(id);
                         const rim = point(rimLocal);
                         const body = point([0, yb, rimLocal[2]]);
-                        expect(rim[0]).toBeGreaterThan(body[0] + 0.05);
+                        expect(rim[2]).toBeGreaterThan(body[2] + 0.08);
+                        expect(rim[0]).toBeGreaterThan(body[0]);
+                        expect(rim[0]).toBeLessThan(body[0] + 0.1);
                         // the opening's normal: the flare's axis, leaning toward the keys
                         const open = point([
                             0,
@@ -148,7 +153,8 @@ describe("sax placement under the sax hold", () => {
 
 /**
  * A pearl touch at fraction `k` from the body's top to the bow, in the
- * instrument frame: on the keys' side (+Y) of the body, just off center.
+ * instrument frame: on the keys' side of the body as it is turned under
+ * the neck, toward the performer's front-right.
  */
 function pearl(id: SaxId, k: number): Vec3 {
     const sh = SAX_SHAPES[id];
@@ -157,19 +163,23 @@ function pearl(id: SaxId, k: number): Vec3 {
     const bowZ = WOODWIND_DIMENSIONS[id].length - sh.bowWidth / 2 - sh.rBow;
     const z = top + (bowZ - top) * k;
     const r = sh.rTop + ((sh.rBow - sh.rTop) * (z - top)) / (bowZ - top);
-    return [0, yb + r, z];
+    return saxTurned([0, yb + r, z], yb);
 }
 
 describe("the sax held in front", () => {
     for (const id of SAXES) {
-        it(`${id}: the bell turns up on the instrument's +X, its flare leaning toward the keys`, () => {
+        it(`${id}: the bell turns up in front of the body (+Y), a little toward +X, the keys turned toward −X`, () => {
             const rim = bellRim(id);
-            expect(rim[0]).toBeGreaterThan(0.05);
             const [, yb] = woodwindModel(id).leftGrip;
-            expect(rim[1]).toBeGreaterThan(yb + 0.01);
+            expect(rim[1]).toBeGreaterThan(yb + 0.08);
+            expect(rim[0]).toBeGreaterThan(0.02);
+            expect(SAX_BODY_TURN).toBeGreaterThan(Math.PI / 4);
+            const keys = saxTurned([0, yb + 1, 0], yb);
+            expect(keys[0]).toBeLessThan(-0.7);
+            expect(keys[1]).toBeGreaterThan(yb + 0.2);
         });
 
-        it(`${id}: hangs centered in front of the body with the keys facing forward`, () => {
+        it(`${id}: hangs centered in front of the body, the neck straight back to the mouth`, () => {
             const { point, y } = placement("up");
             expect(y[2]).toBeGreaterThan(0.95);
             const sh = SAX_SHAPES[id];
@@ -178,8 +188,8 @@ describe("the sax held in front", () => {
                 WOODWIND_DIMENSIONS[id].length - sh.bowWidth / 2 - sh.rBow;
             const bow = point([0, yb, bowZ]);
             expect(Math.abs(bow[0])).toBeLessThan(0.05);
-            // in front of the stomach, not out at arm's length
-            expect(bow[2]).toBeLessThan(0.35);
+            // in front of the stomach, kicked forward 12 degrees, not out at arm's length
+            expect(bow[2]).toBeLessThan(0.45);
         });
 
         it(`${id}: the hands wrap the stacks from the sides, left hand upper, right hand lower`, () => {

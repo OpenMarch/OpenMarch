@@ -39,6 +39,7 @@ import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
 import { allSectionAppearancesQueryOptions } from "@/hooks/queries/useSectionAppearances";
 import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
+import { brassFinishOf, tubaModelOf } from "@/view3d/core/venueSettings";
 import { cueSectionsOf } from "./cueSections";
 import {
     guardUniformPresetOf,
@@ -142,6 +143,9 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     const { data: venue } = useVenueSettings();
     const uniformPreset = uniformPresetOf(venue?.uniforms);
     const guardUniformPreset = guardUniformPresetOf(venue?.guardUniforms);
+    // the brass line's finish and the tubas' horn, from the same settings
+    const brassFinish = brassFinishOf(venue?.brassFinish);
+    const tuba = tubaModelOf(venue?.tuba);
     // om-pose marchers (ADR 0010 D-7); the cylinders stand in until they load.
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
@@ -185,11 +189,19 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 undefined,
                 uniformPreset,
                 guardUniformPreset,
+                { finish: brassFinish, tuba },
             ),
             // no Silk cues yet: the silks take the uniform's carry (the
             // section's 2D fill, else the preset's color and pattern)
         }));
-    }, [looksKey, quality, uniformPreset, guardUniformPreset]);
+    }, [
+        looksKey,
+        quality,
+        uniformPreset,
+        guardUniformPreset,
+        brassFinish,
+        tuba,
+    ]);
     const heightClasses = useMemo(
         () => [...new Set((marcherLooks ?? []).map((l) => l.body.heightClass))],
         [marcherLooks],

@@ -26,8 +26,10 @@ import { type ControlScheme } from "../camera/controlScheme";
 import ControlSchemePicker from "../camera/ControlSchemePicker";
 import { Segmented } from "./Panel";
 import {
+    BrassFinishPicker,
     LightingControl,
     GuardUniformPicker,
+    TubaPicker,
     UniformPicker,
     VenuePicker,
     useVenueRequest,
@@ -87,6 +89,12 @@ export function SettingsPanel({
                     </Row>
                     <Row label={t("view3d.settings.guardUniforms")} stacked>
                         <GuardUniformPicker />
+                    </Row>
+                    <Row label={t("view3d.settings.brassFinish")}>
+                        <BrassFinishPicker />
+                    </Row>
+                    <Row label={t("view3d.settings.tuba")}>
+                        <TubaPicker />
                     </Row>
                     {hasStands && <CrowdRows />}
                     {/* Indoor floors have no end zones */}
