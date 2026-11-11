@@ -134,8 +134,6 @@ function App() {
         inspectorChoices,
     );
     const drawerShown = inspector.presentation === "drawer";
-    // The editor (rather than the launch page or the welcome screen) is showing
-    const editorShown = databaseIsReady && !welcomeBeforeShow;
     const setInspectorOpen = useCallback(
         (open: boolean) =>
             setInspectorChoices((choices) =>
@@ -272,8 +270,7 @@ function App() {
                     <ConvertShowDialog />
                     {isWebBuild && <WebSettingsSheet />}
                     {canSendReports && <ReportRecordingBar />}
-                    {/* Beside the editor once a show is open (below); over the page before that */}
-                    {canSendReports && !editorShown && (
+                    {canSendReports && (
                         <ReportDrawer
                             placement={drawerShown ? "sheet" : "overlay"}
                         />
@@ -384,15 +381,6 @@ function App() {
                                                         >
                                                             <Inspector />
                                                         </InspectorDock>
-                                                    )}
-                                                    {canSendReports && (
-                                                        <ReportDrawer
-                                                            placement={
-                                                                drawerShown
-                                                                    ? "sheet"
-                                                                    : "dock"
-                                                            }
-                                                        />
                                                     )}
                                                 </div>
                                             </>

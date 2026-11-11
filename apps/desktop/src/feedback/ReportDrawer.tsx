@@ -9,20 +9,20 @@ import { clampDrawerWidth, useReportDrawerStore } from "./openReport";
 
 /**
  * Where the drawer sits:
- * - `"dock"`: beside the editor, pushing the field over (mouse layout).
- * - `"overlay"`: over the right side of the page (the launch page, with no field to keep in view).
+ * - `"overlay"`: floating over the right side of the app, which keeps its layout.
  * - `"sheet"`: the whole screen (touch on a narrow or portrait screen, where the Inspector is a drawer too).
  */
-export type ReportDrawerPlacement = "dock" | "overlay" | "sheet";
+export type ReportDrawerPlacement = "overlay" | "sheet";
 
 const ICON_BUTTON =
     "text-text-subtitle hover:text-text hover:bg-fg-1 rounded-6 focus-visible:ring-accent touch:size-44 flex size-32 items-center justify-center focus-visible:ring-1";
 
 /**
- * "Report a bug or send feedback" (fork #801): a drawer, on desktop and on
- * the web. Its tab tucks it away and brings it back with what's typed kept;
- * the X closes it. While recording it steps aside entirely, so the editor
- * can be used and recorded, and `ReportRecordingBar` keeps the time and Stop.
+ * "Report a bug or send feedback" (fork #801): a drawer over the app, on
+ * desktop and on the web. It slides off to the right into a tab and back with
+ * what's typed kept; the X closes it. While recording it slides away on its
+ * own, so the editor can be used and recorded, and `ReportRecordingBar`
+ * keeps the time and Stop.
  */
 export default function ReportDrawer({
     placement,
@@ -50,12 +50,7 @@ export default function ReportDrawer({
             onClick={() => setCollapsed(false)}
             aria-label={t("feedback.drawer.show")}
             title={t("feedback.drawer.show")}
-            className={clsx(
-                "border-stroke bg-fg-1 text-text hover:text-accent focus-visible:outline-accent touch:w-44 touch:h-88 flex h-56 w-24 shrink-0 items-center justify-center self-center border shadow-sm transition-colors",
-                placement === "dock"
-                    ? "rounded-6"
-                    : "rounded-l-8 fixed top-1/2 right-0 z-50 -translate-y-1/2 border-r-0",
-            )}
+            className="border-stroke bg-fg-1 text-text hover:text-accent focus-visible:outline-accent touch:w-44 touch:h-88 rounded-l-8 fixed top-1/2 right-0 z-50 flex h-56 w-24 -translate-y-1/2 items-center justify-center border border-r-0 shadow-sm transition-colors"
         >
             <BugBeetleIcon size={16} />
         </button>
@@ -64,20 +59,15 @@ export default function ReportDrawer({
     return (
         <>
             {tab}
-            {showing && placement === "overlay" && (
-                <div
-                    aria-hidden
-                    className="animate-fade-in fixed inset-0 z-50 bg-black/30"
-                    onClick={() => setCollapsed(true)}
-                />
-            )}
             <aside
                 ref={panel}
                 role="dialog"
-                aria-modal={showing && placement !== "dock"}
+                aria-modal={placement === "sheet"}
                 aria-label={t("feedback.window.title")}
                 tabIndex={-1}
-                hidden={!showing}
+                // Slides off to the right when tucked away or recording
+                inert={!showing}
+                aria-hidden={!showing}
                 // Keys typed here are for the form, not the app's shortcuts behind it
                 onKeyDown={(event) => {
                     event.stopPropagation();
@@ -86,14 +76,12 @@ export default function ReportDrawer({
                 }}
                 style={placement === "sheet" ? undefined : { width }}
                 className={clsx(
-                    "text-text min-h-0 flex-col overflow-hidden font-sans outline-hidden",
-                    showing ? "flex" : "hidden",
-                    placement === "dock" &&
-                        "rounded-6 border-stroke bg-fg-1 relative h-full shrink-0 border",
+                    "text-text bg-bg-1 fixed z-50 flex min-h-0 flex-col overflow-hidden font-sans outline-hidden transition-[translate,visibility] duration-200 ease-out motion-reduce:transition-none",
+                    !showing && "invisible translate-x-[calc(100%+2rem)]",
                     placement === "overlay" &&
-                        "bg-bg-1 rounded-6 border-stroke fixed inset-y-16 right-16 z-50 max-w-[calc(100vw-2rem)] border shadow-xl",
-                    placement === "sheet" &&
-                        "app-frame bg-bg-1 fixed inset-0 z-50",
+                        // Below the title bar, so its window controls stay usable
+                        "rounded-6 border-stroke top-48 right-16 bottom-16 max-w-[calc(100vw-2rem)] border shadow-xl",
+                    placement === "sheet" && "app-frame inset-0",
                 )}
             >
                 {placement !== "sheet" && <ResizeHandle />}

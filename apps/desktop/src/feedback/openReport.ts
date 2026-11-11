@@ -1,6 +1,6 @@
 /**
  * The report drawer's state (fork #801): "Report a bug or send feedback"
- * opens a drawer beside the editor (`ReportDrawer.tsx`), in the desktop app
+ * opens a drawer over the editor (`ReportDrawer.tsx`), in the desktop app
  * and the web editor alike.
  */
 import { create } from "zustand";
