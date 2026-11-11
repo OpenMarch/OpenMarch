@@ -35,8 +35,8 @@ function memoryStorage(): Storage {
 }
 
 describe("the saved control scheme", () => {
-    it("is orbit until someone chooses otherwise", () => {
-        expect(loadControlScheme(memoryStorage())).toBe("orbit");
+    it("is map until someone chooses otherwise", () => {
+        expect(loadControlScheme(memoryStorage())).toBe("map");
     });
 
     it("remembers the choice", () => {
@@ -46,14 +46,14 @@ describe("the saved control scheme", () => {
         expect(loadControlScheme(storage)).toBe("trackpad");
     });
 
-    it("keeps an earlier choice of map", () => {
+    it("keeps an earlier choice of orbit", () => {
         const storage = memoryStorage();
-        saveControlScheme("map", storage);
-        expect(loadControlScheme(storage)).toBe("map");
+        saveControlScheme("orbit", storage);
+        expect(loadControlScheme(storage)).toBe("orbit");
     });
 
-    it("falls back to orbit for a value it doesn't know", () => {
-        expect(parseControlScheme("standard")).toBe("orbit");
+    it("falls back to map for a value it doesn't know", () => {
+        expect(parseControlScheme("standard")).toBe("map");
     });
 });
 

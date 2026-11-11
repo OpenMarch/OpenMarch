@@ -4,8 +4,8 @@
  * storage (ADR 0010 D-5), like `renderPrefs.ts`. Plain TypeScript: the
  * Settings window imports it, so nothing here may load three.js.
  *
- * - `orbit` (default): drag orbits, right-drag pans, and scroll zooms.
- * - `map`: drag pans, right-drag orbits, and scroll zooms.
+ * - `map` (default): drag pans, right-drag orbits, and scroll zooms.
+ * - `orbit`: drag orbits, right-drag pans, and scroll zooms.
  * - `trackpad`: scroll orbits, and a pinch zooms.
  *
  * The scheme is chosen rather than detected because a browser can't reliably
@@ -15,12 +15,12 @@
 export type ControlScheme = "orbit" | "map" | "trackpad";
 
 export const CONTROL_SCHEMES: readonly ControlScheme[] = [
-    "orbit",
     "map",
+    "orbit",
     "trackpad",
 ];
 
-export const DEFAULT_CONTROL_SCHEME: ControlScheme = "orbit";
+export const DEFAULT_CONTROL_SCHEME: ControlScheme = "map";
 
 export const CONTROL_SCHEME_STORAGE_KEY = "view3d.controls";
 
