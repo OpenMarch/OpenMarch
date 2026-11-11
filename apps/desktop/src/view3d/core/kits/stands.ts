@@ -10,8 +10,10 @@ import {
 import {
     createSharedMaterials,
     ft,
+    GROUND_LAYER,
     lightingValues,
     lightPole,
+    setGroundLayer,
     videoBoard,
     type LightPole,
     type SharedMaterials,
@@ -102,7 +104,7 @@ export interface TrackResult {
     dispose(): void;
 }
 
-/** A flat ground plane, centered at (x, y, z). */
+/** A flat ground plane, centered at (x, y, z), on `GROUND_LAYER.ground`. */
 export function groundPlane(
     width: number,
     depth: number,
@@ -113,7 +115,10 @@ export function groundPlane(
     name: string,
 ): { mesh: Mesh; geometry: PlaneGeometry } {
     const geometry = new PlaneGeometry(width, depth);
-    const mesh = new Mesh(geometry, material);
+    const mesh = new Mesh(
+        geometry,
+        setGroundLayer(material, GROUND_LAYER.ground),
+    );
     mesh.name = name;
     mesh.rotation.x = -Math.PI / 2;
     mesh.position.set(x, y, z);

@@ -43,6 +43,7 @@ import {
 } from "@/view3d/core/marchers/looks";
 import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
+import { STAND_Y } from "../performerData";
 import { holdId } from "@/view3d/core/instruments/holds";
 import type { LoadedBody } from "./marcherAssets";
 import { instrumentMaterial } from "./instrumentGeometry";
@@ -497,6 +498,7 @@ export class MarcherBodies {
                     xz[i * 2 + 1],
                     heading[i],
                     placed[i] ? this.scaleOf[i] : 0,
+                    STAND_Y,
                 );
             }
             mesh.instanceMatrix.needsUpdate = true;

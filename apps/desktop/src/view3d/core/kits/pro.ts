@@ -446,7 +446,7 @@ function addGround(ctx: ProContext) {
         ctx.addMesh(
             geo,
             level === GROUND_LAYER.ground
-                ? shared.std(0xffffff, opts)
+                ? setGroundLayer(shared.std(0xffffff, opts), level)
                 : setGroundLayer(ctx.mat({ color: 0xffffff, ...opts }), level),
             name,
         );

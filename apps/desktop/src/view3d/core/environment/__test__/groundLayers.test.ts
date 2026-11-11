@@ -36,6 +36,21 @@ describe("ground layers", () => {
         );
         expect(ring.polygonOffsetUnits).toBeLessThan(field.polygonOffsetUnits);
     });
+
+    it("draws the field at its true depth, so it never covers marchers' feet", () => {
+        const field = setGroundLayer(
+            new MeshBasicMaterial(),
+            GROUND_LAYER.field,
+        );
+        expect(field.polygonOffset).toBe(false);
+        // Everything under the field is pushed back, not pulled forward.
+        for (const level of [GROUND_LAYER.ground, GROUND_LAYER.decal]) {
+            const m = setGroundLayer(new MeshBasicMaterial(), level);
+            expect(m.polygonOffset).toBe(true);
+            expect(m.polygonOffsetFactor).toBeGreaterThan(0);
+            expect(m.polygonOffsetUnits).toBeGreaterThan(0);
+        }
+    });
 });
 
 describe("surroundings", () => {

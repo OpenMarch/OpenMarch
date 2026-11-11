@@ -23,7 +23,9 @@ import {
 } from "three";
 import {
     createSharedMaterials,
+    GROUND_LAYER,
     lightingValues,
+    setGroundLayer,
     setLightIntensity,
     SIGN_RIBBON,
     signRibbonTexture,
@@ -322,7 +324,11 @@ function ribbonLayout(
  */
 const QUIET_RIBBON = { tile: 1e6, uOffset: -SIGN_RIBBON.quiet };
 
-/** The floor inside the bowl, with the event flooring and boundary tape. */
+/**
+ * The floor inside the bowl, with the event flooring and boundary tape:
+ * over the land under it, behind the field tarp on it (2 cm up), at any
+ * distance.
+ */
 function addFloor(ctx: Ctx): void {
     const { cx, ocz, ax, az, fp } = ctx;
     const ext = {
@@ -333,10 +339,13 @@ function addFloor(ctx: Ctx): void {
     };
     const floor = ctx.addMesh(
         new PlaneGeometry(2 * ax, 2 * az),
-        ctx.shared.std(0xffffff, {
-            map: arenaFloorTexture({ ...ext, footprint: fp }),
-            roughness: 0.55,
-        }),
+        setGroundLayer(
+            ctx.shared.std(0xffffff, {
+                map: arenaFloorTexture({ ...ext, footprint: fp }),
+                roughness: 0.55,
+            }),
+            GROUND_LAYER.site,
+        ),
         "arena.floor",
     );
     floor.rotation.x = -Math.PI / 2;
