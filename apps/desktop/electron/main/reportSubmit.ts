@@ -47,20 +47,26 @@ export function submitReportFromMain(
     return uploadReport(
         deps,
         report,
-        files.map((file) => ({
-            slot: file.slot,
-            filename: file.filename,
-            contentType: file.contentType,
-            durationSeconds: file.durationSeconds,
-            byteSize: fs.statSync(file.path).size,
-            checksum: () => md5Base64(file.path),
-            body: () => ({
-                body: Readable.toWeb(
-                    fs.createReadStream(file.path),
-                ) as unknown as BodyInit,
-                // Node's fetch needs this to stream a request body
-                init: { duplex: "half" },
-            }),
-        })),
+        files.map((file) => {
+            const byteSize = fs.statSync(file.path).size;
+            return {
+                slot: file.slot,
+                filename: file.filename,
+                contentType: file.contentType,
+                durationSeconds: file.durationSeconds,
+                byteSize,
+                checksum: () => md5Base64(file.path),
+                body: () => ({
+                    body: Readable.toWeb(
+                        fs.createReadStream(file.path),
+                    ) as unknown as BodyInit,
+                    // Node's fetch needs this to stream a request body
+                    init: { duplex: "half" },
+                    // Without it a stream goes out chunked, and R2 refuses the
+                    // presigned PUT (it signs the length): 403 SignatureDoesNotMatch
+                    headers: { "Content-Length": String(byteSize) },
+                }),
+            };
+        }),
     );
 }

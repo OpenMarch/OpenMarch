@@ -20,8 +20,16 @@ export interface ReportUploadSource {
     readonly byteSize: number;
     /** Base64 of the bytes' MD5, Active Storage's checksum */
     readonly checksum: () => Promise<string>;
-    /** The request body for the PUT, and any extra fetch options it needs */
-    readonly body: () => { body: BodyInit; init?: Record<string, unknown> };
+    /**
+     * The request body for the PUT, any extra fetch options it needs, and any
+     * headers to add to the ones the API returned (a streamed body must state
+     * its Content-Length: the presigned URL signs it)
+     */
+    readonly body: () => {
+        body: BodyInit;
+        init?: Record<string, unknown>;
+        headers?: Record<string, string>;
+    };
 }
 
 export interface ReportUploadDeps {
@@ -94,12 +102,12 @@ async function uploadFile(
         direct_upload: { url: string; headers: Record<string, string> };
     };
 
-    const { body, init } = file.body();
+    const { body, init, headers } = file.body();
     const put = await deps.fetch(started.direct_upload.url, {
-        method: "PUT",
-        headers: started.direct_upload.headers,
-        body,
         ...init,
+        method: "PUT",
+        headers: { ...started.direct_upload.headers, ...headers },
+        body,
     } as RequestInit);
     if (!put.ok)
         throw new ReportSubmitError(

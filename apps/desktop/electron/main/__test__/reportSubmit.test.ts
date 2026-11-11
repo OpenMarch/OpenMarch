@@ -116,9 +116,11 @@ describe("submitReportFromMain", () => {
                 content_type: "application/octet-stream",
             },
         });
+        // The streamed body states its length: R2's presigned PUT signs it
         expect(server.calls[1].headers).toEqual({
             "Content-MD5": "x",
             "Content-Type": "y",
+            "Content-Length": String(showBytes.length),
         });
         expect(server.calls[1].body).toEqual(showBytes);
         expect(server.calls[4].body).toEqual({
