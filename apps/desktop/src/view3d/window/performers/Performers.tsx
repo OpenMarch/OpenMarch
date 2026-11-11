@@ -13,6 +13,9 @@
  *   editor is paused, the store holds the selected page's end, so the blocks
  *   hold that page like the 2D canvas. Nothing is recomputed while the show
  *   time and the inputs stay the same.
+ * - Paused, the om-pose marchers stand in the closed position (at attention,
+ *   feet together, on their dots) unless the viewer chose the actual step
+ *   (`pausedPose.ts`); playing always shows the actual motion.
  *
  * Meshes and buffers are rebuilt only when the marcher set changes.
  */
@@ -355,15 +358,18 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     useEffect(() => requestDraw(1000));
     const motion = useMemo(
         () =>
-            marcherBodies && showPlans && marcherAssets
+            marcherBodies && showPlans && marcherAssets && marcherLooks
                 ? new MarcherMotion(
                       showPlans.plans,
                       marcherAssets.manifest,
                       marcherBodies,
                       hornSlots ?? [],
+                      marcherLooks.map((l) =>
+                          clipName("attention", l.body.heightClass),
+                      ),
                   )
                 : null,
-        [marcherBodies, showPlans, marcherAssets, hornSlots],
+        [marcherBodies, showPlans, marcherAssets, hornSlots, marcherLooks],
     );
     const silkMotion = useMemo(
         () =>
@@ -528,6 +534,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
 
     const frameRef = useRef({
         lastMs: Number.NaN,
+        /** Whether the last frame drew the closed position. */
+        closed: false,
         selection: null as View3dSelection | null,
         selected: new Set<number>(),
     });
@@ -549,7 +557,12 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             frame.selection = sync.selection;
             frame.selected = new Set(sync.selection.selectedMarcherIds);
         }
-        const moved = dirtyRef.current || ms !== frame.lastMs;
+        // paused, the marchers close unless the viewer asked for the step
+        const closed =
+            !sync.clock?.playing &&
+            useView3dSceneStore.getState().pausedPose === "closed";
+        const moved =
+            dirtyRef.current || ms !== frame.lastMs || closed !== frame.closed;
         const lod = lodCameraRef.current;
         const cameraMoved = !(
             Math.hypot(cam[0] - lod[0], cam[1] - lod[1], cam[2] - lod[2]) < 0.5
@@ -575,11 +588,14 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         const { bodies, rings, visible, xz, placed } = meshes;
         if (moved) {
             // the marchers run a count ahead of the clock (`STEP_AHEAD`), so
-            // they're placed from the drill a count later
+            // they're placed from the drill a count later; closed, they stand
+            // on the dot at the show time itself
             const c = countAt(clock, ms, countRef.current);
             writePerformerPositions(
                 slots,
-                marcherBodies && motion ? msAtCount(clock, c + STEP_AHEAD) : ms,
+                marcherBodies && motion && !closed
+                    ? msAtCount(clock, c + STEP_AHEAD)
+                    : ms,
                 fieldProperties,
                 visible,
                 xz,
@@ -587,14 +603,15 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             );
             if (marcherBodies) {
                 countRef.current = c;
-                motion?.update(c, xz, placed, headings);
+                if (closed) motion?.updateClosed(c, headings);
+                else motion?.update(c, xz, placed, headings);
                 marcherBodies.writeFrame(
                     xz,
                     headings,
                     placed,
                     c,
                     cam,
-                    silkMotion?.update(c) ?? null,
+                    silkMotion?.update(c, closed) ?? null,
                 );
                 marcherBodies.compose(state.gl);
                 lod[0] = cam[0];
@@ -622,6 +639,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             rings.instanceMatrix.needsUpdate = true;
         rings.count = ringCount;
         frame.lastMs = ms;
+        frame.closed = closed;
         dirtyRef.current = false;
     });
 

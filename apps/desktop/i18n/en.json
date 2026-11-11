@@ -2950,7 +2950,8 @@
             "panPlain": "Pan",
             "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
-            "zoom": "Zoom"
+            "zoom": "Zoom",
+            "pausedPose": "Paused: show the actual step or the closed position"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -3002,6 +3003,10 @@
         },
         "venue": {
             "updateFailed": "Failed to update the 3D View venue"
+        },
+        "pausedPose": {
+            "label": "Show the actual step when paused",
+            "tooltip": "Show marchers mid-step when paused, as they are at that moment. Off: they stand closed on their dots"
         }
     },
     "web": {

@@ -2856,5 +2856,8 @@
     "view3d.board.designedBy": "Line on the video boards (scoreboards) of the 3D View's stadium and arena venues, under the show's name. {name} is the drill designer from Show settings, e.g. 'Designed by Sam Rivera'. Keep it short: it's painted on a board in large type.",
     "view3d.board.forClient": "Line on the video boards (scoreboards) of the 3D View's stadium and arena venues, under the designer line. {name} is the client the show is for (usually a school or band), from Show settings, e.g. 'For Lincoln High School'. Keep it short.",
     "view3d.board.nowPerforming": "Small heading above the show's name on the video boards (scoreboards) of the 3D View's stadium and arena venues, like an announcer's 'now performing' card. Painted in capital letters with wide letter spacing, so keep it very short.",
-    "view3d.board.untitled": "Shown in large type on the 3D View's video boards in place of the show's name when the show has no name. Keep it short."
+    "view3d.board.untitled": "Shown in large type on the 3D View's video boards in place of the show's name when the show has no name. Keep it short.",
+    "view3d.keys.pausedPose": "Row in the 3D View's keyboard shortcut list (View settings panel) for the S key, which switches how marchers stand while playback is paused: the closed position (feet together on their dots) or the actual mid-step pose at that moment.",
+    "view3d.pausedPose.label": "Screen-reader name of an on/off toggle button (footprints icon) in the 3D View's playback bar. When on, paused marchers show their actual mid-step pose at that moment; when off (default), they stand in the closed position, feet together on their dots.",
+    "view3d.pausedPose.tooltip": "Tooltip of the 3D View's paused-pose toggle (footprints icon) in the playback bar. 'Closed' is the marching-band term for standing with feet together; 'dots' are the marchers' drill positions."
 }
