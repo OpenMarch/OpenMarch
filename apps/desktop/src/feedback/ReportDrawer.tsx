@@ -31,8 +31,14 @@ export default function ReportDrawer({
 }) {
     const { t } = useTranslate();
     const panel = useRef<HTMLDivElement>(null);
-    const { open, collapsed, width, recording } = useReportDrawerStore();
+    const { open, collapsed, width, recording, dirty } = useReportDrawerStore();
     const { close, setCollapsed, setRecording } = useReportDrawerStore();
+    // Closing throws the report away, so it asks first when there's something to lose
+    const [confirmingClose, setConfirmingClose] = useState(false);
+    const tuck = () => {
+        setConfirmingClose(false);
+        setCollapsed(true);
+    };
 
     // The form stays mounted while tucked away or recording, so what's typed is kept
     const mounted = open || recording !== null;
@@ -71,8 +77,10 @@ export default function ReportDrawer({
                 // Keys typed here are for the form, not the app's shortcuts behind it
                 onKeyDown={(event) => {
                     event.stopPropagation();
-                    if (event.key === "Escape" && !event.defaultPrevented)
-                        setCollapsed(true);
+                    if (event.key !== "Escape" || event.defaultPrevented)
+                        return;
+                    if (confirmingClose) setConfirmingClose(false);
+                    else tuck();
                 }}
                 style={placement === "sheet" ? undefined : { width }}
                 className={clsx(
@@ -91,7 +99,7 @@ export default function ReportDrawer({
                         type="button"
                         aria-label={t("feedback.drawer.hide")}
                         title={t("feedback.drawer.hide")}
-                        onClick={() => setCollapsed(true)}
+                        onClick={tuck}
                         className={ICON_BUTTON}
                     >
                         <CaretRightIcon size={18} />
@@ -100,17 +108,69 @@ export default function ReportDrawer({
                         type="button"
                         aria-label={t("feedback.close")}
                         title={t("feedback.close")}
-                        onClick={close}
+                        onClick={() =>
+                            dirty ? setConfirmingClose(true) : close()
+                        }
                         className={ICON_BUTTON}
                     >
                         <XIcon size={20} />
                     </button>
                 </div>
+                {confirmingClose && showing && (
+                    <ConfirmDiscard
+                        onDiscard={close}
+                        onKeep={() => setConfirmingClose(false)}
+                    />
+                )}
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     <ReportBody onRecordingChange={setRecording} />
                 </div>
             </aside>
         </>
+    );
+}
+
+/** "Discard this report?", across the top of the drawer when X is pressed */
+function ConfirmDiscard({
+    onDiscard,
+    onKeep,
+}: {
+    onDiscard: () => void;
+    onKeep: () => void;
+}) {
+    return (
+        <div
+            role="alertdialog"
+            aria-labelledby="report-discard-question"
+            aria-describedby="report-discard-body"
+            className="border-stroke bg-fg-1 flex flex-col gap-8 border-b py-16 pr-88 pl-24"
+        >
+            <p id="report-discard-question" className="text-body font-medium">
+                <T keyName="feedback.discard.question" />
+            </p>
+            <p id="report-discard-body" className="text-sub text-text-subtitle">
+                <T keyName="feedback.discard.body" />
+            </p>
+            <div className="flex gap-8">
+                <Button
+                    type="button"
+                    variant="red"
+                    size="compact"
+                    onClick={onDiscard}
+                >
+                    <T keyName="feedback.discard.confirm" />
+                </Button>
+                <Button
+                    type="button"
+                    variant="secondary"
+                    size="compact"
+                    autoFocus
+                    onClick={onKeep}
+                >
+                    <T keyName="feedback.discard.keep" />
+                </Button>
+            </div>
+        </div>
     );
 }
 

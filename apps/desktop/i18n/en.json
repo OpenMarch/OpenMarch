@@ -3822,6 +3822,13 @@
         "record.failed.webUnsupported": "Recording isn't available in this browser.",
         "drawer.show": "Show the report",
         "drawer.hide": "Hide the report",
-        "drawer.resize": "Resize the report"
+        "drawer.resize": "Resize the report",
+        "discard.question": "Discard this report?",
+        "discard.body": "What you've written and recorded will be lost.",
+        "discard.confirm": "Discard",
+        "discard.keep": "Keep editing",
+        "record.preview": "Your recording",
+        "error.details": "Details: {message}",
+        "error.refused": "Your report couldn't be sent. Try again, and if it keeps happening, tell us on Discord."
     }
 }

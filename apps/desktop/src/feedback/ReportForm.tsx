@@ -4,7 +4,6 @@
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { T, useTranslate } from "@tolgee/react";
-import { toast } from "sonner";
 import {
     Button,
     Checkbox,
@@ -34,6 +33,8 @@ import {
 import { isWebBuild } from "@/utilities/webBuild";
 import { useReportRecording } from "./useReportRecording";
 import { ReportSendError, submitReport } from "./reportsApi";
+import { sendFailure, type SendFailure } from "./sendFailure";
+import { useReportDrawerStore } from "./openReport";
 
 export interface RecordingInProgress {
     readonly startedAt: number;
@@ -42,7 +43,7 @@ export interface RecordingInProgress {
 
 interface ReportFormProps {
     context: ReportContext;
-    onSent: (reportUrl: string) => void;
+    onSent: (sent: { url: string; showFileTooLarge: boolean }) => void;
     /** Told when a recording starts (with how to stop it) and ends (null) */
     onRecordingChange?: (recording: RecordingInProgress | null) => void;
 }
@@ -57,9 +58,19 @@ export default function ReportForm({
     const [draft, setDraft] = useState<ReportDraft>(EMPTY_DRAFT);
     const [sending, setSending] = useState(false);
     const [showFileName, setShowFileName] = useState<string | null>(null);
-    const [microphone, setMicrophone] = useState(false);
+    const [error, setError] = useState<SendFailure | null>(null);
+    const microphone = useReportDrawerStore((s) => s.microphone);
+    const setMicrophone = useReportDrawerStore((s) => s.setMicrophone);
+    const setDirty = useReportDrawerStore((s) => s.setDirty);
     const recording = useReportRecording();
     const problems = draftProblems(draft);
+
+    // Closing the drawer asks first once there's something to lose
+    const dirty =
+        recording.state.status === "done" ||
+        draft.title.trim() !== "" ||
+        Object.values(draft.answers).some((a) => a?.trim());
+    useEffect(() => setDirty(dirty), [dirty, setDirty]);
 
     const recordingStartedAt =
         recording.state.status === "recording"
@@ -114,6 +125,7 @@ export default function ReportForm({
     async function send() {
         setSending(true);
         setStep(null);
+        setError(null);
         try {
             const payload = buildPayload(draft, context, {
                 hasVideo,
@@ -131,9 +143,7 @@ export default function ReportForm({
                           }
                         : undefined,
             });
-            if (showFileTooLarge)
-                toast.warning(t("feedback.sent.showTooLarge"));
-            onSent(url);
+            onSent({ url, showFileTooLarge });
         } catch (error) {
             const status =
                 error instanceof ReportSendError ? error.status : undefined;
@@ -141,15 +151,7 @@ export default function ReportForm({
                 void window.electron.report
                     .showInfo()
                     .then((info) => setShowFileName(info?.fileName ?? null));
-            toast.error(
-                status === 401
-                    ? t("feedback.error.signedOut")
-                    : status === 409
-                      ? t("feedback.error.showChanged")
-                      : status === 429
-                        ? t("feedback.error.tooMany")
-                        : t("feedback.error.failed"),
-            );
+            setError(sendFailure(status, error));
         } finally {
             setSending(false);
             setStep(null);
@@ -324,6 +326,24 @@ export default function ReportForm({
                                 }
                             />
                         </Button>
+                        {error && (
+                            <div
+                                role="alert"
+                                className="text-sub flex flex-col gap-4"
+                            >
+                                <p className="text-red">
+                                    <T keyName={error.key} />
+                                </p>
+                                {error.detail && (
+                                    <p className="text-text-subtitle font-mono break-words">
+                                        <T
+                                            keyName="feedback.error.details"
+                                            params={{ message: error.detail }}
+                                        />
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         <p className="text-sub text-text-subtitle">
                             <T keyName="feedback.retention" />
                         </p>
@@ -513,21 +533,24 @@ function RecordingControls({
     }
     if (state.status === "done") {
         return (
-            <div className="rounded-6 border-stroke flex items-center gap-12 border p-12">
-                <span className="text-body flex-1">
-                    <T
-                        keyName="feedback.record.done"
-                        params={{ time: formatSeconds(state.seconds) }}
-                    />
-                </span>
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="compact"
-                    onClick={recording.discard}
-                >
-                    <T keyName="feedback.record.discard" />
-                </Button>
+            <div className="rounded-6 border-stroke flex flex-col gap-12 border p-12">
+                <RecordingPreview blob={state.blob} />
+                <div className="flex items-center gap-12">
+                    <span className="text-body flex-1">
+                        <T
+                            keyName="feedback.record.done"
+                            params={{ time: formatSeconds(state.seconds) }}
+                        />
+                    </span>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="compact"
+                        onClick={recording.discard}
+                    >
+                        <T keyName="feedback.record.discard" />
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -574,6 +597,27 @@ function RecordingControls({
                 </p>
             )}
         </div>
+    );
+}
+
+/** The finished clip, to watch and listen to before sending */
+function RecordingPreview({ blob }: { blob: Blob }) {
+    const { t } = useTranslate();
+    const [url, setUrl] = useState<string | null>(null);
+    useEffect(() => {
+        const objectUrl = URL.createObjectURL(blob);
+        setUrl(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [blob]);
+    if (!url) return null;
+    return (
+        <video
+            src={url}
+            controls
+            preload="metadata"
+            aria-label={t("feedback.record.preview")}
+            className="rounded-6 max-h-[16rem] w-full bg-black"
+        />
     );
 }
 

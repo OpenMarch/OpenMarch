@@ -45,6 +45,9 @@ export type SubmitStep =
     | { readonly kind: "uploading"; readonly slot: ReportFileSlot }
     | { readonly kind: "creating" };
 
+/** The message when there's no sign-in to send with */
+export const NOT_SIGNED_IN = "Not signed in";
+
 export class ReportSubmitError extends Error {
     constructor(
         message: string,
@@ -127,7 +130,7 @@ export async function uploadReport(
     files: readonly ReportUploadSource[],
 ): Promise<{ id: number }> {
     const token = await deps.getToken();
-    if (!token) throw new ReportSubmitError("Not signed in", 401);
+    if (!token) throw new ReportSubmitError(NOT_SIGNED_IN, 401);
 
     const signedIds: Partial<Record<ReportFileSlot, string>> = {};
     for (const file of files) {

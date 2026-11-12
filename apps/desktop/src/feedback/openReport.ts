@@ -15,6 +15,7 @@ import type { RecordingInProgress } from "./ReportForm";
 export const canSendReports = !isWebBuild || isSignInEnabled;
 
 const WIDTH_KEY = "openmarch:reportDrawerWidth";
+const MICROPHONE_KEY = "openmarch:reportMicrophone";
 export const DEFAULT_DRAWER_WIDTH = 440;
 export const MIN_DRAWER_WIDTH = 360;
 export const MAX_DRAWER_WIDTH = 720;
@@ -37,6 +38,15 @@ function savedWidth(): number {
     return DEFAULT_DRAWER_WIDTH;
 }
 
+/** Recording with the microphone is on until someone turns it off */
+function savedMicrophone(): boolean {
+    try {
+        return localStorage.getItem(MICROPHONE_KEY) !== "off";
+    } catch {
+        return true;
+    }
+}
+
 export const useReportDrawerStore = create<{
     /** The form is open (shown, or tucked away behind its tab) */
     readonly open: boolean;
@@ -45,18 +55,26 @@ export const useReportDrawerStore = create<{
     readonly width: number;
     /** A screen recording under way; the drawer steps aside meanwhile */
     readonly recording: RecordingInProgress | null;
+    /** Something typed or recorded that closing would throw away */
+    readonly dirty: boolean;
+    /** Record with the microphone; remembered on this computer */
+    readonly microphone: boolean;
     readonly show: () => void;
     readonly close: () => void;
     readonly setCollapsed: (collapsed: boolean) => void;
     readonly setWidth: (width: number) => void;
     readonly setRecording: (recording: RecordingInProgress | null) => void;
+    readonly setDirty: (dirty: boolean) => void;
+    readonly setMicrophone: (microphone: boolean) => void;
 }>((set) => ({
     open: false,
     collapsed: false,
     width: savedWidth(),
     recording: null,
+    dirty: false,
+    microphone: savedMicrophone(),
     show: () => set({ open: true, collapsed: false }),
-    close: () => set({ open: false, collapsed: false }),
+    close: () => set({ open: false, collapsed: false, dirty: false }),
     setCollapsed: (collapsed) => set({ collapsed }),
     setWidth: (width) => {
         try {
@@ -67,6 +85,15 @@ export const useReportDrawerStore = create<{
         set({ width });
     },
     setRecording: (recording) => set({ recording }),
+    setDirty: (dirty) => set({ dirty }),
+    setMicrophone: (microphone) => {
+        try {
+            localStorage.setItem(MICROPHONE_KEY, microphone ? "on" : "off");
+        } catch {
+            // See savedWidth
+        }
+        set({ microphone });
+    },
 }));
 
 export const openReport = () => useReportDrawerStore.getState().show();
