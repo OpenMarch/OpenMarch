@@ -363,6 +363,12 @@
         "width": 1600,
         "height": 1138
     },
+    "start-report-drawer": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 912,
+        "height": 560
+    },
     "start-timeline-basic": {
         "chapter": "start",
         "kind": "still",
