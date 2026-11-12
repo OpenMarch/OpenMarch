@@ -150,6 +150,7 @@ class Parts:
         self.by_name = {}
         self.matrix = None
         self.slots = {}
+        self.stand = None
 
     def __getitem__(self, name):
         if name not in self.by_name:
@@ -404,6 +405,11 @@ PALETTE = {
     "screen": ((0.08, 0.20, 0.28), 0.0, 0.2),
     "cover": ((0.05, 0.07, 0.11), 0.0, 0.85),
     "artwork": ((0.015, 0.015, 0.017), 0.0, 0.55),
+    "aluminum": ((0.74, 0.75, 0.77), 0.85, 0.36),
+    "powder-black": ((0.02, 0.02, 0.022), 0.15, 0.5),
+    "tread": ((0.07, 0.07, 0.075), 0.0, 0.85),
+    "galvanized": ((0.6, 0.6, 0.6), 0.35, 0.55),
+    "plank": ((0.52, 0.37, 0.2), 0.0, 0.75),
 }
 
 

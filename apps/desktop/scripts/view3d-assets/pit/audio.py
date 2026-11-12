@@ -1,5 +1,5 @@
 # cspell:words pitlib subwoofer
-# Field speakers, the mixer cart, amps and the conductor podium. No marks.
+# Field speakers, the mixer cart and amps. No marks.
 import math
 
 from pitlib import art_rect, at, caster, circle, field_wheel, place, rect, rot
@@ -224,44 +224,3 @@ def amp_bass(parts, high, **_):
             for sy in (-1, 1):
                 parts["rubber"].box((sx * 0.25 - 0.02, sy * 0.14 - 0.02, 0), (sx * 0.25 + 0.02, sy * 0.14 + 0.02, 0.02))
 
-
-def podium(parts, high, tall=False, **_):
-    """A conductor's podium: a low box with a step, or a tall tower with a ladder."""
-    w = d = 1.2
-    h = 1.5 if tall else 0.42
-    sides = 8 if high else 4
-    if tall:
-        a = w / 2 - 0.04
-        for sx in (-1, 1):
-            for sy in (-1, 1):
-                parts["frame"].tube((sx * a, sy * a, 0), (sx * a, sy * a, h - 0.06), 0.06)
-        parts["frame"].box((-w / 2, -d / 2, h - 0.08), (w / 2, d / 2, h))
-        z0, z1 = 0.15, h - 0.2
-        for p, q in (((-a, -a), (a, -a)), ((a, -a), (a, a)), ((-a, a), (-a, -a))):
-            parts["frame"].tube((p[0], p[1], z0), (q[0], q[1], z1), 0.03)
-            parts["frame"].tube((q[0], q[1], z0), (p[0], p[1], z1), 0.03)
-        run = 0.55
-        for s in (-1, 1):
-            parts["metal"].rod((s * 0.25, d / 2 + run, 0.0), (s * 0.25, d / 2, h), 0.018, sides)
-        steps = 6
-        for i in range(1, steps):
-            t = i / steps
-            y = d / 2 + run * (1 - t)
-            parts["metal"].rod((-0.25, y, h * t), (0.25, y, h * t), 0.014, sides)
-    elif high:
-        parts["frame"].chamfer_box((-w / 2, -d / 2, 0.0), (w / 2, d / 2, h), 0.015)
-        parts["frame"].chamfer_box((-0.32, d / 2 - 0.02, 0.0), (0.32, d / 2 + 0.3, h * 0.5), 0.012)
-    else:
-        parts["frame"].box((-w / 2, -d / 2, 0.0), (w / 2, d / 2, h))
-        parts["frame"].box((-0.32, d / 2, 0.0), (0.32, d / 2 + 0.3, h * 0.5))
-    parts["felt"].box((-w / 2 + 0.02, -d / 2 + 0.02, h), (w / 2 - 0.02, d / 2 - 0.02, h + 0.006))
-    # a safety rail on three sides, open where you climb on
-    rail_h = h + 0.95
-    inset = 0.04
-    pts = [(-w / 2 + inset, d / 2 - inset), (-w / 2 + inset, -d / 2 + inset), (w / 2 - inset, -d / 2 + inset), (w / 2 - inset, d / 2 - inset)]
-    for x, y in pts:
-        parts["metal"].rod((x, y, h), (x, y, rail_h), 0.016, sides)
-    for p, q in zip(pts, pts[1:]):
-        parts["metal"].rod((p[0], p[1], rail_h), (q[0], q[1], rail_h), 0.016, sides)
-        if high:
-            parts["metal"].rod((p[0], p[1], h + 0.48), (q[0], q[1], h + 0.48), 0.011, sides)
