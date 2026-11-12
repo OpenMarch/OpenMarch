@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@openmarch/ui";
 import { FlagIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
@@ -22,6 +22,9 @@ import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { joinList } from "@/timeline/translateTimelineText";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import { holdTerms } from "@/timeline/holdTerms";
 import {
     basicPageBox,
     planCanvasEdit,
@@ -277,7 +280,9 @@ export const passedSets = (names: readonly string[]) =>
  * ordinary page: a whole page box. Prominent, and flashed
  * once, when anything is unusual: a partial window, a window
  * passing page flags (that part never truncates), or past the last flag. With looping on it
- * names it while it is elsewhere ("Space loops Page 3's move", UI-17). Only the buttons take the pointer, so the field under it stays
+ * names it while it is elsewhere ("Space loops Page 3's move", UI-17). When only some of the
+ * selection is Held at the playhead it says how many ("· 1 of 2 Held", #805), since a drag edits
+ * each marcher by its own kind and you're looking at the field when you drag. Only the buttons take the pointer, so the field under it stays
  * usable. Screen readers hear the sentence once it settles, not on every scrubbed beat. Hidden
  * while isolated: the isolation bar says it instead.
  */
@@ -310,6 +315,18 @@ export function TimelineFromStartBadge() {
             ? basicEditSpot(plan.target, pages)
             : null;
     const through = range && !basic ? flagsInside(range, pages) : [];
+    // #805: "· 1 of 2 Held" where only some of the selection is Held at the playhead
+    const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
+    const marcherIds = useMemo(
+        () => (selectedMarchers ?? []).map((m) => m.id),
+        [selectedMarchers],
+    );
+    const partlyHeld = useExpertHolds(marcherIds).partlyHeld;
+    const heldParams = partlyHeld && {
+        ...holdTerms(),
+        count: partlyHeld.held,
+        total: partlyHeld.total,
+    };
     // UI-25: a move split off a page's timeline has the page's range; the line names the move
     const splitMoveName = useTimelineSelectionStore((s) => {
         const move = basic ? null : windowMove(s);
@@ -382,7 +399,12 @@ export function TimelineFromStartBadge() {
             : null;
     const movedOn = stopped !== null;
     const editing = editingWords(basic ? plan : null, name);
-    const unusual = loopShown || through.length > 0 || !wholePage || movedOn;
+    const unusual =
+        loopShown ||
+        through.length > 0 ||
+        !wholePage ||
+        movedOn ||
+        heldParams !== null;
     let sentence = "";
     if (selection.kind !== "none") {
         sentence = through.length
@@ -391,6 +413,11 @@ export function TimelineFromStartBadge() {
                   sets: passedSets(through),
               })
             : editing;
+        if (heldParams)
+            sentence = t("timeline.windowLine.withHeld", {
+                ...heldParams,
+                rest: sentence,
+            });
         if (stopped)
             sentence = t("timeline.windowLine.afterPaused", {
                 paused: stopped,
@@ -479,6 +506,15 @@ export function TimelineFromStartBadge() {
                     {t("timeline.windowLine.through", {
                         sets: passedSets(through),
                     })}
+                </span>
+            )}
+            {heldParams && (
+                <span
+                    data-testid="timeline-window-held"
+                    aria-hidden="true"
+                    className="shrink-0 font-medium"
+                >
+                    {t("timeline.windowLine.held", heldParams)}
                 </span>
             )}
             {loopShown && (

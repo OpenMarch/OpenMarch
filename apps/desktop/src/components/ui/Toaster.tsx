@@ -143,9 +143,10 @@ export default function Toaster() {
                 classNames: {
                     title: "text-body text-text leading-tight",
                     description: "text-sub text-text-subtitle leading-tight",
-                    // With two buttons (a `cancel` beside the action) the toast wraps: the text keeps
-                    // the first line, and the buttons go on their own line underneath
-                    toast: "px-12 py-8 flex items-center gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal [&:has([data-cancel])]:flex-wrap",
+                    // The toast wraps: with two buttons (a `cancel` beside the action), or one too long
+                    // to sit beside the text, the text keeps the first line and the buttons go on their
+                    // own line underneath (#805: "Stop at the end of Page 5" squeezed the text into a column)
+                    toast: "px-12 py-8 flex flex-wrap items-center gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
                     // Centered on a one-line toast; with a description the icon stays by the title
                     // (16 px in its 17.5 px line)
                     icon: "[[data-sonner-toast]:has([data-description])_&]:self-start [[data-sonner-toast]:has([data-description])_&]:mt-[1px]",
@@ -153,11 +154,11 @@ export default function Toaster() {
                     // it; it grows into the rest), or the whole width without one. Sonner
                     // renders the cancel as `[data-cancel]`
                     content:
-                        "min-w-0 flex-1 [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
-                    // The action keeps to one line beside the text, so a long message never squeezes
-                    // its label into a column
+                        "min-w-0 flex-1 basis-[120px] [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
+                    // The action keeps to one line: beside the text while the text keeps 120 px (room for "Release notes" or "Switch to Expert"), so a
+                    // long message never squeezes its label into a column; otherwise under it, at the right
                     actionButton:
-                        "shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
+                        "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
                     // A second, quieter button before the action (sonner's `cancel`); it starts the
                     // buttons' line and pushes both to the right
                     cancelButton:

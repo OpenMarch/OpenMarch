@@ -2189,14 +2189,14 @@
             "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
                 "catchUp": "Now catches up to the set at the end of {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Keep Page {first} as a keyframe} other {Keep Pages {first}–{last} as keyframes}}",
-                    "unnamed": "Keep them as keyframes"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {Stop at the end of Page {first}} other {Stop at the ends of Pages {first}–{last}}}",
+                    "unnamed": "Stop at the ends of those pages"
                 },
-                "keepStopsError": "Couldn't keep those pages as keyframes",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {Page {first} is no longer a keyframe} other {Pages {first}–{last} are no longer keyframes}}",
-                    "unnamed": "The pages inside this move are no longer keyframes"
+                "stopAtEndError": "Couldn't stop the marchers at the ends of those pages",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Now walks straight through the end of Page {first}} other {Now walks straight through the ends of Pages {first}–{last}}}",
+                    "unnamed": "Now walks straight through the ends of the pages inside this move"
                 },
                 "through": "Now moves straight through {through}",
                 "throughAndCatchUp": "Now moves straight through {through}, then catches up to the set at the end of {caughtUp}"
@@ -2498,6 +2498,8 @@
             "passedSets": "{count, plural, =1 {set {names}} other {sets {names}}}",
             "through": "· through {sets}",
             "editingThrough": "{editing}, through {sets}",
+            "held": "· {count} of {total} {held}",
+            "withHeld": "{rest}, {count} of {total} {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. {key} loops {loop}",
             "loops": "<keys></keys> loops {loop}"
