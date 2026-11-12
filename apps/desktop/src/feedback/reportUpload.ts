@@ -60,10 +60,12 @@ export class ReportSubmitError extends Error {
 
 async function apiPost(
     deps: ReportUploadDeps,
-    token: string,
     path: string,
     body: unknown,
 ): Promise<unknown> {
+    // Asked for each request: a big upload can outlast the token it started with
+    const token = await deps.getToken();
+    if (!token) throw new ReportSubmitError(NOT_SIGNED_IN, 401);
     const response = await deps.fetch(`${deps.apiBase}${path}`, {
         method: "POST",
         headers: {
@@ -86,10 +88,9 @@ async function apiPost(
 
 async function uploadFile(
     deps: ReportUploadDeps,
-    token: string,
     file: ReportUploadSource,
 ): Promise<string> {
-    const started = (await apiPost(deps, token, "v1/report_uploads", {
+    const started = (await apiPost(deps, "v1/report_uploads", {
         file: file.slot,
         blob: {
             filename: file.filename,
@@ -129,17 +130,18 @@ export async function uploadReport(
     report: Record<string, unknown>,
     files: readonly ReportUploadSource[],
 ): Promise<{ id: number }> {
-    const token = await deps.getToken();
-    if (!token) throw new ReportSubmitError(NOT_SIGNED_IN, 401);
+    // Signed out: say so before uploading anything
+    if (!(await deps.getToken()))
+        throw new ReportSubmitError(NOT_SIGNED_IN, 401);
 
     const signedIds: Partial<Record<ReportFileSlot, string>> = {};
     for (const file of files) {
         deps.onProgress?.({ kind: "uploading", slot: file.slot });
-        signedIds[file.slot] = await uploadFile(deps, token, file);
+        signedIds[file.slot] = await uploadFile(deps, file);
     }
 
     deps.onProgress?.({ kind: "creating" });
-    const created = (await apiPost(deps, token, "v1/reports", {
+    const created = (await apiPost(deps, "v1/reports", {
         report: { ...report, files: signedIds },
     })) as { report: { id: number } };
     return { id: created.report.id };

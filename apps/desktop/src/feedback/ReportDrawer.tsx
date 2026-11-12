@@ -15,7 +15,7 @@ import { clampDrawerWidth, useReportDrawerStore } from "./openReport";
 export type ReportDrawerPlacement = "overlay" | "sheet";
 
 const ICON_BUTTON =
-    "text-text-subtitle hover:text-text hover:bg-fg-1 rounded-6 focus-visible:ring-accent touch:size-44 flex size-32 items-center justify-center focus-visible:ring-1";
+    "text-text-subtitle hover:text-text hover:bg-fg-1 rounded-6 focus-visible:ring-accent touch:size-44 flex size-32 items-center justify-center focus-visible:ring-1 disabled:opacity-40 disabled:pointer-events-none";
 
 /**
  * "Report a bug or send feedback" (fork #801): a drawer over the app, on
@@ -31,14 +31,24 @@ export default function ReportDrawer({
 }) {
     const { t } = useTranslate();
     const panel = useRef<HTMLDivElement>(null);
-    const { open, collapsed, width, recording, dirty } = useReportDrawerStore();
+    const { open, collapsed, width, recording, dirty, sending } =
+        useReportDrawerStore();
     const { close, setCollapsed, setRecording } = useReportDrawerStore();
     // Closing throws the report away, so it asks first when there's something to lose
     const [confirmingClose, setConfirmingClose] = useState(false);
+    // Tucking away moves focus to the tab, so keyboard users keep their place
+    const tabButton = useRef<HTMLButtonElement>(null);
+    const focusTab = useRef(false);
     const tuck = () => {
         setConfirmingClose(false);
+        focusTab.current = true;
         setCollapsed(true);
     };
+    useEffect(() => {
+        if (!collapsed || !focusTab.current) return;
+        focusTab.current = false;
+        tabButton.current?.focus();
+    }, [collapsed]);
 
     // The form stays mounted while tucked away or recording, so what's typed is kept
     const mounted = open || recording !== null;
@@ -52,6 +62,7 @@ export default function ReportDrawer({
 
     const tab = open && collapsed && recording === null && (
         <button
+            ref={tabButton}
             type="button"
             onClick={() => setCollapsed(false)}
             aria-label={t("feedback.drawer.show")}
@@ -108,6 +119,7 @@ export default function ReportDrawer({
                         type="button"
                         aria-label={t("feedback.close")}
                         title={t("feedback.close")}
+                        disabled={sending}
                         onClick={() =>
                             dirty ? setConfirmingClose(true) : close()
                         }

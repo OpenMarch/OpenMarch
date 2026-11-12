@@ -57,6 +57,8 @@ export const useReportDrawerStore = create<{
     readonly recording: RecordingInProgress | null;
     /** Something typed or recorded that closing would throw away */
     readonly dirty: boolean;
+    /** A report is being sent; closing waits for it */
+    readonly sending: boolean;
     /** Record with the microphone; remembered on this computer */
     readonly microphone: boolean;
     readonly show: () => void;
@@ -65,6 +67,7 @@ export const useReportDrawerStore = create<{
     readonly setWidth: (width: number) => void;
     readonly setRecording: (recording: RecordingInProgress | null) => void;
     readonly setDirty: (dirty: boolean) => void;
+    readonly setSending: (sending: boolean) => void;
     readonly setMicrophone: (microphone: boolean) => void;
 }>((set) => ({
     open: false,
@@ -72,6 +75,7 @@ export const useReportDrawerStore = create<{
     width: savedWidth(),
     recording: null,
     dirty: false,
+    sending: false,
     microphone: savedMicrophone(),
     show: () => set({ open: true, collapsed: false }),
     close: () => set({ open: false, collapsed: false, dirty: false }),
@@ -86,6 +90,7 @@ export const useReportDrawerStore = create<{
     },
     setRecording: (recording) => set({ recording }),
     setDirty: (dirty) => set({ dirty }),
+    setSending: (sending) => set({ sending }),
     setMicrophone: (microphone) => {
         try {
             localStorage.setItem(MICROPHONE_KEY, microphone ? "on" : "off");

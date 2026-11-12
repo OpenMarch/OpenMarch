@@ -37,7 +37,10 @@ export type RecordingState =
           readonly blob: Blob;
           readonly seconds: number;
       }
-    | { readonly status: "failed"; readonly reason: "denied" | "unsupported" };
+    | {
+          readonly status: "failed";
+          readonly reason: "denied" | "microphone" | "unsupported";
+      };
 
 /** MP4 where Chromium can write it (plays everywhere), WebM otherwise. */
 export function pickMimeType(
@@ -53,6 +56,11 @@ export function pickMimeType(
     ].find(isSupported);
 }
 
+/** The microphone, or null when it's refused or missing */
+const microphoneStream = () =>
+    navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+
+// eslint-disable-next-line max-lines-per-function -- one recorder, start to stop
 export function useReportRecording() {
     const [state, setState] = useState<RecordingState>({ status: "idle" });
     const recorder = useRef<MediaRecorder | null>(null);
@@ -85,9 +93,13 @@ export function useReportRecording() {
                 streams.current.push(screen);
                 const tracks: MediaStreamTrack[] = [...screen.getVideoTracks()];
                 if (microphone) {
-                    const mic = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                    });
+                    const mic = await microphoneStream();
+                    // The screen was allowed but not the microphone: say which
+                    if (!mic) {
+                        release();
+                        setState({ status: "failed", reason: "microphone" });
+                        return;
+                    }
                     streams.current.push(mic);
                     tracks.push(...mic.getAudioTracks());
                 }

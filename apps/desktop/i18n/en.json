@@ -3886,6 +3886,8 @@
         "discard.keep": "Keep editing",
         "record.preview": "Your recording",
         "error.details": "Details: {message}",
-        "error.refused": "Your report couldn't be sent. Try again, and if it keeps happening, tell us on Discord."
+        "error.refused": "Your report couldn't be sent. Try again, and if it keeps happening, tell us on Discord.",
+        "record.failed.microphone": "OpenMarch may not use the microphone. Turn off With microphone to record without sound, or allow the microphone in your system settings.",
+        "record.failed.webMicrophone": "Your browser didn't allow the microphone. Turn off With microphone to record without sound, or allow the microphone for this site."
     }
 }

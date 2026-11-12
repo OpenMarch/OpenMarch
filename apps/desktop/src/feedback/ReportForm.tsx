@@ -62,6 +62,7 @@ export default function ReportForm({
     const microphone = useReportDrawerStore((s) => s.microphone);
     const setMicrophone = useReportDrawerStore((s) => s.setMicrophone);
     const setDirty = useReportDrawerStore((s) => s.setDirty);
+    const setSendingInStore = useReportDrawerStore((s) => s.setSending);
     const recording = useReportRecording();
     const problems = draftProblems(draft);
 
@@ -71,6 +72,11 @@ export default function ReportForm({
         draft.title.trim() !== "" ||
         Object.values(draft.answers).some((a) => a?.trim());
     useEffect(() => setDirty(dirty), [dirty, setDirty]);
+    // The drawer can't be closed mid-send: the send would carry on unseen
+    useEffect(() => {
+        setSendingInStore(sending);
+        return () => setSendingInStore(false);
+    }, [sending, setSendingInStore]);
 
     const recordingStartedAt =
         recording.state.status === "recording"
@@ -624,6 +630,7 @@ function RecordingPreview({ blob }: { blob: Blob }) {
 /** In a browser the picker and the permissions are the browser's own */
 const WEB_RECORDING_FAILED = {
     denied: "feedback.record.failed.webDenied",
+    microphone: "feedback.record.failed.webMicrophone",
     unsupported: "feedback.record.failed.webUnsupported",
 } as const;
 
