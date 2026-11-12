@@ -7,6 +7,9 @@
                     "label": "About OpenMarch"
                 },
                 {
+                    "label": "Check for Updates…"
+                },
+                {
                     "separator": true
                 },
                 {
@@ -511,6 +514,12 @@
                 },
                 {
                     "label": "GitHub"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Check for Updates…"
                 }
             ]
         }

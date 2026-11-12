@@ -1463,7 +1463,6 @@
         "general.appearance": "外观",
         "general.appearance.dark": "深色",
         "general.appearance.light": "浅色",
-        "general.automaticUpdates": "自动下载并安装更新",
         "general.description": "编辑器模式、语言及其他全局偏好设置。",
         "general.editorMode": "编辑器模式",
         "general.editorMode.basic": "基础",
@@ -2624,20 +2623,6 @@
             "shapesOff": "关",
             "shapesSelected": "选中时"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "获取版本时出错。",
-            "message": "错误：{message}",
-            "noVersion": "无法获取最新版本。"
-        },
-        "installLinux": "安装Linux版",
-        "installMacArm": "安装Apple芯片版",
-        "installMacIntel": "安装Intel Mac版",
-        "installWindows": "安装Windows版",
-        "skipVersion": "跳过此版本",
-        "title": "新版本可用",
-        "trigger": "新版本可用！"
     },
     "view3d": {
         "autoOpenPrompt": {

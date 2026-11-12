@@ -21,6 +21,10 @@ import type {
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
+import {
+    UPDATE_IPC_CHANNELS,
+    type UpdateState,
+} from "../../src/global/updates";
 import { GPU_CRASHED_CHANNEL, GPU_PROCESS_GONE_CHANNEL } from "../main/gpu";
 import type { HistoryResponse } from "@/db-functions";
 import type { PendingConversion } from "@om-electron/database/convertOnOpenGate";
@@ -163,6 +167,41 @@ const APP_API = {
         ) => callback(change);
         ipcRenderer.on("settings:changed", listener);
         return () => ipcRenderer.removeListener("settings:changed", listener);
+    },
+    /**
+     * The desktop updater (fork #404, `electron/main/update.ts`). Null state means the main
+     * process hasn't started it yet.
+     */
+    updates: {
+        getState: () =>
+            ipcRenderer.invoke(
+                UPDATE_IPC_CHANNELS.getState,
+            ) as Promise<UpdateState | null>,
+        /** Calls `callback` with each new state; returns the unsubscribe */
+        onState: (callback: (state: UpdateState) => void) => {
+            const listener = (
+                _event: Electron.IpcRendererEvent,
+                state: UpdateState,
+            ) => callback(state);
+            ipcRenderer.on(UPDATE_IPC_CHANNELS.state, listener);
+            return () =>
+                ipcRenderer.removeListener(UPDATE_IPC_CHANNELS.state, listener);
+        },
+        /** Looks for an update now; resolves with the state once the check ends */
+        check: () =>
+            ipcRenderer.invoke(
+                UPDATE_IPC_CHANNELS.check,
+            ) as Promise<UpdateState | null>,
+        download: () =>
+            ipcRenderer.invoke(UPDATE_IPC_CHANNELS.download) as Promise<void>,
+        /** Closes the show, installs the downloaded update and opens the app again */
+        install: () =>
+            ipcRenderer.invoke(UPDATE_IPC_CHANNELS.install) as Promise<void>,
+        /** macOS: moves the app into Applications and opens it from there */
+        moveToApplications: () =>
+            ipcRenderer.invoke(
+                UPDATE_IPC_CHANNELS.moveToApplications,
+            ) as Promise<boolean>,
     },
     /** Whether the GPU process crashed this session (ADR 0005 D-3) */
     gpuCrashed: () =>

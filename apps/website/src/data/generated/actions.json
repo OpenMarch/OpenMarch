@@ -949,6 +949,11 @@
             }
         ]
     },
+    "checkForUpdates": {
+        "label": "Check for updates",
+        "category": "ui",
+        "bindings": []
+    },
     "openView3d": {
         "label": "Open 3D View",
         "category": "ui",

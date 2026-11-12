@@ -1,6 +1,14 @@
 /* eslint-disable no-console */
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
-import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
+import {
+    app,
+    autoUpdater as nativeAutoUpdater,
+    BrowserWindow,
+    shell,
+    ipcMain,
+    Menu,
+    dialog,
+} from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
@@ -34,10 +42,17 @@ import type AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
 import {
-    applyAutomaticUpdatesSetting,
     automaticUpdatesAreEnabled,
-    startAutomaticUpdates,
+    createUpdateController,
+    getAutoUpdater,
+    type InstallAttempt,
+    type UpdateController,
+    updateUnsupportedReason,
 } from "./update";
+import {
+    UPDATE_IPC_CHANNELS,
+    type UpdateState,
+} from "../../src/global/updates";
 import { repairDatabase } from "../database/repair";
 import {
     NEEDS_CONVERSION_STATUS,
@@ -127,19 +142,10 @@ ipcMain.on("settings:set", (event, settings) => {
     if (Object.prototype.hasOwnProperty.call(settings, "editorMode"))
         showApplicationMenu();
 
-    if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates")) {
-        const enabled = automaticUpdatesAreEnabled(settings.automaticUpdates);
-        if (app.isPackaged && !process.env.SNAP) {
-            // Applies immediately so opting out also cancels an already-staged install.
-            applyAutomaticUpdatesSetting(enabled);
-            if (enabled) {
-                void startAutomaticUpdates({
-                    isPackaged: true,
-                    automaticUpdatesEnabled: true,
-                });
-            }
-        }
-    }
+    if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates"))
+        updates?.setAutomaticDownload(
+            automaticUpdatesAreEnabled(settings.automaticUpdates),
+        );
 });
 
 ipcMain.handle("settings:get", (_, key) => {
@@ -572,13 +578,121 @@ void app.whenReady().then(async () => {
     // i18n-ignore: the product name and a file path, the same in every language
     await createWindow("OpenMarch - " + store.get("databasePath"));
 
-    void startAutomaticUpdates({
-        isPackaged: app.isPackaged,
-        automaticUpdatesEnabled: automaticUpdatesAreEnabled(
+    updates = startUpdates();
+});
+
+/** Set once the app is ready (fork #404): the updater the title bar and Settings drive */
+let updates: UpdateController | null = null;
+const INSTALL_ATTEMPT_KEY = "updateInstallAttempt";
+
+/** Set once the app starts quitting, for whatever reason */
+let appIsQuitting = false;
+app.on("before-quit", () => {
+    appIsQuitting = true;
+});
+/** Linux: where the update put the new AppImage, if it named it differently */
+let installedAppImage: string | undefined;
+
+function startUpdates(): UpdateController {
+    getAutoUpdater().on("appimage-filename-updated", (path: string) => {
+        installedAppImage = path;
+    });
+    const broadcast = (state: UpdateState) => {
+        for (const window of BrowserWindow.getAllWindows())
+            window.webContents.send(UPDATE_IPC_CHANNELS.state, state);
+    };
+    const controller = createUpdateController({
+        updater: getAutoUpdater(),
+        currentVersion: app.getVersion(),
+        unsupportedReason: updateUnsupportedReason({
+            isPackaged: app.isPackaged,
+            platform: process.platform,
+            env: process.env,
+            hasFeed:
+                app.isPackaged &&
+                fs.existsSync(join(process.resourcesPath, "app-update.yml")),
+        }),
+        needsMoveToApplications: () => isMacOS && !app.isInApplicationsFolder(),
+        automaticDownload: automaticUpdatesAreEnabled(
             store.get("automaticUpdates"),
         ),
-        isSnap: Boolean(process.env.SNAP),
+        onChange: broadcast,
+        takeInstallAttempt: () => {
+            const attempt = store.get(INSTALL_ATTEMPT_KEY) as
+                | InstallAttempt
+                | undefined;
+            store.delete(INSTALL_ATTEMPT_KEY);
+            return attempt ?? null;
+        },
+        saveInstallAttempt: (attempt) =>
+            store.set(INSTALL_ATTEMPT_KEY, attempt),
+        prepareToQuit: closeShowForRestart,
+        nativeStaging: isMacOS ? nativeAutoUpdater : undefined,
+        relaunchAfterInstall:
+            process.platform === "linux"
+                ? () =>
+                      app.relaunch({
+                          execPath: installedAppImage ?? process.env.APPIMAGE,
+                          args: [],
+                      })
+                : undefined,
+        relaunch: () => {
+            // Quitting already, just slowly (a conversion worker stopping): the installer
+            // reopens the app, so don't open a second one
+            if (appIsQuitting) return;
+            app.relaunch();
+            app.exit(0);
+        },
     });
+    // The window asked before the updater existed: tell it now
+    broadcast(controller.getState());
+    controller.start();
+    return controller;
+}
+
+/**
+ * Before a restart for an update or a move to Applications: close the show the way quitting
+ * does, but keep it as the file to open on the next launch. A new show that was never saved is
+ * discarded, as on quit.
+ */
+async function closeShowForRestart() {
+    // Out of sight first, as quitting does: nothing typed now could be saved
+    win?.hide();
+    const reopen = currentNewShowDraftPath ? "" : DatabaseServices.getDbPath();
+    try {
+        await closeCurrentFile(true);
+    } catch (error) {
+        console.error("Error closing file before restarting:", error);
+    }
+    if (reopen) store.set("databasePath", reopen);
+    // The windows close without asking again
+    isQuitting = true;
+}
+
+ipcMain.handle(UPDATE_IPC_CHANNELS.getState, () => updates?.getState() ?? null);
+// The renderer asks only when the person does (Check for updates)
+ipcMain.handle(
+    UPDATE_IPC_CHANNELS.check,
+    () => updates?.check({ manual: true }) ?? null,
+);
+ipcMain.handle(UPDATE_IPC_CHANNELS.download, () => updates?.download());
+ipcMain.handle(UPDATE_IPC_CHANNELS.install, () => updates?.install());
+ipcMain.handle(UPDATE_IPC_CHANNELS.moveToApplications, async () => {
+    if (!isMacOS || app.isInApplicationsFolder()) return false;
+    await closeShowForRestart();
+    let moved = false;
+    try {
+        // Quits and opens the moved copy when it works
+        moved = app.moveToApplicationsFolder();
+    } catch (error) {
+        console.error("Unable to move OpenMarch to Applications:", error);
+    }
+    // The show is closed: open this copy again with it
+    if (!moved) {
+        app.relaunch();
+        app.exit(0);
+    }
+    return moved;
 });
 
 function initGetters() {

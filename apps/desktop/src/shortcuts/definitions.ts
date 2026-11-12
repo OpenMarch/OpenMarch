@@ -567,6 +567,16 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Fork #404: looks for a desktop update now and says what it found. Not in the web
+    // editor, which is always the latest version.
+    checkForUpdates: {
+        labelKey: "actions.ui.checkForUpdates",
+        keywordsKey: "actions.ui.checkForUpdatesKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+        hiddenFromPalette: isWebBuild,
+    },
     // Opens the 3D View window, or focuses it (3D View UI-1). Unbound by default.
     openView3d: {
         labelKey: "actions.ui.openView3d",

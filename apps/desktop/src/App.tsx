@@ -64,6 +64,7 @@ import { isWebBuild } from "./utilities/webBuild";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
+import CheckForUpdatesHandler from "@/updates/CheckForUpdatesHandler";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
 import { shouldShowWelcomeFlow } from "./components/welcome/welcomeFlowSteps";
 import WelcomeScreen from "./components/welcome/WelcomeScreen";
@@ -270,6 +271,7 @@ function App() {
                     {isWebBuild && <WebHomeScreenPrompt />}
                     {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />
+                    {!isWebBuild && <CheckForUpdatesHandler />}
                     <CommandPalette />
                     <ShortcutsDialog />
                     <MusicXmlChecksDialog />

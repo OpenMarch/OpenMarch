@@ -153,6 +153,8 @@
             "openCommandPalette": "Command palette",
             "openCommandBar": "Command bar",
             "openSettings": "Settings…",
+            "checkForUpdates": "Check for updates",
+            "checkForUpdatesKeywords": "update upgrade version download install new release",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
             "showShortcuts": "Keyboard shortcuts",
@@ -1515,7 +1517,17 @@
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
         "general.appearance.light": "Light",
-        "general.automaticUpdates": "Automatically download and install updates",
+        "general.updates": "Updates",
+        "general.updates.version": "You have OpenMarch {version}.",
+        "general.updates.checking": "You have OpenMarch {version}. Checking for updates…",
+        "general.updates.upToDate": "OpenMarch {version} is the latest version.",
+        "general.updates.available": "OpenMarch {version} is available.",
+        "general.updates.downloading": "Downloading OpenMarch {version}: {percent}%",
+        "general.updates.ready": "OpenMarch {version} is ready. It installs the next time you quit, or now from the update button in the title bar.",
+        "general.updates.failed": "The update didn't work. You have OpenMarch {version}.",
+        "general.checkForUpdates": "Check for updates",
+        "general.automaticDownload": "Download updates automatically",
+        "general.automaticDownload.description": "Updates install when you quit OpenMarch, or right away with Update now.",
         "general.description": "Editor mode, language and other app-wide preferences.",
         "general.editorMode": "Editor mode",
         "general.editorMode.basic": "Basic",
@@ -2817,19 +2829,47 @@
             "shapesSelected": "When selected"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "An error occurred while fetching the version.",
-            "message": "Error: {message}",
-            "noVersion": "Unable to fetch latest version."
+    "updates": {
+        "pill": {
+            "available": "Update available",
+            "downloading": "Updating {percent}%",
+            "downloadingQuiet": "Downloading an update: {percent}%",
+            "ready": "Update ready",
+            "failed": "Update failed"
         },
-        "installLinux": "Install for Linux",
-        "installMacArm": "Install for Apple Silicon",
-        "installMacIntel": "Install for Intel Mac",
-        "installWindows": "Install for Windows",
-        "skipVersion": "Skip this version",
-        "title": "New Version Available",
-        "trigger": "New Version Available!"
+        "popover": {
+            "current": "You have {version}.",
+            "availableBody": "Download it now. It installs when you choose Update now, or the next time you quit.",
+            "downloadingBody": "{transferred} of {total} MB, {speed} MB/s",
+            "downloadingStarting": "Starting the download…",
+            "readyBody": "Update now closes your show, installs the update and opens OpenMarch and your show again. Your work is already saved.",
+            "moveBody": "macOS can only update OpenMarch in your Applications folder. Move it there, and OpenMarch opens again from Applications.",
+            "errorBody": "The update couldn't download. Try again, or download the installer and run it yourself.",
+            "installFailedBody": "OpenMarch {version} didn't install. Download the installer and run it yourself."
+        },
+        "action": {
+            "download": "Download",
+            "updateNow": "Update now",
+            "later": "Later",
+            "retry": "Try again",
+            "downloadInstaller": "Download installer",
+            "moveToApplications": "Move to Applications",
+            "whatsNew": "What's new"
+        },
+        "toast": {
+            "checking": "Checking for updates…",
+            "upToDate": "OpenMarch {version} is the latest version.",
+            "available": "OpenMarch {version} is available.",
+            "downloading": "It's downloading now. The update button at the top left shows its progress.",
+            "ready": "OpenMarch {version} is ready to install.",
+            "checkFailed": "Couldn't check for updates."
+        },
+        "unsupported": {
+            "development": "Updates are off in development builds.",
+            "snap": "The Snap Store keeps this copy of OpenMarch up to date.",
+            "linuxPackage": "This copy of OpenMarch can't update itself. Download new versions from openmarch.com.",
+            "noFeed": "This build of OpenMarch doesn't update itself. Download each new build by hand."
+        }
     },
     "view3d": {
         "autoOpenPrompt": {
@@ -3413,6 +3453,7 @@
             "website": "Website",
             "guides": "Docs/Guides"
         },
+        "checkForUpdates": "Check for Updates…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {

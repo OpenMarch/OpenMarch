@@ -1463,7 +1463,6 @@
         "general.appearance": "Penampilan",
         "general.appearance.dark": "Gelap",
         "general.appearance.light": "Cerah",
-        "general.automaticUpdates": "Muat turun dan pasang kemas kini secara automatik",
         "general.description": "Mod editor, bahasa dan keutamaan lain untuk seluruh aplikasi.",
         "general.editorMode": "Mod editor",
         "general.editorMode.basic": "Asas",
@@ -2624,20 +2623,6 @@
             "shapesOff": "Mati",
             "shapesSelected": "Apabila dipilih"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Ralat berlaku semasa mendapatkan versi.",
-            "message": "Ralat: {message}",
-            "noVersion": "Tidak dapat mendapatkan versi terkini."
-        },
-        "installLinux": "Pasang untuk Linux",
-        "installMacArm": "Pasang untuk Apple Silicon",
-        "installMacIntel": "Pasang untuk Mac Intel",
-        "installWindows": "Pasang untuk Windows",
-        "skipVersion": "Langkau versi ini",
-        "title": "Versi baharu tersedia",
-        "trigger": "Versi baharu tersedia!"
     },
     "view3d": {
         "autoOpenPrompt": {

@@ -1,5 +1,7 @@
 words:
   - bpms
+  - APPIMAGE
+  - pipefail
   - nyquist
   - respace
   - neighbours

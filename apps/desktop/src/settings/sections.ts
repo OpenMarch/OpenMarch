@@ -80,7 +80,9 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             ...(isWebBuild
                 ? []
                 : [
-                      "settings.general.automaticUpdates",
+                      "settings.general.updates",
+                      "settings.general.checkForUpdates",
+                      "settings.general.automaticDownload",
                       "settings.general.openView3dWithShow",
                   ]),
         ],

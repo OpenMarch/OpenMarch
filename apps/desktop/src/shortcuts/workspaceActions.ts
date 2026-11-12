@@ -34,6 +34,7 @@ const PREVIEW_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "toggleMetronome",
     "timelineGoTo",
     "openSettings",
+    "checkForUpdates",
     "openView3d",
     "showShortcuts",
     "openCommandPalette",

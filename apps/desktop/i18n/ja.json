@@ -1466,7 +1466,6 @@
         "general.appearance": "外観",
         "general.appearance.dark": "ダーク",
         "general.appearance.light": "ライト",
-        "general.automaticUpdates": "アップデートを自動的にダウンロードしてインストール",
         "general.description": "エディターモード、言語など、アプリ全体の設定です。",
         "general.editorMode": "エディターモード",
         "general.editorMode.basic": "ベーシック",
@@ -2628,20 +2627,6 @@
             "shapesOff": "オフ",
             "shapesSelected": "選択時"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "バージョンの取得中にエラーが発生しました。",
-            "message": "エラー：{message}",
-            "noVersion": "最新バージョンを取得できません。"
-        },
-        "installLinux": "Linux版をインストール",
-        "installMacArm": "Apple Silicon版をインストール",
-        "installMacIntel": "Intel Mac版をインストール",
-        "installWindows": "Windows版をインストール",
-        "skipVersion": "このバージョンをスキップ",
-        "title": "新しいバージョンがあります",
-        "trigger": "新しいバージョンがあります！"
     },
     "view3d": {
         "autoOpenPrompt": {
