@@ -70,7 +70,7 @@ export interface HoldEntryState {
  *
  * - **Define as shown** makes Not defined marchers Defined; it leaves Held ones alone by design,
  *   and those partway through a move.
- * - **Hold from previous page** makes Defined and Not defined marchers Held; one partway through
+ * - **Hold from last keyframe** makes Defined and Not defined marchers Held; one partway through
  *   a move can't be (its move crosses the page's flag).
  * - **Clear this page** makes every other marcher Not defined.
  *

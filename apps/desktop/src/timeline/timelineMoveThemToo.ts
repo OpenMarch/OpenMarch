@@ -30,7 +30,7 @@ import {
     type ShiftTotals,
 } from "@/utilities/moveThemToo";
 import { editedMarcherEnds, type CarrySpan } from "./timelineCarryForward";
-import { toastDroppedHolds, toastTimelineError } from "./timelineErrorMessages";
+import { toastTimelineError } from "./timelineErrorMessages";
 import { toastPassThrough } from "./timelinePassThrough";
 import { offerOnlyThisPage, ownMovers } from "./timelineOnlyThisPage";
 import { boxMembershipEdit } from "@/shapes/placed/boxMembership";
@@ -386,8 +386,6 @@ export async function moveMarchersAndOfferFollowUp({
     // A drag back left shape and follow-the-leader members in their move: say who and why (a
     // warning, since the rest was written)
     if (result.skipped) toastTimelineError(result.skipped);
-    // Holds from the starting spots on later pages the edit left nothing to grow out of (#619)
-    toastDroppedHolds(result.droppedHolds);
     // The resolver's change re-reads them (`PlacedBoxesOverlay`), except where nobody moves (#455)
     if (writesShapes) invalidatePlacedBoxes();
     if (membership && membership.leaves.length > 0)

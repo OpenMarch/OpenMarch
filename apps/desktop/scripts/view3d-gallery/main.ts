@@ -213,6 +213,8 @@ let current: {
 
 function setLighting(preset: LightingPreset): void {
     if (!kit || !current) return;
+    // Optional so the gallery also runs on older core code, for comparisons.
+    current.env.setSurroundings?.(kit.surroundings !== false);
     current.env.setLighting(preset, kit.focus);
     renderer.toneMappingExposure = current.env.exposure;
     kit.setLighting(preset);
@@ -229,7 +231,9 @@ function setLighting(preset: LightingPreset): void {
  * with a large dt first so animated parts (the pro roof) settle.
  */
 function shot(
-    view: string | { position: number[]; target: number[]; fov?: number },
+    view:
+        | string
+        | { position: number[]; target: number[]; fov?: number; near?: number },
 ): void {
     if (!kit) throw new Error("load a kit first");
     const seat =
@@ -244,6 +248,8 @@ function shot(
     camera.position.set(...(seat.position as [number, number, number]));
     camera.lookAt(...(seat.target as [number, number, number]));
     camera.fov = seat.fovDeg ?? 45;
+    // A pose may set the near plane, like the app's close-ups (0.05 m).
+    camera.near = (typeof view !== "string" && view.near) || 0.5;
     camera.updateProjectionMatrix();
     camera.updateMatrixWorld();
     const p = camera.position;
@@ -372,7 +378,13 @@ declare global {
             bench: typeof bench;
             front(): { x: number; z: number };
             gpu(): string;
-            info(): { programs: number; calls: number; triangles: number };
+            info(): {
+                programs: number;
+                calls: number;
+                triangles: number;
+                textures: number;
+                textureMB: number;
+            };
         };
     }
 }
@@ -399,6 +411,29 @@ window.gallery = {
         programs: renderer.info.programs?.length ?? 0,
         calls: renderer.info.render.calls,
         triangles: renderer.info.render.triangles,
+        textures: renderer.info.memory.textures,
+        /** Texture memory (MB): every map's pixels, with mipmaps. */
+        textureMB: (() => {
+            const seen = new Set<unknown>();
+            let bytes = 0;
+            scene.traverse((o) => {
+                const mats = (o as { material?: unknown }).material;
+                for (const m of ([] as unknown[]).concat(mats ?? [])) {
+                    for (const v of Object.values(m as object)) {
+                        const t = v as {
+                            isTexture?: boolean;
+                            image?: { width?: number; height?: number };
+                        };
+                        if (!t?.isTexture || seen.has(t)) continue;
+                        seen.add(t);
+                        const w = t.image?.width ?? 0;
+                        const h = t.image?.height ?? 0;
+                        bytes += w * h * 4 * 1.33;
+                    }
+                }
+            });
+            return Math.round(bytes / 1e5) / 10;
+        })(),
     }),
 };
 document.title = "gallery-ready";

@@ -19,8 +19,13 @@ export type DrawnMarcher = {
     look: FieldTestLook;
     /** Drawn dimmed, outside the isolated move; it can't be selected. */
     dimmed: boolean;
-    /** Drawn as Following (a dashed edge): no coordinate of its own on the count shown (#300). */
-    following: boolean;
+    /**
+     * Drawn Not defined (a dashed edge): nothing decides its position on the count shown, no move
+     * it's walking or arriving in, no Held hold, no carried shape (#478).
+     */
+    notDefined: boolean;
+    /** Its label is drawn bold: a coordinate of its own is set on the count shown (#478). */
+    labelBold: boolean;
 };
 
 // Helpers read the field only through the field test API

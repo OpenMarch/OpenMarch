@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "無法套用下一頁的隊員座標：沒有下一頁",
             "noPreviousPage": "無法套用上一頁的隊員座標：沒有上一頁",
-            "setAllToNext": "從下一頁複製位置（所有隊員）",
-            "setAllToNextSuccess": "{count, plural, other {已將第 {currentPage} 頁全部 # 位隊員的座標設為下一頁（第 {nextPage} 頁）的座標}}",
-            "setSelectedToNext": "從下一頁複製位置（已選取）",
-            "setSelectedToNextSuccess": "{count, plural, other {已將第 {currentPage} 頁 # 位隊員的座標設為下一頁（第 {nextPage} 頁）的座標}}",
             "setAllToPreviousDone": "{count, plural, other {已將第 {currentPage} 頁全部 # 位隊員的座標設為上一頁（第 {previousPage} 頁）的座標}}",
             "setSelectedToPreviousDone": "{count, plural, other {已將第 {currentPage} 頁 # 位隊員的座標設為上一頁（第 {previousPage} 頁）的座標}}"
         },
@@ -2579,7 +2575,6 @@
             "placeAllMarchers": "放置所有隊員",
             "placeSelectedMarchers": "放置所選隊員",
             "snapToggleCaption": "貼齊",
-            "toNextPagePositions": "…到下一頁的位置",
             "setMarcherPositionsAriaLabel": "設定隊員位置"
         },
         "collisions": {

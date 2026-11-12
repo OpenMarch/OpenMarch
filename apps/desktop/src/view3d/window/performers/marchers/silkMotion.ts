@@ -51,19 +51,28 @@ export class SilkMotion {
         };
     }
 
-    /** The silks' motion at show count clock `count`. */
-    update(count: number): SilkMotionFrame {
+    /**
+     * The silks' motion at show count clock `count`. `still` is for a
+     * performer standing in the closed position: no ground speed or turn, so
+     * the silk hangs as it does at a halt.
+     */
+    update(count: number, still = false): SilkMotionFrame {
         const f = this.frame;
         f.seconds = msAtCount(this.clock, count) / 1000;
         const c = count + STEP_AHEAD;
         for (const slot of this.slots) {
             const track = this.tracks[slot];
             const plan: MarcherPlan | null = this.plans.plans[slot];
-            f.speed[slot] = track ? groundSpeedAt(track, c) : 0;
+            f.speed[slot] = track && !still ? groundSpeedAt(track, c) : 0;
             f.distance[slot] = track ? groundDistanceAt(track, c) : 0;
-            f.turn[slot] = plan
-                ? turnRateAt((t) => headingAt(plan, t), c, this.secondsPerCount)
-                : 0;
+            f.turn[slot] =
+                plan && !still
+                    ? turnRateAt(
+                          (t) => headingAt(plan, t),
+                          c,
+                          this.secondsPerCount,
+                      )
+                    : 0;
         }
         return f;
     }

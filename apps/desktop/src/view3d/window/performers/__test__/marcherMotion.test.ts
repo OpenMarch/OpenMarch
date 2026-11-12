@@ -11,7 +11,7 @@ import type { Manifest } from "@/view3d/render/step-blend.js";
 import { fakeShowPositions, type Track } from "@/view3d/__test__/fakePositions";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { buildCountClock } from "@/view3d/core/marchers/countClock";
-import { eventRows } from "@/view3d/core/marchers/planner";
+import { eventRows, headingAt } from "@/view3d/core/marchers/planner";
 import {
     bandMovingCounts,
     compileWindowCues,
@@ -589,5 +589,101 @@ describe("landing each foot on its click", () => {
         );
         m.update(5.01, xz, placed); // the hold's first count
         expect(writes.at(-1)!.clip.row).toBe(rows["attention"]);
+    });
+});
+
+describe("the closed position while paused", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    function motion() {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array(2),
+            placed: Uint8Array.from([1]),
+        };
+    }
+
+    it("stands at attention mid-move", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows["attention"]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+    });
+
+    it("writes the attention clip once while it stays paused", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5);
+        m.updateClosed(2.75);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("faces its heading at the dot's own count, not the plan's lead", () => {
+        const { m } = motion();
+        const closed = new Float32Array(1);
+        m.updateClosed(2.5, closed);
+        expect(closed[0]).toBe(headingAt(plan, 2.5));
+    });
+
+    it("plays the step again on the next update", () => {
+        const { m, writes, xz, placed } = motion();
+        m.updateClosed(2.5);
+        m.update(2.5, xz, placed);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes).toHaveLength(2);
+        expect(writes[1].clip.row).toBe(rows[loop.clip]);
+    });
+
+    it("writes no clip when attention isn't baked yet", () => {
+        const writes: unknown[] = [];
+        const bodies = {
+            bake: { rows: {} },
+            setClip: (...args: unknown[]) => writes.push(args),
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+        );
+        m.updateClosed(2.5);
+        expect(writes).toHaveLength(0);
     });
 });

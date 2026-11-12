@@ -100,9 +100,12 @@ node scripts/docs-media/capture.mjs move-resize          # one shot
 scripts/media-kit/in-docker.sh scripts/docs-media/capture.mjs move-resize   # headless Linux
 ```
 
-On a machine without a display or GPU (CI, the agents' Linux box), use `in-docker.sh`: it runs
-the recorder in a fixed Docker image on a virtual screen with software drawing, so recordings
-come out the same every time. It allows three recordings at once on a machine and queues the
+On a machine without a display (CI, the agents' Linux box), use `in-docker.sh`: it runs the
+recorder in a fixed Docker image on a virtual screen, so recordings come out the same every time.
+Where the machine has an NVIDIA GPU (the agents' Linux box) it passes it in and the app draws on
+it (`--gpu-gl`); CI has none and draws with SwiftShader (`--software-gl`). The two agree on 2D
+shots, but 3D View shots differ by about 0.5 % of pixels (edge smoothing), which is over the
+refresh threshold: re-record a 3D shot with `MEDIA_GPU=0` if it has to match what CI records. It allows three recordings at once on a machine and queues the
 rest. Each run leaves a log and a contact sheet of the clips in
 `apps/desktop/scripts/docs-media/runs/<time>/`.
 

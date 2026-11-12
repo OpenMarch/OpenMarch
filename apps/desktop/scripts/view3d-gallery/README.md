@@ -12,12 +12,19 @@ node scripts/view3d-gallery/shoot.mjs --kits hs,gym --out /mnt/data/om-capture/v
 
 Options: `--lighting all|day,night`, `--cameras all|pressBox,frontRow`, `--quality high|low`,
 `--size 1280x720`, `--no-crowd` and `--poses poses.json` for extra views
-(`[{ "name": "x", "position": [x, y, z], "target": [x, y, z], "fov": 45 }]`, world meters).
+(`[{ "name": "x", "position": [x, y, z], "target": [x, y, z], "fov": 45, "near": 0.5 }]`, world meters).
+It draws on the machine's GPU (ANGLE over EGL, no display needed) when `nvidia-smi` works, and
+with SwiftShader otherwise; `--gpu` forces the GPU, `--software` SwiftShader. The GPU is much
+faster, and unaffected by CPU load. With it, `--bench 200` times 200 frames of each shot.
 
 Output: `<out>/<kit>/<lighting>--<camera>.png`, a labelled contact sheet `<out>/<kit>/sheet.png` and
-`<out>/report.json` (cameras, presets, draw calls, triangles, shader programs, console errors).
+`<out>/report.json` (the GPU, cameras, presets, draw calls, triangles, shader programs, texture
+memory and frame times per shot, console errors).
 
-Rendering is SwiftShader (CPU), so it shows looks, not frame rates. Check performance on a real GPU.
+With SwiftShader (CPU), it shows looks, not frame rates. On the GPU,
+frame times compare branches fairly only when runs alternate (main, branch, main, …) and you keep
+each side's best: other load on the machine skews single runs. A desktop GPU still isn't a school
+laptop; check those on the laptop.
 
 ## Front ensemble models
 

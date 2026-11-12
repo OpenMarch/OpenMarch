@@ -20,6 +20,7 @@ import {
     actionLabelNow,
     isActionChecked,
     isActionEnabled,
+    previewAction,
     runAction,
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
@@ -40,26 +41,33 @@ import {
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The commands that set the selection's state on the current page (holds):
- *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
- *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
- *   unavailable when every selected marcher is already in the state it sets, and with a count,
- *   "Hold from previous page (3 of 5)", when it would change only some of them.
- * - Arranging the selection: align and distribute, and Swap (two marchers).
+ *   **Hold from last keyframe** (timeline mode only), **Hold from start flag to playhead** while
+ *   it's available (Expert with a window, #476), then **Clear this page**. Each says what it
+ *   would do for the selection on the current page (`holdEntryStates`, through its handler):
+ *   checked and unavailable when every selected marcher is already in the state it sets, and with
+ *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
+ * - Arranging the selection: align and distribute, Swap (two marchers), and **Move to next
+ *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
+ *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
  */
+/** The page state commands: the group whose entries can show checked */
+const STATE_GROUP: readonly ActionId[] = [
+    "timelineHoldFromPrevious",
+    "timelineHoldOverWindow",
+    "setSelectedMarchersToPreviousPage",
+];
+
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
-    [
-        "timelineHoldFromPrevious",
-        "setSelectedMarchersToPreviousPage",
-        "setSelectedMarchersToNextPage",
-    ],
+    STATE_GROUP,
     [
         "alignHorizontally",
         "alignVertically",
         "evenlyDistributeHorizontally",
         "evenlyDistributeVertically",
         "swapMarchers",
+        "setSelectedMarchersToNextPage",
     ],
     ["selectAllMarchers"],
 ];
@@ -70,8 +78,15 @@ export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
 const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
 
-/** The group whose entries can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[1]);
+/** Shown only while available, as Group is: Hold over the window in Expert with a window (#476) */
+const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
+    "shapeGroup",
+    "shapeUngroup",
+    "timelineHoldOverWindow",
+]);
+
+/** The entries that can show checked: each keeps room for the check, so the words line up */
+const CHECKABLE: ReadonlySet<ActionId> = new Set(STATE_GROUP);
 
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
@@ -112,10 +127,16 @@ export default function FieldContextMenu({
         document.addEventListener("contextmenu", block, true);
         return () => document.removeEventListener("contextmenu", block, true);
     }, [open]);
+    // The menu closing takes the entry away without a blur
+    useEffect(() => {
+        if (!open) return;
+        return () =>
+            FIELD_MENU_ACTIONS.forEach((id) => previewAction(id, false));
+    }, [open]);
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeGroup" || id === "shapeUngroup"
+        WHILE_AVAILABLE.has(id)
             ? isActionEnabled(id)
             : HOLDS.has(id)
               ? timelineMode
@@ -196,6 +217,8 @@ export default function FieldContextMenu({
                                         data-testid={`field-menu-${id}`}
                                         disabled={!enabled(id)}
                                         onSelect={() => runAction(id)}
+                                        onFocus={() => previewAction(id, true)}
+                                        onBlur={() => previewAction(id, false)}
                                         className={MENU_ITEM_CLASS}
                                     >
                                         {CHECKABLE.has(id) && (

@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa susunod na pahina. Walang susunod na pahina",
             "noPreviousPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa nakaraang pahina. Walang nakaraang pahina",
-            "setAllToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (lahat ng miyembro)",
-            "setAllToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
-            "setSelectedToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (mga napili)",
-            "setSelectedToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}"
         },
@@ -2579,7 +2575,6 @@
             "placeAllMarchers": "Ilagay ang lahat ng miyembro",
             "placeSelectedMarchers": "Ilagay ang mga napiling miyembro",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...sa mga posisyon sa susunod na pahina",
             "setMarcherPositionsAriaLabel": "Itakda ang mga posisyon ng miyembro"
         },
         "collisions": {

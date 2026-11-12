@@ -108,7 +108,7 @@ export const beatToX = (
 /**
  * How much of a page box's width its name takes, from the box's right edge (px): about 7px a
  * character of the 11px mono label, the box's 8px right padding and 2px to spare. The box shows
- * the name only when it is at least this wide (`pageLabelFits`), and a keep chain stays left of it.
+ * the name only when it is at least this wide (`pageLabelFits`).
  */
 export const pageLabelRoom = (labelChars: number) => labelChars * 7 + 10;
 

@@ -15,10 +15,10 @@ import {
 } from "@/view3d/window/renderPrefs";
 import {
     CONTROL_SCHEME_STORAGE_KEY,
-    CONTROL_SCHEMES,
     loadControlScheme,
     saveControlScheme,
 } from "@/view3d/window/camera/controlScheme";
+import ControlSchemePicker from "@/view3d/window/camera/ControlSchemePicker";
 
 /**
  * How the 3D View draws and moves on this computer. Quality and resolution are here only (the 3D window's
@@ -54,11 +54,9 @@ export default function View3dSettings() {
                     />
                 }
             >
-                <Choices
+                <ControlSchemePicker
                     id="view3d-controls"
                     value={controls}
-                    options={CONTROL_SCHEMES}
-                    keyPrefix="settings.view3d.controls"
                     onChange={(scheme) => {
                         saveControlScheme(scheme);
                         setControls(scheme);

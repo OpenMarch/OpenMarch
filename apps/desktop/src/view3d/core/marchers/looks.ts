@@ -25,9 +25,13 @@ import type { RgbaColor } from "@openmarch/core";
 import { FAMILIES, getSectionObjectByName } from "@/global/classes/Sections";
 import {
     carryForSection,
+    finishFor,
     guardCarry,
+    isTuba,
+    tubaCarry,
     type Carry,
     type Finish,
+    type TubaModelId,
 } from "../instruments/catalog";
 import { bassSizesFor } from "../instruments/battery";
 import type { GuardModelId, ModelOptions } from "../instruments/model";
@@ -242,7 +246,10 @@ export function fillToNumber(c: RgbaColor): number {
  * `fill` (sRGB, the section's 2D fill) colors drum shells and plain flag
  * silks; without one they take the color and silk pattern of the preset
  * that dresses the section. `guard`, when set, is the equipment every guard
- * section carries instead of its own (the settings' guard equipment).
+ * section carries instead of its own (the settings' guard equipment). `winds`
+ * is the show's choice for its wind players: the brass line's finish, and
+ * whether the tubas carry marching tubas or sousaphones. Woodwinds keep the
+ * finish they are made in.
  */
 export function sectionUniform(
     section: string,
@@ -252,6 +259,7 @@ export function sectionUniform(
     guard?: GuardModelId,
     preset: UniformPresetId = DEFAULT_UNIFORM_PRESET,
     guardPreset: GuardUniformPresetId = DEFAULT_GUARD_UNIFORM_PRESET,
+    winds: { finish?: Finish; tuba?: TubaModelId } = {},
 ): UniformLook {
     const inGuard = isGuard(section);
     const dressedBy: UniformPresetId = inGuard ? guardPreset : preset;
@@ -260,18 +268,22 @@ export function sectionUniform(
     const carry =
         guard && inGuard
             ? guardCarry(guard)
-            : withOptions(carryForSection(section), options);
+            : winds.tuba && isTuba(section)
+              ? tubaCarry(winds.tuba)
+              : withOptions(carryForSection(section), options);
     return {
         style: base.style,
         colors: { ...base.colors },
         options: {
             ...base.options,
+            // sousaphone players wear a beret, drawn with the horn, not the shako
+            hat: carry?.model === "sousaphone" ? false : base.options.hat,
             hatType: "shako",
             instrument: "none",
             carry,
             carryColor: carry ? (fill ?? dress.carry) : null,
             silk: carry && fill === undefined && dress.silk ? dressedBy : null,
-            finish: "brass",
+            finish: finishFor(carry, winds.finish ?? "brass"),
             hold,
         },
     };
@@ -280,6 +292,8 @@ export function sectionUniform(
 /** The uniform shader's part ids (om-pose `uniforms/uniform-shader.js`). */
 export const PART = {
     shako: [7, 8, 9],
+    /** the shako's plume: drawn as its own mesh (`plumeSet.ts`), not with the body */
+    plume: 8,
     aussie: [10, 11],
     cape: 12,
     /** the shader's placeholder trumpet, mellophone, baritone: never drawn */

@@ -56,6 +56,10 @@ const UP2: XY = [200, 100];
 const ELSEWHERE: XY = [400, 400];
 const PAGE2 = { start: 9, end: 17 };
 const PAGE3 = { start: 17, end: 25 };
+const ranged = ({ start, end }: { start: number; end: number }) => ({
+    start,
+    end,
+});
 
 const TABLES = [
     schema.timelines,
@@ -543,14 +547,50 @@ describeDbTests(
             expect(at(PAGE2.end)).toEqual({
                 canUnset: true,
                 followingLabel: "Remove keyframe, Pages 3–4 move back too",
+                // Hovering it lights the Set marchers' bars on exactly those pages (#477)
+                followingLight: {
+                    byMarcher: new Map([[a, [PAGE3, ranged(BOXES[3]!)]]]),
+                },
             });
             expect(at(PAGE3.end)).toEqual({
                 canUnset: false,
                 followingLabel: null,
+                followingLight: null,
             });
             expect(at(PAGE2.end, true)).toEqual({
                 canUnset: false,
                 followingLabel: null,
+                followingLight: null,
+            });
+        });
+
+        it("lights each marcher's bars only on the pages it follows back on", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { a, b } = await show(db);
+            // Page 5 [33, 41): b moves on page 4 and stands still on 5, at its own spot
+            await createLastPage({ db, newPageCounts: 8 });
+            await timelineResolverSettled();
+            const PAGE4 = { start: 25, end: 33 };
+            const PAGE5 = { start: 33, end: 41 };
+            await move(db, PAGE4, [{ marcherId: b, xy: ELSEWHERE }]);
+            const state = unsetMenuStateAt({
+                resolver: resolver(),
+                marcherIds: [a, b],
+                beat: PAGE2.end,
+                boxes: [...BOXES, { ...PAGE5, name: "5" }],
+                isPlaying: false,
+            });
+            expect(state.followingLabel).toBe(
+                "Remove keyframe, Pages 3–5 move back too",
+            );
+            // b follows back on page 3 only: its page 5 stays where its own move put it
+            expect(state.followingLight).toEqual({
+                byMarcher: new Map([
+                    [a, [PAGE3, PAGE4, PAGE5]],
+                    [b, [PAGE3]],
+                ]),
             });
         });
 

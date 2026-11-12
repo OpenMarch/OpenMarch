@@ -15,6 +15,7 @@
 //   --fps <n>         frames per second (default 60)
 //   --window <w>x<h>  the app window's size in points (default 1600x1000; it must fit the screen)
 //   --software-gl     draw with SwiftShader (machines without a GPU, Docker)
+//   --gpu-gl          draw on the GPU via ANGLE/Vulkan (Docker with an NVIDIA GPU passed in)
 //   --keep-frames     keep the PNG frames in the work folder
 //   --max-frames <n>  stop filming each clip after n frames (quick tests)
 // Each run's work folder (log, contact sheet, failure screenshots, shows, frames) is
@@ -45,6 +46,7 @@ function parseArgs(argv) {
         fps: 60,
         window: { width: 1600, height: 1000 },
         softwareGl: false,
+        gpuGl: false,
         keepFrames: false,
         maxFrames: Infinity,
     };
@@ -57,6 +59,7 @@ function parseArgs(argv) {
             const [width, height] = argv[++i].split("x").map(Number);
             options.window = { width, height };
         } else if (arg === "--software-gl") options.softwareGl = true;
+        else if (arg === "--gpu-gl") options.gpuGl = true;
         else if (arg === "--keep-frames") options.keepFrames = true;
         else if (arg === "--max-frames") options.maxFrames = Number(argv[++i]);
         else if (arg.startsWith("--")) throw new Error(`unknown option ${arg}`);
@@ -109,6 +112,7 @@ function launch(source) {
         window: WINDOW,
         theme: "light",
         softwareGl: options.softwareGl,
+        gpuGl: options.gpuGl,
         log,
     });
 }

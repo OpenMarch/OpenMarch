@@ -30,6 +30,11 @@ export interface ActionHandler {
      * state it sets): menus show it checked. Such an action is disabled too
      */
     checked?: () => boolean;
+    /**
+     * Shows what the action would change while it's highlighted in the palette (true) and stops
+     * (false): a preview with no edit, such as the hold bars a follow-back lights
+     */
+    preview?: (on: boolean) => void;
 }
 
 const handlers = new Map<ActionId, ActionHandler[]>();
@@ -75,6 +80,11 @@ export function actionLabelNow(id: ActionId): string | undefined {
 /** Whether the action's handler says it is already done (`useActionHandler`'s `checked`) */
 export function isActionChecked(id: ActionId): boolean {
     return top(id)?.checked?.() ?? false;
+}
+
+/** Shows (`on`) or stops the action's preview (`useActionHandler`'s `preview`), if it has one */
+export function previewAction(id: ActionId, on: boolean): void {
+    top(id)?.preview?.(on);
 }
 
 /** Whether the action's handler skips key repeats right now (`useActionHandler`'s `ignoreRepeat`) */

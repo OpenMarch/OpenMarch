@@ -34,6 +34,9 @@
  *
  * - `controlScheme`: what dragging and scrolling do (`controlScheme.ts`),
  *   saved per computer. Set it with `setControlScheme`.
+ * - `pausedPose`: how marchers stand while the show is paused, the closed
+ *   position or the actual step (`pausedPose.ts`), saved per computer. The
+ *   transport bar toggles it with `setPausedPose`.
  *
  * The app's Settings window saves the quality, power, resolution and controls choices;
  * `startPrefsSync()` picks them up while the window is open.
@@ -76,6 +79,12 @@ import {
     saveControlScheme,
     type ControlScheme,
 } from "./camera/controlScheme";
+import {
+    PAUSED_POSE_STORAGE_KEY,
+    loadPausedPose,
+    savePausedPose,
+    type PausedPose,
+} from "./pausedPose";
 
 /** People within this many meters of a seat camera are hidden (ui.md UI-3). */
 export const CROWD_CLEAR_RADIUS = 4.9;
@@ -109,6 +118,9 @@ export interface View3dSceneState {
     controlScheme: ControlScheme;
     /** Saves the choice and applies it. */
     setControlScheme: (scheme: ControlScheme) => void;
+    pausedPose: PausedPose;
+    /** Saves the choice and applies it. */
+    setPausedPose: (pose: PausedPose) => void;
     /** True when WebGL draws in software: the scene stays on `low`. */
     softwareGl: boolean;
     /** Window only, before the scene mounts: what the WebGL probe found. */
@@ -181,6 +193,11 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
         saveControlScheme(controlScheme);
         set({ controlScheme });
     },
+    pausedPose: loadPausedPose(),
+    setPausedPose: (pausedPose) => {
+        savePausedPose(pausedPose);
+        set({ pausedPose });
+    },
     softwareGl: false,
     _setSoftwareGl: (softwareGl) =>
         set({
@@ -202,6 +219,8 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
             set({ resolution: loadResolution() });
         if (key === null || key === CONTROL_SCHEME_STORAGE_KEY)
             set({ controlScheme: loadControlScheme() });
+        if (key === null || key === PAUSED_POSE_STORAGE_KEY)
+            set({ pausedPose: loadPausedPose() });
     },
     _setKit: (kitId, kit) =>
         set({

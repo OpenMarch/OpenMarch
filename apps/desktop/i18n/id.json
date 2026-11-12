@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Tidak dapat menyalin koordinat pemain dari halaman berikutnya. Tidak ada halaman berikutnya",
             "noPreviousPage": "Tidak dapat menyalin koordinat pemain dari halaman sebelumnya. Tidak ada halaman sebelumnya",
-            "setAllToNext": "Salin posisi dari halaman berikutnya (semua pemain)",
-            "setAllToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
-            "setSelectedToNext": "Salin posisi dari halaman berikutnya (yang dipilih)",
-            "setSelectedToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}"
         },
@@ -2579,7 +2575,6 @@
             "placeAllMarchers": "Tempatkan semua pemain",
             "placeSelectedMarchers": "Tempatkan pemain terpilih",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...ke posisi halaman berikutnya",
             "setMarcherPositionsAriaLabel": "Atur posisi pemain"
         },
         "collisions": {

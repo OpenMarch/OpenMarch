@@ -259,7 +259,7 @@ const shots = [
     {
         id: "3d-move-view",
         kind: "clip",
-        // Orbit with Shift+drag, pan with a drag, zoom with the wheel
+        // Orbit with a drag, pan with Shift+drag, zoom with the wheel
         async setup(ctx) {
             await seekInPage(ctx.page, 3, 0.5);
             const { view } = await open3d(ctx);
@@ -282,24 +282,24 @@ const shots = [
             const c = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
             await view.mouse.move(c.x - 160, c.y + 130);
             await film.hold(0.4);
-            // Orbit: Shift+drag sideways
-            await view.keyboard.down("Shift");
-            await film.hold(0.3);
+            // Orbit: drag sideways
             await film.drag(
                 view,
                 { x: c.x - 160, y: c.y + 130 },
                 { x: c.x + 120, y: c.y + 110 },
                 1.4,
             );
-            await view.keyboard.up("Shift");
             await film.hold(0.8);
-            // Pan: drag
+            // Pan: Shift+drag
+            await view.keyboard.down("Shift");
+            await film.hold(0.3);
             await film.drag(
                 view,
                 { x: c.x + 120, y: c.y + 110 },
                 { x: c.x - 40, y: c.y + 90 },
                 1.0,
             );
+            await view.keyboard.up("Shift");
             await film.hold(0.6);
             // Zoom: the wheel, toward the pointer
             for (let i = 0; i < 6; i++) {

@@ -40,6 +40,9 @@ export async function waitInPage(page, check, seconds = 60) {
  * - `window`: the content size in points, `{ width, height }`.
  * - `theme`: "light" or "dark".
  * - `softwareGl`: draw with SwiftShader (machines without a GPU, Docker).
+ * - `gpuGl`: draw on the GPU through ANGLE's Vulkan backend (Docker with an NVIDIA GPU passed
+ *   in; in-docker.sh picks it when the machine has one). Under Xvfb this is the only way to reach
+ *   the GPU: ANGLE's GL backend gets Mesa's software llvmpipe.
  * - `uiSettings`: settings merged into the app's stored UI settings before it loads the show.
  * - `mode`: "basic" or "expert" (the app setting; automated sessions default to Expert).
  * - `scale`: device pixels per point (2 for sharp docs images; the screen must fit it).
@@ -53,6 +56,7 @@ export async function launch({
     window: size,
     theme = "light",
     softwareGl = false,
+    gpuGl = false,
     uiSettings,
     mode,
     scale = 1,
@@ -61,17 +65,24 @@ export async function launch({
     const home = fs.mkdtempSync(path.join(work, "profile-"));
     const show = path.join(home, "show.dots");
     fs.copyFileSync(source, show);
-    const gl = softwareGl
+    const gl = gpuGl
         ? [
               "--use-gl=angle",
-              "--use-angle=swiftshader",
-              "--enable-unsafe-swiftshader",
+              "--use-angle=vulkan",
+              "--enable-features=Vulkan",
               "--ignore-gpu-blocklist",
-              // SwiftShader composites the panels' see-through surfaces into gray blocks;
-              // software compositing draws them right (WebGL still uses SwiftShader)
-              "--disable-gpu-compositing",
           ]
-        : [];
+        : softwareGl
+          ? [
+                "--use-gl=angle",
+                "--use-angle=swiftshader",
+                "--enable-unsafe-swiftshader",
+                "--ignore-gpu-blocklist",
+                // SwiftShader composites the panels' see-through surfaces into gray blocks;
+                // software compositing draws them right (WebGL still uses SwiftShader)
+                "--disable-gpu-compositing",
+            ]
+          : [];
     const app = await electron.launch({
         executablePath: require("electron"),
         args: [

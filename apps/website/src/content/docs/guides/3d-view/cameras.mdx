@@ -24,23 +24,26 @@ In the 3D View you can look at the show from anywhere: move the view with the mo
 
 ## Move the view
 
-| Do this                                                      | To                                              |
-| ------------------------------------------------------------ | ----------------------------------------------- |
-| Drag                                                         | Pan across the field                            |
-| <Kbd keys="Alt" gesture="drag" />, <Kbd keys="Ctrl" gesture="drag" />, <Kbd keys="Shift" gesture="drag" />, or drag with the right mouse button | Orbit around the field |
-| Scroll or pinch                                              | Zoom toward the pointer                         |
-| Hold <Kbd keys="Shift" /> or <Kbd keys="Alt" /> while scrolling | Pan                                          |
-| Double-click a spot on the field                             | Orbit around that spot from now on              |
+| Do this                                                                                                   | To                                 |
+| --------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| Drag                                                                                                      | Pan across the field               |
+| Drag with the right mouse button, or hold <Kbd keys="Alt" />, <Kbd keys="Ctrl" /> or <Kbd keys="Shift" /> while dragging | Orbit around the field             |
+| Scroll or pinch                                                                                           | Zoom toward the pointer            |
+| Hold <Kbd keys="Shift" /> or <Kbd keys="Alt" /> while scrolling                                           | Pan                                |
+| Double-click a spot on the field                                                                          | Orbit around that spot from now on |
 
 The camera never goes below the ground.
 
-If you'd rather orbit by scrolling, open <Ui k="view3d.settings.title" /> in the 3D View and set <Ui k="settings.view3d.controls" /> to <Ui k="settings.view3d.controls.trackpad" />. The same choice is in Settings › <Ui k="settings.view3d" />. Then scrolling and dragging orbit, a pinch zooms, and <Kbd keys="Shift" gesture="drag" /> or the right mouse button pans.
+To change this, open <Ui k="view3d.settings.title" /> in the 3D View and pick another <Ui k="settings.view3d.controls" /> choice. The same choice is in Settings › <Ui k="settings.view3d" />.
+
+- <Ui k="settings.view3d.controls.orbit" />: dragging orbits, and <Kbd keys="Shift" gesture="drag" /> or the right mouse button pans. Scrolling still zooms.
+- <Ui k="settings.view3d.controls.trackpad" />: scrolling and dragging orbit, a pinch zooms, and <Kbd keys="Shift" gesture="drag" /> or the right mouse button pans.
 
 On a touch screen, one finger orbits and two fingers pan and zoom, whichever you choose.
 
 <Media
   id="3d-move-view"
-  alt="The 3D View: a Shift-drag orbits the camera around the field, a drag pans it, and the mouse wheel zooms in toward the band."
+  alt="The 3D View: a drag orbits the camera around the field, a Shift-drag pans it, and the mouse wheel zooms in toward the band."
 />
 
 As soon as you move the view, the camera menu reads <Ui k="view3d.overlay.freeCamera" />. Choose a camera to go back to a set position.

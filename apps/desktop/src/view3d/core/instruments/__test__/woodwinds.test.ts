@@ -10,6 +10,7 @@ import {
     type Piece,
     type Vec3,
 } from "../mesh";
+import { SAX_BODY_TURN } from "../saxophones";
 import { SAX_SHAPES, WOODWIND_DIMENSIONS, woodwindModel } from "../woodwinds";
 import { hold } from "../holds";
 import type { WoodwindModelId } from "../model";
@@ -29,10 +30,10 @@ describe("woodwind models", () => {
     it.each(IDS)("%s stays within the triangle budgets", (id) => {
         const high = triangleCount(woodwindModel(id, "high").pieces);
         const low = triangleCount(woodwindModel(id, "low").pieces);
-        expect(high).toBeGreaterThanOrEqual(4000);
-        expect(high).toBeLessThanOrEqual(24000);
+        expect(high).toBeGreaterThanOrEqual(6000);
+        expect(high).toBeLessThanOrEqual(21000);
         expect(low).toBeGreaterThanOrEqual(1000);
-        expect(low).toBeLessThanOrEqual(3500);
+        expect(low).toBeLessThanOrEqual(4500);
     });
 
     it.each(IDS)("%s runs along +Z from the mouthpiece at the origin", (id) => {
@@ -229,6 +230,20 @@ function groups(pieces: Piece[]): number {
     return count;
 }
 
+/** A piece turned back by the sax body's turn about its axis: the body as built, keys +Y and bell +X. */
+function asBuilt(p: Piece, yb: number): Piece {
+    const c = Math.cos(SAX_BODY_TURN);
+    const s = Math.sin(SAX_BODY_TURN);
+    const positions = [...p.positions];
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = p.positions[i];
+        const y = p.positions[i + 1] - yb;
+        positions[i] = x * c + y * s;
+        positions[i + 1] = yb - x * s + y * c;
+    }
+    return { ...p, positions };
+}
+
 /** A curved sax's body: its axis height, top, bow and radius along it. */
 function saxBody(id: "altoSax" | "tenorSax" | "bariSax") {
     const sh = SAX_SHAPES[id];
@@ -239,7 +254,11 @@ function saxBody(id: "altoSax" | "tenorSax" | "bariSax") {
     const rAt = (z: number) =>
         sh.rTop + ((sh.rBow - sh.rTop) * (z - top)) / (bowZ - top);
     const at = (k: number) => top + (bowZ - top) * k;
-    return { m, sh, yb, top, bowZ, rAt, at };
+    // below the neck, the pieces in the frame the body is built in
+    const built = m.pieces.map((p) =>
+        box(p).min[2] > top - 0.02 ? asBuilt(p, yb) : p,
+    );
+    return { m, sh, yb, top, bowZ, rAt, at, built };
 }
 
 describe("woodwind real key work", () => {
@@ -265,12 +284,13 @@ describe("woodwind real key work", () => {
             const m = woodwindModel(id);
             const r = WOODWIND_DIMENSIONS[id].bore;
             const end = bounds(m.pieces).max[2];
-            // the lip plate: wider than the tube, on the player's side at the lips
+            // the lip plate: wider than the tube, at the lips, in line with the keys (+Y)
             const plate = m.pieces.filter(
                 (p) =>
                     p.part === PART_CHROME &&
                     Math.abs(mid(p)[2]) < 0.01 &&
-                    box(p).min[1] < -r - 0.002 &&
+                    box(p).max[1] > r + 0.002 &&
+                    box(p).min[1] > 0 &&
                     size(p)[0] > 2 * r,
             );
             expect(plate.length).toBeGreaterThanOrEqual(1);
@@ -278,7 +298,7 @@ describe("woodwind real key work", () => {
                 (p) =>
                     p.part === PART_BLACK &&
                     Math.abs(mid(p)[2]) < 0.01 &&
-                    mid(p)[1] < -r,
+                    mid(p)[1] > r,
             );
             expect(hole.length).toBe(1);
             // the crown closes the head behind the lips
@@ -294,7 +314,7 @@ describe("woodwind real key work", () => {
                     mid(p)[2] < end * 0.6,
             );
             expect(thumb.length).toBeGreaterThanOrEqual(2);
-            // trill keys: closed cups turned toward −X
+            // trill keys: closed cups turned toward the player's side (−X)
             const trill = flatCups(m.pieces).closed.filter(
                 (c) => c[0] < -r * 0.3,
             );
@@ -320,9 +340,10 @@ describe("woodwind real key work", () => {
         const rollers = m.pieces.filter(
             (p) =>
                 p.part === PART_CHROME &&
-                mid(p)[0] < -r &&
+                mid(p)[0] > r &&
+                mid(p)[1] < r &&
                 mid(p)[2] > foot &&
-                mid(p)[2] < foot + 0.04,
+                mid(p)[2] < foot + 0.045,
         );
         expect(rollers.length).toBeGreaterThanOrEqual(2);
     });
@@ -387,9 +408,9 @@ describe("woodwind real key work", () => {
     });
 
     it.each(["altoSax", "tenorSax", "bariSax"] as const)(
-        "%s: palm keys up the left side, side keys on the right, guards and table keys by the bow",
+        "%s: palm keys up the bell's side, side keys opposite, guards and table keys by the bow",
         (id) => {
-            const { m, sh, yb, top, bowZ, rAt, at } = saxBody(id);
+            const { m, sh, yb, top, bowZ, rAt, at, built } = saxBody(id);
             const w = sh.bowWidth;
             const outside = (p: Piece, side: 1 | -1) => {
                 const c = mid(p);
@@ -399,11 +420,11 @@ describe("woodwind real key work", () => {
                     size(p)[2] < 0.06
                 );
             };
-            const palm = m.pieces.filter(
+            const palm = built.filter(
                 (p) => outside(p, 1) && mid(p)[2] > top && mid(p)[2] < at(0.2),
             );
             expect(palm.length).toBeGreaterThanOrEqual(3);
-            const side = m.pieces.filter(
+            const side = built.filter(
                 (p) =>
                     outside(p, -1) &&
                     mid(p)[2] > at(0.35) &&
@@ -412,7 +433,7 @@ describe("woodwind real key work", () => {
             expect(side.length).toBeGreaterThanOrEqual(3);
             // the low B, Bb and C# keys on the bell's tube, in front of it
             const rBell = sh.rBow * 1.08;
-            const bellKeys = m.pieces.filter((p) => {
+            const bellKeys = built.filter((p) => {
                 const c = mid(p);
                 return (
                     Math.abs(c[0] - w) < rBell * 1.2 &&
@@ -424,7 +445,7 @@ describe("woodwind real key work", () => {
             });
             expect(bellKeys.length).toBeGreaterThanOrEqual(3);
             // key guards: thin lacquer arches standing well clear of the low C and Eb cups
-            const guards = m.pieces.filter((p) => {
+            const guards = built.filter((p) => {
                 const c = mid(p);
                 return (
                     p.part === PART_METAL &&
@@ -438,7 +459,7 @@ describe("woodwind real key work", () => {
             });
             expect(guards.length).toBeGreaterThanOrEqual(4);
             // thumb rest, thumb hook, strap ring and octave thumb key behind the body
-            const back = m.pieces.filter((p) => {
+            const back = built.filter((p) => {
                 const c = mid(p);
                 return (
                     c[2] > top &&
@@ -448,7 +469,7 @@ describe("woodwind real key work", () => {
             });
             expect(back.length).toBeGreaterThanOrEqual(4);
             // pearls over the two stacks
-            const pearls = m.pieces.filter((p) => {
+            const pearls = built.filter((p) => {
                 const c = mid(p);
                 return (
                     p.part === PART_CHROME &&

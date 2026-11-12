@@ -7,6 +7,7 @@ import {
 } from "@openmarch/core";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import {
     fakeShowPositions,
     linearTrack,
@@ -139,7 +140,7 @@ describe("performer matrices", () => {
         return { xz, placed };
     };
 
-    it("places each block at its world position, standing on the ground", () => {
+    it("places each block at its world position, standing on the field surface", () => {
         const { xz, placed } = positionsAt(1000);
         expect([...placed]).toEqual([1, 1, 0]);
         const matrices = new Float32Array(48).fill(7);
@@ -149,7 +150,7 @@ describe("performer matrices", () => {
         const m = new Matrix4().fromArray(matrices, 0);
         const p = new Vector3().applyMatrix4(m);
         expect(p.x).toBeCloseTo(expected.x, 4);
-        expect(p.y).toBe(0);
+        expect(p.y).toBeCloseTo(FIELD_SURFACE_Y, 6);
         expect(p.z).toBeCloseTo(expected.z, 4);
         // No rotation or scale.
         expect(new Vector3(1, 1, 1).applyMatrix4(m).sub(p)).toEqual(

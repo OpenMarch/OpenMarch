@@ -113,7 +113,7 @@ describe("battery placement", () => {
         }
     });
 
-    it("carries every bass drum high: centers at the chest, tops no higher than 1.6 m", () => {
+    it("carries every bass drum high: centers about the shoulders, tops no higher than 1.85 m", () => {
         for (const inches of [18, 22, 26, 32]) {
             const b = bounds(
                 batteryModel("bass", "high", {
@@ -122,9 +122,10 @@ describe("battery placement", () => {
             );
             // the origin sits at 1.0 m
             const center = 1.0 + (b.max[1] + b.min[1]) / 2;
-            expect(center).toBeGreaterThan(1.15);
-            expect(center).toBeLessThan(1.45);
-            expect(1.0 + b.max[1]).toBeLessThanOrEqual(1.6001);
+            // photos put every size's center at about shoulder height
+            expect(center).toBeGreaterThan(1.25);
+            expect(center).toBeLessThan(1.55);
+            expect(1.0 + b.max[1]).toBeLessThanOrEqual(1.8501);
         }
     });
 

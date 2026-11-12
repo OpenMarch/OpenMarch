@@ -1,7 +1,6 @@
 import tolgee from "@/global/singletons/Tolgee";
 import type { SpanInfo } from "@openmarch/core";
 import { pageBoxStateOf, type PageBoxRange } from "./timelinePageBoxState";
-import { holdTerms } from "./holdTerms";
 import { joinList } from "./translateTimelineText";
 
 /**
@@ -238,6 +237,34 @@ export function followingPages(
     return names.length === 0 ? null : { names, all };
 }
 
+/**
+ * Each marcher's own run of `followingPages`: the page boxes after `currentPageId`, in a row,
+ * that it follows into from a page (not its starting spot), up to the first it doesn't. Only the
+ * marchers that follow the first of them are in it. `followingPages` names the union of these.
+ */
+export function followingRuns(
+    states: readonly PageKeepState[],
+    currentPageId: number,
+    homePageId: number | null = null,
+): Map<number, PageKeepState[]> {
+    const runs = new Map<number, PageKeepState[]>();
+    const first = nextBoxIndex(states, currentPageId, homePageId);
+    if (first < 0 || first >= states.length) return runs;
+    const moved = (s: PageKeepState) => {
+        const start = new Set(s.fromStart);
+        return new Set(s.follows.filter((id) => !start.has(id)));
+    };
+    for (const id of moved(states[first]!)) {
+        const run: PageKeepState[] = [];
+        for (let i = first; i < states.length; i++) {
+            if (!moved(states[i]!).has(id)) break;
+            run.push(states[i]!);
+        }
+        runs.set(id, run);
+    }
+    return runs;
+}
+
 /** "Page 3" or "Pages 3–4" (first to last of `names`, in page order). */
 export function pagesText(names: readonly string[]): string {
     if (names.length === 0) return "";
@@ -302,129 +329,3 @@ export function marcherNamesText(
         ),
     ]);
 }
-
-/** A page box's chain: its words, and whom a click sets. */
-export interface PageChainWords {
-    readonly label: string;
-    readonly hint: string;
-    /**
-     * The label for a box too narrow for its chain, whose words send you to the page's menu (a
-     * click on the box selects it): it names whom the menu changes, as **Set as shown** sets every
-     * selected marcher that follows, not-yet-moved ones too. The same as `label` when they have
-     * all moved.
-     */
-    readonly menuLabel: string;
-    /** The hint for that box: what the page's menu does, for the marchers `menuLabel` names */
-    readonly menuHint: string;
-    /** A click sets these marchers as shown */
-    readonly marcherIds: readonly number[];
-}
-
-/** A chain's words for one set of marchers */
-type ChainText = Pick<PageChainWords, "label" | "hint" | "menuHint">;
-
-/**
- * A linked chain's words: what is true now (they hold where a page left them, so changes to that
- * page carry here), then what a click does (sets them as shown here, holds decision 12). Owner,
- * 2026-10-12: say what happens now first, not only what a click would do.
- */
-const followsWords = (
-    follows: readonly number[],
-    page: string,
-    fromPage: string | null,
-    t: KeepTranslate,
-    nameOf: MarcherNameOf | undefined,
-): ChainText => {
-    const count = follows.length;
-    const terms = holdTerms();
-    const names = marcherNamesText(follows, nameOf, t);
-    const label = fromPage
-        ? names
-            ? t(
-                  "timeline.keep.chain.notOwnNamed",
-                  "{count, plural, =1 {{names} has no position of its own here, shown where Page {from} left it} other {{names} have no position of their own here, shown where Page {from} left them}}",
-                  { count, names, from: fromPage },
-              )
-            : t(
-                  "timeline.keep.chain.notOwn",
-                  "{count, plural, one {# marcher has no position of its own here, shown where Page {from} left it} other {# marchers have no position of their own here, shown where Page {from} left them}}",
-                  { count, from: fromPage },
-              )
-        : names
-          ? t(
-                "timeline.keep.chain.notOwnNamedEarlier",
-                "{count, plural, =1 {{names} has no position of its own here, shown where earlier pages left it} other {{names} have no position of their own here, shown where earlier pages left them}}",
-                { count, names },
-            )
-          : t(
-                "timeline.keep.chain.notOwnEarlier",
-                "{count, plural, one {# marcher has no position of its own here, shown where earlier pages left it} other {# marchers have no position of their own here, shown where earlier pages left them}}",
-                { count },
-            );
-    return {
-        label,
-        hint: fromPage
-            ? t(
-                  "timeline.keep.chain.notOwnHint",
-                  "Changes to Page {from} carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
-                  { ...terms, count, page, from: fromPage },
-              )
-            : t(
-                  "timeline.keep.chain.notOwnHintEarlier",
-                  "Changes to earlier pages carry onto Page {page}. Click to make {count, plural, =1 {it {definedLower} here, where it's shown} other {them {definedLower} here, where they're shown}}",
-                  { ...terms, count, page },
-              ),
-        menuHint: fromPage
-            ? t(
-                  "timeline.keep.chain.notOwnMenuHint",
-                  "Changes to Page {from} carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
-                  { ...terms, count, page, from: fromPage },
-              )
-            : t(
-                  "timeline.keep.chain.notOwnMenuHintEarlier",
-                  "Changes to earlier pages carry onto Page {page}. Right-click the page and choose {defineAsShown} to keep {count, plural, =1 {it} other {them}} here",
-                  { ...terms, count, page },
-              ),
-    };
-};
-
-/**
- * A page box's chain for the selection, or null where none follows into it after a move: a click
- * sets them as shown there. The words name whom a click changes (by name up to three,
- * `marcherNamesText`), so a click on a group's chain never surprises (the study's selection trap).
- */
-export function pageChainWords(
-    state: PageKeepState,
-    t: KeepTranslate = appTranslate,
-    nameOf?: MarcherNameOf,
-): PageChainWords | null {
-    const { pageName: page, from } = state;
-    // Marchers that haven't moved yet get no chain (lead, wp19): every box would show one. They
-    // keep the other ways in (the inspector, the menu)
-    const start = new Set(state.fromStart);
-    const follows = state.follows.filter((id) => !start.has(id));
-    if (follows.length === 0) return null;
-    const fromPage = from.length === 1 ? from[0]! : null;
-    // The page's menu sets the not-yet-moved ones too, so a narrow box's words count them (and
-    // name no one page: those hold from the start)
-    const all = state.follows;
-    const menuToo = all.length > follows.length;
-    return {
-        ...withMenu(
-            followsWords(follows, page, fromPage, t, nameOf),
-            menuToo && followsWords(all, page, null, t, nameOf),
-        ),
-        marcherIds: follows,
-    };
-}
-
-/** A chain's words, with a narrow box's from `menu`'s marchers where they differ (`menuLabel`). */
-const withMenu = (
-    words: ChainText,
-    menu: ChainText | false,
-): Pick<PageChainWords, "label" | "hint" | "menuLabel" | "menuHint"> => ({
-    label: words.label,
-    hint: words.hint,
-    menuLabel: (menu || words).label,
-    menuHint: (menu || words).menuHint,
-});

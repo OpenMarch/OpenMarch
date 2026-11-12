@@ -10,31 +10,5 @@
             "license": "CC0-1.0"
         }
     ],
-    "entries": [
-        {
-            "name": "Trumpet",
-            "files": ["src/view3d/assets/instruments/trumpet.json"],
-            "license": "CC-BY-4.0",
-            "author": "Kagelok",
-            "sourceUrl": "https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c",
-            "attribution": "\"Trumpet\" by Kagelok (https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), licensed under CC BY 4.0; moved, scaled, given mapped materials and decimated for OpenMarch",
-            "retrieved": "2026-10-09",
-            "modified": true
-        },
-        {
-            "name": "Mellophone, baritone, euphonium and contra valve blocks",
-            "files": [
-                "src/view3d/assets/instruments/mellophone.json",
-                "src/view3d/assets/instruments/baritone.json",
-                "src/view3d/assets/instruments/euphonium.json",
-                "src/view3d/assets/instruments/contra.json"
-            ],
-            "license": "CC-BY-4.0",
-            "author": "Kagelok",
-            "sourceUrl": "https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c",
-            "attribution": "Valve block and mouthpiece from \"Trumpet\" by Kagelok (https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), licensed under CC BY 4.0; scaled to each horn with new tubing and bells by OpenMarch",
-            "retrieved": "2026-10-09",
-            "modified": true
-        }
-    ]
+    "entries": []
 }

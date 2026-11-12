@@ -144,8 +144,8 @@ function parseArgs(argv) {
     const options = { _: [] };
     for (let i = 0; i < argv.length; i++) {
         const arg = argv[i];
-        // in-docker.sh adds --software-gl for the recorder; nothing here draws
-        if (arg === "--software-gl") continue;
+        // in-docker.sh adds --software-gl or --gpu-gl for the recorder; nothing here draws
+        if (arg === "--software-gl" || arg === "--gpu-gl") continue;
         if (arg.startsWith("--")) {
             const key = arg.slice(2);
             const next = argv[i + 1];

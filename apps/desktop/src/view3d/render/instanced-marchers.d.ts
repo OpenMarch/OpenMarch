@@ -88,7 +88,10 @@ export function writeMarcher(
     clip: MarcherClip,
 ): void;
 
-/** Instance matrix for a marcher at field (x, z) facing `heading` (radians about +Y, 0 = +Z), at scale h. */
+/**
+ * Instance matrix for a marcher at field (x, z) facing `heading` (radians
+ * about +Y, 0 = +Z), at scale h, with its soles at height y (default 0).
+ */
 export function writeMatrix(
     array: ArrayLike<number> & { [i: number]: number },
     i: number,
@@ -96,6 +99,7 @@ export function writeMatrix(
     z: number,
     heading: number,
     h?: number,
+    y?: number,
 ): void;
 
 export const BLOCK_BODY: unknown[];

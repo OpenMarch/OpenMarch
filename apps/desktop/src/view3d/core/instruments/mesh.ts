@@ -19,8 +19,11 @@ export interface Piece {
     indices: number[];
     /** Optional linear RGB per vertex (3 numbers each), from `colorPieces`. */
     colors?: number[];
-    /** The bone this piece rides, when not the model's default. */
-    bone?: "handR" | "handL" | "spine002";
+    /**
+     * The bone this piece rides, when not the model's default. A `head`
+     * piece is given in the body's frame at bind, not the instrument's.
+     */
+    bone?: "handR" | "handL" | "spine002" | "head";
 }
 
 /** Part ids for instruments: the metal in the look's finish, chrome, and black hardware. */
@@ -193,6 +196,15 @@ export function cylinder(
     part: number,
 ): Piece {
     return tube([from, to], radius, segments, part);
+}
+
+/** A point moved by `m` (column-major, as `transformPiece` reads it). */
+export function applyMat4(m: Mat4, [x, y, z]: Vec3): Vec3 {
+    return [
+        m[0] * x + m[4] * y + m[8] * z + m[12],
+        m[1] * x + m[5] * y + m[9] * z + m[13],
+        m[2] * x + m[6] * y + m[10] * z + m[14],
+    ];
 }
 
 export function transformPiece(p: Piece, m: Mat4): Piece {

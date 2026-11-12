@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "无法将队员坐标设为下一页的坐标：没有下一页",
             "noPreviousPage": "无法将队员坐标设为上一页的坐标：没有上一页",
-            "setAllToNext": "从下一页复制位置（全部队员）",
-            "setAllToNextSuccess": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为下一页（第{nextPage}页）的坐标}}",
-            "setSelectedToNext": "从下一页复制位置（所选队员）",
-            "setSelectedToNextSuccess": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为下一页（第{nextPage}页）的坐标}}",
             "setAllToPreviousDone": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为上一页（第{previousPage}页）的坐标}}",
             "setSelectedToPreviousDone": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为上一页（第{previousPage}页）的坐标}}"
         },
@@ -2579,7 +2575,6 @@
             "placeAllMarchers": "放置所有队员",
             "placeSelectedMarchers": "放置所选队员",
             "snapToggleCaption": "吸附",
-            "toNextPagePositions": "...到下一页的位置",
             "setMarcherPositionsAriaLabel": "设置队员位置"
         },
         "collisions": {

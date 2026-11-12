@@ -535,7 +535,7 @@
         "bindings": []
     },
     "timelineHoldFromPrevious": {
-        "label": "Hold from previous page",
+        "label": "Hold from last keyframe",
         "category": "batchEdit",
         "bindings": [
             {
@@ -568,8 +568,13 @@
             }
         ]
     },
+    "timelineHoldOverWindow": {
+        "label": "Hold from start flag to playhead",
+        "category": "batchEdit",
+        "bindings": []
+    },
     "setAllMarchersToNextPage": {
-        "label": "Copy positions from next page (all marchers)",
+        "label": "Move to next page's spots (all marchers)",
         "category": "batchEdit",
         "bindings": [
             {
@@ -607,7 +612,7 @@
         ]
     },
     "setSelectedMarchersToNextPage": {
-        "label": "Copy positions from next page (selected)",
+        "label": "Move to next page's spots (selected)",
         "category": "batchEdit",
         "bindings": [
             {

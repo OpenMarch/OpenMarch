@@ -22,6 +22,13 @@ import {
     type GuardUniformPresetId,
     type UniformPresetId,
 } from "@/view3d/core/marchers/uniformPresets";
+import {
+    FINISHES,
+    TUBA_MODELS,
+    type Finish,
+    type TubaModelId,
+} from "@/view3d/core/instruments/catalog";
+import { brassFinishOf, tubaModelOf } from "@/view3d/core/venueSettings";
 import { Segmented } from "./Panel";
 import {
     applyVenueChange,
@@ -139,6 +146,44 @@ export function GuardUniformPicker() {
             label={t("view3d.settings.guardUniforms")}
             testId="view3d-guard-uniform-picker"
             className="grid! grid-cols-2 [&>*]:justify-start"
+        />
+    );
+}
+
+/** The brass line's finish: gold lacquer or silver plate. */
+export function BrassFinishPicker() {
+    const { t } = useTranslate();
+    const { settings, request } = useVenueRequest();
+    return (
+        <Segmented
+            value={settings ? brassFinishOf(settings.brassFinish) : null}
+            options={FINISHES.map((finish) => ({
+                value: finish,
+                label: t(`view3d.brassFinish.${finish}`),
+            }))}
+            onChange={(brassFinish: Finish) =>
+                request({ kind: "brassFinish", brassFinish })
+            }
+            label={t("view3d.settings.brassFinish")}
+            testId="view3d-brass-finish-picker"
+        />
+    );
+}
+
+/** What the Tuba section carries: marching tubas or sousaphones. */
+export function TubaPicker() {
+    const { t } = useTranslate();
+    const { settings, request } = useVenueRequest();
+    return (
+        <Segmented
+            value={settings ? tubaModelOf(settings.tuba) : null}
+            options={TUBA_MODELS.map((tuba) => ({
+                value: tuba,
+                label: t(`view3d.tuba.${tuba}`),
+            }))}
+            onChange={(tuba: TubaModelId) => request({ kind: "tuba", tuba })}
+            label={t("view3d.settings.tuba")}
+            testId="view3d-tuba-picker"
         />
     );
 }

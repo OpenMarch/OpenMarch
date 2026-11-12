@@ -58,10 +58,10 @@ const upSnap12: CueInput = {
 // The bake's rows, as bakeLayout lays them out: holds are one sample (1/30
 // of a count), transitions 30 samples (one count) that the rate stretches.
 const rows = {
-    "hold:brass:up": { row: 400, frames: 1, counts: 1 / 30 },
-    "hold:brass:carry": { row: 402, frames: 1, counts: 1 / 30 },
-    "trans:brass:up>carry": { row: 404, frames: 30, counts: 1 },
-    "trans:brass:carry>up": { row: 435, frames: 30, counts: 1 },
+    "hold:trumpet:up": { row: 400, frames: 1, counts: 1 / 30 },
+    "hold:trumpet:carry": { row: 402, frames: 1, counts: 1 / 30 },
+    "trans:trumpet:up>carry": { row: 404, frames: 30, counts: 1 },
+    "trans:trumpet:carry>up": { row: 435, frames: 30, counts: 1 },
 };
 
 /** The horn texels slot 3 gets at count `c`. */
@@ -70,7 +70,7 @@ function hornTexelsAt(cues: CueInput[], c: number) {
         defaultState: "up",
         secondsPerCount,
     });
-    const play = hornPlay(events[hornEventAt(events, c)], "brass", rows);
+    const play = hornPlay(events[hornEventAt(events, c)], "trumpet", rows);
     const state = emptyState(4);
     writeChannelState(state, 3, "horn", play);
     const o = 3 * STATE_TEXELS * 4;

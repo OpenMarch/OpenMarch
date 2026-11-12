@@ -5,6 +5,7 @@ import {
     dragAction,
     loadControlScheme,
     parseControlScheme,
+    SCHEME_GESTURES,
     saveControlScheme,
     wheelAction,
 } from "../controlScheme";
@@ -45,8 +46,31 @@ describe("the saved control scheme", () => {
         expect(loadControlScheme(storage)).toBe("trackpad");
     });
 
+    it("keeps an earlier choice of orbit", () => {
+        const storage = memoryStorage();
+        saveControlScheme("orbit", storage);
+        expect(loadControlScheme(storage)).toBe("orbit");
+    });
+
     it("falls back to map for a value it doesn't know", () => {
         expect(parseControlScheme("standard")).toBe("map");
+    });
+});
+
+describe("dragging in orbit", () => {
+    it("orbits on a plain drag", () => {
+        expect(dragAction("orbit", press())).toBe("orbit");
+    });
+
+    it("pans with the right button or Shift", () => {
+        expect(dragAction("orbit", press({ buttons: 2 }))).toBe("pan");
+        expect(dragAction("orbit", press({ shiftKey: true }))).toBe("pan");
+    });
+
+    it("orbits with Ctrl, even when a Mac reports Ctrl-click as the right button", () => {
+        expect(dragAction("orbit", press({ ctrlKey: true, buttons: 2 }))).toBe(
+            "orbit",
+        );
     });
 });
 
@@ -86,8 +110,9 @@ describe("dragging in trackpad", () => {
 
 describe("touch and pen", () => {
     it.each(["touch", "pen"])(
-        "orbit with %s in either scheme",
+        "orbit with %s in every scheme",
         (pointerType) => {
+            expect(dragAction("orbit", press({ pointerType }))).toBe("orbit");
             expect(dragAction("map", press({ pointerType }))).toBe("orbit");
             expect(dragAction("trackpad", press({ pointerType }))).toBe(
                 "orbit",
@@ -97,7 +122,8 @@ describe("touch and pen", () => {
 });
 
 describe("scrolling", () => {
-    it("zooms in map and orbits in trackpad", () => {
+    it("zooms in orbit and map, and orbits in trackpad", () => {
+        expect(wheelAction("orbit", wheel())).toBe("zoom");
         expect(wheelAction("map", wheel())).toBe("zoom");
         expect(wheelAction("trackpad", wheel())).toBe("orbit");
     });
@@ -111,4 +137,34 @@ describe("scrolling", () => {
         expect(wheelAction("map", wheel({ shiftKey: true }))).toBe("pan");
         expect(wheelAction("trackpad", wheel({ altKey: true }))).toBe("pan");
     });
+});
+
+// Checks each card's camera moves, not its input names: a browser can't tell a
+// mouse wheel from a two-finger scroll, so "scroll" and "swipe" are the same event.
+describe("the gestures the Controls picker shows", () => {
+    const mouse = { drag: 1, rightDrag: 2 } as const;
+    const wheels = {
+        scroll: wheel(),
+        swipe: wheel(),
+        pinch: wheel({ ctrlKey: true }),
+    } as const;
+    const does = { pinch: "zoom", zoom: "zoom", orbit: "orbit", pan: "pan" };
+
+    it.each(["orbit", "map", "trackpad"] as const)(
+        "match what %s does",
+        (scheme) => {
+            for (const { input, move } of SCHEME_GESTURES[scheme]) {
+                const got =
+                    input === "drag" || input === "rightDrag"
+                        ? dragAction(scheme, press({ buttons: mouse[input] }))
+                        : does[wheelAction(scheme, wheels[input])];
+                expect(got, `${scheme} ${input}`).toBe(move);
+            }
+            expect(SCHEME_GESTURES[scheme].map((g) => g.move).sort()).toEqual([
+                "orbit",
+                "pan",
+                "zoom",
+            ]);
+        },
+    );
 });
