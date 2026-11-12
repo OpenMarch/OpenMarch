@@ -2927,7 +2927,8 @@
             "pickSeat": "Pick a seat",
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
-            "freeCamera": "Free view"
+            "freeCamera": "Free view",
+            "director": "Director"
         },
         "readout": {
             "count": "Count {count} of {total}",

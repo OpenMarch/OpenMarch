@@ -8,6 +8,7 @@ export * from "./path-utility";
 export * from "./page";
 export * from "./timeline";
 export * from "./cues";
+export * from "./cinema";
 export * from "./items";
 export * from "./sizes";
 
