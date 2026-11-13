@@ -1,10 +1,17 @@
 import { BugBeetleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useTranslate } from "@tolgee/react";
 import { siteUrl } from "@/global/siteUrl";
+import { runAction } from "@/shortcuts/registry";
+import { canSendReports } from "@/feedback/openReport";
 
 export default function BugReport() {
     const { t } = useTranslate();
     const handleClick = () => {
+        // The report form (fork #801); web builds that can't sign in keep the guide
+        if (canSendReports) {
+            runAction("reportFeedback");
+            return;
+        }
         const url = siteUrl("/guides/submitting-feedback/");
         if (window.electron?.openExternal) {
             // recommended way to open external links in the default browser in electron

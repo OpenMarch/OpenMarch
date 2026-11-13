@@ -24,20 +24,25 @@ const rendererActionItem =
         labelKey,
         accelerator,
     }: MenuAction): MenuItemConstructorOptions =>
-        isMacOS
+        !accelerator
             ? {
-                  label: t("menu.withShortcut", {
-                      label: t(labelKey),
-                      shortcut: accelerator.replace("Shift+/", "?"),
-                  }),
+                  label: t(labelKey),
                   click: () => mainProcess.sendMenuAction(action),
               }
-            : {
-                  label: t(labelKey),
-                  accelerator,
-                  registerAccelerator: false,
-                  click: () => mainProcess.sendMenuAction(action),
-              };
+            : isMacOS
+              ? {
+                    label: t("menu.withShortcut", {
+                        label: t(labelKey),
+                        shortcut: accelerator.replace("Shift+/", "?"),
+                    }),
+                    click: () => mainProcess.sendMenuAction(action),
+                }
+              : {
+                    label: t(labelKey),
+                    accelerator,
+                    registerAccelerator: false,
+                    click: () => mainProcess.sendMenuAction(action),
+                };
 
 /** "Check for Updates…": the renderer runs the check and says what it found */
 const checkForUpdatesItem = (): MenuItemConstructorOptions => ({

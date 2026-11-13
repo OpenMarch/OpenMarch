@@ -949,6 +949,16 @@
             }
         ]
     },
+    "reportFeedback": {
+        "label": "Report a bug or send feedback",
+        "category": "ui",
+        "bindings": []
+    },
+    "viewMyReports": {
+        "label": "View my reports",
+        "category": "ui",
+        "bindings": []
+    },
     "checkForUpdates": {
         "label": "Check for updates",
         "category": "ui",

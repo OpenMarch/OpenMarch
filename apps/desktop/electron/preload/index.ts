@@ -158,6 +158,53 @@ const APP_API = {
     openMenu: () => ipcRenderer.send("menu:open"),
     openSettingsWindow: () => ipcRenderer.invoke("settings:open"),
     reloadMainWindow: () => ipcRenderer.send("main-window:reload"),
+    /** Bug and feedback reports (fork #801) */
+    report: {
+        /** The open show's file name; null when no show is open */
+        showInfo: () =>
+            ipcRenderer.invoke("report:show-info") as Promise<{
+                fileName: string;
+            } | null>,
+        /** Sends the report: main scrubs the show and uploads it with the rest */
+        submit: (request: {
+            report: Record<string, unknown>;
+            sendShowFile: boolean;
+            expectedShowFileName?: string;
+            includeAudio: boolean;
+            recording?: {
+                bytes: ArrayBuffer;
+                mimeType: string;
+                seconds: number;
+            };
+            /** The editor's recent actions and errors */
+            diagnostics: readonly unknown[];
+        }) =>
+            ipcRenderer.invoke("report:submit", request) as Promise<
+                | { ok: true; id: number; showFileTooLarge: boolean }
+                | { ok: false; status?: number; message: string }
+            >,
+        /** Which step of sending is under way */
+        onProgress: (
+            callback: (
+                step:
+                    | {
+                          kind: "uploading";
+                          slot: "recording" | "show_file" | "diagnostics";
+                      }
+                    | { kind: "creating" },
+            ) => void,
+        ) => {
+            const listener = (
+                _e: Electron.IpcRendererEvent,
+                step: Parameters<typeof callback>[0],
+            ) => callback(step);
+            ipcRenderer.on("report:progress", listener);
+            return () => {
+                ipcRenderer.removeListener("report:progress", listener);
+            };
+        },
+    },
+
     onSettingsChanged: (
         callback: (change: Record<string, unknown>) => void,
     ) => {
