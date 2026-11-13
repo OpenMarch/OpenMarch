@@ -1466,7 +1466,6 @@
         "general.appearance": "Aparência",
         "general.appearance.dark": "Escuro",
         "general.appearance.light": "Claro",
-        "general.automaticUpdates": "Baixar e instalar atualizações automaticamente",
         "general.description": "Modo do editor, idioma e outras preferências de todo o aplicativo.",
         "general.editorMode": "Modo do editor",
         "general.editorMode.basic": "Básico",
@@ -2628,20 +2627,6 @@
             "shapesOff": "Desativado",
             "shapesSelected": "Quando selecionada"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Ocorreu um erro ao buscar a versão.",
-            "message": "Erro: {message}",
-            "noVersion": "Não foi possível buscar a versão mais recente."
-        },
-        "installLinux": "Instalar para Linux",
-        "installMacArm": "Instalar para Apple Silicon",
-        "installMacIntel": "Instalar para Mac Intel",
-        "installWindows": "Instalar para Windows",
-        "skipVersion": "Pular esta versão",
-        "title": "Nova versão disponível",
-        "trigger": "Nova versão disponível!"
     },
     "view3d": {
         "autoOpenPrompt": {

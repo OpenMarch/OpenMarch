@@ -1463,7 +1463,6 @@
         "general.appearance": "Hitsura",
         "general.appearance.dark": "Madilim",
         "general.appearance.light": "Maliwanag",
-        "general.automaticUpdates": "Awtomatikong i-download at i-install ang mga update",
         "general.description": "Editor mode, wika at iba pang setting para sa buong app.",
         "general.editorMode": "Editor mode",
         "general.editorMode.basic": "Basic",
@@ -2624,20 +2623,6 @@
             "shapesOff": "Naka-off",
             "shapesSelected": "Kapag napili"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Nagkaroon ng error habang kinukuha ang bersyon.",
-            "message": "Error: {message}",
-            "noVersion": "Hindi makuha ang pinakabagong bersyon."
-        },
-        "installLinux": "I-install para sa Linux",
-        "installMacArm": "I-install para sa Apple Silicon",
-        "installMacIntel": "I-install para sa Intel Mac",
-        "installWindows": "I-install para sa Windows",
-        "skipVersion": "Laktawan ang bersyong ito",
-        "title": "May bagong bersyon",
-        "trigger": "May bagong bersyon!"
     },
     "view3d": {
         "autoOpenPrompt": {

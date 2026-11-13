@@ -27,10 +27,12 @@ describe("Toaster", () => {
     it("sits 12px from the window's bottom-right corner, 320px wide, on any window width", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Page 3 is no longer a keyframe");
+            toast.info("Now walks straight through the end of Page 3");
         });
         const li = (
-            await screen.findByText("Page 3 is no longer a keyframe")
+            await screen.findByText(
+                "Now walks straight through the end of Page 3",
+            )
         ).closest("[data-sonner-toast]") as HTMLElement;
         const list = li.closest("[data-sonner-toaster]") as HTMLElement;
         expect(list.dataset.yPosition).toBe("bottom");
@@ -66,41 +68,44 @@ describe("Toaster", () => {
     it("keeps an action's label on one line, with a focus ring", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Pages 3–4 are no longer keyframes", {
+            toast.info("Now walks straight through the ends of Pages 3–4", {
                 action: {
-                    label: "Keep Pages 3–4 as keyframes",
+                    label: "Stop at the ends of Pages 3–4",
                     onClick: () => {},
                 },
             });
         });
         const button = await screen.findByRole("button", {
-            name: "Keep Pages 3–4 as keyframes",
+            name: "Stop at the ends of Pages 3–4",
         });
         expect(button.className).toMatch(/\bwhitespace-nowrap\b/);
         expect(button.className).toMatch(/\bshrink-0\b/);
         expect(button.className).toMatch(/focus-visible:ring/);
     });
 
-    it("with one button, keeps it beside the text on one row", async () => {
+    it("with one button, keeps it beside the text while the text keeps 120 px, else under it at the right (#805)", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Page 3 is no longer a keyframe", {
+            toast.info("Now walks straight through the end of Page 3", {
                 action: {
-                    label: "Keep Page 3 as a keyframe",
+                    label: "Stop at the end of Page 3",
                     onClick: () => {},
                 },
             });
         });
         const button = await screen.findByRole("button", {
-            name: "Keep Page 3 as a keyframe",
+            name: "Stop at the end of Page 3",
         });
         const { li, content } = toastOf(button);
         expect(li.querySelector("[data-cancel]")).toBeNull();
-        // The two-button layout only applies with a cancel
-        expect(li.className).toContain("[&:has([data-cancel])]:flex-wrap");
-        expect(li.className).not.toMatch(/(^| )flex-wrap( |$)/);
+        // The text never gets narrower than 120 px: a label too long to fit beside it wraps
+        expect(li.className).toMatch(/(^| )flex-wrap( |$)/);
         expect(content.className).toMatch(/(^| )flex-1( |$)/);
-        expect(button.className).not.toMatch(/\bml-auto\b/);
+        expect(content.className).toMatch(/(^| )basis-\[120px\]( |$)/);
+        // Only when it is the one button: with a cancel, the cancel pushes both right
+        expect(button.className).toContain(
+            "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto",
+        );
     });
 
     it("with two buttons, wraps them onto their own row under the text, right-aligned", async () => {
@@ -120,7 +125,7 @@ describe("Toaster", () => {
         expect(cancel.parentElement).toBe(action.parentElement);
         const { li, content } = toastOf(action);
         expect(li.matches(":has([data-cancel])")).toBe(true);
-        expect(li.className).toContain("[&:has([data-cancel])]:flex-wrap");
+        expect(li.className).toMatch(/(^| )flex-wrap( |$)/);
         // The text fills the first row beside the icon, so the buttons wrap below it
         expect(li.querySelector("[data-icon]")).not.toBeNull();
         expect(content.className).toContain(

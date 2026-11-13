@@ -1,42 +1,78 @@
 ---
 title: Get help and send feedback
-description: Where to ask a question, report a bug or suggest a feature, and what to include.
+description: Report a bug or send feedback from inside OpenMarch, or ask for help on Discord, GitHub or by email.
 type: how-to
 covers:
   - apps/desktop/src/components/titlebar/BugReport.tsx
+  - apps/desktop/src/feedback
   - apps/desktop/src/ErrorBoundary.tsx
+  - action:reportFeedback
+  - action:viewMyReports
   - i18n:titlebar.bugReport
+  - i18n:feedback
   - i18n:errorBoundary
 sidebar:
   order: 9
 ---
 
+import Media from "@/components/docs/Media.astro";
 import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
 
-OpenMarch is free and built by volunteers, so hearing what goes wrong and what you need is how it gets better. Ask a question, report a bug or suggest a feature in any of the places below.
+OpenMarch is free and built by volunteers, so hearing what goes wrong and what you need is how it gets better. The quickest way to tell us is from inside the app: a report goes straight to the team, with the details we need to find the problem.
 
-## Where to go
+## Send a report from the app
+
+Select <Ui k="titlebar.bugReport" /> in the title bar. The report opens in a drawer over the editor, so you can keep using your show while you write. It's also in the Help menu and the command palette, as <Ui k="actions.ui.reportFeedback" />.
+
+<Media id="start-report-drawer" alt="The report drawer over the editor, asking you to sign in to send a report, with links to GitHub and Discord instead." maxWidth={440} />
+
+You need to be signed in to your OpenMarch account, so you can follow your report and we can tell you what happens to it. If you'd rather not sign in, the drawer links to GitHub and Discord instead.
+
+<Steps>
+
+1. Under <Ui k="feedback.type.label" />, choose <Ui k="feedback.type.broken" />, <Ui k="feedback.type.feature" /> or <Ui k="feedback.type.feedback" />.
+2. Write a short summary, then answer the questions. For a bug, the steps that make it happen again are the most useful part.
+3. With a show open, <Ui k="feedback.attach.showFile" /> sends a copy of it. Marcher names and notes are removed from the copy, and its music isn't sent unless you turn on <Ui k="feedback.attach.music" />.
+4. To show us the problem, select <Ui k="feedback.record.start" />. The drawer steps aside while you record, so you can use the editor. <Ui k="feedback.record.microphone" /> is on, so you can talk us through it; turn it off to record without sound. Select <Ui k="feedback.record.stopAndReturn" /> when you're done.
+5. Play the recording in the drawer to check it. <Ui k="feedback.record.discard" /> throws it away so you can record again.
+6. Under <Ui k="feedback.public.label" />, choose whether your recording and show may be posted publicly, and whether to be credited by name. Leave them off and they stay private.
+7. Select <Ui k="feedback.send" />.
+
+</Steps>
+
+We email you a copy of your report. If it becomes a GitHub issue, we email you its link so you can follow it. Your app's recent actions and errors go with every report, and files you send are deleted from our servers after 2 months.
+
+To see what you've sent, select <Ui k="actions.ui.viewMyReports" /> in the Help menu or the command palette.
+
+### Keep your report while you work
+
+<Ui k="feedback.drawer.hide" /> (or Escape) tucks the drawer into a tab on the edge of the window, with what you've written kept. Select the tab to bring it back. The X closes the report; if you've written or recorded something, OpenMarch asks before throwing it away.
+
+### Recording on a computer and in the web editor
+
+In the desktop app, recording captures only the OpenMarch window, for up to 5 minutes. The first time, macOS asks whether OpenMarch may record the screen and use the microphone; allow both in System Settings › Privacy & Security, then try again. If you'd rather not allow the microphone, turn off <Ui k="feedback.record.microphone" /> and record without sound.
+
+In the web editor, your browser asks what to share: choose the OpenMarch tab. Recording isn't available in every browser, for example on an iPad.
+
+### If sending fails
+
+The reason shows under <Ui k="feedback.send" />, and your report stays in the drawer so you can try again. If you were signed out, sign in again from the drawer and send it; what you wrote and recorded is kept.
+
+## Other places to get help
 
 - [Discord](https://discord.openmarch.com): ask a question, show your work, or talk something through with the team and other users. It's the quickest way to get an answer.
-- [GitHub issues](https://github.com/OpenMarch/OpenMarch/issues): report a bug or request a feature. An issue is tracked until it's fixed, other users can add to it, and you're told when it changes. You need a free GitHub account.
+- [GitHub issues](https://github.com/OpenMarch/OpenMarch/issues): report a bug or request a feature in public. An issue is tracked until it's fixed, other users can add to it, and you're told when it changes. You need a free GitHub account.
 - [The OpenMarch Facebook group](https://facebook-group.openmarch.com): community discussion.
-- Email [contact@openmarch.com](mailto:contact@openmarch.com) if you'd rather not use any of these, or need to send a show privately.
+- Email [contact@openmarch.com](mailto:contact@openmarch.com) if you'd rather not use any of these.
 
-In the app, <Ui k="titlebar.bugReport" /> in the title bar opens this page.
-
-## Report a bug
-
-1. Check [Known issues](/troubleshooting/known-issues/), in case it's already there with a way around it.
-2. Open a [bug report on GitHub](https://github.com/OpenMarch/OpenMarch/issues/new?template=bug-template.yaml), or post in Discord.
-3. Say what you did, what you expected, and what happened instead. The steps that make it happen again are the most useful part.
-4. Give your OpenMarch version, shown next to the name in the title bar, and your system (for example macOS 15, Windows 11, or the web editor in Safari on an iPad).
-5. If you can, attach a screenshot or a short screen recording, and the `.dots` show it happened in.
+Before reporting a bug anywhere, check [Known issues](/troubleshooting/known-issues/), in case it's already there with a way around it. When you report it outside the app, give your OpenMarch version (shown next to the name in the title bar) and your system, for example macOS 15, Windows 11, or the web editor in Safari on an iPad.
 
 If OpenMarch stops with <Ui k="errorBoundary.title" />, select <Ui k="errorBoundary.copyErrorMessage" /> and paste the message into your report. <Ui k="errorBoundary.reportIssue" /> opens this page.
 
 ## Suggest a feature
 
-Open a [feature request on GitHub](https://github.com/OpenMarch/OpenMarch/issues/new?template=feature-request.yaml). Describe what you're trying to do in your show and what gets in the way, not only the button you'd like: there's often more than one way to solve it. Before you open a new one, search the [existing issues](https://github.com/OpenMarch/OpenMarch/issues) and add to a request that's already there.
+Choose <Ui k="feedback.type.feature" /> in the report drawer, or open a [feature request on GitHub](https://github.com/OpenMarch/OpenMarch/issues/new?template=feature-request.yaml). Describe what you're trying to do in your show and what gets in the way, not only the button you'd like: there's often more than one way to solve it.
 
 ## Related
 

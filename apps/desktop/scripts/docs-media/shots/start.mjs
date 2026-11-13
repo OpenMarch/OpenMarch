@@ -140,6 +140,27 @@ const shots = [
             return { box: await around(dialog, 0) };
         },
     },
+    {
+        id: "start-report-drawer",
+        kind: "still",
+        // The report drawer over the editor, before signing in (the recorder isn't signed in)
+        async setup({ page, around, wait }) {
+            await wait(2000);
+            await tidy(page);
+            await page
+                .getByRole("button", { name: "Submit bug or feedback" })
+                .click();
+            const drawer = page.getByRole("dialog", {
+                name: "Report a bug or send feedback",
+            });
+            await drawer.waitFor({ timeout: 10000 });
+            await wait(800);
+            await page.mouse.move(5, 500);
+            // Only the top: the rest of the drawer is empty until you sign in
+            const box = await around(drawer, 8);
+            return { box: { ...box, height: 280 } };
+        },
+    },
 ];
 
 export default shots;

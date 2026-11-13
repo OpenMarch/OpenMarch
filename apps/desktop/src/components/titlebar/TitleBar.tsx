@@ -17,7 +17,7 @@ import {
     AlertDialogAction,
     Button,
 } from "@openmarch/ui";
-import VersionChecker from "../VersionCheck";
+import UpdatePill from "@/updates/UpdatePill";
 import FileControls from "./FileControls";
 import { T, useTranslate } from "@tolgee/react";
 import ActionButton from "@/shortcuts/ActionButton";
@@ -236,7 +236,7 @@ function EditorTitleBar({
                                         {t("titlebar.webBadge")}
                                     </button>
                                 )}
-                                {!isWebBuild && <VersionChecker />}
+                                {!isWebBuild && <UpdatePill />}
                                 {showControls && <FileControls />}
                             </>
                         )}

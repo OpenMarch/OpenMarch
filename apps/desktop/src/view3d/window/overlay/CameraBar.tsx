@@ -2,8 +2,9 @@
  * The camera controls (ui.md UI-2): one menu button naming the current
  * camera, which lists the show's cameras for this venue (the kit's defaults
  * until the show changes them) with their number keys, then "Edit cameras…",
- * which opens the Cameras panel; then "Pick a seat". Camera movement belongs to the rig (P3.2); this only calls its
- * store.
+ * which opens the Cameras panel; then "Pick a seat". Where the Director is
+ * available it is the menu's first item: a camera track that follows the
+ * show. Camera movement belongs to the rig (P3.2); this only calls its store.
  */
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useTranslate } from "@tolgee/react";
@@ -11,12 +12,18 @@ import {
     ArmchairIcon,
     CaretDownIcon,
     CheckIcon,
+    FilmSlateIcon,
     PencilSimpleIcon,
     VideoCameraIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import Shortcut from "@/components/ui/Shortcut";
 import { useCameraStore } from "../camera/cameraStore";
+import {
+    directorAvailable,
+    toggleDirector,
+    useDirectorStore,
+} from "../cinema/directorStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { Panel, PanelSeparator, ToggleButton } from "./Panel";
 import { useCameraList } from "./useCameraList";
@@ -39,6 +46,7 @@ export function CameraBar({
     const selectCamera = useCameraStore((s) => s.selectCamera);
     const pickMode = useCameraStore((s) => s.pickMode);
     const setPickMode = useCameraStore((s) => s.setPickMode);
+    const directing = useDirectorStore((s) => s.directing);
     if (!kit) return null;
 
     const label = t("view3d.overlay.cameras");
@@ -51,13 +59,20 @@ export function CameraBar({
                     aria-label={label}
                     data-testid="view3d-camera-menu"
                     data-camera={activeCameraId ?? ""}
+                    data-directing={directing ? "true" : "false"}
                     className="rounded-4 text-body hover:bg-text/10 data-[state=open]:bg-text/10 focus-visible:outline-accent flex h-28 min-w-0 items-center gap-6 px-8 whitespace-nowrap outline-hidden focus-visible:outline-2"
                 >
-                    <VideoCameraIcon size={16} className="shrink-0" />
+                    {directing ? (
+                        <FilmSlateIcon size={16} className="shrink-0" />
+                    ) : (
+                        <VideoCameraIcon size={16} className="shrink-0" />
+                    )}
                     <span className="truncate">
-                        {active
-                            ? list.label(active)
-                            : t("view3d.overlay.freeCamera")}
+                        {directing
+                            ? t("view3d.overlay.director")
+                            : active
+                              ? list.label(active)
+                              : t("view3d.overlay.freeCamera")}
                     </span>
                     <CaretDownIcon size={12} className="text-text/60" />
                 </DropdownMenu.Trigger>
@@ -68,6 +83,34 @@ export function CameraBar({
                         data-testid="view3d-camera-picker"
                         className="border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text z-50 flex min-w-[13rem] flex-col border p-4"
                     >
+                        {directorAvailable() && (
+                            <>
+                                <DropdownMenu.Item
+                                    data-testid="view3d-camera-director"
+                                    data-state={directing ? "on" : "off"}
+                                    onSelect={toggleDirector}
+                                    className={clsx(
+                                        ITEM_CLASS,
+                                        directing && "text-accent",
+                                    )}
+                                >
+                                    <CheckIcon
+                                        size={14}
+                                        className={clsx(
+                                            "shrink-0",
+                                            !directing && "invisible",
+                                        )}
+                                    />
+                                    <span className="flex-1 truncate">
+                                        {t("view3d.overlay.director")}
+                                    </span>
+                                    <Shortcut keys={["D"]} />
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                            </>
+                        )}
                         {cameras.length === 0 && (
                             <p className="text-body text-text/60 px-8 py-4">
                                 {t("view3d.cameras.none")}

@@ -292,6 +292,8 @@ export function sectionUniform(
 /** The uniform shader's part ids (om-pose `uniforms/uniform-shader.js`). */
 export const PART = {
     shako: [7, 8, 9],
+    /** the shako's plume: drawn as its own mesh (`plumeSet.ts`), not with the body */
+    plume: 8,
     aussie: [10, 11],
     cape: 12,
     /** the shader's placeholder trumpet, mellophone, baritone: never drawn */

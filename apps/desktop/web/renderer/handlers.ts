@@ -19,6 +19,7 @@ import {
     isSignInEnabled,
 } from "../../src/global/auth/constants";
 import { handOffShow } from "./handoff";
+import { registerReportHandlers } from "./report";
 import { webChannel, webExampleShows } from "../../src/utilities/webBuild";
 import { isStandalone } from "../../src/utilities/homeScreen";
 import { GPU_CRASHED_CHANNEL } from "../../electron/main/gpu";
@@ -517,6 +518,9 @@ export function registerPageHandlers({ isSettingsTab = false } = {}) {
     registerAuthHandlers(isSettingsTab);
 
     if (isSettingsTab) return;
+
+    // Bug reports (fork #801): a sheet over the editor, sent from the page
+    if (isSignInEnabled) registerReportHandlers();
 
     // Files: there is one show, kept in this browser. Opening one is a file
     // picker, saving is a download, and the new-show wizard's file location

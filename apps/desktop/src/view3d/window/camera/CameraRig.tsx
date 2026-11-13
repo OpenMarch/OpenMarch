@@ -20,7 +20,12 @@
  * - in pick-a-seat mode, raycasts the kit's `pickTargets`, snaps to the
  *   nearest seat row and flies to a seated eye looking at the focus; Esc
  *   cancels;
- * - clears the crowd within `CROWD_CLEAR_RADIUS` of the camera on arrival.
+ * - clears the crowd within `CROWD_CLEAR_RADIUS` of the camera on arrival;
+ * - while the Director is on (`cinema/directorStore.ts`, key D), puts the
+ *   camera where its shot track says for the show time, on every drawn frame.
+ *   It asks for no frames of its own: playback and scrubs already draw. Any
+ *   of the viewer's moves above turns the Director off first, and the camera
+ *   carries on from where it was.
  *
  * Camera state the overlay reads lives in `cameraStore.ts`.
  */
@@ -52,6 +57,15 @@ import {
     seatAim,
 } from "./rigMath";
 import { snapToSeatRows } from "./seatSnap";
+import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
+import { demoTrack } from "../cinema/demoTrack";
+import {
+    directedPose,
+    toggleDirector,
+    useDirectorStore,
+} from "../cinema/directorStore";
+import { useCinemaContext } from "../cinema/subjectPoints";
 
 /** Pointer travel (px) under which a press counts as a click, for picking. */
 const CLICK_SLOP_PX = 6;
@@ -142,6 +156,30 @@ export default function CameraRig() {
 
     const rig = useMemo(() => new RigController(camera), [camera]);
     const shownKitIdRef = useRef<string | null>(null);
+
+    // The Director's view of the show: who is where, and the picture's shape.
+    const aspect = useThree((s) =>
+        s.size.height > 0 ? s.size.width / s.size.height : 1,
+    );
+    const cinema = useCinemaContext(aspect);
+    const cinemaRef = useRef(cinema);
+    cinemaRef.current = cinema;
+    const directing = useDirectorStore((s) => s.directing);
+    const hasTrack = useDirectorStore((s) => s.track.length > 0);
+    const { countGrid } = useTimingObjects();
+
+    // Until shots are stored in the show, the Director plays a demo track.
+    useEffect(() => {
+        if (!directing || hasTrack || countGrid.storedCount === 0) return;
+        useDirectorStore
+            .getState()
+            .setTrack(
+                demoTrack(
+                    countGrid.storedCount,
+                    (count) => countGrid.timeAtBeat(count) * 1000,
+                ),
+            );
+    }, [directing, hasTrack, countGrid]);
 
     const flyToSeat = (seat: CameraSeat) => {
         const aim = seatAim(seat);
@@ -254,6 +292,9 @@ export default function CameraRig() {
 
         const manualMove = () => {
             requestDraw(INPUT_WAKE_MS);
+            // The camera is already where the Director had it, so the move
+            // carries on from there.
+            useDirectorStore.getState().setDirecting(false);
             const store = useCameraStore.getState();
             if (store.activeCameraId !== null) store._setActive(null);
         };
@@ -401,6 +442,7 @@ export default function CameraRig() {
             if (!eye) return;
             store.setPickMode(false);
             store._setActive(null);
+            useDirectorStore.getState().setDirecting(false);
             rig.flyTo(eye, [...current.focus], {
                 nowMs: performance.now(),
                 instant: prefersReducedMotion(),
@@ -476,6 +518,12 @@ export default function CameraRig() {
                 }
                 return;
             }
+            if (e.key === "d" || e.key === "D") {
+                if (e.repeat || e.shiftKey) return;
+                e.preventDefault();
+                toggleDirector();
+                return;
+            }
             const index = cameraIndexForKey(e.key);
             const { cameras } = useView3dSceneStore.getState();
             const seat = index === null ? undefined : cameras[index];
@@ -508,6 +556,15 @@ export default function CameraRig() {
     // hiding) sees this frame's camera.
     useFrame(() => {
         const now = performance.now();
+        const ctx = cinemaRef.current;
+        const pose = ctx
+            ? directedPose(useView3dSyncStore.getState().showMs(), ctx)
+            : null;
+        if (pose) {
+            // Also ends a fly-to or a coast the Director interrupted.
+            rig.jumpTo(pose.position, pose.target, pose.fovDeg);
+            return;
+        }
         rig.update(now);
         if (rig.moving) requestDraw(100);
     }, -1);
@@ -518,6 +575,7 @@ export default function CameraRig() {
             const store = useCameraStore.getState();
             store._setActive(null);
             store.setPickMode(false);
+            useDirectorStore.getState().setDirecting(false);
         },
         [],
     );

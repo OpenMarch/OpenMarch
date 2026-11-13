@@ -573,8 +573,8 @@ export function turnSkeleton(THREE, bones, t) {
 }
 
 // Instance matrix for a marcher at field (x, z) facing `heading` (radians about +Y, 0 = +Z), drawn at
-// scale h (its height class), written straight into the array.
-export function writeMatrix(array, i, x, z, heading, h = 1) {
+// scale h (its height class) with its soles at height y, written straight into the array.
+export function writeMatrix(array, i, x, z, heading, h = 1, y = 0) {
     const c = Math.cos(heading) * h,
         s = Math.sin(heading) * h,
         o = i * 16;
@@ -591,7 +591,7 @@ export function writeMatrix(array, i, x, z, heading, h = 1) {
     array[o + 10] = c;
     array[o + 11] = 0;
     array[o + 12] = x;
-    array[o + 13] = 0;
+    array[o + 13] = y;
     array[o + 14] = z;
     array[o + 15] = 1;
 }

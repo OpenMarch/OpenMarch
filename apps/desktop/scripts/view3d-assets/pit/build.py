@@ -18,6 +18,7 @@ import keys  # noqa: E402
 import mallets  # noqa: E402
 import metals  # noqa: E402
 import pitlib  # noqa: E402
+import podiums  # noqa: E402
 import racks  # noqa: E402
 
 
@@ -67,8 +68,17 @@ CATALOG["mixer-cart"] = call(audio.mixer_cart)
 CATALOG["mixer-cart-covered"] = call(audio.mixer_cart, covered=True)
 CATALOG["amp-guitar"] = call(audio.amp_guitar)
 CATALOG["amp-bass"] = call(audio.amp_bass)
-CATALOG["conductor-podium"] = call(audio.podium)
-CATALOG["conductor-podium-tall"] = call(audio.podium, tall=True)
+CATALOG["conductor-podium"] = call(podiums.conductor_podium)
+CATALOG["conductor-podium-tall"] = call(podiums.conductor_podium, tall=True)
+for finish in ("", "-black"):
+    black = bool(finish)
+    CATALOG[f"podium-stand-2ft{finish}"] = call(podiums.stand, black=black)
+    CATALOG[f"podium-tower-4ft{finish}"] = call(podiums.tower, height_ft=4, black=black)
+    CATALOG[f"podium-tower-5ft{finish}"] = call(podiums.tower, height_ft=5, black=black)
+    CATALOG[f"podium-tower-6ft{finish}"] = call(podiums.tower, height_ft=6, black=black, rail="full")
+    CATALOG[f"podium-rolling-6ft{finish}"] = call(podiums.rolling, black=black)
+CATALOG["stepladder-6ft"] = call(podiums.stepladder)
+CATALOG["scaffold-tower"] = call(podiums.scaffold)
 
 
 def main():
@@ -90,6 +100,11 @@ def main():
             info = pitlib.export_model(model_id, parts, args.out, suffix)
             info["artworkSlots"] = {k: list(v) for k, v in parts.slots.items()}
             entry["high" if high else "low"] = info
+            if parts.stand is not None:
+                # Blender (x, y, z) is glTF (x, z, -y): where the feet go, and how high.
+                x, y, z = parts.stand
+                entry["standTopM"] = round(z, 4)
+                entry["standAtM"] = [round(x, 4), round(-y, 4) + 0.0]
         manifest[model_id] = entry
         print("BUILT", model_id, entry["high"]["triangles"], entry["low"]["triangles"], entry["high"]["sizeM"])
     with open(path, "w") as f:

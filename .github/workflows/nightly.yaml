@@ -1,8 +1,14 @@
 name: Nightly
 
-# Unsigned desktop builds of every push to main, published as one rolling
-# "nightly" prerelease for internal team testing. Nightlies install as
-# "OpenMarch Nightly" next to the released app (electron-builder-nightly.json5).
+# Desktop builds of every push to main, published as one rolling prerelease for internal team
+# testing. Nightlies install as "OpenMarch Nightly" next to the released app
+# (electron-builder-nightly.json5).
+#
+# In OpenMarch/OpenMarch they're signed like releases and update themselves (fork #404): the
+# release `v0.0.0-nightly` is their update feed, its `nightly-*.yml` files naming the newest
+# build. The tag is a semver prerelease ("nightly") so beta builds, which read the same
+# repository's release list, skip it. Anywhere else (forks, without the signing secrets) they're
+# unsigned, have no feed, and testers download each one by hand.
 
 on:
   push:
@@ -28,13 +34,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      signed: ${{ steps.version.outputs.signed }}
     steps:
       - uses: actions/checkout@v4
       - name: Compute nightly version
         id: version
         run: |
-          BASE=$(node -p "require('./apps/desktop/package.json').version")
+          # Drop the base's own prerelease ("-beta.2"): each nightly must sort after the last
+          # one, and "beta.10-…" would sort before "beta.9-…"
+          BASE=$(node -p "require('./apps/desktop/package.json').version.split('-')[0]")
           echo "version=${BASE}-nightly.$(date -u +%Y%m%d).${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "signed=${{ github.repository == 'OpenMarch/OpenMarch' }}" >> "$GITHUB_OUTPUT"
 
   build:
     needs: version
@@ -43,10 +53,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # The zip is what a Mac nightly updates from; the dmg is for installing by hand
           - os: macos-15
-            platform: --mac dmg
+            platform: --mac dmg zip
           - os: macos-15-intel
-            platform: --mac dmg
+            platform: --mac dmg zip
           - os: ubuntu-latest
             platform: --linux AppImage
           - os: ubuntu-24.04-arm
@@ -98,10 +109,34 @@ jobs:
         run: |
           sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
 
-      - name: Build Electron app (unsigned)
+      - name: Prepare for app notarization
+        if: needs.version.outputs.signed == 'true' && startsWith(matrix.os, 'macos')
+        run: |
+          mkdir -p ~/private_keys/
+          echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
+
+      - name: Build Electron app (signed)
+        if: needs.version.outputs.signed == 'true'
         working-directory: apps/desktop
         shell: bash
         run: pnpm exec electron-builder ${{ matrix.platform }} --publish=never --config electron-builder-nightly.json5
+        env:
+          # macOS: the release's certificate (base64 .p12) and notarization key
+          CSC_LINK: ${{ startsWith(matrix.os, 'macos') && secrets.mac_certs || '' }}
+          CSC_KEY_PASSWORD: ${{ startsWith(matrix.os, 'macos') && secrets.mac_certs_password || '' }}
+          APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+          APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+          APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+          # Windows: Azure signing (electron-builder-sign.json5)
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+
+      - name: Build Electron app (unsigned)
+        if: needs.version.outputs.signed != 'true'
+        working-directory: apps/desktop
+        shell: bash
+        run: pnpm exec electron-builder ${{ matrix.platform }} --publish=never --config electron-builder-nightly-unsigned.json5
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
@@ -109,10 +144,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: nightly-${{ matrix.os }}
+          # The update feed (*.yml), the Mac update zip and the block maps for partial downloads
+          # exist only in signed builds
           path: |
             apps/desktop/release/*/*.dmg
+            apps/desktop/release/*/*.zip
             apps/desktop/release/*/*.exe
             apps/desktop/release/*/*.AppImage
+            apps/desktop/release/*/*.blockmap
+            apps/desktop/release/*/nightly*.yml
           retention-days: 7
           if-no-files-found: error
 
@@ -129,27 +169,59 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: Replace the nightly release
+      - name: Publish to the nightly release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ needs.version.outputs.version }}
+          SIGNED: ${{ needs.version.outputs.signed }}
         run: |
+          set -euo pipefail
+          # Signed builds update from this tag (electron-builder-nightly.json5). Forks keep the
+          # plain `nightly` tag their testers know.
+          if [ "$SIGNED" = true ]; then TAG=v0.0.0-nightly; else TAG=nightly; fi
           # Artifacts keep the release/<version>/ folder, so take the files from any depth.
           # Installer names (electron-builder-nightly.json5) have no spaces.
-          FILES=$(find dist -type f)
-          echo "$FILES"
-          gh release delete nightly --cleanup-tag --yes || true
-          cat > notes.md <<EOF
+          FILES=$(find dist -type f ! -name '*.yml')
+          FEED=$(find dist -type f -name '*.yml')
+          echo "$FILES" "$FEED"
+
+          if [ "$SIGNED" = true ]; then
+            cat > notes.md <<EOF
+          Nightly build **${VERSION}** of [\`${GITHUB_SHA::8}\`](https://github.com/${GH_REPO}/commit/${GITHUB_SHA}), for internal testing only.
+
+          - Installs as **OpenMarch Nightly** next to the released app, with its own settings, and updates itself to each new nightly.
+          - Back up show files before opening them in a nightly.
+          EOF
+          else
+            cat > notes.md <<EOF
           Nightly build **${VERSION}** of [\`${GITHUB_SHA::8}\`](https://github.com/${GH_REPO}/commit/${GITHUB_SHA}), for internal testing only.
 
           - Installs as **OpenMarch Nightly** next to the released app, with its own settings. It does not auto-update; download again for a newer build.
           - Builds are unsigned. On macOS, run \`xattr -cr "/Applications/OpenMarch Nightly.app"\` after installing if macOS says the app is damaged. On Windows, choose **More info → Run anyway**.
           - Back up show files before opening them in a nightly.
           EOF
-          gh release create nightly $FILES \
-            --target "$GITHUB_SHA" \
-            --title "Nightly ${VERSION}" \
-            --notes-file notes.md \
-            --prerelease \
-            --latest=false
+          fi
+
+          # Move the tag to this build, creating the release the first time. The release is
+          # kept, not replaced: a nightly downloading an update keeps finding its files.
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/${GH_REPO}/git/refs/tags/${TAG}" -f sha="$GITHUB_SHA" -F force=true
+          else
+            gh release create "$TAG" --target "$GITHUB_SHA" --prerelease --latest=false \
+              --title "Nightly ${VERSION}" --notes-file notes.md
+          fi
+          OLD=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+
+          # This build's files first, then the feed that points at them, then the old files.
+          # (The Linux AppImage keeps one name, so it's replaced in place.)
+          gh release upload "$TAG" $FILES --clobber
+          if [ -n "$FEED" ]; then gh release upload "$TAG" $FEED --clobber; fi
+          gh release edit "$TAG" --title "Nightly ${VERSION}" --notes-file notes.md \
+            --prerelease --latest=false
+          NEW=$(for f in $FILES $FEED; do basename "$f"; done)
+          for name in $OLD; do
+            if ! grep -qxF "$name" <<< "$NEW"; then
+              gh release delete-asset "$TAG" "$name" --yes
+            fi
+          done

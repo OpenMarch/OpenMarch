@@ -7,7 +7,9 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { isWebBuild } from "@/utilities/webBuild";
+import { canSendReports, openReport } from "@/feedback/openReport";
 import { useActionHandler } from "../useActionHandler";
+import { MY_REPORTS_URL } from "@/feedback/reportsApi";
 
 // eslint-disable-next-line max-lines-per-function
 export function useFileActionHandlers() {
@@ -24,6 +26,14 @@ export function useFileActionHandlers() {
 
     useActionHandler("openSettings", () => {
         void window.electron.openSettingsWindow();
+    });
+
+    // Web builds that can't sign in have no report form (fork #801)
+    useActionHandler("reportFeedback", () => openReport(), {
+        enabled: canSendReports,
+    });
+    useActionHandler("viewMyReports", () => {
+        window.open(MY_REPORTS_URL, "_blank", "noopener,noreferrer");
     });
 
     useActionHandler("launchLoadFileDialogue", () => {

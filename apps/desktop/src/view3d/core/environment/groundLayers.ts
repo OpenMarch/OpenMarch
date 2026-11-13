@@ -5,11 +5,16 @@
  * flashed through each other as the camera moved. Each layer instead draws
  * with a polygon offset by its level: a higher level always wins over a lower
  * one, at any distance. Keep the layers' heights in the same order too.
+ *
+ * The field draws at its true depth and the layers under it are pushed back.
+ * A polygon offset moves a surface by a few pixels' worth of its depth
+ * slope, so a field pulled toward the camera covered the bottom few pixels
+ * of everything standing on it; from far out that was the marchers' feet.
  */
 import type { Material } from "three";
 
 export const GROUND_LAYER = {
-    /** The kits' big plain ground plane: no offset. */
+    /** The kits' big plain ground plane, furthest back. */
     ground: 0,
     /** The shared land past the stands. */
     land: 1,
@@ -23,7 +28,10 @@ export const GROUND_LAYER = {
     decal: 5,
     /** The field surface, over everything else on the ground. */
     field: 6,
-    /** Marchers' soft contact shadows, on the field. */
+    /**
+     * Marchers' soft contact shadows, on the field. They and the rings are
+     * pulled toward the camera, so they overlap the feet a pixel or two.
+     */
     contact: 7,
     /** Selection rings at marchers' feet, over their shadows. */
     selection: 8,
@@ -34,9 +42,11 @@ export function setGroundLayer<M extends Material>(
     material: M,
     level: number,
 ): M {
-    material.polygonOffset = level !== 0;
-    material.polygonOffsetFactor = -level;
-    material.polygonOffsetUnits = -2 * level;
+    // Relative to the field, which gets no offset.
+    const above = level - GROUND_LAYER.field;
+    material.polygonOffset = above !== 0;
+    material.polygonOffsetFactor = -above;
+    material.polygonOffsetUnits = -2 * above;
     return material;
 }
 

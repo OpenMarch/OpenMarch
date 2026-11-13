@@ -58,12 +58,15 @@ import ShortcutsDialog from "./components/ShortcutsDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
+import ReportDrawer, { ReportRecordingBar } from "./feedback/ReportDrawer";
+import { canSendReports } from "./feedback/openReport";
 import WebHomeScreenPrompt from "./components/web/WebHomeScreenPrompt";
 import WebVersionsDialog from "./components/web/WebVersionsDialog";
 import { isWebBuild } from "./utilities/webBuild";
 import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 import { toast } from "sonner";
 import { version as currentVersion } from "../package.json";
+import CheckForUpdatesHandler from "@/updates/CheckForUpdatesHandler";
 import { shouldShowUpdateNotification } from "./utilities/updateNotification";
 import { shouldShowWelcomeFlow } from "./components/welcome/welcomeFlowSteps";
 import WelcomeScreen from "./components/welcome/WelcomeScreen";
@@ -267,9 +270,16 @@ function App() {
                     {isWebBuild && <WebWelcomeModal />}
                     <ConvertShowDialog />
                     {isWebBuild && <WebSettingsSheet />}
+                    {canSendReports && <ReportRecordingBar />}
+                    {canSendReports && (
+                        <ReportDrawer
+                            placement={drawerShown ? "sheet" : "overlay"}
+                        />
+                    )}
                     {isWebBuild && <WebHomeScreenPrompt />}
                     {isWebBuild && <WebVersionsDialog />}
                     <ShortcutDispatcher />
+                    {!isWebBuild && <CheckForUpdatesHandler />}
                     <CommandPalette />
                     <ShortcutsDialog />
                     <MusicXmlChecksDialog />

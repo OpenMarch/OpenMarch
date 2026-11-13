@@ -14,11 +14,19 @@ import {
     InstancedMesh,
     Matrix4,
     Mesh,
+    MeshBasicMaterial,
+    PlaneGeometry,
     Scene,
     Vector3,
     type Material,
 } from "three";
-import { createEnvironment, setTexturePainting } from "../../environment";
+import {
+    createEnvironment,
+    GROUND_LAYER,
+    setGroundLayer,
+    setTexturePainting,
+} from "../../environment";
+import { FIELD_SURFACE_Y } from "../../field";
 import { KIT_BUILDERS } from "..";
 import { DEFAULT_VENUE_PARAMS } from "../../venueSettings";
 
@@ -196,30 +204,67 @@ function flushPairs(triangles: Tri[]): Map<string, number> {
     return found;
 }
 
+const FOOTPRINT = { minX: -54.86, maxX: 54.86, minZ: -48.77, maxZ: 0 };
+
+/** The field surface as the scene draws it: its height and ground layer. */
+function fieldPlane(): Mesh {
+    const f = FOOTPRINT;
+    const mesh = new Mesh(
+        new PlaneGeometry(f.maxX - f.minX, f.maxZ - f.minZ),
+        setGroundLayer(new MeshBasicMaterial(), GROUND_LAYER.field),
+    );
+    mesh.name = "fieldSurface";
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(
+        (f.minX + f.maxX) / 2,
+        FIELD_SURFACE_Y,
+        (f.minZ + f.maxZ) / 2,
+    );
+    mesh.updateMatrixWorld();
+    return mesh;
+}
+
+type KitId = keyof typeof KIT_BUILDERS;
+
+/** Flush pairs over `MAX_OVERLAP` in a venue with its field surface. */
+function fights(id: KitId, quality: "high" | "low"): string[] {
+    const kit = KIT_BUILDERS[id]({
+        footprint: FOOTPRINT,
+        params: { ...DEFAULT_VENUE_PARAMS },
+        quality,
+    });
+    const env = createEnvironment();
+    const scene = new Scene();
+    scene.add(kit.root);
+    scene.add(fieldPlane());
+    if (quality === "high" && kit.surroundings !== false) scene.add(env.root);
+    const found = [...flushPairs(collect(scene))]
+        .filter(([, area]) => area > MAX_OVERLAP)
+        .map(([pair, area]) => `${pair}: ${area.toFixed(1)} m²`);
+    kit.dispose();
+    env.dispose();
+    return found;
+}
+
 describe("stadium surfaces", () => {
     for (const id of ["hs", "bighs", "college", "pro"] as const) {
         for (const quality of ["high", "low"] as const) {
             it(`${id} (${quality}) has no flush surfaces that fight`, () => {
-                const kit = KIT_BUILDERS[id]({
-                    footprint: {
-                        minX: -54.86,
-                        maxX: 54.86,
-                        minZ: -48.77,
-                        maxZ: 0,
-                    },
-                    params: { ...DEFAULT_VENUE_PARAMS },
-                    quality,
-                });
-                const env = createEnvironment();
-                const scene = new Scene();
-                scene.add(kit.root);
-                if (quality === "high") scene.add(env.root);
-                const fights = [...flushPairs(collect(scene))]
-                    .filter(([, area]) => area > MAX_OVERLAP)
-                    .map(([pair, area]) => `${pair}: ${area.toFixed(1)} m²`);
-                expect(fights).toEqual([]);
-                kit.dispose();
-                env.dispose();
+                expect(fights(id, quality)).toEqual([]);
+            });
+        }
+    }
+});
+
+describe("field surface", () => {
+    for (const id of Object.keys(KIT_BUILDERS) as KitId[]) {
+        for (const quality of ["high", "low"] as const) {
+            it(`${id} (${quality}): nothing fights the field`, () => {
+                expect(
+                    fights(id, quality).filter((f) =>
+                        f.includes("fieldSurface"),
+                    ),
+                ).toEqual([]);
             });
         }
     }

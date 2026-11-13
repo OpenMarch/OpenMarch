@@ -32,8 +32,11 @@ laptop; check those on the laptop.
 renders them in day and night lighting.
 
 ```bash
-node scripts/view3d-gallery/shoot-pit.mjs /mnt/data/om-capture/venues/pit [--dir <glb dir>] [--bench] [--gpu]
+node scripts/view3d-gallery/shoot-pit.mjs /mnt/data/om-capture/venues/pit [--dir <glb dir>] [--views a,b] [--bench] [--gpu]
 ```
+
+`--views` renders only the named views, such as `podiums-left,podiums-right,podiums-field` for the
+podiums, which stand in a row on the track either side of the venue's own podium.
 
 `--bench` writes draw calls, triangles and frame time to `report.json`, comparing the detailed
 and distant models, with and without shadows, loaded per part or merged to one mesh per model.

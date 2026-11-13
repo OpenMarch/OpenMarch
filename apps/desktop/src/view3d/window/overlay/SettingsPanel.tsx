@@ -450,6 +450,7 @@ const SHORTCUTS: ShortcutRows = [
     ["cameras", { keys: ["1–9"] }],
     ["fullscreen", { binding: "F" }],
     ["crowd", { binding: "C" }],
+    ["pausedPose", { binding: "S" }],
     ["escape", { binding: "Escape" }],
 ];
 

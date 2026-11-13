@@ -152,15 +152,19 @@ function menus(isMac: boolean) {
     const menuActions = [...PLAYBACK_MENU_ACTIONS, ...HELP_MENU_ACTIONS];
     // On macOS a renderer action's shortcut is written into its label: find the action back
     const byLabel = new Map<string, MenuAction>(
-        menuActions.flatMap((a) => [
+        menuActions.flatMap((a): [string, MenuAction][] => [
             [mainT(a.labelKey), a],
-            [
-                mainT("menu.withShortcut", {
-                    label: mainT(a.labelKey),
-                    shortcut: a.accelerator.replace("Shift+/", "?"),
-                }),
-                a,
-            ],
+            ...(a.accelerator
+                ? [
+                      [
+                          mainT("menu.withShortcut", {
+                              label: mainT(a.labelKey),
+                              shortcut: a.accelerator.replace("Shift+/", "?"),
+                          }),
+                          a,
+                      ] as [string, MenuAction],
+                  ]
+                : []),
         ]),
     );
     const entries = (items: MenuItemConstructorOptions[]): MenuEntry[] => {

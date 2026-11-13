@@ -1463,7 +1463,6 @@
         "general.appearance": "外觀",
         "general.appearance.dark": "深色",
         "general.appearance.light": "淺色",
-        "general.automaticUpdates": "自動下載並安裝更新",
         "general.description": "編輯器模式、語言及其他全域偏好設定。",
         "general.editorMode": "編輯器模式",
         "general.editorMode.basic": "基本",
@@ -2624,20 +2623,6 @@
             "shapesOff": "關閉",
             "shapesSelected": "選取時"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "取得版本時發生錯誤。",
-            "message": "錯誤：{message}",
-            "noVersion": "無法取得最新版本。"
-        },
-        "installLinux": "安裝 Linux 版",
-        "installMacArm": "安裝 Apple Silicon 版",
-        "installMacIntel": "安裝 Intel Mac 版",
-        "installWindows": "安裝 Windows 版",
-        "skipVersion": "略過此版本",
-        "title": "有新版本可用",
-        "trigger": "有新版本！"
     },
     "view3d": {
         "autoOpenPrompt": {

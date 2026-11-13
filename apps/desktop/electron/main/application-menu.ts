@@ -4,6 +4,7 @@ import { t } from "./i18n";
 import { app, dialog, Menu, shell } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import {
+    CHECK_FOR_UPDATES_MENU_ACTION,
     HELP_MENU_ACTIONS,
     PLAYBACK_MENU_ACTIONS,
     type MenuAction,
@@ -23,20 +24,32 @@ const rendererActionItem =
         labelKey,
         accelerator,
     }: MenuAction): MenuItemConstructorOptions =>
-        isMacOS
+        !accelerator
             ? {
-                  label: t("menu.withShortcut", {
-                      label: t(labelKey),
-                      shortcut: accelerator.replace("Shift+/", "?"),
-                  }),
+                  label: t(labelKey),
                   click: () => mainProcess.sendMenuAction(action),
               }
-            : {
-                  label: t(labelKey),
-                  accelerator,
-                  registerAccelerator: false,
-                  click: () => mainProcess.sendMenuAction(action),
-              };
+            : isMacOS
+              ? {
+                    label: t("menu.withShortcut", {
+                        label: t(labelKey),
+                        shortcut: accelerator.replace("Shift+/", "?"),
+                    }),
+                    click: () => mainProcess.sendMenuAction(action),
+                }
+              : {
+                    label: t(labelKey),
+                    accelerator,
+                    registerAccelerator: false,
+                    click: () => mainProcess.sendMenuAction(action),
+                };
+
+/** "Check for Updates…": the renderer runs the check and says what it found */
+const checkForUpdatesItem = (): MenuItemConstructorOptions => ({
+    label: t(CHECK_FOR_UPDATES_MENU_ACTION.labelKey),
+    click: () =>
+        mainProcess.sendMenuAction(CHECK_FOR_UPDATES_MENU_ACTION.action),
+});
 
 /** A link in the Help menu. */
 const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
@@ -81,6 +94,7 @@ export function applicationMenuTemplate({
             label: appName,
             submenu: [
                 { role: "about", label: t("menu.app.about", { appName }) },
+                checkForUpdatesItem(),
                 { type: "separator" },
                 { role: "services", label: t("menu.app.services") },
                 { type: "separator" },
@@ -240,6 +254,9 @@ export function applicationMenuTemplate({
                 linkItem("Discord", "https://discord.gg/eTsQ98uZzq"),
                 // i18n-ignore: brand name, the same in every language
                 linkItem("GitHub", "https://github.com/OpenMarch"),
+                ...(isMacOS
+                    ? []
+                    : [{ type: "separator" } as const, checkForUpdatesItem()]),
             ],
         },
     );

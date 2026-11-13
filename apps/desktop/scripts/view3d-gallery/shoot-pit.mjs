@@ -22,6 +22,8 @@ const dir =
         : path.resolve(argv[dirAt + 1]);
 const gpu = process.argv.includes("--gpu");
 const doBench = process.argv.includes("--bench");
+const viewsAt = argv.indexOf("--views");
+const only = viewsAt < 0 ? null : argv[viewsAt + 1].split(",");
 fs.mkdirSync(out, { recursive: true });
 const manifest = JSON.parse(
     fs.readFileSync(path.join(dir, "manifest.json"), "utf8"),
@@ -76,8 +78,29 @@ const layout = [
         0.4,
     ),
     { id: "mixer-cart", x: 8, front: 8.2 },
-    { id: "conductor-podium-tall", x: -4, front: 9.0 },
-    { id: "conductor-podium", x: 4, front: 9.0 },
+    // the drum major podiums, either side of the venue's own podium on the 50
+    ...row(
+        [
+            "stepladder-6ft",
+            "podium-stand-2ft",
+            "conductor-podium",
+            "podium-tower-4ft",
+            "podium-tower-5ft-black",
+        ],
+        7.6,
+        0.7,
+    ).map((p) => ({ ...p, x: p.x - 5 })),
+    ...row(
+        [
+            "podium-tower-6ft",
+            "podium-rolling-6ft",
+            "conductor-podium-tall",
+            "scaffold-tower",
+            "podium-stand-2ft-black",
+        ],
+        7.6,
+        0.7,
+    ).map((p) => ({ ...p, x: p.x + 6 })),
 ];
 const server = await createServer({
     configFile: path.join(desktop, "scripts/view3d-gallery/vite.config.mts"),
@@ -178,6 +201,21 @@ const views = {
         target: [f.x + 3.5, 0.9, f.z + 4],
         fov: 50,
     },
+    "podiums-left": {
+        position: [f.x - 5.5, 2.8, f.z + 12.8],
+        target: [f.x - 5, 1.3, f.z + 7.6],
+        fov: 55,
+    },
+    "podiums-right": {
+        position: [f.x + 6.5, 2.8, f.z + 12.8],
+        target: [f.x + 6, 1.3, f.z + 7.6],
+        fov: 55,
+    },
+    "podiums-field": {
+        position: [f.x, 2.4, f.z + 1.5],
+        target: [f.x, 1.4, f.z + 7.6],
+        fov: 75,
+    },
     "under-cymbals": {
         position: [f.x + 1.2, 0.7, f.z + 4.4],
         target: [f.x + 2.6, 1.5, f.z + 2.4],
@@ -189,7 +227,11 @@ for (const lighting of ["day", "night"]) {
     await page.evaluate((l) => window.gallery.setLighting(l), lighting);
     await page.evaluate((list) => window.gallery.addModels(list), place(""));
     for (const [name, view] of Object.entries(views)) {
-        if (lighting === "night" && !["pit-front", "press-box"].includes(name))
+        if (only && !only.includes(name)) continue;
+        if (
+            lighting === "night" &&
+            !["pit-front", "press-box", "podiums-left"].includes(name)
+        )
             continue;
         await page.evaluate((v) => window.gallery.shot(v), view);
         await page.screenshot({
