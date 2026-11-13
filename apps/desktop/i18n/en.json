@@ -153,6 +153,8 @@
             "openCommandPalette": "Command palette",
             "openCommandBar": "Command bar",
             "openSettings": "Settings…",
+            "checkForUpdates": "Check for updates",
+            "checkForUpdatesKeywords": "update upgrade version download install new release",
             "openView3d": "Open 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window",
             "showShortcuts": "Keyboard shortcuts",
@@ -1518,7 +1520,17 @@
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
         "general.appearance.light": "Light",
-        "general.automaticUpdates": "Automatically download and install updates",
+        "general.updates": "Updates",
+        "general.updates.version": "You have OpenMarch {version}.",
+        "general.updates.checking": "You have OpenMarch {version}. Checking for updates…",
+        "general.updates.upToDate": "OpenMarch {version} is the latest version.",
+        "general.updates.available": "OpenMarch {version} is available.",
+        "general.updates.downloading": "Downloading OpenMarch {version}: {percent}%",
+        "general.updates.ready": "OpenMarch {version} is ready. It installs the next time you quit, or now from the update button in the title bar.",
+        "general.updates.failed": "The update didn't work. You have OpenMarch {version}.",
+        "general.checkForUpdates": "Check for updates",
+        "general.automaticDownload": "Download updates automatically",
+        "general.automaticDownload.description": "Updates install when you quit OpenMarch, or right away with Update now.",
         "general.description": "Editor mode, language and other app-wide preferences.",
         "general.editorMode": "Editor mode",
         "general.editorMode.basic": "Basic",
@@ -2180,14 +2192,14 @@
             "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} is in a shape} other {{shapeNames} are in a shape}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, and }}}}{leaderCount, plural, =0 {} one {{leaderNames} follows the leader} other {{leaderNames} follow the leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, and }}} other {, and }}}}{orderCount, plural, =0 {} one {{orderNames} shares a curved move with a follow-the-leader order} other {{orderNames} share a curved move with a follow-the-leader order}}, so {count, plural, one {it keeps its} other {they keep their}} move here.",
             "passThrough": {
                 "catchUp": "Now catches up to the set at the end of {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Keep Page {first} as a keyframe} other {Keep Pages {first}–{last} as keyframes}}",
-                    "unnamed": "Keep them as keyframes"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {Stop at the end of Page {first}} other {Stop at the ends of Pages {first}–{last}}}",
+                    "unnamed": "Stop at the ends of those pages"
                 },
-                "keepStopsError": "Couldn't keep those pages as keyframes",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {Page {first} is no longer a keyframe} other {Pages {first}–{last} are no longer keyframes}}",
-                    "unnamed": "The pages inside this move are no longer keyframes"
+                "stopAtEndError": "Couldn't stop the marchers at the ends of those pages",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Now walks straight through the end of Page {first}} other {Now walks straight through the ends of Pages {first}–{last}}}",
+                    "unnamed": "Now walks straight through the ends of the pages inside this move"
                 },
                 "through": "Now moves straight through {through}",
                 "throughAndCatchUp": "Now moves straight through {through}, then catches up to the set at the end of {caughtUp}"
@@ -2489,6 +2501,8 @@
             "passedSets": "{count, plural, =1 {set {names}} other {sets {names}}}",
             "through": "· through {sets}",
             "editingThrough": "{editing}, through {sets}",
+            "held": "· {count} of {total} {held}",
+            "withHeld": "{rest}, {count} of {total} {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. {key} loops {loop}",
             "loops": "<keys></keys> loops {loop}"
@@ -2820,19 +2834,47 @@
             "shapesSelected": "When selected"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "An error occurred while fetching the version.",
-            "message": "Error: {message}",
-            "noVersion": "Unable to fetch latest version."
+    "updates": {
+        "pill": {
+            "available": "Update available",
+            "downloading": "Updating {percent}%",
+            "downloadingQuiet": "Downloading an update: {percent}%",
+            "ready": "Update ready",
+            "failed": "Update failed"
         },
-        "installLinux": "Install for Linux",
-        "installMacArm": "Install for Apple Silicon",
-        "installMacIntel": "Install for Intel Mac",
-        "installWindows": "Install for Windows",
-        "skipVersion": "Skip this version",
-        "title": "New Version Available",
-        "trigger": "New Version Available!"
+        "popover": {
+            "current": "You have {version}.",
+            "availableBody": "Download it now. It installs when you choose Update now, or the next time you quit.",
+            "downloadingBody": "{transferred} of {total} MB, {speed} MB/s",
+            "downloadingStarting": "Starting the download…",
+            "readyBody": "Update now closes your show, installs the update and opens OpenMarch and your show again. Your work is already saved.",
+            "moveBody": "macOS can only update OpenMarch in your Applications folder. Move it there, and OpenMarch opens again from Applications.",
+            "errorBody": "The update couldn't download. Try again, or download the installer and run it yourself.",
+            "installFailedBody": "OpenMarch {version} didn't install. Download the installer and run it yourself."
+        },
+        "action": {
+            "download": "Download",
+            "updateNow": "Update now",
+            "later": "Later",
+            "retry": "Try again",
+            "downloadInstaller": "Download installer",
+            "moveToApplications": "Move to Applications",
+            "whatsNew": "What's new"
+        },
+        "toast": {
+            "checking": "Checking for updates…",
+            "upToDate": "OpenMarch {version} is the latest version.",
+            "available": "OpenMarch {version} is available.",
+            "downloading": "It's downloading now. The update button at the top left shows its progress.",
+            "ready": "OpenMarch {version} is ready to install.",
+            "checkFailed": "Couldn't check for updates."
+        },
+        "unsupported": {
+            "development": "Updates are off in development builds.",
+            "snap": "The Snap Store keeps this copy of OpenMarch up to date.",
+            "linuxPackage": "This copy of OpenMarch can't update itself. Download new versions from openmarch.com.",
+            "noFeed": "This build of OpenMarch doesn't update itself. Download each new build by hand."
+        }
     },
     "view3d": {
         "autoOpenPrompt": {
@@ -2890,7 +2932,8 @@
             "pickSeat": "Pick a seat",
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
-            "freeCamera": "Free view"
+            "freeCamera": "Free view",
+            "director": "Director"
         },
         "readout": {
             "count": "Count {count} of {total}",
@@ -3418,6 +3461,7 @@
             "reportFeedback": "Report a Bug or Send Feedback…",
             "viewMyReports": "View My Reports"
         },
+        "checkForUpdates": "Check for Updates…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {

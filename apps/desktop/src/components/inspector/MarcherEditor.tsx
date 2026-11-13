@@ -45,7 +45,7 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
-import TimelineHoldLine from "./TimelineHoldLine";
+import TimelineHoldLine, { TimelineHeldCount } from "./TimelineHoldLine";
 import MovePad from "./marcher/MovePad";
 import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { formatList } from "@/utilities/formatList";
@@ -641,6 +641,10 @@ function MarcherEditor() {
                                 playingNote
                             ) : (
                                 <>
+                                    {/* Under the marcher count, above the fold (#805) */}
+                                    <TimelineHeldCount
+                                        marcherIds={selectedMarcherIdList}
+                                    />
                                     <MovePad />
                                     <p className="text-sub text-text/80 w-full px-6 font-mono">
                                         {formatList(

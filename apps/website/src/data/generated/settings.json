@@ -9,8 +9,16 @@
                 "label": "Language"
             },
             {
-                "key": "settings.general.automaticUpdates",
-                "label": "Automatically download and install updates"
+                "key": "settings.general.updates",
+                "label": "Updates"
+            },
+            {
+                "key": "settings.general.checkForUpdates",
+                "label": "Check for updates"
+            },
+            {
+                "key": "settings.general.automaticDownload",
+                "label": "Download updates automatically"
             },
             {
                 "key": "settings.general.openView3dWithShow",

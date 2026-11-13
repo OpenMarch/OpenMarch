@@ -346,7 +346,7 @@ const shots = [
         id: "timeline-cross-pages",
         kind: "clip",
         // Pages 5 and 5A selected together (Shift-click), three marchers dragged: one move across
-        // both pages, and the message that Page 5 is no longer a keyframe
+        // both pages, and the message that they now walk straight through the end of Page 5
         async setup({ page, wait }) {
             await ready(page, wait);
             await selectPage(page, 13, wait);

@@ -26,7 +26,15 @@ OpenMarch is free. You can install the desktop app on a Mac, Windows or Linux co
    - Linux: the AppImage for your processor (x64 or ARM), or OpenMarch from the Snap Store. Before you run an AppImage, allow it to run as a program in its file properties, or run `chmod +x` on it.
 3. Open OpenMarch. The first time, it asks for your language and light or dark, shows what's new, and asks how you want to work: Basic or Expert. See [Basic and Expert](/guides/start/basic-and-expert/).
 
-The desktop app checks for a new version when it starts, downloads it, and installs it when you quit. The Snap Store version updates through the Snap Store instead. To turn automatic updates off, open <Ui k="settings.title" /> › <Ui k="settings.general" /> and turn off <Ui k="settings.general.automaticUpdates" />.
+### Updates
+
+The desktop app looks for a new version when it starts and every hour after. When it finds one, it downloads it in the background: a small progress ring next to the version number at the top left shows how far along it is, and becomes <Ui k="updates.pill.ready" /> once it's done. A downloaded update installs the next time you quit. To install it straight away, select the button and then <Ui k="updates.action.updateNow" />: OpenMarch closes your show, installs the update and opens again with your show. Your work is already saved.
+
+- To look for an update yourself, choose <Ui k="menu.checkForUpdates" /> (in the OpenMarch menu on a Mac, the Help menu elsewhere), or <Ui k="settings.general.checkForUpdates" /> in <Ui k="settings.title" /> › <Ui k="settings.general" />.
+- Updates download on their own. To be asked first, turn off <Ui k="settings.general.automaticDownload" /> in <Ui k="settings.title" /> › <Ui k="settings.general" />; the button then shows <Ui k="updates.pill.available" /> and offers <Ui k="updates.action.download" />, followed by the download's progress.
+- On a Mac, OpenMarch can only update itself from the Applications folder. Run from anywhere else, the button offers <Ui k="updates.action.moveToApplications" />.
+- If an update fails, the button turns red and offers <Ui k="updates.action.downloadInstaller" />, which opens the release page so you can install the new version yourself.
+- The Snap Store version updates through the Snap Store instead.
 
 The download page also lists earlier releases, if you need to open a show in an older version. See [Open a show in an older version](/troubleshooting/open-in-an-older-version/).
 

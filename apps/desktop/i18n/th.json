@@ -1463,7 +1463,6 @@
         "general.appearance": "รูปลักษณ์",
         "general.appearance.dark": "มืด",
         "general.appearance.light": "สว่าง",
-        "general.automaticUpdates": "ดาวน์โหลดและติดตั้งอัปเดตโดยอัตโนมัติ",
         "general.description": "โหมดตัวแก้ไข ภาษา และการตั้งค่าอื่นๆ ที่ใช้ทั้งแอป",
         "general.editorMode": "โหมดตัวแก้ไข",
         "general.editorMode.basic": "พื้นฐาน",
@@ -2624,20 +2623,6 @@
             "shapesOff": "ปิด",
             "shapesSelected": "เมื่อเลือก"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "เกิดข้อผิดพลาดขณะดึงข้อมูลเวอร์ชัน",
-            "message": "ข้อผิดพลาด: {message}",
-            "noVersion": "ไม่สามารถดึงข้อมูลเวอร์ชันล่าสุดได้"
-        },
-        "installLinux": "ติดตั้งสำหรับ Linux",
-        "installMacArm": "ติดตั้งสำหรับ Apple Silicon",
-        "installMacIntel": "ติดตั้งสำหรับ Intel Mac",
-        "installWindows": "ติดตั้งสำหรับ Windows",
-        "skipVersion": "ข้ามเวอร์ชันนี้",
-        "title": "มีเวอร์ชันใหม่",
-        "trigger": "มีเวอร์ชันใหม่!"
     },
     "view3d": {
         "autoOpenPrompt": {

@@ -13,6 +13,7 @@ import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 import { APP_LANGUAGES } from "@/utilities/languages";
 import TranslationHelpNote from "@/components/i18n/TranslationHelpNote";
+import UpdateSettingsRow from "@/updates/UpdateSettingsRow";
 
 export default function GeneralSettings() {
     const tolgee = useTolgee(["language"]);
@@ -108,9 +109,13 @@ export default function GeneralSettings() {
             </SettingRow>
 
             {/* The web editor is always the latest version: nothing to install */}
+            {!isWebBuild && <UpdateSettingsRow />}
             {!isWebBuild && (
                 <SettingRow
-                    label={<T keyName="settings.general.automaticUpdates" />}
+                    label={<T keyName="settings.general.automaticDownload" />}
+                    description={
+                        <T keyName="settings.general.automaticDownload.description" />
+                    }
                     htmlFor="automatic-updates"
                 >
                     <Switch

@@ -321,6 +321,8 @@ own row under the text (B-26).
 
 ### Pass-through: "Page 3 is no longer a keyframe · Keep Page 3 as a keyframe"
 
+Reworded on 2026-11-10 (#805) to "Now walks straight through the end of Page 3 · Stop at the end of Page 3": with holds, the passed flag was often no keyframe of those marchers.
+
 Worded "stop" until 2026-10-20 (the screenshot below); now "keyframe", to match the diamonds.
 
 ![Toast: "Page 3 is no longer a stop" with "Keep Page 3 as a stop"](images/07-pass-through-toast.png)

@@ -346,7 +346,7 @@ describeDbTests("carry-forward, from the resolver", (it) => {
         expect(summary).toBeNull();
     });
 
-    it("a window passing a flag says only that its page is no longer a keyframe, with Keep as a stop", async ({
+    it("a window passing a flag says only that it walks through its page's end, with Stop at the end", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -367,10 +367,12 @@ describeDbTests("carry-forward, from the resolver", (it) => {
         expect(info).toHaveBeenCalledTimes(1);
         const [message, options] = info.mock.calls[0]!;
         // No marcher names, and nothing about the pages it carried into
-        expect(message).toBe(`Page ${pages[2]!.name} is no longer a keyframe`);
+        expect(message).toBe(
+            `Now walks straight through the end of Page ${pages[2]!.name}`,
+        );
         expect(options).toMatchObject({
             id: expect.stringMatching(/^timeline-edit-\d+$/),
-            action: { label: `Keep Page ${pages[2]!.name} as a keyframe` },
+            action: { label: `Stop at the end of Page ${pages[2]!.name}` },
         });
     });
 

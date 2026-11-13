@@ -1463,7 +1463,6 @@
         "general.appearance": "Tampilan",
         "general.appearance.dark": "Gelap",
         "general.appearance.light": "Terang",
-        "general.automaticUpdates": "Unduh dan instal pembaruan secara otomatis",
         "general.description": "Mode editor, bahasa, dan preferensi aplikasi lainnya.",
         "general.editorMode": "Mode editor",
         "general.editorMode.basic": "Dasar",
@@ -2624,20 +2623,6 @@
             "shapesOff": "Nonaktif",
             "shapesSelected": "Saat dipilih"
         }
-    },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Terjadi kesalahan saat mengambil versi.",
-            "message": "Kesalahan: {message}",
-            "noVersion": "Tidak dapat mengambil versi terbaru."
-        },
-        "installLinux": "Instal untuk Linux",
-        "installMacArm": "Instal untuk Apple Silicon",
-        "installMacIntel": "Instal untuk Mac Intel",
-        "installWindows": "Instal untuk Windows",
-        "skipVersion": "Lewati versi ini",
-        "title": "Versi baru tersedia",
-        "trigger": "Versi baru tersedia!"
     },
     "view3d": {
         "autoOpenPrompt": {

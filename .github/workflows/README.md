@@ -18,9 +18,14 @@ snapcraft export-login <credentials-filename>
 
 > NOTE - These credentials expire after one year
 
-## Nightly builds (fork)
+## Nightly builds
 
-`nightly.yaml` builds unsigned installers for every push to `main` and replaces the rolling `nightly` prerelease. Nightlies use `apps/desktop/electron-builder-nightly.json5`, so they install as "OpenMarch Nightly" next to the released app and never auto-update.
+`nightly.yaml` builds installers for every push to `main` into one rolling prerelease. Nightlies use `apps/desktop/electron-builder-nightly.json5`, so they install as "OpenMarch Nightly" next to the released app.
+
+- In OpenMarch/OpenMarch they're signed and notarized like releases (the same Apple and Azure secrets as `desktop-release.yaml`) and update themselves from the release `v0.0.0-nightly`: its `nightly-*.yml` files are their update feed. The tag has to stay a semver prerelease, because beta builds read the same release list and skip only custom prerelease channels ([ADR 0014](../../docs/adr/0014-desktop-updates.md)).
+- Anywhere else (a fork, without the secrets) they're unsigned (`electron-builder-nightly-unsigned.json5`), go to a release tagged `nightly`, and never auto-update.
+
+Each run uploads the new files, then the feed, then deletes the previous build's files, so a nightly that is mid-download keeps finding its file.
 
 ## Public betas
 
