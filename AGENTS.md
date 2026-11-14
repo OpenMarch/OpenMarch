@@ -67,6 +67,10 @@
 
 Issues live in GitHub Issues on the fork `AlexDumo/OpenMarch-timeline`, so pass `-R AlexDumo/OpenMarch-timeline` to `gh`. See `docs/agents/issue-tracker.md`.
 
+### Work tracking (fork only)
+
+On the fork, claim an issue on the project board before working on it (`scripts/om-claim <n> --branch <branch>`), link PRs with `Closes #n`, and file issues with one `area:` label under their epic. Never on upstream. See `docs/agents/work-tracking.md`.
+
 ### Triage labels
 
 The five default labels are used as-is: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human` and `wontfix`. See `docs/agents/triage-labels.md`.
