@@ -353,6 +353,16 @@ function fromSegment(at: XY, a: XY, b: XY): number {
     return Math.hypot(at.x - (a.x + dx * t), at.y - (a.y + dy * t));
 }
 
+/** How far `at` is from the polyline `line` (Infinity for a line of one point or none) */
+export function lineDistance(line: readonly XY[], at: XY): number {
+    return line
+        .slice(1)
+        .reduce(
+            (d, b, i) => Math.min(d, fromSegment(at, line[i]!, b)),
+            Infinity,
+        );
+}
+
 /** Whether `at` is within `radius` of the polyline `line` */
 export function onLine(line: readonly XY[], at: XY, radius: number): boolean {
     return line.slice(1).some((b, i) => fromSegment(at, line[i]!, b) <= radius);
@@ -880,7 +890,7 @@ function adjustMenu(onKey: boolean): ToolMenuSection[] {
                     value: "resetSpot",
                     label: tolgee.t(
                         "actions.path.adjustResetSpot",
-                        "Reset this spot",
+                        "Reset adjustment",
                     ),
                     icon: "trash" as const,
                     destructive: true,

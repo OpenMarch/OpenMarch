@@ -17,10 +17,10 @@ import {
 import type { PathTarget } from "../pathTarget";
 
 /**
- * A stored path is shown closed and opened on purpose (owner lab feedback on fork #674,
- * 2026-11-04): with its marcher selected it's drawn with no handles and takes no press; a
- * double-click on its line or Edit path opens it; Escape closes it again, leaving it drawn; a
- * right-click on its line offers Edit path and Remove path.
+ * A stored path is shown quiet and made active on purpose (owner lab feedback on fork #674,
+ * 2026-11-04; interaction system, rule 2): with its marcher selected it's drawn with no handles
+ * and takes no press; one click on its line or Edit path makes it active; Escape makes it quiet
+ * again, leaving it drawn; a right-click on its line offers the Path group.
  */
 
 const fieldProperties =
@@ -97,7 +97,7 @@ describe("a stored path, shown", () => {
     it("takes no press, keeps the field's menu open and the selection box its own", () => {
         showPath(target(5), "T4");
         expect(pathPenMode.claims(ON_LINE)).toBe(false);
-        // Something to click, though (step 3a: a click selects the path)
+        // Something to click, though (a click makes it active)
         expect(pathPenMode.cursorAt(ON_LINE)).toBe("pointer");
         expect(pathPenMode.cursorAt(NEAR)).toBeNull();
         expect(pathPenMode.ownsSelectionBox).toBe(false);
@@ -105,11 +105,11 @@ describe("a stored path, shown", () => {
         expect(pathPenMode.gesture.always).toBe(false);
     });
 
-    it("opens on a double-click on its line; a single click there selects the path (step 3a)", () => {
+    it("opens on one click on its line; a double-click does nothing more (interaction system, rule 2)", () => {
         showPath(target(5), "T4");
         expect(pathPenMode.takeClick(ON_LINE, false)).toBe(true);
-        expect(phase()).toBe("closed");
-        expect(usePathPenStore.getState().session?.object).toBe(true);
+        expect(phase()).toBe("open");
+        expect(usePathPenStore.getState().session?.object).toBe(false);
         expect(pathPenMode.takeClick(ON_LINE, true)).toBe(true);
         expect(phase()).toBe("open");
     });

@@ -1,6 +1,7 @@
 import { afterEach, expect, vi } from "vitest";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { eq } from "drizzle-orm";
+import { toast } from "sonner";
 import type { RouteGeometry, XY } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
@@ -9,7 +10,7 @@ import type Marcher from "@/global/classes/Marcher";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { performRedo, performUndo } from "@/db-functions/history";
-import { drawRoute, removeRoute } from "@/db-functions/timelineRoutes";
+import { drawRoute } from "@/db-functions/timelineRoutes";
 import { drawGroupRoute } from "@/db-functions/timelineGroupRoutes";
 import { editPathPoints } from "@/db-functions/timelinePathEdits";
 import { followTrail, readTrails } from "@/db-functions/timelineTrails";
@@ -29,8 +30,8 @@ import {
     addPoint,
     clearPath,
     finishDrawing,
+    activatePath,
     openPath,
-    selectPathObject,
     usePathPenStore,
 } from "../pathPenStore";
 import { findRouteTarget } from "../pathTarget";
@@ -45,12 +46,12 @@ vi.mock("../pathTarget", async (importOriginal) => {
 });
 
 /**
- * The selected path's lifecycle in `usePathPenActions` (pathways step 3a, spec Appendix I.10,
- * AP-O1, AP-O3, AP-O4, AP-O8), with the real resolver store and the show in the test database:
- * read again by its route after undo and redo, let go of when its route is gone, when the playhead
- * leaves its move and on playback; the marchers let go of when a path becomes the selection, and
- * the path when a marcher is selected (review of #737, S3, N2, N5). On the converted
- * `marchersAndPages` show, page 2's move is `[9, 17)`.
+ * The path's lifecycle in `usePathPenActions` (the interaction system: marchers are the only
+ * selection; a path is quiet or active), with the real resolver store and the show in the test
+ * database: a click's activation outlasts the read for the walkers it selected, an active path
+ * stays active across edits, undo and redo, Enter makes a quiet path active, the path goes with
+ * its marchers and on playback; Detach on a quiet group path; drawing again (AP-O8, N5). On the
+ * converted `marchersAndPages` show, page 2's move is `[9, 17)`.
  */
 
 const page2 = async (db: DbConnection) =>
@@ -112,12 +113,18 @@ const setUp = async (
             hook.result.current.selection.setSelectedMarchers(ids.map(marcher));
         });
     };
-    const selectPath = async (id: number) => {
+    /** A click on route `id`'s line, as `takeClick` does it: active at once, its walkers selected */
+    const activate = async (id: number, walkers: number[]) => {
         const target = (await findRouteTarget(db, resolver(), id, new Map()))!;
-        act(() => selectPathObject(target, "x"));
-        await waitFor(() => expect(session()?.object).toBe(true));
+        act(() => {
+            activatePath(target, "x", null, true);
+            hook.result.current.selection.setSelectedMarchers(
+                walkers.map(marcher),
+            );
+        });
+        await waitFor(() => expect(session()?.phase).toBe("open"));
     };
-    return { timeline, m1: m1!, m2: m2!, A, routeId, hook, select, selectPath };
+    return { timeline, m1: m1!, m2: m2!, A, routeId, hook, select, activate };
 };
 
 afterEach(() => {
@@ -126,150 +133,162 @@ afterEach(() => {
     stopTimelineResolver();
 });
 
-describeDbTests("usePathPenActions: a selected path (AP-O1, AP-O4)", (it) => {
-    it("is read again by its route after an edit, an undo and a redo", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { A, routeId, selectPath } = await setUp(db, wrapper);
-        await selectPath(routeId);
-        const drawn = await routeOf(db, routeId);
-        const moved: XY = [A[0] + 50, A[1] - 60];
-        await editPathPoints({
-            db,
-            routeId,
-            points: [{ id: drawn.points[0]!.id, at: moved }],
-        });
-        await waitFor(() =>
-            expect(session()!.target.points[0]!.at).toEqual(moved),
-        );
-        expect((await performUndo(db)).success).toBe(true);
-        await waitFor(() =>
-            expect(session()!.target.points).toEqual(drawn.points),
-        );
-        expect(session()).toMatchObject({ object: true, phase: "closed" });
-        expect((await performRedo(db)).success).toBe(true);
-        await waitFor(() =>
-            expect(session()!.target.points[0]!.at).toEqual(moved),
-        );
-        expect(session()!.target.routeId).toBe(routeId);
-    });
-
-    it("is let go of when its route is gone", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { routeId, selectPath } = await setUp(db, wrapper);
-        await selectPath(routeId);
-        await removeRoute({ db, routeId });
-        await waitFor(() => expect(session()).toBeNull());
-    });
-
-    it("is let go of when the playhead leaves its move, kept while it's inside", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { routeId, selectPath } = await setUp(db, wrapper);
-        await selectPath(routeId);
-        act(() => {
-            useTimelineSelectionStore.setState({ playheadBeat: 16 });
-        });
-        await new Promise((r) => setTimeout(r, 50));
-        expect(session()?.object).toBe(true);
-        act(() => {
-            useTimelineSelectionStore.setState({ playheadBeat: 20 });
-        });
-        await waitFor(() => expect(session()).toBeNull());
-    });
-
-    it("a group path whose members are in transitions [0, 8] and [4, 12] stays selected at 10 (S1)", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { routeId } = await setUp(db, wrapper);
-        const real = (await findRouteTarget(
-            db,
-            resolver(),
-            routeId,
-            new Map(),
-        ))!;
-        // As `targetOfRoute` reads such a route: the first member's move, and the whole reach
-        const read = { ...real, start: 0, end: 8, span: { start: 0, end: 12 } };
-        const spy = vi.mocked(findRouteTarget);
-        const original = spy.getMockImplementation()!;
-        spy.mockResolvedValue(read);
-        try {
-            act(() => {
-                useTimelineSelectionStore.setState({ playheadBeat: 4 });
-            });
-            act(() => selectPathObject(read, "2"));
-            act(() => {
-                useTimelineSelectionStore.setState({ playheadBeat: 10 });
-            });
-            await new Promise((r) => setTimeout(r, 50));
-            expect(session()?.object).toBe(true);
-            act(() => {
-                useTimelineSelectionStore.setState({ playheadBeat: 13 });
-            });
-            await waitFor(() => expect(session()).toBeNull());
-        } finally {
-            spy.mockImplementation(original);
-        }
-    });
-
-    it("is cleared on playback", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { routeId, hook, selectPath } = await setUp(db, wrapper);
-        await selectPath(routeId);
-        act(() => {
-            hook.result.current.playing.setIsPlaying(true);
-        });
-        expect(session()).toBeNull();
-    });
-
-    it("lets go of the marchers selected when it becomes the selection (AP-O3)", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { m1, routeId, hook, select, selectPath } = await setUp(
+describeDbTests(
+    "usePathPenActions: quiet and active paths (interaction system, rules 1 and 2)",
+    (it) => {
+        it("a click's activation outlasts the read for the walkers it selected", async ({
             db,
             wrapper,
-        );
-        select([m1]);
-        // The path shown for the marcher, closed, not an object
-        await waitFor(() => expect(session()?.target.routeId).toBe(routeId));
-        expect(session()!.object).toBe(false);
-        await selectPath(routeId);
-        expect(hook.result.current.selection.selectedMarchers).toEqual([]);
-        expect(session()).toMatchObject({ object: true, phase: "closed" });
-    });
+            marchersAndPages: _,
+        }) => {
+            const { m1, routeId, activate } = await setUp(db, wrapper);
+            await activate(routeId, [m1]);
+            // The read for the new selection has landed: still active, nothing left to open
+            await waitFor(() =>
+                expect(usePathPenStore.getState().openRoute).toBeNull(),
+            );
+            expect(session()).toMatchObject({ phase: "open", object: false });
+            expect(session()!.target.routeId).toBe(routeId);
+        });
 
-    it("goes as soon as a marcher is selected, so a Delete before the marcher's path is read removes nothing (N2)", async ({
-        db,
-        wrapper,
-        marchersAndPages: _,
-    }) => {
-        const { m2, routeId, select, selectPath } = await setUp(db, wrapper);
-        await selectPath(routeId);
-        expect(isActionEnabled("shapeRemoveLastPoint")).toBe(true);
-        // A click on another marcher's dot: in the same act, before any read lands
-        select([m2]);
-        expect(session()?.object ?? false).toBe(false);
-        expect(isActionEnabled("shapeRemoveLastPoint")).toBe(false);
-        await act(async () => void runAction("shapeRemoveLastPoint"));
-        expect(await routeCount(db)).toBe(1);
-        await new Promise((r) => setTimeout(r, 50));
-        expect(await routeCount(db)).toBe(1);
-    });
-});
+        it("stays active across an edit, an undo and a redo", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { m1, A, routeId, activate } = await setUp(db, wrapper);
+            await activate(routeId, [m1]);
+            const drawn = await routeOf(db, routeId);
+            const moved: XY = [A[0] + 50, A[1] - 60];
+            await editPathPoints({
+                db,
+                routeId,
+                points: [{ id: drawn.points[0]!.id, at: moved }],
+            });
+            await waitFor(() =>
+                expect(session()!.target.points[0]!.at).toEqual(moved),
+            );
+            expect((await performUndo(db)).success).toBe(true);
+            await waitFor(() =>
+                expect(session()!.target.points).toEqual(drawn.points),
+            );
+            expect(session()!.phase).toBe("open");
+            expect((await performRedo(db)).success).toBe(true);
+            await waitFor(() =>
+                expect(session()!.target.points[0]!.at).toEqual(moved),
+            );
+            expect(session()).toMatchObject({ phase: "open", object: false });
+        });
+
+        it("selecting a marcher by its dot shows its path quiet; Enter makes it active", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { m1, routeId, select } = await setUp(db, wrapper);
+            select([m1]);
+            await waitFor(() =>
+                expect(session()?.target.routeId).toBe(routeId),
+            );
+            expect(session()!.phase).toBe("closed");
+            // Quiet: Delete removes nothing, Edit path and Enter are offered
+            expect(isActionEnabled("shapeRemoveLastPoint")).toBe(false);
+            expect(isActionEnabled("editPath")).toBe(true);
+            act(() => void runAction("applyShape"));
+            expect(session()!.phase).toBe("open");
+        });
+
+        it("goes when the selection moves off its marcher, so a Delete then removes nothing", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { m1, m2, routeId, select, activate } = await setUp(
+                db,
+                wrapper,
+            );
+            await activate(routeId, [m1]);
+            select([m2]);
+            await waitFor(() => expect(session()).toBeNull());
+            await act(async () => void runAction("shapeRemoveLastPoint"));
+            expect(await routeCount(db)).toBe(1);
+        });
+
+        it("Delete on the active path with no point selected removes it, with a toast and Undo (Q7)", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { m1, routeId, activate } = await setUp(db, wrapper);
+            await activate(routeId, [m1]);
+            const success = vi.spyOn(toast, "success");
+            try {
+                await act(async () => void runAction("shapeRemoveLastPoint"));
+                await waitFor(() => expect(success).toHaveBeenCalled());
+                expect(success.mock.calls[0]![0]).toBe("Path removed");
+                expect(
+                    (success.mock.calls[0]![1] as { action: { label: string } })
+                        .action.label,
+                ).toBe("Undo");
+                expect(await routeCount(db)).toBe(0);
+            } finally {
+                success.mockRestore();
+            }
+        });
+
+        it("is cleared on playback", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { m1, routeId, hook, activate } = await setUp(db, wrapper);
+            await activate(routeId, [m1]);
+            act(() => {
+                hook.result.current.playing.setIsPlaying(true);
+            });
+            expect(session()).toBeNull();
+        });
+
+        it("a group path: Detach on the quiet path for the members selected; a lane let go when its marcher is selected away", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { timeline, m2, A, select } = await setUp(db, wrapper);
+            const [, , m3] = resolver().marcherIds();
+            const { routeId } = await drawGroupRoute({
+                db,
+                timelineId: timeline.id,
+                marcherIds: [m2, m3!],
+                points: [{ at: [A[0] + 10, A[1] + 10] }],
+            });
+            await timelineResolverSettled();
+            select([m2, m3!]);
+            await waitFor(() =>
+                expect(session()?.target.routeId).toBe(routeId),
+            );
+            expect(session()!.phase).toBe("closed");
+            await waitFor(() =>
+                expect(isActionEnabled("detachPath")).toBe(true),
+            );
+            // Nobody's adjusted: no Reset adjustment
+            expect(isActionEnabled("adjustResetSpot")).toBe(false);
+            // A lane click: that marcher selected, its lane picked, the path active
+            act(() => {
+                activatePath(session()!.target, "2", m2);
+            });
+            select([m2]);
+            await new Promise((r) => setTimeout(r, 50));
+            expect(session()).toMatchObject({
+                phase: "open",
+                lane: { marcherId: m2, key: null },
+            });
+            select([m3!]);
+            await waitFor(() => expect(session()?.lane ?? null).toBeNull());
+            expect(session()!.phase).toBe("open");
+        });
+    },
+);
 
 describeDbTests(
     "usePathPenActions: drawing again from the open path (AP-O8, N5)",

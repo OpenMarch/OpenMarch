@@ -490,6 +490,10 @@ const GROUP_RING = "rgb(59, 130, 246)";
 const OWN_RING = "rgb(249, 115, 22)";
 const MEMBER_RING_SCALE = 1.9;
 const MEMBER_RING_WIDTH = 2;
+/** A detached member's ring: dashed, off the group path (interaction system, rule 5) */
+const MEMBER_RING_DASH = "3 2";
+/** An adjusted lane, in the group ring's color: quieter than the line being edited */
+const LANE_ADJUSTED_ALPHA = 0.7;
 /** The Follow tool's pull arrows (pathways step 4d), in dot radii, and their loop in seconds */
 const PULL_ARROW = {
     /** From the end's center to the first chevron */
@@ -797,6 +801,25 @@ const ShapeBody = memo(function ShapeBody({
                     data-testid="pathGroupLane"
                 />
             ))}
+            {/* Adjusted lanes (pathways, interaction system rule 5), over the faint ones */}
+            {drawing.lanesAdjusted?.map((i) =>
+                drawing.lanes?.[i] ? (
+                    <polyline
+                        key={`laneAdjusted${i}`}
+                        points={drawing.lanes[i]!.map(
+                            (p) => `${p.x},${p.y}`,
+                        ).join(" ")}
+                        fill="none"
+                        stroke={GROUP_RING}
+                        strokeOpacity={LANE_ADJUSTED_ALPHA}
+                        strokeWidth={LANE_HIGHLIGHT_WIDTH}
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathAdjustedLane"
+                    />
+                ) : null,
+            )}
             {drawing.outline && drawing.pathLine === "selected" && (
                 <polyline
                     points={drawing.outline
@@ -890,9 +913,11 @@ const ShapeBody = memo(function ShapeBody({
                     fill="none"
                     stroke={ring.kind === "group" ? GROUP_RING : OWN_RING}
                     strokeWidth={MEMBER_RING_WIDTH}
+                    strokeDasharray={ring.dashed ? MEMBER_RING_DASH : undefined}
                     vectorEffect="non-scaling-stroke"
                     data-testid="pathMemberRing"
                     data-kind={ring.kind}
+                    data-dashed={ring.dashed || undefined}
                     data-pulse={ring.pulse || undefined}
                     // The pull arrows carry the motion (step 4d); the ring stays still beside them
                     className={

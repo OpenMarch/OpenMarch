@@ -128,10 +128,25 @@ describe("FieldContextMenu", () => {
         expect(item("removePath")?.querySelector("svg")).not.toBeNull();
         expect(item("removePath")?.querySelector("kbd")).toBeNull();
         // None of the field's own
-        for (const id of FIELD_MENU_ACTIONS) expect(item(id)).toBeNull();
+        for (const id of FIELD_MENU_ACTIONS)
+            if (id !== "editPath" && id !== "removePath")
+                expect(item(id)).toBeNull();
         fireEvent.click(item("editPath")!);
         expect(edit).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it("on a path's line, shows the Path group's entries only where they apply", () => {
+        handle("editPath");
+        handle("detachPath", { enabled: false });
+        handle("rejoinPath");
+        handle("removePath");
+        open({
+            actions: ["editPath", "detachPath", "rejoinPath", "removePath"],
+        });
+        expect(item("detachPath")).toBeNull();
+        expect(item("rejoinPath")?.textContent).toContain("Rejoin group path");
+        expect(item("rejoinPath")?.querySelector("svg")).not.toBeNull();
     });
 
     it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
@@ -148,6 +163,14 @@ describe("FieldContextMenu", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
+        // The Path group shows only what applies: here Edit path, Detach and Remove path
+        for (const id of [
+            "rejoinPath",
+            "adjustResetSpot",
+            "reverseTrail",
+            "refitPath",
+        ] as const)
+            handle(id, { enabled: false });
         open();
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
@@ -159,6 +182,7 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
+            ["editPath", "detachPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "setSelectedMarchersToPreviousPage",

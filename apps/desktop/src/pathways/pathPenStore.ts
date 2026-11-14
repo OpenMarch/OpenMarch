@@ -38,6 +38,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import type { XY } from "@/shapes/types";
 import { SMOOTH } from "@/shapes/line/lineGeometry";
 import { drawnAsGroup, type GroupMember, type PathTarget } from "./pathTarget";
+import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { dragTrail } from "@/db-functions/timelineTrailDrag";
 import { rippleTrail } from "@/db-functions/timelineTrailRipple";
 import { invalidatePlacedBoxes } from "@/shapes/placed/placedBoxStore";
@@ -160,6 +161,11 @@ interface PathPenState {
      * spec's "its own path is then shown, open" says; null otherwise
      */
     openNext: number | null;
+    /**
+     * A click on a path's line made it active and changed the selection: the path read for the
+     * new selection opens if it's this route (`activatePath`); null otherwise
+     */
+    openRoute: number | null;
     /** Selected marchers on the shown group path, whom Detach gives a copy each (AP-R9) */
     ownable: readonly number[];
     /** Whom Rejoin puts on which group path, or null when it isn't offered (step 15) */
@@ -296,6 +302,7 @@ export const usePathPenStore = create<PathPenState>(() => ({
     hidden: false,
     objects: [],
     openNext: null,
+    openRoute: null,
     ownable: [],
     rejoin: null,
     session: null,
@@ -468,20 +475,133 @@ export function switchDrawing(target: PathTarget, drill: string): boolean {
     return true;
 }
 
+/** Who walks `target`'s path: a trail's line, a group path's members, or its one marcher */
+export const walkersOf = (target: PathTarget): number[] =>
+    target.trail
+        ? target.trail.members.map((m) => m.marcherId)
+        : target.group
+          ? target.group.members.map((m) => m.marcherId)
+          : [target.marcherId];
+
 /**
- * Selects the path `target` as an object (a click, a tap or a right-click on its line, AP-O3):
- * drawn selected, closed. The marcher selection is let go of by `usePathPenActions`. Already
- * selected or open, it stays as it is.
+ * The marcher selection as the pen reads and writes it: the field's editor's, which writes the
+ * app's (the one selection). Marchers are the only selection (interaction system, rule 1): a
+ * click on a path's line selects its walkers instead of the path. Tests put their own in.
  */
-export function selectPathObject(target: PathTarget, drill: string): void {
+export interface PathSelectionPort {
+    get(): readonly number[];
+    set(ids: readonly number[]): void;
+}
+
+const fieldSelection: PathSelectionPort = {
+    get: () => activeFieldEditor()?.selected() ?? [],
+    set: (ids) => activeFieldEditor()?.select(ids),
+};
+let selectionPort: PathSelectionPort = fieldSelection;
+
+/** Puts in the selection the pen writes (tests); null puts the field's back */
+export function setPathSelectionPort(port: PathSelectionPort | null): void {
+    selectionPort = port ?? fieldSelection;
+}
+
+/**
+ * The selection a click (or a right-click) on a path's line makes, as a click on a placed shape's
+ * member selects the shape: `walkers` (all of them, or the one marcher whose lane was clicked).
+ * The selection is kept when it's already some of them, so a marquee of three, then a click on
+ * their line, still acts on those three. Shift adds the walkers. True when the selection changes.
+ */
+export function selectWalkers(
+    walkers: readonly number[],
+    {
+        add = false,
+        keepSubset = true,
+    }: { add?: boolean; keepSubset?: boolean } = {},
+): boolean {
+    const now = selectionPort.get();
+    const theirs = new Set(walkers);
+    let next: readonly number[];
+    if (add) next = [...new Set([...now, ...walkers])];
+    else if (keepSubset && now.length > 0 && now.every((id) => theirs.has(id)))
+        next = now;
+    else next = walkers;
+    const same =
+        next.length === now.length &&
+        [...next].sort((a, b) => a - b).join(",") ===
+            [...now].sort((a, b) => a - b).join(",");
+    if (same) return false;
+    selectionPort.set(next);
+    return true;
+}
+
+/** Shift-click on a lane: that marcher in or out of the selection. True when it's now in. */
+export function toggleWalker(marcherId: number): boolean {
+    const now = selectionPort.get();
+    const isIn = now.includes(marcherId);
+    selectionPort.set(
+        isIn ? now.filter((id) => id !== marcherId) : [...now, marcherId],
+    );
+    return !isIn;
+}
+
+/**
+ * Makes `target`'s path active (interaction system, rule 2): handles and the full bar, at once,
+ * from one click on its line (or Enter). The marchers it's for are selected by the caller; the
+ * path read for them again keeps it active (`showPath`, by `openRoute` and its key). `lane`: the
+ * member whose lane was clicked, picked on the group path.
+ */
+export function activatePath(
+    target: PathTarget,
+    drill: string,
+    lane: number | null = null,
+    selectionChanges = false,
+): void {
+    const { session } = usePathPenStore.getState();
+    const same =
+        session !== null &&
+        session.phase !== "drawing" &&
+        pathKey(session.target) === pathKey(target);
+    const picked =
+        lane !== null && target.group && !target.lane
+            ? { marcherId: lane, key: null }
+            : null;
+    usePathPenStore.setState({
+        openRoute: selectionChanges ? target.routeId : null,
+        session:
+            same && session
+                ? {
+                      ...session,
+                      phase: "open",
+                      lane: picked ?? (lane === null ? null : session.lane),
+                  }
+                : {
+                      phase: "open",
+                      target,
+                      drill,
+                      points: pointsOf(target),
+                      ...toBulgeOf(target),
+                      pointer: null,
+                      selected: null,
+                      dragging: null,
+                      object: false,
+                      lane: picked,
+                  },
+    });
+}
+
+/**
+ * Shows `target`'s path quiet (a right-click or long press on its line, whose walkers the caller
+ * selects), so the menu that opens acts on it; the same path already shown stays as it is.
+ */
+export function focusPath(target: PathTarget, drill: string): void {
     const { session } = usePathPenStore.getState();
     if (
-        session?.object &&
+        session !== null &&
         session.phase !== "drawing" &&
-        sameRoute(session.target, target)
+        pathKey(session.target) === pathKey(target)
     )
         return;
     usePathPenStore.setState({
+        openRoute: null,
         session: {
             phase: "closed",
             target,
@@ -491,36 +611,30 @@ export function selectPathObject(target: PathTarget, drill: string): void {
             pointer: null,
             selected: null,
             dragging: null,
-            object: true,
+            object: false,
         },
     });
 }
 
 /**
- * Escape on a selected path (AP-O4): an open one goes back to selected, as leaving a vector's
- * edit mode does; a selected one is let go of. False when no path object is selected.
+ * Whose adjustment Reset adjustment takes off (AP-R11; one ladder with Rejoin, interaction
+ * system rule 5): the lane picked on the group path, or the one selected member, when it has an
+ * adjustment. Null otherwise.
  */
-export function escapePathObject(): boolean {
-    const { session } = usePathPenStore.getState();
-    if (!session?.object || session.phase === "drawing") return false;
-    if (session.phase === "open")
-        usePathPenStore.setState({
-            session: {
-                ...session,
-                phase: "closed",
-                selected: null,
-                dragging: null,
-            },
-        });
-    else clearPath();
-    return true;
-}
-
-/** Lets go of a selected path object (a click on empty field, AP-O4); false when there's none. */
-export function deselectPathObject(): boolean {
-    if (!usePathPenStore.getState().session?.object) return false;
-    clearPath();
-    return true;
+export function resetTargetOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+): number | null {
+    if (!session || session.phase === "drawing" || !session.target.group)
+        return null;
+    if (session.target.lane) return null;
+    const lane = session.phase === "open" ? session.lane : null;
+    const id = lane
+        ? lane.marcherId
+        : ownable.length === 1
+          ? ownable[0]!
+          : null;
+    return id !== null && memberOf(session, id)?.adjust ? id : null;
 }
 
 /**
@@ -571,13 +685,17 @@ export function showPath(
               false)
             : !target.group && target.marcherId === openNext);
     if (next) usePathPenStore.setState({ openNext: null });
+    // Made active by a click on its line, which selected its walkers (`activatePath`)
+    const { openRoute } = usePathPenStore.getState();
+    const activated = openRoute !== null && target.routeId === openRoute;
+    if (openRoute !== null) usePathPenStore.setState({ openRoute: null });
     // A path object is the same path while it's the same route (AP-O1)
     const same =
         session !== null &&
         (object
             ? session.object && sameRoute(session.target, target)
             : !session.object && pathKey(session.target) === pathKey(target));
-    const open = next || (session?.phase === "open" && same);
+    const open = next || activated || (session?.phase === "open" && same);
     const kept =
         open && session && session.selected !== null
             ? Number(session.selected.slice(1)) < points.length
@@ -595,7 +713,8 @@ export function showPath(
             selected: kept,
             dragging: null,
             object,
-            lane: open && session ? laneAfterRead(session, target) : null,
+            lane:
+                open && session && same ? laneAfterRead(session, target) : null,
         },
     });
 }
@@ -642,8 +761,9 @@ export function closePath(): void {
 
 /** Takes the path off the field: no marcher with a path selected, or playback. */
 export function clearPath(): void {
-    if (usePathPenStore.getState().session)
-        usePathPenStore.setState({ session: null });
+    const { session, openRoute } = usePathPenStore.getState();
+    if (session || openRoute !== null)
+        usePathPenStore.setState({ session: null, openRoute: null });
 }
 
 export const isDrawing = () =>
@@ -1313,7 +1433,9 @@ export async function removePath(): Promise<void> {
             routeId: session.target.routeId,
         });
         clearPath();
-        if (session.target.group)
+        if (!session.target.group)
+            toastWithUndo(tolgee.t("pathways.toasts.removed", "Path removed"));
+        else
             toastWithUndo(
                 tolgee.t(
                     "pathways.toasts.removedGroup",

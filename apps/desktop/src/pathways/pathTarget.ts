@@ -166,6 +166,12 @@ export interface GroupTarget {
         /** Walks a copy Detached from this group path (AP-R9), which Rejoin brings back */
         detached?: boolean;
     }[];
+    /**
+     * Everyone on a copy Detached from this group path, selected or not, so the field can mark
+     * who is off it whenever it shows (interaction system, rule 5). Absent when none is, and for
+     * paths read without it (Paths All's)
+     */
+    detachedMembers?: readonly { marcherId: number; drill: string; from: XY }[];
 }
 
 /**
@@ -404,6 +410,16 @@ export async function findGroupTarget(
             ...(detached.has(id) ? { detached: true } : {}),
         });
     }
+    const detachedMembers = groups
+        .filter((g) => g.detachedFrom === group.routeId)
+        .flatMap((g) => g.marcherIds)
+        .filter((id, i, all) => all.indexOf(id) === i)
+        .sort((a, b) => a - b)
+        .map((id) => ({
+            marcherId: id,
+            drill: drills.get(id) ?? `${id}`,
+            from: xy(resolver.explain(id, move.start).origin),
+        }));
     const g = route[0]!.geometry;
     const target: PathTarget = {
         timelineId: move.timelineId,
@@ -418,7 +434,11 @@ export async function findGroupTarget(
         ends: { from: xy(g.from), to: xy(g.to) },
         ...toBulgeOf(g),
         drawnEnds: drawnEndsOf(members),
-        group: { members, outside },
+        group: {
+            members,
+            outside,
+            ...(detachedMembers.length > 0 ? { detachedMembers } : {}),
+        },
     };
     return group.laneCount === 1
         ? onItsLane(target, members[0]!.offset, group.detachedFrom)

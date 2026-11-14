@@ -13,6 +13,7 @@ import {
     PlayIcon,
     LineSegmentsIcon,
     PathIcon,
+    PencilSimpleIcon,
     TrashIcon,
     UsersThreeIcon,
     WarningIcon,
@@ -38,6 +39,7 @@ import {
 import type { XY } from "@/shapes/types";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { refitNeeded } from "./pathTarget";
+import { useShapeToolStore } from "@/shapes/tool/shapeToolStore";
 import { OffCountWarning, TrailCornerCounts } from "./TrailCornerCounts";
 import { offCountTally, trailCornersOf } from "./trailCorners";
 import {
@@ -58,6 +60,7 @@ import {
     detachIdsOf,
     memberNow,
     memberOf,
+    resetTargetOf,
     shapeOf,
     usePathPenStore,
     type PathSession,
@@ -318,16 +321,28 @@ export function PathEditor({
 }) {
     const session = usePathPenStore((s) => s.session);
     const hidden = usePathPenStore((s) => s.hidden);
+    const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
     if (!session) return null;
-    // A path only shown (closed) has no editor: a double-click or its menu opens it. A trail
-    // keeps its leader's mark, which says who leads and turns the line around (step 4)
+    // A quiet path (closed, interaction system rule 4) has the compact bar: Edit path, the member
+    // commands and Remove path, so they're found without its menu. A trail keeps its leader's
+    // mark, which says who leads and turns the line around (step 4). Not drawn, nothing shows
     if (session.phase === "closed")
-        return session.target.trail && (!hidden || session.object) ? (
+        return hidden || shapeToolOpen ? null : (
             <RichTips>
-                <TrailLeaderMark session={session} />
-                <TrailCornerCounts session={session} />
+                {session.target.trail && (
+                    <>
+                        <TrailLeaderMark session={session} />
+                        <TrailCornerCounts session={session} />
+                    </>
+                )}
+                {session.target.routeId !== null && (
+                    <PathEditorBar
+                        session={session}
+                        fieldProperties={fieldProperties}
+                    />
+                )}
             </RichTips>
-        ) : null;
+        );
     return (
         <>
             {session.phase === "drawing" && <PathPenBanner session={session} />}
@@ -516,10 +531,14 @@ function PathEditorBar({
         fieldWidth: size.fw,
         fieldHeight: size.fh,
     });
-    const big = bigSteps(session, fieldProperties);
-    // Step 6 (TC-7): a trail's turns that fall between counts
-    const offCount = offCountTally(trailCornersOf(session));
     const drawing = session.phase === "drawing";
+    // Quiet (interaction system rule 4): only Edit path, the member commands and Remove path
+    const quiet = session.phase === "closed";
+    const big = quiet ? null : bigSteps(session, fieldProperties);
+    // Step 6 (TC-7): a trail's turns that fall between counts
+    const offCount = quiet
+        ? { turns: 0, corners: 0 }
+        : offCountTally(trailCornersOf(session));
     const stored = session.target.routeId !== null;
     // The open path's selected point: Corner | Smooth for it, as its menu has (step 2)
     const shape = shapeOf(session);
@@ -531,7 +550,11 @@ function PathEditorBar({
     const selectedMembers = usePathPenStore((s) => s.ownable);
     const ownable = detachIdsOf(selectedMembers, session);
     const rejoin = usePathPenStore((s) => s.rejoin);
-    const groupControls = !drawing && (ownable.length > 0 || rejoin !== null);
+    // The "back" slot (interaction system rule 5, one ladder): Rejoin for a detached marcher,
+    // Reset adjustment for an adjusted member (the lane picked, or the one selected)
+    const resetId = resetTargetOf(session, selectedMembers);
+    const groupControls =
+        !drawing && (ownable.length > 0 || rejoin !== null || resetId !== null);
     // Rejoin's marchers that were Detached: the copy shown, or the group's detached ones
     const detachedOutside =
         session.target.group?.outside.filter((m) => m.detached).length ?? 0;
@@ -716,6 +739,23 @@ function PathEditorBar({
                 </>
             ) : (
                 <>
+                    {quiet && (
+                        <>
+                            <IconButton
+                                label={tolgee.t(
+                                    "pathways.editor.editTip",
+                                    "Show this path's points to drag. A click on its line does it too",
+                                )}
+                                action="editPath"
+                                onClick={() => runAction("editPath")}
+                                testId="path-edit"
+                            >
+                                <PencilSimpleIcon size={14} />
+                                {tolgee.t("actions.path.edit", "Edit path")}
+                            </IconButton>
+                            <Divider />
+                        </>
+                    )}
                     {picked >= 0 && (
                         <>
                             <span
@@ -759,6 +799,39 @@ function PathEditorBar({
                             {stored && <Divider />}
                         </>
                     )}
+                    {laneMember && (
+                        <>
+                            <span
+                                className="flex items-center gap-2 px-4"
+                                data-testid="path-lane-picked"
+                            >
+                                {tolgee.t(
+                                    "pathways.editor.laneOf",
+                                    "Spot {spot} · {marcher}",
+                                    {
+                                        spot: (laneMember.slot ?? 0) + 1,
+                                        marcher: laneMember.drill,
+                                    },
+                                )}
+                                {session.lane?.key !== null && (
+                                    <IconButton
+                                        label={tolgee.t(
+                                            "actions.path.adjustRemoveKey",
+                                            "Remove adjustment point",
+                                        )}
+                                        action="adjustRemoveKey"
+                                        onClick={() =>
+                                            runAction("adjustRemoveKey")
+                                        }
+                                        testId="path-adjust-remove-key"
+                                    >
+                                        <BackspaceIcon size={14} />
+                                    </IconButton>
+                                )}
+                            </span>
+                            <Divider />
+                        </>
+                    )}
                     {groupControls && (
                         <>
                             <span className="flex items-center gap-2">
@@ -773,10 +846,16 @@ function PathEditorBar({
                                         testId="path-detach"
                                     >
                                         <ArrowsSplitIcon size={14} />
-                                        {tolgee.t(
-                                            "actions.path.detach",
-                                            "Detach",
-                                        )}
+                                        {ownable.length > 1
+                                            ? tolgee.t(
+                                                  "pathways.editor.detachCount",
+                                                  "Detach {count}",
+                                                  { count: ownable.length },
+                                              )
+                                            : tolgee.t(
+                                                  "actions.path.detach",
+                                                  "Detach",
+                                              )}
                                     </IconButton>
                                 )}
                                 {rejoin !== null && detachedNote && (
@@ -803,6 +882,25 @@ function PathEditorBar({
                                         {tolgee.t(
                                             "actions.path.rejoin",
                                             "Rejoin",
+                                        )}
+                                    </IconButton>
+                                )}
+                                {rejoin === null && resetId !== null && (
+                                    <IconButton
+                                        label={tolgee.t(
+                                            "pathways.editor.resetTip",
+                                            "Take off this marcher's adjustment, so it walks its plain lane of the group path again",
+                                        )}
+                                        action="adjustResetSpot"
+                                        onClick={() =>
+                                            runAction("adjustResetSpot")
+                                        }
+                                        testId="path-adjust-reset"
+                                    >
+                                        <ArrowCounterClockwiseIcon size={14} />
+                                        {tolgee.t(
+                                            "actions.path.adjustResetSpot",
+                                            "Reset adjustment",
                                         )}
                                     </IconButton>
                                 )}
@@ -837,54 +935,6 @@ function PathEditorBar({
                                     )}
                                 </button>
                             </Tip>
-                            <Divider />
-                        </>
-                    )}
-                    {laneMember && (
-                        <>
-                            <span
-                                className="flex items-center gap-2 px-4"
-                                data-testid="path-lane-picked"
-                            >
-                                {tolgee.t(
-                                    "pathways.editor.laneOf",
-                                    "Spot {spot} · {marcher}",
-                                    {
-                                        spot: (laneMember.slot ?? 0) + 1,
-                                        marcher: laneMember.drill,
-                                    },
-                                )}
-                                {session.lane?.key !== null && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "actions.path.adjustRemoveKey",
-                                            "Remove adjustment point",
-                                        )}
-                                        action="adjustRemoveKey"
-                                        onClick={() =>
-                                            runAction("adjustRemoveKey")
-                                        }
-                                        testId="path-adjust-remove-key"
-                                    >
-                                        <BackspaceIcon size={14} />
-                                    </IconButton>
-                                )}
-                                {laneMember.adjust && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "actions.path.adjustResetSpot",
-                                            "Reset this spot",
-                                        )}
-                                        action="adjustResetSpot"
-                                        onClick={() =>
-                                            runAction("adjustResetSpot")
-                                        }
-                                        testId="path-adjust-reset"
-                                    >
-                                        <ArrowCounterClockwiseIcon size={14} />
-                                    </IconButton>
-                                )}
-                            </span>
                             <Divider />
                         </>
                     )}

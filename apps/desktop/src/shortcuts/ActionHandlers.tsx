@@ -58,12 +58,10 @@ export function EditorActionHandlers() {
         (s) => s.selected !== null || s.inside !== null,
     );
     const shapeDiscarded = useShapeToolStore((s) => s.discarded !== null);
-    // The path pen drawing, a path open on the field, or a path selected as an object (step 3a)
-    // takes its keys over everything (pathways); a path only shown (closed) takes none
+    // The path pen drawing, or a path active on the field, takes its keys over everything
+    // (pathways); a quiet path (closed) takes none but Enter (`usePathPenActions`)
     const pathOpen = usePathPenStore(
-        (s) =>
-            s.session !== null &&
-            (s.session.phase !== "closed" || s.session.object),
+        (s) => s.session !== null && s.session.phase !== "closed",
     );
     // Set order (pathways step 4g) takes Enter and Escape over everything while it's on
     const sweeping = useMarcherOrderStore((s) => s.sweep !== null);

@@ -368,11 +368,9 @@ describe("when Re-fit is offered (decision A)", () => {
             },
         });
         expect(refitNeeded(moved)).toBe(true);
-        expect(pathFieldMenu(moved)).toEqual([
-            "editPath",
-            "refitPath",
-            "removePath",
-        ]);
+        // The Path group always lists Re-fit; the menu shows it only while it's enabled
+        expect(pathFieldMenu(moved)).toBe(PATH_FIELD_MENU);
+        expect(PATH_FIELD_MENU).toContain("refitPath");
     });
 
     it("a path not saved yet has nothing to re-fit", () => {

@@ -349,6 +349,11 @@ export type FieldModeDrawing = {
     laneHighlights?: readonly number[];
     /** Which of `lanes` is being worked on: the only heavy line, over the path's (pathways step 3b) */
     lanePicked?: number;
+    /**
+     * Which of `lanes` have an adjustment (pathways, interaction system rule 5): drawn in the
+     * group ring's color, so who bends off the group path reads whenever it shows
+     */
+    lanesAdjusted?: readonly number[];
     /** An adjusted lane's keys, small round handles while its path is open (pathways step 3b) */
     adjustHandles?: readonly { at: FieldPoint; selected: boolean }[];
     /**
@@ -364,6 +369,8 @@ export type FieldModeDrawing = {
         label: string;
         /** Pulses, asking to be pressed: the Follow tool's ends (pathways step 4b) */
         pulse?: boolean;
+        /** Drawn dashed: a marcher detached from the group path shown (pathways step 3c) */
+        dashed?: boolean;
     }[];
     /**
      * The Follow tool's grab cue (pathways step 4d): on each end of the line, chevrons pointing
@@ -942,6 +949,11 @@ export class FieldEditor {
                     !this.ports.marcherHidden?.(id),
             ),
         );
+    }
+
+    /** The marchers selected now: the app's selection, as the editor reads it. */
+    selected(): readonly number[] {
+        return this.ports.selection.get();
     }
 
     /** Selects the marchers in `ids` that are drawn and can be selected (an app action, such as "Select box"). */

@@ -2,7 +2,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { PathEditor } from "../PathEditor";
-import { clearPath, openPath, showPath, startDrawing } from "../pathPenStore";
+import {
+    clearPath,
+    openPath,
+    setGroupCommands,
+    setPathHidden,
+    showPath,
+    startDrawing,
+} from "../pathPenStore";
+import type { AdjustProfile } from "@openmarch/core";
 import type { PathTarget } from "../pathTarget";
 
 /**
@@ -34,8 +42,33 @@ const target = (routeId: number | null, steps = 8): PathTarget => ({
             : [{ id: "c1", at: [(steps / 2) * STEP, 4 * STEP] }],
 });
 
+/** A group path of three, 12 adjusted */
+const groupTarget = (): PathTarget => ({
+    ...target(9),
+    marcherId: 10,
+    group: {
+        members: [10, 11, 12].map((m, i) => ({
+            marcherId: m,
+            transitionId: 7,
+            drill: `B${i + 1}`,
+            offset: { x: 0, y: i * 2 * STEP },
+            from: { x: 0, y: i * 2 * STEP },
+            to: { x: 8 * STEP, y: i * 2 * STEP },
+            laneId: m,
+            slot: i,
+            adjust:
+                m === 12 ? ({ keys: [] } as unknown as AdjustProfile) : null,
+        })),
+        outside: [],
+    },
+});
+
 afterEach(() => {
-    act(() => clearPath());
+    act(() => {
+        clearPath();
+        setGroupCommands([], null);
+        setPathHidden(false);
+    });
     cleanup();
 });
 
@@ -103,13 +136,49 @@ describe("the path's floating editor", () => {
         expect(el.textContent).not.toContain("T4");
     });
 
-    it("closed (the path only shown): no editor, until it's opened", () => {
+    it("quiet (closed): the compact bar, Edit path and Remove path, no Big steps; none while hidden", () => {
         act(() => showPath(target(5, 32), "T4"));
         render(<PathEditor fieldProperties={fieldProperties} />);
-        expect(screen.queryByTestId("path-editor")).toBeNull();
+        expect(bar().dataset.phase).toBe("closed");
+        expect(screen.getByTestId("path-edit").textContent).toBe("Edit path");
+        expect(screen.getByTestId("path-remove")).toBeTruthy();
+        expect(screen.queryByTestId("path-big-steps")).toBeNull();
         expect(screen.queryByTestId("path-pen-banner")).toBeNull();
+        act(() => setPathHidden(true));
+        expect(screen.queryByTestId("path-editor")).toBeNull();
+        act(() => setPathHidden(false));
         act(() => void openPath());
         expect(bar().dataset.phase).toBe("open");
+        expect(screen.queryByTestId("path-edit")).toBeNull();
+    });
+
+    it("quiet on a group path: Detach for the selected members, the back slot by member state", () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10, 11], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
+        expect(screen.queryByTestId("path-adjust-reset")).toBeNull();
+        expect(screen.queryByTestId("path-rejoin")).toBeNull();
+        // One adjusted member selected: Reset adjustment
+        act(() => setGroupCommands([12], null));
+        expect(screen.getByTestId("path-detach").textContent).toBe("Detach");
+        expect(screen.getByTestId("path-adjust-reset").textContent).toBe(
+            "Reset adjustment",
+        );
+        // A plain member selected: no Reset adjustment
+        act(() => setGroupCommands([10], null));
+        expect(screen.queryByTestId("path-adjust-reset")).toBeNull();
+        // A detached marcher selected with them: Rejoin takes the slot
+        act(() =>
+            setGroupCommands([10], {
+                timelineId: 1,
+                routeId: 9,
+                marcherIds: [13],
+            }),
+        );
+        expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin");
     });
 
     it("open with an easy path: no Big steps", () => {

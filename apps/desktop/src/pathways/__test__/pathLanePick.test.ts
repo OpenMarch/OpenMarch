@@ -21,6 +21,7 @@ const {
     openPath,
     selectLane,
     setHoverLane,
+    setPathSelectionPort,
     showPath,
     usePathPenStore,
 } = await import("../pathPenStore");
@@ -332,5 +333,73 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
         pathPenMode.release(at(20 * STEP, laneY + 3 * STEP), null);
         expect(lane()?.marcherId).toBe(10);
         expect(drawn().pathLine).toBe("context");
+    });
+});
+
+describe("a lane is its marcher (interaction system, rule 1)", () => {
+    const ZOOM = 2;
+    const picked = { ids: [] as readonly number[] };
+    beforeEach(() => {
+        picked.ids = [];
+        setPathSelectionPort({
+            get: () => picked.ids,
+            set: (ids) => {
+                picked.ids = ids;
+            },
+        });
+        setShapeField({
+            fieldProperties: () => fieldProperties,
+            zoom: () => ZOOM,
+            marchers: () => [],
+            drawn: () => new Map(),
+        });
+    });
+    afterEach(() => {
+        clearPath();
+        setPathSelectionPort(null);
+        setShapeField(null);
+    });
+    const at = (x: number, ly: number, shift = false) =>
+        ({
+            field: { x, y: ly },
+            screen: { x: x * ZOOM, y: ly * ZOOM },
+            button: 0,
+            shift,
+        }) as FieldPointer;
+    const press = { isMac: false, onDot: () => false } as never;
+    const laneAt = at(20 * STEP, y + 4 * STEP);
+    const click = (p: FieldPointer) => {
+        pathPenMode.press(p, press);
+        pathPenMode.release(p, null);
+    };
+
+    it("a click on a lane of the active group path selects that marcher and picks its lane", () => {
+        open(group(null));
+        picked.ids = [10, 11];
+        click(laneAt);
+        expect(picked.ids).toEqual([10]);
+        expect(lane()).toEqual({ marcherId: 10, key: null });
+    });
+
+    it("Shift-click on a lane adds its marcher, or takes it out", () => {
+        open(group(null));
+        picked.ids = [11];
+        click(at(20 * STEP, y + 4 * STEP, true));
+        expect([...picked.ids].sort()).toEqual([10, 11]);
+        expect(lane()?.marcherId).toBe(10);
+        // The next one down is 11, the picked lane moves to it: Shift takes 11 out
+        click(at(20 * STEP, y + 4 * STEP, true));
+        expect(picked.ids).toEqual([10]);
+        expect(lane()).toBeNull();
+    });
+
+    it("on the quiet path, a click on a lane selects that marcher and makes the path active", () => {
+        showPath(group(null), "2");
+        expect(pathPenMode.takeClick(laneAt, false)).toBe(true);
+        expect(picked.ids).toEqual([10]);
+        expect(usePathPenStore.getState().session).toMatchObject({
+            phase: "open",
+            lane: { marcherId: 10, key: null },
+        });
     });
 });

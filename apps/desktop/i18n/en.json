@@ -187,7 +187,7 @@
             "rejoinGroup": "Rejoin group path",
             "refit": "Re-fit path",
             "adjustRemoveKey": "Remove adjustment point",
-            "adjustResetSpot": "Reset this spot",
+            "adjustResetSpot": "Reset adjustment",
             "adjustAcknowledge": "Keep re-homed adjustments",
             "follow": "Follow",
             "followKeywords": "follow leader trail line snake file ftl reverse path",
@@ -3842,6 +3842,9 @@
             "previewTip": "Preview: the marchers walk the trail from start to end, again and again",
             "previewReduced": "Preview is off while your system asks for less motion",
             "previewNothing": "Preview: place a point first",
+            "editTip": "Show this path's points to drag. A click on its line does it too",
+            "detachCount": "Detach {count}",
+            "resetTip": "Take off this marcher's adjustment, so it walks its plain lane of the group path again",
             "detachedNote": "Detached",
             "detachedCount": "{count} detached"
         },
@@ -3892,6 +3895,7 @@
             "clearOrderTip": "Clear order: forget the order set here, and guess it from where the marchers stand"
         },
         "toasts": {
+            "removed": "Path removed",
             "removedGroup": "Removed the path for {count, plural, one {# marcher} other {# marchers}}",
             "rehomed": "Moved the adjustment on {count, plural, one {# spot} other {# spots}} to the nearest points left",
             "rehomedKeys": "{count, plural, one {# adjustment point} other {# adjustment points}} dropped",
@@ -3904,6 +3908,7 @@
             "group": "Follows the group path",
             "own": "Own path",
             "detached": "Detached: walks its own copy of the group path",
+            "adjusted": "Adjusted: bends off the group path in places, and still follows its edits",
             "offGroup": "Not on the group path",
             "leader": "Leads the line",
             "follower": "Follows the leader",

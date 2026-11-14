@@ -8,7 +8,10 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CheckIcon,
+    ArrowCounterClockwiseIcon,
     ArrowsLeftRightIcon,
+    ArrowsMergeIcon,
+    ArrowsSplitIcon,
     ArrowsOutLineHorizontalIcon,
     PencilSimpleIcon,
     TrashIcon,
@@ -51,6 +54,9 @@ import {
  *
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
+ * - The **Path** group (pathways, interaction system rule 4), each entry shown only while it
+ *   applies to the selection's path: **Edit path**, **Detach from group path**, **Rejoin group
+ *   path**, **Reset adjustment**, **Re-fit path**, **Remove path**.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
@@ -65,11 +71,25 @@ import {
  * - **Select all**, which right-clicking empty field reaches for.
  *
  * A right-click on what a field mode draws can offer its own actions instead (`actions`): on a
- * marcher's path, **Edit path** and **Remove path** (pathways). That menu is tighter, sized to its
- * words, each entry with its icon, as a shape handle's menu (`HandleMenu`) has.
+ * path's line, the same Path group (pathways), each entry shown only while it applies. That menu
+ * is tighter, sized to its words, each entry with its icon, as a shape handle's menu
+ * (`HandleMenu`) has.
  */
+/** The Path group (pathways), on a marcher and on a path's line: each shown only when it applies */
+const PATH: readonly ActionId[] = [
+    "editPath",
+    "detachPath",
+    "rejoinPath",
+    "adjustResetSpot",
+    "reverseTrail",
+    "refitPath",
+    "removePath",
+];
+const PATH_SET: ReadonlySet<ActionId> = new Set(PATH);
+
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
+    PATH,
     [
         "timelineHoldFromPrevious",
         "setSelectedMarchersToPreviousPage",
@@ -112,7 +132,7 @@ const ORDER: ReadonlySet<ActionId> = new Set([
 ]);
 
 /** The group whose entries can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[1]);
+const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[2]);
 
 /** A mode's menu: no wider than its words */
 const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
@@ -120,6 +140,9 @@ const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
 /** A mode's entries' icons */
 const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
     editPath: PencilSimpleIcon,
+    detachPath: ArrowsSplitIcon,
+    rejoinPath: ArrowsMergeIcon,
+    adjustResetSpot: ArrowCounterClockwiseIcon,
     refitPath: ArrowsOutLineHorizontalIcon,
     reverseTrail: ArrowsLeftRightIcon,
     removePath: TrashIcon,
@@ -172,7 +195,7 @@ export default function FieldContextMenu({
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeGroup" || id === "shapeUngroup"
+        id === "shapeGroup" || id === "shapeUngroup" || PATH_SET.has(id)
             ? isActionEnabled(id)
             : HOLDS.has(id)
               ? timelineMode
@@ -184,7 +207,8 @@ export default function FieldContextMenu({
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = actions
-        ? [actions]
+        ? // A path's entries show only where they apply, as on a marcher
+          [actions.filter((id) => !PATH_SET.has(id) || isActionEnabled(id))]
         : GROUPS.map((group) => group.filter(shown)).filter(
               (group) => group.length > 0,
           );
