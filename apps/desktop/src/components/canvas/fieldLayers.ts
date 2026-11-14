@@ -8,7 +8,10 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
  *   and prop tools' cards, the isolation bar, the "Editing Page N's move" line. It always wins.
  * - `mover`: a task bar that moves itself clear of the controls and covers instead of making them
  *   move: the shape editor bar, which follows its shape.
- * - `control`: a fixed control over the field's edge: the zoom box, the Inspector's edge tab.
+ * - `info`: a line that only says something, with no buttons: the "Editing …" line. The pill's
+ *   automatic spot keeps off it, but a spot the user chose doesn't give way to it.
+ * - `control`: a fixed control over the field's edge: the zoom box, the Inspector's edge tab, the
+ *   field display bar.
  * - `cover`: the touch toolbar's panel over the top of the field.
  *
  * Who keeps clear of whom:
@@ -21,7 +24,7 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
  * Desktop has no pill, panel or touch rules, so nothing there changes.
  */
 
-export type FieldLayerKind = "task" | "mover" | "control" | "cover";
+export type FieldLayerKind = "task" | "mover" | "info" | "control" | "cover";
 
 export const FIELD_LAYER_ATTRIBUTE = "data-field-layer";
 /** The CSS variable on the field: how far a cover reaches down over its top, in px */
@@ -30,7 +33,14 @@ export const FIELD_TOP_INSET_VARIABLE = "--field-top-inset";
 export const PILL_AVOIDS: readonly FieldLayerKind[] = [
     "task",
     "mover",
+    "info",
     "control",
+    "cover",
+];
+/** What moves the pill off a spot the user chose; it comes back once they're gone */
+export const SAVED_PILL_YIELDS_TO: readonly FieldLayerKind[] = [
+    "task",
+    "mover",
     "cover",
 ];
 export const MOVER_AVOIDS: readonly FieldLayerKind[] = ["control", "cover"];
@@ -63,14 +73,14 @@ const VERTICAL_COST = 4;
  * Where `rect` goes to keep clear of `obstacles` (with `gap` between) inside `bounds`: where it is
  * when nothing is in the way, else the nearest spot that is clear, trying beside and above or
  * below each obstacle in the way, sideways preferred, kept inside `bounds` along each way it moves.
- * With no clear spot it stays where it is.
+ * With no clear spot it stays where it is, and `clear` is false.
  */
 export function clearSpot(
     rect: Rect,
     obstacles: readonly Rect[],
     bounds: Rect,
     gap = LAYER_GAP,
-): { left: number; top: number } {
+): { left: number; top: number; clear: boolean } {
     // Inside `bounds` along each way it moved (a bar already past an edge can still slide along it)
     const inside = (r: Rect) =>
         (r.left === rect.left ||
@@ -80,7 +90,7 @@ export function clearSpot(
             (r.top >= bounds.top &&
                 r.top + r.height <= bounds.top + bounds.height));
     const clear = (r: Rect) => !obstacles.some((o) => overlaps(r, o, gap));
-    if (clear(rect)) return { left: rect.left, top: rect.top };
+    if (clear(rect)) return { left: rect.left, top: rect.top, clear: true };
     // Each obstacle's four sides, then the same again from those (two obstacles side by side)
     let spots: Rect[] = [rect];
     const tried: Rect[] = [];
@@ -112,8 +122,8 @@ export function clearSpot(
         }
     }
     return best
-        ? { left: best.left, top: best.top }
-        : { left: rect.left, top: rect.top };
+        ? { left: best.left, top: best.top, clear: true }
+        : { left: rect.left, top: rect.top, clear: false };
 }
 
 /**
@@ -205,10 +215,14 @@ export function subscribeFieldLayers(listener: () => void): () => void {
 }
 
 /**
- * A ref for a floating layer's element that notes when it appears, goes and changes size, so the
- * layers that keep clear of it are placed again.
+ * A ref for a floating layer's element that notes when it appears, goes and (unless
+ * `watchSize` is false) changes size, so the layers that keep clear of it are placed again. A
+ * line whose words change on every scrubbed beat doesn't watch its size, so the pill isn't placed
+ * again on every beat.
  */
-export function useFieldLayerRef<T extends Element>(): (el: T | null) => void {
+export function useFieldLayerRef<T extends Element>({
+    watchSize = true,
+}: { watchSize?: boolean } = {}): (el: T | null) => void {
     const observer = useRef<ResizeObserver | null>(null);
     useEffect(
         () => () => {
@@ -216,15 +230,18 @@ export function useFieldLayerRef<T extends Element>(): (el: T | null) => void {
         },
         [],
     );
-    return useCallback((el: T | null) => {
-        observer.current?.disconnect();
-        observer.current = null;
-        if (el && typeof ResizeObserver === "function") {
-            observer.current = new ResizeObserver(noteFieldLayersChanged);
-            observer.current.observe(el);
-        }
-        noteFieldLayersChanged();
-    }, []);
+    return useCallback(
+        (el: T | null) => {
+            observer.current?.disconnect();
+            observer.current = null;
+            if (el && watchSize && typeof ResizeObserver === "function") {
+                observer.current = new ResizeObserver(noteFieldLayersChanged);
+                observer.current.observe(el);
+            }
+            noteFieldLayersChanged();
+        },
+        [watchSize],
+    );
 }
 
 /**

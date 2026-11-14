@@ -34,6 +34,7 @@ describe("clearSpot: the shape editor bar keeps clear of controls", () => {
         expect(clearSpot(bar, [ZOOM, INSPECTOR_TAB], FIELD)).toEqual({
             left: 100,
             top: 300,
+            clear: true,
         });
     });
 
@@ -75,7 +76,11 @@ describe("clearSpot: the shape editor bar keeps clear of controls", () => {
 
     it("stays where it is when no spot inside the field is clear", () => {
         const bar = { left: 0, top: 0, width: 747, height: 556 };
-        expect(clearSpot(bar, [ZOOM], FIELD)).toEqual({ left: 0, top: 0 });
+        expect(clearSpot(bar, [ZOOM], FIELD)).toEqual({
+            left: 0,
+            top: 0,
+            clear: false,
+        });
     });
 
     it("slides along even when it already runs past the field's bottom", () => {

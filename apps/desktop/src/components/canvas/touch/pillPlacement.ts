@@ -102,7 +102,9 @@ export function choosePillPosition(
         };
         // Slid clear of the layers over the field first, so one in the way of a spot (the
         // Inspector's edge tab beside the bottom-right one) moves the pill along, not elsewhere
-        Object.assign(rect, clearSpot(rect, controls, bounds, CONTROL_GAP));
+        const slid = clearSpot(rect, controls, bounds, CONTROL_GAP);
+        rect.left = slid.left;
+        rect.top = slid.top;
         const spot = {
             left: rect.left,
             bottom: container.height - rect.top - pill.height,

@@ -224,3 +224,129 @@ for (const layout of LAYOUTS)
                 path: test.info().outputPath("after.png"),
             });
         });
+
+const LANDSCAPE = LAYOUTS[0];
+
+test("a pill parked where the line tool's card shows moves aside, then comes back", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    const pill = page.getByTestId("touch-modifier-buttons");
+    const grip = pill.getByRole("button", { name: "Move these buttons" });
+    // Dragged by its grip to the top of the field, under where the card shows
+    const field = (await page
+        .getByTestId("fieldCanvas")
+        .first()
+        .boundingBox())!;
+    const from = await centerOf(grip);
+    const pillBox = (await pill.boundingBox())!;
+    const to = {
+        x: from.x + (field.x + 16 - pillBox.x),
+        y: from.y + (field.y + 16 - pillBox.y),
+    };
+    await touchDrag(page, from, to, { steps: 12 });
+    await page.waitForTimeout(300);
+    const parked = (await pill.boundingBox())!;
+
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("l");
+    await tapPoints(page, [
+        await onField(page, 0.3, 0.7),
+        await onField(page, 0.5, 0.7),
+    ]);
+    const hint = page.getByTestId("shape-tool-hint");
+    await expect(hint).toContainText("Tap to add points");
+    // Out of the card's way, and Finish under a finger
+    await pillClearOf(page, hint);
+    expect(await topmostAt(page.getByTestId("shape-tool-finish"))).toBe(
+        "itself",
+    );
+
+    // The card gone, the pill is back where it was parked
+    await tap(page, await centerOf(page.getByTestId("shape-tool-discard")));
+    await expect(hint).toBeHidden();
+    await expect
+        .poll(async () => {
+            const now = (await pill.boundingBox())!;
+            return (
+                Math.abs(now.x - parked.x) < 2 && Math.abs(now.y - parked.y) < 2
+            );
+        })
+        .toBe(true);
+});
+
+test("the zoom box rises above the prop tool's card, and Finish stays reachable", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await tap(page, await centerOf(page.locator("#sidebar-launcher-props")));
+    await tap(
+        page,
+        await centerOf(page.getByRole("button", { name: "Polygon" })),
+    );
+    const finish = page.getByTestId("prop-draw-finish");
+    const card = page.locator('[data-field-layer="task"]', { has: finish });
+    await expect(card).toBeVisible();
+    // Clear of the card, or out of the way when there's no room above it
+    const zoom = page.locator("[data-zoom-controls]");
+    await expect
+        .poll(async () => {
+            const hidden = await zoom.evaluate(
+                (el) => getComputedStyle(el).visibility === "hidden",
+            );
+            if (hidden) return true;
+            return !intersects(
+                (await zoom.boundingBox())!,
+                (await card.boundingBox())!,
+            );
+        })
+        .toBe(true);
+    await pillClearOf(page, card);
+
+    await tapPoints(page, [
+        await onField(page, 0.3, 0.3),
+        await onField(page, 0.5, 0.3),
+        await onField(page, 0.4, 0.15),
+    ]);
+    await expect(finish).toBeEnabled();
+    await reachAndTap(page, finish);
+    await expect
+        .poll(() => page.evaluate(() => window.fieldTest!.activeGesture()))
+        .toBeNull();
+});
+
+test("with the toolbar panel open, the open shape's Go back chip sits below it and Go back works", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await openPanel(page);
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("b");
+    await touchDrag(
+        page,
+        await onField(page, 0.3, 0.5),
+        await onField(page, 0.55, 0.75),
+        { steps: 12 },
+    );
+    const readout = page.getByTestId("shape-tool-readout");
+    await expect(readout).toBeVisible();
+
+    // A beat on, away from the shape's moment: the chip shows instead of the shape
+    await page.keyboard.press("Shift+E");
+    const chip = page.getByTestId("shape-away-chip");
+    await expect(chip).toBeVisible();
+    const panel = (await page.getByTestId("toolbar-panel").boundingBox())!;
+    expect((await chip.boundingBox())!.y).toBeGreaterThanOrEqual(
+        panel.y + panel.height,
+    );
+    await pillClearOf(page, chip);
+    await reachAndTap(page, chip.getByRole("button", { name: "Go back" }));
+    await expect(chip).toBeHidden();
+    await expect(readout).toBeVisible();
+});

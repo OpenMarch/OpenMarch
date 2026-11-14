@@ -56,9 +56,17 @@ function useZoomLift(box: React.RefObject<HTMLDivElement | null>) {
         place();
         const off = subscribeFieldLayers(place);
         window.addEventListener("resize", place);
+        // The field area resizing (the Inspector opening, the timeline split moving) moves it
+        const area = box.current?.offsetParent;
+        const observer =
+            area && typeof ResizeObserver === "function"
+                ? new ResizeObserver(place)
+                : null;
+        if (area) observer?.observe(area);
         return () => {
             off();
             window.removeEventListener("resize", place);
+            observer?.disconnect();
         };
     }, [touch, box]);
     return lift;

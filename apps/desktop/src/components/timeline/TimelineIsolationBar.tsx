@@ -289,7 +289,8 @@ export const passedSets = (names: readonly string[]) =>
  */
 export function TimelineFromStartBadge() {
     const { t } = useTranslate();
-    const layerRef = useFieldLayerRef<HTMLDivElement>();
+    // Its words change on every scrubbed beat: not watched for size, so the pill isn't placed again
+    const layerRef = useFieldLayerRef<HTMLDivElement>({ watchSize: false });
     const selection = useTimelineSelectionStore((s) => s.selection);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
@@ -464,8 +465,9 @@ export function TimelineFromStartBadge() {
             ref={layerRef}
             data-testid="timeline-window-line"
             data-prominent={unusual || undefined}
-            // #927: the pill keeps off it; below the touch toolbar's panel when that's open
-            data-field-layer="task"
+            // #927: the pill's own spot keeps off it, though one the user chose doesn't give way
+            // (no buttons here); below the touch toolbar's panel when that's open
+            data-field-layer="info"
             className={clsx(
                 "rounded-6 text-sub touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+8px)] left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
                 unusual

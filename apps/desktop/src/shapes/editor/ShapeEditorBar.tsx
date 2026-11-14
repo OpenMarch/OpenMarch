@@ -18,9 +18,8 @@ import {
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
-import { editorPlacement } from "./editorPlacement";
+import { clearPlacement } from "./editorPlacement";
 import {
-    clearSpot,
     fieldLayersIn,
     MOVER_AVOIDS,
     noteFieldLayersChanged,
@@ -159,6 +158,8 @@ const PRESS_HOLD_MS = 450;
 const EDITOR_SPRING = { tension: 210, friction: 26, clamp: true };
 /** How long after an edit in the editor its change still counts as that edit (a placed shape saves first) */
 const EDIT_WINDOW_MS = 1000;
+/** How long the editor stays put before the other layers hear where it settled (#927) */
+const NOTE_SETTLED_MS = 150;
 
 /**
  * The floating editor (08-shape-system-ux.md, "The floating editor"), the main place for editing
@@ -1455,6 +1456,9 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     // element's px. None on the desktop
     const touch = useIsTouchMode();
     const obstacles = useRef<Rect[]>([]);
+    /** Where it last settled, as told to the other layers */
+    const noted = useRef<string | null>(null);
+    const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const measureObstacles = useCallback(() => {
         const el = ref.current;
         const field = el?.offsetParent;
@@ -1501,34 +1505,20 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             hitRadius: HANDLE_REACH_PX / (view.zoom || 1),
             stemUnit: HANDLE_REACH_PX / (view.zoom || 1),
         });
-        const placement = editorPlacement({
-            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
-            knob: fieldToElement(view, knob.x, knob.y),
-            handles: kind
-                .handles(params, spots, null)
-                .map(({ at }) => fieldToElement(view, at.x, at.y)),
-            width: room.width,
-            height: room.height,
-            fieldWidth: room.fieldWidth,
-            fieldHeight: room.fieldHeight,
-        });
-        if (obstacles.current.length === 0) return placement;
-        const spot = clearSpot(
+        return clearPlacement(
             {
-                left: placement.left,
-                top: placement.top,
+                outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+                knob: fieldToElement(view, knob.x, knob.y),
+                handles: kind
+                    .handles(params, spots, null)
+                    .map(({ at }) => fieldToElement(view, at.x, at.y)),
                 width: room.width,
                 height: room.height,
+                fieldWidth: room.fieldWidth,
+                fieldHeight: room.fieldHeight,
             },
             obstacles.current,
-            {
-                left: 0,
-                top: 0,
-                width: room.fieldWidth,
-                height: room.fieldHeight,
-            },
         );
-        return { ...placement, ...spot };
     };
     const [above, setAbove] = useState(
         () => targetIn(useFieldViewStore.getState()).above,
@@ -1668,15 +1658,25 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             prefersReducedMotion();
         shown.current = { view, placed: true, gliding, held: false };
         setAbove(target.above);
-        void Promise.all(
-            api.start({
-                left: target.left,
-                top: target.top,
-                immediate: jump,
-                config: EDITOR_SPRING,
-            }),
-            // Settled somewhere new: the pill keeps clear of it
-        ).then(noteFieldLayersChanged);
+        const started = api.start({
+            left: target.left,
+            top: target.top,
+            immediate: jump,
+            config: EDITOR_SPRING,
+        });
+        // Touch layout: once it has settled somewhere new, the pill keeps clear of it. Not on the
+        // desktop, which has no pill; and once the moves stop, not on every pan or zoom frame
+        if (!touch) return;
+        const settledAt = `${Math.round(target.left)},${Math.round(target.top)}`;
+        void Promise.all(started).then(() => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteTimer.current = setTimeout(() => {
+                noteTimer.current = null;
+                if (noted.current === settledAt) return;
+                noted.current = settledAt;
+                noteFieldLayersChanged();
+            }, NOTE_SETTLED_MS);
+        });
     };
     useLayoutEffect(() => {
         measureObstacles();
@@ -1694,7 +1694,13 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         [measureObstacles],
     );
     // Gone: the pill can have its spot back
-    useEffect(() => () => noteFieldLayersChanged(), []);
+    useEffect(
+        () => () => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteFieldLayersChanged();
+        },
+        [],
+    );
     useLayoutEffect(
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],

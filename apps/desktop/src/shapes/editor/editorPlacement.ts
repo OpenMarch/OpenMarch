@@ -1,4 +1,5 @@
 import type { XY } from "../types";
+import { clearSpot, type Rect } from "@/components/canvas/fieldLayers";
 
 /**
  * Where the floating editor goes (#437, owner: predictable motion): under the shape's outline,
@@ -39,22 +40,88 @@ export interface Placement {
     readonly above: boolean;
 }
 
-export function editorPlacement(input: PlacementInput): Placement {
-    const pad = GAP_PX + CLEAR_PX;
-    const { width, height, fieldWidth, fieldHeight } = input;
+/** What counts as the shape's extent: its outline, the knob, and its handles inside the field */
+function shapeExtent(input: PlacementInput) {
+    const { fieldWidth, fieldHeight } = input;
     const xs = input.outline.map((p) => p.x);
     const ys = input.outline.map((p) => p.y);
-    if (input.knob) ys.push(input.knob.y);
+    if (input.knob) {
+        xs.push(input.knob.x);
+        ys.push(input.knob.y);
+    }
     for (const h of input.handles ?? [])
-        if (h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight)
+        if (h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight) {
+            xs.push(h.x);
             ys.push(h.y);
+        }
+    return { xs, ys };
+}
+
+export function editorPlacement(input: PlacementInput): Placement {
+    const pad = GAP_PX + CLEAR_PX;
+    const { width, height, fieldWidth } = input;
+    const xs = input.outline.map((p) => p.x);
+    const { ys } = shapeExtent(input);
     const x = (Math.min(...xs) + Math.max(...xs)) / 2;
     const below = Math.max(...ys) + pad;
     const over = Math.min(...ys) - pad - height;
-    const above = below + height > fieldHeight && over > 0;
+    const above = below + height > input.fieldHeight && over > 0;
     const left = Math.max(
         MARGIN_PX,
         Math.min(x - width / 2, fieldWidth - width - MARGIN_PX),
     );
     return { left, top: above ? over : below, above };
+}
+
+/**
+ * `editorPlacement`, kept clear of `obstacles` too (#927, touch layout: the zoom box, the
+ * Inspector's edge tab, the field display bar, the toolbar panel) without going onto the shape it
+ * edits: slid along its side of the shape, else tried on the other side, and only when neither
+ * clears them all, onto the shape, so its buttons stay reachable.
+ */
+export function clearPlacement(
+    input: PlacementInput,
+    obstacles: readonly Rect[],
+): Placement {
+    const placement = editorPlacement(input);
+    if (obstacles.length === 0) return placement;
+    const { width, height, fieldWidth, fieldHeight } = input;
+    const bounds = { left: 0, top: 0, width: fieldWidth, height: fieldHeight };
+    const { xs, ys } = shapeExtent(input);
+    const shape: Rect = {
+        left: Math.min(...xs) - CLEAR_PX,
+        top: Math.min(...ys) - CLEAR_PX,
+        width: Math.max(...xs) - Math.min(...xs) + 2 * CLEAR_PX,
+        height: Math.max(...ys) - Math.min(...ys) + 2 * CLEAR_PX,
+    };
+    const pad = GAP_PX + CLEAR_PX;
+    const sides = [
+        placement,
+        // The other side of the shape
+        placement.above
+            ? { ...placement, top: Math.max(...ys) + pad, above: false }
+            : {
+                  ...placement,
+                  top: Math.min(...ys) - pad - height,
+                  above: true,
+              },
+    ];
+    for (const [i, side] of sides.entries()) {
+        // The other side only when it fits on the field
+        if (i > 0 && (side.top < 0 || side.top + height > fieldHeight))
+            continue;
+        const spot = clearSpot(
+            { left: side.left, top: side.top, width, height },
+            [shape, ...obstacles],
+            bounds,
+        );
+        if (spot.clear)
+            return { left: spot.left, top: spot.top, above: side.above };
+    }
+    const spot = clearSpot(
+        { left: placement.left, top: placement.top, width, height },
+        obstacles,
+        bounds,
+    );
+    return { left: spot.left, top: spot.top, above: placement.above };
 }

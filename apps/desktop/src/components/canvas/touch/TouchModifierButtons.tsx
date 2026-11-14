@@ -48,8 +48,8 @@ import {
     fieldLayersIn,
     overlaps,
     PILL_AVOIDS,
+    SAVED_PILL_YIELDS_TO,
     subscribeFieldLayers,
-    type FieldLayerKind,
 } from "@/components/canvas/fieldLayers";
 import { useFieldDragModeStore, type FieldDragMode } from "./fieldDragMode";
 import { swallowPress } from "./swallowPress";
@@ -307,16 +307,6 @@ function useTogglePress(toggle: TouchToggle, onExplain: () => void) {
     };
 }
 
-/**
- * What moves the pill off a spot the user chose (#927): a card or bar holding the current task's
- * buttons, and the toolbar panel. The pill comes back once they're gone.
- */
-const SAVED_SPOT_YIELDS_TO: readonly FieldLayerKind[] = [
-    "task",
-    "mover",
-    "cover",
-];
-
 /** How long the layers over the field must stay put before the pill finds its spot again */
 const PLACE_AFTER_LAYERS_MS = 120;
 
@@ -430,6 +420,9 @@ export default function TouchModifierButtons({
     const [auto, setAuto] = useState<Position | null>(null);
     /** The saved spot is under a task's bar or the toolbar panel: the automatic spot meanwhile */
     const [savedBlocked, setSavedBlocked] = useState(false);
+    // Read by the placing, so a drag (which changes it on every move) doesn't set it up again
+    const savedRef = useRef(saved);
+    savedRef.current = saved;
     const dragMode = useFieldDragModeStore((s) => s.mode);
     const setDragMode = useFieldDragModeStore((s) => s.setMode);
     /** The help list or the drag mode menu, whichever is open */
@@ -493,20 +486,24 @@ export default function TouchModifierButtons({
         if (!pill || !parent) return;
         const { field, marchers: dots } = fieldLayout(marchers);
         const size = { width: pill.offsetWidth, height: pill.offsetHeight };
-        setAuto(
-            choosePillPosition(
-                { width: parent.clientWidth, height: parent.clientHeight },
-                size,
-                field,
-                dots,
-                fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
-            ),
+        const next = choosePillPosition(
+            { width: parent.clientWidth, height: parent.clientHeight },
+            size,
+            field,
+            dots,
+            fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
+        );
+        setAuto((last) =>
+            last?.left === next.left && last.bottom === next.bottom
+                ? last
+                : next,
         );
         // Not while it's being dragged: it would jump from under the finger
         if (drag.current) return;
+        const saved = savedRef.current;
         setSavedBlocked(
             saved !== null &&
-                fieldLayersIn(parent, SAVED_SPOT_YIELDS_TO).some((layer) =>
+                fieldLayersIn(parent, SAVED_PILL_YIELDS_TO).some((layer) =>
                     overlaps(
                         {
                             left: saved.left,
@@ -520,7 +517,7 @@ export default function TouchModifierButtons({
                     ),
                 ),
         );
-    }, [marchers, saved]);
+    }, [marchers]);
     useLayoutEffect(() => {
         if (!isTouchMode) return;
         placeAutomatically();
@@ -554,7 +551,7 @@ export default function TouchModifierButtons({
             offLayers();
         };
         // The compact form is narrower: a new spot for it
-    }, [isTouchMode, saved, placeAutomatically, compact, container]);
+    }, [isTouchMode, placeAutomatically, compact, container]);
 
     // The help closes on a press anywhere else (which does nothing more), or
     // Escape. Registered as it appears, so no press slips through.
@@ -594,6 +591,12 @@ export default function TouchModifierButtons({
             startY: e.clientY,
             from: position ?? { left: PILL_EDGE, bottom: PILL_EDGE },
         };
+        // Moved aside from its spot (#927): picked up from where it is, so it follows the finger
+        // rather than staying put and jumping on release
+        if (savedBlocked) {
+            if (position) setSaved(position);
+            setSavedBlocked(false);
+        }
     };
     const onGripMove = (e: React.PointerEvent<HTMLDivElement>) => {
         gripLongPress.onPointerMove(e);

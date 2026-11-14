@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+    noteFieldLayersChanged,
+    useFieldLayerRef,
+} from "@/components/canvas/fieldLayers";
 import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
@@ -161,9 +165,13 @@ function InspectorTab({
         ? t("layout.hideInspector", "Hide inspector")
         : t("layout.showInspector", "Show inspector");
     const Icon = open ? CaretRightIcon : CaretLeftIcon;
+    const layerRef = useFieldLayerRef<HTMLButtonElement>();
+    // Opening or closing moves it without changing its size: the field's layers are placed again
+    useEffect(() => noteFieldLayersChanged(), [open]);
     return (
         // The button is the finger-sized hit area; the tab inside is what shows.
         <button
+            ref={layerRef}
             type="button"
             onClick={onToggle}
             aria-label={label}
