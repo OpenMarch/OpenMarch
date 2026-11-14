@@ -7,6 +7,7 @@ import type { FieldGesture, FieldPoint, FieldPointer } from "./fieldEditor";
 import { hitRadius, type DrawnMarchers } from "./hitTest";
 import {
     areaPicks,
+    fingerLassoCloses,
     lassoCloses,
     marchersInPolygon,
     marchersInRect,
@@ -119,8 +120,10 @@ export function startMarquee(
  * nothing and changes nothing; the double-click's first click has already cleared the selection,
  * unless Shift or Alt was held.
  *
- * Drawn by a finger or a pen, it always closes, back to where it started (#933): a fingertip
- * hides where the line began, and a loop that ends near it is what was meant.
+ * Drawn by a finger or a pen (#933, owner), it closes when released within 150 screen px of its
+ * start, or when the path closed back to its start takes in a real area
+ * (`fingerLassoCloses`): a fingertip hides where the line began. A long straight swipe does
+ * neither, and changes nothing.
  */
 export function startLasso(
     ports: AreaPorts,
@@ -129,9 +132,11 @@ export function startLasso(
 ): AreaGesture {
     const choice = areaChoice(start, isMac);
     const subtract = choice === "subtract";
-    const closesItself = start.kind !== "mouse";
+    const byFinger = start.kind !== "mouse";
     const closes = (end: FieldPoint) =>
-        closesItself || lassoCloses(start.field, end, ports.zoom());
+        byFinger
+            ? fingerLassoCloses(points, ports.zoom())
+            : lassoCloses(start.field, end, ports.zoom());
     // Appended to in place: a long lasso isn't copied on every move
     const points: FieldPoint[] = [start.field];
     let shape: AreaShape = { kind: "lasso", points, closes: true, subtract };

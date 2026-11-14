@@ -43,14 +43,20 @@ import {
     MENU_CONTENT_CLASS,
     MENU_LABEL_CLASS,
 } from "@/components/ui/popupClasses";
-import { choosePillPosition, PILL_EDGE, type Rect } from "./pillPlacement";
+import {
+    choosePillPosition,
+    coversHandle,
+    layersKey,
+    PILL_EDGE,
+    type Rect,
+} from "./pillPlacement";
 import {
     fieldLayersIn,
     NO_FIELD_OBSTACLES,
     noteFieldLayersChanged,
-    obstaclesKey,
     overlaps,
     PILL_AVOIDS,
+    type FieldObstacles,
     type FieldObstacleSource,
     SAVED_PILL_YIELDS_TO,
     subscribeFieldLayers,
@@ -443,8 +449,8 @@ export default function TouchModifierButtons({
     const anchors = useRef<Partial<Record<Explained, HTMLElement | null>>>({});
     const rootRef = useRef<HTMLDivElement>(null);
     const pillRef = useRef<HTMLDivElement>(null);
-    /** The field's obstacles the spot was last worked out for (`obstaclesKey`) */
-    const placedFor = useRef("");
+    /** The layers over the field the spot was last worked out for (`layersKey`) */
+    const placedForLayers = useRef("");
     const drag = useRef<{
         id: number;
         startX: number;
@@ -466,6 +472,9 @@ export default function TouchModifierButtons({
     const gripLongPress = useLongPress(() => setExplained("grip"));
     const closeExplained = useCallback(() => setExplained(null), []);
     const position = saved && !savedBlocked ? saved : auto;
+    /** Where it shows, read by the placing */
+    const shownRef = useRef(position);
+    shownRef.current = position;
 
     // Moved: what keeps below it (a guide's name tag, #933) finds its place again
     const shownLeft = position?.left;
@@ -498,6 +507,38 @@ export default function TouchModifierButtons({
         };
     }, []);
 
+    /** The pill's box at `p`, in the field area's px (top-left origin) */
+    const rectAt = useCallback((p: Position): Rect | null => {
+        const pill = pillRef.current;
+        const parent = rootRef.current?.offsetParent as HTMLElement | null;
+        if (!pill || !parent) return null;
+        const size = { width: pill.offsetWidth, height: pill.offsetHeight };
+        return {
+            left: p.left,
+            top: parent.clientHeight - p.bottom - size.height,
+            ...size,
+        };
+    }, []);
+    /** Whether the saved spot gives way: to a task's bar, the panel or a handle on the field */
+    const updateSavedBlocked = useCallback(
+        (onField: FieldObstacles) => {
+            // Not while it's being dragged: it would jump from under the finger
+            if (drag.current) return;
+            const parent = rootRef.current?.offsetParent as HTMLElement | null;
+            const saved = savedRef.current;
+            const at = saved && rectAt(saved);
+            setSavedBlocked(
+                !!at &&
+                    !!parent &&
+                    [
+                        ...fieldLayersIn(parent, SAVED_PILL_YIELDS_TO),
+                        ...onField.handles,
+                    ].some((layer) => overlaps(at, layer)),
+            );
+        },
+        [rectAt],
+    );
+
     // No saved spot, or one under a task's bar: the bottom spot that covers the fewest marchers and
     // none of the other layers over the field (#927). Worked out again when the field area changes
     // size, when the view settles and when those layers change.
@@ -508,13 +549,14 @@ export default function TouchModifierButtons({
         const { field, marchers: dots } = fieldLayout(marchers);
         const size = { width: pill.offsetWidth, height: pill.offsetHeight };
         const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
-        placedFor.current = obstaclesKey(onField);
+        const layers = fieldLayersIn(parent, PILL_AVOIDS, rootRef.current);
+        placedForLayers.current = layersKey(layers);
         const next = choosePillPosition(
             { width: parent.clientWidth, height: parent.clientHeight },
             size,
             field,
             dots,
-            fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
+            layers,
             onField,
         );
         setAuto((last) =>
@@ -522,29 +564,8 @@ export default function TouchModifierButtons({
                 ? last
                 : next,
         );
-        // Not while it's being dragged: it would jump from under the finger
-        if (drag.current) return;
-        const saved = savedRef.current;
-        setSavedBlocked(
-            saved !== null &&
-                [
-                    ...fieldLayersIn(parent, SAVED_PILL_YIELDS_TO),
-                    ...onField.handles,
-                ].some((layer) =>
-                    overlaps(
-                        {
-                            left: saved.left,
-                            top:
-                                parent.clientHeight -
-                                saved.bottom -
-                                size.height,
-                            ...size,
-                        },
-                        layer,
-                    ),
-                ),
-        );
-    }, [marchers, obstacles]);
+        updateSavedBlocked(onField);
+    }, [marchers, obstacles, updateSavedBlocked]);
     useLayoutEffect(() => {
         if (!isTouchMode) return;
         placeAutomatically();
@@ -564,22 +585,35 @@ export default function TouchModifierButtons({
         let layersSettle: ReturnType<typeof setTimeout> | null = null;
         const offLayers = subscribeFieldLayers(() => {
             if (layersSettle !== null) clearTimeout(layersSettle);
-            layersSettle = setTimeout(
-                placeAutomatically,
-                PLACE_AFTER_LAYERS_MS,
-            );
+            layersSettle = setTimeout(() => {
+                layersSettle = null;
+                // Only when a layer it keeps off came, went or moved: not for its own move, which
+                // it notes for a guide's name tag (#933 review)
+                const parent = container();
+                if (
+                    parent &&
+                    layersKey(
+                        fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
+                    ) === placedForLayers.current
+                )
+                    return;
+                placeAutomatically();
+            }, PLACE_AFTER_LAYERS_MS);
         });
-        // The selection box or the open shape changing (#933): placed again once it has settled
-        // and no drag on the field is under way (the drag's end tells again)
+        // The selection box or the open shape changing (#933), once it has settled and no drag on
+        // the field is under way (the drag's end tells again): a new spot only when the one shown
+        // now covers a handle, so a tap that selects or deselects doesn't move the pill from under
+        // a finger reaching for it (#933 review). A saved spot gives way, or comes back
         let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
         const offObstacles = obstacles?.subscribe(() => {
             if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
             obstaclesSettle = setTimeout(() => {
                 obstaclesSettle = null;
                 if (obstacles.busy()) return;
-                if (obstaclesKey(obstacles.read()) === placedFor.current)
-                    return;
-                placeAutomatically();
+                const onField = obstacles.read();
+                const shown = shownRef.current && rectAt(shownRef.current);
+                if (shown && coversHandle(shown, onField)) placeAutomatically();
+                else updateSavedBlocked(onField);
             }, PLACE_AFTER_LAYERS_MS);
         });
         return () => {
@@ -593,7 +627,15 @@ export default function TouchModifierButtons({
             offObstacles?.();
         };
         // The compact form is narrower: a new spot for it
-    }, [isTouchMode, placeAutomatically, compact, container, obstacles]);
+    }, [
+        isTouchMode,
+        placeAutomatically,
+        compact,
+        container,
+        obstacles,
+        rectAt,
+        updateSavedBlocked,
+    ]);
 
     // The help closes on a press anywhere else (which does nothing more), or
     // Escape. Registered as it appears, so no press slips through.

@@ -51,6 +51,56 @@ export function lassoCloses(
 }
 
 /**
+ * A finger or pen lasso closes when released less than this many screen pixels from where it
+ * started (#933, owner): a fingertip hides where the line began.
+ */
+export const FINGER_LASSO_CLOSE_DISTANCE = 150;
+
+/**
+ * A finger or pen lasso that ends farther away still closes when the path, closed back to its
+ * start, takes in a real area (#933, owner): at least a touch target's square (44 × 44 screen px),
+ * and round enough, not a sliver (`4πA / P²`, 1 for a circle and 0 for a line, at least this).
+ */
+const FINGER_LASSO_MIN_AREA = 44 * 44;
+const FINGER_LASSO_MIN_ROUNDNESS = 0.2;
+
+/**
+ * True when releasing a finger's or pen's lasso drawn through `points` closes it (#933, owner):
+ * it ends within {@link FINGER_LASSO_CLOSE_DISTANCE} screen px of its start, or the path closed
+ * back to its start takes in a real area. A long straight swipe does neither, and changes nothing.
+ * Field units times the zoom, as {@link lassoCloses}.
+ */
+export function fingerLassoCloses(
+    points: readonly FieldPoint[],
+    zoom: number,
+): boolean {
+    if (points.length < 2) return false;
+    const start = points[0];
+    const end = points[points.length - 1];
+    if (
+        Math.hypot(end.x - start.x, end.y - start.y) * zoom <
+        FINGER_LASSO_CLOSE_DISTANCE
+    )
+        return true;
+    // Shoelace area and perimeter of the closed path, in screen px
+    let twiceArea = 0;
+    let perimeter = 0;
+    for (let i = 0; i < points.length; i++) {
+        const a = points[i];
+        const b = points[(i + 1) % points.length];
+        twiceArea += a.x * b.y - b.x * a.y;
+        perimeter += Math.hypot(b.x - a.x, b.y - a.y);
+    }
+    const area = (Math.abs(twiceArea) / 2) * zoom * zoom;
+    perimeter *= zoom;
+    return (
+        area >= FINGER_LASSO_MIN_AREA &&
+        (4 * Math.PI * area) / (perimeter * perimeter) >=
+            FINGER_LASSO_MIN_ROUNDNESS
+    );
+}
+
+/**
  * True when `point` is inside the polygon (even–odd rule, the polygon closed
  * from its last point back to its first). A point exactly on an edge may land
  * either side.

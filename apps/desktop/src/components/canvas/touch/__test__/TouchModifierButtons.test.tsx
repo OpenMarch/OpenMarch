@@ -22,6 +22,11 @@ import { useAlignmentActionHandlers } from "@/shortcuts/handlers/useAlignmentAct
 import { subscribeToActionRuns } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
 import { FIELD_DRAG_MODE_KEY, useFieldDragModeStore } from "../fieldDragMode";
+import {
+    aroundPoints,
+    type FieldObstacles,
+    type FieldObstacleSource,
+} from "@/components/canvas/fieldLayers";
 import TouchModifierButtons, {
     parseModifierPosition,
     TOUCH_MODIFIER_POSITION_KEY,
@@ -483,6 +488,146 @@ describe("where it sits", () => {
         expect(parseModifierPosition('{"left":12}')).toBeNull();
         expect(parseModifierPosition('{"left":"12","bottom":30}')).toBeNull();
         expect(parseModifierPosition('{"left":null,"bottom":30}')).toBeNull();
+    });
+});
+
+describe("keeping its spot while the field changes (#933)", () => {
+    /** A field area of 800 × 600 the pill sits in (there's no layout here: the pill is 0 × 0) */
+    function inArea(run: () => void) {
+        const area = document.createElement("div");
+        Object.defineProperty(area, "clientWidth", { value: 800 });
+        Object.defineProperty(area, "clientHeight", { value: 600 });
+        document.body.append(area);
+        const offsetParent = Object.getOwnPropertyDescriptor(
+            HTMLElement.prototype,
+            "offsetParent",
+        );
+        Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+            configurable: true,
+            get() {
+                return area;
+            },
+        });
+        vi.useFakeTimers();
+        try {
+            run();
+        } finally {
+            vi.useRealTimers();
+            if (offsetParent)
+                Object.defineProperty(
+                    HTMLElement.prototype,
+                    "offsetParent",
+                    offsetParent,
+                );
+            area.remove();
+        }
+    }
+
+    /** What the field says is dragged on it, changed by the test */
+    function fakeField() {
+        let now: FieldObstacles = { handles: [], areas: [] };
+        let busy = false;
+        const listeners = new Set<() => void>();
+        const source: FieldObstacleSource = {
+            read: () => now,
+            subscribe(listener) {
+                listeners.add(listener);
+                return () => void listeners.delete(listener);
+            },
+            busy: () => busy,
+        };
+        return {
+            source,
+            /** The obstacles change, and the field says so */
+            change(
+                next: { x: number; y: number }[],
+                pressing = false,
+                areas: FieldObstacles["areas"] = [],
+            ) {
+                now = { handles: aroundPoints(next), areas };
+                busy = pressing;
+                act(() => listeners.forEach((listener) => listener()));
+            },
+            settle() {
+                act(() => {
+                    vi.advanceTimersByTime(200);
+                });
+            },
+        };
+    }
+
+    const renderWith = (source: FieldObstacleSource) =>
+        render(
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <TouchModifierButtons obstacles={source} />
+            </TolgeeProvider>,
+            { container: document.body.lastElementChild as HTMLElement },
+        );
+    const spot = () => {
+        const pill = screen.getByTestId("touch-modifier-buttons");
+        return `${pill.style.left},${pill.style.bottom}`;
+    };
+    // Its automatic spot with nothing in the way: bottom right, over the zoom box's room. At
+    // 0 × 0, its box is the point (788, 488) in the area
+    const AUTO = "788px,112px";
+
+    it("keeps its spot after a tap-select whose box it's over but whose handles it isn't", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe(AUTO);
+            // A selection box around the pill's spot, its handles well away from it
+            field.change([{ x: 300, y: 300 }], false, [
+                { left: 280, top: 280, width: 520, height: 300 },
+            ]);
+            field.settle();
+            expect(spot()).toBe(AUTO);
+        });
+    });
+
+    it("moves off a handle that lands under it, once no drag is under way", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            // Mid-drag: it waits
+            field.change([{ x: 788, y: 488 }], true);
+            field.settle();
+            expect(spot()).toBe(AUTO);
+            // The drag ends and the field tells again
+            field.change([{ x: 788, y: 488 }]);
+            field.settle();
+            expect(spot()).not.toBe(AUTO);
+            // Off the handle now, a change elsewhere doesn't move it again
+            const moved = spot();
+            field.change([
+                { x: 788, y: 488 },
+                { x: 100, y: 100 },
+            ]);
+            field.settle();
+            expect(spot()).toBe(moved);
+        });
+    });
+
+    it("gives up its saved spot to a handle, and goes back once the handle's gone", () => {
+        inArea(() => {
+            localStorage.setItem(
+                TOUCH_MODIFIER_POSITION_KEY,
+                JSON.stringify({ left: 40, bottom: 60 }),
+            );
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe("40px,60px");
+            // The saved spot is the point (40, 540)
+            field.change([{ x: 40, y: 540 }]);
+            field.settle();
+            expect(spot()).not.toBe("40px,60px");
+            field.change([]);
+            field.settle();
+            expect(spot()).toBe("40px,60px");
+        });
     });
 });
 

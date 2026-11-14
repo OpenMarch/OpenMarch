@@ -1790,7 +1790,41 @@ describe("FieldEditor lasso", () => {
         expect(ports.selection.set).not.toHaveBeenCalled();
     });
 
-    it("closes itself when a finger or a pen draws it, ending 80 screen px from its start (#933)", () => {
+    it("a finger's long straight swipe closes nothing and changes nothing (#933)", () => {
+        const { editor, state, ports } = setup({ selected: [4] });
+        // From (50, 50) to (450, 60): 800 screen px long and nearly straight. With Add, so the
+        // double-tap's first tap keeps the selection
+        lasso(
+            editor,
+            [
+                [50, 50],
+                [250, 56],
+                [450, 60],
+            ],
+            { kind: "touch", shift: true },
+        );
+        expect(state.selected).toEqual([4]);
+        expect(ports.selection.set).not.toHaveBeenCalled();
+    });
+
+    it("a finger's loop around marchers closes even when it ends far from its start (#933)", () => {
+        const { editor, state } = setup({ selected: [4] });
+        // Three sides of a box around marchers 2 and 3, ending 200 screen px below its start
+        lasso(
+            editor,
+            [
+                [140, 40],
+                [360, 40],
+                [360, 160],
+                [140, 160],
+                [140, 140],
+            ],
+            { kind: "touch" },
+        );
+        expect(state.selected).toEqual([2, 3]);
+    });
+
+    it("closes when a finger or a pen draws it, ending 80 screen px from its start (#933)", () => {
         for (const kind of ["touch", "pen"] as const) {
             const { editor, state } = setup({ selected: [4] });
             // 40 field units is 80 screen px at zoom 2

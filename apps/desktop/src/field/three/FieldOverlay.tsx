@@ -484,7 +484,9 @@ function GuideLabels({
         () => ref.current?.ownerSVGElement?.parentElement ?? null,
         [],
     );
-    const overTop = useFieldLayerRects(field, TOP_LAYERS, touchLayout);
+    // Listened to only while a guide has a name to show
+    const named = guides?.some((g) => g.label) ?? false;
+    const overTop = useFieldLayerRects(field, TOP_LAYERS, touchLayout && named);
     return (
         <g ref={ref}>
             {guides?.map(({ from, to, label }, i) => {

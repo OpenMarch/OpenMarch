@@ -1,9 +1,11 @@
 import type { XY } from "../types";
 import {
     aroundPoints,
+    boxAround,
     clearSpot,
     FINGER_REACH,
     overlapArea,
+    rowsAround,
     type Rect,
 } from "@/components/canvas/fieldLayers";
 
@@ -84,20 +86,33 @@ export function editorPlacement(input: PlacementInput): Placement {
     return { left, top: above ? over : below, above };
 }
 
-/** A finger's reach around each of the shape's handles, its knob and each slot inside the field */
-function gripsOf(input: PlacementInput): Rect[] {
+/**
+ * What the editor keeps a finger's reach off (#933), inside the field: each handle and the knob on
+ * its own; the slots as one box (`slots`) or, for sitting over the shape between them, as rows
+ * (`slotRows`). A shape of hundreds of slots stays a handful of boxes, so placing the editor on
+ * every pan or zoom frame stays cheap (#933 review).
+ */
+function gripsOf(input: PlacementInput): {
+    handles: Rect[];
+    slots: Rect[];
+    slotRows: Rect[];
+} {
     const { fieldWidth, fieldHeight } = input;
-    return aroundPoints(
-        [
-            ...(input.handles ?? []),
-            ...(input.knob ? [input.knob] : []),
-            ...(input.spots ?? []),
-        ].filter(
-            (h) =>
-                h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight,
+    const inField = (h: XY) =>
+        h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight;
+    const spots = (input.spots ?? []).filter(inField);
+    const box = boxAround(spots, FINGER_REACH);
+    return {
+        handles: aroundPoints(
+            [
+                ...(input.handles ?? []),
+                ...(input.knob ? [input.knob] : []),
+            ].filter(inField),
+            FINGER_REACH,
         ),
-        FINGER_REACH,
-    );
+        slots: box ? [box] : [],
+        slotRows: rowsAround(spots, FINGER_REACH),
+    };
 }
 
 /**
@@ -152,7 +167,11 @@ export function clearPlacement(
         height,
     });
     const grips = gripsOf(input);
-    for (const keepOff of [[shape, ...grips], grips]) {
+    const keepOffs = [
+        [shape, ...grips.handles, ...grips.slots],
+        [...grips.handles, ...grips.slotRows],
+    ];
+    for (const keepOff of keepOffs) {
         for (const [i, side] of sides.entries()) {
             if (!fits(side, i)) continue;
             const spot = clearSpot(
@@ -166,7 +185,7 @@ export function clearPlacement(
     }
     // Over a control rather than its own shape: the side that covers the least of them
     const controls = obstacles.filter((o) => !covers.includes(o));
-    for (const keepOff of [[shape, ...grips], grips]) {
+    for (const keepOff of keepOffs) {
         let best: Placement | null = null;
         let bestCover = Infinity;
         for (const [i, side] of sides.entries()) {

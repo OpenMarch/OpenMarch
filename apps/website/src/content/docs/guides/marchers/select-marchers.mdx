@@ -99,7 +99,7 @@ What a drag on empty field does depends on the drag mode, the first button over 
 
 - <Ui k="touch.dragMode.auto" />, the starting mode: one finger moves the view, and a pen such as Apple Pencil draws a box. To draw a box with a finger, press and hold on empty field for half a second, then drag; if you lift without moving instead, the field's menu opens.
 - <Ui k="touch.dragMode.box" />: one finger, or the pen, draws a box. Use two fingers to move the view.
-- <Ui k="touch.dragMode.lasso" />: one finger, or the pen, draws around the marchers to select. When you lift, the lasso closes itself back to where you started, so you don't need to end where you began. Use two fingers to move the view.
+- <Ui k="touch.dragMode.lasso" />: one finger, or the pen, draws around the marchers to select. When you lift, the lasso closes back to where you started if you end near your start or have drawn around an area, so you don't need to end exactly where you began. A stroke that does neither, such as a long straight swipe, selects nothing. Use two fingers to move the view.
 - <Ui k="touch.dragMode.pan" />: one finger, or the pen, moves the view.
 
 In every mode, a drag that starts on a marcher, or inside the frame around the selection, moves the marchers. The mode is kept on this device, not in the show file.

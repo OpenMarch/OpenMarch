@@ -10,6 +10,7 @@ import {
     clearSpotOf,
     NO_FIELD_OBSTACLES,
     overlapArea,
+    overlaps,
     type FieldObstacles,
 } from "../fieldLayers";
 
@@ -89,6 +90,29 @@ const AREA_PENALTY = 1e12;
 /** Room kept between the pill and a layer it slid clear of */
 const CONTROL_GAP = 4;
 
+/**
+ * How bad a spot is, lower being better: over a control is worst, then each handle it covers (#933),
+ * then covering the selection box or the open shape at all, then each marcher it covers, then
+ * being at the top, away from the thumbs, then how much of the field drawing it covers
+ */
+export function pillSpotScore(spot: {
+    overControl: boolean;
+    overHandles: number;
+    overArea: boolean;
+    covered: number;
+    top: boolean;
+    fieldArea: number;
+}): number {
+    return (
+        (spot.overControl ? CONTROL_PENALTY : 0) +
+        spot.overHandles * HANDLE_PENALTY +
+        (spot.overArea ? AREA_PENALTY : 0) +
+        spot.covered * 1e9 +
+        (spot.top ? TOP_PENALTY : 0) +
+        spot.fieldArea
+    );
+}
+
 export function choosePillPosition(
     container: { width: number; height: number },
     pill: { width: number; height: number },
@@ -147,13 +171,14 @@ export function choosePillPosition(
             (h) => overlap(rect, h) > 0,
         ).length;
         const overArea = obstacles.areas.some((a) => overlap(rect, a) > 0);
-        const score =
-            (overControl ? CONTROL_PENALTY : 0) +
-            overHandles * HANDLE_PENALTY +
-            (overArea ? AREA_PENALTY : 0) +
-            covered * 1e9 +
-            (candidate.top ? TOP_PENALTY : 0) +
-            fieldArea;
+        const score = pillSpotScore({
+            overControl,
+            overHandles,
+            overArea,
+            covered,
+            top: candidate.top,
+            fieldArea,
+        });
         if (score < bestScore) {
             best = spot;
             bestScore = score;
@@ -161,3 +186,19 @@ export function choosePillPosition(
     }
     return best;
 }
+
+/**
+ * Whether the pill at `rect` covers one of the field's handles (#933): only then does a change on
+ * the field (a selection, a shape, marchers moved) give it a new spot
+ */
+export const coversHandle = (rect: Rect, obstacles: FieldObstacles) =>
+    obstacles.handles.some((h) => overlaps(rect, h));
+
+/** The layers over the field as a string, rounded to whole px, to tell when one really moved */
+export const layersKey = (layers: readonly Rect[]): string =>
+    layers
+        .map(
+            (r) =>
+                `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`,
+        )
+        .join(";");

@@ -9,13 +9,18 @@ import {
     FINGER_REACH,
     LAYER_GAP,
     liftClear,
-    obstaclesKey,
     obstaclesOf,
     overlapArea,
     overlaps,
+    rowsAround,
     type Rect,
 } from "../fieldLayers";
-import { choosePillPosition } from "../touch/pillPlacement";
+import {
+    choosePillPosition,
+    coversHandle,
+    layersKey,
+    pillSpotScore,
+} from "../touch/pillPlacement";
 
 // The field at 1180 × 820 landscape with the Inspector open (finding A): 747 × 556 px
 const FIELD: Rect = { left: 0, top: 0, width: 747, height: 556 };
@@ -238,14 +243,6 @@ describe("obstacles on the field (#933)", () => {
         expect(areas[0].top).toBe(60 - FINGER_REACH);
     });
 
-    it("tells changed obstacles by whole px", () => {
-        const a = obstaclesOf([{ x: 10.2, y: 10 }], []);
-        const b = obstaclesOf([{ x: 10.4, y: 10 }], []);
-        const c = obstaclesOf([{ x: 30, y: 10 }], []);
-        expect(obstaclesKey(a)).toBe(obstaclesKey(b));
-        expect(obstaclesKey(a)).not.toBe(obstaclesKey(c));
-    });
-
     it("measures how much two boxes overlap", () => {
         const a = { left: 0, top: 0, width: 10, height: 10 };
         expect(overlapArea(a, { left: 5, top: 5, width: 10, height: 10 })).toBe(
@@ -353,16 +350,91 @@ describe("the pill keeps off what's dragged on the field (#933)", () => {
         expect(coversAny(spot, obstacles.handles)).toBe(false);
     });
 
+    /** Handle squares every 30 px over the whole field: no spot clears them, nor slides off */
+    const everywhere = () => {
+        const handles: { x: number; y: number }[] = [];
+        for (let y = 0; y <= container.height; y += 30)
+            for (let x = 0; x <= container.width; x += 30)
+                handles.push({ x, y });
+        return { handles: aroundPoints(handles), areas: [] };
+    };
+
     it("covers a handle rather than a control when it must", () => {
-        // A box's handles in every spot the pill could take
-        const handles = Array.from({ length: 12 }, (_, i) => ({
-            x: 30 + (i % 4) * 230,
-            y: 30 + Math.floor(i / 4) * 250,
-        }));
-        const obstacles = obstaclesOf(handles, handles);
+        const obstacles = everywhere();
         const spot = at(
             choosePillPosition(container, pill, null, [], [ZOOM], obstacles),
         );
         expect(overlaps(spot, ZOOM)).toBe(false);
+        expect(coversAny(spot, obstacles.handles)).toBe(true);
+    });
+
+    it("takes a top spot clear of handles over a bottom spot that covers some", () => {
+        // Handles over the field's bottom half, too many rows to slide off; the top is clear
+        const handles = everywhere().handles.filter(
+            (h) => h.top > container.height / 2,
+        );
+        const spot = at(
+            choosePillPosition(container, pill, null, [], [], {
+                handles,
+                areas: [],
+            }),
+        );
+        expect(coversAny(spot, handles)).toBe(false);
+        expect(spot.top).toBeLessThan(container.height / 2);
+    });
+});
+
+describe("how bad a pill spot is (#933)", () => {
+    const none = {
+        overControl: false,
+        overHandles: 0,
+        overArea: false,
+        covered: 0,
+        top: false,
+        fieldArea: 0,
+    };
+    it("puts a handle before a box, a box before marchers, the top and the field", () => {
+        const handle = pillSpotScore({ ...none, overHandles: 1 });
+        const area = pillSpotScore({ ...none, overArea: true });
+        const rest = pillSpotScore({
+            ...none,
+            covered: 200,
+            top: true,
+            fieldArea: 747 * 556,
+        });
+        expect(handle).toBeGreaterThan(area);
+        expect(area).toBeGreaterThan(rest);
+        // Each handle counts
+        expect(pillSpotScore({ ...none, overHandles: 2 })).toBeGreaterThan(
+            handle,
+        );
+        // A control is still worst
+        expect(pillSpotScore({ ...none, overControl: true })).toBeGreaterThan(
+            pillSpotScore({ ...none, overHandles: 9, overArea: true }),
+        );
+    });
+
+    it("tells a pill on a handle, and layers that moved by a whole px", () => {
+        const pill = { left: 0, top: 0, width: 100, height: 40 };
+        const near = { handles: aroundPoints([{ x: 110, y: 20 }]), areas: [] };
+        const far = { handles: aroundPoints([{ x: 200, y: 20 }]), areas: [] };
+        expect(coversHandle(pill, near)).toBe(true);
+        expect(coversHandle(pill, far)).toBe(false);
+        expect(layersKey([{ ...pill, left: 0.2 }])).toBe(layersKey([pill]));
+        expect(layersKey([{ ...pill, left: 3 }])).not.toBe(layersKey([pill]));
+    });
+});
+
+describe("rowsAround (#933 review)", () => {
+    it("makes one box per row of slots, keeping the gaps between rows", () => {
+        const slots = [0, 1, 2, 3].flatMap((col) =>
+            [100, 110, 200].map((y) => ({ x: 50 + col * 20, y })),
+        );
+        const rows = rowsAround(slots, 10);
+        // 100 and 110 share a row; 200 is a row of its own
+        expect(rows).toEqual([
+            { left: 40, top: 90, width: 80, height: 30 },
+            { left: 40, top: 190, width: 80, height: 20 },
+        ]);
     });
 });

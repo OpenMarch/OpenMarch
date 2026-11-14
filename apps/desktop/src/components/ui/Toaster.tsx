@@ -59,6 +59,8 @@ function useTouchToastTop(enabled: boolean): number {
             const bars = Array.from(
                 document.querySelectorAll(`[${FIELD_LAYER_ATTRIBUTE}="task"]`),
             )
+                // A layer with no room to show is out of the way, as in `fieldLayersIn`
+                .filter((el) => getComputedStyle(el).visibility !== "hidden")
                 .map((el) => el.getBoundingClientRect())
                 .filter((r) => r.width > 0 && r.height > 0);
             setTop(touchToastTop(anchor.getBoundingClientRect().bottom, bars));

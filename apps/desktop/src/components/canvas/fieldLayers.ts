@@ -122,15 +122,6 @@ export interface FieldObstacleSource {
     busy(): boolean;
 }
 
-/** The obstacles as a string, rounded to whole px, to tell when they've really changed */
-export const obstaclesKey = ({ handles, areas }: FieldObstacles): string =>
-    [...handles, ...areas]
-        .map(
-            (r) =>
-                `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`,
-        )
-        .join(";");
-
 /** A square `reach` px out from each point, each way */
 export function aroundPoints(
     points: readonly { x: number; y: number }[],
@@ -176,6 +167,32 @@ export function obstaclesOf(
         handles: aroundPoints(handles, reach),
         areas: area ? [area] : [],
     };
+}
+
+/**
+ * The rows of `points`, each as one box a finger's reach out around it (#933 review): points
+ * whose reach squares would touch top to bottom (less than `2 * reach` apart) share a row. A dense
+ * shape's slots become a few boxes rather than one per slot, while the gaps between rows a bar
+ * could sit in stay open.
+ */
+export function rowsAround(
+    points: readonly { x: number; y: number }[],
+    reach = FINGER_REACH,
+): Rect[] {
+    const sorted = [...points].sort((a, b) => a.y - b.y);
+    const rows: Rect[] = [];
+    let row: { x: number; y: number }[] = [];
+    const flush = () => {
+        const box = boxAround(row, reach);
+        if (box) rows.push(box);
+        row = [];
+    };
+    for (const p of sorted) {
+        if (row.length > 0 && p.y - row[row.length - 1].y >= 2 * reach) flush();
+        row.push(p);
+    }
+    flush();
+    return rows;
 }
 
 /** How much of `a` and `b` overlap, in square px */
@@ -245,7 +262,8 @@ export function clearSpot(
                     { ...spot, top: o.top + o.height + gap },
                 );
             }
-        tried.push(...next);
+        // One by one: spread into `push`, many spots overflow the stack (#933 review)
+        for (const spot of next) tried.push(spot);
         spots = next;
     }
     let best: Rect | null = null;

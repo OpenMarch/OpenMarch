@@ -12,7 +12,8 @@ import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
 /**
  * What the touch layout's floating layers keep off on the field (#933), in the field element's px:
  * the selection box with its handles and rotate knob, and the open shape (or selected placed box)
- * with its outline, handles, knob and slots. A finger's reach around each (`FieldObstacles`).
+ * with its outline, handles, knob and slots: a finger's reach around each handle and the knob, and
+ * one area around the outline and the slots (`FieldObstacles`).
  */
 export function readFieldObstacles(
     marchers: FieldMarchers,
@@ -34,12 +35,14 @@ export function readFieldObstacles(
     }
     const drawn = editor.modeDrawing();
     if (drawn) {
+        // Its handles and knob on their own; its slots inside its area, as one box with the
+        // outline, so a shape of hundreds of slots stays a handful of obstacles (#933 review)
         const handles = [
             ...drawn.handles,
             ...(drawn.knob ? [drawn.knob.at] : []),
-            ...drawn.spots,
         ].map(onElement);
-        parts.push(obstaclesOf(handles, (drawn.outline ?? []).map(onElement)));
+        const extent = [...(drawn.outline ?? []), ...drawn.spots];
+        parts.push(obstaclesOf(handles, extent.map(onElement)));
     }
     return {
         handles: parts.flatMap((p) => p.handles),
