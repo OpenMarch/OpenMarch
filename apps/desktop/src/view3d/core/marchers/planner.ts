@@ -58,6 +58,7 @@
  * Pure: no three.js, React or database.
  */
 
+import type { DirectionChange, DotMode } from "../performerDefaults";
 import {
     pickBlend,
     turnedClips,
@@ -149,14 +150,21 @@ export interface PlanInput {
      * count 0..K-1 (a set's mode covers the counts of the move into it):
      * `foot` (the default) puts the landing foot's ankle on the dot at the
      * end of each count of a move, the body half a step behind it with the
-     * weight 50-50; `body` keeps the body's center over the dot. Not offered
-     * in the UI yet.
+     * weight 50-50; `body` keeps the body's center over the dot. The show
+     * default is in Show settings (`core/performerDefaults.ts`).
      */
     dotMode?: DotMode | readonly DotMode[];
+    /**
+     * How the leg in motion gets to a new direction, per count or for the
+     * whole show (`core/performerDefaults.ts`): `corner` (the default) or
+     * `direct`.
+     * Not read yet: `corner` needs om-pose's direction-change clips, which
+     * aren't packed, so every change plays the crossfade (`direct`) for now.
+     */
+    directionChange?: DirectionChange | readonly DirectionChange[];
 }
 
-/** What a marcher's dot marks: the landing foot's ankle, or the body's center. */
-export type DotMode = "foot" | "body";
+export type { DirectionChange, DotMode };
 
 export type EventKind = "rest" | "loop" | "transition" | "crossfade";
 
