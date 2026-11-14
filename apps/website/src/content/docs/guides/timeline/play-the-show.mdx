@@ -6,6 +6,8 @@ covers:
   - apps/desktop/src/components/timeline/TransportButtons.tsx
   - apps/desktop/src/components/timeline/TimelineControls.tsx
   - apps/desktop/src/components/timeline/PlaybackSpeedButton.tsx
+  - apps/desktop/src/components/timeline/TimelineTouchTransport.tsx
+  - apps/desktop/src/components/timeline/touchPlayMenu.ts
   - apps/desktop/src/components/timeline/TimelineLoopBar.tsx
   - apps/desktop/src/components/timeline/timelineFollow.ts
   - apps/desktop/src/timeline/timelineTransport.ts
@@ -22,11 +24,14 @@ covers:
   - action:previousBeat
   - action:firstPage
   - action:lastPage
+  - action:timelineFit
+  - action:toggleTempoMode
   - i18n:timeline.transport
   - i18n:timeline.loop
   - i18n:timeline.playbackSpeed
   - i18n:timeline.goTo
   - i18n:timeline.playheadChip
+  - i18n:timeline.touchTransport
 sidebar:
   order: 2
 ---
@@ -78,7 +83,7 @@ This needs Expert mode: Basic has no loop. See [Basic and Expert](/guides/start/
 2. Select <Ui k="timeline.loop.label" /> (the two arrows next to Play), or press <Kbd action="toggleLoop" />.
 3. Press <Kbd action="playPause" />. The passage plays over and over until you stop it.
 
-The loop shows as a bar along the top of the page row, in the start flag's color. Drag either end of the bar to change what loops; the start flag and the playhead move with it. Press <Kbd action="playPage" /> to play the loop once.
+The loop shows as a bar along the top of the page row, in the start flag's color. Drag either end of the bar to change what loops; the start flag and the playhead move with it. On a tablet, a finger beside an end drags it once the finger has moved a little. Press <Kbd action="playPage" /> to play the loop once.
 
 <Media
   id="timeline-loop"
@@ -92,7 +97,7 @@ To turn the loop off, select <Ui k="timeline.loop.label" /> again or press <Kbd 
 The speed button shows the current speed, such as 1×.
 
 - Select it to go to the next speed.
-- Right-click it for a slider from 0.1× to 8×, with the common speeds as buttons.
+- Right-click it for a slider from 0.1× to 8×, with the common speeds as buttons. On a touch screen, tap it to open the slider.
 - Hold <Kbd action="holdFasterPlayback" /> to play at double speed, or <Kbd action="holdSlowerPlayback" /> for half speed, while the key is down.
 
 The music plays at the new speed without changing its pitch. The speed stays as you set it until you change it, and the 3D View plays at the same speed.
@@ -119,6 +124,26 @@ A page puts the playhead on that page's set; a measure or rehearsal mark puts it
 The previous and next buttons beside Play do the same: on their own they step a page, with <Kbd keys="Shift" /> held they step a count, and with <Kbd keys="Alt" /> held they go to the start or end of the show.
 
 In Expert, going to a page moves the start flag to the start of that page. Stepping by counts, clicking the timeline and dragging the playhead move only the playhead while it stays after the start flag. Put it on or before the start flag and the two swap: that count becomes the start flag, and the old start flag's count becomes the playhead.
+
+## On a tablet
+
+On a touch screen the row above the timeline is shorter, with buttons big enough for a finger: Previous page, Play and Next page, the clock and the readout, the **−** and **+** zoom buttons, and a **…** button with everything else.
+
+Press and hold Play for the other ways to play, the ones a mouse gets with <Kbd keys="Alt" /> or <Kbd keys="Shift" />:
+
+- Stopped: Play, the same as a tap, then <Ui k="timeline.transport.playFromStartAndContinue" plain /> (Expert), and <Ui k="timeline.transport.playFromPlayheadAndContinue" plain /> (with the loop on, <Ui k="timeline.transport.playLoopOnce" plain />).
+- Playing: <Ui k="timeline.transport.stopAndGoBack" plain />, as a tap does, and <Ui k="timeline.transport.pauseHere" plain />.
+
+The **…** button (<Ui k="timeline.transport.more" />) holds:
+
+| Group | Buttons |
+| --- | --- |
+| <Ui k="timeline.touchTransport.goTo" plain /> | The start of the show, one count back, one count on, the end of the show |
+| <Ui k="timeline.touchTransport.playback" plain /> | <Ui k="timeline.loop.label" plain /> (Expert), the playback speed, and sound (volume, mute and the metronome) |
+| <Ui k="timeline.touchTransport.view" plain /> | <Ui k="timeline.touchTransport.fit" plain />, which fits the whole show in the timeline (tap again to go back), and <Ui k="tempoMode.button.text" plain /> |
+| <Ui k="timeline.touchTransport.atPlayhead" plain /> | <Ui k="actions.timeline.createPageAtPlayhead" plain /> and <Ui k="actions.timeline.createSubsetAtPlayhead" plain /> |
+
+A tap on the speed button opens its slider and speed buttons, rather than going to the next speed.
 
 ## Related
 

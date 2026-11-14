@@ -25,9 +25,9 @@
 - `apps/cms` is a Next/Payload/Cloudflare app with its own `apps/cms/AGENTS.md`; read that before CMS changes.
 - `packages/core`, `packages/musicxml-parser`, and `packages/ui` are publishable/shared packages built with `tsup`; `packages/ui/src/tailwind.css` is the shared style source.
 - Prefer existing UI primitives in `packages/ui/src/components/base`; icons should come from `@phosphor-icons/react`.
-- Match the app's visual scale instead of inventing one: theme radii (`rounded-6` surfaces, `rounded-full` buttons), theme font sizes (`text-body`, `text-sub`), and the shared popover and menu classes. Read [UI styling](docs/conventions/ui-styling.md) before building or restyling any UI.
+- Match the app's visual scale instead of inventing one: theme radii (`rounded-6` surfaces, `rounded-full` buttons), theme font sizes (`text-body`, `text-sub`), and the shared popover and menu classes. Read [UI styling](docs/conventions/ui-styling.md) before building or restyling any UI, and [tablet parity](docs/conventions/tablet-parity.md) before adding a control, gesture or field interaction (desktop first; touch reaches the same action).
 - Read [change routing](docs/conventions/change-routing.md) when ownership is unclear or a change crosses packages.
-- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [localization](docs/conventions/localization.md), [testing](docs/conventions/testing.md), [UI styling](docs/conventions/ui-styling.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
+- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [localization](docs/conventions/localization.md), [testing](docs/conventions/testing.md), [UI styling](docs/conventions/ui-styling.md), [tablet parity](docs/conventions/tablet-parity.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
 
 ## Verification
 

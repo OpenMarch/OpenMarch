@@ -716,6 +716,32 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
         hiddenFromPalette: true,
     },
+    // The open shape thrown away, placing nothing (tablet 1.4): the touch layout's Discard, as
+    // Escape is with a keyboard. While clicking a line's points, those points; mid-drag, the drag.
+    // No key of its own: Escape already does it (shapes/tool/ShapeToolKeys)
+    shapeDiscard: {
+        labelKey: "actions.shape.discard",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Drawing a polygon prop (C2.1): finished now, as its double-click does, and its last corner
+    // taken back (tablet 1.4, the drawing card's Finish and Undo point). No keys: the mouse
+    // double-clicks (field/fieldPropTool)
+    propFinishDrawing: {
+        labelKey: "actions.prop.finishDrawing",
+        category: "edit",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    propRemoveLastPoint: {
+        labelKey: "actions.prop.removeLastPoint",
+        category: "edit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     // The floating editor's turn and Recalculate (#429), for the open or selected shape only. While
     // one is shown, Alt+F and Alt+Shift+F (flipHorizontal/flipVertical) flip the shape instead of
     // the marchers (shapes/editor/ShapeEditorBar)
@@ -797,6 +823,28 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
+    // Select one marcher of the placed box selected whole, going inside the box: what a
+    // double-click on a member does, as a field menu entry for a tablet (tablet 1.5). The field's
+    // menu passes the marcher pressed (`args.marcherId`); it needs one, so it isn't in the palette
+    shapeEnterBox: {
+        labelKey: "actions.shape.enterBox",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        hiddenFromPalette: true,
+    },
+
+    // The open shape's pivot back to the center: what a double-click on the pivot does, as an
+    // entry in the floating editor's pivot menu for a tablet (tablet 1.5)
+    shapeCenterPivot: {
+        labelKey: "actions.shape.centerPivot",
+        keywordsKey: "actions.shape.centerPivotKeywords",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+
     // Cursor mode
     cancelAlignmentUpdates: {
         labelKey: "actions.alignment.cancelUpdates",
@@ -833,6 +881,16 @@ const STATIC_ACTIONS = {
         keywordsKey: "actions.timeline.unsetHereKeywords",
         category: "timeline",
         scope: "canvas",
+        defaultBindings: [],
+    },
+
+    // Tablet 0.6 (#846): Basic or Expert from the palette, as Settings › Timeline switches it. No
+    // key: none is free that reads as this, and switching is rare
+    toggleEditorMode: {
+        labelKey: "actions.timeline.toggleEditorMode",
+        keywordsKey: "actions.timeline.toggleEditorModeKeywords",
+        category: "timeline",
+        scope: "global",
         defaultBindings: [],
     },
 
@@ -879,6 +937,41 @@ const STATIC_ACTIONS = {
     },
     mergeMoveIntoPage: {
         labelKey: "actions.timeline.mergeMoveIntoPage",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
+
+    // Tablet 3.2 (#885): one step of the timeline's zoom, about the playhead when it's in view.
+    // The touch layout's ± buttons and tempo mode's transport buttons; no key (Mod+scroll zooms)
+    timelineZoomIn: {
+        labelKey: "actions.timeline.zoomIn",
+        keywordsKey: "actions.timeline.zoomKeywords",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
+    timelineZoomOut: {
+        labelKey: "actions.timeline.zoomOut",
+        keywordsKey: "actions.timeline.zoomKeywords",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Tablet 3.5 (#888): Fit the show in view, or back to the zoom from before, for the touch
+    // transport's "…" and the palette. Shift+Z stays the timeline's own key (`useTimelineZoom`)
+    timelineFit: {
+        labelKey: "actions.timeline.fit",
+        keywordsKey: "actions.timeline.zoomKeywords",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Tablet 3.5 (#888): tempo mode ("Edit music") on or off, for the touch transport's "…" and
+    // the palette. Shift+T stays tempo mode's own key (`TempoModeButton`)
+    toggleTempoMode: {
+        labelKey: "actions.timeline.toggleTempoMode",
+        keywordsKey: "actions.timeline.toggleTempoModeKeywords",
         category: "timeline",
         scope: "global",
         defaultBindings: [],

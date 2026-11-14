@@ -68,6 +68,7 @@ const at = (
     field: { x, y },
     screen: { x: x * 2, y: y * 2 },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,

@@ -95,6 +95,7 @@ const at = (
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,
@@ -304,6 +305,267 @@ describe("FieldEditor click vs drag", () => {
     });
 });
 
+describe("FieldEditor thresholds by pointer kind (tablet 0.1)", () => {
+    // At zoom 2, 1 field unit is 2 screen px
+    const pen = { kind: "pen" } as const;
+    const touch = { kind: "touch" } as const;
+
+    it("reports what made the last press, for readouts that keep clear of a finger", () => {
+        const { editor } = setup();
+        expect(editor.pressKind()).toBe("mouse");
+        editor.pointerDown(at(100, 100, touch));
+        expect(editor.pressKind()).toBe("touch");
+        editor.pointerUp(at(100, 100, touch));
+        // Still the finger's until the next press
+        expect(editor.pressKind()).toBe("touch");
+        editor.pointerDown(at(100, 100, pen));
+        expect(editor.pressKind()).toBe("pen");
+        editor.pointerUp(at(100, 100, pen));
+        editor.pointerDown(at(100, 100));
+        expect(editor.pressKind()).toBe("mouse");
+    });
+
+    it("starts a mouse move at 4 screen px, as always", () => {
+        const { editor } = setup();
+        editor.pointerDown(at(100, 100));
+        editor.pointerMove(at(102, 100));
+        expect(editor.activeGesture()).toBe("move");
+    });
+
+    it("keeps a pen press under 6 screen px a click", () => {
+        const { editor, state } = setup();
+        editor.pointerDown(at(100, 100, pen));
+        editor.pointerMove(at(102.5, 100, pen));
+        expect(editor.activeGesture()).toBeNull();
+        editor.pointerUp(at(102.5, 100, pen));
+        expect(state.selected).toEqual([1]);
+        expect(state.drops).toEqual([]);
+    });
+
+    it("keeps a finger press under 12 screen px from moving anything, and moves at 12", () => {
+        const { editor, state } = setup();
+        editor.pointerDown(at(100, 100, touch));
+        editor.pointerMove(at(105.5, 100, touch));
+        expect(editor.activeGesture()).toBeNull();
+        editor.pointerMove(at(106, 100, touch));
+        expect(editor.activeGesture()).toBe("move");
+        editor.pointerUp(at(106, 100, touch));
+        expect(state.drops.map((d) => d.positions)).toEqual([
+            [{ id: 1, x: 106, y: 100 }],
+        ]);
+    });
+
+    it("lands a finger on a marcher 22 screen px away, where a mouse misses", () => {
+        // 9 field units is 18 screen px below marcher 1
+        const mouse = setup({ selected: [2] });
+        click(mouse.editor, 100, 109);
+        expect(mouse.state.selected).toEqual([]);
+
+        const finger = setup({ selected: [2] });
+        click(finger.editor, 100, 109, touch);
+        expect(finger.state.selected).toEqual([1]);
+        // 11 field units is 22 screen px; just past it misses
+        const past = setup({ selected: [2] });
+        click(past.editor, 100, 111.5, touch);
+        expect(past.state.selected).toEqual([]);
+    });
+
+    it("grabs a selection box handle within a finger's reach, where a mouse draws a marquee", () => {
+        // The box around 1 to 4 has its right-hand middle handle at (410, 100);
+        // (418, 100) is 16 screen px to its right
+        const mouse = setup({ selected: [1, 2, 3, 4] });
+        mouse.editor.pointerDown(at(418, 100));
+        mouse.editor.pointerMove(at(485, 130));
+        expect(mouse.editor.activeGesture()).toBe("marquee");
+
+        const finger = setup({ selected: [1, 2, 3, 4] });
+        finger.editor.pointerDown(at(418, 100, touch));
+        finger.editor.pointerMove(at(485, 130, touch));
+        expect(finger.editor.activeGesture()).toBe("scale");
+    });
+
+    it("counts a second tap 20 screen px from the first as a double-tap, where a mouse's is too far", () => {
+        // A double-click-and-drag on empty field draws a lasso (rules table: Lasso)
+        const mouse = setup();
+        click(mouse.editor, 150, 50);
+        mouse.editor.pointerDown(at(160, 50));
+        mouse.editor.pointerMove(at(260, 50));
+        expect(mouse.editor.activeGesture()).toBe("marquee");
+
+        const finger = setup();
+        click(finger.editor, 150, 50, touch);
+        finger.editor.pointerDown(at(160, 50, touch));
+        finger.editor.pointerMove(at(260, 50, touch));
+        expect(finger.editor.activeGesture()).toBe("lasso");
+    });
+});
+
+describe("FieldEditor finger presses (tablet 1.2)", () => {
+    const touch = { kind: "touch" } as const;
+
+    it("edits where a finger lands on a marcher, within its 22 px hit radius", () => {
+        const { editor } = setup();
+        expect(editor.fingerEdits(at(100, 100, touch))).toBe(true);
+        // 9 field units is 18 screen px: a finger hits, a mouse misses
+        expect(editor.fingerEdits(at(100, 109, touch))).toBe(true);
+        expect(editor.fingerEdits(at(100, 109))).toBe(false);
+        expect(editor.fingerEdits(at(100, 111.5, touch))).toBe(false);
+    });
+
+    it("edits inside a multi-selection's box and on its handles; pans on the rest of the field", () => {
+        const { editor } = setup({ selected: [1, 3] });
+        // Between marchers 2 and 3, inside the box around 1 and 3, clear of its handles
+        expect(editor.fingerEdits(at(250, 100, touch))).toBe(true);
+        // The box's right-hand middle handle is at (310, 100)
+        expect(editor.fingerEdits(at(316, 100, touch))).toBe(true);
+        expect(editor.fingerEdits(at(EMPTY.x, EMPTY.y, touch))).toBe(false);
+        // A single selected marcher has no box: only its dot
+        const one = setup({ selected: [1] });
+        expect(one.editor.fingerEdits(at(250, 100, touch))).toBe(false);
+    });
+
+    it("pans over a marcher that can't be selected or is hidden", () => {
+        const { editor } = setup({
+            dimmed: [1],
+            marcherHidden: (id) => id === 2,
+        });
+        expect(editor.fingerEdits(at(100, 100, touch))).toBe(false);
+        expect(editor.fingerEdits(at(200, 100, touch))).toBe(false);
+    });
+
+    it("edits wherever a field mode claims the press (the shape tool draws, tablet 1.4)", () => {
+        const { editor, calls } = (() => {
+            const s = setup({ selected: [1] });
+            const m = fakeMode();
+            s.editor.setMode(m.mode);
+            return { editor: s.editor, calls: m.calls };
+        })();
+        expect(editor.fingerEdits(at(EMPTY.x, EMPTY.y, touch))).toBe(true);
+        editor.pointerDown(at(EMPTY.x, EMPTY.y, touch));
+        expect(calls).toEqual([`press ${EMPTY.x},${EMPTY.y}`]);
+    });
+
+    it("goes by the editor's rules where a field mode doesn't claim the press", () => {
+        const { editor, state } = setup({ selected: [1, 2] });
+        const { mode, calls } = fakeMode({ claims: () => false });
+        editor.setMode(mode);
+        expect(editor.fingerEdits(at(300, 100, touch))).toBe(true);
+        expect(editor.fingerEdits(at(EMPTY.x, EMPTY.y, touch))).toBe(false);
+        // A tap on empty field is a click there, as a mouse's is
+        editor.fingerTap(at(EMPTY.x, EMPTY.y, touch));
+        expect(calls).toEqual([]);
+        expect(state.selected).toEqual([]);
+    });
+
+    it("draws with every finger while the prop tool is on, and taps do nothing else", () => {
+        const { editor, state } = setup({ selected: [1, 2] });
+        editor.setPropTool("rectangle");
+        expect(editor.fingerEdits(at(EMPTY.x, EMPTY.y, touch))).toBe(true);
+        expect(editor.pressOnEmptyField(at(EMPTY.x, EMPTY.y, touch))).toBe(
+            false,
+        );
+        editor.fingerTap(at(EMPTY.x, EMPTY.y, touch));
+        expect(state.selected).toEqual([1, 2]);
+    });
+
+    it("clears the selection on a tap on empty field, as a click does, and saves nothing", () => {
+        const { editor, state } = setup({ selected: [1, 2] });
+        editor.fingerTap(at(EMPTY.x, EMPTY.y, touch));
+        expect(state.selected).toEqual([]);
+        expect(state.drops).toEqual([]);
+    });
+
+    it("selects only the marcher a finger taps, and moves it after 12 px", () => {
+        const { editor, state } = setup({ selected: [2] });
+        click(editor, 100, 108, touch);
+        expect(state.selected).toEqual([1]);
+        editor.pointerDown(at(300, 100, touch));
+        editor.pointerMove(at(305, 100, touch));
+        expect(state.shown).toBeNull();
+        editor.pointerMove(at(320, 100, touch));
+        // Caught up with the whole drag, not just what came after 12 px
+        expect(state.shown?.get(3)).toEqual({ x: 320, y: 100 });
+        editor.pointerUp(at(320, 100, touch));
+        expect(state.selected).toEqual([3]);
+        expect(state.drops.map((d) => d.positions)).toEqual([
+            [{ id: 3, x: 320, y: 100 }],
+        ]);
+    });
+
+    it("puts a finger's move back with nothing saved when it is cancelled (a second finger)", () => {
+        const { editor, state } = setup({ selected: [1, 3] });
+        editor.pointerDown(at(250, 100, touch));
+        editor.pointerMove(at(290, 100, touch));
+        expect(editor.activeGesture()).toBe("move");
+        expect(state.shown?.get(1)).toEqual({ x: 140, y: 100 });
+        editor.pointerCancel();
+        expect(state.shown).toBeNull();
+        expect(state.drops).toEqual([]);
+        expect(state.selected).toEqual([1, 3]);
+    });
+});
+
+describe("FieldEditor a finger or pen on a narrow selection (tablet 1.4)", () => {
+    // Marchers 1 and 2 selected, a row from (100, 100) to (200, 100): the box is
+    // 10 units out, its handles at x 90, 150, 210 and y 90, 100, 110. A finger
+    // reaches 11 units (22 screen px) from a handle, nearly all of the box; the
+    // handles as drawn are 6.5 screen px (3.25 units) each way
+    const touch = { kind: "touch" } as const;
+    const pen = { kind: "pen" } as const;
+
+    const gestureOf = (pointer: FieldPointer, to: { x: number; y: number }) => {
+        const { editor } = setup({ selected: [1, 2] });
+        editor.pointerDown(pointer);
+        editor.pointerMove({
+            ...pointer,
+            field: to,
+            screen: { x: to.x * ZOOM, y: to.y * ZOOM },
+        });
+        return editor.activeGesture();
+    };
+
+    it("moves the selection with a finger on a marcher, though its handles are within reach", () => {
+        // The left middle handle (90, 100) is 10 units from marcher 1
+        expect(gestureOf(at(100, 100, touch), { x: 130, y: 100 })).toBe("move");
+        expect(gestureOf(at(102, 104, touch), { x: 130, y: 100 })).toBe("move");
+        expect(gestureOf(at(200, 100, pen), { x: 230, y: 100 })).toBe("move");
+    });
+
+    it("moves the selection with a finger inside the box, off the handles as drawn", () => {
+        // The middle, 10 units from the top and bottom handles and far from any marcher
+        expect(gestureOf(at(150, 100, touch), { x: 180, y: 100 })).toBe("move");
+        expect(gestureOf(at(150, 96, touch), { x: 180, y: 96 })).toBe("move");
+    });
+
+    it("scales with a finger outside the box within its reach, or on a handle as drawn", () => {
+        // 6 units above the top middle handle, outside the box
+        expect(gestureOf(at(150, 84, touch), { x: 150, y: 60 })).toBe("scale");
+        // On the top middle handle as drawn, just inside the box
+        expect(gestureOf(at(150, 92, touch), { x: 150, y: 60 })).toBe("scale");
+        // Beside the left middle handle, outside the box
+        expect(gestureOf(at(82, 100, touch), { x: 50, y: 100 })).toBe("scale");
+        // A pen reaches 10 screen px (5 units)
+        expect(gestureOf(at(86, 100, pen), { x: 50, y: 100 })).toBe("scale");
+    });
+
+    it("keeps the rotate handle within a finger's reach", () => {
+        // The rotate handle is 20 units above the top: (150, 70)
+        expect(gestureOf(at(150, 64, touch), { x: 200, y: 64 })).toBe("rotate");
+    });
+
+    it("leaves the mouse as it was: the handle as drawn wins, the rest is the marcher's", () => {
+        expect(gestureOf(at(100, 100), { x: 130, y: 100 })).toBe("move");
+        expect(gestureOf(at(150, 92), { x: 150, y: 60 })).toBe("scale");
+        expect(gestureOf(at(91, 100), { x: 60, y: 100 })).toBe("scale");
+    });
+
+    it("says a finger edits wherever it moves or scales", () => {
+        const { editor } = setup({ selected: [1, 2] });
+        expect(editor.fingerEdits(at(150, 100, touch))).toBe(true);
+        expect(editor.fingerEdits(at(150, 84, touch))).toBe(true);
+    });
+});
+
 describe("FieldEditor buttons", () => {
     it("leaves the right and middle buttons to navigation", () => {
         const { editor, state } = setup();
@@ -346,6 +608,7 @@ describe("FieldEditor right-click menu (#315)", () => {
             expect.objectContaining({
                 screen: { x: (EMPTY.x + 1) * ZOOM, y: EMPTY.y * ZOOM },
             }),
+            null,
         );
     });
 
@@ -467,13 +730,13 @@ describe("FieldEditor right-click menu (#315)", () => {
         expect(openMenu).toHaveBeenCalledTimes(1);
     });
 
-    it("opens the mode's menu on a long press, not the field's", () => {
+    it("opens the mode's menu on a long press, then the field's (tablet 1.5)", () => {
         const { editor, ports } = setup({ selected: [1] });
         const openMenu = vi.fn(() => false);
         editor.setMode({ ...fakeMode().mode, openMenu });
-        editor.longPress(at(300, 100));
+        expect(editor.longPress(at(300, 100, { kind: "touch" }))).toBe(true);
         expect(openMenu).toHaveBeenCalledTimes(1);
-        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(ports.openMenu).toHaveBeenCalledTimes(1);
     });
 
     it("opens the menu for a selected placed box's marchers, keeping the selection", () => {
@@ -1527,6 +1790,52 @@ describe("FieldEditor lasso", () => {
         expect(ports.selection.set).not.toHaveBeenCalled();
     });
 
+    it("a finger's long straight swipe closes nothing and changes nothing (#933)", () => {
+        const { editor, state, ports } = setup({ selected: [4] });
+        // From (50, 50) to (450, 60): 800 screen px long and nearly straight. With Add, so the
+        // double-tap's first tap keeps the selection
+        lasso(
+            editor,
+            [
+                [50, 50],
+                [250, 56],
+                [450, 60],
+            ],
+            { kind: "touch", shift: true },
+        );
+        expect(state.selected).toEqual([4]);
+        expect(ports.selection.set).not.toHaveBeenCalled();
+    });
+
+    it("a finger's loop around marchers closes even when it ends far from its start (#933)", () => {
+        const { editor, state } = setup({ selected: [4] });
+        // Three sides of a box around marchers 2 and 3, ending 200 screen px below its start
+        lasso(
+            editor,
+            [
+                [140, 40],
+                [360, 40],
+                [360, 160],
+                [140, 160],
+                [140, 140],
+            ],
+            { kind: "touch" },
+        );
+        expect(state.selected).toEqual([2, 3]);
+    });
+
+    it("closes when a finger or a pen draws it, ending 80 screen px from its start (#933)", () => {
+        for (const kind of ["touch", "pen"] as const) {
+            const { editor, state } = setup({ selected: [4] });
+            // 40 field units is 80 screen px at zoom 2
+            lasso(editor, [...AROUND_2_AND_3.slice(0, -1), [150, 90]], {
+                kind,
+            });
+            expect(editor.areaShape()).toBeNull();
+            expect(state.selected).toEqual([2, 3]);
+        }
+    });
+
     it("says when releasing would close it (the green cue)", () => {
         const { editor } = setup();
         click(editor, 150, 50);
@@ -2482,5 +2791,91 @@ describe("FieldEditor reach inside a placed box ($mod)", () => {
         expect(state.selected).toEqual([3]);
         expect(box.inside).toBeNull();
         expect(pressSelection).not.toHaveBeenCalled();
+    });
+});
+
+describe("FieldEditor long press (tablet 1.5)", () => {
+    const touch = (x: number, y: number) => at(x, y, { kind: "touch" });
+    const pen = (x: number, y: number) => at(x, y, { kind: "pen" });
+
+    it("selects an unselected marcher and opens the field's menu there, as a right-click does", () => {
+        const { editor, ports, state } = setup({ selected: [2] });
+        expect(editor.longPress(touch(100, 100))).toBe(true);
+        expect(state.selected).toEqual([1]);
+        expect(ports.openMenu).toHaveBeenCalledWith(
+            expect.objectContaining({ field: { x: 100, y: 100 } }),
+            1,
+        );
+    });
+
+    it("keeps a selection that holds the marcher, and the selection on empty field", () => {
+        const { editor, ports, state } = setup({ selected: [1, 2] });
+        editor.longPress(touch(200, 100));
+        expect(state.selected).toEqual([1, 2]);
+        editor.longPress(touch(EMPTY.x, EMPTY.y));
+        expect(state.selected).toEqual([1, 2]);
+        expect(ports.openMenu).toHaveBeenLastCalledWith(
+            expect.anything(),
+            null,
+        );
+    });
+
+    it("gives up a held press on a marcher: its release clicks nothing and its moves drag nothing", () => {
+        const { editor, ports, state } = setup({ selected: [2] });
+        expect(editor.pointerDown(pen(100, 100))).toBe(true);
+        expect(editor.longPress(pen(100, 100))).toBe(true);
+        expect(state.selected).toEqual([1]);
+        editor.pointerMove(pen(160, 100));
+        editor.pointerUp(pen(160, 100));
+        expect(editor.activeGesture()).toBeNull();
+        expect(state.shown).toBeNull();
+        expect(ports.drop).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1]);
+    });
+
+    it("leaves a drag under way alone", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        editor.pointerDown(pen(100, 100));
+        editor.pointerMove(pen(140, 100));
+        expect(editor.longPress(pen(140, 100))).toBe(false);
+        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(editor.activeGesture()).toBe("move");
+    });
+
+    it("keeps a mode's press unless the mode gives it up, then opens the mode's menu", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        const fake = fakeMode();
+        const openMenu = vi.fn(() => true);
+        let givesUp = false;
+        editor.setMode({
+            ...fake.mode,
+            blocksFieldMenu: true,
+            openMenu,
+            longPress: () => givesUp,
+        });
+        editor.pointerDown(pen(300, 100));
+        expect(editor.longPress(pen(300, 100))).toBe(false);
+        expect(openMenu).not.toHaveBeenCalled();
+        expect(fake.calls).toEqual(["press 300,100"]);
+        givesUp = true;
+        expect(editor.longPress(pen(300, 100))).toBe(true);
+        expect(fake.calls).toEqual(["press 300,100", "cancel"]);
+        expect(openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).not.toHaveBeenCalled();
+        // Its release is no click of the mode's
+        editor.pointerUp(pen(300, 100));
+        expect(fake.calls).toEqual(["press 300,100", "cancel"]);
+    });
+
+    it("keeps a mode's press that has no say, and opens nothing while the open shape blocks the field's menu", () => {
+        const { editor, ports } = setup({ selected: [1] });
+        const fake = fakeMode();
+        editor.setMode({ ...fake.mode, blocksFieldMenu: true });
+        editor.pointerDown(pen(300, 100));
+        expect(editor.longPress(pen(300, 100))).toBe(false);
+        editor.pointerUp(pen(300, 100));
+        expect(fake.calls).toEqual(["press 300,100", "release 300,100 click"]);
+        expect(editor.longPress(touch(300, 100))).toBe(false);
+        expect(ports.openMenu).not.toHaveBeenCalled();
     });
 });

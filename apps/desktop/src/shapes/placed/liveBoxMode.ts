@@ -53,6 +53,7 @@ import type { GroupMenuState } from "../field/shapePointer";
 import type { AnyToolKind } from "../tool/toolKind";
 import type { XY } from "../types";
 import type { Roles } from "@/input/modifierRoles";
+import type { PointerKind } from "@/field/editor/pointerThresholds";
 import {
     setShapeDragging,
     setShapePointerOver,
@@ -223,6 +224,8 @@ export class LiveBoxMode implements FieldMode {
     private pressedAt: number | null = null;
     /** The box as last read during a gesture, for when the gesture changes nothing */
     private readDuringGesture: PlacedBox | null = null;
+    /** What made the last press: a held key's rerun goes on with its reach (tablet 1.4) */
+    private pressKind: PointerKind = "mouse";
 
     constructor(
         box: PlacedBox,
@@ -301,7 +304,10 @@ export class LiveBoxMode implements FieldMode {
             params,
             spots,
             pointer.field,
-            { ...toolEnvFor(field), reachInside: true },
+            {
+                ...toolEnvFor(field, undefined, { kind: pointer.kind }),
+                reachInside: true,
+            },
             this.live.selected,
         );
         return !target || !OWN_CONTROLS.has(target.type);
@@ -324,7 +330,10 @@ export class LiveBoxMode implements FieldMode {
                     this.live.box.params,
                     this.live.box.spots,
                     pointer.field,
-                    { ...toolEnvFor(field), reachInside },
+                    {
+                        ...toolEnvFor(field, undefined, { kind: pointer.kind }),
+                        reachInside,
+                    },
                     this.live.selected,
                 ),
             (at, roles) => this.rerun(at, roles),
@@ -332,9 +341,10 @@ export class LiveBoxMode implements FieldMode {
         );
         this.held = held;
         this.pressedAt = displayedBeat(useTimelineSelectionStore.getState());
+        this.pressKind = pointer.kind;
         this.live =
             pressLive(this.live, pointer.field, {
-                ...toolEnvFor(field, held.roles()),
+                ...toolEnvFor(field, held.roles(), { kind: pointer.kind }),
                 reachInside,
             }) ?? this.live;
         this.emit();
@@ -346,7 +356,7 @@ export class LiveBoxMode implements FieldMode {
         this.live = moveLive(
             this.live,
             pointer.field,
-            toolEnvFor(field, this.held?.move(pointer)),
+            toolEnvFor(field, this.held?.move(pointer), { kind: pointer.kind }),
         );
         this.emit();
     }
@@ -355,7 +365,11 @@ export class LiveBoxMode implements FieldMode {
     private rerun(at: XY, roles: Roles): void {
         const field = currentShapeField();
         if (!field) return;
-        this.live = moveLive(this.live, at, toolEnvFor(field, roles));
+        this.live = moveLive(
+            this.live,
+            at,
+            toolEnvFor(field, roles, { kind: this.pressKind }),
+        );
         this.emit();
     }
 
@@ -382,6 +396,15 @@ export class LiveBoxMode implements FieldMode {
         if (!out.changed && out.enter) this.enterAt(pointer);
     }
 
+    /**
+     * A press held still for a long press (a pen, tablet 1.5) gives way to the menus a right-click
+     * there opens: a handle's, else the field's for the box's marchers. Cancelled, it saves
+     * nothing.
+     */
+    longPress(): boolean {
+        return true;
+    }
+
     /** A right-click on a handle with a menu (a Line's point or segment, #569) opens it */
     openMenu(pointer: FieldPointer): boolean {
         const field = currentShapeField();
@@ -392,7 +415,7 @@ export class LiveBoxMode implements FieldMode {
             this.live.params,
             spots,
             pointer.field,
-            toolEnvFor(field),
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
             this.live.selected,
         );
         return openHandleMenu(
@@ -453,7 +476,7 @@ export class LiveBoxMode implements FieldMode {
             this.live.params,
             this.live.box.spots,
             pointer.field,
-            toolEnvFor(field),
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
             this.live.selected,
         );
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
@@ -509,7 +532,11 @@ export class LiveBoxMode implements FieldMode {
     private pressed(pointer: FieldPointer): LiveBox | null {
         const field = currentShapeField();
         if (!field) return null;
-        return pressLive(this.live, pointer.field, toolEnvFor(field));
+        return pressLive(
+            this.live,
+            pointer.field,
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
+        );
     }
 
     /** Goes inside the box at the member nearest `pointer` */

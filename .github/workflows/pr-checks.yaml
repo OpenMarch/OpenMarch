@@ -249,11 +249,12 @@ jobs:
 
       # The shape scenarios and the field and timeline ones the shape work rewrote, plus the
       # field look's (Not defined, Held, keyframe labels, #478) and the video export's; the
-      # whole suite takes about 16 minutes, over this job's budget
+      # whole suite takes about 16 minutes, over this job's budget. The touch and navigation
+      # scenarios, and the mouse cases ported with them (mouse-canvas), cover the tablet work (#594)
       - name: Run browser scenarios
         working-directory: apps/desktop
         run: |
-          specs=$(ls e2e/browser/tests/box-tool.spec.mts e2e/browser/tests/line-tool.spec.mts e2e/browser/tests/hide-marchers.spec.mts e2e/browser/tests/*circle*.spec.mts e2e/browser/tests/*shape*.spec.mts e2e/browser/tests/timeline-interactions.spec.mts e2e/browser/tests/field-actions.spec.mts e2e/browser/tests/field-look.spec.mts e2e/browser/tests/unset-here*.spec.mts e2e/browser/tests/keyframes.spec.mts e2e/browser/tests/video-export.spec.mts 2>/dev/null | sort -u)
+          specs=$(ls e2e/browser/tests/box-tool.spec.mts e2e/browser/tests/line-tool.spec.mts e2e/browser/tests/hide-marchers.spec.mts e2e/browser/tests/*circle*.spec.mts e2e/browser/tests/*shape*.spec.mts e2e/browser/tests/timeline-interactions.spec.mts e2e/browser/tests/field-actions.spec.mts e2e/browser/tests/field-look.spec.mts e2e/browser/tests/unset-here*.spec.mts e2e/browser/tests/keyframes.spec.mts e2e/browser/tests/video-export.spec.mts e2e/browser/tests/*touch*.spec.mts e2e/browser/tests/mouse-canvas.spec.mts e2e/browser/tests/navigation.spec.mts 2>/dev/null | sort -u)
           echo "Specs: $specs"
           pnpm run e2e:browser $specs
 

@@ -28,7 +28,8 @@ const NUDGE_DIRECTIONS = {
  * handlers, so these sit on top of them and the keys go back once the tool closes.
  *
  * - Escape: a gesture goes back to where it started; a selected point (#557) is cleared;
- *   otherwise the tool closes, placing nothing.
+ *   otherwise the tool closes, placing nothing. The touch layout's Discard (`shapeDiscard`) does
+ *   the same, skipping the selected point.
  * - Enter while clicking a line's points finishes the line (#524); otherwise it's Place.
  *   That is an undo step: undo right after it brings the shape back ({@link DiscardedShapeKeys}).
  * - Backspace or Delete while clicking a line's points takes the last one back, as a right-click
@@ -45,6 +46,17 @@ export function ShapeToolKeys(): null {
         else if (tool?.selected) updateTool(clearSelection);
         else discardShapeTool();
     });
+    // The touch layout's Discard (tablet 1.4): Escape's, without its first step of letting go of
+    // a selected point. A drag or the points being clicked go; otherwise the shape, placing nothing
+    useActionHandler(
+        "shapeDiscard",
+        () => {
+            const { tool } = useShapeToolStore.getState();
+            if (tool?.gesture) cancelShapeGesture();
+            else discardShapeTool();
+        },
+        { ignoreRepeat: true },
+    );
     // Enter while clicking points finishes the line rather than placing it (#524). Registered
     // only then: a handler on top that can't run doesn't let Enter through to Place.
     const clicking = useShapeToolStore(

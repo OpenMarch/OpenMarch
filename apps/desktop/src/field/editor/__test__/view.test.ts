@@ -8,9 +8,9 @@ import {
     isPanButton,
     MAX_ZOOM,
     MIN_ZOOM,
-    pinchStep,
     viewBetween,
     wheel,
+    touchNavigation,
     zoomAt,
     type FieldView,
     type NavigationSettings,
@@ -244,12 +244,75 @@ describe("wheel", () => {
     });
 });
 
-describe("pinchStep", () => {
-    it("adds 0.01 zoom per pixel the fingers spread, at the point between them", () => {
+describe("touchNavigation", () => {
+    const big = { width: 100000, height: 100000 };
+
+    it("pans one to one with one finger (the baseline panned half as far)", () => {
+        const moved = touchNavigation(
+            view,
+            { mid: { x: 300, y: 200 }, distance: null },
+            { mid: { x: 400, y: 260 }, distance: null },
+            big,
+        );
+        expect(moved.zoom).toBe(view.zoom);
+        expect(moved.panX).toBeCloseTo(view.panX + 100);
+        expect(moved.panY).toBeCloseTo(view.panY + 60);
+    });
+
+    it("pans with two fingers moving together, without zooming", () => {
+        const moved = touchNavigation(
+            view,
+            { mid: { x: 500, y: 300 }, distance: 100 },
+            { mid: { x: 420, y: 340 }, distance: 100 },
+            big,
+        );
+        expect(moved.zoom).toBe(view.zoom);
+        expect(moved.panX).toBeCloseTo(view.panX - 80);
+        expect(moved.panY).toBeCloseTo(view.panY + 40);
+    });
+
+    it("zooms by as much as the fingers spread, keeping the field under them", () => {
         const under = toField(view, 500, 250);
-        const pinched = pinchStep(view, { x: 500, y: 250 }, 30, field);
-        expect(pinched.zoom).toBeCloseTo(0.8);
+        const pinched = touchNavigation(
+            view,
+            { mid: { x: 500, y: 250 }, distance: 100 },
+            { mid: { x: 500, y: 250 }, distance: 200 },
+            big,
+        );
+        // Twice as far apart: twice the zoom, not 0.01 per pixel (the baseline's 1.5)
+        expect(pinched.zoom).toBeCloseTo(view.zoom * 2);
         expect(at(pinched, under.x, under.y).x).toBeCloseTo(500);
+        expect(at(pinched, under.x, under.y).y).toBeCloseTo(250);
+    });
+
+    it("pans and zooms at once, the field following the point between the fingers", () => {
+        const under = toField(view, 500, 250);
+        const moved = touchNavigation(
+            view,
+            { mid: { x: 500, y: 250 }, distance: 100 },
+            { mid: { x: 560, y: 210 }, distance: 150 },
+            big,
+        );
+        expect(moved.zoom).toBeCloseTo(view.zoom * 1.5);
+        expect(at(moved, under.x, under.y).x).toBeCloseTo(560);
+        expect(at(moved, under.x, under.y).y).toBeCloseTo(210);
+    });
+
+    it("keeps to the zoom and pan limits", () => {
+        const pinched = touchNavigation(
+            view,
+            { mid: { x: 500, y: 250 }, distance: 10 },
+            { mid: { x: 500, y: 250 }, distance: 10000 },
+            field,
+        );
+        expect(pinched.zoom).toBe(MAX_ZOOM);
+        const flung = touchNavigation(
+            view,
+            { mid: { x: 0, y: 0 }, distance: null },
+            { mid: { x: 1e6, y: 0 }, distance: null },
+            field,
+        );
+        expect(flung.panX).toBeLessThan(1e6);
     });
 });
 

@@ -9,6 +9,8 @@ covers:
   - action:playPause
   - action:nextPage
   - action:previousPage
+  - action:timelineZoomIn
+  - action:timelineZoomOut
   - i18n:timeline.readout
   - i18n:timeline.windowLine
   - i18n:timeline.terms
@@ -88,6 +90,34 @@ The mode is a setting of the app, not of the show, so you can open any show in e
   id="timeline-scrub"
   alt="The playhead is dragged from the end of Page 2 to the end of Page 3, and the marchers on the field walk from Page 2's set to Page 3's set as it moves."
 />
+
+## On a tablet
+
+On a touch screen, where a finger lands decides what it does:
+
+- On the page boxes, or the measure numbers under them, one finger drags the playhead, as dragging with a mouse does. A tap on a page box selects it.
+- On a move's bar, one finger drags the bar to new counts, as a mouse does.
+- On empty space below the measure numbers, one finger scrolls the timeline sideways, and up and down when there are more rows than fit. A tap there moves the playhead to that count, as a click does.
+- Two fingers scroll the timeline anywhere on it, and pinching with two fingers zooms it in and out around your fingers. The counts under your fingers stay under them, and spreading your fingers twice as far apart makes the counts twice as wide. Zooming out stops once the whole show fits.
+- The **−** and **+** buttons in the row above the timeline, next to **…** (<Ui k="actions.timeline.zoomOut" /> and <Ui k="actions.timeline.zoomIn" />), zoom a step at a time, around the playhead when it's in view. [Play the show](/guides/timeline/play-the-show/#on-a-tablet) lists the rest of that row.
+
+If a second finger touches the timeline while one finger is dragging the playhead or a bar, the drag is cancelled: the playhead or the bar goes back to where it was, and nothing changes. The two fingers then scroll and zoom.
+
+The timeline's small handles don't need an exact touch. A finger that lands close to one, up to about a fingertip away, takes that handle:
+
+- the start flag and the playhead;
+- a page's flag, beside the line at the end of its box. The selected page's two flags are drawn, so you can see where to touch;
+- the ends of a move's bar and its ⋯ button, once you tap the bar to select it. The selected bar shows its ends;
+- the ends of a hold and the keyframe diamonds;
+- the ends of the loop bar, which start to move once your finger has moved a little, so a tap that wobbles changes nothing;
+- the divider above the timeline, from a little way above it.
+
+A finger right on a handle takes that handle. Where your finger is between two handles, the one on the selected page or move wins, and otherwise the one nearest your finger. Where the start flag or the playhead sits on a page's flag, the line wins, as it does with a mouse: move the line off to drag the page's flag. A finger on a move's bar, or on another button on the timeline, takes that bar or button, except near the ends of the selected bar, which drag those ends. A dragged handle, other than the playhead, stays the same distance from your finger as when you touched it, so it doesn't jump under your finger.
+
+A finger can't right-click, so the timeline's menus open two other ways:
+
+- The selected page's box has a ⋯ button at its end. Select it to open the page's menu: the same items as the box's right-click menu, with <Ui k="timeline.moveMenu.edit" /> first, which a mouse gets by double-clicking the box.
+- Hold a finger still on the playhead, a page's box, a move's bar or a keyframe diamond for half a second, then lift it: the menu a right-click there opens appears, and nothing else happens. A finger that shakes a little still counts. A finger that moves further, before or after the hold, drags as usual. Where a right-click has no menu, such as on the measure numbers, the touch is an ordinary tap.
 
 ## Related
 

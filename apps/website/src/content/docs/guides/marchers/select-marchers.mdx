@@ -11,6 +11,9 @@ covers:
   - action:selectAllMarchers
   - action:cancelAlignmentUpdates
   - i18n:toolbar.select
+  - i18n:touch.dragMode
+  - apps/desktop/src/components/canvas/touch/fieldDragMode.ts
+  - apps/desktop/src/field/three/fieldDragModes.ts
 sidebar:
   order: 2
 ---
@@ -84,11 +87,26 @@ OpenMarch remembers which kind of group you chose. <Ui k="actions.select.selectA
 
 ## Shapes you've placed
 
-Marchers placed on a box are selected together: clicking one of them selects the whole box. Double-click a marcher in it to select only that marcher, or <Kbd keys="Mod" gesture="click" /> it to reach inside the box straight away. See [Shapes](/guides/shapes/).
+Marchers placed on a box are selected together: clicking one of them selects the whole box. Double-click a marcher in it to select only that marcher, or <Kbd keys="Mod" gesture="click" /> it to reach inside the box straight away. You can also right-click a marcher in the selected box and choose <Ui k="actions.shape.enterBox" />. See [Shapes](/guides/shapes/).
 
 ## On a tablet
 
-In the tablet layout, fingers move the view and don't select marchers on the field. Select with a pen, or use the <Ui k="inspector.shape.selectTab" /> tab: there, a switch beside <Ui k="toolbar.select.selectByText" /> chooses whether a tapped group replaces the selection or adds to it.
+On a touch screen, tap a marcher to select only it. Your tap doesn't have to land exactly on the dot: the nearest marcher within about a fingertip's width is picked. Tap empty field to clear the selection. To add marchers to the selection, tap <Ui k="touch.modifiers.add" /> on the buttons over the field to keep it on, then tap each marcher.
+
+Touch and hold a marcher, or empty field, with a finger or a pen, then lift without moving, to open the field's menu, as a right-click does. This works in every drag mode (below). In a placed shape that's selected, hold one of its marchers and choose <Ui k="actions.shape.enterBox" /> to select only that marcher.
+
+What a drag on empty field does depends on the drag mode, the first button over the field (<Ui k="touch.dragMode.prefix" plain /> followed by the mode's name). Tap it to choose:
+
+- <Ui k="touch.dragMode.auto" />, the starting mode: one finger moves the view, and a pen such as Apple Pencil draws a box. To draw a box with a finger, press and hold on empty field for half a second, then drag; if you lift without moving instead, the field's menu opens.
+- <Ui k="touch.dragMode.box" />: one finger, or the pen, draws a box. Use two fingers to move the view.
+- <Ui k="touch.dragMode.lasso" />: one finger, or the pen, draws around the marchers to select. When you lift, the lasso closes back to where you started if you end near your start or have drawn around an area, so you don't need to end exactly where you began. A stroke that does neither, such as a long straight swipe, selects nothing. Use two fingers to move the view.
+- <Ui k="touch.dragMode.pan" />: one finger, or the pen, moves the view.
+
+In every mode, a drag that starts on a marcher, or inside the frame around the selection, moves the marchers. The mode is kept on this device, not in the show file.
+
+To take marchers out of the selection, tap <Ui k="touch.modifiers.subtract" /> to keep it on, then draw a box or lasso around them, as <Kbd keys="Alt" gesture="drag" /> does with a mouse. <Ui k="touch.modifiers.add" /> and <Ui k="touch.modifiers.subtract" /> don't stay on together: turning one on turns the other off.
+
+The <Ui k="inspector.shape.selectTab" /> tab selects whole groups: there, a switch beside <Ui k="toolbar.select.selectByText" /> chooses whether a tapped group replaces the selection or adds to it.
 
 ## Related
 

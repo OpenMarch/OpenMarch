@@ -8,6 +8,8 @@ import * as Popover from "@radix-ui/react-popover";
 import ToolbarSection from "../toolbar/ToolbarSection";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
+import InfoTip from "@/components/ui/InfoTip";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 
 const STEP_OPTIONS = [0.25, 0.5, 1, 2];
 const ALL_STEP_OPTIONS = [0, ...STEP_OPTIONS]; // Include "None" option (0) first
@@ -188,6 +190,7 @@ export default function CoordinateRoundingSettings() {
     );
 
     const { t } = useTranslate();
+    const isTouch = useIsTouchMode();
 
     const handleStepChange = (axis: "X" | "Y", value: number) => {
         setUiSettings({
@@ -341,7 +344,11 @@ export default function CoordinateRoundingSettings() {
                     e.preventDefault();
                     cycleStepOption("X", "backward");
                 }}
-                title={t("coordinateRoundingSettings.xStepDescription")}
+                title={
+                    isTouch
+                        ? undefined
+                        : t("coordinateRoundingSettings.xStepDescription")
+                }
             >
                 {t("coordinateRoundingSettings.xStepValue", {
                     value: formatStepValue(
@@ -356,7 +363,11 @@ export default function CoordinateRoundingSettings() {
                     e.preventDefault();
                     cycleStepOption("Y", "backward");
                 }}
-                title={t("coordinateRoundingSettings.yStepDescription")}
+                title={
+                    isTouch
+                        ? undefined
+                        : t("coordinateRoundingSettings.yStepDescription")
+                }
             >
                 {t("coordinateRoundingSettings.yStepValue", {
                     value: formatStepValue(
@@ -364,6 +375,16 @@ export default function CoordinateRoundingSettings() {
                     ),
                 })}
             </button>
+            {/* No hover or right-click on a tablet: the chips' description is a tip, in touch words */}
+            {isTouch && (
+                <InfoTip
+                    side="bottom"
+                    label={t("coordinateRoundingSettings.aboutSteps")}
+                    content={t(
+                        "coordinateRoundingSettings.touchStepDescription",
+                    )}
+                />
+            )}
         </ToolbarSection>
     );
 }

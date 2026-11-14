@@ -50,7 +50,9 @@ describe("SettingsSidebar", () => {
 
     it("filters by a setting label inside a section", async () => {
         render(<Harness />);
-        fireEvent.change(await search(), { target: { value: "zoom" } });
+        fireEvent.change(await search(), {
+            target: { value: "zoom sensitivity" },
+        });
         const buttons = within(nav()).getAllByRole("button");
         expect(buttons.map((b) => b.textContent)).toEqual(["Mouse & Trackpad"]);
     });

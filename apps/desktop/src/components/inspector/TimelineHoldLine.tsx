@@ -26,10 +26,8 @@ import {
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
 import { OWN_KEYS_WITH_SPACE } from "@/components/timeline/timelineHotkeys";
-import {
-    ShortcutTooltip,
-    TransportTooltipProvider,
-} from "@/components/timeline/ShortcutTooltip";
+import { TransportTooltipProvider } from "@/components/timeline/ShortcutTooltip";
+import { Tip } from "@/components/ui/Tip";
 import { useExpertHolds } from "@/timeline/useExpertHolds";
 
 /**
@@ -143,9 +141,9 @@ export default function TimelineHoldLine({
         const { page: holdPage, fromStart } = state;
         line = (
             <p className="flex flex-wrap items-center gap-6 px-6 leading-none">
-                <ShortcutTooltip
+                {/* A long press shows it on a tablet, where nothing hovers (tablet plan 4.2) */}
+                <Tip
                     side="bottom"
-                    closeOnPress
                     label={
                         fromStart
                             ? t("inspector.marcher.timeline.goToStart", {
@@ -179,7 +177,7 @@ export default function TimelineHoldLine({
                         {holdText(t, state)}
                         <ArrowRightIcon size={14} aria-hidden />
                     </button>
-                </ShortcutTooltip>
+                </Tip>
             </p>
         );
     }

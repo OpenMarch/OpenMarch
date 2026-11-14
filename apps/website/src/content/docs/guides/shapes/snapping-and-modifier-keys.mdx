@@ -79,13 +79,15 @@ A few more things the keys do:
 - Dragging the end of a line, <Kbd keys="Mod" /> keeps the line's direction so only its length changes, and <Kbd keys="Alt" /> moves both ends about the middle.
 - Dragging an arc's handles, <Kbd keys="Mod" /> switches the lock that keeps its width and depth in proportion, and <Kbd keys="Alt" /> stretches it about its circle's center.
 - Turning a shape with its knob goes in 15° steps; <Kbd keys="Shift" /> turns it by whole degrees, and with snapping off it turns freely.
-- <Kbd keys="Mod" gesture="drag" /> from a shape's center dot pulls its pivot out, so the shape turns and flips around that point instead. Double-click the pivot to send it back to the center.
+- <Kbd keys="Mod" gesture="drag" /> from a shape's center dot pulls its pivot out, so the shape turns and flips around that point instead. Double-click the pivot to send it back to the center, or open the pivot menu in the floating editor and choose <Ui k="shapes.edit.pivot.backToCenter" />.
 
 The Shortcuts dialog (<Kbd action="showShortcuts" />) lists these keys in its Shapes group.
 
 ## On a touch screen
 
-On a tablet, buttons on the field stand in for the keys: <Ui k="touch.modifiers.fine" />, <Ui k="touch.modifiers.constrain" /> and <Ui k="touch.modifiers.fromCenter" />, plus <Ui k="touch.modifiers.noSnap" />. Hold one while you drag, or tap it to keep it on.
+On a tablet, buttons on the field stand in for the keys: <Ui k="touch.modifiers.fine" />, <Ui k="touch.modifiers.constrain" /> and <Ui k="touch.modifiers.fromCenter" />, plus <Ui k="touch.modifiers.noSnap" />. Hold one while you drag, or tap it to keep it on. <Ui k="touch.modifiers.add" /> and <Ui k="touch.modifiers.subtract" /> stand in for <Kbd keys="Shift" /> and <Kbd keys="Alt" /> when you select; see [Select marchers](/guides/marchers/select-marchers/#on-a-tablet).
+
+These buttons move aside for whatever holds the buttons of what you're doing, such as a line's <Ui k="shapes.edit.finish" />, a new shape's <Ui k="shapes.edit.place" /> or the isolation bar's Done. The zoom controls move up out of their way too, and the shape's floating editor slides clear of the zoom controls. They also keep off the frame around the selection, the shape you're editing and their handles, so a finger can always reach a handle, and the floating editor keeps off its shape's handles and spots. The floating editor always stays on the field, over the shape if nothing else fits, so <Ui k="shapes.edit.place" /> and <Ui k="shapes.edit.discard" /> are in reach whatever the zoom. The buttons stay where they are when you select, deselect or pick a drawing tool, and move only when something comes over them, so they're where your finger expects them and out of where you're about to draw.
 
 ## Related
 

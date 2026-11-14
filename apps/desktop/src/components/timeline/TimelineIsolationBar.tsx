@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { Button } from "@openmarch/ui";
 import { FlagIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import Shortcut from "@/components/ui/Shortcut";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { TRANSPORT_SHORTCUTS } from "./TransportButtons";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
@@ -288,6 +290,8 @@ export const passedSets = (names: readonly string[]) =>
  */
 export function TimelineFromStartBadge() {
     const { t } = useTranslate();
+    // Its words change on every scrubbed beat: not watched for size, so the pill isn't placed again
+    const layerRef = useFieldLayerRef<HTMLDivElement>({ watchSize: false });
     const selection = useTimelineSelectionStore((s) => s.selection);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
@@ -459,10 +463,14 @@ export function TimelineFromStartBadge() {
     if (hidden) return null;
     return (
         <div
+            ref={layerRef}
             data-testid="timeline-window-line"
             data-prominent={unusual || undefined}
+            // #927: the pill's own spot keeps off it, though one the user chose doesn't give way
+            // (no buttons here); below the touch toolbar's panel when that's open
+            data-field-layer="info"
             className={clsx(
-                "rounded-6 text-sub pointer-events-none absolute top-8 left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
+                "rounded-6 text-sub touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+8px)] left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
                 unusual
                     ? clsx(
                           "bg-bg-1 text-text border shadow-md",
@@ -556,17 +564,24 @@ export default function TimelineIsolationBar() {
             isPageTimeline(timeline, s.storedTimelines ?? [], s.pageBoxes),
     );
     const { pages } = useTimingObjects()!;
+    const layerRef = useFieldLayerRef<HTMLDivElement>();
+    // #936: no Esc key cap on a touch screen until a keyboard is used
+    const showHints = useShowShortcutHints();
     if (!timeline) return null;
     const count = timeline.marcherIds.size;
     return (
         <div
+            ref={layerRef}
             data-testid="timeline-isolation-bar"
+            // #927: Done stays reachable: the pill keeps off the bar, and it sits below the touch
+            // toolbar's panel when that's open
+            data-field-layer="task"
             // UI-14 round-2 review: Enter presses Done, Space plays
             data-timeline-own-keys="true"
             onKeyDown={spaceStaysPlay}
             onKeyUp={spaceStaysPlay}
             role="status"
-            className="border-accent bg-bg-1 text-text rounded-6 text-sub pointer-events-auto absolute top-8 left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
+            className="border-accent bg-bg-1 text-text rounded-6 text-sub touch:z-30 pointer-events-auto absolute top-[calc(var(--field-top-inset,0px)+8px)] left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
         >
             <span className="text-accent font-medium">
                 {t("timeline.isolation.title")}
@@ -609,7 +624,10 @@ export default function TimelineIsolationBar() {
             >
                 <T
                     keyName="timeline.isolation.done"
-                    params={{ keys: () => <Shortcut binding="Escape" /> }}
+                    params={{
+                        keys: () =>
+                            showHints ? <Shortcut binding="Escape" /> : null,
+                    }}
                 />
             </Button>
         </div>

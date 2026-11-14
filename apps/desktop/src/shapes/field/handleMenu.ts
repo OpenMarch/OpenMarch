@@ -22,6 +22,17 @@ export const useHandleMenuStore = create<{ menu: OpenHandleMenu | null }>(
 export const closeHandleMenu = (): void =>
     useHandleMenuStore.setState({ menu: null });
 
+/** Handle `key`'s menu on this shape, or null when its kind gives it none (`ToolKind.menu`) */
+export function handleMenuSections(
+    kind: AnyToolKind,
+    params: unknown,
+    n: number,
+    key: string,
+): readonly ToolMenuSection[] | null {
+    const sections = kind.menu?.sections(params, n, key);
+    return sections?.some((s) => s.items.length > 0) ? sections : null;
+}
+
 /**
  * Opens the menu of the handle a right-click at `at` landed on, when it's a handle whose kind has
  * one (`ToolKind.menu`); says whether it did. `pick` applies an entry picked to handle `key` and
@@ -41,10 +52,8 @@ export function openHandleMenu(
 ): boolean {
     if (target?.type !== "handle" || params === null) return false;
     const { key } = target;
-    const sectionsOf = (p: unknown, count: number) => {
-        const sections = p === null ? null : kind.menu?.sections(p, count, key);
-        return sections?.some((s) => s.items.length > 0) ? sections : null;
-    };
+    const sectionsOf = (p: unknown, count: number) =>
+        p === null ? null : handleMenuSections(kind, p, count, key);
     const sections = sectionsOf(params, n);
     if (!sections) return false;
     const menu: OpenHandleMenu = {

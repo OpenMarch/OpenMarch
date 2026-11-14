@@ -20,6 +20,8 @@ import zhHans from "../../../../i18n/zh-Hans.json";
 import zhHant from "../../../../i18n/zh-Hant.json";
 import { GESTURE_CHIP_KEYS, gestureChipSegments } from "../heldRoleChipText";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "../HeldRolesChip";
+import { useFieldViewStore } from "../fieldView";
+import { FINGER_CLEARANCE } from "../readoutPlacement";
 
 const { chipT } = vi.hoisted(() => ({
     chipT: (key: string) =>
@@ -253,5 +255,40 @@ describe("with a drag readout showing", () => {
         // The stacked one sits in the readout's column, not at the pointer
         expect(chips[0].style.left).toBe("");
         expect(chips[0].textContent).toContain("Shift fine");
+    });
+});
+
+describe("a touch drag's chip (tablet 1.7)", () => {
+    beforeEach(() => {
+        useFieldViewStore.setState({ width: 800, height: 600 });
+    });
+
+    // jsdom lays nothing out, so the chip measures 0 × 0: its top left is the spot it centers on
+    it("sits above the finger, clear of the fingertip", () => {
+        render(
+            <IsPlayingProvider>
+                <HeldRolesChip touch />
+            </IsPlayingProvider>,
+        );
+        sync(MOVE, { ...NONE, fine: true }, { x: 300, y: 400 });
+        expect(chip()).toHaveTextContent("Shift fine");
+        const placed = screen.getByTestId("readoutClearOfFinger");
+        expect(placed).toHaveStyle({
+            left: "300px",
+            top: `${400 - FINGER_CLEARANCE}px`,
+        });
+        // The finger's own spot is left to the finger: no offset beside it as for a mouse
+        expect(chip()!.style.left).toBe("");
+    });
+
+    it("stays beside the mouse pointer for a mouse drag, as before", () => {
+        render(
+            <IsPlayingProvider>
+                <HeldRolesChip touch={false} />
+            </IsPlayingProvider>,
+        );
+        sync(MOVE, { ...NONE, fine: true }, { x: 300, y: 400 });
+        expect(chip()).toHaveStyle({ left: "316px", top: "418px" });
+        expect(screen.queryByTestId("readoutClearOfFinger")).toBeNull();
     });
 });

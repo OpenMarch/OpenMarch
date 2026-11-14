@@ -8,7 +8,14 @@ adding music and pages, moving marchers on the canvas, undo and redo.
 pnpm run build:browser   # about 10 seconds; rerun after changing app code
 pnpm run e2e:browser     # all scenarios, four at a time
 pnpm run e2e:browser e2e/browser/tests/pages.spec.mts
+pnpm run e2e:browser:touch e2e/browser/tests/pages.spec.mts   # on a touch screen
 ```
+
+`e2e:browser:touch` runs the same scenarios on a touch screen (`hasTouch`, a
+coarse pointer, no hover), so the app lays itself out for touch while
+`page.mouse` still presses as a mouse. Finger and pen input goes through the
+helpers in `app.mts` (`tap`, `touchDrag`, `pinch`, `penDrag`, …); see
+`docs/conventions/tablet-parity.md`.
 
 They need no display, no Docker and no `build:electron`, and each test gets
 its own show file, so several runs can share a machine.

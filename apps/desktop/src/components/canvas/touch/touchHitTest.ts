@@ -4,8 +4,10 @@
  * picks the nearest pressable thing within a radius.
  */
 
+import { thresholdsFor } from "@/field/editor/pointerThresholds";
+
 /** How far (screen px) a touch may land from a marcher or handle and still press it */
-export const TOUCH_HIT_RADIUS_PX = 22;
+export const TOUCH_HIT_RADIUS_PX = thresholdsFor("touch").hitRadius;
 
 export interface HitRect {
     left: number;

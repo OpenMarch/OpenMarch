@@ -14,3 +14,5 @@ pull request. See apps/website/AGENTS.md; agents use the user-docs skill. Keep o
 ## How it was checked
 
 <!-- Tests run, what you tried by hand, what you couldn't check. -->
+
+Tablet: <!-- how a finger reaches each new action, or "desktop-only for now, #issue" (docs/conventions/tablet-parity.md) -->

@@ -318,6 +318,7 @@ describeDbTests("the selected shape during a save", (it) => {
             field: at,
             screen: at,
             button: 0,
+            kind: "mouse",
             ...NO_KEYS,
         }) as FieldPointer;
 

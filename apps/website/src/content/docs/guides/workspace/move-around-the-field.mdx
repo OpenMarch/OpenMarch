@@ -4,6 +4,7 @@ description: Pan and zoom the field with a mouse, trackpad or touch screen, and 
 type: how-to
 covers:
   - apps/desktop/src/field/three/fieldNavigation.ts
+  - apps/desktop/src/field/three/fieldGestures.ts
   - apps/desktop/src/field/editor/view.ts
   - apps/desktop/src/components/canvas/CanvasZoomControls.tsx
   - apps/desktop/src/components/launchpage/settings/MouseSettings.tsx
@@ -56,7 +57,13 @@ When the window or the timeline changes size, the field keeps its zoom and stays
 
 ## On a tablet
 
-On a touch screen, fingers move the view: drag with one finger to pan, and pinch with two fingers to zoom. A finger doesn't select or move marchers on the field. Use a pen, such as Apple Pencil, which works like a mouse, or the [Select tab](/guides/marchers/select-marchers/) and the inspector's move pad.
+On a touch screen, fingers move the view: drag with two fingers anywhere to pan, and pinch with two fingers to zoom. The field stays under your fingers as they move. One finger on empty field pans too, unless you've chosen a drag mode that selects with one finger; see [Select marchers](/guides/marchers/select-marchers/#on-a-tablet). One finger that starts on a marcher or inside the frame around the selection moves the marchers instead; see [Move marchers](/guides/marchers/move-marchers/#on-a-tablet). A pen, such as Apple Pencil, works like a mouse, except that the drag mode decides what it does on empty field.
+
+To open the menu a right-click opens, touch and hold a finger or the pen still for half a second, then lift it without moving: the menu opens where you lifted. On a marcher that isn't selected, it selects that marcher first, as a right-click does. If you move instead of lifting, even after holding, you drag or pan as usual.
+
+While the pen touches the screen, a hand resting on it doesn't move the view or press anything. For a moment after the pen lifts, one finger alone doesn't move the view either; use two.
+
+To undo, tap the field with two fingers at once; to redo, tap with three. A short note says <Ui k="touch.undone" plain /> or <Ui k="touch.redone" plain />. They work like <Kbd action="performUndo" /> and <Kbd action="performRedo" />, so when there's nothing left to undo or redo, the app says so instead.
 
 ## Change how the mouse and trackpad behave
 

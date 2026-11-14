@@ -23,6 +23,12 @@ export const TEMPO_MODE_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "nextBeat",
     "previousBeat",
     "timelineGoTo",
+    // the timeline's zoom (tablet 3.5: the touch transport's ± and Fit)
+    "timelineZoomIn",
+    "timelineZoomOut",
+    "timelineFit",
+    // leaving tempo mode from the touch transport's "…"
+    "toggleTempoMode",
     // playback (Click is the metronome)
     "playPause",
     "playPage",

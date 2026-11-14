@@ -105,6 +105,10 @@
             "toggleMetronome": "Toggle metronome",
             "toggleLoop": "Loop on / off"
         },
+        "prop": {
+            "finishDrawing": "Prop: Finish drawing",
+            "removeLastPoint": "Prop: Remove the last corner while drawing"
+        },
         "select": {
             "selectAll": "Select all"
         },
@@ -129,7 +133,11 @@
             "groupKeywords": "group shape freeze as is keep together combine",
             "ungroup": "Shape: Ungroup",
             "ungroupKeywords": "ungroup shape break apart release separate",
-            "arc": "Shape: Arc"
+            "enterBox": "Select only this marcher",
+            "centerPivot": "Shape: Move the pivot back to the center",
+            "centerPivotKeywords": "pivot center centre reset turn flip around",
+            "arc": "Shape: Arc",
+            "discard": "Shape: Discard"
         },
         "swap": {
             "mustSelectTwo": "Can only swap when 2 marchers are selected.",
@@ -144,8 +152,18 @@
             "unsetHereAndFollowing": "{removeKeyframe}, later pages move back too",
             "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, Page {first} moves back too} other {{removeKeyframe}, Pages {first}–{last} move back too}}",
             "unsetHereKeywords": "keyframe diamond unset set defined not defined following remove clear take back coordinate position delete",
+            "toggleEditorMode": "Switch between Basic and Expert",
+            "toggleEditorModeKeywords": "basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "Switch to Basic (Expert is on)",
+            "toggleEditorModeToExpert": "Switch to Expert (Basic is on)",
             "splitSelectedIntoNewMove": "Split selected marchers into a new move",
-            "mergeMoveIntoPage": "Merge this move into its page"
+            "mergeMoveIntoPage": "Merge this move into its page",
+            "zoomIn": "Zoom the timeline in",
+            "zoomOut": "Zoom the timeline out",
+            "zoomKeywords": "zoom magnify timeline wider narrower closer farther scale plus minus",
+            "fit": "Fit the show in the timeline",
+            "toggleTempoMode": "Edit music on / off",
+            "toggleTempoModeKeywords": "edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "Open the field menu",
@@ -311,7 +329,9 @@
         "roundToHalf": "Round {axis} to nearest half step",
         "roundToSteps": "{steps, plural, one {Round {axis} to nearest # step} other {Round {axis} to nearest # steps}}",
         "xStepValue": "X: {value}",
-        "yStepValue": "Y: {value}"
+        "yStepValue": "Y: {value}",
+        "aboutSteps": "About the rounding steps",
+        "touchStepDescription": "Tap X or Y to step through the rounding options. To pick one directly, open Coordinate Rounding."
     },
     "coordinateSheet": {
         "countAbbreviation": "Ct",
@@ -1386,9 +1406,13 @@
                 "arc": "Click both ends of the arc, then click to set its curve.",
                 "circle": "Drag from the center to set the radius.",
                 "drag": "Drag on the field to draw the prop. It is on the field from the playhead's count.",
-                "polygon": "Click each corner, then double-click to finish."
+                "polygon": "Click each corner, then double-click to finish.",
+                "polygonTouch": "Tap each corner, then tap Finish.",
+                "arcTouch": "Tap both ends of the arc, then tap to set its curve."
             },
-            "title": "Draw a prop"
+            "title": "Draw a prop",
+            "finish": "Finish",
+            "undoPoint": "Undo point"
         },
         "edit": "Edit prop",
         "editTitle": "Edit Prop",
@@ -1742,6 +1766,7 @@
             },
             "pivot": {
                 "aria": "Pivot: {pivot}",
+                "backToCenter": "Back to the center",
                 "custom": "Pivot: where it was dragged on the field",
                 "label": "Pivot",
                 "names": {
@@ -1809,7 +1834,13 @@
                 "label": "Who goes where"
             },
             "drawHintFor": "Drag on the field to draw {shape, select, block {a box} circle {a circle} line {a line} curve {a curve} arc {an arc} other {a shape}} · <keys></keys> to cancel",
-            "drawPointsHintFor": "Drag on the field to draw {shape, select, line {a line} curve {a curve} arc {an arc} other {a shape}}, or click point after point · <keys></keys> to cancel"
+            "drawPointsHintFor": "Drag on the field to draw {shape, select, line {a line} curve {a curve} arc {an arc} other {a shape}}, or click point after point · <keys></keys> to cancel",
+            "finish": "Finish",
+            "undoPoint": "Undo point",
+            "discard": "Discard",
+            "drawHintTouchFor": "Drag on the field to draw {shape, select, block {a box} circle {a circle} line {a line} curve {a curve} arc {an arc} other {a shape}}",
+            "drawPointsHintTouchFor": "Drag on the field to draw {shape, select, line {a line} curve {a curve} arc {an arc} other {a shape}}, or tap point after point",
+            "pointsHintTouch": "Tap to add points · Double-tap or Finish to end"
         },
         "placed": {
             "label": "{name} · {count, plural, one {{interval} step} other {{interval} steps}}",
@@ -2115,7 +2146,8 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Shape kinds",
-                "ringHintKeys": "Hold <keys></keys> on the field for the shape ring"
+                "ringHintKeys": "Hold <keys></keys> on the field for the shape ring",
+                "ringCaption": "Ring"
             }
         },
         "transform": {
@@ -2318,6 +2350,7 @@
                 "subsetToggle": "Subset"
             },
             "label": "Page {pageName}",
+            "optionsLabel": "Page {pageName} options",
             "homeTooltip": "Home: the start of the show (page {page}'s set)"
         },
         "rangeMenu": {
@@ -2755,6 +2788,23 @@
         },
         "departure": {
             "title": "Moves again · Page {page}, count {count}"
+        },
+        "touchTransport": {
+            "playMenu": "Ways to play",
+            "goTo": "Go to",
+            "start": "Start",
+            "countBack": "Count back",
+            "countOn": "Count on",
+            "end": "End",
+            "playback": "Playback",
+            "speed": "Speed",
+            "sound": "Sound",
+            "view": "View",
+            "fit": "Fit",
+            "atPlayhead": "At the playhead",
+            "newPage": "New page",
+            "newSubset": "New subset",
+            "compact": "Compact"
         }
     },
     "titlebar": {
@@ -2773,6 +2823,8 @@
         }
     },
     "toolbar": {
+        "showControls": "Show the toolbar",
+        "hideControls": "Hide the toolbar",
         "alignment": {
             "lockXCaption": "Lock X",
             "lockYCaption": "Lock Y",
@@ -2832,7 +2884,8 @@
             "shapesAlways": "Always",
             "shapesOff": "Off",
             "shapesSelected": "When selected"
-        }
+        },
+        "alignmentTabShort": "Align"
     },
     "updates": {
         "pill": {
@@ -3323,6 +3376,7 @@
         "marchers": "Marchers",
         "metronome": "Metronome",
         "mobile": "Mobile app",
+        "props": "Props",
         "music": "Music",
         "renderFail": "Sidebar modal content failed to render",
         "settings": "Show settings"
@@ -3347,6 +3401,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {One finger moves the view. Apple Pencil, or press and hold then drag, draws a box.} other {One finger moves the view. A pen, or press and hold then drag, draws a box.}}",
+            "box": "Box",
+            "boxDescribe": "{device, select, pencil {One finger or Apple Pencil draws a box to select. Two fingers move the view.} other {One finger or a pen draws a box to select. Two fingers move the view.}}",
+            "button": "Drag on empty field: {label}. {describe} Tap to change",
+            "lasso": "Lasso",
+            "lassoDescribe": "{device, select, pencil {One finger or Apple Pencil draws around marchers to select them. Two fingers move the view.} other {One finger or a pen draws around marchers to select them. Two fingers move the view.}}",
+            "menu": "Drag on empty field",
+            "pan": "Pan",
+            "panDescribe": "{device, select, pencil {One finger or Apple Pencil moves the view.} other {One finger or a pen moves the view.}}",
+            "prefix": "Drag:"
+        },
         "modifiers": {
             "add": "Add",
             "addHint": "Add: hold, or tap to keep on. Tapping marchers adds them to the selection",
@@ -3355,11 +3422,13 @@
             "explain": {
                 "add": "Tap marchers to add or remove them.",
                 "constrain": "Equal spacings, one axis when moving, flips proportional scaling.",
+                "dragMode": "What one finger or the pen does on empty field: move the view, or draw a box or lasso.",
                 "fine": "Marchers move slowly, off the grid. Shapes leave the half steps but still catch lines. Turns go by whole degrees.",
                 "fromCenter": "Boxes draw and resize from their center.",
                 "grip": "Drag to move.",
                 "help": "Gestures.",
-                "snap": "Turns Snap to steps and lines on or off."
+                "snap": "Turns Snap to steps and lines on or off.",
+                "subtract": "A box or lasso takes marchers out of the selection."
             },
             "fine": "Fine",
             "fineHint": "Fine: hold, or tap to keep on. Marchers move slowly, off the grid; shapes leave the half steps; turns go by whole degrees",
@@ -3370,12 +3439,17 @@
             "help": "What these buttons do",
             "helpList": {
                 "add": "<b>Add</b> taps add to the selection · <b>Snap off</b> moves freely",
+                "dragMode": "<b>Drag</b> chooses what one finger does on empty field: move the view, or draw a box or lasso",
                 "fine": "<b>Fine</b> exact drags and turns · <b>Equal</b> equal spacings",
                 "fromCenter": "<b>From center</b> boxes grow from the middle",
                 "toggles": "<b>Tap</b> a button to keep it on, or <b>hold</b> it while you drag"
             },
-            "noSnap": "Snap off"
-        }
+            "noSnap": "Snap off",
+            "subtract": "Subtract",
+            "subtractHint": "Subtract: hold, or tap to keep on. A box or lasso takes the marchers it covers out of the selection"
+        },
+        "redone": "Redone",
+        "undone": "Undone"
     },
     "shortcutsDialog": {
         "movement": {

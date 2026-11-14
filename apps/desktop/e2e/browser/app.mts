@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type CDPSession, type Page } from "@playwright/test";
 import type { Show } from "./fixtures.mjs";
 import { savedPositions } from "./positions.mjs";
 import type { FieldTestLook } from "../../src/field/fieldTestApi";
@@ -402,4 +402,235 @@ export async function openSettings(page: Page, section: string) {
         settings.getByRole("heading", { name: section, level: 1 }),
     ).toBeVisible();
     return settings;
+}
+
+// Touch and pen, sent through Chromium's own input (CDP), so the app gets the
+// same pointer and touch events a tablet sends: `pointerType` "touch" or
+// "pen", one pointer per finger, real contact sizes. Points are in viewport
+// pixels. See docs/conventions/tablet-parity.md, section 5.
+
+type Point = { x: number; y: number };
+
+/**
+ * How wide a fingertip touches, in CSS pixels. Real iPads report fingertips
+ * 40–50 px wide in Safari, so the app can't tell a finger from a palm by its
+ * size (docs/tablet-layout.md); the helpers press like a real finger.
+ */
+export const FINGERTIP_WIDTH = 48;
+
+/** Runs `send` with a CDP session on the page, and detaches it after. */
+async function withCdp<T>(
+    page: Page,
+    send: (cdp: CDPSession) => Promise<T>,
+): Promise<T> {
+    const cdp = await page.context().newCDPSession(page);
+    try {
+        return await send(cdp);
+    } finally {
+        await cdp.detach();
+    }
+}
+
+/** The points `steps` moves along the way from `from` to `to`, `to` last. */
+const along = (from: Point, to: Point, steps: number): Point[] =>
+    Array.from({ length: steps }, (_, i) => ({
+        x: from.x + ((to.x - from.x) * (i + 1)) / steps,
+        y: from.y + ((to.y - from.y) * (i + 1)) / steps,
+    }));
+
+/**
+ * Touches the screen with fingers: each step is where the fingers are, in
+ * viewport pixels, finger `i` the same finger in every step. The first step
+ * puts them down, each later one moves them, and then they all lift.
+ * `holdMs` waits with the fingers down before they lift (a long press).
+ */
+export async function touchGesture(
+    page: Page,
+    steps: Point[][],
+    { holdMs = 0 }: { holdMs?: number } = {},
+) {
+    if (steps.length === 0) throw new Error("A touch needs at least one step");
+    await withCdp(page, async (cdp) => {
+        const send = (
+            type: "touchStart" | "touchMove" | "touchEnd",
+            points: Point[],
+        ) =>
+            cdp.send("Input.dispatchTouchEvent", {
+                type,
+                touchPoints: points.map((p, id) => ({
+                    x: p.x,
+                    y: p.y,
+                    radiusX: FINGERTIP_WIDTH / 2,
+                    radiusY: FINGERTIP_WIDTH / 2,
+                    force: 1,
+                    id,
+                })),
+            });
+        await send("touchStart", steps[0]);
+        for (const points of steps.slice(1)) await send("touchMove", points);
+        if (holdMs > 0) await page.waitForTimeout(holdMs);
+        await send("touchEnd", []);
+    });
+}
+
+/** Taps one finger at a point. */
+export const tap = (page: Page, at: Point) => touchGesture(page, [[at]]);
+
+/**
+ * Taps two or more fingers at once (a two-finger tap undoes on iPad; three
+ * fingers redo), at `at` and spread `spacing` px apart across.
+ */
+export function multiFingerTap(
+    page: Page,
+    at: Point,
+    fingers: 2 | 3,
+    { spacing = 60 }: { spacing?: number } = {},
+) {
+    const first = at.x - (spacing * (fingers - 1)) / 2;
+    return touchGesture(page, [
+        Array.from({ length: fingers }, (_, i) => ({
+            x: first + i * spacing,
+            y: at.y,
+        })),
+    ]);
+}
+
+/** Presses one finger at a point and holds it still for `ms` before lifting it. */
+export const longPress = (
+    page: Page,
+    at: Point,
+    { ms = 700 }: { ms?: number } = {},
+) => touchGesture(page, [[at]], { holdMs: ms });
+
+/** Drags one finger from `from` to `to` in `steps` moves. */
+export const touchDrag = (
+    page: Page,
+    from: Point,
+    to: Point,
+    { steps = 10 }: { steps?: number } = {},
+) => touchGesture(page, [[from], ...along(from, to, steps).map((p) => [p])]);
+
+/**
+ * Two fingers, `spread` px either side of a point across, move together by
+ * `by` in `steps` moves.
+ */
+export function twoFingerPan(
+    page: Page,
+    at: Point,
+    by: Point,
+    { steps = 10, spread = 50 }: { steps?: number; spread?: number } = {},
+) {
+    const fingers = (p: Point) => [
+        { x: p.x - spread, y: p.y },
+        { x: p.x + spread, y: p.y },
+    ];
+    const to = { x: at.x + by.x, y: at.y + by.y };
+    return touchGesture(page, [
+        fingers(at),
+        ...along(at, to, steps).map(fingers),
+    ]);
+}
+
+/**
+ * Two fingers either side of a point across, `from` px from it, spread or
+ * close to `to` px from it in `steps` moves: apart zooms in, together out.
+ */
+export function pinch(
+    page: Page,
+    at: Point,
+    { from, to, steps = 10 }: { from: number; to: number; steps?: number },
+) {
+    const fingers = (spread: number) => [
+        { x: at.x - spread, y: at.y },
+        { x: at.x + spread, y: at.y },
+    ];
+    return touchGesture(
+        page,
+        Array.from({ length: steps + 1 }, (_, i) =>
+            fingers(from + ((to - from) * i) / steps),
+        ),
+    );
+}
+
+/** Drags a pen (an Apple Pencil) from `from` to `to` in `steps` moves. */
+export async function penDrag(
+    page: Page,
+    from: Point,
+    to: Point,
+    { steps = 12 }: { steps?: number } = {},
+) {
+    await withCdp(page, async (cdp) => {
+        const send = (
+            type: "mousePressed" | "mouseMoved" | "mouseReleased",
+            p: Point,
+        ) =>
+            cdp.send("Input.dispatchMouseEvent", {
+                type,
+                x: p.x,
+                y: p.y,
+                button: "left",
+                buttons: type === "mouseReleased" ? 0 : 1,
+                clickCount: type === "mouseMoved" ? 0 : 1,
+                pointerType: "pen",
+            });
+        await send("mouseMoved", from);
+        await send("mousePressed", from);
+        for (const p of along(from, to, steps)) await send("mouseMoved", p);
+        await send("mouseReleased", to);
+    });
+}
+
+/**
+ * Presses a pen (an Apple Pencil) at `at`, holds it for `ms`, moving to each
+ * of `wander` in turn first, and lifts it where it ended.
+ */
+export async function penHold(
+    page: Page,
+    at: Point,
+    { ms = 700, wander = [] }: { ms?: number; wander?: Point[] } = {},
+) {
+    await withCdp(page, async (cdp) => {
+        const send = (
+            type: "mousePressed" | "mouseMoved" | "mouseReleased",
+            p: Point,
+        ) =>
+            cdp.send("Input.dispatchMouseEvent", {
+                type,
+                x: p.x,
+                y: p.y,
+                button: "left",
+                buttons: type === "mouseReleased" ? 0 : 1,
+                clickCount: type === "mouseMoved" ? 0 : 1,
+                pointerType: "pen",
+            });
+        await send("mouseMoved", at);
+        await send("mousePressed", at);
+        for (const p of wander) await send("mouseMoved", p);
+        await page.waitForTimeout(ms);
+        await send("mouseReleased", wander.at(-1) ?? at);
+    });
+}
+
+/**
+ * Makes the page a touch screen until the returned stop is called: it reports
+ * touch points and matches `(hover: none)` and `(pointer: coarse)`, so the
+ * app's "auto" input mode lays itself out for touch. For a whole run, use the
+ * `touchScreen` fixture option (the `browser-touch` project) instead. After stop,
+ * `(hover: none)` stays for the rest of the page (Chromium); the coarse pointer goes.
+ */
+export async function emulateTouchScreen(page: Page) {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Emulation.setTouchEmulationEnabled", {
+        enabled: true,
+        maxTouchPoints: 5,
+    });
+    // Turn it off before letting go: detaching alone leaves the touch screen on.
+    // Chromium still reports `(hover: none)` until the page closes; only the coarse
+    // pointer and touch events go away.
+    return async () => {
+        await cdp.send("Emulation.setTouchEmulationEnabled", {
+            enabled: false,
+        });
+        await cdp.detach();
+    };
 }

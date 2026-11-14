@@ -12,6 +12,7 @@ covers:
   - apps/desktop/src/components/timeline/TimelineBasicLayers.tsx
   - action:playOn
   - action:toggleLoop
+  - action:toggleEditorMode
   - i18n:settings.general.editorMode
   - i18n:timeline.basic
 sidebar:
@@ -83,6 +84,8 @@ To switch later:
   id="start-editor-mode-setting"
   alt="The Settings window on the Timeline section, with Editor mode at the top as two cards, Basic and Expert, each with a small picture of its timeline, and the Waveform choices below."
 />
+
+You can also switch from the command palette (<Kbd action="openCommandPalette" />): type "basic" or "expert", and select <Ui k="actions.timeline.toggleEditorModeToExpert" /> in Basic or <Ui k="actions.timeline.toggleEditorModeToBasic" /> in Expert.
 
 The open show changes at once, with no reload. The keyboard shortcuts list, the command palette and the Playback menu leave out what Basic doesn't have.
 

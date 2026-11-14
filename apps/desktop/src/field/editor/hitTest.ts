@@ -1,18 +1,28 @@
+import { thresholdsFor, type PointerKind } from "./pointerThresholds";
+
 /** A dot's radius in field units, as drawn (`MarchersLayer`). */
 export const DOT_RADIUS = 5;
 /** A dot's outline width, in field units. */
 export const OUTLINE_WIDTH = 1;
 
 /**
- * The smallest a dot's target gets on screen, in CSS pixels, so a zoomed-out
- * show can still be clicked. The dot itself is drawn at least 1.5 px.
+ * The smallest a dot's target gets on screen for a mouse, in CSS pixels, so
+ * a zoomed-out show can still be clicked. The dot itself is drawn at least
+ * 1.5 px. A pen or finger gets more (`thresholdsFor(kind).hitRadius`).
  */
-export const MIN_HIT_SCREEN_RADIUS = 5;
+export const MIN_HIT_SCREEN_RADIUS = thresholdsFor("mouse").hitRadius;
 
-/** How far from a dot's center, in field units, a press still lands on it at `zoom` (CSS px per field unit). */
-export function hitRadius(zoom: number): number {
+/**
+ * How far from a dot's center, in field units, a press by `kind` still lands
+ * on it at `zoom` (CSS px per field unit). A marquee or lasso reads the
+ * mouse's: it picks the dots drawn inside it, whatever drew it.
+ */
+export function hitRadius(zoom: number, kind: PointerKind = "mouse"): number {
     // The dot plus its outline when zoomed in
-    return Math.max(DOT_RADIUS + OUTLINE_WIDTH, MIN_HIT_SCREEN_RADIUS / zoom);
+    return Math.max(
+        DOT_RADIUS + OUTLINE_WIDTH,
+        thresholdsFor(kind).hitRadius / zoom,
+    );
 }
 
 /** The marchers drawn: ids, x, y per id in field units, and 1 per id that's hidden (not drawn). */

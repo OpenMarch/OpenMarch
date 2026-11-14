@@ -11,7 +11,10 @@ import type { FieldPoint, FieldPointer } from "./fieldEditor";
  * Outline on the field. A rectangle or circle is a drag, from a corner or
  * the center, and finishes on release. An arc is three clicks (its ends,
  * then its bulge), and a polygon a click per corner, finished with a
- * double-click once it has three. Freehand is a drag, finished on release.
+ * double-click once it has three (or its Finish button, tablet 1.4).
+ * Freehand is a drag, finished on release. A press lost before its release
+ * (a second finger landed to move the view) draws nothing: a drag is
+ * dropped, and a click's corner taken back.
  * Points snap as a marcher's coordinates do, except freehand's. A drawing
  * too small to be meant is dropped and the tool stays on; a finished one goes
  * to the app, which makes the prop and turns the tool off.
@@ -22,6 +25,10 @@ export type PropToolShape = {
     readonly outlineType: OutlineType;
     /** The Outline being drawn, or null before there's enough of it. */
     readonly preview: OutlinePath | null;
+    /** Corners clicked so far (a polygon's or an arc's); 0 for a drag. */
+    readonly points: number;
+    /** Whether {@link PropTool.finishNow} would finish it: a polygon with enough corners. */
+    readonly canFinish: boolean;
 };
 
 export type PropToolPorts = {
@@ -42,6 +49,8 @@ export class PropTool {
     private current: FieldPoint | null = null;
     /** A drag or freehand line is being drawn with the button down. */
     private dragging = false;
+    /** A click's press, until its release: the corners before it, should it be lost. */
+    private clickHeld: FieldPoint[] | null = null;
     private snapshot: PropToolShape;
 
     constructor(
@@ -49,7 +58,12 @@ export class PropTool {
         private readonly ports: PropToolPorts,
     ) {
         this.handler = ITEM_OUTLINES[outlineType];
-        this.snapshot = { outlineType, preview: null };
+        this.snapshot = {
+            outlineType,
+            preview: null,
+            points: 0,
+            canFinish: false,
+        };
     }
 
     press(pointer: FieldPointer) {
@@ -84,6 +98,7 @@ export class PropTool {
     }
 
     release(pointer: FieldPointer) {
+        this.clickHeld = null;
         if (!this.dragging) return;
         this.dragging = false;
         if (this.handler.interaction === "drag")
@@ -93,6 +108,55 @@ export class PropTool {
 
     shape(): PropToolShape {
         return this.snapshot;
+    }
+
+    /** The press was lost before its release: what it drew is dropped. */
+    cancel() {
+        if (this.dragging) {
+            this.dragging = false;
+            this.start = null;
+            this.points = [];
+            this.current = null;
+            this.update();
+            return;
+        }
+        const before = this.clickHeld;
+        this.clickHeld = null;
+        if (!before) return;
+        this.points = before;
+        this.current = before.at(-1) ?? null;
+        this.update();
+    }
+
+    /** Finishes a polygon now, as its double-click does. Returns whether it could. */
+    finishNow(): boolean {
+        if (!this.canFinish() || this.clickHeld) return false;
+        this.finish();
+        return true;
+    }
+
+    /** Takes back the last corner clicked. Returns whether there was one. */
+    removeLastPoint(): boolean {
+        if (this.handler.interaction !== "click" || this.clickHeld)
+            return false;
+        if (this.points.length === 0) return false;
+        this.points = this.points.slice(0, -1);
+        this.current = this.points.at(-1) ?? null;
+        this.update();
+        return true;
+    }
+
+    private canFinish(): boolean {
+        const {
+            interaction,
+            completeOnDoubleClick,
+            minPoints = 0,
+        } = this.handler;
+        return (
+            interaction === "click" &&
+            completeOnDoubleClick === true &&
+            this.points.length >= Math.max(minPoints, 1)
+        );
     }
 
     private click(pointer: FieldPointer) {
@@ -111,6 +175,7 @@ export class PropTool {
             return;
         }
         const point = this.ports.snap(pointer.field);
+        this.clickHeld = [...this.points];
         this.points.push(point);
         this.current = point;
         if (maxPoints && this.points.length === maxPoints) this.finish();
@@ -126,6 +191,7 @@ export class PropTool {
         this.start = null;
         this.points = [];
         this.current = null;
+        this.clickHeld = null;
         this.update();
         if (outline) this.ports.finished(outline);
     }
@@ -138,7 +204,13 @@ export class PropTool {
                   currentPoint: this.current,
               })
             : null;
-        this.snapshot = { outlineType: this.outlineType, preview };
+        this.snapshot = {
+            outlineType: this.outlineType,
+            preview,
+            points:
+                this.handler.interaction === "click" ? this.points.length : 0,
+            canFinish: this.canFinish(),
+        };
         this.ports.changed();
     }
 }

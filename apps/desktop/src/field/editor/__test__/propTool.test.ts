@@ -51,6 +51,7 @@ const at = (x: number, y: number): FieldPointer => ({
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,
@@ -163,5 +164,127 @@ describe("the prop tool", () => {
         editor.setPropTool("polygon");
         editor.pointerMove(at(10, 10));
         expect(editor.propToolShape()?.preview).toBeNull();
+    });
+});
+
+describe("the prop tool's buttons and lost presses (tablet 1.4)", () => {
+    /** Three corners, each a separate click (a second apart, so none is a double-click) */
+    const triangle = (
+        editor: FieldEditor,
+        clock: { now: number },
+        corners: [number, number][] = [
+            [0, 0],
+            [100, 0],
+            [50, 80],
+        ],
+    ) => {
+        for (const [x, y] of corners) {
+            click(editor, x, y);
+            // The renderer cancels after every release: that loses no corner
+            editor.pointerCancel();
+            clock.now += 1000;
+        }
+    };
+
+    it("finishes a polygon with three corners or more, as its double-click does", () => {
+        const { editor, state, clock } = setup("polygon");
+        click(editor, 0, 0);
+        clock.now += 1000;
+        click(editor, 100, 0);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.finishPropTool()).toBe(false);
+        clock.now += 1000;
+        click(editor, 50, 80);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 3,
+            canFinish: true,
+        });
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn).toHaveLength(1);
+        expect(state.drawn[0].points).toEqual([
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 50, y: 80 },
+        ]);
+    });
+
+    it("takes back the last corner, one a press, and nothing once there are none", () => {
+        const { editor, state, clock } = setup("polygon");
+        triangle(editor, clock);
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({ points: 0 });
+        expect(editor.propToolShape()?.preview).toBeNull();
+        expect(editor.removeLastPropPoint()).toBe(false);
+        // Drawing goes on from there
+        triangle(editor, clock, [
+            [0, 0],
+            [60, 0],
+            [60, 60],
+        ]);
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn[0].points).toEqual([
+            { x: 0, y: 0 },
+            { x: 60, y: 0 },
+            { x: 60, y: 60 },
+        ]);
+    });
+
+    it("takes back an arc's corner too, and has no Finish for it", () => {
+        const { editor, clock } = setup("arc");
+        triangle(editor, clock, [
+            [0, 0],
+            [100, 0],
+        ]);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({ points: 1 });
+        expect(editor.finishPropTool()).toBe(false);
+    });
+
+    it("has nothing to take back or finish on a drag", () => {
+        const { editor } = setup("rectangle");
+        editor.pointerDown(at(0, 0));
+        editor.pointerMove(at(50, 50));
+        expect(editor.propToolShape()).toMatchObject({
+            points: 0,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(false);
+        expect(editor.finishPropTool()).toBe(false);
+    });
+
+    it("drops the corner of a press lost before its release (a second finger), keeping the rest", () => {
+        const { editor, state, clock } = setup("polygon");
+        triangle(editor, clock);
+        editor.pointerDown(at(0, 90));
+        expect(editor.propToolShape()).toMatchObject({ points: 4 });
+        editor.pointerCancel();
+        expect(editor.propToolShape()).toMatchObject({ points: 3 });
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn[0].points).toHaveLength(3);
+    });
+
+    it("drops a drag lost before its release, handing nothing over", () => {
+        const { editor, state } = setup("rectangle");
+        editor.pointerDown(at(0, 0));
+        editor.pointerMove(at(60, 40));
+        expect(editor.propToolShape()?.preview).not.toBeNull();
+        editor.pointerCancel();
+        expect(editor.propToolShape()?.preview).toBeNull();
+        editor.pointerUp(at(60, 40));
+        expect(state.drawn).toEqual([]);
+        expect(editor.propToolShape()).not.toBeNull();
     });
 });

@@ -1,3 +1,6 @@
+import { fingerDragSlop } from "./timelineGestures";
+import { touchGrabOffset } from "./touchTargets";
+import { TouchHitArea } from "./TouchHitArea";
 import {
     type KeyboardEvent as ReactKeyboardEvent,
     type PointerEvent as ReactPointerEvent,
@@ -159,9 +162,13 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         pointerId: number;
         index: number;
         startClientX: number;
+        /** How far it moves before it drags: further for a finger (`fingerDragSlop`) */
+        slop: number;
         surface: Element;
         playhead: number | null;
         moved: boolean;
+        /** A finger's offset from the edge it grabbed (`touchGrabOffset`); 0 for a mouse */
+        grab: number;
         last: Landing;
     } | null>(null);
     /**
@@ -195,7 +202,11 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         const handle = current && edges.handles[current.index];
         if (!current || !handle) return null;
         const left = current.surface.getBoundingClientRect().left;
-        const raw = clamp((clientX - left) / pixelsPerBeat, 0, beatCount);
+        const raw = clamp(
+            (clientX + current.grab - left) / pixelsPerBeat,
+            0,
+            beatCount,
+        );
         const snapped = snapEdgeBeat({
             beat: raw,
             pageBeats,
@@ -235,9 +246,16 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
             pointerId: event.pointerId,
             index,
             startClientX: event.clientX,
+            slop: fingerDragSlop(event.pointerType, DRAG_PX),
             surface,
             playhead: snapPlayhead ? Math.round(snapPlayhead()) : null,
             moved: false,
+            grab: touchGrabOffset(
+                event.pointerType,
+                event.clientX,
+                surface.getBoundingClientRect().left +
+                    beatToX(handle.beat, pixelsPerBeat),
+            ),
             last: { beat: handle.beat, blocked: null },
         };
         event.currentTarget.setPointerCapture?.(event.pointerId);
@@ -248,7 +266,7 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
         if (!current || current.pointerId !== event.pointerId) return;
         if (
             !current.moved &&
-            Math.abs(event.clientX - current.startClientX) < DRAG_PX
+            Math.abs(event.clientX - current.startClientX) < current.slop
         )
             return;
         const first = !current.moved;
@@ -394,14 +412,17 @@ export const TimelineHoldEdgeHandles = memo(function TimelineHoldEdgeHandles({
                         <span
                             aria-hidden="true"
                             data-hold-knob=""
+                            data-touch-drawn=""
                             className={clsx(
                                 "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full transition-opacity",
                                 active
                                     ? "bg-accent opacity-100"
-                                    : "bg-text-subtitle opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
+                                    : // A finger can't hover: drawn in the touch layout (3.3)
+                                      "bg-text-subtitle touch:opacity-100 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
                             )}
                             style={{ width: KNOB_WIDTH, height: KNOB_HEIGHT }}
                         />
+                        <TouchHitArea />
                     </button>
                 );
             })}

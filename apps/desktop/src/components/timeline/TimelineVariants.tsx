@@ -59,7 +59,16 @@ import { markedRangeAt, useTimelineRangeMenu } from "./TimelineRangeMenu";
 import { holdBarPageAt } from "./TimelineHoldBars";
 import { isTyping, overlayOpen } from "./timelineHotkeys";
 import { useLatestCallback } from "./useLatestCallback";
+import {
+    attachTimelineGestures,
+    TIMELINE_CONTROL_SELECTOR,
+    timelineTouchRegion,
+    type TimelineNavigationStep,
+} from "./timelineGestures";
 import { TimelineAppendAtPlayhead } from "./TimelineAppendAtPlayhead";
+import { TimelineTouchZoom } from "./TimelineTouchZoom";
+import { useActionHandler } from "@/shortcuts/useActionHandler";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import { useViewportExtent } from "./useViewportExtent";
 import {
     createLiveValue,
@@ -357,14 +366,133 @@ const useTimelineZoom = ({
         return () => window.removeEventListener("keydown", onKeyDown);
     }, [fit, onPixelsPerBeatChange]);
 
+    /**
+     * Two fingers' navigation (tablet 3.1, `timelineGestures.ts`): the limits a pinch zooms within,
+     * and the move to a step, zooming about its anchor when the zoom changed. Without a zoom owner
+     * a pinch only pans.
+     */
+    const clampZoom = useLatestCallback((next: number) =>
+        clamp(next, latest.current.minimum, TIMELINE_MAX_PX_PER_BEAT),
+    )!;
+    const navigate = useLatestCallback((target: TimelineNavigationStep) => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        viewport.scrollTop = target.scrollTop;
+        if (
+            onPixelsPerBeatChange &&
+            Math.abs(target.pixelsPerBeat - latest.current.pixelsPerBeat) >
+                0.001
+        ) {
+            zoomTo(target.pixelsPerBeat, target.anchorPx, target.anchorBeat);
+            return;
+        }
+        viewport.scrollLeft = target.scrollLeft;
+    })!;
+
+    const canZoomIn = pixelsPerBeat < TIMELINE_MAX_PX_PER_BEAT - 0.001;
+    const canZoomOut = pixelsPerBeat > minimum + 0.01;
+    // Tablet 3.2 (#885): the touch layout's ± buttons and the palette step the zoom as tempo
+    // mode's transport buttons do. Only a timeline that owns its zoom registers them
+    useActionHandler(
+        "timelineZoomIn",
+        () => step(1),
+        {
+            enabled: canZoomIn,
+        },
+        onPixelsPerBeatChange !== undefined,
+    );
+    useActionHandler(
+        "timelineZoomOut",
+        () => step(-1),
+        {
+            enabled: canZoomOut,
+        },
+        onPixelsPerBeatChange !== undefined,
+    );
+    // Tablet 3.5 (#888): the touch transport's Fit, as Shift+Z
+    useActionHandler(
+        "timelineFit",
+        () => fit(),
+        undefined,
+        onPixelsPerBeatChange !== undefined,
+    );
+
     return {
         fit,
         fitted: isFitted,
+        clampZoom: onPixelsPerBeatChange ? clampZoom : undefined,
+        navigate,
+        /** The zoom the view is drawn at, or about to be */
+        currentPixelsPerBeat: () => latest.current.pixelsPerBeat,
         viewportWidth,
         step,
-        canZoomIn: pixelsPerBeat < TIMELINE_MAX_PX_PER_BEAT - 0.001,
-        canZoomOut: pixelsPerBeat > minimum + 0.01,
+        canZoomIn,
+        canZoomOut,
     };
+};
+
+/**
+ * Fingers on the timeline (tablet 3.1, `timelineGestures.ts`): the ruler and page row scrub, bare
+ * track space pans, a control takes its own press, and two fingers pan and pinch. Mouse and pen
+ * presses never reach it.
+ */
+const useTimelineGestures = ({
+    viewportRef,
+    headerHeight,
+    leadingInset,
+    zoom,
+    seekAt,
+}: {
+    viewportRef: React.RefObject<HTMLDivElement | null>;
+    /** The pinned header's height: the ruler, page row and measure row */
+    headerHeight: number;
+    leadingInset: number;
+    zoom: Pick<
+        ReturnType<typeof useTimelineZoom>,
+        "clampZoom" | "navigate" | "currentPixelsPerBeat"
+    >;
+    seekAt: (surface: Element, clientX: number) => void;
+}) => {
+    const latest = useRef({ headerHeight, leadingInset, zoom, seekAt });
+    latest.current = { headerHeight, leadingInset, zoom, seekAt };
+    useEffect(() => {
+        const viewport = viewportRef.current;
+        if (!viewport) return;
+        return attachTimelineGestures(viewport, {
+            region: (event) =>
+                timelineTouchRegion({
+                    onControl:
+                        event.target instanceof Element &&
+                        event.target.closest(TIMELINE_CONTROL_SELECTOR) !==
+                            null,
+                    offsetY:
+                        event.clientY - viewport.getBoundingClientRect().top,
+                    headerHeight: latest.current.headerHeight,
+                }),
+            view: () => ({
+                scrollLeft: viewport.scrollLeft,
+                scrollTop: viewport.scrollTop,
+                pixelsPerBeat: latest.current.zoom.currentPixelsPerBeat(),
+            }),
+            navigate: (step) => latest.current.zoom.navigate(step),
+            leadingInset: () => latest.current.leadingInset,
+            // Without a zoom owner a pinch keeps the zoom, and only pans
+            clampZoom: (next) =>
+                latest.current.zoom.clampZoom?.(next) ??
+                latest.current.zoom.currentPixelsPerBeat(),
+            tap: (clientX) => {
+                const surface = viewport.querySelector(
+                    '[data-testid="timeline-pointer-surface"]',
+                );
+                if (!surface) return;
+                // Only where a click would seek: off the surface (left of beat 0, or past its
+                // end) a click does nothing
+                const { left, right } = surface.getBoundingClientRect();
+                if (clientX < left || clientX > right) return;
+                latest.current.seekAt(surface, clientX);
+            },
+        });
+    }, [viewportRef]);
 };
 
 const navigateToPage = ({
@@ -760,6 +888,9 @@ const TimelineSurface = memo(function TimelineSurface({
         onFittedChange: props.onZoomFittedChange,
         followAnchor,
     });
+    const isTouch = useIsTouchMode();
+    const touchZoom =
+        isTouch && props.onPixelsPerBeatChange !== undefined && !showTransport;
     // UI-23: the view follows the playhead
     const follow = useTimelineFollow({
         viewportRef,
@@ -809,8 +940,14 @@ const TimelineSurface = memo(function TimelineSurface({
     // A dragged page flag also lands on the playhead when near; read when a drag starts, so the
     // ruler doesn't re-render as the playhead moves
     const playheadAt = useLatestCallback(() => positionBeat)!;
+    // A finger's scrub that a second finger cancels goes back here (tablet 3.1); while playing a
+    // scrub only suspends playback, and ends where it was
+    const scrubRestoreBeat = useLatestCallback(() =>
+        props.isPlaying ? null : positionBeat,
+    )!;
     const pointer = useTimelinePointer({
         seekSnapBeats,
+        restoreBeat: scrubRestoreBeat,
         onSeek: props.onSeek,
         // Basic and a read-only timeline draw no ranges: every drag scrubs
         onRangeSelect:
@@ -821,6 +958,13 @@ const TimelineSurface = memo(function TimelineSurface({
         pixelsPerBeat,
         beatCount: model.beatCount,
         snapBeats,
+    });
+    useTimelineGestures({
+        viewportRef,
+        headerHeight: audioTop,
+        leadingInset: initialPageWidth,
+        zoom,
+        seekAt: pointer.seekAt,
     });
     const onNavigate = useLatestCallback(transportNavigation(props));
     // A clip is its timeline: clicking it selects that range (UI-12)
@@ -896,6 +1040,13 @@ const TimelineSurface = memo(function TimelineSurface({
                       (t) => String(t.id) === trackId,
                   );
                   return track ? (moveActions(track.id) ?? null) : null;
+              }
+            : undefined,
+        // Tablet 3.4: a finger's page box menu offers what a double-click on the box does
+        editMove: props.onOpenRange
+            ? {
+                  onEdit: props.onOpenRange,
+                  disabledReason: moveCommands?.disabledReason,
               }
             : undefined,
         resolveRange: (event: MouseEvent<HTMLElement>) => {
@@ -992,13 +1143,19 @@ const TimelineSurface = memo(function TimelineSurface({
             className={className}
             pinnedHeight={audioTop}
             overlay={
-                follow.offscreen && (
-                    <TimelinePlayheadChip
-                        side={follow.offscreen}
-                        top={TIMELINE_PAGE_ROW_TOP + 4}
-                        onClick={follow.revealPlayhead}
-                    />
-                )
+                <>
+                    {follow.offscreen && (
+                        <TimelinePlayheadChip
+                            side={follow.offscreen}
+                            top={TIMELINE_PAGE_ROW_TOP + 4}
+                            onClick={follow.revealPlayhead}
+                        />
+                    )}
+                    {/* Tablet 3.2: ± where a thumb reaches, unless the touch transport has them (3.5) */}
+                    {touchZoom && (
+                        <TimelineTouchZoom className="right-20 bottom-24" />
+                    )}
+                </>
             }
             transport={
                 showTransport ? (
@@ -1038,7 +1195,7 @@ const TimelineSurface = memo(function TimelineSurface({
                     "relative",
                     // The page row steps back while a band is edited (tempo mode)
                     bandFocus &&
-                        "[&_[data-testid=timeline-page-ruler]]:opacity-50",
+                        "[&_[data-testid=timeline-page-menu-button]]:opacity-50 [&_[data-testid=timeline-page-ruler]]:opacity-50",
                 )}
                 style={{ width: surfaceWidth, height: surfaceHeight }}
                 onContextMenu={rangeMenu.onContextMenu}
@@ -1191,6 +1348,12 @@ const TimelineSurface = memo(function TimelineSurface({
                         </div>
                         <TimelineRuler
                             pages={model.pages}
+                            // Tablet 3.4: the selected page box's "…" chip opens its menu
+                            onOpenPageMenu={
+                                props.pageMenu || props.onOpenRange
+                                    ? rangeMenu.openPageMenu
+                                    : undefined
+                            }
                             measures={model.measures}
                             beatCount={model.beatCount}
                             pixelsPerBeat={pixelsPerBeat}
@@ -1208,6 +1371,7 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             height={pinnedHeight}
                             flagSnapPlayhead={playheadAt}
+                            scrubRestoreBeat={scrubRestoreBeat}
                             // Only a show without measures numbers the playhead page's counts
                             positionBeat={
                                 expanded &&
@@ -1218,6 +1382,17 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             keyframes={props.keyframes}
                             keyframeMenu={props.keyframeMenu}
+                            lineBeats={[
+                                positionBeat,
+                                ...(selectionRange && !basic && !bandFocus
+                                    ? [
+                                          (selection?.kind === "range"
+                                              ? selection.startFlagBeatIndex
+                                              : undefined) ??
+                                              selectionRange.startBeatIndex,
+                                      ]
+                                    : []),
+                            ]}
                             holds={props.holds}
                             holdEdges={
                                 props.isPlaying || bandFocus

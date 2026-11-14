@@ -40,8 +40,16 @@ export interface ToolEnv {
     readonly fromCenter?: boolean;
     /** The nearest spot on the half-step grid */
     readonly gridSnap: (p: XY) => XY;
-    /** How far from a handle a press still takes it, in field units */
+    /**
+     * How far from a handle a press still takes it, in field units: the reach of the pointer
+     * pressing (a mouse's, unless the env was made for a pen or finger, `pointerThresholds.ts`)
+     */
     readonly hitRadius: number;
+    /**
+     * The handle reach the knob's stem is drawn in, in field units: a mouse's whatever presses, so
+     * a finger's longer reach doesn't move the knob (tablet 1.4). `hitRadius` when absent.
+     */
+    readonly stemUnit?: number;
     /**
      * Screen pixels per field unit, for what depends on how far the field is zoomed in (a Line's
      * dragged interval snapping to half steps rather than whole ones); unknown when absent

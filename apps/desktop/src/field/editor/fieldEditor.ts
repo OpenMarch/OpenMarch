@@ -20,12 +20,14 @@ import {
     handleAt,
     handleCursor,
     handlePoints,
+    wideHandleWins,
     rotatePositions,
     type HandleId,
     type SelectionFrame,
 } from "./groupTransform";
 import { fieldKeys, type FieldKeys } from "./fieldKeys";
 import { hitRadius, marcherAt, type DrawnMarchers } from "./hitTest";
+import { thresholdsFor, type PointerKind } from "./pointerThresholds";
 import {
     ItemResizeGesture,
     ItemRotateGesture,
@@ -73,11 +75,25 @@ export type FieldPointer = {
     screen: FieldPoint;
     /** The button that changed (`PointerEvent.button`): 0 is the primary button. */
     button: number;
+    /**
+     * What made the press (`PointerEvent.pointerType`). Slops, hit radii and handle reach
+     * depend on it (`pointerThresholds.ts`); a mouse's are the field's usual ones.
+     */
+    kind: PointerKind;
     shift: boolean;
     alt: boolean;
     ctrl: boolean;
     meta: boolean;
+    /**
+     * What a drag of this press draws if it starts on empty field, as the
+     * pill's drag mode chose for a finger or pen (tablet 1.3). Unset (a mouse,
+     * always): a marquee, or a lasso after a double-click.
+     */
+    area?: AreaKind;
 };
+
+/** What a drag from empty field draws: a marquee (box) or a lasso. */
+export type AreaKind = "marquee" | "lasso";
 
 /** What the editor reads from, and writes to, the rest of the app. */
 export type FieldEditorPorts = {
@@ -170,9 +186,10 @@ export type FieldEditorPorts = {
     /**
      * A right-click (a right press released under the click slop, with no
      * open shape) asks for the field's menu here (#315), after selecting the
-     * marcher clicked if it wasn't selected.
+     * marcher clicked if it wasn't selected. `hit` is the marcher under it, or null (tablet 1.5:
+     * the menu's "Go inside box" goes in at that marcher).
      */
-    openMenu?(at: FieldPointer): void;
+    openMenu?(at: FieldPointer, hit: number | null): void;
 };
 
 export type DropResult = "saved" | "refused";
@@ -198,7 +215,8 @@ export type FieldEditorOptions = {
      * The touch pill's toggles (`onScreenToggles` in `TouchModifierStore`): its held roles count
      * as held keys for every drag, a toggle changed mid-drag re-runs it as a key does, and the
      * press rule never blocks them. `add` is the add press choice at every press, as Shift is: a
-     * click, a press-drag and a marquee or lasso add to the selection.
+     * click, a press-drag and a marquee or lasso add to the selection. `subtract` is Alt's: a
+     * marquee or lasso takes what it covers out of the selection (add wins when both are on).
      */
     onScreen?: FieldOnScreen;
 };
@@ -208,13 +226,15 @@ export type FieldOnScreen = {
     roles(): ReadonlySet<HeldRole>;
     subscribe(changed: () => void): () => void;
     add(): boolean;
+    subtract?(): boolean;
 };
 
 /**
- * A press that moves less than this far, in screen pixels, is a click: it
- * never moves anything. There's no time limit (rules table: Click vs drag).
+ * A mouse press that moves less than this far, in screen pixels, is a click:
+ * it never moves anything. There's no time limit (rules table: Click vs
+ * drag). Other pointers have their own (`thresholdsFor(kind).moveThreshold`).
  */
-export const CLICK_SLOP = 4;
+export const CLICK_SLOP = thresholdsFor("mouse").clickSlop;
 
 /** How long a drop may take to save before the editor logs that it hasn't settled. */
 const DROP_SETTLE_WARNING_MS = 30_000;
@@ -224,7 +244,8 @@ const DROP_SETTLE_WARNING_MS = 30_000;
  * field is its double-click: dragged, it draws a lasso (rules table: Lasso).
  */
 export const DOUBLE_CLICK_MS = 500;
-export const DOUBLE_CLICK_SLOP = 8;
+/** The mouse's; other pointers have their own (`thresholdsFor(kind).doubleClickSlop`). */
+export const DOUBLE_CLICK_SLOP = thresholdsFor("mouse").doubleClickSlop;
 
 /**
  * A gesture the editor runs once a press becomes a drag: marquee, lasso
@@ -248,6 +269,10 @@ export type FieldPress = {
     double: boolean;
     /** The pill's Add was on at the press: the add choice, as Shift is. */
     add?: boolean;
+    /** The pill's Subtract was on at the press: the subtract choice, as Alt is. */
+    subtract?: boolean;
+    /** What a drag from empty field draws, when a drag mode chose it ({@link FieldPointer.area}). */
+    area?: AreaKind;
 };
 
 /**
@@ -472,6 +497,13 @@ export interface FieldMode {
      * for the field's rules. Absent: always the field's.
      */
     openMenu?(pointer: FieldPointer): boolean;
+    /**
+     * One of its presses held still for a long press (a pen or finger that has no right button,
+     * tablet 1.5): true to give the press up for the menus a right-click there opens (the editor
+     * then cancels it and asks {@link openMenu}), false to keep it. Absent: the press is kept, so
+     * a mode only gives up presses it knows are safe to cancel.
+     */
+    longPress?(pointer: FieldPointer): boolean;
     /** What `activeGesture` reports while one of its presses is held, and while it's on when `always`. */
     readonly gesture: { kind: FieldTestGesture; always: boolean };
 }
@@ -528,6 +560,8 @@ export class FieldEditor {
      * Mac's Ctrl-press too, whose click opens only a mode's menu (#569).
      */
     private rightPress: { start: FieldPointer; dragged: boolean } | null = null;
+    /** What made the last press: readouts by the pointer keep clear of a finger. */
+    private lastPressKind: PointerKind = "mouse";
     private readonly listeners = new Set<() => void>();
     private readonly now: () => number;
     private readonly areaPorts: AreaPorts;
@@ -556,6 +590,7 @@ export class FieldEditor {
      * here; false leaves it to navigation (right, middle, Ctrl on a Mac).
      */
     pointerDown(pointer: FieldPointer): boolean {
+        this.lastPressKind = pointer.kind;
         if (!this.isEditButton(pointer)) {
             // Navigation pans with it; a right-click (no drag) opens the
             // menu. A Mac's Ctrl-click pans (#194), and opens only a mode's
@@ -591,12 +626,7 @@ export class FieldEditor {
             this.ignoredButton = pointer.button;
             return true;
         }
-        const modePress: FieldModePress = {
-            reachesInside: () =>
-                this.reachInside(pointer, this.marcherAt(pointer.field)) !==
-                null,
-            isMac: this.options.isMac ?? false,
-        };
+        const modePress = this.modePressFor(pointer);
         if (this.mode?.claims(pointer, modePress)) {
             const last = this.lastClick;
             this.press = null;
@@ -616,14 +646,16 @@ export class FieldEditor {
         }
         // A press on the field saves a rotation typed in the inspector first
         this.endRotation();
-        const handle = this.handleAt(pointer.field);
-        const hit = handle ? null : this.marcherAt(pointer.field);
+        const handle = this.handleAt(pointer);
+        const hit = handle ? null : this.marcherAt(pointer);
         this.press = {
             start: pointer,
             hit,
             handle,
             double: !handle && this.isDoubleClick(pointer, hit),
             add: this.options.onScreen?.add() ?? false,
+            subtract: this.options.onScreen?.subtract?.() ?? false,
+            area: pointer.area,
         };
         return true;
     }
@@ -654,11 +686,11 @@ export class FieldEditor {
                 this.setHover(modeCursor);
                 return;
             }
-            const handle = this.handleAt(pointer.field);
+            const handle = this.handleAt(pointer);
             this.setHover(
                 handle
                     ? handleCursor(handle)
-                    : this.marcherAt(pointer.field) === null
+                    : this.marcherAt(pointer) === null
                       ? "default"
                       : "pointer",
             );
@@ -766,11 +798,101 @@ export class FieldEditor {
     }
 
     /**
-     * A long press on touch at `pointer` (#569): a mode's menu, as a right-click opens it. Touch
-     * is otherwise navigation's, so the field's own menu doesn't open this way.
+     * A long press by a finger or pen, lifted at `pointer` (tablet 1.5; a pen and a finger have
+     * no right button; held still past the long press time and released without moving): the
+     * menus a right-click there opens, a mode's first, then the field's (#569, #315), selecting
+     * the marcher under it if it isn't selected. Returns whether it took over; when it didn't,
+     * a press it holds is left for the caller to release (a slow tap).
+     *
+     * A press the editor holds that hasn't become a drag (a finger or pen on a marcher) is given
+     * up first, so nothing is left pressed under the menu; a mode's press only when the mode says
+     * it can be ({@link FieldMode.longPress}). Nothing during a drag or while the prop tool draws:
+     * then the press carries on.
      */
-    longPress(pointer: FieldPointer): void {
-        if (this.menuFree()) this.mode?.openMenu?.(pointer);
+    longPress(pointer: FieldPointer): boolean {
+        if (this.gesture || this.propTool || this.ignoredButton !== null)
+            return false;
+        if (this.modePress) {
+            if (
+                this.modePress.dragged ||
+                isPastSlop(this.modePress.start, pointer) ||
+                !this.mode?.longPress?.(pointer)
+            )
+                return false;
+            this.modePress = null;
+            this.mode.cancel();
+            this.emit();
+        } else if (this.press) {
+            if (isPastSlop(this.press.start, pointer)) return false;
+            // Given up, it's no click: nor half of a double-click
+            this.press = null;
+            this.lastClick = null;
+        }
+        if (this.mode?.openMenu?.(pointer)) return true;
+        if (this.blocksFieldMenu()) return false;
+        this.openMenu(pointer);
+        return true;
+    }
+
+    /**
+     * Whether a single finger pressing at `pointer` edits (tablet 1.2): it
+     * lands on what a drag would move. That is a marcher within the finger's
+     * hit radius, a handle of the selection box, or the inside of a
+     * multi-selection's box (unless the pill's Add makes that press a marquee,
+     * as Shift does). Anywhere else the finger moves the view.
+     *
+     * While the prop tool is on, every finger draws, and while a field mode
+     * is on, every press it claims is its own (tablet 1.4): the open shape
+     * tool claims them all, so one finger draws and two move the view.
+     */
+    fingerEdits(pointer: FieldPointer): boolean {
+        if (this.propTool) return true;
+        if (this.mode?.claims(pointer, this.modePressFor(pointer))) return true;
+        if (this.handleAt(pointer) || this.marcherAt(pointer) !== null)
+            return true;
+        return (
+            !this.onScreenAreaChoice() &&
+            !this.modeOwnsSelectionBox() &&
+            this.insideSelectionBox(this.ports.selection.get(), pointer.field)
+        );
+    }
+
+    /**
+     * Whether a finger or pen press at `pointer` is on empty field, where the
+     * pill's drag mode decides what its drag does (tablet 1.3): no tool or
+     * field mode is on, and the press lands on nothing a drag would move
+     * ({@link fingerEdits}).
+     */
+    pressOnEmptyField(pointer: FieldPointer): boolean {
+        return !this.propTool && !this.mode && !this.fingerEdits(pointer);
+    }
+
+    /** The pill's Add or Subtract is on: a press inside the selection box draws an area, as Shift or Alt does */
+    private onScreenAreaChoice(): boolean {
+        const screen = this.options.onScreen;
+        return (screen?.add() ?? false) || (screen?.subtract?.() ?? false);
+    }
+
+    /**
+     * A finger tapped where it moves the view (empty field, tablet 1.2): a
+     * click there, so it clears the selection as a click does (the pill's Add
+     * keeps it, as Shift does). A field mode on sees it as it sees a click
+     * there. Nothing while the prop tool is on: its fingers draw
+     * ({@link fingerEdits}).
+     */
+    fingerTap(pointer: FieldPointer): void {
+        if (this.propTool || !this.menuFree()) return;
+        if (!this.pointerDown(pointer)) return;
+        this.pointerUp(pointer);
+    }
+
+    /** What the editor tells a mode of a press at `pointer` */
+    private modePressFor(pointer: FieldPointer): FieldModePress {
+        return {
+            reachesInside: () =>
+                this.reachInside(pointer, this.marcherAt(pointer)) !== null,
+            isMac: this.options.isMac ?? false,
+        };
     }
 
     /** No press, drag or prop tool that a menu would cut into */
@@ -792,6 +914,9 @@ export class FieldEditor {
     /** The pointer was lost (capture lost, the window lost focus): nothing is clicked or dropped. */
     pointerCancel(): void {
         // The last click stays: the renderer also cancels after every release
+        // A press the prop tool was drawing with is dropped (a second finger
+        // landed to move the view): the corners already down stay
+        this.propTool?.cancel();
         if (this.modePress) {
             this.modePress = null;
             this.mode?.cancel();
@@ -832,6 +957,23 @@ export class FieldEditor {
                 (id, i) =>
                     wanted.has(id) && !hidden?.[i] && this.ports.canSelect(id),
             ),
+        );
+    }
+
+    /**
+     * What made the press in progress, or the last one: the overlay keeps its readouts clear
+     * of a finger, and by a mouse or pen pointer as they always were.
+     */
+    pressKind(): PointerKind {
+        return this.lastPressKind;
+    }
+
+    /** Whether a press on the field is under way, still a click or already a drag (#933) */
+    pressing(): boolean {
+        return (
+            this.press !== null ||
+            this.gesture !== null ||
+            this.modePress !== null
         );
     }
 
@@ -893,7 +1035,7 @@ export class FieldEditor {
                     Math.hypot(
                         pointer.screen.x - last.screen.x,
                         pointer.screen.y - last.screen.y,
-                    ) <= DOUBLE_CLICK_SLOP
+                    ) <= thresholdsFor(pointer.kind).doubleClickSlop
                 );
             },
         });
@@ -903,6 +1045,23 @@ export class FieldEditor {
     /** The prop tool's Outline being drawn, or null when it's off. */
     propToolShape(): PropToolShape | null {
         return this.propTool?.shape() ?? null;
+    }
+
+    /**
+     * Finishes the polygon the prop tool is drawing, as a double-click does
+     * (its Finish button, tablet 1.4). Returns whether it could: three
+     * corners or more, and no press held.
+     */
+    finishPropTool(): boolean {
+        return this.propTool?.finishNow() ?? false;
+    }
+
+    /**
+     * Takes back the last corner the prop tool's clicks put down (its Undo
+     * point button, tablet 1.4). Returns whether there was one.
+     */
+    removeLastPropPoint(): boolean {
+        return this.propTool?.removeLastPoint() ?? false;
     }
 
     /** What the mode draws over the field, or null with no mode or nothing drawn. */
@@ -1105,12 +1264,43 @@ export class FieldEditor {
         return { box, pad: this.ports.selectionBoxPadding?.() ?? 0, angle: 0 };
     }
 
-    /** The handle of the selection box at `point`, or null. */
-    private handleAt(point: FieldPoint): HandleId | null {
+    /**
+     * The handle of the selection box `pointer` is on, within its kind's reach, or null. A pen's
+     * or finger's wider reach gives way to a move where the press is on a marcher or inside the
+     * box ({@link wideHandleWins}, tablet 1.4); a mouse's is the handle as drawn, and wins there.
+     */
+    private handleAt(pointer: FieldPointer): HandleId | null {
         const frame = this.selectionFrame();
         if (!frame) return null;
         const zoom = this.ports.zoom();
-        return handleAt(handlePoints(frame, zoom), point, zoom);
+        const handles = handlePoints(frame, zoom);
+        const handle = handleAt(
+            handles,
+            pointer.field,
+            zoom,
+            thresholdsFor(pointer.kind).handleReach,
+        );
+        if (handle === null || pointer.kind === "mouse") return handle;
+        const hit = this.marcherAt(pointer);
+        const [onMarcher] =
+            hit !== null && !(this.ports.isItem?.(hit) ?? false)
+                ? this.drawnPositions([hit])
+                : [];
+        return wideHandleWins({
+            frame,
+            handle,
+            handles,
+            at: pointer.field,
+            zoom,
+            marcherDistance: onMarcher
+                ? Math.hypot(
+                      onMarcher.x - pointer.field.x,
+                      onMarcher.y - pointer.field.y,
+                  )
+                : Infinity,
+        })
+            ? handle
+            : null;
     }
 
     /**
@@ -1173,15 +1363,24 @@ export class FieldEditor {
     private startArea(press: FieldPress): FieldGesture {
         const start = this.areaStart(press);
         const isMac = this.options.isMac ?? false;
-        this.area = press.double
-            ? startLasso(this.areaPorts, start, isMac)
-            : startMarquee(this.areaPorts, start, isMac);
+        this.area =
+            press.double || press.area === "lasso"
+                ? startLasso(this.areaPorts, start, isMac)
+                : startMarquee(this.areaPorts, start, isMac);
         return this.area;
     }
 
-    /** The keys an area from `press` starts with: the pill's Add adds, as Shift at the press does. */
+    /**
+     * The keys an area from `press` starts with: the pill's Add adds, as Shift
+     * at the press does, and its Subtract subtracts, as Alt does.
+     */
     private areaStart(press: FieldPress): FieldPointer {
-        return press.add ? { ...press.start, shift: true } : press.start;
+        if (!press.add && !press.subtract) return press.start;
+        return {
+            ...press.start,
+            shift: press.start.shift || press.add === true,
+            alt: press.start.alt || press.subtract === true,
+        };
     }
 
     /** Whether a press on `hit` (null: empty field) is the second of a double-click. */
@@ -1201,7 +1400,7 @@ export class FieldEditor {
             Math.hypot(
                 pointer.screen.x - last.screen.x,
                 pointer.screen.y - last.screen.y,
-            ) <= DOUBLE_CLICK_SLOP
+            ) <= thresholdsFor(pointer.kind).doubleClickSlop
         );
     }
 
@@ -1420,12 +1619,10 @@ export class FieldEditor {
      */
     private openMenu(pointer: FieldPointer) {
         this.ports.takePress?.();
-        const hit = this.handleAt(pointer.field)
-            ? null
-            : this.marcherAt(pointer.field);
+        const hit = this.handleAt(pointer) ? null : this.marcherAt(pointer);
         if (hit !== null && !this.ports.selection.get().includes(hit))
             this.write([hit]);
-        this.ports.openMenu?.(pointer);
+        this.ports.openMenu?.(pointer, hit);
     }
 
     private click(press: FieldPress, shift: boolean) {
@@ -1442,8 +1639,10 @@ export class FieldEditor {
         const keeps =
             shift ||
             (press.hit === null &&
-                areaChoice(press.start, this.options.isMac ?? false) ===
-                    "subtract");
+                areaChoice(
+                    this.areaStart(press),
+                    this.options.isMac ?? false,
+                ) === "subtract");
         this.write(
             chosen ??
                 selectionAfterClick(
@@ -1465,13 +1664,13 @@ export class FieldEditor {
      * pressed. Every press, drag, menu and hover finds performers here, so
      * hidden ones (#558) are passed over in this one place.
      */
-    private marcherAt(point: FieldPoint) {
+    private marcherAt({ field: point, kind }: FieldPointer) {
         const isItem = this.ports.isItem ?? (() => false);
         const hidden = this.ports.marcherHidden ?? (() => false);
         const performer = marcherAt(
             this.ports.marchers(),
             point,
-            hitRadius(this.ports.zoom()),
+            hitRadius(this.ports.zoom(), kind),
             (id) => !isItem(id) && !hidden(id) && this.ports.canSelect(id),
         );
         if (performer !== null) return performer;
@@ -1519,11 +1718,12 @@ const withPositions = (
     return merged;
 };
 
-const isPastSlop = (start: FieldPointer, pointer: FieldPointer) =>
+/** Whether a press from `start` has become a drag: past its kind's move threshold. */
+export const isPastSlop = (start: FieldPointer, pointer: FieldPointer) =>
     Math.hypot(
         pointer.screen.x - start.screen.x,
         pointer.screen.y - start.screen.y,
-    ) >= CLICK_SLOP;
+    ) >= thresholdsFor(start.kind).moveThreshold;
 
 /** The same ids, in any order. */
 const sameIds = (a: readonly number[], b: readonly number[]) => {

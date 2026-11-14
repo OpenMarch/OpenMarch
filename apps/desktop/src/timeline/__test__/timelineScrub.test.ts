@@ -166,3 +166,27 @@ describe("dragging a line by itself while paused (UI-21)", () => {
         expect(store().selection).toEqual({ kind: "range", start: 5, end: 12 });
     });
 });
+
+describe("a scrub cancelled over playback (tablet 3.1)", () => {
+    const playing = { isPlaying: true, setIsPlaying: () => {} };
+
+    it("a cancelled press doesn't jump playback; an ended one does", () => {
+        store().setPlayback({ kind: "on" });
+        expect(store().cursorBeat).toBeNull();
+        seekTimeline(BEATS, 3, "press", playing);
+        seekTimeline(BEATS, 3, "cancel", playing);
+        expect(store().cursorBeat).toBeNull();
+        // The scrub is over: the next press starts afresh, and a release jumps
+        seekTimeline(BEATS, 5, "press", playing);
+        seekTimeline(BEATS, 5, "end", playing);
+        expect(store().cursorBeat).toBe(5);
+    });
+
+    it("paused, a cancel lands where it's sent, as an end does", () => {
+        seekTimeline(BEATS, 5, "press", paused);
+        seekTimeline(BEATS, 8, "drag", paused);
+        seekTimeline(BEATS, 2, "cancel", paused);
+        expect(store().playheadBeat).toBe(2);
+        expect(store().scrubbing).toBe(false);
+    });
+});

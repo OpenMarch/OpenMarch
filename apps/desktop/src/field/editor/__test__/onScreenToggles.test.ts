@@ -107,6 +107,7 @@ const at = (
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,
@@ -360,5 +361,160 @@ describe("Add on the pill, as Shift at the press", () => {
             expect(add.selected).toEqual(shift.selected);
             expect(add.drops).toEqual(shift.drops);
         });
+    });
+});
+
+describe("the pill and a finger (tablet 1.2)", () => {
+    const finger = (x: number, y: number): FieldPointer => ({
+        ...at(x, y),
+        kind: "touch",
+    });
+
+    it("Fine slows a finger's drag as it slows a mouse's", () => {
+        store().toggleLatched("fine");
+        const { editor, state } = setup({ selected: [1] });
+        editor.pointerDown(finger(100, 100));
+        editor.pointerMove(finger(130, 110));
+        editor.pointerMove(finger(157, 121));
+        editor.pointerUp(finger(157, 121));
+        expect(state.drops[0]).toEqual([{ id: 1, x: 114.25, y: 105.25 }]);
+    });
+
+    it("Add keeps the selection on a tap on empty field, and adds the marcher a finger taps", () => {
+        store().toggleLatched("add");
+        const { editor, state } = setup({ selected: [1, 2] });
+        editor.fingerTap(finger(250, 300));
+        expect(state.selected).toEqual([1, 2]);
+        editor.pointerDown(finger(300, 100));
+        editor.pointerUp(finger(300, 100));
+        expect(state.selected).toEqual([1, 2, 3]);
+    });
+
+    it("Add takes out a selected marcher a finger taps, even with a box handle within the finger's reach (#875)", () => {
+        store().toggleLatched("add");
+        const { editor, state } = setup({ selected: [1, 2, 3] });
+        // 7 px above marcher 2's dot: the box's top-middle handle, at y 90, is 13 px away,
+        // within a finger's 22 px reach, but the marcher is nearer
+        const tap = finger(200, 96.5);
+        expect(editor.fingerEdits(tap)).toBe(true);
+        editor.pointerDown(tap);
+        editor.pointerUp(tap);
+        expect(state.selected).toEqual([1, 3]);
+        expect(state.drops).toEqual([]);
+    });
+
+    it("Add makes a finger inside the selection's box pan, as a press there would draw a marquee", () => {
+        // Between marchers 2 and 3, inside the box around 1 and 3, clear of its handles
+        const plain = setup({ selected: [1, 3] });
+        expect(plain.editor.fingerEdits(finger(250, 100))).toBe(true);
+        store().toggleLatched("add");
+        const add = setup({ selected: [1, 3] });
+        expect(add.editor.fingerEdits(finger(250, 100))).toBe(false);
+        // On a marcher it still edits
+        expect(add.editor.fingerEdits(finger(300, 100))).toBe(true);
+    });
+});
+
+describe("Subtract on the pill, as Alt at the press (tablet 1.3)", () => {
+    it("a marquee takes what it covers out of the selection", () => {
+        store().toggleLatched("subtract");
+        const { editor, state } = setup({ selected: [1, 2, 3] });
+        drag(editor, { x: 150, y: 50 }, { x: 250, y: 150 });
+        expect(state.selected).toEqual([1, 3]);
+    });
+
+    it("a marquee starts inside a multi-selection's box and subtracts, moving nothing", () => {
+        store().toggleLatched("subtract");
+        const { editor, state } = setup({ selected: [1, 2, 3, 4] });
+        drag(editor, { x: 250, y: 50 }, { x: 450, y: 150 });
+        expect(state.selected).toEqual([1, 2]);
+        expect(state.drops).toEqual([]);
+    });
+
+    it("a lasso subtracts too", () => {
+        store().toggleLatched("subtract");
+        const { editor, state } = setup({ selected: [1, 2, 3] });
+        editor.pointerDown({ ...at(150, 50), area: "lasso" });
+        for (const [x, y] of [
+            [350, 50],
+            [350, 150],
+            [150, 150],
+            [150, 60],
+        ] as const)
+            editor.pointerMove(at(x, y));
+        editor.pointerUp(at(150, 60));
+        expect(state.selected).toEqual([1]);
+    });
+
+    it("a click on empty field keeps the selection, as Alt does", () => {
+        store().toggleLatched("subtract");
+        const { editor, state } = setup({ selected: [1, 2] });
+        click(editor, 250, 300);
+        expect(state.selected).toEqual([1, 2]);
+    });
+
+    it("isn't Alt for the drag: moving a marcher with Subtract on is a plain move", () => {
+        store().toggleLatched("subtract");
+        const { editor, state } = setup({ selected: [1] });
+        drag(editor, { x: 100, y: 100 }, { x: 157, y: 121 });
+        expect(state.drops[0]).toEqual([{ id: 1, x: 160, y: 120 }]);
+    });
+
+    it("Add wins when both are held, as Shift wins over Alt", () => {
+        store().setHeld("add", true);
+        store().setHeld("subtract", true);
+        const { editor, state } = setup({ selected: [1] });
+        drag(editor, { x: 250, y: 50 }, { x: 350, y: 150 });
+        expect(state.selected).toEqual([1, 3]);
+    });
+});
+
+describe("the drag modes' area (tablet 1.3)", () => {
+    const finger = (
+        x: number,
+        y: number,
+        area?: FieldPointer["area"],
+    ): FieldPointer => ({ ...at(x, y), kind: "touch", area });
+
+    it("a press asking for a lasso draws one from empty field, with no double-click first", () => {
+        const { editor, state } = setup({ selected: [4] });
+        editor.pointerDown(finger(150, 50, "lasso"));
+        for (const [x, y] of [
+            [350, 50],
+            [350, 150],
+            [150, 150],
+            [150, 60],
+        ] as const)
+            editor.pointerMove(finger(x, y));
+        editor.pointerUp(finger(150, 60));
+        expect(state.selected).toEqual([2, 3]);
+    });
+
+    it("a press asking for a marquee draws one", () => {
+        const { editor, state } = setup();
+        editor.pointerDown(finger(150, 50, "marquee"));
+        editor.pointerMove(finger(250, 100));
+        editor.pointerMove(finger(350, 150));
+        editor.pointerUp(finger(350, 150));
+        expect(state.selected).toEqual([2, 3]);
+    });
+
+    it("on a marcher, the area is ignored: the press moves it", () => {
+        const { editor, state } = setup();
+        editor.pointerDown(finger(100, 100, "lasso"));
+        editor.pointerMove(finger(130, 110));
+        editor.pointerMove(finger(157, 121));
+        editor.pointerUp(finger(157, 121));
+        expect(state.drops).toHaveLength(1);
+    });
+
+    it("pressOnEmptyField: empty field outside the selection's box, not a marcher or inside it", () => {
+        const { editor } = setup({ selected: [1, 3] });
+        expect(editor.pressOnEmptyField(finger(250, 300))).toBe(true);
+        expect(editor.pressOnEmptyField(finger(300, 100))).toBe(false);
+        expect(editor.pressOnEmptyField(finger(250, 100))).toBe(false);
+        // Subtract, as Add, makes inside the box empty field
+        store().toggleLatched("subtract");
+        expect(editor.pressOnEmptyField(finger(250, 100))).toBe(true);
     });
 });

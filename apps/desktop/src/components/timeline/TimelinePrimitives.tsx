@@ -8,6 +8,9 @@ import {
     MagnifyingGlassPlusIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
+import { fingerDragSlop } from "./timelineGestures";
+import { touchGrabOffset } from "./touchTargets";
+import { TouchHitArea } from "./TouchHitArea";
 import { animated, useSpring } from "@react-spring/web";
 import { flushSync } from "react-dom";
 import {
@@ -75,11 +78,15 @@ import {
     TimelineMenuClose,
     TimelineMoveMenuItems,
     timelineRangeTargetProps,
+    type TimelineMenuTarget,
     type TimelineMoveCommands,
     type TimelineMoveMenuActions,
 } from "./TimelineRangeMenu";
 import { MOVE_NAME_MAX_LENGTH } from "@/timeline/timelineViewModel";
 import { AddPageFlagMenu } from "./AddPageFlagMenu";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useTouchPressOutside } from "@/components/ui/useTouchPressOutside";
+import { TimelineTouchTransport } from "./TimelineTouchTransport";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import {
     previewPagesForFlag,
@@ -224,6 +231,7 @@ export const TimelineTransport = memo(function TimelineTransport({
     onSelectionChange?: (selection: TimelineSelection) => void;
 }) {
     const { t } = useTranslate();
+    const isTouch = useIsTouchMode();
     const rowRef = useRef<HTMLDivElement>(null);
     const width = useElementWidth(rowRef);
     const folded = width > 0 && width < TRANSPORT_FOLD_PX;
@@ -299,7 +307,7 @@ export const TimelineTransport = memo(function TimelineTransport({
                 }}
                 onBlur={() => setGoTo(null)}
                 className={clsx(
-                    "bg-bg-1 text-text rounded-4 text-sub h-22 w-[150px] min-w-0 border px-6 font-mono outline-hidden",
+                    "bg-bg-1 text-text rounded-4 text-sub touch:h-44 h-22 w-[150px] min-w-0 border px-6 font-mono outline-hidden",
                     goToFailed ? "border-red" : "border-accent",
                 )}
             />
@@ -317,7 +325,7 @@ export const TimelineTransport = memo(function TimelineTransport({
                     key: "G",
                     modKey: goToMod,
                 })}
-                className="text-text rounded-4 enabled:hover:bg-fg-2 text-sub flex h-22 min-w-0 items-baseline gap-8 overflow-hidden px-4 font-mono leading-[22px] whitespace-nowrap"
+                className="text-text rounded-4 enabled:hover:bg-fg-2 text-sub touch:h-44 touch:items-center flex h-22 min-w-0 items-baseline gap-8 overflow-hidden px-4 font-mono leading-[22px] whitespace-nowrap"
             >
                 {/* UI-13: a minimum width, so the transport doesn't shift as the count changes */}
                 <span className="min-w-[15ch] shrink-0">
@@ -381,6 +389,23 @@ export const TimelineTransport = memo(function TimelineTransport({
     const divider = (
         <span aria-hidden="true" className="bg-stroke h-16 w-px shrink-0" />
     );
+    // Tablet 3.5 (#888): the touch layout has its own compact row, on the same actions
+    if (isTouch)
+        return (
+            <TransportTooltipProvider>
+                <TimelineTouchTransport
+                    isPlaying={isPlaying}
+                    playLoops={playLoops}
+                    playsOn={onPlayOn != null}
+                    fromPlayhead={onPlayFromPlayhead != null}
+                    playOnly={playOnly}
+                    clock={clock}
+                    readout={readout}
+                    canFit={onFit != null}
+                    fitted={fitted}
+                />
+            </TransportTooltipProvider>
+        );
     return (
         <TransportTooltipProvider>
             <div
@@ -599,6 +624,8 @@ const useRulerScrub = (
     pixelsPerBeat: number,
     seekSnapBeats: readonly number[],
     scrubLine: TimelineLiveValue<number | null> | undefined,
+    /** Where a finger's cancelled scrub goes back to (`useTimelinePointer`'s `restoreBeat`) */
+    restoreBeat?: () => number | null,
 ) => {
     const latest = useRef({
         onSeek,
@@ -606,6 +633,7 @@ const useRulerScrub = (
         pixelsPerBeat,
         seekSnapBeats,
         scrubLine,
+        restoreBeat,
     });
     latest.current = {
         onSeek,
@@ -613,6 +641,7 @@ const useRulerScrub = (
         pixelsPerBeat,
         seekSnapBeats,
         scrubLine,
+        restoreBeat,
     };
     const edgeScroll = useScrubEdgeScroll();
     const [scrub] = useState(() => {
@@ -623,6 +652,10 @@ const useRulerScrub = (
             surface: Element;
             scrubbing: boolean;
             lastBeat: number;
+            /** How far it moves before it scrubs: further for a finger */
+            slop: number;
+            /** A finger's press: where a cancel puts the playhead back */
+            restoreBeat: number | null;
         } | null = null;
         let swallowClick = false;
         const pointerBeat = (clientX: number, surface: Element) =>
@@ -705,12 +738,17 @@ const useRulerScrub = (
                         '[data-testid="timeline-pointer-surface"]',
                     );
                     if (!surface) return;
+                    const touch = event.pointerType === "touch";
                     drag = {
                         pointerId: event.pointerId,
                         startClientX: event.clientX,
                         surface,
                         scrubbing: false,
                         lastBeat: 0,
+                        slop: timelineDragSlop(event.pointerType),
+                        restoreBeat: touch
+                            ? (latest.current.restoreBeat?.() ?? null)
+                            : null,
                     };
                     event.currentTarget.setPointerCapture?.(event.pointerId);
                 },
@@ -723,7 +761,7 @@ const useRulerScrub = (
                     if (
                         !current.scrubbing &&
                         Math.abs(event.clientX - current.startClientX) <
-                            TIMELINE_RANGE_DRAG_PX
+                            current.slop
                     )
                         return;
                     current.scrubbing = true;
@@ -748,8 +786,9 @@ const useRulerScrub = (
                         event.pointerId,
                     );
                 },
+                // A finger's scrub cancelled by a second finger goes back to where it began
                 onPointerCancel: () => {
-                    finish();
+                    finish(drag?.restoreBeat ?? undefined);
                 },
                 // The capture can go without a pointerup or pointercancel (the window loses focus
                 // mid-drag and the button is released outside it): end the scrub as a cancel does
@@ -824,7 +863,20 @@ export const TimelineRuler = memo(function TimelineRuler({
     pageFlagMove,
     height = TIMELINE_PAGE_ROW_BOTTOM,
     flagSnapPlayhead,
+    scrubRestoreBeat,
+    lineBeats,
+    onOpenPageMenu,
 }: {
+    /**
+     * Where the start flag and the playhead are drawn (view beats): a grip under one of them has
+     * no finger hit area, since the line wins there (UI-21)
+     */
+    lineBeats?: readonly number[];
+    /**
+     * Opens a page box's menu as a finger does (tablet 3.4), at a client point: the selected box's
+     * "…" chip, in the touch layout. Without it, no chip.
+     */
+    onOpenPageMenu?: (target: TimelineMenuTarget, x: number, y: number) => void;
     pages: readonly TimelinePageMarker[];
     measures: readonly TimelineMeasureMarker[];
     beatCount: number;
@@ -848,6 +900,8 @@ export const TimelineRuler = memo(function TimelineRuler({
     height?: number;
     /** The playhead, which a dragged flag lands on when near, as on downbeats and page lines */
     flagSnapPlayhead?: () => BeatPosition;
+    /** Where a finger's cancelled scrub puts the playhead back (`useTimelinePointer`) */
+    scrubRestoreBeat?: () => number | null;
     /** Where the selected marchers are Set (#303); none without a selection */
     keyframes?: readonly TimelineKeyframe[];
     /** A diamond's right-click Unset actions (#306), by view beat; without it, no menu */
@@ -913,6 +967,7 @@ export const TimelineRuler = memo(function TimelineRuler({
         pixelsPerBeat,
         seekSnapBeats,
         scrubLine,
+        scrubRestoreBeat,
     );
     const initialPage = pages.find((page) => page.isInitial);
     // UI-9: the initial box is home; a page box is its range, previous flag to its own flag.
@@ -1001,6 +1056,7 @@ export const TimelineRuler = memo(function TimelineRuler({
                 initialPageWidth={initialPageWidth}
                 scrub={scrub}
                 onSelectPage={selectPage}
+                onOpenPageMenu={onOpenPageMenu}
             />
             {pageFlagMove && (
                 <TimelinePageFlagGrips
@@ -1015,6 +1071,8 @@ export const TimelineRuler = memo(function TimelineRuler({
                     preview={flagPreview}
                     onPreviewChange={setFlagPreview}
                     onSelectPage={selectPage}
+                    selectedBoxIds={selectedBoxIds}
+                    lineBeats={lineBeats}
                 />
             )}
             {holds && (
@@ -1067,6 +1125,7 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     initialPageWidth,
     scrub,
     onSelectPage,
+    onOpenPageMenu,
 }: {
     initialPage: TimelinePageMarker | undefined;
     pageBoxes: readonly {
@@ -1081,61 +1140,85 @@ const TimelineRulerBoxes = memo(function TimelineRulerBoxes({
     initialPageWidth: number;
     scrub: RulerScrub;
     onSelectPage: (page: TimelinePageMarker, extend?: boolean) => void;
+    /** Tablet 3.4: the selected page box's "…" chip opens its menu; without it, no chip */
+    onOpenPageMenu?: (target: TimelineMenuTarget, x: number, y: number) => void;
 }) {
     const { t } = useTranslate();
     const selectedIds = new Set(selectedBoxIds.split("\n"));
+    const openPageMenu = onOpenPageMenu ?? null;
     return (
-        <div
-            data-testid="timeline-page-ruler"
-            // Clipped without being a scroll container, so labels can stick to the viewport
-            className="border-stroke bg-fg-2 rounded-6 absolute overflow-clip border font-mono"
-            style={{
-                top: TIMELINE_PAGE_ROW_TOP,
-                height: TIMELINE_PAGE_ROW_HEIGHT,
-                left: -initialPageWidth,
-                width: beatCount * pixelsPerBeat + initialPageWidth,
-            }}
-        >
-            {initialPage && (
-                <button
-                    type="button"
-                    data-timeline-interactive="true"
-                    data-testid="timeline-initial-page"
-                    aria-label={t("timeline.page.label", {
-                        pageName: initialPage.label,
-                    })}
-                    title={t("timeline.page.homeTooltip", {
-                        page: initialPage.label,
-                    })}
-                    aria-pressed={homeSelected}
-                    {...scrub.handlers}
-                    onClick={(event) => {
-                        if (!scrub.consumeClick(event))
-                            onSelectPage(initialPage);
-                    }}
-                    // eslint-disable-next-line no-restricted-syntax -- the inner corner of the rounded-6 page row inside its 1 px border
-                    className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 left-0 flex h-full items-center justify-center rounded-l-[5px] border-r outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
-                    style={{ width: initialPageWidth }}
-                >
-                    {/* UI-13: a house, so home's "0" isn't read as a count or a measure */}
-                    {HOUSE_ICON}
-                </button>
-            )}
-            {pageBoxes.map(({ page, range }) =>
-                range ? (
-                    <TimelinePageBox
-                        key={page.id}
-                        page={page}
-                        range={range}
-                        selected={selectedIds.has(String(page.id))}
-                        pixelsPerBeat={pixelsPerBeat}
-                        initialPageWidth={initialPageWidth}
-                        scrub={scrub}
-                        onSelectPage={onSelectPage}
-                    />
-                ) : null,
-            )}
-        </div>
+        <>
+            <div
+                data-testid="timeline-page-ruler"
+                // Clipped without being a scroll container, so labels can stick to the viewport
+                className="border-stroke bg-fg-2 rounded-6 absolute overflow-clip border font-mono"
+                style={{
+                    top: TIMELINE_PAGE_ROW_TOP,
+                    height: TIMELINE_PAGE_ROW_HEIGHT,
+                    left: -initialPageWidth,
+                    width: beatCount * pixelsPerBeat + initialPageWidth,
+                }}
+            >
+                {initialPage && (
+                    <button
+                        type="button"
+                        data-timeline-interactive="true"
+                        data-touch-yield=""
+                        data-testid="timeline-initial-page"
+                        aria-label={t("timeline.page.label", {
+                            pageName: initialPage.label,
+                        })}
+                        title={t("timeline.page.homeTooltip", {
+                            page: initialPage.label,
+                        })}
+                        aria-pressed={homeSelected}
+                        {...scrub.handlers}
+                        onClick={(event) => {
+                            if (!scrub.consumeClick(event))
+                                onSelectPage(initialPage);
+                        }}
+                        // eslint-disable-next-line no-restricted-syntax -- the inner corner of the rounded-6 page row inside its 1 px border
+                        className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 left-0 flex h-full items-center justify-center rounded-l-[5px] border-r outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+                        style={{ width: initialPageWidth }}
+                    >
+                        {/* UI-13: a house, so home's "0" isn't read as a count or a measure */}
+                        {HOUSE_ICON}
+                    </button>
+                )}
+                {pageBoxes.map(({ page, range }) =>
+                    range ? (
+                        <TimelinePageBox
+                            key={page.id}
+                            page={page}
+                            range={range}
+                            selected={selectedIds.has(String(page.id))}
+                            hasMenuChip={
+                                openPageMenu !== null &&
+                                selectedIds.has(String(page.id))
+                            }
+                            pixelsPerBeat={pixelsPerBeat}
+                            initialPageWidth={initialPageWidth}
+                            scrub={scrub}
+                            onSelectPage={onSelectPage}
+                        />
+                    ) : null,
+                )}
+            </div>
+            {/* Outside the row's clip, so their finger areas take the row's full height, border too */}
+            {openPageMenu &&
+                pageBoxes.map(({ page, range }) =>
+                    range && selectedIds.has(String(page.id)) ? (
+                        <TimelinePageMenuChip
+                            key={`menu-${page.id}`}
+                            page={page}
+                            range={range}
+                            pixelsPerBeat={pixelsPerBeat}
+                            initialPageWidth={initialPageWidth}
+                            onOpen={openPageMenu}
+                        />
+                    ) : null,
+                )}
+        </>
     );
 });
 
@@ -1144,6 +1227,7 @@ const TimelinePageBox = memo(function TimelinePageBox({
     page,
     range,
     selected,
+    hasMenuChip,
     pixelsPerBeat,
     initialPageWidth,
     scrub,
@@ -1152,6 +1236,8 @@ const TimelinePageBox = memo(function TimelinePageBox({
     page: TimelinePageMarker;
     range: TimelineBeatRange;
     selected: boolean;
+    /** The box has the "…" chip in the touch layout (tablet 3.4): its label keeps clear of it */
+    hasMenuChip: boolean;
     pixelsPerBeat: number;
     initialPageWidth: number;
     scrub: RulerScrub;
@@ -1167,7 +1253,11 @@ const TimelinePageBox = memo(function TimelinePageBox({
         <button
             type="button"
             data-timeline-interactive="true"
+            // A finger near a flag, grip or keyframe over the box takes that target (3.3)
+            data-touch-yield=""
             {...timelineRangeTargetProps(range, undefined, page.id)}
+            // A finger's long press opens the box's menu (tablet 3.4), not the button's hint
+            data-own-long-press=""
             aria-label={t("timeline.page.label", { pageName: page.label })}
             aria-pressed={selected}
             {...scrub.handlers}
@@ -1176,13 +1266,102 @@ const TimelinePageBox = memo(function TimelinePageBox({
                 // macOS ctrl+click opens the context menu (UI-9: no selection change)
                 if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
             }}
-            className="border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 flex h-full items-center justify-end border-r px-8 outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset"
+            className={clsx(
+                "border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 flex h-full items-center justify-end border-r px-8 outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset",
+                hasMenuChip && "touch:pr-48",
+            )}
             style={{
                 left: boxLeft,
                 width: boxWidth,
             }}
         >
             <PageBoxLabel label={page.label} shown={labelShown} />
+        </button>
+    );
+});
+
+/** The page box chip's drawn size, as the clip's ⋯ (UI-14) */
+const PAGE_MENU_CHIP_WIDTH = 18;
+const PAGE_MENU_CHIP_HEIGHT = 16;
+/** How far in from the box's end the chip sits: clear of the end flag's grip bar */
+const PAGE_MENU_CHIP_INSET = 22;
+
+/**
+ * The selected page box's "…" chip (tablet plan 3.4), shown only in the touch layout: a finger
+ * can't right-click, so it opens the box's full menu, the right-click's entries with **Edit move**
+ * first (a mouse double-clicks the box for that). Drawn as the clip's ⋯, with a hit area 44px wide
+ * and as tall as the page row, so it never takes a scrub on the measure numbers, that follows the
+ * press rules of tablet 3.3 (`findTouchHit`). It isn't marked as the selected object's: a finger
+ * nearer a keyframe, the playhead or the start flag than the chip takes that instead, so the
+ * chip never steals their near misses. A press right on the chip is the chip's. It sits inside
+ * the box's end, clear of the end flag's grip.
+ */
+const TimelinePageMenuChip = memo(function TimelinePageMenuChip({
+    page,
+    range,
+    pixelsPerBeat,
+    initialPageWidth,
+    onOpen,
+}: {
+    page: TimelinePageMarker;
+    range: TimelineBeatRange;
+    pixelsPerBeat: number;
+    initialPageWidth: number;
+    onOpen: (target: TimelineMenuTarget, x: number, y: number) => void;
+}) {
+    const { t } = useTranslate();
+    const boxLeft =
+        initialPageWidth + beatToX(range.startBeatIndex, pixelsPerBeat);
+    const boxRight =
+        initialPageWidth + beatToX(range.endBeatIndex, pixelsPerBeat);
+    // In the ruler's parent: the row's box starts `initialPageWidth` left of beat 0
+    const left =
+        Math.max(
+            boxLeft + 2,
+            boxRight - PAGE_MENU_CHIP_INSET - PAGE_MENU_CHIP_WIDTH,
+        ) - initialPageWidth;
+    // Centred in the page row, inside its 1px border
+    const inset = (TIMELINE_PAGE_ROW_HEIGHT - PAGE_MENU_CHIP_HEIGHT) / 2;
+    const open = (element: Element) => {
+        const rect = element.getBoundingClientRect();
+        onOpen({ range, pageId: String(page.id) }, rect.left, rect.bottom + 4);
+    };
+    return (
+        <button
+            type="button"
+            data-testid="timeline-page-menu-button"
+            data-timeline-interactive="true"
+            // Its long press opens the menu too, not the button's hint
+            data-own-long-press=""
+            aria-haspopup="menu"
+            aria-label={t("timeline.page.optionsLabel", {
+                pageName: page.label,
+            })}
+            // A press on it never scrubs
+            onPointerDown={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => event.stopPropagation()}
+            onClick={(event) => open(event.currentTarget)}
+            // Its right-click (or a finger's long press on it) is the box's menu, too
+            onContextMenu={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                open(event.currentTarget);
+            }}
+            className="text-text bg-bg-1/70 hover:bg-fg-2 focus-visible:ring-accent rounded-4 touch:flex absolute z-20 hidden items-center justify-center outline-hidden focus-visible:ring-2"
+            style={{
+                left,
+                top: TIMELINE_PAGE_ROW_TOP + inset,
+                width: PAGE_MENU_CHIP_WIDTH,
+                height: PAGE_MENU_CHIP_HEIGHT,
+            }}
+        >
+            <DotsThreeIcon size={12} weight="bold" />
+            {/* 44px wide and the page row's height: below the row the measure numbers scrub, and
+                above it the headroom is the pennant's and the loop ends' (UI-20) */}
+            <TouchHitArea
+                className="touch:block pointer-events-auto absolute left-1/2 hidden w-full min-w-44 -translate-x-1/2"
+                style={{ top: -inset, height: TIMELINE_PAGE_ROW_HEIGHT }}
+            />
         </button>
     );
 });
@@ -1562,6 +1741,8 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
     );
     // The move menu opened from the ⋯ button or the keyboard (UI-14)
     const [menuOpen, setMenuOpen] = useState(false);
+    const menuContent = useRef<HTMLDivElement>(null);
+    useTouchPressOutside(menuOpen, menuContent, () => setMenuOpen(false));
     // Rename focuses its field and Delete removes the clip: after those, focus stays put
     const keepFocus = useRef(false);
     const trackId = track.id;
@@ -1651,6 +1832,8 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
          * for its range (a move or a resize), or the range
          */
         from: TimelineBeatRange | null;
+        /** How far it moves before it drags (`timelineDragSlop`) */
+        slop: number;
     } | null>(null);
     const peeling = useClipPeel({ trackId: track.id, peel, clipRef });
 
@@ -1714,6 +1897,8 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
         resize,
         // An edge dragged during a dropped move's wait starts from the drop, which gives way
         held: movePreview,
+        selected,
+        touchGroup: `clip:${track.id}`,
         onDragStart: () => {
             releaseMove();
             setMovePreview(null);
@@ -1769,8 +1954,12 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                 type="button"
                 data-timeline-interactive="true"
                 data-testid="timeline-clip"
+                // A finger's long press opens the move's menu (tablet 3.4), not the button's hint
+                data-own-long-press={moveMenu ? "" : undefined}
                 data-move-id={track.linkId}
                 data-selected={selected}
+                // A finger on the clip moves it, even inside another target's hit area (3.3)
+                data-touch-keep={`clip:${track.id}`}
                 // UI-14 review: its keys are its own; the app's Enter, arrows and WASD don't run
                 data-timeline-own-keys={moveMenu ? "true" : undefined}
                 ref={clipRef}
@@ -1876,6 +2065,7 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                         moved: false,
                         vertical: false,
                         from: null,
+                        slop: timelineDragSlop(event.pointerType),
                     };
                     event.currentTarget.setPointerCapture?.(event.pointerId);
                 }}
@@ -1893,7 +2083,12 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                     }
                     const dx = event.clientX - drag.startClientX;
                     const dy = event.clientY - drag.startClientY;
-                    if (!drag.moved && peel && isVerticalPeel(dx, dy)) {
+                    if (
+                        !drag.moved &&
+                        peel &&
+                        isVerticalPeel(dx, dy) &&
+                        Math.abs(dy) >= drag.slop
+                    ) {
                         drag.vertical = true;
                         drag.moved = true;
                         setMoving(true);
@@ -1907,7 +2102,7 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                     // Sideways first is a re-time; mostly up or down waits for the vertical lock
                     if (
                         !drag.moved &&
-                        (Math.abs(dx) < TIMELINE_RANGE_DRAG_PX ||
+                        (Math.abs(dx) < drag.slop ||
                             (peel !== undefined &&
                                 2 * Math.abs(dx) <= Math.abs(dy)))
                     )
@@ -2112,6 +2307,8 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                                 type="button"
                                 data-testid="timeline-clip-menu-button"
                                 data-timeline-interactive="true"
+                                // Its menu, not the button's hint, on a finger's long press
+                                data-own-long-press=""
                                 data-timeline-own-keys="true"
                                 // Space stays Play (UI-14 round-2 review): it doesn't open the menu
                                 onKeyDown={spaceStaysPlay}
@@ -2138,11 +2335,18 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                                 }}
                             >
                                 <DotsThreeIcon size={12} weight="bold" />
+                                {/* A finger's 44px ⋯ chip (tablet plan 3.3); it opens the
+                                    same menu as a right-click on the clip */}
+                                <TouchHitArea
+                                    selected
+                                    group={`clip:${track.id}`}
+                                />
                             </button>
                         </DropdownMenu.Trigger>
                     </div>
                     <DropdownMenu.Portal>
                         <DropdownMenu.Content
+                            ref={menuContent}
                             data-testid="timeline-clip-menu"
                             align="end"
                             sideOffset={4}
@@ -2249,6 +2453,10 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
         lastBeat: number | null;
         /** The pointer has moved past the drag threshold: a drag, not a click */
         moved: boolean;
+        /** How far it moves before it drags: further for a finger (`timelineDragSlop`) */
+        slop: number;
+        /** A finger's offset from the flag it grabbed (`touchGrabOffset`); 0 for a mouse */
+        grab: number;
     } | null>(null);
 
     // A new range replaces the preview in the same render, not in an effect after it: an effect
@@ -2368,7 +2576,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
             dragLive(
                 drag,
                 flagBeatAt(
-                    event.clientX,
+                    event.clientX + drag.grab,
                     drag.surface,
                     isPageSnapDisabled(event),
                 ),
@@ -2378,7 +2586,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
         }
         const next = updatePreview(
             drag.kind,
-            event.clientX,
+            event.clientX + drag.grab,
             drag.surface,
             isPageSnapDisabled(event),
             false,
@@ -2446,6 +2654,13 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 playheadBeat: range.endBeatIndex,
                 lastBeat: null,
                 moved: false,
+                slop: timelineDragSlop(event.pointerType),
+                grab: touchGrabOffset(
+                    event.pointerType,
+                    event.clientX,
+                    surface.getBoundingClientRect().left +
+                        beatToX(beatIndex, pixelsPerBeat),
+                ),
             };
             event.currentTarget.setPointerCapture?.(event.pointerId);
         },
@@ -2454,8 +2669,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
             if (!drag || drag.pointerId !== event.pointerId) return;
             if (
                 !drag.moved &&
-                Math.abs(event.clientX - drag.startClientX) <
-                    TIMELINE_RANGE_DRAG_PX
+                Math.abs(event.clientX - drag.startClientX) < drag.slop
             )
                 return;
             drag.moved = true;
@@ -2463,7 +2677,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 dragLive(
                     drag,
                     flagBeatAt(
-                        event.clientX,
+                        event.clientX + drag.grab,
                         drag.surface,
                         isPageSnapDisabled(event),
                     ),
@@ -2473,7 +2687,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
             }
             updatePreview(
                 kind,
-                event.clientX,
+                event.clientX + drag.grab,
                 drag.surface,
                 isPageSnapDisabled(event),
             );
@@ -2558,10 +2772,12 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                     style={{ left: x, height }}
                 >
                     <span
+                        data-touch-drawn=""
                         className="bg-accent pointer-events-none absolute top-0 left-1/2 w-px"
                         style={{ height }}
                     />
                     <span className="bg-accent rounded-l-4 absolute top-0 right-1/2 h-10 w-8" />
+                    {(onCommit || live(kind)) && <TouchHitArea />}
                 </button>
             );
         // UI-10, UI-11: the start flag, where movers leave from. No words: a line and a pennant,
@@ -2584,12 +2800,14 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                 >
                     {/* UI-20: 2px, from the headroom strip down */}
                     <span
+                        data-touch-drawn=""
                         className={clsx(
                             "pointer-events-none absolute top-0 left-1/2 w-[2px] -translate-x-1/2",
                             START_INK.bg,
                         )}
                         style={{ height }}
                     />
+                    {(onCommit || live(kind)) && <TouchHitArea />}
                 </button>
                 {/* The pennant is its own handle in the headroom strip (UI-20), above the
                     playhead's (z-50) and the loop's ends (z-58): after Stop the flag is drawn on
@@ -2621,6 +2839,7 @@ export const TimelineSelectionRange = memo(function TimelineSelectionRange({
                             bar's top; its left side is the 2px stem */}
                         <path d="M0 0 L12 0 L0 12 Z" fill="currentColor" />
                     </svg>
+                    {(onCommit || live(kind)) && <TouchHitArea />}
                 </button>
             </>
         );
@@ -2991,6 +3210,8 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 type="button"
                 data-testid="timeline-playhead"
                 data-timeline-scrub="true"
+                // A finger's long press opens its menu (tablet 3.4), not the button's hint
+                data-own-long-press={onAddPage ? "" : undefined}
                 aria-label={t("timeline.playhead.label", {
                     position: getPlayheadReadout(model, positionBeat).spoken,
                 })}
@@ -3031,6 +3252,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 {/* UI-20: a 2px line from the headroom strip down, and a head in the strip, centered on
                 the line, so its tip runs into the line */}
                 <span
+                    data-touch-drawn=""
                     className="bg-accent pointer-events-none absolute top-0 left-1/2 w-[2px] -translate-x-1/2"
                     style={{ height }}
                 />
@@ -3043,6 +3265,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 >
                     <path d="M0 0 H12 V6 L6 11 L0 6 Z" fill="currentColor" />
                 </svg>
+                {onSeek && <TouchHitArea />}
             </button>
         </AddPageFlagMenu>
     );
@@ -3107,6 +3330,13 @@ export function showsReturnMarker(
 
 /** How far, in pixels, a press on empty timeline space must move to select a range */
 export const TIMELINE_RANGE_DRAG_PX = 4;
+
+/**
+ * How far a press on a clip or a page box moves before it drags (tablet 3.1): the mouse's
+ * `TIMELINE_RANGE_DRAG_PX`, or a finger's move threshold, so a tap that wobbles stays a tap.
+ */
+export const timelineDragSlop = (pointerType: string) =>
+    fingerDragSlop(pointerType, TIMELINE_RANGE_DRAG_PX);
 
 /**
  * The range a drag on empty timeline space selects (ui.md UI-9 "Creating a timeline"): from where
@@ -3205,6 +3435,7 @@ export const useTimelinePointer = ({
     beatCount,
     snapBeats = [],
     seekSnapBeats = [],
+    restoreBeat,
 }: {
     onSeek?: TimelineSeek;
     onRangeSelect?: (range: TimelineBeatRange) => void;
@@ -3213,6 +3444,11 @@ export const useTimelinePointer = ({
     snapBeats?: readonly number[];
     /** Downbeats and page lines a click or scrub lands on when near (UI-12) */
     seekSnapBeats?: readonly number[];
+    /**
+     * Where a finger's scrub goes back to when it's cancelled (a second finger landed, tablet
+     * 3.1): the playhead's beat before the press, or null to end where it was (while playing)
+     */
+    restoreBeat?: () => number | null;
 }) => {
     // Every move of a range drag writes it: only the preview leaf reads it (`TimelineRangePreview`)
     const [rangePreview] = useState(() =>
@@ -3233,6 +3469,12 @@ export const useTimelinePointer = ({
         lastBeat: number | null;
         /** The press was on the playhead's line or head: a paused drag can swap it (UI-21) */
         onPlayhead: boolean;
+        /** A finger's press: where a cancel puts the playhead back (`restoreBeat`) */
+        restoreBeat: number | null;
+        /** A finger's press, which a `pointercancel` cancels (a mouse's or pen's ends there) */
+        touch: boolean;
+        /** The scrub sent a `drag` seek: over playback, that suspended it */
+        dragged: boolean;
     } | null>(null);
     const edgeScroll = useScrubEdgeScroll();
     const draggedRange = (
@@ -3275,8 +3517,10 @@ export const useTimelinePointer = ({
                 pixelsPerBeat,
                 isPageSnapDisabled(event),
             );
-            if (gesture.current && seekGesture !== undefined)
+            if (gesture.current && seekGesture !== undefined) {
                 gesture.current.lastBeat = snapped;
+                if (seekGesture === "drag") gesture.current.dragged = true;
+            }
             // The seek only goes out when the beat changes (`seekTimeline`)
             const landed = onSeek?.(
                 snapped,
@@ -3304,17 +3548,26 @@ export const useTimelinePointer = ({
         rangePreview.set(null);
     };
     const release = () => scrubLine.set(null);
-    /** Ends a gesture without its release: a range isn't selected, a scrub ends where it was */
-    const cancel = () => {
+    /**
+     * Ends a gesture without its release: a range isn't selected, a scrub ends where it was. A
+     * finger's cancelled scrub (a second finger landed) goes back to where the playhead was.
+     */
+    const cancel = (event?: { readonly type: string }) => {
         const current = gesture.current;
         if (!current) return;
         end();
-        // The scrub ends where it was, so a suspended playback resumes and S settles
-        if (current.mode === "scrub" && current.lastBeat !== null)
-            onSeek?.(current.lastBeat, {
-                gesture: "end",
-                ...(current.onPlayhead ? { line: "playhead" as const } : {}),
-            });
+        const fingerCancel = current.touch && event?.type === "pointercancel";
+        const line = current.onPlayhead ? { line: "playhead" as const } : {};
+        if (current.mode === "scrub" && current.lastBeat !== null) {
+            if (fingerCancel && current.restoreBeat !== null)
+                // Paused: back to where the playhead was before the press
+                onSeek?.(current.restoreBeat, { gesture: "end", ...line });
+            else if (fingerCancel && !current.dragged)
+                // Over playback, a press only marked where a click would jump: no jump
+                onSeek?.(current.lastBeat, { gesture: "cancel", ...line });
+            // The scrub ends where it was, so a suspended playback resumes and S settles
+            else onSeek?.(current.lastBeat, { gesture: "end", ...line });
+        }
         release();
     };
     // A gesture still down when the timeline goes (a variant switch, focusing the page timeline)
@@ -3326,11 +3579,30 @@ export const useTimelinePointer = ({
     return {
         rangePreview,
         scrubLine,
+        /**
+         * A finger's tap on bare track space (tablet 3.1, `timelineGestures.ts`): the click there,
+         * one seek. `surface` is the pointer surface.
+         */
+        seekAt: (surface: Element, clientX: number) => {
+            if (gesture.current) return;
+            seek(beatAtClientX(surface, clientX), { altKey: false });
+        },
         pointerHandlers: {
             onPointerMove: (event: ReactPointerEvent<HTMLElement>) => {
                 const current = gesture.current;
                 if (!current) return;
                 if (current.mode === "scrub") {
+                    // A finger on the playhead drags it only once past a finger's slop, so one held
+                    // still with a little jitter (a long press for its menu, tablet 3.4) never
+                    // moves it
+                    if (
+                        current.touch &&
+                        current.onPlayhead &&
+                        !current.dragged &&
+                        Math.abs(event.clientX - current.startClientX) <
+                            timelineDragSlop("touch")
+                    )
+                        return;
                     seek(pointerBeat(event), event, "drag");
                     const surface = event.currentTarget;
                     const { clientX, altKey } = event;
@@ -3372,7 +3644,11 @@ export const useTimelinePointer = ({
                     event.target.closest("[data-timeline-scrub]") != null;
                 const startBeat = pointerBeat(event);
                 // UI-12: a plain drag scrubs; Ctrl+drag (Cmd on macOS) draws a range
+                const touch = event.pointerType === "touch";
                 gesture.current = {
+                    touch,
+                    dragged: false,
+                    restoreBeat: touch ? (restoreBeat?.() ?? null) : null,
                     mode:
                         onPlayhead || !onRangeSelect || !drawing
                             ? "scrub"

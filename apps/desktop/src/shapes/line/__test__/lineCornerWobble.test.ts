@@ -51,6 +51,7 @@ const pointer = (at: XY): FieldPointer => ({
     field: at,
     screen: at,
     button: 0,
+    kind: "mouse",
     ...NO_KEYS,
 });
 

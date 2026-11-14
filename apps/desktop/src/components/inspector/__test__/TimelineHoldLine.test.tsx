@@ -161,6 +161,15 @@ describe("TimelineHoldLine", () => {
         expect(useTimelineSelectionStore.getState().playheadBeat).toBe(9);
     });
 
+    it("carries where the link goes for a long press, which a tablet shows instead of the tooltip", () => {
+        mocks.selectedPage = PAGES[3];
+        show([1]);
+        expect(line()).toHaveAttribute(
+            "data-tip-label",
+            "Go to Page 2, where these marchers last moved",
+        );
+    });
+
     it("says a marcher that never moved holds from the start, not from the first page by name, and jumps there", async () => {
         mocks.selectedPage = PAGES[3];
         useTimelineSelectionStore.getState().seek(17);

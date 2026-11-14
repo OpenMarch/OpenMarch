@@ -37,6 +37,7 @@ const pointer = (
     field: { x, y },
     screen: { x, y },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,

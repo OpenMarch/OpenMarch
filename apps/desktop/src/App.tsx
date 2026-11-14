@@ -1,5 +1,5 @@
 import { threeZoomControls } from "@/field/three/fieldNavigation";
-import Toolbar from "@/components/toolbar/Toolbar";
+import Toolbar, { PreviewToolbar } from "@/components/toolbar/Toolbar";
 import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
@@ -29,13 +29,11 @@ import { useUiSettingsStore } from "./stores/UiSettingsStore";
 import { useSnapOnWhenFileOpens } from "./hooks/useSnapOnWhenFileOpens";
 import CanvasZoomControls from "@/components/canvas/CanvasZoomControls";
 import FieldDisplayBar from "@/components/canvas/display/FieldDisplayBar";
-import View3dButton from "@/components/toolbar/View3dButton";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useIsPreviewMode } from "./stores/PreviewModeStore";
 import { PreviewModeHost } from "./components/preview/PreviewMode";
-import WorkspaceViewSwitch from "./components/toolbar/WorkspaceViewSwitch";
 import { useEditorModeStore } from "./stores/EditorModeStore";
 import ErrorBoundary from "./ErrorBoundary";
 import {
@@ -324,10 +322,7 @@ function App() {
                                                     >
                                                         {preview ? (
                                                             // Only the workspace switch, to go back, and the 3D View
-                                                            <div className="flex items-center justify-end gap-8">
-                                                                <View3dButton />
-                                                                <WorkspaceViewSwitch />
-                                                            </div>
+                                                            <PreviewToolbar />
                                                         ) : (
                                                             <div
                                                                 className={
@@ -337,7 +332,14 @@ function App() {
                                                                     tempoMode
                                                                 }
                                                             >
-                                                                <Toolbar />
+                                                                <Toolbar
+                                                                    tempoMode={
+                                                                        tempoMode
+                                                                    }
+                                                                    tempoModeClass={
+                                                                        tempoModeClass
+                                                                    }
+                                                                />
                                                             </div>
                                                         )}
                                                         <div

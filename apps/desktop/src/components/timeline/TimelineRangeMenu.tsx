@@ -1,8 +1,10 @@
 import {
     createContext,
+    useCallback,
     useContext,
     useEffect,
     useId,
+    useRef,
     useState,
     type MouseEvent,
     type ReactNode,
@@ -33,11 +35,17 @@ import {
 } from "@/timeline/holdMenuState";
 import { useTranslate } from "@tolgee/react";
 import type { TimelineBeatRange } from "./TimelineViewModel";
+import { isTouchContextMenu } from "./timelineGestures";
 import {
     MENU_CONTENT_CLASS,
     MENU_ITEM_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
+import { TIP_DATA } from "@/components/ui/Tip";
+import {
+    MENU_PART_ATTRIBUTE,
+    useTouchPressOutside,
+} from "@/components/ui/useTouchPressOutside";
 
 /**
  * The timeline's right-click menu (ui.md UI-9, P8.14). On a page box it offers **Delete page**
@@ -46,6 +54,10 @@ import {
  * clip it offers the move's entries (UI-14): **Edit move**, **Rename move…** and **Delete move**,
  * the same entries as the selected clip's ⋯ button. A dragged range with none of those opens
  * nothing.
+ *
+ * Opened by touch (a finger's long press, or the selected page box's "…" chip, tablet plan 3.4),
+ * a page box's menu also starts with **Edit move**, which a mouse reaches by double-clicking the
+ * box.
  */
 
 /**
@@ -111,6 +123,8 @@ export function MenuItemWithReason({
                     : { role: "menuitemradio", "aria-checked": checked })}
                 aria-disabled={unavailable ? "true" : undefined}
                 aria-describedby={unavailable ? reasonId : undefined}
+                // A finger's long press on it shows the reason too (LongPressGuard, #928)
+                {...(unavailable ? { [TIP_DATA.label]: reason } : {})}
                 onSelect={(event) => {
                     if (!unavailable) return onSelect();
                     // Pressing it shows why instead of closing the menu
@@ -150,6 +164,8 @@ export function MenuItemWithReason({
                                 </Tooltip.Trigger>
                                 <Tooltip.Portal>
                                     <Tooltip.Content
+                                        {...{ [MENU_PART_ATTRIBUTE]: "" }}
+                                        data-testid={`${reasonTestId}-tip`}
                                         side="right"
                                         sideOffset={8}
                                         onEscapeKeyDown={() =>
@@ -582,27 +598,52 @@ export const markedRangeAt = (
 export function useTimelineRangeMenu({
     menu,
     movesFor,
+    editMove,
     resolveRange,
 }: {
     menu?: TimelinePageMenu;
     /** A clip's move entries (UI-14) by its track id, or null where it has none */
     movesFor?: (trackId: string) => TimelineMoveMenuActions | null;
+    /**
+     * **Edit move** in a page box's menu opened by touch (tablet plan 3.4): what a double-click on
+     * the box does. Without it, no such entry.
+     */
+    editMove?: {
+        readonly onEdit: (target: TimelineMenuTarget) => void;
+        /** Why it can't run now (while playing), or null */
+        readonly disabledReason?: string | null;
+    };
     resolveRange: (event: MouseEvent<HTMLElement>) => TimelineMenuTarget | null;
 }): {
     onContextMenu: (event: MouseEvent<HTMLElement>) => void;
+    /**
+     * Opens a page box's menu as a finger does (with **Edit move**), at (`x`, `y`) in client
+     * pixels: the selected page box's "…" chip (tablet plan 3.4)
+     */
+    openPageMenu: (target: TimelineMenuTarget, x: number, y: number) => void;
     element: ReactNode;
 } {
     const [open, setOpen] = useState<{
         target: TimelineMenuTarget;
         x: number;
         y: number;
+        /** Opened by a finger: a page box's menu offers **Edit move** */
+        touch: boolean;
     } | null>(null);
+    const openPageMenu = useCallback(
+        (target: TimelineMenuTarget, x: number, y: number) =>
+            setOpen({ target, x, y, touch: true }),
+        [],
+    );
+    const content = useRef<HTMLDivElement>(null);
+    useTouchPressOutside(open !== null, content, () => setOpen(null));
     const movesOf = (target: TimelineMenuTarget) =>
         target.trackId === undefined
             ? null
             : (movesFor?.(target.trackId) ?? null);
     const onContextMenu = (event: MouseEvent<HTMLElement>) => {
-        if (!menu && !movesFor) return;
+        const touch = isTouchContextMenu(event.nativeEvent);
+        if (!menu && !movesFor && !(touch && editMove)) return;
         const target = resolveRange(event);
         if (!target) return;
         // Nothing to offer here: no page-box entry, and no move
@@ -614,13 +655,21 @@ export function useTimelineRangeMenu({
                 menu?.clearPage !== undefined ||
                 menu?.subset !== undefined ||
                 menu?.extraFor !== undefined ||
-                menu?.splitHold !== undefined) &&
+                menu?.splitHold !== undefined ||
+                (touch && editMove !== undefined)) &&
             target.pageId !== undefined;
         if (!canDelete && !movesOf(target)) return;
         event.preventDefault();
-        setOpen({ target, x: event.clientX, y: event.clientY });
+        setOpen({ target, x: event.clientX, y: event.clientY, touch });
     };
     const moves = open ? movesOf(open.target) : null;
+    const editEntry =
+        open?.touch &&
+        editMove &&
+        open.target.pageId !== undefined &&
+        open.target.trackId === undefined
+            ? editMove
+            : undefined;
     const setAsShownReason =
         open && menu?.setAsShown && open.target.pageId !== undefined
             ? menu.setAsShown.reasonFor(open.target.pageId)
@@ -659,6 +708,7 @@ export function useTimelineRangeMenu({
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
                 <DropdownMenu.Content
+                    ref={content}
                     data-testid="timeline-range-menu"
                     align="start"
                     // The trigger is an invisible point; focus stays where an entry puts it (the
@@ -668,6 +718,24 @@ export function useTimelineRangeMenu({
                     className={TIMELINE_MENU_CONTENT_CLASS}
                 >
                     <TimelineMenuClose.Provider value={() => setOpen(null)}>
+                        {editEntry && (
+                            <>
+                                <MenuItemWithReason
+                                    testId="timeline-range-menu-edit-move"
+                                    reason={editEntry.disabledReason ?? null}
+                                    reasonTestId="timeline-range-menu-edit-move-reason"
+                                    onSelect={() =>
+                                        editEntry.onEdit(open.target)
+                                    }
+                                >
+                                    <PencilSimpleIcon size={14} />
+                                    {tolgee.t("timeline.moveMenu.edit")}
+                                </MenuItemWithReason>
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                            </>
+                        )}
                         {splitHoldBeat !== undefined && (
                             <>
                                 <DropdownMenu.Item
@@ -854,5 +922,5 @@ export function useTimelineRangeMenu({
             </DropdownMenu.Portal>
         </DropdownMenu.Root>
     );
-    return { onContextMenu, element };
+    return { onContextMenu, openPageMenu, element };
 }

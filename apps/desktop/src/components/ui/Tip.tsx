@@ -1,4 +1,5 @@
 import {
+    cloneElement,
     createContext,
     useContext,
     type ReactElement,
@@ -11,6 +12,18 @@ import {
 import type { ActionId } from "@/shortcuts/definitions";
 
 const InRichTips = createContext(false);
+
+/**
+ * What a {@link Tip} writes on its control for the app's long press (`LongPressGuard`), which
+ * explains a control to a finger or pen: hover never reaches a tablet, so the long press shows
+ * the tooltip's label, shortcut and hint line instead.
+ */
+export const TIP_DATA = {
+    label: "data-tip-label",
+    hint: "data-tip-hint",
+    action: "data-tip-action",
+    shortcut: "data-tip-shortcut",
+} as const;
 
 /**
  * One tooltip timing for the controls inside, as the timeline's transport has: moving along a
@@ -30,6 +43,10 @@ export function RichTips({ children }: { children: ReactNode }) {
  * drag goes on undisturbed. `children` is one element that takes a ref, such as a `<button>`;
  * with no `label` it has no tooltip. `action` adds that action's shortcut (as the user has bound
  * it), `shortcut` a binding of keys that aren't an action, and `hint` a second line.
+ *
+ * A finger or pen reads the same tooltip with a long press (`LongPressGuard`, tablet plan 4.2).
+ * Wrap a disabled control in an element and put the Tip on that, with the reason in its label:
+ * a disabled control gets no hover, and the long press on it reads the wrapper's Tip.
  */
 export function Tip({
     label,
@@ -55,6 +72,15 @@ export function Tip({
 }) {
     const shared = useContext(InRichTips);
     if (!label) return children;
+    // The long press reads these (a Tip that never opens keeps the control's own name)
+    const control = disabled
+        ? children
+        : cloneElement(children, {
+              [TIP_DATA.label]: label,
+              [TIP_DATA.hint]: hint,
+              [TIP_DATA.action]: action,
+              [TIP_DATA.shortcut]: shortcut,
+          } as Record<string, string | undefined>);
     const tip = (
         <ShortcutTooltip
             label={label}
@@ -65,7 +91,7 @@ export function Tip({
             side={side}
             closeOnPress
         >
-            {children}
+            {control}
         </ShortcutTooltip>
     );
     return shared ? (

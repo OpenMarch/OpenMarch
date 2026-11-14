@@ -4,13 +4,32 @@ import { HELD_ROLES, type HeldRole } from "@/input/modifierRoles";
 /**
  * The toggles on the touch pill over the field, for a tablet with no keyboard (modifier roles,
  * version A, "Touch and Apple Pencil"): the held roles `fine`, `constrain` (Equal) and
- * `fromCenter`, OR'd into every drag's held keys through `onScreenRoles`, and `add`, the press
- * choice the Select tab reads as Shift through `isShiftHeld`. They're named by role, never by key,
- * so remapping a key doesn't move them.
+ * `fromCenter`, OR'd into every drag's held keys through `onScreenRoles`; `add`, the press
+ * choice the Select tab reads as Shift through `isShiftHeld`; and `subtract`, Alt's press choice:
+ * a marquee or lasso takes what it covers out of the selection (tablet 1.3). They're named by
+ * role, never by key, so remapping a key doesn't move them. Add and Subtract don't stay on
+ * together: latching one lets go of the other's latch.
  *
  * `held` lasts while the button is pressed; `latched` stays on until it is tapped again.
  */
-export type TouchToggle = HeldRole | "add";
+export type TouchToggle = HeldRole | "add" | "subtract";
+
+/** Latching one of these lets go of the other's latch */
+const OPPOSITE: Partial<Record<TouchToggle, TouchToggle>> = {
+    add: "subtract",
+    subtract: "add",
+};
+
+/** `latched` with `toggle` flipped, and its opposite let go when it turns on */
+const flipLatch = (
+    latched: Record<TouchToggle, boolean>,
+    toggle: TouchToggle,
+): Record<TouchToggle, boolean> => {
+    const next = { ...latched, [toggle]: !latched[toggle] };
+    const opposite = OPPOSITE[toggle];
+    if (next[toggle] && opposite) next[opposite] = false;
+    return next;
+};
 
 interface TouchModifierState {
     held: Record<TouchToggle, boolean>;
@@ -27,6 +46,7 @@ const none = (): Record<TouchToggle, boolean> => ({
     constrain: false,
     fromCenter: false,
     add: false,
+    subtract: false,
 });
 
 export const useTouchModifierStore = create<TouchModifierState>((set) => ({
@@ -35,15 +55,11 @@ export const useTouchModifierStore = create<TouchModifierState>((set) => ({
     setHeld: (toggle, held) =>
         set((state) => ({ held: { ...state.held, [toggle]: held } })),
     toggleLatched: (toggle) =>
-        set((state) => ({
-            latched: { ...state.latched, [toggle]: !state.latched[toggle] },
-        })),
+        set((state) => ({ latched: flipLatch(state.latched, toggle) })),
     release: (toggle, tap) =>
         set((state) => ({
             held: { ...state.held, [toggle]: false },
-            latched: tap
-                ? { ...state.latched, [toggle]: !state.latched[toggle] }
-                : state.latched,
+            latched: tap ? flipLatch(state.latched, toggle) : state.latched,
         })),
     clear: () => set({ held: none(), latched: none() }),
 }));
@@ -73,4 +89,5 @@ export const onScreenToggles = {
     roles: onScreenRoles,
     subscribe: subscribeOnScreen,
     add: (): boolean => isToggleOn("add"),
+    subtract: (): boolean => isToggleOn("subtract"),
 };

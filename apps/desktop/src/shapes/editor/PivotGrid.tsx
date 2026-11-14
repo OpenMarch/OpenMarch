@@ -3,6 +3,7 @@ import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import {
+    DEFAULT_PIVOT,
     PIVOT_KEYS,
     isPivotKey,
     type Pivot,
@@ -14,6 +15,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { setPivotPreview } from "../field/shapePointer";
 import { screenCellOf, shapeKeyAt } from "./pivotScreen";
 import { arrowFocus, useEditorMenu, useMenuFocus } from "./menuFocus";
+import ActionButton from "@/shortcuts/ActionButton";
 
 export const PIVOT_NAMES: Record<PivotKey, string> = {
     nw: "back left",
@@ -137,6 +139,8 @@ function PivotGlyph({ pivot }: { pivot: Pivot }) {
  * The floating editor's pivot (#435): a small button beside the turn whose icon shows the pivot,
  * opening the 3 × 3 grid. Picking one closes it. The grid is in screen terms (#437): its top-left
  * cell is whichever of the shape's points is at the top left now, however the shape is turned.
+ * With the pivot away from the center, a row under the grid sends it back there, as a double-click
+ * on the pivot does (`shapeCenterPivot`, tablet 1.5).
  */
 export function PivotMenu({
     pivot,
@@ -208,6 +212,19 @@ export function PivotMenu({
                         }
                         testId={`${testId}-grid`}
                     />
+                    {pivot !== DEFAULT_PIVOT && (
+                        <ActionButton
+                            action="shapeCenterPivot"
+                            onRun={() => setOpen(false)}
+                            data-testid={`${testId}-center`}
+                            className="rounded-4 text-sub text-text hover:text-accent touch:min-h-44 mt-4 flex w-full items-center px-4 py-2"
+                        >
+                            {tolgee.t(
+                                "shapes.edit.pivot.backToCenter",
+                                "Back to the center",
+                            )}
+                        </ActionButton>
+                    )}
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>

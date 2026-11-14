@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { TEMPO_BAND, useTempoModeStore } from "@/tempo/TempoBand";
 import { TempoModeButton } from "@/tempo/TempoModeButton";
+import { useTempoModeKeys } from "@/tempo/useTempoModeKeys";
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -204,6 +205,8 @@ export const toTimelineSelection = (
  */
 export default function TimelineModePanel() {
     const { beats, pages, measures, countGrid } = useTimingObjects()!;
+    // Shift+T and tempo mode's key guard, whichever transport is shown (tablet 3.5)
+    useTempoModeKeys();
     // UI-19: Basic is this timeline with its page boxes holding the music, and none of the
     // Expert parts (clips, the loop, isolation, moves): docs/timeline/research/basic-mode
     // Tempo mode: the timeline shows the tempo lanes in place of the clips, in Basic too

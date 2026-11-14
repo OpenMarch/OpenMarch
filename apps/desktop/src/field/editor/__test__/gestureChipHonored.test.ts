@@ -22,6 +22,7 @@ const at = (x: number, y: number): FieldPointer => ({
     field: { x, y },
     screen: { x, y },
     button: 0,
+    kind: "mouse",
     ...NO_KEYS,
 });
 

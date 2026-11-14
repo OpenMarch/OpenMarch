@@ -10,13 +10,42 @@ import { toast, Toaster as ToasterPrimitive } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { NOTE_TOAST_DURATION_MS } from "./toastDurations";
+import {
+    FIELD_LAYER_ATTRIBUTE,
+    subscribeFieldLayers,
+} from "@/components/canvas/fieldLayers";
 
 const GAP = 8;
+/**
+ * Room between a task's bar and a toast below it (#933): a whole touch target, so a finger aimed
+ * at the bar's Done can't land on the toast's Undo
+ */
+export const BELOW_TASK_GAP = 44;
+/** A task's bar this close below the toolbar is at the field's top, where the toasts start */
+const TOP_BAR_REACH = 96;
+
+/**
+ * Where toasts start, given where the toolbar ends and the task bars over the field (in viewport
+ * px): just below the toolbar, or below a task's bar at the field's top (the isolation bar with
+ * Done, the line tool's card) with a finger's room between, so the toast covers none of its buttons
+ * (#933). Pure, for the tests.
+ */
+export function touchToastTop(
+    toolbarBottom: number,
+    taskBars: readonly { top: number; bottom: number }[],
+): number {
+    let top = toolbarBottom + GAP;
+    for (const bar of taskBars)
+        if (bar.top < toolbarBottom + TOP_BAR_REACH && bar.bottom > 0)
+            top = Math.max(top, bar.bottom + BELOW_TASK_GAP);
+    return Math.round(top);
+}
 
 /**
  * Where toasts start in touch mode: just below the toolbar (or the title bar
  * when there's no toolbar), centred over the field, so they don't cover the
- * timeline, the inspector or their controls at the bottom.
+ * timeline, the inspector or their controls at the bottom; below a task's bar at the field's top
+ * while one is showing (`touchToastTop`).
  */
 function useTouchToastTop(enabled: boolean): number {
     const [top, setTop] = useState(64);
@@ -26,8 +55,15 @@ function useTouchToastTop(enabled: boolean): number {
             const anchor =
                 document.querySelector("[data-toolbar]") ??
                 document.querySelector(".main-app-titlebar");
-            if (anchor)
-                setTop(Math.round(anchor.getBoundingClientRect().bottom) + GAP);
+            if (!anchor) return;
+            const bars = Array.from(
+                document.querySelectorAll(`[${FIELD_LAYER_ATTRIBUTE}="task"]`),
+            )
+                // A layer with no room to show is out of the way, as in `fieldLayersIn`
+                .filter((el) => getComputedStyle(el).visibility !== "hidden")
+                .map((el) => el.getBoundingClientRect())
+                .filter((r) => r.width > 0 && r.height > 0);
+            setTop(touchToastTop(anchor.getBoundingClientRect().bottom, bars));
         };
         measure();
         const observer =
@@ -37,9 +73,12 @@ function useTouchToastTop(enabled: boolean): number {
         const anchor = document.querySelector("[data-toolbar]");
         if (anchor && observer) observer.observe(anchor);
         window.addEventListener("resize", measure);
+        // A task's bar appearing or going (#933)
+        const offLayers = subscribeFieldLayers(measure);
         return () => {
             observer?.disconnect();
             window.removeEventListener("resize", measure);
+            offLayers();
         };
     }, [enabled]);
     return top;

@@ -8,6 +8,11 @@ import {
 import { TolgeeProvider } from "@tolgee/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import {
+    markKeyboardSeen,
+    resetKeyboardSeen,
+} from "@/stores/KeyboardSeenStore";
 import CommandPalette from "../CommandPalette";
 import DockedCommandBar from "../DockedCommandBar";
 import {
@@ -409,5 +414,54 @@ describe("commands with typed parameters (an action's `params`)", () => {
         );
         expect(runAction("nextPage", { counts: 4 })).toBe(true);
         expect(handler).toHaveBeenCalledWith({ counts: 4 });
+    });
+});
+
+describe("the palette's input focus (tablet plan 4.3)", () => {
+    beforeAll(async () => {
+        Element.prototype.scrollIntoView = vi.fn();
+        await tolgee.run();
+    });
+    afterEach(() => {
+        act(() => {
+            useCommandBarStore.setState({ palette: null, docked: null });
+            useInputModeStore.getState().setPreference("mouse");
+        });
+        cleanup();
+        resetKeyboardSeen();
+        localStorage.clear();
+    });
+
+    it("with a mouse, the input has the focus as soon as it opens", () => {
+        renderBar();
+        expect(openWith("openCommandPalette")).toHaveFocus();
+    });
+
+    it("on a tablet with no keyboard, the input waits for a tap, so no keyboard pops up", () => {
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        resetKeyboardSeen();
+        renderBar();
+        const input = openWith("openCommandPalette");
+        expect(input).not.toHaveFocus();
+        // The dialog holds the focus instead, so Escape still closes it
+        expect(screen.getByRole("dialog")).toHaveFocus();
+        act(() => {
+            input.focus();
+        });
+        expect(input).toHaveFocus();
+    });
+
+    it("on a tablet once a keyboard has been used, the input has the focus", () => {
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        // ⌘K on a hardware keyboard
+        act(() => {
+            markKeyboardSeen();
+        });
+        renderBar();
+        expect(openWith("openCommandPalette")).toHaveFocus();
     });
 });

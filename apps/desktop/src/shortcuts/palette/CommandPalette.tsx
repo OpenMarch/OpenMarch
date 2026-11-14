@@ -158,6 +158,9 @@ export default function CommandPalette() {
     const isTouch = useIsTouchMode();
     // Shortcut keycaps only once a keyboard has been used (or with a mouse layout)
     const showHints = useShowShortcutHints();
+    // On a tablet with no keyboard used yet, focusing the input would pop the on-screen keyboard
+    // over the list: the input waits for a tap (tablet plan 4.3). A keyboard's ⌘K types at once.
+    const focusInput = !isTouch || showHints;
     const [activeIndex, setActiveIndex] = useState(0);
     const [sourcesVersion, setSourcesVersion] = useState(0);
     const pendingRun = useRef<(() => void) | null>(null);
@@ -357,6 +360,12 @@ export default function CommandPalette() {
                 <RadixDialog.Content
                     className="command-palette palette-shell"
                     aria-describedby={undefined}
+                    onOpenAutoFocus={(event) => {
+                        if (focusInput) return;
+                        // Focus the dialog itself, so nothing opens a keyboard
+                        event.preventDefault();
+                        (event.currentTarget as HTMLElement | null)?.focus();
+                    }}
                     onCloseAutoFocus={(event) => {
                         const run = pendingRun.current;
                         pendingRun.current = null;
@@ -383,7 +392,7 @@ export default function CommandPalette() {
                                 </span>
                             ))}
                             <input
-                                autoFocus
+                                autoFocus={focusInput}
                                 role="combobox"
                                 aria-expanded
                                 aria-controls="command-palette-list"

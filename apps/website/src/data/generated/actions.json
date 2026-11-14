@@ -1177,6 +1177,21 @@
             }
         ]
     },
+    "shapeDiscard": {
+        "label": "Shape: Discard",
+        "category": "shape",
+        "bindings": []
+    },
+    "propFinishDrawing": {
+        "label": "Prop: Finish drawing",
+        "category": "edit",
+        "bindings": []
+    },
+    "propRemoveLastPoint": {
+        "label": "Prop: Remove the last corner while drawing",
+        "category": "edit",
+        "bindings": []
+    },
     "shapeQuarterTurn": {
         "label": "Shape: Turn 90° clockwise",
         "category": "shape",
@@ -1322,6 +1337,16 @@
             }
         ]
     },
+    "shapeEnterBox": {
+        "label": "Select only this marcher",
+        "category": "shape",
+        "bindings": []
+    },
+    "shapeCenterPivot": {
+        "label": "Shape: Move the pivot back to the center",
+        "category": "shape",
+        "bindings": []
+    },
     "cancelAlignmentUpdates": {
         "label": "Cancel or deselect",
         "category": "cursor",
@@ -1381,6 +1406,11 @@
     },
     "timelineUnsetHereAndFollowing": {
         "label": "Remove keyframe, later pages move back too",
+        "category": "timeline",
+        "bindings": []
+    },
+    "toggleEditorMode": {
+        "label": "Switch between Basic and Expert",
         "category": "timeline",
         "bindings": []
     },
@@ -1452,6 +1482,26 @@
     },
     "mergeMoveIntoPage": {
         "label": "Merge this move into its page",
+        "category": "timeline",
+        "bindings": []
+    },
+    "timelineZoomIn": {
+        "label": "Zoom the timeline in",
+        "category": "timeline",
+        "bindings": []
+    },
+    "timelineZoomOut": {
+        "label": "Zoom the timeline out",
+        "category": "timeline",
+        "bindings": []
+    },
+    "timelineFit": {
+        "label": "Fit the show in the timeline",
+        "category": "timeline",
+        "bindings": []
+    },
+    "toggleTempoMode": {
+        "label": "Edit music on / off",
         "category": "timeline",
         "bindings": []
     },

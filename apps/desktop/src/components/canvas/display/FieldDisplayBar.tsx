@@ -1,4 +1,5 @@
 import * as Popover from "@radix-ui/react-popover";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { BoundingBoxIcon, TagIcon, type Icon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
@@ -38,9 +39,13 @@ const SHAPE_CHOICES: readonly Choice<ShapeOutlines>[] = [
  */
 export default function FieldDisplayBar() {
     const { t } = useTranslate();
+    const layerRef = useFieldLayerRef<HTMLDivElement>();
     return (
         <TransportTooltipProvider>
             <div
+                ref={layerRef}
+                // #927: the pill and the shape editor bar keep off it
+                data-field-layer="control"
                 role="group"
                 aria-label={t("fieldDisplay.label")}
                 data-testid="field-display-bar"
