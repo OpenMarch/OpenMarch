@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { HOLD_STATES, hold } from "@/view3d/core/instruments/holds";
 import { ARM_BONES, holdClip, poseArms } from "../marchers/armPose";
+import { restoreStillPose } from "@/view3d/window/performers/marchers/stillPose";
 
 async function skeleton(): Promise<THREE.Skeleton> {
     const b = fs.readFileSync(
@@ -34,7 +35,7 @@ async function clip8to5(): Promise<THREE.AnimationClip> {
         b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength),
         "",
     );
-    return gltf.animations.find((c) => c.name === "8to5")!;
+    return restoreStillPose(gltf.animations).find((c) => c.name === "8to5")!;
 }
 
 /** World position of a posed bone's head, by applying the pose to a cloned rig. */

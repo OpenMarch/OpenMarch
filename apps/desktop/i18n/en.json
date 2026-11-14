@@ -3344,6 +3344,11 @@
                 "markTime": "Mark time",
                 "highMarkTime": "High mark time",
                 "stand": "Stand"
+            },
+            "percussionTravel": {
+                "label": "Drums travel sideways",
+                "crab": "Crab step",
+                "slide": "Slide"
             }
         }
     },

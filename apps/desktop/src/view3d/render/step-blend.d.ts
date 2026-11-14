@@ -20,8 +20,12 @@ export interface ManifestClip {
 }
 export type Manifest = ManifestClip[] | { clips: ManifestClip[] };
 
-export type Family = "forward" | "backward" | "slideL" | "slideR";
-export const FAMILIES: Record<Family, [number, number]>;
+export type StraightFamily = "forward" | "backward" | "slideL" | "slideR";
+/** A crab step's side and angle off straight forward, as om-pose names it: `crabL090`. */
+export type CrabFamily = `crab${"L" | "R"}${string}`;
+export type Family = StraightFamily | CrabFamily;
+export const FAMILIES: Record<StraightFamily, [number, number]>;
+export function isCrabFamily(family: unknown): family is CrabFamily;
 export const SIDEWAYS_TOL: number;
 
 export interface Pick {
@@ -87,7 +91,7 @@ export function pickDirection(
     tx: number,
     tz: number,
 ): Direction;
-export function turnedDir(family: Family, legYaw: number): [number, number];
+export function turnedDir(family: StraightFamily, legYaw: number): [number, number];
 export function turnedClips(
     manifest: Manifest,
     pick: Pick,

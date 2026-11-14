@@ -40,19 +40,32 @@ export const HOLDS_WHILE_BAND_MOVES: readonly HoldWhileBandMoves[] = [
     "stand",
 ];
 
+/**
+ * How percussion travels off straight forward and back
+ * (docs/3d/technique.md, "The crab step"): crab, hips square, or slide like
+ * the winds.
+ */
+export type PercussionTravel = "crab" | "slide";
+export const PERCUSSION_TRAVELS: readonly PercussionTravel[] = [
+    "crab",
+    "slide",
+];
+
 export interface PerformerDefaults {
     stepOffFoot: StepOffFoot;
     dotMode: DotMode;
     directionChange: DirectionChange;
     holdWhileBandMoves: HoldWhileBandMoves;
+    percussionTravel: PercussionTravel;
 }
 
-/** Left foot, foot on the dot, round the corner, mark time. */
+/** Left foot, foot on the dot, round the corner, mark time, drums crab. */
 export const BUILT_IN_PERFORMER_DEFAULTS: PerformerDefaults = {
     stepOffFoot: "left",
     dotMode: "foot",
     directionChange: "corner",
     holdWhileBandMoves: "markTime",
+    percussionTravel: "crab",
 };
 
 /**
@@ -68,6 +81,7 @@ export const performerDefaultsSchema = z.object({
         .enum(["stand", "markTime", "highMarkTime"])
         .optional()
         .catch(undefined),
+    percussionTravel: z.enum(["crab", "slide"]).optional().catch(undefined),
 });
 export type SavedPerformerDefaults = z.infer<typeof performerDefaultsSchema>;
 

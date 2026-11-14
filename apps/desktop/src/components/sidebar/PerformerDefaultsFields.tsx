@@ -11,6 +11,7 @@ import {
     DIRECTION_CHANGES,
     DOT_MODES,
     HOLDS_WHILE_BAND_MOVES,
+    PERCUSSION_TRAVELS,
     STEP_OFF_FEET,
     performerDefaults,
     type PerformerDefaults,
@@ -37,6 +38,10 @@ const OPTION_KEYS = {
             "workspaceSettings.performer.holdWhileBandMoves.highMarkTime",
         stand: "workspaceSettings.performer.holdWhileBandMoves.stand",
     },
+    percussionTravel: {
+        crab: "workspaceSettings.performer.percussionTravel.crab",
+        slide: "workspaceSettings.performer.percussionTravel.slide",
+    },
 } as const;
 
 const LABEL_KEYS: Record<keyof PerformerDefaults, string> = {
@@ -44,6 +49,7 @@ const LABEL_KEYS: Record<keyof PerformerDefaults, string> = {
     dotMode: "workspaceSettings.performer.dotMode.label",
     directionChange: "workspaceSettings.performer.directionChange.label",
     holdWhileBandMoves: "workspaceSettings.performer.holdWhileBandMoves.label",
+    percussionTravel: "workspaceSettings.performer.percussionTravel.label",
 };
 
 const OPTIONS: {
@@ -53,6 +59,7 @@ const OPTIONS: {
     dotMode: DOT_MODES,
     directionChange: DIRECTION_CHANGES,
     holdWhileBandMoves: HOLDS_WHILE_BAND_MOVES,
+    percussionTravel: PERCUSSION_TRAVELS,
 };
 
 const FIELDS = Object.keys(LABEL_KEYS) as (keyof PerformerDefaults)[];

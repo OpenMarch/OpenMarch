@@ -548,8 +548,9 @@ of this change until they are tested more.
 - The workspace settings get `performerDefaults` back, optional and with
   every field optional: `stepOffFoot` (`left`, `right`), `dotMode` (`foot`,
   `body`), `directionChange` (`corner`, `direct`) and `holdWhileBandMoves`
-  (`markTime`, `highMarkTime`, `stand`). Unset fields take the built-in
-  defaults: left, foot, corner, mark time
+  (`markTime`, `highMarkTime`, `stand`), plus `percussionTravel` (`crab`,
+  `slide`), added with the crab step. Unset fields take the built-in
+  defaults: left, foot, corner, mark time, crab
   (`src/view3d/core/performerDefaults.ts`). An unknown value reads as unset
   instead of failing the whole settings object.
 - Show settings has a "Performer defaults" section for them.

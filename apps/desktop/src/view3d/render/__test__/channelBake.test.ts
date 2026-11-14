@@ -11,6 +11,7 @@ import {
     armHold,
     holdRowName,
 } from "@/view3d/window/performers/marchers/hornRows";
+import { restoreStillPose } from "@/view3d/window/performers/marchers/stillPose";
 
 const root = path.resolve(__dirname, "../../assets/om-pose");
 
@@ -29,7 +30,9 @@ async function fixture() {
             mesh = o as THREE.SkinnedMesh;
     });
     const clips = new Map<string, THREE.AnimationClip>();
-    for (const c of (await gltf("clips/clips-h100.glb")).animations)
+    for (const c of restoreStillPose(
+        (await gltf("clips/clips-h100.glb")).animations,
+    ))
         clips.set(c.name, c);
     return { scene: body.scene, mesh: mesh! as THREE.SkinnedMesh, clips };
 }

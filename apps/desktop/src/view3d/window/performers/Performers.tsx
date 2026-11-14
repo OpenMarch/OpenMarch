@@ -52,6 +52,7 @@ import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import { performerDefaults } from "@/view3d/core/performerDefaults";
+import { isPercussionSection } from "@/view3d/core/marchers/crab";
 import { marcherHeading } from "@/view3d/core/marchers/facing";
 import {
     buildCountClock,
@@ -209,7 +210,24 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         () => [...new Set((marcherLooks ?? []).map((l) => l.body.heightClass))],
         [marcherLooks],
     );
-    const marcherAssets = useMarcherAssets(heightClasses);
+    // Percussion travels in a crab step unless Show settings say it slides;
+    // only then do its clips load.
+    const percussionTravel = performerDefaults(
+        useQuery(workspaceSettingsQueryOptions()).data?.performerDefaults,
+    ).percussionTravel;
+    const crabs = useMemo(
+        () =>
+            looksKey && percussionTravel === "crab"
+                ? (JSON.parse(looksKey) as [number, string, unknown][]).map(
+                      ([, section]) => isPercussionSection(section),
+                  )
+                : null,
+        [looksKey, percussionTravel],
+    );
+    const marcherAssets = useMarcherAssets(
+        heightClasses,
+        crabs?.includes(true) ?? false,
+    );
     // The count clock and every marcher's clip plan for the whole show.
     const { beats } = useTimingObjects();
     const clock = useMemo(() => buildCountClock(beats), [beats]);
@@ -301,6 +319,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             cues,
             previousPlans.current,
             dotMode,
+            crabs,
             directionChange,
         );
         previousPlans.current = planned;
@@ -320,6 +339,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         cues,
         dotMode,
         directionChange,
+        crabs,
     ]);
     const clipNames = useMemo(() => {
         const names = plannedClips(

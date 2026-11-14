@@ -3065,6 +3065,9 @@
     "workspaceSettings.performer.holdWhileBandMoves.markTime": "Option for 'Holding while others move' in the Show settings: the marcher steps in place in time with the music. Marching band term.",
     "workspaceSettings.performer.holdWhileBandMoves.highMarkTime": "Option for 'Holding while others move' in the Show settings: the marcher steps in place, lifting the knees high. Marching band term.",
     "workspaceSettings.performer.holdWhileBandMoves.stand": "Option for 'Holding while others move' in the Show settings: the marcher stands still.",
+    "workspaceSettings.performer.percussionTravel.label": "Label in the Show settings, Performer defaults: how drummers (percussion) move when they travel sideways or on a diagonal. Followed by 'Crab step' or 'Slide'.",
+    "workspaceSettings.performer.percussionTravel.crab": "Option for 'Drums travel sideways' in the Show settings: drummers keep their hips facing the front and cross one foot over the other, so the drum stays square. Marching percussion term.",
+    "workspaceSettings.performer.percussionTravel.slide": "Option for 'Drums travel sideways' in the Show settings: drummers turn their legs and slide like the wind players, with the upper body facing the front. Marching band term.",
     "feedback.record.failed.microphone": "Error in the bug and feedback report drawer (a panel over the right side of the editor) (Help → Report a bug or send feedback) in the desktop app when screen recording was allowed but the microphone wasn't. 'With microphone' is the checkbox next to the record button; keep it the same wording.",
     "feedback.record.failed.webMicrophone": "Error in the bug and feedback report drawer (a panel over the right side of the editor) (Help → Report a bug or send feedback) in the web editor when the browser refused the microphone. 'With microphone' is the checkbox next to the record button; keep it the same wording."
 }

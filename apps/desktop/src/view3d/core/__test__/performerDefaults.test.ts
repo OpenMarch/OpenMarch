@@ -6,12 +6,13 @@ import {
 } from "../performerDefaults";
 
 describe("performerDefaults", () => {
-    it("is left foot, foot on the dot, round the corner, mark time", () => {
+    it("is left foot, foot on the dot, round the corner, mark time, drums crab", () => {
         expect(performerDefaults(undefined)).toEqual({
             stepOffFoot: "left",
             dotMode: "foot",
             directionChange: "corner",
             holdWhileBandMoves: "markTime",
+            percussionTravel: "crab",
         });
         expect(performerDefaults({})).toEqual(BUILT_IN_PERFORMER_DEFAULTS);
     });
