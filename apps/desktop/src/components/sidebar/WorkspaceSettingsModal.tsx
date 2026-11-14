@@ -15,6 +15,7 @@ import {
     defaultWorkspaceSettings,
 } from "@/settings/workspaceSettings";
 import { Button, Input, UnitInput } from "@openmarch/ui";
+import { PerformerDefaultsFields } from "./PerformerDefaultsFields";
 import * as Form from "@radix-ui/react-form";
 import { SidebarModalLauncher } from "./SidebarModal";
 import FormField from "../ui/FormField";
@@ -450,6 +451,15 @@ function WorkspaceSettingsModalContents() {
                         },
                     )}
                 </Form.Root>
+                <PerformerDefaultsFields
+                    value={localSettings.performerDefaults}
+                    onChange={(performerDefaults) =>
+                        setLocalSettings({
+                            ...localSettings,
+                            performerDefaults,
+                        })
+                    }
+                />
             </div>
 
             <div className="flex w-[30rem] max-w-full shrink-0 flex-col gap-8">

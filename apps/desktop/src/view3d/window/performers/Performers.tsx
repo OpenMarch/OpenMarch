@@ -50,6 +50,8 @@ import {
 } from "@/view3d/core/marchers/uniformPresets";
 import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import { performerDefaults } from "@/view3d/core/performerDefaults";
 import { marcherHeading } from "@/view3d/core/marchers/facing";
 import {
     buildCountClock,
@@ -103,8 +105,6 @@ import { SilkMotion } from "./marchers/silkMotion";
 
 const CYLINDER_SEGMENTS = 20;
 const RING_SEGMENTS = 32;
-/** Every marcher steps off with the left foot, and the dot marks the foot on every count. */
-const STEP_OFF_FOOT = "left";
 
 interface PerformersProps {
     fieldProperties: FieldProperties;
@@ -213,6 +213,14 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     // The count clock and every marcher's clip plan for the whole show.
     const { beats } = useTimingObjects();
     const clock = useMemo(() => buildCountClock(beats), [beats]);
+    // How marchers move where no cue says otherwise: the show's performer
+    // defaults (Show settings), field by field so an unrelated settings
+    // change keeps every plan.
+    const defaults = performerDefaults(
+        useQuery(workspaceSettingsQueryOptions()).data?.performerDefaults,
+    );
+    const { stepOffFoot, dotMode, directionChange, holdWhileBandMoves } =
+        defaults;
     // What each marcher carries, for the Horn/Equipment default: their
     // section's usual equipment, as in the editor. Keyed on the carry alone,
     // so a quality change doesn't recompile.
@@ -253,9 +261,9 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             ).join(""),
         [slots, clock, fieldProperties],
     );
-    // The show defaults compiled for every marcher (no cues are stored): mark
-    // time while the band moves, else stand; face the front; horns up; the
-    // left foot steps off. `carries` decides each marcher's Horn/Equipment
+    // The show defaults compiled for every marcher (no cues are stored): the
+    // Show settings' hold while the band moves (mark time unless changed),
+    // else stand; face the front; horns up; the Show settings' step-off foot. `carries` decides each marcher's Horn/Equipment
     // default.
     const cues = useMemo(() => {
         if (!marchers || !carriesKey || !cueSectionsKey) return null;
@@ -265,12 +273,21 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 ReturnType<typeof sectionCueCarry>,
             ][],
         );
-        return compileWindowCues(marchers, beats, STEP_OFF_FOOT, {
+        return compileWindowCues(marchers, beats, stepOffFoot, {
             sections: JSON.parse(cueSectionsKey) as CueSection[],
             bandMoving: Array.from(bandMovingKey, Number),
+            holdWhileBandMoves,
             carries: (id) => carries.get(id) ?? "none",
         });
-    }, [marchers, beats, carriesKey, cueSectionsKey, bandMovingKey]);
+    }, [
+        marchers,
+        beats,
+        carriesKey,
+        cueSectionsKey,
+        bandMovingKey,
+        stepOffFoot,
+        holdWhileBandMoves,
+    ]);
     const previousPlans = useRef<ShowPlans | null>(null);
     const showPlans = useMemo(() => {
         if (!marcherAssets || !marcherLooks || !cues) return null;
@@ -283,7 +300,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             marcherAssets.manifest,
             cues,
             previousPlans.current,
-            null,
+            dotMode,
+            directionChange,
         );
         previousPlans.current = planned;
         // eslint-disable-next-line no-console -- planning time is a cost to watch at 2,000 marchers
@@ -293,7 +311,16 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                 `${clock.counts} counts in ${planned.planMs.toFixed(0)} ms`,
         );
         return planned;
-    }, [marcherAssets, marcherLooks, slots, clock, fieldProperties, cues]);
+    }, [
+        marcherAssets,
+        marcherLooks,
+        slots,
+        clock,
+        fieldProperties,
+        cues,
+        dotMode,
+        directionChange,
+    ]);
     const clipNames = useMemo(() => {
         const names = plannedClips(
             (showPlans?.plans ?? []).filter((p) => p !== null),

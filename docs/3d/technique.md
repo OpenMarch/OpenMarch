@@ -64,10 +64,13 @@ the 3D View shows the difference.
     feet come together the performer is centered on the dot;
   - **changing direction:** the ankle is on the dot on count 8, and from
     count 8 to count 1 the leg in motion goes to the new direction.
-- **Body center** is an option for later, chosen on specific sets: the
-  center of the body mass, between the two feet at the same step size the
-  performer was coming from, is over the dot (weight 50-50 over it) rather
-  than one foot. It isn't shown in the UI yet.
+- **Body center** is chosen on specific sets: the center of the body mass,
+  between the two feet at the same step size the performer was coming from,
+  is over the dot (weight 50-50 over it) rather than one foot.
+- **Where it's set** (owner, 2026-11-11): the show default is "Dot marks"
+  in Show settings, Performer defaults (foot on the dot unless changed). A
+  set that differs will get it from a cue, once cues are stored again.
+  Code: `core/performerDefaults.ts`.
 - Code: `dotMode` in `core/marchers/planner.ts`, `"foot"` by default. The
   body is placed half the count's step behind the dot after every moving
   count, on the dot after a rest, and swings to the new direction during
@@ -124,20 +127,34 @@ the 3D View shows the difference.
   and so looked slow (2026-10-09): the closing foot should move at marching
   pace.
 
-## Direction changes: the a, b, c triangle
+## Direction changes: round the corner or straight across
 
-The owner's picture (2026-10-09): going from straight forward into a right
-slide, the leg could travel to the foot (side **a**) and then out to the side
-(side **b**). A real marcher takes the short side, **c**: the leg travels
-smoothly along the direct path from the last count of one move to the first
-count of the next. The same holds for every change (forward right slide into a
-backward march, and so on).
+Two ways (owner, 2026-11-11). The show default is "Direction changes" in
+Show settings, Performer defaults, round the corner unless changed; a cue
+will change it from a count once cues are stored again. Code:
+`core/performerDefaults.ts`, `directionChange` in `planner.ts`.
 
-- A change must not snap on the downbeat. It is centered on the count
-  boundary: the old move blends into the new from the middle of count 8 to the
-  middle of count 1 of the next page, while the legs ease from the old travel
-  direction to the new (`crossfade` in `planner.ts`).
-- A turn larger than `SHARP_TURN` (20 degrees) between counts is a change of
+- **Round the corner** (the default; owner, 2026-11-10, as om-pose's
+  `docs/turns.md` builds it from the 2017 Bluecoats visual handbook,
+  "Direction Changes"). Count 8 is a placement on the platform, pointing
+  halfway to the new direction (with the handbook's four Figure 8
+  exceptions); on count 1 the back leg goes up its own line until it is
+  level with the planted foot and then out to the side, the two sides of
+  the triangle with the corner rounded, not across it. A turn of more than
+  90 degrees re-steps in place on count 1. **Not played yet:** it needs
+  om-pose's direction-change clips, which aren't in the app, so for now
+  every change plays the crossfade below.
+- **Straight across** (the owner's picture of 2026-10-09). Going from
+  straight forward into a right slide, the leg could travel to the foot
+  (side **a**) and then out to the side (side **b**); this way it takes the
+  short side, **c**: the leg travels smoothly along the direct path from the
+  last count of one move to the first count of the next.
+- Either way a change must not snap on the downbeat. The crossfade is
+  centered on the count boundary: the old move blends into the new from the
+  middle of count 8 to the middle of count 1 of the next page, while the
+  legs ease from the old travel direction to the new (`crossfade` in
+  `planner.ts`).
+- A turn larger than `SHARP_TURN` (10 degrees) between counts is a change of
   move; smaller drifts ease the legs over half a loop.
 
 ## Slides

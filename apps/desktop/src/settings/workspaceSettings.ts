@@ -1,5 +1,6 @@
 import * as z from "zod";
 import { MIN_TEMPO_BPM } from "@/global/classes/Beat";
+import { performerDefaultsSchema } from "@/view3d/core/performerDefaults";
 
 export const workspaceSettingsSchema = z.object({
     defaultBeatsPerMeasure: z.int().positive().default(4),
@@ -25,6 +26,13 @@ export const workspaceSettingsSchema = z.object({
      * conversion worker's host reads it to tell whether a conversion committed.
      */
     timelineConvertedAt: z.string().optional(),
+
+    /**
+     * How the 3D View's marchers move wherever no cue says otherwise (ADR 0004 D-4, amended
+     * 2026-11-11): step-off foot, what the dot marks, direction changes, and what a holding
+     * marcher does while others move. Unset fields take `BUILT_IN_PERFORMER_DEFAULTS`.
+     */
+    performerDefaults: performerDefaultsSchema.optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;

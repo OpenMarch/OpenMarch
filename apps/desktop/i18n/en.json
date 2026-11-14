@@ -3267,6 +3267,31 @@
             "designer": "Designer",
             "client": "Client",
             "optional": "Optional"
+        },
+        "performer": {
+            "title": "Performer defaults",
+            "description": "How marchers move in the 3D View wherever nothing more specific is set.",
+            "stepOffFoot": {
+                "label": "Step off on",
+                "left": "Left foot",
+                "right": "Right foot"
+            },
+            "dotMode": {
+                "label": "Dot marks",
+                "foot": "Foot on the dot",
+                "body": "Body center"
+            },
+            "directionChange": {
+                "label": "Direction changes",
+                "corner": "Round the corner",
+                "direct": "Straight across"
+            },
+            "holdWhileBandMoves": {
+                "label": "Holding while others move",
+                "markTime": "Mark time",
+                "highMarkTime": "High mark time",
+                "stand": "Stand"
+            }
         }
     },
     "canvas": {
