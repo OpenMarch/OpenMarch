@@ -507,8 +507,8 @@ function GuideLabels({
     );
 }
 
-/** What a guide's name at the top keeps below: the task's cards and the toolbar panel */
-const TOP_LAYERS: readonly FieldLayerKind[] = ["task", "cover"];
+/** What a guide's name at the top keeps below: the task's cards, the toolbar panel and the pill */
+const TOP_LAYERS: readonly FieldLayerKind[] = ["task", "cover", "pill"];
 
 /**
  * A guide's name at the canvas edge (#427): at the top for a line side to side, at the left for

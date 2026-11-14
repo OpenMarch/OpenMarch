@@ -19,6 +19,8 @@ import {
  * - `control`: a fixed control over the field's edge: the zoom box, the Inspector's edge tab, the
  *   field display bar.
  * - `cover`: the touch toolbar's panel over the top of the field.
+ * - `pill`: the modifier pill itself. Only a guide's name tag keeps below it (#933); the other
+ *   layers don't move for it, it moves for them.
  *
  * Who keeps clear of whom:
  * - the modifier pill keeps clear of everything else (`PILL_AVOIDS`), and of what's dragged on
@@ -34,7 +36,13 @@ import {
  * Desktop has no pill, panel or touch rules, so nothing there changes.
  */
 
-export type FieldLayerKind = "task" | "mover" | "info" | "control" | "cover";
+export type FieldLayerKind =
+    | "task"
+    | "mover"
+    | "info"
+    | "control"
+    | "cover"
+    | "pill";
 
 export const FIELD_LAYER_ATTRIBUTE = "data-field-layer";
 /** The CSS variable on the field: how far a cover reaches down over its top, in px */

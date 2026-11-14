@@ -47,6 +47,7 @@ import { choosePillPosition, PILL_EDGE, type Rect } from "./pillPlacement";
 import {
     fieldLayersIn,
     NO_FIELD_OBSTACLES,
+    noteFieldLayersChanged,
     obstaclesKey,
     overlaps,
     PILL_AVOIDS,
@@ -466,6 +467,13 @@ export default function TouchModifierButtons({
     const closeExplained = useCallback(() => setExplained(null), []);
     const position = saved && !savedBlocked ? saved : auto;
 
+    // Moved: what keeps below it (a guide's name tag, #933) finds its place again
+    const shownLeft = position?.left;
+    const shownBottom = position?.bottom;
+    useEffect(() => {
+        if (shownLeft !== undefined) noteFieldLayersChanged();
+    }, [shownLeft, shownBottom]);
+
     // Leaving touch mode (or the field) lets go of anything held or latched
     useEffect(() => {
         if (!isTouchMode) clear();
@@ -722,6 +730,7 @@ export default function TouchModifierButtons({
             // Presses on the pill are the pill's, not the field's navigation
             onPointerDown={(e) => e.stopPropagation()}
             data-testid="touch-modifier-buttons"
+            data-field-layer="pill"
         >
             {popup === "help" && (
                 <div
