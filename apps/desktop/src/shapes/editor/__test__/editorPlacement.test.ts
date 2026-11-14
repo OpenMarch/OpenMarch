@@ -5,6 +5,8 @@ import {
     clearPlacement,
     editorPlacement,
     GAP_PX,
+    isInside,
+    oneRowRoom,
     type PlacementInput,
 } from "../editorPlacement";
 
@@ -204,5 +206,219 @@ describe("clearPlacement", () => {
         const at = placed(input, clearPlacement(input, [ZOOM, PANEL]));
         expect(hits(at, ZOOM)).toBe(false);
         expect(hits(at, PANEL)).toBe(false);
+    });
+
+    // #936: a 12 × 8 box pinch-zoomed to 200 %, bigger than the field every way
+    describe("kept inside the field's visible box (#936)", () => {
+        // 1180 × 820 landscape: the field 747 × 556, the toolbar panel over its top 60 px
+        const field = { fieldWidth: 747, fieldHeight: 556 };
+        const panel = { left: 0, top: -10, width: 747, height: 70 };
+        const displayBar = { left: 683, top: 70, width: 58, height: 123 };
+        const zoom = { left: 571, top: 453, width: 170, height: 103 };
+        const tab = { left: 711, top: 323, width: 30, height: 113 };
+        const visible = { left: 0, top: 60, width: 747, height: 496 };
+        // 12 columns × 8 rows of slots, 96 px apart, past every edge of the field
+        const outline = rectangle(-150, -100, 950, 700);
+        const spots = Array.from({ length: 96 }, (_, i) => ({
+            x: -150 + (i % 12) * 100,
+            y: -100 + Math.floor(i / 12) * 114,
+        }));
+        const handles = [
+            ...outline,
+            { x: 400, y: -100 },
+            { x: 950, y: 300 },
+            { x: 400, y: 700 },
+            { x: -150, y: 300 },
+        ];
+        const big = {
+            outline,
+            handles,
+            knob: { x: 400, y: -140 },
+            spots,
+            width: 528,
+            height: 130,
+            ...field,
+        };
+
+        it("stays inside the field, clear of the controls and the panel, though it covers the shape", () => {
+            // Following the shape alone, it would leave the field
+            const free = placed(
+                big,
+                clearPlacement(big, [displayBar, zoom, tab, panel], [panel]),
+            );
+            expect(isInside(free, visible)).toBe(false);
+            const at = placed(
+                big,
+                clearPlacement(
+                    big,
+                    [displayBar, zoom, tab, panel],
+                    [panel],
+                    visible,
+                ),
+            );
+            expect(isInside(at, visible)).toBe(true);
+            for (const control of [displayBar, zoom, tab, panel])
+                expect(hits(at, control)).toBe(false);
+        });
+
+        it("stays inside after a pan that puts the shape below the field", () => {
+            const low = {
+                ...big,
+                outline: outline.map((p) => ({ x: p.x, y: p.y + 500 })),
+                handles: handles.map((p) => ({ x: p.x, y: p.y + 500 })),
+                spots: spots.map((p) => ({ x: p.x, y: p.y + 500 })),
+                knob: { x: 400, y: 360 },
+            };
+            const at = placed(
+                low,
+                clearPlacement(
+                    low,
+                    [displayBar, zoom, tab, panel],
+                    [panel],
+                    visible,
+                ),
+            );
+            expect(isInside(at, visible)).toBe(true);
+        });
+
+        // Rows of slots 150 px apart, one near the field's bottom where the pulled-in bar lands,
+        // with room between rows for the bar
+        const rowsShape = (dy = 0) => {
+            const rows = [-100, 50, 200, 350, 500, 650, 800].map((y) => y + dy);
+            return {
+                outline: rectangle(-100, -100 + dy, 850, 800 + dy),
+                handles: [
+                    ...rectangle(-100, -100 + dy, 850, 800 + dy),
+                    { x: 375, y: -100 + dy },
+                    { x: 375, y: 800 + dy },
+                ],
+                spots: rows.flatMap((y) =>
+                    Array.from({ length: 10 }, (_, i) => ({
+                        x: -100 + i * 105,
+                        y,
+                    })),
+                ),
+                width: 300,
+                height: 60,
+                ...field,
+            };
+        };
+        // Near a point a finger can press: one on the field
+        const nearAny = (
+            at: Box,
+            points: readonly { x: number; y: number }[],
+        ) =>
+            points
+                .filter(
+                    (p) =>
+                        p.x >= 0 &&
+                        p.x <= field.fieldWidth &&
+                        p.y >= 0 &&
+                        p.y <= field.fieldHeight,
+                )
+                .some(
+                    (p) =>
+                        p.x > at.left - FINGER_REACH &&
+                        p.x < at.left + at.width + FINGER_REACH &&
+                        p.y > at.top - FINGER_REACH &&
+                        p.y < at.top + at.height + FINGER_REACH,
+                );
+
+        it("takes a spot between the slot rows when there is one, not over a row", () => {
+            const input = rowsShape();
+            const at = placed(
+                input,
+                clearPlacement(input, [zoom, tab, panel], [panel], visible),
+            );
+            expect(isInside(at, visible)).toBe(true);
+            expect(nearAny(at, input.spots)).toBe(false);
+            expect(nearAny(at, input.handles)).toBe(false);
+            expect(hits(at, zoom)).toBe(false);
+        });
+
+        it("holds still on screen during a slow pan while its spot stays clear, then is carried along rather than hopping", () => {
+            let current: { left: number; top: number } | null = null;
+            let fresh: { left: number; top: number } | null = null;
+            let moves = 0;
+            let freshMoves = 0;
+            for (let dy = 0; dy <= 200; dy += 10) {
+                const input = rowsShape(-dy);
+                const before = current;
+                const next = clearPlacement(
+                    input,
+                    [zoom, tab, panel],
+                    [panel],
+                    visible,
+                    current,
+                );
+                const at = placed(input, next);
+                expect(isInside(at, visible)).toBe(true);
+                expect(nearAny(at, input.spots)).toBe(false);
+                if (before) {
+                    const was = placed(input, before);
+                    // Its old spot still clear of every slot: it didn't move
+                    if (!nearAny(was, input.spots) && !hits(was, zoom))
+                        expect(next.top).toBe(before.top);
+                    // A hop: more than the pan moved this frame
+                    if (Math.abs(next.top - before.top) > 10) moves++;
+                }
+                current = { left: next.left, top: next.top };
+                // The same pan re-picking the best spot every frame
+                const best = clearPlacement(
+                    input,
+                    [zoom, tab, panel],
+                    [panel],
+                    visible,
+                );
+                if (fresh && Math.abs(best.top - fresh.top) > 10) freshMoves++;
+                fresh = best;
+            }
+            // Re-picked every frame it hops between gaps; kept, it doesn't
+            expect(freshMoves).toBeGreaterThan(0);
+            expect(moves).toBe(0);
+        });
+
+        it("doesn't move a bar that's already inside", () => {
+            const small = {
+                outline: rectangle(200, 150, 400, 250),
+                width: 300,
+                height: 80,
+                ...field,
+            };
+            expect(
+                clearPlacement(
+                    small,
+                    [displayBar, zoom, tab, panel],
+                    [panel],
+                    visible,
+                ),
+            ).toEqual(
+                clearPlacement(small, [displayBar, zoom, tab, panel], [panel]),
+            );
+        });
+    });
+});
+
+/** #936: the editor's one row never reaches under an edge tab, so Place shows whole (06b) */
+describe("oneRowRoom", () => {
+    it("is the field's width with no edge tabs (the desktop)", () => {
+        expect(oneRowRoom(747, [])).toBe(747);
+    });
+
+    it("takes off the widest edge tab on each side, with a gap", () => {
+        // 06b: the Inspector's tab and the field display rail on the right, the zoom box in the
+        // bottom-right corner (too wide to be a tab)
+        const tab = { left: 723, top: 323, width: 24, height: 90 };
+        const rail = { left: 685, top: 10, width: 54, height: 123 };
+        const zoom = { left: 571, top: 453, width: 170, height: 103 };
+        expect(oneRowRoom(747, [tab, zoom])).toBe(747 - 24 - 8);
+        expect(oneRowRoom(747, [tab, rail, zoom])).toBe(747 - 62 - 8);
+        const leftTab = { left: 0, top: 200, width: 30, height: 90 };
+        expect(oneRowRoom(747, [leftTab, tab])).toBe(747 - 38 - 32);
+    });
+
+    it("so the 730 px bar of 06b goes on two rows", () => {
+        const tab = { left: 723, top: 323, width: 24, height: 90 };
+        expect(730 > oneRowRoom(747, [tab]) - 2 * 4).toBe(true);
     });
 });

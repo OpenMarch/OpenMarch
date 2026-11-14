@@ -3,6 +3,7 @@ import { test, expect, type Show } from "../fixtures.mjs";
 import {
     drawnMarchers,
     expectCanvasMatchesShow,
+    pinch,
     readField,
     tap,
     touchDrag,
@@ -25,6 +26,8 @@ import type { FieldTestShapeOverlay } from "../../../src/field/fieldTestApi";
 // Each button's middle must be the topmost element there, and a tap on it must work.
 // And on the field itself (#933): the pill and the shape editor leave the box's handles and the
 // selection's rotate knob free, and the split toast leaves Done free.
+// And (#936): a big shape's editor bar stays inside the field after a pinch, the pill keeps its
+// spot after a deselect, and arming the Box tool doesn't put the pill where the first stroke goes.
 
 // Trumpets spread over the field, with a row along its bottom, where the pill's bottom spots are:
 // in landscape the pill was pushed to the top of the field, over the task's cards (finding B)
@@ -524,6 +527,8 @@ test("the split toast leaves the isolation bar's Done free, its Undo well away f
     });
     await expect(bar).toBeVisible();
     await expect(toast).toBeVisible();
+    // No Esc key cap on a touch screen where no key has been pressed (#936)
+    await expect(done.locator("kbd")).toHaveCount(0);
     await expect.poll(() => topmostAt(done)).toBe("itself");
     // Below the bar, with a touch target's room between Done and the toast's Undo
     const undo = toast.getByRole("button", { name: "Undo" });
@@ -536,4 +541,231 @@ test("the split toast leaves the isolation bar's Done free, its Undo well away f
         .toBeGreaterThanOrEqual(40);
     await reachAndTap(page, done);
     await expect(bar).toBeHidden();
+});
+
+/** Whether `inner` lies wholly inside `outer` */
+const within = (inner: Box, outer: Box) =>
+    inner.x >= outer.x - 0.5 &&
+    inner.y >= outer.y - 0.5 &&
+    inner.x + inner.width <= outer.x + outer.width + 0.5 &&
+    inner.y + inner.height <= outer.y + outer.height + 0.5;
+
+/** What's topmost at a point in the viewport: the nearest test id, or the tag */
+const topmostAtPoint = (page: Page, at: Point) =>
+    page.evaluate(({ x, y }) => {
+        const hit = document.elementFromPoint(x, y);
+        if (!hit) return "nothing";
+        if (hit.tagName === "CANVAS") return "canvas";
+        return (
+            hit.closest("[data-testid]")?.getAttribute("data-testid") ??
+            hit.tagName
+        );
+    }, at);
+
+/** The first of `fractions` of the field where a finger lands on the field itself, away from marchers */
+async function emptyFieldPoint(
+    page: Page,
+    fractions: readonly [number, number][],
+): Promise<Point> {
+    const marchers = (await drawnMarchers(page)).filter((m) => m.onScreen);
+    for (const [fx, fy] of fractions) {
+        const p = await onField(page, fx, fy);
+        const nearMarcher = marchers.some(
+            (m) => Math.hypot(m.screen.x - p.x, m.screen.y - p.y) < 40,
+        );
+        if (!nearMarcher && (await topmostAtPoint(page, p)) === "canvas")
+            return p;
+    }
+    throw new Error("No empty spot on the field");
+}
+
+test("a tap on Fine within 300 ms of a deselect hits Fine: the pill keeps its spot (#936)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    const pill = page.getByTestId("touch-modifier-buttons");
+    const fine = page.getByTestId("touch-toggle-fine");
+    await expect(pill).toBeVisible();
+
+    // Where the selection's top handle shows
+    await page.keyboard.press("ControlOrMeta+a");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(HOME.length);
+    await expect
+        .poll(() => page.evaluate(() => window.fieldTest!.handles() !== null))
+        .toBe(true);
+    const handle = (await page.evaluate(() => window.fieldTest!.handles()))!.n;
+    await page.keyboard.press("Escape");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(0);
+
+    // The pill dragged by its grip over that spot: the user's spot
+    const grip = pill.getByRole("button", { name: "Move these buttons" });
+    const from = await centerOf(grip);
+    const box = (await pill.boundingBox())!;
+    await touchDrag(
+        page,
+        from,
+        {
+            x: from.x + (handle.x - 60 - box.x),
+            y: from.y + (handle.y - box.height / 2 - box.y),
+        },
+        { steps: 12 },
+    );
+    await page.waitForTimeout(300);
+
+    // Selected again: the pill gives way to the handle
+    await page.keyboard.press("ControlOrMeta+a");
+    await expect
+        .poll(async () => {
+            const now = (await pill.boundingBox())!;
+            return intersects(now, {
+                x: handle.x - 22,
+                y: handle.y - 22,
+                width: 44,
+                height: 44,
+            });
+        })
+        .toBe(false);
+    const fineAt = await settledAt(page, fine);
+    const pillBefore = (await pill.boundingBox())!;
+
+    // A finger deselects on empty field, then reaches for Fine 250 ms later
+    const empty = await emptyFieldPoint(page, [
+        [0.03, 0.06],
+        [0.97, 0.06],
+        [0.03, 0.5],
+        [0.5, 0.06],
+        [0.97, 0.5],
+    ]);
+    await tap(page, empty);
+    await page.waitForTimeout(250);
+    expect(await topmostAtPoint(page, fineAt)).toBe("touch-toggle-fine");
+    await tap(page, fineAt);
+    await expect(fine).toHaveAttribute("aria-pressed", "true");
+    expect((await readField(page)).selection).toEqual([]);
+    // And it stays there afterwards
+    await page.waitForTimeout(700);
+    const pillAfter = (await pill.boundingBox())!;
+    expect(Math.abs(pillAfter.x - pillBefore.x)).toBeLessThan(2);
+    expect(Math.abs(pillAfter.y - pillBefore.y)).toBeLessThan(2);
+});
+
+test("with the Box tool armed, the first drag on the field draws (#936)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await page.keyboard.press("ControlOrMeta+a");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(HOME.length);
+    const pill = page.getByTestId("touch-modifier-buttons");
+    await settledAt(page, pill);
+    // A spot on the field near its top, where the pill's top spots are
+    const start = await emptyFieldPoint(page, [
+        [0.25, 0.2],
+        [0.5, 0.2],
+        [0.75, 0.2],
+        [0.25, 0.35],
+        [0.5, 0.35],
+    ]);
+
+    await page.keyboard.press("b");
+    const hint = page.getByTestId("shape-tool-hint");
+    await expect(hint).toBeVisible();
+    await pillClearOf(page, hint);
+    // Past every settle the pill waits for
+    await page.waitForTimeout(800);
+    expect(await topmostAtPoint(page, start)).toBe("canvas");
+
+    await touchDrag(
+        page,
+        start,
+        { x: start.x + 160, y: start.y + 110 },
+        { steps: 12 },
+    );
+    await expect(page.getByTestId("shape-tool-readout")).toBeVisible();
+    // Nothing on the pill was pressed instead
+    await expect(
+        pill.locator('[aria-pressed="true"][data-testid^="touch-toggle-"]'),
+    ).toHaveCount(0);
+});
+
+// 96 trumpets in a 12 × 8 grid across the field, for a big box (#936)
+const GRID: SeedPosition[] = Array.from(
+    { length: 96 },
+    (_, i): SeedPosition => [
+        1 + i,
+        200 + (i % 12) * 100,
+        150 + Math.floor(i / 12) * 80,
+    ],
+);
+
+test.describe("a big shape (#936)", () => {
+    test.use({
+        seedSql: seedShowSql({
+            beats: 32,
+            pageStarts: [1, 9],
+            measureStarts: [1, 5, 9, 13, 17, 21, 25, 29],
+            marchers: GRID.map(([id]) => ({
+                id,
+                section: "Trumpet",
+                prefix: "T",
+                order: id,
+            })),
+            positions: [GRID, GRID, GRID],
+        }),
+    });
+
+    test("pinch-zoomed to 200 %, its Place and Discard stay inside the field and on top", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await page.setViewportSize(LANDSCAPE);
+        await expectCanvasMatchesShow(show);
+        await page.keyboard.press("ControlOrMeta+a");
+        await expect
+            .poll(async () => (await readField(page)).selection.length)
+            .toBe(GRID.length);
+        await page.keyboard.press("b");
+        await expect(page.getByTestId("shape-tool-hint")).toBeVisible();
+        // A box across most of the field
+        await touchDrag(
+            page,
+            await onField(page, 0.12, 0.2),
+            await onField(page, 0.85, 0.85),
+            { steps: 16 },
+        );
+        const readout = page.getByTestId("shape-tool-readout");
+        await expect(readout).toBeVisible();
+        const place = page.getByTestId("shape-editor-place");
+        const discard = page.getByTestId("shape-editor-discard");
+        await settledAt(page, place);
+
+        // Two fingers spread apart at the box's middle: twice the zoom
+        const zoom = () =>
+            page.evaluate(() => window.fieldTest!.viewport().zoom);
+        const before = await zoom();
+        const middle = await onField(page, 0.48, 0.52);
+        await pinch(page, middle, { from: 70, to: 140, steps: 20 });
+        await expect.poll(zoom).toBeGreaterThan(before * 1.8);
+
+        const field = (await page
+            .getByTestId("fieldCanvas")
+            .first()
+            .boundingBox())!;
+        for (const button of [place, discard]) {
+            await settledAt(page, button);
+            await expect.poll(() => topmostAt(button)).toBe("itself");
+            expect(within((await button.boundingBox())!, field)).toBe(true);
+        }
+        await reachAndTap(page, place);
+        await expect(readout).toBeHidden();
+    });
 });

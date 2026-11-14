@@ -46,6 +46,7 @@ import {
 import {
     choosePillPosition,
     coversHandle,
+    keepOrSlide,
     layersKey,
     PILL_EDGE,
     type Rect,
@@ -71,6 +72,11 @@ const EXPLAIN_MS = 500;
 
 /** How long the view must stay still before the pill finds its spot again */
 const PLACE_AFTER_VIEW_MS = 300;
+
+/** Why a saved spot gives way (`updateSavedBlocked`) */
+type Blocker = "layer" | "handle" | null;
+/** When a saved spot that gave way may come back (`updateSavedBlocked`) */
+type ReturnWhen = "any" | "layer" | "none";
 
 interface Position {
     /** Distance from the left edge of the field (px) */
@@ -410,7 +416,10 @@ function useCompactPill(
  * Each toggle is held while pressed, or latched by a tap. Drag the grip to move the pill; the
  * spot is remembered. Until then it sits at the bottom where it covers the fewest marchers, and
  * off the selection box, the open shape and their handles (#933). A spot the user chose gives way
- * to those handles too, and comes back once they've gone.
+ * to those handles too, and comes back when the pill is next placed afresh (the view settles), not
+ * on the deselect itself (#936). When a layer comes or goes, or the selection changes, the pill
+ * keeps its spot unless that spot is now covered or covers a handle; then it slides the least way
+ * clear. While a tool waits for a stroke it never moves for less (#936).
  */
 // eslint-disable-next-line max-lines-per-function
 export default function TouchModifierButtons({
@@ -436,8 +445,16 @@ export default function TouchModifierButtons({
         parseModifierPosition(readStorage(TOUCH_MODIFIER_POSITION_KEY)),
     );
     const [auto, setAuto] = useState<Position | null>(null);
-    /** The saved spot is under a task's bar or the toolbar panel: the automatic spot meanwhile */
-    const [savedBlocked, setSavedBlocked] = useState(false);
+    const autoRef = useRef(auto);
+    autoRef.current = auto;
+    /**
+     * Why the saved spot gives way, if it does: it's under a task's bar or the toolbar panel
+     * (`layer`), or over a handle on the field (`handle`). The automatic spot meanwhile
+     */
+    const [blockedBy, setBlockedBy] = useState<Blocker>(null);
+    const blockedRef = useRef(blockedBy);
+    blockedRef.current = blockedBy;
+    const savedBlocked = blockedBy !== null;
     // Read by the placing, so a drag (which changes it on every move) doesn't set it up again
     const savedRef = useRef(saved);
     savedRef.current = saved;
@@ -519,30 +536,106 @@ export default function TouchModifierButtons({
             ...size,
         };
     }, []);
-    /** Whether the saved spot gives way: to a task's bar, the panel or a handle on the field */
+    /**
+     * Whether the saved spot gives way: to a task's bar, the panel or a handle on the field. Once
+     * it has, it comes back only as `mayReturn` allows (#936): `any` when the pill is placed again
+     * anyway (the view settled, the field resized), `layer` when it gave way to a layer that's
+     * gone, `none` after a change on the field alone: a deselect doesn't move the pill from under
+     * a finger reaching for it. Returns why it gives way now.
+     */
     const updateSavedBlocked = useCallback(
-        (onField: FieldObstacles) => {
+        (onField: FieldObstacles, mayReturn: ReturnWhen = "any"): Blocker => {
+            const last = blockedRef.current;
             // Not while it's being dragged: it would jump from under the finger
-            if (drag.current) return;
+            if (drag.current) return last;
             const parent = rootRef.current?.offsetParent as HTMLElement | null;
             const saved = savedRef.current;
             const at = saved && rectAt(saved);
-            setSavedBlocked(
-                !!at &&
-                    !!parent &&
-                    [
-                        ...fieldLayersIn(parent, SAVED_PILL_YIELDS_TO),
-                        ...onField.handles,
-                    ].some((layer) => overlaps(at, layer)),
-            );
+            let next: Blocker = null;
+            if (at && parent) {
+                if (
+                    fieldLayersIn(parent, SAVED_PILL_YIELDS_TO).some((layer) =>
+                        overlaps(at, layer),
+                    )
+                )
+                    next = "layer";
+                else if (coversHandle(at, onField)) next = "handle";
+            }
+            const stays =
+                next === null &&
+                last !== null &&
+                (mayReturn === "none" ||
+                    (mayReturn === "layer" && last !== "layer"));
+            if (stays) return last;
+            blockedRef.current = next;
+            setBlockedBy(next);
+            return next;
         },
         [rectAt],
     );
+
+    /**
+     * After the layers over the field or what's on it change (#936): the pill keeps its spot
+     * unless that spot is now covered or covers a handle, and then slides the least way clear
+     * (`keepOrSlide`), finding a new spot only when no slide will do. A saved spot that gave way to
+     * a layer comes back once the layer's gone; one that gave way to a handle waits for the next
+     * full placing (`updateSavedBlocked`).
+     */
+    const keepOrMove = useCallback(() => {
+        const pill = pillRef.current;
+        const parent = rootRef.current?.offsetParent as HTMLElement | null;
+        if (!pill || !parent) return;
+        const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
+        const layers = fieldLayersIn(parent, PILL_AVOIDS, rootRef.current);
+        placedForLayers.current = layersKey(layers);
+        // Where the pill is now: the saved spot, or the automatic one while that gives way
+        const was = shownRef.current;
+        const blocked = updateSavedBlocked(onField, "layer");
+        // The saved spot shows, clear of them all
+        if (savedRef.current && blocked === null) return;
+        // Slid from where it is, the saved spot included when a layer has just covered it (#936
+        // review), so it moves the least way rather than jumping to an old automatic spot
+        const from = was ?? autoRef.current;
+        const shown = from && rectAt(from);
+        const container = {
+            width: parent.clientWidth,
+            height: parent.clientHeight,
+        };
+        const next = shown
+            ? keepOrSlide(shown, container, layers, onField)
+            : null;
+        if (next === "keep") {
+            // Kept where it is: the automatic spot, if it was the saved one that just gave way
+            if (from && from !== autoRef.current)
+                setAuto({ left: from.left, bottom: from.bottom });
+            return;
+        }
+        const spot =
+            next ??
+            choosePillPosition(
+                container,
+                { width: pill.offsetWidth, height: pill.offsetHeight },
+                fieldLayout(marchers).field,
+                fieldLayout(marchers).marchers,
+                layers,
+                onField,
+            );
+        setAuto((last) =>
+            last?.left === spot.left && last.bottom === spot.bottom
+                ? last
+                : spot,
+        );
+    }, [marchers, obstacles, rectAt, updateSavedBlocked]);
 
     // No saved spot, or one under a task's bar: the bottom spot that covers the fewest marchers and
     // none of the other layers over the field (#927). Worked out again when the field area changes
     // size, when the view settles and when those layers change.
     const placeAutomatically = useCallback(() => {
+        // A tool waiting for a stroke: it stays out of where the user is about to draw (#936)
+        if (obstacles?.armed?.()) {
+            keepOrMove();
+            return;
+        }
         const pill = pillRef.current;
         const parent = rootRef.current?.offsetParent as HTMLElement | null;
         if (!pill || !parent) return;
@@ -565,7 +658,8 @@ export default function TouchModifierButtons({
                 : next,
         );
         updateSavedBlocked(onField);
-    }, [marchers, obstacles, updateSavedBlocked]);
+    }, [marchers, obstacles, updateSavedBlocked, keepOrMove]);
+
     useLayoutEffect(() => {
         if (!isTouchMode) return;
         placeAutomatically();
@@ -597,13 +691,14 @@ export default function TouchModifierButtons({
                     ) === placedForLayers.current
                 )
                     return;
-                placeAutomatically();
+                keepOrMove();
             }, PLACE_AFTER_LAYERS_MS);
         });
         // The selection box or the open shape changing (#933), once it has settled and no drag on
         // the field is under way (the drag's end tells again): a new spot only when the one shown
         // now covers a handle, so a tap that selects or deselects doesn't move the pill from under
-        // a finger reaching for it (#933 review). A saved spot gives way, or comes back
+        // a finger reaching for it (#933 review). A saved spot gives way to a handle, but doesn't
+        // come back on a deselect (#936): only at the next full placing
         let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
         const offObstacles = obstacles?.subscribe(() => {
             if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
@@ -612,8 +707,10 @@ export default function TouchModifierButtons({
                 if (obstacles.busy()) return;
                 const onField = obstacles.read();
                 const shown = shownRef.current && rectAt(shownRef.current);
-                if (shown && coversHandle(shown, onField)) placeAutomatically();
-                else updateSavedBlocked(onField);
+                if (!shown || !coversHandle(shown, onField)) return;
+                // A tool waiting for a stroke: the least move (#936)
+                if (obstacles.armed?.()) keepOrMove();
+                else placeAutomatically();
             }, PLACE_AFTER_LAYERS_MS);
         });
         return () => {
@@ -630,11 +727,11 @@ export default function TouchModifierButtons({
     }, [
         isTouchMode,
         placeAutomatically,
+        keepOrMove,
         compact,
         container,
         obstacles,
         rectAt,
-        updateSavedBlocked,
     ]);
 
     // The help closes on a press anywhere else (which does nothing more), or
@@ -679,7 +776,8 @@ export default function TouchModifierButtons({
         // rather than staying put and jumping on release
         if (savedBlocked) {
             if (position) setSaved(position);
-            setSavedBlocked(false);
+            blockedRef.current = null;
+            setBlockedBy(null);
         }
     };
     const onGripMove = (e: React.PointerEvent<HTMLDivElement>) => {

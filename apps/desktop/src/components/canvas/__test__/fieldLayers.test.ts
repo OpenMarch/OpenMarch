@@ -18,6 +18,7 @@ import {
 import {
     choosePillPosition,
     coversHandle,
+    keepOrSlide,
     layersKey,
     pillSpotScore,
 } from "../touch/pillPlacement";
@@ -436,5 +437,73 @@ describe("rowsAround (#933 review)", () => {
             { left: 40, top: 90, width: 80, height: 30 },
             { left: 40, top: 190, width: 80, height: 20 },
         ]);
+    });
+});
+
+/** #936: the pill keeps its spot unless it's now covered, and then slides the least way */
+describe("keepOrSlide", () => {
+    const AREA = { width: 747, height: 556 };
+    const PILL: Rect = { left: 51, top: 300, width: 645, height: 48 };
+
+    it("keeps its spot with nothing over it: after a deselect, or a layer elsewhere", () => {
+        expect(keepOrSlide(PILL, AREA, [])).toBe("keep");
+        // The Box tool's card at the field's top
+        const card = { left: 250, top: 12, width: 250, height: 40 };
+        expect(keepOrSlide(PILL, AREA, [card])).toBe("keep");
+        // A selection's box around it, its handles away from it
+        expect(
+            keepOrSlide(PILL, AREA, [], {
+                handles: aroundPoints([{ x: 20, y: 20 }]),
+                areas: [{ left: 0, top: 0, width: 747, height: 556 }],
+            }),
+        ).toBe("keep");
+    });
+
+    it("slides the least way off a layer that lands on it", () => {
+        const bar = { left: 100, top: 280, width: 500, height: 40 };
+        const next = keepOrSlide(PILL, AREA, [bar]);
+        expect(next).not.toBe("keep");
+        expect(next).not.toBeNull();
+        const { left, bottom } = next as { left: number; bottom: number };
+        const top = AREA.height - bottom - PILL.height;
+        expect(left).toBe(PILL.left);
+        // Just below the bar
+        expect(top).toBe(bar.top + bar.height + 4);
+    });
+
+    it("slides off a handle that lands under it", () => {
+        const handles = aroundPoints([{ x: 300, y: 320 }]);
+        const next = keepOrSlide(PILL, AREA, [], { handles, areas: [] });
+        expect(next).not.toBe("keep");
+        const { left, bottom } = next as { left: number; bottom: number };
+        const moved = {
+            ...PILL,
+            left,
+            top: AREA.height - bottom - PILL.height,
+        };
+        expect(coversHandle(moved, { handles, areas: [] })).toBe(false);
+    });
+
+    it("is pulled back onto a field that shrank under it", () => {
+        // Rotated: the field is 500 wide, the pill reaches x 696
+        const next = keepOrSlide(PILL, { width: 500, height: 556 }, []);
+        expect(next).toEqual({
+            left: 0,
+            bottom: 556 - PILL.top - PILL.height,
+        });
+        // And clear of a layer where it lands (pulled in to x 5, over a tab at the left edge)
+        const tab = { left: 0, top: 290, width: 30, height: 80 };
+        const slid = keepOrSlide(PILL, { width: 650, height: 556 }, [tab]);
+        expect(slid).not.toBe("keep");
+        expect(slid).not.toBeNull();
+        const { left, bottom } = slid as { left: number; bottom: number };
+        const top = 556 - bottom - PILL.height;
+        expect(left + PILL.width).toBeLessThanOrEqual(650);
+        expect(overlaps({ ...PILL, left, top }, tab)).toBe(false);
+    });
+
+    it("gives up (a new spot) when no slide clears them", () => {
+        const all = { left: 0, top: 0, width: 747, height: 556 };
+        expect(keepOrSlide(PILL, AREA, [all])).toBeNull();
     });
 });

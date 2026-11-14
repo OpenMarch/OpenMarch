@@ -188,6 +188,59 @@ export function choosePillPosition(
 }
 
 /**
+ * What the pill does when the layers over the field or what's on it change (#936): it keeps its
+ * spot (`"keep"`) unless that spot now covers one of `layers` or a handle, so a select, a deselect
+ * or a tool being armed doesn't move it from under a finger reaching for it, or onto where the
+ * user is about to draw. When it must move, it slides the least way clear: of the layers and
+ * what's dragged on the field, else of the layers and the handles. A spot past the field's edge
+ * (the field shrank under it) is pulled back in first. `null` when no slide clears them: then it
+ * finds a new spot (`choosePillPosition`).
+ */
+export function keepOrSlide(
+    shown: Rect,
+    container: { width: number; height: number },
+    layers: readonly Rect[],
+    obstacles: FieldObstacles = NO_FIELD_OBSTACLES,
+): "keep" | PillPosition | null {
+    const blocked = (r: Rect) =>
+        layers.some((layer) => overlaps(r, layer)) ||
+        coversHandle(r, obstacles);
+    // Pulled back inside first: the field can shrink under it (a rotation, the Inspector opening)
+    const inside = pulledInside(shown, container);
+    const moved = inside.left !== shown.left || inside.top !== shown.top;
+    if (!moved && !blocked(shown)) return "keep";
+    const at = (r: { left: number; top: number }): PillPosition => ({
+        left: r.left,
+        bottom: container.height - r.top - shown.height,
+    });
+    if (!blocked(inside)) return at(inside);
+    const slid = clearSpotOf(
+        inside,
+        [
+            [...layers, ...obstacles.handles, ...obstacles.areas],
+            [...layers, ...obstacles.handles],
+        ],
+        { left: 0, top: 0, ...container },
+        CONTROL_GAP,
+    );
+    return slid.clear ? at(slid) : null;
+}
+
+/** `r` moved the least to lie inside `container` (its top left inside when it's bigger) */
+function pulledInside(
+    r: Rect,
+    container: { width: number; height: number },
+): Rect {
+    const clamp = (v: number, max: number) =>
+        Math.max(0, Math.min(v, Math.max(0, max)));
+    return {
+        ...r,
+        left: clamp(r.left, container.width - r.width),
+        top: clamp(r.top, container.height - r.height),
+    };
+}
+
+/**
  * Whether the pill at `rect` covers one of the field's handles (#933): only then does a change on
  * the field (a selection, a shape, marchers moved) give it a new spot
  */
