@@ -27,6 +27,7 @@ import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
 import { MarcherShape } from "./MarcherShape";
+import { yardNumberPath } from "./fieldNumbers";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import {
@@ -2283,70 +2284,82 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
         }
 
-        // Print yard line numbers if they exist
+        // Yard numbers, painted like the numbers on a football field
         const yardNumberCoordinates =
             this.fieldProperties.yardNumberCoordinates;
+        const fieldLabelFill = rgbaToString(
+            this.fieldProperties.theme.fieldLabel,
+        );
+        const stepsToY = (steps: number) =>
+            centerFrontPoint.yPixels - steps * pixelsPerStep;
+        const yardNumberSides: { insideY: number; outsideY: number }[] = [];
         if (
             yardNumberCoordinates.homeStepsFromFrontToInside !== undefined &&
             yardNumberCoordinates.homeStepsFromFrontToOutside !== undefined
-        ) {
-            const numberHeight =
-                (yardNumberCoordinates.homeStepsFromFrontToInside -
-                    yardNumberCoordinates.homeStepsFromFrontToOutside) *
-                pixelsPerStep;
-            const numberProps = {
-                fontSize: numberHeight,
-                fill: rgbaToString(this.fieldProperties.theme.fieldLabel),
-                selectable: false,
-                charSpacing: 160,
-            };
-            const yardNumberXOffset = 22;
-            for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
-                // Yard line numbers
-                const x =
-                    centerFrontPoint.xPixels +
-                    xCheckpoint.stepsFromCenterFront * pixelsPerStep;
-
-                if (xCheckpoint.fieldLabel) {
-                    if (
-                        yardNumberCoordinates.homeStepsFromFrontToInside !==
-                            undefined &&
-                        yardNumberCoordinates.homeStepsFromFrontToOutside !==
-                            undefined
-                    ) {
-                        // Home number
-                        fieldArray.push(
-                            new fabric.Text(xCheckpoint.fieldLabel, {
-                                left: x - yardNumberXOffset,
-                                top:
-                                    centerFrontPoint.yPixels -
-                                    yardNumberCoordinates.homeStepsFromFrontToInside *
-                                        pixelsPerStep,
-                                ...numberProps,
-                            }),
-                        );
-                    }
-                    if (
-                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
-                            undefined &&
-                        yardNumberCoordinates.awayStepsFromFrontToOutside !==
-                            undefined
-                    ) {
-                        // Away number
-                        fieldArray.push(
-                            new fabric.Text(xCheckpoint.fieldLabel, {
-                                left: x - yardNumberXOffset,
-                                top:
-                                    centerFrontPoint.yPixels -
-                                    yardNumberCoordinates.awayStepsFromFrontToOutside *
-                                        pixelsPerStep,
-                                flipY: true,
-                                flipX: true,
-                                ...numberProps,
-                            }),
-                        );
-                    }
+        )
+            yardNumberSides.push({
+                insideY: stepsToY(
+                    yardNumberCoordinates.homeStepsFromFrontToInside,
+                ),
+                outsideY: stepsToY(
+                    yardNumberCoordinates.homeStepsFromFrontToOutside,
+                ),
+            });
+        if (
+            yardNumberCoordinates.awayStepsFromFrontToInside !== undefined &&
+            yardNumberCoordinates.awayStepsFromFrontToOutside !== undefined
+        )
+            yardNumberSides.push({
+                insideY: stepsToY(
+                    yardNumberCoordinates.awayStepsFromFrontToInside,
+                ),
+                outsideY: stepsToY(
+                    yardNumberCoordinates.awayStepsFromFrontToOutside,
+                ),
+            });
+        for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
+            const label = xCheckpoint.fieldLabel;
+            if (!label) continue;
+            const lineX =
+                centerFrontPoint.xPixels +
+                xCheckpoint.stepsFromCenterFront * pixelsPerStep;
+            const arrowDirection = Math.sign(
+                xCheckpoint.stepsFromCenterFront,
+            ) as -1 | 0 | 1;
+            for (const { insideY, outsideY } of yardNumberSides) {
+                const path = yardNumberPath({
+                    label,
+                    lineX,
+                    insideY,
+                    outsideY,
+                    arrowDirection,
+                });
+                if (path) {
+                    fieldArray.push(
+                        new fabric.Path(path, {
+                            fill: fieldLabelFill,
+                            strokeWidth: 0,
+                            selectable: false,
+                        }),
+                    );
+                    continue;
                 }
+                // Labels that aren't numbers fall back to text, centred on the line
+                const turned = outsideY < insideY;
+                fieldArray.push(
+                    new fabric.Text(label, {
+                        left: lineX,
+                        top: (insideY + outsideY) / 2,
+                        originX: "center",
+                        originY: "center",
+                        fontSize: Math.abs(outsideY - insideY),
+                        fontFamily: "DM Sans",
+                        fontWeight: 700,
+                        fill: fieldLabelFill,
+                        selectable: false,
+                        angle: turned ? 180 : 0,
+                    }),
+                );
             }
         }
 
