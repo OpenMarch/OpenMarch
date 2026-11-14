@@ -507,10 +507,15 @@ describe("keeping its spot while the field changes (#933)", () => {
     beforeEach(() => new Promise((done) => setTimeout(done, 50)));
 
     /** A field area of 800 × 600 the pill sits in (there's no layout here: the pill is 0 × 0) */
-    function inArea(run: () => void) {
+    function inArea(
+        run: (resize: (width: number, height: number) => void) => void,
+    ) {
+        const size = { width: 800, height: 600 };
         const area = document.createElement("div");
-        Object.defineProperty(area, "clientWidth", { value: 800 });
-        Object.defineProperty(area, "clientHeight", { value: 600 });
+        Object.defineProperty(area, "clientWidth", { get: () => size.width });
+        Object.defineProperty(area, "clientHeight", {
+            get: () => size.height,
+        });
         document.body.append(area);
         const offsetParent = Object.getOwnPropertyDescriptor(
             HTMLElement.prototype,
@@ -532,7 +537,10 @@ describe("keeping its spot while the field changes (#933)", () => {
             ],
         });
         try {
-            run();
+            run((width, height) => {
+                size.width = width;
+                size.height = height;
+            });
         } finally {
             // A frame still waiting would keep the layers' next change note from being sent
             act(() => {
@@ -740,6 +748,104 @@ describe("keeping its spot while the field changes (#933)", () => {
             } finally {
                 bar.remove();
             }
+        });
+    });
+
+    /** A layer over the field area, in its px; gone again with `remove()` */
+    const layer = (
+        kind: string,
+        rect: { left: number; top: number; width: number; height: number },
+    ) => {
+        const el = document.createElement("div");
+        el.setAttribute("data-field-layer", kind);
+        el.getBoundingClientRect = () => rect as DOMRect;
+        document.body.append(el);
+        act(() => {
+            noteFieldLayersChanged();
+        });
+        return el;
+    };
+    const wait = (ms: number) =>
+        act(() => {
+            vi.advanceTimersByTime(ms);
+        });
+    const saveSpot = () =>
+        localStorage.setItem(
+            TOUCH_MODIFIER_POSITION_KEY,
+            JSON.stringify({ left: 40, bottom: 60 }),
+        );
+
+    it("with a saved spot, a handle pushes it off, and after a deselect a layer change doesn't bring it back (#936)", () => {
+        inArea(() => {
+            saveSpot();
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe("40px,60px");
+            // The saved spot is the point (40, 540): a handle there pushes the pill off it
+            field.change([{ x: 40, y: 540 }]);
+            field.settle();
+            const moved = spot();
+            expect(moved).not.toBe("40px,60px");
+            // Deselected, then a layer elsewhere changes: it stays where it moved to
+            field.change([]);
+            wait(250);
+            const card = layer("task", {
+                left: 300,
+                top: 10,
+                width: 200,
+                height: 40,
+            });
+            try {
+                wait(1000);
+                expect(spot()).toBe(moved);
+            } finally {
+                card.remove();
+            }
+        });
+    });
+
+    it("with a tool armed, a layer over its saved spot slides it the least way from there (#936 review)", () => {
+        inArea(() => {
+            saveSpot();
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            field.arm(true);
+            expect(spot()).toBe("40px,60px");
+            // A card over the saved spot, the point (40, 540)
+            const card = layer("task", {
+                left: 0,
+                top: 500,
+                width: 200,
+                height: 100,
+            });
+            try {
+                wait(400);
+                // Beside the card, 4 px off its right edge, at the saved spot's height
+                expect(spot()).toBe("204px,60px");
+            } finally {
+                card.remove();
+            }
+        });
+    });
+
+    it("with a tool armed, the field shrinking under it pulls it back onto the field (#936 review)", () => {
+        inArea((resize) => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe(AUTO);
+            field.arm(true);
+            // The Inspector opens: the field is 600 wide, and the pill at x 788 is past its edge
+            resize(600, 600);
+            act(() => {
+                useFieldViewStore.setState({
+                    width: useFieldViewStore.getState().width + 1,
+                });
+            });
+            wait(400);
+            expect(spot()).toBe("600px,112px");
         });
     });
 

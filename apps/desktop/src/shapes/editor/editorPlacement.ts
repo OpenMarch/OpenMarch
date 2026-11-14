@@ -7,6 +7,7 @@ import {
     FINGER_REACH,
     LAYER_GAP,
     overlapArea,
+    overlaps,
     rowsAround,
     type Rect,
 } from "@/components/canvas/fieldLayers";
@@ -134,17 +135,19 @@ function gripsOf(input: PlacementInput): {
  * With `visible` (the touch layout, #936: the field less the toolbar panel over its top), it never
  * leaves that box, whatever the zoom or pan, so Place and Discard can always be tapped: a spot
  * past its edge is pulled back in, then moved clear as above, onto the shape only when nothing
- * else fits (`keepVisible`).
+ * else fits (`keepVisible`). While pulled in, it keeps `current` (where it is now, in the
+ * field's px) as long as that's still as good, so a slow pan doesn't hop it from gap to gap.
  */
 export function clearPlacement(
     input: PlacementInput,
     obstacles: readonly Rect[],
     covers: readonly Rect[] = [],
     visible?: Rect,
+    current?: { left: number; top: number } | null,
 ): Placement {
     const placement = clearOfObstacles(input, obstacles, covers);
     return visible
-        ? keepVisible(input, placement, obstacles, covers, visible)
+        ? keepVisible(input, placement, obstacles, covers, visible, current)
         : placement;
 }
 
@@ -174,6 +177,11 @@ function pulledInside(r: Rect, bounds: Rect): Rect {
  * or panned half off it) is pulled back in, then kept clear in this order: of the shape, its grips
  * and the obstacles; of its grips (its slots as rows) and the obstacles; of its handles and the
  * obstacles; of the obstacles; of the covers. With none clear it stays pulled in.
+ *
+ * `current`, where the bar is now, wins while it's clear of a list at least as early as the spot
+ * found, and otherwise the least move from it that is (#936 review): during a pan the bar holds
+ * still on screen, or is carried along by the shape, instead of hopping to whichever gap between
+ * the slot rows is nearest the field's edge this frame.
  */
 function keepVisible(
     input: PlacementInput,
@@ -181,6 +189,7 @@ function keepVisible(
     obstacles: readonly Rect[],
     covers: readonly Rect[],
     visible: Rect,
+    current?: { left: number; top: number } | null,
 ): Placement {
     const { width, height } = input;
     const at = { left: placement.left, top: placement.top, width, height };
@@ -194,20 +203,36 @@ function keepVisible(
         height: Math.max(...ys) - Math.min(...ys) + 2 * CLEAR_PX,
     };
     const grips = gripsOf(input);
-    const spot = clearSpotOf(
-        inside,
-        [
-            [shape, ...grips.handles, ...grips.slots, ...obstacles],
-            [...grips.handles, ...grips.slotRows, ...obstacles],
-            [...grips.handles, ...obstacles],
-            [...obstacles],
-            [...covers],
-        ],
-        visible,
-    );
-    return spot.clear
-        ? { left: spot.left, top: spot.top, above: placement.above }
-        : { left: inside.left, top: inside.top, above: placement.above };
+    const lists = [
+        [shape, ...grips.handles, ...grips.slots, ...obstacles],
+        [...grips.handles, ...grips.slotRows, ...obstacles],
+        [...grips.handles, ...obstacles],
+        [...obstacles],
+        [...covers],
+    ];
+    // The first list a spot clears, `lists.length` for none
+    const tier = (r: Rect) => {
+        const i = lists.findIndex(
+            (list) => !list.some((o) => overlaps(r, o, LAYER_GAP)),
+        );
+        return i < 0 ? lists.length : i;
+    };
+    const spot = clearSpotOf(inside, lists, visible);
+    const found = spot.clear
+        ? { ...inside, left: spot.left, top: spot.top }
+        : inside;
+    if (current) {
+        // Where it is now, else the least move from there that's as good: carried along with the
+        // shape rather than re-picked from the field's edge
+        const now = pulledInside({ ...current, width, height }, visible);
+        const best = tier(found);
+        if (tier(now) <= best)
+            return { left: now.left, top: now.top, above: placement.above };
+        const slid = clearSpotOf(now, lists.slice(0, best + 1), visible);
+        if (slid.clear && tier({ ...now, ...slid }) <= best)
+            return { left: slid.left, top: slid.top, above: placement.above };
+    }
+    return { left: found.left, top: found.top, above: placement.above };
 }
 
 /** A control this narrow along the field's left or right edge is an edge tab (the Inspector's) */

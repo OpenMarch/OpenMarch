@@ -281,6 +281,103 @@ describe("clearPlacement", () => {
             expect(isInside(at, visible)).toBe(true);
         });
 
+        // Rows of slots 150 px apart, one near the field's bottom where the pulled-in bar lands,
+        // with room between rows for the bar
+        const rowsShape = (dy = 0) => {
+            const rows = [-100, 50, 200, 350, 500, 650, 800].map((y) => y + dy);
+            return {
+                outline: rectangle(-100, -100 + dy, 850, 800 + dy),
+                handles: [
+                    ...rectangle(-100, -100 + dy, 850, 800 + dy),
+                    { x: 375, y: -100 + dy },
+                    { x: 375, y: 800 + dy },
+                ],
+                spots: rows.flatMap((y) =>
+                    Array.from({ length: 10 }, (_, i) => ({
+                        x: -100 + i * 105,
+                        y,
+                    })),
+                ),
+                width: 300,
+                height: 60,
+                ...field,
+            };
+        };
+        // Near a point a finger can press: one on the field
+        const nearAny = (
+            at: Box,
+            points: readonly { x: number; y: number }[],
+        ) =>
+            points
+                .filter(
+                    (p) =>
+                        p.x >= 0 &&
+                        p.x <= field.fieldWidth &&
+                        p.y >= 0 &&
+                        p.y <= field.fieldHeight,
+                )
+                .some(
+                    (p) =>
+                        p.x > at.left - FINGER_REACH &&
+                        p.x < at.left + at.width + FINGER_REACH &&
+                        p.y > at.top - FINGER_REACH &&
+                        p.y < at.top + at.height + FINGER_REACH,
+                );
+
+        it("takes a spot between the slot rows when there is one, not over a row", () => {
+            const input = rowsShape();
+            const at = placed(
+                input,
+                clearPlacement(input, [zoom, tab, panel], [panel], visible),
+            );
+            expect(isInside(at, visible)).toBe(true);
+            expect(nearAny(at, input.spots)).toBe(false);
+            expect(nearAny(at, input.handles)).toBe(false);
+            expect(hits(at, zoom)).toBe(false);
+        });
+
+        it("holds still on screen during a slow pan while its spot stays clear, then is carried along rather than hopping", () => {
+            let current: { left: number; top: number } | null = null;
+            let fresh: { left: number; top: number } | null = null;
+            let moves = 0;
+            let freshMoves = 0;
+            for (let dy = 0; dy <= 200; dy += 10) {
+                const input = rowsShape(-dy);
+                const before = current;
+                const next = clearPlacement(
+                    input,
+                    [zoom, tab, panel],
+                    [panel],
+                    visible,
+                    current,
+                );
+                const at = placed(input, next);
+                expect(isInside(at, visible)).toBe(true);
+                expect(nearAny(at, input.spots)).toBe(false);
+                if (before) {
+                    const was = placed(input, before);
+                    // Its old spot still clear of every slot: it didn't move
+                    if (!nearAny(was, input.spots) && !hits(was, zoom))
+                        expect(next.top).toBe(before.top);
+                    // A hop: more than the pan moved this frame
+                    if (Math.abs(next.top - before.top) > 10) moves++;
+                }
+                current = { left: next.left, top: next.top };
+                // The same pan re-picking the best spot every frame
+                const best = clearPlacement(
+                    input,
+                    [zoom, tab, panel],
+                    [panel],
+                    visible,
+                );
+                if (fresh && Math.abs(best.top - fresh.top) > 10) freshMoves++;
+                fresh = best;
+            }
+            // Re-picked every frame it hops between gaps; kept, it doesn't
+            expect(freshMoves).toBeGreaterThan(0);
+            expect(moves).toBe(0);
+        });
+
         it("doesn't move a bar that's already inside", () => {
             const small = {
                 outline: rectangle(200, 150, 400, 250),

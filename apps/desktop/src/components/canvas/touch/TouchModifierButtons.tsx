@@ -588,10 +588,15 @@ export default function TouchModifierButtons({
         const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
         const layers = fieldLayersIn(parent, PILL_AVOIDS, rootRef.current);
         placedForLayers.current = layersKey(layers);
+        // Where the pill is now: the saved spot, or the automatic one while that gives way
+        const was = shownRef.current;
         const blocked = updateSavedBlocked(onField, "layer");
         // The saved spot shows, clear of them all
         if (savedRef.current && blocked === null) return;
-        const shown = autoRef.current && rectAt(autoRef.current);
+        // Slid from where it is, the saved spot included when a layer has just covered it (#936
+        // review), so it moves the least way rather than jumping to an old automatic spot
+        const from = was ?? autoRef.current;
+        const shown = from && rectAt(from);
         const container = {
             width: parent.clientWidth,
             height: parent.clientHeight,
@@ -599,7 +604,12 @@ export default function TouchModifierButtons({
         const next = shown
             ? keepOrSlide(shown, container, layers, onField)
             : null;
-        if (next === "keep") return;
+        if (next === "keep") {
+            // Kept where it is: the automatic spot, if it was the saved one that just gave way
+            if (from && from !== autoRef.current)
+                setAuto({ left: from.left, bottom: from.bottom });
+            return;
+        }
         const spot =
             next ??
             choosePillPosition(

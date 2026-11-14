@@ -1481,6 +1481,8 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     const [rowRoom, setRowRoom] = useState(Infinity);
     /** Where it last settled, as told to the other layers */
     const noted = useRef<string | null>(null);
+    /** Where it was last sent, in the field's px */
+    const lastTarget = useRef<{ left: number; top: number } | null>(null);
     const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const measureObstacles = useCallback(() => {
         const el = ref.current;
@@ -1570,6 +1572,8 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
                       obstacles.current.covers,
                   )
                 : undefined,
+            // Where it is now: kept while it's still as good, so a pan doesn't hop it (#936)
+            lastTarget.current,
         );
     };
     const [above, setAbove] = useState(
@@ -1698,6 +1702,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             return;
         }
         const target = targetIn(view);
+        lastTarget.current = { left: target.left, top: target.top };
         // A pan or zoom, the first placing and reduced motion jump; the shape's changes spring,
         // and so do the editor's own glide, to its end, and the end of a hold, which a view glide
         // after a click on the editor outlasts (review)

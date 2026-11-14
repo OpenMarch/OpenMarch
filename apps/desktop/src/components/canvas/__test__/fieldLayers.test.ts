@@ -484,6 +484,24 @@ describe("keepOrSlide", () => {
         expect(coversHandle(moved, { handles, areas: [] })).toBe(false);
     });
 
+    it("is pulled back onto a field that shrank under it", () => {
+        // Rotated: the field is 500 wide, the pill reaches x 696
+        const next = keepOrSlide(PILL, { width: 500, height: 556 }, []);
+        expect(next).toEqual({
+            left: 0,
+            bottom: 556 - PILL.top - PILL.height,
+        });
+        // And clear of a layer where it lands (pulled in to x 5, over a tab at the left edge)
+        const tab = { left: 0, top: 290, width: 30, height: 80 };
+        const slid = keepOrSlide(PILL, { width: 650, height: 556 }, [tab]);
+        expect(slid).not.toBe("keep");
+        expect(slid).not.toBeNull();
+        const { left, bottom } = slid as { left: number; bottom: number };
+        const top = 556 - bottom - PILL.height;
+        expect(left + PILL.width).toBeLessThanOrEqual(650);
+        expect(overlaps({ ...PILL, left, top }, tab)).toBe(false);
+    });
+
     it("gives up (a new spot) when no slide clears them", () => {
         const all = { left: 0, top: 0, width: 747, height: 556 };
         expect(keepOrSlide(PILL, AREA, [all])).toBeNull();
