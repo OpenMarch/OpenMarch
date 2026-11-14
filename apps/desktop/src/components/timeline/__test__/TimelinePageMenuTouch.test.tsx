@@ -206,6 +206,30 @@ describe("the page box menu on a tablet (3.4)", () => {
         expect(onDeleteFlag).not.toHaveBeenCalled();
     });
 
+    it("a finger's long press outside the open menu opens no other menu there (#928)", () => {
+        render(<Show onDeleteFlag={vi.fn()} onOpenRange={vi.fn()} />);
+        fireEvent.click(box("Page 2"));
+        fireEvent.click(screen.getByTestId("timeline-page-menu-button"));
+        const other = box("Page 1");
+        const press = (type: string) => {
+            const event = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+            });
+            Object.defineProperty(event, "pointerType", { value: "touch" });
+            Object.defineProperty(event, "pointerId", { value: 8 });
+            fireEvent(other, event);
+        };
+        press("pointerdown");
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+        // The browser's own long-press menu event (Android, a Windows touch screen)
+        fireEvent.contextMenu(other);
+        press("pointerup");
+        fireEvent.click(other);
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+    });
+
     it("has no Edit move where boxes can't be opened (Basic), and no chip without any page menu", () => {
         const { unmount } = render(<Show onDeleteFlag={vi.fn()} />);
         fireEvent.click(box("Page 2"));

@@ -51,6 +51,26 @@ async function expectOnScreen(page: Page, locator: Locator) {
     );
 }
 
+/**
+ * The on-screen marchers a finger can press: where the field itself is under their middle, not a
+ * floating control over it (the zoom box, the pill, the toolbar panel)
+ */
+async function pressableMarchers(page: Page) {
+    const marchers = (await drawnMarchers(page)).filter((m) => m.onScreen);
+    const open = await page.evaluate(
+        (points) =>
+            points.map(({ x, y }) => {
+                const field = document.querySelector(
+                    '[data-testid="fieldCanvas"]',
+                );
+                const hit = document.elementFromPoint(x, y);
+                return !!field && !!hit && field.contains(hit);
+            }),
+        marchers.map((m) => m.screen),
+    );
+    return marchers.filter((_, i) => open[i]);
+}
+
 /** Zooms the timeline in on the beat-53 page, wide enough for its … chip, and opens its menu */
 async function openPageMenu(page: Page) {
     const viewport = page.getByTestId("timeline-viewport");
@@ -81,9 +101,8 @@ async function marcherClearOf(page: Page, avoid: Locator) {
         .first()
         .boundingBox())!;
     const margin = 40;
-    const marcher = (await drawnMarchers(page)).find(
+    const marcher = (await pressableMarchers(page)).find(
         (m) =>
-            m.onScreen &&
             m.screen.y > field.y + margin &&
             m.screen.y < field.y + field.height - margin &&
             m.screen.x > field.x + margin &&
@@ -118,26 +137,13 @@ test.describe("touch layout", () => {
         // A short window, as on a tablet in landscape: the touch menu fits neither below nor
         // above a marcher near the field's top
         await page.setViewportSize({ width: 1180, height: 600 });
-        const field = (await page
-            .getByTestId("fieldCanvas")
-            .first()
-            .boundingBox())!;
+        // Two marchers the field takes a press on, once the layout has settled
         await expect
-            .poll(async () =>
-                (await drawnMarchers(page)).some(
-                    (m) => m.onScreen && m.screen.y > field.y + 20,
-                ),
-            )
-            .toBe(true);
-        const marchers = (await drawnMarchers(page))
-            .filter(
-                (m) =>
-                    m.onScreen &&
-                    m.screen.y > field.y + 20 &&
-                    m.screen.x > field.x + 20 &&
-                    m.screen.x < field.x + field.width - 20,
-            )
-            .sort((a, b) => a.screen.y - b.screen.y);
+            .poll(async () => (await pressableMarchers(page)).length)
+            .toBeGreaterThan(1);
+        const marchers = (await pressableMarchers(page)).sort(
+            (a, b) => a.screen.y - b.screen.y,
+        );
         const top = marchers[0]!;
         await longPress(page, top.screen, { ms: 900 });
         await expect(fieldMenu(page)).toBeVisible();
@@ -196,7 +202,7 @@ test.describe("touch layout", () => {
         const { page } = show;
         await openPageMenu(page);
         const greyed = rangeMenu(page)
-            .locator('[role^="menuitem"][aria-disabled="true"]')
+            .locator('[role^="menuitem"][aria-disabled="true"][data-tip-label]')
             .first();
         await expect(greyed, "the menu has a greyed entry").toBeVisible();
         const testId = (await greyed.getAttribute("data-testid"))!;

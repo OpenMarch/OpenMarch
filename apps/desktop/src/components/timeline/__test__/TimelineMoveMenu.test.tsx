@@ -324,6 +324,34 @@ describe("the ⋯ button (UI-14)", () => {
         expect(moves.onEdit).toHaveBeenCalledWith(7);
     });
 
+    it("a finger's tap outside its menu only closes it (#928): the page box under it isn't selected", async () => {
+        const onSelectionChange = vi.fn();
+        const moves = show({ selection: SELECTED, onSelectionChange });
+        fireEvent.keyDown(screen.getByTestId("timeline-clip-menu-button"), {
+            key: "Enter",
+        });
+        await waitFor(() =>
+            expect(screen.getByTestId("timeline-clip-menu")).toBeTruthy(),
+        );
+        const box = screen.getByRole("button", { name: "Page 1" });
+        for (const type of ["pointerdown", "pointerup"]) {
+            const event = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+            });
+            Object.defineProperty(event, "pointerType", { value: "touch" });
+            Object.defineProperty(event, "pointerId", { value: 9 });
+            fireEvent(box, event);
+        }
+        fireEvent.click(box);
+        await waitFor(() =>
+            expect(screen.queryByTestId("timeline-clip-menu")).toBeNull(),
+        );
+        expect(onSelectionChange).not.toHaveBeenCalled();
+        expect(moves.onDelete).not.toHaveBeenCalled();
+    });
+
     it("a press in its menu stays in the menu: it doesn't scrub the timeline under it", async () => {
         const onSeek = vi.fn();
         render(
