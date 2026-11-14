@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import {
     BufferAttribute,
+    BufferGeometry,
     DoubleSide,
     InstancedBufferAttribute,
     InstancedBufferGeometry,
@@ -11,6 +12,7 @@ import {
 import type { FieldProperties } from "@openmarch/core";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { fieldGeometry, rgba01, type FieldRects } from "../fieldGeometry";
+import type { FieldShapeMesh } from "../fieldShapes";
 import { useFieldDraw } from "../fieldDrawContext";
 import { TextBatch, type GlyphAtlas, type TextLabel } from "../sdfText";
 
@@ -125,9 +127,63 @@ function rectsMesh(
 }
 
 /**
+ * Filled shapes (the painted yard numbers, `fieldShapes.ts`). Each edge gets
+ * a strip one pixel wide outside the fill whose alpha falls from 1 to 0
+ * across it: the edges antialias, as the lines'
+ * (#249), with MSAA off.
+ */
+const SHAPE_VERTEX = /* glsl */ `
+attribute vec2 aOffset; // unit miter away from the fill
+attribute float aEdge;  // device pixels along it
+attribute vec4 aColor;
+uniform float uPixel;   // one device pixel in field units
+varying vec4 vColor;
+varying float vEdge;
+void main() {
+    vColor = aColor;
+    vEdge = aEdge;
+    vec2 pos = position.xy + aOffset * aEdge * uPixel;
+    gl_Position = projectionMatrix * viewMatrix * vec4(pos, 0.0, 1.0);
+}`;
+
+const SHAPE_FRAGMENT = /* glsl */ `
+varying vec4 vColor;
+varying float vEdge;
+void main() {
+    float alpha = vColor.a * clamp(1.0 - vEdge, 0.0, 1.0);
+    if (alpha <= 0.0) discard;
+    gl_FragColor = vec4(vColor.rgb, alpha);
+}`;
+
+function shapesMesh(shapes: FieldShapeMesh, renderOrder: number) {
+    const geometry = new BufferGeometry();
+    geometry.setAttribute("position", new BufferAttribute(shapes.positions, 3));
+    geometry.setAttribute("aOffset", new BufferAttribute(shapes.offsets, 2));
+    geometry.setAttribute("aEdge", new BufferAttribute(shapes.edges, 1));
+    geometry.setAttribute("aColor", new BufferAttribute(shapes.colors, 4));
+    geometry.setIndex(new BufferAttribute(shapes.indices, 1));
+    const mesh = new Mesh(
+        geometry,
+        new ShaderMaterial({
+            vertexShader: SHAPE_VERTEX,
+            fragmentShader: SHAPE_FRAGMENT,
+            uniforms: { uPixel: { value: 1 } },
+            transparent: true,
+            depthTest: false,
+            depthWrite: false,
+            side: DoubleSide,
+        }),
+    );
+    mesh.frustumCulled = false;
+    mesh.renderOrder = renderOrder;
+    return mesh;
+}
+
+/**
  * The field: background, grid, half lines, yard lines, hashes, the border,
- * yard numbers and the checkpoint labels around it, as `planField2d` lays
- * them out. The background draws under the field image
+ * yard numbers (shapes, and text for labels that aren't digits) and the
+ * checkpoint labels around it, as `planField2d` lays them out. The
+ * background draws under the field image
  * (`BackgroundImageLayer`, render order -1), everything else over it.
  * Rebuilt only when the field properties or the grid and half line settings
  * change.
@@ -150,10 +206,13 @@ export default function FieldLayer({
     const halfLines = useUiSettingsStore((s) => s.uiSettings.halfLines);
 
     const layer = useMemo(() => {
-        const { background, rects, texts } = fieldGeometry(fieldProperties, {
-            gridLines,
-            halfLines,
-        });
+        const { background, rects, texts, shapes } = fieldGeometry(
+            fieldProperties,
+            {
+                gridLines,
+                halfLines,
+            },
+        );
         const batch = (atlas: GlyphAtlas, font: "number" | "label") => {
             const chosen = texts.filter((text) => text.font === font);
             const text = new TextBatch(atlas);
@@ -177,6 +236,8 @@ export default function FieldLayer({
         return {
             background: rectsMesh(background, -2, { edges: false }),
             lines: rectsMesh(rects, 0, { edges: true }),
+            // Over the lines, with the yard number text
+            shapes: shapesMesh(shapes, 1),
             numbers: batch(numberAtlas, "number"),
             labels: batch(labelAtlas, "label"),
         };
@@ -185,7 +246,7 @@ export default function FieldLayer({
     useEffect(() => {
         invalidate();
         return () => {
-            for (const mesh of [layer.background, layer.lines]) {
+            for (const mesh of [layer.background, layer.lines, layer.shapes]) {
                 mesh.geometry.dispose();
                 mesh.material.dispose();
             }
@@ -199,6 +260,7 @@ export default function FieldLayer({
         const pixel = 1 / (zoom * dpr);
         layer.background.material.uniforms.uPixel.value = pixel;
         layer.lines.material.uniforms.uPixel.value = pixel;
+        layer.shapes.material.uniforms.uPixel.value = pixel;
         layer.lines.material.uniforms.uMinCoverage.value =
             draw.quality().minLineCoverage;
     });
@@ -207,6 +269,7 @@ export default function FieldLayer({
         <>
             <primitive object={layer.background} />
             <primitive object={layer.lines} />
+            <primitive object={layer.shapes} />
             <primitive object={layer.numbers.mesh} />
             <primitive object={layer.labels.mesh} />
         </>

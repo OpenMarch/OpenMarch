@@ -249,6 +249,28 @@ describe("fieldSvg", () => {
         expect(xs(all).length).toBeGreaterThan(xs(none).length);
     });
 
+    it("paints the yard numbers as filled paths in the field label color", () => {
+        const svg = parse(
+            `<svg xmlns="http://www.w3.org/2000/svg">${fieldSvg(
+                fieldProperties,
+                { gridLines: false, halfLines: false },
+            )}</svg>`,
+        );
+        const paths = [...svg.querySelectorAll("path")];
+        const labeled = fieldProperties.xCheckpoints.filter(
+            (c) => c.fieldLabel,
+        ).length;
+        expect(paths).toHaveLength(labeled * 2);
+        const { r, g, b } = theme.fieldLabel;
+        for (const path of paths) {
+            expect(path.getAttribute("fill")).toBe(`rgb(${r},${g},${b})`);
+            expect(path.getAttribute("d")).toMatch(/^M[\d.\- MLQZ]+Z$/); // cspell:disable-line
+        }
+        // No yard number is left as text: only the checkpoint labels are
+        for (const text of svg.querySelectorAll("text"))
+            expect(text.getAttribute("font-family")).toBe("mono");
+    });
+
     it("draws the field image only when the field shows it", () => {
         const image = { href: "data:x", width: 100, height: 100 };
         const shown = fieldSvg(fieldProperties, {

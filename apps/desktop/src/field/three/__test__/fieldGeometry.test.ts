@@ -96,27 +96,33 @@ describe("fieldGeometry", () => {
         }
     });
 
-    it("places the yard numbers on their yard lines, home and away", () => {
-        const numbers = geometry.texts.filter((t) => t.font === "number");
-        const labeled = fp.xCheckpoints.filter((c) => c.fieldLabel);
-        expect(numbers).toHaveLength(labeled.length * 2);
-        for (const checkpoint of labeled) {
-            const x =
-                xPixels + checkpoint.stepsFromCenterFront * fp.pixelsPerStep;
-            const at = numbers.filter(
-                (t) =>
-                    t.text === checkpoint.fieldLabel &&
-                    Math.abs(t.x - x) < 1e-3,
+    it("triangulates the yard numbers on their yard lines, home and away", () => {
+        expect(geometry.texts.filter((t) => t.font === "number")).toEqual([]);
+        const { shapes } = geometry;
+        expect(shapes.fillIndexCount).toBeGreaterThan(0);
+        // Every fill vertex is near a labeled yard line, in one of the two bands
+        const lines = fp.xCheckpoints
+            .filter((c) => c.fieldLabel)
+            .map((c) => xPixels + c.stepsFromCenterFront * fp.pixelsPerStep);
+        // The digits and the arrow beside them
+        const reach = 6 * fp.pixelsPerStep;
+        const seen = new Set<number>();
+        for (let i = 0; i < shapes.fillIndexCount; i++) {
+            const v = shapes.indices[i]!;
+            const x = shapes.positions[v * 3]!;
+            const y = shapes.positions[v * 3 + 1]!;
+            const line = lines.findIndex((l) => Math.abs(l - x) < reach);
+            expect(line, `a vertex at x = ${x}`).toBeGreaterThanOrEqual(0);
+            seen.add(line * 2 + (y > yPixels / 2 ? 1 : 0));
+            expect(y).toBeGreaterThan(0);
+            expect(y).toBeLessThan(yPixels);
+        }
+        expect(seen.size).toBe(lines.length * 2);
+        const color = rgba01(fp.theme.fieldLabel);
+        for (let i = 0; i < shapes.colors.length; i += 4)
+            color.forEach((value, k) =>
+                expect(shapes.colors[i + k]).toBeCloseTo(value, 6),
             );
-            expect(at.map((t) => t.rotation).sort()).toEqual([0, Math.PI]);
-        }
-        // Letter spacing 160 thousandths of an em
-        for (const t of numbers) expect(t.letterSpacing).toBeCloseTo(0.16);
-        // Home numbers are between the front sideline and the field's middle
-        for (const t of numbers.filter((n) => n.rotation === 0)) {
-            expect(t.y).toBeGreaterThan(yPixels / 2);
-            expect(t.y).toBeLessThan(yPixels);
-        }
     });
 
     it("labels the checkpoints outside the field's edges", () => {

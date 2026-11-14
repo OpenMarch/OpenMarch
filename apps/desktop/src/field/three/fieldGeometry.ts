@@ -6,14 +6,15 @@ import {
     type FieldPlanOptions,
     type FieldPlanText,
 } from "@/field/fieldPlan";
+import { fieldShapeMesh, type FieldShapeMesh } from "./fieldShapes";
 
 /**
  * The field's rectangles and text in field units.
  *
  * The layout is `planField2d` (`src/field/fieldPlan.ts`), the one the drill
  * chart export draws. This module only turns the plan's lines and border into
- * rectangles for one instanced draw, and its text into SDF labels. Change
- * what the field shows there, once, for both.
+ * rectangles for one instanced draw, its text into SDF labels and its filled
+ * shapes into triangles. Change what the field shows there, once, for both.
  */
 
 export type FieldRects = {
@@ -49,6 +50,8 @@ export type FieldGeometry = {
     /** The lines and border, over the field image. */
     rects: FieldRects;
     texts: FieldText[];
+    /** The painted yard numbers, triangulated, over the lines. */
+    shapes: FieldShapeMesh;
 };
 
 type Rect = [minX: number, minY: number, maxX: number, maxY: number];
@@ -126,6 +129,7 @@ export function fieldGeometry(
         ]),
         rects: packRects(rects),
         texts,
+        shapes: fieldShapeMesh(plan.shapes),
     };
 }
 

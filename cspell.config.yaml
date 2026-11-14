@@ -194,6 +194,7 @@ words:
   - musescore
   - musicxml
   - Nativewind
+  - NFHS
   - noopener
   - noreferrer
   - nosniff
@@ -346,6 +347,7 @@ ignorePaths:
   - "**/locales/**"
   - locales/**
   - patreonMembers.json
+  - "**/*.LICENSE.txt"
   - "**/mock-databases/**"
   - "**/_journal.json"
   - pnpm-lock.yaml

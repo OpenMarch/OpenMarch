@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { parse as parseYaml } from "yaml";
 import { version } from "./package.json";
+import { thirdPartyNotices } from "./vite.notices.mjs";
 import { DEMOS } from "./web/demos";
 
 /**
@@ -382,6 +383,7 @@ export default defineConfig(({ mode, command }) => {
             webEntry(scriptHosts(clerkPublishableKey)),
             writeHeaders(),
             copyExamples(),
+            thirdPartyNotices(),
         ],
         worker: {
             format: "es",
