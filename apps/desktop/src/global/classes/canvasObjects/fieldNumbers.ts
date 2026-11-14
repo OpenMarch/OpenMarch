@@ -135,20 +135,26 @@ export function yardNumberPath({
         return `${round(cx)} ${round(cy)}`;
     };
 
-    const parts: string[] = [];
-    digits.forEach((digit, i) => {
-        const glyph = FIELD_NUMERAL_GLYPHS[digit];
+    const glyphs = digits.map((digit) => FIELD_NUMERAL_GLYPHS[digit]);
+    const lefts = glyphs.map((glyph, i) => {
         const glyphWidth = glyph.width * boxWidth;
         const box = boxes[i];
-        const left =
-            box.align === "left"
-                ? box.left
-                : box.align === "right"
-                  ? box.left + boxWidth - glyphWidth
-                  : box.left + (boxWidth - glyphWidth) / 2;
+        return box.align === "left"
+            ? box.left
+            : box.align === "right"
+              ? box.left + boxWidth - glyphWidth
+              : box.left + (boxWidth - glyphWidth) / 2;
+    });
+    // A centred number is centred by its visible digits, so a narrow digit at one
+    // end (the "1" of "100") doesn't pull it off the line.
+    const inkRight = lefts.at(-1)! + glyphs.at(-1)!.width * boxWidth;
+    const shift = digits.length === 2 ? 0 : -(lefts[0] + inkRight) / 2;
+
+    const parts: string[] = [];
+    glyphs.forEach((glyph, i) => {
         parts.push(
             transformGlyphPath(glyph.path, (gx, gy) =>
-                toCanvas(left + gx * boxWidth, gy * height),
+                toCanvas(lefts[i] + shift + gx * boxWidth, gy * height),
             ),
         );
     });

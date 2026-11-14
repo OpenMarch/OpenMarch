@@ -207,8 +207,8 @@ describe("yardNumberPath", () => {
             const reach = (label.length * 24 + (label.length - 1) * 12) / 2;
             expect(all.minX).toBeGreaterThanOrEqual(home.lineX - reach - 0.01);
             expect(all.maxX).toBeLessThanOrEqual(home.lineX + reach + 0.01);
-            expect(all.minX).toBeLessThan(home.lineX);
-            expect(all.maxX).toBeGreaterThan(home.lineX);
+            // Centred by the visible digits, even with a narrow "1" at one end
+            expect((all.minX + all.maxX) / 2).toBeCloseTo(home.lineX, 1);
         },
     );
 });
