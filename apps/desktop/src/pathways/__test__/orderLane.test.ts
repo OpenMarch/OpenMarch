@@ -2,9 +2,18 @@ import { describe, expect, it } from "vitest";
 import {
     BADGE_HEIGHT,
     badgeWidth,
+    alongFractions,
     classifyOrder,
-    laneDarts,
+    FADE_LEAD,
+    FADE_TAIL,
+    fadeAt,
+    haloTone,
+    haloWidth,
     laneHalfWidth,
+    laneSamplePoints,
+    ownHalfWidth,
+    relativeLuminance,
+    washAlpha,
     laneTip,
     neighborHalfWidths,
     placeNumbers,
@@ -15,7 +24,7 @@ import {
 } from "../orderLane";
 import type { XY } from "../orderSweep";
 
-/** The order lane's drawing rules (pathways step 4h, design E) */
+/** The order lane's drawing rules (pathways steps 4h and 4i) */
 
 /** The dot's radius on screen at 100% */
 const R = 3.26;
@@ -152,18 +161,6 @@ describe("laneTip", () => {
 });
 
 describe("darts", () => {
-    it("a short lane has none; a long one has one about every 110 px, pointing toward the leader", () => {
-        expect(laneDarts(row(6, 30), R)).toEqual([]);
-        const darts = laneDarts(row(20, 22), R);
-        expect(darts.length).toBeGreaterThanOrEqual(3);
-        expect(darts.length).toBeLessThanOrEqual(4);
-        for (const d of darts) {
-            const xs = d.split(" ").map((p) => Number(p.split(",")[0]));
-            // The point (the middle corner) is the leftmost: toward the leader at x = 0
-            expect(xs[1]).toBeLessThan(Math.min(xs[0]!, xs[2]!));
-        }
-    });
-
     it("a thread has one per leg long enough to hold it", () => {
         expect(
             threadDarts([
@@ -178,6 +175,103 @@ describe("darts", () => {
                 { x: 0, y: 50 },
             ]),
         ).toHaveLength(2);
+    });
+});
+
+describe("the fade (step 4i)", () => {
+    it("runs from dark at the leader to pale at the tail, by distance along the line", () => {
+        expect(fadeAt(0)).toBe(FADE_LEAD);
+        expect(fadeAt(1)).toBe(FADE_TAIL);
+        expect(fadeAt(0.5)).toBeCloseTo((FADE_LEAD + FADE_TAIL) / 2);
+        // Out of range clamps
+        expect(fadeAt(-1)).toBe(FADE_LEAD);
+        expect(fadeAt(2)).toBe(FADE_TAIL);
+        const along = alongFractions([
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 40, y: 0 },
+        ]);
+        expect(along).toEqual([0, 0.25, 1]);
+    });
+
+    it("is strong enough to read on its own: at least 3:1 from leader to tail on a white field", () => {
+        const grey = (alpha: number) => {
+            const c = (v: number) => 255 - alpha * (255 - v);
+            return relativeLuminance({ r: c(0x1c), g: c(0x1f), b: c(0x26) });
+        };
+        const lead = grey(FADE_LEAD);
+        const tail = grey(FADE_TAIL);
+        expect((tail + 0.05) / (lead + 0.05)).toBeGreaterThanOrEqual(3);
+    });
+});
+
+describe("ownHalfWidth (step 4i)", () => {
+    it("a lane through a box narrows so the ranks of a snake stay apart", () => {
+        // A 4 × 4 box at 2 steps (about 15 px at 100%), its order snaking across the ranks
+        const box = Array.from({ length: 4 }, (_, r) =>
+            Array.from({ length: 4 }, (_, f) => ({ x: f * 15, y: r * 15 })),
+        );
+        const snake = box.flatMap((rank, r) =>
+            r % 2 ? [...rank].reverse() : rank,
+        );
+        const hw = ownHalfWidth(snake, 8.26, R);
+        expect(hw).toBeCloseTo(15 / 2 - 1.5);
+        // The two ranks' lanes leave a gap between them
+        expect(2 * hw).toBeLessThan(15);
+        // At 30 px the lanes don't touch: nothing narrows
+        expect(ownHalfWidth(BOX.flat(), 10, R)).toBe(10);
+    });
+
+    it("a straight row keeps its width, and nothing narrows below the dots", () => {
+        expect(ownHalfWidth(row(6, 30), 8, R)).toBe(8);
+        expect(ownHalfWidth(row(6, 4), 8, R)).toBe(R + 1.4);
+        expect(ownHalfWidth(row(2, 30), 8, R)).toBe(8);
+    });
+});
+
+describe("the wash (step 4i)", () => {
+    it("is none on a white field and just enough on darker floors", () => {
+        expect(washAlpha(Array(20).fill(0.98))).toBe(0);
+        expect(washAlpha([])).toBe(0);
+        const mid = washAlpha(Array(20).fill(0.5));
+        // Brings a mid-gray floor up to the target under the lane
+        expect(0.5 + mid * 0.5).toBeCloseTo(0.82, 2);
+        // A black floor is lifted to the target; even black and white stripes never hide the floor
+        expect(washAlpha(Array(20).fill(0))).toBeCloseTo(0.82);
+        expect(
+            washAlpha(Array.from({ length: 40 }, (_, i) => (i % 2 ? 1 : 0))),
+        ).toBe(0.85);
+    });
+
+    it("calms a high-contrast pattern even where its darkest part is light enough", () => {
+        const checker = Array.from({ length: 40 }, (_, i) =>
+            i % 2 ? 0.95 : 0.35,
+        );
+        expect(washAlpha(checker)).toBeGreaterThan(0.7);
+    });
+
+    it("reads the floor along the lane's middle and both its edges", () => {
+        const at = laneSamplePoints(row(2, 20), 10, 5);
+        // 5 stops along a 20 px leg, three across each
+        expect(at).toHaveLength(15);
+        expect(Math.min(...at.map((p) => p.y))).toBeCloseTo(-8);
+        expect(Math.max(...at.map((p) => p.y))).toBeCloseTo(8);
+    });
+});
+
+describe("halos (step 4i)", () => {
+    it("are dark round light dots and light round the rest, from the dot's color alone", () => {
+        expect(haloTone({ r: 255, g: 0, b: 0 })).toBe("light");
+        expect(haloTone({ r: 128, g: 128, b: 128 })).toBe("light");
+        expect(haloTone({ r: 0, g: 0, b: 0 })).toBe("light");
+        expect(haloTone({ r: 255, g: 255, b: 255 })).toBe("dark");
+        expect(haloTone({ r: 255, g: 212, b: 0 })).toBe("dark");
+    });
+
+    it("thin when zoomed out, so a block of dots isn't one mass", () => {
+        expect(haloWidth(1.5)).toBe(0.9);
+        expect(haloWidth(3.26)).toBeCloseTo(1.63);
+        expect(haloWidth(10)).toBe(2);
     });
 });
 

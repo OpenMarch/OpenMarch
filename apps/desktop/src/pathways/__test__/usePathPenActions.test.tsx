@@ -13,7 +13,11 @@ import { drawRoute, removeRoute } from "@/db-functions/timelineRoutes";
 import { drawGroupRoute } from "@/db-functions/timelineGroupRoutes";
 import { editPathPoints } from "@/db-functions/timelinePathEdits";
 import { followTrail, readTrails } from "@/db-functions/timelineTrails";
-import { isActionEnabled, runAction } from "@/shortcuts/registry";
+import {
+    actionDisabledReason,
+    isActionEnabled,
+    runAction,
+} from "@/shortcuts/registry";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     startTimelineResolver,
@@ -376,5 +380,115 @@ describeDbTests("usePathPenActions: Follow (Shift+L)", (it) => {
         ).toEqual([...line].sort());
     });
 });
+
+describeDbTests(
+    "usePathPenActions: the Follow tool's Ends (step 9, RP-1)",
+    (it) => {
+        it("From trail, Keep end spots and Ripple in are commands; Ripple in says why when it's off", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { select } = await setUp(db, wrapper);
+            // The drawing is for the selected marchers; it goes when they're let go of
+            select([1, 2]);
+            const at = (x: number) => ({ x, y: 0 });
+            const open = (form: boolean, keep = true) =>
+                act(() =>
+                    usePathPenStore.setState({
+                        session: {
+                            phase: "drawing",
+                            target: {
+                                timelineId: -1,
+                                transitionId: -1,
+                                marcherId: 2,
+                                start: 9,
+                                end: 17,
+                                from: at(0),
+                                to: at(0),
+                                routeId: null,
+                                points: [],
+                                ends: null,
+                                group: null,
+                                trail: {
+                                    members: [1, 2].map((id) => ({
+                                        marcherId: id,
+                                        drill: `M${id}`,
+                                        from: at(id),
+                                        to: at(id),
+                                    })),
+                                    leaderId: 2,
+                                    reverse: false,
+                                },
+                            },
+                            drill: "2",
+                            points: [],
+                            pointer: null,
+                            selected: null,
+                            dragging: null,
+                            object: false,
+                            byRoute: false,
+                            follow: {
+                                window: { start: 9, end: 17 },
+                                ids: [1, 2],
+                                order: [1, 2],
+                                starts: new Map([
+                                    [1, at(0)],
+                                    [2, at(2)],
+                                ]),
+                                grabbed: null,
+                                spacing: { kind: "keep" },
+                                ends: "trail",
+                                keep: keep
+                                    ? {
+                                          timelineId: 7,
+                                          start: 9,
+                                          end: 17,
+                                          spots: new Map([
+                                              [1, { x: 0, y: 10 }],
+                                              [2, { x: 2, y: 10 }],
+                                          ]),
+                                      }
+                                    : null,
+                                form: form
+                                    ? {
+                                          ids: [1, 2],
+                                          spots: [
+                                              [0, 10],
+                                              [2, 10],
+                                          ],
+                                      }
+                                    : null,
+                                formWhy: form ? null : "a loop",
+                                step: 1,
+                            },
+                        },
+                    }),
+                );
+            open(true);
+            await waitFor(() =>
+                expect(isActionEnabled("followEndsRipple")).toBe(true),
+            );
+            act(() => void runAction("followEndsRipple"));
+            expect(session()!.follow!.ends).toBe("ripple");
+            act(() => void runAction("followEndsKeep"));
+            expect(session()!.follow!.ends).toBe("keep");
+            act(() => void runAction("followEndsTrail"));
+            expect(session()!.follow!.ends).toBe("trail");
+            open(false);
+            await waitFor(() =>
+                expect(isActionEnabled("followEndsRipple")).toBe(false),
+            );
+            expect(actionDisabledReason("followEndsRipple")).toBe("a loop");
+            open(false, false);
+            await waitFor(() =>
+                expect(actionDisabledReason("followEndsRipple")).toMatch(
+                    /end spots/,
+                ),
+            );
+            expect(isActionEnabled("followEndsKeep")).toBe(false);
+        });
+    },
+);
 
 vi.setConfig({ testTimeout: 30000 });

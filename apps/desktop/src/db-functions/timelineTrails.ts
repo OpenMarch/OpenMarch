@@ -384,6 +384,31 @@ export async function refuseTrailRows(
     if (row) refuse(trailRefusal[why](await moveNameOf(tx, row.timelineId)));
 }
 
+/**
+ * Each of `ids`'s end spot in move `timelineId`: its slot's stored destination (R-13), as AP-T1
+ * reads it. Null when one of them has no row in the move. The Follow tool and Ripple in's write
+ * both read end spots this way (step 9), so they agree.
+ */
+export async function endSpotsInMove(
+    tx: DbTransaction,
+    timelineId: number,
+    ids: readonly number[],
+): Promise<Map<number, XY> | null> {
+    const rows = await memberRows(tx, timelineId);
+    const spots = new Map<number, XY>();
+    for (const m of ids) {
+        const row = rows.find((r) => r.assignment.marcher_id === m);
+        if (!row) return null;
+        const [x, y] = await destinationOf(
+            tx,
+            row.transition,
+            row.assignment.slot_index,
+        );
+        spots.set(m, [x, y]);
+    }
+    return spots;
+}
+
 // ---------------------------------------------------------------------------
 // AP-T1: Follow
 // ---------------------------------------------------------------------------
@@ -606,6 +631,7 @@ export async function followTrailInTransaction({
     points,
     line,
     along = false,
+    destinations,
 }: {
     tx: DbTransaction;
     timelineId: number;
@@ -621,6 +647,12 @@ export async function followTrailInTransaction({
      * the route runs to its last point (`to`), not to an end spot. A new line only.
      */
     along?: boolean;
+    /**
+     * Step 9 (AP-T12, RP-3): each member's end spot by id, in place of the one it has, so a
+     * ripple deals the next form's spots in trail order; the route then runs to the tail's. A
+     * new line only.
+     */
+    destinations?: ReadonlyMap<number, XY>;
 }): Promise<FollowTrailResult> {
     const plan = await planFollow(tx, timelineId, marcherIds);
     if (plan.kind === "redraw") {
@@ -637,7 +669,14 @@ export async function followTrailInTransaction({
             redrawn: true,
         };
     }
-    const { chosen, starts, ends } = plan;
+    const { chosen, starts } = plan;
+    const ends = destinations
+        ? chosen.map((r) => {
+              const to = destinations.get(r.assignment.marcher_id);
+              if (!to) refuse("the end spots name other marchers");
+              return to;
+          })
+        : plan.ends;
     const order = line
         ? line.map((id) => {
               const i = chosen.findIndex((r) => r.assignment.marcher_id === id);

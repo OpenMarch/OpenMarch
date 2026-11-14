@@ -28,6 +28,10 @@ export type DrawnSelectionBox = Omit<SelectionFrame, "pad"> & { pad?: number };
  *
  * One item selected alone gets its own frame instead (C2.1): on its Outline,
  * turned with it, with handles that resize and turn it.
+ *
+ * While an order lane shows on the selection (pathways step 4j) the box also
+ * takes in the lane, its tip and its names (`covers`), and is drawn as a
+ * hairline with corner handles, so it never sits on the lane.
  */
 export function drawnSelectionBox(
     marchers: FieldMarchers,
@@ -46,7 +50,8 @@ export function drawnSelectionBox(
         if (selected[i] && !hidden[i])
             drawn.push({ x: positions[i * 2], y: positions[i * 2 + 1] });
     const box = drawn.length < 2 ? null : boundsOf(drawn);
-    return box && { box, angle: 0 };
+    // Clear of the order lane drawn on the selection (step 4j)
+    return box && { box, angle: 0, covers: editor.selectionCovers() };
 }
 
 /** The frame of the one item selected and drawn, or null for any other selection. */

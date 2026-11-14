@@ -1,16 +1,22 @@
 /**
- * The order lane's drawing rules (pathways step 4h, design E "the lane"), pure and in screen
- * pixels (any origin: the overlay works them out with the field's pan left out, and moves them by it).
+ * The order lane's drawing rules (pathways steps 4h and 4i), pure and in screen pixels (any
+ * origin: the overlay works them out with the field's pan left out, and moves them by it).
  *
- * A line's order is a soft neutral lane under its dots, wide enough to hold a dot and its selection
- * ring, with a solid tip past the leader: the whole thing is one arrow pointing the way the line
- * travels. Small darts along a long lane keep the way visible mid-line. When the lane can't tell
- * the story it steps back: an order that runs back over its own marchers loses its tip (it would
- * lie) and shows its numbers; one whose legs cross thins to a thread with a dart per leg, and shows
- * its numbers. Numbers are badges on one rail beside the dots, thinned like ruler labels on a
- * plain lane, never thinned on an order that doubles back or crosses (that order is only readable
- * from them): there they stagger into a second row, and where even two rows can't fit, only the
- * leader's and the tail's show and the field asks for a closer zoom.
+ * A line's order is a lane under its dots, wide enough to hold a dot and its selection ring, with a
+ * solid tip past the leader: the whole thing is one arrow pointing the way the line travels. The
+ * lane fades from dark at the leader to pale at the tail, always that way round, so where a marcher
+ * sits in the order (front, middle, back) shows without numbers (step 4i). It carries its own ground
+ * on any floor: a light wash under it, just strong enough for the floor beneath (none on a white
+ * field), a faint rim, and a halo round every dot in the tone that sets that dot's color apart.
+ * A lane never grows wider than half the gap to a marcher that isn't its neighbor in the order,
+ * so the ranks of a block stay apart and a snake order can be traced.
+ *
+ * When the lane can't tell the story it steps back: an order that runs back over its own marchers
+ * loses its tip and its fade (both would lie) and shows its numbers; one whose legs cross thins to a
+ * thread with a dart per leg, and shows its numbers. Numbers are badges on one rail beside the dots,
+ * thinned like ruler labels on a plain lane, never thinned on an order that doubles back or crosses
+ * (that order is only readable from them): there they stagger into a second row, and where even two
+ * rows can't fit, only the leader's and the tail's show and the field asks for a closer zoom.
  */
 import type { XY } from "./orderSweep";
 
@@ -139,49 +145,134 @@ export function laneTip(
     };
 }
 
-/** About this far apart along a plain lane, darts keep its way visible mid-line, in screen pixels */
-export const DART_EVERY = 110;
-/** A lane shorter than this has no darts: its tip is close enough */
-const DARTS_FROM = 240;
+/** The fade's ink strength (alpha of the lane ink) at the leader and at the tail (step 4i) */
+export const FADE_LEAD = 0.72;
+export const FADE_TAIL = 0.14;
+/** A crossed order's thread: its ink strength at the leader and at the tail */
+export const THREAD_LEAD = 0.8;
+export const THREAD_TAIL = 0.4;
+/** A lane that doubles back is drawn flat at this strength (a fade on it would lie) */
+export const FOLDED_INK = 0.15;
+
+/** The ink strength `t` of the way along (0 at the leader, 1 at the tail) */
+export const fadeAt = (t: number, lead = FADE_LEAD, tail = FADE_TAIL): number =>
+    lead + (tail - lead) * Math.min(1, Math.max(0, t));
+
+/** How far along the line each point is, by distance: 0 at the leader, 1 at the last point */
+export function alongFractions(points: readonly XY[]): number[] {
+    const run = [0];
+    for (let i = 1; i < points.length; i++)
+        run.push(
+            run[i - 1]! +
+                Math.hypot(
+                    points[i]!.x - points[i - 1]!.x,
+                    points[i]!.y - points[i - 1]!.y,
+                ),
+        );
+    const total = run.at(-1)! || 1;
+    return run.map((d) => d / total);
+}
 
 /**
- * The small darts along a plain lane, pointing the way it travels (toward the leader): about every
- * `DART_EVERY` pixels, each in the middle of a leg with room between its dots
+ * A lane's own half width: never more than just under half the gap to a marcher of the same line
+ * that isn't its neighbor in the order, so the ranks of a block (a snake through it) stay apart;
+ * never thinner than its dots
  */
-export function laneDarts(points: readonly XY[], dotRadius: number): string[] {
-    let total = 0;
-    for (let i = 0; i + 1 < points.length; i++)
-        total += Math.hypot(
-            points[i + 1]!.x - points[i]!.x,
-            points[i + 1]!.y - points[i]!.y,
-        );
-    if (total <= DARTS_FROM) return [];
-    const darts: string[] = [];
-    let run = 0;
-    let next = DART_EVERY;
+export function ownHalfWidth(
+    points: readonly XY[],
+    halfWidth: number,
+    dotRadius: number,
+): number {
+    let nearest = Infinity;
+    for (let a = 0; a < points.length; a++)
+        for (let c = a + 2; c < points.length; c++)
+            nearest = Math.min(
+                nearest,
+                Math.hypot(
+                    points[a]!.x - points[c]!.x,
+                    points[a]!.y - points[c]!.y,
+                ),
+            );
+    if (nearest === Infinity) return halfWidth;
+    return Math.max(dotRadius + 1.4, Math.min(halfWidth, nearest / 2 - 1.5));
+}
+
+/** Points along a lane, its middle and both edges, about every `every` pixels: where the floor is read */
+export function laneSamplePoints(
+    points: readonly XY[],
+    halfWidth: number,
+    every = 5,
+): XY[] {
+    const out: XY[] = [];
     for (let i = 0; i + 1 < points.length; i++) {
         const a = points[i]!;
         const b = points[i + 1]!;
         const length = Math.hypot(b.x - a.x, b.y - a.y);
-        if (run + length / 2 >= next && length - 2 * dotRadius > 12) {
-            const way = unit(b, a);
-            darts.push(
-                triangle(
-                    {
-                        x: (a.x + b.x) / 2 - way.x * 2.5,
-                        y: (a.y + b.y) / 2 - way.y * 2.5,
-                    },
-                    way,
-                    5,
-                    2.6,
-                ),
-            );
-            next = run + length / 2 + DART_EVERY;
-        }
-        run += length;
+        const way = unit(a, b);
+        const nx = -way.y;
+        const ny = way.x;
+        for (let s = 0; s <= length; s += every)
+            for (const o of [-halfWidth * 0.8, 0, halfWidth * 0.8])
+                out.push({
+                    x: a.x + way.x * s + nx * o,
+                    y: a.y + way.y * s + ny * o,
+                });
     }
-    return darts;
+    if (points.length === 1) out.push(points[0]!);
+    return out;
 }
+
+/** The ground under a lane, as light as this (gamma-encoded brightness, 0 to 1), is what its ink is drawn on */
+export const WASH_TARGET = 0.82;
+/** A patterned floor's light and dark parts may differ by this much under the wash */
+const WASH_PATTERN = 0.12;
+/** The wash never hides the floor completely */
+const WASH_MOST = 0.85;
+
+/**
+ * How strong a light wash a lane needs over a floor, from the floor's brightness under it (gamma
+ * encoded, 0 to 1): enough that its darkest part comes up to `WASH_TARGET`, and enough that a pattern
+ * (the spread between its 10th and 90th percentile) fades to `WASH_PATTERN`. None on a white field.
+ */
+export function washAlpha(samples: readonly number[]): number {
+    if (samples.length === 0) return 0;
+    const sorted = [...samples].sort((a, b) => a - b);
+    const at = (q: number) =>
+        sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))]!;
+    const darkest = at(0.03);
+    const spread = at(0.9) - at(0.1);
+    const lift = (WASH_TARGET - darkest) / (1 - darkest || 1);
+    const calm = spread > WASH_PATTERN ? 1 - WASH_PATTERN / spread : 0;
+    const alpha = Math.min(WASH_MOST, Math.max(0, lift, calm));
+    return alpha < 0.04 ? 0 : alpha;
+}
+
+/** An sRGB color, 0 to 255 a channel */
+export interface Rgb {
+    readonly r: number;
+    readonly g: number;
+    readonly b: number;
+}
+
+const linear = (c: number) => {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+};
+
+/** A color's relative luminance (WCAG), 0 to 1 */
+export const relativeLuminance = ({ r, g, b }: Rgb): number =>
+    0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+
+/**
+ * The halo round a dot: dark round a light dot (white, yellow, light gray), light round the rest.
+ * The dot's color alone decides it, so it never flips between dots, floors or zoom levels.
+ */
+export const haloTone = (fill: Rgb): "light" | "dark" =>
+    relativeLuminance(fill) > 0.45 ? "dark" : "light";
+
+/** The halo's width round a dot of `dotRadius` on screen: thin when zoomed out, so a block isn't a mass */
+export const haloWidth = (dotRadius: number): number =>
+    dotRadius < 2 ? 0.9 : Math.max(1, Math.min(2, dotRadius * 0.5));
 
 /** A crossed order's thread: a dart in the middle of every leg long enough to hold one */
 export function threadDarts(points: readonly XY[]): string[] {

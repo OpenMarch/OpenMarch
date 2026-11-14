@@ -470,6 +470,26 @@ export interface TrailDragResult extends FollowTrailResult {
     recipeId?: number;
 }
 
+/**
+ * The start beat of the move Keep end spots follows into (`keepMove`, else the one over exactly
+ * the window), or the start flag when there's none (Keep end spots then refuses, `noSpots`).
+ */
+async function keptMoveStart(
+    tx: DbTransaction,
+    input: Pick<TrailDragInput, "window" | "marcherIds" | "keepMove">,
+): Promise<number> {
+    const move =
+        input.keepMove ??
+        (await windowMoveOf(tx, input.window, input.marcherIds));
+    if (move === null) return input.window.start;
+    const row = await tx
+        .select({ start: schema.timelines.start_beat })
+        .from(schema.timelines)
+        .where(eq(schema.timelines.id, move))
+        .get();
+    return row?.start ?? input.window.start;
+}
+
 /** AP-T8's reads and refusals, with nothing written. */
 async function planDragInTransaction(
     tx: DbTransaction,
@@ -483,12 +503,15 @@ async function planDragInTransaction(
     if (!(window.end > window.start) || window.start < 0)
         refuse(trailDragRefusal.noWindow());
     const resolver = createResolver((await readTimelineTables(tx)).snapshot);
-    // Where the marchers stand at the start flag
+    // Where the marchers stand at the start flag; with Keep end spots, at the start of the move
+    // they follow into, where AP-T1's trail starts (step 9 review)
+    const from =
+        input.ends === "keep" ? await keptMoveStart(tx, input) : window.start;
     const starts = ids.map((m): XY => {
-        const [x, y] = resolver.positionAt(m, window.start);
+        const [x, y] = resolver.positionAt(m, from);
         return [x, y];
     });
-    const along = await followOrderAt(tx, ids, window.start, starts);
+    const along = await followOrderAt(tx, ids, from, starts);
     if (!along) refuse(trailDragRefusal.notFitted());
     const order = trailOrderFrom(along.order, ids.indexOf(leaderId));
     if (!order) refuse(trailDragRefusal.notAnEnd());
@@ -498,7 +521,10 @@ async function planDragInTransaction(
         spacing,
         step,
     );
-    if (drawn && !(plan.drawn >= EPS_GEOM)) refuse(trailDragRefusal.tooShort());
+    // Keep end spots may run straight in with nothing drawn (step 9, RP-6): the leg from the
+    // leader's start to the tail's spot is its trail, as step 4's Follow with no points
+    if (drawn && input.ends !== "keep" && !(plan.drawn >= EPS_GEOM))
+        refuse(trailDragRefusal.tooShort());
     // Keep end spots has no spacing of its own: the members go to the spots they have
     if (input.ends !== "keep" && spacing.kind === "even" && !plan.forward)
         refuse(
@@ -564,6 +590,7 @@ export async function trailDragRefusalFor(
                 spacing: { kind: "keep" },
                 step: 1,
                 ends,
+                keepMove,
             },
             false,
         );

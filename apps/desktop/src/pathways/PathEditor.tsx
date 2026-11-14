@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
+import { toast } from "sonner";
 import { T } from "@tolgee/react";
 import {
     ArrowCounterClockwiseIcon,
@@ -37,6 +38,8 @@ import {
 import type { XY } from "@/shapes/types";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { refitNeeded } from "./pathTarget";
+import { OffCountWarning, TrailCornerCounts } from "./TrailCornerCounts";
+import { offCountTally, trailCornersOf } from "./trailCorners";
 import {
     EVEN_FIRST,
     EVEN_STEP,
@@ -46,9 +49,11 @@ import {
     followPlanOf,
     followSpacingOf,
     keepsEndSpots,
-    setFollowEnds,
+    rippleDrawnPlanOf,
+    ripplesIn,
     setFollowSpacing,
 } from "./followDrag";
+import { rippleArrivalCount } from "@/db-functions/timelineTrailRipplePlan";
 import {
     detachIdsOf,
     memberNow,
@@ -161,10 +166,15 @@ function trailBigSteps(
     // end spots it is step 4's trail into the spots they have, read as step 4 reads it (AP-T9)
     const plan =
         session.follow && !keepsEndSpots(session.follow)
-            ? followPlanOf(session)
+            ? ripplesIn(session.follow)
+                ? rippleDrawnPlanOf(session)
+                : followPlanOf(session)
             : null;
+    // Ripple in (step 9): each member's whole way into the next form, the connector included
     const distances = plan
-        ? plan.ends.map((e, q) => e - plan.startDist[q]!)
+        ? ("endDist" in plan ? plan.endDist : plan.ends).map(
+              (e, q) => e - plan.startDist[q]!,
+          )
         : trailDistances(trail.members, curveOf(shapeOf(session)).L);
     const threshold = fieldProperties.stepSizeWarningThresholdInches;
     let worst: { size: StepSize; drill: string } | null = null;
@@ -315,6 +325,7 @@ export function PathEditor({
         return session.target.trail && (!hidden || session.object) ? (
             <RichTips>
                 <TrailLeaderMark session={session} />
+                <TrailCornerCounts session={session} />
             </RichTips>
         ) : null;
     return (
@@ -325,6 +336,7 @@ export function PathEditor({
                     <TrailLeaderMark session={session} />
                 </RichTips>
             )}
+            {session.target.trail && <TrailCornerCounts session={session} />}
             <RichTips>
                 <PathEditorBar
                     session={session}
@@ -397,6 +409,16 @@ function PathPenBanner({ session }: { session: PathSession }) {
                     keyName="pathways.banner.followGrab"
                     defaultValue="Follow: drag a trail out of either end of the line · <esc></esc> to leave"
                     params={{ esc }}
+                />
+            ) : session.follow && ripplesIn(session.follow) ? (
+                <T
+                    keyName="pathways.banner.rippleDrawing"
+                    defaultValue="Ripple in, {marcher} leading: click an end of the form to go straight in, or click for corners first · Double-click to finish · <esc></esc> to cancel"
+                    params={{
+                        marcher:
+                            session.target.trail?.members.at(-1)?.drill ?? "",
+                        esc,
+                    }}
                 />
             ) : session.target.trail ? (
                 <T
@@ -495,6 +517,8 @@ function PathEditorBar({
         fieldHeight: size.fh,
     });
     const big = bigSteps(session, fieldProperties);
+    // Step 6 (TC-7): a trail's turns that fall between counts
+    const offCount = offCountTally(trailCornersOf(session));
     const drawing = session.phase === "drawing";
     const stored = session.target.routeId !== null;
     // The open path's selected point: Corner | Smooth for it, as its menu has (step 2)
@@ -609,7 +633,8 @@ function PathEditorBar({
                     </span>
                 </Tip>
             )}
-            {big && controls && <Divider />}
+            {offCount.turns > 0 && <OffCountWarning tally={offCount} />}
+            {(big || offCount.turns > 0) && controls && <Divider />}
             {drawing ? (
                 <>
                     {kindChoice && (
@@ -658,6 +683,7 @@ function PathEditorBar({
                     {session.follow && session.follow.grabbed !== null && (
                         <FollowControls session={session} />
                     )}
+                    {session.follow && <FollowEndsControls session={session} />}
                     <span className="flex items-center gap-2">
                         <IconButton
                             label={tolgee.t(
@@ -924,6 +950,107 @@ function PathEditorBar({
 }
 
 /**
+ * The Follow tool's Ends on the path bar (DL-8, AP-T9, RP-1), when the line already has end spots
+ * here: From trail, Keep end spots, or Ripple in (disabled with the reason when those spots don't
+ * stand in a form). Shown before an end is grabbed too, so the choice comes first (step 9).
+ */
+function FollowEndsControls({ session }: { session: PathSession }) {
+    const follow = session.follow!;
+    const fromTrail = follow.ends === "trail";
+    const ripple = ripplesIn(follow);
+    // A finger gets no tooltip: a press on the greyed-out choice says why (step 9 review)
+    const sayWhy = (why: string) => () =>
+        toast.info(why, { id: "follow-ends-why" });
+    const needSpots = tolgee.t(
+        "pathways.editor.endsNeedSpots",
+        "Ripple in and Keep end spots follow into end spots the line already has on this page. Place them first (a shape tool, or move the marchers), then choose Follow",
+    );
+    if (!follow.keep)
+        // No end spots here: Ripple in shows greyed out, saying what would make it work
+        return (
+            <>
+                <IconButton
+                    label={needSpots}
+                    action="followEndsRipple"
+                    disabled
+                    onClick={() => undefined}
+                    onDisabledClick={sayWhy(needSpots)}
+                    testId="follow-ends-ripple"
+                >
+                    {tolgee.t("pathways.editor.endsRipple", "Ripple in")}
+                </IconButton>
+                <Divider />
+            </>
+        );
+    const rippleWhy =
+        follow.formWhy ??
+        tolgee.t(
+            "pathways.editor.endsRippleOff",
+            "Ripple in: their end spots don't stand in a line, curve or arc",
+        );
+    return (
+        <>
+            <span
+                className="flex items-center gap-2"
+                role="group"
+                aria-label={tolgee.t("pathways.editor.ends", "Ends")}
+                data-testid="follow-ends"
+            >
+                <IconButton
+                    label={tolgee.t(
+                        "pathways.editor.endsFromTrailTip",
+                        "From trail: the line stops along the trail, and those become its end spots",
+                    )}
+                    action="followEndsTrail"
+                    pressed={fromTrail}
+                    onClick={() => runAction("followEndsTrail")}
+                    testId="follow-ends-trail"
+                >
+                    {tolgee.t("pathways.editor.endsFromTrail", "From trail")}
+                </IconButton>
+                <IconButton
+                    label={tolgee.t(
+                        "pathways.editor.endsKeepTip",
+                        "Keep end spots: the line follows the trail into the end spots it already has",
+                    )}
+                    action="followEndsKeep"
+                    pressed={follow.ends === "keep"}
+                    onClick={() => runAction("followEndsKeep")}
+                    testId="follow-ends-keep"
+                >
+                    {tolgee.t("pathways.editor.endsKeep", "Keep end spots")}
+                </IconButton>
+                <IconButton
+                    label={
+                        follow.form
+                            ? tolgee.t(
+                                  "pathways.editor.endsRippleTip",
+                                  "Ripple in: the line follows its leader straight to the near end of the form its end spots make, then along it. The leader takes the far end",
+                              )
+                            : rippleWhy
+                    }
+                    action="followEndsRipple"
+                    disabled={!follow.form}
+                    pressed={ripple}
+                    onClick={() => runAction("followEndsRipple")}
+                    onDisabledClick={sayWhy(rippleWhy)}
+                    testId="follow-ends-ripple"
+                >
+                    {tolgee.t("pathways.editor.endsRipple", "Ripple in")}
+                </IconButton>
+            </span>
+            <Divider />
+        </>
+    );
+}
+
+/** A count to the nearest half, as a drill book writes it: 6, 6½ */
+function countText(count: number): string {
+    const whole = Math.floor(count);
+    return count - whole >= 0.5 ? `${whole === 0 ? "" : whole}½` : `${whole}`;
+}
+
+/**
  * The Follow tool's choices on the path bar (pathways step 4b): Spacing, Keep spacing or Even N
  * steps, Even held to the largest N that keeps everyone walking forward (DL-7, AP-T8); ▶ Preview,
  * the line looping its walk (step 4c, DL-17); and, when the line already has end spots here, Ends:
@@ -938,9 +1065,19 @@ function FollowControls({ session }: { session: PathSession }) {
     const even = spacing.kind === "even" ? spacing.steps : null;
     const evenOff = limit !== null && limit < EVEN_STEP;
     const fromTrail = follow.ends === "trail";
-    // ▶ Preview (step 4c, DL-17): once there's a walk to show
+    const ripple = ripplesIn(follow);
+    // ▶ Preview (step 4c, DL-17): once there's a walk to show; Ripple in has one once grabbed
     const canPreview =
-        session.points.length > 0 && followMarchersOf(session) !== null;
+        (ripple || session.points.length > 0) &&
+        followMarchersOf(session) !== null;
+    // RP-5: the count the leader reaches the next form on
+    const ripplePlan = ripple ? rippleDrawnPlanOf(session) : null;
+    const arrival = ripplePlan
+        ? rippleArrivalCount(
+              ripplePlan,
+              session.target.end - session.target.start,
+          )
+        : null;
     const reducedMotion = prefersReducedMotion();
     const setEven = (steps: number) =>
         setFollowSpacing({
@@ -1056,7 +1193,27 @@ function FollowControls({ session }: { session: PathSession }) {
                     <Divider />
                 </>
             )}
-            {fromTrail && (
+            {ripple && arrival !== null && (
+                <>
+                    <span
+                        className="text-text-subtitle"
+                        data-testid="follow-ripple-arrival"
+                    >
+                        {arrival === 0
+                            ? tolgee.t(
+                                  "pathways.editor.rippleArrivalStart",
+                                  "Leader starts at the form",
+                              )
+                            : tolgee.t(
+                                  "pathways.editor.rippleArrival",
+                                  "Leader reaches the form on count {count}",
+                                  { count: countText(arrival) },
+                              )}
+                    </span>
+                    <Divider />
+                </>
+            )}
+            {(fromTrail || ripple) && (
                 <>
                     <IconButton
                         label={
@@ -1084,46 +1241,6 @@ function FollowControls({ session }: { session: PathSession }) {
                         <PlayIcon size={14} />
                         {tolgee.t("pathways.editor.preview", "Preview")}
                     </IconButton>
-                    <Divider />
-                </>
-            )}
-            {follow.keep && (
-                <>
-                    <span
-                        className="flex items-center gap-2"
-                        role="group"
-                        aria-label={tolgee.t("pathways.editor.ends", "Ends")}
-                        data-testid="follow-ends"
-                    >
-                        <IconButton
-                            label={tolgee.t(
-                                "pathways.editor.endsFromTrailTip",
-                                "From trail: the line stops along the trail, and those become its end spots",
-                            )}
-                            pressed={fromTrail}
-                            onClick={() => setFollowEnds("trail")}
-                            testId="follow-ends-trail"
-                        >
-                            {tolgee.t(
-                                "pathways.editor.endsFromTrail",
-                                "From trail",
-                            )}
-                        </IconButton>
-                        <IconButton
-                            label={tolgee.t(
-                                "pathways.editor.endsKeepTip",
-                                "Keep end spots: the line follows the trail into the end spots it already has",
-                            )}
-                            pressed={!fromTrail}
-                            onClick={() => setFollowEnds("keep")}
-                            testId="follow-ends-keep"
-                        >
-                            {tolgee.t(
-                                "pathways.editor.endsKeep",
-                                "Keep end spots",
-                            )}
-                        </IconButton>
-                    </span>
                     <Divider />
                 </>
             )}

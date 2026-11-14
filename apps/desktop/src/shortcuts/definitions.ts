@@ -874,6 +874,32 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         ignoreRepeat: true,
     },
+    // Pathways step 9 (spec L.10, RP-1): the Follow tool's Ends, as commands so the bar, the
+    // palette and a custom key reach the same choice. No keys by default
+    followEndsTrail: {
+        labelKey: "actions.path.followEndsTrail",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    followEndsKeep: {
+        labelKey: "actions.path.followEndsKeep",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    followEndsRipple: {
+        labelKey: "actions.path.followEndsRipple",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
     reverseTrail: {
         labelKey: "actions.path.reverse",
         keywordsKey: "actions.path.followKeywords",

@@ -6,6 +6,7 @@ import {
     MIN_SCALE,
     ROTATE_HANDLE_OFFSET,
     boundsOf,
+    frameEdges,
     handleAt,
     handlePoints,
     rotatePositions,
@@ -91,6 +92,46 @@ describe("handlePoints and handleAt", () => {
         const tiny = handlePoints({ box: BOX, pad: 10, angle: 0 }, 0.05);
         expect(handleAt(tiny, { x: 92, y: 192 }, 0.05)).toBe("nw");
         expect(handleAt(tiny, { x: 148, y: 192 }, 0.05)).toBe("n");
+    });
+});
+
+describe("a frame standing clear of more ground (pathways step 4j)", () => {
+    // An order lane with its tip out past the left side and names above
+    const covers = { left: 60, top: 170, right: 205, bottom: 255 };
+    const frame = { box: BOX, pad: 10, angle: 0, covers };
+
+    it("grows to take the ground in, never shrinking past the padded box", () => {
+        expect(frameEdges(frame)).toEqual({
+            left: 60,
+            top: 170,
+            right: 210,
+            bottom: 260,
+        });
+        expect(frameEdges({ ...frame, covers: null })).toEqual({
+            left: 90,
+            top: 190,
+            right: 210,
+            bottom: 260,
+        });
+    });
+
+    it("puts the corners on the grown frame and the middles on its sides' middles", () => {
+        const handles = handlePoints(frame, 2);
+        expect(handles.nw).toEqual({ x: 60, y: 170 });
+        expect(handles.se).toEqual({ x: 210, y: 260 });
+        expect(handles.n).toEqual({ x: 135, y: 170 });
+        expect(handles.w).toEqual({ x: 60, y: 215 });
+        expect(handles.rot).toEqual({
+            x: 135,
+            y: 170 - ROTATE_HANDLE_OFFSET / 2,
+        });
+    });
+
+    it("turns about the marchers' center, as the rotation does", () => {
+        const handles = handlePoints({ ...frame, angle: 180 }, 1);
+        // (60, 170) half a turn about (150, 225)
+        expect(handles.nw.x).toBeCloseTo(240);
+        expect(handles.nw.y).toBeCloseTo(280);
     });
 });
 

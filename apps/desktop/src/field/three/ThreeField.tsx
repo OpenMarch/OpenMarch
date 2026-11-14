@@ -107,6 +107,7 @@ import {
 } from "./fieldNavigation";
 import { GlyphAtlas } from "./sdfText";
 import { selectionBoxPadding } from "./selectionRing";
+import { useSelectionCoverStore } from "@/field/editor/selectionCoverStore";
 import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
 import { createThreeFieldTestApi } from "./threeFieldTestApi";
 import FieldLayer from "./layers/FieldLayer";
@@ -135,6 +136,8 @@ import FieldBenchmark from "@/field/benchmark/FieldBenchmark";
 import PropDrawingNotice from "@/components/items/PropDrawingNotice";
 import { threeFieldView } from "@/field/benchmark/fieldScenarios";
 import { r3fFrames } from "./benchmarkFrames";
+import { makeFloorSampler } from "@/pathways/floorSampler";
+import { useTheme } from "@/context/ThemeContext";
 import {
     CHECKPOINT_FONT,
     COLLISION_FONT,
@@ -223,6 +226,29 @@ function ThreeFieldView() {
                   )
                 : null,
         [fieldProperties, fieldImage],
+    );
+    const { theme: appTheme } = useTheme();
+    // How bright the floor is under the order lanes (step 4i): background and field image, read once
+    const orderFloor = useMemo(
+        () =>
+            makeFloorSampler({
+                background: fieldProperties?.theme.background ?? {
+                    r: 255,
+                    g: 255,
+                    b: 255,
+                },
+                image: fieldImage,
+                placement: fieldImagePlan,
+                width: fieldProperties?.width ?? 0,
+                height: fieldProperties?.height ?? 0,
+                // Beyond the field the app's own background shows through the canvas
+                outside: document.documentElement.classList.contains("dark")
+                    ? 0.06
+                    : 0.92,
+            }),
+        // `appTheme` is what the dark class follows
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [fieldProperties, fieldImage, fieldImagePlan, appTheme],
     );
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const { mutateAsync: moveMarchers } = useMutation(
@@ -428,6 +454,9 @@ function ThreeFieldView() {
                     takePress: () => menuShown.current || takeFieldPress(),
                     selectionBoxPadding: () =>
                         selectionBoxPadding(useFieldViewStore.getState().zoom),
+                    // Step 4j: the box stands clear of the order lane drawn on the selection
+                    selectionCovers: () =>
+                        useSelectionCoverStore.getState().covers,
                     showPositions: (positions) =>
                         marchers.setOverrides(positions),
                     // #196: drops go through the drop-to-timeline path
@@ -731,6 +760,7 @@ function ThreeFieldView() {
                         marchers={marchers}
                         labels={orderLabels}
                         theme={fieldProperties.theme}
+                        floor={orderFloor}
                     />
                 )}
                 {fieldProperties && (

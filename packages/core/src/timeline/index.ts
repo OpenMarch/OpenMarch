@@ -57,6 +57,8 @@ export {
     groupMemberWalk,
     groupPoint,
     makeAlongTrail,
+    makeTrail,
+    pointsPath,
     alongEnds,
     alongPoint,
     placed,
@@ -150,3 +152,21 @@ export type {
 export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle {
     return createOracle(host);
 }
+
+export {
+    trailCornerCounts,
+    wayCorners,
+    cornerCounts,
+    isOnCount,
+    roundCount,
+    CORNER_MIN_TURN,
+    CORNER_STAND_OUT,
+    ON_COUNT_TOLERANCE,
+} from "./trailCorners";
+export type {
+    WayWalk,
+    WayCorner,
+    CornerTurn,
+    CornerCount,
+    TrailEnds,
+} from "./trailCorners";

@@ -21,6 +21,8 @@ import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import {
     cancelFollowDrawing,
     followMarchersOf,
+    ripplesIn,
+    setFollowEnds,
     setFollowPreview,
 } from "./followDrag";
 import { isTrailLineAt, openFollowTool } from "./followTool";
@@ -336,8 +338,38 @@ export function usePathPenActions(): void {
     // and the system allows motion
     const canPreview = usePathPenStore(
         (s) =>
-            !!s.session?.points.length && followMarchersOf(s.session) !== null,
+            (!!s.session?.points.length ||
+                (!!s.session?.follow && ripplesIn(s.session.follow))) &&
+            followMarchersOf(s.session) !== null,
     );
+    // The Follow tool's Ends (DL-8, AP-T9, RP-1): offered with end spots here; Ripple in with a
+    // form to ripple into, else said why
+    const followOpen = usePathPenStore((s) => !!s.session?.follow);
+    const hasKeep = usePathPenStore((s) => !!s.session?.follow?.keep);
+    const hasForm = usePathPenStore(
+        (s) => !!s.session?.follow?.keep && !!s.session.follow.form,
+    );
+    const formWhy = usePathPenStore((s) => s.session?.follow?.formWhy ?? null);
+    const noSpots = tolgee.t(
+        "pathways.editor.endsNeedSpots",
+        "Ripple in and Keep end spots follow into end spots the line already has on this page. Place them first (a shape tool, or move the marchers), then choose Follow",
+    );
+    useActionHandler("followEndsTrail", () => setFollowEnds("trail"), {
+        enabled: followOpen && hasKeep,
+        disabledReason: followOpen ? noSpots : undefined,
+    });
+    useActionHandler("followEndsKeep", () => setFollowEnds("keep"), {
+        enabled: followOpen && hasKeep,
+        disabledReason: followOpen ? noSpots : undefined,
+    });
+    useActionHandler("followEndsRipple", () => setFollowEnds("ripple"), {
+        enabled: followOpen && hasForm,
+        disabledReason: !followOpen
+            ? undefined
+            : hasKeep
+              ? (formWhy ?? noSpots)
+              : noSpots,
+    });
     useActionHandler(
         "followPreview",
         () => {

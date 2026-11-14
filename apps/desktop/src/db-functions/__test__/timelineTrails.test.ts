@@ -803,6 +803,30 @@ describeDbTests("Follow a drawn trail (AP-T1 to AP-T6)", (it) => {
         expect(await violations(db)).toEqual([]);
     });
 
+    it("QA-TC-14 (step 6): the shown trail carries each member's own end spot by slot, and when a founder taken over partway leaves it (TC-2)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const f = await follow(db);
+        // the first founder is taken over over [12, 13), then resumes
+        const taken = f.result.marcherIds[0]!;
+        await overlay(db, taken, 12, 13, [7, 7]);
+        const r = await resolverOf(db);
+        const target = await findTrailRouteTarget(
+            db,
+            r,
+            f.result.routeId,
+            new Map(),
+        );
+        const trail = target!.trail!;
+        for (const m of trail.members) {
+            // its index on the end line is its own end spot
+            expect(m.endAt).toBeDefined();
+            expect(trail.endLine![m.endAt!]).toEqual(m.to);
+            expect(m.until).toBe(m.marcherId === taken ? 12 : undefined);
+        }
+    });
+
     it("a trail nobody founds (each taken over at the start) can still be shown, reversed and removed (review)", async ({
         db,
         marchersAndPages: _,

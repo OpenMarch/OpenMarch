@@ -39,8 +39,15 @@ import type { XY } from "@/shapes/types";
 import { SMOOTH } from "@/shapes/line/lineGeometry";
 import { drawnAsGroup, type GroupMember, type PathTarget } from "./pathTarget";
 import { dragTrail } from "@/db-functions/timelineTrailDrag";
+import { rippleTrail } from "@/db-functions/timelineTrailRipple";
 import { invalidatePlacedBoxes } from "@/shapes/placed/placedBoxStore";
-import { followSpacingOf, type FollowDrag } from "./followDrag";
+import {
+    followSpacingOf,
+    intoEndSpots,
+    rippleDrawnPlanOf,
+    ripplesIn,
+    type FollowDrag,
+} from "./followDrag";
 import {
     besideArc,
     besideArcReason,
@@ -353,12 +360,18 @@ export function shapeOf(s: PathSession): PathShape {
     if (shape) return shape;
     const { target, points } = s;
     // A dragged-out trail ends at its own last point: there are no end spots to enter (R-13″).
-    // With Keep end spots it runs on into the tail's end spot, as step 4's trail does (AP-T9)
+    // With Keep end spots it runs on into the tail's end spot, as step 4's trail does (AP-T9);
+    // with Ripple in, into the next form's entrance as the drawing shows it now (step 9, RP-4)
     if (s.follow) {
-        const to =
-            s.follow.ends === "keep" && s.follow.grabbed !== null
-                ? target.to
-                : (points.at(-1)?.at ?? target.from);
+        const entrance =
+            s.follow.grabbed !== null && ripplesIn(s.follow)
+                ? rippleDrawnPlanOf(s)?.spots[0]
+                : undefined;
+        const to = entrance
+            ? { x: entrance[0], y: entrance[1] }
+            : intoEndSpots(s.follow) && s.follow.grabbed !== null
+              ? target.to
+              : (points.at(-1)?.at ?? target.from);
         shape = {
             from: target.from,
             to,
@@ -779,10 +792,48 @@ export const storedPoints = (points: readonly PathPoint[]): RoutePointInput[] =>
         ...(c.bulge ? { bulge: c.bulge } : {}),
     }));
 
+/**
+ * The Follow tool's write (step 4b, step 9): Ripple in (AP-T12) into the form the end spots make,
+ * dealt in trail order; else the drag (AP-T8) or onto the spots they have (AP-T9)
+ */
+async function saveFollow(
+    follow: FollowDrag,
+    leaderId: number,
+    points: RoutePointInput[],
+    session: PathSession,
+    enter: number | null,
+): Promise<void> {
+    if (ripplesIn(follow))
+        await rippleTrail({
+            db,
+            window: follow.window,
+            marcherIds: follow.ids,
+            leaderId,
+            points,
+            keepMove: follow.keep?.timelineId ?? null,
+            enter,
+        });
+    else
+        await dragTrail({
+            db,
+            window: follow.window,
+            marcherIds: follow.ids,
+            leaderId,
+            points,
+            spacing: followSpacingOf(session),
+            step: follow.step,
+            ends: follow.ends === "keep" ? "keep" : "trail",
+            keepMove: follow.keep?.timelineId ?? null,
+        });
+    invalidatePlacedBoxes();
+}
+
 /** Writes `points` as the session's path (AP-R1), smooth ones with their roundness. */
 async function save(
     points: readonly PathPoint[],
     drag = false,
+    /** Ripple in: the marcher whose spot the finish was on, which the line enters (RP-4) */
+    enter: number | null = null,
 ): Promise<boolean> {
     const { session, saving } = usePathPenStore.getState();
     if (!session || saving) return false;
@@ -794,18 +845,7 @@ async function save(
     const { follow } = session;
     try {
         if (follow && follow.grabbed !== null)
-            // The Follow tool's drag (AP-T8), or onto the spots they have (AP-T9)
-            await dragTrail({
-                db,
-                window: follow.window,
-                marcherIds: follow.ids,
-                leaderId: follow.grabbed,
-                points: stored,
-                spacing: followSpacingOf(session),
-                step: follow.step,
-                ends: follow.ends,
-                keepMove: follow.keep?.timelineId ?? null,
-            }).then(() => invalidatePlacedBoxes());
+            await saveFollow(follow, follow.grabbed, stored, session, enter);
         else if (target.trail && target.routeId !== null)
             // Point edits on an open trail, or the trail drawn again (AP-T2): by its route, so a
             // member taken over at the move's start doesn't stop it
@@ -883,14 +923,29 @@ async function save(
  * (AP-R1). With no point placed it's the same as Escape, as a Line with too few points is. The
  * path is left shown and closed, read again once the timeline has it (`usePathPen`).
  */
-export async function finishDrawing(): Promise<void> {
+export async function finishDrawing(
+    /** Ripple in: the marcher whose spot the finish was on (RP-4) */
+    enter: number | null = null,
+): Promise<void> {
     const { session } = usePathPenStore.getState();
     if (!session || session.phase !== "drawing") return;
-    if (session.points.length === 0) {
+    // Into end spots (Keep end spots, Ripple in) the trail may run straight in (RP-6)
+    const straightIn =
+        !!session.follow &&
+        session.follow.grabbed !== null &&
+        intoEndSpots(session.follow);
+    if (session.points.length === 0 && !straightIn) {
         closePath();
         return;
     }
-    const ok = await save(session.points);
+    // Ripple in finished with no end named (Enter, Finish, a double-click): the entrance the
+    // drawing shows now, the pointer counted as it's shown, so what's written is what's seen
+    // (RP-4, step 9 review)
+    const shown =
+        enter === null && session.follow && ripplesIn(session.follow)
+            ? (rippleDrawnPlanOf(session)?.entrance ?? null)
+            : enter;
+    const ok = await save(session.points, false, shown);
     // A trail dragged out (step 4b): the stored trail is read again and shown as any trail is
     if (ok && session.follow) {
         usePathPenStore.setState((state) => ({

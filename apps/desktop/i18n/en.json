@@ -194,6 +194,9 @@
             "reverse": "Reverse leader",
             "removeTrail": "Remove trail",
             "followPreview": "Preview the follow walk",
+            "followEndsTrail": "Follow: ends from the trail",
+            "followEndsKeep": "Follow: keep end spots",
+            "followEndsRipple": "Follow: ripple into the end spots' form",
             "showOrder": "Show order",
             "setOrder": "Set order",
             "reverseOrder": "Reverse order",
@@ -2746,6 +2749,10 @@
                 "tooShort": "Draw a longer trail",
                 "evenTooWide": "Even spacing can be at most {limit} steps here, or someone would walk backward",
                 "noSpots": "Keep end spots needs every marcher in one move with spots there",
+                "notAForm": "Their end spots don't stand in a line, curve or arc, so the line can't ripple into them",
+                "formLoop": "Their end spots close into a loop (a circle or a box outline). Rippling around an outline comes in a later step",
+                "formFold": "Their end spots fold back close to themselves (a sharp V, or rows through a box), so the line would pass close by itself. Rippling along a snake comes in a later step",
+                "formOverlap": "Their end spots lie on the line where it stands, so the line would walk back through itself. Move the end spots off the line first",
                 "notOneMove": "{marcher} can't join the rest of the line in one move here, so nothing was changed",
                 "noWindow": "Move the playhead past the start flag to drag out a trail",
                 "reverseAlong": "Reverse leader is off for a trail dragged out of a line. Drag the trail out of the other end instead."
@@ -3825,6 +3832,12 @@
             "endsFromTrailTip": "From trail: the line stops along the trail, and those become its end spots",
             "endsKeep": "Keep end spots",
             "endsKeepTip": "Keep end spots: the line follows the trail into the end spots it already has",
+            "endsRipple": "Ripple in",
+            "endsRippleTip": "Ripple in: the line follows its leader straight to the near end of the form its end spots make, then along it. The leader takes the far end",
+            "endsRippleOff": "Ripple in: their end spots don't stand in a line, curve or arc",
+            "endsNeedSpots": "Ripple in and Keep end spots follow into end spots the line already has on this page. Place them first (a shape tool, or move the marchers), then choose Follow",
+            "rippleArrival": "Leader reaches the form on count {count}",
+            "rippleArrivalStart": "Leader starts at the form",
             "preview": "Preview",
             "previewTip": "Preview: the marchers walk the trail from start to end, again and again",
             "previewReduced": "Preview is off while your system asks for less motion",
@@ -3867,6 +3880,7 @@
             "drawingPointsClick": "{marcher}'s path: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
             "groupDrawing": "Group path for {count} marchers: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
             "trailDrawing": "Trail for {count} marchers, {marcher} leading: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
+            "rippleDrawing": "Ripple in, {marcher} leading: click an end of the form to go straight in, or click for corners first · Double-click to finish · <esc></esc> to cancel",
             "followGrab": "Follow: drag a trail out of either end of the line · <esc></esc> to leave"
         },
         "toolbar": {
@@ -3917,6 +3931,17 @@
             "doneButton": "Done",
             "banner": "Set order: drag through the marchers from the leader, or click them one by one · {picked} of {count}",
             "zoomIn": "Zoom in to read the order"
+        },
+        "corners": {
+            "chipLabel": "Turning counts {range} at this corner. Show who turns when.",
+            "chipOffLabel": "Turning counts {range} at this corner, some between counts. Show who turns when.",
+            "listTitle": "Turns at this corner",
+            "leader": "Leader",
+            "onCount": "count {count}",
+            "betweenCounts": "{count} · between {before} and {after}",
+            "stopBefore": "{count, plural, one {# stops or leaves the trail before turning here} other {# stop or leave the trail before turning here}}",
+            "offCountShort": "Turns between counts",
+            "offCountTip": "{turns, plural, one {# turn falls} other {# turns fall}} between counts, at {corners, plural, one {# corner} other {# corners}}. Each marcher reaches a corner at its own steady speed. Move the corner, change the spacing or the move's counts to put every turn on a count. Tap or click a corner's count to see who turns when."
         }
     }
 }

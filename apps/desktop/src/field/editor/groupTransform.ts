@@ -55,30 +55,58 @@ export function boundsOf(
  * The selection box as drawn: around the marchers' centers (`box`), `pad`
  * further out, turned `angle` degrees about its center (only while a rotation
  * is being dragged; the box fits the marchers again after it).
+ *
+ * `covers` is ground the frame also stands clear of (pathways step 4j: the
+ * order lane drawn on the selection, its tip and its names). The frame grows
+ * to take it in and is drawn as a hairline with corner handles; scaling and
+ * rotating still work on the marchers' `box`, so what a handle does is
+ * unchanged.
  */
-export type SelectionFrame = { box: FieldRect; pad: number; angle: number };
+export type SelectionFrame = {
+    box: FieldRect;
+    pad: number;
+    angle: number;
+    covers?: FieldRect | null;
+};
+
+/** The frame's own edges, before it's turned: `box` and `pad`, grown to take in `covers`. */
+export function frameEdges({ box, pad, covers }: SelectionFrame): FieldRect {
+    const edges = {
+        left: box.left - pad,
+        right: box.right + pad,
+        top: box.top - pad,
+        bottom: box.bottom + pad,
+    };
+    if (!covers) return edges;
+    return {
+        left: Math.min(edges.left, covers.left),
+        right: Math.max(edges.right, covers.right),
+        top: Math.min(edges.top, covers.top),
+        bottom: Math.max(edges.bottom, covers.bottom),
+    };
+}
 
 /** Where each handle is drawn, in field units, at `zoom` (CSS px per field unit). */
 export function handlePoints(
-    { box, pad, angle }: SelectionFrame,
+    frame: SelectionFrame,
     zoom: number,
 ): Record<HandleId, FieldPoint> {
-    const left = box.left - pad;
-    const right = box.right + pad;
-    const top = box.top - pad;
-    const bottom = box.bottom + pad;
-    const center = centerOf(box);
-    const turn = (x: number, y: number) => rotatePoint({ x, y }, center, angle);
+    const { left, right, top, bottom } = frameEdges(frame);
+    // The middles sit on the middle of the frame's sides; it turns about the marchers' center
+    const middle = { x: (left + right) / 2, y: (top + bottom) / 2 };
+    const center = centerOf(frame.box);
+    const turn = (x: number, y: number) =>
+        rotatePoint({ x, y }, center, frame.angle);
     return {
         nw: turn(left, top),
-        n: turn(center.x, top),
+        n: turn(middle.x, top),
         ne: turn(right, top),
-        e: turn(right, center.y),
+        e: turn(right, middle.y),
         se: turn(right, bottom),
-        s: turn(center.x, bottom),
+        s: turn(middle.x, bottom),
         sw: turn(left, bottom),
-        w: turn(left, center.y),
-        rot: turn(center.x, top - ROTATE_HANDLE_OFFSET / zoom),
+        w: turn(left, middle.y),
+        rot: turn(middle.x, top - ROTATE_HANDLE_OFFSET / zoom),
     };
 }
 

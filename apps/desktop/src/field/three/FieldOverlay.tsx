@@ -36,10 +36,21 @@ import {
 } from "@/shapes/field/groupDrawing";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "./HeldRolesChip";
 import { useFieldUnderlayStore } from "@/field/editor/fieldUnderlayStore";
+import { useSelectionCoverStore } from "@/field/editor/selectionCoverStore";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 
 /** The selection border width, in CSS px. */
 const BOX_WIDTH = 2;
+/**
+ * The selection box standing clear of an order lane (pathways step 4j): a 1 CSS px hairline, 8 px
+ * corner squares and a smaller rotate knob. Presses still take a handle anywhere in its
+ * {@link HANDLE_SIZE} square.
+ */
+const CLEAR_BOX_WIDTH = 1;
+const CLEAR_HANDLE_SIZE = 8;
+const CLEAR_ROTATE_RADIUS = 4.5;
+/** The middle handles, drawn on a box clear of a lane only while pointed at */
+const MIDDLE_HANDLES: ReadonlySet<HandleId> = new Set(["n", "e", "s", "w"]);
 /** The marquee border width, in CSS px. */
 const MARQUEE_WIDTH = 2;
 /** The lasso stroke: 2 CSS px, dashed 5 on, 5 off. */
@@ -162,6 +173,7 @@ export default function FieldOverlay({
                     marchers.subscribe(listener),
                     items.subscribe(listener),
                     subscribeEditor(listener),
+                    useSelectionCoverStore.subscribe(listener),
                 ];
                 return () => off.forEach((unsubscribe) => unsubscribe());
             },
@@ -171,6 +183,9 @@ export default function FieldOverlay({
     );
     const area = useSyncExternalStore(subscribeEditor, () =>
         editor.areaShape(),
+    );
+    const hoveredHandle = useSyncExternalStore(subscribeEditor, () =>
+        editor.hoveredHandle(),
     );
     const drawn = useSyncExternalStore(subscribeEditor, () =>
         editor.modeDrawing(),
@@ -206,6 +221,7 @@ export default function FieldOverlay({
             >
                 <SelectionBox
                     frame={JSON.parse(box) as DrawnSelectionBox | null}
+                    hovered={hoveredHandle}
                 />
                 {area?.kind === "marquee" && (
                     <Marquee
@@ -250,10 +266,21 @@ export default function FieldOverlay({
  * handles (#198): squares on the corners and middles, and the rotate handle
  * above the top middle, joined to it by a line. Turned with the marchers
  * while a rotation is dragged.
+ *
+ * Standing clear of an order lane (`covers`, pathways step 4j) it's a hairline
+ * with small corner squares and the rotate handle; a middle handle shows only
+ * while it's pointed at (`hovered`), and takes presses either way.
  */
-function SelectionBox({ frame }: { frame: DrawnSelectionBox | null }) {
+function SelectionBox({
+    frame,
+    hovered,
+}: {
+    frame: DrawnSelectionBox | null;
+    hovered: HandleId | null;
+}) {
     const view = useFieldViewStore();
     if (!frame) return null;
+    const clear = !!frame.covers;
     const screen = Object.fromEntries(
         Object.entries(selectionHandles(frame, view.zoom)).map(([id, at]) => [
             id,
@@ -263,14 +290,18 @@ function SelectionBox({ frame }: { frame: DrawnSelectionBox | null }) {
     const corners = [screen.nw, screen.ne, screen.se, screen.sw]
         .map(({ x, y }) => `${x},${y}`)
         .join(" ");
-    const half = HANDLE_SIZE / 2;
+    const size = clear ? CLEAR_HANDLE_SIZE : HANDLE_SIZE;
+    const half = size / 2;
+    const shown = (Object.keys(screen) as HandleId[]).filter(
+        (id) => !clear || !MIDDLE_HANDLES.has(id) || id === hovered,
+    );
     return (
-        <g data-testid="fieldSelectionBox">
+        <g data-testid="fieldSelectionBox" data-clear={clear || undefined}>
             <polygon
                 points={corners}
                 fill="none"
                 stroke={SELECTION_COLOR}
-                strokeWidth={BOX_WIDTH}
+                strokeWidth={clear ? CLEAR_BOX_WIDTH : BOX_WIDTH}
             />
             <line
                 x1={screen.n.x}
@@ -280,13 +311,13 @@ function SelectionBox({ frame }: { frame: DrawnSelectionBox | null }) {
                 stroke={SELECTION_COLOR}
                 strokeWidth={ROTATE_LINE_WIDTH}
             />
-            {(Object.keys(screen) as HandleId[]).map((id) =>
+            {shown.map((id) =>
                 id === "rot" ? (
                     <circle
                         key={id}
                         cx={screen.rot.x}
                         cy={screen.rot.y}
-                        r={half}
+                        r={clear ? CLEAR_ROTATE_RADIUS : half}
                         fill="white"
                         stroke={SELECTION_COLOR}
                         strokeWidth={1}
@@ -296,8 +327,8 @@ function SelectionBox({ frame }: { frame: DrawnSelectionBox | null }) {
                         key={id}
                         x={-half}
                         y={-half}
-                        width={HANDLE_SIZE}
-                        height={HANDLE_SIZE}
+                        width={size}
+                        height={size}
                         transform={`translate(${screen[id].x} ${screen[id].y}) rotate(${frame.angle})`}
                         fill="white"
                         stroke={SELECTION_COLOR}

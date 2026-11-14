@@ -60,6 +60,7 @@ export function IconButton({
     pressed,
     testId,
     children,
+    onDisabledClick,
 }: {
     label: string;
     /** The action it runs, whose shortcut the tooltip shows */
@@ -70,6 +71,11 @@ export function IconButton({
     pressed?: boolean;
     testId?: string;
     children: ReactNode;
+    /**
+     * A press while disabled, so a finger (which gets no tooltip) can still be told why, as a
+     * toast. Nothing happens without it.
+     */
+    onDisabledClick?: () => void;
 }) {
     return (
         <Tip label={label} action={action}>
@@ -83,6 +89,7 @@ export function IconButton({
                 onPointerDown={keepFocus}
                 onClick={() => {
                     if (!disabled) onClick();
+                    else onDisabledClick?.();
                 }}
                 data-testid={testId}
                 className={clsx(

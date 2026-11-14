@@ -30,6 +30,7 @@ function setup({
     marcherHidden = undefined as FieldEditorPorts["marcherHidden"],
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
     ratioLocked = undefined as (() => boolean) | undefined,
+    selectionCovers = undefined as FieldEditorPorts["selectionCovers"],
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -64,6 +65,7 @@ function setup({
         reachesInside,
         marcherHidden,
         selectionBoxPadding: () => 10,
+        selectionCovers,
         openMenu: vi.fn(),
         showPositions: vi.fn((positions) => {
             state.shown = positions;
@@ -1800,6 +1802,7 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         expect(editor.rotationFrame()).toEqual({
             box: { left: 100, top: 100, right: 400, bottom: 100 },
             angle: 90,
+            covers: null,
         });
         editor.pointerUp(at(280, 100));
         expect(editor.rotationFrame()).toBeNull();
@@ -1846,6 +1849,92 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         expect(editor.activeGesture()).toBe("marquee");
         editor.pointerUp(at(60, 60));
         expect(state.drops).toEqual([]);
+    });
+
+    describe("standing clear of an order lane (pathways step 4j)", () => {
+        // The selection's lane, its tip out past marcher 1 and its names: the box grows to take
+        // it in, from (40, 85) to (410, 115)
+        const COVERS = { left: 40, top: 85, right: 405, bottom: 115 };
+        const lane = () =>
+            setup({ selected: ALL, selectionCovers: () => COVERS });
+
+        it("puts its handles on the grown box: the old corner is empty field", () => {
+            const { editor } = lane();
+            editor.pointerMove(at(40, 85));
+            expect(editor.cursor()).toBe("nwse-resize");
+            editor.pointerMove(at(90, 90));
+            expect(editor.cursor()).not.toBe("nwse-resize");
+            // The middles sit on the middle of the grown sides
+            editor.pointerMove(at(40, 100));
+            expect(editor.cursor()).toBe("ew-resize");
+            editor.pointerMove(at(225, 85));
+            expect(editor.cursor()).toBe("ns-resize");
+        });
+
+        it("still scales the marchers from their own opposite side", () => {
+            const { editor, state } = lane();
+            // The left handle 150 further left: the 300-wide row grows by half from x = 400
+            drag(editor, { x: 40, y: 100 }, { x: -110, y: 100 });
+            expect(state.drops[0].positions.map((p) => p.x)).toEqual([
+                -50, 100, 250, 400,
+            ]);
+        });
+
+        it("moves the selection from a press on the lane's tip, inside the grown box", () => {
+            const { editor } = lane();
+            editor.pointerDown(at(60, 100));
+            editor.pointerMove(at(60, 130));
+            expect(editor.activeGesture()).toBe("move");
+        });
+
+        it("says which handle is pointed at, so a middle one can show only then", () => {
+            const { editor } = lane();
+            expect(editor.hoveredHandle()).toBeNull();
+            editor.pointerMove(at(40, 100));
+            expect(editor.hoveredHandle()).toBe("w");
+            editor.pointerMove(at(250, 300));
+            expect(editor.hoveredHandle()).toBeNull();
+            editor.pointerMove(at(40, 100));
+            editor.pointerLeave();
+            expect(editor.hoveredHandle()).toBeNull();
+        });
+
+        it("forgets the handle pointed at when the selection changes, and shows one pressed with no move first", () => {
+            const { editor } = lane();
+            editor.pointerMove(at(40, 100));
+            editor.selectionChanged();
+            expect(editor.hoveredHandle()).toBeNull();
+            // The right side stays on the padded box (410), past the cover's 405
+            editor.pointerDown(at(410, 100));
+            expect(editor.hoveredHandle()).toBe("e");
+        });
+
+        it("lets a marcher under a hidden middle handle take the press", () => {
+            // The lane's box reaches marcher 1 (100, 100) with its left middle handle
+            const { editor, state } = setup({
+                selected: [2, 3, 4],
+                selectionCovers: () => ({
+                    left: 98,
+                    top: 85,
+                    right: 405,
+                    bottom: 115,
+                }),
+            });
+            editor.pointerMove(at(98, 100));
+            expect(editor.hoveredHandle()).toBeNull();
+            expect(editor.cursor()).toBe("pointer");
+            click(editor, 98, 100, { shift: true });
+            expect(state.selected).toEqual([2, 3, 4, 1]);
+        });
+
+        it("turns with the cover it had at the press while a rotation is dragged", () => {
+            const { editor } = lane();
+            // The rotate handle sits 20 units above the grown box's top middle
+            editor.pointerDown(at(222.5, 65));
+            editor.pointerMove(at(240, 70));
+            expect(editor.activeGesture()).toBe("rotate");
+            expect(editor.rotationFrame()?.covers).toEqual(COVERS);
+        });
     });
 
     it("shows each handle's cursor on hover", () => {

@@ -12,6 +12,12 @@ import {
     type TrailSpacing,
     type TrailWindow,
 } from "@/db-functions/timelineTrailDrag";
+import {
+    planRipple,
+    ripplePreview,
+    type RippleForm,
+    type RipplePlan,
+} from "@/db-functions/timelineTrailRipplePlan";
 import type { XY } from "@/shapes/types";
 import type { PathTarget } from "./pathTarget";
 import {
@@ -31,6 +37,15 @@ export interface FollowKeep {
     readonly end: number;
     /** Each member's end spot in that move, by id */
     readonly spots: ReadonlyMap<number, XY>;
+    /**
+     * The line where that move starts, which is where a trail into its spots starts (step 9
+     * review): each member's start there and the order there, tail first. Absent when no order is
+     * remembered or guessed there; the start flag's line is used then.
+     */
+    readonly line?: {
+        readonly starts: ReadonlyMap<number, XY>;
+        readonly order: readonly number[];
+    };
 }
 
 /** The Follow tool's drag in progress (a session's `follow`) */
@@ -46,10 +61,20 @@ export interface FollowDrag {
     /** The end pressed, who leads (DL-1); null while the ends pulse */
     readonly grabbed: number | null;
     readonly spacing: TrailSpacing;
-    /** From trail (AP-T8) or Keep end spots (AP-T1), AP-T9 */
-    readonly ends: "trail" | "keep";
+    /** From trail (AP-T8), Keep end spots (AP-T1, AP-T9) or Ripple in (step 9, AP-T12) */
+    readonly ends: FollowEnds;
     /** Keep end spots, offered when every member is in one move at the playhead; else null */
     readonly keep: FollowKeep | null;
+    /**
+     * Ripple in (step 9, RP-2): the next form, the end spots of `keep` in the form's own order.
+     * Absent or null when there's no `keep`, or its spots don't stand in a line, curve or arc.
+     */
+    readonly form?: RippleForm | null;
+    /**
+     * Why Ripple in isn't offered (translated) when there are end spots but no form to ripple
+     * into: not a line, curve or arc; a loop or a block; on the line itself (RP-2)
+     */
+    readonly formWhy?: string | null;
     /** One step, in field units */
     readonly step: number;
     /**
@@ -64,22 +89,40 @@ export interface FollowDrag {
     readonly hover?: number | null;
 }
 
+/** The path bar's Ends (DL-8, AP-T9, RP-1) */
+export type FollowEnds = "trail" | "keep" | "ripple";
+
 /** Even's steps: the finest choice, and the first offered */
 export const EVEN_STEP = 0.5;
 export const EVEN_FIRST = 2;
 
+/**
+ * The line the tool works on: where it stands at the start flag, or with Keep end spots and
+ * Ripple in, where it stands at the start of the move it follows into (`FollowKeep.line`)
+ */
+export function lineOf(follow: FollowDrag): {
+    starts: ReadonlyMap<number, XY>;
+    order: readonly number[];
+} {
+    const kept = intoEndSpots(follow) ? follow.keep?.line : undefined;
+    return kept ?? { starts: follow.starts, order: follow.order };
+}
+
 /** The line, tail first and the leader last, once an end is grabbed */
 export function trailLine(follow: FollowDrag): number[] {
-    const { order, grabbed } = follow;
+    const { grabbed } = follow;
+    const { order } = lineOf(follow);
     if (grabbed === null) return [...order];
     return order[0] === grabbed ? [...order].reverse() : [...order];
 }
 
 /** The two ends of the selection along its shape (DL-4) */
-export const followEnds = (follow: FollowDrag): number[] =>
-    follow.order.length > 1
-        ? [follow.order[0]!, follow.order[follow.order.length - 1]!]
-        : [...follow.order];
+export const followEnds = (follow: FollowDrag): number[] => {
+    const { order } = lineOf(follow);
+    return order.length > 1
+        ? [order[0]!, order[order.length - 1]!]
+        : [...order];
+};
 
 type Planned = { plan: TrailDragPlan; spacing: TrailSpacing } | null;
 
@@ -217,8 +260,9 @@ export function followHit(
     radius: number,
 ): { id: number; end: boolean } | null {
     let best: { id: number; d: number } | null = null;
-    for (const id of follow.order) {
-        const p = follow.starts.get(id)!;
+    const { order, starts } = lineOf(follow);
+    for (const id of order) {
+        const p = starts.get(id)!;
         const d = Math.hypot(p.x - at.x, p.y - at.y);
         if (d <= radius && (!best || d < best.d)) best = { id, d };
     }
@@ -229,6 +273,100 @@ export function followHit(
 /** Whether the session is Follow onto the spots the line has (AP-T9's Keep end spots) */
 export const keepsEndSpots = (follow: FollowDrag): boolean =>
     follow.ends === "keep" && follow.keep !== null;
+
+/** Whether the session ripples into the form the line's end spots make (step 9, RP-1) */
+export const ripplesIn = (follow: FollowDrag): boolean =>
+    follow.ends === "ripple" && follow.keep !== null && !!follow.form;
+
+/**
+ * Whether the trail runs on into end spots (Keep end spots or Ripple in): its route ends at the
+ * tail's spot, and it may finish with nothing drawn (RP-6)
+ */
+export const intoEndSpots = (follow: FollowDrag): boolean =>
+    keepsEndSpots(follow) || ripplesIn(follow);
+
+/** The line's starts in trail order, tail first */
+const lineStarts = (f: FollowDrag): [number, number][] =>
+    trailLine(f).map((id): [number, number] => {
+        const p = lineOf(f).starts.get(id)!;
+        return [p.x, p.y];
+    });
+
+const ripplePlans = new WeakMap<PathSession, RipplePlan | null>();
+
+/**
+ * Ripple in's plan for the points placed (AP-T12, RP-4): the entrance by the last point, or the
+ * leader's start. What finishing writes (with `enter` when the finish is on an end's spot).
+ */
+export function ripplePlanOf(
+    s: PathSession,
+    enter?: number | null,
+): RipplePlan | null {
+    const f = s.follow;
+    if (!f || f.grabbed === null || !ripplesIn(f)) return null;
+    if (enter != null)
+        return planRipple(
+            lineStarts(f),
+            f.form!,
+            storedPoints(s.points),
+            enter,
+        );
+    if (ripplePlans.has(s)) return ripplePlans.get(s)!;
+    const plan = planRipple(lineStarts(f), f.form!, storedPoints(s.points));
+    ripplePlans.set(s, plan);
+    return plan;
+}
+
+/**
+ * How near an end of the next form counts as on it, in steps (RP-4): the same for what the
+ * drawing shows and for a finish, and wide enough for a finger
+ */
+export const RIPPLE_END_STEPS = 2;
+
+/**
+ * The end of the next form whose spot is within `RIPPLE_END_STEPS` of `at`, as the marcher
+ * standing there now, or null: a finish there enters there (RP-4)
+ */
+export function rippleEndAt(follow: FollowDrag, at: XY): number | null {
+    const form = follow.form;
+    if (!form || !ripplesIn(follow)) return null;
+    const radius = RIPPLE_END_STEPS * follow.step;
+    let best: { id: number; d: number } | null = null;
+    for (const i of [0, form.ids.length - 1]) {
+        const p = form.spots[i]!;
+        const d = Math.hypot(p[0] - at.x, p[1] - at.y);
+        if (d <= radius && (!best || d < best.d))
+            best = { id: form.ids[i]!, d };
+    }
+    return best?.id ?? null;
+}
+
+const rippleDrawn = new WeakMap<PathSession, RipplePlan | null>();
+
+/**
+ * Ripple in's plan as the drawing shows it (DL-20, RP-4): while drawing, the pointer counts as
+ * the last point, and on an end's spot it enters there instead of adding a corner. Else the
+ * placed plan (`ripplePlanOf`).
+ */
+export function rippleDrawnPlanOf(s: PathSession): RipplePlan | null {
+    const f = s.follow;
+    if (!f || f.grabbed === null || !ripplesIn(f)) return null;
+    const p = s.pointer;
+    if (s.phase !== "drawing" || !p) return ripplePlanOf(s);
+    if (rippleDrawn.has(s)) return rippleDrawn.get(s)!;
+    const end = rippleEndAt(f, p);
+    const last = s.points.at(-1)?.at;
+    const onLast = last && last.x === p.x && last.y === p.y;
+    const plan =
+        end !== null || onLast
+            ? planRipple(lineStarts(f), f.form!, storedPoints(s.points), end)
+            : planRipple(lineStarts(f), f.form!, [
+                  ...storedPoints(s.points),
+                  { at: [p.x, p.y] },
+              ]);
+    rippleDrawn.set(s, plan);
+    return plan;
+}
 
 /**
  * The target as drawn once `follow` is grabbed: its line in trail order, the leader last. With
@@ -241,12 +379,21 @@ export function followTarget(
     drills: ReadonlyMap<number, string>,
 ): PathTarget {
     const line = trailLine(follow);
-    const keep = keepsEndSpots(follow) ? follow.keep : null;
-    const members = line.map((id) => ({
+    const keep = intoEndSpots(follow) ? follow.keep : null;
+    // Ripple in (RP-3): each takes its spot in the next form, dealt from the end nearer the
+    // leader's start until a point is placed (`ripplePlanOf` has it after)
+    const dealt =
+        ripplesIn(follow) && follow.grabbed !== null
+            ? planRipple(lineStarts(follow), follow.form!, []).spots
+            : null;
+    const { starts } = lineOf(follow);
+    const members = line.map((id, q) => ({
         marcherId: id,
         drill: drills.get(id) ?? `${id}`,
-        from: follow.starts.get(id)!,
-        to: keep?.spots.get(id) ?? follow.starts.get(id)!,
+        from: starts.get(id)!,
+        to: dealt
+            ? { x: dealt[q]![0], y: dealt[q]![1] }
+            : (keep?.spots.get(id) ?? starts.get(id)!),
     }));
     const leader = members.at(-1)!;
     return {
@@ -322,11 +469,22 @@ export function setFollowSpacing(spacing: TrailSpacing): void {
     updateFollow((s, f) => ({ ...s, follow: { ...f, spacing } }));
 }
 
-/** The path bar's Ends (DL-8, AP-T9): From trail, or Keep end spots */
-export function setFollowEnds(ends: "trail" | "keep"): void {
+/** The path bar's Ends (DL-8, AP-T9, RP-1): From trail, Keep end spots, or Ripple in */
+export function setFollowEnds(ends: FollowEnds): void {
     updateFollow((s, f) => {
         if (ends === "keep" && !f.keep) return s;
+        if (ends === "ripple" && !(f.keep && f.form)) return s;
         const follow = { ...f, ends };
+        // The line changes where it's read (the kept move's start, step 9 review): a grabbed
+        // marcher that isn't an end of it there lets go, and the ends pulse again
+        if (f.grabbed !== null && !followEnds(follow).includes(f.grabbed))
+            return {
+                ...s,
+                follow: { ...follow, grabbed: null },
+                points: [],
+                pointer: null,
+                dragging: null,
+            };
         return {
             ...s,
             follow,
@@ -392,6 +550,19 @@ export function followMarchersOf(s: PathSession | null): FollowMarchers | null {
     if (!s) return null;
     const f = s.follow;
     if (!f || !followHasTrail(s) || keepsEndSpots(f)) return null;
+    // Ripple in (step 9): the marchers on their dealt spots, and the walk into the next form
+    if (ripplesIn(f)) {
+        const ripple = rippleDrawnPlanOf(s);
+        if (!ripple) return null;
+        const ids = trailLine(f);
+        const spots = ripple.spots.map(([x, y]) => ({ x, y }));
+        if (!f.preview) return { ids, spots };
+        return {
+            ids,
+            spots,
+            walk: (p) => ripplePreview(ripple, p).map(([x, y]) => ({ x, y })),
+        };
+    }
     const plan = followDrawnPlanOf(s);
     if (!plan) return null;
     const ids = trailLine(f);
@@ -412,7 +583,8 @@ export function followHasTrail(s: PathSession): boolean {
     return (
         !!s.follow &&
         s.follow.grabbed !== null &&
-        (s.points.length > 0 || s.pointer !== null)
+        // Ripple in always has one once an end is grabbed: the straight connector (RP-5)
+        (s.points.length > 0 || s.pointer !== null || ripplesIn(s.follow))
     );
 }
 
@@ -424,8 +596,8 @@ export function followHasTrail(s: PathSession): boolean {
 export function followFootprint(s: PathSession): XY[] {
     const f = s.follow;
     if (!f || s.phase !== "drawing") return [];
-    const at: XY[] = [...f.starts.values()];
-    const plan = followDrawnPlanOf(s);
+    const at: XY[] = [...lineOf(f).starts.values()];
+    const plan = ripplesIn(f) ? rippleDrawnPlanOf(s) : followDrawnPlanOf(s);
     if (plan) for (const [x, y] of plan.spots) at.push({ x, y });
     if (s.pointer) at.push(s.pointer);
     return at;
