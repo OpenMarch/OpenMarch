@@ -98,12 +98,38 @@ const topmostAt = (locator: Locator) =>
         );
     });
 
+/**
+ * Waits until `locator` has stayed in the same place for a few frames: the shape editor springs
+ * after an edit and glides with the view after a drag, and a tap on a moving button can miss
+ */
+async function settledAt(page: Page, locator: Locator): Promise<Point> {
+    let last = "";
+    let same = 0;
+    await expect
+        .poll(
+            async () => {
+                const box = await locator.boundingBox();
+                const now = box
+                    ? `${Math.round(box.x)},${Math.round(box.y)},${Math.round(box.width)}`
+                    : "";
+                same = now !== "" && now === last ? same + 1 : 0;
+                last = now;
+                return same >= 3;
+            },
+            { intervals: [100] },
+        )
+        .toBe(true);
+    return centerOf(locator);
+}
+
 /** Checks a finger at `locator`'s middle lands on it, then taps it there */
 async function reachAndTap(page: Page, locator: Locator) {
     await expect(locator).toBeVisible();
     // The pill and the zoom box find their spots once the layers settle
     await expect.poll(() => topmostAt(locator)).toBe("itself");
-    await tap(page, await centerOf(locator));
+    const at = await settledAt(page, locator);
+    expect(await topmostAt(locator)).toBe("itself");
+    await tap(page, at);
 }
 
 const intersects = (a: Box, b: Box) =>
@@ -264,9 +290,16 @@ test("a pill parked where the line tool's card shows moves aside, then comes bac
         "itself",
     );
 
-    // The card gone, the pill is back where it was parked
-    await tap(page, await centerOf(page.getByTestId("shape-tool-discard")));
+    // Discard drops the points; the tool stays armed with its empty card (#872), also at the
+    // field's top, so the pill stays aside. A second Discard closes the tool and the card goes
+    const discard = page.getByTestId("shape-tool-discard");
+    await reachAndTap(page, discard);
+    await expect(hint).toContainText("Drag on the field to draw");
+    await expect(page.getByTestId("shape-tool-finish")).toHaveCount(0);
+    await pillClearOf(page, hint);
+    await reachAndTap(page, discard);
     await expect(hint).toBeHidden();
+    // The card gone, the pill is back where it was parked
     await expect
         .poll(async () => {
             const now = (await pill.boundingBox())!;
