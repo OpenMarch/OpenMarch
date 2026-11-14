@@ -17,6 +17,7 @@ import FieldContextMenu, {
     useFieldMenu,
 } from "../FieldContextMenu";
 import type { FieldMarchers } from "../fieldMarchers";
+import { useInputModeStore } from "@/stores/InputModeStore";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -308,6 +309,33 @@ describe("FieldContextMenu", () => {
         open({ selectedCount: 2 });
         fireEvent.click(item("swapMarchers")!);
         expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens below the point with a mouse, and beside it in the touch layout, where it slides to stay on screen (#928)", () => {
+        open();
+        const menu = screen.getByTestId("field-menu");
+        expect(menu).toHaveAttribute("data-side", "bottom");
+        expect(menu.className).not.toContain("overflow-y-auto");
+        cleanup();
+        const before = useInputModeStore.getState().preference;
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        try {
+            open();
+            const touchMenu = screen.getByTestId("field-menu");
+            expect(touchMenu).toHaveAttribute("data-side", "right");
+            // Never taller than the room there: it scrolls instead
+            expect(touchMenu.className).toContain(
+                "max-h-(--radix-dropdown-menu-content-available-height)",
+            );
+            expect(touchMenu.className).toContain("overflow-y-auto");
+        } finally {
+            act(() => {
+                useInputModeStore.getState().setPreference(before);
+            });
+            localStorage.clear();
+        }
     });
 
     it("lists every action it offers by its label", () => {

@@ -85,6 +85,7 @@ import {
 import { MOVE_NAME_MAX_LENGTH } from "@/timeline/timelineViewModel";
 import { AddPageFlagMenu } from "./AddPageFlagMenu";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useTouchPressOutside } from "@/components/ui/useTouchPressOutside";
 import { TimelineTouchTransport } from "./TimelineTouchTransport";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import {
@@ -1740,6 +1741,8 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
     );
     // The move menu opened from the ⋯ button or the keyboard (UI-14)
     const [menuOpen, setMenuOpen] = useState(false);
+    const menuContent = useRef<HTMLDivElement>(null);
+    useTouchPressOutside(menuOpen, menuContent, () => setMenuOpen(false));
     // Rename focuses its field and Delete removes the clip: after those, focus stays put
     const keepFocus = useRef(false);
     const trackId = track.id;
@@ -2343,6 +2346,7 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                     </div>
                     <DropdownMenu.Portal>
                         <DropdownMenu.Content
+                            ref={menuContent}
                             data-testid="timeline-clip-menu"
                             align="end"
                             sideOffset={4}
