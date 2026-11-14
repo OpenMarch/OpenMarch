@@ -46,8 +46,11 @@ import {
 import { choosePillPosition, PILL_EDGE, type Rect } from "./pillPlacement";
 import {
     fieldLayersIn,
+    NO_FIELD_OBSTACLES,
+    obstaclesKey,
     overlaps,
     PILL_AVOIDS,
+    type FieldObstacleSource,
     SAVED_PILL_YIELDS_TO,
     subscribeFieldLayers,
 } from "@/components/canvas/fieldLayers";
@@ -307,6 +310,9 @@ function useTogglePress(toggle: TouchToggle, onExplain: () => void) {
     };
 }
 
+/** The drag mode menu's width (`w-280`), to keep it inside the field */
+const DRAG_MODE_MENU_WIDTH = 280;
+
 /** How long the layers over the field must stay put before the pill finds its spot again */
 const PLACE_AFTER_LAYERS_MS = 120;
 
@@ -395,14 +401,19 @@ function useCompactPill(
  * - "?" explains them. A long press on any of them explains it too.
  *
  * Each toggle is held while pressed, or latched by a tap. Drag the grip to move the pill; the
- * spot is remembered. Until then it sits at the bottom where it covers the fewest marchers.
+ * spot is remembered. Until then it sits at the bottom where it covers the fewest marchers, and
+ * off the selection box, the open shape and their handles (#933). A spot the user chose gives way
+ * to those handles too, and comes back once they've gone.
  */
 // eslint-disable-next-line max-lines-per-function
 export default function TouchModifierButtons({
     marchers = null,
+    obstacles = null,
 }: {
     /** The marchers drawn, for a spot that covers the fewest */
     marchers?: FieldMarchers | null;
+    /** What's dragged on the field, which the pill keeps off (#933), in the field element's px */
+    obstacles?: FieldObstacleSource | null;
 }) {
     const { t } = useTranslate();
     const isTouchMode = useIsTouchMode();
@@ -431,6 +442,8 @@ export default function TouchModifierButtons({
     const anchors = useRef<Partial<Record<Explained, HTMLElement | null>>>({});
     const rootRef = useRef<HTMLDivElement>(null);
     const pillRef = useRef<HTMLDivElement>(null);
+    /** The field's obstacles the spot was last worked out for (`obstaclesKey`) */
+    const placedFor = useRef("");
     const drag = useRef<{
         id: number;
         startX: number;
@@ -486,12 +499,15 @@ export default function TouchModifierButtons({
         if (!pill || !parent) return;
         const { field, marchers: dots } = fieldLayout(marchers);
         const size = { width: pill.offsetWidth, height: pill.offsetHeight };
+        const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
+        placedFor.current = obstaclesKey(onField);
         const next = choosePillPosition(
             { width: parent.clientWidth, height: parent.clientHeight },
             size,
             field,
             dots,
             fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
+            onField,
         );
         setAuto((last) =>
             last?.left === next.left && last.bottom === next.bottom
@@ -503,7 +519,10 @@ export default function TouchModifierButtons({
         const saved = savedRef.current;
         setSavedBlocked(
             saved !== null &&
-                fieldLayersIn(parent, SAVED_PILL_YIELDS_TO).some((layer) =>
+                [
+                    ...fieldLayersIn(parent, SAVED_PILL_YIELDS_TO),
+                    ...onField.handles,
+                ].some((layer) =>
                     overlaps(
                         {
                             left: saved.left,
@@ -517,7 +536,7 @@ export default function TouchModifierButtons({
                     ),
                 ),
         );
-    }, [marchers]);
+    }, [marchers, obstacles]);
     useLayoutEffect(() => {
         if (!isTouchMode) return;
         placeAutomatically();
@@ -542,16 +561,31 @@ export default function TouchModifierButtons({
                 PLACE_AFTER_LAYERS_MS,
             );
         });
+        // The selection box or the open shape changing (#933): placed again once it has settled
+        // and no drag on the field is under way (the drag's end tells again)
+        let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
+        const offObstacles = obstacles?.subscribe(() => {
+            if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
+            obstaclesSettle = setTimeout(() => {
+                obstaclesSettle = null;
+                if (obstacles.busy()) return;
+                if (obstaclesKey(obstacles.read()) === placedFor.current)
+                    return;
+                placeAutomatically();
+            }, PLACE_AFTER_LAYERS_MS);
+        });
         return () => {
             clearTimeout(later);
             if (settle !== null) clearTimeout(settle);
             if (layersSettle !== null) clearTimeout(layersSettle);
+            if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
             observer?.disconnect();
             offView();
             offLayers();
+            offObstacles?.();
         };
         // The compact form is narrower: a new spot for it
-    }, [isTouchMode, placeAutomatically, compact, container]);
+    }, [isTouchMode, placeAutomatically, compact, container, obstacles]);
 
     // The help closes on a press anywhere else (which does nothing more), or
     // Escape. Registered as it appears, so no press slips through.
@@ -647,11 +681,27 @@ export default function TouchModifierButtons({
     const popupStyle = {
         maxHeight: Math.max(120, openBelow ? roomBelow : roomAbove),
     };
-    const popupSide = clsx(
+    const popupVertical = clsx(
         "absolute overflow-y-auto",
-        onRight ? "right-0" : "left-0",
         openBelow ? "top-[calc(100%+8px)]" : "bottom-[calc(100%+8px)]",
     );
+    const popupSide = clsx(popupVertical, onRight ? "right-0" : "left-0");
+    // The drag mode menu opens over or under its own button (#933), lined up with its left edge,
+    // and moved along only as far as it takes to stay inside the field
+    const dragModeButton = anchors.current.dragMode;
+    const dragModeMenuLeft =
+        dragModeButton && parent && position
+            ? Math.max(
+                  PILL_EDGE - position.left,
+                  Math.min(
+                      dragModeButton.offsetLeft,
+                      parent.clientWidth -
+                          PILL_EDGE -
+                          DRAG_MODE_MENU_WIDTH -
+                          position.left,
+                  ),
+              )
+            : 0;
     const current =
         DRAG_MODES.find((option) => option.mode === dragMode) ?? DRAG_MODES[0];
     const describe = (key: string) => t(key, { device: PEN_DEVICE });
@@ -696,9 +746,9 @@ export default function TouchModifierButtons({
                 <div
                     role="menu"
                     aria-label={t("touch.dragMode.menu")}
-                    style={popupStyle}
+                    style={{ ...popupStyle, left: dragModeMenuLeft }}
                     className={clsx(
-                        popupSide,
+                        popupVertical,
                         MENU_CONTENT_CLASS,
                         "w-280 max-w-[calc(100vw-24px)]",
                     )}

@@ -1790,6 +1790,18 @@ describe("FieldEditor lasso", () => {
         expect(ports.selection.set).not.toHaveBeenCalled();
     });
 
+    it("closes itself when a finger or a pen draws it, ending 80 screen px from its start (#933)", () => {
+        for (const kind of ["touch", "pen"] as const) {
+            const { editor, state } = setup({ selected: [4] });
+            // 40 field units is 80 screen px at zoom 2
+            lasso(editor, [...AROUND_2_AND_3.slice(0, -1), [150, 90]], {
+                kind,
+            });
+            expect(editor.areaShape()).toBeNull();
+            expect(state.selected).toEqual([2, 3]);
+        }
+    });
+
     it("says when releasing would close it (the green cue)", () => {
         const { editor } = setup();
         click(editor, 150, 50);

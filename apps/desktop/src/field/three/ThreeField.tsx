@@ -108,6 +108,7 @@ import {
 import { GlyphAtlas } from "./sdfText";
 import { selectionBoxPadding } from "./selectionRing";
 import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
+import { fieldObstacleSource } from "./fieldObstacles";
 import { createThreeFieldTestApi } from "./threeFieldTestApi";
 import FieldLayer from "./layers/FieldLayer";
 import BackgroundImageLayer from "./layers/BackgroundImageLayer";
@@ -492,6 +493,11 @@ function ThreeFieldView() {
         });
         return () => setShapeField(null);
     }, [marchers]);
+    // #933: the pill keeps off the selection box, the open shape and their handles
+    const obstacles = useMemo(
+        () => fieldObstacleSource(marchers, editor, items),
+        [marchers, editor, items],
+    );
     useShapeFieldModes(editor, isPlaying);
     useFieldPropTool(editor);
     const menu = useFieldMenu({
@@ -732,7 +738,12 @@ function ThreeFieldView() {
                     <ShapeEditor stepPx={fieldProperties.pixelsPerStep} />
                 )}
                 {/* Fine, Equal, From center, Add and Snap for a tablet: touch layout only */}
-                {!preview && <TouchModifierButtons marchers={marchers} />}
+                {!preview && (
+                    <TouchModifierButtons
+                        marchers={marchers}
+                        obstacles={obstacles}
+                    />
+                )}
                 <FavoritesRing />
                 {/* A command asking its parameters docks here, over the field's top (#354) */}
                 <DockedCommandBar />

@@ -1,5 +1,11 @@
 import type { XY } from "../types";
-import { clearSpot, type Rect } from "@/components/canvas/fieldLayers";
+import {
+    aroundPoints,
+    clearSpot,
+    FINGER_REACH,
+    overlapArea,
+    type Rect,
+} from "@/components/canvas/fieldLayers";
 
 /**
  * Where the floating editor goes (#437, owner: predictable motion): under the shape's outline,
@@ -26,6 +32,11 @@ export interface PlacementInput {
      * shape, so the editor never covers one (#634)
      */
     readonly handles?: readonly XY[];
+    /**
+     * The shape's slots in the field element's px: when the editor can only sit on the shape,
+     * it keeps off these and the handles (#933)
+     */
+    readonly spots?: readonly XY[];
     /** The editor's size */
     readonly width: number;
     readonly height: number;
@@ -73,15 +84,40 @@ export function editorPlacement(input: PlacementInput): Placement {
     return { left, top: above ? over : below, above };
 }
 
+/** A finger's reach around each of the shape's handles, its knob and each slot inside the field */
+function gripsOf(input: PlacementInput): Rect[] {
+    const { fieldWidth, fieldHeight } = input;
+    return aroundPoints(
+        [
+            ...(input.handles ?? []),
+            ...(input.knob ? [input.knob] : []),
+            ...(input.spots ?? []),
+        ].filter(
+            (h) =>
+                h.x >= 0 && h.x <= fieldWidth && h.y >= 0 && h.y <= fieldHeight,
+        ),
+        FINGER_REACH,
+    );
+}
+
 /**
  * `editorPlacement`, kept clear of `obstacles` too (#927, touch layout: the zoom box, the
  * Inspector's edge tab, the field display bar, the toolbar panel) without going onto the shape it
- * edits: slid along its side of the shape, else tried on the other side, and only when neither
- * clears them all, onto the shape, so its buttons stay reachable.
+ * edits, and a finger's reach off its handles, knob and slots (#933): slid along its side of the
+ * shape, else tried on the other side. When neither clears them all (#933: a bar nearly as wide
+ * as the field), in this order:
+ * 1. over the shape, but a finger's reach off its handles, knob and slots, still clear of them all,
+ * 2. beside the shape, clear of it and of `covers`, over as little of the other obstacles (the
+ *    controls) as it can,
+ * 3. as 2, but a finger's reach off the shape's handles and slots rather than off all of it,
+ * 4. clear of the obstacles, onto the shape, so its buttons stay reachable.
+ *
+ * Its whole height counts, the layout row under its bar too.
  */
 export function clearPlacement(
     input: PlacementInput,
     obstacles: readonly Rect[],
+    covers: readonly Rect[] = [],
 ): Placement {
     const placement = editorPlacement(input);
     if (obstacles.length === 0) return placement;
@@ -106,17 +142,47 @@ export function clearPlacement(
                   above: true,
               },
     ];
-    for (const [i, side] of sides.entries()) {
-        // The other side only when it fits on the field
-        if (i > 0 && (side.top < 0 || side.top + height > fieldHeight))
-            continue;
-        const spot = clearSpot(
-            { left: side.left, top: side.top, width, height },
-            [shape, ...obstacles],
-            bounds,
-        );
-        if (spot.clear)
-            return { left: spot.left, top: spot.top, above: side.above };
+    // The other side only when it fits on the field
+    const fits = (side: Placement, i: number) =>
+        i === 0 || (side.top >= 0 && side.top + height <= fieldHeight);
+    const at = (side: Placement) => ({
+        left: side.left,
+        top: side.top,
+        width,
+        height,
+    });
+    const grips = gripsOf(input);
+    for (const keepOff of [[shape, ...grips], grips]) {
+        for (const [i, side] of sides.entries()) {
+            if (!fits(side, i)) continue;
+            const spot = clearSpot(
+                at(side),
+                [...keepOff, ...obstacles],
+                bounds,
+            );
+            if (spot.clear)
+                return { left: spot.left, top: spot.top, above: side.above };
+        }
+    }
+    // Over a control rather than its own shape: the side that covers the least of them
+    const controls = obstacles.filter((o) => !covers.includes(o));
+    for (const keepOff of [[shape, ...grips], grips]) {
+        let best: Placement | null = null;
+        let bestCover = Infinity;
+        for (const [i, side] of sides.entries()) {
+            if (!fits(side, i)) continue;
+            const spot = clearSpot(at(side), [...keepOff, ...covers], bounds);
+            if (!spot.clear) continue;
+            const covered = controls.reduce(
+                (sum, c) => sum + overlapArea({ ...at(side), ...spot }, c),
+                0,
+            );
+            if (covered < bestCover) {
+                best = { left: spot.left, top: spot.top, above: side.above };
+                bestCover = covered;
+            }
+        }
+        if (best) return best;
     }
     const spot = clearSpot(
         { left: placement.left, top: placement.top, width, height },

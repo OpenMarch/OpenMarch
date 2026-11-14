@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type RefObject,
+} from "react";
 
 /**
  * One placement rule for what floats over the field in the touch layout (#927). Each layer says
@@ -15,7 +21,10 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
  * - `cover`: the touch toolbar's panel over the top of the field.
  *
  * Who keeps clear of whom:
- * - the modifier pill keeps clear of everything else (`PILL_AVOIDS`),
+ * - the modifier pill keeps clear of everything else (`PILL_AVOIDS`), and of what's dragged on
+ *   the field: the selection box, the open shape and their handles (`FieldObstacles`, #933),
+ * - the shape editor bar keeps off its own shape's handles and slots (`clearPlacement`, #933),
+ * - a toast at the field's top sits below a task's bar (`Toaster`, #933),
  * - the zoom box rises above `task` layers, and once rising, above other controls it meets too
  *   (`liftClear`),
  * - a `mover` keeps clear of controls and covers (`MOVER_AVOIDS`, `clearSpot`),
@@ -70,6 +79,122 @@ export function overlaps(a: Rect, b: Rect, gap = 0): boolean {
         a.top < b.top + b.height + gap &&
         b.top < a.top + a.height + gap
     );
+}
+
+/**
+ * A finger's reach around a handle, in CSS px (#933): half a 44 px touch target. A layer kept
+ * this far off a handle leaves the whole of a finger's press on it.
+ */
+export const FINGER_REACH = 22;
+
+/**
+ * What a floating layer keeps off on the field itself (#933), in the field element's px:
+ * - `handles`: a finger's reach around each handle that something on the field is dragged by
+ *   (the selection box's handles and rotate knob, the open shape's handles, knob and slots),
+ * - `areas`: the box around each of those things as a whole (the selection box, the open
+ *   shape's outline), with a finger's reach around it.
+ *
+ * Covering an area is better than covering a handle, and covering the field around them is better
+ * than either.
+ */
+export interface FieldObstacles {
+    handles: Rect[];
+    areas: Rect[];
+}
+
+export const NO_FIELD_OBSTACLES: FieldObstacles = { handles: [], areas: [] };
+
+/** Where the field's obstacles come from: the field, which knows its selection and shape */
+export interface FieldObstacleSource {
+    /** The obstacles now, in the field element's px */
+    read(): FieldObstacles;
+    /** Calls `listener` when they may have changed (often, during a drag) */
+    subscribe(listener: () => void): () => void;
+    /** A drag on the field is under way: what keeps clear of them waits for it to end */
+    busy(): boolean;
+}
+
+/** The obstacles as a string, rounded to whole px, to tell when they've really changed */
+export const obstaclesKey = ({ handles, areas }: FieldObstacles): string =>
+    [...handles, ...areas]
+        .map(
+            (r) =>
+                `${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}`,
+        )
+        .join(";");
+
+/** A square `reach` px out from each point, each way */
+export function aroundPoints(
+    points: readonly { x: number; y: number }[],
+    reach = FINGER_REACH,
+): Rect[] {
+    return points.map(({ x, y }) => ({
+        left: x - reach,
+        top: y - reach,
+        width: 2 * reach,
+        height: 2 * reach,
+    }));
+}
+
+/** The box around all of `points`, `reach` px out from them each way; null with none */
+export function boxAround(
+    points: readonly { x: number; y: number }[],
+    reach = FINGER_REACH,
+): Rect | null {
+    if (points.length === 0) return null;
+    const xs = points.map((p) => p.x);
+    const ys = points.map((p) => p.y);
+    const left = Math.min(...xs) - reach;
+    const top = Math.min(...ys) - reach;
+    return {
+        left,
+        top,
+        width: Math.max(...xs) + reach - left,
+        height: Math.max(...ys) + reach - top,
+    };
+}
+
+/**
+ * The obstacles of one thing on the field: its `handles` (each kept a finger's reach clear) and
+ * its `extent` (the points its outline or box runs through, kept clear as one box)
+ */
+export function obstaclesOf(
+    handles: readonly { x: number; y: number }[],
+    extent: readonly { x: number; y: number }[],
+    reach = FINGER_REACH,
+): FieldObstacles {
+    const area = boxAround([...extent, ...handles], reach);
+    return {
+        handles: aroundPoints(handles, reach),
+        areas: area ? [area] : [],
+    };
+}
+
+/** How much of `a` and `b` overlap, in square px */
+export function overlapArea(a: Rect, b: Rect): number {
+    const w =
+        Math.min(a.left + a.width, b.left + b.width) - Math.max(a.left, b.left);
+    const h =
+        Math.min(a.top + a.height, b.top + b.height) - Math.max(a.top, b.top);
+    return w > 0 && h > 0 ? w * h : 0;
+}
+
+/**
+ * `clearSpot` against each list of obstacles in turn, most to keep clear of first: the first
+ * spot that clears its list. With none, the last list's best try (`clear` false).
+ */
+export function clearSpotOf(
+    rect: Rect,
+    lists: readonly (readonly Rect[])[],
+    bounds: Rect,
+    gap = LAYER_GAP,
+): { left: number; top: number; clear: boolean } {
+    let spot = { left: rect.left, top: rect.top, clear: false };
+    for (const obstacles of lists) {
+        spot = clearSpot(rect, obstacles, bounds, gap);
+        if (spot.clear) return spot;
+    }
+    return spot;
 }
 
 /** Moving up or down costs this much more than sideways: a bar under a shape slides along first */
@@ -152,6 +277,26 @@ export function liftClear(
         lift = rect.top - (highest - gap - rect.height);
     }
     return null;
+}
+
+/**
+ * Where `rect` goes top to bottom to sit below every one of `layers` it would be under, `gap` px
+ * below the lowest (each move down can put it under another layer lower down): its own top when
+ * none is in the way
+ */
+export function belowLayers(
+    rect: Rect,
+    layers: readonly Rect[],
+    gap = LAYER_GAP,
+): number {
+    let top = rect.top;
+    for (let i = 0; i <= layers.length; i++) {
+        const at = { ...rect, top };
+        const hit = layers.filter((layer) => overlaps(at, layer));
+        if (hit.length === 0) return top;
+        top = Math.max(...hit.map((layer) => layer.top + layer.height)) + gap;
+    }
+    return top;
 }
 
 /**
@@ -248,6 +393,39 @@ export function useFieldLayerRef<T extends Element>({
         },
         [watchSize],
     );
+}
+
+/**
+ * The shown layers of `kinds` over `field()` (`fieldLayersIn`), kept current as they come, go and
+ * move; none while `enabled` is false
+ */
+export function useFieldLayerRects(
+    field: () => Element | null,
+    kinds: readonly FieldLayerKind[],
+    enabled: boolean,
+): Rect[] {
+    const [rects, setRects] = useState<Rect[]>([]);
+    useEffect(() => {
+        if (!enabled) {
+            setRects((last) => (last.length === 0 ? last : []));
+            return;
+        }
+        const measure = () => {
+            const el = field();
+            const next = el ? fieldLayersIn(el, kinds) : [];
+            setRects((last) =>
+                JSON.stringify(last) === JSON.stringify(next) ? last : next,
+            );
+        };
+        measure();
+        const off = subscribeFieldLayers(measure);
+        window.addEventListener("resize", measure);
+        return () => {
+            off();
+            window.removeEventListener("resize", measure);
+        };
+    }, [field, kinds, enabled]);
+    return rects;
 }
 
 /**

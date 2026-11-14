@@ -118,6 +118,9 @@ export function startMarquee(
  * picks them (Shift at the press adds them, Alt removes them). Released farther away, it selects
  * nothing and changes nothing; the double-click's first click has already cleared the selection,
  * unless Shift or Alt was held.
+ *
+ * Drawn by a finger or a pen, it always closes, back to where it started (#933): a fingertip
+ * hides where the line began, and a loop that ends near it is what was meant.
  */
 export function startLasso(
     ports: AreaPorts,
@@ -126,6 +129,9 @@ export function startLasso(
 ): AreaGesture {
     const choice = areaChoice(start, isMac);
     const subtract = choice === "subtract";
+    const closesItself = start.kind !== "mouse";
+    const closes = (end: FieldPoint) =>
+        closesItself || lassoCloses(start.field, end, ports.zoom());
     // Appended to in place: a long lasso isn't copied on every move
     const points: FieldPoint[] = [start.field];
     let shape: AreaShape = { kind: "lasso", points, closes: true, subtract };
@@ -134,7 +140,7 @@ export function startLasso(
         shape = {
             kind: "lasso",
             points,
-            closes: lassoCloses(start.field, point, ports.zoom()),
+            closes: closes(point),
             subtract,
         };
     };
@@ -147,7 +153,7 @@ export function startLasso(
         },
         end(next) {
             add(next.field);
-            if (!lassoCloses(start.field, next.field, ports.zoom())) return;
+            if (!closes(next.field)) return;
             const inside = areaPicks(
                 marchersInPolygon(ports.marchers(), points, ports.canSelect),
                 (id) => ports.isItem?.(id) ?? false,

@@ -968,6 +968,15 @@ export class FieldEditor {
         return this.lastPressKind;
     }
 
+    /** Whether a press on the field is under way, still a click or already a drag (#933) */
+    pressing(): boolean {
+        return (
+            this.press !== null ||
+            this.gesture !== null ||
+            this.modePress !== null
+        );
+    }
+
     /** The gesture in progress, for the field test API and the overlay; a press that's still a click has none. */
     activeGesture(): FieldTestGesture | null {
         if (this.propTool) return "prop";

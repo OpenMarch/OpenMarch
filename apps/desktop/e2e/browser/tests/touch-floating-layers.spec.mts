@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 import { test, expect, type Show } from "../fixtures.mjs";
 import {
+    drawnMarchers,
     expectCanvasMatchesShow,
     readField,
     tap,
@@ -8,7 +9,7 @@ import {
     waitForIdle,
 } from "../app.mjs";
 import { savedPositions } from "../positions.mjs";
-import { isolate } from "../timeline.mjs";
+import { goToPage, isolate, pageBox } from "../timeline.mjs";
 import { seedShowSql, type SeedPosition } from "../seed.mjs";
 import type { FieldTestShapeOverlay } from "../../../src/field/fieldTestApi";
 
@@ -22,6 +23,8 @@ import type { FieldTestShapeOverlay } from "../../../src/field/fieldTestApi";
 // - the shape editor's Place, after dragging the line's handle toward the zoom box,
 // - the isolation bar's Done.
 // Each button's middle must be the topmost element there, and a tap on it must work.
+// And on the field itself (#933): the pill and the shape editor leave the box's handles and the
+// selection's rotate knob free, and the split toast leaves Done free.
 
 // Trumpets spread over the field, with a row along its bottom, where the pill's bottom spots are:
 // in landscape the pill was pushed to the top of the field, over the task's cards (finding B)
@@ -382,4 +385,155 @@ test("with the toolbar panel open, the open shape's Go back chip sits below it a
     await reachAndTap(page, chip.getByRole("button", { name: "Go back" }));
     await expect(chip).toBeHidden();
     await expect(readout).toBeVisible();
+});
+
+/**
+ * What's topmost at each of `points` (viewport px) that's on the field: "canvas" for the field
+ * itself, else the test id over it
+ */
+async function topmostOnField(page: Page, points: readonly Point[]) {
+    const field = (await page
+        .getByTestId("fieldCanvas")
+        .first()
+        .boundingBox())!;
+    const inside = points.filter(
+        (p) =>
+            p.x > field.x &&
+            p.x < field.x + field.width &&
+            p.y > field.y &&
+            p.y < field.y + field.height,
+    );
+    return page.evaluate(
+        (inside) =>
+            inside.map(({ x, y }) => {
+                const hit = document.elementFromPoint(x, y);
+                if (!hit) return "nothing";
+                if (hit.tagName === "CANVAS") return "canvas";
+                return (
+                    hit.closest("[data-testid]")?.getAttribute("data-testid") ??
+                    hit.tagName
+                );
+            }),
+        inside,
+    );
+}
+
+test("after a handle drag, the pill and the editor leave every box handle free (#933)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.press("b");
+    await touchDrag(
+        page,
+        await onField(page, 0.3, 0.45),
+        await onField(page, 0.55, 0.65),
+        { steps: 12 },
+    );
+    const readout = page.getByTestId("shape-tool-readout");
+    await expect(readout).toBeVisible();
+    // Its bottom right corner dragged down toward the zoom box: the box grows to the field's
+    // bottom and the editor goes above it, toward the field's top (finding A)
+    const drawn = (await shapeOverlay(page))!;
+    const corner = drawn.handles.reduce((p, q) =>
+        q.x + q.y > p.x + p.y ? q : p,
+    );
+    await touchDrag(page, corner, await onField(page, 0.7, 0.85), {
+        steps: 12,
+    });
+    await settledAt(page, readout);
+    // Once the pill has found its spot, a finger reaches every handle
+    await expect
+        .poll(async () => {
+            const { handles } = (await shapeOverlay(page))!;
+            return (await topmostOnField(page, handles)).filter(
+                (hit) => hit !== "canvas",
+            );
+        })
+        .toEqual([]);
+    await expect(page.getByTestId("touch-modifier-buttons")).toBeVisible();
+    await reachAndTap(page, page.getByTestId("shape-editor-place"));
+    await expect(readout).toBeHidden();
+});
+
+test("the pill leaves the selection's rotate knob and handles free (#933)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await page.keyboard.press("ControlOrMeta+a");
+    await expect
+        .poll(async () => (await readField(page)).selection.length)
+        .toBe(HOME.length);
+    const pill = page.getByTestId("touch-modifier-buttons");
+    await expect(pill).toBeVisible();
+    const handles = async () =>
+        page.evaluate(() => window.fieldTest!.handles());
+    await expect.poll(async () => (await handles()) !== null).toBe(true);
+    // The knob is the field's, and no handle is under the pill
+    await expect
+        .poll(async () => {
+            const { rot } = (await handles())!;
+            return topmostOnField(page, [rot]);
+        })
+        .toEqual(["canvas"]);
+    await expect
+        .poll(() =>
+            page.evaluate(() =>
+                Object.entries(window.fieldTest!.handles() ?? {})
+                    .filter(([, { x, y }]) =>
+                        document
+                            .elementFromPoint(x, y)
+                            ?.closest('[data-testid="touch-modifier-buttons"]'),
+                    )
+                    .map(([id]) => id),
+            ),
+        )
+        .toEqual([]);
+});
+
+test("the split toast leaves the isolation bar's Done free, its Undo well away from it (#933)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LANDSCAPE);
+    await expectCanvasMatchesShow(show);
+    await goToPage(page, PAGE_2_BOX);
+    // One of page 2's marchers selected by a finger
+    const one = (await drawnMarchers(page)).find(
+        (m) => m.id === 1 && m.onScreen,
+    )!;
+    await tap(page, one.screen);
+    await expect
+        .poll(() => page.evaluate(() => window.fieldTest!.selection()))
+        .toEqual([1]);
+    // Split from the page box's menu: the new move, isolated, and the toast with Undo
+    await expect(async () => {
+        await pageBox(page, PAGE_2_BOX).click({ button: "right" });
+        await page
+            .getByRole("menuitem", { name: "Split 1 selected into new move" })
+            .click({ timeout: 1000 });
+    }).toPass();
+    const bar = page.getByTestId("timeline-isolation-bar");
+    const done = bar.getByRole("button", { name: /Done/ });
+    const toast = page.locator("[data-sonner-toast]", {
+        hasText: "Split 1 marcher into",
+    });
+    await expect(bar).toBeVisible();
+    await expect(toast).toBeVisible();
+    await expect.poll(() => topmostAt(done)).toBe("itself");
+    // Below the bar, with a touch target's room between Done and the toast's Undo
+    const undo = toast.getByRole("button", { name: "Undo" });
+    await expect
+        .poll(async () => {
+            const d = (await done.boundingBox())!;
+            const u = (await undo.boundingBox())!;
+            return u.y - (d.y + d.height);
+        })
+        .toBeGreaterThanOrEqual(40);
+    await reachAndTap(page, done);
+    await expect(bar).toBeHidden();
 });
