@@ -1,4 +1,17 @@
-import { memo, useCallback, useMemo, useSyncExternalStore } from "react";
+import {
+    memo,
+    useCallback,
+    useMemo,
+    useRef,
+    useSyncExternalStore,
+} from "react";
+import {
+    belowLayers,
+    useFieldLayerRects,
+    type FieldLayerKind,
+    type Rect,
+} from "@/components/canvas/fieldLayers";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import { GlyphText } from "@/shapes/editor/GlyphText";
 import { rgbaToString, type FieldTheme } from "@openmarch/core";
 import type { FieldEditor, FieldModeDrawing } from "@/field/editor/fieldEditor";
@@ -455,9 +468,54 @@ const StartMarks = memo(function StartMarks({
     );
 });
 
+/** The guides' names (#427), below the task's card at the field's top in the touch layout (#933) */
+function GuideLabels({
+    guides,
+    at,
+    view,
+}: {
+    guides: FieldModeDrawing["guides"];
+    at: (p: { x: number; y: number }) => { x: number; y: number };
+    view: { width: number; height: number };
+}) {
+    const ref = useRef<SVGGElement>(null);
+    const touchLayout = useIsTouchMode();
+    const field = useCallback(
+        () => ref.current?.ownerSVGElement?.parentElement ?? null,
+        [],
+    );
+    // Listened to only while a guide has a name to show
+    const named = guides?.some((g) => g.label) ?? false;
+    const overTop = useFieldLayerRects(field, TOP_LAYERS, touchLayout && named);
+    return (
+        <g ref={ref}>
+            {guides?.map(({ from, to, label }, i) => {
+                if (!label) return null;
+                const upright = Math.abs(at(from).x - at(to).x) < 1e-6;
+                const p = at(from);
+                return (
+                    <GuideLabel
+                        key={i}
+                        text={label}
+                        at={upright ? { x: p.x, y: 0 } : { x: 0, y: p.y }}
+                        upright={upright}
+                        width={view.width}
+                        height={view.height}
+                        overTop={overTop}
+                    />
+                );
+            })}
+        </g>
+    );
+}
+
+/** What a guide's name at the top keeps below: the task's cards, the toolbar panel and the pill */
+const TOP_LAYERS: readonly FieldLayerKind[] = ["task", "cover", "pill"];
+
 /**
  * A guide's name at the canvas edge (#427): at the top for a line side to side, at the left for
- * one front to back, kept inside the canvas
+ * one front to back, kept inside the canvas. At the top it goes below any of `overTop` it would be
+ * under (#933: the line tool's card)
  */
 function GuideLabel({
     text,
@@ -465,12 +523,14 @@ function GuideLabel({
     upright,
     width,
     height,
+    overTop = [],
 }: {
     text: string;
     at: { x: number; y: number };
     upright: boolean;
     width: number;
     height: number;
+    overTop?: readonly Rect[];
 }) {
     // About the width of the text in DM Sans at this size, with room either side
     const w = text.length * GUIDE_LABEL_PX * 0.55 + 16;
@@ -478,7 +538,13 @@ function GuideLabel({
     const clamp = (v: number, max: number) =>
         Math.max(GUIDE_LABEL_INSET, Math.min(max - GUIDE_LABEL_INSET, v));
     const x = upright ? clamp(at.x - w / 2, width - w) : GUIDE_LABEL_INSET;
-    const y = upright ? GUIDE_LABEL_INSET : clamp(at.y - h / 2, height - h);
+    const y = upright
+        ? belowLayers(
+              { left: x, top: GUIDE_LABEL_INSET, width: w, height: h },
+              overTop,
+              GUIDE_LABEL_INSET,
+          )
+        : clamp(at.y - h / 2, height - h);
     return (
         <g data-testid="fieldShapeGuideLabel">
             <rect
@@ -1298,21 +1364,7 @@ function ModeDrawing({
                 })()}
             {/* The guides' names last, over every line, edge and spot, so nothing crosses
                 their text (owner on #427) */}
-            {drawing.guides?.map(({ from, to, label }, i) => {
-                if (!label) return null;
-                const upright = Math.abs(at(from).x - at(to).x) < 1e-6;
-                const p = at(from);
-                return (
-                    <GuideLabel
-                        key={i}
-                        text={label}
-                        at={upright ? { x: p.x, y: 0 } : { x: 0, y: p.y }}
-                        upright={upright}
-                        width={view.width}
-                        height={view.height}
-                    />
-                );
-            })}
+            <GuideLabels guides={drawing.guides} at={at} view={view} />
         </g>
     );
 }

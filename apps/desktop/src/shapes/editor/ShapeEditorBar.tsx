@@ -22,6 +22,7 @@ import { clearPlacement } from "./editorPlacement";
 import {
     fieldLayersIn,
     MOVER_AVOIDS,
+    type FieldLayerKind,
     noteFieldLayersChanged,
     subscribeFieldLayers,
     useFieldLayerRef,
@@ -30,6 +31,7 @@ import {
 import { usePlacedBoxPreviewStore } from "../placed/boxSelectionStore";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
+import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import {
     engageStep,
     setShapeScrubbing,
@@ -1455,15 +1457,27 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     // #927, touch layout: the controls and covers over the field it keeps clear of, in the field
     // element's px. None on the desktop
     const touch = useIsTouchMode();
-    const obstacles = useRef<Rect[]>([]);
+    const obstacles = useRef<{ all: Rect[]; covers: Rect[] }>({
+        all: [],
+        covers: [],
+    });
     /** Where it last settled, as told to the other layers */
     const noted = useRef<string | null>(null);
     const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const measureObstacles = useCallback(() => {
         const el = ref.current;
         const field = el?.offsetParent;
-        const next =
-            touch && el && field ? fieldLayersIn(field, MOVER_AVOIDS, el) : [];
+        const of = (kinds: readonly FieldLayerKind[]) =>
+            touch && el && field ? fieldLayersIn(field, kinds, el) : [];
+        // The covers on their own too: `clearPlacement` can go over a control, never a cover
+        const covers = of(MOVER_AVOIDS.filter((kind) => kind === "cover"));
+        const next = {
+            all: [
+                ...of(MOVER_AVOIDS.filter((kind) => kind !== "cover")),
+                ...covers,
+            ],
+            covers,
+        };
         if (JSON.stringify(next) === JSON.stringify(obstacles.current))
             return false;
         obstacles.current = next;
@@ -1512,12 +1526,20 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
                 handles: kind
                     .handles(params, spots, null)
                     .map(({ at }) => fieldToElement(view, at.x, at.y)),
+                // #933, touch layout: its slots as the field draws them, which it keeps off when it
+                // can only sit on the shape
+                spots: touch
+                    ? (activeFieldEditor()?.modeDrawing()?.spots ?? []).map(
+                          (p) => fieldToElement(view, p.x, p.y),
+                      )
+                    : [],
                 width: room.width,
                 height: room.height,
                 fieldWidth: room.fieldWidth,
                 fieldHeight: room.fieldHeight,
             },
-            obstacles.current,
+            obstacles.current.all,
+            obstacles.current.covers,
         );
     };
     const [above, setAbove] = useState(

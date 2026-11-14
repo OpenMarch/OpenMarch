@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
+import { FINGER_REACH } from "@/components/canvas/fieldLayers";
 import {
     clearPlacement,
     editorPlacement,
@@ -147,6 +148,53 @@ describe("clearPlacement", () => {
         expect(hits(at, PANEL)).toBe(false);
         expect(hits(at, bounds(outline))).toBe(false);
         expect(at.top + at.height).toBeLessThanOrEqual(500);
+    });
+
+    it("keeps off its own box's handles and slots when it's nearly as wide as the field (06b, #933)", () => {
+        // 1180 × 820 landscape with the Inspector open: the field is 747 × 556, the bar 730 wide
+        // with its layout row under it
+        const field = { fieldWidth: 747, fieldHeight: 556 };
+        const panel = { left: 0, top: 0, width: 747, height: 60 };
+        const displayBar = { left: 683, top: 10, width: 58, height: 123 };
+        const zoom = { left: 571, top: 453, width: 170, height: 103 };
+        const tab = { left: 711, top: 323, width: 44, height: 113 };
+        const outline = rectangle(374, 200, 553, 368);
+        const handles = [
+            ...outline,
+            { x: 463, y: 200 },
+            { x: 553, y: 284 },
+            { x: 463, y: 368 },
+            { x: 374, y: 284 },
+        ];
+        // 6 × 3 slots
+        const spots = Array.from({ length: 18 }, (_, i) => ({
+            x: 374 + (i % 6) * 36,
+            y: 200 + Math.floor(i / 6) * 84,
+        }));
+        const input = {
+            outline,
+            handles,
+            knob: { x: 463, y: 160 },
+            spots,
+            width: 730,
+            height: 85,
+            ...field,
+        };
+        const at = placed(
+            input,
+            clearPlacement(input, [displayBar, zoom, tab, panel], [panel]),
+        );
+        const reach = (p: { x: number; y: number }) =>
+            p.x > at.left - FINGER_REACH &&
+            p.x < at.left + at.width + FINGER_REACH &&
+            p.y > at.top - FINGER_REACH &&
+            p.y < at.top + at.height + FINGER_REACH;
+        expect(handles.filter(reach)).toEqual([]);
+        expect(spots.filter(reach)).toEqual([]);
+        expect(hits(at, bounds(outline))).toBe(false);
+        expect(hits(at, panel)).toBe(false);
+        expect(at.top).toBeGreaterThanOrEqual(0);
+        expect(at.top + at.height).toBeLessThanOrEqual(field.fieldHeight);
     });
 
     it("goes onto the shape only when nowhere else keeps its buttons clear", () => {
