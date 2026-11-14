@@ -11,6 +11,8 @@ const PRESSABLE =
 /** Things with their own long press (or none worth explaining). */
 const OWN_LONG_PRESS =
     '[data-own-long-press], canvas, input, textarea, select, [contenteditable="true"], [role="menu"], [role="listbox"]';
+/** A menu entry that can't run now, with the reason as its Tip label */
+const UNAVAILABLE_MENU_ITEM = `[role^="menuitem"][aria-disabled="true"][${TIP_DATA.label}]`;
 const SLOP_PX = 10;
 /** How long after the release the click that follows is still swallowed. */
 const SWALLOW_MS = 700;
@@ -69,12 +71,17 @@ function tipFor(control: Element, start: Element): HTMLElement | null {
 /**
  * What a long press on `target` would explain, if anything: an enabled pressable element (with
  * its `Tip`, if it has one), or a disabled one that has a `Tip` saying why it's off. A disabled
- * control without a Tip says nothing, as before.
+ * control without a Tip says nothing, as before. Menus have their own long press, except an
+ * unavailable entry with its reason in a Tip label, which shows the reason.
  */
 export function longPressTarget(
     target: EventTarget | null,
 ): LongPressTarget | null {
     if (!(target instanceof Element)) return null;
+    // A menu has its own long press, but an unavailable entry that gives its reason in a Tip's
+    // label (the timeline menus' entries with a ?, #928) explains itself as a disabled control does
+    const item = target.closest<HTMLElement>(UNAVAILABLE_MENU_ITEM);
+    if (item) return { anchor: item, tip: item };
     const el = target.closest<HTMLElement>(PRESSABLE);
     const own = target.closest(OWN_LONG_PRESS);
     if (el && !isDisabled(el)) {

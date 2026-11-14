@@ -171,6 +171,63 @@ describe("the page box menu on a tablet (3.4)", () => {
             screen.getByTestId("timeline-range-menu-edit-move-reason")
                 .textContent,
         ).toBe("Pause to edit a move.");
+        // A tap shows it beside the entry, and a finger's long press reads it (#928)
+        expect(
+            screen.getByTestId("timeline-range-menu-edit-move-reason-tip"),
+        ).toHaveTextContent("Pause to edit a move.");
+        expect(
+            screen
+                .getByTestId("timeline-range-menu-edit-move")
+                .getAttribute("data-tip-label"),
+        ).toBe("Pause to edit a move.");
+    });
+
+    it("a finger's tap outside the open menu only closes it: the box under it isn't selected (#928)", () => {
+        const onDeleteFlag = vi.fn();
+        render(<Show onDeleteFlag={onDeleteFlag} onOpenRange={vi.fn()} />);
+        fireEvent.click(box("Page 2"));
+        fireEvent.click(screen.getByTestId("timeline-page-menu-button"));
+        expect(screen.getByTestId("timeline-range-menu")).toBeTruthy();
+        const other = box("Page 1");
+        for (const type of ["pointerdown", "pointerup"]) {
+            const event = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+            });
+            Object.defineProperty(event, "pointerType", { value: "touch" });
+            Object.defineProperty(event, "pointerId", { value: 7 });
+            fireEvent(other, event);
+        }
+        fireEvent.click(other);
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+        expect(box("Page 2")).toHaveAttribute("aria-pressed", "true");
+        expect(other).toHaveAttribute("aria-pressed", "false");
+        expect(onDeleteFlag).not.toHaveBeenCalled();
+    });
+
+    it("a finger's long press outside the open menu opens no other menu there (#928)", () => {
+        render(<Show onDeleteFlag={vi.fn()} onOpenRange={vi.fn()} />);
+        fireEvent.click(box("Page 2"));
+        fireEvent.click(screen.getByTestId("timeline-page-menu-button"));
+        const other = box("Page 1");
+        const press = (type: string) => {
+            const event = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                button: 0,
+            });
+            Object.defineProperty(event, "pointerType", { value: "touch" });
+            Object.defineProperty(event, "pointerId", { value: 8 });
+            fireEvent(other, event);
+        };
+        press("pointerdown");
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
+        // The browser's own long-press menu event (Android, a Windows touch screen)
+        fireEvent.contextMenu(other);
+        press("pointerup");
+        fireEvent.click(other);
+        expect(screen.queryByTestId("timeline-range-menu")).toBeNull();
     });
 
     it("has no Edit move where boxes can't be opened (Basic), and no chip without any page menu", () => {

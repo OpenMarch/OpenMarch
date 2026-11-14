@@ -26,6 +26,7 @@ import {
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
@@ -125,6 +126,7 @@ export default function FieldContextMenu({
     timelineMode: boolean;
 }) {
     const { t } = useTranslate();
+    const touch = useIsTouchMode();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -178,14 +180,24 @@ export default function FieldContextMenu({
                 <DropdownMenu.Content
                     data-testid="field-menu"
                     align="start"
-                    side="bottom"
+                    // In the touch layout its entries are taller, so it often fits neither
+                    // below nor above the finger, and Radix only flips across that way: beside
+                    // the finger it slides up or down to stay on screen (#928). Never taller than
+                    // the screen either: it scrolls instead
+                    side={touch ? "right" : "bottom"}
+                    sideOffset={touch ? 12 : 0}
+                    sticky={touch ? "always" : "partial"}
                     collisionPadding={8}
                     // Focus isn't returned to the anchor, a hidden div: it falls to the page
                     // body. The shortcuts listen on the window, so the field's
                     // keys still work
                     onCloseAutoFocus={(event) => event.preventDefault()}
                     {...KEEP_MENU_EVENTS}
-                    className={TIMELINE_MENU_CONTENT_CLASS}
+                    className={
+                        touch
+                            ? `${TIMELINE_MENU_CONTENT_CLASS} max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto`
+                            : TIMELINE_MENU_CONTENT_CLASS
+                    }
                 >
                     {groups.map((group, i) => (
                         <Fragment key={group[0]}>

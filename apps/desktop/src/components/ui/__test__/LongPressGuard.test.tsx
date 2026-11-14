@@ -256,4 +256,53 @@ describe("LongPressGuard", () => {
         longPress(screen.getByText("One"));
         expect(screen.getByTestId("long-press-bubble").textContent).toBe("One");
     });
+    it("explains an unavailable menu entry by the reason in its Tip label (#928), and doesn't pick it", () => {
+        const onClick = vi.fn();
+        render(
+            <>
+                <LongPressGuard />
+                <div role="menu">
+                    <div
+                        role="menuitem"
+                        aria-disabled="true"
+                        data-tip-label="Nothing moves on this page yet"
+                        onClick={onClick}
+                    >
+                        <span>Split selected into new move</span>
+                    </div>
+                    <div
+                        role="menuitem"
+                        data-tip-label="Not a reason"
+                        onClick={onClick}
+                    >
+                        Delete page
+                    </div>
+                </div>
+            </>,
+        );
+        longPress(screen.getByText("Split selected into new move"));
+        expect(screen.getByTestId("long-press-bubble")).toHaveTextContent(
+            "Nothing moves on this page yet",
+        );
+        expect(onClick).not.toHaveBeenCalled();
+        act(() => {
+            vi.advanceTimersByTime(1000);
+        });
+        cleanup();
+    });
+
+    it("an available menu entry keeps the menu's own long press: no bubble", () => {
+        render(
+            <>
+                <LongPressGuard />
+                <div role="menu">
+                    <div role="menuitem" data-tip-label="Not a reason">
+                        Delete page
+                    </div>
+                </div>
+            </>,
+        );
+        longPress(screen.getByText("Delete page"));
+        expect(screen.queryByTestId("long-press-bubble")).toBeNull();
+    });
 });
