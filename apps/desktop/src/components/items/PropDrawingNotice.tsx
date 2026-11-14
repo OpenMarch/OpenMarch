@@ -1,4 +1,5 @@
 import { Button, getButtonClassName } from "@openmarch/ui";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { InfoIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
@@ -34,6 +35,7 @@ export default function PropDrawingNotice() {
     const drawingMode = useItemDrawingStore((s) => s.drawingMode);
     const reset = useItemDrawingStore((s) => s.resetDrawingState);
     const touch = useIsTouchMode();
+    const layerRef = useFieldLayerRef<HTMLDivElement>();
     if (!drawingMode) return null;
     const instructions =
         (touch ? TOUCH_INSTRUCTION_KEYS[drawingMode] : undefined) ??
@@ -42,7 +44,12 @@ export default function PropDrawingNotice() {
         // text-body after twMerge, which drops it (docs/conventions/ui-styling.md)
         `${getButtonClassName({ variant, size: "compact" })} text-body w-full`;
     return (
-        <div className="rounded-6 border-stroke bg-modal text-text shadow-modal fixed bottom-[140px] left-1/2 z-[999] flex max-w-[27.5rem] min-w-[18.75rem] -translate-x-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-lg">
+        <div
+            ref={layerRef}
+            // #927: the zoom box and the pill keep off its buttons
+            data-field-layer="task"
+            className="rounded-6 border-stroke bg-modal text-text shadow-modal fixed bottom-[140px] left-1/2 z-[999] flex max-w-[27.5rem] min-w-[18.75rem] -translate-x-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-lg"
+        >
             <div className="flex items-center gap-16">
                 <InfoIcon size={24} />
                 <span className="text-body text-text flex-1">

@@ -1,4 +1,5 @@
 import { Tabs, TabContent, TabItem, TabsList } from "@openmarch/ui";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { FileTab } from "./tabs/FileTab";
 import AlignmentTab from "./tabs/AlignmentTab";
 import ShapesTab from "@/shapes/tool/ShapesTab";
@@ -235,6 +236,7 @@ function TouchToolbar({
     const { setTab, setOpen, pressTab } = useToolbarPanelStore.getState();
     const [root, setRoot] = useState<HTMLDivElement | null>(null);
     const insets = usePanelInsets(root, open);
+    const panelLayerRef = useFieldLayerRef<HTMLDivElement>();
 
     // The tab list selects a tab as the press begins, so whether the tapped tab was already
     // open is read then, before the tap ends
@@ -325,8 +327,11 @@ function TouchToolbar({
                     tabsSlot,
                 )}
                 <div
+                    ref={panelLayerRef}
                     id="toolbar-panel"
                     data-testid="toolbar-panel"
+                    // #927: the pill keeps off it, and the field's bars move down below it
+                    data-field-layer="cover"
                     // Until it's measured, nothing: it would cover the sidebar for a frame
                     hidden={!open || !insets}
                     style={insets ?? undefined}

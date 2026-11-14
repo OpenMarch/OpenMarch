@@ -69,8 +69,9 @@ export function pillCandidates(
  *
  * @param field The field drawing, in container pixels (top-left origin)
  * @param marchers Marcher dots, in container pixels
- * @param controls Controls over the field the pill must not cover (the zoom controls), in
- *   container pixels (top-left origin). A spot over one loses to any spot that isn't.
+ * @param controls The other layers over the field the pill must not cover (the zoom controls,
+ *   the task's cards and bars, the toolbar panel: `fieldLayers.ts`), in container pixels (top-left
+ *   origin). A spot over one loses to any spot that isn't.
  */
 // A spot at the top only wins when every bottom spot covers marchers: the pill
 // belongs within reach of the thumbs

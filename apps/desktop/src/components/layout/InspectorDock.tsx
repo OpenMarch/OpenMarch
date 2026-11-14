@@ -171,6 +171,8 @@ function InspectorTab({
             aria-controls="inspector-panel"
             title={label}
             data-testid="inspector-tab"
+            // #927: the shape editor bar and the pill keep off it where it hangs over the field
+            data-field-layer="control"
             data-hint={hint || undefined}
             className={clsx(
                 "group touch:min-h-88 touch:w-44 touch:h-auto touch:py-8 flex h-64 w-20 shrink-0 items-center justify-end",

@@ -44,6 +44,13 @@ import {
     MENU_LABEL_CLASS,
 } from "@/components/ui/popupClasses";
 import { choosePillPosition, PILL_EDGE, type Rect } from "./pillPlacement";
+import {
+    fieldLayersIn,
+    overlaps,
+    PILL_AVOIDS,
+    subscribeFieldLayers,
+    type FieldLayerKind,
+} from "@/components/canvas/fieldLayers";
 import { useFieldDragModeStore, type FieldDragMode } from "./fieldDragMode";
 import { swallowPress } from "./swallowPress";
 
@@ -300,21 +307,18 @@ function useTogglePress(toggle: TouchToggle, onExplain: () => void) {
     };
 }
 
-/** The zoom controls' box in `parent`'s pixels, so the pill doesn't cover them */
-function zoomControlsIn(parent: HTMLElement): Rect[] {
-    const zoom = document.querySelector<HTMLElement>("[data-zoom-controls]");
-    if (!zoom) return [];
-    const at = parent.getBoundingClientRect();
-    const box = zoom.getBoundingClientRect();
-    return [
-        {
-            left: box.left - at.left,
-            top: box.top - at.top,
-            width: box.width,
-            height: box.height,
-        },
-    ];
-}
+/**
+ * What moves the pill off a spot the user chose (#927): a card or bar holding the current task's
+ * buttons, and the toolbar panel. The pill comes back once they're gone.
+ */
+const SAVED_SPOT_YIELDS_TO: readonly FieldLayerKind[] = [
+    "task",
+    "mover",
+    "cover",
+];
+
+/** How long the layers over the field must stay put before the pill finds its spot again */
+const PLACE_AFTER_LAYERS_MS = 120;
 
 /** The field drawing and the marchers, in the field element's pixels */
 function fieldLayout(marchers: FieldMarchers | null): {
@@ -424,6 +428,8 @@ export default function TouchModifierButtons({
         parseModifierPosition(readStorage(TOUCH_MODIFIER_POSITION_KEY)),
     );
     const [auto, setAuto] = useState<Position | null>(null);
+    /** The saved spot is under a task's bar or the toolbar panel: the automatic spot meanwhile */
+    const [savedBlocked, setSavedBlocked] = useState(false);
     const dragMode = useFieldDragModeStore((s) => s.mode);
     const setDragMode = useFieldDragModeStore((s) => s.setMode);
     /** The help list or the drag mode menu, whichever is open */
@@ -452,7 +458,7 @@ export default function TouchModifierButtons({
     const helpLongPress = useLongPress(() => setExplained("help"));
     const gripLongPress = useLongPress(() => setExplained("grip"));
     const closeExplained = useCallback(() => setExplained(null), []);
-    const position = saved ?? auto;
+    const position = saved && !savedBlocked ? saved : auto;
 
     // Leaving touch mode (or the field) lets go of anything held or latched
     useEffect(() => {
@@ -478,25 +484,45 @@ export default function TouchModifierButtons({
         };
     }, []);
 
-    // No saved spot: the bottom spot that covers the fewest marchers. Worked
-    // out again when the field area changes size and when the view settles.
+    // No saved spot, or one under a task's bar: the bottom spot that covers the fewest marchers and
+    // none of the other layers over the field (#927). Worked out again when the field area changes
+    // size, when the view settles and when those layers change.
     const placeAutomatically = useCallback(() => {
         const pill = pillRef.current;
         const parent = rootRef.current?.offsetParent as HTMLElement | null;
         if (!pill || !parent) return;
         const { field, marchers: dots } = fieldLayout(marchers);
+        const size = { width: pill.offsetWidth, height: pill.offsetHeight };
         setAuto(
             choosePillPosition(
                 { width: parent.clientWidth, height: parent.clientHeight },
-                { width: pill.offsetWidth, height: pill.offsetHeight },
+                size,
                 field,
                 dots,
-                zoomControlsIn(parent),
+                fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
             ),
         );
-    }, [marchers]);
+        // Not while it's being dragged: it would jump from under the finger
+        if (drag.current) return;
+        setSavedBlocked(
+            saved !== null &&
+                fieldLayersIn(parent, SAVED_SPOT_YIELDS_TO).some((layer) =>
+                    overlaps(
+                        {
+                            left: saved.left,
+                            top:
+                                parent.clientHeight -
+                                saved.bottom -
+                                size.height,
+                            ...size,
+                        },
+                        layer,
+                    ),
+                ),
+        );
+    }, [marchers, saved]);
     useLayoutEffect(() => {
-        if (!isTouchMode || saved) return;
+        if (!isTouchMode) return;
         placeAutomatically();
         // Again once the field has been fitted and the marchers drawn
         const later = setTimeout(placeAutomatically, 800);
@@ -511,11 +537,21 @@ export default function TouchModifierButtons({
             if (settle !== null) clearTimeout(settle);
             settle = setTimeout(placeAutomatically, PLACE_AFTER_VIEW_MS);
         });
+        let layersSettle: ReturnType<typeof setTimeout> | null = null;
+        const offLayers = subscribeFieldLayers(() => {
+            if (layersSettle !== null) clearTimeout(layersSettle);
+            layersSettle = setTimeout(
+                placeAutomatically,
+                PLACE_AFTER_LAYERS_MS,
+            );
+        });
         return () => {
             clearTimeout(later);
             if (settle !== null) clearTimeout(settle);
+            if (layersSettle !== null) clearTimeout(layersSettle);
             observer?.disconnect();
             offView();
+            offLayers();
         };
         // The compact form is narrower: a new spot for it
     }, [isTouchMode, saved, placeAutomatically, compact, container]);
@@ -577,6 +613,8 @@ export default function TouchModifierButtons({
         if (!d || d.id !== e.pointerId) return;
         e.stopPropagation();
         drag.current = null;
+        // Let go over a task's bar: it moves off it
+        setTimeout(placeAutomatically, 0);
         setSaved((p) => {
             if (p) writeStorage(TOUCH_MODIFIER_POSITION_KEY, JSON.stringify(p));
             return p;

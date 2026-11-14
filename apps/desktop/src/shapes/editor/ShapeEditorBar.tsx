@@ -19,6 +19,15 @@ import {
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { editorPlacement } from "./editorPlacement";
+import {
+    clearSpot,
+    fieldLayersIn,
+    MOVER_AVOIDS,
+    noteFieldLayersChanged,
+    subscribeFieldLayers,
+    useFieldLayerRef,
+    type Rect,
+} from "@/components/canvas/fieldLayers";
 import { usePlacedBoxPreviewStore } from "../placed/boxSelectionStore";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
@@ -190,12 +199,17 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
     const tool = useToolEditTarget();
     const placed = usePlacedEditTarget();
     const touch = useIsTouchMode();
+    const hintLayerRef = useFieldLayerRef<HTMLDivElement>();
     if (hidden) return <ShapeAwayChip />;
     if (armed || clicking)
         return (
             <div
+                ref={hintLayerRef}
+                // #927: Finish, Undo point and Discard stay reachable: the pill keeps off the
+                // card, and it sits below the touch toolbar's panel when that's open
+                data-field-layer="task"
                 className={clsx(
-                    "rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal pointer-events-none absolute top-12 left-1/2 z-10 -translate-x-1/2 border px-12 py-6",
+                    "rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+12px)] left-1/2 z-10 -translate-x-1/2 border px-12 py-6",
                     // The touch layout's buttons for what Enter, Backspace and Escape do
                     touch && "flex items-center gap-12 py-4 pr-4",
                 )}
@@ -474,12 +488,15 @@ function ShapeEditorBar({
     return (
         <animated.div
             ref={place.ref}
-            className="shape-editor-surface text-sub text-text pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
+            className="shape-editor-surface text-sub text-text touch:z-30 pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
             style={place.style}
             data-over={overShape}
             {...place.hold}
             data-testid={testId}
             data-shape-editor
+            // #927: holds Place; it keeps off the zoom box, the Inspector's tab and the toolbar
+            // panel itself, and the pill keeps off it
+            data-field-layer="mover"
             data-placement={place.above ? "above" : "below"}
             data-held={place.held}
             onPointerDown={(e) => e.stopPropagation()}
@@ -1434,6 +1451,20 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     const placedDrag = useShapePointerStore((s) => s.dragging);
     const fieldDrag = toolGesture || placedDrag;
     const ref = useRef<HTMLDivElement>(null);
+    // #927, touch layout: the controls and covers over the field it keeps clear of, in the field
+    // element's px. None on the desktop
+    const touch = useIsTouchMode();
+    const obstacles = useRef<Rect[]>([]);
+    const measureObstacles = useCallback(() => {
+        const el = ref.current;
+        const field = el?.offsetParent;
+        const next =
+            touch && el && field ? fieldLayersIn(field, MOVER_AVOIDS, el) : [];
+        if (JSON.stringify(next) === JSON.stringify(obstacles.current))
+            return false;
+        obstacles.current = next;
+        return true;
+    }, [touch]);
     const [room, setRoom] = useState({
         width: 0,
         height: 0,
@@ -1470,7 +1501,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             hitRadius: HANDLE_REACH_PX / (view.zoom || 1),
             stemUnit: HANDLE_REACH_PX / (view.zoom || 1),
         });
-        return editorPlacement({
+        const placement = editorPlacement({
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
             knob: fieldToElement(view, knob.x, knob.y),
             handles: kind
@@ -1481,6 +1512,23 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             fieldWidth: room.fieldWidth,
             fieldHeight: room.fieldHeight,
         });
+        if (obstacles.current.length === 0) return placement;
+        const spot = clearSpot(
+            {
+                left: placement.left,
+                top: placement.top,
+                width: room.width,
+                height: room.height,
+            },
+            obstacles.current,
+            {
+                left: 0,
+                top: 0,
+                width: room.fieldWidth,
+                height: room.fieldHeight,
+            },
+        );
+        return { ...placement, ...spot };
     };
     const [above, setAbove] = useState(
         () => targetIn(useFieldViewStore.getState()).above,
@@ -1620,18 +1668,33 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             prefersReducedMotion();
         shown.current = { view, placed: true, gliding, held: false };
         setAbove(target.above);
-        void api.start({
-            left: target.left,
-            top: target.top,
-            immediate: jump,
-            config: EDITOR_SPRING,
-        });
+        void Promise.all(
+            api.start({
+                left: target.left,
+                top: target.top,
+                immediate: jump,
+                config: EDITOR_SPRING,
+            }),
+            // Settled somewhere new: the pill keeps clear of it
+        ).then(noteFieldLayersChanged);
     };
     useLayoutEffect(() => {
+        measureObstacles();
         follow(useFieldViewStore.getState());
         // `follow` reads only these
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api, held, room, outline]);
+    }, [api, held, room, outline, measureObstacles]);
+    // A control or cover appearing, going or moving (the toolbar panel opening): placed again
+    useLayoutEffect(
+        () =>
+            subscribeFieldLayers(() => {
+                if (measureObstacles())
+                    latestFollow.current(useFieldViewStore.getState());
+            }),
+        [measureObstacles],
+    );
+    // Gone: the pill can have its spot back
+    useEffect(() => () => noteFieldLayersChanged(), []);
     useLayoutEffect(
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],
