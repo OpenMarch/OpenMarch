@@ -18,8 +18,9 @@ import {
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
-import { clearPlacement } from "./editorPlacement";
+import { clearPlacement, oneRowRoom } from "./editorPlacement";
 import {
+    coverInset,
     fieldLayersIn,
     MOVER_AVOIDS,
     type FieldLayerKind,
@@ -486,7 +487,7 @@ function ShapeEditorBar({
 
     const whatRow = useRef<HTMLSpanElement>(null);
     const doRow = useRef<HTMLSpanElement>(null);
-    const twoRows = useTwoRows(whatRow, doRow, place.fieldWidth, place.held);
+    const twoRows = useTwoRows(whatRow, doRow, place.rowRoom, place.held);
 
     return (
         <animated.div
@@ -1441,6 +1442,16 @@ const FillPill = memo(function FillPill({
     );
 });
 
+/** The field less the covers over its top (the touch toolbar's panel), in the field's px */
+function visibleField(
+    width: number,
+    height: number,
+    covers: readonly Rect[],
+): Rect {
+    const top = coverInset({ left: 0, top: 0, width, height }, covers);
+    return { left: 0, top, width, height: Math.max(0, height - top) };
+}
+
 /**
  * Where the editor sits (`editorPlacement`), sprung there whenever the shape or the editor's own
  * size moves it, gently and without overshoot (#437, owner: predictable motion, no jump when the
@@ -1457,10 +1468,17 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     // #927, touch layout: the controls and covers over the field it keeps clear of, in the field
     // element's px. None on the desktop
     const touch = useIsTouchMode();
-    const obstacles = useRef<{ all: Rect[]; covers: Rect[] }>({
+    const obstacles = useRef<{
+        all: Rect[];
+        covers: Rect[];
+        /** The controls' edge tabs leave this much of the field's width for one row (#936) */
+        rowRoom: number;
+    }>({
         all: [],
         covers: [],
+        rowRoom: Infinity,
     });
+    const [rowRoom, setRowRoom] = useState(Infinity);
     /** Where it last settled, as told to the other layers */
     const noted = useRef<string | null>(null);
     const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1471,13 +1489,16 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             touch && el && field ? fieldLayersIn(field, kinds, el) : [];
         // The covers on their own too: `clearPlacement` can go over a control, never a cover
         const covers = of(MOVER_AVOIDS.filter((kind) => kind === "cover"));
+        const controls = of(MOVER_AVOIDS.filter((kind) => kind !== "cover"));
         const next = {
-            all: [
-                ...of(MOVER_AVOIDS.filter((kind) => kind !== "cover")),
-                ...covers,
-            ],
+            all: [...controls, ...covers],
             covers,
+            rowRoom:
+                touch && field
+                    ? oneRowRoom(field.clientWidth, controls)
+                    : Infinity,
         };
+        setRowRoom(next.rowRoom);
         if (JSON.stringify(next) === JSON.stringify(obstacles.current))
             return false;
         obstacles.current = next;
@@ -1540,6 +1561,15 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             },
             obstacles.current.all,
             obstacles.current.covers,
+            // #936, touch layout: never off the field or under the toolbar panel, so Place and
+            // Discard can always be tapped
+            touch && Number.isFinite(room.fieldWidth)
+                ? visibleField(
+                      room.fieldWidth,
+                      room.fieldHeight,
+                      obstacles.current.covers,
+                  )
+                : undefined,
         );
     };
     const [above, setAbove] = useState(
@@ -1732,6 +1762,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         above,
         held,
         fieldWidth: room.fieldWidth,
+        rowRoom: Math.min(room.fieldWidth, rowRoom),
         noteEdit,
         // Moved by a transform, not left and top: a pan then only moves its layer, nothing is laid
         // out or painted again (#455)
@@ -1841,13 +1872,14 @@ const FIELD_MARGIN_PX = 4;
 /**
  * Whether the editor's two rows, what the shape is and what's done to it, go one above the other:
  * only when side by side they'd be wider than the field (owner: one row whenever it fits, and
- * every control visible in a narrow window). Measured from the rows themselves, which keep their
- * width either way, so it doesn't flip back and forth.
+ * every control visible in a narrow window). `room` is the field's width, less its edge tabs in the
+ * touch layout (`oneRowRoom`, #936). Measured from the rows themselves, which keep their width
+ * either way, so it doesn't flip back and forth.
  */
 function useTwoRows(
     what: RefObject<HTMLElement | null>,
     act: RefObject<HTMLElement | null>,
-    fieldWidth: number,
+    room: number,
     held: boolean,
 ) {
     const [wanted, setWanted] = useState(false);
@@ -1858,7 +1890,7 @@ function useTwoRows(
         const measure = () =>
             setWanted(
                 a.offsetWidth + b.offsetWidth + ONE_ROW_EXTRA_PX >
-                    fieldWidth - 2 * FIELD_MARGIN_PX,
+                    room - 2 * FIELD_MARGIN_PX,
             );
         measure();
         // Its numbers redraw on their own, so it's the rows' size that's watched
@@ -1866,7 +1898,7 @@ function useTwoRows(
         observer.observe(a);
         observer.observe(b);
         return () => observer.disconnect();
-    }, [what, act, fieldWidth]);
+    }, [what, act, room]);
     // Held after a press, it keeps its rows: a − or + that crosses the line would otherwise
     // rearrange it under the pointer and send it a long way once let go (review of #493)
     const [twoRows, setTwoRows] = useState(wanted);

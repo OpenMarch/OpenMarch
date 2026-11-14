@@ -8,6 +8,19 @@ import type { FieldItems } from "./fieldItems";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
+import { useShapeToolStore } from "@/shapes/tool/shapeToolStore";
+import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
+
+/**
+ * Whether a tool waits for a stroke on the field (#936): a shape tool armed with nothing drawn,
+ * a line being clicked point by point, or the prop tool drawing
+ */
+export function drawToolArmed(): boolean {
+    const { tool } = useShapeToolStore.getState();
+    if (tool && (tool.params === null || tool.gesture?.type === "points"))
+        return true;
+    return useItemDrawingStore.getState().drawingMode !== null;
+}
 
 /**
  * What the touch layout's floating layers keep off on the field (#933), in the field element's px:
@@ -67,5 +80,6 @@ export function fieldObstacleSource(
             return () => off.forEach((unsubscribe) => unsubscribe());
         },
         busy: () => editor.pressing(),
+        armed: drawToolArmed,
     };
 }

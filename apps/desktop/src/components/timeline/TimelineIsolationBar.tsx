@@ -5,6 +5,7 @@ import { FlagIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import Shortcut from "@/components/ui/Shortcut";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { TRANSPORT_SHORTCUTS } from "./TransportButtons";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
@@ -564,6 +565,8 @@ export default function TimelineIsolationBar() {
     );
     const { pages } = useTimingObjects()!;
     const layerRef = useFieldLayerRef<HTMLDivElement>();
+    // #936: no Esc key cap on a touch screen until a keyboard is used
+    const showHints = useShowShortcutHints();
     if (!timeline) return null;
     const count = timeline.marcherIds.size;
     return (
@@ -621,7 +624,10 @@ export default function TimelineIsolationBar() {
             >
                 <T
                     keyName="timeline.isolation.done"
-                    params={{ keys: () => <Shortcut binding="Escape" /> }}
+                    params={{
+                        keys: () =>
+                            showHints ? <Shortcut binding="Escape" /> : null,
+                    }}
                 />
             </Button>
         </div>

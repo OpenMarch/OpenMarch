@@ -26,6 +26,10 @@ import {
  * - the modifier pill keeps clear of everything else (`PILL_AVOIDS`), and of what's dragged on
  *   the field: the selection box, the open shape and their handles (`FieldObstacles`, #933),
  * - the shape editor bar keeps off its own shape's handles and slots (`clearPlacement`, #933),
+ *   and never leaves the field less the toolbar panel (#936),
+ * - once placed, the pill keeps its spot unless it's covered or covers a handle, then slides the
+ *   least way (`keepOrSlide`, #936),
+ * - a touch drag's readout keeps off the pill and the other layers (`touchReadoutPlacement`, #936),
  * - a toast at the field's top sits below a task's bar (`Toaster`, #933),
  * - the zoom box rises above `task` layers, and once rising, above other controls it meets too
  *   (`liftClear`),
@@ -120,6 +124,12 @@ export interface FieldObstacleSource {
     subscribe(listener: () => void): () => void;
     /** A drag on the field is under way: what keeps clear of them waits for it to end */
     busy(): boolean;
+    /**
+     * A tool waits for a stroke on the field (a shape tool armed, the prop tool drawing): the pill
+     * stays where it is unless something now covers it, so it doesn't move into where the user is
+     * about to draw (#936)
+     */
+    armed?(): boolean;
 }
 
 /** A square `reach` px out from each point, each way */
