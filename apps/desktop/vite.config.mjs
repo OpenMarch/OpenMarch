@@ -7,6 +7,7 @@ import renderer from "vite-plugin-electron-renderer";
 import pkg from "./package.json";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
+import { thirdPartyNotices } from "./vite.notices.mjs";
 // https://vitejs.dev/config/
 // eslint-disable-next-line max-lines-per-function
 export default defineConfig(({ command }) => {
@@ -27,6 +28,7 @@ export default defineConfig(({ command }) => {
             // Keep tailwindcss here for the main renderer process
             tailwindcss(),
             react(),
+            thirdPartyNotices(),
             sentryVitePlugin({
                 authToken: process.env.SENTRY_AUTH_TOKEN,
                 org: "openmarch-llc",

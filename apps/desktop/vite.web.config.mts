@@ -4,6 +4,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { version } from "./package.json";
+import { thirdPartyNotices } from "./vite.notices.mjs";
 
 /**
  * Builds the web editor (editor.openmarch.com): the app in a browser tab,
@@ -163,6 +164,7 @@ export default defineConfig({
         react(),
         webEntry(),
         writeHeaders(),
+        thirdPartyNotices(),
     ],
     worker: {
         format: "es",
