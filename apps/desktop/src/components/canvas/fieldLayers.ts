@@ -16,7 +16,8 @@ import { useCallback, useEffect, useRef, type RefObject } from "react";
  *
  * Who keeps clear of whom:
  * - the modifier pill keeps clear of everything else (`PILL_AVOIDS`),
- * - the zoom box rises above `task` layers (`liftClear`),
+ * - the zoom box rises above `task` layers, and once rising, above other controls it meets too
+ *   (`liftClear`),
  * - a `mover` keeps clear of controls and covers (`MOVER_AVOIDS`, `clearSpot`),
  * - layers at the field's top sit below a cover (`coverInset`, the `--field-top-inset` variable
  *   on the field).
@@ -45,6 +46,11 @@ export const SAVED_PILL_YIELDS_TO: readonly FieldLayerKind[] = [
 ];
 export const MOVER_AVOIDS: readonly FieldLayerKind[] = ["control", "cover"];
 export const ZOOM_AVOIDS: readonly FieldLayerKind[] = ["task"];
+/** Once it rises, also the other controls it meets on the way (the Inspector's tab) */
+export const ZOOM_RISING_AVOIDS: readonly FieldLayerKind[] = [
+    "task",
+    "control",
+];
 
 /** Room kept between two layers */
 export const LAYER_GAP = 8;

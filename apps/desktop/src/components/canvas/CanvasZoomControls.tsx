@@ -12,6 +12,7 @@ import {
     noteFieldLayersChanged,
     subscribeFieldLayers,
     ZOOM_AVOIDS,
+    ZOOM_RISING_AVOIDS,
 } from "./fieldLayers";
 
 /**
@@ -42,11 +43,18 @@ function useZoomLift(box: React.RefObject<HTMLDivElement | null>) {
                 width: r.width,
                 height: r.height,
             };
-            const next = liftClear(
+            let next = liftClear(
                 usual,
                 fieldLayersIn(parent, ZOOM_AVOIDS, el),
                 LAYER_GAP,
             );
+            // Rising: not up under the Inspector's tab either
+            if (next !== 0)
+                next = liftClear(
+                    usual,
+                    fieldLayersIn(parent, ZOOM_RISING_AVOIDS, el),
+                    LAYER_GAP,
+                );
             if (next === current.current) return;
             current.current = next;
             setLift(next);
