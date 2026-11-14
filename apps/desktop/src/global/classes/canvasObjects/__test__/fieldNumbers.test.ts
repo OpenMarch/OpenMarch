@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+    arrowDirectionFor,
     canPaintAsFieldNumber,
     YARD_NUMBER_PROPORTIONS,
     yardNumberPath,
+    yardNumberSides,
 } from "../fieldNumbers";
 import { FIELD_NUMERAL_GLYPHS } from "../fieldNumeralGlyphs";
 
@@ -155,5 +157,124 @@ describe("yardNumberPath", () => {
         const all = union(subpathBounds(path));
         expect(all.maxX).toBeCloseTo(12 + ZERO_WIDTH * 48, 0);
         expect(all.maxY).toBeCloseTo(72, 0);
+    });
+
+    it("trims whitespace around the label", () => {
+        expect(
+            yardNumberPath({ label: " 40 ", arrowDirection: 1, ...home }),
+        ).toBe(yardNumberPath({ label: "40", arrowDirection: 1, ...home }));
+    });
+
+    it("returns undefined when the band has no height", () => {
+        expect(
+            yardNumberPath({
+                label: "40",
+                arrowDirection: 1,
+                lineX: 0,
+                insideY: 10,
+                outsideY: 10,
+            }),
+        ).toBeUndefined();
+    });
+
+    it("points the far side's arrow toward smaller x when asked", () => {
+        const path = yardNumberPath({
+            label: "40",
+            arrowDirection: -1,
+            ...away,
+        })!;
+        const arrow = subpathBounds(path).at(-1)!;
+        expect(arrow.maxX).toBeCloseTo(away.lineX - 36, 1);
+        expect(arrow.minX).toBeCloseTo(away.lineX - 36 - ARROW_LENGTH, 1);
+        expect(arrow.maxY).toBeCloseTo(away.insideY, 1);
+    });
+
+    it.each(["5", "100"])(
+        "centres %s on the line and gives it no arrow",
+        (label) => {
+            const withArrow = yardNumberPath({
+                label,
+                arrowDirection: 1,
+                ...home,
+            })!;
+            const without = yardNumberPath({
+                label,
+                arrowDirection: 0,
+                ...home,
+            })!;
+            expect(withArrow).toBe(without);
+            const all = union(subpathBounds(without));
+            const reach = (label.length * 24 + (label.length - 1) * 12) / 2;
+            expect(all.minX).toBeGreaterThanOrEqual(home.lineX - reach - 0.01);
+            expect(all.maxX).toBeLessThanOrEqual(home.lineX + reach + 0.01);
+            expect(all.minX).toBeLessThan(home.lineX);
+            expect(all.maxX).toBeGreaterThan(home.lineX);
+        },
+    );
+});
+
+describe("arrowDirectionFor", () => {
+    it.each([
+        [-8, -1],
+        [0, 0],
+        [16, 1],
+    ])("%s steps from center -> %s", (steps, expected) => {
+        expect(arrowDirectionFor(steps)).toBe(expected);
+    });
+});
+
+describe("yardNumberSides", () => {
+    const stepsToY = (steps: number) => 1000 - steps * 10;
+
+    it("gives the home and away bands when both are set", () => {
+        expect(
+            yardNumberSides(
+                {
+                    homeStepsFromFrontToOutside: 11.2,
+                    homeStepsFromFrontToInside: 14.4,
+                    awayStepsFromFrontToInside: 70.9,
+                    awayStepsFromFrontToOutside: 74.1,
+                },
+                stepsToY,
+            ),
+        ).toEqual([
+            { insideY: 856, outsideY: 888 },
+            { insideY: 291, outsideY: 259 },
+        ]);
+    });
+
+    it("draws only the side that has both coordinates", () => {
+        expect(
+            yardNumberSides(
+                {
+                    awayStepsFromFrontToInside: 70,
+                    awayStepsFromFrontToOutside: 74,
+                },
+                stepsToY,
+            ),
+        ).toEqual([{ insideY: 300, outsideY: 260 }]);
+        expect(
+            yardNumberSides(
+                {
+                    homeStepsFromFrontToOutside: 11,
+                    homeStepsFromFrontToInside: 14,
+                    awayStepsFromFrontToOutside: 74,
+                },
+                stepsToY,
+            ),
+        ).toEqual([{ insideY: 860, outsideY: 890 }]);
+    });
+
+    it("skips a side with no height, and gives nothing without coordinates", () => {
+        expect(
+            yardNumberSides(
+                {
+                    homeStepsFromFrontToOutside: 12,
+                    homeStepsFromFrontToInside: 12,
+                },
+                stepsToY,
+            ),
+        ).toEqual([]);
+        expect(yardNumberSides({}, stepsToY)).toEqual([]);
     });
 });

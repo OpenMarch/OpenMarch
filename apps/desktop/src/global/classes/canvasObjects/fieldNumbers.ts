@@ -1,3 +1,4 @@
+import type { YardNumberCoordinates } from "@openmarch/core";
 import { FIELD_NUMERAL_GLYPHS } from "./fieldNumeralGlyphs";
 
 /**
@@ -8,7 +9,8 @@ import { FIELD_NUMERAL_GLYPHS } from "./fieldNumeralGlyphs";
  * - Each digit is at most 4 ft wide and 6 ft tall (NCAA, NFHS and NFL).
  * - The two digits sit either side of the yard line, 1 ft from it.
  * - A direction arrow (NCAA: a triangle with an 18 in base and two 36 in sides)
- *   sits beside the number, pointing toward the nearer goal line. There is none at the 50.
+ *   sits beside the number, pointing toward the nearer goal line. There is none at the 50,
+ *   and none for labels that aren't two digits, since those aren't yard numbers.
  */
 export const YARD_NUMBER_PROPORTIONS = {
     /** Digit width (4 ft) over digit height (6 ft). */
@@ -39,6 +41,40 @@ export type YardNumberLayout = {
     arrowDirection: -1 | 0 | 1;
 };
 
+export type YardNumberSide = { insideY: number; outsideY: number };
+
+/**
+ * The bands the numbers are painted in, one per side that has both of its coordinates.
+ * Sides with no height are skipped.
+ *
+ * @param stepsToY converts steps from the front sideline to canvas y.
+ */
+export function yardNumberSides(
+    coordinates: YardNumberCoordinates,
+    stepsToY: (steps: number) => number,
+): YardNumberSide[] {
+    const sides: YardNumberSide[] = [];
+    const add = (inside?: number, outside?: number) => {
+        if (inside === undefined || outside === undefined) return;
+        if (inside === outside) return;
+        sides.push({ insideY: stepsToY(inside), outsideY: stepsToY(outside) });
+    };
+    add(
+        coordinates.homeStepsFromFrontToInside,
+        coordinates.homeStepsFromFrontToOutside,
+    );
+    add(
+        coordinates.awayStepsFromFrontToInside,
+        coordinates.awayStepsFromFrontToOutside,
+    );
+    return sides;
+}
+
+/** Which way a yard line's arrow points: away from the center line, none on it. */
+export function arrowDirectionFor(stepsFromCenterFront: number): -1 | 0 | 1 {
+    return stepsFromCenterFront < 0 ? -1 : stepsFromCenterFront > 0 ? 1 : 0;
+}
+
 /** True when every character of the label can be painted as a field numeral. */
 export function canPaintAsFieldNumber(label: string): boolean {
     return (
@@ -56,12 +92,13 @@ export function canPaintAsFieldNumber(label: string): boolean {
  * Returns undefined when the label has characters that aren't digits.
  */
 export function yardNumberPath({
-    label,
+    label: rawLabel,
     lineX,
     insideY,
     outsideY,
     arrowDirection,
 }: YardNumberLayout): string | undefined {
+    const label = rawLabel.trim();
     if (!canPaintAsFieldNumber(label)) return undefined;
     const height = Math.abs(outsideY - insideY);
     if (height <= 0) return undefined;
@@ -116,7 +153,7 @@ export function yardNumberPath({
         );
     });
 
-    if (arrowDirection !== 0) {
+    if (arrowDirection !== 0 && digits.length === 2) {
         // The arrow lines up with the top of the number. Its direction is in canvas
         // terms, so undo the 180° turn when choosing which side it goes on.
         const uprightDirection = turned ? -arrowDirection : arrowDirection;

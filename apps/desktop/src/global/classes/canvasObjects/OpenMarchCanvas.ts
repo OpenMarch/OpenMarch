@@ -27,7 +27,11 @@ import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
 import { MarcherShape } from "./MarcherShape";
-import { yardNumberPath } from "./fieldNumbers";
+import {
+    arrowDirectionFor,
+    yardNumberPath,
+    yardNumberSides,
+} from "./fieldNumbers";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import {
@@ -2285,48 +2289,23 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
 
         // Yard numbers, painted like the numbers on a football field
-        const yardNumberCoordinates =
-            this.fieldProperties.yardNumberCoordinates;
         const fieldLabelFill = rgbaToString(
             this.fieldProperties.theme.fieldLabel,
         );
-        const stepsToY = (steps: number) =>
-            centerFrontPoint.yPixels - steps * pixelsPerStep;
-        const yardNumberSides: { insideY: number; outsideY: number }[] = [];
-        if (
-            yardNumberCoordinates.homeStepsFromFrontToInside !== undefined &&
-            yardNumberCoordinates.homeStepsFromFrontToOutside !== undefined
-        )
-            yardNumberSides.push({
-                insideY: stepsToY(
-                    yardNumberCoordinates.homeStepsFromFrontToInside,
-                ),
-                outsideY: stepsToY(
-                    yardNumberCoordinates.homeStepsFromFrontToOutside,
-                ),
-            });
-        if (
-            yardNumberCoordinates.awayStepsFromFrontToInside !== undefined &&
-            yardNumberCoordinates.awayStepsFromFrontToOutside !== undefined
-        )
-            yardNumberSides.push({
-                insideY: stepsToY(
-                    yardNumberCoordinates.awayStepsFromFrontToInside,
-                ),
-                outsideY: stepsToY(
-                    yardNumberCoordinates.awayStepsFromFrontToOutside,
-                ),
-            });
+        const yardNumberBands = yardNumberSides(
+            this.fieldProperties.yardNumberCoordinates,
+            (steps) => centerFrontPoint.yPixels - steps * pixelsPerStep,
+        );
         for (const xCheckpoint of this.fieldProperties.xCheckpoints) {
-            const label = xCheckpoint.fieldLabel;
+            const label = xCheckpoint.fieldLabel?.trim();
             if (!label) continue;
             const lineX =
                 centerFrontPoint.xPixels +
                 xCheckpoint.stepsFromCenterFront * pixelsPerStep;
-            const arrowDirection = Math.sign(
+            const arrowDirection = arrowDirectionFor(
                 xCheckpoint.stepsFromCenterFront,
-            ) as -1 | 0 | 1;
-            for (const { insideY, outsideY } of yardNumberSides) {
+            );
+            for (const { insideY, outsideY } of yardNumberBands) {
                 const path = yardNumberPath({
                     label,
                     lineX,

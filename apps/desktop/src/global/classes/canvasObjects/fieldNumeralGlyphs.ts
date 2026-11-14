@@ -1,9 +1,18 @@
+/*!
+ * Yard number digit outlines derived from Inter Light.
+ * Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+ * @license OFL-1.1 (SIL Open Font License 1.1, https://openfontlicense.org).
+ * This file stays under the OFL, not the project's license. The full license
+ * text is in fieldNumeralGlyphs.LICENSE.txt next to this file.
+ */
+
 /**
  * Outlines of the digits 0-9, used to paint yard numbers on the field.
  *
- * Generated from Inter Light (Copyright 2016 The Inter Project Authors,
- * https://github.com/rsms/inter), licensed under the SIL Open
- * Font License 1.1. See fieldNumeralGlyphs.LICENSE.txt next to this file.
+ * How this was generated: the glyphs for 0-9 were read from
+ * inter-latin-300-normal.woff in @fontsource/inter 5.3.0 with opentype.js 1.3.4
+ * (font.getPath(digit, 0, 0, 1000)), then normalized as below and rounded to
+ * 4 decimal places.
  *
  * Coordinates are normalized. y runs from 0 (top of the digit) to 1 (bottom), and
  * every digit fills that height, without the font's overshoot, as painted numbers do.
