@@ -4,6 +4,7 @@ import {
     useContext,
     useEffect,
     useId,
+    useRef,
     useState,
     type MouseEvent,
     type ReactNode,
@@ -40,6 +41,11 @@ import {
     MENU_ITEM_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
+import { TIP_DATA } from "@/components/ui/Tip";
+import {
+    MENU_PART_ATTRIBUTE,
+    useTouchPressOutside,
+} from "@/components/ui/useTouchPressOutside";
 
 /**
  * The timeline's right-click menu (ui.md UI-9, P8.14). On a page box it offers **Delete page**
@@ -117,6 +123,8 @@ export function MenuItemWithReason({
                     : { role: "menuitemradio", "aria-checked": checked })}
                 aria-disabled={unavailable ? "true" : undefined}
                 aria-describedby={unavailable ? reasonId : undefined}
+                // A finger's long press on it shows the reason too (LongPressGuard, #928)
+                {...(unavailable ? { [TIP_DATA.label]: reason } : {})}
                 onSelect={(event) => {
                     if (!unavailable) return onSelect();
                     // Pressing it shows why instead of closing the menu
@@ -156,6 +164,8 @@ export function MenuItemWithReason({
                                 </Tooltip.Trigger>
                                 <Tooltip.Portal>
                                     <Tooltip.Content
+                                        {...{ [MENU_PART_ATTRIBUTE]: "" }}
+                                        data-testid={`${reasonTestId}-tip`}
                                         side="right"
                                         sideOffset={8}
                                         onEscapeKeyDown={() =>
@@ -625,6 +635,8 @@ export function useTimelineRangeMenu({
             setOpen({ target, x, y, touch: true }),
         [],
     );
+    const content = useRef<HTMLDivElement>(null);
+    useTouchPressOutside(open !== null, content, () => setOpen(null));
     const movesOf = (target: TimelineMenuTarget) =>
         target.trackId === undefined
             ? null
@@ -696,6 +708,7 @@ export function useTimelineRangeMenu({
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
                 <DropdownMenu.Content
+                    ref={content}
                     data-testid="timeline-range-menu"
                     align="start"
                     // The trigger is an invisible point; focus stays where an entry puts it (the
