@@ -167,3 +167,22 @@ describe("the pill keeps clear of the task's cards and bars", () => {
         expect(overlaps(at, bar)).toBe(false);
     });
 });
+
+describe("the pill slides along a spot that's in the way", () => {
+    it("keeps off both the zoom box and the Inspector's tab at 1180 × 820 (Inspector open)", () => {
+        const container = { width: 747, height: 556 };
+        const pill = { width: 643, height: 50 };
+        // The zoom box and the tab, in the field's pixels
+        const zoom = { left: 571, top: 451, width: 170, height: 99 };
+        const tab = { left: 711, top: 313, width: 44, height: 113 };
+        const spot = choosePillPosition(container, pill, null, [], [zoom, tab]);
+        const at = {
+            left: spot.left,
+            top: container.height - spot.bottom - pill.height,
+            ...pill,
+        };
+        expect(overlaps(at, zoom)).toBe(false);
+        expect(overlaps(at, tab)).toBe(false);
+        expect(at.top).toBeGreaterThan(container.height / 2);
+    });
+});
