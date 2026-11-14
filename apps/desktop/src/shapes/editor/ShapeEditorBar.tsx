@@ -18,7 +18,15 @@ import {
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
-import { editorPlacement } from "./editorPlacement";
+import { clearPlacement } from "./editorPlacement";
+import {
+    fieldLayersIn,
+    MOVER_AVOIDS,
+    noteFieldLayersChanged,
+    subscribeFieldLayers,
+    useFieldLayerRef,
+    type Rect,
+} from "@/components/canvas/fieldLayers";
 import { usePlacedBoxPreviewStore } from "../placed/boxSelectionStore";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
@@ -150,6 +158,8 @@ const PRESS_HOLD_MS = 450;
 const EDITOR_SPRING = { tension: 210, friction: 26, clamp: true };
 /** How long after an edit in the editor its change still counts as that edit (a placed shape saves first) */
 const EDIT_WINDOW_MS = 1000;
+/** How long the editor stays put before the other layers hear where it settled (#927) */
+const NOTE_SETTLED_MS = 150;
 
 /**
  * The floating editor (08-shape-system-ux.md, "The floating editor"), the main place for editing
@@ -190,12 +200,17 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
     const tool = useToolEditTarget();
     const placed = usePlacedEditTarget();
     const touch = useIsTouchMode();
+    const hintLayerRef = useFieldLayerRef<HTMLDivElement>();
     if (hidden) return <ShapeAwayChip />;
     if (armed || clicking)
         return (
             <div
+                ref={hintLayerRef}
+                // #927: Finish, Undo point and Discard stay reachable: the pill keeps off the
+                // card, and it sits below the touch toolbar's panel when that's open
+                data-field-layer="task"
                 className={clsx(
-                    "rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal pointer-events-none absolute top-12 left-1/2 z-10 -translate-x-1/2 border px-12 py-6",
+                    "rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+12px)] left-1/2 z-10 -translate-x-1/2 border px-12 py-6",
                     // The touch layout's buttons for what Enter, Backspace and Escape do
                     touch && "flex items-center gap-12 py-4 pr-4",
                 )}
@@ -474,12 +489,15 @@ function ShapeEditorBar({
     return (
         <animated.div
             ref={place.ref}
-            className="shape-editor-surface text-sub text-text pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
+            className="shape-editor-surface text-sub text-text touch:z-30 pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
             style={place.style}
             data-over={overShape}
             {...place.hold}
             data-testid={testId}
             data-shape-editor
+            // #927: holds Place; it keeps off the zoom box, the Inspector's tab and the toolbar
+            // panel itself, and the pill keeps off it
+            data-field-layer="mover"
             data-placement={place.above ? "above" : "below"}
             data-held={place.held}
             onPointerDown={(e) => e.stopPropagation()}
@@ -1434,6 +1452,23 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     const placedDrag = useShapePointerStore((s) => s.dragging);
     const fieldDrag = toolGesture || placedDrag;
     const ref = useRef<HTMLDivElement>(null);
+    // #927, touch layout: the controls and covers over the field it keeps clear of, in the field
+    // element's px. None on the desktop
+    const touch = useIsTouchMode();
+    const obstacles = useRef<Rect[]>([]);
+    /** Where it last settled, as told to the other layers */
+    const noted = useRef<string | null>(null);
+    const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const measureObstacles = useCallback(() => {
+        const el = ref.current;
+        const field = el?.offsetParent;
+        const next =
+            touch && el && field ? fieldLayersIn(field, MOVER_AVOIDS, el) : [];
+        if (JSON.stringify(next) === JSON.stringify(obstacles.current))
+            return false;
+        obstacles.current = next;
+        return true;
+    }, [touch]);
     const [room, setRoom] = useState({
         width: 0,
         height: 0,
@@ -1470,17 +1505,20 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             hitRadius: HANDLE_REACH_PX / (view.zoom || 1),
             stemUnit: HANDLE_REACH_PX / (view.zoom || 1),
         });
-        return editorPlacement({
-            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
-            knob: fieldToElement(view, knob.x, knob.y),
-            handles: kind
-                .handles(params, spots, null)
-                .map(({ at }) => fieldToElement(view, at.x, at.y)),
-            width: room.width,
-            height: room.height,
-            fieldWidth: room.fieldWidth,
-            fieldHeight: room.fieldHeight,
-        });
+        return clearPlacement(
+            {
+                outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+                knob: fieldToElement(view, knob.x, knob.y),
+                handles: kind
+                    .handles(params, spots, null)
+                    .map(({ at }) => fieldToElement(view, at.x, at.y)),
+                width: room.width,
+                height: room.height,
+                fieldWidth: room.fieldWidth,
+                fieldHeight: room.fieldHeight,
+            },
+            obstacles.current,
+        );
     };
     const [above, setAbove] = useState(
         () => targetIn(useFieldViewStore.getState()).above,
@@ -1620,18 +1658,49 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             prefersReducedMotion();
         shown.current = { view, placed: true, gliding, held: false };
         setAbove(target.above);
-        void api.start({
+        const started = api.start({
             left: target.left,
             top: target.top,
             immediate: jump,
             config: EDITOR_SPRING,
         });
+        // Touch layout: once it has settled somewhere new, the pill keeps clear of it. Not on the
+        // desktop, which has no pill; and once the moves stop, not on every pan or zoom frame
+        if (!touch) return;
+        const settledAt = `${Math.round(target.left)},${Math.round(target.top)}`;
+        void Promise.all(started).then(() => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteTimer.current = setTimeout(() => {
+                noteTimer.current = null;
+                if (noted.current === settledAt) return;
+                noted.current = settledAt;
+                noteFieldLayersChanged();
+            }, NOTE_SETTLED_MS);
+        });
     };
     useLayoutEffect(() => {
+        measureObstacles();
         follow(useFieldViewStore.getState());
         // `follow` reads only these
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api, held, room, outline]);
+    }, [api, held, room, outline, measureObstacles]);
+    // A control or cover appearing, going or moving (the toolbar panel opening): placed again
+    useLayoutEffect(
+        () =>
+            subscribeFieldLayers(() => {
+                if (measureObstacles())
+                    latestFollow.current(useFieldViewStore.getState());
+            }),
+        [measureObstacles],
+    );
+    // Gone: the pill can have its spot back
+    useEffect(
+        () => () => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteFieldLayersChanged();
+        },
+        [],
+    );
     useLayoutEffect(
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],

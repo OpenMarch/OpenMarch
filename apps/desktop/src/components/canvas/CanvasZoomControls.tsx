@@ -1,9 +1,84 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import clsx from "clsx";
 import { PlusIcon, MinusIcon } from "@phosphor-icons/react";
 import { Slider } from "@openmarch/ui";
 import { useTranslate } from "@tolgee/react";
 import { MAX_ZOOM, MIN_ZOOM } from "@/field/editor/view";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import {
+    fieldLayersIn,
+    LAYER_GAP,
+    liftClear,
+    noteFieldLayersChanged,
+    subscribeFieldLayers,
+    ZOOM_AVOIDS,
+    ZOOM_RISING_AVOIDS,
+} from "./fieldLayers";
+
+/**
+ * In the touch layout, how far the zoom box rises to keep off a card or bar that holds the current
+ * task's buttons (#927): `0` where it usually sits, `null` hidden when there's no room above them.
+ * Desktop: always 0.
+ */
+function useZoomLift(box: React.RefObject<HTMLDivElement | null>) {
+    const touch = useIsTouchMode();
+    const [lift, setLift] = useState<number | null>(0);
+    const current = useRef<number | null>(0);
+    useEffect(() => {
+        if (!touch) {
+            current.current = 0;
+            setLift(0);
+            return;
+        }
+        const place = () => {
+            const el = box.current;
+            const parent = el?.offsetParent;
+            if (!el || !parent) return;
+            const at = parent.getBoundingClientRect();
+            const r = el.getBoundingClientRect();
+            // Where it usually sits: where it is, less the lift it has now (hidden counts as none)
+            const usual = {
+                left: r.left - at.left,
+                top: r.top - at.top + (current.current ?? 0),
+                width: r.width,
+                height: r.height,
+            };
+            let next = liftClear(
+                usual,
+                fieldLayersIn(parent, ZOOM_AVOIDS, el),
+                LAYER_GAP,
+            );
+            // Rising: not up under the Inspector's tab either
+            if (next !== 0)
+                next = liftClear(
+                    usual,
+                    fieldLayersIn(parent, ZOOM_RISING_AVOIDS, el),
+                    LAYER_GAP,
+                );
+            if (next === current.current) return;
+            current.current = next;
+            setLift(next);
+            // The pill keeps off the zoom box: it moved
+            noteFieldLayersChanged();
+        };
+        place();
+        const off = subscribeFieldLayers(place);
+        window.addEventListener("resize", place);
+        // The field area resizing (the Inspector opening, the timeline split moving) moves it
+        const area = box.current?.offsetParent;
+        const observer =
+            area && typeof ResizeObserver === "function"
+                ? new ResizeObserver(place)
+                : null;
+        if (area) observer?.observe(area);
+        return () => {
+            off();
+            window.removeEventListener("resize", place);
+            observer?.disconnect();
+        };
+    }, [touch, box]);
+    return lift;
+}
 
 /**
  * What the zoom controls call on the field: the field's view
@@ -35,6 +110,8 @@ export default function CanvasZoomControls({
     const { t } = useTranslate();
     const [currentZoom, setCurrentZoom] = useState(100); // Represents percentage
     const [rawZoom, setRawZoom] = useState(1); // Raw field zoom, for the slider
+    const boxRef = useRef<HTMLDivElement>(null);
+    const lift = useZoomLift(boxRef);
 
     useEffect(() => {
         if (!canvas) return;
@@ -158,10 +235,16 @@ export default function CanvasZoomControls({
 
     return (
         <div
+            ref={boxRef}
             data-zoom-controls
+            // #927: the pill and the shape editor bar keep off it; it keeps off the task's cards
+            data-field-layer="control"
+            data-lift={lift ?? "hidden"}
             className={clsx(
                 "group border-stroke bg-bg-1 rounded-8 touch:w-auto pointer-events-auto absolute right-6 bottom-6 z-10 flex w-160 flex-col overflow-hidden border shadow-lg",
+                lift === null && "invisible",
             )}
+            style={lift ? { bottom: 6 + lift } : undefined}
         >
             <div className="border-stroke flex items-center border-b px-12 py-2">
                 <Slider

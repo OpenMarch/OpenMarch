@@ -6,6 +6,8 @@
  * as `left` from its left edge and `bottom` from its bottom edge.
  */
 
+import { clearSpot } from "../fieldLayers";
+
 export interface Rect {
     left: number;
     top: number;
@@ -69,13 +71,16 @@ export function pillCandidates(
  *
  * @param field The field drawing, in container pixels (top-left origin)
  * @param marchers Marcher dots, in container pixels
- * @param controls Controls over the field the pill must not cover (the zoom controls), in
- *   container pixels (top-left origin). A spot over one loses to any spot that isn't.
+ * @param controls The other layers over the field the pill must not cover (the zoom controls,
+ *   the task's cards and bars, the toolbar panel: `fieldLayers.ts`), in container pixels (top-left
+ *   origin). A spot over one loses to any spot that isn't.
  */
 // A spot at the top only wins when every bottom spot covers marchers: the pill
 // belongs within reach of the thumbs
 const TOP_PENALTY = 1e8;
 const CONTROL_PENALTY = 1e15;
+/** Room kept between the pill and a layer it slid clear of */
+const CONTROL_GAP = 4;
 
 export function choosePillPosition(
     container: { width: number; height: number },
@@ -87,12 +92,22 @@ export function choosePillPosition(
     const candidates = pillCandidates(container, pill);
     let best: PillPosition = candidates[0];
     let bestScore = Infinity;
+    const bounds = { left: 0, top: 0, ...container };
     for (const candidate of candidates) {
         const rect: Rect = {
             left: candidate.left,
             top: container.height - candidate.bottom - pill.height,
             width: pill.width,
             height: pill.height,
+        };
+        // Slid clear of the layers over the field first, so one in the way of a spot (the
+        // Inspector's edge tab beside the bottom-right one) moves the pill along, not elsewhere
+        const slid = clearSpot(rect, controls, bounds, CONTROL_GAP);
+        rect.left = slid.left;
+        rect.top = slid.top;
+        const spot = {
+            left: rect.left,
+            bottom: container.height - rect.top - pill.height,
         };
         // A margin around the pill, so a marcher right next to it counts too
         const padded: Rect = {
@@ -116,7 +131,7 @@ export function choosePillPosition(
             (candidate.top ? TOP_PENALTY : 0) +
             fieldArea;
         if (score < bestScore) {
-            best = { left: candidate.left, bottom: candidate.bottom };
+            best = spot;
             bestScore = score;
         }
     }

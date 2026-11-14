@@ -396,6 +396,82 @@ describe("where it sits", () => {
         ).toEqual({ left: 70, bottom: 80 });
     });
 
+    it("moves aside from its saved spot for a task's bar, and a drag then follows the finger (#927)", () => {
+        // A field area of 800 × 600 with the line tool's card across its bottom, over the saved
+        // spot (40 from the left, 60 from the bottom)
+        const area = document.createElement("div");
+        Object.defineProperty(area, "clientWidth", { value: 800 });
+        Object.defineProperty(area, "clientHeight", { value: 600 });
+        document.body.append(area);
+        const card = document.createElement("div");
+        card.setAttribute("data-field-layer", "task");
+        card.getBoundingClientRect = () =>
+            ({ left: 0, top: 500, width: 400, height: 100 }) as DOMRect;
+        document.body.append(card);
+        const offsetParent = Object.getOwnPropertyDescriptor(
+            HTMLElement.prototype,
+            "offsetParent",
+        );
+        Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+            configurable: true,
+            get() {
+                return area;
+            },
+        });
+        try {
+            localStorage.setItem(
+                TOUCH_MODIFIER_POSITION_KEY,
+                JSON.stringify({ left: 40, bottom: 60 }),
+            );
+            touchMode(true);
+            render(
+                <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                    <TouchModifierButtons />
+                </TolgeeProvider>,
+                { container: area },
+            );
+            const pill = screen.getByTestId("touch-modifier-buttons");
+            // Off the card: its automatic spot, at the bottom right
+            expect(pill.style.left).toBe("788px");
+            expect(pill.style.bottom).toBe("112px");
+
+            const grip = screen.getByRole("button", {
+                name: "Move these buttons",
+            });
+            fireEvent.pointerDown(grip, {
+                pointerId: 3,
+                clientX: 100,
+                clientY: 100,
+            });
+            fireEvent.pointerMove(grip, {
+                pointerId: 3,
+                clientX: 90,
+                clientY: 80,
+            });
+            // Following the finger from where it was, mid-drag
+            expect(pill.style.left).toBe("778px");
+            expect(pill.style.bottom).toBe("132px");
+            fireEvent.pointerUp(grip, {
+                pointerId: 3,
+                clientX: 90,
+                clientY: 80,
+            });
+            expect(pill.style.left).toBe("778px");
+            expect(
+                JSON.parse(localStorage.getItem(TOUCH_MODIFIER_POSITION_KEY)!),
+            ).toEqual({ left: 778, bottom: 132 });
+        } finally {
+            if (offsetParent)
+                Object.defineProperty(
+                    HTMLElement.prototype,
+                    "offsetParent",
+                    offsetParent,
+                );
+            card.remove();
+            area.remove();
+        }
+    });
+
     it("reads a stored spot, and nothing for anything else", () => {
         expect(parseModifierPosition('{"left":12,"bottom":30}')).toEqual({
             left: 12,

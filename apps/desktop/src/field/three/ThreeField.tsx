@@ -9,6 +9,7 @@ import {
     type RefObject,
 } from "react";
 import clsx from "clsx";
+import { useFieldTopInset } from "@/components/canvas/fieldLayers";
 import { useShallow } from "zustand/react/shallow";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { OrthographicCamera, WebGLRenderer } from "three";
@@ -333,6 +334,8 @@ function ThreeFieldView() {
     const { dimming, look } = timeline;
     useShapeFocus(dimming);
     const root = useRef<HTMLDivElement>(null);
+    // #927: the bars at the field's top sit below the touch toolbar's panel
+    useFieldTopInset(root);
 
     // The field test API and the editor read the latest of these, not the render they came from
     const element = useRef<HTMLElement | null>(null);
