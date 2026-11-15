@@ -174,11 +174,19 @@ describe("the frozen fork migrations", () => {
     });
 
     it("leave upstream's migrations 0000-0016 alone: the folder keeps them and adds 0017 and 0018", () => {
-        expect(folderMigrations.map((m) => m.tag)).toEqual([
+        expect(folderMigrations.slice(0, 19).map((m) => m.tag)).toEqual([
             ...folderMigrations.slice(0, 17).map((m) => m.tag),
             "0017_timeline_model",
             "0018_drop_page_era",
         ]);
+        // later fork migrations follow them in order (0019_silk_artwork, ...)
+        folderMigrations
+            .slice(19)
+            .forEach((m, i) =>
+                expect(m.tag.startsWith(String(19 + i).padStart(4, "0"))).toBe(
+                    true,
+                ),
+            );
         expect(folderMigrations[16]!.folderMillis).toBe(
             UPSTREAM_LAST_MIGRATION_MS,
         );

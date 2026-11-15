@@ -145,6 +145,11 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
             if (object.type === "index" && PAGE_ERA_TABLES.includes(object.tbl))
                 db.exec(object.sql);
     },
+    // Imported silk Artwork (fork #973): its table and the undo triggers on it
+    19: (db) => {
+        dropTriggers(db);
+        dropTables(db, ["view3d_silk_artwork"]);
+    },
 };
 
 /**

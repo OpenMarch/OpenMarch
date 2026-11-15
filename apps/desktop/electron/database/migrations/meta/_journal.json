@@ -134,6 +134,13 @@
             "when": 1793856519415,
             "tag": "0018_drop_page_era",
             "breakpoints": true
+        },
+        {
+            "idx": 19,
+            "version": "6",
+            "when": 1794740760388,
+            "tag": "0019_silk_artwork",
+            "breakpoints": true
         }
     ]
 }

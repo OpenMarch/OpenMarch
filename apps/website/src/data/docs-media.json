@@ -62,6 +62,18 @@
         "width": 752,
         "height": 1784
     },
+    "3d-silk-artwork": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 586
+    },
+    "3d-silk-settings": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 684,
+        "height": 1032
+    },
     "3d-window": {
         "chapter": "3d-view",
         "kind": "still",

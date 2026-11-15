@@ -320,6 +320,25 @@ export const view3d_venue = sqliteTable(
 );
 
 /**
+ * Silk Artwork the show imported (fork #973, ADR 0010 amendment 2026-11-15):
+ * a painted silk template, as the PNG's own bytes. Rows are referenced by
+ * id: the venue settings' `silkArtwork` names the one the guard's flags
+ * start the show with, and Silk cues can name others later. In the undo
+ * history, so an import or a removal is one undo step.
+ */
+export const view3d_silk_artwork = sqliteTable("view3d_silk_artwork", {
+    id: integer().primaryKey(),
+    /** The imported file's name, shown beside the picture. */
+    name: text().notNull(),
+    /** The PNG file, as imported. */
+    data: browserSafeBinaryBlob().notNull(),
+    /** Its size in pixels. */
+    width: integer().notNull(),
+    height: integer().notNull(),
+    ...timestamps,
+});
+
+/**
  * The show's 3D View cameras (ADR 0010 D-5, amended 2026-10-16). A single
  * row with `id = 1` whose `json_data` is validated by `showCamerasSchema` in
  * `src/view3d/core/cameraList.ts`: the show's own camera list for each venue

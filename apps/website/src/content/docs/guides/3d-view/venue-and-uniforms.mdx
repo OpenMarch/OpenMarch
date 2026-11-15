@@ -10,11 +10,16 @@ covers:
   - apps/desktop/src/view3d/window/useKitShowCredits.ts
   - apps/desktop/src/view3d/core/marchers
   - apps/desktop/src/view3d/core/instruments/catalog.ts
+  - apps/desktop/src/view3d/core/sizes/silkShapes.ts
+  - apps/desktop/src/view3d/core/artworkTemplates
+  - apps/desktop/src/view3d/window/overlay/SilkArtworkControls.tsx
   - packages/core/src/cues
   - i18n:view3d.settings
   - i18n:view3d.kit
   - i18n:view3d.lighting
   - i18n:view3d.uniformPreset
+  - i18n:view3d.silkShape
+  - i18n:view3d.silkArtwork
 sidebar:
   order: 3
 ---
@@ -64,6 +69,45 @@ The video boards in the <Ui k="view3d.kit.bighs" plain />, <Ui k="view3d.kit.col
 <Ui k="view3d.settings.uniforms" /> dresses the band and <Ui k="view3d.settings.guardUniforms" /> dresses the color guard. Choose one of the built-in uniforms for each, such as <Ui k="view3d.uniformPreset.westPoint" /> or <Ui k="view3d.uniformPreset.sash" />. Marchers in guard sections (Color Guard, Flag, Rifle and the other guard sections) wear the guard uniform; everyone else wears the band uniform.
 
 You can't design your own uniform in this version.
+
+## Flag silks
+
+The color guard's 6-foot flags can have any of the common silk shapes, and you can paint them with your own artwork.
+
+<Media
+  id="3d-silk-settings"
+  alt="The flag silk rows of View settings: thirteen silk shapes, each drawn as a small outline with its name, with Standard selected; below them, the imported artwork with its picture and file name, Replace and Remove buttons, and PNG, SVG and PDF template buttons for the Standard shape."
+  maxWidth={360}
+/>
+
+<Ui k="view3d.settings.silkShape" /> chooses the shape: <Ui k="view3d.silkShape.standard" />, <Ui k="view3d.silkShape.curvedTail" />, <Ui k="view3d.silkShape.cSwing" />, <Ui k="view3d.silkShape.rainbow" />, <Ui k="view3d.silkShape.arc" />, <Ui k="view3d.silkShape.teardrop" />, <Ui k="view3d.silkShape.distressed" />, <Ui k="view3d.silkShape.rounded" />, <Ui k="view3d.silkShape.rectangle" />, <Ui k="view3d.silkShape.curvedAngle" />, <Ui k="view3d.silkShape.wings" />, <Ui k="view3d.silkShape.snake" /> or <Ui k="view3d.silkShape.swing" />. Each shape comes in one common size, such as 36 by 56 inches for the Standard. A show starts with the plain <Ui k="view3d.silkShape.rectangle" plain />.
+
+To paint the silks with your own design:
+
+<Steps>
+
+1. Under <Ui k="view3d.settings.silkArtwork" plain />, download the template for the shape you chose with the **PNG**, **SVG** or **PDF** button. The template is drawn at the silk's real size. The pole side is on the left, the grey parts are outside the silk, and the dashed line is the safe area.
+
+2. Paint your design over the template in any image editor, and export it as a PNG. Keep the template's size and proportions, with or without the bleed around the edge.
+
+3. Select <Ui k="view3d.silkArtwork.import" /> and choose the PNG. A large picture is scaled down to 4,096 pixels on its longest side as it comes in, the most detail the 3D View shows, so a template painted at full size imports as it is.
+
+</Steps>
+
+<Media
+  id="3d-silk-artwork"
+  alt="The band from the front row: the color guard's Standard-shaped flags show the imported design, a white star and a gold stripe on purple."
+/>
+
+The flags show your design, cut to the silk's shape. You see it reversed on the back of the silk, the way a one-sided print looks. If you change the shape afterwards, the same picture stretches to fit the new shape, so download that shape's template and paint it again. <Ui k="view3d.silkArtwork.replace" /> chooses another PNG, and <Ui k="view3d.silkArtwork.remove" /> takes the artwork off.
+
+The silks show your artwork instead of the guard uniform's pattern or the section's color. The shape and artwork are saved in the show file, and importing or removing artwork is one step in the editor's undo history.
+
+Some shapes are only approximate:
+
+- <Ui k="view3d.silkShape.curvedTail" plain />, <Ui k="view3d.silkShape.rainbow" plain />, <Ui k="view3d.silkShape.distressed" plain />, <Ui k="view3d.silkShape.rounded" plain />, <Ui k="view3d.silkShape.curvedAngle" plain />, <Ui k="view3d.silkShape.wings" plain /> and <Ui k="view3d.silkShape.snake" plain /> are traced from a chart of common shapes, and their sizes are estimates. Their templates say so: check the cut and size with your flag maker before you print.
+- <Ui k="view3d.silkShape.wings" plain /> are worn, but in the 3D View they hang from the flag pole for now.
+- The shape and artwork stay the same for the whole show, and every guard member's flag gets them.
 
 ## Horns
 

@@ -186,6 +186,15 @@ const SILK_CUT_TRACING: CatalogSource = {
     url: "https://fjminc.com/pages/custom-flag-designs",
     confidence: "unverified",
 };
+/**
+ * The owner's reference chart of common guard silk shapes (fork #973,
+ * 2026-11-15). The chart has no sizes: its shapes were traced and sized at
+ * the chart's own scale, its Standard taken as a 36 in header.
+ */
+const SILK_SHAPE_CHART: CatalogSource = {
+    name: "Reference chart of common silk shapes (owner, fork #973); sizes estimated at the chart's scale",
+    confidence: "unverified",
+};
 const SHEET_GOODS: CatalogSource = {
     name: "General practice: 4 x 8 ft sheet goods",
     confidence: "unverified",
@@ -461,6 +470,56 @@ const silks: CatalogEntryOf<"silk">[] = [
             ],
         },
     ),
+    // The shapes on the owner's chart that no catalog Cut had (fork #973).
+    silk(
+        "silk-curved-tail-36x62",
+        "Curved tail",
+        36,
+        62.375,
+        "flag",
+        [SILK_SHAPE_CHART],
+        { depth: 54.375 },
+    ),
+    silk(
+        "silk-rainbow-36x56",
+        "Rainbow",
+        36,
+        56.125,
+        "flag",
+        [SILK_SHAPE_CHART],
+        { depth: 48.625 },
+    ),
+    silk(
+        "silk-distressed-36x56",
+        "Distressed",
+        36,
+        56.375,
+        "flag",
+        [SILK_SHAPE_CHART],
+        { depth: 43.875 },
+    ),
+    silk(
+        "silk-rounded-36x54",
+        "Rounded",
+        36,
+        54.25,
+        "flag",
+        [SILK_SHAPE_CHART],
+        { depth: 46.75 },
+    ),
+    silk(
+        "silk-oversized-curved-angle-34x88",
+        "Oversized curved angle",
+        34,
+        53.875,
+        "swing",
+        [SILK_SHAPE_CHART],
+        { depth: 87.5 },
+    ),
+    // Wings lie with their straight edge, the one with the notches, as the
+    // header: 72 in across, 36 in out to the round edge.
+    silk("silk-wings-72x36", "Wings", 72, 36, "flag", [SILK_SHAPE_CHART]),
+    silk("silk-snake-36x117", "Snake", 36, 116.75, "flag", [SILK_SHAPE_CHART]),
 ];
 
 const rifles: CatalogEntryOf<"rifle">[] = [36, 37.5, 39].map((lengthIn) => ({

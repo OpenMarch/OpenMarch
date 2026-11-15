@@ -52,6 +52,8 @@ import { updateVenueSettingsMutationOptions } from "@/hooks/queries/useVenueSett
 import { venueSettingsSchema } from "@/view3d/core/venueSettings";
 import { updateShowCamerasMutationOptions } from "@/hooks/queries/useShowCameras";
 import { showCamerasSchema } from "@/view3d/core/cameraList";
+import { setSilkArtworkMutationOptions } from "@/hooks/queries/useSilkArtwork";
+import { silkArtworkImportSchema } from "@/view3d/core/silkArtwork";
 import { pressAction, type ReleaseReason } from "@/shortcuts/registry";
 import { subscribeTimelineChanges } from "@/db-functions/timelineChanges";
 import { useView3dWindowStore } from "@/stores/View3dWindowStore";
@@ -165,6 +167,10 @@ export function useView3dPublisher() {
     const { mutate: updateCameras } = useMutation(
         updateShowCamerasMutationOptions(queryClient),
     );
+    // With history: an Artwork import or removal is one undo step.
+    const { mutate: setSilkArtwork } = useMutation(
+        setSilkArtworkMutationOptions(queryClient),
+    );
     const windowOpen = useView3dWindowStore((s) => s.open);
     const setWindowOpen = useView3dWindowStore((s) => s.setOpen);
     // The window goes with the show
@@ -266,6 +272,22 @@ export function useView3dPublisher() {
                 sendHiddenProps();
             }),
             electron.onView3dVenueChangeRequest((request) => {
+                if (request?.silkArtwork !== undefined) {
+                    if (request.silkArtwork === null) {
+                        setSilkArtwork(null);
+                        return;
+                    }
+                    const artwork = silkArtworkImportSchema.safeParse(
+                        request.silkArtwork,
+                    );
+                    if (artwork.success) setSilkArtwork(artwork.data);
+                    else
+                        console.warn(
+                            "3D View: ignored an invalid silk Artwork",
+                            artwork.error,
+                        );
+                    return;
+                }
                 if (request?.cameras !== undefined) {
                     const cameras = showCamerasSchema.safeParse(
                         request.cameras,
@@ -301,6 +323,7 @@ export function useView3dPublisher() {
         sendHiddenProps,
         updateVenue,
         updateCameras,
+        setSilkArtwork,
         setWindowOpen,
     ]);
 

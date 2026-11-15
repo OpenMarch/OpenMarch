@@ -4,6 +4,38 @@
 // waits for the scene to draw; a shot returns `{ box, target: view }` to film it. Props are
 // drawn in the editor window with the Props panel's tools.
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+/** The demo silk Artwork, painted on the Standard silk's template (fork #973). */
+const SILK_ARTWORK = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "assets",
+    "silk-artwork.png",
+);
+
+/**
+ * Opens View settings, picks the Standard silk and imports the demo Artwork;
+ * leaves the panel open and returns it.
+ */
+async function paintSilks(view) {
+    await view.getByTestId("view3d-settings-button").click();
+    const panel = view.getByTestId("view3d-settings");
+    await panel.waitFor();
+    await view
+        .getByTestId("view3d-silk-shape-picker")
+        .locator('[data-value="standard"]')
+        .click();
+    await view
+        .getByTestId("view3d-silk-artwork-file")
+        .setInputFiles(SILK_ARTWORK);
+    await view
+        .getByTestId("view3d-silk-artwork-name")
+        .waitFor({ timeout: 20000 });
+    return panel;
+}
+
 /** The nth page box on the timeline ruler, in order. */
 const pageBox = (page, n) => page.locator("[data-timeline-range-page]").nth(n);
 
@@ -363,6 +395,69 @@ const shots = [
             await ctx.wait(800);
             return {
                 box: await ctx.around(panel, 16),
+                target: view,
+            };
+        },
+    },
+    {
+        id: "3d-silk-settings",
+        kind: "still",
+        // The flag silk rows of View settings: the shapes, and imported Artwork
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view } = await open3d(ctx);
+            await paintSilks(view);
+            // the rows, labels and all: the shapes, and the Artwork under them
+            const shapeRow = view
+                .getByTestId("view3d-silk-shape-picker")
+                .locator("xpath=..");
+            const artworkRow = view
+                .getByTestId("view3d-silk-artwork")
+                .locator("xpath=..");
+            // the shapes' row near the top of the panel, clear of its edge
+            await shapeRow.evaluate((el) => {
+                el.scrollIntoView({ block: "start" });
+                let scroller = el.parentElement;
+                while (
+                    scroller &&
+                    !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)
+                )
+                    scroller = scroller.parentElement;
+                if (scroller) scroller.scrollTop -= 24;
+            });
+            await view.mouse.move(4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            return {
+                // tight below the Artwork, so the next row's control stays out
+                box: ctx.union(
+                    await ctx.around(shapeRow, 10),
+                    await ctx.around(artworkRow, 4),
+                ),
+                target: view,
+            };
+        },
+    },
+    {
+        id: "3d-silk-artwork",
+        kind: "still",
+        // The guard's flags in the Standard shape, painted with imported Artwork
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view } = await open3d(ctx);
+            await paintSilks(view);
+            await view.getByTestId("view3d-settings-button").click();
+            await ctx.wait(1500);
+            // The Front row camera: close to the sideline, at the band's height
+            await view.keyboard.press("Digit2");
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            await ctx.wait(3000);
+            return {
+                box: {
+                    x: 200,
+                    y: 330,
+                    width: ctx.window.width - 400,
+                    height: 440,
+                },
                 target: view,
             };
         },

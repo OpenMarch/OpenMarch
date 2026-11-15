@@ -119,6 +119,12 @@ export interface View3dVenueChangeRequest {
     settings?: unknown;
     /** Unchecked: the editor validates it against `showCamerasSchema`. */
     cameras?: unknown;
+    /**
+     * A silk Artwork import (unchecked: the editor validates it against
+     * `silkArtworkImportSchema`), or null to remove the show's Artwork
+     * (fork #973). The editor stores it with history.
+     */
+    silkArtwork?: unknown;
 }
 
 /**

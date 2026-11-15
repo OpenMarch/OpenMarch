@@ -25,10 +25,12 @@ import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
 import { type ControlScheme } from "../camera/controlScheme";
 import ControlSchemePicker from "../camera/ControlSchemePicker";
 import { Segmented } from "./Panel";
+import { SilkArtworkControls } from "./SilkArtworkControls";
 import {
     BrassFinishPicker,
     LightingControl,
     GuardUniformPicker,
+    SilkShapePicker,
     TubaPicker,
     UniformPicker,
     VenuePicker,
@@ -89,6 +91,12 @@ export function SettingsPanel({
                     </Row>
                     <Row label={t("view3d.settings.guardUniforms")} stacked>
                         <GuardUniformPicker />
+                    </Row>
+                    <Row label={t("view3d.settings.silkShape")} stacked>
+                        <SilkShapePicker />
+                    </Row>
+                    <Row label={t("view3d.settings.silkArtwork")} stacked>
+                        <SilkArtworkControls />
                     </Row>
                     <Row label={t("view3d.settings.brassFinish")}>
                         <BrassFinishPicker />
