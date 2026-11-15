@@ -1445,7 +1445,8 @@ function buildDrawing(
     return {
         outline,
         openOutline: true,
-        pathLine: pathLineOf(session),
+        // Paths All's lines keep a shown path's color; the selection's quiet line is faint
+        pathLine: asObject ? "shown" : pathLineOf(session),
         stage: drawingNow ? "drawing" : "open",
         spots: target.trail
             ? target.trail.members.map((m) => m.to)
@@ -1525,7 +1526,8 @@ const laneInFocus = laneFocusOf;
  * a path object (AP-O4)
  */
 const pathLineOf = (s: PathSession): FieldModeDrawing["pathLine"] => {
-    if (s.phase === "closed") return "shown";
+    // Quiet, it's faint: only a line being edited is deep (interaction round 3)
+    if (s.phase === "closed") return "quiet";
     return laneInFocus(s) !== null ? "context" : "edited";
 };
 
@@ -1659,7 +1661,7 @@ function differenceRings(
  * - `drawing`: every member's lane, thin and faint, to where the next point would land, and a
  *   ring on each saying it follows.
  * - `selected` (quiet): only the selected members' lanes and the selected marchers' own lines off
- *   it, each at a shown path's weight, as the one line that marcher walks.
+ *   it, each at a shown path's weight in the faint path color, as the one line that marcher walks.
  * - `edit` and `object`: every member's lane, thin and faint, round the group line.
  * - `adjust`: the one line being edited (Edit <name>'s line), heavy, with its bend points and the
  *   spots to grab it by (`laneBendSpotsOf`), over its plain lane (faint) when it has bends.
@@ -1744,7 +1746,7 @@ function groupParts(
         return {
             lanes,
             laneIds,
-            lanesWeight: "path",
+            lanesWeight: "quiet",
             ...(adjusted.length > 0 ? { lanesAdjusted: adjusted } : {}),
             memberRings: rings,
         };
@@ -1781,8 +1783,9 @@ function groupParts(
         };
     }
     // `edit` and `object`: the group line with every member's lane round it. Edited, each lane is
-    // the line its marcher walks, at a shown path's weight (round 2: not lighter), so the group line
-    // reads as the middle they follow; Paths All's drawing for nobody selected keeps them faint
+    // the line its marcher walks, at a shown path's weight (round 2) in the faint path color (round
+    // 3: only the line being edited is deep), so the group line reads as the middle they follow;
+    // Paths All's drawing for nobody selected keeps them thin
     const hovered =
         session.phase === "open" ? session.hoverLane?.marcherId : undefined;
     const adjusted = walks.flatMap(({ marcherId }, i) =>
@@ -1791,7 +1794,7 @@ function groupParts(
     return {
         lanes: walks.map(({ walk }) => laneOutline(walk)),
         laneIds: walks.map((w) => w.marcherId),
-        ...(view === "edit" ? { lanesWeight: "path" as const } : {}),
+        ...(view === "edit" ? { lanesWeight: "quiet" as const } : {}),
         ...(adjusted.length > 0 ? { lanesAdjusted: adjusted } : {}),
         laneHighlights: walks.flatMap(({ marcherId }, i) =>
             marcherId === hovered ? [i] : [],

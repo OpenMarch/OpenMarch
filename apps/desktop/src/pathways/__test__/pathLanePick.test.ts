@@ -286,6 +286,12 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
         expect(drawn().laneHighlights).toEqual([1]);
     });
 
+    it("edited, the group line is the deep one and the lanes round it are faint (round 3)", () => {
+        open(group(null, 8 * STEP));
+        expect(drawn().pathLine).toBe("edited");
+        expect(drawn().lanesWeight).toBe("quiet");
+    });
+
     it("can't grab a group point while a lane is picked", () => {
         open(group(null));
         const point = at(10 * STEP, y);
@@ -411,7 +417,7 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
         // Quiet, only the selected marchers' lines are drawn, as each one's own path
         const quiet = drawingOf(usePathPenStore.getState().session)!;
         expect(quiet.outline).toBeNull();
-        expect(quiet.lanesWeight).toBe("path");
+        expect(quiet.lanesWeight).toBe("quiet");
         expect(quiet.laneIds).toEqual([10, 11]);
         expect(pathPenMode.takeClick(laneAt, false)).toBe(true);
         expect(picked.ids).toEqual([10]);

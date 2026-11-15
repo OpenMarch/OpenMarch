@@ -242,7 +242,7 @@ describe("quiet and active (interaction system, rule 2)", () => {
         expect(actionLabelNow("cancelAlignmentUpdates")).toBe("Close path");
         act(() => void runAction("cancelAlignmentUpdates"));
         expect(session()).toMatchObject({ phase: "closed" });
-        expect(drawingOf(session())!.pathLine).toBe("shown");
+        expect(drawingOf(session())!.pathLine).toBe("quiet");
         expect(selectedNow()).toEqual([10, 11]);
     });
 

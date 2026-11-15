@@ -305,11 +305,13 @@ export type FieldModeDrawing = {
     /**
      * The outline is a drawn path (pathways): drawn solid and heavier than a shape's outline, so it
      * reads over a group's faint lanes; heaviest while drawn or open (`edited`), a little lighter
-     * while only shown (`shown`, closed); `selected` while the path is selected as an object
+     * while only shown (`shown`, closed: Paths All's lines); `quiet` for the selected marchers'
+     * path while it's closed, in the faint path color, so only a line being edited is deep
+     * (pathways interaction round 3); `selected` while the path is selected as an object
      * (pathways step 3a), drawn in the selection color with a halo; `context` thin and grey behind
      * the one lane being worked on (pathways step 3b)
      */
-    pathLine?: "shown" | "edited" | "selected" | "context";
+    pathLine?: "shown" | "quiet" | "edited" | "selected" | "context";
     /**
      * Circles the shape is drawn on, quiet solid lines under it: an Arc's whole circle (#634)
      */
@@ -348,11 +350,12 @@ export type FieldModeDrawing = {
     /** The marcher who walks each of `lanes`, in the same order (pathways), when known */
     laneIds?: readonly number[];
     /**
-     * How `lanes` are drawn: `faint` (thin, under a group path's line, the default) or `path`
-     * (each one the line a marcher walks, at a shown path's weight: a quiet group path's selected
-     * marchers, or every member while the group path is edited; pathways interaction round 2)
+     * How `lanes` are drawn: `faint` (thin, under a group path's line, the default) or `quiet`
+     * (each one the line a marcher walks, at a shown path's weight in the faint path color: a
+     * quiet group path's selected marchers, or every member while the group path is edited, so
+     * only the line being edited is deep; pathways interaction rounds 2 and 3)
      */
-    lanesWeight?: "faint" | "path";
+    lanesWeight?: "faint" | "quiet";
     /** Which of `lanes` the pointer is on: tinted, lighter than a picked lane (pathways step 3b) */
     laneHighlights?: readonly number[];
     /** Which of `lanes` is being worked on: the only heavy line, over the path's (pathways step 3b) */

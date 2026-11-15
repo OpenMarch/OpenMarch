@@ -73,6 +73,8 @@ const GUIDE_REACH = 100_000;
 const SPOT_RADIUS = 4;
 const SPOT_WIDTH = 1.5;
 const WALK_WIDTH = 1;
+/** A shape's walks, the faint line from each marcher to its spot, in the shape's color this strong */
+const WALK_ALPHA = 0.4;
 const SHAPE_HANDLE_SIZE = 9;
 /** A handle that adds a point (a line's midpoint, #524): a small ring, over the center dot */
 const ADD_HANDLE_RADIUS = 3;
@@ -460,9 +462,17 @@ const LANE_HIGHLIGHT_WIDTH = 1.5;
 const PATH_LINE_WIDTH = {
     edited: 2.5,
     shown: 1.75,
+    quiet: 1.75,
     selected: 2.5,
     context: 1.25,
 } as const;
+/**
+ * A line that isn't being edited, in the faint path color (pathways interaction round 3): the
+ * selected marchers' lines while quiet, and the members' lanes round the group path being edited.
+ * The walks' color, at a shown path's weight, so only the line being edited reads deep; the
+ * lanes' fainter one lost a single selected marcher's line on the field.
+ */
+const QUIET_LINE_ALPHA = WALK_ALPHA;
 /** How far the group path's line goes to grey behind the lane being worked on (0 to 1), and its alpha */
 const PATH_CONTEXT_GREY = 0.75;
 const PATH_CONTEXT_ALPHA = 0.7;
@@ -720,7 +730,8 @@ const ShapeBody = memo(function ShapeBody({
     spotShape: MarkerShape;
 }) {
     const shape = rgbaToString(theme.shape);
-    const walk = rgbaToString({ ...theme.shape, a: 0.4 });
+    const quietLine = rgbaToString({ ...theme.shape, a: QUIET_LINE_ALPHA });
+    const walk = rgbaToString({ ...theme.shape, a: WALK_ALPHA });
     const fill = rgbaToString({ ...theme.shape, a: 0.06 });
     const open = drawing.stage === "open";
     const dots = drawing.stage === "drawing";
@@ -781,13 +792,17 @@ const ShapeBody = memo(function ShapeBody({
                 ))}
             {/* Under the path's line, which is the one being edited */}
             {drawing.lanes?.map((lane, i) =>
-                drawing.lanesWeight === "path" ? (
-                    // A selected marcher's own walked line, at a shown path's weight
+                drawing.lanesWeight === "quiet" ? (
+                    // A marcher's own walked line, at a shown path's weight, faint unless pointed at
                     <polyline
                         key={`lane${i}`}
                         points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
                         fill="none"
-                        stroke={shape}
+                        stroke={
+                            drawing.laneHighlights?.includes(i)
+                                ? shape
+                                : quietLine
+                        }
                         strokeWidth={
                             drawing.laneHighlights?.includes(i)
                                 ? PATH_LINE_WIDTH.selected
@@ -830,14 +845,10 @@ const ShapeBody = memo(function ShapeBody({
                         ).join(" ")}
                         fill="none"
                         stroke={GROUP_RING}
-                        strokeOpacity={
-                            drawing.lanesWeight === "path"
-                                ? 1
-                                : LANE_ADJUSTED_ALPHA
-                        }
+                        strokeOpacity={LANE_ADJUSTED_ALPHA}
                         strokeWidth={
-                            drawing.lanesWeight === "path"
-                                ? PATH_LINE_WIDTH.shown
+                            drawing.lanesWeight === "quiet"
+                                ? PATH_LINE_WIDTH.quiet
                                 : LANE_HIGHLIGHT_WIDTH
                         }
                         strokeLinejoin="round"
@@ -875,7 +886,9 @@ const ShapeBody = memo(function ShapeBody({
                                 ? SELECTION_COLOR
                                 : drawing.pathLine === "context"
                                   ? contextLineColor(theme.shape)
-                                  : shape
+                                  : drawing.pathLine === "quiet"
+                                    ? quietLine
+                                    : shape
                         }
                         strokeWidth={
                             drawing.pathLine
