@@ -28,6 +28,38 @@ function formatZodError(error: ZodError): string {
 }
 
 /**
+ * Reads a `.fieldots` file's text into the field properties JSON to store, or the message to
+ * show when it isn't a valid field file.
+ */
+export function parseFieldFile(
+    text: string,
+): { ok: true; json: string } | { ok: false; message: string } {
+    let parsedJson;
+    try {
+        parsedJson = JSON.parse(text);
+    } catch (parseError) {
+        console.error("JSON parsing error:", parseError);
+        return {
+            ok: false,
+            message: tolgee.t("fieldProperties.errors.invalidJson"),
+        };
+    }
+
+    const result = FieldPropertiesSchema.safeParse(parsedJson);
+    if (!result.success) {
+        const errorDetails = formatZodError(result.error);
+        console.error("Field properties validation error:", errorDetails);
+        return {
+            ok: false,
+            message: tolgee.t("fieldProperties.errors.invalidFile", {
+                details: errorDetails,
+            }),
+        };
+    }
+    return { ok: true, json: JSON.stringify(result.data) };
+}
+
+/**
  * Triggers the file input to open for importing field properties
  * @param fileInputRef - Reference to the hidden file input element
  */
@@ -50,35 +82,12 @@ export const handleFileInputChange = async (
     if (!file) return;
 
     try {
-        const text = await file.text();
-
-        // Parse JSON - first try-catch block for JSON parsing errors
-        let parsedJson;
-        try {
-            parsedJson = JSON.parse(text);
-        } catch (parseError) {
-            console.error("JSON parsing error:", parseError);
-            alert(tolgee.t("fieldProperties.errors.invalidJson"));
-            throw new Error("Invalid JSON file.");
+        const result = parseFieldFile(await file.text());
+        if (!result.ok) {
+            alert(result.message);
+            throw new Error(result.message);
         }
-
-        // Validate with Zod schema - second try-catch block for validation errors
-        const result = FieldPropertiesSchema.safeParse(parsedJson);
-
-        if (!result.success) {
-            // If validation fails, provide detailed error information
-            const errorDetails = formatZodError(result.error);
-            console.error("Field properties validation error:", errorDetails);
-            alert(
-                tolgee.t("fieldProperties.errors.invalidFile", {
-                    details: errorDetails,
-                }),
-            );
-            throw new Error(errorDetails);
-        }
-
-        // Validation succeeded, proceed with import
-        const validatedJson = JSON.stringify(result.data);
+        const validatedJson = result.json;
 
         // Update field properties with validated data
         await updateFieldsPropertiesJSON(validatedJson);

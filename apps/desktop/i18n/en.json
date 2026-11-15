@@ -3619,6 +3619,12 @@
             "onX": "On {checkpoint}",
             "onY": "On {checkpoint}",
             "outside": "{steps, plural, =0 {OUT {checkpoint}} other {# OUT {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "center line",
+            "centerLineShort": "CL",
+            "frontEdge": "front edge",
+            "frontEdgeShort": "FE"
         }
     },
     "activities": {
