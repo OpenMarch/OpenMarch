@@ -3905,7 +3905,8 @@
             "rehomedCleared": "{count, plural, one {# spot} other {# spots}} lost their adjustment",
             "adjustsRemoved": "{count, plural, one {# adjustment} other {# adjustments}} removed: {count, plural, one {it was} other {they were}} on the old path",
             "removedTrail": "Removed the trail: {count, plural, one {# marcher walks} other {# marchers walk}} straight to the same end spots",
-            "reversed": "{marcher} leads now"
+            "reversed": "{marcher} leads now",
+            "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}"
         },
         "rings": {
             "group": "Follows the group path",

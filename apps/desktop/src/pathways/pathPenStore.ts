@@ -1650,6 +1650,14 @@ export async function detachFor(marcherIds: readonly number[]): Promise<void> {
             marcherIds,
         });
         const copy = one ? routes[marcherIds[0]!] : undefined;
+        // Said in words, with Undo (interaction round 2: testers couldn't tell Detach worked)
+        toastWithUndo(
+            tolgee.t(
+                "pathways.toasts.detached",
+                "{count, plural, one {# marcher detached} other {# marchers detached}}",
+                { count: marcherIds.length },
+            ),
+        );
         usePathPenStore.setState((state) => ({
             saved: state.saved + 1,
             openNext: one && !session.object ? marcherIds[0]! : null,

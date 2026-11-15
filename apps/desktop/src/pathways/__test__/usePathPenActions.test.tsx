@@ -287,6 +287,44 @@ describeDbTests(
             await waitFor(() => expect(session()?.lane ?? null).toBeNull());
             expect(session()!.phase).toBe("open");
         });
+
+        it("Detach of two says so with Undo; the group path stays shown with Rejoin (round 2)", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { timeline, m2, A, select } = await setUp(db, wrapper);
+            const [, , m3, m4, m5] = resolver().marcherIds();
+            const { routeId } = await drawGroupRoute({
+                db,
+                timelineId: timeline.id,
+                marcherIds: [m2, m3!, m4!, m5!],
+                points: [{ at: [A[0] + 10, A[1] + 10] }],
+            });
+            await timelineResolverSettled();
+            select([m3!, m5!]);
+            await waitFor(() =>
+                expect(session()?.target.routeId).toBe(routeId),
+            );
+            await waitFor(() =>
+                expect(isActionEnabled("detachPath")).toBe(true),
+            );
+            const success = vi.spyOn(toast, "success");
+            try {
+                await act(async () => void runAction("detachPath"));
+                await waitFor(() => expect(success).toHaveBeenCalled());
+                expect(success.mock.calls[0]![0]).toBe("2 marchers detached");
+            } finally {
+                success.mockRestore();
+            }
+            // Still the group path, with the two off it: Rejoin on its bar, nothing to Detach
+            await waitFor(() =>
+                expect(session()?.target.group?.outside.length).toBe(2),
+            );
+            expect(session()!.target.routeId).toBe(routeId);
+            expect(isActionEnabled("rejoinPath")).toBe(true);
+            expect(isActionEnabled("detachPath")).toBe(false);
+        });
     },
 );
 

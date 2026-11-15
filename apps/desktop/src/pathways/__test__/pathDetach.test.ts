@@ -6,6 +6,7 @@ import {
     groupToShow,
     refitNeeded,
     rejoinTargetOf,
+    sourceOfCopies,
     targetOfRoute,
 } from "../pathTarget";
 
@@ -148,6 +149,18 @@ describe("which group path the selection shows (groupToShow)", () => {
         );
         expect(groupToShow([R, other])).toBe(null);
         expect(groupToShow([])).toBe(null);
+    });
+
+    it("copies of one group path only: that group path stays shown, so Rejoin stays on its bar (round 2)", () => {
+        const copy2 = { routeId: 10, detachedFrom: 5 };
+        const groups = [R, other, copyOfR, copy2];
+        expect(sourceOfCopies([copyOfR, copy2], groups)).toBe(R);
+        // Copies of two group paths, or a group path that's gone, pick none
+        expect(
+            sourceOfCopies([copyOfR, { routeId: 11, detachedFrom: 6 }], groups),
+        ).toBe(null);
+        expect(sourceOfCopies([copyOfR, copy2], [copyOfR, copy2])).toBe(null);
+        expect(sourceOfCopies([R, other], groups)).toBe(null);
     });
 });
 

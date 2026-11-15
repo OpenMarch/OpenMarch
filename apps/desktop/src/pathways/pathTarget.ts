@@ -292,6 +292,20 @@ export function groupToShow<
     return main.length === 1 ? main[0]! : null;
 }
 
+/**
+ * With only marchers on copies Detached from one group path selected (two or more copies), that
+ * group path, so it stays shown with them off it and Rejoin on its bar (interaction round 2:
+ * after Detach the bar stays). Null otherwise.
+ */
+export function sourceOfCopies<
+    G extends { routeId: number; detachedFrom: number | null },
+>(on: readonly G[], groups: readonly G[]): G | null {
+    const source = on[0]?.detachedFrom ?? null;
+    if (source === null || on.some((g) => g.detachedFrom !== source))
+        return null;
+    return groups.find((g) => g.routeId === source) ?? null;
+}
+
 const xy = (p: readonly [number, number]): XY => ({ x: p[0], y: p[1] });
 
 /** One marcher's move at `beat`, as `findPathTarget` picks it, or null */
@@ -365,7 +379,7 @@ export async function findGroupTarget(
     const groups = await readGroupPaths(db, move.timelineId);
     const selected = new Set(marcherIds);
     const on = groups.filter((g) => g.marcherIds.some((m) => selected.has(m)));
-    const group = groupToShow(on);
+    const group = groupToShow(on) ?? sourceOfCopies(on, groups);
     if (!group) return null;
     // Selected marchers on copies Detached from it are off it, and can Rejoin
     const detached = new Set(
