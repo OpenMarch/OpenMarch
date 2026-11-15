@@ -19,6 +19,12 @@ import { useBoxSelectionStore } from "@/shapes/placed/boxSelectionStore";
 import { useUnsetActionHandlers } from "./handlers/useUnsetActionHandlers";
 import { useHoldActionHandlers } from "./handlers/useHoldActionHandlers";
 import { useFieldEditActionHandlers } from "./handlers/useFieldEditActionHandlers";
+import {
+    useFieldEditModeEntry,
+    useFieldLineActions,
+    useFieldPanelActions,
+} from "@/field/editMode/useFieldEditModeActions";
+import { useFieldEditModeStore } from "@/field/editMode/fieldEditModeStore";
 
 /** Handlers available before a show is open (launch page). */
 export function FileActionHandlers() {
@@ -40,6 +46,7 @@ export function EditorActionHandlers() {
     useUnsetActionHandlers();
     useHoldActionHandlers();
     useFieldEditActionHandlers();
+    useFieldEditModeEntry();
     useTimelineActionEffects();
     // Mounted after the handlers above, so the open shape tool's keys are on top, and a selected
     // placed box's below them
@@ -51,6 +58,9 @@ export function EditorActionHandlers() {
         (s) => s.selected !== null || s.inside !== null,
     );
     const shapeDiscarded = useShapeToolStore((s) => s.discarded !== null);
+    // The Field panel (#824) takes its keys over everything while it's open
+    const fieldPanelOpen = useFieldEditModeStore((s) => s.active);
+    if (fieldPanelOpen) return <FieldPanelKeys />;
     if (shapeToolOpen && !shapeHidden) return <ShapeToolKeys />;
     return (
         <>
@@ -59,4 +69,16 @@ export function EditorActionHandlers() {
             {shapeDiscarded && <DiscardedShapeKeys />}
         </>
     );
+}
+
+/** The Field panel's keys while it's open, and Edit lines' while that's on (#824) */
+function FieldPanelKeys() {
+    useFieldPanelActions();
+    const editingLines = useFieldEditModeStore((s) => s.lines);
+    return editingLines ? <FieldLineKeys /> : null;
+}
+
+function FieldLineKeys(): null {
+    useFieldLineActions();
+    return null;
 }

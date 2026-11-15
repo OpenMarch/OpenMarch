@@ -61,7 +61,38 @@
                 "every": "Steps between checkpoints",
                 "toBack": "Back to how many steps behind the front",
                 "toSide": "Out to how many steps from the center"
-            }
+            },
+            "editField": "Edit field",
+            "editFieldKeywords": "field lines checkpoints yard hash grid customize size template settings",
+            "done": "Done editing the field",
+            "discard": "Discard field changes",
+            "mirror": "Mirror sides",
+            "mirrorOn": "Turn Mirror sides on",
+            "mirrorOff": "Turn Mirror sides off",
+            "addXLine": "Add X line",
+            "addYLine": "Add Y line",
+            "editLine": "Type the picked line's position",
+            "deleteLines": "Delete lines",
+            "toggleVisible": "Hide or show lines",
+            "toggleReference": "Use lines as reference or not",
+            "nextLine": "Pick the next line",
+            "previousLine": "Pick the previous line",
+            "selectAllLines": "Select all lines",
+            "selectAllXLines": "Select all X lines",
+            "selectAllYLines": "Select all Y lines",
+            "everyOther": "Keep every other line picked",
+            "resetNames": "Name lines from their position",
+            "nudgeLeft": "Move lines left",
+            "nudgeRight": "Move lines right",
+            "nudgeUp": "Move lines back",
+            "nudgeDown": "Move lines forward",
+            "nextPane": "Go between the field and the Field panel",
+            "previousPane": "Go between the Field panel and the field",
+            "importImage": "Import field background image…",
+            "removeImage": "Remove field background image",
+            "imageKeywords": "picture photo aerial background image field",
+            "halfStep": "half step",
+            "editLines": "Edit field lines"
         },
         "file": {
             "closeFile": "Close file",
@@ -556,7 +587,6 @@
             "unavailable.title": "The field can't be drawn",
             "unavailable.web": "This browser has WebGL graphics turned off or blocked. Turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\"), restart the browser, then reload this page. Your show is safe."
         },
-        "title": "Field",
         "errors": {
             "noWebGL": "WebGL is not available",
             "contextLost": "The field's WebGL context was lost, so the video can't be drawn. Try the export again.",
@@ -572,39 +602,15 @@
         "applyFieldTypeWarning": "Marchers will not move to the new field type size, they will stay where they are on the canvas. You can always change back the field type.",
         "buttons": {
             "importImage": "Import Image",
-            "newXCheckpoint": "New X-Checkpoint",
-            "newYCheckpoint": "New Y-Checkpoint",
             "resetTheme": "Reset Theme to Default"
         },
         "checkpoint": {
             "created": "{axis}-checkpoint at {steps} steps created",
-            "delete": "Delete",
-            "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
-            "deleteTooltip": "Delete this checkpoint from the field",
-            "fieldLabel": "Field label",
-            "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
-            "minimumRequired": "At least 2 {axis}-checkpoints are required",
-            "name": "Name",
-            "nameTooltip": "Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting.",
-            "shortName": "Short Name",
-            "shortNameTooltip": "The primary name of the checkpoint. (E.g. \"45 Yard Line - Side 1\")",
-            "stepsFromCenter": "Steps from center",
-            "stepsFromFront": "Steps from front",
-            "stepsFromFrontTooltip": "The number of steps away from the front of the field that this checkpoint is. Negative is towards the back.",
-            "useAsReference": "Use as reference",
-            "useAsReferenceTooltip": "If this checkpoint should be used as a reference for coordinates.",
-            "visible": "Visible",
-            "visibleTooltip": "If this checkpoint should be visible on the field",
-            "stepsFromCenterHint": "The number of steps away from the center of the field that this checkpoint is. Negative is toward the left, as the audience sees the field."
+            "minimumRequired": "At least 2 {axis}-checkpoints are required"
         },
-        "customField": "Custom Field",
         "customFieldDocs": "See docs",
         "customFieldName": "Custom",
-        "customization": "Customization",
-        "customize": "Customize",
         "errors": {
-            "invalidColor": "Invalid color",
-            "noPropertiesToLoad": "No field properties to load! This should never happen, please reach out to support",
             "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support.",
             "invalidJson": "Invalid JSON file.\n\nPlease ensure the file contains valid JSON syntax.",
             "invalidFile": "Invalid field properties file.\n\n{details}\n\nPlease ensure the file contains all required fields with correct values.",
@@ -620,57 +626,38 @@
         "fieldType": {
             "label": "Field type"
         },
-        "general": "General",
         "labels": {
             "background": "Background",
-            "backgroundImageOpacity": "Background Image Opacity",
-            "backgroundImageRatio": "Background Image Ratio",
+            "backgroundImageOpacity": "Background image opacity",
             "bottom": "Bottom",
-            "conformingMethod": "Conforming Method",
-            "conformMethod": "Conform Method",
-            "directorsLeft": "Director's Left",
-            "directorsRight": "Director's Right",
-            "externalLabels": "External Labels",
-            "fieldLabels": "Field Labels",
-            "fieldName": "Field Name",
-            "fieldRatio": "Field Ratio",
-            "gridLines": "Grid Lines",
-            "halfLineXInterval": "Half Line X-Interval",
-            "halfLineYInterval": "Half Line Y-Interval",
-            "height": "Height",
+            "conformMethod": "Conform method",
+            "directorsLeft": "Director's left",
+            "directorsRight": "Director's right",
+            "externalLabels": "External labels",
+            "fieldLabels": "Field labels",
+            "fieldName": "Field name",
+            "gridLines": "Grid lines",
+            "halfLineXInterval": "Half line X interval",
+            "halfLineYInterval": "Half line Y interval",
             "left": "Left",
-            "leftAbbreviation": "Left Abbreviation",
-            "marcherFill": "Marcher Fill",
-            "marcherOutline": "Marcher Outline",
-            "marcherText": "Marcher Text",
-            "measurementSystem": "Measurement System",
-            "nextPath": "Next Path",
-            "previousPath": "Previous Path",
-            "primaryLines": "Primary Lines",
+            "leftAbbreviation": "Left abbreviation",
+            "marcherFill": "Marcher fill",
+            "marcherOutline": "Marcher outline",
+            "marcherText": "Marcher text",
+            "measurementSystem": "Measurement system",
+            "nextPath": "Next path",
+            "previousPath": "Previous path",
+            "primaryLines": "Primary lines",
             "right": "Right",
-            "rightAbbreviation": "Right Abbreviation",
-            "secondaryLines": "Secondary Lines",
+            "rightAbbreviation": "Right abbreviation",
+            "secondaryLines": "Secondary lines",
             "shapes": "Shapes",
-            "shapeType": "Shape Type",
-            "showBackgroundImage": "Show Background Image",
-            "stepsFromFrontToAwayLabelBottom": "Steps from front to away label bottom",
-            "stepsFromFrontToAwayLabelTop": "Steps from front to away label top",
-            "stepsFromFrontToHomeLabel": "Steps from front to home label bottom",
-            "stepsFromFrontToHomeLabelTop": "Steps from front to home label top",
-            "stepSize": "Step Size",
-            "stepSizeWarningThreshold": "Step Size Warning Threshold",
-            "temporaryPath": "Temporary Path",
-            "top": "Top",
-            "useHashes": "Use Hashes",
-            "width": "Width",
-            "widthHeight": "w/h",
-            "noBackgroundImage": "N/A",
-            "stepSizeWarningRatio": "Step Size Warning Threshold ({steps} to 5)"
-        },
-        "messages": {
-            "fieldRatio": "{ratio} or {decimal}",
-            "measurementModificationNote": "These values can be modified by adjusting the X and Y coordinates, the step size and the background image",
-            "refreshAfterImporting": "Refresh after importing [Ctrl + R]"
+            "shapeType": "Shape type",
+            "showBackgroundImage": "Show background image",
+            "stepSize": "Step size",
+            "stepSizeWarningThreshold": "Step size warning threshold",
+            "temporaryPath": "Temporary path",
+            "top": "Top"
         },
         "options": {
             "fill": "Fill",
@@ -679,40 +666,16 @@
             "metric": "Metric"
         },
         "sections": {
-            "externalLabels": "External Labels",
-            "fieldLabels": "Field Labels",
-            "general": "General",
-            "imageRendering": "Image Rendering",
-            "measurements": "Measurements",
-            "sideDescriptions": "Side Descriptions",
-            "theme": "Theme",
-            "xCheckpoints": "X-Checkpoints",
-            "yCheckpoints": "Y-Checkpoints"
-        },
-        "tabs": {
-            "checkpoints": "Checkpoints",
-            "general": "General",
-            "image": "Image",
-            "theme": "Theme"
-        },
-        "themeSubsections": {
-            "grid": "Grid",
-            "labels": "Labels",
-            "marchers": "Marchers",
-            "pathways": "Pathways"
+            "sideDescriptions": "Side descriptions"
         },
         "tooltips": {
-            "importImage": "Import an image to display on the field",
             "conformMethod": "Whether to fit the background image inside the field or fill it. The aspect ratio is always maintained",
             "directorsLeft": "E.g. \"Side 1\", \"Audience Left\" or \"Stage Right\"",
             "directorsRight": "E.g. \"Side 2\", \"Audience Right\" or \"Stage Left\"",
-            "fieldName": "The name or title of the field template",
             "halfLineXInterval": "The interval that half lines appear in the UI on the X axis from the center of the field. Leave empty to omit half lines on the X-axis. This is purely cosmetic and does not affect coordinates in any way",
             "halfLineYInterval": "The interval that half lines appear in the UI on the Y axis from the front of the field. Leave empty to omit half lines on the Y-axis. This is purely cosmetic and does not affect coordinates in any way",
             "leftAbbreviation": "E.g. \"S1\", \"AL\" or \"SR\" (short for \"Side 1\", \"Audience Left\" or \"Stage Right\")",
-            "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
             "resetTheme": "Reset the theme to the default values",
-            "resetToDefault": "Reset to default",
             "rightAbbreviation": "E.g. \"S2\", \"AR\" or \"SL\" (short for \"Side 2\", \"Audience Right\" or \"Stage Left\")",
             "stepsFromFrontToAwayLabelBottom": "Number of steps from the front sideline to the outside of the away number (closer to the back sideline)",
             "stepsFromFrontToAwayLabelTop": "Number of steps from the front sideline to the inside of the away number (closer to the center of the field)",
@@ -726,15 +689,10 @@
             "inches": "in",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "WARNING - The left and rightmost X-checkpoints are not equidistant from the center. This may cause strange graphical artifacts and should be fixed.",
-            "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
-        },
         "loading": "Loading...",
         "measurements": {
             "feet": "{value} ft",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# step} other {# steps}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -4074,6 +4032,8 @@
             "fieldResized": "The field's size or center changed. Marchers keep their spots, so check them against the lines.",
             "fieldResizeRefused": "That would change the field's size or center, so nothing changed"
         },
+        "nothingAdded": "Every spot already has a checkpoint",
+        "seriesAdded": "{count, plural, one {# {axis}-checkpoint added} other {# {axis}-checkpoints added}}",
         "names": {
             "yardLine": "{yards} yard line",
             "endZone": "end zone",
@@ -4086,8 +4046,154 @@
             "stepsFromFront": "{steps} steps from front",
             "stepsFromFrontShort": "F{steps}"
         },
-        "failed": "The field change couldn't be saved, so nothing changed.",
-        "nothingAdded": "Every spot already has a checkpoint",
-        "seriesAdded": "{count, plural, one {# {axis}-checkpoint added} other {# {axis}-checkpoints added}}"
+        "failed": "The field change couldn't be saved, so nothing changed."
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "Field",
+            "done": "Done",
+            "discard": "Discard changes",
+            "discardTip": "Put the field back as it was when you opened this panel. Undo brings the changes back.",
+            "discarded": "Field changes discarded. Undo brings them back.",
+            "custom": "Custom field",
+            "changes": "{count, plural, =0 {No changes from the template} one {# change from the template} other {# changes from the template}}",
+            "selectMany": "Select many",
+            "mirror": "Mirror sides",
+            "mirrorOnTip": "Mirror sides is on: an edit on one side of the 50 also edits its twin",
+            "mirrorOffTip": "Mirror sides is off: each line is edited on its own",
+            "sections": {
+                "size": "Size and steps",
+                "template": "Template",
+                "names": "Names and sides",
+                "markings": "Markings and labels",
+                "image": "Background image",
+                "colors": "Colors"
+            },
+            "tabs": {
+                "setup": "Setup",
+                "lines": "Lines",
+                "appearance": "Appearance"
+            }
+        },
+        "ruler": {
+            "x": "Drag out of this ruler to add an X line",
+            "y": "Drag out of this ruler to add a Y line"
+        },
+        "readout": {
+            "newLine": "New line:",
+            "fromCenter": "{side} · {steps} steps",
+            "center": "On the center",
+            "behindFront": "{steps} steps behind the front",
+            "toLine": "{steps} to {line}",
+            "mirrored": "Its twin on the other side too",
+            "releaseToDelete": "{count, plural, one {Let go to delete this line} other {Let go to delete these # lines}}",
+            "dragOut": "Drag onto the field to add a line"
+        },
+        "popover": {
+            "position": "Position",
+            "side": "Side",
+            "stepsFromCenter": "steps from the center",
+            "stepsBehindFront": "steps behind the front",
+            "yardLine": "= {yard} yard line",
+            "typeHint": "type 24, +4 or 85.33/2",
+            "typeHintYards": "type 24, +4, 47.5yd or 85.33/2",
+            "shortName": "Short name",
+            "shortNameHint": "Shown on the field's edges and in coordinates, such as 45 or FH",
+            "name": "Name",
+            "nameHint": "Used in written-out coordinates and to pick the 3D View's venue",
+            "yardNumber": "Yard number",
+            "yardNumberHint": "The number painted on the field at this line, if any",
+            "none": "none",
+            "visible": "Visible",
+            "mirrored": "Mirrored with {twin}: edits apply to both",
+            "delete": "Delete"
+        },
+        "numberPad": {
+            "label": "Number pad",
+            "back": "Delete last character",
+            "clear": "Clear",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "Those lines already have the names their position gives them",
+        "list": {
+            "xHeading": "X · side to side",
+            "yHeading": "Y · front to back",
+            "center": "center",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "{steps} back",
+            "drawAsHashes": "Draw as hashes",
+            "asymmetric": "The outermost X lines aren't the same distance from the center, so the field is drawn off-center. Move one of them until both sides match.",
+            "hidden": "Hidden",
+            "reference": "Reference"
+        },
+        "size": {
+            "width": "Width",
+            "depth": "Depth",
+            "steps": "steps",
+            "stepsTo5": "{steps} to 5",
+            "extent": "{steps} steps · {length}"
+        },
+        "names": {
+            "fieldNameHint": "The 3D View picks its venue from this name"
+        },
+        "markings": {
+            "edgeLabels": "Edge labels",
+            "yardNumbers": "Yard numbers",
+            "yardNumbersHint": "Steps from the front to each edge of the painted numbers. Clear the home numbers to paint none.",
+            "homeBottom": "Home, bottom",
+            "homeTop": "Home, top",
+            "awayTop": "Away, top",
+            "awayBottom": "Away, bottom"
+        },
+        "image": {
+            "remove": "Remove image",
+            "ratios": "Field ratio {field} · image ratio {image}"
+        },
+        "colors": {
+            "field": "Field",
+            "marchers": "Marchers and paths",
+            "shapes": {
+                "circle": "Circle",
+                "square": "Square",
+                "triangle": "Triangle",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "Switch to {template}?",
+            "lines": "Lines: {added} added, {removed} removed, {renamed} renamed or changed",
+            "size": "Size: {before} → {after} steps",
+            "keepLook": "Keep my look (colors, labels, image, side names)",
+            "undoNote": "This is one step to undo.",
+            "cancel": "Cancel",
+            "apply": "Switch",
+            "resetTitle": "Reset to {template}?",
+            "resetApply": "Reset",
+            "basedOn": "Based on",
+            "resetShort": "Reset to template"
+        },
+        "fieldPane": "Field lines",
+        "help": {
+            "button": "Keyboard",
+            "title": "Keyboard",
+            "route": "<tab></tab> picks the next line while the field has the keyboard. <pane></pane> moves between the field and the Field panel."
+        },
+        "lines": {
+            "pickedMany": "{count} lines picked",
+            "axis": "Which lines",
+            "xTab": "Side to side · {count}",
+            "yTab": "Front to back · {count}",
+            "canvasHint": "Click a line to pick it · Drag out of a ruler to add one · <keys></keys> to finish",
+            "canvasHintPicked": "Drag the picked lines to move them · <keys></keys> to drop the pick"
+        },
+        "line": {
+            "title": "Line",
+            "noneHint": "Pick a line on the field or in the list. Shift-click picks more. Drag out of a ruler to add one.",
+            "reference": "Use as reference",
+            "mixed": "Mixed",
+            "add": "Add line",
+            "everyOther": "Keep every other"
+        }
     }
 }

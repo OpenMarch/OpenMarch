@@ -1129,6 +1129,384 @@
             ]
         },
         {
+            "title": "Field",
+            "rows": [
+                {
+                    "label": "Edit field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Shift",
+                                "E"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "⌘",
+                                "E"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Done editing the field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Esc"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Esc"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Mirror sides",
+                    "other": [
+                        {
+                            "keys": [
+                                "M"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "M"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Add X line",
+                    "other": [
+                        {
+                            "keys": [
+                                "X"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "X"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Add Y line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Y"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Y"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Type the picked line's position",
+                    "other": [
+                        {
+                            "keys": [
+                                "Enter"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↩"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Delete lines",
+                    "other": [
+                        {
+                            "keys": [
+                                "Del"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌦"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Hide or show lines",
+                    "other": [
+                        {
+                            "keys": [
+                                "H"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "H"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Use lines as reference or not",
+                    "other": [
+                        {
+                            "keys": [
+                                "R"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "R"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Pick the next line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Tab"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Tab"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Pick the previous line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "Tab"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "Tab"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Go between the field and the Field panel",
+                    "other": [
+                        {
+                            "keys": [
+                                "F6"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F6"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Go between the Field panel and the field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "F6"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "F6"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines back",
+                    "other": [
+                        {
+                            "keys": [
+                                "↑"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↑"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines back (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "↑"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "↑"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines forward",
+                    "other": [
+                        {
+                            "keys": [
+                                "↓"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↓"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines forward (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "↓"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "↓"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines left",
+                    "other": [
+                        {
+                            "keys": [
+                                "←"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "←"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines left (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "←"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "←"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines right",
+                    "other": [
+                        {
+                            "keys": [
+                                "→"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "→"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines right (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "→"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "→"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "title": "Tools",
             "rows": [
                 {
@@ -2385,6 +2763,384 @@
                             "keys": [
                                 "⇧",
                                 "N"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Field",
+            "rows": [
+                {
+                    "label": "Edit field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Shift",
+                                "E"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "⌘",
+                                "E"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Done editing the field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Esc"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Esc"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Mirror sides",
+                    "other": [
+                        {
+                            "keys": [
+                                "M"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "M"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Add X line",
+                    "other": [
+                        {
+                            "keys": [
+                                "X"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "X"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Add Y line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Y"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Y"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Type the picked line's position",
+                    "other": [
+                        {
+                            "keys": [
+                                "Enter"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↩"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Delete lines",
+                    "other": [
+                        {
+                            "keys": [
+                                "Del"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌦"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Hide or show lines",
+                    "other": [
+                        {
+                            "keys": [
+                                "H"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "H"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Use lines as reference or not",
+                    "other": [
+                        {
+                            "keys": [
+                                "R"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "R"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Pick the next line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Tab"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "Tab"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Pick the previous line",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "Tab"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "Tab"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Go between the field and the Field panel",
+                    "other": [
+                        {
+                            "keys": [
+                                "F6"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F6"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Go between the Field panel and the field",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "F6"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "F6"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines back",
+                    "other": [
+                        {
+                            "keys": [
+                                "↑"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↑"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines back (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "↑"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "↑"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines forward",
+                    "other": [
+                        {
+                            "keys": [
+                                "↓"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "↓"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines forward (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "↓"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "↓"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines left",
+                    "other": [
+                        {
+                            "keys": [
+                                "←"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "←"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines left (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "←"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "←"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines right",
+                    "other": [
+                        {
+                            "keys": [
+                                "→"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "→"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Move lines right (half step)",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "→"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "→"
                             ]
                         }
                     ]

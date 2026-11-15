@@ -494,7 +494,6 @@
             "unavailable.title": "No se puede dibujar el campo",
             "unavailable.web": "Este navegador tiene los gráficos WebGL desactivados o bloqueados. Activa la aceleración de gráficos (en Chrome o Edge: Configuración, Sistema, \"Usar aceleración de gráficos cuando esté disponible\"), reinicia el navegador y vuelve a cargar esta página. Tu show está a salvo."
         },
-        "title": "Campo",
         "errors": {
             "noWebGL": "WebGL no está disponible",
             "contextLost": "Se perdió el contexto WebGL del campo, así que no se puede dibujar el video. Vuelve a intentar la exportación.",
@@ -510,41 +509,17 @@
         "applyFieldTypeWarning": "Los integrantes no se moverán al tamaño del nuevo tipo de campo; se quedarán donde están en el lienzo. Siempre puedes volver al tipo de campo anterior.",
         "buttons": {
             "importImage": "Importar Imagen",
-            "newXCheckpoint": "Nueva línea de referencia X",
-            "newYCheckpoint": "Nueva línea de referencia Y",
             "resetTheme": "Restablecer tema predeterminado",
             "uploadFloor": "Cargar piso…",
             "removeFloor": "Quitar piso"
         },
         "checkpoint": {
             "created": "Se creó la línea de referencia {axis} a {steps} pasos",
-            "delete": "Eliminar",
-            "deleted": "Se eliminó la línea de referencia {axis} a {steps} pasos - \"{name}\"",
-            "deleteTooltip": "Eliminar esta línea de referencia del campo",
-            "fieldLabel": "Etiqueta en el campo",
-            "fieldLabelTooltip": "La etiqueta que aparece en el campo (p. ej., los números de las yardas)",
-            "minimumRequired": "Se requieren al menos 2 líneas de referencia {axis}",
-            "name": "Nombre",
-            "nameTooltip": "Ponle a tu línea de referencia el nombre que quieras. Solo sirve para que sepas qué línea de referencia estás seleccionando.",
-            "shortName": "Nombre corto",
-            "shortNameTooltip": "El nombre principal de la línea de referencia. (P. ej., \"Línea de yarda 45 - Lado 1\")",
-            "stepsFromCenter": "Pasos desde el centro",
-            "stepsFromFront": "Pasos desde el frente",
-            "stepsFromFrontTooltip": "La cantidad de pasos que separan esta línea de referencia del frente del campo. Los valores negativos van hacia atrás.",
-            "useAsReference": "Usar como referencia",
-            "useAsReferenceTooltip": "Si esta línea se debe usar como referencia para las coordenadas.",
-            "visible": "Visible",
-            "visibleTooltip": "Si esta línea de referencia debe verse en el campo",
-            "stepsFromCenterHint": "La cantidad de pasos que separan esta línea de referencia del centro del campo. Los valores negativos van hacia la izquierda, tal como el público ve el campo."
+            "minimumRequired": "Se requieren al menos 2 líneas de referencia {axis}"
         },
-        "customField": "Campo personalizado",
         "customFieldDocs": "Ver documentación",
         "customFieldName": "Personalizado",
-        "customization": "Personalización",
-        "customize": "Personalizar",
         "errors": {
-            "invalidColor": "Color no válido",
-            "noPropertiesToLoad": "¡No hay propiedades del campo para cargar! Esto nunca debería pasar; comunícate con soporte",
             "notDefined": "FieldProperties no está definido. Esto nunca debería pasar; comunícate con soporte.",
             "invalidJson": "Archivo JSON no válido.\n\nAsegúrate de que el archivo tenga una sintaxis JSON válida.",
             "invalidFile": "Archivo de propiedades del campo no válido.\n\n{details}\n\nAsegúrate de que el archivo contenga todas las entradas obligatorias con valores correctos.",
@@ -560,24 +535,19 @@
         "fieldType": {
             "label": "Tipo de campo"
         },
-        "general": "General",
         "labels": {
             "background": "Fondo",
             "backgroundImageOpacity": "Opacidad de la imagen de fondo",
-            "backgroundImageRatio": "Proporción de la imagen de fondo",
             "bottom": "Abajo",
-            "conformingMethod": "Método de ajuste",
             "conformMethod": "Método de ajuste",
             "directorsLeft": "Izquierda del director",
             "directorsRight": "Derecha del director",
             "externalLabels": "Etiquetas externas",
             "fieldLabels": "Etiquetas del campo",
             "fieldName": "Nombre del campo",
-            "fieldRatio": "Proporción del campo",
             "gridLines": "Líneas de cuadrícula",
             "halfLineXInterval": "Intervalo X de medias líneas",
             "halfLineYInterval": "Intervalo Y de medias líneas",
-            "height": "Altura",
             "left": "Izquierda",
             "leftAbbreviation": "Abreviatura de izquierda",
             "marcherFill": "Relleno de integrante",
@@ -593,26 +563,14 @@
             "shapes": "Formas",
             "shapeType": "Tipo de forma",
             "showBackgroundImage": "Mostrar imagen de fondo",
-            "stepsFromFrontToAwayLabelBottom": "Pasos desde el frente hasta el borde inferior del número visitante",
-            "stepsFromFrontToAwayLabelTop": "Pasos desde el frente hasta el borde superior del número visitante",
-            "stepsFromFrontToHomeLabel": "Pasos desde el frente hasta el borde inferior del número local",
-            "stepsFromFrontToHomeLabelTop": "Pasos desde el frente hasta el borde superior del número local",
             "stepSize": "Tamaño del paso",
             "stepSizeWarningThreshold": "Umbral de aviso de tamaño de paso",
             "temporaryPath": "Ruta temporal",
-            "top": "Superior",
-            "useHashes": "Usar hashes",
-            "width": "Ancho",
-            "widthHeight": "a/h",
-            "noBackgroundImage": "N/D",
-            "stepSizeWarningRatio": "Umbral de aviso de tamaño de paso ({steps} a 5)"
+            "top": "Superior"
         },
         "messages": {
-            "fieldRatio": "{ratio} o {decimal}",
-            "measurementModificationNote": "Estos valores se pueden modificar ajustando las coordenadas X e Y, el tamaño del paso y la imagen de fondo",
             "noFloor": "Sin piso",
-            "floorUnnamed": "Piso",
-            "refreshAfterImporting": "Actualizar después de importar [Ctrl + R]"
+            "floorUnnamed": "Piso"
         },
         "options": {
             "fill": "Rellenar",
@@ -621,40 +579,16 @@
             "metric": "Métrico"
         },
         "sections": {
-            "externalLabels": "Etiquetas externas",
-            "fieldLabels": "Etiquetas del campo",
-            "general": "General",
-            "imageRendering": "Visualización de la imagen",
-            "measurements": "Medidas",
-            "sideDescriptions": "Descripciones de los lados",
-            "theme": "Tema",
-            "xCheckpoints": "Líneas de referencia X",
-            "yCheckpoints": "Líneas de referencia Y"
-        },
-        "tabs": {
-            "checkpoints": "Líneas de referencia",
-            "general": "General",
-            "image": "Imagen",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Cuadrícula",
-            "labels": "Etiquetas",
-            "marchers": "Integrantes",
-            "pathways": "Rutas"
+            "sideDescriptions": "Descripciones de los lados"
         },
         "tooltips": {
-            "importImage": "Importar una imagen para mostrar en el campo",
             "conformMethod": "Indica si la imagen de fondo se ajusta dentro del campo o lo rellena. Siempre se mantiene la relación de aspecto",
             "directorsLeft": "P. ej., \"Lado 1\", \"Izquierda del público\" o \"Derecha del escenario\"",
             "directorsRight": "P. ej., \"Lado 2\", \"Derecha del público\" o \"Izquierda del escenario\"",
-            "fieldName": "El nombre o título de la plantilla de campo",
             "halfLineXInterval": "El intervalo, desde el centro del campo, en el que aparecen las medias líneas en la interfaz en el eje X. Déjalo vacío para omitir las medias líneas en el eje X. Es puramente visual y no afecta las coordenadas de ninguna manera",
             "halfLineYInterval": "El intervalo, desde el frente del campo, en el que aparecen las medias líneas en la interfaz en el eje Y. Déjalo vacío para omitir las medias líneas en el eje Y. Es puramente visual y no afecta las coordenadas de ninguna manera",
             "leftAbbreviation": "P. ej., \"L1\", \"IP\" o \"DE\" (abreviaturas de \"Lado 1\", \"Izquierda del público\" o \"Derecha del escenario\")",
-            "measurementSystem": "La unidad de medida con la que se define el tamaño del paso. Puedes cambiarla cuando quieras",
             "resetTheme": "Restablecer el tema a los valores predeterminados",
-            "resetToDefault": "Restablecer valor predeterminado",
             "rightAbbreviation": "P. ej., \"L2\", \"DP\" o \"IE\" (abreviaturas de \"Lado 2\", \"Derecha del público\" o \"Izquierda del escenario\")",
             "stepsFromFrontToAwayLabelBottom": "Número de pasos desde la línea lateral delantera hasta el borde exterior del número visitante (más cerca de la línea lateral trasera)",
             "stepsFromFrontToAwayLabelTop": "Número de pasos desde la línea lateral delantera hasta el borde interior del número visitante (más cerca del centro del campo)",
@@ -669,15 +603,10 @@
             "inches": "pulg.",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "ADVERTENCIA: las líneas de referencia X de los extremos izquierdo y derecho no están a la misma distancia del centro. Esto puede causar fallas gráficas extrañas y debe corregirse.",
-            "yCheckpointsNegative": "ADVERTENCIA: se recomienda encarecidamente que los pasos de todas las líneas de referencia Y sean menores que cero (es decir, números negativos). Todas las coordenadas Y deben quedar detrás del frente del campo. De lo contrario, pueden producirse errores gráficos y coordenadas inesperadas."
-        },
         "loading": "Cargando...",
         "measurements": {
             "feet": "{value} pies",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# paso} other {# pasos}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {

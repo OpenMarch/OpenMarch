@@ -182,6 +182,7 @@ describe("FieldContextMenu", () => {
                 "setSelectedMarchersToNextPage",
             ],
             ["selectAllMarchers"],
+            ["fieldEditMode"],
         ]);
         expect(item("timelineHoldFromPrevious")).toHaveTextContent(
             "Hold from last keyframe",

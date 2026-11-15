@@ -494,7 +494,6 @@
             "unavailable.title": "フィールドを描画できません",
             "unavailable.web": "このブラウザではWebGLグラフィックスが無効になっているか、ブロックされています。グラフィックアクセラレーションをオンにして（ChromeまたはEdgeの「設定」>「システム」にある設定）、ブラウザを再起動してから、このページを再読み込みしてください。ショーのデータは失われていません。"
         },
-        "title": "フィールド",
         "errors": {
             "noWebGL": "WebGLを使用できません",
             "contextLost": "フィールドのWebGLコンテキストが失われたため、動画を描画できません。もう一度エクスポートしてください。",
@@ -510,41 +509,17 @@
         "applyFieldTypeWarning": "メンバーは新しいフィールドタイプのサイズに合わせて移動せず、キャンバス上の現在の位置に留まります。フィールドタイプはいつでも元に戻せます。",
         "buttons": {
             "importImage": "画像 インポート",
-            "newXCheckpoint": "X基準線を追加",
-            "newYCheckpoint": "Y基準線を追加",
             "resetTheme": "テーマをデフォルトに戻す",
             "uploadFloor": "床画像をアップロード…",
             "removeFloor": "床画像を削除"
         },
         "checkpoint": {
             "created": "{steps}歩の位置に{axis}基準線を作成しました",
-            "delete": "削除",
-            "deleted": "{steps}歩の位置の{axis}基準線を削除しました - 「{name}」",
-            "deleteTooltip": "この基準線をフィールドから削除",
-            "fieldLabel": "フィールドラベル",
-            "fieldLabelTooltip": "フィールドに表示するラベル（ヤードラインの番号など）",
-            "minimumRequired": "{axis}基準線は少なくとも2本必要です",
-            "name": "名前",
-            "nameTooltip": "基準線には自由に名前を付けられます。名前は、どの基準線を選択しているかを自分で把握するためのものです。",
-            "shortName": "短縮名",
-            "shortNameTooltip": "基準線の主な名前です（例：「45ヤードライン - サイド1」）。",
-            "stepsFromCenter": "中央からの歩数",
-            "stepsFromFront": "前方からの歩数",
-            "stepsFromFrontTooltip": "この基準線がフィールドの前方から何歩離れているかを示します。負の値は後方を表します。",
-            "useAsReference": "基準として使用",
-            "useAsReferenceTooltip": "この基準線を座標の基準として使用するかどうかを設定します。",
-            "visible": "表示",
-            "visibleTooltip": "この基準線をフィールドに表示するかどうかを設定します。",
-            "stepsFromCenterHint": "この基準線がフィールドの中央から何歩離れているかを示します。負の値は、客席から見て左側を表します。"
+            "minimumRequired": "{axis}基準線は少なくとも2本必要です"
         },
-        "customField": "カスタムフィールド",
         "customFieldDocs": "ドキュメントを参照",
         "customFieldName": "カスタム",
-        "customization": "カスタマイズ",
-        "customize": "カスタマイズ",
         "errors": {
-            "invalidColor": "無効な色です",
-            "noPropertiesToLoad": "読み込むフィールド設定がありません。通常は発生しないエラーです。サポートにお問い合わせください。",
             "notDefined": "FieldPropertiesが定義されていません。通常は発生しないエラーです。サポートにお問い合わせください。",
             "invalidJson": "無効なJSONファイルです。\n\nファイルが正しいJSON構文で記述されているか確認してください。",
             "invalidFile": "無効なフィールド設定ファイルです。\n\n{details}\n\n必要な項目がすべて正しい値で含まれているか確認してください。",
@@ -560,24 +535,19 @@
         "fieldType": {
             "label": "フィールドタイプ"
         },
-        "general": "一般",
         "labels": {
             "background": "背景",
             "backgroundImageOpacity": "背景画像の不透明度",
-            "backgroundImageRatio": "背景画像の比率",
             "bottom": "下",
-            "conformingMethod": "サイズ調整方法",
             "conformMethod": "サイズ調整方法",
             "directorsLeft": "ディレクターから見て左",
             "directorsRight": "ディレクターから見て右",
             "externalLabels": "フィールド外のラベル",
             "fieldLabels": "フィールドラベル",
             "fieldName": "フィールド名",
-            "fieldRatio": "フィールドの比率",
             "gridLines": "グリッド線",
             "halfLineXInterval": "ハーフラインのX間隔",
             "halfLineYInterval": "ハーフラインのY間隔",
-            "height": "高さ",
             "left": "左",
             "leftAbbreviation": "左側の略称",
             "marcherFill": "メンバーの塗り",
@@ -593,26 +563,14 @@
             "shapes": "図形",
             "shapeType": "形の種類",
             "showBackgroundImage": "背景画像を表示",
-            "stepsFromFrontToAwayLabelBottom": "前からアウェイラベル下端までの歩数",
-            "stepsFromFrontToAwayLabelTop": "前からアウェイラベル上端までの歩数",
-            "stepsFromFrontToHomeLabel": "前からホームラベル下端までの歩数",
-            "stepsFromFrontToHomeLabelTop": "前からホームラベル上端までの歩数",
             "stepSize": "歩幅",
             "stepSizeWarningThreshold": "歩幅の警告しきい値",
             "temporaryPath": "一時パス",
-            "top": "上",
-            "useHashes": "ハッシュを使用",
-            "width": "幅",
-            "widthHeight": "幅/高さ",
-            "noBackgroundImage": "なし",
-            "stepSizeWarningRatio": "歩幅の警告しきい値（{steps}対5）"
+            "top": "上"
         },
         "messages": {
-            "fieldRatio": "{ratio}または{decimal}",
-            "measurementModificationNote": "これらの値は、X座標とY座標、歩幅、背景画像を調整すると変更できます。",
             "noFloor": "フロアなし",
-            "floorUnnamed": "フロア",
-            "refreshAfterImporting": "[Ctrl + R] インポート 後に 更新"
+            "floorUnnamed": "フロア"
         },
         "options": {
             "fill": "埋める",
@@ -621,40 +579,16 @@
             "metric": "メートル法"
         },
         "sections": {
-            "externalLabels": "外側のラベル",
-            "fieldLabels": "フィールドラベル",
-            "general": "一般",
-            "imageRendering": "画像の表示",
-            "measurements": "寸法",
-            "sideDescriptions": "左右の名称",
-            "theme": "テーマ",
-            "xCheckpoints": "X基準線",
-            "yCheckpoints": "Y基準線"
-        },
-        "tabs": {
-            "checkpoints": "基準線",
-            "general": "一般",
-            "image": "画像",
-            "theme": "テーマ"
-        },
-        "themeSubsections": {
-            "grid": "グリッド",
-            "labels": "ラベル",
-            "marchers": "メンバー",
-            "pathways": "経路"
+            "sideDescriptions": "左右の名称"
         },
         "tooltips": {
-            "importImage": "フィールドに表示する 画像 を インポート する",
             "conformMethod": "背景画像をフィールド内に収めるか、フィールド全体を埋めるかを指定します。縦横比は常に維持されます。",
             "directorsLeft": "例：「サイド1」、「客席から見て左」、「下手」",
             "directorsRight": "例：「サイド2」、「客席から見て右」、「上手」",
-            "fieldName": "フィールドテンプレートの名前またはタイトル",
             "halfLineXInterval": "フィールドの中央からX軸方向に、画面上でハーフラインを表示する間隔です。空欄にすると、X軸上のハーフラインは表示されません。見た目だけの設定で、座標には一切影響しません。",
             "halfLineYInterval": "フィールドの前端からY軸方向に、画面上でハーフラインを表示する間隔です。空欄にすると、Y軸上のハーフラインは表示されません。見た目だけの設定で、座標には一切影響しません。",
             "leftAbbreviation": "例：「S1」、「客左」、「下」（それぞれ「サイド1」、「客席から見て左」、「下手」の略）",
-            "measurementSystem": "歩幅を指定する単位です。いつでも切り替えられます。",
             "resetTheme": "テーマをデフォルト値に戻す",
-            "resetToDefault": "デフォルトに戻す",
             "rightAbbreviation": "例：「S2」、「客右」、「上」（それぞれ「サイド2」、「客席から見て右」、「上手」の略）",
             "stepsFromFrontToAwayLabelBottom": "前側のサイドラインから、アウェイ側の数字の外側（後ろ側のサイドライン寄り）までの歩数",
             "stepsFromFrontToAwayLabelTop": "前側のサイドラインから、アウェイ側の数字の内側（フィールド中央寄り）までの歩数",
@@ -669,15 +603,10 @@
             "inches": "インチ",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "警告：左端と右端のX基準線が中心から等距離にありません。表示が乱れる原因になる可能性があるため、修正してください。",
-            "yCheckpointsNegative": "警告：すべてのY基準線の歩数を0未満（つまり負の数）にすることを強くおすすめします。すべてのY座標はフィールドの前端より後ろにある必要があります。そうしないと、表示の不具合や予期しない座標が発生する可能性があります。"
-        },
         "loading": "読み込み中...",
         "measurements": {
             "feet": "{value}フィート",
-            "meters": "{value} m",
-            "steps": "{count, plural, other {#歩}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {

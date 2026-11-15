@@ -1,4 +1,9 @@
-import { rgbaToString, type FieldTheme } from "@openmarch/core";
+import {
+    rgbaToString,
+    type FieldProperties,
+    type FieldTheme,
+} from "@openmarch/core";
+import { fieldEditTestState } from "@/field/editMode/fieldEditTestApi";
 import { useShapeGuidesStore } from "@/shapes/field/shapeGuides";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 import type { FieldModeDrawing, FieldPoint } from "@/field/editor/fieldEditor";
@@ -59,6 +64,8 @@ export type ThreeFieldState = {
     items: FieldItems;
     /** The editor's prop tool, or null when it's off (C2.1). */
     propTool(): PropToolShape | null;
+    /** The field as stored, for the Edit field mode (#824) */
+    fieldProperties(): FieldProperties | undefined;
 };
 
 /**
@@ -68,6 +75,14 @@ export type ThreeFieldState = {
  */
 export function createThreeFieldTestApi(field: ThreeFieldState): FieldTestApi {
     return {
+        fieldEdit() {
+            const element = field.element();
+            return fieldEditTestState(
+                field.fieldProperties(),
+                field.view(),
+                element ? element.getBoundingClientRect() : null,
+            );
+        },
         marchers() {
             const element = field.element();
             if (!element) return [];

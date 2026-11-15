@@ -494,7 +494,6 @@
             "unavailable.title": "無法繪製場地",
             "unavailable.web": "此瀏覽器已關閉或封鎖 WebGL 圖形。請開啟圖形加速功能（在 Chrome 或 Edge 中：「設定」>「系統」>「可用時使用圖形加速功能」），重新啟動瀏覽器，然後重新載入此網頁。你的表演安全無虞。"
         },
-        "title": "場地",
         "errors": {
             "noWebGL": "無法使用 WebGL",
             "contextLost": "場地的 WebGL 繪圖環境已遺失，因此無法繪製影片。請重新匯出。",
@@ -509,41 +508,17 @@
         "applyFieldType": "套用場地類型",
         "applyFieldTypeWarning": "隊員不會移動以配合新場地類型的大小，而會停留在畫布上原本的位置。你隨時可以改回原本的場地類型。",
         "buttons": {
-            "newXCheckpoint": "新增 X 參考線",
-            "newYCheckpoint": "新增 Y 參考線",
             "resetTheme": "將主題重設為預設值",
             "uploadFloor": "上傳地板…",
             "removeFloor": "移除地板"
         },
         "checkpoint": {
             "created": "已建立位於 {steps} 步的 {axis} 參考線",
-            "delete": "刪除",
-            "deleted": "已刪除位於 {steps} 步的 {axis} 參考線：「{name}」",
-            "deleteTooltip": "從場地刪除此參考線",
-            "fieldLabel": "場地標籤",
-            "fieldLabelTooltip": "顯示在場地上的標籤（例如碼線數字）",
-            "minimumRequired": "至少需要 2 條 {axis} 參考線",
-            "name": "名稱",
-            "nameTooltip": "參考線可任意命名，名稱僅供你辨識目前選取的是哪一條參考線。",
-            "shortName": "簡稱",
-            "shortNameTooltip": "參考線的主要名稱。（例如「45 碼線 - 第 1 側」）",
-            "stepsFromCenter": "距中心步數",
-            "stepsFromFront": "距前方步數",
-            "stepsFromFrontTooltip": "此參考線距離場地前方的步數。負數表示朝後方。",
-            "useAsReference": "用作參考",
-            "useAsReferenceTooltip": "此參考線是否用作描述座標的參考基準。",
-            "visible": "顯示",
-            "visibleTooltip": "此參考線是否在場地上顯示",
-            "stepsFromCenterHint": "此參考線距離場地中心的步數。負數表示朝左方（從觀眾的角度看）。"
+            "minimumRequired": "至少需要 2 條 {axis} 參考線"
         },
-        "customField": "自訂場地",
         "customFieldDocs": "查看說明文件",
         "customFieldName": "自訂",
-        "customization": "自訂",
-        "customize": "自訂",
         "errors": {
-            "invalidColor": "無效的顏色",
-            "noPropertiesToLoad": "沒有可載入的場地屬性！這種情況不應發生，請聯絡支援團隊",
             "notDefined": "FieldProperties 未定義。這種情況不應發生，請聯絡支援團隊。",
             "invalidJson": "無效的 JSON 檔案。\n\n請確認檔案內容的 JSON 語法正確。",
             "invalidFile": "無效的場地屬性檔案。\n\n{details}\n\n請確認檔案包含所有必要欄位，且數值正確。",
@@ -559,24 +534,19 @@
         "fieldType": {
             "label": "場地類型"
         },
-        "general": "一般",
         "labels": {
             "background": "背景",
             "backgroundImageOpacity": "背景圖片不透明度",
-            "backgroundImageRatio": "背景圖片比例",
             "bottom": "下方",
-            "conformingMethod": "縮放方式",
             "conformMethod": "縮放方式",
             "directorsLeft": "指揮左側",
             "directorsRight": "指揮右側",
             "externalLabels": "外部標籤",
             "fieldLabels": "場地標籤",
             "fieldName": "場地名稱",
-            "fieldRatio": "場地比例",
             "gridLines": "網格線",
             "halfLineXInterval": "X 半線間距",
             "halfLineYInterval": "Y 半線間距",
-            "height": "高度",
             "left": "左方",
             "leftAbbreviation": "左側縮寫",
             "marcherFill": "隊員填色",
@@ -592,23 +562,12 @@
             "shapes": "圖形",
             "shapeType": "圖形類型",
             "showBackgroundImage": "顯示背景圖片",
-            "stepsFromFrontToAwayLabelBottom": "前邊線至客隊側數字底端的步數",
-            "stepsFromFrontToAwayLabelTop": "前邊線至客隊側數字頂端的步數",
-            "stepsFromFrontToHomeLabel": "前邊線至主隊側數字底端的步數",
-            "stepsFromFrontToHomeLabelTop": "前邊線至主隊側數字頂端的步數",
             "stepSize": "步幅",
             "stepSizeWarningThreshold": "步幅警告門檻",
             "temporaryPath": "暫時路徑",
-            "top": "上",
-            "useHashes": "使用 Hash 標記",
-            "width": "寬度",
-            "widthHeight": "寬/高",
-            "noBackgroundImage": "無",
-            "stepSizeWarningRatio": "步幅警告門檻（{steps} 比 5）"
+            "top": "上"
         },
         "messages": {
-            "fieldRatio": "{ratio} 或 {decimal}",
-            "measurementModificationNote": "這些數值可透過調整 X 與 Y 參考線位置、步幅及背景圖片來修改",
             "noFloor": "無地板",
             "floorUnnamed": "地板"
         },
@@ -619,39 +578,16 @@
             "metric": "公制"
         },
         "sections": {
-            "externalLabels": "外部標籤",
-            "fieldLabels": "場地標籤",
-            "general": "一般",
-            "imageRendering": "圖片呈現",
-            "measurements": "尺寸",
-            "sideDescriptions": "側邊名稱",
-            "theme": "主題",
-            "xCheckpoints": "X 參考線",
-            "yCheckpoints": "Y 參考線"
-        },
-        "tabs": {
-            "checkpoints": "參考線",
-            "general": "一般",
-            "image": "圖片",
-            "theme": "主題"
-        },
-        "themeSubsections": {
-            "grid": "格線",
-            "labels": "標籤",
-            "marchers": "隊員",
-            "pathways": "路徑"
+            "sideDescriptions": "側邊名稱"
         },
         "tooltips": {
             "conformMethod": "選擇讓背景圖片完整顯示在場地內，或填滿整個場地。圖片的長寬比一律維持不變",
             "directorsLeft": "例如「第1側」、「觀眾左側」或「舞台右側」",
             "directorsRight": "例如「第2側」、「觀眾右側」或「舞台左側」",
-            "fieldName": "場地範本的名稱或標題",
             "halfLineXInterval": "半線在介面中沿 X 軸、從場地中央起算的顯示間距。留空則不在 X 軸顯示半線。此設定僅影響外觀，完全不會影響座標",
             "halfLineYInterval": "半線在介面中沿 Y 軸、從場地前緣起算的顯示間距。留空則不在 Y 軸顯示半線。此設定僅影響外觀，完全不會影響座標",
             "leftAbbreviation": "例如「1側」、「觀左」或「台右」（分別為「第1側」、「觀眾左側」或「舞台右側」的簡稱）",
-            "measurementSystem": "定義步幅所使用的度量單位，可隨時來回切換",
             "resetTheme": "將主題重設為預設值",
-            "resetToDefault": "重設為預設值",
             "rightAbbreviation": "例如「2側」、「觀右」或「台左」（分別為「第2側」、「觀眾右側」或「舞台左側」的簡稱）",
             "stepsFromFrontToAwayLabelBottom": "從前邊線到客隊側數字外緣的步數（較靠近後邊線）",
             "stepsFromFrontToAwayLabelTop": "從前邊線到客隊側數字內緣的步數（較靠近場地中央）",
@@ -666,15 +602,10 @@
             "inches": "英吋",
             "centimeters": "公分"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "警告：最左側與最右側的 X 參考線與中央的距離不相等。這可能會造成奇怪的圖形瑕疵，應予以修正。",
-            "yCheckpointsNegative": "警告：強烈建議所有 Y 參考線的步數都小於零（即負數）。所有 Y 座標都應位於場地前緣之後。否則可能會造成圖形錯誤及非預期的座標。"
-        },
         "loading": "載入中…",
         "measurements": {
             "feet": "{value} 英尺",
-            "meters": "{value} 公尺",
-            "steps": "{count, plural, other {# 步}}"
+            "meters": "{value} 公尺"
         }
     },
     "fileAccessDialogError": {

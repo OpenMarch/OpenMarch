@@ -68,17 +68,36 @@
         "width": 1600,
         "height": 1000
     },
-    "field-checkpoints": {
+    "field-edit-mode": {
         "chapter": "field",
         "kind": "still",
-        "width": 1152,
-        "height": 1224
+        "width": 1600,
+        "height": 1000
     },
-    "field-panel": {
+    "field-inspector": {
         "chapter": "field",
         "kind": "still",
-        "width": 1176,
-        "height": 1416
+        "width": 920,
+        "height": 1364
+    },
+    "field-keys-help": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 672,
+        "height": 888
+    },
+    "field-line-detail": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 912,
+        "height": 724
+    },
+    "field-ruler-drag": {
+        "chapter": "field",
+        "kind": "clip",
+        "width": 1280,
+        "height": 1228,
+        "seconds": 4.9
     },
     "field-show-settings": {
         "chapter": "field",
@@ -95,8 +114,8 @@
     "field-template": {
         "chapter": "field",
         "kind": "still",
-        "width": 1152,
-        "height": 408
+        "width": 912,
+        "height": 660
     },
     "files-export-charts": {
         "chapter": "files",

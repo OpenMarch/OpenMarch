@@ -1,5 +1,10 @@
 import { isWebBuild } from "@/utilities/webBuild";
-export type ActionScope = "global" | "canvas";
+/**
+ * Where an action's key works. `canvas` keys beat `global` ones on the same key; `fieldEdit` keys
+ * work only in the Edit field mode (#824), whose handlers exist only while it's on, and beat both
+ * there. A `fieldEdit` key may reuse a `canvas` key (Delete, H, R, the arrows) but not a global one.
+ */
+export type ActionScope = "global" | "canvas" | "fieldEdit";
 export type ActionCategory =
     | "file"
     | "edit"
@@ -160,6 +165,35 @@ function buildNudgeActions(): Record<NudgeActionId, ActionDefinition> {
             };
         }
     }
+    return result;
+}
+
+type FieldLineNudgeActionId =
+    `fieldEditNudge${keyof typeof NUDGE_KEYS}${"" | "Fine"}`;
+
+/**
+ * The Edit field mode's arrows (#824): move the selected lines a step (X lines left and right, Y
+ * lines up and down), or half a step with Shift (the Fine role, as for marchers)
+ */
+function buildFieldLineNudgeActions(): Record<
+    FieldLineNudgeActionId,
+    ActionDefinition
+> {
+    const result = {} as Record<FieldLineNudgeActionId, ActionDefinition>;
+    for (const [dirName, dir] of Object.entries(NUDGE_KEYS))
+        for (const fine of [false, true]) {
+            const id =
+                `fieldEditNudge${dirName}${fine ? "Fine" : ""}` as FieldLineNudgeActionId;
+            result[id] = {
+                labelKey: `actions.field.nudge${dirName}`,
+                // Half a step, not the marchers' Fine (¼ step, no snap)
+                labelSuffixKey: fine ? "actions.field.halfStep" : undefined,
+                category: "field",
+                scope: "fieldEdit",
+                defaultBindings: [fine ? `Shift+${dir.arrow}` : dir.arrow],
+                args: { direction: dir.direction, steps: fine ? 0.5 : 1 },
+            };
+        }
     return result;
 }
 
@@ -1041,11 +1075,161 @@ const STATIC_ACTIONS = {
             },
         ],
     },
+    // The Field panel (#824). Opening it is global; the rest are the panel's keys, handled only
+    // while it's open, and the line keys only while Edit lines is on (useFieldEditModeActions)
+    fieldEditMode: {
+        labelKey: "actions.field.editField",
+        keywordsKey: "actions.field.editFieldKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: ["$mod+Shift+E", "Control+Shift+E"],
+    },
+    // Opens the Field panel on its Lines tab (#824). No key: E is the next page everywhere
+    fieldEditLines: {
+        labelKey: "actions.field.editLines",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: [],
+    },
+    fieldEditDone: {
+        labelKey: "actions.field.done",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Escape"],
+    },
+    // The Field panel's X (#824): puts the field back as it was when the panel opened, one undo step
+    fieldEditDiscard: {
+        labelKey: "actions.field.discard",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditMirror: {
+        labelKey: "actions.field.mirror",
+        toggleOnKey: "actions.field.mirrorOn",
+        toggleOffKey: "actions.field.mirrorOff",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["M"],
+        ignoreRepeat: true,
+    },
+    fieldEditAddXLine: {
+        labelKey: "actions.field.addXLine",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["X"],
+    },
+    fieldEditAddYLine: {
+        labelKey: "actions.field.addYLine",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Y"],
+    },
+    fieldEditEditLine: {
+        labelKey: "actions.field.editLine",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Enter", "F2"],
+    },
+    fieldEditDeleteLines: {
+        labelKey: "actions.field.deleteLines",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Delete", "Backspace"],
+    },
+    fieldEditToggleVisible: {
+        labelKey: "actions.field.toggleVisible",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["H"],
+    },
+    fieldEditToggleReference: {
+        labelKey: "actions.field.toggleReference",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["R"],
+    },
+    fieldEditNextLine: {
+        labelKey: "actions.field.nextLine",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Tab"],
+    },
+    fieldEditPreviousLine: {
+        labelKey: "actions.field.previousLine",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Shift+Tab"],
+    },
+    // The keyboard's way out of the field (where Tab walks lines) to the bar and the inspector
+    fieldEditNextPane: {
+        labelKey: "actions.field.nextPane",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["F6"],
+        allowInInputs: true,
+    },
+    fieldEditPreviousPane: {
+        labelKey: "actions.field.previousPane",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: ["Shift+F6"],
+        allowInInputs: true,
+    },
+    fieldEditImportImage: {
+        labelKey: "actions.field.importImage",
+        keywordsKey: "actions.field.imageKeywords",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditRemoveImage: {
+        labelKey: "actions.field.removeImage",
+        keywordsKey: "actions.field.imageKeywords",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditSelectAllLines: {
+        labelKey: "actions.field.selectAllLines",
+        category: "field",
+        scope: "fieldEdit",
+        // ⌘A / Ctrl+A is Select all marchers' (global); the mode takes it over while it's on
+        defaultBindings: [],
+    },
+    fieldEditSelectAllXLines: {
+        labelKey: "actions.field.selectAllXLines",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditSelectAllYLines: {
+        labelKey: "actions.field.selectAllYLines",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditEveryOther: {
+        labelKey: "actions.field.everyOther",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
+    fieldEditResetNames: {
+        labelKey: "actions.field.resetNames",
+        category: "field",
+        scope: "fieldEdit",
+        defaultBindings: [],
+    },
 } satisfies Record<string, ActionDefinition>;
 
 export const ACTIONS = {
     ...STATIC_ACTIONS,
     ...buildNudgeActions(),
+    ...buildFieldLineNudgeActions(),
 } as const satisfies Record<string, ActionDefinition>;
 
 export type ActionId = keyof typeof ACTIONS;
@@ -1054,6 +1238,11 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[];
 
 export const NUDGE_ACTION_IDS = ACTION_IDS.filter((id) =>
     id.startsWith("moveSelectedMarchers"),
+);
+
+/** The Edit field mode's arrows (#824) */
+export const FIELD_LINE_NUDGE_ACTION_IDS = ACTION_IDS.filter((id) =>
+    id.startsWith("fieldEditNudge"),
 );
 
 export const EXPORT_ACTION_IDS = [

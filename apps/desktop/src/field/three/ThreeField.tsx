@@ -20,6 +20,11 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { LABEL_SIZE_SCALE, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { isPreviewMode, useIsPreviewMode } from "@/stores/PreviewModeStore";
+import {
+    useIsEditingFieldLines,
+    useIsFieldEditMode,
+} from "@/field/editMode/fieldEditModeStore";
+import { FieldEditOverlay } from "@/field/editMode/FieldEditOverlay";
 import { onScreenToggles } from "@/stores/TouchModifierStore";
 import {
     allItemsQueryOptions,
@@ -100,7 +105,9 @@ import { runFieldHistory } from "./fieldHistory";
 import { cameraBounds, useFieldViewStore } from "./fieldView";
 import {
     attachFieldNavigation,
+    enterFieldEditView,
     fitAfterResize,
+    leaveFieldEditView,
     glideToFitAfterResize,
     resetView,
     settleView,
@@ -334,6 +341,14 @@ function ThreeFieldView() {
     });
     const { dimming, look } = timeline;
     useShapeFocus(dimming);
+    // #824: while the Field panel is open the drill can't be picked, and while its lines are
+    // edited the drill steps back
+    const fieldEditing = useIsFieldEditMode() && !preview;
+    const editingLines = useIsEditingFieldLines() && !preview;
+    useEffect(
+        () => dimming.setEveryoneDimmed(editingLines),
+        [dimming, editingLines],
+    );
     const root = useRef<HTMLDivElement>(null);
     // #927: the bars at the field's top sit below the touch toolbar's panel
     useFieldTopInset(root);
@@ -539,6 +554,7 @@ function ThreeFieldView() {
                 labelShown: (id) => dimming.labelShown(id),
                 notDefined: (id) => drawnNotDefined(dimming, look, id),
                 labelBold: (id) => drawnLabelBold(dimming, look, id),
+                fieldProperties: () => latest.current.fieldProperties,
             }),
         );
         return () => installFieldTestApi(undefined);
@@ -580,6 +596,7 @@ function ThreeFieldView() {
     // keeps the view
     const opened = useRef(false);
     usePreviewFit(preview, ready, settled);
+    useFieldEditFit(fieldEditing, ready);
 
     return (
         <div
@@ -592,7 +609,7 @@ function ThreeFieldView() {
             data-testid="threeField"
         >
             {/* What a drag edits: Preview edits nothing */}
-            {!preview && (
+            {!preview && !fieldEditing && (
                 <>
                     <TimelineIsolationBar />
                     <TimelineFromStartBadge />
@@ -737,6 +754,10 @@ function ThreeFieldView() {
                 {fieldProperties && (
                     <ShapeEditor stepPx={fieldProperties.pixelsPerStep} />
                 )}
+                {/* Edit lines' rulers and lines, over everything that edits the drill */}
+                {fieldProperties && editingLines && (
+                    <FieldEditOverlay fp={fieldProperties} />
+                )}
                 {/* Fine, Equal, From center, Add and Snap for a tablet: touch layout only */}
                 {!preview && (
                     <TouchModifierButtons
@@ -811,6 +832,20 @@ function useFieldItems(
             ),
         [itemRows, showPropNames, propNameOverrides],
     );
+}
+
+/**
+ * The Edit field mode (#824) holds the field still, fitted inside its rulers: entering it glides
+ * there, and leaving it glides back to the view from before.
+ */
+function useFieldEditFit(fieldEditing: boolean, ready: boolean) {
+    const entered = useRef(false);
+    useEffect(() => {
+        if (!ready || fieldEditing === entered.current) return;
+        entered.current = fieldEditing;
+        if (fieldEditing) enterFieldEditView();
+        else leaveFieldEditView();
+    }, [fieldEditing, ready]);
 }
 
 /** How long to wait for Preview's layout to settle. */
@@ -930,17 +965,19 @@ function EditorInput({
 }) {
     const canvas = useThree((s) => s.gl.domElement);
     const invalidate = useThree((s) => s.invalidate);
-    // Preview edits nothing, and selects nothing: presses only move the view (`fieldNavigation`)
+    // Preview edits nothing, and selects nothing: presses only move the view (`fieldNavigation`).
+    // Nor does the Edit field mode (#824), whose overlay takes the presses
     const preview = useIsPreviewMode();
+    const fieldEditing = useIsFieldEditMode();
 
     useEffect(
         () =>
-            preview
+            preview || fieldEditing
                 ? undefined
                 : attachFieldPointerInput(canvas, editor, {
                       penDrag: (press) => penDrag(editor, press),
                   }),
-        [canvas, editor, preview],
+        [canvas, editor, preview, fieldEditing],
     );
     // A drag moves marchers outside the playhead's fills: draw them
     useEffect(() => marchers.subscribe(invalidate), [marchers, invalidate]);

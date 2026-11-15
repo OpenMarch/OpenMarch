@@ -6,6 +6,7 @@ covers:
   - apps/desktop/src/timeline/stepSizeWarning.ts
   - apps/desktop/src/components/inspector/StepSizeWarningBadge.tsx
   - apps/desktop/src/components/field/customizer/GeneralTab.tsx
+  - apps/desktop/src/field/editMode/panel/FieldSettings.tsx
   - apps/desktop/src/shapes/validate.ts
   - action:toggleNextPagePaths
   - i18n:fieldProperties.labels.stepSizeWarningThreshold
@@ -46,12 +47,12 @@ The limit belongs to the field, so every show on that field uses the same one.
 <Steps>
 
 1. Select <Ui k="sidebar.field" /> in the sidebar.
-2. If the field is a template, select <Ui k="fieldProperties.customize" />.
-3. On the <Ui k="fieldProperties.tabs.general" /> tab, enter the longest step in <Ui k="fieldProperties.labels.stepSizeWarningThreshold" />, in inches or centimeters.
+2. In the Field panel, on the <Ui k="fieldEditMode.panel.tabs.setup" /> tab under <Ui k="fieldEditMode.panel.sections.size" />, enter the longest step in <Ui k="fieldProperties.labels.stepSizeWarningThreshold" />, in inches or centimeters.
+3. Select <Ui k="fieldEditMode.panel.done" />.
 
 </Steps>
 
-The label also shows the limit the way drill writers say it: 45 inches is (4 to 5), four steps every five yards, and 22.5 inches is (8 to 5). A step counts as too long when it's more than half an inch over the limit. The default is 45 inches.
+Under the box, the panel also shows the limit the way drill writers say it: 45 inches is "4 to 5", four steps every five yards, and 22.5 inches is "8 to 5". A step counts as too long when it's more than half an inch over the limit. The default is 45 inches.
 
 Enter 0 to turn the warnings off for this field, whatever the setting.
 

@@ -54,6 +54,7 @@ import {
  *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
+ * - **Edit field**, which puts the canvas into the Edit field mode (#824).
  */
 /** The page state commands: the group whose entries can show checked */
 const STATE_GROUP: readonly ActionId[] = [
@@ -74,6 +75,8 @@ const GROUPS: readonly (readonly ActionId[])[] = [
         "setSelectedMarchersToNextPage",
     ],
     ["selectAllMarchers"],
+    // #824: the field's own lines and settings, from where you're looking at it
+    ["fieldEditMode"],
 ];
 
 /** The actions the menu offers, in order. */

@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { glideTo, isGliding } from "../fieldNavigation";
+import {
+    enterFieldEditView,
+    glideTo,
+    isGliding,
+    leaveFieldEditView,
+    setView,
+} from "../fieldNavigation";
+import { fieldEditMode } from "@/field/editMode/fieldEditModeStore";
 import { useFieldViewStore } from "../fieldView";
 
 /** The floating editor's glide to keep a shape in view (#441) */
@@ -48,5 +55,51 @@ describe("glideTo", () => {
         expect(view.height).toBe(450);
         expect(view.zoom).toBeCloseTo(2);
         expect(view.panX).toBeCloseTo(80);
+    });
+});
+
+/** The Edit field mode holds the field still, fitted inside its rulers (#824, owner feedback) */
+describe("the Edit field mode's view", () => {
+    const settleAll = async () => {
+        for (let i = 0; i < 200; i++) await frame();
+    };
+
+    it("fits the field inside the rulers, ignores navigation, and goes back on Done", async () => {
+        fieldEditMode.enter();
+        enterFieldEditView();
+        await settleAll();
+        const fitted = useFieldViewStore.getState();
+        expect(fitted.panX).toBeGreaterThanOrEqual(22);
+        expect(fitted.panY).toBeGreaterThanOrEqual(22);
+        expect(fitted.panX + 400 * fitted.zoom).toBeLessThanOrEqual(1000);
+        expect(fitted.panY + 200 * fitted.zoom).toBeLessThanOrEqual(600);
+
+        // Wheel, drags, pinches and app actions all go through here: none moves the view
+        setView({ ...START, zoom: 5, panX: -300, panY: -100 });
+        const held = useFieldViewStore.getState();
+        expect(held.zoom).toBe(fitted.zoom);
+        expect(held.panX).toBe(fitted.panX);
+
+        fieldEditMode.exit();
+        leaveFieldEditView();
+        await settleAll();
+        const back = useFieldViewStore.getState();
+        expect(back.zoom).toBeCloseTo(START.zoom);
+        expect(back.panX).toBeCloseTo(START.panX);
+        expect(back.panY).toBeCloseTo(START.panY);
+    });
+
+    it("reads 100% at the view from before when the panel closes (sims: it read 146%)", async () => {
+        fieldEditMode.enter();
+        enterFieldEditView();
+        await settleAll();
+        // The pane is narrowed by the panel while it's open
+        useFieldViewStore.setState({ width: 700 });
+        fieldEditMode.exit();
+        leaveFieldEditView();
+        await settleAll();
+        const back = useFieldViewStore.getState();
+        expect(back.baseZoom).toBe(2);
+        expect(back.zoom / back.baseZoom).toBeCloseTo(1);
     });
 });
