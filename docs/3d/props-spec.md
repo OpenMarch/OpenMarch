@@ -71,6 +71,9 @@ phases [26.24].
   after reopening must find the item it used. While a cue uses a
   Library item, the show's copy can't be deleted; deleting it offers "Replace with…" and lists
   the uses [26.10].
+  Amended 2026-11-15 (ADR 0010, fork #996): replaced by one show asset
+  store for any kind, never pruned automatically, with a "Remove unused…"
+  note in Show checks.
 - The item table loads at open; blobs are read lazily by hash for the current
   or a nearby moment, with a small in-memory cache. Rendering never reads
   originals.

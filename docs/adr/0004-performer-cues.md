@@ -287,7 +287,9 @@ Carry, Silk and Uniform values name Library items (a model, an Artwork, a
 Uniform) at an exact Version, embedded in the show (ADR 0010 D-12), as
 `library:<uuid>@<version hash>`; Carry also takes `none` [06, 26.10, 26.14].
 
-- Save never prunes a Library item a cue names [06].
+- Save never prunes a Library item a cue names [06]. Amended 2026-11-15
+  (ADR 0010, fork #996): nothing prunes the show's assets at all; "Remove
+  unused…" removes only assets nothing names.
 - While a cue uses a Library item, the show's copy can't be deleted. Deleting it
   offers "Replace with…" and lists the cues that use it [26.10].
 
