@@ -1,8 +1,8 @@
 ---
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
-id: detach-rejoin
-title: "Detach and Rejoin a group path's members (pathways, step 3c)"
+id: paths-interaction
+title: "Path editing: one line per marcher, Adjust, Detach and Rejoin (interaction MVP)"
 summary: "Step 3c of pathways: select a member of a group path and press Detach. It gets its own copy of the path and keeps walking in step with the group, without anybody moving, until you edit the copy. Rejoin puts it back on the group path."
 status: open
 variants: []
