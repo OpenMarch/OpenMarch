@@ -201,7 +201,8 @@
             "setOrder": "Set order",
             "reverseOrder": "Reverse order",
             "clearOrder": "Clear order",
-            "orderKeywords": "order sequence leader tail first last line follow reverse numbers"
+            "orderKeywords": "order sequence leader tail first last line follow reverse numbers",
+            "adjust": "Adjust"
         }
     },
     "analyticsOptIn": {
@@ -2726,9 +2727,9 @@
                 "alreadyOnGroupPath": "Those marchers already follow the group path",
                 "groupTooSmall": "A group path is for two or more marchers",
                 "spotShared": "Spot {spot} is also walked by {marcher} from count {count}",
-                "adjustOutside": "Adjust reaches only the shared part of the path; drag the end spot for the legs",
+                "adjustOutside": "This end of the line only takes the marcher to or from the group path, so it can't be bent. Bend it farther along, between the group path's first and last points",
                 "adjustTooClose": "Keep adjustments at least a step apart",
-                "adjustTooShort": "This path's shared part is too short to adjust; Detach to edit it",
+                "adjustTooShort": "This line is too short to bend. Detach the marcher to edit its own copy",
                 "refitNotNeeded": "The path already fits where its marchers stand",
                 "refitNoFounder": "Nobody starts on this path, so it has no ends to re-fit to",
                 "arcTooRound": "An arc can bend at most into a half circle",
@@ -3847,7 +3848,8 @@
             "resetTip": "Take off this marcher's adjustment, so it walks its plain lane of the group path again",
             "detachedNote": "Detached",
             "detachedCount": "{count} detached",
-            "groupLabel": "Group path · {count}"
+            "groupLabel": "Group path · {count}",
+            "adjustTip": "Bend only this marcher's line. It keeps following the group path's edits"
         },
         "menu": {
             "pointType": "Corner type",
@@ -3948,6 +3950,14 @@
             "stopBefore": "{count, plural, one {# stops or leaves the trail before turning here} other {# stop or leave the trail before turning here}}",
             "offCountShort": "Turns between counts",
             "offCountTip": "{turns, plural, one {# turn falls} other {# turns fall}} between counts, at {corners, plural, one {# corner} other {# corners}}. Each marcher reaches a corner at its own steady speed. Move the corner, change the spacing or the move's counts to put every turn on a count. Tap or click a corner's count to see who turns when."
+        },
+        "adjust": {
+            "groupOnly": "Adjust is for a marcher on a group path",
+            "ownPath": "This marcher walks its own path: Edit path changes it",
+            "detached": "This marcher is detached: Edit path changes its own copy, or Rejoin puts it back on the group path",
+            "alone": "This marcher is alone on its path: Edit path changes it",
+            "severalSelected": "Adjust one marcher at a time: select just one",
+            "noneSelected": "Select a marcher on the group path to adjust its line"
         }
     }
 }

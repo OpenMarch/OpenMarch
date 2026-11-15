@@ -9,6 +9,7 @@ import {
     ArrowsOutLineHorizontalIcon,
     ArrowsSplitIcon,
     BackspaceIcon,
+    BezierCurveIcon,
     FlagPennantIcon,
     PlayIcon,
     LineSegmentsIcon,
@@ -57,7 +58,9 @@ import {
 } from "./followDrag";
 import { rippleArrivalCount } from "@/db-functions/timelineTrailRipplePlan";
 import {
+    adjustTargetOf,
     detachIdsOf,
+    laneFocusOf,
     memberNow,
     memberOf,
     groupViewOf,
@@ -589,6 +592,9 @@ function PathEditorBar({
     // The "back" slot (interaction system rule 5, one ladder): Rejoin for a detached marcher,
     // Reset adjustment for an adjusted member (the lane picked, or the one selected)
     const resetId = resetTargetOf(session, selectedMembers);
+    // Adjust (interaction round 2): who it acts on or why not, and the lane adjusted now
+    const adjustWho = adjustTargetOf(session, selectedMembers);
+    const adjustingId = drawing ? null : laneFocusOf(session);
     const groupControls =
         !drawing && (ownable.length > 0 || rejoin !== null || resetId !== null);
     // Rejoin's marchers that were Detached: the copy shown, or the group's detached ones
@@ -775,7 +781,7 @@ function PathEditorBar({
                 </>
             ) : (
                 <>
-                    {quiet && (
+                    {(quiet || adjustingId !== null) && (
                         <>
                             <IconButton
                                 label={tolgee.t(
@@ -788,6 +794,35 @@ function PathEditorBar({
                             >
                                 <PencilSimpleIcon size={14} />
                                 {tolgee.t("actions.path.edit", "Edit path")}
+                            </IconButton>
+                            <Divider />
+                        </>
+                    )}
+                    {session.target.group && !session.target.lane && (
+                        <>
+                            <IconButton
+                                label={
+                                    "reason" in adjustWho
+                                        ? adjustWho.reason
+                                        : tolgee.t(
+                                              "pathways.editor.adjustTip",
+                                              "Bend only this marcher's line. It keeps following the group path's edits",
+                                          )
+                                }
+                                action="adjustPath"
+                                disabled={"reason" in adjustWho}
+                                pressed={adjustingId !== null}
+                                onClick={() => runAction("adjustPath")}
+                                onDisabledClick={() =>
+                                    "reason" in adjustWho &&
+                                    toast.info(adjustWho.reason, {
+                                        id: "path-adjust-why",
+                                    })
+                                }
+                                testId="path-adjust"
+                            >
+                                <BezierCurveIcon size={14} />
+                                {tolgee.t("actions.path.adjust", "Adjust")}
                             </IconButton>
                             <Divider />
                         </>

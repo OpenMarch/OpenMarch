@@ -10,7 +10,10 @@ import {
     pathPenMode,
 } from "../pathPenMode";
 import {
+    adjustMember,
+    adjustTargetOf,
     clearPath,
+    closePath,
     openPath,
     selectLane,
     showPath,
@@ -379,5 +382,72 @@ describe("when Re-fit is offered (decision A)", () => {
 
     it("a path not saved yet has nothing to re-fit", () => {
         expect(refitNeeded(group({ routeId: null, ends: null }))).toBe(false);
+    });
+});
+
+describe("Adjust, an explicit command (interaction round 2)", () => {
+    beforeEach(() => {
+        setShapeField({
+            fieldProperties: () => fieldProperties,
+            zoom: () => ZOOM,
+            marchers: () => [],
+            drawn: () => new Map(),
+        });
+    });
+    afterEach(() => {
+        clearPath();
+        setShapeField(null);
+    });
+    const session = () => usePathPenStore.getState().session;
+
+    it("acts on the one selected member; several, none or a path that isn't a group's say why", () => {
+        showPath(group(), "2");
+        expect(adjustTargetOf(session(), [11])).toEqual({ marcherId: 11 });
+        expect(adjustTargetOf(session(), [10, 11])).toEqual({
+            reason: "Adjust one marcher at a time: select just one",
+        });
+        expect("reason" in adjustTargetOf(session(), [])).toBe(true);
+        showPath(group({ group: null }), "B1");
+        expect(adjustTargetOf(session(), [])).toEqual({
+            reason: "This marcher walks its own path: Edit path changes it",
+        });
+        showPath(
+            group({ lane: { offset: { x: 0, y: 0 }, detachedFrom: 3 } }),
+            "B1",
+        );
+        expect("reason" in adjustTargetOf(session(), [10])).toBe(true);
+    });
+
+    it("makes only that member's lane drawn and editable, from quiet; Escape's close goes back to quiet", () => {
+        showPath(group(), "2");
+        adjustMember(11);
+        expect(session()).toMatchObject({
+            phase: "open",
+            lane: { marcherId: 11, key: null },
+        });
+        const d = drawingOf(session())!;
+        expect(d.outline).toBeNull();
+        expect(d.laneIds).toEqual([11]);
+        // While adjusting, Adjust names the lane adjusted whatever is selected
+        expect(adjustTargetOf(session(), [])).toEqual({ marcherId: 11 });
+        // A press on the other member's lane isn't taken: it isn't drawn
+        const otherLane = pointer(20 * STEP, 16 * STEP);
+        expect(pathPenMode.claims(otherLane, onDot(false))).toBe(false);
+        closePath();
+        expect(session()).toMatchObject({ phase: "closed", lane: null });
+    });
+
+    it("Edit path from Adjust edits the group path, its line drawn again", () => {
+        showPath(group(), "2");
+        adjustMember(10);
+        openPath();
+        expect(session()).toMatchObject({ phase: "open", lane: null });
+        expect(drawingOf(session())!.outline).not.toBeNull();
+    });
+
+    it("does nothing for a marcher who isn't a member", () => {
+        showPath(group(), "2");
+        adjustMember(99);
+        expect(session()!.phase).toBe("closed");
     });
 });

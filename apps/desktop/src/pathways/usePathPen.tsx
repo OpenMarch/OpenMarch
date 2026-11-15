@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { translateTimelineText } from "@/timeline/translateTimelineText";
 import { allMarchersQueryOptions } from "@/hooks/queries";
@@ -47,6 +48,8 @@ import {
 } from "./pathTarget";
 import {
     acknowledgeOpenPath,
+    adjustMember,
+    adjustTargetOf,
     deleteAdjustKey,
     deleteOnLane,
     resetSpot,
@@ -393,9 +396,29 @@ export function usePathPenActions(): void {
 
     // Edit path: opens the selected marcher's path at the playhead, as a double-click on it does.
     // No key of its own: the shape tool has none for editing points (Enter places a shape)
+    // Adjusting one lane, it goes back to editing the group path (its line shows only then)
+    const adjusting = usePathPenStore(
+        (s) => s.session?.phase === "open" && !!s.session.lane,
+    );
     useActionHandler("editPath", () => void openPath(), {
-        enabled: phase === "closed",
+        enabled: phase === "closed" || adjusting,
     });
+    // Adjust (interaction round 2): the one selected member's lane alone, editable
+    const adjustWho = usePathPenStore(
+        useShallow((s) => adjustTargetOf(s.session, s.ownable)),
+    );
+    const adjustId = "marcherId" in adjustWho ? adjustWho.marcherId : null;
+    useActionHandler(
+        "adjustPath",
+        () => {
+            if (adjustId !== null) adjustMember(adjustId);
+        },
+        {
+            enabled: adjustId !== null,
+            disabledReason:
+                "reason" in adjustWho ? adjustWho.reason : undefined,
+        },
+    );
     // Enter makes the selection's quiet path active, as a click on its line does (interaction
     // system, rule 2), and as Edit path does a hidden one. Not while a shape tool has Enter (Set
     // order's keys sit on top)
@@ -754,7 +777,10 @@ export function PathPenKeys(): null {
     useActionHandler(
         "cancelAlignmentUpdates",
         () => {
-            if (!drawing && pickedLane !== null) selectLane(null);
+            // Adjusting a lane: its picked handle goes first, then back to quiet (round 2)
+            if (!drawing && pickedLane?.key != null)
+                selectLane({ marcherId: pickedLane.marcherId, key: null });
+            else if (!drawing && pickedLane !== null) closePath();
             else if (!drawing && picked !== null) selectPoint(null);
             // The Follow tool (step 4b): Escape cancels the trail drawn, then leaves the tool
             else if (drawing && cancelFollowDrawing()) return;
@@ -763,8 +789,8 @@ export function PathPenKeys(): null {
         {
             label: drawing
                 ? tolgee.t("actions.path.cancel", "Cancel path")
-                : pickedLane !== null
-                  ? tolgee.t("actions.path.deselectSpot", "Deselect spot")
+                : pickedLane?.key != null
+                  ? tolgee.t("actions.path.deselectPoint", "Deselect point")
                   : picked !== null
                     ? tolgee.t("actions.path.deselectPoint", "Deselect point")
                     : tolgee.t("actions.path.close", "Close path"),

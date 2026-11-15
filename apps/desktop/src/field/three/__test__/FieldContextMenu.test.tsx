@@ -163,7 +163,7 @@ describe("FieldContextMenu", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
-        // The Path group shows only what applies: here Edit path, Detach and Remove path
+        // The Path group shows only what applies: here Edit path, Adjust, Detach and Remove path
         for (const id of [
             "rejoinPath",
             "adjustResetSpot",
@@ -182,7 +182,7 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["editPath", "detachPath", "removePath"],
+            ["editPath", "adjustPath", "detachPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "setSelectedMarchersToPreviousPage",

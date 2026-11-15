@@ -13,6 +13,7 @@ import {
     ArrowsMergeIcon,
     ArrowsSplitIcon,
     ArrowsOutLineHorizontalIcon,
+    BezierCurveIcon,
     PencilSimpleIcon,
     TrashIcon,
     type Icon,
@@ -78,6 +79,7 @@ import {
 /** The Path group (pathways), on a marcher and on a path's line: each shown only when it applies */
 const PATH: readonly ActionId[] = [
     "editPath",
+    "adjustPath",
     "detachPath",
     "rejoinPath",
     "adjustResetSpot",
@@ -140,6 +142,7 @@ const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
 /** A mode's entries' icons */
 const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
     editPath: PencilSimpleIcon,
+    adjustPath: BezierCurveIcon,
     detachPath: ArrowsSplitIcon,
     rejoinPath: ArrowsMergeIcon,
     adjustResetSpot: ArrowCounterClockwiseIcon,

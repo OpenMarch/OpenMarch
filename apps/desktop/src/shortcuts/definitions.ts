@@ -815,6 +815,16 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         ignoreRepeat: true,
     },
+    // Adjust (pathways interaction round 2): the selected member's lane alone, editable. On the
+    // floating path bar, the Path menus and in the palette; no keys
+    adjustPath: {
+        labelKey: "actions.path.adjust",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
     adjustResetSpot: {
         labelKey: "actions.path.adjustResetSpot",
         keywordsKey: "actions.path.keywords",

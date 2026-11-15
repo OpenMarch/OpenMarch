@@ -688,6 +688,90 @@ export function resetTargetOf(
 }
 
 /**
+ * Whom Adjust acts on (interaction round 2), or why it can't: the one selected member of the
+ * group path shown, or the member whose lane is being adjusted. Adjust makes only that member's
+ * lane editable, so nobody has to find its faint lane by dragging. One marcher at a time: two
+ * members' bends are two separate edits.
+ */
+export function adjustTargetOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+): { marcherId: number } | { reason: string } {
+    const groupOnly = () =>
+        tolgee.t(
+            "pathways.adjust.groupOnly",
+            "Adjust is for a marcher on a group path",
+        );
+    if (!session || session.phase === "drawing" || session.target.trail)
+        return { reason: groupOnly() };
+    if (!session.target.group)
+        return {
+            reason: tolgee.t(
+                "pathways.adjust.ownPath",
+                "This marcher walks its own path: Edit path changes it",
+            ),
+        };
+    if (session.target.lane)
+        return {
+            reason:
+                session.target.lane.detachedFrom != null
+                    ? tolgee.t(
+                          "pathways.adjust.detached",
+                          "This marcher is detached: Edit path changes its own copy, or Rejoin puts it back on the group path",
+                      )
+                    : tolgee.t(
+                          "pathways.adjust.alone",
+                          "This marcher is alone on its path: Edit path changes it",
+                      ),
+        };
+    const lane = session.phase === "open" ? session.lane : null;
+    if (lane) return { marcherId: lane.marcherId };
+    if (ownable.length > 1)
+        return {
+            reason: tolgee.t(
+                "pathways.adjust.severalSelected",
+                "Adjust one marcher at a time: select just one",
+            ),
+        };
+    if (ownable.length === 1) return { marcherId: ownable[0]! };
+    return {
+        reason: tolgee.t(
+            "pathways.adjust.noneSelected",
+            "Select a marcher on the group path to adjust its line",
+        ),
+    };
+}
+
+/**
+ * Adjust (interaction round 2): `marcherId`'s lane of the group path shown is the only line drawn
+ * and the only one editable, with its handles; the path is active. Escape goes back to quiet.
+ */
+export function adjustMember(marcherId: number): void {
+    const { session } = usePathPenStore.getState();
+    if (
+        !session ||
+        session.phase === "drawing" ||
+        !memberOf(session, marcherId) ||
+        session.target.lane
+    )
+        return;
+    if (
+        session.phase === "open" &&
+        session.lane?.marcherId === marcherId &&
+        !session.lane.keyGone
+    )
+        return;
+    usePathPenStore.setState({
+        session: {
+            ...session,
+            phase: "open",
+            selected: null,
+            lane: { marcherId, key: null },
+        },
+    });
+}
+
+/**
  * Shows `target`'s stored path on the field, closed, or refreshes it after a save or a move of the
  * playhead. A path already open for the same move stays open, keeping its selected point.
  */
@@ -809,6 +893,7 @@ export function closePath(): void {
             pointer: null,
             selected: null,
             dragging: null,
+            lane: null,
         },
     });
 }

@@ -148,6 +148,7 @@ const MENU_KIND = { menu: PATH_MENU };
  */
 export const PATH_FIELD_MENU = [
     "editPath",
+    "adjustPath",
     "detachPath",
     "rejoinPath",
     "adjustResetSpot",
