@@ -19,8 +19,8 @@ import {
  * something to do or watch: an update to download, one downloading, one ready to install, or one
  * that failed. A download shows a small progress ring, with the percentage in its tooltip; one
  * the person asked for also says "Downloading update", an automatic one is the ring alone. The
- * popover holds the step to take: Download, Update now, Move to Applications (macOS, outside Applications), or
- * Try again and Download installer.
+ * popover holds the step to take: Download, Update now, Move to Applications (macOS, outside
+ * Applications), or Try again and Download installer.
  */
 export default function UpdatePill() {
     const { t } = useTranslate();
@@ -49,7 +49,7 @@ export default function UpdatePill() {
         failed
             ? "updates.pill.failed"
             : downloading
-              ? "updates.pill.downloadingQuiet"
+              ? "updates.pill.downloadingProgress"
               : kind === "downloaded"
                 ? "updates.pill.ready"
                 : "updates.pill.available",
@@ -127,7 +127,7 @@ function PillLabel({ state, failed }: { state: UpdateState; failed: boolean }) {
     const { phase } = state;
     if (failed) return <T keyName="updates.pill.failed" />;
     if (phase.kind === "downloading")
-        return <T keyName="updates.pill.downloading" />;
+        return <T keyName="updates.pill.downloadingUpdate" />;
     if (phase.kind === "downloaded") return <T keyName="updates.pill.ready" />;
     return <T keyName="updates.pill.available" />;
 }
