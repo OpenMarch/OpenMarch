@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import {
+    act,
+    cleanup,
+    fireEvent,
+    render,
+    screen,
+} from "@testing-library/react";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { PathEditor } from "../PathEditor";
 import { PathBigStepsLine } from "../pathBigSteps";
@@ -248,5 +254,47 @@ describe("the path's floating editor", () => {
         act(() => showPath(target(5), "T4"));
         render(<PathBigStepsLine fieldProperties={fieldProperties} />);
         expect(screen.queryByTestId("path-big-steps")).toBeNull();
+    });
+
+    it("on a group path, the inspector's Big steps is for the marchers selected on it", () => {
+        // A long detour: big steps for everybody along it
+        act(() => {
+            showPath(
+                {
+                    ...groupTarget(),
+                    points: [{ id: "c1", at: [4 * STEP, 60 * STEP] }],
+                },
+                "3",
+            );
+            setGroupCommands([], {
+                timelineId: 1,
+                routeId: 9,
+                marcherIds: [13],
+            });
+        });
+        render(<PathBigStepsLine fieldProperties={fieldProperties} />);
+        // Only a marcher off it selected: nothing about the others' steps
+        expect(screen.queryByTestId("path-big-steps")).toBeNull();
+        act(() => setGroupCommands([10], null));
+        expect(screen.getByTestId("path-big-steps").textContent).toMatch(
+            /^Big steps · /,
+        );
+    });
+
+    it("··· opens its menu: Re-center group path, greyed out when centered, and Remove path", async () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        const more = screen.getByTestId("path-more");
+        fireEvent.keyDown(more, { key: "ArrowDown" });
+        const menu = await screen.findByTestId("path-more-menu");
+        expect(menu.textContent).toContain("Re-center group path");
+        expect(menu.textContent).toContain("Remove path");
+        expect(screen.getByTestId("path-refit")).toHaveAttribute(
+            "aria-disabled",
+            "true",
+        );
     });
 });

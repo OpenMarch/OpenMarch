@@ -151,6 +151,8 @@ export interface BigSteps {
         where: LegWhere;
         drill: string | null;
         steps: string;
+        /** Its inches in a step, to find the worst of some legs (the inspector's) */
+        inches?: number;
         /** An adjusted stretch (J.6): its spot and the counts it runs over */
         spot?: number;
         from?: number;
@@ -216,7 +218,7 @@ function groupBigSteps(
         inches: Math.round(worst.inches),
         where: worst.where,
         worst,
-        legs: big.map(({ inches: _inches, ...leg }) => leg),
+        legs: big.map((leg) => ({ ...leg, inches: Math.round(leg.inches) })),
     };
 }
 
@@ -251,7 +253,9 @@ export function PathBigStepsLine({
     fieldProperties: FieldProperties;
 }) {
     const session = usePathPenStore((s) => s.session);
-    const big = session ? bigSteps(session, fieldProperties) : null;
+    const selected = usePathPenStore((s) => s.ownable);
+    const all = session ? bigSteps(session, fieldProperties) : null;
+    const big = session && all ? forSelection(all, session, selected) : null;
     if (!big) return null;
     return (
         <div className="flex justify-between px-6">
@@ -303,6 +307,42 @@ function bigStepsTip(big: NonNullable<ReturnType<typeof bigSteps>>): string {
                 .join(", "),
         },
     );
+}
+
+/**
+ * A group path's Big steps for the marchers selected on it (`ownable`): the stretch every member
+ * shares, and the selected members' own legs, so the inspector doesn't name a marcher who isn't
+ * selected. Nothing when no member is selected (only marchers off it). Other paths as they are.
+ */
+function forSelection(
+    big: BigSteps,
+    session: PathSession,
+    ownable: readonly number[],
+): BigSteps | null {
+    const group = session.target.group;
+    if (!group || session.target.lane || big.legs.length === 0) return big;
+    const drills = new Set(
+        group.members
+            .filter((m) => ownable.includes(m.marcherId))
+            .map((m) => m.drill),
+    );
+    if (drills.size === 0) return null;
+    const legs = big.legs.filter(
+        (l) => l.drill === null || drills.has(l.drill),
+    );
+    if (legs.length === 0) return null;
+    if (legs.length === big.legs.length) return big;
+    const worst = legs.reduce((a, b) =>
+        (b.inches ?? 0) > (a.inches ?? 0) ? b : a,
+    );
+    return {
+        ...big,
+        steps: worst.steps,
+        inches: worst.inches ?? big.inches,
+        where: worst.where,
+        worst,
+        legs,
+    };
 }
 
 /** Big steps' words: how big, and where when it's one leg */

@@ -743,8 +743,8 @@ export function adjustTargetOf(
 }
 
 /**
- * The path bar's fixed slots (interaction round 2: items stayed put so nobody presses the wrong one when the
- * selection changes): Edit path · Adjust · Detach or Rejoin · Match group · More. Each slot is
+ * The path bar's fixed slots (interaction round 2: they stay put, so a press after the selection
+ * changes lands where it did): Edit path · Adjust · Detach or Rejoin · Match group · More. Each is
  * there for any path but a trail; one that can't act now says why (its tooltip, and the menus'
  * reason). Null reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
  */

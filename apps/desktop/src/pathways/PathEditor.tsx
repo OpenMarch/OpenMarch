@@ -32,7 +32,6 @@ import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { getActionShortcutKeys } from "@/shortcuts/labels";
 import { fieldToElement, useFieldViewStore } from "@/field/three/fieldView";
 import { editorPlacement } from "@/shapes/editor/editorPlacement";
-import { keepFocus } from "@/shapes/editor/keepFocus";
 import {
     KEEP_MENU_EVENTS,
     MenuItemWithReason,
@@ -798,7 +797,6 @@ function PathMoreMenu({ session }: { session: PathSession }) {
                     <button
                         type="button"
                         aria-label={more}
-                        onPointerDown={keepFocus}
                         className={clsx(
                             "rounded-4 flex min-h-24 min-w-24 items-center justify-center p-4",
                             open
