@@ -31,7 +31,8 @@ import { runAction } from "@/shortcuts/registry";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { getActionShortcutKeys } from "@/shortcuts/labels";
 import { fieldToElement, useFieldViewStore } from "@/field/three/fieldView";
-import { editorPlacement } from "@/shapes/editor/editorPlacement";
+import { stackedPlacement } from "@/shapes/editor/editorPlacement";
+import { useShapeEditorRect } from "@/shapes/editor/shapeEditorRect";
 import {
     KEEP_MENU_EVENTS,
     MenuItemWithReason,
@@ -123,11 +124,14 @@ export function PathEditor({
 }) {
     const session = usePathPenStore((s) => s.session);
     const hidden = usePathPenStore((s) => s.hidden);
+    const ownable = usePathPenStore((s) => s.ownable);
     const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
     if (!session) return null;
-    // Edit path on a group path: its line is named, so it reads as the shape the lanes follow
+    // Edit group path, or the whole group selected (round 4): its line is named, so it reads as
+    // the line the whole group follows, not as one more marcher's path
+    const view = groupViewOf(session, ownable);
     const groupLabel =
-        groupViewOf(session) === "edit" ? (
+        view === "edit" || (view === "whole" && !hidden) ? (
             <GroupPathLabel session={session} />
         ) : null;
     // A quiet path (closed, interaction system rule 4) has the compact bar: Edit path, the member
@@ -136,6 +140,7 @@ export function PathEditor({
     if (session.phase === "closed")
         return hidden || shapeToolOpen ? null : (
             <RichTips>
+                {groupLabel}
                 {session.target.trail && (
                     <>
                         <TrailLeaderMark session={session} />
@@ -345,28 +350,43 @@ function PathEditorBar({
         return () => observer.disconnect();
     }, []);
     // Beside the lines drawn: under them, above when there's no room, as the shape editor sits. A
-    // quiet group path draws only its selected marchers' lines, so the bar goes by those
+    // quiet group path draws only its selected marchers' lines, so the bar goes by those; the
+    // group line alone (the whole group selected, or edited) doesn't reach its marchers' starts
+    // and end spots, so those count too, and the bar stays put from one to the other (round 4)
     const view = useFieldViewStore();
     const ownableNow = usePathPenStore((s) => s.ownable);
     const outline: XY[] = useMemo(() => {
         const drawn = drawingOf(session, ownableNow);
-        const lines = drawn?.outline ?? drawn?.lanes?.flat() ?? [];
-        return lines.length > 0 ? [...lines] : pathOutline(shapeOf(session));
+        const lines = drawn?.outline
+            ? [
+                  ...drawn.outline,
+                  ...(drawn.lanes?.flat() ?? []),
+                  ...(session.target.group && !session.target.trail
+                      ? [...(drawn.rings ?? []), ...drawn.spots]
+                      : []),
+              ]
+            : (drawn?.lanes?.flat() ?? []);
+        return lines.length > 0 ? lines : pathOutline(shapeOf(session));
     }, [session, ownableNow]);
+    // A selected placed shape's bar is on the field too: the path bar stacks clear of it
+    const shapeBar = useShapeEditorRect((s) => s.rect);
     // The Follow tool's line, its end spots and the pointer stay clear too, with room under each
     // for the field's note (the hover note, the step readout), so the bar never covers the work
     const footprint = useMemo(() => followFootprint(session), [session]);
-    const place = editorPlacement({
-        outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
-        handles: footprint.flatMap((p) => {
-            const e = fieldToElement(view, p.x, p.y);
-            return [e, { x: e.x, y: e.y + FIELD_NOTE_ROOM_PX }];
-        }),
-        width: size.width,
-        height: size.height,
-        fieldWidth: size.fw,
-        fieldHeight: size.fh,
-    });
+    const place = stackedPlacement(
+        {
+            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+            handles: footprint.flatMap((p) => {
+                const e = fieldToElement(view, p.x, p.y);
+                return [e, { x: e.x, y: e.y + FIELD_NOTE_ROOM_PX }];
+            }),
+            width: size.width,
+            height: size.height,
+            fieldWidth: size.fw,
+            fieldHeight: size.fh,
+        },
+        shapeBar,
+    );
     const drawing = session.phase === "drawing";
     const quiet = session.phase === "closed";
     // Step 6 (TC-7): a trail's turns that fall between counts

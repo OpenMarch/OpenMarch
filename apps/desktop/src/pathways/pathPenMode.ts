@@ -339,9 +339,10 @@ class PathPenMode implements FieldMode {
         const drawn = drawingOf(s);
         if (drawn?.outline && onPath(shapeOf(s), pointer.field, env))
             return true;
-        // A group path's lanes open it too (step 15)
-        const lanes = drawn?.lanes ?? [];
-        return lanes.some((lane) => onLine(lane, pointer.field, env.hitRadius));
+        // A group path's lanes open it too (step 15), but for the whole group selected
+        return clickableLanes(s, drawn).some(({ line }) =>
+            onLine(line, pointer.field, env.hitRadius),
+        );
     }
 
     /**
@@ -414,8 +415,12 @@ class PathPenMode implements FieldMode {
         // row: every lane this near is under the press. The one picked keeps it; a click on it
         // goes to the next (`releaseLane`), as a click cycles through stacked layers in a drawing
         // app
+        const bentOnly = focus === null && groupViewOf(s) === "edit";
         const hits = walks.flatMap(({ marcherId, walk }) => {
             if (focus !== null && marcherId !== focus) return [];
+            // Editing the group path, only the bent lanes are drawn, so only they're grabbed
+            // (round 4)
+            if (bentOnly && !adjustNow(s, marcherId)) return [];
             const hit = laneHitOf(walk, pointer.field, env.hitRadius);
             return hit ? [{ marcherId, walk, hit }] : [];
         });
@@ -1086,14 +1091,20 @@ class PathPenMode implements FieldMode {
                 : false);
         if (env && !onReference && !target.trail && !target.lane && drawn) {
             let best = Infinity;
-            (drawn.lanes ?? []).forEach((line, i) => {
+            const lanes =
+                "object" in hit
+                    ? (drawn.lanes ?? []).map((line, i) => ({
+                          line,
+                          id: drawn.laneIds?.[i] ?? members[i]?.marcherId,
+                      }))
+                    : clickableLanes(hit.session, drawn);
+            for (const { line, id } of lanes) {
                 const near = lineDistance(line, pointer.field);
-                const id = drawn.laneIds?.[i] ?? members[i]?.marcherId;
                 if (near <= env.hitRadius && near < best && id !== undefined) {
                     best = near;
                     lane = id;
                 }
-            });
+            }
         }
         const outside =
             lane !== null && !members.some((m) => m.marcherId === lane);
@@ -1370,9 +1381,10 @@ function buildDrawing(
     const { target, pointer, selected: selectedKey } = session;
     const drawingNow = session.phase === "drawing";
     const shape = shapeOf(session);
-    const view = asObject ? null : groupViewOf(session);
+    const view = asObject ? null : groupViewOf(session, selected);
     // A quiet group path draws only its selected marchers' lines, and an adjusted lane only
-    // itself: no group line then (interaction round 2)
+    // itself: no group line then (interaction round 2). With the whole group selected, the group
+    // line is the one drawn (round 4)
     const noLine = view === "selected" || view === "adjust";
     const middle = session.points.map((c) => c.at);
     // While drawing, the next leg runs to where the next point would land, straight
@@ -1445,8 +1457,9 @@ function buildDrawing(
     return {
         outline,
         openOutline: true,
-        // Paths All's lines keep a shown path's color; the selection's quiet line is faint
-        pathLine: asObject ? "shown" : pathLineOf(session),
+        // Paths All's lines keep a shown path's color; the selection's quiet line is faint, but
+        // the whole group's one line is deep (round 4)
+        pathLine: asObject || view === "whole" ? "shown" : pathLineOf(session),
         stage: drawingNow ? "drawing" : "open",
         spots: target.trail
             ? target.trail.members.map((m) => m.to)
@@ -1662,7 +1675,10 @@ function differenceRings(
  *   ring on each saying it follows.
  * - `selected` (quiet): only the selected members' lanes and the selected marchers' own lines off
  *   it, each at a shown path's weight in the faint path color, as the one line that marcher walks.
- * - `edit` and `object`: every member's lane, thin and faint, round the group line.
+ * - `whole` (quiet, every member selected): no plain member's lane, only the bent ones and the
+ *   lines of the selected marchers off it and of the detached members, faint (round 4).
+ * - `edit`: the bent members' lanes, faint, round the group line (round 4: no plain ones).
+ * - `object`: every member's lane, thin and faint, round the group line.
  * - `adjust`: the one line being edited (Edit <name>'s line), heavy, with its bend points and the
  *   spots to grab it by (`laneBendSpotsOf`), over its plain lane (faint) when it has bends.
  *
@@ -1751,6 +1767,12 @@ function groupParts(
             memberRings: rings,
         };
     }
+    if (view === "whole")
+        return wholeGroupParts(
+            session,
+            walks.filter((w) => adjustedIds.has(w.marcherId)),
+            rings,
+        );
     if (view === "adjust") {
         const focus = laneInFocus(session)!;
         const at = walks.find((w) => w.marcherId === focus);
@@ -1782,24 +1804,69 @@ function groupParts(
             memberRings: rings,
         };
     }
-    // `edit` and `object`: the group line with every member's lane round it. Edited, each lane is
-    // the line its marcher walks, at a shown path's weight (round 2) in the faint path color (round
-    // 3: only the line being edited is deep), so the group line reads as the middle they follow;
-    // Paths All's drawing for nobody selected keeps them thin
+    // `edit` and `object`: the group line with the members' lanes round it. Edited, only the bent
+    // lanes, each the line its marcher walks, at a shown path's weight (round 2) in the faint path
+    // color (round 3: only the line being edited is deep): a plain lane is the group line moved
+    // over, and a block's many of them hid it (round 4). Paths All's drawing for nobody selected
+    // keeps every lane, thin
     const hovered =
         session.phase === "open" ? session.hoverLane?.marcherId : undefined;
-    const adjusted = walks.flatMap(({ marcherId }, i) =>
+    const drawnWalks =
+        view === "edit"
+            ? walks.filter((w) => adjustedIds.has(w.marcherId))
+            : walks;
+    const adjusted = drawnWalks.flatMap(({ marcherId }, i) =>
         adjustedIds.has(marcherId) ? [i] : [],
     );
     return {
-        lanes: walks.map(({ walk }) => laneOutline(walk)),
-        laneIds: walks.map((w) => w.marcherId),
+        lanes: drawnWalks.map(({ walk }) => laneOutline(walk)),
+        laneIds: drawnWalks.map((w) => w.marcherId),
         ...(view === "edit" ? { lanesWeight: "quiet" as const } : {}),
         ...(adjusted.length > 0 ? { lanesAdjusted: adjusted } : {}),
-        laneHighlights: walks.flatMap(({ marcherId }, i) =>
+        laneHighlights: drawnWalks.flatMap(({ marcherId }, i) =>
             marcherId === hovered ? [i] : [],
         ),
         adjustHandles: [],
+        memberRings: rings,
+    };
+}
+
+/**
+ * `groupParts` with the whole group selected (round 4): the group line is the one line, and only
+ * whoever walks it differently keeps a faint line of their own: a bent member (`bent`), a
+ * selected marcher off it, a detached member
+ */
+function wholeGroupParts(
+    session: PathSession,
+    bent: readonly { marcherId: number; walk: GroupMemberWalk }[],
+    rings: NonNullable<FieldModeDrawing["memberRings"]>,
+): LaneParts {
+    const group = session.target.group!;
+    const offIds = [
+        ...new Set([
+            ...group.outside.map((m) => m.marcherId),
+            ...(group.detachedMembers ?? []).map((m) => m.marcherId),
+        ]),
+    ];
+    const offPath = offIds.flatMap((marcherId) => {
+        const line = walkedLine(
+            marcherId,
+            session.target.start,
+            session.target.end,
+        );
+        return line ? [{ marcherId, line }] : [];
+    });
+    return {
+        lanes: [
+            ...bent.map(({ walk }) => laneOutline(walk)),
+            ...offPath.map((o) => o.line),
+        ],
+        laneIds: [
+            ...bent.map((w) => w.marcherId),
+            ...offPath.map((o) => o.marcherId),
+        ],
+        lanesWeight: "quiet",
+        ...(bent.length > 0 ? { lanesAdjusted: bent.map((_, i) => i) } : {}),
         memberRings: rings,
     };
 }
@@ -1880,6 +1947,26 @@ export function objectDrawingOf(o: PathObject): FieldModeDrawing | null {
     );
     objectDrawings.set(o.target, drawing);
     return drawing;
+}
+
+/**
+ * The session's drawn lanes a click can land on, with whose each is. With the whole group selected
+ * the group line is the one to click: a bent member's faint lane isn't (round 4), while the line
+ * of a marcher off it still is, as that marcher's own.
+ */
+function clickableLanes(
+    s: PathSession,
+    drawn: FieldModeDrawing | null,
+): { line: readonly XY[]; id: number | undefined }[] {
+    const members = s.target.group?.members ?? [];
+    const lanes = (drawn?.lanes ?? []).map((line, i) => ({
+        line,
+        id: drawn?.laneIds?.[i] ?? members[i]?.marcherId,
+    }));
+    if (groupViewOf(s, usePathPenStore.getState().ownable) !== "whole")
+        return lanes;
+    const memberIds = new Set(members.map((m) => m.marcherId));
+    return lanes.filter(({ id }) => id === undefined || !memberIds.has(id));
 }
 
 /** Whether `at` is on a path object's drawn line (AP-O3) */

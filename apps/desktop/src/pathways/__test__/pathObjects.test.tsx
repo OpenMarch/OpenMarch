@@ -343,10 +343,17 @@ describe("member state on the field, whenever a group path shows (interaction sy
     };
 
     it("quiet: an adjusted member's line is marked, a detached member's start is ringed dashed", () => {
-        usePathPenStore.setState({ ownable: [10, 11] });
+        usePathPenStore.setState({ ownable: [11] });
         showPath(adjusted(), "2");
+        const one = drawingOf(session())!;
+        expect(one.laneIds).toEqual([11]);
+        expect(one.lanesAdjusted).toEqual([0]);
+        // The whole group selected: the group line, and of the members only the bent one's line
+        usePathPenStore.setState({ ownable: [10, 11] });
         const d = drawingOf(session())!;
-        expect(d.lanesAdjusted).toEqual([1]);
+        expect(d.outline).not.toBeNull();
+        expect(d.laneIds).toEqual([11]);
+        expect(d.lanesAdjusted).toEqual([0]);
         const rings = d.memberRings!;
         expect(rings.find((r) => r.marcherId === 11)!.label).toMatch(
             /^Has bends of its own/,

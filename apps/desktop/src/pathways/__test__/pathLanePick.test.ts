@@ -18,6 +18,7 @@ vi.doMock("@/db-functions/timelinePathAdjust", async (importOriginal) => ({
 const {
     clearPath,
     deleteOnLane,
+    groupLineIds,
     openPath,
     selectLane,
     setHoverLane,
@@ -74,6 +75,24 @@ const group = (adjust: AdjustProfile | null, dy = 4 * STEP): PathTarget => ({
         outside: [],
     },
 });
+
+/**
+ * Both members bent by a key that moves nothing, their lanes where the plain ones run: editing the
+ * group path, only bent lanes are drawn and grabbed (interaction round 4)
+ */
+const allBent = (dy = 4 * STEP): PathTarget => {
+    const t = group(null, dy);
+    return {
+        ...t,
+        group: {
+            ...t.group!,
+            members: t.group!.members.map((m) => ({
+                ...m,
+                adjust: profile(["p", "q", 0.5, 0]),
+            })),
+        },
+    };
+};
 
 const lane = () => usePathPenStore.getState().session?.lane;
 const open = (target: PathTarget) => {
@@ -190,13 +209,13 @@ describe("the hover note on lanes", () => {
     const hover = () => usePathPenStore.getState().session?.hoverLane;
 
     it("counts lanes lying on top of each other", () => {
-        open(group(null));
+        open(allBent());
         over(20 * STEP, y + 4 * STEP);
         expect(hover()?.stacked).toBe(2);
     });
 
     it("names the lane a click picked, with the pointer still; only that lane takes clicks then", () => {
-        open(group(null));
+        open(allBent());
         const at = {
             field: { x: 20 * STEP, y: y + 4 * STEP },
             screen: { x: 20 * STEP * ZOOM, y: (y + 4 * STEP) * ZOOM },
@@ -220,7 +239,7 @@ describe("the hover note on lanes", () => {
     });
 
     it("moves its note along the lane once the pointer has run far enough", () => {
-        open(group(null));
+        open(allBent());
         over(20 * STEP, y + 4 * STEP);
         const first = hover()!.at;
         over(20 * STEP + 2, y + 4 * STEP);
@@ -281,9 +300,27 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
     });
 
     it("tints a hovered lane while the group path is edited", () => {
-        open(group(null, 8 * STEP));
+        open(allBent(8 * STEP));
         setHoverLane({ marcherId: 11, at: { x: 0, y: 0 } });
         expect(drawn().laneHighlights).toEqual([1]);
+    });
+
+    it("edited, a plain member's lane isn't drawn, nor pressed: only the bent ones (round 4)", () => {
+        open(group(bulge, 8 * STEP));
+        expect(drawn().laneIds).toEqual([11]);
+        expect(drawn().lanesAdjusted).toEqual([0]);
+        clearPath();
+        open(group(null, 8 * STEP));
+        expect(drawn().lanes ?? []).toEqual([]);
+        expect(pathPenMode.claims(at(20 * STEP, y + 8 * STEP), press)).toBe(
+            false,
+        );
+        // Edit <name>'s line draws it, to edit
+        selectLane({ marcherId: 11, key: null });
+        expect(drawn().laneIds).toEqual([11]);
+        expect(pathPenMode.claims(at(20 * STEP, y + 8 * STEP), press)).toBe(
+            true,
+        );
     });
 
     it("edited, the group line is the deep one and the lanes round it are faint (round 3)", () => {
@@ -342,7 +379,7 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
     });
 
     it("mutes the group path as soon as an unpicked lane is dragged, and the drag picks it", () => {
-        open(group(null));
+        open(allBent());
         const on = at(20 * STEP, laneY);
         pathPenMode.press(on, press);
         pathPenMode.move(at(20 * STEP, laneY + 3 * STEP));
@@ -392,7 +429,7 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
     };
 
     it("a click on a lane of the active group path selects that marcher and picks its lane", () => {
-        open(group(null));
+        open(allBent());
         picked.ids = [10, 11];
         click(laneAt);
         expect(picked.ids).toEqual([10]);
@@ -400,7 +437,7 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
     });
 
     it("Shift-click on a lane adds its marcher, or takes it out", () => {
-        open(group(null));
+        open(allBent());
         picked.ids = [11];
         click(at(20 * STEP, y + 4 * STEP, true));
         expect([...picked.ids].sort()).toEqual([10, 11]);
@@ -412,13 +449,13 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
     });
 
     it("on the quiet path, a click on a selected marcher's line selects it and makes its lane active", () => {
-        usePathPenStore.setState({ ownable: [10, 11] });
+        usePathPenStore.setState({ ownable: [10] });
         showPath(group(null), "2");
         // Quiet, only the selected marchers' lines are drawn, as each one's own path
         const quiet = drawingOf(usePathPenStore.getState().session)!;
         expect(quiet.outline).toBeNull();
         expect(quiet.lanesWeight).toBe("quiet");
-        expect(quiet.laneIds).toEqual([10, 11]);
+        expect(quiet.laneIds).toEqual([10]);
         expect(pathPenMode.takeClick(laneAt, false)).toBe(true);
         expect(picked.ids).toEqual([10]);
         expect(usePathPenStore.getState().session).toMatchObject({
@@ -436,5 +473,89 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
         expect(quiet.ringIds).toEqual([11]);
         expect(pathPenMode.takeClick(at(20 * STEP, y), false)).toBe(false);
         usePathPenStore.setState({ ownable: [] });
+    });
+});
+
+describe("one line for what you selected: the whole group (interaction round 4)", () => {
+    const ZOOM = 2;
+    const picked = { ids: [] as readonly number[] };
+    beforeEach(() => {
+        picked.ids = [];
+        setPathSelectionPort({
+            get: () => picked.ids,
+            set: (ids) => {
+                picked.ids = ids;
+            },
+        });
+        setShapeField({
+            fieldProperties: () => fieldProperties,
+            zoom: () => ZOOM,
+            marchers: () => [],
+            drawn: () => new Map(),
+        });
+    });
+    afterEach(() => {
+        clearPath();
+        usePathPenStore.setState({ ownable: [] });
+        setPathSelectionPort(null);
+        setShapeField(null);
+    });
+    const at = (x: number, ly: number) =>
+        ({
+            field: { x, y: ly },
+            screen: { x: x * ZOOM, y: ly * ZOOM },
+            button: 0,
+            shift: false,
+        }) as FieldPointer;
+    const drawn = () => drawingOf(usePathPenStore.getState().session)!;
+    const quietWhole = (target: PathTarget) => {
+        picked.ids = [10, 11];
+        usePathPenStore.setState({ ownable: [10, 11] });
+        showPath(target, "2");
+    };
+
+    it("draws only the group line, deep, and none of the members' lanes", () => {
+        quietWhole(group(null, 8 * STEP));
+        expect(drawn().outline).not.toBeNull();
+        expect(drawn().pathLine).toBe("shown");
+        expect(drawn().lanes ?? []).toEqual([]);
+        // Every member's end spot and start ghost still shows
+        expect(drawn().ringIds).toEqual([10, 11]);
+        // Their own walked paths give way to the group line
+        expect(
+            groupLineIds(usePathPenStore.getState().session!, [10, 11]),
+        ).toEqual([10, 11]);
+    });
+
+    it("a bent member keeps a faint line, marked, which a click doesn't land on", () => {
+        quietWhole(group(bulge, 8 * STEP));
+        expect(drawn().laneIds).toEqual([11]);
+        expect(drawn().lanesWeight).toBe("quiet");
+        expect(drawn().lanesAdjusted).toEqual([0]);
+        // 11's lane, off the group line: not a hit target while the whole group is selected
+        expect(pathPenMode.takeClick(at(5 * STEP, y + 8 * STEP), false)).toBe(
+            false,
+        );
+        expect(usePathPenStore.getState().session?.phase).toBe("closed");
+    });
+
+    it("a click on the group line makes the group path active, its handles on the group line", () => {
+        quietWhole(group(null, 8 * STEP));
+        expect(pathPenMode.takeClick(at(20 * STEP, y), false)).toBe(true);
+        expect([...picked.ids].sort()).toEqual([10, 11]);
+        const s = usePathPenStore.getState().session!;
+        expect(s.phase).toBe("open");
+        expect(s.lane ?? null).toBeNull();
+        expect(drawn().pathLine).toBe("edited");
+        expect(drawn().handles?.length).toBeGreaterThan(0);
+        for (const h of drawn().handles ?? []) expect(h.y).toBeCloseTo(y);
+    });
+
+    it("one member selected is that marcher's own line, as before", () => {
+        picked.ids = [11];
+        usePathPenStore.setState({ ownable: [11] });
+        showPath(group(null, 8 * STEP), "2");
+        expect(drawn().outline).toBeNull();
+        expect(drawn().laneIds).toEqual([11]);
     });
 });

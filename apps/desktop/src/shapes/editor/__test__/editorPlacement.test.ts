@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
     editorPlacement,
     GAP_PX,
+    stackedPlacement,
     type PlacementInput,
 } from "../editorPlacement";
 
@@ -75,5 +76,30 @@ describe("the floating editor's place", () => {
             input({ outline: box(400, 200, 90), knob: { x: 454, y: 200 } }),
         );
         expect(p.left).toBeCloseTo(400 - 150);
+    });
+});
+
+describe("a second floating editor stacked clear of the first (pathways interaction round 4)", () => {
+    // The shape's bar under the same box: where the path bar would go too
+    const first = editorPlacement(input());
+    const bar = { left: first.left, top: first.top, width: 300, height: 70 };
+
+    it("stays where it goes when it covers nothing", () => {
+        expect(stackedPlacement(input(), null)).toEqual(first);
+        const away = { ...bar, left: 800, width: 100 };
+        expect(stackedPlacement(input(), away)).toEqual(first);
+    });
+
+    it("goes under the first bar when it would cover it, a gap between them", () => {
+        const p = stackedPlacement(input(), bar);
+        expect(p.above).toBe(false);
+        expect(p.top).toBe(bar.top + bar.height + GAP_PX);
+        expect(p.left).toBe(first.left);
+    });
+
+    it("goes above both without room under the first bar", () => {
+        const p = stackedPlacement(input({ fieldHeight: 360 }), bar);
+        expect(p.above).toBe(true);
+        expect(p.top + 40).toBeLessThan(170);
     });
 });

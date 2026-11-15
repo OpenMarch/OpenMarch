@@ -58,3 +58,46 @@ export function editorPlacement(input: PlacementInput): Placement {
     );
     return { left, top: above ? over : below, above };
 }
+
+/** Another floating bar on the field, in the field element's px */
+export interface BarRect {
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    readonly height: number;
+}
+
+/**
+ * Where a second floating editor goes when a first one (`bar`) is already on the field: where
+ * `editorPlacement` puts it, unless that covers the first bar, and then stacked clear of it, the
+ * first bar taken as part of what it sits beside (under both, or above both without room below).
+ * The path bar goes by the selected placed shape's bar this way (pathways interaction round 4),
+ * so neither covers the other.
+ */
+export function stackedPlacement(
+    input: PlacementInput,
+    bar: BarRect | null,
+): Placement {
+    const place = editorPlacement(input);
+    if (!bar || bar.width <= 0 || bar.height <= 0) return place;
+    const covers =
+        place.left < bar.left + bar.width &&
+        place.left + input.width > bar.left &&
+        place.top < bar.top + bar.height &&
+        place.top + input.height > bar.top;
+    if (!covers) return place;
+    // Its middle stands for it side to side: only its top and bottom count
+    const x = Math.min(Math.max(bar.left + bar.width / 2, 0), input.fieldWidth);
+    return editorPlacement({
+        ...input,
+        handles: [
+            ...(input.handles ?? []),
+            // Kept GAP_PX from it either way, as from a shape's outline
+            { x, y: Math.max(bar.top + CLEAR_PX, 0) },
+            {
+                x,
+                y: Math.min(bar.top + bar.height - CLEAR_PX, input.fieldHeight),
+            },
+        ],
+    });
+}

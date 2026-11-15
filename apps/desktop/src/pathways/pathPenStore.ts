@@ -299,12 +299,17 @@ export const pathMarcherIds = (
  * or null for any other path:
  *
  * - `drawing`: a new group path being drawn, its line with every member's faint lane.
- * - `selected`: quiet, with marchers selected: only the line each selected marcher walks, at a
- *   shown path's weight, and no group line (testers read the two as "two paths").
- * - `edit`: open for editing (Edit path): the group line, named, with every member's lane round it.
- * - `adjust`: one member's lane picked (Adjust, or a click on its line): that lane alone, editable.
+ * - `selected`: quiet, with some of its marchers selected: only the line each selected marcher
+ *   walks, at a shown path's weight, and no group line (testers read the two as "two paths").
+ * - `whole`: quiet, with every member selected (interaction round 4, "one line for what you
+ *   selected"): the group line alone, deep, the one line to click; only a bent member's lane and
+ *   the selected marchers off it keep a faint line of their own.
+ * - `edit`: open for editing (Edit group path): the group line, named; of the members' lanes only
+ *   the bent ones (round 4: a plain lane is the group line moved over, and many of them hid it).
+ * - `adjust`: one member's lane picked (Edit <name>'s line, or a click on its line): that lane
+ *   alone, editable.
  */
-export type GroupView = "drawing" | "selected" | "edit" | "adjust";
+export type GroupView = "drawing" | "selected" | "whole" | "edit" | "adjust";
 
 /** The spot whose lane is being worked on, picked or in mid-drag, or null */
 export function laneFocusOf(s: PathSession): number | null {
@@ -312,16 +317,42 @@ export function laneFocusOf(s: PathSession): number | null {
     return s.laneEdit?.marcherId ?? s.lane?.marcherId ?? null;
 }
 
-export function groupViewOf(s: PathSession): GroupView | null {
+/**
+ * Whether `selected` takes in every member of the group path shown, two or more (interaction
+ * round 4): the group is selected as a whole, so its one line is what's drawn. Marchers off it
+ * selected as well don't change that. One member alone is one marcher, drawn as its own line.
+ */
+export function wholeGroupOf(
+    s: PathSession,
+    selected: readonly number[],
+): boolean {
+    const group = s.target.group;
+    if (!group || s.target.lane || s.target.trail || group.members.length < 2)
+        return false;
+    const on = new Set(selected);
+    return group.members.every((m) => on.has(m.marcherId));
+}
+
+/**
+ * How the session's group path is drawn now (`GroupView`), `selected` being the selected members
+ * of it (the store's `ownable`), or null for any other path
+ */
+export function groupViewOf(
+    s: PathSession,
+    selected: readonly number[] = [],
+): GroupView | null {
     if (!s.target.group || s.target.lane || s.target.trail) return null;
     if (s.phase === "drawing") return "drawing";
-    if (s.phase === "closed") return "selected";
+    if (s.phase === "closed")
+        return wholeGroupOf(s, selected) ? "whole" : "selected";
     return laneFocusOf(s) !== null ? "adjust" : "edit";
 }
 
 /**
  * Whose lines a group path session draws (`GroupView`): the selected members and the selected
- * marchers off it while quiet, the one lane while adjusting, every member otherwise
+ * marchers off it while quiet, with the whole group selected every member (the group line is
+ * drawn for them) and the detached ones too (a faint line each), the one lane while adjusting,
+ * every member otherwise
  */
 export function groupLineIds(
     s: PathSession,
@@ -330,7 +361,15 @@ export function groupLineIds(
     const group = s.target.group;
     if (!group) return [];
     const members = group.members.map((m) => m.marcherId);
-    const view = groupViewOf(s);
+    const view = groupViewOf(s, selected);
+    if (view === "whole")
+        return [
+            ...new Set([
+                ...members,
+                ...group.outside.map((m) => m.marcherId),
+                ...(group.detachedMembers ?? []).map((m) => m.marcherId),
+            ]),
+        ];
     if (view === "selected") {
         const on = new Set(members);
         return [

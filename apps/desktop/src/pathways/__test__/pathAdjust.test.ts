@@ -110,9 +110,30 @@ describe("what a press on an open group path takes (decision C)", () => {
         showPath(target, "2");
         openPath();
     };
+    /**
+     * `target` with `ids` bent: a key that moves nothing, so their lanes run where the plain ones
+     * do. Editing the group path, only bent lanes are drawn and grabbed (round 4)
+     */
+    const bent = (target: PathTarget, ids: readonly number[]): PathTarget => ({
+        ...target,
+        group: {
+            ...target.group!,
+            members: target.group!.members.map((m) =>
+                ids.includes(m.marcherId)
+                    ? {
+                          ...m,
+                          adjust: {
+                              v: 1,
+                              keys: [{ a: "p", b: "q", f: 0.5, d: [0, 0] }],
+                          },
+                      }
+                    : m,
+            ),
+        },
+    });
 
-    it("takes a press on a lane's line; a dot, the bold line and empty field stay as they were", () => {
-        open();
+    it("takes a press on a bent lane's line; a dot, the bold line, a plain lane and empty field stay as they were", () => {
+        open(bent(group(), [11]));
         const onLane = pointer(20 * STEP, laneY);
         expect(pathPenMode.claims(onLane, onDot(false))).toBe(true);
         expect(pathPenMode.claims(onLane, onDot(true))).toBe(false);
@@ -125,6 +146,10 @@ describe("what a press on an open group path takes (decision C)", () => {
         expect(
             pathPenMode.claims(pointer(20 * STEP, y + 12 * STEP), onDot(false)),
         ).toBe(false);
+        // 10's lane is plain: not drawn while the group path is edited, so not there to press
+        expect(
+            pathPenMode.claims(pointer(20 * STEP, y - 4 * STEP), onDot(false)),
+        ).toBe(false);
     });
 
     it("lanes on top of each other: a click picks one, which alone takes clicks while adjusted", () => {
@@ -136,7 +161,7 @@ describe("what a press on an open group path takes (decision C)", () => {
                 offset: { x: 0, y: 4 * STEP },
             })),
         };
-        open(target);
+        open(bent(target, [10, 11]));
         const on = pointer(20 * STEP, laneY);
         const click = () => {
             pathPenMode.press(on, {
@@ -159,8 +184,10 @@ describe("what a press on an open group path takes (decision C)", () => {
 
     it("a drag writes nothing on the session until release and previews the bulge", () => {
         open();
+        // A plain lane is edited by Edit <name>'s line (round 4: it isn't drawn otherwise)
+        editMemberLine(11);
         const plainLane = drawingOf(usePathPenStore.getState().session)
-            ?.lanes?.[1];
+            ?.lanes?.[0];
         const held = pointer(20 * STEP, laneY);
         pathPenMode.press(held, { isMac: false, onDot: () => false } as never);
         pathPenMode.move(pointer(20 * STEP, laneY + 5 * STEP));
@@ -168,7 +195,7 @@ describe("what a press on an open group path takes (decision C)", () => {
         expect(edit?.marcherId).toBe(11);
         expect(edit?.adjust?.keys.length).toBe(3);
         expect(
-            drawingOf(usePathPenStore.getState().session)?.lanes?.[1],
+            drawingOf(usePathPenStore.getState().session)?.lanes?.at(-1),
         ).not.toEqual(plainLane);
         pathPenMode.cancel();
         expect(usePathPenStore.getState().session?.laneEdit).toBeNull();
