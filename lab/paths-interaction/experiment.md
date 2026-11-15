@@ -2,18 +2,19 @@
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
 id: paths-interaction
-title: "Path editing: one line per marcher, Edit a marcher's line, Detach and Rejoin (interaction MVP)"
-summary: "The path interaction MVP: marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), Detach or Rejoin, and Match group."
+title: "Path editing: one line per marcher, Edit a marcher's line, Detach in a menu, Rejoin (interaction MVP)"
+summary: "The path interaction MVP: marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), and Match group, or Rejoin for detached marchers. Detach from group path is under the bar's ··· menu."
 status: open
 variants: []
 questions:
-  - "Draw a group path for a block, select one member and press Detach on the path bar. Its copy opens. Did anything on the field move? Was it clear that the open path is now that marcher's own?"
+  - "Draw a group path for a block, select one member, open ··· on the path bar and choose Detach from group path. Its copy opens and the bar offers Rejoin. Did anything on the field move? Was it clear that the open path is now that marcher's own?"
+  - "Detach isn't on the path bar any more: it's under ··· as Detach from group path, and Edit <name>'s line changes one marcher's line while it keeps following the group. Did you go looking for Detach on the bar? Was Edit <name>'s line what you wanted most of the time?"
   - "Drag a point of the detached copy, then play the move. Only that marcher's walk changed, and it still reaches each point of its copy on the group's counts. Is that what you expected from 'keeps the group's timing'?"
   - "Select the whole block again. The detached marcher has an orange 'Detached' ring and the bar offers Rejoin. Press it. The marcher goes back to its place on the group path, and its copy is gone. Did the word Rejoin fit?"
-  - "Select one member and press Edit <its name>'s line (for example Edit T15's line). Its handles show at once. Was it clear what to drag? Bend it, then Detach it, then Rejoin it. The bend is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the bend came back?"
+  - "Select one member and press Edit <its name>'s line (for example Edit T15's line). Its handles show at once. Was it clear what to drag? Bend it, then Detach it (··· › Detach from group path), then Rejoin it. The bend is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the bend came back?"
   - "Select the whole block (or click its placed shape). Only the group path is drawn, deep, named Group path · 16, plus a faint line for any bent or detached marcher. Click the line: its points show. Is it clear this one line moves the whole block? Do you miss seeing every marcher's own line?"
   - "Select one or a few members instead. Each one's own line is drawn faint, and only the line you edit is deep. Can you still read where each marcher goes?"
-  - "Select the whole block. Detach on the bar is greyed out, and its tooltip points to ··· › Detach all 16 marchers. Was it clear why, and that Detach all ends the group path?"
+  - "Select the whole block and open ···. Instead of Detach from group path it offers Detach all 16 marchers, with 'Ends the group path' under it. Was it clear that Detach all ends the group path?"
   - "Run Detach all 16 marchers from ···, then Undo once. Did the toast ('Group path ended: 16 marchers have their own paths') say how big that was? Did it feel like one step both ways?"
   - "After Detach all there is no group path left to Rejoin, only Undo. Would you rather the group path stayed (empty) so they could rejoin it later?"
   - "Anything else about Detach and Rejoin you'd change?"
@@ -21,10 +22,18 @@ questions:
 
 **What's new**
 
-- **Detach** replaces **Own path** on the path bar for a member of a group path. Select
-  one or more members of a group path (the path shows, quiet or being edited) and press
-  **Detach**. Each gets its own copy of the path. It is also in the field's right-click
-  and long-press menu (the Path group) and the command palette.
+- **Detach moved off the bar, into ···** (as a design tool keeps Detach instance in a
+  menu). The bar is now **Edit group path · Edit T15's line · Match group · ···**. To
+  change one marcher's line and keep it following the group, use **Edit T15's line**. To
+  break a marcher off the group path, open **···** and choose **Detach from group path**
+  (**Detach 3 from group path** with several selected), with "Stops following group path
+  changes" under it. The right-click Path menu has it in the same place; the palette keeps
+  it too. The third slot is the "back to the group" slot: with detached marchers selected
+  it says **Rejoin** (**Rejoin 3**), otherwise **Match group**.
+- **Detach** replaces **Own path** for a member of a group path. Select one or more
+  members of a group path (the path shows, quiet or being edited) and choose **··· ›
+  Detach from group path**. Each gets its own copy of the path. It is also in the field's
+  right-click and long-press menu (the Path group) and the command palette.
 - **One line for what you selected.** With the whole group selected (a box round the
   block, or its placed shape), only the group path is drawn, deep, named **Group path ·
   16**: no line per marcher. A bent or detached marcher keeps a faint line of its own.
@@ -35,7 +44,7 @@ questions:
   Selecting marchers by their dots shows the line each one walks, whatever the Paths
   setting (it is for the marchers not selected), drawn faint: only the line you are
   editing is deep. A small bar beside it keeps its buttons in the same places: **Edit group
-  path · Edit T15's line · Detach** (or **Rejoin**) **· Match group · ···** (for a marcher
+  path · Edit T15's line · Match group** (or **Rejoin**) **· ···** (for a marcher
   with a path of its own, the first button is **Edit path**). A button that can't act is
   greyed out and says why. **Escape** goes back to quiet, then deselects; **Enter** shows
   the group path's points.
@@ -60,14 +69,14 @@ questions:
 - **Rejoin** puts a detached marcher back on the group path it came from, in its place
   in the group, also after its copy or the group path was edited. Its copy goes, and so
   do any bends on its line (decided: Rejoin always drops them). Undo brings both back.
-  Rejoin shows when a detached marcher is selected on its own, or with the group, where
-  its start ring and the bar say **Detached**. In the palette they are **Detach from
-  group path** and **Rejoin group path**.
-- **Detach all is apart.** With the whole group selected, **Detach** on the bar stays in
-  its place but is greyed out: its tooltip says to select some marchers, or to use **··· ›
-  Detach all 16 marchers**. That entry sits beside **Remove path**, after a line, with
-  "Ends the group path; each marcher gets their own copy" under it (also in the
-  right-click menu and the palette). The toast after it says **Group path ended: 16
+  Rejoin takes the bar's third slot when only detached marchers are selected; selected
+  with members of the group, Rejoin is under **···** and their start rings say
+  **Detached**. In the palette they are **Detach from group path** and **Rejoin group
+  path**.
+- **Detach all is apart.** With the whole group selected, **···** offers **Detach all 16
+  marchers** instead of Detach from group path. It sits beside **Remove path**, after a
+  line, with "Ends the group path; each marcher gets their own copy" under it (also in
+  the right-click menu and the palette). The toast after it says **Group path ended: 16
   marchers have their own paths**, with Undo.
 - Detach, Detach all, Rejoin and their undo are one step each.
 
@@ -75,8 +84,8 @@ questions:
 
 1. Select a block of 16 on a page, draw a group path through it with **P**, and finish.
    Click one member's dot: only that marcher's line shows, faint, with the bar beside it:
-   **Edit group path · Edit T15's line · Detach · Match group · ···**. Click another
-   member: the buttons stay in the same places.
+   **Edit group path · Edit T15's line · Match group · ···**. Click another member: the
+   buttons stay in the same places.
 2. With one member selected, press **Edit T15's line** (its name is on the button). Only
    its line shows, with handles right away: drag a small circle, or a square, somewhere
    between the group path's first and last points, then press **Escape**. The bent line is
@@ -84,10 +93,11 @@ questions:
    that run from the marcher's start onto the group path, and off it to the end spot, have
    no handles: they only join the group path.
 3. Drag a box round three members (or click one dot, then Shift-click two more). Edit
-   marcher's line is greyed out ("Select one marcher to edit their line") and the bar says
-   **Detach 3**. Press it: a toast says
-   **3 marchers detached** with Undo, nothing moves, the group line stays where it was,
-   and the bar stays, now offering **Rejoin 3**. Their start rings turn dashed orange.
+   marcher's line is greyed out ("Select one marcher to edit their line"). Open **···**: it
+   has **Detach 3 from group path**. Choose it: a toast says **3 marchers detached** with
+   Undo, nothing moves, the group line stays where it was, the three stay selected, and the
+   bar's third slot now says **Rejoin 3** where Match group was. Their start rings turn
+   dashed orange.
 4. Click one detached marcher's dot: its copy shows. Click the copy's line to edit it, drag
    a point, and play the move with **Space**.
 5. Right-click (or long-press) the detached marcher: the menu's Path group is in the bar's
@@ -97,10 +107,9 @@ questions:
    faint line for each of those marchers. Click the group line: its points show. Drag a
    point to reshape the whole group. With a placed shape, its bar and the path bar sit
    one under the other.
-7. With the whole block still selected, **Detach** on the bar is greyed out: hover it (or
-   press it) to read why. Open **···**: **Re-center group path** (greyed out unless the
-   block has moved since the path was drawn), then after a line **Detach all 16 marchers**
-   and **Remove path**. Choose Detach all: a toast says **Group path ended: 16 marchers
+7. With the whole block still selected, open **···**: **Re-center group path** (greyed out
+   unless the block has moved since the path was drawn), then after a line **Detach all 16
+   marchers** and **Remove path**. Choose Detach all: a toast says **Group path ended: 16 marchers
    have their own paths** with **Undo**. Undo it, then Remove the path: a toast offers
    **Undo**.
 8. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
