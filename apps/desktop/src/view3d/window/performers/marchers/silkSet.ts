@@ -455,7 +455,8 @@ export class SilkSet {
     /**
      * Places every placed slot's silks in its tier's mesh, packed by
      * distance as the instruments are (`hornSet.ts`), with this frame's
-     * motion. `camera` null draws everything at full detail.
+     * motion. `camera` null draws everything at full detail. `lift` raises
+     * each slot (m), as onto a platform; null stands them all on the ground.
      */
     writeFrame(
         xz: Float32Array,
@@ -463,6 +464,7 @@ export class SilkSet {
         placed: Uint8Array,
         scale: Float32Array,
         camera: [number, number, number] | null,
+        lift: Float32Array | null = null,
     ): void {
         if (this.tiers.length === 0) return;
         const lists: number[][] = this.tiers.map(() => []);
@@ -499,7 +501,7 @@ export class SilkSet {
                     xz[slot * 2 + 1],
                     heading[slot],
                     scale[slot],
-                    STAND_Y,
+                    STAND_Y + (lift?.[slot] ?? 0),
                 );
                 for (let c = 0; c < 4; c++)
                     motion.array[i * 4 + c] = this.motion[silk * 4 + c];

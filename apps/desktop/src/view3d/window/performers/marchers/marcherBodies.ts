@@ -533,7 +533,9 @@ export class MarcherBodies {
      * (not drawn) otherwise. `count` is the show's count clock. `camera`
      * picks each instrument's detail; null draws them all at full detail.
      * `silk` is each slot's motion for the silks' wave; without it they
-     * keep the last motion written, as when only the camera moved.
+     * keep the last motion written, as when only the camera moved. `lift`
+     * raises each slot (m) onto the platform under it; null stands them all
+     * on the ground.
      */
     writeFrame(
         xz: Float32Array,
@@ -542,6 +544,7 @@ export class MarcherBodies {
         count: number,
         camera: [number, number, number] | null = null,
         silk: SilkMotionFrame | null = null,
+        lift: Float32Array | null = null,
     ): void {
         for (const { mesh, slots } of this.entries) {
             const array = mesh.instanceMatrix.array as Float32Array;
@@ -554,15 +557,15 @@ export class MarcherBodies {
                     xz[i * 2 + 1],
                     heading[i],
                     placed[i] ? this.scaleOf[i] : 0,
-                    STAND_Y,
+                    STAND_Y + (lift?.[i] ?? 0),
                 );
             }
             mesh.instanceMatrix.needsUpdate = true;
         }
-        this.plumes?.writeFrame(xz, heading, placed, this.scaleOf);
-        this.horns?.writeFrame(xz, heading, placed, this.scaleOf, camera);
+        this.plumes?.writeFrame(xz, heading, placed, this.scaleOf, lift);
+        this.horns?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
         if (silk) this.silks?.writeMotion(silk);
-        this.silks?.writeFrame(xz, heading, placed, this.scaleOf, camera);
+        this.silks?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
         const discs = this.contact.instanceMatrix.array as Float32Array;
         for (let i = 0; i < placed.length; i++) {
             const o = i * 16;
@@ -573,7 +576,7 @@ export class MarcherBodies {
             discs[o + 5] = 1;
             discs[o + 10] = s;
             discs[o + 12] = xz[i * 2];
-            discs[o + 13] = CONTACT_Y;
+            discs[o + 13] = CONTACT_Y + (lift?.[i] ?? 0);
             discs[o + 14] = xz[i * 2 + 1];
             discs[o + 15] = 1;
         }

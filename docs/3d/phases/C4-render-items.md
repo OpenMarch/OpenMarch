@@ -104,19 +104,19 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### C4.5: Props, platforms and obstacles in 3D
 
-- Owner: none
-- Status: open
-- PR: none
+- Owner: Trevor (3d/c4-props)
+- Status: in-review
+- PR: AlexDumo/OpenMarch-timeline#755 (branch `3d/c4-props`, opened 2026-11-07)
 - Parallel: yes
 - Depends on: C4.1, C2.1, C2.3, C2.6
 
 **Goal:** props stand in the venue at their real size, and performers stand on platforms.
 
-**Scope:** Outline boxes (or a prop's Library model) from the geometry table at each count; floor = flat, platform = stood on, obstacle = not stood on; Off field not drawn; a performer at the height of the tallest platform under their dot, stepping over about half a count at an edge; stacking makes steps; props and placed items on the tallest platform under their footprint center; Floor props stay on the Base floor; notes for steps over 16 in, performers inside obstacles, and dots leaving a moving platform.
+**Scope:** Outline boxes (or a prop's Library model) from the geometry table at each count; floor = flat, platform = stood on, obstacle = not stood on; a performer at the height of the tallest platform under their dot, stepping over about half a count at an edge; stacking makes steps; props and placed items on the tallest platform under their footprint center; Floor props stay on the Base floor. Notes for steps over 16 in, performers inside obstacles, and dots leaving a moving platform wait for show checks to return (parked 2026-11-03; kept on branch `3d/c4-props-notes`).
 
 **Tickets:** 05, 21, 24, 25.
 
-**Done when:** a performer crossing onto a 24 in platform steps up in about half a count and the note names the count.
+**Done when:** a performer crossing onto a 24 in platform steps up in about half a count (the note naming the count comes back with show checks).
 
 **Checks:** unit tests for the height rule; screenshots; focused `src/view3d` tests; type-check, lint, format, spellcheck.
 
@@ -281,3 +281,67 @@ Nothing yet.
   `research/gpu-benchmark.md` onto a branch from `main` and re-run
   `run-bench.mjs` with `garment=all`.
   <!-- cspell:ignore Subdiv -->
+- 2026-11-01, C4.5 part 1 (branch `3d/c4-props`): props stand in the
+  venue. `view3d/core/props/propLayout.ts` (`propsAt`, `platformTopAt`)
+  places each prop's Outline at real size where the timeline has it, from
+  the count it was made on, not while Off field, and not while held (C4.6
+  draws held items). Platforms and obstacles sit on the tallest platform
+  under their footprint center; of two platforms over each other's centers
+  the smaller stands on the larger (the same size: the later made on the
+  earlier), so stacking makes steps and there are no loops. Floor props lie
+  flat on the field. `window/props/Props.tsx` draws each prop as its own
+  extruded mesh (an open freehand path as a 10 cm wall), rebuilt only when
+  its shape changes, from `useShowProps` (`src/hooks/`). Plain materials per
+  surface type until props carry Artwork (C5.5). Checked in the web preview
+  with a demo show given a stage, a riser on it, a turned wall, a tarp and a
+  round obstacle.
+- 2026-11-01, C4.5 part 2 (branch `3d/c4-props`): performers stand at the
+  top of the tallest platform under their dot (`platformLift.ts`). The step
+  is a ramp across the edge as wide as a dot goes in half a count at the
+  show's step size, halfway up on the edge; each stacked platform lifts from
+  what is under it toward its own top. The lift is worked out at the moment
+  the performers are placed (a count ahead, `STEP_AHEAD`) and raises the
+  body, instrument, silk, contact shadow and selection ring
+  (`writeFrame`'s new `lift`, null for the ground). Obstacles and Floor
+  props lift nothing. Checked in the web preview: the performers inside the
+  stage stand on it, the one on the riser higher.
+- 2026-11-01, C4.5 part 3 (branch `3d/c4-props`): the platform checks in
+  "Show checks" (`notes/platformNotes.ts`), checked on every count as the
+  3D View stands the props: a step of more than 16 in from one count to the
+  next ("Alice steps up 24 in onto Stage, Page 5 count 7", in cm for a
+  metric show), a performer inside an obstacle (one note over the counts
+  they are in it), and a dot that leaves a platform while the platform
+  moves. `useShowNotes` reads the items' Outline changes for it. Shows with
+  no platforms or obstacles skip the check; 400 performers over 1,000 counts
+  with three props took about 95 ms on an M1 Pro.
+- 2026-11-01, C4.5 review fixes (branch `3d/c4-props`): a platform now
+  stands on any platform under its center; only two platforms over each
+  other's centers use the order (the smaller on the larger, then the later on
+  the earlier), and a longer loop is broken where it is entered. The props
+  and the performers share one layout a frame, and performers stand on the
+  platforms as drawn at the clock, where their bodies are (after the motion
+  step). The moving-platform note also fires when the platform turns or
+  changes size; the obstacle note says its counts ("Page 3 count 3 to
+  Page 4 count 2"); the step note's limit reads in the show's units.
+  - **Open:** a prop's Library model is C4.6's (props draw as Outlines until
+    then). "With nothing between" is read count to count: a step up 16 in and
+    another 16 in within one count reads as one 32 in step, and a hop onto
+    and off a narrow platform within one count isn't seen.
+- 2026-11-07, C4.5 merged with `timeline/main` (branch `3d/c4-props`).
+  Main had parked prop holding (Placement, holders, crew, put-down) and show
+  notes and Show checks (commit eb87d04a0), and drew props as plain blocks
+  (`PropBlocks.tsx`, a color per prop, hidden props hidden). Props now draw
+  through main's `PropBlocks`; the branch's own `Props.tsx` and
+  `propMeshes.ts` are gone, so an open freehand path is a filled block, not
+  a 10 cm wall. `PropBlocks` stands each block on the platform under it from
+  the same layout the performers stand on (`placePropBlocks`'s `liftOf`).
+  With no Placement, a prop with an Outline always stands (no Off field, no
+  held props); a prop hidden on the field isn't stood on. The layout reads
+  the beat from `ShowPositions.beatAt`, as the blocks and the 2D field do.
+  The platform checks (part 3) left with show notes; they are on branch
+  `3d/c4-props-notes` for when show checks return. Checked in the Electron
+  build (temporary Playwright spec): a stage with a riser on it, a round
+  obstacle and a tarp; five performers step onto the stage, the middle one
+  onto the riser, a sixth walks into the obstacle and through it, and all
+  step back off. The view3d web preview could not be used (it fails on
+  `timeline/main` with "table `timeline_assignments` already exists").

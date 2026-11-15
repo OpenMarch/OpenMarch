@@ -13,6 +13,8 @@
  *   the timeline while playing and scrubbing. Nothing is recomputed while the
  *   show time and the inputs stay the same.
  * - Shadows follow the scene's quality, like the performers.
+ * - A platform or obstacle stands on the platform under its center (C4.5,
+ *   `propLayout.ts`), from the same layout the performers stand on.
  *
  * Meshes are rebuilt only when the set of footprints or the prop count
  * changes; an Outline edit that keeps them only refreshes the matrices.
@@ -42,6 +44,7 @@ import {
     itemOutlineChanges,
 } from "@/items/itemOutlineTimeline";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { useShowProps } from "@/hooks/useShowProps";
 import { propColorsByMarcher } from "@/items/propColor";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import {
@@ -58,6 +61,7 @@ import { useShowPositions } from "@/view3d/positions";
 import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { requestDraw } from "../drawWake";
+import { propSolidsAt } from "./performerLift";
 
 /**
  * A unit footprint extruded 1 m up, base on y = 0. The shape is drawn in
@@ -98,6 +102,12 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
     const { beats } = useTimingObjects();
     const { positions } = useShowPositions();
     const hiddenItemIds = useView3dSyncStore((s) => s.hiddenItemIds);
+    // The props as stood, for the platform each block stands on (C4.5)
+    const { props: showProps } = useShowProps(hiddenItemIds);
+    const stacks = useMemo(
+        () => showProps.some((p) => p.surface === "platform"),
+        [showProps],
+    );
 
     const tracks = useMemo(() => {
         const rows = items ?? [];
@@ -199,7 +209,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
     useEffect(() => {
         dirtyRef.current = true;
         requestDraw(1000);
-    }, [meshes, tracks, positions, fieldProperties]);
+    }, [meshes, tracks, positions, fieldProperties, showProps]);
 
     const lastMsRef = useRef(Number.NaN);
     useFrame(() => {
@@ -208,6 +218,18 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         if (!dirtyRef.current && ms === lastMsRef.current) return;
         const { frame, list } = meshes;
         if (positions) {
+            let liftOf: ((marcherId: number) => number) | undefined;
+            if (stacks) {
+                const bases = new Map<number, number>();
+                for (const solid of propSolidsAt({
+                    props: showProps,
+                    positions,
+                    ms,
+                    fieldProperties,
+                }))
+                    bases.set(solid.id, solid.base);
+                liftOf = (marcherId) => bases.get(marcherId) ?? 0;
+            }
             placePropBlocks(
                 tracks,
                 positions.beatAt(ms),
@@ -216,6 +238,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
                 frame,
                 keyOf,
                 FIELD_SURFACE_Y,
+                liftOf,
             );
         } else frame.counts.fill(0);
         list.forEach((mesh, k) => {
