@@ -12,6 +12,10 @@
   Visuals mode and item placement (holders, artwork slots, put-down) are
   parked: the code is on branch `archive/pre-convergence`, and their
   migrations stay until the fork's migrations are collapsed.
+- Superseded in part (2026-11-15) by [ADR 0015](0015-cue-model.md): D-1 to
+  D-3, the channels, phrases, take-overs and targets give way to one parameter
+  per cue type, cues that store their performers, and hold style on the hold
+  with Stand as the show default. D-6, D-7 and the beat deletion rule stand.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only, and

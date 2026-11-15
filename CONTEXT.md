@@ -51,6 +51,18 @@ Terms the code, docs and issues use. Add a term when a design decision settles i
   interval: a drag changes only what the interval doesn't pin. Interval on the path counts as
   locked.
 
+## Cues
+
+From ADR 0015.
+
+- **Cue**: a value set for some performers at a moment (a count), for one cue type. Only things
+  that change independently of the drill are cues. _Avoid_: event, channel.
+- **Cue type**: what a cue controls, exactly one parameter of a performer: Equipment, Position,
+  Silk, Look, Facing, Posture (Lights later). Each is a lane on the timeline.
+- **Lasting / momentary**: a lasting cue holds until that performer's next lasting cue of the
+  type; a momentary one applies for a length in counts, then the lasting value shows again.
+- **Transition length**: how many counts a cue's change takes; each value has a default.
+
 ## Modifier keys
 
 From the modifier roles design, `docs/timeline/research/shapes/modifier-roles.md` (version A).
