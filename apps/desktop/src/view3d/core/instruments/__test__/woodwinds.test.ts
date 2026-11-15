@@ -10,7 +10,7 @@ import {
     type Piece,
     type Vec3,
 } from "../mesh";
-import { SAX_BODY_TURN, saxTurned, saxSwivelBack } from "../saxophones";
+import { SAX_BODY_TURN, saxTurned } from "../saxophones";
 import { SAX_SHAPES, WOODWIND_DIMENSIONS, woodwindModel } from "../woodwinds";
 import type { WoodwindModelId } from "../model";
 
@@ -228,23 +228,14 @@ function groups(pieces: Piece[]): number {
     return count;
 }
 
-/** A piece turned back by the sax body's turn about its axis (and the bari's swivel): the body as built, keys +Y and bell +X. */
-function asBuilt(
-    p: Piece,
-    yb: number,
-    id: "altoSax" | "tenorSax" | "bariSax",
-): Piece {
+/** A piece turned back by the sax body's turn about its axis: the body as built, keys +Y and bell +X. */
+function asBuilt(p: Piece, yb: number): Piece {
     const c = Math.cos(SAX_BODY_TURN);
     const s = Math.sin(SAX_BODY_TURN);
     const positions = [...p.positions];
     for (let i = 0; i < positions.length; i += 3) {
-        const [ux, uy] = saxSwivelBack(id, [
-            p.positions[i],
-            p.positions[i + 1],
-            p.positions[i + 2],
-        ]);
-        const x = ux;
-        const y = uy - yb;
+        const x = p.positions[i];
+        const y = p.positions[i + 1] - yb;
         positions[i] = x * c + y * s;
         positions[i + 1] = yb - x * s + y * c;
     }
@@ -263,7 +254,7 @@ function saxBody(id: "altoSax" | "tenorSax" | "bariSax") {
     const at = (k: number) => top + (bowZ - top) * k;
     // below the neck, the pieces in the frame the body is built in
     const built = m.pieces.map((p) =>
-        box(p).min[2] > top - 0.02 ? asBuilt(p, yb, id) : p,
+        box(p).min[2] > top - 0.02 ? asBuilt(p, yb) : p,
     );
     return { m, sh, yb, top, bowZ, rAt, at, built };
 }

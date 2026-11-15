@@ -1563,27 +1563,6 @@ const ALTO_HANDS: { left: SaxHand; right: SaxHand } = {
         out: [-0.05, -0.187, -0.055],
     },
 };
-/**
- * The bari's: the left hand reaches across the front of the chest to the
- * upper stack, its fingers wrapping back toward the body; the right hand
- * comes onto the lower stack from the right hip, the elbow drawn back
- * behind the torso, the hand leveling out and wrapping inward.
- */
-const BARI_HANDS: { left: SaxHand; right: SaxHand } = {
-    left: {
-        k: 0.3,
-        knuckles: [-0.02, 0, 0],
-        fingers: [-0.683, -0.62, 0.385],
-        out: [0.1, -0.3, 0.03],
-    },
-    right: {
-        k: 0.66,
-        knuckles: [-0.02, 0, 0],
-        fingers: [0.046, 0.995, 0.089],
-        out: [-0.06, -0.162, -0.105],
-    },
-};
-
 /** The most a sax hand bends at the wrist: curled onto the keys, still reading as a hand. */
 const SAX_WRIST_BEND = (30 * Math.PI) / 180;
 
@@ -1627,55 +1606,14 @@ function saxHands(
 }
 
 /**
- * The bari up (owner, 2026-11-14, with marching photos): too long to hang
- * straight in front, it is worn on a harness sideways down the body, the
- * top of the horn out by the left shoulder and the bow resting just in
- * front of the right thigh, nearly touching the leg, the bell opening
- * forward, with its neck swivelled in the receiver (`BARI_NECK_SWIVEL` in
- * saxophones.ts) so it reaches the mouth from by the left side of the
- * face. The sax hold turned `BARI_YAW_DEG` toward the performer's left
- * about the vertical, then rolled `BARI_ROLL_DEG` about the forward axis
- * so the bottom swings across to the right thigh, its bottom tipped
- * forward by -`BARI_PITCH_DEG` (a positive pitch tips it back) to clear the
- * belly. The mouthpiece stays at the lips; the hands follow the stacks.
+ * The bari up (owner, 2026-11-14): straight up and down like the alto and
+ * tenor, the mouthpiece straight back into the mouth and the bell straight
+ * away, the long body hanging in front of the performer. It keeps a hold
+ * of its own so its hands land on its own, longer stacks.
  */
-const BARI_YAW_DEG = 38;
-const BARI_ROLL_DEG = 18;
-const BARI_PITCH_DEG = -2;
 function bariUp(): Hold {
-    const base = withMouth(SAX.up);
-    const y = (BARI_YAW_DEG * Math.PI) / 180;
-    const r = (BARI_ROLL_DEG * Math.PI) / 180;
-    const p = (BARI_PITCH_DEG * Math.PI) / 180;
-    // pitch about +X (the bottom back toward the body), yaw about +Y (forward
-    // toward the left), then roll about +Z (down toward the right)
-    const turn = (v0: Vec3): Vec3 => {
-        const v: Vec3 = [
-            v0[0],
-            v0[1] * Math.cos(p) - v0[2] * Math.sin(p),
-            v0[1] * Math.sin(p) + v0[2] * Math.cos(p),
-        ];
-        const a: Vec3 = [
-            v[0] * Math.cos(y) + v[2] * Math.sin(y),
-            v[1],
-            -v[0] * Math.sin(y) + v[2] * Math.cos(y),
-        ];
-        return [
-            a[0] * Math.cos(r) + a[1] * Math.sin(r),
-            -a[0] * Math.sin(r) + a[1] * Math.cos(r),
-            a[2],
-        ];
-    };
-    const h: Hold = {
-        ...base,
-        family: "bariSax",
-        instrument: {
-            origin: base.instrument.origin,
-            bellAxis: turn([0, -1, 0]),
-            capsAxis: turn([0, 0, 1]),
-        },
-    };
-    return { ...h, ...saxHands(h, ["bariSax"], BARI_HANDS) };
+    const h: Hold = { ...withMouth(SAX.up), family: "bariSax" };
+    return { ...h, ...saxHands(h, ["bariSax"], ALTO_HANDS) };
 }
 
 /**

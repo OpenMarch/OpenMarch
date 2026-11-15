@@ -396,25 +396,14 @@ points and where the elbows go.
   front to back through the right fist, the mouthpiece forward, the bow and
   bell hanging straight down below the body tube, clear of the leg; the
   arms are the brass trail's.
-- **bari sax.** A hold of its own (owner, 2026-11-14, with marching
-  photos and an independent review). The model's neck is swivelled 40
-  degrees in its receiver (`BARI_NECK_SWIVEL` in `saxophones.ts`), as
-  players turn it: the body and bell turn about the receiver's axis while
-  the neck stays a plain hook from the mouthpiece down into the receiver,
-  so the neck reaches the mouth from by the left side of the face while the
-  bell faces forward. Up: too long to hang straight in front, it is worn
-  sideways down the body, the bow in front of the right thigh: the sax hold
-  turned 38 degrees toward the performer's left (`BARI_YAW_DEG`), rolled 18
-  degrees (`BARI_ROLL_DEG`) so the bow swings across to the right thigh, and
-  its bottom tipped 2 degrees forward (`BARI_PITCH_DEG`), which keeps the
-  crook off the left of the chest and the lower tube off the belly; the
-  bell opens up and forward, a little left. The left hand reaches across the
-  chest to the upper stack, its elbow down at the side; the right comes onto
-  the lower stack from the right hip, its elbow drawn back. These angles
-  were hand-tuned against renders and the reference photos: the tests in
-  `saxPlacement.test.ts` hold what they must keep (the bow by the right
-  thigh, nothing in the torso, the neck and crook clear of the face, neck
-  and shoulders), so a retune only has to keep those passing. Carry: as the
+- **bari sax.** A hold of its own, so its hands land on its own, longer
+  stacks. The model follows the same rule as the alto and tenor: the
+  mouthpiece comes straight back to the player and the bell faces straight
+  away, with the top loop, crook and neck receiver on the near side of the
+  body in the same plane. Up (owner, 2026-11-14, after trying a carry slung
+  sideways down the body): straight up and down like the alto and tenor,
+  the long body hanging in front of the performer, the hands in the same
+  real grip on its stacks. Carry: as the
   alto's, the hands on the bari's upper stacks so they reach at eye level.
   Trail: as the alto's, the tube a little further out for the wide bell.
 - **snare, tenors.** Elbows at the sides, a little forward, not winged

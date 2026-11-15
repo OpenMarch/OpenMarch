@@ -472,15 +472,11 @@ describe("woodwind and battery holds", () => {
         expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.999);
     });
 
-    it("bariSax: sideways down the body, top out to the left, bottom to the right hip", () => {
+    it("bariSax: straight up and down like the alto, the neck straight back to the lips", () => {
+        // owner, 2026-11-14: upright, not slung across the body
         const h = hold("bariSax", "up");
-        const [x, y] = h.instrument.bellAxis;
-        // down the body, leaning toward the performer's right
-        expect(y).toBeLessThan(-0.85);
-        expect(x).toBeLessThan(-0.25);
-        // the neck comes in to the mouth from the front-left
-        expect(h.instrument.capsAxis[0]).toBeGreaterThan(0.3);
-        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.75);
+        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.999);
+        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.999);
     });
 
     it("drums ride the chest with the hands over the heads", () => {

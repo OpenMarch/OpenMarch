@@ -521,7 +521,7 @@ function saxTop(shape: SaxShape, s: SegmentCounts) {
     }
     coil.push(top);
     // the neck runs on from the mouthpiece and bends down into the receiver
-    const end = saxSwivelled("bariSax", saxTurned(coil[0], yb));
+    const end = saxTurned(coil[0], yb);
     const neck = bezier(
         mpEnd,
         add3(mpEnd, [0, 0.045, -0.004]),
@@ -553,50 +553,6 @@ export function saxTurned(p: Vec3, yb: number): Vec3 {
     const s = Math.sin(SAX_BODY_TURN);
     const y = p[1] - yb;
     return [p[0] * c - y * s, yb + p[0] * s + y * c, p[2]];
-}
-
-/**
- * How far the bari's neck is swivelled in its receiver (owner and review,
- * 2026-11-14, from marching photos): players turn the neck about 40 degrees
- * so it runs across to the mouth from by the left collarbone while the body
- * and bell still face forward. The body turns about the receiver's axis,
- * its bell from straight ahead (+Y) toward −X; the neck and mouthpiece stay
- * where they are, so the mouthpiece is still the frame's origin.
- */
-export const BARI_NECK_SWIVEL = (40 * Math.PI) / 180;
-
-/** The bari's neck receiver in the instrument frame, before any swivel: the axis the body swivels about. */
-function bariReceiver(): Vec3 {
-    const pig = SAX_SHAPES.bariSax.pigtail!;
-    return saxTurned([-2 * pig.r1, pig.yb - 2 * pig.r2, pig.receiver], pig.yb);
-}
-
-/** A point of a sax's body in the instrument frame, swivelled about the bari's receiver (others unchanged). */
-export function saxSwivelled(
-    id: "altoSax" | "tenorSax" | "bariSax",
-    p: Vec3,
-): Vec3 {
-    if (id !== "bariSax") return p;
-    const [rx, ry] = bariReceiver();
-    const c = Math.cos(BARI_NECK_SWIVEL);
-    const s = Math.sin(BARI_NECK_SWIVEL);
-    const x = p[0] - rx;
-    const y = p[1] - ry;
-    return [rx + x * c - y * s, ry + x * s + y * c, p[2]];
-}
-
-/** The inverse of {@link saxSwivelled}: a body point back as the body is turned, before the bari's swivel. */
-export function saxSwivelBack(
-    id: "altoSax" | "tenorSax" | "bariSax",
-    p: Vec3,
-): Vec3 {
-    if (id !== "bariSax") return p;
-    const [rx, ry] = bariReceiver();
-    const c = Math.cos(BARI_NECK_SWIVEL);
-    const s = Math.sin(BARI_NECK_SWIVEL);
-    const x = p[0] - rx;
-    const y = p[1] - ry;
-    return [rx + x * c + y * s, ry - x * s + y * c, p[2]];
 }
 
 /**
@@ -897,11 +853,11 @@ export function curvedSax(
                 ),
             );
     }
-    // the body turned under the neck, then (the bari) swivelled about the
-    // receiver: one matrix, column-major, from three points it carries
-    const o = saxSwivelled(id, saxTurned([0, 0, 0], yb));
-    const ex = saxSwivelled(id, saxTurned([1, 0, 0], yb));
-    const ey = saxSwivelled(id, saxTurned([0, 1, 0], yb));
+    // the body turned under the neck: one matrix, column-major, from three
+    // points it carries
+    const o = saxTurned([0, 0, 0], yb);
+    const ex = saxTurned([1, 0, 0], yb);
+    const ey = saxTurned([0, 1, 0], yb);
     const turn = [
         ex[0] - o[0],
         ex[1] - o[1],
@@ -944,7 +900,7 @@ export function saxStack(
     const bowZ = WOODWIND_DIMENSIONS[id].length - sh.bowWidth / 2 - sh.rBow;
     const z = lerp(top[2], bowZ, k);
     const r = lerp(sh.rTop, sh.rBow, k);
-    return saxSwivelled(id, saxTurned([0, yb + r + off, z], yb));
+    return saxTurned([0, yb + r + off, z], yb);
 }
 
 /** A point on a curved sax's body axis at fraction `k` from its top to the bow, in the instrument frame. */
