@@ -68,6 +68,8 @@ import {
 import { rippleArrivalCount } from "@/db-functions/timelineTrailRipplePlan";
 import {
     detachIdsOf,
+    editGroupPathLabel,
+    editLineLabel,
     laneFocusOf,
     pathSlotsOf,
     memberOf,
@@ -521,7 +523,7 @@ function PathEditorBar({
                                     <IconButton
                                         label={tolgee.t(
                                             "actions.path.adjustRemoveKey",
-                                            "Remove adjustment point",
+                                            "Remove bend point",
                                         )}
                                         action="adjustRemoveKey"
                                         onClick={() =>
@@ -596,8 +598,9 @@ function PathEditorBar({
 }
 
 /**
- * The path bar's fixed slots (interaction round 2): Edit path · Adjust · Detach or Rejoin · Match
- * group, in the same places for every marcher, so a press after the selection changes lands on
+ * The path bar's fixed slots (interaction round 2): Edit group path (Edit path for a path of one) ·
+ * Edit <name>'s line · Detach or Rejoin · Match group, in the same places for every marcher, so a
+ * press after the selection changes lands on
  * what it did before. A slot that can't act stays, greyed out, its tooltip saying why (a press on
  * it says so too, for a finger). A trail has only Edit path: its members have no lanes.
  */
@@ -607,53 +610,67 @@ function PathSlots({ session }: { session: PathSession }) {
     const slots = pathSlotsOf(session, ownable, rejoin);
     const detachIds = detachIdsOf(ownable, session);
     const editing = session.phase === "open" && !session.lane;
-    const adjustingId = laneFocusOf(session);
+    const lineId = laneFocusOf(session);
     const sayWhy = (why: string | null) => () => {
         if (why !== null) toast.info(why, { id: "path-slot-why" });
     };
-    const adjustReason = "reason" in slots.adjust ? slots.adjust.reason : null;
+    const lineReason = "reason" in slots.line ? slots.line.reason : null;
+    const lineDrill = "drill" in slots.line ? slots.line.drill : null;
+    // On a group path, Edit path edits the line every member follows: named so (round 3)
+    const group = !!session.target.group && !session.target.lane;
     const backReason = slots.backIsRejoin ? null : slots.detachReason;
     return (
         <>
             <IconButton
-                label={tolgee.t(
-                    "pathways.editor.editTip",
-                    "Show this path's points to drag. A click on its line does it too",
-                )}
+                label={
+                    group
+                        ? tolgee.t(
+                              "pathways.editor.editGroupTip",
+                              "Show the group path's points to drag. Every marcher on it follows",
+                          )
+                        : tolgee.t(
+                              "pathways.editor.editTip",
+                              "Show this path's points to drag. A click on its line does it too",
+                          )
+                }
                 action="editPath"
                 pressed={editing}
                 onClick={() => runAction("editPath")}
                 testId="path-edit"
             >
                 <PencilSimpleIcon size={14} />
-                {tolgee.t("actions.path.edit", "Edit path")}
+                {group
+                    ? editGroupPathLabel()
+                    : tolgee.t("actions.path.edit", "Edit path")}
             </IconButton>
             {slots.shown && (
                 <>
                     <Divider />
                     <IconButton
                         label={
-                            adjustReason ??
+                            lineReason ??
                             tolgee.t(
-                                "pathways.editor.adjustTip",
-                                "Bend only this marcher's line. It keeps following the group path's edits",
+                                "pathways.editor.editLineTip",
+                                "Bend only {marcher}'s line, by its handles. It keeps following the group path's edits. A click on the line does it too",
+                                { marcher: lineDrill ?? "" },
                             )
                         }
-                        action="adjustPath"
-                        disabled={adjustReason !== null}
-                        pressed={adjustingId !== null}
-                        onClick={() => runAction("adjustPath")}
-                        onDisabledClick={sayWhy(adjustReason)}
-                        testId="path-adjust"
+                        action="editLine"
+                        disabled={lineReason !== null}
+                        pressed={lineId !== null}
+                        onClick={() => runAction("editLine")}
+                        onDisabledClick={sayWhy(lineReason)}
+                        testId="path-edit-line"
+                        className={LINE_SLOT_WIDTH}
                     >
                         <BezierCurveIcon size={14} />
-                        {tolgee.t("actions.path.adjust", "Adjust")}
+                        {editLineLabel(lineDrill)}
                     </IconButton>
                     {slots.backIsRejoin ? (
                         <IconButton
                             label={tolgee.t(
                                 "pathways.editor.rejoinTip",
-                                "Put the selected marchers back on the group path. A detached marcher's copy goes, and so does any adjustment on it",
+                                "Put the selected marchers back on the group path. A detached marcher's copy goes, and so do any bends on its line",
                             )}
                             action="rejoinPath"
                             onClick={() => runAction("rejoinPath")}
@@ -720,6 +737,9 @@ function PathSlots({ session }: { session: PathSession }) {
         </>
     );
 }
+
+/** Edit <name>'s line's slot fits a long drill number, so the slots after it never move */
+const LINE_SLOT_WIDTH = "min-w-[124px] justify-start";
 
 /** Detach's slot holds Detach, Detach 12 or Rejoin 3 at one width, so Match group never moves */
 const SLOT_WIDTH = "min-w-[84px] justify-start";

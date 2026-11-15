@@ -56,10 +56,10 @@ import {
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
- *   path**, **Adjust**, **Detach from group path** or **Rejoin group path**, **Match group**,
- *   **Re-fit path** (Re-center group path), **Remove path**. Adjust, Detach and Match group stay
- *   in their places, greyed out with the reason, for any path but a trail; the others show only
- *   while they apply.
+ *   group path** (Edit path), **Edit <name>'s line**, **Detach from group path** or **Rejoin
+ *   group path**, **Match group**, **Re-fit path** (Re-center group path), **Remove path**. Edit
+ *   <name>'s line, Detach and Match group stay in their places, greyed out with the reason, for
+ *   any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
@@ -81,7 +81,7 @@ import {
 /** The Path group (pathways), on a marcher and on a path's line: each shown only when it applies */
 const PATH: readonly ActionId[] = [
     "editPath",
-    "adjustPath",
+    "editLine",
     "detachPath",
     "rejoinPath",
     "adjustResetSpot",
@@ -96,7 +96,7 @@ const PATH_SET: ReadonlySet<ActionId> = new Set(PATH);
  * others show only while they apply. Detach's slot gives no reason while Rejoin holds it.
  */
 const PATH_SLOTS: ReadonlySet<ActionId> = new Set([
-    "adjustPath",
+    "editLine",
     "detachPath",
     "adjustResetSpot",
 ]);
@@ -157,7 +157,7 @@ const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
 /** A mode's entries' icons */
 const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
     editPath: PencilSimpleIcon,
-    adjustPath: BezierCurveIcon,
+    editLine: BezierCurveIcon,
     detachPath: ArrowsSplitIcon,
     rejoinPath: ArrowsMergeIcon,
     adjustResetSpot: ArrowCounterClockwiseIcon,

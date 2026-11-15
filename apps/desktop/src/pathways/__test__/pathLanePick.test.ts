@@ -254,14 +254,17 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
     const drawn = () => drawingOf(usePathPenStore.getState().session)!;
     const laneY = y + 4 * STEP;
 
-    it("draws only the picked lane, without the group line or its handles (interaction round 2)", () => {
+    it("draws only the picked lane, without the group line or its handles, but with its own spots to grab (rounds 2 and 3)", () => {
         open(group(null));
         expect(drawn().pathLine).toBe("edited");
         expect(drawn().handles?.length).toBeGreaterThan(0);
         selectLane({ marcherId: 11, key: null });
         expect(drawn().outline).toBeNull();
         expect(drawn().handles).toEqual([]);
-        expect(drawn().addHandles).toEqual([]);
+        // The round spots are on the picked lane, not the group line's midpoints
+        expect(drawn().addHandles?.length).toBeGreaterThan(0);
+        for (const spot of drawn().addHandles ?? [])
+            expect(spot.y).toBeCloseTo(laneY);
         expect(drawn().lanes).toHaveLength(1);
         expect(drawn().laneIds).toEqual([11]);
         expect(drawn().lanePicked).toBe(0);

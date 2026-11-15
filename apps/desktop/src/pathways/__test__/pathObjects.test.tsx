@@ -349,7 +349,7 @@ describe("member state on the field, whenever a group path shows (interaction sy
         expect(d.lanesAdjusted).toEqual([1]);
         const rings = d.memberRings!;
         expect(rings.find((r) => r.marcherId === 11)!.label).toMatch(
-            /^Adjusted/,
+            /^Has bends of its own/,
         );
         expect(rings.find((r) => r.marcherId === 12)).toMatchObject({
             kind: "own",

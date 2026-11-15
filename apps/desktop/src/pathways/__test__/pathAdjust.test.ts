@@ -10,8 +10,8 @@ import {
     pathPenMode,
 } from "../pathPenMode";
 import {
-    adjustMember,
-    adjustTargetOf,
+    editMemberLine,
+    lineTargetOf,
     clearPath,
     closePath,
     openPath,
@@ -21,6 +21,7 @@ import {
 } from "../pathPenStore";
 import {
     groupLegDistances,
+    laneBendSpotsOf,
     laneHitOf,
     limitDrag,
     memberWalkOf,
@@ -385,7 +386,7 @@ describe("when Re-fit is offered (decision A)", () => {
     });
 });
 
-describe("Adjust, an explicit command (interaction round 2)", () => {
+describe("Edit <name>'s line, an explicit command (interaction round 3, was Adjust)", () => {
     beforeEach(() => {
         setShapeField({
             fieldProperties: () => fieldProperties,
@@ -402,25 +403,28 @@ describe("Adjust, an explicit command (interaction round 2)", () => {
 
     it("acts on the one selected member; several, none or a path that isn't a group's say why", () => {
         showPath(group(), "2");
-        expect(adjustTargetOf(session(), [11])).toEqual({ marcherId: 11 });
-        expect(adjustTargetOf(session(), [10, 11])).toEqual({
-            reason: "Adjust one marcher at a time: select just one",
+        expect(lineTargetOf(session(), [11])).toEqual({
+            marcherId: 11,
+            drill: "B2",
         });
-        expect("reason" in adjustTargetOf(session(), [])).toBe(true);
+        expect(lineTargetOf(session(), [10, 11])).toEqual({
+            reason: "Select one marcher to edit their line",
+        });
+        expect("reason" in lineTargetOf(session(), [])).toBe(true);
         showPath(group({ group: null }), "B1");
-        expect(adjustTargetOf(session(), [])).toEqual({
+        expect(lineTargetOf(session(), [])).toEqual({
             reason: "This marcher walks its own path: Edit path changes it",
         });
         showPath(
             group({ lane: { offset: { x: 0, y: 0 }, detachedFrom: 3 } }),
             "B1",
         );
-        expect("reason" in adjustTargetOf(session(), [10])).toBe(true);
+        expect("reason" in lineTargetOf(session(), [10])).toBe(true);
     });
 
-    it("makes only that member's lane drawn and editable, from quiet; Escape's close goes back to quiet", () => {
+    it("makes only that member's lane drawn and editable, its handles shown at once, from quiet; Escape's close goes back to quiet", () => {
         showPath(group(), "2");
-        adjustMember(11);
+        editMemberLine(11);
         expect(session()).toMatchObject({
             phase: "open",
             lane: { marcherId: 11, key: null },
@@ -428,8 +432,23 @@ describe("Adjust, an explicit command (interaction round 2)", () => {
         const d = drawingOf(session())!;
         expect(d.outline).toBeNull();
         expect(d.laneIds).toEqual([11]);
-        // While adjusting, Adjust names the lane adjusted whatever is selected
-        expect(adjustTargetOf(session(), [])).toEqual({ marcherId: 11 });
+        // No bends yet, and still something to grab: the group path's points on the line and the
+        // middle between them, on the part that bends only (not the legs to and from its ends)
+        const y = 24 * STEP;
+        expect(d.adjustHandles).toEqual([]);
+        expect(d.addHandles).toEqual([
+            { x: 10 * STEP, y },
+            { x: 20 * STEP, y },
+            { x: 30 * STEP, y },
+        ]);
+        // A press on one of them takes the line, as a drag there bends it
+        const spot = pointer(20 * STEP, y);
+        expect(pathPenMode.claims(spot, onDot(false))).toBe(true);
+        // While its line is edited, the command names that marcher whatever is selected
+        expect(lineTargetOf(session(), [])).toEqual({
+            marcherId: 11,
+            drill: "B2",
+        });
         // A press on the other member's lane isn't taken: it isn't drawn
         const otherLane = pointer(20 * STEP, 16 * STEP);
         expect(pathPenMode.claims(otherLane, onDot(false))).toBe(false);
@@ -437,9 +456,9 @@ describe("Adjust, an explicit command (interaction round 2)", () => {
         expect(session()).toMatchObject({ phase: "closed", lane: null });
     });
 
-    it("Edit path from Adjust edits the group path, its line drawn again", () => {
+    it("Edit group path from a member's line edits the group path, its line drawn again", () => {
         showPath(group(), "2");
-        adjustMember(10);
+        editMemberLine(10);
         openPath();
         expect(session()).toMatchObject({ phase: "open", lane: null });
         expect(drawingOf(session())!.outline).not.toBeNull();
@@ -447,7 +466,76 @@ describe("Adjust, an explicit command (interaction round 2)", () => {
 
     it("does nothing for a marcher who isn't a member", () => {
         showPath(group(), "2");
-        adjustMember(99);
+        editMemberLine(99);
         expect(session()!.phase).toBe("closed");
+    });
+});
+
+describe("laneBendSpotsOf: where an edited line can be grabbed (round 3)", () => {
+    const shape = (): PathShape => ({
+        from: { x: 0, y: 0 },
+        to: { x: 40 * STEP, y: 0 },
+        points: [
+            { at: { x: 10 * STEP, y: 0 } },
+            { at: { x: 30 * STEP, y: 0 } },
+        ],
+    });
+    const walk = (adjust: null | { v: 1; keys: unknown[] }) =>
+        memberWalkOf(
+            scheduleOf(shape()),
+            {
+                from: { x: 0, y: 4 * STEP },
+                to: { x: 40 * STEP, y: 4 * STEP },
+                offset: { x: 0, y: 4 * STEP },
+                adjust: adjust as never,
+            },
+            [{ id: "p" }, { id: "q" }],
+        );
+
+    it("a line with no bends: the group path's points and the middle between", () => {
+        expect(laneBendSpotsOf(walk(null)).map((p) => p.x)).toEqual([
+            10 * STEP,
+            20 * STEP,
+            30 * STEP,
+        ]);
+    });
+
+    it("leaves out a spot within a step of a bend point, and splits the stretches beside it", () => {
+        // A bend point 1/4 of the way from p to q, pulled 2 steps down
+        const spots = laneBendSpotsOf(
+            walk({
+                v: 1,
+                keys: [{ a: "p", b: "q", f: 0.25, d: [0, 2 * STEP] }],
+            }),
+        );
+        const xs = spots.map((p) => p.x);
+        expect(xs).not.toContain(15 * STEP);
+        expect(xs).toContain(10 * STEP);
+        expect(xs).toContain(30 * STEP);
+        expect(xs).toContain(22.5 * STEP);
+        // Drawn where the bent line runs: the middle on the bend's slope sits off the plain lane
+        const middle = spots.find((p) => p.x === 22.5 * STEP)!;
+        expect(middle.y).toBeGreaterThan(4 * STEP);
+    });
+
+    it("a line too short to bend has none", () => {
+        const short: PathShape = {
+            from: { x: 0, y: 0 },
+            to: { x: 2 * STEP, y: 0 },
+            points: [{ at: { x: 1 * STEP, y: 0 } }],
+        };
+        expect(
+            laneBendSpotsOf(
+                memberWalkOf(
+                    scheduleOf(short),
+                    {
+                        from: { x: 0, y: 0 },
+                        to: { x: 2 * STEP, y: 0 },
+                        offset: { x: 0, y: 0 },
+                    },
+                    [{ id: "p" }],
+                ),
+            ),
+        ).toEqual([]);
     });
 });

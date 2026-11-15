@@ -1495,14 +1495,17 @@ function ModeDrawing({
                         />
                     );
                 })()}
+            {/* A line's bend points, squares as a path's points are; the round spots beside them
+                (addHandles) are where to grab it for a new bend (round 3) */}
             {drawing.adjustHandles?.map(({ at: point, selected }, i) => {
                 const p = at(point);
                 return (
-                    <circle
+                    <rect
                         key={`adjust${i}`}
-                        cx={p.x}
-                        cy={p.y}
-                        r={ADD_HANDLE_RADIUS}
+                        x={p.x - half}
+                        y={p.y - half}
+                        width={SHAPE_HANDLE_SIZE}
+                        height={SHAPE_HANDLE_SIZE}
                         fill={selected ? shape : "white"}
                         stroke={shape}
                         strokeWidth={SHAPE_HANDLE_WIDTH}

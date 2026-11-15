@@ -48,8 +48,10 @@ import {
 } from "./pathTarget";
 import {
     acknowledgeOpenPath,
-    adjustMember,
+    editMemberLine,
     pathSlotsOf,
+    editGroupPathLabel,
+    editLineLabel,
     deleteAdjustKey,
     deleteOnLane,
     resetSpot,
@@ -396,13 +398,10 @@ export function usePathPenActions(): void {
 
     // Edit path: opens the selected marcher's path at the playhead, as a double-click on it does.
     // No key of its own: the shape tool has none for editing points (Enter places a shape)
-    // Adjusting one lane, it goes back to editing the group path (its line shows only then)
-    const adjusting = usePathPenStore(
+    // Editing one marcher's line, it goes back to editing the group path (its line shows only then)
+    const lineEdited = usePathPenStore(
         (s) => s.session?.phase === "open" && !!s.session.lane,
     );
-    useActionHandler("editPath", () => void openPath(), {
-        enabled: phase === "closed" || adjusting,
-    });
     // The bar's fixed slots (interaction round 2): each says why it can't act, for any path but
     // a trail, so the menus can show it greyed out in its place
     const slots = usePathPenStore(
@@ -410,9 +409,9 @@ export function usePathPenActions(): void {
             const all = pathSlotsOf(s.session, s.ownable, s.rejoin);
             return {
                 shown: all.shown,
-                adjustId:
-                    "marcherId" in all.adjust ? all.adjust.marcherId : null,
-                adjustReason: "reason" in all.adjust ? all.adjust.reason : null,
+                lineId: "marcherId" in all.line ? all.line.marcherId : null,
+                lineDrill: "drill" in all.line ? all.line.drill : null,
+                lineReason: "reason" in all.line ? all.line.reason : null,
                 detachReason: all.detachReason,
                 matchReason: all.matchReason,
                 group: !!s.session?.target.group && !s.session.target.lane,
@@ -421,16 +420,24 @@ export function usePathPenActions(): void {
     );
     const reason = (why: string | null) =>
         slots.shown && why !== null ? why : undefined;
-    // Adjust (interaction round 2): the one selected member's lane alone, editable
-    const adjustId = slots.adjustId;
+    // On a group path it's named for what it edits: the line every member follows (round 3)
+    const editLabel = slots.group ? editGroupPathLabel() : undefined;
+    useActionHandler("editPath", () => void openPath(), {
+        enabled: phase === "closed" || lineEdited,
+        label: editLabel,
+    });
+    // Edit <name>'s line (interaction round 3, was Adjust): the one selected member's line alone,
+    // its handles shown at once
+    const lineId = slots.lineId;
     useActionHandler(
-        "adjustPath",
+        "editLine",
         () => {
-            if (adjustId !== null) adjustMember(adjustId);
+            if (lineId !== null) editMemberLine(lineId);
         },
         {
-            enabled: adjustId !== null,
-            disabledReason: reason(slots.adjustReason),
+            enabled: lineId !== null,
+            label: editLineLabel(slots.lineDrill),
+            disabledReason: reason(slots.lineReason),
         },
     );
     // Enter makes the selection's quiet path active, as a click on its line does (interaction
@@ -441,7 +448,7 @@ export function usePathPenActions(): void {
     useActionHandler(
         "applyShape",
         () => void openPath(),
-        { label: tolgee.t("actions.path.edit", "Edit path") },
+        { label: editLabel ?? tolgee.t("actions.path.edit", "Edit path") },
         quietShown && !shapeToolOpen && !isPlaying,
     );
     // Remove path (AP-R2), open or closed, not while a new one is drawn
@@ -477,7 +484,7 @@ export function usePathPenActions(): void {
                   )
             : undefined,
     });
-    // Adjust's named actions, on the lane or key picked on the open group path (decision C)
+    // The named actions on the line or bend point picked on the open group path (decision C)
     const lane = usePathPenStore((s) =>
         s.session?.phase === "open" ? (s.session.lane ?? null) : null,
     );

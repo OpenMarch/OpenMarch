@@ -687,27 +687,39 @@ export function resetTargetOf(
     return id !== null && memberOf(session, id)?.adjust ? id : null;
 }
 
+/** Edit path's name on a group path (round 3): it edits the line every member follows */
+export const editGroupPathLabel = () =>
+    tolgee.t("actions.path.editGroup", "Edit group path");
+
+/** Edit <name>'s line's name: the marcher's drill number, or no name while it can't act */
+export const editLineLabel = (drill: string | null) =>
+    drill === null
+        ? tolgee.t("actions.path.editLine", "Edit marcher's line")
+        : tolgee.t("actions.path.editLineOf", "Edit {marcher}'s line", {
+              marcher: drill,
+          });
+
 /**
- * Whom Adjust acts on (interaction round 2), or why it can't: the one selected member of the
- * group path shown, or the member whose lane is being adjusted. Adjust makes only that member's
- * lane editable, so nobody has to find its faint lane by dragging. One marcher at a time: two
- * members' bends are two separate edits.
+ * Whose line Edit <name>'s line opens (interaction round 3, was Adjust), or why it can't: the one
+ * selected member of the group path shown, or the member whose line is being edited. Only that
+ * member's line is drawn then, editable, so nobody has to find its faint lane by dragging. One
+ * marcher at a time: two members' bends are two separate edits.
  */
-export function adjustTargetOf(
+export function lineTargetOf(
     session: PathSession | null,
     ownable: readonly number[],
-): { marcherId: number } | { reason: string } {
+): { marcherId: number; drill: string } | { reason: string } {
     const groupOnly = () =>
         tolgee.t(
-            "pathways.adjust.groupOnly",
-            "Adjust is for a marcher on a group path",
+            "pathways.editLine.groupOnly",
+            "Select a marcher on a group path to edit their line",
         );
     if (!session || session.phase === "drawing" || session.target.trail)
         return { reason: groupOnly() };
     if (!session.target.group)
         return {
             reason: tolgee.t(
-                "pathways.adjust.ownPath",
+                "pathways.editLine.ownPath",
                 "This marcher walks its own path: Edit path changes it",
             ),
         };
@@ -716,42 +728,50 @@ export function adjustTargetOf(
             reason:
                 session.target.lane.detachedFrom != null
                     ? tolgee.t(
-                          "pathways.adjust.detached",
+                          "pathways.editLine.detached",
                           "This marcher is detached: Edit path changes its own copy, or Rejoin puts it back on the group path",
                       )
                     : tolgee.t(
-                          "pathways.adjust.alone",
+                          "pathways.editLine.alone",
                           "This marcher is alone on its path: Edit path changes it",
                       ),
         };
+    const target = (marcherId: number) => {
+        const member = memberOf(session, marcherId);
+        return member ? { marcherId, drill: member.drill } : null;
+    };
     const lane = session.phase === "open" ? session.lane : null;
-    if (lane) return { marcherId: lane.marcherId };
+    const picked = lane ? target(lane.marcherId) : null;
+    if (picked) return picked;
     if (ownable.length > 1)
         return {
             reason: tolgee.t(
-                "pathways.adjust.severalSelected",
-                "Adjust one marcher at a time: select just one",
+                "pathways.editLine.severalSelected",
+                "Select one marcher to edit their line",
             ),
         };
-    if (ownable.length === 1) return { marcherId: ownable[0]! };
+    const one = ownable.length === 1 ? target(ownable[0]!) : null;
+    if (one) return one;
     return {
         reason: tolgee.t(
-            "pathways.adjust.noneSelected",
-            "Select a marcher on the group path to adjust its line",
+            "pathways.editLine.noneSelected",
+            "Select a marcher on the group path to edit their line",
         ),
     };
 }
 
 /**
  * The path bar's fixed slots (interaction round 2: they stay put, so a press after the selection
- * changes lands where it did): Edit path · Adjust · Detach or Rejoin · Match group · More. Each is
+ * changes lands where it did): Edit group path (Edit path for a path of one) · Edit <name>'s line ·
+ * Detach or Rejoin · Match group · More. Each is
  * there for any path but a trail; one that can't act now says why (its tooltip, and the menus'
  * reason). Null reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
  */
 export interface PathSlots {
     /** Whether the bar has the member slots at all: any shown path but a trail */
     shown: boolean;
-    adjust: { marcherId: number } | { reason: string };
+    /** Edit <name>'s line: whose, or why it can't */
+    line: { marcherId: number; drill: string } | { reason: string };
     /** Detach's slot: Rejoin takes it when Rejoin can act and Detach can't */
     backIsRejoin: boolean;
     detachReason: string | null;
@@ -811,7 +831,7 @@ export function pathSlotsOf(
                       )));
     return {
         shown,
-        adjust: adjustTargetOf(session, ownable),
+        line: lineTargetOf(session, ownable),
         backIsRejoin,
         detachReason,
         matchReason,
@@ -819,10 +839,11 @@ export function pathSlotsOf(
 }
 
 /**
- * Adjust (interaction round 2): `marcherId`'s lane of the group path shown is the only line drawn
- * and the only one editable, with its handles; the path is active. Escape goes back to quiet.
+ * Edit <name>'s line (interaction round 3, was Adjust): `marcherId`'s lane of the group path shown
+ * is the only line drawn and the only one editable, its bend handles shown at once; the path is
+ * active, as Edit path makes it. Escape, or a click on empty field, leaves it.
  */
-export function adjustMember(marcherId: number): void {
+export function editMemberLine(marcherId: number): void {
     const { session } = usePathPenStore.getState();
     if (
         !session ||

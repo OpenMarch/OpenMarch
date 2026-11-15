@@ -139,9 +139,9 @@ describe("FieldContextMenu", () => {
 
     it("keeps the path bar's slots in their places, greyed out with the reason (round 2)", () => {
         handle("editPath");
-        handle("adjustPath", {
+        handle("editLine", {
             enabled: false,
-            reason: "Adjust one marcher at a time: select just one",
+            reason: "Select one marcher to edit their line",
         });
         handle("detachPath");
         handle("rejoinPath", { enabled: false });
@@ -161,12 +161,12 @@ describe("FieldContextMenu", () => {
         // Re-fit shows only while it can act; Rejoin only while it holds Detach's slot
         expect(ids).toEqual([
             "editPath",
-            "adjustPath",
+            "editLine",
             "detachPath",
             "adjustResetSpot",
             "removePath",
         ]);
-        expect(item("adjustPath")).toHaveAttribute("aria-disabled", "true");
+        expect(item("editLine")).toHaveAttribute("aria-disabled", "true");
         expect(item("adjustResetSpot")).toHaveAttribute(
             "aria-disabled",
             "true",
@@ -200,7 +200,7 @@ describe("FieldContextMenu", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
-        // The Path group shows only what applies: here Edit path, Adjust, Detach and Remove path
+        // The Path group shows only what applies: here Edit path, Edit <name>'s line, Detach and Remove path
         for (const id of [
             "rejoinPath",
             "adjustResetSpot",
@@ -219,7 +219,7 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["editPath", "adjustPath", "detachPath", "removePath"],
+            ["editPath", "editLine", "detachPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "setSelectedMarchersToPreviousPage",

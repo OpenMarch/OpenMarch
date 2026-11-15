@@ -10,7 +10,7 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 import { PathEditor } from "../PathEditor";
 import { PathBigStepsLine } from "../pathBigSteps";
 import {
-    adjustMember,
+    editMemberLine,
     clearPath,
     openPath,
     setGroupCommands,
@@ -146,7 +146,7 @@ describe("the path's floating editor", () => {
         render(<PathEditor fieldProperties={fieldProperties} />);
         expect(bar().dataset.phase).toBe("closed");
         expect(screen.getByTestId("path-edit").textContent).toBe("Edit path");
-        for (const id of ["path-adjust", "path-detach", "path-adjust-reset"])
+        for (const id of ["path-edit-line", "path-detach", "path-adjust-reset"])
             expect(screen.getByTestId(id).getAttribute("aria-disabled")).toBe(
                 "true",
             );
@@ -156,7 +156,7 @@ describe("the path's floating editor", () => {
         expect(screen.queryByTestId("path-editor")).toBeNull();
     });
 
-    it("fixed slots on a group path: Edit path · Adjust · Detach or Rejoin · Match group · More, whoever is selected", () => {
+    it("fixed slots on a group path: Edit group path · Edit <name>'s line · Detach or Rejoin · Match group · More, whoever is selected", () => {
         act(() => {
             showPath(groupTarget(), "3");
             setGroupCommands([10, 11], null);
@@ -168,27 +168,34 @@ describe("the path's floating editor", () => {
             );
         const slots = [
             "path-edit",
-            "path-adjust",
+            "path-edit-line",
             "path-detach",
             "path-adjust-reset",
             "path-more",
         ];
         expect(order()).toEqual(slots);
-        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
-        // Two selected: Adjust and Match group greyed out, saying why
-        const adjust = screen.getByTestId("path-adjust");
-        expect(adjust.getAttribute("aria-disabled")).toBe("true");
-        expect(adjust.getAttribute("aria-label")).toBe(
-            "Adjust one marcher at a time: select just one",
+        expect(screen.getByTestId("path-edit").textContent).toBe(
+            "Edit group path",
         );
+        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
+        // Two selected: Edit <name>'s line and Match group greyed out, saying why
+        const line = screen.getByTestId("path-edit-line");
+        expect(line.getAttribute("aria-disabled")).toBe("true");
+        expect(line.getAttribute("aria-label")).toBe(
+            "Select one marcher to edit their line",
+        );
+        expect(line.textContent).toBe("Edit marcher's line");
         // One adjusted member selected: every slot acts, in the same places
         act(() => setGroupCommands([12], null));
         expect(order()).toEqual(slots);
         expect(screen.getByTestId("path-detach").textContent).toBe("Detach");
+        expect(screen.getByTestId("path-edit-line").textContent).toBe(
+            "Edit B3's line",
+        );
         expect(screen.getByTestId("path-adjust-reset").textContent).toBe(
             "Match group",
         );
-        for (const id of ["path-adjust", "path-detach", "path-adjust-reset"])
+        for (const id of ["path-edit-line", "path-detach", "path-adjust-reset"])
             expect(
                 screen.getByTestId(id).getAttribute("aria-disabled"),
             ).toBeNull();
@@ -210,7 +217,7 @@ describe("the path's floating editor", () => {
         );
         expect(order()).toEqual([
             "path-edit",
-            "path-adjust",
+            "path-edit-line",
             "path-rejoin",
             "path-adjust-reset",
             "path-more",
@@ -218,16 +225,19 @@ describe("the path's floating editor", () => {
         expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin 2");
     });
 
-    it("Adjust lights while one lane is adjusted, and Edit path goes back to the group path", () => {
+    it("Edit <name>'s line lights while that line is edited, and Edit group path goes back to the group path", () => {
         act(() => {
             showPath(groupTarget(), "3");
             setGroupCommands([11], null);
         });
         render(<PathEditor fieldProperties={fieldProperties} />);
-        act(() => adjustMember(11));
+        act(() => editMemberLine(11));
         expect(
-            screen.getByTestId("path-adjust").getAttribute("aria-pressed"),
+            screen.getByTestId("path-edit-line").getAttribute("aria-pressed"),
         ).toBe("true");
+        expect(screen.getByTestId("path-edit-line").textContent).toBe(
+            "Edit B2's line",
+        );
         expect(
             screen.getByTestId("path-edit").getAttribute("aria-pressed"),
         ).toBe("false");

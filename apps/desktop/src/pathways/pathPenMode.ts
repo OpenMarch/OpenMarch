@@ -52,6 +52,7 @@ import {
     PATH_MENU,
     adjustHandlesOf,
     adjustKey,
+    laneBendSpotsOf,
     adjustKeyOf,
     laneHitOf,
     laneKey,
@@ -143,13 +144,13 @@ const MENU_KIND = { menu: PATH_MENU };
 
 /**
  * The Path group (interaction system, rule 4): what the field's menu offers on a path's line, and
- * on a marcher with a path (`FieldContextMenu`), in the path bar's order (round 2): Edit path,
- * Adjust, Detach or Rejoin, Match group (the bar's fixed slots, greyed out where they can't act),
- * then Re-fit (Re-center group path) when the ends moved, and Remove path.
+ * on a marcher with a path (`FieldContextMenu`), in the path bar's order (round 2): Edit (group)
+ * path, Edit <name>'s line, Detach or Rejoin, Match group (the bar's fixed slots, greyed out where
+ * they can't act), then Re-fit (Re-center group path) when the ends moved, and Remove path.
  */
 export const PATH_FIELD_MENU = [
     "editPath",
-    "adjustPath",
+    "editLine",
     "detachPath",
     "rejoinPath",
     "adjustResetSpot",
@@ -1430,6 +1431,7 @@ function buildDrawing(
         lanePicked,
         adjustHandles,
         lanesAdjusted,
+        addHandles: bendSpots,
     } = target.trail
         ? trailParts(target.trail)
         : groupParts(session, shape, asObject ? "object" : view, selected);
@@ -1468,6 +1470,8 @@ function buildDrawing(
         ...(laneHighlights ? { laneHighlights } : {}),
         ...(lanePicked !== undefined ? { lanePicked } : {}),
         ...(adjustHandles ? { adjustHandles } : {}),
+        // A line being edited: where to grab it besides its bend points (round 3)
+        ...(bendSpots ? { addHandles: bendSpots } : {}),
         ...(lanesAdjusted ? { lanesAdjusted } : {}),
         ...(memberRings ? { memberRings } : {}),
         ...guidesFor(moving ? [moving] : [], outline ?? []),
@@ -1489,7 +1493,7 @@ function laneTipOf(session: PathSession): FieldModeDrawing["tip"] | null {
                           ? "pathways.lanes.hoverAdjusted"
                           : "pathways.lanes.hover",
                       hoverMember.adjust
-                          ? "Spot {spot} · {marcher} · adjusted"
+                          ? "Spot {spot} · {marcher} · bent"
                           : "Spot {spot} · {marcher}",
                       {
                           spot: (hoverMember.slot ?? 0) + 1,
@@ -1560,6 +1564,7 @@ type LaneParts = Pick<
     | "lanePicked"
     | "adjustHandles"
     | "lanesAdjusted"
+    | "addHandles"
 >;
 
 /** How many points a selected marcher's line off the group path is sampled at */
@@ -1614,7 +1619,7 @@ function differenceRings(
                           kind: "group" as const,
                           label: tolgee.t(
                               "pathways.rings.adjusted",
-                              "Adjusted: bends off the group path in places, and still follows its edits",
+                              "Has bends of its own, and still follows the group path's edits",
                           ),
                       },
                   ]
@@ -1656,8 +1661,8 @@ function differenceRings(
  * - `selected` (quiet): only the selected members' lanes and the selected marchers' own lines off
  *   it, each at a shown path's weight, as the one line that marcher walks.
  * - `edit` and `object`: every member's lane, thin and faint, round the group line.
- * - `adjust`: the one lane being adjusted, heavy, with its keys, over its plain lane (faint) when
- *   it has an adjustment.
+ * - `adjust`: the one line being edited (Edit <name>'s line), heavy, with its bend points and the
+ *   spots to grab it by (`laneBendSpotsOf`), over its plain lane (faint) when it has bends.
  *
  * The rings say who's different (`differenceRings`), except while drawing.
  */
@@ -1771,6 +1776,7 @@ function groupParts(
                 at: h.at,
                 selected: picked?.marcherId === focus && picked.key === h.index,
             })),
+            addHandles: laneBendSpotsOf(at.walk),
             memberRings: rings,
         };
     }

@@ -21,6 +21,8 @@ import {
     type RoutePath,
     MAX_ROUTE_BULGE,
     ROUTE_ARC_SAMPLES,
+    S_MIN,
+    laneRigidPart,
 } from "@openmarch/core";
 import tolgee from "@/global/singletons/Tolgee";
 import {
@@ -881,7 +883,7 @@ function adjustMenu(onKey: boolean): ToolMenuSection[] {
                               value: "removeKey",
                               label: tolgee.t(
                                   "actions.path.adjustRemoveKey",
-                                  "Remove adjustment point",
+                                  "Remove bend point",
                               ),
                           },
                       ]
@@ -1039,6 +1041,34 @@ export function adjustHandlesOf(
             at: { x: q[0] + offset[0] + d[0], y: q[1] + offset[1] + d[1] },
         };
     });
+}
+
+/**
+ * What a line being edited offers to grab besides its bend points (interaction round 3), so even a
+ * line with no bends has something to drag, as Edit path's points and midpoints are: each of the
+ * group path's points on the line, and the middle of each stretch between those and the bend
+ * points. All lie on the part that bends, between the group path's first and last points: the legs
+ * onto and off it take none. None within a step of a bend point, where a press takes that point.
+ */
+export function laneBendSpotsOf(walk: GroupMemberWalk): XY[] {
+    const part = laneRigidPart(walk.schedule);
+    if (!part || part.to - part.from < 2 * S_MIN) return [];
+    const { W } = walk.schedule;
+    const corners = W.D.slice(1, W.V.length - 1);
+    const keys = walk.adjust?.xs ?? [];
+    const anchors = [...new Set([...corners, ...keys])].sort((a, b) => a - b);
+    const middles = anchors.slice(1).flatMap((x, i) => {
+        const before = anchors[i]!;
+        return x - before >= 2 * S_MIN ? [(before + x) / 2] : [];
+    });
+    return [...corners, ...middles]
+        .filter((x) => keys.every((k) => Math.abs(k - x) >= S_MIN))
+        .sort((a, b) => a - b)
+        .map((x) => {
+            const plain = lanePlain(walk, x);
+            const d = laneDelta(walk, x);
+            return { x: plain.x + d.x, y: plain.y + d.y };
+        });
 }
 
 /** The lane's reference place at `x`, before its Adjust: `walk(x) + o` */
