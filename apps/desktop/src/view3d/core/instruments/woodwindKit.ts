@@ -45,7 +45,7 @@ export const WOODWIND_DIMENSIONS: Record<
     sopranoSax: { length: 0.65, bore: 0.012, bell: 0.09 },
     altoSax: { length: 0.65, bore: 0.02, bell: 0.12 },
     tenorSax: { length: 0.8, bore: 0.024, bell: 0.14 },
-    bariSax: { length: 1.0, bore: 0.032, bell: 0.19 },
+    bariSax: { length: 1.0, bore: 0.032, bell: 0.17 },
 };
 
 /** Default colors by part: gold lacquer, chrome, black and cork. The window recolors the lacquer. */

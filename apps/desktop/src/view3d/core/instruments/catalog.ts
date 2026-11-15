@@ -35,7 +35,7 @@ const SECTIONS: Record<string, Carry> = {
     "soprano sax": { model: "sopranoSax", family: "clarinet" },
     "alto sax": { model: "altoSax", family: "sax" },
     "tenor sax": { model: "tenorSax", family: "sax" },
-    "bari sax": { model: "bariSax", family: "sax" },
+    "bari sax": { model: "bariSax", family: "bariSax" },
     snare: { model: "snare", family: "snare" },
     tenors: { model: "tenors", family: "tenors" },
     "bass drum": { model: "bass", family: "bass" },

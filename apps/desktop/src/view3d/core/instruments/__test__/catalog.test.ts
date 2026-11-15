@@ -65,7 +65,7 @@ describe("section to instrument", () => {
         });
         expect(carryForSection("Bari Sax")).toEqual({
             model: "bariSax",
-            family: "sax",
+            family: "bariSax",
         });
     });
 

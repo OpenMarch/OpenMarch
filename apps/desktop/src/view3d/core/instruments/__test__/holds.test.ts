@@ -65,6 +65,7 @@ const FAMILIES: HoldFamily[] = [
     "clarinet",
     "bassClarinet",
     "sax",
+    "bariSax",
     "snare",
     "tenors",
     "bass",
@@ -402,11 +403,19 @@ describe("woodwind and battery holds", () => {
         },
     );
 
-    it.each(["flute", "piccolo", "clarinet", "bassClarinet", "sax"] as const)(
-        "%s up: each hand carries straight on from the forearm, bent 30 degrees at most",
+    it.each([
+        "flute",
+        "piccolo",
+        "clarinet",
+        "bassClarinet",
+        "sax",
+        "bariSax",
+    ] as const)(
+        "%s up: each hand bends at most 30 degrees from the forearm",
         (family) => {
             // a stiff mitt reads as a hand only with a nearly straight wrist
-            // (woodwind wrist study, 2026-11-10)
+            // (woodwind wrist study, 2026-11-10); the saxes curl it toward the
+            // palm onto the keys, up to that limit (2026-11-14)
             const h = hold(family, "up");
             for (const arm of [h.left, h.right]) {
                 const fore = arm.wrist.map((w, i) => w - arm.elbow[i]);
@@ -455,11 +464,23 @@ describe("woodwind and battery holds", () => {
         expect(h.right.wrist[1]).toBeLessThan(h.left.wrist[1]);
     });
 
-    it("sax: body straight down in front, neck at the lips", () => {
+    it("sax: straight up and down in front, the neck straight back to the lips", () => {
         const h = hold("sax", "up");
         expect(h.instrument.origin[1]).toBeGreaterThan(1.45);
-        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.95);
-        expect(Math.abs(h.instrument.bellAxis[0])).toBeLessThan(0.1);
+        // perpendicular to the ground, the neck pointing straight back
+        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.999);
+        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.999);
+    });
+
+    it("bariSax: sideways down the body, top out to the left, bottom to the right hip", () => {
+        const h = hold("bariSax", "up");
+        const [x, y] = h.instrument.bellAxis;
+        // down the body, leaning toward the performer's right
+        expect(y).toBeLessThan(-0.85);
+        expect(x).toBeLessThan(-0.25);
+        // the neck comes in to the mouth from the front-left
+        expect(h.instrument.capsAxis[0]).toBeGreaterThan(0.3);
+        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.75);
     });
 
     it("drums ride the chest with the hands over the heads", () => {
@@ -538,7 +559,7 @@ describe("woodwind carry and trail", () => {
         ],
     } as const;
     const STRAIGHT = ["flute", "piccolo", "clarinet"] as const;
-    const BENT = ["sax", "bassClarinet"] as const;
+    const BENT = ["sax", "bariSax", "bassClarinet"] as const;
     const dot = (a: readonly number[], b: readonly number[]) =>
         a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     const cross = (a: readonly number[], b: readonly number[]) => [
@@ -702,7 +723,8 @@ describe("woodwind carry and trail", () => {
             expect(Math.abs(bellAxis[1])).toBeLessThan(0.01);
             expect(Math.abs(bellAxis[2])).toBeGreaterThan(0.99);
             expect(origin[0]).toBeLessThan(-0.1);
-            expect(origin[1]).toBeLessThan(1.05);
+            // the mouthpiece above the fist by the body's axis height (the bari's most)
+            expect(origin[1]).toBeLessThan(1.12);
         },
     );
 
