@@ -95,6 +95,7 @@ export type FieldTestGesture =
     | "move"
     | "scale"
     | "rotate"
+    | "pivot"
     | "pan"
     | "shape"
     | "box"
@@ -130,6 +131,16 @@ export interface FieldTestApi {
     viewport(): { zoom: number; pan: { x: number; y: number } };
     /** The selection box's handles, or null when none are shown. */
     handles(): Record<FieldTestHandle, ScreenPoint> | null;
+    /**
+     * A plain selection's pivot crosshair, in the viewport, with where it is in field units and
+     * whether it's out of the center; null when none is shown.
+     */
+    selectionPivot?(): {
+        screen: ScreenPoint;
+        x: number;
+        y: number;
+        own: boolean;
+    } | null;
     /** The gesture in progress, or null. */
     activeGesture(): FieldTestGesture | null;
     /** The id of the page the field shows, or null before one is shown. */

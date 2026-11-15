@@ -188,7 +188,7 @@
         "chapter": "marchers",
         "kind": "still",
         "width": 644,
-        "height": 1116
+        "height": 756
     },
     "marchers-move-drag": {
         "chapter": "marchers",
@@ -203,10 +203,24 @@
         "width": 1012,
         "height": 1040
     },
-    "marchers-rotate": {
+    "marchers-pivot": {
         "chapter": "marchers",
         "kind": "clip",
         "width": 1240,
+        "height": 960,
+        "seconds": 7
+    },
+    "marchers-pivot-pick": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1240,
+        "height": 720,
+        "seconds": 8
+    },
+    "marchers-rotate": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1120,
         "height": 840,
         "seconds": 4.5
     },

@@ -570,6 +570,11 @@
             "wholeDegrees": "whole degrees",
             "withKey": "<keys></keys> {word}"
         },
+        "pivotHint": {
+            "own": "Drag to move the pivot · double-click to put it back in the middle",
+            "picking": "Click a marcher or a spot to turn around · <keys></keys> cancel",
+            "pull": "<keys></keys> move the pivot"
+        },
         "general": {
             "exportField": "Export Field",
             "exportField.tooltip": "Export this field to a file to use in other projects",
@@ -750,6 +755,13 @@
         "valueMissing": "Please enter a value."
     },
     "inspector": {
+        "arrange": {
+            "title": "Arrange",
+            "pickPivot": "Pick the pivot on the field",
+            "pickPivotHint": "Or hold {key} and drag the dot in the middle of the selection",
+            "pivotTip": "Turn around the {pivot}",
+            "pickPivotButton": "Pick on field"
+        },
         "marcher": {
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
@@ -803,6 +815,7 @@
             "removeFromTagCaption": "Remove",
             "alignHeading": "Align",
             "distributeHeading": "Distribute",
+            "rotateHeading": "Rotate",
             "distributeStepsPlaceholder": "Steps",
             "coords": {
                 "x": "X",
@@ -2118,9 +2131,6 @@
                 "ringHintKeys": "Hold <keys></keys> on the field for the shape ring",
                 "ringCaption": "Ring"
             }
-        },
-        "transform": {
-            "title": "Transform"
         },
         "validate": {
             "noPosition": "The shape has a spot with no position",

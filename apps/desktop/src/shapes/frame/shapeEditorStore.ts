@@ -1,21 +1,15 @@
 import { create } from "zustand";
-import { DEFAULT_PIVOT, type PivotKey } from "./frame";
 
 /**
- * The shape editor's own choices (08-shape-system-ux.md): what a plain selection turns and flips
- * around (the Transform section's pivot grid, #349; the center by default, in Basic and Expert
- * alike), the box's ratio lock and an Arc's width-and-depth lock (both off by default; each its
- * own, so locking one doesn't lock the other, owner on #634). They last for the session, not the
- * show. A shape keeps its own pivot in its params instead (`pivot.ts`, #350).
+ * The shape editor's own choices (08-shape-system-ux.md): the box's ratio lock and an Arc's
+ * width-and-depth lock (both off by default; each its own, so locking one doesn't lock the other,
+ * owner on #634). They last for the session, not the show. A shape keeps its own pivot in its
+ * params (`pivot.ts`, #350); a plain selection's is the field editor's (`selectionPivot.ts`).
  */
 export const useShapeEditorStore = create<{
-    pivot: PivotKey;
     ratioLocked: boolean;
     sizesLocked: boolean;
-}>(() => ({ pivot: DEFAULT_PIVOT, ratioLocked: false, sizesLocked: false }));
-
-export const setShapePivot = (pivot: PivotKey): void =>
-    useShapeEditorStore.setState({ pivot });
+}>(() => ({ ratioLocked: false, sizesLocked: false }));
 
 export const toggleRatioLock = (): void =>
     useShapeEditorStore.setState((s) => ({ ratioLocked: !s.ratioLocked }));

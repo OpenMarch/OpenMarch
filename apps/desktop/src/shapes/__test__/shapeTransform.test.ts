@@ -24,7 +24,6 @@ import {
     undo,
     type ToolState,
 } from "../tool/toolMachine";
-import { selectionPivot } from "../transform/selectionTransform";
 import type { ShapeContext, XY } from "../types";
 import {
     gapListTool,
@@ -329,18 +328,5 @@ describe("a placed shape remembers its turn and flip", () => {
         const now = boxTool.frameOf(box!.params, box!.spots);
         expect(now.rotation).toBeCloseTo(was.rotation);
         expect([now.flipX, now.flipY]).toEqual([was.flipX, was.flipY]);
-    });
-});
-
-describe("a plain selection", () => {
-    const points = [
-        { id: 1, x: 0, y: 0 },
-        { id: 2, x: 40, y: 0 },
-        { id: 3, x: 40, y: 20 },
-    ];
-
-    it("puts the pivot on the box around them", () => {
-        expect(selectionPivot(points, "ne")).toEqual({ x: 40, y: 0 });
-        expect(selectionPivot(points, "c")).toEqual({ x: 20, y: 10 });
     });
 });

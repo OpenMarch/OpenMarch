@@ -1939,9 +1939,6 @@
                 "ringHintKeys": "Segure <keys></keys> no campo para abrir o anel de formas"
             }
         },
-        "transform": {
-            "title": "Transformação"
-        },
         "validate": {
             "noPosition": "A forma tem um ponto sem posição",
             "offField": "{count, plural, one {# integrante ficaria} other {# integrantes ficariam}} fora do campo",

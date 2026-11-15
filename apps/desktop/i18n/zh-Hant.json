@@ -1938,9 +1938,6 @@
                 "ringHintKeys": "在場地上按住<keys></keys>即可開啟圖形環"
             }
         },
-        "transform": {
-            "title": "變形"
-        },
         "validate": {
             "noPosition": "圖形中有未設定位置的點",
             "offField": "{count, plural, other {#名隊員}}會站在場地外",

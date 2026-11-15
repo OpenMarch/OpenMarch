@@ -1939,9 +1939,6 @@
                 "ringHintKeys": "フィールド上で<keys></keys>を押し続けると形状リングを表示"
             }
         },
-        "transform": {
-            "title": "変形"
-        },
         "validate": {
             "noPosition": "形状に位置のないスポットがあります",
             "offField": "{count}人のメンバーがフィールドの外に出ます",

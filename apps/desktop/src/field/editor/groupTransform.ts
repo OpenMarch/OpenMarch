@@ -56,11 +56,17 @@ export function boundsOf(
  * further out, turned `angle` degrees about its center (only while a rotation
  * is being dragged; the box fits the marchers again after it).
  */
-export type SelectionFrame = { box: FieldRect; pad: number; angle: number };
+export type SelectionFrame = {
+    box: FieldRect;
+    pad: number;
+    angle: number;
+    /** What `angle` turns the box around: its center when omitted (a pivot, `selectionPivot.ts`). */
+    around?: FieldPoint;
+};
 
 /** Where each handle is drawn, in field units, at `zoom` (CSS px per field unit). */
 export function handlePoints(
-    { box, pad, angle }: SelectionFrame,
+    { box, pad, angle, around }: SelectionFrame,
     zoom: number,
 ): Record<HandleId, FieldPoint> {
     const left = box.left - pad;
@@ -68,7 +74,8 @@ export function handlePoints(
     const top = box.top - pad;
     const bottom = box.bottom + pad;
     const center = centerOf(box);
-    const turn = (x: number, y: number) => rotatePoint({ x, y }, center, angle);
+    const pivot = around ?? center;
+    const turn = (x: number, y: number) => rotatePoint({ x, y }, pivot, angle);
     return {
         nw: turn(left, top),
         n: turn(center.x, top),

@@ -175,8 +175,9 @@ export class RotationDrag {
 }
 
 /**
- * The rotate handle: turns the selection about its box's center by the
- * angle {@link RotationDrag} draws.
+ * The rotate handle: turns the selection about its pivot (its box's center
+ * unless the pivot was dragged elsewhere, `selectionPivot.ts`) by the angle
+ * {@link RotationDrag} draws.
  */
 export class RotateGesture extends HandleGesture {
     readonly kind: FieldTestGesture = "rotate";
@@ -192,9 +193,11 @@ export class RotateGesture extends HandleGesture {
         keys: FieldKeys,
         /** The Snap toggle, read on every event; on when omitted. */
         snap?: () => boolean,
+        /** What it turns around: the box's center when omitted. */
+        center: FieldPoint = centerOf(box),
     ) {
         super(origin, starts, host, keys, ROTATE_HONORS);
-        this.center = centerOf(box);
+        this.center = center;
         this.rotation = new RotationDrag(this.center, origin.field, snap);
     }
 

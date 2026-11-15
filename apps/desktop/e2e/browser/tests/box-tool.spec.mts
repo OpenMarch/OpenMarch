@@ -798,7 +798,7 @@ test("change: an open box fades everyone else, still readable, and once drawn hi
     await expect.poll(looks).toEqual(expected("full", "full"));
 });
 
-test("change: the chip and the plain selection's Transform section draw their direction marks as icons, never as text a font may make an emoji", async ({
+test("change: the chip draws its direction marks as icons, never as text a font may make an emoji", async ({
     show,
 }) => {
     const { page } = show;
@@ -808,12 +808,6 @@ test("change: the chip and the plain selection's Transform section draw their di
     await expect(chip.locator('[data-glyph="across"]')).toHaveCount(1);
     await expect(chip.locator('[data-glyph="deep"]')).toHaveCount(1);
     expect(await chip.innerText()).not.toMatch(PICTOGRAPHIC);
-    // A plain selection's Transform section
-    await page.keyboard.press("Escape");
-    await selectAll(page);
-    const transform = page.getByTestId("transform-section");
-    await expect(transform).toBeVisible();
-    expect(await transform.innerText()).not.toMatch(PICTOGRAPHIC);
 });
 
 test("change: start positions show as faint dots in the marchers' own color", async ({
@@ -2015,25 +2009,40 @@ async function spacings(page: Page): Promise<[number, number]> {
     ];
 }
 
-test("change: the Transform section turns a plain selection around the pivot, writing positions only", async ({
+test("change: a plain selection turns around its pivot, pulled out of the center with Ctrl onto a corner marcher, writing positions only", async ({
     show,
 }) => {
     const { page } = show;
     await selectAll(page);
-    const section = page.getByTestId("transform-section");
-    await expect(section).toBeVisible();
-    // A plain selection has no scale, and the Align row has the flips
-    await expect(section.getByTestId("transform-scale-more")).toHaveCount(0);
+    const pivot = () =>
+        page.evaluate(() => window.fieldTest!.selectionPivot!());
+    await expect.poll(async () => (await pivot())?.own).toBe(false);
     const steps = await undoSteps(show);
 
-    // A quarter turn clockwise around the back-left corner of their box
+    // Ctrl-drag the pivot out of the center onto the back-left marcher: it snaps there
     const before = await savedPositions(show, 0);
-    const corner = {
-        x: Math.min(...before.map((p) => p.x)),
-        y: Math.min(...before.map((p) => p.y)),
-    };
-    await section.getByTestId("transform-pivot-nw").click();
-    const rotation = section.getByRole("textbox", { name: "Rotation" });
+    const corner = before.reduce((a, b) => (b.x + b.y < a.x + a.y ? b : a));
+    const target = await marcherScreen(page, corner.id);
+    const from = (await pivot())!.screen;
+    await page.mouse.move(from.x, from.y);
+    await page.keyboard.down("Control");
+    await page.mouse.down();
+    await page.mouse.move((from.x + target.x) / 2, (from.y + target.y) / 2);
+    await page.mouse.move(target.x + 2, target.y + 1);
+    await page.mouse.up();
+    await page.keyboard.up("Control");
+    await expect
+        .poll(async () => {
+            const p = await pivot();
+            return p && p.own && Math.hypot(p.x - corner.x, p.y - corner.y);
+        })
+        .toBeLessThan(0.01);
+    expect(await undoSteps(show)).toBe(steps);
+
+    // A quarter turn clockwise, typed in the Arrange section
+    const rotation = page
+        .getByTestId("arrange-section")
+        .getByRole("textbox", { name: "Rotation" });
     await rotation.fill("90");
     await rotation.blur();
     await expect
@@ -2053,21 +2062,6 @@ test("change: the Transform section turns a plain selection around the pivot, wr
     await expectCanvasMatchesShow(show);
 });
 
-test("change: with a kind armed and nothing drawn yet, the Transform section shows the selection's controls", async ({
-    show,
-}) => {
-    const { page } = show;
-    await selectAll(page);
-    await page.keyboard.press("b");
-    await expect(page.getByTestId("shape-tool-hint")).toBeVisible();
-    const section = page.getByTestId("transform-section");
-    await expect(section).toBeVisible();
-    await expect(
-        section.getByRole("textbox", { name: "Rotation" }),
-    ).toBeVisible();
-    await expect(section.getByTestId("transform-scale-more")).toHaveCount(0);
-});
-
 test("change: the inspector shows no shape section while a shape is open or a placed one is selected (#435)", async ({
     show,
 }) => {
@@ -2075,7 +2069,6 @@ test("change: the inspector shows no shape section while a shape is open or a pl
     const inspectorShape = async () => {
         for (const id of [
             "shape-tool-section",
-            "transform-section",
             "placed-box-summary",
             "shape-layout-picker",
         ])

@@ -56,6 +56,8 @@ export type ThreeFieldState = {
     activeGesture(): FieldTestGesture | null;
     /** The selection box's handles as drawn, in field units, or null with no box (#198). */
     handles(): Record<FieldTestHandle, FieldPoint> | null;
+    /** A plain selection's pivot, in field units, or null with none drawn. */
+    selectionPivot(): { at: FieldPoint; own: boolean } | null;
     /** What the editor's mode draws (the shape tool, a selected placed box), or null (#204). */
     modeDrawing(): FieldModeDrawing | null;
     /** The placed boxes outlined on the field (#204). */
@@ -122,6 +124,7 @@ export function createThreeFieldTestApi(field: ThreeFieldState): FieldTestApi {
             return { zoom, pan: { x: panX, y: panY } };
         },
         handles: () => handlesOnScreen(field),
+        selectionPivot: () => pivotOnScreen(field),
         activeGesture: () =>
             field.view().panning ? "pan" : field.activeGesture(),
         pageId: () => field.pageId(),
@@ -307,6 +310,21 @@ function itemsOnScreen(field: ThreeFieldState): FieldTestItem[] {
 }
 
 /** The selection box's handles as drawn, in viewport CSS px, or null with none. */
+/** A plain selection's pivot crosshair, in the viewport, or null with none drawn */
+function pivotOnScreen(field: ThreeFieldState) {
+    const element = field.element();
+    const pivot = field.selectionPivot();
+    if (!element || !pivot) return null;
+    const rect = element.getBoundingClientRect();
+    const at = fieldToElement(field.view(), pivot.at.x, pivot.at.y);
+    return {
+        screen: { x: rect.x + at.x, y: rect.y + at.y },
+        x: pivot.at.x,
+        y: pivot.at.y,
+        own: pivot.own,
+    };
+}
+
 function handlesOnScreen(
     field: ThreeFieldState,
 ): Record<FieldTestHandle, ScreenPoint> | null {

@@ -1938,9 +1938,6 @@
                 "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis"
             }
         },
-        "transform": {
-            "title": "Transform"
-        },
         "validate": {
             "noPosition": "May puwesto ang hugis na walang posisyon",
             "offField": "{count, plural, one {# miyembro ang tatayo} other {# miyembro ang tatayo}} sa labas ng field",

@@ -497,7 +497,11 @@ function ThreeFieldView() {
     // when either changes before it's saved, it's dropped (#198)
     useEffect(() => editor.selectionChanged(), [editor, selectedIds]);
     const pageId = selectedPage?.id;
-    useEffect(() => editor.cancelRotation(), [editor, pageId]);
+    useEffect(() => {
+        editor.cancelRotation();
+        editor.pageChanged();
+    }, [editor, pageId]);
+    useEffect(() => editor.setPlaying(isPlaying), [editor, isPlaying]);
     // #204: the shape tool and placed boxes read this field
     useEffect(() => {
         setShapeField({
@@ -543,6 +547,7 @@ function ThreeFieldView() {
                         selectionHandles(box, useFieldViewStore.getState().zoom)
                     );
                 },
+                selectionPivot: () => editor.selectionPivot(),
                 modeDrawing: () => editor.modeDrawing(),
                 placedBoxes: drawnPlacedBoxes,
                 items,

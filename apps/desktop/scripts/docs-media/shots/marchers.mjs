@@ -290,22 +290,18 @@ const shots = [
     {
         id: "marchers-inspector",
         kind: "still",
-        // The inspector's Align and Distribute tools, with eight marchers selected
+        // The inspector's Arrange section, with eight marchers selected
         async setup({ page, wait }) {
             await toPage1(page, wait);
             const all = await marchers(page);
             await shiftSelect(page, named(all, range("B", 1, 8)), wait);
             await wait(600);
-            const align = page.getByRole("heading", {
-                name: "Align",
-                exact: true,
-            });
-            await align.evaluate((el) => el.scrollIntoView({ block: "start" }));
+            const title = page.getByText("Arrange", { exact: true }).first();
+            await title.evaluate((el) => el.scrollIntoView({ block: "start" }));
             await wait(400);
-            const a = await align.boundingBox();
-            const place = await page
-                .getByText("Place selected marchers")
-                .first()
+            const a = await title.boundingBox();
+            const section = await page
+                .getByTestId("arrange-section")
                 .boundingBox();
             const top = a.y - 14;
             return {
@@ -313,7 +309,7 @@ const shots = [
                     x: 1272,
                     y: top,
                     width: 322,
-                    height: place.y + place.height + 16 - top,
+                    height: section.y + section.height + 16 - top,
                 },
             };
         },
@@ -405,6 +401,143 @@ const shots = [
                 const p = {
                     x: center.x + r * Math.cos(a),
                     y: center.y + r * Math.sin(a),
+                };
+                await page.mouse.move(p.x, p.y);
+                await film.frame();
+                last = p;
+            }
+            await film.hold(0.3);
+            await page.mouse.up();
+            await page.mouse.move(last.x + 40, last.y + 40);
+            await film.hold(1.2);
+        },
+    },
+    {
+        id: "marchers-pivot-pick",
+        kind: "clip",
+        // Resting on a selected block's pivot dot shows the Ctrl-drag reminder; then Pick on
+        // field, and a click on the block's front-right marcher puts the pivot there
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            const all = await marchers(page);
+            const block = named(all, [
+                ...range("U", 1, 4),
+                ...range("B", 1, 8),
+            ]);
+            await shiftSelect(page, block, wait);
+            const b = bounds(block);
+            return {
+                box: boxAround(
+                    {
+                        x: (b.left + b.right) / 2 + 20,
+                        y: (b.top + b.bottom) / 2,
+                    },
+                    620,
+                    360,
+                ),
+            };
+        },
+        async perform({ page, film, overlay }) {
+            await overlay.enable();
+            const pivot = await page.evaluate(() =>
+                window.fieldTest.selectionPivot(),
+            );
+            const b8 = (await marchers(page)).get("B8");
+            const target = { x: b8.x, y: b8.y };
+            const rest = { x: pivot.screen.x + 70, y: pivot.screen.y + 60 };
+            await page.mouse.move(rest.x, rest.y);
+            await film.hold(0.3);
+            await film.moveTo(page, rest, pivot.screen, 0.5);
+            // The reminder waits half a second, as a tooltip does
+            await film.hold(1.6);
+            await page.keyboard.down("Control");
+            await film.hold(0.8);
+            await page.keyboard.up("Control");
+            await film.moveTo(page, pivot.screen, rest, 0.4);
+            await film.hold(0.3);
+            const pick = page.getByTestId("arrange-pick-pivot");
+            await pick.click();
+            const near = { x: target.x - 60, y: target.y - 40 };
+            await page.mouse.move(near.x, near.y);
+            await film.hold(0.4);
+            await film.moveTo(
+                page,
+                near,
+                { x: target.x + 3, y: target.y + 2 },
+                0.7,
+            );
+            await film.hold(0.6);
+            await page.mouse.down();
+            await page.mouse.up();
+            await film.hold(1.2);
+        },
+    },
+    {
+        id: "marchers-pivot",
+        kind: "clip",
+        // Ctrl-dragging a selected block's pivot out of its center onto its corner marcher, then
+        // turning around it
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            const all = await marchers(page);
+            const block = named(all, [
+                ...range("U", 1, 4),
+                ...range("B", 1, 8),
+            ]);
+            await shiftSelect(page, block, wait);
+            const b = bounds(block);
+            return {
+                box: boxAround(
+                    {
+                        x: (b.left + b.right) / 2 - 30,
+                        y: (b.top + b.bottom) / 2 - 20,
+                    },
+                    620,
+                    480,
+                ),
+            };
+        },
+        async perform({ page, film, overlay }) {
+            await overlay.enable();
+            const pivot = await page.evaluate(() =>
+                window.fieldTest.selectionPivot(),
+            );
+            const handles = await page.evaluate(() =>
+                window.fieldTest.handles(),
+            );
+            // The marcher nearest the frame's back-left corner
+            const block = named(await marchers(page), [
+                ...range("U", 1, 4),
+                ...range("B", 1, 8),
+            ]);
+            const near = (m) =>
+                Math.hypot(m.x - handles.nw.x, m.y - handles.nw.y);
+            const nearest = block.reduce((a, m) => (near(m) < near(a) ? m : a));
+            const corner = { x: nearest.x, y: nearest.y };
+            const rest = { x: pivot.screen.x + 60, y: pivot.screen.y + 50 };
+            await page.mouse.move(rest.x, rest.y);
+            await film.hold(0.3);
+            await film.moveTo(page, rest, pivot.screen, 0.5);
+            await page.keyboard.down("Control");
+            await film.hold(0.3);
+            await page.mouse.down();
+            await film.moveTo(page, pivot.screen, corner, 0.9);
+            await page.mouse.up();
+            await page.keyboard.up("Control");
+            await film.hold(0.6);
+            // Turn a quarter around it with the round handle
+            const rot = handles.rot;
+            const r = Math.hypot(rot.x - corner.x, rot.y - corner.y);
+            const start = Math.atan2(rot.y - corner.y, rot.x - corner.x);
+            await film.moveTo(page, corner, rot, 0.5);
+            await page.mouse.down();
+            let last = rot;
+            const steps = 36;
+            for (let i = 1; i <= steps; i++) {
+                const a = start + (i / steps) * (Math.PI / 2);
+                const p = {
+                    x: corner.x + r * Math.cos(a),
+                    y: corner.y + r * Math.sin(a),
                 };
                 await page.mouse.move(p.x, p.y);
                 await film.frame();

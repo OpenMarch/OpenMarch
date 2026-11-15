@@ -75,6 +75,8 @@ export class ReadOnlyFieldEditor extends FieldEditor {
         }
         this.readOnly = readOnly;
         if (!readOnly) this.setModeNow?.(this.wantedMode);
+        // What's drawn for the selection (its pivot) depends on it
+        this.emit();
     }
 
     /** Whether presses only select ({@link setReadOnly}). */

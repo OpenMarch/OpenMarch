@@ -1939,9 +1939,6 @@
                 "ringHintKeys": "Maintenez <keys></keys> sur le terrain pour l'anneau de formes"
             }
         },
-        "transform": {
-            "title": "Transformation"
-        },
         "validate": {
             "noPosition": "La forme a un emplacement sans position",
             "offField": "{count, plural, one {# marcheur se retrouverait} other {# marcheurs se retrouveraient}} hors du terrain",
