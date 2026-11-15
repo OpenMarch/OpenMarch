@@ -1,3 +1,4 @@
+// cspell:words clearcoat
 /**
  * Hold gallery: one marcher per section, standing in its `up` hold with its
  * instrument, drawn from several sides so the hands can be checked against
@@ -7,6 +8,7 @@
  */
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import bodyUrl from "@/view3d/assets/om-pose/bodies/neutral-average.glb?url";
 import {
     carryForSection,
@@ -28,6 +30,23 @@ import {
 } from "@/view3d/core/instruments/mesh";
 import { partVisible, sectionUniform } from "@/view3d/core/marchers/looks";
 import { poseArms } from "@/view3d/window/performers/marchers/armPose";
+import {
+    FINISH_COLORS,
+    surfaceOf,
+    surfaceShader,
+} from "@/view3d/window/performers/marchers/instrumentGeometry";
+import { BRASS_COLORS } from "@/view3d/core/instruments/brass";
+
+/**
+ * `?look=1`: draw the instrument as the window does (its colors by part,
+ * the section's color on drum shells, each part's surface from
+ * `surfaceOf` under an environment map) rather than flat check colors.
+ * `?shell=<hex>` sets the section color, `?finish=silver` the brass finish.
+ */
+const params = new URLSearchParams(window.location.search);
+const LOOK = params.get("look") === "1";
+const SHELL_COLOR = parseInt(params.get("shell") ?? "6442ff", 16);
+const LOOK_FINISH = params.get("finish") === "silver" ? "silver" : "brass";
 
 export interface Entry {
     name: string;
@@ -86,7 +105,16 @@ renderer.setScissorTest(true);
 document.body.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 1.6));
+if (LOOK) {
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    scene.environment = new THREE.PMREMGenerator(renderer).fromScene(
+        new RoomEnvironment(),
+        0.04,
+    ).texture;
+    scene.environmentIntensity = 0.6;
+}
+// look mode: the window's hemisphere strength (core/environment/rig.ts)
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, LOOK ? 1 : 1.6));
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
 sun.position.set(-1.5, 3, 2.5);
 scene.add(sun);
@@ -216,6 +244,7 @@ function show(entry: Entry, state: HoldState) {
     const nrm: number[] = [];
     const col: number[] = [];
     const idx: number[] = [];
+    const surf: number[] = [];
     // instrument pieces by the hold's placement; head pieces (a beret),
     // built in the body's frame at bind, by the posed head
     const place = placement(h);
@@ -230,19 +259,30 @@ function show(entry: Entry, state: HoldState) {
         const m = p.bone === "head" ? onHead : place;
         const nm = new THREE.Matrix3().getNormalMatrix(m);
         const first = pos.length / 3;
-        const base = new THREE.Color(
-            p.part === PART_METAL && silver
-                ? 0xeeeeea
-                : (PART_COLORS[p.part] ?? 0x888888),
-        );
+        const base = LOOK
+            ? new THREE.Color(
+                  p.part === PART_METAL
+                      ? FINISH_COLORS[LOOK_FINISH]
+                      : p.part === PART_SHELL || p.part === PART_SILK
+                        ? SHELL_COLOR
+                        : (BRASS_COLORS[p.part] ?? BRASS_COLORS[PART_METAL]),
+              )
+            : new THREE.Color(
+                  p.part === PART_METAL && silver
+                      ? 0xeeeeea
+                      : (PART_COLORS[p.part] ?? 0x888888),
+              );
+        const surface = surfaceOf(p.part, LOOK_FINISH);
+        const shellLike = p.part === PART_SHELL || p.part === PART_SILK;
         for (let i = 0; i < p.positions.length; i += 3) {
             v.fromArray(p.positions, i).applyMatrix4(m);
             pos.push(v.x, v.y, v.z);
             v.fromArray(p.normals, i).applyMatrix3(nm).normalize();
             nrm.push(v.x, v.y, v.z);
-            if (p.colors && p.part !== PART_METAL)
+            if (p.colors && p.part !== PART_METAL && !(LOOK && shellLike))
                 col.push(p.colors[i], p.colors[i + 1], p.colors[i + 2]);
             else col.push(base.r, base.g, base.b);
+            surf.push(surface.metalness, surface.roughness, surface.coat);
         }
         for (const i of p.indices) idx.push(first + i);
     }
@@ -250,16 +290,28 @@ function show(entry: Entry, state: HoldState) {
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
     g.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
     g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+    g.setAttribute("_surface", new THREE.Float32BufferAttribute(surf, 3));
     g.setIndex(idx);
-    instrument = new THREE.Mesh(
-        g,
-        new THREE.MeshStandardMaterial({
+    let material: THREE.MeshStandardMaterial;
+    if (LOOK) {
+        const m = new THREE.MeshPhysicalMaterial({
+            vertexColors: true,
+            metalness: 1,
+            roughness: 0.2,
+            clearcoat: 1,
+            clearcoatRoughness: 0.06,
+            side: THREE.DoubleSide,
+        });
+        m.onBeforeCompile = surfaceShader;
+        material = m;
+    } else
+        material = new THREE.MeshStandardMaterial({
             vertexColors: true,
             metalness: 0.35,
             roughness: 0.4,
             side: THREE.DoubleSide,
-        }),
-    );
+        });
+    instrument = new THREE.Mesh(g, material);
     scene.add(instrument);
 
     // frame the upper body and the instrument
@@ -291,10 +343,37 @@ function show(entry: Entry, state: HoldState) {
     ];
     const mat = instrument.material as THREE.MeshStandardMaterial;
     const head = new THREE.Vector3(0, 1.6, 0.08);
+    // in look mode the last view is the instrument alone, close, from the front right
+    const own = new THREE.Box3().setFromObject(instrument);
+    const ownCenter = own.getCenter(new THREE.Vector3());
+    const ownHalf =
+        (Math.max(...own.getSize(new THREE.Vector3()).toArray()) / 2) * 0.8;
+    // ?hand=R or L: the close-up frames that hand's grip instead
+    const handClose = params.get("hand");
+    if (handClose) {
+        const grip = handClose === "L" ? h.left : h.right;
+        ownCenter
+            .set(...grip.wrist)
+            .addScaledVector(new THREE.Vector3(...grip.fingers), 0.07);
+    }
+    const handHalf = 0.13;
+    if (LOOK)
+        dirs[dirs.length - 1] = [
+            handClose
+                ? new THREE.Vector3(-0.3, 0.5, 1).normalize()
+                : new THREE.Vector3(-1, 0.6, 1.3).normalize(),
+            new THREE.Vector3(0, 1, 0),
+        ];
     dirs.forEach(([dir, up], i) => {
         const close = i === dirs.length - 1;
-        const h = close ? 0.22 : half;
-        const at = close ? head : center;
+        const h = close
+            ? LOOK
+                ? handClose
+                    ? handHalf
+                    : ownHalf
+                : 0.22
+            : half;
+        const at = close ? (LOOK ? ownCenter : head) : center;
         const cam = new THREE.OrthographicCamera(-h, h, h, -h, 0.01, 20);
         cam.position.copy(at).addScaledVector(dir, 6);
         cam.up.copy(up);

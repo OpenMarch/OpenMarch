@@ -12,6 +12,11 @@ node scripts/view3d-holds/shoot.mjs --out /mnt/data/om-capture/holds/my-run
 
 Options: `--states up,carry,trail` (default `up`) and `--only Trumpet,Flute` (matches section names).
 
+`--look` draws the instruments as the 3D View does (each part's colors and surface from
+`surfaceOf`, the section's color on drum shells, under an environment map) instead of flat check
+colors, and swaps the head close-up for a close-up of the instrument. `--shell <hex>` sets the
+section color (default `6442ff`), and `--hand R` or `--hand L` frames that hand's grip in the close-up.
+
 Each section gets six views side by side: front, right side, top, front-right, front-left, and the
 front again with the instrument see-through, so a big bell can't hide the hands.
 
