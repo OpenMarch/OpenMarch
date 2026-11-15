@@ -133,8 +133,6 @@ const CALM_CONTROLS_OPACITY = 0.25;
 const SPOT_LABEL_PX = 10;
 const TIP_PX = 12;
 const TIP_OFFSET_PX = 14;
-/** Room for the tip's pill; it lays itself out inside, from the top left */
-const TIP_BOX = { width: 360, height: 32 };
 
 /**
  * The SVG overlay over the field (ADR 0005 D-2): what the editor draws on top
@@ -257,6 +255,7 @@ export default function FieldOverlay({
                 )}
                 {propTool && <PropToolPreview tool={propTool} theme={theme} />}
             </svg>
+            {modeDrawing?.tip && <ModeTip tip={modeDrawing.tip} />}
         </>
     );
 }
@@ -1218,6 +1217,35 @@ function useSpotShape(
     }, [ringKey, looks, marchers, theme]);
 }
 
+/**
+ * The note by the pointer (a drag's readout, a lane's name): a solid pill, so it reads over any
+ * part of the field (owner). Over the field's floating bars too, outside the overlay's SVG: the
+ * path bar sits beside the lines, so a note by a hovered line often lands on it (owner, MVP lab).
+ */
+function ModeTip({ tip }: { tip: NonNullable<FieldModeDrawing["tip"]> }) {
+    const view = useFieldViewStore();
+    const p = fieldToElement(view, tip.at.x, tip.at.y);
+    return (
+        <div
+            className="pointer-events-none absolute z-20 flex flex-col items-start gap-4"
+            style={{
+                left: p.x + TIP_OFFSET_PX,
+                top: p.y + TIP_OFFSET_PX,
+            }}
+        >
+            <div
+                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
+                style={{ fontSize: TIP_PX }}
+                data-testid="fieldShapeTip"
+            >
+                <GlyphText text={tip.text} size={12} />
+            </div>
+            {/* The held-roles chip stacks under the readout, never over it */}
+            <HeldRolesChipBelowTip />
+        </div>
+    );
+}
+
 function ModeDrawing({
     drawing,
     theme,
@@ -1602,35 +1630,6 @@ function ModeDrawing({
                                 strokeWidth={1}
                             />
                         </g>
-                    );
-                })()}
-            {drawing.tip &&
-                (() => {
-                    const p = at(drawing.tip.at);
-                    // A solid pill, so the readout reads over any part of the field (owner)
-                    return (
-                        <foreignObject
-                            x={p.x + TIP_OFFSET_PX}
-                            y={p.y + TIP_OFFSET_PX}
-                            width={TIP_BOX.width}
-                            height={TIP_BOX.height}
-                            overflow="visible"
-                        >
-                            <div className="flex flex-col items-start gap-4">
-                                <div
-                                    className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
-                                    style={{ fontSize: TIP_PX }}
-                                    data-testid="fieldShapeTip"
-                                >
-                                    <GlyphText
-                                        text={drawing.tip.text}
-                                        size={12}
-                                    />
-                                </div>
-                                {/* The held-roles chip stacks under the readout, never over it */}
-                                <HeldRolesChipBelowTip />
-                            </div>
-                        </foreignObject>
                     );
                 })()}
             {/* The guides' names last, over every line, edge and spot, so nothing crosses
