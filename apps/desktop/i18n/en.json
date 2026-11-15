@@ -3815,7 +3815,7 @@
             "laneOf": "Spot {spot} · {marcher}",
             "rehomedBadge": "Adjustment re-homed",
             "rehomedTip": "A point an adjustment was attached to changed, so the adjustment moved to the nearest points left. Check it still does what you meant.",
-            "legAdjusted": "spot {spot}, counts {from} to {to} (adjusted)",
+            "legAdjusted": "spot {spot}, counts {from} to {to} (bent)",
             "bigStepsTipTrail": "{marcher} has the farthest to go: {inches} in a step. Each marcher walks its own way along the trail at a steady speed. Lengthen the move, or shorten the trail.",
             "pathKind": "How the marchers take the path",
             "togetherTip": "Together: the group slides along the path and keeps its shape",

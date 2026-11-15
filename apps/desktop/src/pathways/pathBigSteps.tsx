@@ -230,7 +230,7 @@ const legWords = (
     if (where === "adjusted")
         return tolgee.t(
             "pathways.editor.legAdjusted",
-            "spot {spot}, counts {from} to {to} (adjusted)",
+            "spot {spot}, counts {from} to {to} (bent)",
             { spot: leg.spot ?? 0, from: leg.from ?? 0, to: leg.to ?? 0 },
         );
     return where === "onto"
