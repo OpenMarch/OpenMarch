@@ -35,6 +35,7 @@ const GROUPS: readonly (readonly [
     ["alignment", "shortcutsDialog.group.alignment", "Alignment"],
     ["shape", "shortcutsDialog.group.shape", "Shapes"],
     ["batchEdit", "shortcutsDialog.group.batchEdit", "Batch editing"],
+    ["field", "shortcutsDialog.group.field", "Field"],
     ["cursor", "shortcutsDialog.group.cursor", "Tools"],
     ["ui", "shortcutsDialog.group.ui", "View"],
     ["file", "shortcutsDialog.group.file", "File"],

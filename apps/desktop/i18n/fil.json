@@ -525,8 +525,6 @@
             "minimumRequired": "Kailangan ng hindi bababa sa 2 linya ng sanggunian {axis}",
             "name": "Pangalan",
             "nameTooltip": "Pangalanan ang linya ng sanggunian mo kahit ano ang gusto mo. Para lang ito malaman mo kung aling linya ng sanggunian ang pinipili mo.",
-            "newXCheckpointName": "Bagong linya ng sanggunian X",
-            "newYCheckpointName": "Bagong linya ng sanggunian Y",
             "shortName": "Maikling pangalan",
             "shortNameTooltip": "Ang pangunahing pangalan ng linya ng sanggunian. (Hal. \"45 Yard Line - Side 1\")",
             "stepsFromCenter": "Hakbang mula sa gitna",

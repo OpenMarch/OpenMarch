@@ -12,7 +12,8 @@ export type ActionCategory =
     | "cursor"
     | "select"
     | "shape"
-    | "timeline";
+    | "timeline"
+    | "field";
 export type ActionArgs = Readonly<Record<string, string | number | boolean>>;
 
 /**
@@ -975,6 +976,70 @@ const STATIC_ACTIONS = {
         category: "timeline",
         scope: "global",
         defaultBindings: [],
+    },
+    // Field edits (#823, src/field/edits): the field's checkpoints, each one undo step. The ones
+    // that need no checkpoint picked are here; remove, move, update, settings and templates are
+    // called by name (runFieldEdit / applyFieldEdits) until the Edit field mode (#824) has a
+    // checkpoint selection to give them. Unbound
+    fieldAddXCheckpoint: {
+        labelKey: "actions.field.addXCheckpoint",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: [],
+    },
+    fieldAddYCheckpoint: {
+        labelKey: "actions.field.addYCheckpoint",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: [],
+    },
+    fieldAddXCheckpointSeries: {
+        labelKey: "actions.field.addXCheckpointSeries",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: [],
+        params: [
+            {
+                key: "every",
+                labelKey: "actions.field.params.every",
+                unit: "steps",
+                default: 4,
+                range: { min: 0.5 },
+            },
+            {
+                key: "to",
+                labelKey: "actions.field.params.toSide",
+                unit: "steps",
+                default: 80,
+                range: { min: 0 },
+            },
+        ],
+    },
+    fieldAddYCheckpointSeries: {
+        labelKey: "actions.field.addYCheckpointSeries",
+        keywordsKey: "actions.field.checkpointKeywords",
+        category: "field",
+        scope: "global",
+        defaultBindings: [],
+        params: [
+            {
+                key: "every",
+                labelKey: "actions.field.params.every",
+                unit: "steps",
+                default: 4,
+                range: { min: 0.5 },
+            },
+            {
+                key: "to",
+                labelKey: "actions.field.params.toBack",
+                unit: "steps",
+                default: 84,
+                range: { min: 0 },
+            },
+        ],
     },
 } satisfies Record<string, ActionDefinition>;
 

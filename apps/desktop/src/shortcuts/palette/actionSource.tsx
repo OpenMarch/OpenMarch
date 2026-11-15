@@ -6,6 +6,7 @@ import {
     ArrowUUpLeftIcon,
     CursorIcon,
     FileIcon,
+    GridFourIcon,
     PlayIcon,
     SelectionAllIcon,
     ShapesIcon,
@@ -46,6 +47,7 @@ const CATEGORY_ICONS: Record<ActionCategory, Icon> = {
     shape: ShapesIcon,
     ui: SidebarSimpleIcon,
     timeline: WaveformIcon,
+    field: GridFourIcon,
 };
 
 /** Drill-writing tools first; file, playback and app settings after. */
@@ -60,6 +62,7 @@ const PALETTE_CATEGORY_ORDER: readonly ActionCategory[] = [
     "file",
     "edit",
     "timeline",
+    "field",
     "movement",
     "ui",
 ];

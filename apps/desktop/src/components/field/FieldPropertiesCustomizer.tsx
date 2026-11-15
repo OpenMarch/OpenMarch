@@ -16,6 +16,12 @@ import {
     fieldPropertiesQueryOptions,
     updateFieldPropertiesMutationOptions,
 } from "@/hooks/queries";
+import type {
+    CheckpointPatch,
+    FieldEditRequest,
+    FieldEditResult,
+} from "@/field/edits";
+import { useApplyFieldEdits } from "@/hooks/useApplyFieldEdits";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { GeneralTab } from "./customizer/GeneralTab";
 import { CheckpointsTab } from "./customizer/CheckpointsTab";
@@ -42,6 +48,10 @@ export default function FieldPropertiesCustomizer() {
 
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
 
+    // Checkpoint add, delete and update are field edits (#823): one undo step each, with the
+    // invariants checked in the edit, not here. Refusals, warnings and failures are toasted there
+    const applyFieldEdits = useApplyFieldEdits();
+
     const updateCheckpoint = useCallback(
         ({
             oldCheckpoint,
@@ -51,177 +61,88 @@ export default function FieldPropertiesCustomizer() {
             oldCheckpoint: Checkpoint;
             newCheckpoint: Checkpoint;
             axis: "x" | "y";
-        }) => {
-            let found = false;
-            const newCheckpoints = (
-                axis === "x"
-                    ? currentFieldProperties.xCheckpoints
-                    : currentFieldProperties.yCheckpoints
-            ).map((checkpoint) => {
-                if (!found && checkpoint.id === oldCheckpoint.id) {
-                    found = true;
-                    return newCheckpoint;
-                }
-                return checkpoint;
-            });
-            if (!found) {
-                console.error(
-                    `Checkpoint with id ${oldCheckpoint.id} not found`,
-                );
-                return;
-            }
-            if (axis === "x") {
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        xCheckpoints: newCheckpoints,
-                    }),
-                );
-            } else {
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        yCheckpoints: newCheckpoints,
-                    }),
-                );
-            }
+        }): Promise<FieldEditResult | undefined> => {
+            const ids = [{ axis, id: oldCheckpoint.id }];
+            const edits: FieldEditRequest[] = [];
+            if (
+                newCheckpoint.stepsFromCenterFront !==
+                oldCheckpoint.stepsFromCenterFront
+            )
+                edits.push({
+                    edit: "moveCheckpoints",
+                    // Typed positions keep the typed names
+                    args: {
+                        ids,
+                        to: newCheckpoint.stepsFromCenterFront,
+                        followNames: false,
+                    },
+                });
+            const patch: CheckpointPatch = {
+                ...(newCheckpoint.name !== oldCheckpoint.name
+                    ? { name: newCheckpoint.name }
+                    : {}),
+                ...(newCheckpoint.terseName !== oldCheckpoint.terseName
+                    ? { shortName: newCheckpoint.terseName }
+                    : {}),
+                ...(newCheckpoint.visible !== oldCheckpoint.visible
+                    ? { visible: newCheckpoint.visible }
+                    : {}),
+                ...(newCheckpoint.useAsReference !==
+                oldCheckpoint.useAsReference
+                    ? { useAsReference: newCheckpoint.useAsReference }
+                    : {}),
+                ...(newCheckpoint.fieldLabel !== oldCheckpoint.fieldLabel
+                    ? { fieldLabel: newCheckpoint.fieldLabel ?? "" }
+                    : {}),
+            };
+            if (Object.keys(patch).length > 0)
+                edits.push({ edit: "updateCheckpoints", args: { ids, patch } });
+            if (edits.length === 0) return Promise.resolve(undefined);
+            return applyFieldEdits(edits);
         },
-        [currentFieldProperties, updateFieldProperties],
+        [applyFieldEdits],
     );
 
     const deleteCheckpoint = useCallback(
         (checkpoint: Checkpoint) => {
-            const checkpoints =
-                checkpoint.axis === "x"
-                    ? currentFieldProperties.xCheckpoints
-                    : currentFieldProperties.yCheckpoints;
-            if (checkpoints.length <= 2) {
-                toast.error(
-                    t("fieldProperties.checkpoint.minimumRequired", {
+            void applyFieldEdits({
+                edit: "removeCheckpoints",
+                args: {
+                    ids: [{ axis: checkpoint.axis, id: checkpoint.id }],
+                },
+            }).then((result) => {
+                if (!result?.diff.ok || result.diff.empty) return;
+                toast.success(
+                    t("fieldProperties.checkpoint.deleted", {
                         axis: checkpoint.axis.toUpperCase(),
+                        steps: checkpoint.stepsFromCenterFront,
+                        name: checkpoint.name,
                     }),
                 );
-                return;
-            }
-            if (checkpoint.axis === "x") {
-                const newCheckpoints =
-                    currentFieldProperties.xCheckpoints.filter(
-                        (c) => c.id !== checkpoint.id,
-                    );
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        xCheckpoints: newCheckpoints,
-                    }),
-                );
-            } else {
-                const newCheckpoints =
-                    currentFieldProperties.yCheckpoints.filter(
-                        (c) => c.id !== checkpoint.id,
-                    );
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        yCheckpoints: newCheckpoints,
-                    }),
-                );
-            }
-            toast.success(
-                // `${checkpoint.axis.toUpperCase()}-checkpoint at ${checkpoint.stepsFromCenterFront} steps deleted - "${checkpoint.name}"`,
-                t("fieldProperties.checkpoint.deleted", {
-                    axis: checkpoint.axis.toUpperCase(),
-                    steps: checkpoint.stepsFromCenterFront,
-                    name: checkpoint.name,
-                }),
-            );
+            });
         },
-        [currentFieldProperties, updateFieldProperties, t],
+        [applyFieldEdits, t],
     );
 
+    // B6: a new checkpoint goes halfway into the largest gap nearest the center, named from its
+    // position, not on top of the outermost line
     const addCheckpoint = useCallback(
         (axis: "x" | "y") => {
-            let newSteps: number;
-            if (axis === "x") {
-                const maxXCheckpointSteps =
-                    currentFieldProperties.xCheckpoints.reduce(
-                        (max, checkpoint) => {
-                            return checkpoint.stepsFromCenterFront > max
-                                ? checkpoint.stepsFromCenterFront
-                                : max;
-                        },
-                        0,
-                    );
-                newSteps = maxXCheckpointSteps;
-                const maxXCheckpointId =
-                    currentFieldProperties.xCheckpoints.reduce(
-                        (max, checkpoint) => {
-                            return checkpoint.id > max ? checkpoint.id : max;
-                        },
-                        0,
-                    );
-                const newXCheckpoint: Checkpoint = {
-                    id: maxXCheckpointId + 1,
-                    name: t("fieldProperties.checkpoint.newXCheckpointName"),
-                    terseName: "TBD",
-                    axis: "x",
-                    stepsFromCenterFront: maxXCheckpointSteps,
-                    useAsReference: true,
-                    visible: true,
-                };
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        xCheckpoints: [
-                            ...currentFieldProperties.xCheckpoints,
-                            newXCheckpoint,
-                        ].sort(sorter),
+            void applyFieldEdits({
+                edit: "addCheckpoint",
+                args: { axis },
+            }).then((result) => {
+                const added = result?.diff.checkpoints.added[0];
+                if (!result?.diff.ok || !added) return;
+                toast.success(
+                    t("fieldProperties.checkpoint.created", {
+                        axis: axis.toUpperCase(),
+                        steps: added.stepsFromCenterFront,
                     }),
                 );
-            } else {
-                const maxYCheckpointId =
-                    currentFieldProperties.yCheckpoints.reduce(
-                        (max, checkpoint) => {
-                            return checkpoint.id > max ? checkpoint.id : max;
-                        },
-                        0,
-                    );
-                const maxYCheckpointSteps =
-                    currentFieldProperties.yCheckpoints.reduce(
-                        (max, checkpoint) => {
-                            return checkpoint.stepsFromCenterFront > max
-                                ? checkpoint.stepsFromCenterFront
-                                : max;
-                        },
-                        0,
-                    );
-                newSteps = maxYCheckpointSteps;
-                const newYCheckpoint: Checkpoint = {
-                    id: maxYCheckpointId + 1,
-                    name: t("fieldProperties.checkpoint.newYCheckpointName"),
-                    terseName: "TBD",
-                    axis: "y",
-                    stepsFromCenterFront: maxYCheckpointSteps,
-                    useAsReference: true,
-                    visible: true,
-                };
-                updateFieldProperties(
-                    new FieldProperties({
-                        ...currentFieldProperties,
-                        yCheckpoints: [
-                            ...currentFieldProperties.yCheckpoints,
-                            newYCheckpoint,
-                        ].sort(sorter),
-                    }),
-                );
-            }
-            toast.success(
-                t("fieldProperties.checkpoint.created", {
-                    axis: axis.toUpperCase(),
-                    steps: newSteps,
-                }),
-            );
+            });
         },
-        [currentFieldProperties, updateFieldProperties, t],
+        [applyFieldEdits, t],
     );
 
     const sorter = (a: Checkpoint, b: Checkpoint) => {

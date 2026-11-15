@@ -526,8 +526,6 @@
             "minimumRequired": "{axis}基準線は少なくとも2本必要です",
             "name": "名前",
             "nameTooltip": "基準線には自由に名前を付けられます。名前は、どの基準線を選択しているかを自分で把握するためのものです。",
-            "newXCheckpointName": "新しいX基準線",
-            "newYCheckpointName": "新しいY基準線",
             "shortName": "短縮名",
             "shortNameTooltip": "基準線の主な名前です（例：「45ヤードライン - サイド1」）。",
             "stepsFromCenter": "中央からの歩数",

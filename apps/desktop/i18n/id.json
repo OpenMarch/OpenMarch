@@ -525,8 +525,6 @@
             "minimumRequired": "Diperlukan minimal 2 garis acuan {axis}",
             "name": "Nama",
             "nameTooltip": "Beri nama garis acuan sesuka Anda. Nama ini hanya untuk membantu Anda mengenali garis acuan yang sedang dipilih.",
-            "newXCheckpointName": "Garis acuan X baru",
-            "newYCheckpointName": "Garis acuan Y baru",
             "shortName": "Nama pendek",
             "shortNameTooltip": "Nama utama garis acuan. (Mis. \"Garis yard 45 - Sisi 1\")",
             "stepsFromCenter": "Langkah dari tengah",

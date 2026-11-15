@@ -8,6 +8,12 @@ covers:
   - apps/desktop/src/components/launchpage/settings/FieldSettings.tsx
   - i18n:fieldProperties
   - i18n:field.general
+  - i18n:fieldEdits
+  - apps/desktop/src/field/edits
+  - action:fieldAddXCheckpoint
+  - action:fieldAddYCheckpoint
+  - action:fieldAddXCheckpointSeries
+  - action:fieldAddYCheckpointSeries
 sidebar:
   order: 1
 ---
@@ -85,6 +91,19 @@ Select a checkpoint to edit it:
 - <Ui k="fieldProperties.checkpoint.useAsReference" />: whether coordinates are measured from it. Turn it off for lines you want to see but not count from, such as the real hash next to the grid hash.
 
 Use <Ui k="fieldProperties.buttons.newXCheckpoint" /> and <Ui k="fieldProperties.buttons.newYCheckpoint" /> to add one, and <Ui k="fieldProperties.checkpoint.delete" /> to remove one. A field needs at least two of each.
+
+A new checkpoint goes halfway into the widest gap between two checkpoints, the one nearest the center when gaps are the same size. It's named for where it lands, such as 47.5 yard line (short name 47.5) on a football field or 12 steps from front (F12) for a Y-checkpoint, and gets a yard number when it lands on a ten. Rename it as you like.
+
+A position that's already taken by another checkpoint, or a Y-checkpoint in front of the front sideline (above 0), isn't saved: a message says why, and the box shows the position the checkpoint still has. Positions are rounded to a hundredth of a step.
+
+You can also add checkpoints from the command palette (<Kbd action="openCommandPalette" />), in the Field group:
+
+- <Ui k="actions.field.addXCheckpoint" />: an X-checkpoint in the widest gap, and its twin on the other side of the center.
+- <Ui k="actions.field.addYCheckpoint" />: a Y-checkpoint in the widest gap.
+- <Ui k="actions.field.addXCheckpointSeries" />: asks how many steps apart and how far from the center, then adds X-checkpoints on both sides.
+- <Ui k="actions.field.addYCheckpointSeries" />: asks how many steps apart and how far back, then adds Y-checkpoints from the front.
+
+A series skips spots that already have a checkpoint and stops at the outermost checkpoints, so it never changes the field's size. Its checkpoints are drawn but aren't used as references, so coordinates still count from your main lines; turn on <Ui k="fieldProperties.checkpoint.useAsReference" /> for any you want to count from.
 
 The outermost checkpoints set the field's size. Keep the leftmost and rightmost X-checkpoints the same distance from the center, and every Y-checkpoint at 0 or below; the tab warns you when they aren't. Turn on <Ui k="fieldProperties.labels.useHashes" /> to draw Y-checkpoints as short hash marks, as on a football field, instead of lines across the field.
 

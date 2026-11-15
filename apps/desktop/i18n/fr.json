@@ -526,8 +526,6 @@
             "minimumRequired": "Au moins 2 repères {axis} sont requis",
             "name": "Nom",
             "nameTooltip": "Nommez votre repère comme vous le souhaitez. Le nom sert uniquement à savoir quel repère vous sélectionnez.",
-            "newXCheckpointName": "Nouveau repère X",
-            "newYCheckpointName": "Nouveau repère Y",
             "shortName": "Nom court",
             "shortNameTooltip": "Nom principal du repère. (Ex. : « Ligne de yard 45 – Côté 1 »)",
             "stepsFromCenter": "Pas depuis le centre",

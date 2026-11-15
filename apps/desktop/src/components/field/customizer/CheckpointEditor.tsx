@@ -4,17 +4,21 @@ import { useState } from "react";
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { Input, Button, Switch } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
+import type { FieldEditResult } from "@/field/edits";
 import FormField from "../../ui/FormField";
 import { inputClassname, blurOnEnterFunc as blurOnEnter } from "./utils";
+
+/** Resolves with the edit's result (what was stored), when there was an edit */
+export type UpdateCheckpoint = (args: {
+    oldCheckpoint: Checkpoint;
+    newCheckpoint: Checkpoint;
+    axis: "x" | "y";
+}) => Promise<FieldEditResult | undefined> | void;
 
 interface CheckpointEditorProps {
     checkpoint: Checkpoint;
     deleteCheckpoint: (checkpoint: Checkpoint) => void;
-    updateCheckpoint: (args: {
-        oldCheckpoint: Checkpoint;
-        newCheckpoint: Checkpoint;
-        axis: "x" | "y";
-    }) => void;
+    updateCheckpoint: UpdateCheckpoint;
     axis: "x" | "y";
 }
 
@@ -39,6 +43,32 @@ export function CheckpointEditor({
         stepsValue.trim() !== "" && !isNaN(parseFloat(stepsValue));
     const isNameValid = nameValue.trim() !== "";
     const isTerseNameValid = terseNameValue.trim() !== "";
+
+    // After a commit the input shows what was stored: the old value when the edit was refused,
+    // the rounded one when it was snapped (10.125 is stored as 10.13)
+    const commitDraft = (
+        field: "steps" | "name" | "terseName",
+        newCheckpoint: Checkpoint,
+    ) =>
+        void Promise.resolve(
+            updateCheckpoint({
+                axis,
+                oldCheckpoint: checkpoint,
+                newCheckpoint,
+            }),
+        ).then((result) => {
+            const stored =
+                (result &&
+                    (axis === "x"
+                        ? result.next.xCheckpoints
+                        : result.next.yCheckpoints
+                    ).find((c) => c.id === checkpoint.id)) ||
+                checkpoint;
+            if (field === "steps")
+                setStepsValue(String(stored.stepsFromCenterFront));
+            else if (field === "name") setNameValue(stored.name);
+            else setTerseNameValue(stored.terseName);
+        });
 
     const errorInputClassname = `${inputClassname} border-red`;
 
@@ -96,13 +126,9 @@ export function CheckpointEditor({
                                 const parsedFloat = parseFloat(trimmed);
 
                                 if (trimmed !== "" && !isNaN(parsedFloat)) {
-                                    updateCheckpoint({
-                                        axis,
-                                        oldCheckpoint: checkpoint,
-                                        newCheckpoint: {
-                                            ...checkpoint,
-                                            stepsFromCenterFront: parsedFloat,
-                                        },
+                                    commitDraft("steps", {
+                                        ...checkpoint,
+                                        stepsFromCenterFront: parsedFloat,
                                     });
                                 }
                             }}
@@ -140,13 +166,9 @@ export function CheckpointEditor({
                                 e.preventDefault();
                                 const trimmed = nameValue.trim();
                                 if (trimmed !== "") {
-                                    updateCheckpoint({
-                                        axis,
-                                        oldCheckpoint: checkpoint,
-                                        newCheckpoint: {
-                                            ...checkpoint,
-                                            name: trimmed,
-                                        },
+                                    commitDraft("name", {
+                                        ...checkpoint,
+                                        name: trimmed,
                                     });
                                 }
                             }}
@@ -177,13 +199,9 @@ export function CheckpointEditor({
                                     trimmed !== "" &&
                                     trimmed !== checkpoint.terseName
                                 ) {
-                                    updateCheckpoint({
-                                        axis,
-                                        oldCheckpoint: checkpoint,
-                                        newCheckpoint: {
-                                            ...checkpoint,
-                                            terseName: trimmed,
-                                        },
+                                    commitDraft("terseName", {
+                                        ...checkpoint,
+                                        terseName: trimmed,
                                     });
                                 }
                             }}
@@ -206,7 +224,7 @@ export function CheckpointEditor({
                                     if (
                                         e.target.value !== checkpoint.fieldLabel
                                     ) {
-                                        updateCheckpoint({
+                                        void updateCheckpoint({
                                             axis,
                                             oldCheckpoint: checkpoint,
                                             newCheckpoint: {
@@ -234,7 +252,7 @@ export function CheckpointEditor({
                             checked={checkpoint.visible}
                             onClick={(e) => {
                                 e.preventDefault();
-                                updateCheckpoint({
+                                void updateCheckpoint({
                                     axis,
                                     oldCheckpoint: checkpoint,
                                     newCheckpoint: {
@@ -256,7 +274,7 @@ export function CheckpointEditor({
                             checked={checkpoint.useAsReference}
                             onClick={(e) => {
                                 e.preventDefault();
-                                updateCheckpoint({
+                                void updateCheckpoint({
                                     axis,
                                     oldCheckpoint: checkpoint,
                                     newCheckpoint: {

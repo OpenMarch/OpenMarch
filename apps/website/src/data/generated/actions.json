@@ -1505,6 +1505,26 @@
         "category": "timeline",
         "bindings": []
     },
+    "fieldAddXCheckpoint": {
+        "label": "Add X checkpoint on both sides",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddYCheckpoint": {
+        "label": "Add Y checkpoint",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddXCheckpointSeries": {
+        "label": "Add X checkpoints every few steps",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddYCheckpointSeries": {
+        "label": "Add Y checkpoints every few steps",
+        "category": "field",
+        "bindings": []
+    },
     "moveSelectedMarchersUp": {
         "label": "Nudge up",
         "category": "movement",

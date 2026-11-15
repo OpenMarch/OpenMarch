@@ -51,6 +51,18 @@
             "undo": "Undo",
             "undoFailed": "The undo couldn't be applied, so nothing changed."
         },
+        "field": {
+            "addXCheckpoint": "Add X checkpoint on both sides",
+            "addXCheckpointSeries": "Add X checkpoints every few steps",
+            "addYCheckpoint": "Add Y checkpoint",
+            "addYCheckpointSeries": "Add Y checkpoints every few steps",
+            "checkpointKeywords": "field line lines grid yard hash reference",
+            "params": {
+                "every": "Steps between checkpoints",
+                "toBack": "Back to how many steps behind the front",
+                "toSide": "Out to how many steps from the center"
+            }
+        },
         "file": {
             "closeFile": "Close file",
             "exportCoordinateSheets": "Export coordinate sheets…",
@@ -574,8 +586,6 @@
             "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "name": "Name",
             "nameTooltip": "Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting.",
-            "newXCheckpointName": "New X Checkpoint",
-            "newYCheckpointName": "New Y Checkpoint",
             "shortName": "Short Name",
             "shortNameTooltip": "The primary name of the checkpoint. (E.g. \"45 Yard Line - Side 1\")",
             "stepsFromCenter": "Steps from center",
@@ -1671,7 +1681,8 @@
         "repairDotsFile.reopenFailed": "The repaired file was saved at {path} but couldn't be opened (status {status}).",
         "utilityUpdateFailed": "Failed to update utility settings",
         "shortcuts.conflictWith": "<keys></keys> is already used by {actions}.",
-        "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)"
+        "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)",
+        "shortcuts.category.field": "Field"
     },
     "shapes": {
         "box": {
@@ -3488,7 +3499,8 @@
             "select": "Selection",
             "shape": "Shapes",
             "timeline": "Timeline",
-            "ui": "View"
+            "ui": "View",
+            "field": "Field"
         }
     },
     "shortcut": {
@@ -4037,5 +4049,39 @@
         "error.refused": "Your report couldn't be sent. Try again, and if it keeps happening, tell us on Discord.",
         "record.failed.microphone": "OpenMarch may not use the microphone. Turn off With microphone to record without sound, or allow the microphone in your system settings.",
         "record.failed.webMicrophone": "Your browser didn't allow the microphone. Turn off With microphone to record without sound, or allow the microphone for this site."
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "The left and rightmost X-checkpoints are no longer the same distance from the center",
+            "centerLocked": "The center line stays at the center while both sides are edited together",
+            "duplicatePosition": "There is already an {axis}-checkpoint there",
+            "invalid": "That field change isn't valid",
+            "invalidStepSize": "The step size must be more than 0",
+            "mirrorIgnored": "Only X-checkpoints are mirrored",
+            "noGap": "There's no gap between two {axis}-checkpoints to add one in. Give its position instead.",
+            "notFound": "That checkpoint no longer exists",
+            "skippedExisting": "Skipped spots that already have a checkpoint",
+            "tooMany": "That would add too many checkpoints. Use a larger spacing.",
+            "yInFront": "Y-checkpoints can't be in front of the front of the field. Use 0 or a negative number of steps.",
+            "mirrorTwinSkipped": "The other side already has a checkpoint there, so only this one was added",
+            "outsideField": "Left out spots past the field's outermost checkpoints, so the field keeps its size",
+            "fieldResized": "The field's size or center changed. Marchers keep their spots, so check them against the lines.",
+            "fieldResizeRefused": "That would change the field's size or center, so nothing changed"
+        },
+        "names": {
+            "yardLine": "{yards} yard line",
+            "endZone": "end zone",
+            "endZoneShort": "EZ",
+            "endZoneLine": "end zone {yards}",
+            "endZoneLineShort": "EZ{yards}",
+            "gridLine": "{line} line",
+            "sideSteps": "{side} {steps} steps from center",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "{steps} steps from front",
+            "stepsFromFrontShort": "F{steps}"
+        },
+        "failed": "The field change couldn't be saved, so nothing changed.",
+        "nothingAdded": "Every spot already has a checkpoint",
+        "seriesAdded": "{count, plural, one {# {axis}-checkpoint added} other {# {axis}-checkpoints added}}"
     }
 }

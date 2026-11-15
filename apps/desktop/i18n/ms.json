@@ -525,8 +525,6 @@
             "minimumRequired": "Sekurang-kurangnya 2 garisan rujukan {axis} diperlukan",
             "name": "Nama",
             "nameTooltip": "Namakan garisan rujukan anda mengikut kehendak anda. Nama ini hanya untuk membantu anda mengenal pasti garisan rujukan yang sedang dipilih.",
-            "newXCheckpointName": "Garisan rujukan X baharu",
-            "newYCheckpointName": "Garisan rujukan Y baharu",
             "shortName": "Nama ringkas",
             "shortNameTooltip": "Nama utama garisan rujukan. (Cth. \"Garisan 45 Ela - Sisi 1\")",
             "stepsFromCenter": "Langkah dari tengah",

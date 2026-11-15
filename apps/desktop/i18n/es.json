@@ -526,8 +526,6 @@
             "minimumRequired": "Se requieren al menos 2 líneas de referencia {axis}",
             "name": "Nombre",
             "nameTooltip": "Ponle a tu línea de referencia el nombre que quieras. Solo sirve para que sepas qué línea de referencia estás seleccionando.",
-            "newXCheckpointName": "Nueva línea de referencia X",
-            "newYCheckpointName": "Nueva línea de referencia Y",
             "shortName": "Nombre corto",
             "shortNameTooltip": "El nombre principal de la línea de referencia. (P. ej., \"Línea de yarda 45 - Lado 1\")",
             "stepsFromCenter": "Pasos desde el centro",

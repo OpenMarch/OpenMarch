@@ -2,17 +2,13 @@ import { Checkpoint, FieldProperties } from "@openmarch/core";
 import { TabContent, Button, Switch } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
 import FormField from "@/components/ui/FormField";
-import { CheckpointEditor } from "./CheckpointEditor";
+import { CheckpointEditor, type UpdateCheckpoint } from "./CheckpointEditor";
 import { inputClassname } from "./utils";
 
 export interface CheckpointsTabProps {
     currentFieldProperties: FieldProperties;
     updateFieldProperties: (props: FieldProperties) => void;
-    updateCheckpoint: (args: {
-        oldCheckpoint: Checkpoint;
-        newCheckpoint: Checkpoint;
-        axis: "x" | "y";
-    }) => void;
+    updateCheckpoint: UpdateCheckpoint;
     deleteCheckpoint: (checkpoint: Checkpoint) => void;
     addCheckpoint: (axis: "x" | "y") => void;
     sorter: (a: Checkpoint, b: Checkpoint) => number;

@@ -525,8 +525,6 @@
             "minimumRequired": "至少需要2条{axis}参考线",
             "name": "名称",
             "nameTooltip": "可随意为参考线命名。名称仅用于帮助你识别所选的参考线。",
-            "newXCheckpointName": "新X参考线",
-            "newYCheckpointName": "新Y参考线",
             "shortName": "简称",
             "shortNameTooltip": "参考线的主要名称。（例如“45码线 - 1侧”）",
             "stepsFromCenter": "距中心步数",
