@@ -116,10 +116,13 @@ import {
     shapeNewPoint,
     shapeOf,
     pathShown,
+    groupViewOf,
+    laneFocusOf,
     usePathPenStore,
     type PathObject,
     type PathSession,
 } from "./pathPenStore";
+import { useTimelineResolverStore } from "@/timeline/timelineStore";
 
 /** The env for the roles held, as the shape tool's (half steps, the field's lines, the Snap toggle) */
 const envOf = (roles?: Roles): ToolEnv | null => {
@@ -323,13 +326,18 @@ class PathPenMode implements FieldMode {
             : null;
     }
 
-    /** Whether `pointer` is on the path's line, open or closed */
+    /**
+     * Whether `pointer` is on a line the path draws now, open or closed: its own line when it's
+     * drawn (a quiet group path draws only its selected marchers' lines), or a lane
+     */
     private onLine(s: PathSession, pointer: Pick<FieldPointer, "field">) {
         const env = envOf();
         if (s.phase === "drawing" || !env) return false;
-        if (onPath(shapeOf(s), pointer.field, env)) return true;
+        const drawn = drawingOf(s);
+        if (drawn?.outline && onPath(shapeOf(s), pointer.field, env))
+            return true;
         // A group path's lanes open it too (step 15)
-        const lanes = drawingOf(s)?.lanes ?? [];
+        const lanes = drawn?.lanes ?? [];
         return lanes.some((lane) => onLine(lane, pointer.field, env.hitRadius));
     }
 
@@ -366,7 +374,10 @@ class PathPenMode implements FieldMode {
         if (this.handleAt(s, pointer)) return null;
         const walks = laneWalks(s);
         let bestKey: { d: number; hold: LaneHold } | null = null;
-        for (const { marcherId, walk } of walks)
+        const keysOf = laneInFocus(s);
+        for (const { marcherId, walk } of walks) {
+            // Only the lane being adjusted shows its keys, so only its keys are grabbed
+            if (keysOf === null || marcherId !== keysOf) continue;
             for (const h of adjustHandlesOf(walk)) {
                 const d = Math.hypot(
                     h.at.x - pointer.field.x,
@@ -389,16 +400,19 @@ class PathPenMode implements FieldMode {
                         },
                     };
             }
+        }
         if (bestKey) return bestKey.hold;
         const focus = laneInFocus(s);
-        const onGroupLine = onPath(shapeOf(s), pointer.field, env);
-        if (onGroupLine && focus === null) return null;
+        // Adjusting one lane, it's the only one drawn and the only one to grab (interaction
+        // round 2: testers bent the wrong marcher's faint lane)
+        if (focus === null && onPath(shapeOf(s), pointer.field, env))
+            return null;
         // Lanes of one row of a block lie on top of each other along a leg that runs with the
         // row: every lane this near is under the press. The one picked keeps it; a click on it
         // goes to the next (`releaseLane`), as a click cycles through stacked layers in a drawing
         // app
         const hits = walks.flatMap(({ marcherId, walk }) => {
-            if (onGroupLine && marcherId !== focus) return [];
+            if (focus !== null && marcherId !== focus) return [];
             const hit = laneHitOf(walk, pointer.field, env.hitRadius);
             return hit ? [{ marcherId, walk, hit }] : [];
         });
@@ -955,14 +969,7 @@ class PathPenMode implements FieldMode {
                 : null,
         );
         if (lane) return lane.index !== null ? "move" : "grab";
-        // The muted group line: a click on it lets the lane go
-        const env = envOf();
-        return !hover?.onDot() &&
-            env &&
-            laneInFocus(s) !== null &&
-            onPath(shapeOf(s), pointer.field, env)
-            ? "pointer"
-            : null;
+        return null;
     }
 
     leave(): void {
@@ -1051,6 +1058,8 @@ class PathPenMode implements FieldMode {
         target: PathTarget;
         drill: string;
         lane: number | null;
+        /** The line is a selected marcher's off the group path (its own path, or a copy) */
+        outside: boolean;
     } | null {
         const hit = this.pathAt(pointer);
         if (!hit) return null;
@@ -1064,28 +1073,28 @@ class PathPenMode implements FieldMode {
         const shape = "object" in hit ? null : shapeOf(hit.session);
         let lane: number | null = null;
         const members = target.group?.members ?? [];
+        // The path's own line, when it's drawn (a quiet group path draws only its marchers' lines)
         const onReference =
             !env ||
-            (shape
-                ? onPath(shape, pointer.field, env)
-                : drawn?.outline
-                  ? onLine(drawn.outline, pointer.field, env.hitRadius)
-                  : false);
+            (drawn?.outline
+                ? shape
+                    ? onPath(shape, pointer.field, env)
+                    : onLine(drawn.outline, pointer.field, env.hitRadius)
+                : false);
         if (env && !onReference && !target.trail && !target.lane && drawn) {
             let best = Infinity;
             (drawn.lanes ?? []).forEach((line, i) => {
                 const near = lineDistance(line, pointer.field);
-                if (
-                    near <= env.hitRadius &&
-                    near < best &&
-                    members[i] !== undefined
-                ) {
+                const id = drawn.laneIds?.[i] ?? members[i]?.marcherId;
+                if (near <= env.hitRadius && near < best && id !== undefined) {
                     best = near;
-                    lane = members[i]!.marcherId;
+                    lane = id;
                 }
             });
         }
-        return { target, drill, lane };
+        const outside =
+            lane !== null && !members.some((m) => m.marcherId === lane);
+        return { target, drill, lane, outside };
     }
 
     /**
@@ -1098,7 +1107,8 @@ class PathPenMode implements FieldMode {
         const hit = this.lineHit(pointer);
         if (!hit) return null;
         selectWalkers(hit.lane !== null ? [hit.lane] : walkersOf(hit.target));
-        focusPath(hit.target, hit.drill);
+        // A line off the group path is its marcher's own: its path is read for it, selected
+        if (!hit.outside) focusPath(hit.target, hit.drill);
         return pathFieldMenu(hit.target);
     }
 
@@ -1113,6 +1123,17 @@ class PathPenMode implements FieldMode {
     takeClick(pointer: FieldPointer, _double: boolean): boolean {
         const hit = this.lineHit(pointer);
         if (!hit) return false;
+        // A selected marcher's line off the group path (its own path, or a Detached copy): that
+        // marcher alone is selected, and its own path opens once it's read for it
+        if (hit.outside && hit.lane !== null) {
+            if (pointer.shift) toggleWalker(hit.lane);
+            else {
+                usePathPenStore.setState({ openNext: hit.lane });
+                if (!selectWalkers([hit.lane], { keepSubset: false }))
+                    usePathPenStore.setState({ openNext: null });
+            }
+            return true;
+        }
         const s = this.session;
         if (
             s?.phase === "open" &&
@@ -1146,8 +1167,13 @@ class PathPenMode implements FieldMode {
     }
 }
 
-let last: { session: PathSession | null; drawing: FieldModeDrawing | null } = {
+let last: {
+    session: PathSession | null;
+    selected: readonly number[];
+    drawing: FieldModeDrawing | null;
+} = {
     session: null,
+    selected: [],
     drawing: null,
 };
 
@@ -1161,14 +1187,17 @@ let last: { session: PathSession | null; drawing: FieldModeDrawing | null } = {
  */
 export function drawingOf(
     session: PathSession | null,
+    /** The selected members of the group path shown: whose lines a quiet group path draws */
+    selected: readonly number[] = usePathPenStore.getState().ownable,
 ): FieldModeDrawing | null {
-    if (session === last.session) return last.drawing;
+    if (session === last.session && selected === last.selected)
+        return last.drawing;
     const drawing = session
         ? session.follow
             ? followDrawing(session)
-            : buildDrawing(session)
+            : buildDrawing(session, selected)
         : null;
-    last = { session, drawing };
+    last = { session, selected, drawing };
     return drawing;
 }
 
@@ -1326,24 +1355,36 @@ function realMarchers(
     return { marchersAt: { ids: line, spots: starts } };
 }
 
-/** `drawingOf`'s work, uncached */
-function buildDrawing(session: PathSession): FieldModeDrawing {
-    const { target, pointer, selected } = session;
+/**
+ * `drawingOf`'s work, uncached. `selected`: the selected members of a quiet group path, whose
+ * lines are drawn. `asObject`: Paths All's drawing of a group path nothing selects (AP-O7).
+ */
+function buildDrawing(
+    session: PathSession,
+    selected: readonly number[] = [],
+    asObject = false,
+): FieldModeDrawing {
+    const { target, pointer, selected: selectedKey } = session;
     const drawingNow = session.phase === "drawing";
     const shape = shapeOf(session);
+    const view = asObject ? null : groupViewOf(session);
+    // A quiet group path draws only its selected marchers' lines, and an adjusted lane only
+    // itself: no group line then (interaction round 2)
+    const noLine = view === "selected" || view === "adjust";
     const middle = session.points.map((c) => c.at);
     // While drawing, the next leg runs to where the next point would land, straight
-    const outline =
-        drawingNow && pointer
-            ? [
-                  ...pathOutline({
-                      ...shape,
-                      to: pointer,
-                      ends: { from: shape.from, to: pointer },
-                  }),
-                  target.to,
-              ]
-            : pathOutline(shape);
+    const outline = noLine
+        ? null
+        : drawingNow && pointer
+          ? [
+                ...pathOutline({
+                    ...shape,
+                    to: pointer,
+                    ends: { from: shape.from, to: pointer },
+                }),
+                target.to,
+            ]
+          : pathOutline(shape);
     // While a press-and-drag shapes the point just placed, its tangent bar
     const shaping =
         drawingNow && session.dragging !== null
@@ -1367,7 +1408,7 @@ function buildDrawing(session: PathSession): FieldModeDrawing {
                 },
                 shape,
                 1,
-                selected,
+                selectedKey,
             );
     // The point being placed or dragged: guides where it's on a field line, and where it is
     const moving = drawingNow
@@ -1380,13 +1421,23 @@ function buildDrawing(session: PathSession): FieldModeDrawing {
     const group = target.group;
     const {
         lanes,
+        laneIds,
+        lanesWeight,
         memberRings,
         laneHighlights,
         lanePicked,
         adjustHandles,
         lanesAdjusted,
-    } = target.trail ? trailParts(target.trail) : groupParts(session, shape);
+    } = target.trail
+        ? trailParts(target.trail)
+        : groupParts(session, shape, asObject ? "object" : view, selected);
     const laneTip = moving ? null : laneTipOf(session);
+    // Whose end spots and start ghosts show: a quiet group path's or an adjusted lane's own
+    // marchers only, so one selected marcher doesn't bring the whole group's along
+    const shownIds = noLine ? new Set(laneIds ?? []) : null;
+    const groupShown = group
+        ? group.members.filter((m) => !shownIds || shownIds.has(m.marcherId))
+        : [];
     return {
         outline,
         openOutline: true,
@@ -1395,27 +1446,29 @@ function buildDrawing(session: PathSession): FieldModeDrawing {
         spots: target.trail
             ? target.trail.members.map((m) => m.to)
             : group
-              ? group.members.map((m) => m.to)
+              ? groupShown.map((m) => m.to)
               : [target.to],
         walks: [],
         ...handles,
         rings: target.trail
             ? target.trail.members.map((m) => m.from)
             : group
-              ? group.members.map((m) => m.from)
+              ? groupShown.map((m) => m.from)
               : [target.from],
         ringIds: target.trail
             ? target.trail.members.map((m) => m.marcherId)
             : group
-              ? group.members.map((m) => m.marcherId)
+              ? groupShown.map((m) => m.marcherId)
               : [target.marcherId],
         ...(lanes ? { lanes } : {}),
+        ...(laneIds ? { laneIds } : {}),
+        ...(lanesWeight ? { lanesWeight } : {}),
         ...(laneHighlights ? { laneHighlights } : {}),
         ...(lanePicked !== undefined ? { lanePicked } : {}),
         ...(adjustHandles ? { adjustHandles } : {}),
         ...(lanesAdjusted ? { lanesAdjusted } : {}),
         ...(memberRings ? { memberRings } : {}),
-        ...guidesFor(moving ? [moving] : [], outline),
+        ...guidesFor(moving ? [moving] : [], outline ?? []),
         ...(tipText && moving ? { tip: { at: moving, text: tipText } } : {}),
         ...(laneTip ? { tip: laneTip } : {}),
     };
@@ -1456,13 +1509,10 @@ function laneTipOf(session: PathSession): FieldModeDrawing["tip"] | null {
 }
 
 /**
- * The spot whose lane is being worked on, picked or in mid-drag. While there is one, that lane is
- * the only heavy line and the group path is context: thin, grey and without handles (AP-R11).
+ * The spot whose lane is being worked on, picked or in mid-drag (Adjust). While there is one, that
+ * lane is the only line drawn, and the only one with handles (AP-R11; interaction round 2).
  */
-function laneInFocus(s: PathSession): number | null {
-    if (s.phase !== "open") return null;
-    return s.laneEdit?.marcherId ?? s.lane?.marcherId ?? null;
-}
+const laneInFocus = laneFocusOf;
 
 /**
  * How heavy the line is: edited while drawn or open, context behind a lane in focus, selected for
@@ -1479,17 +1529,7 @@ const pathLineOf = (s: PathSession): FieldModeDrawing["pathLine"] => {
  * and faint as a group path's lanes are (the pen's line is the drawn part between them); and a
  * ring on each member, the leader's saying so.
  */
-function trailParts(
-    trail: NonNullable<PathTarget["trail"]>,
-): Pick<
-    FieldModeDrawing,
-    | "lanes"
-    | "memberRings"
-    | "laneHighlights"
-    | "lanePicked"
-    | "adjustHandles"
-    | "lanesAdjusted"
-> {
+function trailParts(trail: NonNullable<PathTarget["trail"]>): LaneParts {
     const lineUp = trail.members.map((m) => m.from);
     // The line is entered at the tail's end spot and runs on to the leader's
     const endLine = trail.members.map((m) => m.to);
@@ -1507,22 +1547,124 @@ function trailParts(
     };
 }
 
-/**
- * A group path's parts of the drawing (step 15): every member's lane, thin and faint (while
- * drawing, to where the next point would land), and the rings saying who follows it
- */
-function groupParts(
-    session: PathSession,
-    shape: PathShape,
-): Pick<
+/** The parts of the drawing a path's lanes and rings make */
+type LaneParts = Pick<
     FieldModeDrawing,
     | "lanes"
+    | "laneIds"
+    | "lanesWeight"
     | "memberRings"
     | "laneHighlights"
     | "lanePicked"
     | "adjustHandles"
     | "lanesAdjusted"
-> {
+>;
+
+/** How many points a selected marcher's line off the group path is sampled at */
+const WALKED_SAMPLES = 64;
+
+/**
+ * Where `marcherId` walks from `start` to `end` (beats), as the timeline has it now: the line of a
+ * selected marcher off the group path shown (its own path, or a Detached copy). Null with no
+ * timeline read yet.
+ */
+function walkedLine(
+    marcherId: number,
+    start: number,
+    end: number,
+): XY[] | null {
+    const resolver = useTimelineResolverStore.getState().resolver;
+    if (!resolver || !(end > start)) return null;
+    const line: XY[] = [];
+    for (let i = 0; i <= WALKED_SAMPLES; i++) {
+        const p = resolver.positionAt(
+            marcherId,
+            start + ((end - start) * i) / WALKED_SAMPLES,
+        );
+        line.push({ x: p[0], y: p[1] });
+    }
+    return line;
+}
+
+/**
+ * The rings saying who walks the group path differently, whenever it shows (interaction system
+ * rule 5; round 2: also on Paths All's drawing and while the group path is edited): an adjusted
+ * member's start ringed blue, a detached member's ringed dashed orange, and the selected marchers
+ * off it ringed orange. A plain member has no ring: its lane says it follows.
+ */
+function differenceRings(
+    session: PathSession,
+    asObject: boolean,
+): NonNullable<FieldModeDrawing["memberRings"]> {
+    const group = session.target.group!;
+    const detachedLabel = tolgee.t(
+        "pathways.rings.detached",
+        "Detached: walks its own copy of the group path",
+    );
+    const outsideIds = new Set(group.outside.map((m) => m.marcherId));
+    return [
+        ...group.members.flatMap((m) =>
+            memberNow(session, m).adjust
+                ? [
+                      {
+                          at: m.from,
+                          marcherId: m.marcherId,
+                          kind: "group" as const,
+                          label: tolgee.t(
+                              "pathways.rings.adjusted",
+                              "Adjusted: bends off the group path in places, and still follows its edits",
+                          ),
+                      },
+                  ]
+                : [],
+        ),
+        ...(group.detachedMembers ?? [])
+            .filter((m) => !outsideIds.has(m.marcherId))
+            .map((m) => ({
+                at: m.from,
+                marcherId: m.marcherId,
+                kind: "own" as const,
+                label: detachedLabel,
+                dashed: true,
+            })),
+        // Paths All's drawing is for nobody selected
+        ...(asObject ? [] : group.outside).map((m) => ({
+            at: m.from,
+            marcherId: m.marcherId,
+            kind: "own" as const,
+            ...(m.detached ? { dashed: true } : {}),
+            label: m.detached
+                ? detachedLabel
+                : m.ownPath
+                  ? tolgee.t("pathways.rings.own", "Own path")
+                  : tolgee.t(
+                        "pathways.rings.offGroup",
+                        "Not on the group path",
+                    ),
+        })),
+    ];
+}
+
+/**
+ * A group path's parts of the drawing (step 15), by how it's drawn now (`GroupView`; `object` for
+ * Paths All's drawing of one nothing selects):
+ *
+ * - `drawing`: every member's lane, thin and faint, to where the next point would land, and a
+ *   ring on each saying it follows.
+ * - `selected` (quiet): only the selected members' lanes and the selected marchers' own lines off
+ *   it, each at a shown path's weight, as the one line that marcher walks.
+ * - `edit` and `object`: every member's lane, thin and faint, round the group line.
+ * - `adjust`: the one lane being adjusted, heavy, with its keys, over its plain lane (faint) when
+ *   it has an adjustment.
+ *
+ * The rings say who's different (`differenceRings`), except while drawing.
+ */
+function groupParts(
+    session: PathSession,
+    shape: PathShape,
+    view: ReturnType<typeof groupViewOf> | "object",
+    selected: readonly number[],
+): LaneParts {
     const group = session.target.group;
     if (!group) return {};
     const { pointer } = session;
@@ -1539,78 +1681,132 @@ function groupParts(
         marcherId: m.marcherId,
         walk: memberWalkOf(schedule, memberNow(session, m), laneShape.points),
     }));
-    const open = session.phase === "open";
-    const picked = open ? session.lane : null;
-    const focus = laneInFocus(session);
-    const hovered = open ? session.hoverLane?.marcherId : undefined;
-    const pickedIndex = walks.findIndex((w) => w.marcherId === focus);
-    // Who is different, whenever the group path shows (interaction system, rule 5): adjusted
-    // lanes in the group ring's color, detached members' starts ringed dashed orange
-    const adjusted = group.members.flatMap((m, i) =>
-        memberNow(session, m).adjust ? [i] : [],
+    const adjustedIds = new Set(
+        group.members
+            .filter((m) => memberNow(session, m).adjust)
+            .map((m) => m.marcherId),
     );
-    const detachedLabel = tolgee.t(
-        "pathways.rings.detached",
-        "Detached: walks its own copy of the group path",
+    if (view === "drawing" || view === null) {
+        // A new group path, or a one-lane path (a Detached copy) drawn as its own line
+        return {
+            lanes: walks.map(({ walk }) => laneOutline(walk)),
+            laneIds: walks.map((w) => w.marcherId),
+            ...(view === null
+                ? {
+                      memberRings:
+                          session.target.lane?.detachedFrom != null
+                              ? differenceRingsOfCopy(group)
+                              : [],
+                  }
+                : {
+                      memberRings: group.members.map((m) => ({
+                          at: m.from,
+                          marcherId: m.marcherId,
+                          kind: "group" as const,
+                          label: tolgee.t(
+                              "pathways.rings.group",
+                              "Follows the group path",
+                          ),
+                      })),
+                  }),
+        };
+    }
+    const rings = differenceRings(session, view === "object");
+    if (view === "selected") {
+        const on = new Set(selected);
+        const mine = walks.filter((w) => on.has(w.marcherId));
+        const offPath = group.outside.flatMap((m) => {
+            const line = walkedLine(
+                m.marcherId,
+                session.target.start,
+                session.target.end,
+            );
+            return line ? [{ marcherId: m.marcherId, line }] : [];
+        });
+        const lanes = [
+            ...mine.map(({ walk }) => laneOutline(walk)),
+            ...offPath.map((o) => o.line),
+        ];
+        const laneIds = [
+            ...mine.map((w) => w.marcherId),
+            ...offPath.map((o) => o.marcherId),
+        ];
+        const adjusted = laneIds.flatMap((id, i) =>
+            adjustedIds.has(id) ? [i] : [],
+        );
+        return {
+            lanes,
+            laneIds,
+            lanesWeight: "path",
+            ...(adjusted.length > 0 ? { lanesAdjusted: adjusted } : {}),
+            memberRings: rings,
+        };
+    }
+    if (view === "adjust") {
+        const focus = laneInFocus(session)!;
+        const at = walks.find((w) => w.marcherId === focus);
+        if (!at) return { memberRings: rings };
+        const member = group.members.find((m) => m.marcherId === focus)!;
+        const adjusted = adjustedIds.has(focus);
+        // Its plain lane, faint, under the bent one: where the group path alone would take it
+        const plain = adjusted
+            ? [
+                  laneOutline(
+                      memberWalkOf(
+                          schedule,
+                          { ...member, adjust: null },
+                          laneShape.points,
+                      ),
+                  ),
+              ]
+            : [];
+        const picked = session.phase === "open" ? session.lane : null;
+        return {
+            lanes: [...plain, laneOutline(at.walk)],
+            laneIds: [...plain.map(() => focus), focus],
+            lanePicked: plain.length,
+            adjustHandles: adjustHandlesOf(at.walk).map((h) => ({
+                at: h.at,
+                selected: picked?.marcherId === focus && picked.key === h.index,
+            })),
+            memberRings: rings,
+        };
+    }
+    // `edit` and `object`: the group line with every member's lane round it. Edited, each lane is
+    // the line its marcher walks, at a shown path's weight (round 2: not lighter), so the group line
+    // reads as the middle they follow; Paths All's drawing for nobody selected keeps them faint
+    const hovered =
+        session.phase === "open" ? session.hoverLane?.marcherId : undefined;
+    const adjusted = walks.flatMap(({ marcherId }, i) =>
+        adjustedIds.has(marcherId) ? [i] : [],
     );
-    const outsideIds = new Set(group.outside.map((m) => m.marcherId));
     return {
         lanes: walks.map(({ walk }) => laneOutline(walk)),
+        laneIds: walks.map((w) => w.marcherId),
+        ...(view === "edit" ? { lanesWeight: "path" as const } : {}),
         ...(adjusted.length > 0 ? { lanesAdjusted: adjusted } : {}),
         laneHighlights: walks.flatMap(({ marcherId }, i) =>
-            marcherId === hovered && marcherId !== focus ? [i] : [],
+            marcherId === hovered ? [i] : [],
         ),
-        ...(pickedIndex >= 0 ? { lanePicked: pickedIndex } : {}),
-        adjustHandles: open
-            ? walks.flatMap(({ marcherId, walk }) =>
-                  adjustHandlesOf(walk).map((h) => ({
-                      at: h.at,
-                      selected:
-                          picked?.marcherId === marcherId &&
-                          picked.key === h.index,
-                  })),
-              )
-            : [],
-        memberRings: [
-            ...group.members.map((m) => ({
-                at: m.from,
-                marcherId: m.marcherId,
-                kind: "group" as const,
-                label: m.adjust
-                    ? tolgee.t(
-                          "pathways.rings.adjusted",
-                          "Adjusted: bends off the group path in places, and still follows its edits",
-                      )
-                    : tolgee.t(
-                          "pathways.rings.group",
-                          "Follows the group path",
-                      ),
-            })),
-            ...(group.detachedMembers ?? [])
-                .filter((m) => !outsideIds.has(m.marcherId))
-                .map((m) => ({
-                    at: m.from,
-                    marcherId: m.marcherId,
-                    kind: "own" as const,
-                    label: detachedLabel,
-                    dashed: true,
-                })),
-            ...group.outside.map((m) => ({
-                at: m.from,
-                marcherId: m.marcherId,
-                kind: "own" as const,
-                ...(m.detached ? { dashed: true } : {}),
-                label: m.detached
-                    ? detachedLabel
-                    : m.ownPath
-                      ? tolgee.t("pathways.rings.own", "Own path")
-                      : tolgee.t(
-                            "pathways.rings.offGroup",
-                            "Not on the group path",
-                        ),
-            })),
-        ],
+        adjustHandles: [],
+        memberRings: rings,
     };
+}
+
+/** A Detached copy shown as its marcher's own path: its start ringed dashed orange */
+function differenceRingsOfCopy(
+    group: NonNullable<PathTarget["group"]>,
+): NonNullable<FieldModeDrawing["memberRings"]> {
+    return group.members.map((m) => ({
+        at: m.from,
+        marcherId: m.marcherId,
+        kind: "own" as const,
+        label: tolgee.t(
+            "pathways.rings.detached",
+            "Detached: walks its own copy of the group path",
+        ),
+        dashed: true,
+    }));
 }
 
 /** Guides along the field's lines that `points` lie on, as a shape's are drawn while it's edited */
@@ -1645,29 +1841,32 @@ function guidesFor(
 const objectDrawings = new WeakMap<PathTarget, FieldModeDrawing | null>();
 
 /**
- * How Paths All draws a group path object (AP-O7): as the closed path shows it (its reference
- * line, its members' faint lanes, their ghosts and end spots), without the rings that name who
- * follows it, which are for a selection. An own path is drawn by the start flag positions as it
- * was, so it has no drawing of its own (null).
+ * How Paths All draws a group path object (AP-O7): its reference line, its members' faint lanes,
+ * their ghosts and end spots, and the rings that mark who's different (adjusted, detached), so
+ * those read with nothing selected (interaction round 2). An own path is drawn by the start flag
+ * positions as it was, so it has no drawing of its own (null).
  */
 export function objectDrawingOf(o: PathObject): FieldModeDrawing | null {
     if (!drawnAsGroup(o.target)) return null;
     let drawing = objectDrawings.get(o.target);
     if (drawing !== undefined) return drawing;
-    const built = buildDrawing({
-        phase: "closed",
-        target: o.target,
-        drill: o.drill,
-        points: pointsOf(o.target),
-        ...(o.target.toBulge === undefined
-            ? {}
-            : { toBulge: o.target.toBulge }),
-        pointer: null,
-        selected: null,
-        dragging: null,
-        object: false,
-    });
-    drawing = built ? { ...built, memberRings: [] } : null;
+    drawing = buildDrawing(
+        {
+            phase: "closed",
+            target: o.target,
+            drill: o.drill,
+            points: pointsOf(o.target),
+            ...(o.target.toBulge === undefined
+                ? {}
+                : { toBulge: o.target.toBulge }),
+            pointer: null,
+            selected: null,
+            dragging: null,
+            object: false,
+        },
+        [],
+        true,
+    );
     objectDrawings.set(o.target, drawing);
     return drawing;
 }

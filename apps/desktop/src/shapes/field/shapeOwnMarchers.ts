@@ -26,7 +26,13 @@ export function useShowingShapeMarchers(): ReadonlySet<number> | null {
     const hidden = useShapeHidden();
     const onPath = usePathPenStore(
         useShallow((s) =>
-            pathMarcherIds(s.session, s.hidden, marchers !== null, s.objects),
+            pathMarcherIds(
+                s.session,
+                s.hidden,
+                marchers !== null,
+                s.objects,
+                s.ownable,
+            ),
         ),
     );
     return useMemo(() => {

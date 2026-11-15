@@ -345,6 +345,14 @@ export type FieldModeDrawing = {
      * along its copy of the path to its end spot
      */
     lanes?: readonly (readonly FieldPoint[])[];
+    /** The marcher who walks each of `lanes`, in the same order (pathways), when known */
+    laneIds?: readonly number[];
+    /**
+     * How `lanes` are drawn: `faint` (thin, under a group path's line, the default) or `path`
+     * (each one the line a marcher walks, at a shown path's weight: a quiet group path's selected
+     * marchers, or every member while the group path is edited; pathways interaction round 2)
+     */
+    lanesWeight?: "faint" | "path";
     /** Which of `lanes` the pointer is on: tinted, lighter than a picked lane (pathways step 3b) */
     laneHighlights?: readonly number[];
     /** Which of `lanes` is being worked on: the only heavy line, over the path's (pathways step 3b) */

@@ -781,26 +781,46 @@ const ShapeBody = memo(function ShapeBody({
                     />
                 ))}
             {/* Under the path's line, which is the one being edited */}
-            {drawing.lanes?.map((lane, i) => (
-                <polyline
-                    key={`lane${i}`}
-                    points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
-                    fill="none"
-                    stroke={rgbaToString({
-                        ...theme.shape,
-                        a: drawing.laneHighlights?.includes(i)
-                            ? LANE_HIGHLIGHT_ALPHA
-                            : LANE_ALPHA,
-                    })}
-                    strokeWidth={
-                        drawing.laneHighlights?.includes(i)
-                            ? LANE_HIGHLIGHT_WIDTH
-                            : LANE_WIDTH
-                    }
-                    vectorEffect="non-scaling-stroke"
-                    data-testid="pathGroupLane"
-                />
-            ))}
+            {drawing.lanes?.map((lane, i) =>
+                drawing.lanesWeight === "path" ? (
+                    // A selected marcher's own walked line, at a shown path's weight
+                    <polyline
+                        key={`lane${i}`}
+                        points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="none"
+                        stroke={shape}
+                        strokeWidth={
+                            drawing.laneHighlights?.includes(i)
+                                ? PATH_LINE_WIDTH.selected
+                                : PATH_LINE_WIDTH.shown
+                        }
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathMemberLine"
+                        data-marcher={drawing.laneIds?.[i]}
+                    />
+                ) : (
+                    <polyline
+                        key={`lane${i}`}
+                        points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="none"
+                        stroke={rgbaToString({
+                            ...theme.shape,
+                            a: drawing.laneHighlights?.includes(i)
+                                ? LANE_HIGHLIGHT_ALPHA
+                                : LANE_ALPHA,
+                        })}
+                        strokeWidth={
+                            drawing.laneHighlights?.includes(i)
+                                ? LANE_HIGHLIGHT_WIDTH
+                                : LANE_WIDTH
+                        }
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathGroupLane"
+                    />
+                ),
+            )}
             {/* Adjusted lanes (pathways, interaction system rule 5), over the faint ones */}
             {drawing.lanesAdjusted?.map((i) =>
                 drawing.lanes?.[i] ? (
@@ -811,8 +831,16 @@ const ShapeBody = memo(function ShapeBody({
                         ).join(" ")}
                         fill="none"
                         stroke={GROUP_RING}
-                        strokeOpacity={LANE_ADJUSTED_ALPHA}
-                        strokeWidth={LANE_HIGHLIGHT_WIDTH}
+                        strokeOpacity={
+                            drawing.lanesWeight === "path"
+                                ? 1
+                                : LANE_ADJUSTED_ALPHA
+                        }
+                        strokeWidth={
+                            drawing.lanesWeight === "path"
+                                ? PATH_LINE_WIDTH.shown
+                                : LANE_HIGHLIGHT_WIDTH
+                        }
                         strokeLinejoin="round"
                         strokeLinecap="round"
                         vectorEffect="non-scaling-stroke"

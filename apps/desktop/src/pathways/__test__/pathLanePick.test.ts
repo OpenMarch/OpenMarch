@@ -195,7 +195,7 @@ describe("the hover note on lanes", () => {
         expect(hover()?.stacked).toBe(2);
     });
 
-    it("names the lane a click just moved to, with the pointer still", () => {
+    it("names the lane a click picked, with the pointer still; only that lane takes clicks then", () => {
         open(group(null));
         const at = {
             field: { x: 20 * STEP, y: y + 4 * STEP },
@@ -215,7 +215,7 @@ describe("the hover note on lanes", () => {
             };
         };
         expect(click()).toEqual({ picked: 10, named: 10 });
-        expect(click()).toEqual({ picked: 11, named: 11 });
+        // Adjusting 10, its lane is the only one drawn: the stacked lane under it isn't there
         expect(click()).toEqual({ picked: 10, named: 10 });
     });
 
@@ -254,25 +254,33 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
     const drawn = () => drawingOf(usePathPenStore.getState().session)!;
     const laneY = y + 4 * STEP;
 
-    it("draws the group path as context, without handles, behind the picked lane", () => {
+    it("draws only the picked lane, without the group line or its handles (interaction round 2)", () => {
         open(group(null));
         expect(drawn().pathLine).toBe("edited");
         expect(drawn().handles?.length).toBeGreaterThan(0);
         selectLane({ marcherId: 11, key: null });
-        expect(drawn().pathLine).toBe("context");
+        expect(drawn().outline).toBeNull();
         expect(drawn().handles).toEqual([]);
         expect(drawn().addHandles).toEqual([]);
-        expect(drawn().lanePicked).toBe(1);
-        expect(drawn().laneHighlights).toEqual([]);
+        expect(drawn().lanes).toHaveLength(1);
+        expect(drawn().laneIds).toEqual([11]);
+        expect(drawn().lanePicked).toBe(0);
+        // Its end spot and start ghost only, not the whole group's
+        expect(drawn().ringIds).toEqual([11]);
     });
 
-    it("tints only a hovered lane that isn't the picked one", () => {
+    it("an adjusted lane is drawn over its plain lane, faint", () => {
+        open(group(bulge));
+        selectLane({ marcherId: 11, key: null });
+        expect(drawn().lanes).toHaveLength(2);
+        expect(drawn().laneIds).toEqual([11, 11]);
+        expect(drawn().lanePicked).toBe(1);
+    });
+
+    it("tints a hovered lane while the group path is edited", () => {
         open(group(null, 8 * STEP));
-        selectLane({ marcherId: 10, key: null });
         setHoverLane({ marcherId: 11, at: { x: 0, y: 0 } });
         expect(drawn().laneHighlights).toEqual([1]);
-        setHoverLane({ marcherId: 10, at: { x: 0, y: 0 } });
-        expect(drawn().laneHighlights).toEqual([]);
     });
 
     it("can't grab a group point while a lane is picked", () => {
@@ -283,10 +291,11 @@ describe("one line reads as selected while a lane is worked on (AP-R11)", () => 
         expect(pathPenMode.claims(point, press)).toBe(false);
     });
 
-    it("a click on the muted line lets the lane go and brings the handles back", () => {
+    it("the group line isn't there to click while a lane is adjusted; Edit path brings it back", () => {
         open(group(null));
         selectLane({ marcherId: 11, key: null });
-        expect(pathPenMode.takeClick(at(20 * STEP, y), false)).toBe(true);
+        expect(pathPenMode.takeClick(at(20 * STEP, y), false)).toBe(false);
+        openPath();
         expect(lane()).toBeNull();
         expect(drawn().pathLine).toBe("edited");
         expect(drawn().handles?.length).toBeGreaterThan(0);
@@ -387,19 +396,36 @@ describe("a lane is its marcher (interaction system, rule 1)", () => {
         click(at(20 * STEP, y + 4 * STEP, true));
         expect([...picked.ids].sort()).toEqual([10, 11]);
         expect(lane()?.marcherId).toBe(10);
-        // The next one down is 11, the picked lane moves to it: Shift takes 11 out
+        // 10's lane is the one adjusted now, the only one to click: Shift takes 10 out
         click(at(20 * STEP, y + 4 * STEP, true));
-        expect(picked.ids).toEqual([10]);
+        expect(picked.ids).toEqual([11]);
         expect(lane()).toBeNull();
     });
 
-    it("on the quiet path, a click on a lane selects that marcher and makes the path active", () => {
+    it("on the quiet path, a click on a selected marcher's line selects it and makes its lane active", () => {
+        usePathPenStore.setState({ ownable: [10, 11] });
         showPath(group(null), "2");
+        // Quiet, only the selected marchers' lines are drawn, as each one's own path
+        const quiet = drawingOf(usePathPenStore.getState().session)!;
+        expect(quiet.outline).toBeNull();
+        expect(quiet.lanesWeight).toBe("path");
+        expect(quiet.laneIds).toEqual([10, 11]);
         expect(pathPenMode.takeClick(laneAt, false)).toBe(true);
         expect(picked.ids).toEqual([10]);
         expect(usePathPenStore.getState().session).toMatchObject({
             phase: "open",
             lane: { marcherId: 10, key: null },
         });
+        usePathPenStore.setState({ ownable: [] });
+    });
+
+    it("quiet, only the selected marcher's line is drawn, and the group line isn't there to click", () => {
+        usePathPenStore.setState({ ownable: [11] });
+        showPath(group(null, 8 * STEP), "2");
+        const quiet = drawingOf(usePathPenStore.getState().session)!;
+        expect(quiet.laneIds).toEqual([11]);
+        expect(quiet.ringIds).toEqual([11]);
+        expect(pathPenMode.takeClick(at(20 * STEP, y), false)).toBe(false);
+        usePathPenStore.setState({ ownable: [] });
     });
 });

@@ -32,4 +32,40 @@ describe("pathMarcherIds", () => {
         expect(pathMarcherIds(session("open"), false, true)).toEqual([7]);
         expect(pathMarcherIds(session("drawing"), false, true)).toEqual([7]);
     });
+
+    it("a quiet group path names only the marchers whose lines it draws (interaction round 2)", () => {
+        const group = (
+            phase: PathSession["phase"],
+            lane?: PathSession["lane"],
+        ): PathSession =>
+            ({
+                ...session(phase),
+                lane,
+                target: {
+                    marcherId: 1,
+                    group: {
+                        members: [1, 2, 3].map((marcherId) => ({ marcherId })),
+                        outside: [{ marcherId: 9 }],
+                    },
+                },
+            }) as unknown as PathSession;
+        // Quiet: the selected members and the selected marchers off it
+        expect(pathMarcherIds(group("closed"), false, false, [], [2])).toEqual([
+            2, 9,
+        ]);
+        // Edited: every member's lane round the group line
+        expect(pathMarcherIds(group("open"), false, false, [], [2])).toEqual([
+            1, 2, 3,
+        ]);
+        // Adjusting one lane: that marcher alone
+        expect(
+            pathMarcherIds(
+                group("open", { marcherId: 3, key: null }),
+                false,
+                false,
+                [],
+                [3],
+            ),
+        ).toEqual([3]);
+    });
 });

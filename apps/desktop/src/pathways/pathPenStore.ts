@@ -270,6 +270,8 @@ export const pathMarcherIds = (
     closedUnder: boolean,
     /** Paths All's group path objects (step 3a): their members give way to the line and lanes */
     objects: readonly PathObject[] = [],
+    /** The selected members of the group path shown (the store's `ownable`) */
+    selected: readonly number[] = [],
 ): readonly number[] => {
     const own =
         !pathShown(session, hidden) ||
@@ -282,7 +284,7 @@ export const pathMarcherIds = (
                   ? []
                   : session.target.trail.members.map((m) => m.marcherId)
               : session.target.group
-                ? session.target.group.members.map((m) => m.marcherId)
+                ? groupLineIds(session, selected)
                 : [session.target.marcherId];
     const drawn = objectsDrawn(objects, session, closedUnder).flatMap((o) =>
         o.target.group && drawnAsGroup(o.target)
@@ -291,6 +293,54 @@ export const pathMarcherIds = (
     );
     return drawn.length === 0 ? own : [...new Set([...own, ...drawn])];
 };
+
+/**
+ * How a group path (not a one-lane copy, not a trail) is drawn now (pathways interaction round 2),
+ * or null for any other path:
+ *
+ * - `drawing`: a new group path being drawn, its line with every member's faint lane.
+ * - `selected`: quiet, with marchers selected: only the line each selected marcher walks, at a
+ *   shown path's weight, and no group line (testers read the two as "two paths").
+ * - `edit`: open for editing (Edit path): the group line, named, with every member's lane round it.
+ * - `adjust`: one member's lane picked (Adjust, or a click on its line): that lane alone, editable.
+ */
+export type GroupView = "drawing" | "selected" | "edit" | "adjust";
+
+/** The spot whose lane is being worked on, picked or in mid-drag, or null */
+export function laneFocusOf(s: PathSession): number | null {
+    if (s.phase !== "open") return null;
+    return s.laneEdit?.marcherId ?? s.lane?.marcherId ?? null;
+}
+
+export function groupViewOf(s: PathSession): GroupView | null {
+    if (!s.target.group || s.target.lane || s.target.trail) return null;
+    if (s.phase === "drawing") return "drawing";
+    if (s.phase === "closed") return "selected";
+    return laneFocusOf(s) !== null ? "adjust" : "edit";
+}
+
+/**
+ * Whose lines a group path session draws (`GroupView`): the selected members and the selected
+ * marchers off it while quiet, the one lane while adjusting, every member otherwise
+ */
+export function groupLineIds(
+    s: PathSession,
+    selected: readonly number[],
+): number[] {
+    const group = s.target.group;
+    if (!group) return [];
+    const members = group.members.map((m) => m.marcherId);
+    const view = groupViewOf(s);
+    if (view === "selected") {
+        const on = new Set(members);
+        return [
+            ...selected.filter((id) => on.has(id)),
+            ...group.outside.map((m) => m.marcherId),
+        ];
+    }
+    if (view === "adjust") return [laneFocusOf(s)!];
+    return members;
+}
 
 /** Hides or shows the closed path, as start flag positions' paths level in effect says */
 export function setPathHidden(hidden: boolean): void {
@@ -719,13 +769,17 @@ export function showPath(
     });
 }
 
-/** Opens the path shown for editing (a double-click on it, or Edit path); false when none is. */
+/**
+ * Opens the path shown for editing (Edit path, Enter); false when none is. Adjusting one lane of a
+ * group path, it lets the lane go, so the group path itself is edited (interaction round 2: the
+ * group line shows only then).
+ */
 export function openPath(): boolean {
     const { session } = usePathPenStore.getState();
     if (!session || session.phase === "drawing") return false;
-    if (session.phase === "closed")
+    if (session.phase === "closed" || session.lane)
         usePathPenStore.setState({
-            session: { ...session, phase: "open", selected: null },
+            session: { ...session, phase: "open", selected: null, lane: null },
         });
     return true;
 }

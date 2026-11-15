@@ -60,11 +60,13 @@ import {
     detachIdsOf,
     memberNow,
     memberOf,
+    groupViewOf,
     resetTargetOf,
     shapeOf,
     usePathPenStore,
     type PathSession,
 } from "./pathPenStore";
+import { drawingOf } from "./pathPenMode";
 import {
     curveOf,
     groupLegDistances,
@@ -323,6 +325,11 @@ export function PathEditor({
     const hidden = usePathPenStore((s) => s.hidden);
     const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
     if (!session) return null;
+    // Edit path on a group path: its line is named, so it reads as the shape the lanes follow
+    const groupLabel =
+        groupViewOf(session) === "edit" ? (
+            <GroupPathLabel session={session} />
+        ) : null;
     // A quiet path (closed, interaction system rule 4) has the compact bar: Edit path, the member
     // commands and Remove path, so they're found without its menu. A trail keeps its leader's
     // mark, which says who leads and turns the line around (step 4). Not drawn, nothing shows
@@ -345,6 +352,7 @@ export function PathEditor({
         );
     return (
         <>
+            {groupLabel}
             {session.phase === "drawing" && <PathPenBanner session={session} />}
             {session.target.trail && session.follow?.grabbed !== null && (
                 <RichTips>
@@ -404,6 +412,31 @@ function TrailLeaderMark({ session }: { session: PathSession }) {
                     <ArrowsLeftRightIcon size={14} />
                 </IconButton>
             )}
+        </div>
+    );
+}
+
+/**
+ * The group path's name by its line while it's edited (interaction round 2): "Group path · 16",
+ * over the line's highest point, so the line reads as the middle the members' lanes follow, not as
+ * one more marcher's path. It takes no presses.
+ */
+function GroupPathLabel({ session }: { session: PathSession }) {
+    const view = useFieldViewStore();
+    const outline = pathOutline(shapeOf(session));
+    if (outline.length === 0) return null;
+    const top = outline
+        .map((p) => fieldToElement(view, p.x, p.y))
+        .reduce((a, b) => (b.y < a.y ? b : a));
+    return (
+        <div
+            className="rounded-6 border-stroke bg-modal text-sub text-text shadow-modal pointer-events-none absolute z-10 -translate-x-1/2 border px-6 py-2 whitespace-nowrap"
+            style={{ left: top.x, top: top.y - 32 }}
+            data-testid="path-group-label"
+        >
+            {tolgee.t("pathways.editor.groupLabel", "Group path · {count}", {
+                count: session.target.group?.members.length ?? 0,
+            })}
         </div>
     );
 }
@@ -511,12 +544,15 @@ function PathEditorBar({
         observer.observe(field);
         return () => observer.disconnect();
     }, []);
-    // Beside the path: under it, above when there's no room, as the shape editor sits
+    // Beside the lines drawn: under them, above when there's no room, as the shape editor sits. A
+    // quiet group path draws only its selected marchers' lines, so the bar goes by those
     const view = useFieldViewStore();
-    const outline: XY[] = useMemo(
-        () => pathOutline(shapeOf(session)),
-        [session],
-    );
+    const ownableNow = usePathPenStore((s) => s.ownable);
+    const outline: XY[] = useMemo(() => {
+        const drawn = drawingOf(session, ownableNow);
+        const lines = drawn?.outline ?? drawn?.lanes?.flat() ?? [];
+        return lines.length > 0 ? [...lines] : pathOutline(shapeOf(session));
+    }, [session, ownableNow]);
     // The Follow tool's line, its end spots and the pointer stay clear too, with room under each
     // for the field's note (the hover note, the step readout), so the bar never covers the work
     const footprint = useMemo(() => followFootprint(session), [session]);

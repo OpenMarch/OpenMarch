@@ -3846,7 +3846,8 @@
             "detachCount": "Detach {count}",
             "resetTip": "Take off this marcher's adjustment, so it walks its plain lane of the group path again",
             "detachedNote": "Detached",
-            "detachedCount": "{count} detached"
+            "detachedCount": "{count} detached",
+            "groupLabel": "Group path · {count}"
         },
         "menu": {
             "pointType": "Corner type",

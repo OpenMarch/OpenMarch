@@ -386,11 +386,10 @@ export function usePathPenActions(): void {
             : undefined,
     });
 
-    // The closed path shows by start flag positions' paths level in effect, as the straight paths
-    // do: the setting, and N held or tapped (owner, 2026-11-04). The marcher is selected, so
-    // Selected and All both show it. Edit path still opens a hidden one
-    const pathsLevel = useStartFlagLevelsInEffect().paths;
-    useEffect(() => setPathHidden(pathsLevel === "off"), [pathsLevel]);
+    // The selected marchers' paths always show, whatever start flag positions' paths level says:
+    // that level is for the marchers not selected (interaction round 2: with Paths Off, testers
+    // couldn't find the path of the marcher they had selected)
+    useEffect(() => setPathHidden(false), []);
 
     // Edit path: opens the selected marcher's path at the playhead, as a double-click on it does.
     // No key of its own: the shape tool has none for editing points (Enter places a shape)

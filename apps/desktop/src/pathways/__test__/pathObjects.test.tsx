@@ -271,14 +271,17 @@ describe("quiet and active (interaction system, rule 2)", () => {
         expect(pathPenMode.fieldMenuAt(EMPTY)).toBeNull();
     });
 
-    it("a click on the active path's line keeps it active; with a lane picked it lets the lane go", () => {
-        activatePath(group(9), "2", 10);
-        picked.ids = [10];
+    it("a click on the active path's line keeps it active; with a lane adjusted the line isn't drawn", () => {
+        activatePath(group(9), "2");
         expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(true);
         expect(session()).toMatchObject({ phase: "open", lane: null });
-        expect(selectedNow()).toEqual([10, 11]);
-        expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(true);
-        expect(session()!.phase).toBe("open");
+        activatePath(group(9), "2", 10);
+        picked.ids = [10];
+        expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(false);
+        expect(session()).toMatchObject({
+            phase: "open",
+            lane: { marcherId: 10 },
+        });
     });
 
     it("a click on another path makes that one active", () => {
@@ -339,7 +342,8 @@ describe("member state on the field, whenever a group path shows (interaction sy
         };
     };
 
-    it("quiet: an adjusted member's lane is marked, a detached member's start is ringed dashed", () => {
+    it("quiet: an adjusted member's line is marked, a detached member's start is ringed dashed", () => {
+        usePathPenStore.setState({ ownable: [10, 11] });
         showPath(adjusted(), "2");
         const d = drawingOf(session())!;
         expect(d.lanesAdjusted).toEqual([1]);
@@ -352,17 +356,28 @@ describe("member state on the field, whenever a group path shows (interaction sy
             dashed: true,
             label: "Detached: walks its own copy of the group path",
         });
-        expect(rings.find((r) => r.marcherId === 10)!.dashed).toBeUndefined();
+        // A plain member has no ring: only who's different is marked
+        expect(rings.find((r) => r.marcherId === 10)).toBeUndefined();
+        usePathPenStore.setState({ ownable: [] });
     });
 
-    it("Paths All with nothing selected still marks the adjusted lane", () => {
+    it("the marks show while the group path is edited too", () => {
+        activatePath(adjusted(), "2");
+        const rings = drawingOf(session())!.memberRings!;
+        expect(rings.map((r) => r.marcherId)).toEqual([11, 12]);
+    });
+
+    it("Paths All with nothing selected still marks the adjusted lane and the detached start", () => {
         const d = objectDrawingOf({
             target: adjusted(),
             drill: "2",
             walk: null,
         })!;
         expect(d.lanesAdjusted).toEqual([1]);
-        expect(d.memberRings).toEqual([]);
+        expect(d.memberRings!.map((r) => [r.marcherId, !!r.dashed])).toEqual([
+            [11, false],
+            [12, true],
+        ]);
     });
 });
 

@@ -12,6 +12,7 @@ import {
 import {
     clearPath,
     openPath,
+    selectLane,
     showPath,
     usePathPenStore,
 } from "../pathPenStore";
@@ -122,7 +123,7 @@ describe("what a press on an open group path takes (decision C)", () => {
         ).toBe(false);
     });
 
-    it("lanes on top of each other: a click on the picked one goes to the next", () => {
+    it("lanes on top of each other: a click picks one, which alone takes clicks while adjusted", () => {
         const target = group();
         target.group = {
             ...target.group!,
@@ -142,7 +143,6 @@ describe("what a press on an open group path takes (decision C)", () => {
             return usePathPenStore.getState().session?.lane?.marcherId;
         };
         expect(click()).toBe(10);
-        expect(click()).toBe(11);
         expect(click()).toBe(10);
     });
 
@@ -170,7 +170,7 @@ describe("what a press on an open group path takes (decision C)", () => {
         expect(usePathPenStore.getState().session?.laneEdit).toBeNull();
     });
 
-    it("draws an adjusted lane's keys as handles while open", () => {
+    it("draws an adjusted lane's keys as handles while that lane is adjusted, not otherwise", () => {
         const target = group();
         target.group = {
             ...target.group!,
@@ -186,6 +186,10 @@ describe("what a press on an open group path takes (decision C)", () => {
             ],
         };
         open(target);
+        expect(
+            drawingOf(usePathPenStore.getState().session)?.adjustHandles,
+        ).toEqual([]);
+        selectLane({ marcherId: 11, key: null });
         const d = drawingOf(usePathPenStore.getState().session);
         expect(d?.adjustHandles).toEqual([
             {
