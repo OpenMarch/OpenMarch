@@ -49,7 +49,7 @@ import {
 import {
     acknowledgeOpenPath,
     adjustMember,
-    adjustTargetOf,
+    pathSlotsOf,
     deleteAdjustKey,
     deleteOnLane,
     resetSpot,
@@ -403,11 +403,26 @@ export function usePathPenActions(): void {
     useActionHandler("editPath", () => void openPath(), {
         enabled: phase === "closed" || adjusting,
     });
-    // Adjust (interaction round 2): the one selected member's lane alone, editable
-    const adjustWho = usePathPenStore(
-        useShallow((s) => adjustTargetOf(s.session, s.ownable)),
+    // The bar's fixed slots (interaction round 2): each says why it can't act, for any path but
+    // a trail, so the menus can show it greyed out in its place
+    const slots = usePathPenStore(
+        useShallow((s) => {
+            const all = pathSlotsOf(s.session, s.ownable, s.rejoin);
+            return {
+                shown: all.shown,
+                adjustId:
+                    "marcherId" in all.adjust ? all.adjust.marcherId : null,
+                adjustReason: "reason" in all.adjust ? all.adjust.reason : null,
+                detachReason: all.detachReason,
+                matchReason: all.matchReason,
+                group: !!s.session?.target.group && !s.session.target.lane,
+            };
+        }),
     );
-    const adjustId = "marcherId" in adjustWho ? adjustWho.marcherId : null;
+    const reason = (why: string | null) =>
+        slots.shown && why !== null ? why : undefined;
+    // Adjust (interaction round 2): the one selected member's lane alone, editable
+    const adjustId = slots.adjustId;
     useActionHandler(
         "adjustPath",
         () => {
@@ -415,8 +430,7 @@ export function usePathPenActions(): void {
         },
         {
             enabled: adjustId !== null,
-            disabledReason:
-                "reason" in adjustWho ? adjustWho.reason : undefined,
+            disabledReason: reason(slots.adjustReason),
         },
     );
     // Enter makes the selection's quiet path active, as a click on its line does (interaction
@@ -445,14 +459,29 @@ export function usePathPenActions(): void {
             s.session.phase !== "drawing" &&
             refitNeeded(s.session.target),
     );
+    // On a group path it's named for what it does: the line through the middle of its marchers
     useActionHandler("refitPath", () => void refitOpenPath(), {
         enabled: canRefit,
+        label: slots.group
+            ? tolgee.t("actions.path.recenter", "Re-center group path")
+            : undefined,
+        disabledReason: slots.shown
+            ? slots.group
+                ? tolgee.t(
+                      "pathways.slots.centered",
+                      "The group path already runs through the middle of its marchers",
+                  )
+                : tolgee.t(
+                      "pathways.slots.fits",
+                      "The path already fits where its marcher stands",
+                  )
+            : undefined,
     });
     // Adjust's named actions, on the lane or key picked on the open group path (decision C)
     const lane = usePathPenStore((s) =>
         s.session?.phase === "open" ? (s.session.lane ?? null) : null,
     );
-    // Reset adjustment: the lane picked, or the one member selected, when it's adjusted (one
+    // Match group: the lane picked, or the one member selected, when it's adjusted (one
     // ladder with Rejoin, interaction system rule 5)
     const resetId = usePathPenStore((s) => resetTargetOf(s.session, s.ownable));
     const rehomedOpen = usePathPenStore(
@@ -473,7 +502,10 @@ export function usePathPenActions(): void {
         () => {
             if (resetId !== null) void resetSpot(resetId);
         },
-        { enabled: resetId !== null && phase !== "drawing" },
+        {
+            enabled: resetId !== null && phase !== "drawing",
+            disabledReason: reason(slots.matchReason),
+        },
     );
     useActionHandler("adjustAcknowledge", () => void acknowledgeOpenPath(), {
         enabled: rehomedOpen,
@@ -485,6 +517,7 @@ export function usePathPenActions(): void {
     const rejoin = usePathPenStore((s) => s.rejoin);
     useActionHandler("detachPath", () => void detachFor(ownIds), {
         enabled: ownIds.length > 0 && phase !== "drawing",
+        disabledReason: reason(slots.detachReason),
     });
     useActionHandler("rejoinPath", () => void rejoinFor(rejoin), {
         enabled: rejoin !== null && phase !== "drawing",

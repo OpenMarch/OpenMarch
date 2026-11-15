@@ -2,7 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { PathEditor } from "../PathEditor";
+import { PathBigStepsLine } from "../pathBigSteps";
 import {
+    adjustMember,
     clearPath,
     openPath,
     setGroupCommands,
@@ -114,8 +116,8 @@ describe("the path's floating editor", () => {
         );
     });
 
-    it("open: only Remove path, and Big steps when the path is too long, in the bar's one text size", () => {
-        // 64 steps of path in 8 counts: big steps
+    it("open: Edit path lit, the rest under More, no Big steps on the bar, in the bar's one text size", () => {
+        // 64 steps of path in 8 counts: big steps, said in the inspector (round 2)
         act(() => {
             showPath(target(5, 32), "T4");
             openPath();
@@ -124,70 +126,127 @@ describe("the path's floating editor", () => {
         const el = bar();
         expect(el.dataset.phase).toBe("open");
         expect(
-            screen.getByTestId("path-remove").getAttribute("aria-label"),
-        ).toBe("Remove path");
+            screen.getByTestId("path-edit").getAttribute("aria-pressed"),
+        ).toBe("true");
+        expect(screen.getByTestId("path-more")).toBeTruthy();
         expect(screen.queryByTestId("path-finish")).toBeNull();
-        const big = screen.getByTestId("path-big-steps");
-        expect(big.textContent).toMatch(/^Big steps · /);
-        // No size of its own: it reads the bar's
-        expect(big.className).not.toMatch(/text-\[|text-(sub|body|xs|sm)\b/);
+        expect(screen.queryByTestId("path-big-steps")).toBeNull();
         expect(el.textContent).not.toMatch(PICTOGRAPHIC);
-        expect(el.textContent).not.toContain("Path");
         expect(el.textContent).not.toContain("T4");
     });
 
-    it("quiet (closed): the compact bar, Edit path and Remove path, no Big steps; none while hidden", () => {
+    it("quiet (closed): Edit path, the member slots greyed out for an own path, More; none while hidden", () => {
         act(() => showPath(target(5, 32), "T4"));
         render(<PathEditor fieldProperties={fieldProperties} />);
         expect(bar().dataset.phase).toBe("closed");
         expect(screen.getByTestId("path-edit").textContent).toBe("Edit path");
-        expect(screen.getByTestId("path-remove")).toBeTruthy();
-        expect(screen.queryByTestId("path-big-steps")).toBeNull();
+        for (const id of ["path-adjust", "path-detach", "path-adjust-reset"])
+            expect(screen.getByTestId(id).getAttribute("aria-disabled")).toBe(
+                "true",
+            );
+        expect(screen.getByTestId("path-more")).toBeTruthy();
         expect(screen.queryByTestId("path-pen-banner")).toBeNull();
         act(() => setPathHidden(true));
         expect(screen.queryByTestId("path-editor")).toBeNull();
-        act(() => setPathHidden(false));
-        act(() => void openPath());
-        expect(bar().dataset.phase).toBe("open");
-        expect(screen.queryByTestId("path-edit")).toBeNull();
     });
 
-    it("quiet on a group path: Detach for the selected members, the back slot by member state", () => {
+    it("fixed slots on a group path: Edit path · Adjust · Detach or Rejoin · Match group · More, whoever is selected", () => {
         act(() => {
             showPath(groupTarget(), "3");
             setGroupCommands([10, 11], null);
         });
         render(<PathEditor fieldProperties={fieldProperties} />);
+        const order = () =>
+            Array.from(bar().querySelectorAll("[data-testid]")).map((e) =>
+                e.getAttribute("data-testid"),
+            );
+        const slots = [
+            "path-edit",
+            "path-adjust",
+            "path-detach",
+            "path-adjust-reset",
+            "path-more",
+        ];
+        expect(order()).toEqual(slots);
         expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
-        expect(screen.queryByTestId("path-adjust-reset")).toBeNull();
-        expect(screen.queryByTestId("path-rejoin")).toBeNull();
-        // One adjusted member selected: Reset adjustment
+        // Two selected: Adjust and Match group greyed out, saying why
+        const adjust = screen.getByTestId("path-adjust");
+        expect(adjust.getAttribute("aria-disabled")).toBe("true");
+        expect(adjust.getAttribute("aria-label")).toBe(
+            "Adjust one marcher at a time: select just one",
+        );
+        // One adjusted member selected: every slot acts, in the same places
         act(() => setGroupCommands([12], null));
+        expect(order()).toEqual(slots);
         expect(screen.getByTestId("path-detach").textContent).toBe("Detach");
         expect(screen.getByTestId("path-adjust-reset").textContent).toBe(
-            "Reset adjustment",
+            "Match group",
         );
-        // A plain member selected: no Reset adjustment
+        for (const id of ["path-adjust", "path-detach", "path-adjust-reset"])
+            expect(
+                screen.getByTestId(id).getAttribute("aria-disabled"),
+            ).toBeNull();
+        // A plain member: Match group greyed out, still in its place
         act(() => setGroupCommands([10], null));
-        expect(screen.queryByTestId("path-adjust-reset")).toBeNull();
-        // A detached marcher selected with them: Rejoin takes the slot
+        expect(order()).toEqual(slots);
+        expect(
+            screen.getByTestId("path-adjust-reset").getAttribute("aria-label"),
+        ).toBe(
+            "This marcher already walks the group path exactly: nothing to match",
+        );
+        // Only detached marchers selected: Rejoin takes Detach's slot
         act(() =>
-            setGroupCommands([10], {
+            setGroupCommands([], {
                 timelineId: 1,
                 routeId: 9,
-                marcherIds: [13],
+                marcherIds: [13, 14],
             }),
         );
-        expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin");
+        expect(order()).toEqual([
+            "path-edit",
+            "path-adjust",
+            "path-rejoin",
+            "path-adjust-reset",
+            "path-more",
+        ]);
+        expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin 2");
     });
 
-    it("open with an easy path: no Big steps", () => {
+    it("Adjust lights while one lane is adjusted, and Edit path goes back to the group path", () => {
         act(() => {
-            showPath(target(5), "T4");
-            openPath();
+            showPath(groupTarget(), "3");
+            setGroupCommands([11], null);
         });
         render(<PathEditor fieldProperties={fieldProperties} />);
+        act(() => adjustMember(11));
+        expect(
+            screen.getByTestId("path-adjust").getAttribute("aria-pressed"),
+        ).toBe("true");
+        expect(
+            screen.getByTestId("path-edit").getAttribute("aria-pressed"),
+        ).toBe("false");
+        expect(screen.queryByTestId("path-group-label")).toBeNull();
+        act(() => void openPath());
+        expect(
+            screen.getByTestId("path-edit").getAttribute("aria-pressed"),
+        ).toBe("true");
+        // Editing the group path: its line is named, with its member count
+        expect(screen.getByTestId("path-group-label").textContent).toBe(
+            "Group path · 3",
+        );
+    });
+
+    it("Big steps shows in the inspector's line for a path too long for its counts, not otherwise", () => {
+        act(() => showPath(target(5, 32), "T4"));
+        const { unmount } = render(
+            <PathBigStepsLine fieldProperties={fieldProperties} />,
+        );
+        expect(screen.getByTestId("path-big-steps").textContent).toMatch(
+            /^Big steps · /,
+        );
+        unmount();
+        act(() => showPath(target(5), "T4"));
+        render(<PathBigStepsLine fieldProperties={fieldProperties} />);
         expect(screen.queryByTestId("path-big-steps")).toBeNull();
-        expect(screen.getByTestId("path-remove")).toBeTruthy();
     });
 });

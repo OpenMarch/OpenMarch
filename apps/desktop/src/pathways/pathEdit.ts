@@ -890,7 +890,7 @@ function adjustMenu(onKey: boolean): ToolMenuSection[] {
                     value: "resetSpot",
                     label: tolgee.t(
                         "actions.path.adjustResetSpot",
-                        "Reset adjustment",
+                        "Match group",
                     ),
                     icon: "trash" as const,
                     destructive: true,

@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import type { ActionId } from "@/shortcuts/definitions";
 import { registerActionHandler } from "@/shortcuts/registry";
+import { PATH_FIELD_MENU } from "@/pathways/pathPenMode";
 import FieldContextMenu, { FIELD_MENU_ACTIONS } from "../FieldContextMenu";
 
 /**
@@ -134,6 +135,42 @@ describe("FieldContextMenu", () => {
         fireEvent.click(item("editPath")!);
         expect(edit).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it("keeps the path bar's slots in their places, greyed out with the reason (round 2)", () => {
+        handle("editPath");
+        handle("adjustPath", {
+            enabled: false,
+            reason: "Adjust one marcher at a time: select just one",
+        });
+        handle("detachPath");
+        handle("rejoinPath", { enabled: false });
+        handle("adjustResetSpot", {
+            enabled: false,
+            reason: "Select one marcher to match it to the group path",
+        });
+        handle("refitPath", { enabled: false, reason: "Already centered" });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        const ids = Array.from(
+            screen.getByTestId("field-menu").querySelectorAll("[data-testid]"),
+        )
+            .map((e) => e.getAttribute("data-testid")!)
+            .filter((id) => /^field-menu-[a-zA-Z]+$/.test(id))
+            .map((id) => id.replace("field-menu-", ""));
+        // Re-fit shows only while it can act; Rejoin only while it holds Detach's slot
+        expect(ids).toEqual([
+            "editPath",
+            "adjustPath",
+            "detachPath",
+            "adjustResetSpot",
+            "removePath",
+        ]);
+        expect(item("adjustPath")).toHaveAttribute("aria-disabled", "true");
+        expect(item("adjustResetSpot")).toHaveAttribute(
+            "aria-disabled",
+            "true",
+        );
     });
 
     it("on a path's line, shows the Path group's entries only where they apply", () => {

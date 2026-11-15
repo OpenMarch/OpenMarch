@@ -10,7 +10,7 @@ questions:
   - "Draw a group path for a block, select one member and press Detach on the path bar. Its copy opens. Did anything on the field move? Was it clear that the open path is now that marcher's own?"
   - "Drag a point of the detached copy, then play the move. Only that marcher's walk changed, and it still reaches each point of its copy on the group's counts. Is that what you expected from 'keeps the group's timing'?"
   - "Select the whole block again. The detached marcher has an orange 'Detached' ring and the bar offers Rejoin. Press it. The marcher goes back to its place on the group path, and its copy is gone. Did the word Rejoin fit?"
-  - "Adjust one member's lane (drag its lane on the open group path), then Detach it, then Rejoin it. The adjustment is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the adjustment came back?"
+  - "Adjust one member (select it, press Adjust, drag its line), then Detach it, then Rejoin it. The adjustment is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the adjustment came back?"
   - "Select all 16 members and press Detach once, then Undo once. Did it feel like one step both ways?"
   - "After detaching every member there is no group path left to Rejoin, only Undo. Would you rather the group path stayed (empty) so they could rejoin it later?"
   - "Anything else about Detach and Rejoin you'd change?"
@@ -24,9 +24,14 @@ questions:
   and long-press menu (the Path group) and the command palette.
 - **One way to work a path.** Marchers are the only selection: clicking a path's line
   selects the marchers who walk it and shows its points at once (no double-click).
-  Selecting marchers by their dots shows their path quiet, with a small bar (Edit path,
-  Detach, Rejoin or Reset adjustment, Remove path). **Escape** goes back to quiet, then
+  Selecting marchers by their dots shows the line each one walks, whatever the Paths
+  setting (it is for the marchers not selected), with a small bar whose buttons stay in
+  the same places: **Edit path · Adjust · Detach** (or **Rejoin**) **· Match group · ···**.
+  A button that can't act is greyed out and says why. **Escape** goes back to quiet, then
   deselects; **Enter** shows the points.
+- **Adjust** bends one member's line on its own, still linked to the group path. **Match
+  group** takes the bend off. **Edit path** on the group path shows its middle line, named
+  **Group path · 16**, with every member's line around it.
 - **Nobody moves.** The copy is the group path exactly, and the marcher keeps its place
   and any adjustment it had, so it walks exactly as before, passing each point on the
   group's counts, until you edit the copy (or the group path).
@@ -45,26 +50,29 @@ questions:
 **Try it**
 
 1. Select a block of 16 on a page, draw a group path through it with **P**, and finish.
-   The path stays drawn, quiet, with a small bar beside it: **Edit path**, **Detach 16**
-   and **Remove path**.
-2. Drag a box round three members (or click one dot, then Shift-click two more). The bar
-   now says **Detach 3**. Press it, and watch that nothing moves. Their rings turn dashed
-   orange: **Detached**.
-3. Click one detached marcher's dot. Its copy shows, with **Detached · Rejoin** on the bar.
-   Click the copy's line to edit it (one click shows the points; no double-click), drag a
-   point, and play the move with **Space**.
-4. Right-click (or long-press) the detached marcher: the menu's Path group has **Rejoin
-   group path**. Choose it. Then **Undo**.
-5. Click one member's dot, then the group path's line: its points show (the selection
-   stays that one member; with nobody selected, a click on the line selects them all). Drag
-   a member's lane to bend it, then press **Escape** (the path goes quiet). With that marcher
-   selected, the bar's slot reads **Reset adjustment**; the bent lane is drawn blue whenever
-   the group path shows.
-6. Select all 16, press **Detach 16**, then **Undo** once.
-7. Click the group path's line, then press **Delete**: the path goes, and a toast offers
-   **Undo**.
-8. Try it with a finger or pencil on a tablet: every one of these is a button on the bar or
-   an entry in the long-press menu.
+   Click one member's dot: only that marcher's line shows, with the bar beside it:
+   **Edit path · Adjust · Detach · Match group · ···**. Click another member: the buttons
+   stay in the same places.
+2. With one member selected, press **Adjust**. Only its line shows, ready to bend: drag it
+   somewhere between the group path's first and last points, then press **Escape**. The
+   bent line is drawn blue. With that marcher selected, **Match group** takes the bend off.
+3. Drag a box round three members (or click one dot, then Shift-click two more). Adjust is
+   greyed out (one marcher at a time) and the bar says **Detach 3**. Press it: a toast says
+   **3 marchers detached** with Undo, nothing moves, the group line stays where it was,
+   and the bar stays, now offering **Rejoin 3**. Their start rings turn dashed orange.
+4. Click one detached marcher's dot: its copy shows. Click the copy's line to edit it, drag
+   a point, and play the move with **Space**.
+5. Right-click (or long-press) the detached marcher: the menu's Path group is in the bar's
+   order and has **Rejoin group path**. Choose it, then **Undo**.
+6. Select a member and press **Edit path**: the group path's middle line shows, named
+   **Group path · 16**, with every member's line around it and the detached and adjusted
+   marks on their dots. Drag a point to reshape the whole group.
+7. Open **···** on the bar: **Re-center group path** (greyed out unless the block has moved
+   since the path was drawn) and **Remove path**. Remove it: a toast offers **Undo**.
+8. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
+   bar.
+9. Try it with a finger or pencil on a tablet: every one of these is a button on the bar or
+   an entry in the long-press menu; a press on a greyed-out button says why.
 
 **Good to know**
 
@@ -72,8 +80,8 @@ questions:
   selected). Drawing over a detached copy with P from that marcher alone draws a new path
   of its own, as before.
 - A detached copy keeps the group path's start and end it was drawn against, so the copy
-  is timed like the group. **Re-fit** shows on a copy only when its marcher's start has
-  moved, and then only moves the start side.
+  is timed like the group. **Re-fit path** (under ···) acts on a copy only when its
+  marcher's start has moved, and then only moves the start side.
 - **Split at the playhead** is refused on a move with a group path, and now also on a
   detached copy of one (it walks the group's timing); remove the path first. Splitting a
   group path is a later step.
@@ -86,6 +94,6 @@ questions:
 - Detaching every member leaves no group path to Rejoin; Undo brings it back.
 - Rejoin puts a marcher in its place on the group path when no Re-fit is pending there.
   If another member's start moved since the group path was drawn, and you then move the
-  group path's first point, the rejoined marcher can land a little off; Re-fit first.
+  group path's first point, the rejoined marcher can land a little off; Re-center first.
 - Linked adjustments for several members at once (and detaching such a sub-group with
   one shared copy) are step 26.

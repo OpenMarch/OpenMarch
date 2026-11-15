@@ -55,9 +55,11 @@ import {
  *
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
- * - The **Path** group (pathways, interaction system rule 4), each entry shown only while it
- *   applies to the selection's path: **Edit path**, **Detach from group path**, **Rejoin group
- *   path**, **Reset adjustment**, **Re-fit path**, **Remove path**.
+ * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
+ *   path**, **Adjust**, **Detach from group path** or **Rejoin group path**, **Match group**,
+ *   **Re-fit path** (Re-center group path), **Remove path**. Adjust, Detach and Match group stay
+ *   in their places, greyed out with the reason, for any path but a trail; the others show only
+ *   while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
@@ -88,6 +90,19 @@ const PATH: readonly ActionId[] = [
     "removePath",
 ];
 const PATH_SET: ReadonlySet<ActionId> = new Set(PATH);
+/**
+ * The path bar's fixed slots (pathways interaction round 2): shown greyed out with their reason
+ * where they can't act, so the entries stay in the same places from one marcher to the next. The
+ * others show only while they apply. Detach's slot gives no reason while Rejoin holds it.
+ */
+const PATH_SLOTS: ReadonlySet<ActionId> = new Set([
+    "adjustPath",
+    "detachPath",
+    "adjustResetSpot",
+]);
+const pathShown = (id: ActionId) =>
+    isActionEnabled(id) ||
+    (PATH_SLOTS.has(id) && actionDisabledReason(id) !== undefined);
 
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
@@ -198,20 +213,22 @@ export default function FieldContextMenu({
     if (!at) return null;
 
     const shown = (id: ActionId) =>
-        id === "shapeGroup" || id === "shapeUngroup" || PATH_SET.has(id)
-            ? isActionEnabled(id)
-            : HOLDS.has(id)
-              ? timelineMode
-              : MOVES.has(id)
-                ? timelineMode && hasActionHandler(id)
-                : ORDER.has(id)
-                  ? timelineMode && selectedCount >= 2
-                  : true;
+        PATH_SET.has(id)
+            ? pathShown(id)
+            : id === "shapeGroup" || id === "shapeUngroup"
+              ? isActionEnabled(id)
+              : HOLDS.has(id)
+                ? timelineMode
+                : MOVES.has(id)
+                  ? timelineMode && hasActionHandler(id)
+                  : ORDER.has(id)
+                    ? timelineMode && selectedCount >= 2
+                    : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = actions
         ? // A path's entries show only where they apply, as on a marcher
-          [actions.filter((id) => !PATH_SET.has(id) || isActionEnabled(id))]
+          [actions.filter((id) => !PATH_SET.has(id) || pathShown(id))]
         : GROUPS.map((group) => group.filter(shown)).filter(
               (group) => group.length > 0,
           );

@@ -187,7 +187,7 @@
             "rejoinGroup": "Rejoin group path",
             "refit": "Re-fit path",
             "adjustRemoveKey": "Remove adjustment point",
-            "adjustResetSpot": "Reset adjustment",
+            "adjustResetSpot": "Match group",
             "adjustAcknowledge": "Keep re-homed adjustments",
             "follow": "Follow",
             "followKeywords": "follow leader trail line snake file ftl reverse path",
@@ -202,7 +202,8 @@
             "reverseOrder": "Reverse order",
             "clearOrder": "Clear order",
             "orderKeywords": "order sequence leader tail first last line follow reverse numbers",
-            "adjust": "Adjust"
+            "adjust": "Adjust",
+            "recenter": "Re-center group path"
         }
     },
     "analyticsOptIn": {
@@ -3801,7 +3802,7 @@
             "pointType": "Point type",
             "bigStepsTipPoints": "{inches} in a step, all along the path. Lengthen the move, or move or take out points to shorten the path.",
             "bigStepsLeg": "Big steps · {steps} {where}",
-            "bigStepsTipLegs": "Big steps on {legs}. Every marcher passes each point of the path at the same moment, so only the legs onto and off the path change speed. Lengthen the move, or move points to even out the legs.",
+            "bigStepsTipLegs": "Big steps {legs}. Every marcher passes each point of the path at the same moment, so only getting onto and off the path changes speed. Lengthen the move, or move points to even them out.",
             "legOnto": "onto the path",
             "legOff": "off the path",
             "legAlong": "along the path",
@@ -3845,11 +3846,11 @@
             "previewNothing": "Preview: place a point first",
             "editTip": "Show this path's points to drag. A click on its line does it too",
             "detachCount": "Detach {count}",
-            "resetTip": "Take off this marcher's adjustment, so it walks its plain lane of the group path again",
-            "detachedNote": "Detached",
-            "detachedCount": "{count} detached",
+            "resetTip": "Take this marcher's bends off, so it walks the group path like the others again",
             "groupLabel": "Group path · {count}",
-            "adjustTip": "Bend only this marcher's line. It keeps following the group path's edits"
+            "adjustTip": "Bend only this marcher's line. It keeps following the group path's edits",
+            "rejoinCount": "Rejoin {count}",
+            "more": "More path commands"
         },
         "menu": {
             "pointType": "Corner type",
@@ -3959,6 +3960,19 @@
             "alone": "This marcher is alone on its path: Edit path changes it",
             "severalSelected": "Adjust one marcher at a time: select just one",
             "noneSelected": "Select a marcher on the group path to adjust its line"
+        },
+        "inspector": {
+            "path": "Path"
+        },
+        "slots": {
+            "detached": "This marcher is detached: Rejoin puts it back on the group path",
+            "ownPath": "This marcher walks its own path, not a group path",
+            "detachNone": "Select marchers on the group path to detach them",
+            "matchSeveral": "Select one marcher to match it to the group path",
+            "matchNone": "Select a marcher on the group path",
+            "matches": "This marcher already walks the group path exactly: nothing to match",
+            "centered": "The group path already runs through the middle of its marchers",
+            "fits": "The path already fits where its marcher stands"
         }
     }
 }

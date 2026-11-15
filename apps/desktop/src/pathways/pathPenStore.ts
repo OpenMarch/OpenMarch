@@ -743,6 +743,82 @@ export function adjustTargetOf(
 }
 
 /**
+ * The path bar's fixed slots (interaction round 2: items stayed put so nobody presses the wrong one when the
+ * selection changes): Edit path · Adjust · Detach or Rejoin · Match group · More. Each slot is
+ * there for any path but a trail; one that can't act now says why (its tooltip, and the menus'
+ * reason). Null reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
+ */
+export interface PathSlots {
+    /** Whether the bar has the member slots at all: any shown path but a trail */
+    shown: boolean;
+    adjust: { marcherId: number } | { reason: string };
+    /** Detach's slot: Rejoin takes it when Rejoin can act and Detach can't */
+    backIsRejoin: boolean;
+    detachReason: string | null;
+    matchReason: string | null;
+}
+
+export function pathSlotsOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+    rejoin: RejoinTarget | null,
+): PathSlots {
+    const shown =
+        session !== null &&
+        session.phase !== "drawing" &&
+        !session.target.trail;
+    const detachIds = detachIdsOf(ownable, session);
+    const backIsRejoin = rejoin !== null && detachIds.length === 0;
+    const notGroup =
+        !session?.target.group || session.target.lane
+            ? session?.target.lane?.detachedFrom != null
+                ? tolgee.t(
+                      "pathways.slots.detached",
+                      "This marcher is detached: Rejoin puts it back on the group path",
+                  )
+                : tolgee.t(
+                      "pathways.slots.ownPath",
+                      "This marcher walks its own path, not a group path",
+                  )
+            : null;
+    const detachReason =
+        !shown || detachIds.length > 0 || backIsRejoin
+            ? null
+            : (notGroup ??
+              tolgee.t(
+                  "pathways.slots.detachNone",
+                  "Select marchers on the group path to detach them",
+              ));
+    const resetId = resetTargetOf(session, ownable);
+    const lanePicked = session?.phase === "open" && !!session.lane;
+    const matchReason =
+        !shown || resetId !== null
+            ? null
+            : (notGroup ??
+              (!lanePicked && ownable.length > 1
+                  ? tolgee.t(
+                        "pathways.slots.matchSeveral",
+                        "Select one marcher to match it to the group path",
+                    )
+                  : !lanePicked && ownable.length === 0
+                    ? tolgee.t(
+                          "pathways.slots.matchNone",
+                          "Select a marcher on the group path",
+                      )
+                    : tolgee.t(
+                          "pathways.slots.matches",
+                          "This marcher already walks the group path exactly: nothing to match",
+                      )));
+    return {
+        shown,
+        adjust: adjustTargetOf(session, ownable),
+        backIsRejoin,
+        detachReason,
+        matchReason,
+    };
+}
+
+/**
  * Adjust (interaction round 2): `marcherId`'s lane of the group path shown is the only line drawn
  * and the only one editable, with its handles; the path is active. Escape goes back to quiet.
  */
