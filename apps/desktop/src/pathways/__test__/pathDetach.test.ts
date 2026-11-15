@@ -137,6 +137,40 @@ describe("a Detached copy is shown on its lane", () => {
     });
 });
 
+describe("where a group path's line is drawn (round 2: Detach and Rejoin don't move it)", () => {
+    const starts: Record<number, [number, number]> = {
+        1: [0, 0],
+        2: [0, 10],
+        3: [0, 20],
+    };
+    const res = {
+        explain: (id: number) => ({ origin: starts[id]! }),
+        positionAt: (id: number) => [80, starts[id]![1]],
+    } as unknown as Pick<Resolver, "explain" | "positionAt">;
+    const entry = (marcherId: number, routeId: number): MoveRoute => ({
+        ...copyEntry(routeId === 5 ? 2 : 1),
+        routeId,
+        marcherId,
+        laneId: marcherId,
+        offset: [0, starts[marcherId]![1] - 10],
+        detachedFrom: routeId === 5 ? null : 5,
+    });
+    it("through the middle of its members and the marchers Detached from it", () => {
+        const group = [entry(1, 5), entry(2, 5)];
+        const copy = entry(3, 9);
+        const withCopy = targetOfRoute(group, res, drills, [...group, copy])!;
+        expect(withCopy.drawnEnds).toEqual({
+            from: { x: 0, y: 10 },
+            to: { x: 80, y: 10 },
+        });
+        // Without the copy counted, the line would shift toward the members left
+        expect(targetOfRoute(group, res, drills)!.drawnEnds!.from).toEqual({
+            x: 0,
+            y: 5,
+        });
+    });
+});
+
 describe("which group path the selection shows (groupToShow)", () => {
     const R = { routeId: 5, detachedFrom: null };
     const copyOfR = { routeId: 9, detachedFrom: 5 };

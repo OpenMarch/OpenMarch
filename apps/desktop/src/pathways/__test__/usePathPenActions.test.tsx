@@ -288,7 +288,7 @@ describeDbTests(
             expect(session()!.phase).toBe("open");
         });
 
-        it("Detach of two says so with Undo; the group path stays shown with Rejoin (round 2)", async ({
+        it("Detach of two says so with Undo; the group path stays shown with Rejoin, its line where it was (round 2)", async ({
             db,
             wrapper,
             marchersAndPages: _,
@@ -309,6 +309,7 @@ describeDbTests(
             await waitFor(() =>
                 expect(isActionEnabled("detachPath")).toBe(true),
             );
+            const lineBefore = session()!.target.drawnEnds!;
             const success = vi.spyOn(toast, "success");
             try {
                 await act(async () => void runAction("detachPath"));
@@ -324,6 +325,22 @@ describeDbTests(
             expect(session()!.target.routeId).toBe(routeId);
             expect(isActionEnabled("rejoinPath")).toBe(true);
             expect(isActionEnabled("detachPath")).toBe(false);
+            // The group line didn't move (no Re-fit): its drawn ends are where they were, and
+            // there's nothing to re-center
+            const near = (a: XY, b: XY) => {
+                expect(a.x).toBeCloseTo(b.x, 6);
+                expect(a.y).toBeCloseTo(b.y, 6);
+            };
+            near(session()!.target.drawnEnds!.from, lineBefore.from);
+            near(session()!.target.drawnEnds!.to, lineBefore.to);
+            expect(isActionEnabled("refitPath")).toBe(false);
+            // Nor on Rejoin
+            await act(async () => void runAction("rejoinPath"));
+            await waitFor(() =>
+                expect(session()?.target.group?.members.length).toBe(4),
+            );
+            near(session()!.target.drawnEnds!.from, lineBefore.from);
+            near(session()!.target.drawnEnds!.to, lineBefore.to);
         });
     },
 );

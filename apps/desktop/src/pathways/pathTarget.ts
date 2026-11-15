@@ -387,9 +387,8 @@ export async function findGroupTarget(
             .filter((g) => g.detachedFrom === group.routeId)
             .flatMap((g) => g.marcherIds),
     );
-    const route = (await readRoutes(db, move.timelineId)).filter(
-        (r) => r.routeId === group.routeId,
-    );
+    const routes = await readRoutes(db, move.timelineId);
+    const route = routes.filter((r) => r.routeId === group.routeId);
     if (route.length === 0) return null;
     const members: GroupMember[] = [];
     const seen = new Set<number>();
@@ -447,7 +446,10 @@ export async function findGroupTarget(
         points: g.points,
         ends: { from: xy(g.from), to: xy(g.to) },
         ...toBulgeOf(g),
-        drawnEnds: drawnEndsOf(members),
+        drawnEnds: drawnEndsOf(
+            members,
+            copiesOf(routes, group.routeId, resolver),
+        ),
         group: {
             members,
             outside,
@@ -459,13 +461,50 @@ export async function findGroupTarget(
         : target;
 }
 
-/** The ends a saved group path's line is drawn between: its members' middles now (AP-R5) */
-const drawnEndsOf = (members: readonly GroupMember[]) => {
+/** Who walks a group path or a copy Detached from it: by marcher, where it starts and ends */
+type Walker = { marcherId: number; from: XY; to: XY };
+
+/**
+ * The walkers of the copies Detached from group path `routeId` (K6), from `routes` (`readRoutes`):
+ * they count toward where its line is drawn (`drawnEndsOf`)
+ */
+function copiesOf(
+    routes: readonly MoveRoute[],
+    routeId: number | null,
+    resolver: Pick<Resolver, "explain" | "positionAt">,
+): Walker[] {
+    if (routeId === null) return [];
+    const seen = new Set<number>();
+    return routes.flatMap((r) => {
+        if (r.detachedFrom !== routeId || seen.has(r.marcherId)) return [];
+        seen.add(r.marcherId);
+        return [
+            {
+                marcherId: r.marcherId,
+                from: xy(resolver.explain(r.marcherId, r.start).origin),
+                to: xy(resolver.positionAt(r.marcherId, r.end)),
+            },
+        ];
+    });
+}
+
+/**
+ * The ends a saved group path's line is drawn between (AP-R5): the middles now of its members and
+ * of the marchers Detached from it, so the line stays on a box that has moved, and doesn't move
+ * when marchers Detach or Rejoin (interaction round 2: testers saw it shift, as a Re-fit would)
+ */
+const drawnEndsOf = (
+    members: readonly Walker[],
+    detached: readonly Walker[] = [],
+) => {
+    const all = [...members, ...detached].sort(
+        (a, b) => a.marcherId - b.marcherId,
+    );
     const middle = (ends: readonly XY[]) =>
         xy(meanOf(ends.map((p) => [p.x, p.y] as [number, number])));
     return {
-        from: middle(members.map((m) => m.from)),
-        to: middle(members.map((m) => m.to)),
+        from: middle(all.map((m) => m.from)),
+        to: middle(all.map((m) => m.to)),
     };
 };
 
@@ -821,8 +860,9 @@ export async function findRouteTarget(
     routeId: number,
     drills: ReadonlyMap<number, string>,
 ): Promise<PathTarget | null> {
-    const entries = (await readRoutes(db)).filter((r) => r.routeId === routeId);
-    return targetOfRoute(entries, resolver, drills);
+    const routes = await readRoutes(db);
+    const entries = routes.filter((r) => r.routeId === routeId);
+    return targetOfRoute(entries, resolver, drills, routes);
 }
 
 /** A route's lanes and walkers (`readRoutes`, one route) as the target the pen shows */
@@ -830,6 +870,8 @@ export function targetOfRoute(
     entries: readonly MoveRoute[],
     resolver: Pick<Resolver, "explain" | "positionAt">,
     drills: ReadonlyMap<number, string>,
+    /** Other routes, whose copies Detached from this one count toward where its line is drawn */
+    others: readonly MoveRoute[] = [],
 ): PathTarget | null {
     const first = entries[0];
     if (!first) return null;
@@ -889,7 +931,10 @@ export function targetOfRoute(
         points: g.points,
         ends: { from: xy(g.from), to: xy(g.to) },
         ...toBulgeOf(g),
-        drawnEnds: drawnEndsOf(members),
+        drawnEnds: drawnEndsOf(
+            members,
+            copiesOf(others, first.routeId, resolver),
+        ),
         group: { members, outside: [] },
         span,
     };
@@ -1011,6 +1056,7 @@ export function pathObjectsAt(
             (r) => r.start <= beat - 1e-9 && r.end > beat - 1e-9,
         );
     const out: PathTarget[] = [];
+    let all: MoveRoute[] | undefined;
     for (const [routeId, entries] of index.routes) {
         const at = entries.some((r) =>
             moveIsAt(r, beat, r.start === beat && arrives(r.marcherId)),
@@ -1018,7 +1064,8 @@ export function pathObjectsAt(
         if (!at) continue;
         let target = index.targets.get(routeId);
         if (target === undefined) {
-            target = targetOfRoute(entries, resolver, drills);
+            all ??= [...index.routes.values()].flat();
+            target = targetOfRoute(entries, resolver, drills, all);
             index.targets.set(routeId, target);
         }
         if (target) out.push(target);
