@@ -854,6 +854,16 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         ignoreRepeat: true,
     },
+    // Detach all (round 5): with every member of a group path selected, each gets its own copy and
+    // the group path ends. Under the bar's ···, beside Remove path, and in the Path menus and palette
+    detachAllPath: {
+        labelKey: "actions.path.detachAll",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
     rejoinPath: {
         labelKey: "actions.path.rejoinGroup",
         keywordsKey: "actions.path.keywords",

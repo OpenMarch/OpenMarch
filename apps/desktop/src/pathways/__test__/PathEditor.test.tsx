@@ -225,6 +225,52 @@ describe("the path's floating editor", () => {
         expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin 2");
     });
 
+    it("the whole group selected: Detach greyed out in its place, pointing at ··· › Detach all, which sits beside Remove path saying what it does (round 5)", async () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10, 11, 12], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        const detach = screen.getByTestId("path-detach");
+        expect(detach.getAttribute("aria-disabled")).toBe("true");
+        expect(detach.getAttribute("aria-label")).toBe(
+            "Select some marchers to detach them. To detach everyone, use ··· › Detach all 3 marchers",
+        );
+        // No count on the greyed-out slot: it reads as a slot, not as a command for all three
+        expect(detach.textContent).toBe("Detach");
+        fireEvent.keyDown(screen.getByTestId("path-more"), {
+            key: "ArrowDown",
+        });
+        await screen.findByTestId("path-more-menu");
+        const all = screen.getByTestId("path-detach-all");
+        expect(all.textContent).toBe(
+            "Detach all 3 marchers" +
+                "Ends the group path; each marcher gets their own copy",
+        );
+        // After the line, beside Remove path, apart from the routine commands
+        expect(all.previousElementSibling?.getAttribute("role")).toBe(
+            "separator",
+        );
+        expect(all.nextElementSibling).toBe(screen.getByTestId("path-remove"));
+    });
+
+    it("some of the group selected: Detach N on the bar, no Detach all under ···", async () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10, 11], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
+        expect(
+            screen.getByTestId("path-detach").getAttribute("aria-disabled"),
+        ).toBeNull();
+        fireEvent.keyDown(screen.getByTestId("path-more"), {
+            key: "ArrowDown",
+        });
+        await screen.findByTestId("path-more-menu");
+        expect(screen.queryByTestId("path-detach-all")).toBeNull();
+    });
+
     it("Edit <name>'s line lights while that line is edited, and Edit group path goes back to the group path", () => {
         act(() => {
             showPath(groupTarget(), "3");

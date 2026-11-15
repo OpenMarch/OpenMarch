@@ -16,6 +16,7 @@ import { editPathPoints } from "@/db-functions/timelinePathEdits";
 import { followTrail, readTrails } from "@/db-functions/timelineTrails";
 import {
     actionDisabledReason,
+    actionLabelNow,
     isActionEnabled,
     runAction,
 } from "@/shortcuts/registry";
@@ -268,8 +269,20 @@ describeDbTests(
                 expect(session()?.target.routeId).toBe(routeId),
             );
             expect(session()!.phase).toBe("closed");
+            // The whole group selected: Detach greyed out, Detach all ends the group path (round 5)
+            await waitFor(() =>
+                expect(isActionEnabled("detachAllPath")).toBe(true),
+            );
+            expect(isActionEnabled("detachPath")).toBe(false);
+            // One of them: Detach
+            select([m2]);
             await waitFor(() =>
                 expect(isActionEnabled("detachPath")).toBe(true),
+            );
+            expect(isActionEnabled("detachAllPath")).toBe(false);
+            select([m2, m3!]);
+            await waitFor(() =>
+                expect(isActionEnabled("detachAllPath")).toBe(true),
             );
             // Nobody's adjusted: no Reset adjustment
             expect(isActionEnabled("adjustResetSpot")).toBe(false);
@@ -561,6 +574,55 @@ describeDbTests(
                 ),
             );
             expect(isActionEnabled("followEndsKeep")).toBe(false);
+        });
+
+        it("Detach all with the whole group selected ends the group path: the toast says so, with Undo (round 5)", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { timeline, m2, A, select } = await setUp(db, wrapper);
+            const [, , m3, m4] = resolver().marcherIds();
+            const { routeId } = await drawGroupRoute({
+                db,
+                timelineId: timeline.id,
+                marcherIds: [m2, m3!, m4!],
+                points: [{ at: [A[0] + 10, A[1] + 10] }],
+            });
+            await timelineResolverSettled();
+            select([m2, m3!, m4!]);
+            await waitFor(() =>
+                expect(session()?.target.routeId).toBe(routeId),
+            );
+            await waitFor(() =>
+                expect(isActionEnabled("detachAllPath")).toBe(true),
+            );
+            expect(isActionEnabled("detachPath")).toBe(false);
+            expect(actionLabelNow("detachAllPath")).toBe(
+                "Detach all 3 marchers",
+            );
+            const before = await routeCount(db);
+            const success = vi.spyOn(toast, "success");
+            try {
+                await act(async () => void runAction("detachAllPath"));
+                await waitFor(() => expect(success).toHaveBeenCalled());
+                expect(success.mock.calls[0]![0]).toBe(
+                    "Group path ended: 3 marchers have their own paths",
+                );
+            } finally {
+                success.mockRestore();
+            }
+            // Three copies, and the group path nobody walks is gone
+            await waitFor(async () =>
+                expect(await routeCount(db)).toBe(before + 2),
+            );
+            expect(
+                await db
+                    .select()
+                    .from(schema.timeline_routes)
+                    .where(eq(schema.timeline_routes.id, routeId))
+                    .get(),
+            ).toBeUndefined();
         });
     },
 );

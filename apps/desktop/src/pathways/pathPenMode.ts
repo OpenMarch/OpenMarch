@@ -146,7 +146,8 @@ const MENU_KIND = { menu: PATH_MENU };
  * The Path group (interaction system, rule 4): what the field's menu offers on a path's line, and
  * on a marcher with a path (`FieldContextMenu`), in the path bar's order (round 2): Edit (group)
  * path, Edit <name>'s line, Detach or Rejoin, Match group (the bar's fixed slots, greyed out where
- * they can't act), then Re-fit (Re-center group path) when the ends moved, and Remove path.
+ * they can't act), then Re-fit (Re-center group path) when the ends moved, and after a line,
+ * Detach all (the whole group selected, round 5) and Remove path.
  */
 export const PATH_FIELD_MENU = [
     "editPath",
@@ -155,6 +156,7 @@ export const PATH_FIELD_MENU = [
     "rejoinPath",
     "adjustResetSpot",
     "refitPath",
+    "detachAllPath",
     "removePath",
 ] as const;
 

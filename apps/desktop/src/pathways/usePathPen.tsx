@@ -67,6 +67,8 @@ import {
     deletePoint,
     finishDrawing,
     openPath,
+    detachAllIdsOf,
+    detachAllLabel,
     detachFor,
     detachIdsOf,
     rejoinFor,
@@ -521,10 +523,22 @@ export function usePathPenActions(): void {
     const selectedMembers = usePathPenStore((s) => s.ownable);
     const detachSession = usePathPenStore((s) => s.session);
     const ownIds = detachIdsOf(selectedMembers, detachSession);
+    // The whole group selected (round 5): Detach is greyed out, and Detach all ends the group
+    // path, its own command beside Remove path, so it isn't pressed by mistake
+    const allIds = detachAllIdsOf(selectedMembers, detachSession);
     const rejoin = usePathPenStore((s) => s.rejoin);
     useActionHandler("detachPath", () => void detachFor(ownIds), {
-        enabled: ownIds.length > 0 && phase !== "drawing",
+        enabled:
+            ownIds.length > 0 && allIds.length === 0 && phase !== "drawing",
         disabledReason: reason(slots.detachReason),
+    });
+    useActionHandler("detachAllPath", () => void detachFor(allIds, true), {
+        enabled: allIds.length > 0,
+        label: allIds.length > 0 ? detachAllLabel(allIds.length) : undefined,
+        disabledReason: tolgee.t(
+            "pathways.slots.detachAllNone",
+            "Select every marcher on a group path to detach them all",
+        ),
     });
     useActionHandler("rejoinPath", () => void rejoinFor(rejoin), {
         enabled: rejoin !== null && phase !== "drawing",

@@ -57,9 +57,10 @@ import {
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
  *   group path** (Edit path), **Edit <name>'s line**, **Detach from group path** or **Rejoin
- *   group path**, **Match group**, **Re-fit path** (Re-center group path), **Remove path**. Edit
- *   <name>'s line, Detach and Match group stay in their places, greyed out with the reason, for
- *   any path but a trail; the others show only while they apply.
+ *   group path**, **Match group**, **Re-fit path** (Re-center group path), then after a line
+ *   **Detach all N marchers** (the whole group selected: it ends the group path, said under its
+ *   name) and **Remove path**. Edit <name>'s line, Detach and Match group stay in their places,
+ *   greyed out with the reason, for any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
@@ -87,9 +88,14 @@ const PATH: readonly ActionId[] = [
     "adjustResetSpot",
     "reverseTrail",
     "refitPath",
-    "removePath",
 ];
-const PATH_SET: ReadonlySet<ActionId> = new Set(PATH);
+/**
+ * The Path group's weighty end, kept apart from the routine entries by a line (round 5): Detach all,
+ * which ends the group path (with the whole group selected), and Remove path
+ */
+const PATH_END: readonly ActionId[] = ["detachAllPath", "removePath"];
+const PATH_END_SET: ReadonlySet<ActionId> = new Set(PATH_END);
+const PATH_SET: ReadonlySet<ActionId> = new Set([...PATH, ...PATH_END]);
 /**
  * The path bar's fixed slots (pathways interaction round 2): shown greyed out with their reason
  * where they can't act, so the entries stay in the same places from one marcher to the next. The
@@ -107,6 +113,7 @@ const pathShown = (id: ActionId) =>
 const GROUPS: readonly (readonly ActionId[])[] = [
     ["shapeGroup", "shapeUngroup"],
     PATH,
+    PATH_END,
     [
         "timelineHoldFromPrevious",
         "setSelectedMarchersToPreviousPage",
@@ -149,7 +156,7 @@ const ORDER: ReadonlySet<ActionId> = new Set([
 ]);
 
 /** The group whose entries can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[2]);
+const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[3]);
 
 /** A mode's menu: no wider than its words */
 const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
@@ -159,12 +166,18 @@ const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
     editPath: PencilSimpleIcon,
     editLine: BezierCurveIcon,
     detachPath: ArrowsSplitIcon,
+    detachAllPath: ArrowsSplitIcon,
     rejoinPath: ArrowsMergeIcon,
     adjustResetSpot: ArrowCounterClockwiseIcon,
     refitPath: ArrowsOutLineHorizontalIcon,
     reverseTrail: ArrowsLeftRightIcon,
     removePath: TrashIcon,
 };
+/** A second line under an entry's name, saying what a weighty one does (its i18n key) */
+const NOTES: Partial<Record<ActionId, string>> = {
+    detachAllPath: "pathways.editor.detachAllNote",
+};
+
 /** Entries that delete something: red where highlighted, as a shape handle's Delete */
 const DESTRUCTIVE: ReadonlySet<ActionId> = new Set(["removePath"]);
 
@@ -226,12 +239,18 @@ export default function FieldContextMenu({
                     : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
-    const groups = actions
-        ? // A path's entries show only where they apply, as on a marcher
-          [actions.filter((id) => !PATH_SET.has(id) || pathShown(id))]
-        : GROUPS.map((group) => group.filter(shown)).filter(
-              (group) => group.length > 0,
-          );
+    const groups = (
+        actions
+            ? // A path's entries show only where they apply, as on a marcher; Detach all and
+              // Remove path after a line
+              [
+                  actions.filter((id) => !PATH_END_SET.has(id)),
+                  actions.filter((id) => PATH_END_SET.has(id)),
+              ].map((group) =>
+                  group.filter((id) => !PATH_SET.has(id) || pathShown(id)),
+              )
+            : GROUPS.map((group) => group.filter(shown))
+    ).filter((group) => group.length > 0);
 
     return (
         <DropdownMenu.Root
@@ -287,6 +306,7 @@ export default function FieldContextMenu({
                                 const ModeIcon = actions
                                     ? MODE_ICONS[id]
                                     : null;
+                                const note = NOTES[id];
                                 if (isActionChecked(id))
                                     return (
                                         <DropdownMenu.CheckboxItem
@@ -338,13 +358,17 @@ export default function FieldContextMenu({
                                             actions &&
                                                 DESTRUCTIVE.has(id) &&
                                                 "data-[highlighted]:text-red",
+                                            note && "items-start",
                                         )}
                                     >
                                         {ModeIcon && (
                                             <ModeIcon
                                                 size={14}
                                                 aria-hidden
-                                                className="shrink-0"
+                                                className={clsx(
+                                                    "shrink-0",
+                                                    note && "mt-2",
+                                                )}
                                             />
                                         )}
                                         {CHECKABLE.has(id) && (
@@ -352,7 +376,19 @@ export default function FieldContextMenu({
                                                 className={CHECK_SLOT_CLASS}
                                             />
                                         )}
-                                        {label}
+                                        {note ? (
+                                            <span className="flex flex-col">
+                                                {label}
+                                                <span
+                                                    className="text-sub text-text-subtitle"
+                                                    data-testid={`field-menu-${id}-note`}
+                                                >
+                                                    {t(note)}
+                                                </span>
+                                            </span>
+                                        ) : (
+                                            label
+                                        )}
                                         {shortcut}
                                     </DropdownMenu.Item>
                                 );

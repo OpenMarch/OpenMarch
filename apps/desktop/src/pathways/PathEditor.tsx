@@ -68,6 +68,9 @@ import {
 } from "./followDrag";
 import { rippleArrivalCount } from "@/db-functions/timelineTrailRipplePlan";
 import {
+    detachAllIdsOf,
+    detachAllLabel,
+    detachAllNote,
     detachIdsOf,
     editGroupPathLabel,
     editLineLabel,
@@ -723,7 +726,9 @@ function PathSlots({ session }: { session: PathSession }) {
                             className={SLOT_WIDTH}
                         >
                             <ArrowsSplitIcon size={14} />
-                            {detachIds.length > 1
+                            {/* The whole group selected: greyed out, no count (round 5) */}
+                            {detachIds.length > 1 &&
+                            slots.detachAll.length === 0
                                 ? tolgee.t(
                                       "pathways.editor.detachCount",
                                       "Detach {count}",
@@ -818,6 +823,7 @@ function PathMoreMenu({ session }: { session: PathSession }) {
     const group = !!session.target.group && !session.target.lane;
     const rejoinHere =
         rejoin !== null && detachIdsOf(ownable, session).length > 0;
+    const detachAll = detachAllIdsOf(ownable, session);
     const refitReason = refitNeeded(session.target)
         ? null
         : group
@@ -896,6 +902,27 @@ function PathMoreMenu({ session }: { session: PathSession }) {
                         <DropdownMenu.Separator
                             className={MENU_SEPARATOR_CLASS}
                         />
+                    )}
+                    {detachAll.length > 0 && (
+                        // Ends the group path (round 5): kept apart from the routine commands,
+                        // beside Remove path, saying what it does
+                        <DropdownMenu.Item
+                            className={clsx(MENU_ITEM_CLASS, "items-start")}
+                            onSelect={() => runAction("detachAllPath")}
+                            data-testid="path-detach-all"
+                        >
+                            <ArrowsSplitIcon
+                                size={14}
+                                aria-hidden
+                                className="mt-2 shrink-0"
+                            />
+                            <span className="flex flex-col">
+                                {detachAllLabel(detachAll.length)}
+                                <span className="text-sub text-text-subtitle">
+                                    {detachAllNote()}
+                                </span>
+                            </span>
+                        </DropdownMenu.Item>
                     )}
                     <DropdownMenu.Item
                         className={clsx(

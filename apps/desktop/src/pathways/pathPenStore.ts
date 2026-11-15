@@ -202,6 +202,25 @@ export function detachIdsOf(
     return [session.lane.marcherId];
 }
 
+/**
+ * Whom Detach all ends the group path for (owner, round 5): every member of the shown group path,
+ * when the selection takes them all in (`wholeGroupOf`); none otherwise. Detach on the bar is
+ * greyed out then: detaching everyone leaves no group path to rejoin, so it's its own command,
+ * under ···, beside Remove path.
+ */
+export function detachAllIdsOf(
+    ownable: readonly number[],
+    session: PathSession | null,
+): readonly number[] {
+    if (
+        !session ||
+        session.phase === "drawing" ||
+        !wholeGroupOf(session, ownable)
+    )
+        return [];
+    return session.target.group!.members.map((m) => m.marcherId);
+}
+
 /** What Detach and Rejoin act on for the selection now (spec Appendix I.8) */
 export function setGroupCommands(
     ownable: readonly number[],
@@ -730,6 +749,19 @@ export function resetTargetOf(
 export const editGroupPathLabel = () =>
     tolgee.t("actions.path.editGroup", "Edit group path");
 
+/** Detach all's name (round 5): how many marchers it detaches, so its size reads */
+export const detachAllLabel = (count: number) =>
+    tolgee.t("pathways.editor.detachAllCount", "Detach all {count} marchers", {
+        count,
+    });
+
+/** What Detach all does, under its name in the menus (round 5) */
+export const detachAllNote = () =>
+    tolgee.t(
+        "pathways.editor.detachAllNote",
+        "Ends the group path; each marcher gets their own copy",
+    );
+
 /** Edit <name>'s line's name: the marcher's drill number, or no name while it can't act */
 export const editLineLabel = (drill: string | null) =>
     drill === null
@@ -814,6 +846,11 @@ export interface PathSlots {
     /** Detach's slot: Rejoin takes it when Rejoin can act and Detach can't */
     backIsRejoin: boolean;
     detachReason: string | null;
+    /**
+     * The members Detach all would detach, with the whole group selected (round 5): Detach is
+     * greyed out then, pointing at ··· › Detach all; none otherwise
+     */
+    detachAll: readonly number[];
     matchReason: string | null;
 }
 
@@ -840,14 +877,21 @@ export function pathSlotsOf(
                       "This marcher walks its own path, not a group path",
                   )
             : null;
+    const detachAll = shown ? detachAllIdsOf(ownable, session) : [];
     const detachReason =
-        !shown || detachIds.length > 0 || backIsRejoin
-            ? null
-            : (notGroup ??
-              tolgee.t(
-                  "pathways.slots.detachNone",
-                  "Select marchers on the group path to detach them",
-              ));
+        detachAll.length > 0
+            ? tolgee.t(
+                  "pathways.slots.detachWhole",
+                  "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
+                  { count: detachAll.length },
+              )
+            : !shown || detachIds.length > 0 || backIsRejoin
+              ? null
+              : (notGroup ??
+                tolgee.t(
+                    "pathways.slots.detachNone",
+                    "Select marchers on the group path to detach them",
+                ));
     const resetId = resetTargetOf(session, ownable);
     const lanePicked = session?.phase === "open" && !!session.lane;
     const matchReason =
@@ -873,6 +917,7 @@ export function pathSlotsOf(
         line: lineTargetOf(session, ownable),
         backIsRejoin,
         detachReason,
+        detachAll,
         matchReason,
     };
 }
@@ -1771,8 +1816,12 @@ export async function reverseShownTrail(): Promise<void> {
  * Detach (AP-R9, step 3c): the selected marchers on the shown group path each get a verbatim copy
  * of it, keeping their offset and Adjust, so nobody moves; one undo step however many. With one
  * marcher, its copy is then shown, open (the hook reads it again after the save and keeps it open).
+ * `all` for Detach all (round 5): every member, so the group path ends, and the toast says so.
  */
-export async function detachFor(marcherIds: readonly number[]): Promise<void> {
+export async function detachFor(
+    marcherIds: readonly number[],
+    all = false,
+): Promise<void> {
     const { session, saving } = usePathPenStore.getState();
     if (!session?.target.group || saving || marcherIds.length === 0) return;
     const one = marcherIds.length === 1;
@@ -1788,11 +1837,17 @@ export async function detachFor(marcherIds: readonly number[]): Promise<void> {
         const copy = one ? routes[marcherIds[0]!] : undefined;
         // Said in words, with Undo (interaction round 2: testers couldn't tell Detach worked)
         toastWithUndo(
-            tolgee.t(
-                "pathways.toasts.detached",
-                "{count, plural, one {# marcher detached} other {# marchers detached}}",
-                { count: marcherIds.length },
-            ),
+            all
+                ? tolgee.t(
+                      "pathways.toasts.groupEnded",
+                      "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}",
+                      { count: marcherIds.length },
+                  )
+                : tolgee.t(
+                      "pathways.toasts.detached",
+                      "{count, plural, one {# marcher detached} other {# marchers detached}}",
+                      { count: marcherIds.length },
+                  ),
         );
         usePathPenStore.setState((state) => ({
             saved: state.saved + 1,

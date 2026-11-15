@@ -158,7 +158,8 @@ describe("FieldContextMenu", () => {
             .map((e) => e.getAttribute("data-testid")!)
             .filter((id) => /^field-menu-[a-zA-Z]+$/.test(id))
             .map((id) => id.replace("field-menu-", ""));
-        // Re-fit shows only while it can act; Rejoin only while it holds Detach's slot
+        // Re-fit shows only while it can act; Rejoin only while it holds Detach's slot; Detach all
+        // only with the whole group selected
         expect(ids).toEqual([
             "editPath",
             "editLine",
@@ -166,11 +167,43 @@ describe("FieldContextMenu", () => {
             "adjustResetSpot",
             "removePath",
         ]);
+        // Remove path after a line, apart from the routine entries (round 5)
+        const separators = screen
+            .getByTestId("field-menu")
+            .querySelectorAll('[role="separator"]');
+        expect(separators).toHaveLength(1);
+        expect(separators[0]!.nextElementSibling).toBe(item("removePath"));
         expect(item("editLine")).toHaveAttribute("aria-disabled", "true");
         expect(item("adjustResetSpot")).toHaveAttribute(
             "aria-disabled",
             "true",
         );
+    });
+
+    it("the whole group selected: Detach greyed out pointing at Detach all, which sits after a line beside Remove path, saying what it does (round 5)", () => {
+        handle("editPath");
+        handle("detachPath", {
+            enabled: false,
+            reason: "Select some marchers to detach them. To detach everyone, use ··· › Detach all 16 marchers",
+        });
+        const all = handle("detachAllPath", {
+            label: "Detach all 16 marchers",
+        });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        expect(item("detachPath")).toHaveAttribute("aria-disabled", "true");
+        const detachAll = item("detachAllPath")!;
+        expect(detachAll.textContent).toContain("Detach all 16 marchers");
+        expect(
+            screen.getByTestId("field-menu-detachAllPath-note").textContent,
+        ).toBe("Ends the group path; each marcher gets their own copy");
+        const separator = screen
+            .getByTestId("field-menu")
+            .querySelector('[role="separator"]')!;
+        expect(separator.nextElementSibling).toBe(detachAll);
+        expect(detachAll.nextElementSibling).toBe(item("removePath"));
+        fireEvent.click(detachAll);
+        expect(all).toHaveBeenCalledTimes(1);
     });
 
     it("on a path's line, shows the Path group's entries only where they apply", () => {
@@ -219,7 +252,8 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["editPath", "editLine", "detachPath", "removePath"],
+            ["editPath", "editLine", "detachPath"],
+            ["detachAllPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "setSelectedMarchersToPreviousPage",

@@ -186,6 +186,7 @@
             "pointSmooth": "Smooth point",
             "detach": "Detach",
             "detachFromGroup": "Detach from group path",
+            "detachAll": "Detach all marchers",
             "rejoin": "Rejoin",
             "rejoinGroup": "Rejoin group path",
             "refit": "Re-fit path",
@@ -3850,6 +3851,8 @@
             "editGroupTip": "Show the group path's points to drag. Every marcher on it follows",
             "editLineTip": "Bend only {marcher}'s line, by its handles. It keeps following the group path's edits. A click on the line does it too",
             "detachCount": "Detach {count}",
+            "detachAllCount": "Detach all {count} marchers",
+            "detachAllNote": "Ends the group path; each marcher gets their own copy",
             "resetTip": "Take this marcher's bends off, so it walks the group path like the others again",
             "groupLabel": "Group path · {count}",
             "rejoinCount": "Rejoin {count}",
@@ -3910,7 +3913,8 @@
             "adjustsRemoved": "{count, plural, one {# adjustment} other {# adjustments}} removed: {count, plural, one {it was} other {they were}} on the old path",
             "removedTrail": "Removed the trail: {count, plural, one {# marcher walks} other {# marchers walk}} straight to the same end spots",
             "reversed": "{marcher} leads now",
-            "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}"
+            "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}",
+            "groupEnded": "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}"
         },
         "rings": {
             "group": "Follows the group path",
@@ -3963,6 +3967,8 @@
             "detached": "This marcher is detached: Rejoin puts it back on the group path",
             "ownPath": "This marcher walks its own path, not a group path",
             "detachNone": "Select marchers on the group path to detach them",
+            "detachWhole": "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
+            "detachAllNone": "Select every marcher on a group path to detach them all",
             "matchSeveral": "Select one marcher to match it to the group path",
             "matchNone": "Select a marcher on the group path",
             "matches": "This marcher already walks the group path exactly: nothing to match",
