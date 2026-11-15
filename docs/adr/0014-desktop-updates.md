@@ -31,9 +31,9 @@ rollback system, and most of its benefit comes from making updates visible, not 
   action, `checkForUpdates`, also in the app menu through `menu:action`, ADR 0003). "Download
   updates automatically" (Settings › General, on by default; the old `automaticUpdates` key)
   decides whether a found update downloads by itself. A downloaded update always installs on
-  quit. An automatic download shows only as a small progress ring (the percentage in its tooltip); a
-  download the person asked for (Download, Try again, or Check for updates while one runs)
-  shows its text and a progress bar.
+  quit. A download shows as a small progress ring in the title bar, never a bar (the percentage
+  in its tooltip). An automatic download is the ring alone; one the person asked for (Download,
+  Try again, or Check for updates while one runs) also says "Downloading update".
 - **Background and asked-for checks differ.** The launch and hourly checks are quiet: while an
   update waits for Download they don't hide the pill, and if they fail the found update stays.
   A check the person asks for reports what it found, failures included, and its download shows
@@ -65,7 +65,7 @@ rollback system, and most of its benefit comes from making updates visible, not 
 ## Consequences
 
 - The title bar's update pill replaces the GitHub-API version check. It appears only when there
-  is something to do or watch (available, downloading, with a progress ring or bar, ready, failed), and
+  is something to do or watch (available, downloading with a progress ring, ready, failed), and
   its popover holds the step: Download, Update now, Move to Applications, or Try again and
   Download installer.
 - Release notes come from the release page ("What's new"), not from the app.
