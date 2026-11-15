@@ -72,6 +72,8 @@ import {
     detachAllLabel,
     detachAllNote,
     detachIdsOf,
+    detachLabel,
+    detachNote,
     editGroupPathLabel,
     editLineLabel,
     laneFocusOf,
@@ -622,16 +624,15 @@ function PathEditorBar({
 
 /**
  * The path bar's fixed slots (interaction round 2): Edit group path (Edit path for a path of one) ·
- * Edit <name>'s line · Detach or Rejoin · Match group, in the same places for every marcher, so a
- * press after the selection changes lands on
- * what it did before. A slot that can't act stays, greyed out, its tooltip saying why (a press on
+ * Edit <name>'s line · Match group or Rejoin (round 6: Detach moved to ···, like a design tool's
+ * Detach instance), in the same places for every marcher, so a press after the selection changes
+ * lands on what it did before. A slot that can't act stays, greyed out, its tooltip saying why (a press on
  * it says so too, for a finger). A trail has only Edit path: its members have no lanes.
  */
 function PathSlots({ session }: { session: PathSession }) {
     const ownable = usePathPenStore((s) => s.ownable);
     const rejoin = usePathPenStore((s) => s.rejoin);
     const slots = pathSlotsOf(session, ownable, rejoin);
-    const detachIds = detachIdsOf(ownable, session);
     const editing = session.phase === "open" && !session.lane;
     const lineId = laneFocusOf(session);
     const sayWhy = (why: string | null) => () => {
@@ -641,7 +642,6 @@ function PathSlots({ session }: { session: PathSession }) {
     const lineDrill = "drill" in slots.line ? slots.line.drill : null;
     // On a group path, Edit path edits the line every member follows: named so (round 3)
     const group = !!session.target.group && !session.target.lane;
-    const backReason = slots.backIsRejoin ? null : slots.detachReason;
     return (
         <>
             <IconButton
@@ -689,6 +689,7 @@ function PathSlots({ session }: { session: PathSession }) {
                         <BezierCurveIcon size={14} />
                         {editLineLabel(lineDrill)}
                     </IconButton>
+                    {/* Back to the group (round 6): Rejoin for detached marchers, else Match group */}
                     {slots.backIsRejoin ? (
                         <IconButton
                             label={tolgee.t(
@@ -712,51 +713,26 @@ function PathSlots({ session }: { session: PathSession }) {
                     ) : (
                         <IconButton
                             label={
-                                backReason ??
+                                slots.matchReason ??
                                 tolgee.t(
-                                    "pathways.editor.detachTip",
-                                    "Give the selected marchers, or the marcher whose lane is picked, their own copy of the group path. They walk in step with the group until you edit the copy",
+                                    "pathways.editor.resetTip",
+                                    "Take this marcher's bends off, so it walks the group path like the others again",
                                 )
                             }
-                            action="detachPath"
-                            disabled={backReason !== null}
-                            onClick={() => runAction("detachPath")}
-                            onDisabledClick={sayWhy(backReason)}
-                            testId="path-detach"
+                            action="adjustResetSpot"
+                            disabled={slots.matchReason !== null}
+                            onClick={() => runAction("adjustResetSpot")}
+                            onDisabledClick={sayWhy(slots.matchReason)}
+                            testId="path-adjust-reset"
                             className={SLOT_WIDTH}
                         >
-                            <ArrowsSplitIcon size={14} />
-                            {/* The whole group selected: greyed out, no count (round 5) */}
-                            {detachIds.length > 1 &&
-                            slots.detachAll.length === 0
-                                ? tolgee.t(
-                                      "pathways.editor.detachCount",
-                                      "Detach {count}",
-                                      { count: detachIds.length },
-                                  )
-                                : tolgee.t("actions.path.detach", "Detach")}
+                            <ArrowCounterClockwiseIcon size={14} />
+                            {tolgee.t(
+                                "actions.path.adjustResetSpot",
+                                "Match group",
+                            )}
                         </IconButton>
                     )}
-                    <IconButton
-                        label={
-                            slots.matchReason ??
-                            tolgee.t(
-                                "pathways.editor.resetTip",
-                                "Take this marcher's bends off, so it walks the group path like the others again",
-                            )
-                        }
-                        action="adjustResetSpot"
-                        disabled={slots.matchReason !== null}
-                        onClick={() => runAction("adjustResetSpot")}
-                        onDisabledClick={sayWhy(slots.matchReason)}
-                        testId="path-adjust-reset"
-                    >
-                        <ArrowCounterClockwiseIcon size={14} />
-                        {tolgee.t(
-                            "actions.path.adjustResetSpot",
-                            "Match group",
-                        )}
-                    </IconButton>
                 </>
             )}
         </>
@@ -766,8 +742,8 @@ function PathSlots({ session }: { session: PathSession }) {
 /** Edit <name>'s line's slot fits a long drill number, so the slots after it never move */
 const LINE_SLOT_WIDTH = "min-w-[124px] justify-start";
 
-/** Detach's slot holds Detach, Detach 12 or Rejoin 3 at one width, so Match group never moves */
-const SLOT_WIDTH = "min-w-[84px] justify-start";
+/** The third slot holds Match group or Rejoin 12 at one width, so ··· never moves */
+const SLOT_WIDTH = "min-w-[104px] justify-start";
 
 /** The open path's selected point: Corner | Smooth, as its menu has (step 2) */
 function PointTypeButtons({
@@ -812,8 +788,10 @@ function PointTypeButtons({
 
 /**
  * The bar's ··· (interaction round 2): what's rarer, kept off the bar so the slots stay few and
- * still: Rejoin when Detach holds its slot, Re-center group path (Re-fit) and Remove path. The
- * same commands as the Path menus, greyed out with the reason where they can't act.
+ * still: Rejoin when Match group holds its slot (a mixed selection), Re-center group path (Re-fit),
+ * then after a line Detach from group path (some of the group selected, round 6: it left the bar),
+ * Detach all (the whole group) and Remove path. The same commands, in the same order, as the Path
+ * menus, Re-fit greyed out with the reason where it can't act.
  */
 function PathMoreMenu({ session }: { session: PathSession }) {
     const ownable = usePathPenStore((s) => s.ownable);
@@ -824,6 +802,11 @@ function PathMoreMenu({ session }: { session: PathSession }) {
     const rejoinHere =
         rejoin !== null && detachIdsOf(ownable, session).length > 0;
     const detachAll = detachAllIdsOf(ownable, session);
+    // Detach (round 6): only while it can act; the whole group selected gets Detach all instead
+    const detachIds =
+        detachAll.length === 0 && session.phase !== "drawing"
+            ? detachIdsOf(ownable, session)
+            : [];
     const refitReason = refitNeeded(session.target)
         ? null
         : group
@@ -902,6 +885,27 @@ function PathMoreMenu({ session }: { session: PathSession }) {
                         <DropdownMenu.Separator
                             className={MENU_SEPARATOR_CLASS}
                         />
+                    )}
+                    {detachIds.length > 0 && (
+                        // Off the bar (round 6), as a design tool keeps Detach instance in a menu:
+                        // Edit <name>'s line is how a member's line is changed and kept following
+                        <DropdownMenu.Item
+                            className={clsx(MENU_ITEM_CLASS, "items-start")}
+                            onSelect={() => runAction("detachPath")}
+                            data-testid="path-more-detach"
+                        >
+                            <ArrowsSplitIcon
+                                size={14}
+                                aria-hidden
+                                className="mt-2 shrink-0"
+                            />
+                            <span className="flex flex-col">
+                                {detachLabel(detachIds.length)}
+                                <span className="text-sub text-text-subtitle">
+                                    {detachNote()}
+                                </span>
+                            </span>
+                        </DropdownMenu.Item>
                     )}
                     {detachAll.length > 0 && (
                         // Ends the group path (round 5): kept apart from the routine commands,

@@ -16,7 +16,7 @@ import { seedShowSql, type SeedPosition } from "../seed.mjs";
 // Enter saves it as one undo step: one route, each member's transition walking it with
 // its own offset, every lane drawn faint and every member ringed ("Follows the group
 // path"). Undo takes it away and redo brings back the same route. With one member selected
-// the group path shows, and Detach (the palette here; the open path's bar too) gives that
+// the group path shows, and Detach (the palette here; the bar's ··· too) gives that
 // member its own copy of the group path, keeping its offset (one undo step), shown open,
 // where Rejoin puts it back on the group path. Remove path with one member selected
 // removes the whole group's path, and the toast says for how many marchers. Since step 24

@@ -71,6 +71,7 @@ import {
     detachAllLabel,
     detachFor,
     detachIdsOf,
+    detachLabel,
     rejoinFor,
     removeLastPoint,
     removePath,
@@ -527,9 +528,12 @@ export function usePathPenActions(): void {
     // path, its own command beside Remove path, so it isn't pressed by mistake
     const allIds = detachAllIdsOf(selectedMembers, detachSession);
     const rejoin = usePathPenStore((s) => s.rejoin);
+    // Off the bar since round 6: under ··· and in the Path menus, "Detach 3 from group path"
+    const canDetach =
+        ownIds.length > 0 && allIds.length === 0 && phase !== "drawing";
     useActionHandler("detachPath", () => void detachFor(ownIds), {
-        enabled:
-            ownIds.length > 0 && allIds.length === 0 && phase !== "drawing",
+        enabled: canDetach,
+        label: canDetach ? detachLabel(ownIds.length) : undefined,
         disabledReason: reason(slots.detachReason),
     });
     useActionHandler("detachAllPath", () => void detachFor(allIds, true), {

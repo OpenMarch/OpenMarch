@@ -33,6 +33,7 @@ import {
     finishDrawing,
     activatePath,
     openPath,
+    pathSlotsOf,
     usePathPenStore,
 } from "../pathPenStore";
 import { findRouteTarget } from "../pathTarget";
@@ -274,11 +275,12 @@ describeDbTests(
                 expect(isActionEnabled("detachAllPath")).toBe(true),
             );
             expect(isActionEnabled("detachPath")).toBe(false);
-            // One of them: Detach
+            // One of them: Detach, named in full now it's off the bar (round 6)
             select([m2]);
             await waitFor(() =>
                 expect(isActionEnabled("detachPath")).toBe(true),
             );
+            expect(actionLabelNow("detachPath")).toBe("Detach from group path");
             expect(isActionEnabled("detachAllPath")).toBe(false);
             select([m2, m3!]);
             await waitFor(() =>
@@ -322,6 +324,9 @@ describeDbTests(
             await waitFor(() =>
                 expect(isActionEnabled("detachPath")).toBe(true),
             );
+            expect(actionLabelNow("detachPath")).toBe(
+                "Detach 2 from group path",
+            );
             const lineBefore = session()!.target.drawnEnds!;
             const success = vi.spyOn(toast, "success");
             try {
@@ -338,6 +343,14 @@ describeDbTests(
             expect(session()!.target.routeId).toBe(routeId);
             expect(isActionEnabled("rejoinPath")).toBe(true);
             expect(isActionEnabled("detachPath")).toBe(false);
+            // The selection stays, and the bar's third slot is Rejoin (round 6)
+            const { ownable, rejoin } = usePathPenStore.getState();
+            expect([...(rejoin?.marcherIds ?? [])].sort()).toEqual(
+                [m3!, m5!].sort(),
+            );
+            expect(pathSlotsOf(session(), ownable, rejoin).backIsRejoin).toBe(
+                true,
+            );
             // The group line didn't move (no Re-fit): its drawn ends are where they were, and
             // there's nothing to re-center
             const near = (a: XY, b: XY) => {

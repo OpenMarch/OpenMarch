@@ -137,19 +137,22 @@ describe("FieldContextMenu", () => {
         expect(onClose).toHaveBeenCalled();
     });
 
-    it("keeps the path bar's slots in their places, greyed out with the reason (round 2)", () => {
+    it("keeps the path bar's slots in their places, greyed out with the reason; Detach from group path after the line, before Remove path (round 6)", () => {
         handle("editPath");
         handle("editLine", {
             enabled: false,
             reason: "Select one marcher to edit their line",
         });
-        handle("detachPath");
+        const detach = handle("detachPath", {
+            label: "Detach 2 from group path",
+        });
         handle("rejoinPath", { enabled: false });
         handle("adjustResetSpot", {
             enabled: false,
             reason: "Select one marcher to match it to the group path",
         });
         handle("refitPath", { enabled: false, reason: "Already centered" });
+        handle("detachAllPath", { enabled: false });
         handle("removePath");
         open({ actions: PATH_FIELD_MENU });
         const ids = Array.from(
@@ -158,29 +161,57 @@ describe("FieldContextMenu", () => {
             .map((e) => e.getAttribute("data-testid")!)
             .filter((id) => /^field-menu-[a-zA-Z]+$/.test(id))
             .map((id) => id.replace("field-menu-", ""));
-        // Re-fit shows only while it can act; Rejoin only while it holds Detach's slot; Detach all
-        // only with the whole group selected
+        // The bar's order: Edit group path, Edit <name>'s line, Match group (Rejoin only while it
+        // can act); Re-fit only while it can act; Detach all only with the whole group selected
         expect(ids).toEqual([
             "editPath",
             "editLine",
-            "detachPath",
             "adjustResetSpot",
+            "detachPath",
             "removePath",
         ]);
-        // Remove path after a line, apart from the routine entries (round 5)
+        // Detach and Remove path after a line, apart from the routine entries, as under ···
         const separators = screen
             .getByTestId("field-menu")
             .querySelectorAll('[role="separator"]');
         expect(separators).toHaveLength(1);
-        expect(separators[0]!.nextElementSibling).toBe(item("removePath"));
+        expect(separators[0]!.nextElementSibling).toBe(item("detachPath"));
+        expect(item("detachPath")!.nextElementSibling).toBe(item("removePath"));
+        expect(item("detachPath")!.textContent).toContain(
+            "Detach 2 from group path",
+        );
+        expect(
+            screen.getByTestId("field-menu-detachPath-note").textContent,
+        ).toBe("Stops following group path changes");
         expect(item("editLine")).toHaveAttribute("aria-disabled", "true");
         expect(item("adjustResetSpot")).toHaveAttribute(
             "aria-disabled",
             "true",
         );
+        fireEvent.click(item("detachPath")!);
+        expect(detach).toHaveBeenCalledTimes(1);
     });
 
-    it("the whole group selected: Detach greyed out pointing at Detach all, which sits after a line beside Remove path, saying what it does (round 5)", () => {
+    it("detached marchers selected: Rejoin before Match group, no Detach (round 6)", () => {
+        handle("editPath");
+        handle("editLine", { enabled: false, reason: "Own path" });
+        handle("detachPath", { enabled: false });
+        handle("rejoinPath");
+        handle("adjustResetSpot", {
+            enabled: false,
+            reason: "This marcher is detached: Rejoin puts it back on the group path",
+        });
+        handle("refitPath", { enabled: false });
+        handle("detachAllPath", { enabled: false });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        expect(item("detachPath")).toBeNull();
+        expect(item("rejoinPath")!.nextElementSibling).toBe(
+            item("adjustResetSpot"),
+        );
+    });
+
+    it("the whole group selected: no Detach, Detach all after a line beside Remove path, saying what it does (round 5)", () => {
         handle("editPath");
         handle("detachPath", {
             enabled: false,
@@ -191,7 +222,7 @@ describe("FieldContextMenu", () => {
         });
         handle("removePath");
         open({ actions: PATH_FIELD_MENU });
-        expect(item("detachPath")).toHaveAttribute("aria-disabled", "true");
+        expect(item("detachPath")).toBeNull();
         const detachAll = item("detachAllPath")!;
         expect(detachAll.textContent).toContain("Detach all 16 marchers");
         expect(
@@ -233,7 +264,8 @@ describe("FieldContextMenu", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
-        // The Path group shows only what applies: here Edit path, Edit <name>'s line, Detach and Remove path
+        // The Path group shows only what applies: here Edit path, Edit <name>'s line, then after a
+        // line Detach, Detach all and Remove path
         for (const id of [
             "rejoinPath",
             "adjustResetSpot",
@@ -252,8 +284,8 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["editPath", "editLine", "detachPath"],
-            ["detachAllPath", "removePath"],
+            ["editPath", "editLine"],
+            ["detachPath", "detachAllPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "setSelectedMarchersToPreviousPage",

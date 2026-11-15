@@ -56,11 +56,12 @@ import {
  * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
- *   group path** (Edit path), **Edit <name>'s line**, **Detach from group path** or **Rejoin
- *   group path**, **Match group**, **Re-fit path** (Re-center group path), then after a line
- *   **Detach all N marchers** (the whole group selected: it ends the group path, said under its
- *   name) and **Remove path**. Edit <name>'s line, Detach and Match group stay in their places,
- *   greyed out with the reason, for any path but a trail; the others show only while they apply.
+ *   group path** (Edit path), **Edit <name>'s line**, **Rejoin group path**, **Match group**,
+ *   **Re-fit path** (Re-center group path), then after a line, as under the bar's ···, **Detach
+ *   from group path** (some of the group selected; "Detach 3 from group path"), **Detach all N
+ *   marchers** (the whole group selected: it ends the group path), each saying what it does under
+ *   its name, and **Remove path**. Edit <name>'s line and Match group stay in their places, greyed
+ *   out with the reason, for any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
  *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
@@ -83,27 +84,30 @@ import {
 const PATH: readonly ActionId[] = [
     "editPath",
     "editLine",
-    "detachPath",
     "rejoinPath",
     "adjustResetSpot",
     "reverseTrail",
     "refitPath",
 ];
 /**
- * The Path group's weighty end, kept apart from the routine entries by a line (round 5): Detach all,
- * which ends the group path (with the whole group selected), and Remove path
+ * The Path group's weighty end, kept apart from the routine entries by a line (round 5): Detach
+ * (round 6: off the bar, under ···), Detach all, which ends the group path (with the whole group
+ * selected), and Remove path
  */
-const PATH_END: readonly ActionId[] = ["detachAllPath", "removePath"];
+const PATH_END: readonly ActionId[] = [
+    "detachPath",
+    "detachAllPath",
+    "removePath",
+];
 const PATH_END_SET: ReadonlySet<ActionId> = new Set(PATH_END);
 const PATH_SET: ReadonlySet<ActionId> = new Set([...PATH, ...PATH_END]);
 /**
  * The path bar's fixed slots (pathways interaction round 2): shown greyed out with their reason
  * where they can't act, so the entries stay in the same places from one marcher to the next. The
- * others show only while they apply. Detach's slot gives no reason while Rejoin holds it.
+ * others show only while they apply: Rejoin, and Detach (off the bar since round 6).
  */
 const PATH_SLOTS: ReadonlySet<ActionId> = new Set([
     "editLine",
-    "detachPath",
     "adjustResetSpot",
 ]);
 const pathShown = (id: ActionId) =>
@@ -175,6 +179,7 @@ const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
 };
 /** A second line under an entry's name, saying what a weighty one does (its i18n key) */
 const NOTES: Partial<Record<ActionId, string>> = {
+    detachPath: "pathways.editor.detachNote",
     detachAllPath: "pathways.editor.detachAllNote",
 };
 

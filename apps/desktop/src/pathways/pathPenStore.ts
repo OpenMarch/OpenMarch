@@ -749,6 +749,26 @@ export function resetTargetOf(
 export const editGroupPathLabel = () =>
     tolgee.t("actions.path.editGroup", "Edit group path");
 
+/**
+ * Detach's name in ··· and the Path menus (round 6, off the bar): "Detach from group path", with
+ * the count when several, "Detach 3 from group path"
+ */
+export const detachLabel = (count: number) =>
+    count > 1
+        ? tolgee.t(
+              "pathways.editor.detachFromGroupCount",
+              "Detach {count} from group path",
+              { count },
+          )
+        : tolgee.t("actions.path.detachFromGroup", "Detach from group path");
+
+/** What Detach does, under its name in the menus (round 6) */
+export const detachNote = () =>
+    tolgee.t(
+        "pathways.editor.detachNote",
+        "Stops following group path changes",
+    );
+
 /** Detach all's name (round 5): how many marchers it detaches, so its size reads */
 export const detachAllLabel = (count: number) =>
     tolgee.t("pathways.editor.detachAllCount", "Detach all {count} marchers", {
@@ -834,17 +854,22 @@ export function lineTargetOf(
 /**
  * The path bar's fixed slots (interaction round 2: they stay put, so a press after the selection
  * changes lands where it did): Edit group path (Edit path for a path of one) · Edit <name>'s line ·
- * Detach or Rejoin · Match group · More. Each is
- * there for any path but a trail; one that can't act now says why (its tooltip, and the menus'
- * reason). Null reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
+ * Match group or Rejoin · More. Detach left the bar for ··· (round 6). Each slot is there for any
+ * path but a trail; one that can't act now says why (its tooltip, and the menus' reason). Null
+ * reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
  */
 export interface PathSlots {
     /** Whether the bar has the member slots at all: any shown path but a trail */
     shown: boolean;
     /** Edit <name>'s line: whose, or why it can't */
     line: { marcherId: number; drill: string } | { reason: string };
-    /** Detach's slot: Rejoin takes it when Rejoin can act and Detach can't */
+    /**
+     * The third slot, back to the group (round 6): Rejoin when the selection is detached marchers
+     * (Rejoin can act and Detach can't), Match group otherwise. A mixed selection keeps Match group
+     * there, Rejoin under ···
+     */
     backIsRejoin: boolean;
+    /** Why Detach (under ··· and in the menus since round 6) can't act, or null */
     detachReason: string | null;
     /**
      * The members Detach all would detach, with the whole group selected (round 5): Detach is

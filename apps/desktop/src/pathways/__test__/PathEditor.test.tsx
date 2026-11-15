@@ -146,17 +146,18 @@ describe("the path's floating editor", () => {
         render(<PathEditor fieldProperties={fieldProperties} />);
         expect(bar().dataset.phase).toBe("closed");
         expect(screen.getByTestId("path-edit").textContent).toBe("Edit path");
-        for (const id of ["path-edit-line", "path-detach", "path-adjust-reset"])
+        for (const id of ["path-edit-line", "path-adjust-reset"])
             expect(screen.getByTestId(id).getAttribute("aria-disabled")).toBe(
                 "true",
             );
+        expect(screen.queryByTestId("path-detach")).toBeNull();
         expect(screen.getByTestId("path-more")).toBeTruthy();
         expect(screen.queryByTestId("path-pen-banner")).toBeNull();
         act(() => setPathHidden(true));
         expect(screen.queryByTestId("path-editor")).toBeNull();
     });
 
-    it("fixed slots on a group path: Edit group path · Edit <name>'s line · Detach or Rejoin · Match group · More, whoever is selected", () => {
+    it("fixed slots on a group path: Edit group path · Edit <name>'s line · Match group or Rejoin · More, whoever is selected (round 6)", () => {
         act(() => {
             showPath(groupTarget(), "3");
             setGroupCommands([10, 11], null);
@@ -169,7 +170,6 @@ describe("the path's floating editor", () => {
         const slots = [
             "path-edit",
             "path-edit-line",
-            "path-detach",
             "path-adjust-reset",
             "path-more",
         ];
@@ -177,7 +177,8 @@ describe("the path's floating editor", () => {
         expect(screen.getByTestId("path-edit").textContent).toBe(
             "Edit group path",
         );
-        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
+        // Detach left the bar for ···
+        expect(screen.queryByTestId("path-detach")).toBeNull();
         // Two selected: Edit <name>'s line and Match group greyed out, saying why
         const line = screen.getByTestId("path-edit-line");
         expect(line.getAttribute("aria-disabled")).toBe("true");
@@ -185,17 +186,19 @@ describe("the path's floating editor", () => {
             "Select one marcher to edit their line",
         );
         expect(line.textContent).toBe("Edit marcher's line");
-        // One adjusted member selected: every slot acts, in the same places
+        expect(
+            screen.getByTestId("path-adjust-reset").getAttribute("aria-label"),
+        ).toBe("Select one marcher to match it to the group path");
+        // One bent member selected: every slot acts, in the same places
         act(() => setGroupCommands([12], null));
         expect(order()).toEqual(slots);
-        expect(screen.getByTestId("path-detach").textContent).toBe("Detach");
         expect(screen.getByTestId("path-edit-line").textContent).toBe(
             "Edit B3's line",
         );
         expect(screen.getByTestId("path-adjust-reset").textContent).toBe(
             "Match group",
         );
-        for (const id of ["path-edit-line", "path-detach", "path-adjust-reset"])
+        for (const id of ["path-edit-line", "path-adjust-reset"])
             expect(
                 screen.getByTestId(id).getAttribute("aria-disabled"),
             ).toBeNull();
@@ -207,7 +210,7 @@ describe("the path's floating editor", () => {
         ).toBe(
             "This marcher already walks the group path exactly: nothing to match",
         );
-        // Only detached marchers selected: Rejoin takes Detach's slot
+        // Only detached marchers selected: Rejoin takes the third slot, at Match group's width
         act(() =>
             setGroupCommands([], {
                 timelineId: 1,
@@ -219,29 +222,88 @@ describe("the path's floating editor", () => {
             "path-edit",
             "path-edit-line",
             "path-rejoin",
-            "path-adjust-reset",
             "path-more",
         ]);
-        expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin 2");
+        const rejoin = screen.getByTestId("path-rejoin");
+        expect(rejoin.textContent).toBe("Rejoin 2");
+        expect(rejoin.className).toContain("min-w-[104px]");
+        act(() =>
+            setGroupCommands([], {
+                timelineId: 1,
+                routeId: 9,
+                marcherIds: [13],
+            }),
+        );
+        expect(screen.getByTestId("path-rejoin").textContent).toBe("Rejoin");
+        // A mixed selection (a member and a detached marcher): Match group stays in the slot
+        act(() =>
+            setGroupCommands([10], {
+                timelineId: 1,
+                routeId: 9,
+                marcherIds: [13],
+            }),
+        );
+        expect(order()).toEqual(slots);
+        expect(screen.getByTestId("path-adjust-reset").className).toContain(
+            "min-w-[104px]",
+        );
     });
 
-    it("the whole group selected: Detach greyed out in its place, pointing at ··· › Detach all, which sits beside Remove path saying what it does (round 5)", async () => {
+    const openMore = async () => {
+        fireEvent.keyDown(screen.getByTestId("path-more"), {
+            key: "ArrowDown",
+        });
+        await screen.findByTestId("path-more-menu");
+    };
+
+    it("one member selected: ··· has Detach from group path after the line, saying what it does, before Remove path (round 6)", async () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        await openMore();
+        const detach = screen.getByTestId("path-more-detach");
+        expect(detach.textContent).toBe(
+            [
+                "Detach from group path",
+                "Stops following group path changes",
+            ].join(""),
+        );
+        expect(detach.previousElementSibling?.getAttribute("role")).toBe(
+            "separator",
+        );
+        expect(detach.nextElementSibling).toBe(
+            screen.getByTestId("path-remove"),
+        );
+        expect(screen.queryByTestId("path-detach-all")).toBeNull();
+        expect(screen.queryByTestId("path-more-rejoin")).toBeNull();
+    });
+
+    it("some of the group selected: Detach N from group path under ···, no Detach all", async () => {
+        act(() => {
+            showPath(groupTarget(), "3");
+            setGroupCommands([10, 11], null);
+        });
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        await openMore();
+        expect(screen.getByTestId("path-more-detach").textContent).toBe(
+            [
+                "Detach 2 from group path",
+                "Stops following group path changes",
+            ].join(""),
+        );
+        expect(screen.queryByTestId("path-detach-all")).toBeNull();
+    });
+
+    it("the whole group selected: no Detach under ···, Detach all beside Remove path saying what it does (round 5)", async () => {
         act(() => {
             showPath(groupTarget(), "3");
             setGroupCommands([10, 11, 12], null);
         });
         render(<PathEditor fieldProperties={fieldProperties} />);
-        const detach = screen.getByTestId("path-detach");
-        expect(detach.getAttribute("aria-disabled")).toBe("true");
-        expect(detach.getAttribute("aria-label")).toBe(
-            "Select some marchers to detach them. To detach everyone, use ··· › Detach all 3 marchers",
-        );
-        // No count on the greyed-out slot: it reads as a slot, not as a command for all three
-        expect(detach.textContent).toBe("Detach");
-        fireEvent.keyDown(screen.getByTestId("path-more"), {
-            key: "ArrowDown",
-        });
-        await screen.findByTestId("path-more-menu");
+        await openMore();
+        expect(screen.queryByTestId("path-more-detach")).toBeNull();
         const all = screen.getByTestId("path-detach-all");
         expect(all.textContent).toBe(
             "Detach all 3 marchers" +
@@ -254,21 +316,19 @@ describe("the path's floating editor", () => {
         expect(all.nextElementSibling).toBe(screen.getByTestId("path-remove"));
     });
 
-    it("some of the group selected: Detach N on the bar, no Detach all under ···", async () => {
+    it("only detached marchers selected: no Detach under ··· (Rejoin is on the bar)", async () => {
         act(() => {
             showPath(groupTarget(), "3");
-            setGroupCommands([10, 11], null);
+            setGroupCommands([], {
+                timelineId: 1,
+                routeId: 9,
+                marcherIds: [13],
+            });
         });
         render(<PathEditor fieldProperties={fieldProperties} />);
-        expect(screen.getByTestId("path-detach").textContent).toBe("Detach 2");
-        expect(
-            screen.getByTestId("path-detach").getAttribute("aria-disabled"),
-        ).toBeNull();
-        fireEvent.keyDown(screen.getByTestId("path-more"), {
-            key: "ArrowDown",
-        });
-        await screen.findByTestId("path-more-menu");
-        expect(screen.queryByTestId("path-detach-all")).toBeNull();
+        await openMore();
+        expect(screen.queryByTestId("path-more-detach")).toBeNull();
+        expect(screen.queryByTestId("path-more-rejoin")).toBeNull();
     });
 
     it("Edit <name>'s line lights while that line is edited, and Edit group path goes back to the group path", () => {
