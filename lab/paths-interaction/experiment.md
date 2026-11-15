@@ -3,7 +3,7 @@
 # Keep `id` stable: feedback is filed under it.
 id: paths-interaction
 title: "Path editing: one line per marcher, Edit a marcher's line, Detach and Rejoin (interaction MVP)"
-summary: "The path interaction MVP: marchers are the only selection, and each selected marcher's line shows, faint until you edit it. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), Detach or Rejoin, and Match group."
+summary: "The path interaction MVP: marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), Detach or Rejoin, and Match group."
 status: open
 variants: []
 questions:
@@ -11,7 +11,8 @@ questions:
   - "Drag a point of the detached copy, then play the move. Only that marcher's walk changed, and it still reaches each point of its copy on the group's counts. Is that what you expected from 'keeps the group's timing'?"
   - "Select the whole block again. The detached marcher has an orange 'Detached' ring and the bar offers Rejoin. Press it. The marcher goes back to its place on the group path, and its copy is gone. Did the word Rejoin fit?"
   - "Select one member and press Edit <its name>'s line (for example Edit T15's line). Its handles show at once. Was it clear what to drag? Bend it, then Detach it, then Rejoin it. The bend is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the bend came back?"
-  - "With the whole block selected, every marcher's line is drawn faint, and only the line you edit is deep. Can you still read where each marcher goes? Is the line you are editing easy to tell apart?"
+  - "Select the whole block (or click its placed shape). Only the group path is drawn, deep, named Group path · 16, plus a faint line for any bent or detached marcher. Click the line: its points show. Is it clear this one line moves the whole block? Do you miss seeing every marcher's own line?"
+  - "Select one or a few members instead. Each one's own line is drawn faint, and only the line you edit is deep. Can you still read where each marcher goes?"
   - "Select all 16 members and press Detach once, then Undo once. Did it feel like one step both ways?"
   - "After detaching every member there is no group path left to Rejoin, only Undo. Would you rather the group path stayed (empty) so they could rejoin it later?"
   - "Anything else about Detach and Rejoin you'd change?"
@@ -23,6 +24,11 @@ questions:
   one or more members of a group path (the path shows, quiet or being edited) and press
   **Detach**. Each gets its own copy of the path. It is also in the field's right-click
   and long-press menu (the Path group) and the command palette.
+- **One line for what you selected.** With the whole group selected (a box round the
+  block, or its placed shape), only the group path is drawn, deep, named **Group path ·
+  16**: no line per marcher. A bent or detached marcher keeps a faint line of its own.
+  Clicking the group line shows its points (Edit group path); the faint lines don't take
+  that click. With one or a few members selected, each one's own line shows instead.
 - **One way to work a path.** Marchers are the only selection: clicking a path's line
   selects the marchers who walk it and shows its points at once (no double-click).
   Selecting marchers by their dots shows the line each one walks, whatever the Paths
@@ -36,8 +42,13 @@ questions:
   its handles at once: squares for its bends, small circles where a new bend can be
   dragged out. A bend stays linked to the group path. **Escape** or a click on empty field
   leaves it, as with Edit group path. **Match group** takes the bends off. **Edit group
-  path** shows the group path's middle line, named **Group path · 16**, with every
-  member's line around it, faint.
+  path** shows the group path's middle line, named **Group path · 16**, and of the
+  members' lines only the bent ones, faint: a plain member's line is the group line moved
+  over. To bend a plain member's line, select it and press **Edit T15's line**.
+- **The path bar stays clear of a placed shape's bar.** With a placed shape selected, the
+  path bar sits under the shape's own bar (its size, spacing and Grid row) instead of
+  over it, and it stays in the same place between the quiet group path and Edit group
+  path.
 - **Nobody moves.** The copy is the group path exactly, and the marcher keeps its place
   and any bends it had, so it walks exactly as before, passing each point on the
   group's counts, until you edit the copy (or the group path).
@@ -74,9 +85,11 @@ questions:
    a point, and play the move with **Space**.
 5. Right-click (or long-press) the detached marcher: the menu's Path group is in the bar's
    order and has **Rejoin group path**. Choose it, then **Undo**.
-6. Select a member and press **Edit group path**: the group path's middle line shows, deep,
-   named **Group path · 16**, with every member's line around it, faint, and the detached
-   and bent marks on their dots. Drag a point to reshape the whole group.
+6. Drag a box round the whole block (or click its placed shape): only the group path shows,
+   deep, named **Group path · 16**, with the detached and bent marks on their dots and a
+   faint line for each of those marchers. Click the group line: its points show. Drag a
+   point to reshape the whole group. With a placed shape, its bar and the path bar sit
+   one under the other.
 7. Open **···** on the bar: **Re-center group path** (greyed out unless the block has moved
    since the path was drawn) and **Remove path**. Remove it: a toast offers **Undo**.
 8. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
