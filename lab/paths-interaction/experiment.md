@@ -13,8 +13,9 @@ questions:
   - "Select one member and press Edit <its name>'s line (for example Edit T15's line). Its handles show at once. Was it clear what to drag? Bend it, then Detach it, then Rejoin it. The bend is dropped on Rejoin (decided: Rejoin always drops it). Press Undo: is it clear the bend came back?"
   - "Select the whole block (or click its placed shape). Only the group path is drawn, deep, named Group path · 16, plus a faint line for any bent or detached marcher. Click the line: its points show. Is it clear this one line moves the whole block? Do you miss seeing every marcher's own line?"
   - "Select one or a few members instead. Each one's own line is drawn faint, and only the line you edit is deep. Can you still read where each marcher goes?"
-  - "Select all 16 members and press Detach once, then Undo once. Did it feel like one step both ways?"
-  - "After detaching every member there is no group path left to Rejoin, only Undo. Would you rather the group path stayed (empty) so they could rejoin it later?"
+  - "Select the whole block. Detach on the bar is greyed out, and its tooltip points to ··· › Detach all 16 marchers. Was it clear why, and that Detach all ends the group path?"
+  - "Run Detach all 16 marchers from ···, then Undo once. Did the toast ('Group path ended: 16 marchers have their own paths') say how big that was? Did it feel like one step both ways?"
+  - "After Detach all there is no group path left to Rejoin, only Undo. Would you rather the group path stayed (empty) so they could rejoin it later?"
   - "Anything else about Detach and Rejoin you'd change?"
 ---
 
@@ -62,7 +63,13 @@ questions:
   Rejoin shows when a detached marcher is selected on its own, or with the group, where
   its start ring and the bar say **Detached**. In the palette they are **Detach from
   group path** and **Rejoin group path**.
-- Detach, Rejoin and their undo are one step each, also for all 16 members at once.
+- **Detach all is apart.** With the whole group selected, **Detach** on the bar stays in
+  its place but is greyed out: its tooltip says to select some marchers, or to use **··· ›
+  Detach all 16 marchers**. That entry sits beside **Remove path**, after a line, with
+  "Ends the group path; each marcher gets their own copy" under it (also in the
+  right-click menu and the palette). The toast after it says **Group path ended: 16
+  marchers have their own paths**, with Undo.
+- Detach, Detach all, Rejoin and their undo are one step each.
 
 **Try it**
 
@@ -90,8 +97,12 @@ questions:
    faint line for each of those marchers. Click the group line: its points show. Drag a
    point to reshape the whole group. With a placed shape, its bar and the path bar sit
    one under the other.
-7. Open **···** on the bar: **Re-center group path** (greyed out unless the block has moved
-   since the path was drawn) and **Remove path**. Remove it: a toast offers **Undo**.
+7. With the whole block still selected, **Detach** on the bar is greyed out: hover it (or
+   press it) to read why. Open **···**: **Re-center group path** (greyed out unless the
+   block has moved since the path was drawn), then after a line **Detach all 16 marchers**
+   and **Remove path**. Choose Detach all: a toast says **Group path ended: 16 marchers
+   have their own paths** with **Undo**. Undo it, then Remove the path: a toast offers
+   **Undo**.
 8. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
    bar.
 9. Try it with a finger or pencil on a tablet: every one of these is a button on the bar or
@@ -114,7 +125,7 @@ questions:
 - A straight move (no path yet) has nothing to grab: draw its first path with **P**.
 - No live link between a copy and its group path (decided: copies now, links later). An
   edit of the group path after Detach doesn't reach the copy.
-- Detaching every member leaves no group path to Rejoin; Undo brings it back.
+- Detach all leaves no group path to Rejoin; Undo brings it back.
 - Rejoin puts a marcher in its place on the group path when no Re-fit is pending there.
   If another member's start moved since the group path was drawn, and you then move the
   group path's first point, the rejoined marcher can land a little off; Re-center first.
