@@ -1,9 +1,9 @@
 ---
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
-id: paths-interaction
-title: "Path editing: only shapes keep a group path, one line per marcher, Edit a marcher's line, Detach, Rejoin (interaction MVP)"
-summary: "The path interaction MVP. New: only a placed shape keeps a group path. A path drawn for marchers you picked by hand is saved as each marcher's own path, so there's nothing to find again later; select the same marchers and you edit them together again. Marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), and Match group, or Rejoin for detached marchers. Detach from group path is under the bar's ··· menu."
+id: detach-rejoin
+title: "Path editing, step 3c: one line per marcher, Edit a marcher's line, Detach and Rejoin, only shapes keep a group path (pathways)"
+summary: "Step 3c of pathways, now the whole path interaction from the MVP rounds. Marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), and Match group, or Rejoin for detached marchers. Detach from group path, and Detach all for the whole group, are under the bar's ··· menu. Only a placed shape keeps a group path: a path drawn for marchers you picked by hand is saved as each marcher's own path, and selecting the same marchers again edits them together."
 status: open
 variants: []
 questions:
