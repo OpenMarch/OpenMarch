@@ -29,7 +29,7 @@ import {
 } from "../../__test__/convertOnOpenFixtures";
 import { migrationAt } from "../../__test__/migrationRollback";
 
-const TRAIL_MIGRATION = migrationAt(22);
+const TRAIL_MIGRATION = migrationAt(27);
 
 const open = async (file: string) => {
     const db = new DatabaseSync(file);
@@ -81,7 +81,7 @@ const TABLES = [
  * A new show put back to before 0027: the older CHECK on `timeline_transitions`, a laned move
  * with an Adjust, version 12
  */
-async function fileBefore0022(file: string) {
+async function fileBefore0027(file: string) {
     await createNewTimelineShow(file);
     withDb(file, (db) => {
         const triggers = db
@@ -165,7 +165,7 @@ describe(`Migration ${TRAIL_MIGRATION.tag}`, () => {
     });
 
     it("QA-MIG-T1: a file with moves, lanes and an Adjust keeps every row and id, and its version", async () => {
-        await fileBefore0022(file);
+        await fileBefore0027(file);
         const before = withDb(file, (db) => {
             expect(tableSql(db)).toContain(OLD_CHECK);
             return TABLES.map((t) => rowsOf(db, t));

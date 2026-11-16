@@ -28,7 +28,7 @@ import {
 } from "../../__test__/convertOnOpenFixtures";
 import { migrationAt } from "../../__test__/migrationRollback";
 
-const ADJUST_MIGRATION = migrationAt(21);
+const ADJUST_MIGRATION = migrationAt(26);
 
 const open = async (file: string) => {
     const db = new DatabaseSync(file);
@@ -50,7 +50,7 @@ const ROUTE = JSON.stringify({
 });
 
 /** A new show put back to before 0026: a group lane, version 11, the column gone */
-async function fileBefore0021(file: string) {
+async function fileBefore0026(file: string) {
     await createNewTimelineShow(file);
     withDb(file, (db) => {
         db.exec(`
@@ -113,7 +113,7 @@ describe(`Migration ${ADJUST_MIGRATION.tag}`, () => {
     });
 
     it("a file with lanes keeps every lane, adjust NULL, and stays at 11", async () => {
-        await fileBefore0021(file);
+        await fileBefore0026(file);
         await open(file);
         withDb(file, (db) => {
             expect(

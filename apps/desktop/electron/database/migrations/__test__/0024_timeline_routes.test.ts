@@ -31,7 +31,7 @@ import {
     rollBackRoutesSchema,
 } from "../../__test__/migrationRollback";
 
-const ROUTES_MIGRATION = migrationAt(19);
+const ROUTES_MIGRATION = migrationAt(24);
 const V017_SMALL = path.resolve(
     __dirname,
     "../../__test__/v017-files/small.dots",

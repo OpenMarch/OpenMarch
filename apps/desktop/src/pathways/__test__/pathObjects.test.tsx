@@ -123,6 +123,7 @@ const at = (x: number, y: number, button = 0): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 /** On the own path's first leg */
@@ -350,29 +351,33 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
         expect(session()).toMatchObject({ object: false, phase: "closed" });
         expect(state.selected).toEqual([3]);
         expect(ports.openMenu).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBeUndefined();
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
     });
 
-    it("a long press on that dot picks no path either", () => {
+    it("a long press on that dot picks no path either: the marcher's menu opens (tablet 1.5)", () => {
         showPath(own(5), "T4");
         const { editor, ports, state } = fieldWithPen([3]);
         editor.longPress(ON_OWN);
         expect(session()).toMatchObject({ object: false });
         expect(state.selected).toEqual([3]);
-        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(ports.openMenu).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBe(3);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
     });
 
     it("with Paths All, a right-click or long press on a dot a group lane runs through is the marcher's", () => {
         setPathObjects([groupObject(9)]);
         const { editor, ports, state, right } = fieldWithPen([]);
+        // The field's own menu, for the marcher pressed, either way
         editor.longPress(ON_LANE);
         expect(session()).toBeNull();
-        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([10]);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBe(10);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
         right(ON_LANE);
         expect(session()).toBeNull();
-        // The field's own menu, for the marcher pressed
         expect(state.selected).toEqual([10]);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBeUndefined();
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
     });
 
     it("off the dots, a right-click on the line still selects the path and offers its actions", () => {
@@ -380,7 +385,7 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
         const { ports, right } = fieldWithPen([]);
         right(ON_GROUP);
         expect(session()).toMatchObject({ object: true });
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toEqual(
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toEqual(
             PATH_FIELD_MENU,
         );
     });

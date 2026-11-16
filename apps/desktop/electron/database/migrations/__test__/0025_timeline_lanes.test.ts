@@ -30,7 +30,7 @@ import {
 } from "../../__test__/convertOnOpenFixtures";
 import { migrationAt } from "../../__test__/migrationRollback";
 
-const LANES_MIGRATION = migrationAt(20);
+const LANES_MIGRATION = migrationAt(25);
 
 const ROUTE_OWN = {
     v: 1,

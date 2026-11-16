@@ -42,7 +42,7 @@ import { runAction } from "@/shortcuts/registry";
 import type { OrderChoice } from "../assign";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { keepFocus } from "./keepFocus";
-import { RichTips, Tip } from "@/components/ui/Tip";
+import { RichTips } from "@/components/ui/Tip";
 import ActionButton from "@/shortcuts/ActionButton";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import {

@@ -49,6 +49,7 @@ const at = (x: number, y: number, button = 0): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 /** On the path's first leg, from (0, 0) to the corner */

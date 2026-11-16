@@ -756,7 +756,7 @@ describe("FieldEditor right-click menu (#315)", () => {
         rightDown(editor, 250, 300);
         rightUp(editor, 250, 300);
         expect(ports.openMenu).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toEqual([
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toEqual([
             "editPath",
             "removePath",
         ]);
@@ -765,11 +765,11 @@ describe("FieldEditor right-click menu (#315)", () => {
         rightDown(editor, 250, 200);
         rightUp(editor, 250, 200);
         expect(ports.openMenu).toHaveBeenCalledTimes(2);
-        expect(vi.mocked(ports.openMenu!).mock.calls[1]![1]).toBeUndefined();
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
         // A long press reaches the same menu on touch
         editor.longPress(at(250, 300));
         expect(ports.openMenu).toHaveBeenCalledTimes(3);
-        expect(vi.mocked(ports.openMenu!).mock.calls[2]![1]).toEqual([
+        expect(vi.mocked(ports.openMenu!).mock.calls[2]![2]).toEqual([
             "editPath",
             "removePath",
         ]);
@@ -796,16 +796,18 @@ describe("FieldEditor right-click menu (#315)", () => {
         rightUp(editor, 200, 100);
         expect(fieldMenuAt).not.toHaveBeenCalled();
         expect(state.selected).toEqual([2]);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBeUndefined();
-        // A long press there opens nothing (touch's field menu is the mode's only)
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
+        // A long press there opens the marcher's menu too (tablet 1.5), not the path's
         editor.longPress(at(100, 100));
         expect(fieldMenuAt).not.toHaveBeenCalled();
-        expect(ports.openMenu).toHaveBeenCalledTimes(1);
+        expect(ports.openMenu).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![1]).toBe(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
         // Between the dots, the path's
         rightDown(editor, 250, 100);
         rightUp(editor, 250, 100);
         expect(fieldMenuAt).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(ports.openMenu!).mock.calls[1]![1]).toEqual([
+        expect(vi.mocked(ports.openMenu!).mock.calls[2]![2]).toEqual([
             "editPath",
             "removePath",
         ]);
