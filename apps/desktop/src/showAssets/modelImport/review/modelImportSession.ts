@@ -93,6 +93,8 @@ const requireDeps = () => {
 /** Each run's controller; a newer run or Cancel aborts the older one */
 let current: AbortController | null = null;
 let beforeRun: AbortController | null = null;
+/** Bumped by each new import, so a save that ends after it leaves the new one alone */
+let generation = 0;
 
 const isAbort = (error: unknown) =>
     error instanceof DOMException && error.name === "AbortError";
@@ -121,19 +123,17 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
             .then((result) => {
                 if (current !== controller) return;
                 current = null;
-                const first = get().result === null;
+                // The file's own name and credits fill in with the first run that reads it
+                // (Try again after a failed one included); later runs keep the user's edits
+                const firstModel = result.ok && !get().result?.ok;
                 set({
                     running: false,
                     result,
-                    // The file's own name and credits fill in once; later runs keep edits
-                    ...(first && result.ok
+                    ...(firstModel
                         ? {
                               name: defaultModelName(files, result.model),
                               credits: { ...result.model.credits },
                           }
-                        : {}),
-                    ...(first && !result.ok
-                        ? { name: defaultModelName(files, undefined) }
                         : {}),
                 });
             })
@@ -167,6 +167,7 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
     return {
         ...IDLE,
         open(files) {
+            generation++;
             endRuns();
             set({ ...IDLE, files: [...files] });
             runNow();
@@ -222,6 +223,7 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
         async add() {
             const { result, running, saving, name, credits } = get();
             if (!result?.ok || running || saving) return null;
+            const started = generation;
             set({ saving: true, saveError: null });
             try {
                 const trimmed = name.trim();
@@ -230,15 +232,21 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
                     name: trimmed || result.model.name,
                     credits: withoutEmpty(credits),
                 });
+                // Another import opened meanwhile: the model is stored, and that one goes on
+                if (started !== generation) return null;
                 endRuns();
                 set(IDLE);
                 return modelValue;
             } catch (error) {
-                set({ saving: false, saveError: String(error) });
+                if (started === generation)
+                    set({ saving: false, saveError: String(error) });
                 return null;
             }
         },
         cancel() {
+            // A save can't be taken back once it starts; the review keeps Cancel off meanwhile
+            if (get().saving) return;
+            generation++;
             endRuns();
             set(IDLE);
         },

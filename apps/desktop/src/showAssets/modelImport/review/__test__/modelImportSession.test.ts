@@ -163,3 +163,70 @@ it("leaves blank credits out: empty means Unknown", () => {
         withoutEmpty({ license: "", author: " Ann ", sourceUrl: " " }),
     ).toEqual({ author: "Ann" });
 });
+
+describe("the session around a save", () => {
+    it("fills the name and credits once a Try again reads the file", async () => {
+        const { runs } = deferredRuns();
+        session().open(FILES);
+        runs[0].finish({
+            ok: false,
+            report: {
+                cantImport: [{ code: "timedOut", seconds: 120 }],
+                needsChoice: [],
+                fixedForYou: [],
+                notes: [],
+            },
+        });
+        await vi.waitFor(() => expect(session().running).toBe(false));
+        session().retry();
+        runs[1].finish(ok("Riser"));
+        await vi.waitFor(() => expect(session().running).toBe(false));
+        expect(session()).toMatchObject({
+            name: "Riser",
+            credits: { author: "Ann" },
+        });
+    });
+
+    it("keeps Cancel from undoing a save under way", async () => {
+        const { runs, save } = deferredRuns();
+        let finishSave!: () => void;
+        save.mockImplementationOnce(
+            (m) =>
+                new Promise((resolve) => {
+                    finishSave = () =>
+                        resolve({ modelValue: `library:${m.name}@x` });
+                }),
+        );
+        session().open(FILES);
+        runs[0].finish(ok("Riser"));
+        await vi.waitFor(() => expect(session().running).toBe(false));
+        const added = session().add();
+        session().cancel();
+        expect(session()).toMatchObject({ saving: true });
+        finishSave();
+        expect(await added).toBe("library:Riser@x");
+    });
+
+    it("leaves an import opened during a save alone", async () => {
+        const { runs, save } = deferredRuns();
+        let finishSave!: () => void;
+        save.mockImplementationOnce(
+            (m) =>
+                new Promise((resolve) => {
+                    finishSave = () =>
+                        resolve({ modelValue: `library:${m.name}@x` });
+                }),
+        );
+        session().open(FILES);
+        runs[0].finish(ok("Riser"));
+        await vi.waitFor(() => expect(session().running).toBe(false));
+        const added = session().add();
+        session().open([
+            { name: "Tuba stand.glb", bytes: new Uint8Array([2]) },
+        ]);
+        finishSave();
+        expect(await added).toBeNull();
+        expect(session().files?.[0].name).toBe("Tuba stand.glb");
+        expect(runs[1].signal.aborted).toBe(false);
+    });
+});

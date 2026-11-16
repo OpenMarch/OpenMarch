@@ -3,6 +3,7 @@
  * Both read the bytes in the page, the same on desktop and the web; the import worker gets bytes,
  * never paths (#998).
  */
+import { touchSafeAccept } from "@/utilities/fileAccept";
 import type { PickedFile } from "../types";
 
 /** What the picker offers: a model, and the buffers and pictures a `.gltf` names */
@@ -33,7 +34,8 @@ export function pickModelFiles(): Promise<File[] | null> {
         const input = document.createElement("input");
         input.type = "file";
         input.multiple = true;
-        input.accept = MODEL_FILE_ACCEPT;
+        // iPad Safari greys out .glb and .gltf; there any file is offered and the import checks
+        input.accept = touchSafeAccept(MODEL_FILE_ACCEPT);
         input.style.display = "none";
         const done = (files: File[] | null) => {
             input.remove();

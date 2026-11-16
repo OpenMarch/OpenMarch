@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
     ArrowClockwiseIcon,
     CaretRightIcon,
@@ -58,21 +58,19 @@ export function useBytesUrl(
     bytes: Uint8Array | undefined,
     type: string,
 ): string | undefined {
-    const url = useMemo(
-        () =>
-            bytes
-                ? URL.createObjectURL(
-                      new Blob([bytes as Uint8Array<ArrayBuffer>], { type }),
-                  )
-                : undefined,
-        [bytes, type],
-    );
-    useEffect(
-        () => () => {
-            if (url) URL.revokeObjectURL(url);
-        },
-        [url],
-    );
+    // Made in the effect, so React's mount, cleanup, mount in development makes a new one
+    const [url, setUrl] = useState<string>();
+    useEffect(() => {
+        if (!bytes) {
+            setUrl(undefined);
+            return;
+        }
+        const made = URL.createObjectURL(
+            new Blob([bytes as Uint8Array<ArrayBuffer>], { type }),
+        );
+        setUrl(made);
+        return () => URL.revokeObjectURL(made);
+    }, [bytes, type]);
     return url;
 }
 
@@ -107,6 +105,10 @@ export default function ModelImportReview({
     const simplified = simplify?.applied ? simplify : undefined;
     const [showBefore, setShowBefore] = useState(false);
     const before = session.before;
+    // A turn or a unit change drops the before picture: back to the one Add stores
+    useEffect(() => {
+        if (!before) setShowBefore(false);
+    }, [before]);
     const pictureBytes =
         showBefore && before?.status === "ready"
             ? before.thumbnail
@@ -114,6 +116,8 @@ export default function ModelImportReview({
     const picture = useBytesUrl(pictureBytes, "image/png");
 
     const cancel = () => {
+        // A save under way can't be taken back
+        if (session.saving) return;
         session.cancel();
         onDone(null);
     };
@@ -129,7 +133,7 @@ export default function ModelImportReview({
         >
             <ItemPanelHeader
                 title={<T keyName="props.import.title" />}
-                onBack={cancel}
+                onBack={session.saving ? undefined : cancel}
             />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto pr-4">
                 {/* The picture, from the audience side, with the turn beside it */}
@@ -359,6 +363,7 @@ export default function ModelImportReview({
                         size="compact"
                         variant="secondary"
                         onClick={cancel}
+                        disabled={session.saving}
                         data-testid="model-import-cancel"
                     >
                         <T keyName="props.import.cancel" />

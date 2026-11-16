@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { hasModelFile } from "@/showAssets/modelImport/review/modelFiles";
+import { isPreviewMode } from "@/stores/PreviewModeStore";
 import { importModelFiles } from "./openModelImport";
 
 const carriesFiles = (event: DragEvent) =>
@@ -21,7 +22,11 @@ export default function ModelFileDrop() {
             if (!carriesFiles(event)) return;
             event.preventDefault();
             const files = [...(event.dataTransfer?.files ?? [])];
-            if (hasModelFile(files.map((file) => file.name)))
+            // Preview hides the sidebar, where the review shows
+            if (
+                !isPreviewMode() &&
+                hasModelFile(files.map((file) => file.name))
+            )
                 void importModelFiles(files);
         };
         window.addEventListener("dragover", onDragOver);
