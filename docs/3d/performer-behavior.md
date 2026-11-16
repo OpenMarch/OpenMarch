@@ -185,7 +185,7 @@ Facing alone.
 
 | Group     | Cue type  | Parameter                 | Values                                                                     | Default                | Built                                     |
 | --------- | --------- | ------------------------- | -------------------------------------------------------------------------- | ---------------------- | ----------------------------------------- |
-| Equipment | Equipment | What the performer holds  | The section's instrument, flag, rifle, sabre, nothing                      | The section's usual    | End to end (fork #992)                    |
+| Equipment | Equipment | What the performer holds  | A catalog item (guard, brass, woodwinds, drums), their own, nothing        | The section's usual    | End to end (fork #992)                    |
 | Equipment | Position  | How it is held            | Horn up, down, trail; sticks playing, in, down; set, port, present; tosses | Up, playing or set     | Compile; 3D horn holds. No editor         |
 | Equipment | Silk      | A held flag's design      | Plain color; artwork later                                                 | The section's color    | Compile only                              |
 | Looks     | Look      | Which uniform look        | A look from #972                                                           | The band or guard look | Compile only; waits on #972               |
@@ -201,8 +201,15 @@ Facing alone.
 ### Equipment
 
 - Equipment belongs to the performer: "G3 holds a rifle from count 40". The
-  default comes from the section: a Rifle section holds rifles, Flag and Color
-  Guard hold flags, winds and battery hold their instrument.
+  default comes from the section: each section holds its own catalog item (a
+  trumpet, a tuba, a 6 ft flag, a rifle; `cueSections.ts`).
+- The values are a fixed catalog of real items (`equipmentCatalog` in core),
+  grouped by family: guard equipment (flag, swing flag, double swing flags,
+  rifle, sabre), brass, woodwinds and drums. Any performer can hold any item.
+  Each lines up with a 3D View model (`cues/equipmentItems.ts`).
+  `builtin:equipment.usual` is "their own instrument", which compile resolves
+  to the performer's section default; `builtin:equipment.none` is nothing.
+  Imported equipment will be a family of its own later.
 - The swap cuts on the count, with no animation.
 - The 2D field and the 3D View both show what each performer holds at the
   playhead (section 7).
@@ -261,8 +268,9 @@ on holds, and its settings with defaults. The editor and the compile step read
 it without the 3D assets; the animation data lives with the 3D View. A show
 can add values of its own, such as a section's equipment.
 
-- **Equipment:** nothing ("None"), horn, drum, flag, rifle, sabre. Cuts on its
-  count.
+- **Equipment:** the catalog's items by family (section 3), nothing
+  ("None") and their own instrument ("Own"). Horn and drum stay only as the
+  default of a section with no catalog item. Cuts on its count.
 - **Position, winds:** horns up ("HU"; angle box or +10°), horns down ("HD"),
   trail ("Trail"). Snap by default.
 - **Position, battery:** playing ("Play"), sticks in ("In"), sticks down
@@ -363,34 +371,40 @@ only when nothing but those types' cues changed.
 ### 7.1 Equipment commands (built)
 
 These are commands (`shortcuts/definitions.ts`, `cues/useCueCommands.ts`),
-so the command bar finds them. The field's right-click **Equipment** submenu
-offers all but the lasting, momentary and delete ones, which the Equipment
-lane's cue menu offers:
+so the command bar finds them. The field's right-click menu has an
+**Equipment** submenu (their own instrument; the last four items picked; a
+submenu per family; Nothing) and a **Select by equipment** submenu grouped the
+same way. The Equipment lane's cue menu offers the cue edits:
 
-- **Instrument, Flag, Rifle, Sabre, Nothing:** what the selected performers
-  hold from the paused playhead on, as one lasting cue that stores them.
-  Instrument hands each performer their own section's instrument. The menu
-  checks the one every selected performer holds.
+- **Equipment: <item>**, one per catalog item, **their own instrument** and
+  **Nothing:** what the selected performers hold from the paused playhead on,
+  as one lasting cue that stores them. The menu checks what every selected
+  performer already holds, and keeps the last four items picked (UI settings,
+  per device).
 - **Add selected to this cue, Remove selected from this cue:** change who the
   picked cue applies to (picked in the lane, else the one Equipment cue on the
   playhead's count). After a change the cue's label names its performers
   again (`cueLabel.ts`).
-- **Make lasting, Make momentary** (8 counts by default) and **Delete cue**
-  for the picked cue.
-- **Select Rifles, Flags, Sabres, Instruments, Nothing:** select whoever holds
-  that at the playhead, whatever their section (`whoHolds`).
+- **Make lasting, Make momentary** (8 counts by default), **Move cue to
+  playhead** and **Delete cue** for the picked cue.
+- **Select <items>** for each item, **Select all <family>** for each family,
+  and **Select empty hands:** select whoever holds it at the playhead,
+  whatever their section (`whoHasValue`).
 
 ### 7.2 The 2D field (built)
 
 The field tags a drill number with what the performer holds when it isn't
-their section's usual: **R** rifle, **F** flag, **S** sabre, **H** horn, **D**
-drum, **N** nothing (`useEquipmentTags.ts`). Shows without Equipment cues
-draw no tags.
+their own instrument: a short abbreviation per item, such as **R** rifle, **F**
+flag, **Tp** trumpet, **Tu** tuba, **SD** snare, **N** nothing (`ITEM_TAG` in
+`cues/equipmentItems.ts`; ASCII only, for the field's glyph atlas). Shows
+without Equipment cues draw no tags.
 
 ### 7.3 Timeline lanes
 
 One lane per cue type in the main timeline, under the drill rows, grouped as
-in section 3. Each can be shown or hidden, and all are hidden by default. A
+in section 3. Each can be shown or hidden from the timeline's Lanes button, a
+checklist of the lanes that are built (`cues/cueLanes.ts`), and all are hidden
+by default. A
 lasting cue draws as a bar to the next one and a momentary cue as a block of
 its length. There is no separate workspace: cues are timed against the drill,
 so the drill stays in view (ADR 0015 D-7).
@@ -403,7 +417,11 @@ The **Equipment lane** is built (`cues/equipmentLane.ts`,
 - only performers with an Equipment cue are in it; a section's usual (not a
   cue) draws as a dashed bar;
 - click a cue to pick it for the commands above; right-click or long-press it
-  for its menu; click a row's name to select its performers.
+  for its menu; click a row's name to select its performers;
+- drag a cue sideways to move it to another count, as a move's clip moves
+  (whole beats, pulled to page lines, `snapRangeOffset`), and drag a momentary
+  cue's end to change its length; each drag is one undo step, and a cue that
+  spans rows moves in all of them.
 
 The other lanes come with their editors. The parked branch's who list and why
 readout are starting points (ADR 0015, "What comes back").
