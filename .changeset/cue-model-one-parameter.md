@@ -23,3 +23,6 @@ change (the module is not in a released version yet).
   counts.
 - New queries: `whoHasValue`, `whoHolds`, `heldAt` and `cueValueAt`.
 - `RecompileOptions.channels` becomes `types`.
+- `CueNoteKind` loses `silk_aspect`: the note for a silk whose aspect differs
+  waits for silk artwork (ADR 0015 keeps Silk a plain color). `carry_mismatch`
+  becomes `equipment_mismatch`.
