@@ -18,13 +18,36 @@
             "snapOn": "สแนปปิดอยู่: กดเพื่อเปิดอีกครั้ง",
             "snapToCustomFraction": "สแนปเข้ากับกริด",
             "toggleSnap": "เปิด/ปิดสแนป",
-            "toggleSnapKeywords": "สแนป แม่เหล็ก กริด ตาราง อิสระ snap magnet grid free"
+            "toggleSnapKeywords": "สแนป แม่เหล็ก กริด ตาราง อิสระ snap magnet grid free",
+            "propsOnly": "เลือกไว้เฉพาะพร็อพ: พร็อพไม่ถูกจัดแนวหรือกระจายระยะ"
         },
         "batchEdit": {
-            "noNextPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าถัดไปได้ เนื่องจากไม่มีหน้าถัดไป",
-            "noPreviousPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าก่อนหน้าได้ เนื่องจากไม่มีหน้าก่อนหน้า",
+            "clearPage": "ล้างหน้า {page}",
+            "clearPageAndLater": "{count, plural, =1 {ล้างหน้า {page} หน้า {first} จะย้อนกลับด้วย} other {ล้างหน้า {page} หน้า {first}–{last} จะย้อนกลับด้วย}}",
+            "clearThisPageAll": "{clearThisPage} (ผู้แสดงทั้งหมด)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (ผู้แสดงทั้งหมด) หน้าถัดไปจะย้อนกลับด้วย",
+            "clearThisPageHoldsToo": "{count, plural, other {ช่วงคงตำแหน่งของ {names} ใน{pages} ถูกล้างด้วย}}",
+            "clearThisPageSelected": "{clearThisPage} (ที่เลือก)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (ที่เลือก) หน้าถัดไปจะย้อนกลับด้วย",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (ผู้แสดงทั้งหมด)",
+            "forSelected": "{label} (ที่เลือก)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "คงตำแหน่ง ค้าง อยู่กับที่ กำหนด ไม่ได้กำหนด คงไว้ ตั้งค่า คีย์เฟรม หน้า สถานะ ก่อนหน้า hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "รูปแบบการคงตำแหน่ง: ตามการตั้งค่าโชว์",
+            "holdStyleHighMarkTime": "รูปแบบการคงตำแหน่ง: ย่ำเท้ายกเข่าสูง",
+            "holdStyleKeywords": "คงตำแหน่ง รูปแบบ ยืน นิ่ง หยุด ย่ำเท้า อยู่กับที่ ยกเข่าสูง เท้า 3 มิติ hold style stand still halt mark time marktime high feet 3d",
+            "holdStyleMarkTime": "รูปแบบการคงตำแหน่ง: ย่ำเท้าอยู่กับที่",
+            "holdStyleStand": "รูปแบบการคงตำแหน่ง: ยืนนิ่ง",
+            "noPageAfter": "ไม่มีหน้าถัดจากหน้านี้",
+            "noPageBefore": "ไม่มีหน้าก่อนหน้านี้",
+            "moveAllToNextSpots": "ย้ายไปยังตำแหน่งของหน้าถัดไป (ผู้แสดงทั้งหมด)",
+            "movedAllToNextSpots": "{count, plural, other {ย้ายผู้แสดงทั้งหมด # คนในหน้า {currentPage} ไปยังตำแหน่งในหน้า {nextPage} แล้ว}}",
+            "moveSelectedToNextSpots": "ย้ายไปยังตำแหน่งของหน้าถัดไป (ที่เลือก)",
+            "movedSelectedToNextSpots": "{count, plural, other {ย้ายผู้แสดง # คนในหน้า {currentPage} ไปยังตำแหน่งในหน้า {nextPage} แล้ว}}",
             "setAllToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดงทั้งหมด # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}",
-            "setSelectedToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}"
+            "setSelectedToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "ไม่มีการกระทำให้ทำซ้ำ",
@@ -33,6 +56,49 @@
             "redoFailed": "ไม่สามารถทำซ้ำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ",
             "undo": "เลิกทำ",
             "undoFailed": "ไม่สามารถเลิกทำได้ จึงไม่มีการเปลี่ยนแปลงใด ๆ"
+        },
+        "field": {
+            "addXCheckpoint": "เพิ่มเส้นอ้างอิง X ทั้งสองฝั่ง",
+            "addXCheckpointSeries": "เพิ่มเส้นอ้างอิง X ทุกๆ ไม่กี่ก้าว",
+            "addYCheckpoint": "เพิ่มเส้นอ้างอิง Y",
+            "addYCheckpointSeries": "เพิ่มเส้นอ้างอิง Y ทุกๆ ไม่กี่ก้าว",
+            "checkpointKeywords": "สนาม เส้น กริด ตาราง หลา แฮช เส้นแฮช อ้างอิง field line lines grid yard hash reference",
+            "params": {
+                "every": "จำนวนก้าวระหว่างเส้นอ้างอิง",
+                "toBack": "ถอยไปกี่ก้าวจากด้านหน้าสนาม",
+                "toSide": "ออกไปกี่ก้าวจากกึ่งกลางสนาม"
+            },
+            "editField": "แก้ไขสนาม",
+            "editFieldKeywords": "สนาม เส้น เส้นอ้างอิง หลา แฮช เส้นแฮช กริด ปรับแต่ง ขนาด เทมเพลต การตั้งค่า field lines checkpoints yard hash grid customize size template settings",
+            "done": "แก้ไขสนามเสร็จแล้ว",
+            "discard": "ละทิ้งการเปลี่ยนแปลงสนาม",
+            "mirror": "สะท้อนสองฝั่ง",
+            "mirrorOn": "เปิดสะท้อนสองฝั่ง",
+            "mirrorOff": "ปิดสะท้อนสองฝั่ง",
+            "addXLine": "เพิ่มเส้น X",
+            "addYLine": "เพิ่มเส้น Y",
+            "editLine": "พิมพ์ตำแหน่งของเส้นที่เลือก",
+            "deleteLines": "ลบเส้น",
+            "toggleVisible": "ซ่อนหรือแสดงเส้น",
+            "toggleReference": "ใช้หรือไม่ใช้เส้นเป็นเส้นอ้างอิง",
+            "nextLine": "เลือกเส้นถัดไป",
+            "previousLine": "เลือกเส้นก่อนหน้า",
+            "selectAllLines": "เลือกเส้นทั้งหมด",
+            "selectAllXLines": "เลือกเส้น X ทั้งหมด",
+            "selectAllYLines": "เลือกเส้น Y ทั้งหมด",
+            "everyOther": "คงการเลือกไว้แบบเส้นเว้นเส้น",
+            "resetNames": "ตั้งชื่อเส้นตามตำแหน่ง",
+            "nudgeLeft": "ย้ายเส้นไปทางซ้าย",
+            "nudgeRight": "ย้ายเส้นไปทางขวา",
+            "nudgeUp": "ย้ายเส้นไปด้านหลัง",
+            "nudgeDown": "ย้ายเส้นไปด้านหน้า",
+            "nextPane": "สลับระหว่างสนามกับแผงสนาม",
+            "previousPane": "สลับระหว่างแผงสนามกับสนาม",
+            "importImage": "นำเข้าภาพพื้นหลังสนาม…",
+            "removeImage": "นำภาพพื้นหลังสนามออก",
+            "imageKeywords": "รูป รูปภาพ ภาพถ่าย ภาพถ่ายทางอากาศ พื้นหลัง สนาม picture photo aerial background image field",
+            "halfStep": "ครึ่งก้าว",
+            "editLines": "แก้ไขเส้นสนาม"
         },
         "file": {
             "closeFile": "ปิดไฟล์",
@@ -88,8 +154,16 @@
             "toggleMetronome": "เปิด/ปิดเมโทรนอม",
             "toggleLoop": "เปิด / ปิดการวนซ้ำ"
         },
+        "prop": {
+            "finishDrawing": "พร็อพ: วาดเสร็จ",
+            "removeLastPoint": "พร็อพ: ลบมุมสุดท้ายขณะวาด"
+        },
         "select": {
-            "selectAll": "เลือกทั้งหมด"
+            "selectAll": "เลือกทั้งหมด",
+            "toggleLasso": "สลับระหว่างการเลือกแบบกรอบกับแบบลาสโซ",
+            "useLasso": "ใช้การเลือกแบบลาสโซ",
+            "useBox": "ใช้การเลือกแบบกรอบ",
+            "toggleLassoKeywords": "ลาสโซ บ่วง กรอบ สี่เหลี่ยม วาดอิสระ เลือก เครื่องมือ lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "ไม่ได้เลือกผู้แสดง",
@@ -111,10 +185,15 @@
             "group": "จัดกลุ่มที่เลือก",
             "groupKeywords": "จัดกลุ่ม กลุ่ม รูปร่าง ตรึง คงไว้ ไว้ด้วยกัน รวม group shape freeze as is keep together combine",
             "ungroup": "รูปร่าง: ยกเลิกการจัดกลุ่ม",
-            "ungroupKeywords": "ยกเลิกการจัดกลุ่ม รูปร่าง แยก ปล่อย แยกออก ungroup shape break apart release separate"
+            "ungroupKeywords": "ยกเลิกการจัดกลุ่ม รูปร่าง แยก ปล่อย แยกออก ungroup shape break apart release separate",
+            "enterBox": "เลือกเฉพาะผู้แสดงคนนี้",
+            "centerPivot": "รูปร่าง: ย้ายจุดหมุนกลับไปที่กึ่งกลาง",
+            "centerPivotKeywords": "จุดหมุน กึ่งกลาง ตรงกลาง รีเซ็ต หมุน พลิก รอบ pivot center centre reset turn flip around",
+            "arc": "รูปร่าง: ส่วนโค้ง",
+            "discard": "รูปร่าง: ละทิ้ง"
         },
         "swap": {
-            "mustSelectTwo": "สลับได้เฉพาะเมื่อเลือกผู้แสดง 2 คน",
+            "selectTwo": "เลือกผู้แสดง 2 คนเพื่อสลับตำแหน่ง",
             "swap": "สลับผู้แสดงสองคน"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "แยกการเคลื่อนที่ที่หัวเล่น",
             "unsetHere": "ลบคีย์เฟรม",
             "unsetHereAndFollowing": "ลบคีย์เฟรม หน้าถัดจากนี้กลับไปตามเดิม",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe} หน้า {first} จะย้อนกลับด้วย} other {{removeKeyframe} หน้า {first}–{last} จะย้อนกลับด้วย}}",
             "unsetHereKeywords": "คีย์เฟรม เพชร ข้าวหลามตัด ยกเลิก ตั้ง ถัดไป ลบ ล้าง เอาคืน พิกัด ตำแหน่ง keyframe diamond unset set following remove clear take back coordinate position delete",
+            "toggleEditorMode": "สลับระหว่างโหมดพื้นฐานกับขั้นสูง",
+            "toggleEditorModeKeywords": "พื้นฐาน ขั้นสูง ตัวแก้ไข โหมด ง่าย เต็ม ไทม์ไลน์ หน้า basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "สลับไปโหมดพื้นฐาน (เปิดโหมดขั้นสูงอยู่)",
+            "toggleEditorModeToExpert": "สลับไปโหมดขั้นสูง (เปิดโหมดพื้นฐานอยู่)",
             "splitSelectedIntoNewMove": "แยกผู้แสดงที่เลือกเป็นการเคลื่อนที่ใหม่",
-            "mergeMoveIntoPage": "รวมการเคลื่อนที่นี้กลับเข้าหน้าของตน"
+            "mergeMoveIntoPage": "รวมการเคลื่อนที่นี้กลับเข้าหน้าของตน",
+            "zoomIn": "ขยายไทม์ไลน์",
+            "zoomOut": "ย่อไทม์ไลน์",
+            "zoomKeywords": "ซูม ขยาย ย่อ ไทม์ไลน์ กว้างขึ้น แคบลง ใกล้ ไกล มาตราส่วน บวก ลบ zoom magnify timeline wider narrower closer farther scale plus minus",
+            "fit": "ปรับให้เห็นทั้งโชว์ในไทม์ไลน์",
+            "toggleTempoMode": "เปิด/ปิดแก้ไขเพลง",
+            "toggleTempoModeKeywords": "แก้ไขเพลง ดนตรี เทมโป ความเร็ว อัตราจังหวะ เครื่องหมายกำหนดจังหวะ เครื่องหมายซ้อม เสียง จัดให้ตรง จังหวะ edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "เปิดเมนูสนาม",
@@ -134,6 +224,8 @@
             "openCommandPalette": "แผงคำสั่ง",
             "openCommandBar": "แถบคำสั่ง",
             "openSettings": "การตั้งค่า…",
+            "checkForUpdates": "ตรวจหาการอัปเดต",
+            "checkForUpdatesKeywords": "อัปเดต อัปเกรด เวอร์ชัน ดาวน์โหลด ติดตั้ง ใหม่ รุ่น update upgrade version download install new release",
             "openView3d": "เปิดมุมมอง 3 มิติ",
             "openView3dKeywords": "3d 3มิติ สามมิติ สนามกีฬา สเตเดียม สถานที่ หน้าต่าง three dimensional stadium venue window",
             "showShortcuts": "แป้นพิมพ์ลัด",
@@ -144,7 +236,19 @@
             "showNextPaths": "แสดงเส้นทางหน้าถัดไป",
             "toggleNextPaths": "เปิด/ปิดเส้นทางหน้าถัดไป",
             "togglePreview": "ดูตัวอย่างโชว์",
-            "togglePreviewKeywords": "ดูตัวอย่าง พรีวิว ซีเนมาติก ชม นำเสนอ การนำเสนอ เต็มจอ เล่น preview cinematic watch present presentation fullscreen play"
+            "togglePreviewKeywords": "ดูตัวอย่าง พรีวิว ซีเนมาติก ชม นำเสนอ การนำเสนอ เต็มจอ เล่น preview cinematic watch present presentation fullscreen play",
+            "reportFeedback": "รายงานบั๊กหรือส่งความคิดเห็น",
+            "reportFeedbackKeywords": "บั๊ก ข้อบกพร่อง ปัญหา ความคิดเห็น ข้อเสนอแนะ ขอฟีเจอร์ ช่วยเหลือ bug issue problem feedback feature request support",
+            "viewMyReports": "ดูรายงานของฉัน",
+            "openFrontEnsemble": "เปิดฟรอนต์อองซอมเบิลและโพเดียม",
+            "openFrontEnsembleKeywords": "พิต ฟรอนต์อองซอมเบิล โพเดียม ดรัมเมเจอร์ มาริมบา ไวบราโฟน เพอร์คัชชัน เครื่องกระทบ ลำโพง อุปกรณ์ พรีเซ็ต pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "เพิ่มอุปกรณ์ฟรอนต์อองซอมเบิลหรือโพเดียม",
+            "addFrontEnsembleEquipmentKeywords": "พิต โพเดียม ดรัมเมเจอร์ มาริมบา ไวบราโฟน เพอร์คัชชัน เครื่องกระทบ ลำโพง มิกเซอร์ หอ บันได เครื่องดนตรี pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+        },
+        "items": {
+            "edit": "แก้ไขพร็อพหรืออุปกรณ์ที่เลือก",
+            "editNamed": "แก้ไข {name}",
+            "editKeywords": "แก้ไข การตั้งค่า คุณสมบัติ พร็อพ อุปกรณ์ โพเดียม เครื่องดนตรี ชื่อ ขนาด ล็อก edit settings properties prop equipment podium instrument name size lock"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +268,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "เกิดข้อผิดพลาดในการสร้างจังหวะ",
-                "success": "สร้างจังหวะเรียบร้อยแล้ว"
+                "error": "เกิดข้อผิดพลาดในการสร้างจังหวะ"
             },
             "replace": {
-                "error": "เกิดข้อผิดพลาดในการแทนที่จังหวะ",
-                "success": "แทนที่จังหวะเรียบร้อยแล้ว"
+                "error": "เกิดข้อผิดพลาดในการแทนที่จังหวะ"
             },
             "update": {
                 "error": "เกิดข้อผิดพลาดในการอัปเดตจังหวะ"
@@ -179,9 +281,6 @@
             },
             "shift": {
                 "error": "เกิดข้อผิดพลาดในการเลื่อนจังหวะ"
-            },
-            "flatten": {
-                "error": "เกิดข้อผิดพลาดในการจัดลำดับจังหวะใหม่"
             }
         },
         "context": {
@@ -200,6 +299,7 @@
         "signIn": "ลงชื่อเข้าใช้",
         "signInAriaLabel": "ลงชื่อเข้าใช้",
         "signOut": "ออกจากระบบ",
+        "signOutFailed": "ออกจากระบบไม่สำเร็จ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง",
         "userFallback": "ผู้ใช้",
         "fullName": "{firstName} {lastName}",
         "api": {
@@ -224,6 +324,7 @@
         "title": "แผงคำสั่ง",
         "unavailable": "ไม่พร้อมใช้งานในขณะนี้",
         "offInPreview": "ใช้ไม่ได้ในโหมดดูตัวอย่าง — ออกจากโหมดดูตัวอย่างเพื่อแก้ไข",
+        "offInEditMusic": "ใช้ไม่ได้ขณะแก้ไขเพลง — เลือก “แก้ไขเพลง” เพื่อกลับ",
         "shape": "รูปทรง",
         "next": "ถัดไป",
         "done": "เสร็จสิ้น",
@@ -286,7 +387,9 @@
         "roundToHalf": "ปัด {axis} ไปยังครึ่งก้าวที่ใกล้ที่สุด",
         "roundToSteps": "{steps, plural, other {ปัด {axis} ไปยังทุก # ก้าวที่ใกล้ที่สุด}}",
         "xStepValue": "X: {value}",
-        "yStepValue": "Y: {value}"
+        "yStepValue": "Y: {value}",
+        "aboutSteps": "เกี่ยวกับขั้นการปัดเศษ",
+        "touchStepDescription": "แตะ X หรือ Y เพื่อเปลี่ยนไปยังตัวเลือกการปัดเศษถัดไป หากต้องการเลือกโดยตรง ให้เปิด “การปัดเศษพิกัด”"
     },
     "coordinateSheet": {
         "countAbbreviation": "จังหวะ",
@@ -346,7 +449,7 @@
         "exporting": "กำลังส่งออก... โปรดรอสักครู่",
         "exportNotAvailable": "ไม่สามารถส่งออกได้",
         "exportNotAvailableDescription": "การส่งออกต้องมีคุณสมบัติสนาม หน้าที่ไม่ใช่หน้าเริ่มต้นอย่างน้อยหนึ่งหน้า และผู้แสดงอย่างน้อยหนึ่งคน",
-        "exportPDFSuccess": "ส่งออกเป็น PDF สำเร็จแล้ว!",
+        "drillChartsExported": "ส่งออกแผนผังดริลเป็น PDF แล้ว",
         "fieldPropertiesNotLoaded": "ยังไม่ได้โหลดคุณสมบัติสนาม",
         "fieldPropertiesRequired": "ต้องมีคุณสมบัติสนามจึงจะส่งออกได้",
         "frontToBackHeader": "หน้า-หลัง",
@@ -377,7 +480,7 @@
         "noMarcher": "ไม่มีผู้แสดง",
         "noMarcherPages": "ไม่มีหน้าของผู้แสดง",
         "noPages": "ไม่มีหน้า",
-        "openExportDirectory": "คลิกเพื่อเปิดไฟล์ที่ส่งออก",
+        "showInFolder": "แสดงในโฟลเดอร์",
         "openExportDirectoryError": "ไม่สามารถเปิดโฟลเดอร์ที่ส่งออกได้: {error}",
         "organizeBySection": "จัดตามกลุ่มเครื่อง",
         "pdfExportFailed": "การส่งออก PDF ล้มเหลว: {error}",
@@ -402,12 +505,17 @@
         "unsortedSection": "ไม่ได้จัดกลุ่ม",
         "useXYHeaders": "ใช้หัวคอลัมน์ X/Y",
         "video": "วิดีโอ",
+        "webMobileUnavailable": {
+            "description": "การอัปโหลดไปยังแอป On the Move ต้องใช้บัญชี OpenMarch และบิลด์ทดสอบนี้ลงชื่อเข้าใช้ไม่ได้ โปรดใช้ตัวแก้ไข OpenMarch ที่ editor.openmarch.com หรือแอปเดสก์ท็อป",
+            "openEditor": "เปิด editor.openmarch.com",
+            "title": "อัปโหลดไปยังมือถือจากที่นี่ไม่ได้"
+        },
         "videoAudioTrack": "แทร็กเสียง: {name}",
         "videoAudioNoData": "ไฟล์เสียงไม่มีข้อมูล",
         "videoBackground": "พื้นหลังวิดีโอ",
         "videoBranding": "สร้างด้วย {product}",
         "videoExportFailed": "การส่งออกวิดีโอล้มเหลว: {error}",
-        "videoExportSuccess": "ส่งออกวิดีโอสำเร็จแล้ว!",
+        "videoExported": "ส่งออกวิดีโอแล้ว",
         "videoFieldFraming": "การจัดเฟรมสนาม",
         "videoFieldOffsetX": "ระยะเลื่อนแนวนอน",
         "videoFieldOffsetY": "ระยะเลื่อนแนวตั้ง",
@@ -421,7 +529,7 @@
         "videoNoCanvas": "ไม่สามารถสร้างแคนวาสสำหรับการส่งออกได้",
         "videoNoEncoder": "ไม่มีตัวเข้ารหัสวิดีโอที่รองรับในระบบนี้",
         "videoNoWebGL": "การส่งออกวิดีโอต้องใช้ WebGL ซึ่งคอมพิวเตอร์เครื่องนี้ใช้งานไม่ได้ในขณะนี้ เปิดการเร่งด้วยฮาร์ดแวร์หรืออัปเดตไดรเวอร์กราฟิก แล้วเปิดหน้าต่างนี้อีกครั้ง",
-        "videoOpenFile": "คลิกเพื่อเปิดวิดีโอ",
+        "openVideo": "เปิดวิดีโอ",
         "videoOverlay": "ข้อมูลบนหน้าจอ",
         "videoOverlayClock": "เวลาที่ผ่านไป",
         "videoOverlayCount": "จังหวะ {count} / {total}",
@@ -455,7 +563,7 @@
             "savePdfTitle": "บันทึก PDF",
             "videoTitle": "ส่งออกวิดีโอ"
         },
-        "exportedCount": "{count, plural, other {ส่งออกตารางพิกัดของผู้แสดง {count} คนเรียบร้อยแล้ว!}}",
+        "coordinateSheetsExported": "{count, plural, other {ส่งออกตารางพิกัดของผู้แสดง # คนแล้ว}}",
         "checkFieldProperties": "คุณสมบัติสนาม: {status, select, ok {✓} other {✗}}",
         "checkMarcher": "ผู้แสดง: {status, select, ok {✓} other {✗}}",
         "checkPage": "หน้า: {status, select, ok {✓} other {✗}}",
@@ -476,6 +584,11 @@
             "snapOff": "ปิดการสแนป",
             "wholeDegrees": "องศาเต็ม",
             "withKey": "<keys></keys> {word}"
+        },
+        "pivotHint": {
+            "own": "ลากเพื่อย้ายจุดหมุน · ดับเบิลคลิกเพื่อย้ายกลับไปตรงกลาง",
+            "picking": "คลิกผู้แสดงหรือตำแหน่งที่จะใช้เป็นจุดหมุน · <keys></keys> ยกเลิก",
+            "pull": "<keys></keys> ย้ายจุดหมุน"
         },
         "general": {
             "exportField": "ส่งออกสนาม",
@@ -498,22 +611,32 @@
             "noWebGL": "WebGL ไม่พร้อมใช้งาน",
             "contextLost": "บริบท WebGL ของสนามสูญหาย จึงไม่สามารถวาดวิดีโอได้ ลองส่งออกอีกครั้ง",
             "offscreenTimeout": "สนามนอกหน้าจอเริ่มทำงานไม่ทันเวลา"
+        },
+        "areaCount": {
+            "add": "{count, plural, other {+ผู้แสดง # คน}}",
+            "select": "{count, plural, other {ผู้แสดง # คน}}",
+            "subtract": "{count, plural, other {−ผู้แสดง # คน}}"
         }
     },
     "fieldDisplay": {
         "label": "การแสดงผลสนาม",
         "valueLabel": "{label}: {value}"
     },
+    "fieldSelectTool": {
+        "label": "เครื่องมือเลือก",
+        "box": "เลือกแบบกรอบ",
+        "lasso": "เลือกแบบลาสโซ",
+        "boxHint": "ลากบนพื้นที่ว่างของสนามเพื่อวาดกรอบ",
+        "lassoHint": "วาดล้อมรอบผู้แสดง เมื่อใช้แบบกรอบ ดับเบิลคลิกแล้วลากก็วาดลาสโซได้เช่นกัน"
+    },
     "fieldProperties": {
         "applyFieldType": "ใช้ประเภทสนาม",
         "applyFieldTypeWarning": "ผู้แสดงจะไม่ย้ายตามขนาดของประเภทสนามใหม่ แต่จะอยู่ที่ตำแหน่งเดิมบนพื้นที่วาด คุณเปลี่ยนประเภทสนามกลับได้ทุกเมื่อ",
         "buttons": {
-            "resetTheme": "รีเซ็ตธีมเป็นค่าเริ่มต้น",
-            "uploadFloor": "อัปโหลดพื้น…",
-            "removeFloor": "ลบพื้น"
+            "importImage": "นำเข้ารูปภาพ",
+            "resetTheme": "รีเซ็ตธีมเป็นค่าเริ่มต้น"
         },
         "checkpoint": {
-            "created": "สร้างเส้นอ้างอิง {axis} ที่ {steps} ก้าวแล้ว",
             "minimumRequired": "ต้องมีเส้นอ้างอิง {axis} อย่างน้อย 2 เส้น"
         },
         "customFieldDocs": "ดูเอกสาร",
@@ -567,10 +690,6 @@
             "temporaryPath": "เส้นทางชั่วคราว",
             "top": "บน"
         },
-        "messages": {
-            "noFloor": "ไม่มีพื้น",
-            "floorUnnamed": "พื้น"
-        },
         "options": {
             "fill": "เติม",
             "fit": "พอดี",
@@ -595,8 +714,7 @@
             "stepsFromFrontToHomeLabelTop": "จำนวนก้าวจากเส้นข้างด้านหน้าถึงขอบในของตัวเลขฝั่งเหย้า (ด้านที่ใกล้กึ่งกลางสนาม)",
             "stepSize": "ขนาดของแต่ละก้าวบนสนาม เป็นนิ้วหรือเซนติเมตร",
             "stepSizeWarningThreshold": "ผู้แสดงที่มีขนาดก้าวเกินระยะนี้จะแสดงเส้นทางเป็นสีเตือน ตั้งเป็น 0 เพื่อปิดใช้งาน",
-            "useHashes": "ใช้เส้นแฮชสำหรับเส้นอ้างอิง Y เหมือนสนามฟุตบอล หากไม่เลือก จะใช้เส้นเต็มแทน",
-            "uploadFloor": "นำเข้าภาพเป็นพื้นของโชว์นี้ ใช้เป็นภาพสนามในมุมมอง 2D การส่งออก และ 3D"
+            "useHashes": "ใช้เส้นแฮชสำหรับเส้นอ้างอิง Y เหมือนสนามฟุตบอล หากไม่เลือก จะใช้เส้นเต็มแทน"
         },
         "units": {
             "inches": "นิ้ว",
@@ -647,7 +765,6 @@
         "saveSpinnerText": "กำลังบันทึกสำเนา...",
         "toasts": {
             "audioUploadFailed": "อัปโหลดไฟล์เสียงไม่สำเร็จ",
-            "audioUploaded": "อัปโหลดไฟล์เสียงสำเร็จ",
             "error": "ไม่สามารถบันทึกสำเนาได้",
             "errorWithDetails": "ไม่สามารถบันทึกสำเนาได้ ข้อผิดพลาด {error}",
             "noFileOpen": "ไม่มีไฟล์ที่เปิดอยู่ สร้างหรือเปิดโชว์ก่อน",
@@ -663,10 +780,18 @@
         "valueMissing": "โปรดป้อนค่า"
     },
     "inspector": {
+        "arrange": {
+            "title": "จัดเรียง",
+            "pickPivot": "เลือกจุดหมุนบนสนาม",
+            "pickPivotHint": "หรือกด {key} ค้างแล้วลากจุดตรงกลางของส่วนที่เลือก",
+            "pivotTip": "หมุนรอบ{pivot}",
+            "pickPivotButton": "เลือกบนสนาม"
+        },
         "marcher": {
             "drillNumber": "หมายเลขดริล",
             "errorLoadingCoords": "เกิดข้อผิดพลาดในการโหลดพิกัด",
             "itemsSelected": "{count, plural, other {เลือกพร็อพแล้ว # รายการ แก้ไขได้ในแผงพร็อพ}}",
+            "equipmentSelected": "{count, plural, =1 {เลือกอุปกรณ์ # ชิ้น คลิกขวาที่อุปกรณ์เพื่อแก้ไข} other {เลือกอุปกรณ์ # ชิ้น คลิกขวาที่ชิ้นใดชิ้นหนึ่งเพื่อแก้ไข}}",
             "playing": "กำลังเล่น หยุดชั่วคราวเพื่อดูและแก้ไขผู้แสดงที่เลือก",
             "maxStepSize": "ขนาดก้าวที่ใหญ่ที่สุด",
             "minStepSize": "ขนาดก้าวที่เล็กที่สุด",
@@ -677,11 +802,25 @@
             "stepSizeWarning": "ขนาดก้าวเกินเกณฑ์",
             "swapMarchers": "สลับตำแหน่งผู้แสดง",
             "timeline": {
+                "goToHeldPage": "ไปยังหน้า {page} ซึ่งเป็นจุดเริ่มของช่วงคงตำแหน่งนี้",
                 "goToPage": "ไปที่หน้า {page} ซึ่งผู้แสดงเหล่านี้เคลื่อนที่ครั้งล่าสุด",
                 "goToStart": "ไปที่จุดเริ่มต้น",
+                "heldFromStart": "{held} · ตั้งแต่เริ่มต้น",
+                "heldSince": "{held} · ตั้งแต่หน้า {page}",
                 "holdFrom": "อยู่กับที่ตั้งแต่หน้า {page}",
                 "holdFromStart": "อยู่กับที่ตั้งแต่เริ่มต้น",
-                "movesOnThisPage": "เคลื่อนที่ในหน้านี้"
+                "holdStyle": {
+                    "default": "ตามการตั้งค่าโชว์",
+                    "highMarkTime": "ย่ำเท้ายกเข่าสูง",
+                    "label": "รูปแบบการคงตำแหน่ง",
+                    "markTime": "ย่ำเท้าอยู่กับที่",
+                    "mixed": "ผสม",
+                    "stand": "ยืนนิ่ง"
+                },
+                "movesOnThisPage": "เคลื่อนที่ในหน้านี้",
+                "notDefinedFromStart": "{notDefined} · แสดงตำแหน่งเริ่มต้น",
+                "notDefinedShowing": "{notDefined} · แสดงหน้า {page}",
+                "heldOfSelected": "{held} {count} จาก {total} ที่เลือก"
             },
             "title": "ผู้แสดง {count} คน",
             "titleSingle": "ผู้แสดง {drillNumber}",
@@ -710,6 +849,7 @@
             "removeFromTagCaption": "นำออก",
             "alignHeading": "จัดแนว",
             "distributeHeading": "กระจาย",
+            "rotateHeading": "หมุน",
             "distributeStepsPlaceholder": "ก้าว",
             "coords": {
                 "x": "X",
@@ -849,6 +989,11 @@
                     "sectionCount": "{section} ({count})",
                     "title": "ผู้แสดง"
                 },
+                "frontEnsemble": {
+                    "title": "ฟรอนต์อองซอมเบิล",
+                    "description": "โชว์นี้มีพิตหรือไม่ คุณเปลี่ยนได้ในภายหลัง",
+                    "hint": "เมื่อเลือกขนาด ระบบจะวางอุปกรณ์และผู้แสดงประจำเครื่องดนตรีแต่ละชิ้นไว้หน้าสนาม พร้อมโพเดียมบนเส้น 50 หลา"
+                },
                 "project": {
                     "description": "ตั้งชื่อโชว์และเลือกตำแหน่งที่จะบันทึก",
                     "fileType": "ไฟล์ OpenMarch",
@@ -878,7 +1023,6 @@
                     "waitingDb": "กำลังเตรียมไฟล์โชว์…"
                 }
             },
-            "success": "สร้างโชว์เรียบร้อยแล้ว",
             "tempo": "เทมโปเริ่มต้น (BPM)",
             "title": "โชว์ใหม่"
         },
@@ -1029,9 +1173,9 @@
         }
     },
     "measures": {
-        "createFailed": "สร้างห้องไม่สำเร็จ - {error}",
-        "deleteFailed": "ลบห้องไม่สำเร็จ - {error}",
-        "updateFailed": "อัปเดตห้องไม่สำเร็จ - {error}"
+        "addFailed": "เพิ่มห้องไม่สำเร็จ",
+        "removeFailed": "ลบห้องไม่สำเร็จ",
+        "changeFailed": "เปลี่ยนแปลงห้องไม่สำเร็จ"
     },
     "mobileExport": {
         "accessError": {
@@ -1088,6 +1232,9 @@
             "validatingAccess": "กำลังยืนยันสิทธิ์เข้าถึง On the Move..."
         },
         "logoAlt": "โลโก้ OTM",
+        "pageLines": {
+            "note": "โทรศัพท์จะแสดงตำแหน่งของผู้แสดงในแต่ละหน้า การเคลื่อนที่ระหว่างหน้าจึงแสดงเป็นเส้นตรง"
+        },
         "revision": {
             "audioSyncFailed": "อัปโหลดรีวิชันแล้ว แต่ซิงค์เสียงไม่สำเร็จ: {msg}",
             "backgroundSyncFailed": "อัปโหลดรีวิชันแล้ว แต่ซิงค์ภาพพื้นหลังไม่สำเร็จ: {msg}",
@@ -1128,12 +1275,28 @@
             "noProduction": "ไม่พบโปรดักชัน",
             "title": "การตั้งค่าแอปมือถือ"
         },
+        "signInRejected": {
+            "description": "บริการออนไลน์ของ OpenMarch ไม่ยอมรับการลงชื่อเข้าใช้ของคุณ โปรดออกจากระบบ แล้วลงชื่อเข้าใช้อีกครั้ง",
+            "signOut": "ออกจากระบบ",
+            "title": "การลงชื่อเข้าใช้ของคุณไม่ได้รับการยอมรับ"
+        },
         "signedOut": {
             "createAccountPrompt": "ยังไม่มีบัญชีใช่ไหม? สร้างบัญชีได้เลยตอนนี้!",
+            "errors": {
+                "failed": "ลงชื่อเข้าใช้ไม่สำเร็จ ลองอีกครั้ง",
+                "sessionExpired": "การลงชื่อเข้าใช้ของคุณหมดอายุแล้ว ลงชื่อเข้าใช้อีกครั้งเพื่ออัปโหลดต่อ",
+                "unavailable": "โหลดหน้าลงชื่อเข้าใช้ไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง"
+            },
             "setupAccount": "ตั้งค่าบัญชีของคุณ",
-            "signInPrompt": "มีบัญชีอยู่แล้วใช่ไหม? เชื่อมต่อบัญชีกับแอปเดสก์ท็อปเพื่อเริ่มพาโชว์ของคุณไปกับ On The Move!"
+            "signInPrompt": "มีบัญชีอยู่แล้วใช่ไหม? เชื่อมต่อบัญชีกับแอปเดสก์ท็อปเพื่อเริ่มพาโชว์ของคุณไปกับ On The Move!",
+            "signInPromptWeb": "มีบัญชีอยู่แล้วใช่ไหม ลงชื่อเข้าใช้เพื่อเริ่มนำโชว์ไปกับ On The Move!"
         },
-        "title": "ส่งออกไปยังมือถือ"
+        "title": "ส่งออกไปยังมือถือ",
+        "unreachable": {
+            "description": "OpenMarch เชื่อมต่อบริการออนไลน์หรือยืนยันการลงชื่อเข้าใช้ของคุณไม่ได้ ตรวจสอบการเชื่อมต่ออินเทอร์เน็ตแล้วลองอีกครั้ง",
+            "retry": "ลองอีกครั้ง",
+            "title": "เชื่อมต่อ OpenMarch ไม่ได้"
+        }
     },
     "music": {
         "accent": "เน้นจังหวะแรก",
@@ -1153,7 +1316,6 @@
         "deleteAllMeasures": "ลบห้องทั้งหมดและหน้าที่เกี่ยวข้อง",
         "deleteAudioFile": "ลบไฟล์เสียง",
         "deleteAudioFileDescription": "แน่ใจหรือไม่ว่าต้องการลบไฟล์เสียงนี้? การดำเนินการนี้ไม่สามารถเลิกทำได้",
-        "deleteSuccess": "ลบ {fileName} เรียบร้อยแล้ว",
         "deleteTempoGroupAlert": "แน่ใจหรือไม่?",
         "deleteTempoGroupDescription": "การลบกลุ่มเทมโปจะลบหน้าทั้งหมดที่เกี่ยวข้องกับกลุ่มนี้ด้วย",
         "endTempo": "เทมโปปลายทาง",
@@ -1198,10 +1360,8 @@
         "tempo": "เทมโป *",
         "tempoBelowMinimum": "เทมโปต้องไม่ต่ำกว่า {min} BPM",
         "tempoDescription": "จังหวะต่อนาที",
-        "tempoGroupCreated": "สร้างกลุ่มเทมโปแล้ว",
         "tempoGroupNamePlaceholder": "ไม่บังคับ",
         "tempoGroups": "กลุ่มเทมโป",
-        "tempoGroupUpdated": "อัปเดตกลุ่มเทมโปแล้ว",
         "undoWithShortcut": "เลิกทำการดำเนินการนี้ได้ด้วย <keys></keys>",
         "timeSignature": "เครื่องหมายกำหนดจังหวะ: {timeSignature}",
         "title": "เพลง",
@@ -1225,16 +1385,13 @@
     "pages": {
         "undoDeleteUnavailable": "ไม่สามารถเลิกทำการลบได้ เนื่องจากมีการเปลี่ยนแปลงหลังจากนั้น ใช้ปุ่มเลิกทำในแถบเครื่องมือเพื่อย้อนกลับทีละขั้น",
         "dotModeFailed": "เกิดข้อผิดพลาดในการตั้งค่าโหมดจุด",
-        "noNextPage": "ไม่มีหน้าถัดไป",
-        "noPreviousPage": "ไม่มีหน้าก่อนหน้า",
         "durationNoBeat": "อัปเดตความยาวหน้าไม่สำเร็จ ไม่พบจังหวะที่เหมาะสม",
         "durationFailed": "อัปเดตความยาวหน้าไม่สำเร็จ",
         "yankNegativeCounts": "ไม่สามารถดึงหน้าย้อนกลับได้ เพราะจะทำให้จำนวนจังหวะติดลบ",
         "pushPastEnd": "ไม่สามารถดันหน้าเลยจุดสิ้นสุดของโชว์ได้",
         "yankEmptyPages": "ไม่สามารถดึงหน้าที่ไม่มีจังหวะย้อนกลับได้",
         "yankOutOfBounds": "การดึงจังหวะจะทำให้จังหวะอยู่นอกขอบเขต",
-        "splitTooShort": "ไม่สามารถแยกหน้าที่มีน้อยกว่า 2 จังหวะได้",
-        "splitNoStartBeat": "ไม่พบจังหวะเริ่มต้นใหม่",
+        "splitNeedsTwoCounts": "หน้าต้องมีอย่างน้อย 2 จังหวะจึงจะแยกได้",
         "deleteWithMoves": {
             "changed": "{count, plural, =1 {หน้า {pages} มีการเปลี่ยนแปลง} other {หน้า {pages} มีการเปลี่ยนแปลง}}",
             "changedBoth": "{keptCount, plural, =1 {หน้า {kept}} other {หน้า {kept}}} และ{renamedCount, plural, =1 {หน้าเดิม {renamed}} other {หน้าเดิม {renamed}}} มีการเปลี่ยนแปลง",
@@ -1244,12 +1401,15 @@
             "grownOld": "หน้าเดิม {page} ตอนนี้ยาว {counts, plural, other {# จังหวะ}}",
             "noOtherChanged": "ไม่มีหน้าอื่นเปลี่ยนแปลง"
         },
-        "createError": "สร้างหน้าไม่สำเร็จ - {error}",
-        "updateError": "อัปเดตหน้าไม่สำเร็จ - {error}"
+        "createFailed": "สร้างหน้าไม่สำเร็จ",
+        "updateFailed": "เปลี่ยนแปลงหน้าไม่สำเร็จ"
     },
     "props": {
         "back": "ย้อนกลับ",
         "close": "ปิด",
+        "color": "สี",
+        "colorMixed": "ผสม",
+        "colorNone": "ไม่มี",
         "counts": "จังหวะ",
         "delete": "ลบพร็อพ",
         "depth": "ความลึก",
@@ -1259,9 +1419,13 @@
                 "arc": "คลิกที่ปลายทั้งสองด้านของส่วนโค้ง แล้วคลิกเพื่อกำหนดความโค้ง",
                 "circle": "ลากจากจุดศูนย์กลางเพื่อกำหนดรัศมี",
                 "drag": "ลากบนสนามเพื่อวาดพร็อพ พร็อพจะอยู่บนสนามตั้งแต่จังหวะที่หัวเล่นอยู่",
-                "polygon": "คลิกที่แต่ละมุม แล้วดับเบิลคลิกเพื่อเสร็จสิ้น"
+                "polygon": "คลิกที่แต่ละมุม แล้วดับเบิลคลิกเพื่อเสร็จสิ้น",
+                "polygonTouch": "แตะที่แต่ละมุม แล้วแตะ “เสร็จสิ้น”",
+                "arcTouch": "แตะที่ปลายทั้งสองด้านของส่วนโค้ง แล้วแตะเพื่อกำหนดความโค้ง"
             },
-            "title": "วาดพร็อพ"
+            "title": "วาดพร็อพ",
+            "finish": "เสร็จสิ้น",
+            "undoPoint": "เลิกทำจุด"
         },
         "edit": "แก้ไขพร็อพ",
         "editTitle": "แก้ไขพร็อพ",
@@ -1270,7 +1434,8 @@
             "create": "ไม่สามารถสร้างพร็อพได้",
             "delete": "ไม่สามารถลบพร็อพได้",
             "outline": "ไม่สามารถเปลี่ยนรูปร่างของพร็อพได้",
-            "update": "ไม่สามารถเปลี่ยนแปลงพร็อพได้"
+            "update": "ไม่สามารถเปลี่ยนแปลงพร็อพได้",
+            "preset": "ใช้พรีเซ็ตไม่สำเร็จ"
         },
         "height": "ความสูง",
         "hide": "ซ่อนบนสนาม",
@@ -1294,6 +1459,7 @@
             "right": "คลี่ออกจากด้านขวา"
         },
         "rotation": "การหมุน",
+        "selectedCount": "{count, plural, other {เลือกพร็อพ # ชิ้น}}",
         "show": "แสดงบนสนาม",
         "showNames": "แสดงชื่อทั้งหมด",
         "surface": {
@@ -1307,7 +1473,74 @@
         "width": "ความกว้าง",
         "units": {
             "meters": "ม."
-        }
+        },
+        "locked": "ล็อกอยู่",
+        "lockLabel": "ล็อก",
+        "lockHint": "ตำแหน่งเดียวตลอดทั้งโชว์"
+    },
+    "frontEnsemble": {
+        "title": "ฟรอนต์อองซอมเบิลและโพเดียม",
+        "add": {
+            "title": "เพิ่มอุปกรณ์",
+            "button": "เพิ่ม"
+        },
+        "empty": "ยังไม่มีฟรอนต์อองซอมเบิล เพิ่มอุปกรณ์และโพเดียม หรือเริ่มจากพรีเซ็ต",
+        "list": {
+            "equipment": "อุปกรณ์",
+            "podiums": "โพเดียม"
+        },
+        "placeInstructions": "คลิกบนสนามเพื่อวาง{name} โดยจะอยู่บนสนามตั้งแต่จังหวะที่หัวเล่นอยู่",
+        "equipment": {
+            "block": "อุปกรณ์",
+            "delete": "ลบอุปกรณ์",
+            "edit": "แก้ไขอุปกรณ์",
+            "editTitle": "แก้ไขอุปกรณ์",
+            "model": "รุ่นของ{family}"
+        },
+        "podium": {
+            "delete": "ลบโพเดียม",
+            "edit": "แก้ไขโพเดียม",
+            "editTitle": "แก้ไขโพเดียม"
+        },
+        "default": "ค่าเริ่มต้น",
+        "footprint": "{width} × {depth} ม.",
+        "groups": {
+            "audio": "เครื่องเสียง",
+            "keyboards": "คีย์บอร์ด",
+            "percussion": "เพอร์คัชชัน",
+            "podiums": "โพเดียม"
+        },
+        "presets": {
+            "title": "พรีเซ็ต",
+            "size": "ขนาดพรีเซ็ต",
+            "small": "เล็ก",
+            "medium": "กลาง",
+            "large": "ใหญ่",
+            "summary": {
+                "small": "มาริมบา 2 ตัว ไวบราโฟน 2 ตัว แร็ก 1 ชุด ซินธิไซเซอร์ 1 ตัว และลำโพง 2 ตัว",
+                "medium": "มาริมบา 4 ตัว ไวบราโฟน 3 ตัว ไซโลโฟน กล็อกเคนชปีล แร็ก กลองชุด ซินธิไซเซอร์ และลำโพง 4 ตัว",
+                "large": "มาริมบา 6 ตัว ไวบราโฟน 4 ตัว ไซโลโฟน กล็อกเคนชปีล แร็ก 2 ชุด กลองชุด ซินธิไซเซอร์ 2 ตัว และลำโพง 6 ตัว",
+                "none": "ไม่มีพิต คุณตั้งค่าได้ภายหลังในแผงผู้แสดง"
+            },
+            "always": "ทุกขนาดจะเพิ่มโพเดียมบนเส้น 50 หลาและมิกเซอร์ด้านหลังพิตด้วย",
+            "addPerformers": "เพิ่มผู้แสดงด้วย",
+            "apply": "นำไปใช้",
+            "replaces": "แทนที่อุปกรณ์ที่พรีเซ็ตก่อนหน้าเพิ่มไว้ ผู้เล่นจะย้ายไปยังตำแหน่งใหม่ ส่วนผู้เล่นที่ไม่มีเครื่องดนตรีจะถูกนำออก เว้นแต่จะมีการเคลื่อนที่ในช่วงหลังของโชว์ กด “เลิกทำ” เพื่อนำทุกอย่างกลับมา อุปกรณ์ที่คุณเพิ่มเองจะยังอยู่",
+            "none": "ไม่มี",
+            "start": "เริ่มจากพรีเซ็ต",
+            "reset": "รีเซ็ตเป็นพรีเซ็ต"
+        },
+        "summary": {
+            "title": "ฟรอนต์อองซอมเบิลและโพเดียม",
+            "none": "ยังไม่มีพิต",
+            "setUp": "ตั้งค่า",
+            "edit": "แก้ไข",
+            "equipment": "{count, plural, other {อุปกรณ์ # ชิ้น}}",
+            "podiums": "{count, plural, other {โพเดียม # ตัว}}"
+        },
+        "search": "ค้นหาอุปกรณ์",
+        "noMatch": "ไม่มีอุปกรณ์ที่ตรงกัน",
+        "results": "{count, plural, =0 {ไม่มีอุปกรณ์ที่ตรงกัน} other {# รุ่น}}"
     },
     "section": {
         "drumMajor": "ดรัมเมเจอร์",
@@ -1351,8 +1584,12 @@
         "other": "อื่นๆ",
         "pit": {
             "auxPercussion": "เครื่องกระทบเสริม",
+            "drumSet": "กลองชุด",
+            "glockenspiel": "กล็อกเคนชปีล",
             "marimba": "มาริมบา",
+            "rack": "แร็ก",
             "synthesizer": "ซินธิไซเซอร์",
+            "timpani": "ทิมปานี",
             "vibraphone": "ไวบราโฟน",
             "xylophone": "ไซโลโฟน"
         },
@@ -1392,6 +1629,17 @@
         "general.appearance": "รูปลักษณ์",
         "general.appearance.dark": "มืด",
         "general.appearance.light": "สว่าง",
+        "general.updates": "การอัปเดต",
+        "general.updates.version": "คุณใช้ OpenMarch {version} อยู่",
+        "general.updates.checking": "คุณใช้ OpenMarch {version} อยู่ กำลังตรวจหาการอัปเดต…",
+        "general.updates.upToDate": "OpenMarch {version} เป็นเวอร์ชันล่าสุดแล้ว",
+        "general.updates.available": "OpenMarch {version} พร้อมให้ดาวน์โหลดแล้ว",
+        "general.updates.downloading": "กำลังดาวน์โหลด OpenMarch {version}: {percent}%",
+        "general.updates.ready": "OpenMarch {version} พร้อมแล้ว โดยจะติดตั้งเมื่อคุณออกจากแอปครั้งถัดไป หรือติดตั้งทันทีจากปุ่มอัปเดตในแถบชื่อเรื่อง",
+        "general.updates.failed": "อัปเดตไม่สำเร็จ คุณใช้ OpenMarch {version} อยู่",
+        "general.checkForUpdates": "ตรวจหาการอัปเดต",
+        "general.automaticDownload": "ดาวน์โหลดการอัปเดตโดยอัตโนมัติ",
+        "general.automaticDownload.description": "การอัปเดตจะติดตั้งเมื่อคุณออกจาก OpenMarch หรือติดตั้งทันทีด้วย “อัปเดตทันที”",
         "general.description": "โหมดตัวแก้ไข ภาษา และการตั้งค่าอื่นๆ ที่ใช้ทั้งแอป",
         "general.editorMode": "โหมดตัวแก้ไข",
         "general.editorMode.basic": "พื้นฐาน",
@@ -1468,7 +1716,21 @@
         "tolgeeApiKeyPlaceholder": "คีย์ API ของ Tolgee",
         "tolgeeDevToolsToggle": "การแปลในบริบทของ Tolgee",
         "view3d": "มุมมอง 3D",
-        "view3d.description": "วิธีที่มุมมอง 3D วาดภาพบนคอมพิวเตอร์เครื่องนี้ ไม่ได้บันทึกไว้ในโชว์",
+        "view3d.controls": "การควบคุม",
+        "view3d.controls.input.drag": "คลิกซ้ายแล้วลาก",
+        "view3d.controls.input.pinch": "บีบนิ้ว",
+        "view3d.controls.input.rightDrag": "คลิกขวาแล้วลาก",
+        "view3d.controls.input.scroll": "เลื่อน",
+        "view3d.controls.input.swipe": "เลื่อนสองนิ้ว",
+        "view3d.controls.move.orbit": "หมุนรอบ",
+        "view3d.controls.move.pan": "เลื่อนมุมมอง",
+        "view3d.controls.move.zoom": "ซูม",
+        "view3d.controls.orbit": "หมุนรอบ",
+        "view3d.controls.orbit.description": "การลากจะหมุนรอบ และการเลื่อนจะซูม ลากด้วยปุ่มเมาส์ขวาหรือกด Shift ค้างเพื่อเลื่อนไปตามสนาม",
+        "view3d.controls.map": "แผนที่",
+        "view3d.controls.map.description": "การลากจะเลื่อนไปตามสนาม และการเลื่อนจะซูม กดปุ่มปรับเปลี่ยนค้างหรือใช้ปุ่มเมาส์ขวาเพื่อหมุนรอบ",
+        "view3d.controls.trackpad": "แทร็กแพด",
+        "view3d.controls.trackpad.description": "การเลื่อนและการลากจะหมุนรอบ และการบีบนิ้วจะซูม ปุ่มเมาส์ขวาใช้เลื่อนมุมมอง",
         "view3d.quality": "คุณภาพ",
         "view3d.quality.auto": "อัตโนมัติ",
         "view3d.quality.auto.description": "เริ่มที่ “สูง” และสลับเป็น “ต่ำ” หากภาพกระตุก",
@@ -1483,6 +1745,7 @@
         "view3d.resolution.fast.description": "ภาพนุ่มที่สุด โดยทำงานน้อยลงประมาณครึ่งหนึ่ง สำหรับคอมพิวเตอร์รุ่นเก่า",
         "view3d.resolution.sharp": "คมชัด",
         "view3d.resolution.sharp.description": "รายละเอียดเต็มที่บนหน้าจอความละเอียดสูง",
+        "view3d.summary": "วิธีที่มุมมอง 3D แสดงผลและเคลื่อนไหวบนคอมพิวเตอร์เครื่องนี้ ไม่ได้บันทึกไว้ในโชว์",
         "input": "การสัมผัสและอินพุต",
         "input.description": "เลือกเลย์เอาต์แท็บเล็ต (สำหรับนิ้วและปากกา) หรือเลย์เอาต์เดสก์ท็อป (สำหรับเมาส์และแทร็กแพด)",
         "input.interface": "เลย์เอาต์",
@@ -1493,7 +1756,8 @@
         "repairDotsFile.reopenFailed": "บันทึกไฟล์ที่ซ่อมแล้วไว้ที่ {path} แต่เปิดไม่ได้ (สถานะ {status})",
         "utilityUpdateFailed": "อัปเดตการตั้งค่ายูทิลิตีไม่สำเร็จ",
         "shortcuts.conflictWith": "<keys></keys> ถูกใช้โดย {actions} อยู่แล้ว",
-        "shortcuts.recordingHint": "กดแป้น… (<keys></keys> เพื่อยกเลิก)"
+        "shortcuts.recordingHint": "กดแป้น… (<keys></keys> เพื่อยกเลิก)",
+        "shortcuts.category.field": "สนาม"
     },
     "shapes": {
         "box": {
@@ -1588,6 +1852,7 @@
             },
             "pivot": {
                 "aria": "จุดหมุน: {pivot}",
+                "backToCenter": "กลับไปที่กึ่งกลาง",
                 "custom": "จุดหมุน: ตำแหน่งที่ลากไปบนสนาม",
                 "label": "จุดหมุน",
                 "names": {
@@ -1605,9 +1870,16 @@
             },
             "place": "วาง",
             "quarterTurn": "หมุน 90° ตามเข็มนาฬิกา",
+            "guides": {
+                "label": "เส้นไกด์",
+                "circle": "วงกลม",
+                "angles": "เส้นมุม"
+            },
             "ratioLock": {
                 "locked": "ล็อกระยะห่างไว้ด้วยกันอยู่: คลิกเพื่อปลดล็อก",
-                "unlocked": "ล็อกระยะห่างทั้งสองไว้ด้วยกัน"
+                "unlocked": "ล็อกระยะห่างทั้งสองไว้ด้วยกัน",
+                "sizesLocked": "ล็อกความกว้างและความสูงไว้ด้วยกันอยู่: คลิกเพื่อปลดล็อก",
+                "sizesUnlocked": "ล็อกความกว้างและความสูงไว้ด้วยกัน"
             },
             "hideMarchers": {
                 "hide": "ซ่อนผู้แสดง",
@@ -1648,7 +1920,13 @@
                 "label": "ใครไปตำแหน่งไหน"
             },
             "drawHintFor": "ลากบนสนามเพื่อวาด{shape, select, block {บล็อก} circle {วงกลม} line {เส้น} curve {เส้นโค้ง} arc {ส่วนโค้ง} other {รูปทรง}} · <keys></keys> เพื่อยกเลิก",
-            "drawPointsHintFor": "ลากบนสนามเพื่อวาด{shape, select, line {เส้น} curve {เส้นโค้ง} arc {ส่วนโค้ง} other {รูปทรง}} หรือคลิกทีละจุด · <keys></keys> เพื่อยกเลิก"
+            "drawPointsHintFor": "ลากบนสนามเพื่อวาด{shape, select, line {เส้น} curve {เส้นโค้ง} arc {ส่วนโค้ง} other {รูปทรง}} หรือคลิกทีละจุด · <keys></keys> เพื่อยกเลิก",
+            "finish": "เสร็จสิ้น",
+            "undoPoint": "เลิกทำจุด",
+            "discard": "ละทิ้ง",
+            "drawHintTouchFor": "ลากบนสนามเพื่อวาด{shape, select, block {บล็อก} circle {วงกลม} line {เส้น} curve {เส้นโค้ง} arc {ส่วนโค้ง} other {รูปทรง}}",
+            "drawPointsHintTouchFor": "ลากบนสนามเพื่อวาด{shape, select, line {เส้น} curve {เส้นโค้ง} arc {ส่วนโค้ง} other {รูปร่าง}} หรือแตะทีละจุด",
+            "pointsHintTouch": "แตะเพื่อเพิ่มจุด · แตะสองครั้งหรือกด “เสร็จสิ้น” เพื่อจบ"
         },
         "placed": {
             "label": "{name} · {count, plural, other {{interval} ก้าว}}",
@@ -1661,6 +1939,7 @@
                 "steps": "{count, plural, other {{interval} ก้าว}}"
             },
             "groupError": "จัดกลุ่มผู้แสดงไม่สำเร็จ",
+            "groupNeedsTwo": "เลือกผู้แสดงตั้งแต่ 2 คนขึ้นไปเพื่อจัดกลุ่ม",
             "ungroupError": "เกิดข้อผิดพลาดในการยกเลิกการจัดกลุ่มรูปทรง",
             "ungroupIsolated": "ออกจากโหมดแยกเดี่ยวก่อนจึงจะยกเลิกการจัดกลุ่มรูปทรงนี้ได้ เพราะรูปทรงนี้มาจากหน้าก่อนหน้า",
             "leftShape": {
@@ -1715,6 +1994,25 @@
                 "validate": {
                     "flat": "ส่วนโค้งแบนราบ จึงเป็นเส้นตรง",
                     "sameSpot": "ปลายทั้งสองของส่วนโค้งอยู่ที่จุดเดียวกัน"
+                },
+                "params": {
+                    "bend": "ส่วนโค้งหมุนไปกี่องศา",
+                    "width": "ความกว้างของส่วนโค้งจากด้านหนึ่งถึงอีกด้าน หน่วยเป็นก้าว",
+                    "height": "ความสูงของส่วนโค้ง วัดจากปลายทั้งสองถึงขอบที่ไกลที่สุด หน่วยเป็นก้าว",
+                    "stretch": "วงรีที่ส่วนโค้งอยู่ยืดออกแค่ไหน: สูงเป็นกี่เท่าของความกว้าง หรือกว้างเป็นกี่เท่าของความสูง"
+                },
+                "ends": {
+                    "label": "เปิดหรือปิด",
+                    "open": "เปิด",
+                    "chord": "ปิดด้วยเส้นตรง",
+                    "circle": "ปิดเป็นวงกลม",
+                    "round": "ปิดให้ครบรอบ"
+                },
+                "size": {
+                    "steps": "ก้าว",
+                    "tall": "สูง",
+                    "wide": "กว้าง",
+                    "round": "วงกลม"
                 }
             },
             "block": {
@@ -1935,7 +2233,8 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "ชนิดรูปทรง",
-                "ringHintKeys": "กด <keys></keys> ค้างไว้บนสนามเพื่อเปิดวงรูปทรง"
+                "ringHintKeys": "กด <keys></keys> ค้างไว้บนสนามเพื่อเปิดวงรูปทรง",
+                "ringCaption": "วงแหวน"
             }
         },
         "validate": {
@@ -1999,23 +2298,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "เกิดข้อผิดพลาดในการสร้างจังหวะใหม่",
-        "deletedSuccessfully": "ลบกลุ่มเทมโปเรียบร้อยแล้ว",
         "deleteFailed": "ลบกลุ่มเทมโปไม่สำเร็จ",
-        "differentBeatsError": "กลุ่มเทมโปมีจำนวนจังหวะไม่ตรงกัน ซึ่งไม่ควรเกิดขึ้น โปรดติดต่อเรา",
+        "temposFailed": "ไม่สามารถเปลี่ยนเทมโปได้",
         "errorUpdatingTempoGroup": "เกิดข้อผิดพลาดในการอัปเดตกลุ่มเทมโป"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} other {{shapeNames} อยู่ในรูปร่าง}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other { และ }}}}{leaderCount, plural, =0 {} other {{leaderNames} เดินตามผู้นำ}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other { และ }}} other { และ }}}}{orderCount, plural, =0 {} other {{orderNames} ใช้การเคลื่อนที่แบบโค้งร่วมกับลำดับการเดินตามผู้นำ}} {count, plural, other {จึงคงการเคลื่อนที่ของตนไว้ตรงนี้}}",
             "passThrough": {
                 "catchUp": "ตอนนี้จะไปถึงฟอร์เมชันตอนท้ายของ {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {คงหน้า {first} ไว้เป็นคีย์เฟรม} other {คงหน้า {first}–{last} ไว้เป็นคีย์เฟรม}}",
-                    "unnamed": "คงไว้เป็นคีย์เฟรม"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {หยุดที่ท้ายหน้า {first}} other {หยุดที่ท้ายหน้า {first}–{last}}}",
+                    "unnamed": "หยุดที่ท้ายหน้าเหล่านั้น"
                 },
-                "keepStopsError": "ไม่สามารถคงหน้าเหล่านั้นไว้เป็นคีย์เฟรมได้",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {หน้า {first} ไม่ใช่คีย์เฟรมอีกต่อไป} other {หน้า {first}–{last} ไม่ใช่คีย์เฟรมอีกต่อไป}}",
-                    "unnamed": "หน้าต่างๆ ภายในการเคลื่อนที่นี้ไม่ใช่คีย์เฟรมอีกต่อไป"
+                "stopAtEndError": "ไม่สามารถให้ผู้แสดงหยุดที่ท้ายหน้าเหล่านั้นได้",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {ตอนนี้เดินผ่านท้ายหน้า {first} ไปโดยไม่หยุด} other {ตอนนี้เดินผ่านท้ายหน้า {first}–{last} ไปโดยไม่หยุด}}",
+                    "unnamed": "ตอนนี้เดินผ่านท้ายหน้าที่อยู่ในการเคลื่อนที่นี้ไปโดยไม่หยุด"
                 },
                 "through": "ตอนนี้จะเคลื่อนที่ผ่าน {through} ไปโดยตรง",
                 "throughAndCatchUp": "ตอนนี้จะเคลื่อนที่ผ่าน {through} ไปโดยตรง แล้วไปถึงฟอร์เมชันตอนท้ายของ {caughtUp}"
@@ -2034,7 +2333,18 @@
             "destinationShapeUnsuitable": "จุดหมายนั้นไม่เข้ากับทรานซิชัน ทรานซิชันแบบตามผู้นำไม่สามารถจบบนกริดได้ และกริดต้องมีตำแหน่งอย่างน้อยเท่ากับจำนวนช่องของทรานซิชัน",
             "followLeaderBlock": "ทรานซิชันแบบตามผู้นำไม่สามารถจบบนกริดได้ เลือกเส้นตรง เส้นโค้ง วงกลม หรือบล็อกแทน",
             "followLeaderNeedsShape": "ทรานซิชันแบบตามผู้นำต้องมีรูปทรงให้เดินตาม",
+            "heldConflict": "{count, plural, =1 {{names} {held}ใน{pages} ใช้ {clearThisPage} เพื่อนำช่วงคงตำแหน่งออก หรือลากภายในช่วงคงตำแหน่งเพื่อย้าย} other {{names} {held}ใน{pages} ใช้ {clearThisPage} เพื่อนำช่วงคงตำแหน่งออก หรือลากภายในช่วงคงตำแหน่งเพื่อย้าย}}",
+            "heldHoldsOverlap": "ผู้แสดงหนึ่งคนจะมีช่วง {held} สองช่วงในจังหวะเดียวกันไม่ได้",
+            "heldPages": "{count, plural, =1 {หน้า {pages}} other {หน้า {pages}}}",
             "legacyConvertedTimeline": "ไฟล์นี้ถูกแปลงเป็นไทม์ไลน์โดยเวอร์ชันพัฒนารุ่นก่อน ซึ่งรวมการเคลื่อนที่ของหลายหน้าไว้ในไทม์ไลน์เดียว จึงแก้ไขไม่ได้ แปลงไฟล์ใหม่อีกครั้ง: เปิดไฟล์สำรอง (ไฟล์ที่บันทึกไว้ข้างๆ กันก่อนการแปลง)",
+            "moveInHeldHold": "การแก้ไขนี้จะทำให้มีการเคลื่อนที่อยู่ในช่วง {held} ใช้ {clearThisPage} เพื่อนำช่วงคงตำแหน่งออก หรือลากภายในช่วงคงตำแหน่งเพื่อย้าย",
+            "notJoined": {
+                "marcherCount": "{count, plural, other {ผู้แสดง # คน}}",
+                "message": "{names} รวมการเคลื่อนที่ไม่ได้: {reason}",
+                "overlap": "การเคลื่อนที่ที่รวมแล้วจะชนกับการเคลื่อนที่อื่นของผู้แสดงในเลเยอร์เดียวกัน",
+                "partway": "มีผู้แสดงเข้าร่วมหรือออกจากการเคลื่อนที่ถัดไปกลางคัน",
+                "secondMove": "ผู้แสดงจะมีการเคลื่อนที่สองรายการในจังหวะเดียวกัน"
+            },
             "notReady": "ไทม์ไลน์ยังโหลดไม่เสร็จ ลองอีกครั้งในอีกสักครู่",
             "numberOutOfRange": "มีตัวเลขที่อยู่นอกช่วง จังหวะ เลเยอร์ จำนวนช่อง และตำแหน่งต้องเป็นจำนวนเต็มหรือจำนวนที่มีค่าจำกัดภายในขีดจำกัดที่อนุญาต",
             "pathParamsInvalid": "การตั้งค่าเส้นทางนั้นไม่ถูกต้อง ความโค้งของส่วนโค้งต้องไม่เกินครึ่งหนึ่งของระยะระหว่างปลายทั้งสองข้าง และจุดผ่านต้องเป็นจุดบนสนาม",
@@ -2044,11 +2354,47 @@
             "transitionSpansTimeline": "ทรานซิชันต้องครอบคลุมไทม์ไลน์ทั้งหมด โดยเริ่มและจบพร้อมกับไทม์ไลน์ ให้เปลี่ยนช่วงของไทม์ไลน์แทน แล้วทรานซิชันจะเลื่อนตามไปด้วย",
             "unknown": "ไทม์ไลน์ไม่สามารถทำการเปลี่ยนแปลงนั้นได้"
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "หน้า {page}: {label} {hint}"
+        "holdEdge": {
+            "endLabel": "จุดสิ้นสุดของช่วง {held} ลากเพื่อให้ออกเดินเร็วขึ้นหรือคงตำแหน่งนานขึ้น",
+            "readoutEnd": "{held} จนถึงหน้า {page} จังหวะที่ {count}",
+            "blocked": {
+                "minimum": "ช่วงคงตำแหน่งต้องยาวอย่างน้อยหนึ่งจังหวะ",
+                "nextMove": "หยุดที่การเคลื่อนที่ถัดไป",
+                "showEnd": "หยุดที่จุดสิ้นสุดของโชว์"
             },
+            "changeError": "ไม่สามารถเปลี่ยนช่วงคงตำแหน่งได้",
+            "splitError": "ไม่สามารถแยกช่วงคงตำแหน่งได้",
+            "styleError": "ไม่สามารถเปลี่ยนรูปแบบการคงตำแหน่งได้"
+        },
+        "heldBar": {
+            "detail": "{held} จาก {total} คนที่เลือก",
+            "shape": "รูปร่างยังคงอยู่ต่อในช่วงนี้",
+            "title": "{held} · หน้า {page}",
+            "titleRange": "{held} · หน้า {first}–{last}",
+            "titleWithDetail": "{title} {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}: การเคลื่อนที่ก่อน{page}เป็นแบบเดินตามผู้นำ",
+            "arrivalShape": "{names}: การเคลื่อนที่ก่อน{page}จบลงในรูปร่าง",
+            "count": "{count, plural, other {ผู้แสดง # คน}}",
+            "crossesFlag": "{names}: มีการเคลื่อนที่ที่ข้ามธงของหน้านี้",
+            "done": "{names} {held}ใน{page}",
+            "endsWithoutArriving": "{names}: มีการเคลื่อนที่ที่จบที่{page}โดยไปไม่ถึงตำแหน่ง",
+            "expertMoves": "{names}: มีการเคลื่อนที่แบบขั้นสูงในหน้านี้",
+            "followLeader": "{names}: เดินตามผู้นำในหน้านี้",
+            "held": "{names}: {held}ที่นี่อยู่แล้ว",
+            "homeShape": "{names}: มีรูปร่างกำหนดตำแหน่งเริ่มต้น ยกเลิกการจัดกลุ่มที่ต้นโชว์เพื่อให้คงตำแหน่งทีละคน",
+            "none": "ไม่มีใคร{held}ใน{page}",
+            "notHeldReasons": "ไม่ได้{heldLower}: {reasons}",
+            "shape": "{names}: อยู่ในรูปร่างในหน้านี้",
+            "holdError": "ไม่สามารถให้ผู้แสดงคงตำแหน่งได้",
+            "paused": "หยุดชั่วคราวเพื่อเปลี่ยนช่วงคงตำแหน่ง",
+            "styleNoneHeld": "ไม่มีผู้แสดงที่เลือกคนใดคงตำแหน่งอยู่ที่หัวเล่น",
+            "styleInEffect": "เป็นรูปแบบการคงตำแหน่งที่ใช้อยู่ตรงนี้แล้ว"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {หน้า {first} ไม่มีตำแหน่งของตัวเองสำหรับผู้แสดงเหล่านี้ จึงเปลี่ยนตามไปด้วย} other {หน้า {first}–{last} ไม่มีตำแหน่งของตัวเองสำหรับผู้แสดงเหล่านี้ จึงเปลี่ยนตามไปด้วย}}",
                 "keepAsBefore": "{count, plural, =1 {คงหน้า {first} ไว้เหมือนเดิม} other {คงหน้า {first}–{last} ไว้เหมือนเดิม}}",
                 "keepError": "เกิดข้อผิดพลาดในการคงหน้าที่ตามมาไว้เหมือนเดิม"
             },
@@ -2066,6 +2412,9 @@
             "removeError": "ไม่สามารถลบคีย์เฟรมได้",
             "removeLocked": "{count, plural, other {ผู้แสดง # คนใช้การเคลื่อนที่แบบขั้นสูงในหน้านี้ จึงไม่ได้ลบคีย์เฟรมของผู้แสดงเหล่านั้น สลับไปโหมดขั้นสูงเพื่อแก้ไข}}",
             "removeLockedAll": "{count, plural, other {ผู้แสดง # คนใช้การเคลื่อนที่แบบขั้นสูงในหน้านี้ สลับไปโหมดขั้นสูงเพื่อแก้ไข}}",
+            "paused": "หยุดชั่วคราวเพื่อเปลี่ยนคีย์เฟรม",
+            "removeNone": "ไม่มีผู้แสดงที่เลือกคนใดมีคีย์เฟรมตรงนี้",
+            "followNone": "ไม่มีหน้าถัดไปที่ใช้ตำแหน่งนี้ตาม",
             "title": "คีย์เฟรม · หน้า {page} จังหวะที่ {count}",
             "spoken": "{title} {detail}"
         },
@@ -2078,6 +2427,7 @@
             "message": "แยก {label} ที่ {where} แล้ว",
             "messageAtPlayhead": "แยก {label} ที่หัวเล่นแล้ว",
             "changed": "{count, plural, other {วาดเส้นทางของผู้แสดง # คนใหม่: เป็นเส้นตรงก่อนจุดแยก และเริ่มใหม่หลังจุดแยก}}",
+            "restarted": "{count, plural, other {เส้นทางโค้งของผู้แสดง # คนเริ่มใหม่หลังจุดแยก}}",
             "paused": "หยุดชั่วคราวก่อนเพื่อแยกการเคลื่อนที่",
             "isolatedOutside": "วางหัวเล่นไว้ภายในการเคลื่อนที่ที่กำลังแก้ไขเพื่อแยก",
             "noneAt": "ไม่มีการเคลื่อนที่ใดผ่าน {where} วางหัวเล่นไว้ภายในการเคลื่อนที่เพื่อแยก",
@@ -2091,14 +2441,32 @@
                 "subsetToggle": "หน้าย่อย"
             },
             "label": "หน้า {pageName}",
+            "optionsLabel": "ตัวเลือกของหน้า {pageName}",
             "homeTooltip": "ตำแหน่งเริ่มต้น: จุดเริ่มของโชว์ (ฟอร์เมชันของหน้า {page})"
         },
         "rangeMenu": {
             "deleteWithMoves": "ลบหน้าและการเคลื่อนที่ของหน้า",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "กำหนดตำแหน่งตามที่แสดง",
+            "holdFromPreviousNone": "ผู้แสดงที่เลือกทุกคน{heldLower}ใน{page}อยู่แล้ว หรืออยู่ระหว่างการเคลื่อนที่",
             "setAsShownNone": "ผู้แสดงที่เลือกทุกคนมีตำแหน่งกำหนดไว้ที่ {page} แล้ว หรืออยู่ระหว่างการเคลื่อนที่",
             "setAsShownError": "เกิดข้อผิดพลาดในการกำหนดตำแหน่งผู้แสดงตามที่แสดง",
-            "deletePage": "ลบหน้า"
+            "deletePage": "ลบหน้า",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "ล้างหน้านี้",
+            "defineAsShown": "กำหนดตำแหน่งตามที่แสดง",
+            "defined": "กำหนดแล้ว",
+            "definedLower": "กำหนดแล้ว",
+            "held": "คงตำแหน่ง",
+            "heldLower": "คงตำแหน่ง",
+            "holdFromPrevious": "คงตำแหน่งจากคีย์เฟรมล่าสุด",
+            "notDefined": "ยังไม่กำหนด",
+            "notDefinedLower": "ยังไม่กำหนด",
+            "removeKeyframe": "ลบคีย์เฟรม",
+            "holdOverWindow": "คงตำแหน่งจากธงเริ่มต้นถึงหัวเล่น",
+            "splitHold": "แยกช่วงคงตำแหน่งที่นี่"
         },
         "startFlagPositions": {
             "always": "เสมอ",
@@ -2124,16 +2492,15 @@
             "menu": "{count, plural, other {แยกผู้แสดงที่เลือก # คนเป็นการเคลื่อนที่ใหม่}}",
             "menuNone": "แยกผู้แสดงที่เลือกเป็นการเคลื่อนที่ใหม่",
             "drag": "แยก{count, plural, other {ผู้แสดง # คน}}",
-            "done": "แยก{count, plural, other {ผู้แสดง # คน}}ไปยัง {label} แล้ว",
             "paused": "หยุดชั่วคราวก่อนเพื่อแยกหรือรวมการเคลื่อนที่",
-            "nothingOnPage": "ยังไม่มีการเคลื่อนที่ในหน้านี้ จึงไม่มีอะไรให้แยก"
+            "nothingOnPage": "ยังไม่มีการเคลื่อนที่ในหน้านี้ จึงไม่มีอะไรให้แยก",
+            "pageSplitOff": "หน้านี้ไม่มีการเคลื่อนที่ของตัวเอง หากต้องการแยกการเคลื่อนที่ที่พาดผ่านหน้านี้ ให้ใช้คลิปของการเคลื่อนที่นั้น"
         },
         "merge": {
             "menuPair": "รวม {source} เข้ากับ {target}",
             "menuPairFit": "รวม {source} เข้ากับ {target} · ปรับให้พอดีกับจำนวนจังหวะ",
             "menuInto": "รวมเข้ากับ {target}",
             "menuIntoFit": "รวมเข้ากับ {target} · ปรับให้พอดีกับจำนวนจังหวะ",
-            "done": "รวม {source} เข้ากับ {target} แล้ว",
             "page": "หน้า {name}",
             "thisPage": "หน้านี้",
             "thisMove": "การเคลื่อนที่นี้",
@@ -2256,6 +2623,8 @@
             "passedSets": "{count, plural, other {เซ็ต {names}}}",
             "through": "· ผ่าน{sets}",
             "editingThrough": "{editing} ผ่าน{sets}",
+            "held": "· {held} {count} จาก {total} คน",
+            "withHeld": "{rest}, {held} {count} จาก {total} คน",
             "afterPaused": "{paused} {rest}",
             "withLoop": "{rest} {key} เล่นวนซ้ำ{loop}",
             "loops": "<keys></keys> เล่นวนซ้ำ{loop}"
@@ -2313,6 +2682,11 @@
             "label": "ย่อให้พอดีทั้งโชว์",
             "hint": "กดอีกครั้งเพื่อย้อนกลับ บีบนิ้วหรือใช้ <keys></keys> เพื่อซูม"
         },
+        "zoom": {
+            "in": "ซูมเข้า",
+            "out": "ซูมออก",
+            "hint": "หรือบีบนิ้ว หรือใช้ <keys></keys>"
+        },
         "transport": {
             "label": "ตัวควบคุมการเล่น",
             "more": "ตัวควบคุมเพิ่มเติม",
@@ -2366,6 +2740,7 @@
         },
         "moveMenu": {
             "edit": "แก้ไขการเคลื่อนที่",
+            "selectMarchers": "เลือกผู้แสดง",
             "rename": "เปลี่ยนชื่อการเคลื่อนที่…",
             "splitAtPlayhead": "แยกที่หัวเล่น",
             "delete": "ลบการเคลื่อนที่",
@@ -2459,6 +2834,15 @@
                 "alreadyInSlot": "ผู้แสดงอยู่ในช่อง {slot} แล้ว"
             },
             "changesNothing": "การแก้ไขนี้ไม่ได้เปลี่ยนแปลงอะไร",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} ใช้ได้กับทั้งหน้าเท่านั้น ไม่ใช่{counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} ใช้ได้กับทั้งหน้าเท่านั้น ไม่ใช่{counts}"
+            },
+            "holdEdge": {
+                "outside": "ช่วงคงตำแหน่งไปถึงจังหวะนั้นไม่ได้: ช่วงคงตำแหน่งจะหยุดที่การเคลื่อนที่ถัดไปของผู้แสดง ที่จุดสิ้นสุดของโชว์ หรือห่างจากปลายอีกด้านหนึ่งจังหวะ"
+            },
             "moveTimeline": {
                 "tooEarly": "ไทม์ไลน์เริ่มที่จังหวะ {start} จึงเลื่อนให้เร็วขึ้น {count, plural, other {# จังหวะ}} ไม่ได้",
                 "tooLate": "ไทม์ไลน์เลื่อนเลยจังหวะ {max} ไม่ได้"
@@ -2474,6 +2858,45 @@
                 "wholePage": "“คงไว้” ใช้ได้กับทั้งหน้าเท่านั้น ไม่ใช่ {counts}"
             },
             "tooFarPastEnd": "ตำแหน่งนั้นเลยจุดสิ้นสุดไป {count, plural, other {# จังหวะ}} การแก้ไขหนึ่งครั้งเก็บได้สูงสุด {max} จังหวะ"
+        },
+        "expertHolds": {
+            "held": "{names}: {heldLower}จากธงเริ่มต้นถึงหัวเล่นอยู่แล้ว",
+            "shape": "{names}: อยู่ในรูปร่างระหว่างธงเริ่มต้นกับหัวเล่น",
+            "followLeader": "{names}: เดินตามผู้นำระหว่างธงเริ่มต้นกับหัวเล่น",
+            "followLeaderOrder": "{names}: ใช้การเคลื่อนที่แบบโค้งร่วมกับลำดับการเดินตามผู้นำ",
+            "arrivalShape": "{names}: ช่วงคงตำแหน่งจะเริ่มตรงจุดที่รูปร่างสิ้นสุด",
+            "arrivalFollowLeader": "{names}: ช่วงคงตำแหน่งจะเริ่มตรงจุดที่การเคลื่อนที่แบบเดินตามผู้นำสิ้นสุด",
+            "homeShape": "{names}: มีรูปร่างกำหนดตำแหน่งเริ่มต้น ยกเลิกการจัดกลุ่มที่ต้นโชว์เพื่อให้คงตำแหน่งทีละคน",
+            "endsWithoutArriving": "{names}: การเคลื่อนที่สุดท้ายก่อนธงเริ่มต้นจบโดยไปไม่ถึงตำแหน่ง",
+            "count": "{count, plural, other {ผู้แสดง # คน}}",
+            "notHeld": "{count, plural, other {ผู้แสดง # คน}}ไม่ได้{heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · หน้า {page}",
+            "titleRange": "{notDefined} · หน้า {first}–{last}"
+        },
+        "departure": {
+            "title": "เคลื่อนที่อีกครั้ง · หน้า {page} จังหวะที่ {count}"
+        },
+        "touchTransport": {
+            "playMenu": "วิธีเล่น",
+            "goTo": "ไปที่",
+            "start": "เริ่มต้น",
+            "countBack": "ถอย 1 จังหวะ",
+            "countOn": "ถัดไป 1 จังหวะ",
+            "end": "สิ้นสุด",
+            "playback": "การเล่น",
+            "speed": "ความเร็ว",
+            "sound": "เสียง",
+            "view": "มุมมอง",
+            "fit": "พอดี",
+            "atPlayhead": "ที่หัวเล่น",
+            "newPage": "หน้าใหม่",
+            "newSubset": "หน้าย่อยใหม่",
+            "compact": "กะทัดรัด"
+        },
+        "clearPage": {
+            "error": "ไม่สามารถล้างหน้าได้"
         }
     },
     "titlebar": {
@@ -2492,6 +2915,8 @@
         }
     },
     "toolbar": {
+        "showControls": "แสดงแถบเครื่องมือ",
+        "hideControls": "ซ่อนแถบเครื่องมือ",
         "alignment": {
             "lockXCaption": "ล็อก X",
             "lockYCaption": "ล็อก Y",
@@ -2499,8 +2924,11 @@
             "lockMarchersAriaLabel": "การเคลื่อนเคอร์เซอร์และการสแนปผู้แสดง",
             "placeAllMarchers": "วางผู้แสดงทั้งหมด",
             "placeSelectedMarchers": "วางผู้แสดงที่เลือก",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "สแนป",
-            "setMarcherPositionsAriaLabel": "กำหนดตำแหน่งผู้แสดง"
+            "toNextPageSpots": "...ไปยังตำแหน่งของหน้าถัดไป",
+            "setMarcherPositionsAriaLabel": "กำหนดตำแหน่งผู้แสดง",
+            "toPreviousPagePositions": "...ไปยังตำแหน่งของหน้าก่อนหน้า"
         },
         "collisions": {
             "collisionsToolbar": "การชนกัน",
@@ -2548,6 +2976,49 @@
             "shapesAlways": "เสมอ",
             "shapesOff": "ปิด",
             "shapesSelected": "เมื่อเลือก"
+        },
+        "alignmentTabShort": "จัดแนว"
+    },
+    "updates": {
+        "pill": {
+            "available": "มีอัปเดต",
+            "downloadingUpdate": "กำลังดาวน์โหลดอัปเดต",
+            "downloadingProgress": "กำลังดาวน์โหลดอัปเดต: {percent}%",
+            "ready": "อัปเดตพร้อมแล้ว",
+            "failed": "อัปเดตไม่สำเร็จ"
+        },
+        "popover": {
+            "current": "คุณใช้ {version} อยู่",
+            "availableBody": "ดาวน์โหลดได้เลย อัปเดตจะติดตั้งเมื่อคุณเลือก “อัปเดตทันที” หรือเมื่อคุณออกจากแอปครั้งถัดไป",
+            "downloadingBody": "{transferred} จาก {total} MB, {speed} MB/s",
+            "downloadingStarting": "กำลังเริ่มดาวน์โหลด…",
+            "readyBody": "“อัปเดตทันที” จะปิดโชว์ของคุณ ติดตั้งอัปเดต แล้วเปิด OpenMarch และโชว์ของคุณอีกครั้ง งานของคุณถูกบันทึกไว้แล้ว",
+            "moveBody": "macOS อัปเดต OpenMarch ได้เฉพาะเมื่ออยู่ในโฟลเดอร์แอปพลิเคชัน ย้ายไปไว้ที่นั่น แล้ว OpenMarch จะเปิดอีกครั้งจากโฟลเดอร์แอปพลิเคชัน",
+            "errorBody": "ดาวน์โหลดอัปเดตไม่สำเร็จ ลองอีกครั้ง หรือดาวน์โหลดตัวติดตั้งแล้วเปิดใช้ด้วยตนเอง",
+            "installFailedBody": "ติดตั้ง OpenMarch {version} ไม่สำเร็จ ดาวน์โหลดตัวติดตั้งแล้วเปิดใช้ด้วยตนเอง"
+        },
+        "action": {
+            "download": "ดาวน์โหลด",
+            "updateNow": "อัปเดตทันที",
+            "later": "ภายหลัง",
+            "retry": "ลองอีกครั้ง",
+            "downloadInstaller": "ดาวน์โหลดตัวติดตั้ง",
+            "moveToApplications": "ย้ายไปยังแอปพลิเคชัน",
+            "whatsNew": "มีอะไรใหม่"
+        },
+        "toast": {
+            "checking": "กำลังตรวจหาอัปเดต…",
+            "upToDate": "OpenMarch {version} เป็นเวอร์ชันล่าสุดแล้ว",
+            "available": "OpenMarch {version} พร้อมให้ดาวน์โหลดแล้ว",
+            "downloading": "กำลังดาวน์โหลดอยู่ ปุ่มอัปเดตที่มุมซ้ายบนจะแสดงความคืบหน้า",
+            "ready": "OpenMarch {version} พร้อมติดตั้งแล้ว",
+            "checkFailed": "ไม่สามารถตรวจหาอัปเดตได้"
+        },
+        "unsupported": {
+            "development": "การอัปเดตปิดอยู่ในบิลด์สำหรับการพัฒนา",
+            "snap": "Snap Store จะคอยอัปเดต OpenMarch ชุดนี้ให้เป็นเวอร์ชันล่าสุด",
+            "linuxPackage": "OpenMarch ชุดนี้อัปเดตตัวเองไม่ได้ ดาวน์โหลดเวอร์ชันใหม่ได้จาก openmarch.com",
+            "noFeed": "OpenMarch บิลด์นี้ไม่อัปเดตตัวเอง โปรดดาวน์โหลดบิลด์ใหม่แต่ละครั้งด้วยตนเอง"
         }
     },
     "view3d": {
@@ -2556,6 +3027,12 @@
             "no": "ไม่",
             "title": "เปิดมุมมอง 3D โดยอัตโนมัติเมื่อเริ่มต้นหรือไม่",
             "yes": "ใช่"
+        },
+        "board": {
+            "designedBy": "ออกแบบโดย {name}",
+            "forClient": "สำหรับ {name}",
+            "nowPerforming": "กำลังแสดง",
+            "untitled": "โชว์ไม่มีชื่อ"
         },
         "camera": {
             "blimp": "เรือเหาะ",
@@ -2600,7 +3077,8 @@
             "pickSeat": "เลือกที่นั่ง",
             "pickSeatTooltip": "เลือกที่นั่ง: คลิกที่นั่งบนอัฒจันทร์เพื่อนั่งตรงนั้น",
             "venue": "สถานที่",
-            "freeCamera": "มุมมองอิสระ"
+            "freeCamera": "มุมมองอิสระ",
+            "director": "ผู้กำกับ"
         },
         "readout": {
             "count": "จังหวะ {count} จาก {total}",
@@ -2646,7 +3124,11 @@
             "graphicsHint": "ไม่ได้บันทึกไว้ในโชว์ จึงอาจแตกต่างกันในแต่ละคอมพิวเตอร์",
             "keysSection": "แป้นพิมพ์และเมาส์",
             "uniforms": "เครื่องแบบวง",
-            "guardUniforms": "เครื่องแบบคัลเลอร์การ์ด"
+            "guardUniforms": "เครื่องแบบคัลเลอร์การ์ด",
+            "brassFinish": "ผิวเครื่องทองเหลือง",
+            "tuba": "ทูบา",
+            "silkShape": "รูปทรงผืนธง",
+            "silkArtwork": "ลวดลายผืนธง"
         },
         "keys": {
             "playPause": "เล่นหรือหยุดชั่วคราว",
@@ -2657,11 +3139,23 @@
             "crowd": "แสดงหรือซ่อนผู้ชม",
             "escape": "ยกเลิกการเลือกที่นั่ง ปิดการตั้งค่า ออกจากโหมดเต็มหน้าจอ",
             "orbit": "หมุนรอบ",
+            "orbitOrRight": "หมุนรอบ หรือลากด้วยปุ่มเมาส์ขวา",
+            "panPlain": "เลื่อนมุมมอง",
+            "zoomOrPinch": "ซูม หรือบีบนิ้วบนแทร็กแพด",
             "pan": "เลื่อนมุมมอง หรือลากด้วยปุ่มเมาส์ขวา",
-            "zoom": "ซูม"
+            "zoom": "ซูม",
+            "pausedPose": "ขณะหยุดชั่วคราว: แสดงท่าก้าวจริงหรือท่าเท้าชิด"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "แล็กเกอร์",
+            "silver": "เงิน"
+        },
+        "tuba": {
+            "contra": "ทูบามาร์ชชิง",
+            "sousaphone": "ซูซาโฟน"
         },
         "uniformPreset": {
             "fade": "Ultraviolet Fade",
@@ -2703,11 +3197,37 @@
         "venue": {
             "updateFailed": "อัปเดตสถานที่ของมุมมอง 3D ไม่สำเร็จ"
         },
-        "board": {
-            "designedBy": "ออกแบบโดย {name}",
-            "forClient": "สำหรับ {name}",
-            "nowPerforming": "กำลังแสดง",
-            "untitled": "โชว์ไม่มีชื่อ"
+        "pausedPose": {
+            "label": "แสดงท่าก้าวจริงขณะหยุดชั่วคราว",
+            "tooltip": "แสดงผู้แสดงในท่ากลางก้าวขณะหยุดชั่วคราว ตามที่เป็นอยู่ ณ ขณะนั้น เมื่อปิด: ผู้แสดงยืนเท้าชิดบนจุดของตน"
+        },
+        "silkShape": {
+            "standard": "มาตรฐาน",
+            "curvedTail": "หางโค้ง",
+            "cSwing": "สวิงรูปตัว C",
+            "rainbow": "สายรุ้ง",
+            "arc": "ส่วนโค้ง",
+            "teardrop": "หยดน้ำ",
+            "distressed": "ขอบขาดวิ่น",
+            "rounded": "ปลายมน",
+            "rectangle": "สี่เหลี่ยมผืนผ้า",
+            "curvedAngle": "มุมโค้งขนาดใหญ่",
+            "wings": "ปีก",
+            "snake": "งู",
+            "swing": "สวิง"
+        },
+        "silkArtwork": {
+            "none": "ไม่มีลวดลาย: ผืนธงจะแสดงลายของเครื่องแบบคัลเลอร์การ์ดหรือสีของกลุ่มเครื่อง",
+            "import": "นำเข้า PNG…",
+            "replace": "แทนที่…",
+            "remove": "นำออก",
+            "template": "เทมเพลตสำหรับ{shape}:",
+            "preparing": "กำลังเตรียม…",
+            "notPng": "ไฟล์นั้นไม่ใช่ PNG ส่งออกลวดลายของคุณเป็น PNG แล้วนำเข้าอีกครั้ง",
+            "tooLarge": "ไฟล์ PNG นั้นใหญ่เกินไป ส่งออกด้วยความละเอียดที่ต่ำลงแล้วนำเข้าอีกครั้ง",
+            "unreadable": "ไม่สามารถอ่านไฟล์ PNG นั้นได้",
+            "templateFailed": "ไม่สามารถสร้างเทมเพลตได้",
+            "saveFailed": "ไม่สามารถบันทึกลวดลายผืนธงได้"
         }
     },
     "web": {
@@ -2839,6 +3359,58 @@
         "welcome": {
             "description": "ยินดีต้อนรับสู่อนาคตของการออกแบบ มาเริ่มตั้งค่ากันเลย",
             "title": "ยินดีต้อนรับสู่ OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "นี่คือสิ่งที่เปลี่ยนไปตั้งแต่คุณใช้งานครั้งล่าสุด",
+            "title": "ยินดีต้อนรับกลับมา"
+        },
+        "whatsNew": {
+            "carousel": "การแนะนำฟีเจอร์",
+            "guides": "เรียนรู้เพิ่มเติมในคู่มือ OpenMarch",
+            "next": "ถัดไป",
+            "position": "{current} จาก {total}",
+            "skip": "ข้าม",
+            "slide": "สไลด์",
+            "slides": {
+                "pathways": {
+                    "label": "เส้นทาง",
+                    "media": "รูปภาพตัวอย่างชั่วคราว: ยังไม่ได้บันทึกคลิปของปากกาเส้นทาง",
+                    "text": "ใช้ปากกาเส้นทางวาดเส้นทางที่มีจุดหักมุมให้ผู้แสดง แล้วผู้แสดงจะเดินตามเส้นทางนั้นแทนการเดินเป็นเส้นตรง",
+                    "title": "เส้นทาง"
+                },
+                "props": {
+                    "label": "พร็อพ",
+                    "media": "ในมุมมอง 3D แท่นยกพื้นสีอำพันเลื่อนไปตามด้านหลังของสนามแล้วหมุน โดยไม่ชนวงโยธวาทิต",
+                    "text": "วาดพร็อพบนสนามและเคลื่อนย้ายบนไทม์ไลน์ ตอนนี้พร็อพจะแสดงเป็นบล็อกเรียบๆ ในมุมมอง 3D",
+                    "title": "พร็อพ"
+                },
+                "shapes": {
+                    "label": "รูปร่าง",
+                    "media": "ผู้แสดงกลุ่มเครื่องหนึ่งถูกวางในบล็อก จากนั้นบนเส้น แล้วบนส่วนโค้ง โดยแต่ละรูปร่างวาดบนสนามและสแนปเข้ากับเส้นของสนาม",
+                    "text": "วาดบล็อก เส้น หรือส่วนโค้ง แล้ววางผู้แสดงที่เลือกลงไป จุดของรูปร่างจะสแนปเข้ากับครึ่งก้าว เส้นหลา และเส้นแฮช",
+                    "title": "รูปร่าง"
+                },
+                "tempo": {
+                    "label": "แก้ไขเพลง",
+                    "media": "การแก้ไขเพลงในไทม์ไลน์: โชว์เล่นที่ 118 จังหวะต่อนาที ค่อยๆ ช้าลงเป็น 81 ภายในสองห้อง แล้วกระโดดกลับไปที่ 118 พร้อมอัตราจังหวะใหม่ หัวเล่นช้าลงตลอดช่วงที่เทมโปค่อยๆ เปลี่ยน แล้วเร็วขึ้นอีกครั้งหลังจากนั้น",
+                    "text": "จัดจังหวะของคุณให้ตรงกับเพลงในไทม์ไลน์: ลากเทมโปจนจังหวะตรงกับบีตของเพลง แล้วตั้งการเปลี่ยนเทมโป จังหวะค้าง และอัตราจังหวะ",
+                    "title": "แก้ไขเพลง"
+                },
+                "timeline": {
+                    "label": "ไทม์ไลน์",
+                    "media": "ผู้แสดง 20 คนเรียงเป็นเส้นเดินไปข้างหน้า 16 จังหวะในการเคลื่อนที่เดียว การเคลื่อนที่ที่สั้นกว่าสามรายการซึ่งซ้อนอยู่ใต้การเคลื่อนที่นั้นบนไทม์ไลน์ เหวี่ยงปลายเส้นกลับ ขยายเส้นออก แล้วโค้งทั้ง 20 คนเป็นส่วนโค้ง",
+                    "text": "หน้า การเคลื่อนที่ และจังหวะอยู่บนไทม์ไลน์เดียวใต้สนาม และในโหมดขั้นสูง การเคลื่อนที่ข้ามหน้าและซ้อนทับกันได้",
+                    "title": "ไทม์ไลน์"
+                },
+                "view3d": {
+                    "label": "มุมมอง 3D",
+                    "media": "วงกำลังเดินแถวระหว่างเซ็ตในแบบ 3D ในสนามกีฬาหลังคาโดม มองจากมุมสูงเหนือห้องสื่อมวลชน: ผู้แสดงในเครื่องแบบและคัลเลอร์การ์ดพร้อมธง",
+                    "text": "ชมโชว์ของคุณจากอัฒจันทร์ พร้อมผู้แสดงในเครื่องแบบ",
+                    "title": "มุมมอง 3D"
+                }
+            },
+            "steps": "ฟีเจอร์ใหม่",
+            "title": "มีอะไรใหม่ใน 0.2"
         }
     },
     "workspaceSettings": {
@@ -2862,7 +3434,6 @@
         },
         "unsavedChanges": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
         "close": "ปิด",
-        "saved": "บันทึกการตั้งค่าโชว์แล้ว",
         "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ",
         "showInfo": {
             "projectName": "ชื่อโชว์",
@@ -2870,6 +3441,36 @@
             "designer": "ผู้ออกแบบ",
             "client": "ลูกค้า",
             "optional": "ไม่บังคับ"
+        },
+        "performer": {
+            "title": "ค่าเริ่มต้นของผู้แสดง",
+            "description": "วิธีที่ผู้แสดงเคลื่อนที่ในมุมมอง 3D ในทุกที่ที่ไม่ได้ตั้งค่าเฉพาะเจาะจงกว่านี้",
+            "stepOffFoot": {
+                "label": "เริ่มก้าวด้วย",
+                "left": "เท้าซ้าย",
+                "right": "เท้าขวา"
+            },
+            "dotMode": {
+                "label": "จุดหมายถึง",
+                "foot": "เท้าอยู่บนจุด",
+                "body": "กึ่งกลางลำตัว"
+            },
+            "directionChange": {
+                "label": "การเปลี่ยนทิศทาง",
+                "corner": "อ้อมมุม",
+                "direct": "ตัดตรง"
+            },
+            "holdWhileBandMoves": {
+                "label": "คงตำแหน่งขณะคนอื่นเคลื่อนที่",
+                "markTime": "ย่ำเท้าอยู่กับที่",
+                "highMarkTime": "ย่ำเท้ายกเข่าสูง",
+                "stand": "ยืนนิ่ง"
+            },
+            "percussionTravel": {
+                "label": "กลองเคลื่อนที่ด้านข้าง",
+                "crab": "ก้าวปู",
+                "slide": "สไลด์"
+            }
         }
     },
     "canvas": {
@@ -2901,6 +3502,7 @@
         "marchers": "ผู้แสดง",
         "metronome": "เมโทรนอม",
         "mobile": "แอปมือถือ",
+        "props": "พร็อพ",
         "music": "เพลง",
         "renderFail": "ไม่สามารถแสดงเนื้อหาของแผงด้านข้างได้",
         "settings": "การตั้งค่าโชว์"
@@ -2925,6 +3527,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "อัตโนมัติ",
+            "autoDescribe": "{device, select, pencil {หนึ่งนิ้วเลื่อนมุมมอง ใช้ Apple Pencil หรือแตะค้างแล้วลาก เพื่อวาดกรอบเลือก} other {หนึ่งนิ้วเลื่อนมุมมอง ใช้ปากกา หรือแตะค้างแล้วลาก เพื่อวาดกรอบเลือก}}",
+            "box": "กรอบ",
+            "boxDescribe": "{device, select, pencil {หนึ่งนิ้วหรือ Apple Pencil วาดกรอบเพื่อเลือก สองนิ้วเลื่อนมุมมอง} other {หนึ่งนิ้วหรือปากกาวาดกรอบเพื่อเลือก สองนิ้วเลื่อนมุมมอง}}",
+            "button": "ลากบนสนามที่ว่าง: {label} {describe} แตะเพื่อเปลี่ยน",
+            "lasso": "ลาสโซ",
+            "lassoDescribe": "{device, select, pencil {หนึ่งนิ้วหรือ Apple Pencil วาดล้อมรอบผู้แสดงเพื่อเลือก สองนิ้วเลื่อนมุมมอง} other {หนึ่งนิ้วหรือปากกาวาดล้อมรอบผู้แสดงเพื่อเลือก สองนิ้วเลื่อนมุมมอง}}",
+            "menu": "ลากบนสนามที่ว่าง",
+            "pan": "เลื่อน",
+            "panDescribe": "{device, select, pencil {หนึ่งนิ้วหรือ Apple Pencil เลื่อนมุมมอง} other {หนึ่งนิ้วหรือปากกาเลื่อนมุมมอง}}",
+            "prefix": "ลาก:"
+        },
         "modifiers": {
             "add": "เพิ่ม",
             "addHint": "เพิ่ม: กดค้างไว้ หรือแตะเพื่อเปิดค้างไว้ การแตะผู้แสดงจะเพิ่มลงในส่วนที่เลือก",
@@ -2933,11 +3548,13 @@
             "explain": {
                 "add": "แตะผู้แสดงเพื่อเพิ่มหรือนำออก",
                 "constrain": "ระยะห่างเท่ากัน เคลื่อนที่ในแกนเดียว สลับการปรับขนาดตามสัดส่วน",
+                "dragMode": "กำหนดว่านิ้วเดียวหรือปากกาทำอะไรบนพื้นที่ว่างของสนาม: เลื่อนมุมมอง หรือวาดกรอบหรือลาสโซ",
                 "fine": "ผู้แสดงเคลื่อนที่ช้าๆ โดยไม่ยึดตาราง รูปร่างไม่ยึดครึ่งก้าวแต่ยังจับเส้นได้ การหมุนจะเป็นทีละองศาเต็ม",
                 "fromCenter": "บล็อกจะวาดและปรับขนาดจากจุดกึ่งกลาง",
                 "grip": "ลากเพื่อย้าย",
                 "help": "ท่าทางสัมผัส",
-                "snap": "เปิดหรือปิดการสแนปกับก้าวและเส้น"
+                "snap": "เปิดหรือปิดการสแนปกับก้าวและเส้น",
+                "subtract": "กรอบหรือลาสโซจะนำผู้แสดงออกจากส่วนที่เลือก"
             },
             "fine": "ละเอียด",
             "fineHint": "ละเอียด: กดค้างไว้ หรือแตะเพื่อเปิดค้างไว้ ผู้แสดงเคลื่อนที่ช้าๆ โดยไม่ยึดตาราง รูปร่างไม่ยึดครึ่งก้าว การหมุนเป็นทีละองศาเต็ม",
@@ -2948,12 +3565,17 @@
             "help": "ปุ่มเหล่านี้ทำอะไร",
             "helpList": {
                 "add": "<b>เพิ่ม</b> แตะเพื่อเพิ่มลงในส่วนที่เลือก · <b>ปิดสแนป</b> ย้ายได้อิสระ",
+                "dragMode": "<b>ลาก</b> กำหนดว่านิ้วเดียวทำอะไรบนพื้นที่ว่างของสนาม: เลื่อนมุมมอง หรือวาดกรอบหรือลาสโซ",
                 "fine": "<b>ละเอียด</b> ลากและหมุนได้แม่นยำ · <b>เท่ากัน</b> ระยะห่างเท่ากัน",
                 "fromCenter": "<b>จากกึ่งกลาง</b> บล็อกขยายออกจากตรงกลาง",
                 "toggles": "<b>แตะ</b>ปุ่มเพื่อเปิดค้างไว้ หรือ<b>กดค้าง</b>ไว้ขณะลาก"
             },
-            "noSnap": "ปิดสแนป"
-        }
+            "noSnap": "ปิดสแนป",
+            "subtract": "นำออก",
+            "subtractHint": "นำออก: กดค้างไว้ หรือแตะเพื่อเปิดค้างไว้ กรอบหรือลาสโซจะนำผู้แสดงที่ครอบไว้ออกจากส่วนที่เลือก"
+        },
+        "redone": "ทำซ้ำแล้ว",
+        "undone": "เลิกทำแล้ว"
     },
     "shortcutsDialog": {
         "movement": {
@@ -2987,7 +3609,8 @@
             "select": "การเลือก",
             "shape": "รูปร่าง",
             "timeline": "ไทม์ไลน์",
-            "ui": "มุมมอง"
+            "ui": "มุมมอง",
+            "field": "สนาม"
         }
     },
     "shortcut": {
@@ -3060,8 +3683,11 @@
             "title": "วิธีใช้",
             "showShortcuts": "แป้นพิมพ์ลัด",
             "website": "เว็บไซต์",
-            "guides": "เอกสาร/คู่มือ"
+            "guides": "เอกสาร/คู่มือ",
+            "reportFeedback": "รายงานบั๊กหรือส่งความคิดเห็น…",
+            "viewMyReports": "ดูรายงานของฉัน"
         },
+        "checkForUpdates": "ตรวจหาการอัปเดต…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {
@@ -3079,6 +3705,13 @@
         },
         "openFailed": {
             "title": "เกิดข้อผิดพลาดในการโหลดฐานข้อมูล"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "ไม่สามารถเพิ่มคิวได้",
+            "delete": "ไม่สามารถลบคิวได้",
+            "update": "ไม่สามารถเปลี่ยนคิวได้"
         }
     },
     "coordinates": {
@@ -3103,6 +3736,12 @@
             "onX": "บน {checkpoint}",
             "onY": "บน {checkpoint}",
             "outside": "{steps, plural, =0 {นอก {checkpoint}} other {# นอก {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "เส้นกึ่งกลางสนาม",
+            "centerLineShort": "กลาง",
+            "frontEdge": "ขอบสนามด้านหน้า",
+            "frontEdgeShort": "ขอบ"
         }
     },
     "activities": {
@@ -3120,9 +3759,651 @@
         "toFive": "{steps, number} ต่อ 5",
         "undefined": "ไม่ระบุ"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "เพิ่มจุดเปลี่ยนเทมโปที่ {where}",
+                "curve": "เส้นโค้งเทมโป",
+                "endsOn": "จบที่ {tempo}",
+                "endsOnThen": "จบที่ {tempo} แล้วต่อด้วย {next}",
+                "gradual": "เปลี่ยนเทมโปแบบค่อยเป็นค่อยไป",
+                "held": "ค้าง {where} ไว้ {seconds} วินาที",
+                "hold": "จังหวะค้าง",
+                "holdDrill": "หยุดดริลไว้",
+                "jump": "เปลี่ยนเทมโปทันที",
+                "measureNumber": "หมายเลขห้อง",
+                "movedChange": "ย้ายจุดเปลี่ยนเทมโปไปที่ {where}",
+                "rehearsalMark": "เครื่องหมายซ้อม",
+                "removedChange": "ลบจุดเปลี่ยนเทมโปที่ {where}",
+                "tempo": "เทมโป",
+                "timeSignature": "อัตราจังหวะ"
+            },
+            "ask": {
+                "add": {
+                    "intro": "ใช้เมื่อเพลงมีจังหวะเกินมาตรงนี้ซึ่งจังหวะนับไม่มี ไฟล์เสียงไม่เปลี่ยน เปลี่ยนเฉพาะจังหวะนับเท่านั้น",
+                    "keepMeasure": "{measure} จะมี {count, plural, other {# จังหวะ}} ในช่วงเวลาเท่าเดิม ({tempo})",
+                    "manyKeep": "{moves, plural, other {การเคลื่อนที่ # รายการที่คร่อมอยู่ยังคงจำนวนจังหวะเดิม}} ผู้แสดงจะคงตำแหน่ง {count, plural, other {# จังหวะ}} ตอนท้ายของแต่ละรายการ",
+                    "manyShift": "{moves, plural, other {การเคลื่อนที่ # รายการที่คร่อมอยู่จะยาวขึ้นรายการละ}} {count, plural, other {# จังหวะ}}",
+                    "noMove": "ไม่มีการเคลื่อนที่คร่อมจุดนี้ ผู้แสดงจึงคงตำแหน่งตลอดช่วงนี้",
+                    "oneKeep": "{move} ยังคงยาว {moveCounts, plural, other {# จังหวะ}} และผู้แสดงจะคงตำแหน่ง {count, plural, other {# จังหวะ}} ตอนท้าย",
+                    "oneShift": "{move} ยาวขึ้นจาก {from} เป็น {to, plural, other {# จังหวะ}}",
+                    "shift": "เพิ่มเวลาตรงนี้ {count, plural, other {# จังหวะ}} ({seconds} วินาที): จังหวะและดริลหลังจากนี้จะเลื่อนออกไปเท่ากันเมื่อเทียบกับเพลง ใช้เมื่อเดิมมาก่อนเพลง"
+                },
+                "addCountAfter": "เพิ่มจังหวะหลัง {where}",
+                "addCountBefore": "เพิ่มจังหวะก่อน {where}",
+                "addMeasureBefore": "เพิ่มห้อง ({count, plural, other {# จังหวะ}}) ก่อนห้อง {measure}",
+                "addedCountAfter": "เพิ่มจังหวะหลัง {where} แล้ว",
+                "addedCountBefore": "เพิ่มจังหวะก่อน {where} แล้ว",
+                "addedMeasureBefore": "เพิ่มห้อง ({count, plural, other {# จังหวะ}}) ก่อนห้อง {measure} แล้ว",
+                "breath": {
+                    "many": "{moves, plural, other {การเคลื่อนที่ # รายการที่คร่อมอยู่จะจบเร็วขึ้น 1 จังหวะ}} ผู้แสดงจะคงตำแหน่งในจังหวะนั้น",
+                    "noCountAdded": "ไม่มีการเพิ่มจังหวะ และเพลงคงเดิม",
+                    "none": "สำหรับเว้นจังหวะพักในดริลโดยเพลงคงเดิม: ไม่มีการเคลื่อนที่คร่อมจุดนี้ให้จบเร็วขึ้น",
+                    "one": "{move}: การเคลื่อนที่ {from} → {to, plural, other {# จังหวะ}} ผู้แสดงคงตำแหน่งใน {where}"
+                },
+                "countsFewer": "{count, plural, other {ลดลง # จังหวะ}}",
+                "countsMore": "{count, plural, other {เพิ่มขึ้น # จังหวะ}}",
+                "hidden": {
+                    "fewer": "ลบ {where} แทน",
+                    "fewerHint": "เหลือหนึ่งจังหวะระหว่างคีย์เฟรมกับธง",
+                    "fixHint": "ผู้แสดงจะถึงตำแหน่งปลายทางหนึ่งจังหวะก่อน {move} จบ แล้วจังหวะจะถูกลบ เลิกทำครั้งเดียวจะย้อนกลับทั้งสองอย่าง",
+                    "fixTooShort": "คีย์เฟรมของผู้แสดงจะยาวเพียงหนึ่งจังหวะ จึงจบเร็วกว่านี้ไม่ได้",
+                    "marchersMore": "{names} และอีก {count, plural, other {# คน}}",
+                    "text": "คีย์เฟรมของผู้แสดงจะจบในจังหวะเดียวกับ {move} เมื่อการเคลื่อนที่สองรายการจบพร้อมกัน คีย์เฟรมจะมีผลเหนือกว่า ผู้แสดงจึงจะไม่ได้ยืนที่ตำแหน่งปลายทางนั้นเลย",
+                    "theMove": "การเคลื่อนที่ที่อยู่ข้างใต้",
+                    "title": "{marchers} จะไม่ได้ยืนที่ตำแหน่งปลายทางของ {move}"
+                },
+                "laterCountsStay": "จังหวะหลังจากนี้ยังอยู่ตรงกับเพลงเหมือนเดิม ใช้เมื่อตรงกับเพลงอยู่แล้ว",
+                "noMoveHere": "ไม่มีการเคลื่อนที่ตรงนี้",
+                "pageCounts": "หน้า {page}: {from} → {to, plural, other {# จังหวะ}}",
+                "pagesSentence": "{pages}",
+                "remove": {
+                    "intro": "ใช้เมื่อเพลงตรงนี้มีจังหวะน้อยกว่าจังหวะนับ ไฟล์เสียงไม่เปลี่ยน เปลี่ยนเฉพาะจังหวะนับเท่านั้น",
+                    "keep": "จังหวะรอบข้างจะขยายเต็มช่วงเวลาเดิม ({where}: {from} → {to, plural, other {# จังหวะ}}, {tempo})",
+                    "manyKeep": "{moves, plural, other {การเคลื่อนที่ # รายการที่คร่อมอยู่ยังคงจำนวนจังหวะเดิมโดยจบช้าลง}} หากไม่มีอะไรขวางอยู่ตรงนั้น",
+                    "manyShift": "{moves, plural, other {การเคลื่อนที่ # รายการที่คร่อมอยู่จะสั้นลง}}",
+                    "marksGo": "{count, plural, other {เครื่องหมายซ้อม {marks} จะหายไป เพราะห้องที่เหลืออยู่ตรงนั้นมีเครื่องหมายของตัวเองอยู่แล้ว}}",
+                    "noMove": "ไม่มีการเคลื่อนที่คร่อมจุดนี้",
+                    "oneKeep": "{move} ยังคงยาว {moveCounts, plural, other {# จังหวะ}} โดยจบช้าลง {count, plural, other {# จังหวะ}} หากไม่มีอะไรขวางอยู่ตรงนั้น",
+                    "oneShift": "{move} สั้นลง {count, plural, other {# จังหวะ}}",
+                    "shift": "เวลาของจังหวะนั้นถูกตัดออกด้วย: จังหวะและดริลหลังจากนี้จะเลื่อนเข้ามาเร็วขึ้นเมื่อเทียบกับเพลง ใช้เมื่อเดิมมาช้ากว่าเพลง",
+                    "title": "ลบ {where}"
+                },
+                "removed": "ลบ {where} แล้ว"
+            },
+            "editor": {
+                "holdHint": "ระยะเวลาที่ค้าง {where} ไว้ เป็นวินาที",
+                "markHint": "เครื่องหมายซ้อมที่ห้อง {measure} (เว้นว่างเพื่อลบ)",
+                "notATempo": "“{value}” ไม่ใช่เทมโป: พิมพ์ตัวเลข เช่น 120 หรือ 120-90 เพื่อเปลี่ยนแบบค่อยเป็นค่อยไป",
+                "renumberHint": "กำหนดหมายเลขใหม่ตั้งแต่ห้อง {measure}: ห้องถัดไปจะนับต่อจากหมายเลขที่คุณใส่ เว้นว่างเพื่อกลับไปนับต่อตามปกติ",
+                "tempoFromToHint": "เทมโปตั้งแต่ {from} ถึง {to}: “120” หรือ “120-90” เพื่อเปลี่ยนแบบค่อยเป็นค่อยไป",
+                "tempoOfHint": "เทมโปของ {where}: “120” หรือ “120-90” เพื่อเปลี่ยนแบบค่อยเป็นค่อยไป",
+                "tempoOutOfRange": "“{value}” อยู่นอกช่วง: เทมโปต้องอยู่ระหว่าง 20 ถึง 400 จังหวะต่อนาที",
+                "wholeStretch": "ใช้ทั้งช่วง {range} (ตอนนี้ ♩{tempo}) แทน"
+            },
+            "label": {
+                "beforeMark": "{where} ก่อน {mark}",
+                "count": "จังหวะที่ {count}",
+                "measure": "ห้อง {measure}",
+                "measureCount": "ห้อง {measure} จังหวะที่ {count}",
+                "measures": "ห้อง {from}–{to}",
+                "range": "{from} ถึง {to}"
+            },
+            "lane": {
+                "clearSelection": "ล้างการเลือก",
+                "clearSelectionTitle": "ล้างการเลือก ({key})",
+                "holdLabel": "ค้าง {seconds} วิ",
+                "holdLabelShort": "{seconds} วิ",
+                "markDrag": "{mark} → ห้อง {measure}",
+                "markTitle": "เครื่องหมายซ้อม {mark} ที่ห้อง {measure}: ลากไปยังห้องอื่น ดับเบิลคลิกเพื่อเปลี่ยนชื่อ",
+                "renumberedTitle": "ห้อง {measure}: กำหนดหมายเลขเอง ห้องถัดไปจะนับต่อจากห้องนี้ คลิกขวาหรือดับเบิลคลิกเพื่อเปลี่ยน",
+                "shortMeasureTitle": "ห้อง {measure}: ห้องสั้น มี {count, plural, other {# จังหวะ}}",
+                "tempoLabelTitle": "{range}: คลิกเพื่อพิมพ์เทมโป",
+                "timeSignatureTitle": "อัตราจังหวะ {meter}: คลิกเพื่อเปลี่ยนตั้งแต่ตรงนี้จนถึงอัตราจังหวะถัดไป"
+            },
+            "menu": {
+                "addChange": "เพิ่มจุดเปลี่ยนเทมโปตรงนี้",
+                "addCountAfter": "เพิ่มจังหวะต่อท้าย…",
+                "addCountBefore": "เพิ่มจังหวะก่อนหน้า…",
+                "addMark": "เพิ่มเครื่องหมายซ้อม…",
+                "addMeasureBefore": "เพิ่มห้องก่อนหน้า…",
+                "cancel": "ยกเลิก",
+                "clearSelection": "ล้างการเลือก",
+                "countTitle": "ห้อง {measure} จังหวะที่ {count}",
+                "countTitleNoMeasure": "จังหวะที่ {count}",
+                "editMark": "เครื่องหมายซ้อม…",
+                "gradual": "เปลี่ยนแบบค่อยเป็นค่อยไป",
+                "gradualHint": "จบที่เทมโปถัดไป ({tempo}) จังหวะค้างที่อยู่นอกช่วงยังคงเดิม",
+                "gradualNothingHint": "ไม่มีเทมโปให้เปลี่ยนไปหา: เทมโปถัดไปเท่ากัน หรือช่วงนี้มีจังหวะเดียว",
+                "gradualTo": "เปลี่ยนแบบค่อยเป็นค่อยไปจนถึง {tempo}",
+                "holdLength": "ความยาวจังหวะค้าง…",
+                "holdSubtitle": "ค้าง {seconds} วินาที",
+                "makeHold": "ทำเป็นจังหวะค้าง (เฟอร์มาตา)",
+                "markMoveHere": "ย้าย {mark} จากห้อง {measure} มาที่นี่",
+                "markTaken": "{mark} อยู่ที่ห้อง {measure} แล้ว ใช้ซ้ำหรือไม่",
+                "markUseAgain": "ใช้ {mark} ซ้ำที่ห้อง {measure}",
+                "measureSubtitleMark": "{meter} · เครื่องหมาย {mark}",
+                "measureTitle": "ห้อง {measure}",
+                "notAHold": "ไม่เป็นจังหวะค้าง",
+                "removeChange": "ลบจุดเปลี่ยนเทมโปนี้",
+                "removeCount": "ลบจังหวะนี้…",
+                "removeCounts": "ลบจังหวะเหล่านี้…",
+                "removeMeasure": "ลบห้องนี้…",
+                "renumber": "กำหนดหมายเลขใหม่ตั้งแต่ตรงนี้…",
+                "seconds": "{seconds} วินาที",
+                "selectionCounts": "{count, plural, other {# จังหวะ}}",
+                "setTempo": "ตั้งเทมโป…",
+                "timeSignature": "อัตราจังหวะ…",
+                "toMeasure": "ถึงห้อง {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} นับแบบ {grouping}",
+                "fromSubtitle": "จนถึงอัตราจังหวะถัดไป",
+                "fromTitle": "ตั้งแต่ห้อง {measure}",
+                "justThisMeasure": "เฉพาะห้องนี้",
+                "justThisMeasureHint": "เปิด: อัตราจังหวะใช้กับห้องนี้เท่านั้น ห้องถัดไปคงอัตราจังหวะเดิมและเลื่อนตาม ปิด: ใช้ไปจนถึงอัตราจังหวะถัดไป เหมือนในโน้ตเพลง",
+                "onlySubtitle": "ห้องถัดไปคงอัตราจังหวะเดิม",
+                "onlyTitle": "เฉพาะห้อง {measure}",
+                "other": "อื่นๆ… (เช่น 11/8 3+3+3+2)",
+                "otherHint": "อัตราจังหวะ และวิธีนับเป็นโน้ตเขบ็ตหนึ่งชั้น: “7/8 2+2+3”, “5/8 3+2”, “3/2” (นับเป็นโน้ตตัวดำ)"
+            },
+            "move": {
+                "from": "การเคลื่อนที่จาก {where}",
+                "its": "การเคลื่อนที่ของหน้านี้",
+                "page": "หน้า {page}",
+                "pagesMove": "การเคลื่อนที่ของหน้า {page}"
+            },
+            "tip": {
+                "outlier": "{where} {direction, select, faster {เร็วกว่า} other {ช้ากว่า}}จังหวะข้างเคียงมาก ({tempo} ขณะที่ข้างเคียงคือ {before}, {after}) จึงอาจไม่ตรงกับเพลง คลิกขวาที่จังหวะนี้ > ตั้งเทมโป… เพื่อแก้ไข หรือปล่อยไว้หากเพลงเป็นเช่นนั้นจริง"
+            },
+            "toast": {
+                "changedFirst": "{action}: ไม่ได้นำไปใช้ เนื่องจากโชว์เพิ่งเปลี่ยนไปก่อนหน้านี้ ลองอีกครั้ง",
+                "failed": "{action}: {error}",
+                "holdInvalid": "จังหวะค้างต้องเป็นระยะเวลาเป็นวินาที เช่น 2.5",
+                "holdMade": "{where} เป็นจังหวะค้างแล้ว คลิกขวาที่จังหวะนี้ > ความยาวจังหวะค้าง… เพื่อกำหนดระยะเวลา",
+                "markAlreadyThere": "ห้อง {measure} มีเครื่องหมายซ้อม {mark} อยู่แล้ว",
+                "markMoved": "ย้าย {mark} จากห้อง {from} ไปห้อง {to} แล้ว",
+                "meterSetFrom": "{meter} ตั้งแต่ {where} ห้องละ {count, plural, other {# จังหวะ}} เทมโปคงเดิม",
+                "meterSetOnly": "{meter} เฉพาะห้อง {measure} เทมโปคงเดิม",
+                "meterShiftNote": "ห้องถัดไปจะเริ่ม{direction, select, earlier {เร็วขึ้น} other {ช้าลง}} {count, plural, other {# จังหวะ}}",
+                "meterShortNote": "ห้องสุดท้ายก่อนอัตราจังหวะถัดไปเป็นห้องสั้น: {count, plural, other {# จังหวะ}} (มีเครื่องหมาย *)",
+                "movesCouldNotKeep": "{count, plural, other {การเคลื่อนที่ # รายการคงจำนวนจังหวะเดิมไม่ได้ ความยาวจึงเปลี่ยน}}",
+                "movesKept": "{count, plural, other {การเคลื่อนที่ # รายการคงจำนวนจังหวะเดิม}}",
+                "movesKeptHold": "{kept, plural, one {การเคลื่อนที่ที่คร่อมอยู่คงจำนวนจังหวะเดิม ผู้แสดงจะคงตำแหน่ง} other {การเคลื่อนที่ # รายการคงจำนวนจังหวะเดิม ผู้แสดงจะคงตำแหน่ง}} {count, plural, other {# จังหวะ}} ตอนท้าย",
+                "notATimeSignature": "“{text}” ไม่ใช่อัตราจังหวะ: ลอง 7/8 หรือ 7/8 2+2+3 (การจัดกลุ่มโน้ตเขบ็ตหนึ่งชั้น)",
+                "notMeasureNumber": "“{value}” ไม่ใช่หมายเลขห้อง",
+                "tooFastOrSlow": "{action}: จะทำให้มีจังหวะที่เร็วหรือช้าเกินไป"
+            }
+        },
+        "button": {
+            "hint": "ไฟล์เพลง และการจัดจังหวะให้ตรงกับเพลง: เทมโป อัตราจังหวะ เครื่องหมายซ้อม",
+            "hintOn": "จัดจังหวะให้ตรงกับเพลง กด <escape></escape> หรือ <toggle></toggle> เพื่อออก",
+            "label": "แก้ไขเพลง",
+            "labelOn": "กำลังแก้ไขเพลง",
+            "text": "แก้ไขเพลง"
+        },
+        "errors": {
+            "cantRemoveLastCount": "ไม่สามารถลบจังหวะสุดท้ายได้",
+            "moveOneCountLong": "การเคลื่อนที่นั้นยาวเพียงหนึ่งจังหวะ",
+            "wouldHideSet": "การทำเช่นนี้จะทำให้คีย์เฟรมจบในจังหวะเดียวกับการเคลื่อนที่ที่อยู่ข้างใต้ ซึ่งจะซ่อนตำแหน่งปลายทางของการเคลื่อนที่นั้น ให้ลบจังหวะน้อยลง หรือให้คีย์เฟรมจบเร็วขึ้นหนึ่งจังหวะ",
+            "wouldRemovePage": "การทำเช่นนี้จะลบหน้าออกไปด้วย ให้ลบจังหวะน้อยลง หรือลบหน้านั้นก่อน"
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "เพิ่มจุดเปลี่ยนเทมโป",
+                "text": "ดับเบิลคลิกเลนเทมโปตรงจุดที่ต้องการให้เปลี่ยน ดับเบิลคลิกที่จุดเปลี่ยนเพื่อลบ"
+            },
+            "dragChangeDot": {
+                "title": "ย้ายจุดเปลี่ยนเทมโป",
+                "text": "ลากจุดขึ้นหรือลงเพื่อเปลี่ยนเทมโป หรือลากไปด้านข้างเพื่อย้ายตำแหน่งที่เปลี่ยน"
+            },
+            "dragEndDot": {
+                "title": "กำหนดจุดจบของ rit.",
+                "text": "ลากจุดสี่เหลี่ยมที่ปลายช่วง เพื่อให้เทมโปถัดไปกลับมาเท่าเดิมได้ทันที (a tempo)"
+            },
+            "dragLine": {
+                "title": "ตั้งเทมโป",
+                "text": "ลากเส้นเทมโปขึ้นหรือลง หากต้องการพิมพ์เทมโป ให้คลิกขวาแล้วเลือก ตั้งเทมโป…"
+            },
+            "dragMeasures": {
+                "title": "เลือกจังหวะ",
+                "text": "ลากไปตามเลนห้องหรือเลนเพลง แล้วแก้ไขทั้งหมดพร้อมกัน"
+            },
+            "dragRoundHandle": {
+                "title": "เปลี่ยนเทมโปแบบค่อยเป็นค่อยไป",
+                "text": "ลากจุดจับกลมที่กลางช่วง ดับเบิลคลิกเพื่อกลับไปเปลี่ยนทันที"
+            },
+            "keys": {
+                "escape": "ล้างการเลือก หรือยกเลิกการลาก หากไม่มีอะไรให้ล้าง จะหยุดแก้ไขเพลง",
+                "play": "เล่นจากหัวเล่น หรือหยุดตรงตำแหน่งปัจจุบัน",
+                "tap": "แตะหาเทมโป: แตะตามแต่ละจังหวะเพื่อดูว่าเร็วเท่าใด",
+                "toggle": "เริ่มหรือหยุดแก้ไขเพลง",
+                "metronome": "เปิดหรือปิดเมโทรนอม"
+            },
+            "label": "วิธีการทำงานของการแก้ไขเพลง",
+            "rightClick": {
+                "title": "จังหวะค้างและจังหวะ",
+                "text": "คลิกขวาที่จังหวะเพื่อทำเป็นจังหวะค้าง เปลี่ยนเทมโปแบบค่อยเป็นค่อยไป หรือเพิ่มและลบจังหวะ"
+            },
+            "rightClickMeasure": {
+                "title": "ห้องและเครื่องหมายซ้อม",
+                "text": "คลิกขวาที่ห้องเพื่อกำหนดหมายเลขใหม่ ตั้งอัตราจังหวะ หรือเพิ่มเครื่องหมาย ลากเครื่องหมายเพื่อย้าย"
+            },
+            "title": "จัดจังหวะให้ตรงกับเพลง",
+            "musicFile": {
+                "title": "เปลี่ยนเพลง",
+                "text": "คลิกชื่อไฟล์ในส่วนหัวเพื่อสลับ นำเข้า หรือลบไฟล์เสียง หรือตั้งออฟเซ็ตเพลง"
+            }
+        },
+        "importScore": {
+            "choose": "เลือกไฟล์…",
+            "keeps": "หน้า ดริล คิว และพร็อพยังอยู่ที่จังหวะเดิม จึงเล่นตามเทมโปของโน้ตเพลง กด “เลิกทำ” เพื่อย้อนกลับทั้งหมด",
+            "replaces": "เทมโป อัตราจังหวะ ห้อง และเครื่องหมายซ้อมของโน้ตเพลงจะแทนที่ของโชว์ รวมถึงสิ่งที่คุณเปลี่ยนไว้ที่นี่",
+            "title": "ใช้จังหวะเวลาจากโน้ตเพลงหรือไม่"
+        },
+        "lanes": {
+            "marks": {
+                "name": "ซ้อม",
+                "title": "เครื่องหมายซ้อม: ดับเบิลคลิกเพื่อตั้งชื่อ หรือลากไปยังห้องอื่น"
+            },
+            "measures": {
+                "name": "ห้อง",
+                "title": "ห้อง: ลากไปตามเลนเพื่อเลือกจังหวะ คลิกขวาหรือดับเบิลคลิกที่หมายเลขเพื่อกำหนดหมายเลขใหม่ตั้งแต่ตรงนั้น คลิกอัตราจังหวะเพื่อเปลี่ยน"
+            },
+            "music": {
+                "name": "เพลง",
+                "title": "เพลง: ลากไปตามเลนเพื่อเลือกจังหวะ คลิกเพื่อย้ายหัวเล่น หรือคลิกขวาที่จุดใดจุดหนึ่งเพื่อให้เพลงเริ่มตรงนั้น (ที่จังหวะที่ 1)"
+            },
+            "tempo": {
+                "name": "เทมโป",
+                "title": "เทมโป: ลากเส้นขึ้นหรือลง ลากจุดเพื่อย้ายจุดเปลี่ยนเทมโป หรือลากจุดจับกลมเพื่อเปลี่ยนแบบค่อยเป็นค่อยไป ดับเบิลคลิกเพื่อเพิ่มจุดเปลี่ยน คลิกขวา > ตั้งเทมโป… เพื่อพิมพ์ค่า ลากจากนอกเส้นเพื่อเลือกจังหวะ"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "ยกเลิก",
+                    "fix": "ให้คีย์เฟรมจบเร็วขึ้นหนึ่งจังหวะ แล้วลบ"
+                },
+                "footer": "คลิกตัวเลือกที่ต้องการ <enter></enter> ใช้ตัวเลือกที่ทำเครื่องหมายไว้ ซึ่งเป็นตัวเลือกล่าสุดของคุณ <escape></escape> ยกเลิก และเลิกทำได้ทุกตัวเลือก",
+                "hold": "หยุดดริลไว้ตรงนี้แทน",
+                "holdIntro": "เพลงไม่มีจังหวะเกิน แต่ผู้แสดงต้องการจังหวะพักตรงนี้ใช่ไหม",
+                "keep": "คงส่วนอื่นทั้งหมดไว้ที่เดิม",
+                "shift": "เลื่อนทุกอย่างหลังจากนี้"
+            },
+            "measureGlyph": "ห{number}"
+        },
+        "tap": {
+            "average": "เฉลี่ย {bpm} · เริ่มใหม่หลังหยุด 2 วินาที",
+            "count": "{count, plural, other {แตะ # ครั้ง}}",
+            "hint": "แตะตามเพลงเพื่อหาเทมโปโดยประมาณของเพลง",
+            "instructions": "แตะ <key></key> หรือปุ่มตามแต่ละจังหวะ",
+            "name": "แตะหาเทมโป",
+            "reset": "รีเซ็ต",
+            "selectFirst": "เลือกจังหวะก่อน",
+            "setTarget": "ตั้ง {target} เป็น ♩{bpm}",
+            "tap": "แตะ",
+            "use": "ใช้",
+            "useBpm": "ใช้ ♩{bpm}",
+            "useBpmOn": "ใช้ ♩{bpm} <muted>กับ {target}</muted>",
+            "useHint": "ตั้งเทมโปคงที่ให้จังหวะที่เลือก หรือหากไม่ได้เลือก ให้ช่วงเทมโปที่หัวเล่นอยู่",
+            "useOn": "ใช้ <muted>กับ {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "เล่นจากหัวเล่น",
+            "playLoop": "วนซ้ำ {measures}",
+            "stopHere": "หยุดตรงนี้"
+        },
+        "toolbar": {
+            "done": "เสร็จสิ้น",
+            "doneLabel": "เสร็จสิ้น: หยุดแก้ไขเพลง",
+            "metronome": "เมโทรนอม",
+            "metronomeHint": "เสียงคลิกทุกจังหวะ เพื่อฟังว่าจังหวะตรงกับเพลงหรือไม่",
+            "metronomeOff": "เมโทรนอม: ปิด",
+            "metronomeOn": "เมโทรนอม: เปิด",
+            "title": "กำลังแก้ไขเพลง"
+        },
+        "import": {
+            "button": "นำเข้า",
+            "hint": "นำเข้าไฟล์เพลง หรือเทมโป อัตราจังหวะ ห้อง และเครื่องหมายซ้อมจากโน้ตเพลง",
+            "audio": "ไฟล์เสียง…",
+            "score": "โน้ตเพลง MusicXML…"
+        },
+        "music": {
+            "add": "เพิ่มเพลง…",
+            "menuLabel": "ไฟล์เพลง",
+            "pick": "เลือกเพลง",
+            "importAnother": "นำเข้าไฟล์เสียงอื่น…",
+            "delete": "ลบไฟล์เสียงนี้…",
+            "offset": "ออฟเซ็ตเพลง…",
+            "offsetValue": "{seconds} วินาที",
+            "offsetTitle": "ออฟเซ็ตเพลง",
+            "offsetHelp": "จำนวนวินาทีหลังจังหวะที่ 1 ที่เพลงเริ่ม ค่าติดลบจะข้ามช่วงต้นของเพลง",
+            "offsetSet": "ตั้งค่า",
+            "seconds": "วินาที"
+        }
+    },
     "workspace": {
         "label": "พื้นที่ทำงาน",
         "editor": "ตัวแก้ไข",
         "preview": "แสดงตัวอย่าง"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "แร็กเครื่องเคาะ",
+            "bongos": "บองโก",
+            "chimes": "ระฆังราว",
+            "concertBassDrum": "คอนเสิร์ตเบสดรัม",
+            "congas": "คองกา",
+            "drumSet": "กลองชุด",
+            "glockenspiel": "กล็อกเคนชปีล",
+            "gong": "ฆ้อง",
+            "marimba": "มาริมบา",
+            "mixer": "มิกเซอร์",
+            "podium": "โพเดียม",
+            "speaker": "ลำโพง",
+            "synth": "ซินธ์",
+            "timpani": "ทิมปานี",
+            "trapTable": "โต๊ะแทร็ป",
+            "vibraphone": "ไวบราโฟน",
+            "xylophone": "ไซโลโฟน",
+            "podiumStand": "แท่นโพเดียม",
+            "podiumTower": "หอโพเดียม",
+            "rollingPodium": "โพเดียมล้อเลื่อน",
+            "stepladder": "บันไดพับ",
+            "scaffold": "หอนั่งร้าน"
+        },
+        "variant": {
+            "accessories": "เครื่องประกอบ",
+            "cage": "แร็กโครง",
+            "covered": "มีฝาครอบ",
+            "double": "คีย์บอร์ด 2 ตัว",
+            "gold": "สีทอง",
+            "inches": "{size} นิ้ว",
+            "keys": "{size} คีย์",
+            "low": "เตี้ย",
+            "mixed": "ผสม",
+            "octaves": "{size} อ็อกเทฟ",
+            "open": "ไม่มีฝาครอบ",
+            "plain": "มาตรฐาน",
+            "rosewood": "ไม้โรสวูด",
+            "silver": "สีเงิน",
+            "single": "คีย์บอร์ด 1 ตัว",
+            "square": "สี่เหลี่ยมจัตุรัส",
+            "syntheticBlack": "วัสดุสังเคราะห์สีดำ",
+            "tall": "สูง",
+            "toms": "ทอม",
+            "wide": "กว้าง",
+            "aluminum": "อะลูมิเนียม",
+            "black": "สีดำ",
+            "feet": "{size} ฟุต"
+        }
+    },
+    "feedback": {
+        "window.title": "รายงานบั๊กหรือส่งความคิดเห็น",
+        "signIn.heading": "ลงชื่อเข้าใช้เพื่อส่งรายงาน",
+        "signIn.why": "เพื่อให้คุณติดตามรายงานของคุณได้ และเราแจ้งความคืบหน้าให้คุณทราบได้",
+        "signIn.button": "ลงชื่อเข้าใช้",
+        "signIn.alternatives": "ไม่อยากลงชื่อเข้าใช้ใช่ไหม <github>รายงานบน GitHub</github> หรือ<discord>ถามใน Discord</discord>",
+        "sent.heading": "ขอบคุณสำหรับรายงานของคุณ",
+        "sent.body": "เราส่งสำเนาไปที่อีเมลของคุณแล้ว หากรายงานนี้กลายเป็น issue บน GitHub เราจะส่งลิงก์ให้ทางอีเมลเพื่อให้คุณติดตามได้",
+        "sent.another": "ส่งอีกรายงาน",
+        "viewMyReports": "ดูรายงานของฉัน",
+        "type.label": "เรื่องนี้เกี่ยวกับอะไร",
+        "type.broken": "มีบางอย่างใช้งานไม่ได้",
+        "type.broken.hint": "บั๊ก แอปหยุดทำงาน หรือสิ่งที่ทำงานไม่ถูกต้อง",
+        "type.feature": "ขอฟีเจอร์",
+        "type.feature.hint": "สิ่งที่คุณอยากให้ OpenMarch ทำได้",
+        "type.feedback": "ความคิดเห็นทั่วไป",
+        "type.feedback.hint": "เรื่องอื่นๆ ที่คุณอยากบอกเรา",
+        "title.label": "สรุป",
+        "title.placeholder": "สรุปในบรรทัดเดียวว่าเรื่องนี้เกี่ยวกับอะไร",
+        "question.whatWentWrong": "เกิดปัญหาอะไรขึ้น",
+        "question.whatWentWrong.placeholder": "อธิบายสิ่งที่เกิดขึ้น",
+        "question.expected": "คุณคาดว่าจะเกิดอะไรขึ้น",
+        "question.expected.placeholder": "อธิบายสิ่งที่ควรจะเกิดขึ้น",
+        "question.steps": "เราจะทำให้ปัญหานี้เกิดขึ้นอีกครั้งได้อย่างไร",
+        "question.steps.placeholder": "1. เปิดโชว์\n2. …",
+        "question.feature": "คุณอยากให้ OpenMarch ทำอะไรได้",
+        "question.feature.placeholder": "อธิบายฟีเจอร์และสิ่งที่คุณจะนำไปใช้",
+        "question.ideas": "แนวคิดว่าฟีเจอร์นี้ควรทำงานอย่างไร",
+        "question.ideas.placeholder": "ภาพร่าง ตัวอย่างจากแอปอื่น หรืออะไรก็ได้ที่ช่วยได้",
+        "question.feedback": "คุณอยากบอกอะไรเรา",
+        "question.feedback.placeholder": "ความคิดเห็นของคุณ",
+        "optional": "(ไม่บังคับ)",
+        "attach.label": "ไฟล์แนบ",
+        "attach.showFile": "ส่งสำเนาโชว์ของฉัน",
+        "attach.showFile.scrubbed": "ชื่อและโน้ตของผู้แสดงจะถูกลบออกก่อน",
+        "attach.music": "รวมเพลง",
+        "attach.noShow": "เปิดโชว์เพื่อส่งสำเนาไปพร้อมกับรายงานของคุณ",
+        "attach.diagnostics": "การกระทำและข้อผิดพลาดล่าสุดของแอปจะถูกส่งไปด้วย เพื่อช่วยให้เราหาปัญหาได้",
+        "record.start": "บันทึกหน้าจอ",
+        "record.microphone": "พร้อมไมโครโฟน",
+        "record.hint": "บันทึกเฉพาะหน้าต่าง OpenMarch ได้นานสูงสุด 5 นาที รายงานจะหลบไปขณะที่คุณบันทึก ให้แสดงปัญหาให้เราดูพร้อมกับพูดอธิบายไปด้วย",
+        "record.recording": "กำลังบันทึก {time}",
+        "record.stop": "หยุด",
+        "record.done": "การบันทึกพร้อมแล้ว ({time})",
+        "record.discard": "ละทิ้ง",
+        "record.failed.denied": "การบันทึกไม่เริ่มทำงาน ตรวจสอบในการตั้งค่าระบบว่า OpenMarch ได้รับอนุญาตให้ใช้หน้าจอและไมโครโฟน",
+        "record.failed.unsupported": "คอมพิวเตอร์เครื่องนี้ไม่รองรับการบันทึก",
+        "public.label": "สิ่งที่เราอาจแชร์",
+        "public.notice": "รายงานอาจถูกสรุปไว้ใน issue สาธารณะบน GitHub เราจะไม่โพสต์ชื่อ อีเมล หรือไฟล์ของคุณ เว้นแต่คุณจะอนุญาตด้านล่าง",
+        "public.video": "อนุญาตให้โพสต์การบันทึกของฉันแบบสาธารณะ",
+        "public.showFile": "อนุญาตให้โพสต์ไฟล์โชว์ของฉันแบบสาธารณะ",
+        "public.credit": "ระบุชื่อฉันหากรายงานนี้กลายเป็น issue สาธารณะ",
+        "send": "ส่งรายงาน",
+        "sending": "กำลังส่ง…",
+        "retention": "ไฟล์ที่คุณส่งมาพร้อมรายงานจะถูกลบออกจากเซิร์ฟเวอร์ของเราหลังจาก 2 เดือน",
+        "error.failed": "ส่งรายงานของคุณไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง",
+        "attach.music.off": "ไม่ส่งเพลง",
+        "attach.music.on": "ส่งเพลงไปด้วย",
+        "sending.recording": "กำลังอัปโหลดการบันทึก…",
+        "sending.show_file": "กำลังอัปโหลดโชว์ของคุณ…",
+        "sending.diagnostics": "กำลังอัปโหลดข้อมูลวินิจฉัย…",
+        "sending.creating": "กำลังส่ง…",
+        "sent.view": "ดูรายงานนี้",
+        "error.signedOut": "คุณออกจากระบบแล้ว ลงชื่อเข้าใช้อีกครั้งแล้วส่งรายงาน",
+        "error.tooMany": "วันนี้คุณส่งรายงานไปหลายฉบับแล้ว โปรดลองอีกครั้งพรุ่งนี้",
+        "error.showChanged": "ตอนนี้เปิดโชว์อื่นอยู่ ตรวจสอบไฟล์แนบแล้วส่งอีกครั้ง",
+        "sent.showTooLarge": "โชว์ของคุณใหญ่เกินกว่าจะแนบได้ (เกิน 1 GB) จึงส่งรายงานไปโดยไม่มีโชว์",
+        "close": "ปิด",
+        "record.stopAndReturn": "หยุดแล้วกลับไปที่รายงาน",
+        "record.webHint": "เบราว์เซอร์จะถามว่าต้องการแชร์อะไร ให้เลือกแท็บนี้ รายงานจะหลบไปขณะที่คุณบันทึก ซึ่งบันทึกได้นานสูงสุด 5 นาที ให้แสดงปัญหาให้เราดูพร้อมกับพูดอธิบายไปด้วย",
+        "record.failed.webDenied": "การบันทึกไม่เริ่มทำงาน เลือกแท็บนี้เมื่อเบราว์เซอร์ถาม และอนุญาตไมโครโฟนหากคุณเปิดใช้ไว้",
+        "record.failed.webUnsupported": "เบราว์เซอร์นี้ไม่รองรับการบันทึก",
+        "drawer.show": "แสดงรายงาน",
+        "drawer.hide": "ซ่อนรายงาน",
+        "drawer.resize": "ปรับขนาดรายงาน",
+        "discard.question": "ละทิ้งรายงานนี้ใช่ไหม",
+        "discard.body": "สิ่งที่คุณเขียนและบันทึกไว้จะหายไป",
+        "discard.confirm": "ละทิ้ง",
+        "discard.keep": "แก้ไขต่อ",
+        "record.preview": "การบันทึกของคุณ",
+        "error.details": "รายละเอียด: {message}",
+        "error.refused": "ส่งรายงานของคุณไม่สำเร็จ ลองอีกครั้ง และหากยังเกิดขึ้นอยู่ โปรดแจ้งเราใน Discord",
+        "record.failed.microphone": "OpenMarch ไม่ได้รับอนุญาตให้ใช้ไมโครโฟน ปิด “พร้อมไมโครโฟน” เพื่อบันทึกแบบไม่มีเสียง หรืออนุญาตไมโครโฟนในการตั้งค่าระบบ",
+        "record.failed.webMicrophone": "เบราว์เซอร์ไม่อนุญาตให้ใช้ไมโครโฟน ปิด “พร้อมไมโครโฟน” เพื่อบันทึกแบบไม่มีเสียง หรืออนุญาตไมโครโฟนสำหรับเว็บไซต์นี้"
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "เส้นอ้างอิง X ซ้ายสุดและขวาสุดอยู่ห่างจากกึ่งกลางไม่เท่ากันแล้ว",
+            "centerLocked": "เส้นกึ่งกลางจะอยู่ที่กึ่งกลางเสมอขณะแก้ไขทั้งสองฝั่งพร้อมกัน",
+            "duplicatePosition": "มีเส้นอ้างอิง {axis} อยู่ตรงนั้นแล้ว",
+            "invalid": "การเปลี่ยนแปลงสนามนั้นไม่ถูกต้อง",
+            "invalidStepSize": "ขนาดก้าวต้องมากกว่า 0",
+            "mirrorIgnored": "สะท้อนได้เฉพาะเส้นอ้างอิง X",
+            "noGap": "ไม่มีช่องว่างระหว่างเส้นอ้างอิง {axis} สองเส้นให้เพิ่มเส้นใหม่ ให้ระบุตำแหน่งแทน",
+            "notFound": "เส้นอ้างอิงนั้นไม่มีอยู่แล้ว",
+            "skippedExisting": "ข้ามตำแหน่งที่มีเส้นอ้างอิงอยู่แล้ว",
+            "tooMany": "การทำเช่นนั้นจะเพิ่มเส้นอ้างอิงมากเกินไป ให้ใช้ระยะห่างที่มากขึ้น",
+            "yInFront": "เส้นอ้างอิง Y อยู่หน้าขอบด้านหน้าของสนามไม่ได้ ให้ใช้ 0 หรือจำนวนก้าวที่เป็นค่าลบ",
+            "mirrorTwinSkipped": "อีกฝั่งมีเส้นอ้างอิงอยู่ตรงนั้นแล้ว จึงเพิ่มเฉพาะเส้นนี้",
+            "outsideField": "ละตำแหน่งที่เลยเส้นอ้างอิงนอกสุดของสนามออก สนามจึงคงขนาดเดิม",
+            "fieldResized": "ขนาดหรือกึ่งกลางของสนามเปลี่ยนไป ผู้แสดงยังอยู่ที่ตำแหน่งเดิม จึงควรตรวจสอบเทียบกับเส้น",
+            "fieldResizeRefused": "การทำเช่นนั้นจะเปลี่ยนขนาดหรือกึ่งกลางของสนาม จึงไม่มีอะไรเปลี่ยนแปลง"
+        },
+        "nothingAdded": "ทุกตำแหน่งมีเส้นอ้างอิงอยู่แล้ว",
+        "seriesAdded": "{count, plural, other {เพิ่มเส้นอ้างอิง {axis} แล้ว # เส้น}}",
+        "names": {
+            "yardLine": "เส้น {yards} หลา",
+            "endZone": "เอนด์โซน",
+            "endZoneShort": "EZ",
+            "endZoneLine": "เอนด์โซน {yards}",
+            "endZoneLineShort": "EZ{yards}",
+            "gridLine": "เส้น {line}",
+            "sideSteps": "{side} {steps} ก้าวจากกึ่งกลาง",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "{steps} ก้าวจากด้านหน้า",
+            "stepsFromFrontShort": "F{steps}"
+        },
+        "failed": "บันทึกการเปลี่ยนแปลงสนามไม่สำเร็จ จึงไม่มีอะไรเปลี่ยนแปลง"
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "สนาม",
+            "done": "เสร็จสิ้น",
+            "discard": "ละทิ้งการเปลี่ยนแปลง",
+            "discardTip": "คืนสนามกลับเป็นแบบตอนที่คุณเปิดแผงนี้ ใช้เลิกทำเพื่อนำการเปลี่ยนแปลงกลับมา",
+            "discarded": "ละทิ้งการเปลี่ยนแปลงสนามแล้ว ใช้เลิกทำเพื่อนำกลับมา",
+            "custom": "สนามกำหนดเอง",
+            "changes": "{count, plural, =0 {ไม่มีการเปลี่ยนแปลงจากเทมเพลต} other {เปลี่ยนแปลงจากเทมเพลต # รายการ}}",
+            "selectMany": "เลือกหลายเส้น",
+            "mirror": "สะท้อนสองฝั่ง",
+            "mirrorOnTip": "สะท้อนสองฝั่งเปิดอยู่: การแก้ไขที่ฝั่งหนึ่งของเส้น 50 จะแก้ไขเส้นคู่ของมันด้วย",
+            "mirrorOffTip": "สะท้อนสองฝั่งปิดอยู่: แต่ละเส้นจะถูกแก้ไขแยกกัน",
+            "sections": {
+                "size": "ขนาดและก้าว",
+                "template": "เทมเพลต",
+                "names": "ชื่อและฝั่ง",
+                "markings": "เครื่องหมายและป้ายกำกับ",
+                "image": "ภาพพื้นหลัง",
+                "colors": "สี"
+            },
+            "tabs": {
+                "setup": "ตั้งค่า",
+                "lines": "เส้น",
+                "appearance": "ลักษณะ"
+            }
+        },
+        "ruler": {
+            "x": "ลากออกจากไม้บรรทัดนี้เพื่อเพิ่มเส้น X",
+            "y": "ลากออกจากไม้บรรทัดนี้เพื่อเพิ่มเส้น Y"
+        },
+        "readout": {
+            "newLine": "เส้นใหม่:",
+            "fromCenter": "{side} · {steps} ก้าว",
+            "center": "อยู่บนกึ่งกลาง",
+            "behindFront": "{steps} ก้าวหลังด้านหน้า",
+            "toLine": "{steps} ถึง {line}",
+            "mirrored": "รวมเส้นคู่ที่อีกฝั่งด้วย",
+            "releaseToDelete": "{count, plural, =1 {ปล่อยเพื่อลบเส้นนี้} other {ปล่อยเพื่อลบ # เส้นนี้}}",
+            "dragOut": "ลากไปบนสนามเพื่อเพิ่มเส้น"
+        },
+        "popover": {
+            "position": "ตำแหน่ง",
+            "side": "ฝั่ง",
+            "stepsFromCenter": "ก้าวจากกึ่งกลาง",
+            "stepsBehindFront": "ก้าวหลังด้านหน้า",
+            "yardLine": "= เส้น {yard} หลา",
+            "typeHint": "พิมพ์ 24, +4 หรือ 85.33/2",
+            "typeHintYards": "พิมพ์ 24, +4, 47.5yd หรือ 85.33/2",
+            "shortName": "ชื่อย่อ",
+            "shortNameHint": "แสดงที่ขอบสนามและในพิกัด เช่น 45 หรือ FH",
+            "name": "ชื่อ",
+            "nameHint": "ใช้ในพิกัดแบบเขียนเต็ม และใช้เลือกสถานที่ของมุมมอง 3D",
+            "yardNumber": "ตัวเลขหลา",
+            "yardNumberHint": "ตัวเลขที่ทาไว้บนสนามตรงเส้นนี้ (ถ้ามี)",
+            "none": "ไม่มี",
+            "visible": "มองเห็นได้",
+            "mirrored": "สะท้อนกับ {twin}: การแก้ไขมีผลกับทั้งสองเส้น",
+            "delete": "ลบ"
+        },
+        "numberPad": {
+            "label": "แป้นตัวเลข",
+            "back": "ลบอักขระสุดท้าย",
+            "clear": "ล้าง",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "เส้นเหล่านั้นมีชื่อตามตำแหน่งอยู่แล้ว",
+        "list": {
+            "xHeading": "X · ฝั่งถึงฝั่ง",
+            "yHeading": "Y · หน้าไปหลัง",
+            "center": "กึ่งกลาง",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "ถอยหลัง {steps}",
+            "drawAsHashes": "วาดเป็นเส้นแฮช",
+            "asymmetric": "เส้น X นอกสุดอยู่ห่างจากกึ่งกลางไม่เท่ากัน สนามจึงถูกวาดเยื้องจากกึ่งกลาง ย้ายเส้นใดเส้นหนึ่งจนทั้งสองฝั่งเท่ากัน",
+            "hidden": "ซ่อนอยู่",
+            "reference": "ใช้อ้างอิง"
+        },
+        "size": {
+            "width": "ความกว้าง",
+            "depth": "ความลึก",
+            "steps": "ก้าว",
+            "stepsTo5": "{steps} ก้าวต่อ 5 หลา",
+            "extent": "{steps} ก้าว · {length}"
+        },
+        "names": {
+            "fieldNameHint": "มุมมอง 3D เลือกสถานที่จากชื่อนี้"
+        },
+        "markings": {
+            "edgeLabels": "ป้ายกำกับขอบ",
+            "yardNumbers": "ตัวเลขหลา",
+            "yardNumbersHint": "จำนวนก้าวจากด้านหน้าถึงขอบแต่ละด้านของตัวเลขที่ทาไว้ ล้างค่าตัวเลขฝั่งเหย้าหากไม่ต้องการทาตัวเลข",
+            "homeBottom": "ฝั่งเหย้า ขอบล่าง",
+            "homeTop": "ฝั่งเหย้า ขอบบน",
+            "awayTop": "ฝั่งเยือน ขอบบน",
+            "awayBottom": "ฝั่งเยือน ขอบล่าง"
+        },
+        "image": {
+            "remove": "นำภาพออก",
+            "ratios": "อัตราส่วนสนาม {field} · อัตราส่วนภาพ {image}"
+        },
+        "colors": {
+            "field": "สนาม",
+            "marchers": "ผู้แสดงและเส้นทาง",
+            "shapes": {
+                "circle": "วงกลม",
+                "square": "สี่เหลี่ยมจัตุรัส",
+                "triangle": "สามเหลี่ยม",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "เปลี่ยนเป็น {template} ใช่ไหม",
+            "lines": "เส้น: เพิ่ม {added} ลบ {removed} เปลี่ยนชื่อหรือแก้ไข {renamed}",
+            "size": "ขนาด: {before} → {after} ก้าว",
+            "keepLook": "คงรูปลักษณ์ของฉันไว้ (สี ป้ายกำกับ ภาพ ชื่อฝั่ง)",
+            "undoNote": "เลิกทำได้ในขั้นตอนเดียว",
+            "cancel": "ยกเลิก",
+            "apply": "เปลี่ยน",
+            "resetTitle": "รีเซ็ตเป็น {template} ใช่ไหม",
+            "resetApply": "รีเซ็ต",
+            "basedOn": "อิงจาก",
+            "resetShort": "รีเซ็ตเป็นเทมเพลต"
+        },
+        "fieldPane": "เส้นสนาม",
+        "help": {
+            "button": "คีย์บอร์ด",
+            "title": "คีย์บอร์ด",
+            "route": "<tab></tab> เลือกเส้นถัดไปขณะที่โฟกัสคีย์บอร์ดอยู่ที่สนาม <pane></pane> สลับระหว่างสนามกับแผงสนาม"
+        },
+        "lines": {
+            "pickedMany": "เลือก {count} เส้น",
+            "axis": "เส้นชุดใด",
+            "xTab": "ฝั่งถึงฝั่ง · {count}",
+            "yTab": "หน้าไปหลัง · {count}",
+            "canvasHint": "คลิกเส้นเพื่อเลือก · ลากออกจากไม้บรรทัดเพื่อเพิ่มเส้น · <keys></keys> เพื่อเสร็จสิ้น",
+            "canvasHintPicked": "ลากเส้นที่เลือกเพื่อย้าย · <keys></keys> เพื่อเลิกเลือก"
+        },
+        "line": {
+            "title": "เส้น",
+            "noneHint": "เลือกเส้นบนสนามหรือในรายการ กด Shift ค้างแล้วคลิกเพื่อเลือกเพิ่ม ลากออกจากไม้บรรทัดเพื่อเพิ่มเส้น",
+            "reference": "ใช้เป็นเส้นอ้างอิง",
+            "mixed": "ผสม",
+            "add": "เพิ่มเส้น",
+            "everyOther": "คงไว้เส้นเว้นเส้น"
+        }
     }
 }

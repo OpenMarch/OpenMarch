@@ -18,13 +18,36 @@
             "snapOn": "貼齊已關閉：按下即可重新開啟",
             "snapToCustomFraction": "貼齊格線",
             "toggleSnap": "切換貼齊",
-            "toggleSnapKeywords": "貼齊 磁鐵 吸附 格線 網格 自由 snap magnet grid free"
+            "toggleSnapKeywords": "貼齊 磁鐵 吸附 格線 網格 自由 snap magnet grid free",
+            "propsOnly": "只選取了道具：道具無法對齊或均分"
         },
         "batchEdit": {
-            "noNextPage": "無法套用下一頁的隊員座標：沒有下一頁",
-            "noPreviousPage": "無法套用上一頁的隊員座標：沒有上一頁",
+            "clearPage": "清除第{page}頁",
+            "clearPageAndLater": "{count, plural, =1 {清除第{page}頁，第{first}頁也會退回} other {清除第{page}頁，第{first}–{last}頁也會退回}}",
+            "clearThisPageAll": "{clearThisPage}（所有隊員）",
+            "clearThisPageAllAndFollowing": "{clearThisPage}（所有隊員），後面的頁也會退回",
+            "clearThisPageHoldsToo": "{count, plural, other {{names}在{pages}的停留也已一併清除}}。",
+            "clearThisPageSelected": "{clearThisPage}（選取的隊員）",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage}（選取的隊員），後面的頁也會退回",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label}（所有隊員）",
+            "forSelected": "{label}（選取的隊員）",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "停留 保持 不動 維持 已定義 未定義 設定 關鍵影格 頁 狀態 上一個 hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "停留樣式：依表演設定",
+            "holdStyleHighMarkTime": "停留樣式：高抬腿踏步",
+            "holdStyleKeywords": "停留 樣式 保持 姿態 站立 立定 靜止 停止 原地踏步 踏步 高抬腿 腳 3D hold style stand still halt mark time marktime high feet 3d",
+            "holdStyleMarkTime": "停留樣式：原地踏步",
+            "holdStyleStand": "停留樣式：立定",
+            "noPageAfter": "這一頁之後沒有其他頁",
+            "noPageBefore": "這一頁之前沒有其他頁",
+            "moveAllToNextSpots": "移到下一頁的位置（所有隊員）",
+            "movedAllToNextSpots": "{count, plural, other {已將第{currentPage}頁全部#位隊員移到他們在第{nextPage}頁的位置}}",
+            "moveSelectedToNextSpots": "移到下一頁的位置（選取的隊員）",
+            "movedSelectedToNextSpots": "{count, plural, other {已將第{currentPage}頁的#位隊員移到他們在第{nextPage}頁的位置}}",
             "setAllToPreviousDone": "{count, plural, other {已將第 {currentPage} 頁全部 # 位隊員的座標設為上一頁（第 {previousPage} 頁）的座標}}",
-            "setSelectedToPreviousDone": "{count, plural, other {已將第 {currentPage} 頁 # 位隊員的座標設為上一頁（第 {previousPage} 頁）的座標}}"
+            "setSelectedToPreviousDone": "{count, plural, other {已將第 {currentPage} 頁 # 位隊員的座標設為上一頁（第 {previousPage} 頁）的座標}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "沒有可重做的操作",
@@ -33,6 +56,49 @@
             "redoFailed": "無法重做，未進行任何變更。",
             "undo": "復原",
             "undoFailed": "無法復原，未進行任何變更。"
+        },
+        "field": {
+            "addXCheckpoint": "在兩側新增 X 參考線",
+            "addXCheckpointSeries": "每隔幾步新增 X 參考線",
+            "addYCheckpoint": "新增 Y 參考線",
+            "addYCheckpointSeries": "每隔幾步新增 Y 參考線",
+            "checkpointKeywords": "場地 線 線條 格線 網格 碼線 參考線 參考 field line lines grid yard hash reference",
+            "params": {
+                "every": "參考線之間相隔幾步",
+                "toBack": "從前緣往後延伸幾步",
+                "toSide": "從中央往外延伸幾步"
+            },
+            "editField": "編輯場地",
+            "editFieldKeywords": "場地 線條 參考線 碼線 格線 網格 自訂 大小 尺寸 範本 設定 field lines checkpoints yard hash grid customize size template settings",
+            "done": "完成編輯場地",
+            "discard": "捨棄場地變更",
+            "mirror": "兩側鏡像",
+            "mirrorOn": "開啟兩側鏡像",
+            "mirrorOff": "關閉兩側鏡像",
+            "addXLine": "新增 X 線",
+            "addYLine": "新增 Y 線",
+            "editLine": "輸入所選線條的位置",
+            "deleteLines": "刪除線條",
+            "toggleVisible": "隱藏或顯示線條",
+            "toggleReference": "切換是否以線條作為座標基準",
+            "nextLine": "選取下一條線",
+            "previousLine": "選取上一條線",
+            "selectAllLines": "選取所有線條",
+            "selectAllXLines": "選取所有 X 線",
+            "selectAllYLines": "選取所有 Y 線",
+            "everyOther": "每隔一條保留選取",
+            "resetNames": "依位置為線條命名",
+            "nudgeLeft": "將線條左移",
+            "nudgeRight": "將線條右移",
+            "nudgeUp": "將線條後移",
+            "nudgeDown": "將線條前移",
+            "nextPane": "在場地與「場地」面板之間切換",
+            "previousPane": "在「場地」面板與場地之間切換",
+            "importImage": "匯入場地背景圖片…",
+            "removeImage": "移除場地背景圖片",
+            "imageKeywords": "圖片 照片 相片 空拍 背景 影像 場地 picture photo aerial background image field",
+            "halfStep": "半步",
+            "editLines": "編輯場地線條"
         },
         "file": {
             "closeFile": "關閉檔案",
@@ -88,8 +154,16 @@
             "toggleMetronome": "切換節拍器",
             "toggleLoop": "循環播放開／關"
         },
+        "prop": {
+            "finishDrawing": "道具：完成繪製",
+            "removeLastPoint": "道具：繪製時移除最後一個角"
+        },
         "select": {
-            "selectAll": "全選"
+            "selectAll": "全選",
+            "toggleLasso": "切換框選與套索選取",
+            "useLasso": "使用套索選取",
+            "useBox": "使用框選",
+            "toggleLassoKeywords": "套索 框選 矩形 選取框 手繪 選取 工具 lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "未選取任何隊員",
@@ -111,10 +185,15 @@
             "group": "將選取項目組成群組",
             "groupKeywords": "群組 形狀 固定 維持原樣 保持 一起 合併 group shape freeze as is keep together combine",
             "ungroup": "形狀：取消群組",
-            "ungroupKeywords": "取消群組 形狀 拆開 分開 釋放 分離 ungroup shape break apart release separate"
+            "ungroupKeywords": "取消群組 形狀 拆開 分開 釋放 分離 ungroup shape break apart release separate",
+            "enterBox": "只選取這位隊員",
+            "centerPivot": "形狀：將軸心移回中心",
+            "centerPivotKeywords": "軸心 中心 中央 重設 旋轉 翻轉 pivot center centre reset turn flip around",
+            "arc": "形狀：弧線",
+            "discard": "形狀：捨棄"
         },
         "swap": {
-            "mustSelectTwo": "必須選取 2 位隊員才能交換。",
+            "selectTwo": "請選取 2 位隊員以交換位置",
             "swap": "交換兩位隊員"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "在播放指示器處分割動作",
             "unsetHere": "移除關鍵影格",
             "unsetHereAndFollowing": "移除關鍵影格，後面的頁改回跟隨",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}，第{first}頁也會退回} other {{removeKeyframe}，第{first}–{last}頁也會退回}}",
             "unsetHereKeywords": "關鍵影格 菱形 取消設定 設定 後續 移除 清除 撤回 座標 位置 刪除 keyframe diamond unset set following remove clear take back coordinate position delete",
+            "toggleEditorMode": "切換基本與專家模式",
+            "toggleEditorModeKeywords": "基本 專家 編輯器 模式 簡易 完整 時間軸 頁 basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "切換至基本模式（目前為專家模式）",
+            "toggleEditorModeToExpert": "切換至專家模式（目前為基本模式）",
             "splitSelectedIntoNewMove": "將選取的隊員分割成新動作",
-            "mergeMoveIntoPage": "將此動作合併回所屬的頁"
+            "mergeMoveIntoPage": "將此動作合併回所屬的頁",
+            "zoomIn": "放大時間軸",
+            "zoomOut": "縮小時間軸",
+            "zoomKeywords": "縮放 放大 縮小 時間軸 變寬 變窄 拉近 拉遠 比例 加 減 zoom magnify timeline wider narrower closer farther scale plus minus",
+            "fit": "讓整場表演符合時間軸寬度",
+            "toggleTempoMode": "編輯音樂開／關",
+            "toggleTempoModeKeywords": "編輯音樂 音樂 速度 拍號 排練記號 音訊 對齊 拍 edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "開啟場地選單",
@@ -134,6 +224,8 @@
             "openCommandPalette": "命令面板",
             "openCommandBar": "命令列",
             "openSettings": "設定…",
+            "checkForUpdates": "檢查更新",
+            "checkForUpdatesKeywords": "更新 升級 版本 下載 安裝 新版 發行 update upgrade version download install new release",
             "openView3d": "開啟3D檢視",
             "openView3dKeywords": "3d 三維 立體 體育場 球場 場館 視窗 three dimensional stadium venue window",
             "showShortcuts": "鍵盤快速鍵",
@@ -144,7 +236,19 @@
             "showNextPaths": "顯示下一頁路徑",
             "toggleNextPaths": "切換下一頁路徑",
             "togglePreview": "預覽表演",
-            "togglePreviewKeywords": "預覽 電影 觀看 播放 簡報 展示 全螢幕 preview cinematic watch present presentation fullscreen play"
+            "togglePreviewKeywords": "預覽 電影 觀看 播放 簡報 展示 全螢幕 preview cinematic watch present presentation fullscreen play",
+            "reportFeedback": "回報錯誤或傳送意見回饋",
+            "reportFeedbackKeywords": "錯誤 問題 臭蟲 意見 回饋 功能 建議 支援 bug issue problem feedback feature request support",
+            "viewMyReports": "檢視我的回報",
+            "openFrontEnsemble": "開啟定點打擊組與指揮台",
+            "openFrontEnsembleKeywords": "定點打擊 定點打擊組 前場 指揮台 樂隊指揮 馬林巴木琴 鐵琴 打擊 喇叭 器材 預設組合 pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "新增定點打擊組器材或指揮台",
+            "addFrontEnsembleEquipmentKeywords": "定點打擊 前場 指揮台 樂隊指揮 馬林巴木琴 鐵琴 打擊 喇叭 混音器 高台 梯子 樂器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+        },
+        "items": {
+            "edit": "編輯選取的道具或器材",
+            "editNamed": "編輯{name}",
+            "editKeywords": "編輯 設定 屬性 道具 器材 指揮台 樂器 名稱 大小 尺寸 鎖定 edit settings properties prop equipment podium instrument name size lock"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +268,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "建立節拍時發生錯誤",
-                "success": "已成功建立節拍"
+                "error": "建立節拍時發生錯誤"
             },
             "replace": {
-                "error": "取代節拍時發生錯誤",
-                "success": "已成功取代節拍"
+                "error": "取代節拍時發生錯誤"
             },
             "update": {
                 "error": "更新節拍時發生錯誤"
@@ -179,9 +281,6 @@
             },
             "shift": {
                 "error": "移動節拍時發生錯誤"
-            },
-            "flatten": {
-                "error": "整理節拍順序時發生錯誤"
             }
         },
         "context": {
@@ -200,6 +299,7 @@
         "signIn": "登入",
         "signInAriaLabel": "登入",
         "signOut": "登出",
+        "signOutFailed": "無法登出。請檢查網際網路連線後再試一次。",
         "userFallback": "使用者",
         "fullName": "{lastName}{firstName}",
         "api": {
@@ -224,6 +324,7 @@
         "title": "指令面板",
         "unavailable": "目前無法使用",
         "offInPreview": "「預覽」中無法使用：請結束「預覽」以進行編輯",
+        "offInEditMusic": "編輯音樂時無法使用：請選取「編輯音樂」以返回",
         "shape": "形狀",
         "next": "下一步",
         "done": "完成",
@@ -286,7 +387,9 @@
         "roundToHalf": "將{axis}取整至最接近的半步",
         "roundToSteps": "{steps, plural, other {將{axis}取整至最接近的#步}}",
         "xStepValue": "X：{value}",
-        "yStepValue": "Y：{value}"
+        "yStepValue": "Y：{value}",
+        "aboutSteps": "關於取整級距",
+        "touchStepDescription": "點一下 X 或 Y 即可依序切換取整選項。若要直接選擇，請開啟「座標取整」。"
     },
     "coordinateSheet": {
         "countAbbreviation": "拍",
@@ -346,7 +449,7 @@
         "exporting": "正在匯出……請稍候",
         "exportNotAvailable": "無法匯出",
         "exportNotAvailableDescription": "匯出需要場地屬性、至少一個非預設頁，以及至少一位隊員。",
-        "exportPDFSuccess": "已成功匯出為PDF！",
+        "drillChartsExported": "隊形圖已匯出為 PDF",
         "fieldPropertiesNotLoaded": "場地屬性尚未載入",
         "fieldPropertiesRequired": "匯出需要場地屬性",
         "frontToBackHeader": "前後",
@@ -377,7 +480,7 @@
         "noMarcher": "未提供隊員",
         "noMarcherPages": "未提供隊員頁面",
         "noPages": "未提供頁面",
-        "openExportDirectory": "按一下開啟匯出內容",
+        "showInFolder": "在資料夾中顯示",
         "openExportDirectoryError": "無法開啟匯出資料夾：{error}",
         "organizeBySection": "依聲部整理",
         "pdfExportFailed": "PDF匯出失敗：{error}",
@@ -402,12 +505,17 @@
         "unsortedSection": "未分類",
         "useXYHeaders": "使用X/Y欄標題",
         "video": "影片",
+        "webMobileUnavailable": {
+            "description": "上傳至 On the Move App 需要你的OpenMarch帳號，而這個測試版本無法登入。請使用 editor.openmarch.com 的OpenMarch編輯器，或使用桌面版應用程式。",
+            "openEditor": "開啟 editor.openmarch.com",
+            "title": "這裡無法上傳至行動裝置"
+        },
         "videoAudioTrack": "音軌：{name}",
         "videoAudioNoData": "音訊檔沒有資料",
         "videoBackground": "影片背景",
         "videoBranding": "以{product}製作",
         "videoExportFailed": "影片匯出失敗：{error}",
-        "videoExportSuccess": "已成功匯出影片！",
+        "videoExported": "影片已匯出",
         "videoFieldFraming": "場地取景",
         "videoFieldOffsetX": "水平位移",
         "videoFieldOffsetY": "垂直位移",
@@ -421,7 +529,7 @@
         "videoNoCanvas": "無法建立匯出畫布",
         "videoNoEncoder": "此系統沒有可用的影片編碼器",
         "videoNoWebGL": "匯出影片需要WebGL，但這部電腦目前無法使用。請開啟硬體加速或更新顯示卡驅動程式，然後重新開啟此視窗。",
-        "videoOpenFile": "按一下開啟影片",
+        "openVideo": "開啟影片",
         "videoOverlay": "畫面資訊",
         "videoOverlayClock": "經過時間",
         "videoOverlayCount": "拍 {count} / {total}",
@@ -455,7 +563,7 @@
             "savePdfTitle": "儲存 PDF",
             "videoTitle": "匯出影片"
         },
-        "exportedCount": "{count, plural, other {已成功匯出 {count} 位隊員的座標表！}}",
+        "coordinateSheetsExported": "{count, plural, other {已匯出#位隊員的座標表}}",
         "checkFieldProperties": "場地屬性：{status, select, ok {✓} other {✗}}",
         "checkMarcher": "隊員：{status, select, ok {✓} other {✗}}",
         "checkPage": "頁：{status, select, ok {✓} other {✗}}",
@@ -476,6 +584,11 @@
             "snapOff": "貼齊已關閉",
             "wholeDegrees": "整數角度",
             "withKey": "<keys></keys> {word}"
+        },
+        "pivotHint": {
+            "own": "拖曳以移動軸心 · 按兩下放回中間",
+            "picking": "按一下隊員或某個位置作為旋轉軸心 · <keys></keys>取消",
+            "pull": "<keys></keys>移動軸心"
         },
         "general": {
             "exportField": "匯出場地",
@@ -498,22 +611,32 @@
             "noWebGL": "無法使用 WebGL",
             "contextLost": "場地的 WebGL 繪圖環境已遺失，因此無法繪製影片。請重新匯出。",
             "offscreenTimeout": "背景中的場地未能及時啟動"
+        },
+        "areaCount": {
+            "add": "{count, plural, other {+#位隊員}}",
+            "select": "{count, plural, other {#位隊員}}",
+            "subtract": "{count, plural, other {−#位隊員}}"
         }
     },
     "fieldDisplay": {
         "label": "場地顯示",
         "valueLabel": "{label}：{value}"
     },
+    "fieldSelectTool": {
+        "label": "選取工具",
+        "box": "框選",
+        "lasso": "套索選取",
+        "boxHint": "在場地空白處拖曳以畫出選取框",
+        "lassoHint": "沿著隊員周圍畫一圈。使用框選時，按兩下再拖曳也能畫出套索"
+    },
     "fieldProperties": {
         "applyFieldType": "套用場地類型",
         "applyFieldTypeWarning": "隊員不會移動以配合新場地類型的大小，而會停留在畫布上原本的位置。你隨時可以改回原本的場地類型。",
         "buttons": {
-            "resetTheme": "將主題重設為預設值",
-            "uploadFloor": "上傳地板…",
-            "removeFloor": "移除地板"
+            "importImage": "匯入圖片",
+            "resetTheme": "將主題重設為預設值"
         },
         "checkpoint": {
-            "created": "已建立位於 {steps} 步的 {axis} 參考線",
             "minimumRequired": "至少需要 2 條 {axis} 參考線"
         },
         "customFieldDocs": "查看說明文件",
@@ -567,10 +690,6 @@
             "temporaryPath": "暫時路徑",
             "top": "上"
         },
-        "messages": {
-            "noFloor": "無地板",
-            "floorUnnamed": "地板"
-        },
         "options": {
             "fill": "填滿",
             "fit": "符合",
@@ -595,8 +714,7 @@
             "stepsFromFrontToHomeLabelTop": "從前邊線到主隊側數字內緣的步數（較靠近場地中央）",
             "stepSize": "場地上每一步的長度，以英吋或公分為單位",
             "stepSizeWarningThreshold": "步幅超過此距離的隊員，其路徑會以警告色標示。設為 0 即可停用。",
-            "useHashes": "以 Hash 標記顯示 Y 參考線，如同美式足球場。若未勾選，則會使用完整線條。",
-            "uploadFloor": "匯入圖片作為此表演的地板：用於 2D 檢視、匯出及 3D 的場地圖片"
+            "useHashes": "以 Hash 標記顯示 Y 參考線，如同美式足球場。若未勾選，則會使用完整線條。"
         },
         "units": {
             "inches": "英吋",
@@ -647,7 +765,6 @@
         "saveSpinnerText": "正在儲存副本…",
         "toasts": {
             "audioUploadFailed": "無法上傳音訊檔案",
-            "audioUploaded": "已成功上傳音訊檔案",
             "error": "無法儲存副本",
             "errorWithDetails": "無法儲存副本。錯誤：{error}",
             "noFileOpen": "目前沒有開啟的檔案。請先建立或開啟表演。",
@@ -663,10 +780,18 @@
         "valueMissing": "請輸入值。"
     },
     "inspector": {
+        "arrange": {
+            "title": "排列",
+            "pickPivot": "在場地上選擇軸心",
+            "pickPivotHint": "或按住{key}並拖曳選取範圍中間的圓點",
+            "pivotTip": "以{pivot}為軸心旋轉",
+            "pickPivotButton": "在場地上選擇"
+        },
         "marcher": {
             "drillNumber": "隊形編號",
             "errorLoadingCoords": "載入座標時發生錯誤",
             "itemsSelected": "{count, plural, other {已選取 # 個道具。請在「道具」面板中編輯。}}",
+            "equipmentSelected": "{count, plural, =1 {已選取#件器材。在器材上按右鍵即可編輯。} other {已選取#件器材。在其中一件上按右鍵即可編輯。}}",
             "playing": "正在播放。暫停即可查看及編輯所選的隊員。",
             "maxStepSize": "最大步幅",
             "minStepSize": "最小步幅",
@@ -677,11 +802,25 @@
             "stepSizeWarning": "步幅超過門檻",
             "swapMarchers": "交換隊員位置",
             "timeline": {
+                "goToHeldPage": "前往第{page}頁（這段停留的起點）",
                 "goToPage": "前往第{page}頁（這些隊員最後移動的頁）",
                 "goToStart": "前往開頭",
+                "heldFromStart": "{held} · 從開頭起",
+                "heldSince": "{held} · 從第{page}頁起",
                 "holdFrom": "從第{page}頁起保持不動",
                 "holdFromStart": "從開頭起保持不動",
-                "movesOnThisPage": "在此頁移動"
+                "holdStyle": {
+                    "default": "依表演設定",
+                    "highMarkTime": "高抬腿踏步",
+                    "label": "停留樣式",
+                    "markTime": "原地踏步",
+                    "mixed": "混合",
+                    "stand": "立定"
+                },
+                "movesOnThisPage": "在此頁移動",
+                "notDefinedFromStart": "{notDefined} · 顯示起始位置",
+                "notDefinedShowing": "{notDefined} · 顯示第{page}頁的位置",
+                "heldOfSelected": "選取的{total}位中有{count}位{held}"
             },
             "title": "{count}位隊員",
             "titleSingle": "隊員{drillNumber}",
@@ -710,6 +849,7 @@
             "removeFromTagCaption": "移除",
             "alignHeading": "對齊",
             "distributeHeading": "均分",
+            "rotateHeading": "旋轉",
             "distributeStepsPlaceholder": "步數",
             "coords": {
                 "x": "X",
@@ -849,6 +989,11 @@
                     "sectionCount": "{section}（{count}）",
                     "title": "隊員"
                 },
+                "frontEnsemble": {
+                    "title": "定點打擊組",
+                    "description": "這場表演有定點打擊組嗎？之後仍可變更。",
+                    "hint": "選擇規模後，會在場地前方放置器材，每件樂器配一位隊員，並在 50 碼線放一座指揮台。"
+                },
                 "project": {
                     "description": "為表演命名並選擇儲存位置。",
                     "fileType": "OpenMarch檔案",
@@ -878,7 +1023,6 @@
                     "waitingDb": "正在準備你的表演檔案…"
                 }
             },
-            "success": "已成功建立表演",
             "tempo": "預設速度（BPM）",
             "title": "新表演"
         },
@@ -1029,9 +1173,9 @@
         }
     },
     "measures": {
-        "createFailed": "無法建立小節：{error}",
-        "deleteFailed": "無法刪除小節：{error}",
-        "updateFailed": "無法更新小節：{error}"
+        "addFailed": "無法新增小節",
+        "removeFailed": "無法刪除小節",
+        "changeFailed": "無法變更小節"
     },
     "mobileExport": {
         "accessError": {
@@ -1088,6 +1232,9 @@
             "validatingAccess": "正在確認On the Move存取權…"
         },
         "logoAlt": "OTM標誌",
+        "pageLines": {
+            "note": "手機只會顯示隊員在每一頁的位置，因此頁與頁之間的動作會顯示為直線。"
+        },
         "revision": {
             "audioSyncFailed": "修訂版本已上傳，但音訊同步失敗：{msg}",
             "backgroundSyncFailed": "修訂版本已上傳，但背景圖片同步失敗：{msg}",
@@ -1128,12 +1275,28 @@
             "noProduction": "找不到製作",
             "title": "行動應用程式設定"
         },
+        "signInRejected": {
+            "description": "OpenMarch的線上服務未接受你的登入。請先登出，再重新登入。",
+            "signOut": "登出",
+            "title": "你的登入未被接受"
+        },
         "signedOut": {
             "createAccountPrompt": "還沒有帳號嗎？立即建立一個！",
+            "errors": {
+                "failed": "登入失敗。請再試一次。",
+                "sessionExpired": "你的登入已過期。請重新登入以繼續上傳。",
+                "unavailable": "無法載入登入功能。請檢查網際網路連線後再試一次。"
+            },
             "setupAccount": "設定你的帳號",
-            "signInPrompt": "已經有帳號了嗎？將它連結到桌面應用程式，開始把你的表演帶上 On The Move！"
+            "signInPrompt": "已經有帳號了嗎？將它連結到桌面應用程式，開始把你的表演帶上 On The Move！",
+            "signInPromptWeb": "已經有帳號了嗎？登入後就能帶著表演 On The Move！"
         },
-        "title": "匯出到行動裝置"
+        "title": "匯出到行動裝置",
+        "unreachable": {
+            "description": "OpenMarch無法連上線上服務，或無法確認你的登入。請檢查網際網路連線後再試一次。",
+            "retry": "再試一次",
+            "title": "無法連上OpenMarch"
+        }
     },
     "music": {
         "accent": "強調每小節的第一個節拍",
@@ -1153,7 +1316,6 @@
         "deleteAllMeasures": "刪除所有小節及其相關頁面",
         "deleteAudioFile": "刪除音訊檔案",
         "deleteAudioFileDescription": "確定要刪除這個音訊檔案嗎？此操作無法復原。",
-        "deleteSuccess": "已刪除{fileName}",
         "deleteTempoGroupAlert": "你確定嗎？",
         "deleteTempoGroupDescription": "刪除速度組也會刪除與其相關的所有頁面。",
         "endTempo": "結束速度",
@@ -1198,10 +1360,8 @@
         "tempo": "速度 *",
         "tempoBelowMinimum": "速度至少須為{min} BPM",
         "tempoDescription": "每分鐘節拍數",
-        "tempoGroupCreated": "已建立速度組",
         "tempoGroupNamePlaceholder": "選填",
         "tempoGroups": "速度組",
-        "tempoGroupUpdated": "已更新速度組",
         "undoWithShortcut": "此操作可使用<keys></keys>復原",
         "timeSignature": "拍號：{timeSignature}",
         "title": "音樂",
@@ -1225,16 +1385,13 @@
     "pages": {
         "undoDeleteUnavailable": "無法復原刪除：之後已有其他變更。請使用工具列中的「復原」逐步返回。",
         "dotModeFailed": "設定點位顯示模式時發生錯誤",
-        "noNextPage": "沒有下一頁",
-        "noPreviousPage": "沒有上一頁",
         "durationNoBeat": "無法更新頁面長度。找不到合適的節拍。",
         "durationFailed": "無法更新頁面長度",
         "yankNegativeCounts": "無法往前拉動頁面，否則拍數會變成負數",
         "pushPastEnd": "無法將頁面推到超過表演結尾",
         "yankEmptyPages": "無法往前拉動沒有節拍的頁面",
         "yankOutOfBounds": "拉動節拍會使節拍超出範圍",
-        "splitTooShort": "無法分割少於2個節拍的頁面",
-        "splitNoStartBeat": "找不到新的起始節拍",
+        "splitNeedsTwoCounts": "頁至少要有 2 拍才能分割",
         "deleteWithMoves": {
             "changed": "{count, plural, other {第{pages}頁已變更}}",
             "changedBoth": "{keptCount, plural, other {第{kept}頁}}及{renamedCount, plural, other {原第{renamed}頁}}已變更",
@@ -1244,12 +1401,15 @@
             "grownOld": "原第{page}頁現為{counts, plural, other {#拍}}",
             "noOtherChanged": "沒有其他頁面變更"
         },
-        "createError": "無法建立頁面：{error}",
-        "updateError": "無法更新頁面：{error}"
+        "createFailed": "無法建立頁",
+        "updateFailed": "無法變更頁"
     },
     "props": {
         "back": "返回",
         "close": "關閉",
+        "color": "顏色",
+        "colorMixed": "混合",
+        "colorNone": "無",
         "counts": "拍",
         "delete": "刪除道具",
         "depth": "深度",
@@ -1259,9 +1419,13 @@
                 "arc": "先點選弧線的兩端，再點一下設定弧度。",
                 "circle": "從中心向外拖曳以設定半徑。",
                 "drag": "在場地上拖曳以繪製道具。道具會從播放指示器所在的拍開始出現在場地上。",
-                "polygon": "點選每個角，再按兩下完成。"
+                "polygon": "點選每個角，再按兩下完成。",
+                "polygonTouch": "點一下每個角，再點一下「完成」。",
+                "arcTouch": "點一下弧線的兩端，再點一下設定弧度。"
             },
-            "title": "繪製道具"
+            "title": "繪製道具",
+            "finish": "完成",
+            "undoPoint": "復原上一點"
         },
         "edit": "編輯道具",
         "editTitle": "編輯道具",
@@ -1270,7 +1434,8 @@
             "create": "無法建立道具",
             "delete": "無法刪除道具",
             "outline": "無法變更道具的外框",
-            "update": "無法變更道具"
+            "update": "無法變更道具",
+            "preset": "無法套用預設組合"
         },
         "height": "高度",
         "hide": "在場地上隱藏",
@@ -1294,6 +1459,7 @@
             "right": "從右側展開"
         },
         "rotation": "旋轉",
+        "selectedCount": "{count, plural, other {已選取#個道具}}",
         "show": "在場地上顯示",
         "showNames": "顯示所有名稱",
         "surface": {
@@ -1307,7 +1473,74 @@
         "width": "寬度",
         "units": {
             "meters": "m"
-        }
+        },
+        "locked": "已鎖定",
+        "lockLabel": "鎖定",
+        "lockHint": "整場表演固定在同一位置"
+    },
+    "frontEnsemble": {
+        "title": "定點打擊組與指揮台",
+        "add": {
+            "title": "新增器材",
+            "button": "新增"
+        },
+        "empty": "尚未設定定點打擊組。請新增器材和指揮台，或從預設組合開始。",
+        "list": {
+            "equipment": "器材",
+            "podiums": "指揮台"
+        },
+        "placeInstructions": "在場地上按一下以放置{name}。它會從播放指示器所在的拍開始出現在場地上。",
+        "equipment": {
+            "block": "器材",
+            "delete": "刪除器材",
+            "edit": "編輯器材",
+            "editTitle": "編輯器材",
+            "model": "{family}型號"
+        },
+        "podium": {
+            "delete": "刪除指揮台",
+            "edit": "編輯指揮台",
+            "editTitle": "編輯指揮台"
+        },
+        "default": "預設",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "音響",
+            "keyboards": "鍵盤樂器",
+            "percussion": "打擊樂器",
+            "podiums": "指揮台"
+        },
+        "presets": {
+            "title": "預設組合",
+            "size": "預設組合規模",
+            "small": "小型",
+            "medium": "中型",
+            "large": "大型",
+            "summary": {
+                "small": "2 台馬林巴木琴、2 台鐵琴、1 組打擊架、1 台合成器和 2 支喇叭",
+                "medium": "4 台馬林巴木琴、3 台鐵琴、木琴、鐘琴、打擊架、爵士鼓、合成器和 4 支喇叭",
+                "large": "6 台馬林巴木琴、4 台鐵琴、木琴、鐘琴、2 組打擊架、爵士鼓、2 台合成器和 6 支喇叭",
+                "none": "沒有定點打擊組。之後可以在「隊員」面板中設定。"
+            },
+            "always": "每種規模都會另外在 50 碼線放一座指揮台，並在定點打擊組後方放一台混音器。",
+            "addPerformers": "同時加入隊員",
+            "apply": "套用",
+            "replaces": "會取代上一個預設組合加入的器材。原有的演奏隊員會移到新位置；沒有樂器可用的隊員會被移除，除非他們在表演後段還有動作。按「復原」即可全部還原。你自行加入的器材會保留。",
+            "none": "無",
+            "start": "從預設組合開始",
+            "reset": "重設為預設組合"
+        },
+        "summary": {
+            "title": "定點打擊組與指揮台",
+            "none": "尚未設定定點打擊組",
+            "setUp": "設定",
+            "edit": "編輯",
+            "equipment": "{count, plural, other {#件器材}}",
+            "podiums": "{count, plural, other {#座指揮台}}"
+        },
+        "search": "搜尋器材",
+        "noMatch": "沒有符合的器材。",
+        "results": "{count, plural, =0 {沒有符合的器材。} other {#種型號}}"
     },
     "section": {
         "drumMajor": "樂隊指揮",
@@ -1351,8 +1584,12 @@
         "other": "其他",
         "pit": {
             "auxPercussion": "輔助打擊",
+            "drumSet": "爵士鼓",
+            "glockenspiel": "鐘琴",
             "marimba": "馬林巴木琴",
+            "rack": "打擊架",
             "synthesizer": "合成器",
+            "timpani": "定音鼓",
             "vibraphone": "鐵琴",
             "xylophone": "木琴"
         },
@@ -1392,6 +1629,17 @@
         "general.appearance": "外觀",
         "general.appearance.dark": "深色",
         "general.appearance.light": "淺色",
+        "general.updates": "更新",
+        "general.updates.version": "你目前使用OpenMarch {version}。",
+        "general.updates.checking": "你目前使用OpenMarch {version}。正在檢查更新…",
+        "general.updates.upToDate": "OpenMarch {version}已是最新版本。",
+        "general.updates.available": "OpenMarch {version}已可下載。",
+        "general.updates.downloading": "正在下載OpenMarch {version}：{percent}%",
+        "general.updates.ready": "OpenMarch {version}已準備就緒。下次結束應用程式時會自動安裝，也可以按標題列的更新按鈕立即安裝。",
+        "general.updates.failed": "更新失敗。你目前使用OpenMarch {version}。",
+        "general.checkForUpdates": "檢查更新",
+        "general.automaticDownload": "自動下載更新",
+        "general.automaticDownload.description": "更新會在你結束OpenMarch時安裝，也可以按「立即更新」馬上安裝。",
         "general.description": "編輯器模式、語言及其他全域偏好設定。",
         "general.editorMode": "編輯器模式",
         "general.editorMode.basic": "基本",
@@ -1468,7 +1716,21 @@
         "tolgeeApiKeyPlaceholder": "Tolgee API 金鑰",
         "tolgeeDevToolsToggle": "Tolgee 情境內翻譯",
         "view3d": "3D 檢視",
-        "view3d.description": "3D 檢視在這台電腦上的繪製方式。不會儲存在表演中。",
+        "view3d.controls": "操控方式",
+        "view3d.controls.input.drag": "左鍵拖曳",
+        "view3d.controls.input.pinch": "雙指開合",
+        "view3d.controls.input.rightDrag": "右鍵拖曳",
+        "view3d.controls.input.scroll": "捲動",
+        "view3d.controls.input.swipe": "雙指捲動",
+        "view3d.controls.move.orbit": "環繞",
+        "view3d.controls.move.pan": "平移",
+        "view3d.controls.move.zoom": "縮放",
+        "view3d.controls.orbit": "環繞",
+        "view3d.controls.orbit.description": "拖曳可環繞，捲動可縮放。以滑鼠右鍵拖曳或按住 Shift 可在場地上平移。",
+        "view3d.controls.map": "地圖",
+        "view3d.controls.map.description": "拖曳可在場地上平移，捲動可縮放。按住輔助按鍵或使用滑鼠右鍵可環繞。",
+        "view3d.controls.trackpad": "觸控板",
+        "view3d.controls.trackpad.description": "捲動和拖曳可環繞，雙指開合可縮放。滑鼠右鍵可平移。",
         "view3d.quality": "品質",
         "view3d.quality.auto": "自動",
         "view3d.quality.auto.description": "從「高」開始，若畫面不順暢則切換為「低」。",
@@ -1483,6 +1745,7 @@
         "view3d.resolution.fast.description": "最柔和，負擔約減半。適合較舊的電腦。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高解析度螢幕上呈現完整細節。",
+        "view3d.summary": "3D 檢視在這台電腦上的繪製與操控方式。不會儲存在表演中。",
         "input": "觸控與輸入",
         "input.description": "選擇平板版面（適用手指與觸控筆）或桌面版面（適用滑鼠與觸控板）。",
         "input.interface": "版面配置",
@@ -1493,7 +1756,8 @@
         "repairDotsFile.reopenFailed": "修復後的檔案已儲存至{path}，但無法開啟（狀態碼{status}）。",
         "utilityUpdateFailed": "無法更新時間設定",
         "shortcuts.conflictWith": "<keys></keys>已被{actions}使用。",
-        "shortcuts.recordingHint": "請按下按鍵…（按<keys></keys>取消）"
+        "shortcuts.recordingHint": "請按下按鍵…（按<keys></keys>取消）",
+        "shortcuts.category.field": "場地"
     },
     "shapes": {
         "box": {
@@ -1588,6 +1852,7 @@
             },
             "pivot": {
                 "aria": "軸心：{pivot}",
+                "backToCenter": "回到中心",
                 "custom": "軸心：在場地上拖曳到的位置",
                 "label": "軸心",
                 "names": {
@@ -1605,9 +1870,16 @@
             },
             "place": "放置",
             "quarterTurn": "順時針旋轉90°",
+            "guides": {
+                "label": "輔助線",
+                "circle": "圓形",
+                "angles": "角度線"
+            },
             "ratioLock": {
                 "locked": "間距已連動鎖定：按一下解除",
-                "unlocked": "連動鎖定兩個間距"
+                "unlocked": "連動鎖定兩個間距",
+                "sizesLocked": "寬度與高度已連動鎖定：按一下解除",
+                "sizesUnlocked": "連動鎖定寬度與高度"
             },
             "hideMarchers": {
                 "hide": "隱藏隊員",
@@ -1648,7 +1920,13 @@
                 "label": "站位分配"
             },
             "drawHintFor": "在場地上拖曳以繪製{shape, select, block {方陣} circle {圓形} line {直線} curve {曲線} arc {弧形} other {圖形}} · 按<keys></keys>取消",
-            "drawPointsHintFor": "在場地上拖曳以繪製{shape, select, line {直線} curve {曲線} arc {弧形} other {圖形}}，或逐點按一下 · 按<keys></keys>取消"
+            "drawPointsHintFor": "在場地上拖曳以繪製{shape, select, line {直線} curve {曲線} arc {弧形} other {圖形}}，或逐點按一下 · 按<keys></keys>取消",
+            "finish": "完成",
+            "undoPoint": "復原上一點",
+            "discard": "捨棄",
+            "drawHintTouchFor": "在場地上拖曳以繪製{shape, select, block {方陣} circle {圓形} line {直線} curve {曲線} arc {弧形} other {圖形}}",
+            "drawPointsHintTouchFor": "在場地上拖曳以繪製{shape, select, line {直線} curve {曲線} arc {弧形} other {圖形}}，或逐點點按",
+            "pointsHintTouch": "點一下新增點 · 點兩下或按「完成」結束"
         },
         "placed": {
             "label": "{name} · {count, plural, other {{interval}步}}",
@@ -1661,6 +1939,7 @@
                 "steps": "{count, plural, other {{interval}步}}"
             },
             "groupError": "將隊員組成圖形時發生錯誤",
+            "groupNeedsTwo": "選取2位以上的隊員才能組成群組",
             "ungroupError": "取消群組圖形時發生錯誤",
             "ungroupIsolated": "此圖形來自先前的頁，請離開獨立模式後再取消群組",
             "leftShape": {
@@ -1715,6 +1994,25 @@
                 "validate": {
                     "flat": "弧線沒有彎曲，因此是一條直線",
                     "sameSpot": "弧線的兩端在同一點"
+                },
+                "params": {
+                    "bend": "弧線轉過的角度",
+                    "width": "弧線左右的跨距（步）",
+                    "height": "弧線的高度，從兩端到最遠邊緣（步）",
+                    "stretch": "弧線所在橢圓的伸展程度：高是寬的幾倍，或寬是高的幾倍"
+                },
+                "ends": {
+                    "label": "開放或封閉",
+                    "open": "開放",
+                    "chord": "以直線封閉",
+                    "circle": "封閉成圓形",
+                    "round": "環繞一整圈封閉"
+                },
+                "size": {
+                    "steps": "步",
+                    "tall": "高",
+                    "wide": "寬",
+                    "round": "圓形"
                 }
             },
             "block": {
@@ -1935,7 +2233,8 @@
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "圖形種類",
-                "ringHintKeys": "在場地上按住<keys></keys>即可開啟圖形環"
+                "ringHintKeys": "在場地上按住<keys></keys>即可開啟圖形環",
+                "ringCaption": "形狀環"
             }
         },
         "validate": {
@@ -1999,23 +2298,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "建立新節拍時發生錯誤",
-        "deletedSuccessfully": "已刪除速度群組",
         "deleteFailed": "無法刪除速度群組",
-        "differentBeatsError": "速度群組的節拍數不符。這不應該發生，請與我們聯絡！",
+        "temposFailed": "無法變更速度",
         "errorUpdatingTempoGroup": "更新速度群組時發生錯誤"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} other {{shapeNames}在形狀中}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {，}}}}{leaderCount, plural, =0 {} other {{leaderNames}跟隨領隊}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {，}}} other {，}}}}{orderCount, plural, =0 {} other {{orderNames}與跟隨領隊的順序共用曲線動作}}，因此{count, plural, other {這裡的動作維持不變}}。",
             "passThrough": {
                 "catchUp": "現在會追上{caughtUp}結束時的定位",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {將第{first}頁保留為關鍵影格} other {將第{first}–{last}頁保留為關鍵影格}}",
-                    "unnamed": "保留為關鍵影格"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {在第{first}頁結尾停下} other {在第{first}–{last}頁結尾停下}}",
+                    "unnamed": "在這些頁的結尾停下"
                 },
-                "keepStopsError": "無法將這些頁保留為關鍵影格",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {第{first}頁已不再是關鍵影格} other {第{first}–{last}頁已不再是關鍵影格}}",
-                    "unnamed": "此動作內的頁已不再是關鍵影格"
+                "stopAtEndError": "無法讓隊員在這些頁的結尾停下",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {現在會直接走過第{first}頁的結尾} other {現在會直接走過第{first}–{last}頁的結尾}}",
+                    "unnamed": "現在會直接走過此動作內各頁的結尾"
                 },
                 "through": "現在會直接穿過{through}",
                 "throughAndCatchUp": "現在會直接穿過{through}，再追上{caughtUp}結束時的定位"
@@ -2034,7 +2333,18 @@
             "destinationShapeUnsuitable": "該目的地不適用於此轉換。跟隨領隊的轉換不能以網格陣結束，且網格陣的位置數至少須與轉換的位置槽數相同。",
             "followLeaderBlock": "跟隨領隊的轉換不能以網格陣結束。請改選直線、曲線、圓形或方陣。",
             "followLeaderNeedsShape": "跟隨領隊的轉換需要一個可跟隨的形狀。",
+            "heldConflict": "{count, plural, =1 {{names}在{pages}為{held}。{clearThisPage}即可移除停留，或在停留範圍內拖曳以移動它。} other {{names}在{pages}為{held}。{clearThisPage}即可移除停留，或在停留範圍內拖曳以移動它們。}}",
+            "heldHoldsOverlap": "同一位隊員不能在相同的拍上有兩段{held}。",
+            "heldPages": "{count, plural, =1 {第{pages}頁} other {第{pages}頁}}",
             "legacyConvertedTimeline": "此檔案由較早的開發版本轉換為時間軸，該版本將多個頁的動作放在同一條時間軸中，因此無法編輯。請重新轉換：開啟其備份（轉換前儲存在其旁邊的檔案）。",
+            "moveInHeldHold": "這樣會把動作放進一段{held}之中。{clearThisPage}即可移除停留，或在停留範圍內拖曳以移動它。",
+            "notJoined": {
+                "marcherCount": "{count, plural, other {#位隊員}}",
+                "message": "{names}的動作無法合併：{reason}。",
+                "overlap": "合併後的動作會與他們在同一圖層上的另一個動作重疊",
+                "partway": "有隊員在下一個動作中途加入或離開",
+                "secondMove": "他們在相同的拍上會有兩個動作"
+            },
             "notReady": "時間軸仍在載入中。請稍後再試。",
             "numberOutOfRange": "數值超出範圍。節拍、圖層、位置槽數和位置必須是允許範圍內的整數或有限數值。",
             "pathParamsInvalid": "該路徑設定無效。弧線的弧度最多為兩端距離的一半，且路徑點必須是場地上的點。",
@@ -2044,11 +2354,47 @@
             "transitionSpansTimeline": "轉換必須涵蓋整條時間軸，與時間軸同時開始和結束。請改為變更時間軸的範圍，其轉換會隨之移動。",
             "unknown": "時間軸無法進行該變更。"
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "第{page}頁：{label}。{hint}"
+        "holdEdge": {
+            "endLabel": "{held}的結尾。拖曳可提早離開或延長停留",
+            "readoutEnd": "{held}至第{page}頁第{count}拍",
+            "blocked": {
+                "minimum": "停留至少持續一拍",
+                "nextMove": "到下一個動作為止",
+                "showEnd": "到表演結尾為止"
             },
+            "changeError": "無法變更停留",
+            "splitError": "無法分割停留",
+            "styleError": "無法變更停留樣式"
+        },
+        "heldBar": {
+            "detail": "已選取{total}位中的{held}位",
+            "shape": "其形狀在此延續",
+            "title": "{held} · 第{page}頁",
+            "titleRange": "{held} · 第{first}–{last}頁",
+            "titleWithDetail": "{title}。{detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}：{page}之前的動作為跟隨領隊",
+            "arrivalShape": "{names}：{page}之前的動作結束於形狀",
+            "count": "{count, plural, other {#位隊員}}",
+            "crossesFlag": "{names}：有動作跨越此頁的頁面標記",
+            "done": "{names}在{page}{held}",
+            "endsWithoutArriving": "{names}：有動作在{page}結束，但並未抵達該處",
+            "expertMoves": "{names}：此頁有專家模式的動作",
+            "followLeader": "{names}：在此頁跟隨領隊",
+            "held": "{names}：在此已是{held}",
+            "homeShape": "{names}：起始位置由形狀決定。請在表演開頭將其取消群組，才能逐一設為停留",
+            "none": "{page}沒有任何隊員{held}",
+            "notHeldReasons": "未{heldLower}：{reasons}",
+            "shape": "{names}：在此頁位於形狀中",
+            "holdError": "無法讓隊員停留",
+            "paused": "暫停播放後才能變更停留",
+            "styleNoneHeld": "所選隊員在播放指示器處都不是「停留」",
+            "styleInEffect": "此處已是這個停留樣式"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {第{first}頁沒有這些隊員自己的位置，因此也跟著變更} other {第{first}–{last}頁沒有這些隊員自己的位置，因此也跟著變更}}",
                 "keepAsBefore": "{count, plural, =1 {維持第{first}頁原樣} other {維持第{first}–{last}頁原樣}}",
                 "keepError": "保留後續頁時發生錯誤"
             },
@@ -2066,6 +2412,9 @@
             "removeError": "無法移除關鍵影格",
             "removeLocked": "{count, plural, =1 {有一名隊員在此頁使用專家模式的動作，因此未移除其關鍵影格。請切換到專家模式以編輯。} other {有#名隊員在此頁使用專家模式的動作，因此未移除他們的關鍵影格。請切換到專家模式以編輯。}}",
             "removeLockedAll": "{count, plural, =1 {有一名隊員在此頁使用專家模式的動作。請切換到專家模式以編輯。} other {有#名隊員在此頁使用專家模式的動作。請切換到專家模式以編輯。}}",
+            "paused": "暫停播放後才能變更關鍵影格",
+            "removeNone": "所選隊員在此都沒有關鍵影格",
+            "followNone": "後面沒有任何頁沿用這個位置",
             "title": "關鍵影格 · 第{page}頁，第{count}拍",
             "spoken": "{title}。{detail}"
         },
@@ -2078,6 +2427,7 @@
             "message": "已在{where}分割{label}",
             "messageAtPlayhead": "已在播放指示器處分割{label}",
             "changed": "{count, plural, other {已重繪#名隊員的路徑：分割點之前改為直線，之後重新開始}}",
+            "restarted": "{count, plural, other {#位隊員的曲線路徑會在其後重新開始}}",
             "paused": "請先暫停再分割動作。",
             "isolatedOutside": "請將播放指示器移到正在編輯的動作內，才能分割。",
             "noneAt": "沒有動作經過{where}。請將播放指示器移到動作內再分割。",
@@ -2091,14 +2441,32 @@
                 "subsetToggle": "子頁"
             },
             "label": "第{pageName}頁",
+            "optionsLabel": "第{pageName}頁選項",
             "homeTooltip": "起點：表演的開始（第{page}頁的隊形）"
         },
         "rangeMenu": {
             "deleteWithMoves": "刪除頁面及其動作",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "設為目前顯示的位置",
+            "holdFromPreviousNone": "所選隊員在{page}都已{heldLower}，或正在動作中途",
             "setAsShownNone": "所有選取的隊員在{page}都已設定位置，或正處於動作途中",
             "setAsShownError": "將隊員設為目前顯示的位置時發生錯誤",
-            "deletePage": "刪除頁面"
+            "deletePage": "刪除頁面",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "清除此頁",
+            "defineAsShown": "依目前位置定義",
+            "defined": "已定義",
+            "definedLower": "已定義",
+            "held": "停留",
+            "heldLower": "停留",
+            "holdFromPrevious": "從上一個關鍵影格起停留",
+            "notDefined": "未定義",
+            "notDefinedLower": "未定義",
+            "removeKeyframe": "移除關鍵影格",
+            "holdOverWindow": "從起始標記停留到播放指示器",
+            "splitHold": "在此分割停留"
         },
         "startFlagPositions": {
             "always": "一律",
@@ -2124,16 +2492,15 @@
             "menu": "{count, plural, other {將選取的#名隊員分割為新動作}}",
             "menuNone": "將選取的隊員分割為新動作",
             "drag": "分割{count, plural, other {#名隊員}}",
-            "done": "已將{count, plural, other {#名隊員}}分割至{label}",
             "paused": "請先暫停再分割或合併動作。",
-            "nothingOnPage": "此頁還沒有任何動作，所以沒有可分割的項目。"
+            "nothingOnPage": "此頁還沒有任何動作，所以沒有可分割的項目。",
+            "pageSplitOff": "此頁沒有自己的動作。若要分割跨越此頁的動作，請使用該動作的片段。"
         },
         "merge": {
             "menuPair": "將{source}合併至{target}",
             "menuPairFit": "將{source}合併至{target} · 配合其拍數",
             "menuInto": "合併至{target}",
             "menuIntoFit": "合併至{target} · 配合其拍數",
-            "done": "已將{source}合併至{target}",
             "page": "第{name}頁",
             "thisPage": "此頁",
             "thisMove": "此動作",
@@ -2256,6 +2623,8 @@
             "passedSets": "{count, plural, other {第{names}頁的隊形}}",
             "through": "· 經過{sets}",
             "editingThrough": "{editing}，經過{sets}",
+            "held": "· {total}位中{count}位{held}",
+            "withHeld": "{rest}，{total}位中{count}位{held}",
             "afterPaused": "{paused}。{rest}",
             "withLoop": "{rest}。{key}會循環播放{loop}",
             "loops": "<keys></keys>循環播放{loop}"
@@ -2313,6 +2682,11 @@
             "label": "顯示整場表演",
             "hint": "再按一次即可返回。以雙指開合或<keys></keys>縮放"
         },
+        "zoom": {
+            "in": "放大",
+            "out": "縮小",
+            "hint": "或以雙指開合，或<keys></keys>"
+        },
         "transport": {
             "label": "播放控制",
             "more": "更多控制項",
@@ -2366,6 +2740,7 @@
         },
         "moveMenu": {
             "edit": "編輯動作",
+            "selectMarchers": "選取隊員",
             "rename": "重新命名動作…",
             "splitAtPlayhead": "在播放指示器處分割",
             "delete": "刪除動作",
@@ -2459,6 +2834,15 @@
                 "alreadyInSlot": "該隊員已在位置{slot}"
             },
             "changesNothing": "這不會造成任何變更",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown}適用於一整頁，而非{counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious}適用於一整頁，而非{counts}"
+            },
+            "holdEdge": {
+                "outside": "停留無法延伸到該拍：它會止於隊員的下一個動作、表演結尾，或距離另一端一拍之處。"
+            },
             "moveTimeline": {
                 "tooEarly": "時間軸從第{start}個節拍開始，因此無法提早{count, plural, other {#個節拍}}",
                 "tooLate": "時間軸無法移到第{max}個節拍之後"
@@ -2474,6 +2858,45 @@
                 "wholePage": "「保持」只能用於整頁，不能用於{counts}"
             },
             "tooFarPastEnd": "這已超過結尾{count, plural, other {#拍}}；一次編輯最多儲存{max}拍"
+        },
+        "expertHolds": {
+            "held": "{names}：從起始標記到播放指示器已{heldLower}",
+            "shape": "{names}：在起始標記與播放指示器之間位於形狀中",
+            "followLeader": "{names}：在起始標記與播放指示器之間跟隨領隊",
+            "followLeaderOrder": "{names}：與跟隨領隊的順序共用曲線動作",
+            "arrivalShape": "{names}：停留會從形狀結束之處開始",
+            "arrivalFollowLeader": "{names}：停留會從跟隨領隊動作結束之處開始",
+            "homeShape": "{names}：起始位置由形狀決定。請在表演開頭將其取消群組，才能逐一設為停留",
+            "endsWithoutArriving": "{names}：起始標記前的最後一個動作結束時並未抵達該處",
+            "count": "{count, plural, other {#位隊員}}",
+            "notHeld": "{count, plural, other {#位隊員}}未{heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · 第{page}頁",
+            "titleRange": "{notDefined} · 第{first}–{last}頁"
+        },
+        "departure": {
+            "title": "再次移動 · 第{page}頁第{count}拍"
+        },
+        "touchTransport": {
+            "playMenu": "播放方式",
+            "goTo": "前往",
+            "start": "開頭",
+            "countBack": "上一拍",
+            "countOn": "下一拍",
+            "end": "結尾",
+            "playback": "播放",
+            "speed": "速度",
+            "sound": "聲音",
+            "view": "檢視",
+            "fit": "全覽",
+            "atPlayhead": "在播放指示器處",
+            "newPage": "新增頁",
+            "newSubset": "新增子頁",
+            "compact": "精簡"
+        },
+        "clearPage": {
+            "error": "無法清除此頁"
         }
     },
     "titlebar": {
@@ -2492,6 +2915,8 @@
         }
     },
     "toolbar": {
+        "showControls": "顯示工具列",
+        "hideControls": "隱藏工具列",
         "alignment": {
             "lockXCaption": "鎖定X",
             "lockYCaption": "鎖定Y",
@@ -2499,8 +2924,11 @@
             "lockMarchersAriaLabel": "游標移動與隊員貼齊",
             "placeAllMarchers": "放置所有隊員",
             "placeSelectedMarchers": "放置所選隊員",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "貼齊",
-            "setMarcherPositionsAriaLabel": "設定隊員位置"
+            "toNextPageSpots": "…到下一頁的位置",
+            "setMarcherPositionsAriaLabel": "設定隊員位置",
+            "toPreviousPagePositions": "…到上一頁的位置"
         },
         "collisions": {
             "collisionsToolbar": "碰撞",
@@ -2548,6 +2976,49 @@
             "shapesAlways": "一律顯示",
             "shapesOff": "關閉",
             "shapesSelected": "選取時"
+        },
+        "alignmentTabShort": "對齊"
+    },
+    "updates": {
+        "pill": {
+            "available": "有可用的更新",
+            "downloadingUpdate": "正在下載更新",
+            "downloadingProgress": "正在下載更新：{percent}%",
+            "ready": "更新已就緒",
+            "failed": "更新失敗"
+        },
+        "popover": {
+            "current": "你目前的版本是{version}。",
+            "availableBody": "立即下載。選擇「立即更新」或下次結束程式時就會安裝。",
+            "downloadingBody": "{transferred}／{total} MB，{speed} MB/s",
+            "downloadingStarting": "正在開始下載…",
+            "readyBody": "「立即更新」會關閉你的表演、安裝更新，然後重新開啟OpenMarch與你的表演。你的作品已經儲存。",
+            "moveBody": "macOS只能更新位於「應用程式」資料夾中的OpenMarch。將它移到該處後，OpenMarch會從「應用程式」重新開啟。",
+            "errorBody": "無法下載更新。請再試一次，或下載安裝程式自行執行。",
+            "installFailedBody": "OpenMarch {version}未能安裝。請下載安裝程式自行執行。"
+        },
+        "action": {
+            "download": "下載",
+            "updateNow": "立即更新",
+            "later": "稍後",
+            "retry": "再試一次",
+            "downloadInstaller": "下載安裝程式",
+            "moveToApplications": "移到「應用程式」",
+            "whatsNew": "新功能"
+        },
+        "toast": {
+            "checking": "正在檢查更新…",
+            "upToDate": "OpenMarch {version}已是最新版本。",
+            "available": "OpenMarch {version}已可下載。",
+            "downloading": "正在下載中。左上角的更新按鈕會顯示進度。",
+            "ready": "OpenMarch {version}已可安裝。",
+            "checkFailed": "無法檢查更新。"
+        },
+        "unsupported": {
+            "development": "開發版本已停用更新。",
+            "snap": "這份OpenMarch由Snap Store負責更新。",
+            "linuxPackage": "這份OpenMarch無法自行更新。請從openmarch.com下載新版本。",
+            "noFeed": "此版本的OpenMarch不會自行更新。請手動下載每個新版本。"
         }
     },
     "view3d": {
@@ -2556,6 +3027,12 @@
             "no": "否",
             "title": "開啟表演時自動開啟 3D 檢視？",
             "yes": "是"
+        },
+        "board": {
+            "designedBy": "設計：{name}",
+            "forClient": "演出單位：{name}",
+            "nowPerforming": "正在表演",
+            "untitled": "未命名表演"
         },
         "camera": {
             "blimp": "飛艇",
@@ -2600,7 +3077,8 @@
             "pickSeat": "選擇座位",
             "pickSeatTooltip": "選擇座位：按一下看台上的座位即可坐到該處",
             "venue": "場館",
-            "freeCamera": "自由視角"
+            "freeCamera": "自由視角",
+            "director": "導播"
         },
         "readout": {
             "count": "第 {count} 拍，共 {total} 拍",
@@ -2646,7 +3124,11 @@
             "graphicsHint": "不會儲存在表演中，因此每台電腦的設定可以不同。",
             "keysSection": "鍵盤與滑鼠",
             "uniforms": "樂隊制服",
-            "guardUniforms": "旗隊制服"
+            "guardUniforms": "旗隊制服",
+            "brassFinish": "銅管表面處理",
+            "tuba": "低音號",
+            "silkShape": "旗面形狀",
+            "silkArtwork": "旗面圖案"
         },
         "keys": {
             "playPause": "播放或暫停",
@@ -2657,11 +3139,23 @@
             "crowd": "顯示或隱藏觀眾",
             "escape": "取消選擇座位、關閉設定、結束全螢幕",
             "orbit": "環繞",
+            "orbitOrRight": "環繞，或以滑鼠右鍵拖曳",
+            "panPlain": "平移",
+            "zoomOrPinch": "縮放，或在觸控板上雙指開合",
             "pan": "平移，或以滑鼠右鍵拖曳",
-            "zoom": "縮放"
+            "zoom": "縮放",
+            "pausedPose": "暫停時：顯示實際步伐或併腳姿勢"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "金漆",
+            "silver": "鍍銀"
+        },
+        "tuba": {
+            "contra": "行進低音號",
+            "sousaphone": "蘇沙號"
         },
         "uniformPreset": {
             "fade": "紫外漸層",
@@ -2703,11 +3197,37 @@
         "venue": {
             "updateFailed": "無法更新3D 檢視的場館"
         },
-        "board": {
-            "designedBy": "設計：{name}",
-            "forClient": "演出單位：{name}",
-            "nowPerforming": "正在表演",
-            "untitled": "未命名表演"
+        "pausedPose": {
+            "label": "暫停時顯示實際步伐",
+            "tooltip": "暫停時顯示隊員當下跨步中的姿勢。關閉時：隊員併腳站在自己的點位上"
+        },
+        "silkShape": {
+            "standard": "標準",
+            "curvedTail": "弧形尾",
+            "cSwing": "C形擺旗",
+            "rainbow": "彩虹",
+            "arc": "弧形",
+            "teardrop": "水滴",
+            "distressed": "破損",
+            "rounded": "圓角",
+            "rectangle": "長方形",
+            "curvedAngle": "特大弧角",
+            "wings": "翅膀",
+            "snake": "蛇形",
+            "swing": "擺旗"
+        },
+        "silkArtwork": {
+            "none": "沒有圖案：旗面會顯示旗隊制服的花樣或聲部的顏色。",
+            "import": "匯入PNG…",
+            "replace": "取代…",
+            "remove": "移除",
+            "template": "{shape}的範本：",
+            "preparing": "準備中…",
+            "notPng": "該檔案不是PNG。請將圖案匯出為PNG後再匯入一次。",
+            "tooLarge": "該PNG太大。請以較低解析度匯出後再匯入一次。",
+            "unreadable": "無法讀取該PNG。",
+            "templateFailed": "無法製作範本。",
+            "saveFailed": "無法儲存旗面圖案"
         }
     },
     "web": {
@@ -2839,6 +3359,58 @@
         "welcome": {
             "description": "歡迎來到設計的未來。讓我們幫你完成設定。",
             "title": "歡迎使用 OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "以下是你上次使用後的變更。",
+            "title": "歡迎回來"
+        },
+        "whatsNew": {
+            "carousel": "導覽",
+            "guides": "在OpenMarch指南中進一步瞭解",
+            "next": "下一步",
+            "position": "第{current}張，共{total}張",
+            "skip": "略過",
+            "slide": "投影片",
+            "slides": {
+                "pathways": {
+                    "label": "路徑",
+                    "media": "預留圖片：路徑筆的影片尚未錄製。",
+                    "text": "用路徑筆為隊員畫出一條帶轉角的路徑，隊員就會沿著它走，而不是走直線。",
+                    "title": "路徑"
+                },
+                "props": {
+                    "label": "道具",
+                    "media": "在3D 檢視中，一座琥珀色的台階沿著場地後方滑動並轉向，與行進樂隊保持距離。",
+                    "text": "在場地上繪製道具，並在時間軸上移動它們。目前它們在3D 檢視中顯示為簡單的方塊。",
+                    "title": "道具"
+                },
+                "shapes": {
+                    "label": "形狀",
+                    "media": "一個聲部的隊員先排成方陣，再排成直線，然後排成弧線；每個形狀都畫在場地上，並貼齊場地的線。",
+                    "text": "繪製方陣、直線或弧線，並將所選隊員放入其中；形狀的點會貼齊半步、碼線與Hash 標記。",
+                    "title": "形狀"
+                },
+                "tempo": {
+                    "label": "編輯音樂",
+                    "media": "在時間軸中編輯音樂：表演以每分鐘118拍播放，在兩個小節內逐漸放慢到81，接著以新的拍號跳回118。播放指示器在漸變期間放慢，之後又恢復速度。",
+                    "text": "在時間軸中讓你的拍與音樂對齊：拖曳速度直到拍落在節拍上，並設定速度變化、延長與拍號。",
+                    "title": "編輯音樂"
+                },
+                "timeline": {
+                    "label": "時間軸",
+                    "media": "一排20位隊員在一個動作中向前移動16拍。時間軸上嵌套在它下方的三個較短動作，先讓兩端向後擺、再把隊伍拉開，最後讓全部20人彎成一道弧線。",
+                    "text": "頁、動作與拍都排在場地下方的同一條時間軸上；在專家模式中，動作可以跨頁並互相重疊。",
+                    "title": "時間軸"
+                },
+                "view3d": {
+                    "label": "3D 檢視",
+                    "media": "樂隊以3D在各隊形之間行進，場景是巨蛋體育場，從記者席上方高處俯瞰：穿著制服的隊員，以及持旗的旗隊。",
+                    "text": "從看台觀賞你的表演，隊員都穿著制服。",
+                    "title": "3D 檢視"
+                }
+            },
+            "steps": "新功能項目",
+            "title": "0.2的新功能"
         }
     },
     "workspaceSettings": {
@@ -2862,7 +3434,6 @@
         },
         "unsavedChanges": "你有尚未儲存的變更",
         "close": "關閉",
-        "saved": "表演設定已儲存",
         "updateFailed": "無法更新表演設定",
         "showInfo": {
             "projectName": "表演名稱",
@@ -2870,6 +3441,36 @@
             "designer": "設計者",
             "client": "客戶",
             "optional": "選填"
+        },
+        "performer": {
+            "title": "表演者預設值",
+            "description": "在沒有更具體設定的地方，隊員在3D 檢視中的動作方式。",
+            "stepOffFoot": {
+                "label": "起步腳",
+                "left": "左腳",
+                "right": "右腳"
+            },
+            "dotMode": {
+                "label": "點位代表",
+                "foot": "腳踩在點上",
+                "body": "身體中心"
+            },
+            "directionChange": {
+                "label": "方向變換",
+                "corner": "繞過轉角",
+                "direct": "直接跨過"
+            },
+            "holdWhileBandMoves": {
+                "label": "其他人移動時的停留",
+                "markTime": "原地踏步",
+                "highMarkTime": "高抬腿踏步",
+                "stand": "立定"
+            },
+            "percussionTravel": {
+                "label": "鼓組橫向移動",
+                "crab": "蟹步",
+                "slide": "滑步"
+            }
         }
     },
     "canvas": {
@@ -2901,6 +3502,7 @@
         "marchers": "隊員",
         "metronome": "節拍器",
         "mobile": "行動App",
+        "props": "道具",
         "music": "音樂",
         "renderFail": "側邊欄內容無法顯示",
         "settings": "表演設定"
@@ -2925,6 +3527,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "自動",
+            "autoDescribe": "{device, select, pencil {單指移動畫面。使用Apple Pencil，或長按後拖曳，可拉出選取框。} other {單指移動畫面。使用觸控筆，或長按後拖曳，可拉出選取框。}}",
+            "box": "框選",
+            "boxDescribe": "{device, select, pencil {單指或Apple Pencil拉出選取框來選取。雙指移動畫面。} other {單指或觸控筆拉出選取框來選取。雙指移動畫面。}}",
+            "button": "在空白場地上拖曳：{label}。{describe}點一下即可變更",
+            "lasso": "套索",
+            "lassoDescribe": "{device, select, pencil {單指或Apple Pencil圈住隊員即可選取。雙指移動畫面。} other {單指或觸控筆圈住隊員即可選取。雙指移動畫面。}}",
+            "menu": "在空白場地上拖曳",
+            "pan": "平移",
+            "panDescribe": "{device, select, pencil {單指或Apple Pencil移動畫面。} other {單指或觸控筆移動畫面。}}",
+            "prefix": "拖曳："
+        },
         "modifiers": {
             "add": "加選",
             "addHint": "加選：按住，或點一下保持開啟。點選隊員會將其加入選取範圍",
@@ -2933,11 +3548,13 @@
             "explain": {
                 "add": "點選隊員以加入或移除選取。",
                 "constrain": "間距相等、移動時鎖定單一軸向、切換等比例縮放。",
+                "dragMode": "單指或觸控筆在場地空白處的作用：移動畫面，或畫出選取框或套索。",
                 "fine": "隊員緩慢移動，不貼齊格線。形狀不貼齊半步，但仍會貼齊線條。旋轉以1度為單位。",
                 "fromCenter": "方陣從中心繪製及調整大小。",
                 "grip": "拖曳以移動。",
                 "help": "手勢。",
-                "snap": "開啟或關閉貼齊步數和線條。"
+                "snap": "開啟或關閉貼齊步數和線條。",
+                "subtract": "選取框或套索會將隊員從選取範圍中移除。"
             },
             "fine": "微調",
             "fineHint": "微調：按住，或點一下保持開啟。隊員緩慢移動、不貼齊格線；形狀不貼齊半步；旋轉以1度為單位",
@@ -2948,12 +3565,17 @@
             "help": "這些按鈕的作用",
             "helpList": {
                 "add": "<b>加選</b>點選即加入選取 · <b>關閉貼齊</b>自由移動",
+                "dragMode": "<b>拖曳</b>選擇單指在場地空白處的作用：移動畫面，或畫出選取框或套索",
                 "fine": "<b>微調</b>精確拖曳與旋轉 · <b>等距</b>間距相等",
                 "fromCenter": "<b>從中心</b>方陣從中間向外擴展",
                 "toggles": "<b>點一下</b>按鈕保持開啟，或在拖曳時<b>按住</b>"
             },
-            "noSnap": "關閉貼齊"
-        }
+            "noSnap": "關閉貼齊",
+            "subtract": "減選",
+            "subtractHint": "減選：按住，或點一下保持開啟。選取框或套索會將涵蓋的隊員從選取範圍中移除"
+        },
+        "redone": "已重做",
+        "undone": "已復原"
     },
     "shortcutsDialog": {
         "movement": {
@@ -2987,7 +3609,8 @@
             "select": "選取",
             "shape": "形狀",
             "timeline": "時間軸",
-            "ui": "顯示"
+            "ui": "顯示",
+            "field": "場地"
         }
     },
     "shortcut": {
@@ -3060,8 +3683,11 @@
             "title": "說明",
             "showShortcuts": "鍵盤快速鍵",
             "website": "網站",
-            "guides": "說明文件/指南"
+            "guides": "說明文件/指南",
+            "reportFeedback": "回報錯誤或傳送意見回饋…",
+            "viewMyReports": "檢視我的回報"
         },
+        "checkForUpdates": "檢查更新…",
         "withShortcut": "{label}（{shortcut}）"
     },
     "fileDialog": {
@@ -3079,6 +3705,13 @@
         },
         "openFailed": {
             "title": "載入資料庫時發生錯誤"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "無法新增提示點",
+            "delete": "無法刪除提示點",
+            "update": "無法變更提示點"
         }
     },
     "coordinates": {
@@ -3103,6 +3736,12 @@
             "onX": "{checkpoint}上",
             "onY": "{checkpoint}上",
             "outside": "{steps, plural, =0 {{checkpoint}外} other {{checkpoint}外#}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "中線",
+            "centerLineShort": "中線",
+            "frontEdge": "前緣",
+            "frontEdgeShort": "前緣"
         }
     },
     "activities": {
@@ -3120,9 +3759,651 @@
         "toFive": "{steps, number}步5碼",
         "undefined": "未定義"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "已在{where}新增速度變化",
+                "curve": "速度曲線",
+                "endsOn": "結束於{tempo}",
+                "endsOnThen": "結束於{tempo}，接著{next}",
+                "gradual": "漸進速度變化",
+                "held": "{where}延長{seconds} s",
+                "hold": "延長",
+                "holdDrill": "隊形停留",
+                "jump": "速度突變",
+                "measureNumber": "小節編號",
+                "movedChange": "已將速度變化移至{where}",
+                "rehearsalMark": "排練記號",
+                "removedChange": "已移除{where}的速度變化",
+                "tempo": "速度",
+                "timeSignature": "拍號"
+            },
+            "ask": {
+                "add": {
+                    "intro": "適用於此處音樂多出一個節拍，而拍卻沒算到的情況。錄音不會改變，只有拍會改變。",
+                    "keepMeasure": "{measure}在相同時間內有{count, plural, other {#拍}}（{tempo}）。",
+                    "manyKeep": "{moves, plural, other {跨越此處的#個動作保持各自的拍數}}；其隊員在每個動作結尾原地停留{count, plural, other {#拍}}。",
+                    "manyShift": "{moves, plural, other {跨越此處的#個動作各延長}}{count, plural, other {#拍}}。",
+                    "noMove": "此處沒有動作經過，因此隊員會原地停留。",
+                    "oneKeep": "{move}維持{moveCounts, plural, other {#拍}}，其隊員在結尾原地停留{count, plural, other {#拍}}。",
+                    "oneShift": "{move}從{from}延長為{to, plural, other {#拍}}。",
+                    "shift": "此處多出{count, plural, other {#拍}}的時間（{seconds} s）：之後的拍與隊形相對於音樂會延後這麼多，適用於原本偏早的情況。"
+                },
+                "addCountAfter": "在{where}之後新增一拍",
+                "addCountBefore": "在{where}之前新增一拍",
+                "addMeasureBefore": "在第{measure}小節之前新增一個小節（{count, plural, other {#拍}}）",
+                "addedCountAfter": "已在{where}之後新增一拍",
+                "addedCountBefore": "已在{where}之前新增一拍",
+                "addedMeasureBefore": "已在第{measure}小節之前新增一個小節（{count, plural, other {#拍}}）",
+                "breath": {
+                    "many": "{moves, plural, other {跨越此處的#個動作提早1拍結束}}；其隊員在那一拍原地停留。",
+                    "noCountAdded": "不會新增拍，音樂維持不變。",
+                    "none": "用於在音樂不變的情況下讓隊形喘口氣：此處沒有動作經過，無法提早結束。",
+                    "one": "{move}：動作{from} → {to, plural, other {#拍}}；隊員在{where}原地停留。"
+                },
+                "countsFewer": "{count, plural, other {減少#拍}}",
+                "countsMore": "{count, plural, other {增加#拍}}",
+                "hidden": {
+                    "fewer": "改為移除{where}",
+                    "fewerHint": "在關鍵影格與標記之間保留一拍。",
+                    "fixHint": "他們會在{move}結束前一拍到達定位，接著移除這些拍。復原一次即可同時還原兩者。",
+                    "fixTooShort": "他們的關鍵影格將只剩一拍長，無法再提早結束。",
+                    "marchersMore": "{names}及{count, plural, other {其他#位}}",
+                    "text": "他們的關鍵影格將與{move}在同一拍結束。兩個動作同時結束時以關鍵影格為準，因此他們永遠不會站上該定位。",
+                    "theMove": "其下方的動作",
+                    "title": "{marchers}將錯過{move}結尾的定位"
+                },
+                "laterCountsStay": "之後的拍維持對齊音樂：適用於原本就已對齊的情況。",
+                "noMoveHere": "此處沒有動作",
+                "pageCounts": "第{page}頁：{from} → {to, plural, other {#拍}}",
+                "pagesSentence": "{pages}。",
+                "remove": {
+                    "intro": "適用於此處音樂的節拍比拍少的情況。錄音不會改變，只有拍會改變。",
+                    "keep": "周圍的拍會填滿相同的時間（{where}：{from} → {to, plural, other {#拍}}，{tempo}）。",
+                    "manyKeep": "{moves, plural, other {跨越此處的#個動作會延後結束以保持拍數}}，前提是該處沒有東西擋住。",
+                    "manyShift": "{moves, plural, other {跨越此處的#個動作會縮短。}}",
+                    "marksGo": "{count, plural, other {排練記號{marks}將被移除：留在該處的小節保留自己的記號。}}",
+                    "noMove": "沒有動作經過此處。",
+                    "oneKeep": "{move}會延後{count, plural, other {#拍}}結束以保持{moveCounts, plural, other {#拍}}，前提是該處沒有東西擋住。",
+                    "oneShift": "{move}縮短{count, plural, other {#拍}}。",
+                    "shift": "其時間也一併移除：之後的拍與隊形相對於音樂會提前，適用於原本偏晚的情況。",
+                    "title": "移除{where}"
+                },
+                "removed": "已移除{where}"
+            },
+            "editor": {
+                "holdHint": "{where}延長的時間長度（秒）",
+                "markHint": "第{measure}小節的排練記號（留空即移除）",
+                "notATempo": "「{value}」不是速度：請輸入像120這樣的數字，或輸入120-90以漸進變化",
+                "renumberHint": "從第{measure}小節重新編號：之後的小節會從你輸入的數字接續編號。留空則恢復自動接續編號。",
+                "tempoFromToHint": "{from}到{to}的速度：「120」，或以「120-90」漸進變化",
+                "tempoOfHint": "{where}的速度：「120」，或以「120-90」漸進變化",
+                "tempoOutOfRange": "「{value}」超出範圍：速度須介於每分鐘20到400個節拍之間",
+                "wholeStretch": "改為整個區段{range}（目前♩{tempo}）"
+            },
+            "label": {
+                "beforeMark": "{where}，{mark}之前",
+                "count": "第{count}拍",
+                "measure": "第{measure}小節",
+                "measureCount": "第{measure}小節第{count}拍",
+                "measures": "第{from}–{to}小節",
+                "range": "{from}到{to}"
+            },
+            "lane": {
+                "clearSelection": "清除選取範圍",
+                "clearSelectionTitle": "清除選取範圍（{key}）",
+                "holdLabel": "延長{seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → 第{measure}小節",
+                "markTitle": "第{measure}小節的排練記號{mark}：拖曳可移至其他小節；按兩下可重新命名",
+                "renumberedTitle": "第{measure}小節：已手動重新編號；之後的小節從它接續編號。按右鍵或按兩下即可變更。",
+                "shortMeasureTitle": "第{measure}小節：較短的小節，{count, plural, other {#拍}}",
+                "tempoLabelTitle": "{range}：按一下以輸入速度",
+                "timeSignatureTitle": "拍號{meter}：按一下可變更從此處到下一個拍號之間的拍號"
+            },
+            "menu": {
+                "addChange": "在此新增速度變化",
+                "addCountAfter": "在之後新增一拍…",
+                "addCountBefore": "在之前新增一拍…",
+                "addMark": "新增排練記號…",
+                "addMeasureBefore": "在之前新增一個小節…",
+                "cancel": "取消",
+                "clearSelection": "清除選取範圍",
+                "countTitle": "第{measure}小節，第{count}拍",
+                "countTitleNoMeasure": "第{count}拍",
+                "editMark": "排練記號…",
+                "gradual": "漸進變化",
+                "gradualHint": "結束於其後的速度（{tempo}）；範圍外的延長維持不變",
+                "gradualNothingHint": "沒有可漸變的目標：其後的速度相同，或只有一拍",
+                "gradualTo": "漸進變化至{tempo}",
+                "holdLength": "延長長度…",
+                "holdSubtitle": "延長{seconds} s",
+                "makeHold": "設為延長（延長記號）",
+                "markMoveHere": "將{mark}從第{measure}小節移到這裡",
+                "markTaken": "{mark}已在第{measure}小節。要再用一次嗎？",
+                "markUseAgain": "在第{measure}小節再次使用{mark}",
+                "measureSubtitleMark": "{meter} · 記號{mark}",
+                "measureTitle": "第{measure}小節",
+                "notAHold": "不延長",
+                "removeChange": "移除此速度變化",
+                "removeCount": "移除這一拍…",
+                "removeCounts": "移除這些拍…",
+                "removeMeasure": "移除此小節…",
+                "renumber": "從這裡重新編號…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, other {#拍}}",
+                "setTempo": "設定速度…",
+                "timeSignature": "拍號…",
+                "toMeasure": "到第{measure}小節"
+            },
+            "meterMenu": {
+                "counted": "{meter}，以{grouping}計拍",
+                "fromSubtitle": "直到下一個拍號",
+                "fromTitle": "從第{measure}小節起",
+                "justThisMeasure": "僅此小節",
+                "justThisMeasureHint": "開啟：拍號僅適用於此小節；之後的小節保留各自的拍號，並隨之移動。關閉：拍號持續到下一個拍號為止，如同樂譜。",
+                "onlySubtitle": "之後的小節保留各自的拍號",
+                "onlyTitle": "僅第{measure}小節",
+                "other": "其他…（例如11/8 3+3+3+2）",
+                "otherHint": "拍號，以及以八分音符計拍的方式：「7/8 2+2+3」、「5/8 3+2」、「3/2」（以四分音符計拍）"
+            },
+            "move": {
+                "from": "從{where}開始的動作",
+                "its": "該頁的動作",
+                "page": "第{page}頁",
+                "pagesMove": "第{page}頁的動作"
+            },
+            "tip": {
+                "outlier": "{where}比相鄰的拍（{before}、{after}）{direction, select, faster {快} other {慢}}很多（{tempo}）：可能沒有對上音樂。對它按右鍵 >「設定速度…」即可修正；若音樂確實如此則可保留。"
+            },
+            "toast": {
+                "changedFirst": "{action}：未套用，因為表演剛剛才變更過。請再試一次。",
+                "failed": "{action}：{error}",
+                "holdInvalid": "延長是以秒為單位的長度，例如2.5",
+                "holdMade": "{where}已設為延長。對它按右鍵 >「延長長度…」即可設定持續多久。",
+                "markAlreadyThere": "第{measure}小節已有排練記號{mark}",
+                "markMoved": "已將{mark}從第{from}小節移至第{to}小節",
+                "meterSetFrom": "從{where}起為{meter}，每小節{count, plural, other {#拍}}；速度維持不變",
+                "meterSetOnly": "僅第{measure}小節為{meter}；速度維持不變",
+                "meterShiftNote": "之後的小節{direction, select, earlier {提前} other {延後}}{count, plural, other {#拍}}開始",
+                "meterShortNote": "下一個拍號之前的最後一個小節較短：{count, plural, other {#拍}}（標有*）",
+                "movesCouldNotKeep": "{count, plural, other {#個動作無法保持拍數，長度已改變}}",
+                "movesKept": "{count, plural, other {#個動作保持了拍數}}",
+                "movesKeptHold": "{kept, plural, other {跨越此處的#個動作保持了拍數：其隊員}}在結尾原地停留{count, plural, other {#拍}}",
+                "notATimeSignature": "「{text}」不是拍號：請試試7/8，或7/8 2+2+3（八分音符的分組）",
+                "notMeasureNumber": "「{value}」不是小節編號",
+                "tooFastOrSlow": "{action}：這會讓某一拍太快或太慢"
+            }
+        },
+        "button": {
+            "hint": "音樂檔案，以及讓拍與音樂對齊：速度、拍號、排練記號",
+            "hintOn": "讓拍與音樂對齊。按<escape></escape>或<toggle></toggle>即可離開。",
+            "label": "編輯音樂",
+            "labelOn": "正在編輯音樂",
+            "text": "編輯音樂"
+        },
+        "errors": {
+            "cantRemoveLastCount": "無法移除最後一拍",
+            "moveOneCountLong": "該動作只有一拍長",
+            "wouldHideSet": "這會讓關鍵影格與其下方的動作在同一拍結束，使該動作的定位被隱藏。請少移除幾拍，或讓關鍵影格提早一拍結束。",
+            "wouldRemovePage": "這會移除一頁。請少移除幾拍，或先刪除該頁。"
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "新增速度變化",
+                "text": "在速度軌上要變化的位置按兩下。按兩下變化的圓點即可移除。"
+            },
+            "dragChangeDot": {
+                "title": "移動速度變化",
+                "text": "上下拖曳其圓點可變更速度，左右拖曳可移動變化的位置。"
+            },
+            "dragEndDot": {
+                "title": "設定漸慢（rit.）的結束位置",
+                "text": "拖曳區段結尾的方形點，讓下一個速度可以跳回原速（a tempo）。"
+            },
+            "dragLine": {
+                "title": "設定速度",
+                "text": "上下拖曳速度線。若要輸入速度，請按右鍵並選擇「設定速度…」"
+            },
+            "dragMeasures": {
+                "title": "選取拍",
+                "text": "沿著小節或音樂拖曳，即可一次編輯全部。"
+            },
+            "dragRoundHandle": {
+                "title": "漸進變更速度",
+                "text": "拖曳區段中間的圓形控點。按兩下可恢復為突變。"
+            },
+            "keys": {
+                "escape": "清除選取範圍，或取消拖曳；沒有可清除的項目時，停止編輯音樂",
+                "play": "從播放指示器開始播放，或停在目前位置",
+                "tap": "點按速度：跟著每個節拍點按，看看速度有多快",
+                "toggle": "開始或停止編輯音樂",
+                "metronome": "開啟或關閉節拍器"
+            },
+            "label": "編輯音樂的運作方式",
+            "rightClick": {
+                "title": "延長與拍",
+                "text": "對某一拍按右鍵，可將其設為延長、漸進變更速度，或新增及移除拍。"
+            },
+            "rightClickMeasure": {
+                "title": "小節與排練記號",
+                "text": "對小節按右鍵，可重新編號、設定拍號或新增記號。拖曳記號即可移動。"
+            },
+            "title": "讓拍與音樂對齊",
+            "musicFile": {
+                "title": "更換音樂",
+                "text": "按一下標題列中的檔案名稱，可切換、匯入或刪除音訊，或設定音樂偏移。"
+            }
+        },
+        "importScore": {
+            "choose": "選擇檔案…",
+            "keeps": "頁、隊形、提示點和道具會留在原本的拍上，因此會依樂譜的速度播放。復原即可全部還原。",
+            "replaces": "樂譜的速度、拍號、小節和排練記號會取代表演原有的設定，包括你在這裡所做的變更。",
+            "title": "要使用樂譜的時間設定嗎？"
+        },
+        "lanes": {
+            "marks": {
+                "name": "記號",
+                "title": "排練記號：按兩下可命名，或將記號拖曳到其他小節"
+            },
+            "measures": {
+                "name": "小節",
+                "title": "小節：沿著拖曳可選取拍，對編號按右鍵或按兩下可從該處重新編號，按一下拍號可變更"
+            },
+            "music": {
+                "name": "音樂",
+                "title": "音樂：沿著拖曳可選取拍，按一下可移動播放指示器，或對某處按右鍵讓音樂從該處開始（對應第1拍）"
+            },
+            "tempo": {
+                "name": "速度",
+                "title": "速度：上下拖曳速度線；拖曳圓點可移動速度變化，拖曳圓形控點可漸進變化。按兩下可新增變化；按右鍵 >「設定速度…」可輸入速度。從線外開始拖曳可選取拍"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "取消",
+                    "fix": "讓關鍵影格提早一拍結束，再移除"
+                },
+                "footer": "按一下即可執行。<enter></enter>執行標示的選項，也就是你上次的選擇；<escape></escape>取消，復原則可還原任何一項。",
+                "hold": "改為讓隊形在此停留",
+                "holdIntro": "音樂沒有多出節拍，但隊員在這裡需要喘口氣嗎？",
+                "keep": "其他一切保持原位",
+                "shift": "移動之後的所有內容"
+            },
+            "measureGlyph": "{number}節"
+        },
+        "tap": {
+            "average": "平均{bpm} · 2 s後重新開始",
+            "count": "{count, plural, other {點按#次}}",
+            "hint": "跟著音樂點按，找出大致的速度",
+            "instructions": "在每個節拍按<key></key>或按鈕",
+            "name": "點按速度",
+            "reset": "重設",
+            "selectFirst": "請先選取一些拍",
+            "setTarget": "將{target}設為♩{bpm}",
+            "tap": "點按",
+            "use": "套用",
+            "useBpm": "套用♩{bpm}",
+            "useBpmOn": "套用♩{bpm}<muted>至{target}</muted>",
+            "useHint": "在選取的拍上套用穩定的速度，否則套用至播放指示器所在的速度區段",
+            "useOn": "套用<muted>至{target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "從播放指示器開始播放",
+            "playLoop": "循環播放{measures}",
+            "stopHere": "停在這裡"
+        },
+        "toolbar": {
+            "done": "完成",
+            "doneLabel": "完成：停止編輯音樂",
+            "metronome": "節拍器",
+            "metronomeHint": "每一拍發出一聲提示音，用來聽出拍是否對上音樂",
+            "metronomeOff": "節拍器：關",
+            "metronomeOn": "節拍器：開",
+            "title": "正在編輯音樂"
+        },
+        "import": {
+            "button": "匯入",
+            "hint": "匯入音樂檔案，或樂譜的速度、拍號、小節和排練記號",
+            "audio": "音訊檔案…",
+            "score": "MusicXML樂譜…"
+        },
+        "music": {
+            "add": "新增音樂…",
+            "menuLabel": "音樂檔案",
+            "pick": "選擇音樂",
+            "importAnother": "匯入其他音訊檔案…",
+            "delete": "刪除此音訊檔案…",
+            "offset": "音樂偏移…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "音樂偏移",
+            "offsetHelp": "音樂在第1拍之後幾秒開始。負值會從音樂中途開始。",
+            "offsetSet": "設定",
+            "seconds": "秒"
+        }
+    },
     "workspace": {
         "label": "工作區",
         "editor": "編輯器",
         "preview": "預覽"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "輔助打擊架",
+            "bongos": "邦哥鼓",
+            "chimes": "管鐘",
+            "concertBassDrum": "音樂會大鼓",
+            "congas": "康加鼓",
+            "drumSet": "爵士鼓",
+            "glockenspiel": "鐘琴",
+            "gong": "鑼",
+            "marimba": "馬林巴木琴",
+            "mixer": "混音器",
+            "podium": "指揮台",
+            "speaker": "喇叭",
+            "synth": "合成器",
+            "timpani": "定音鼓",
+            "trapTable": "小樂器桌",
+            "vibraphone": "鐵琴",
+            "xylophone": "木琴",
+            "podiumStand": "指揮踏台",
+            "podiumTower": "指揮塔",
+            "rollingPodium": "移動式指揮台",
+            "stepladder": "摺疊梯",
+            "scaffold": "鷹架塔"
+        },
+        "variant": {
+            "accessories": "配件",
+            "cage": "籠式鼓架",
+            "covered": "有蓋",
+            "double": "雙鍵盤",
+            "gold": "金色",
+            "inches": "{size} 吋",
+            "keys": "{size} 鍵",
+            "low": "低",
+            "mixed": "混合",
+            "octaves": "{size} 個八度",
+            "open": "無蓋",
+            "plain": "標準",
+            "rosewood": "玫瑰木",
+            "silver": "銀色",
+            "single": "單鍵盤",
+            "square": "方形",
+            "syntheticBlack": "黑色合成材質",
+            "tall": "高",
+            "toms": "筒鼓",
+            "wide": "寬",
+            "aluminum": "鋁製",
+            "black": "黑色",
+            "feet": "{size} 呎"
+        }
+    },
+    "feedback": {
+        "window.title": "回報錯誤或傳送意見回饋",
+        "signIn.heading": "登入以傳送回報",
+        "signIn.why": "這樣你就能追蹤自己的回報，我們也能告知你後續的處理情況。",
+        "signIn.button": "登入",
+        "signIn.alternatives": "不想登入嗎？可以<github>在 GitHub 上回報</github>，或<discord>到 Discord 詢問</discord>。",
+        "sent.heading": "感謝你的回報",
+        "sent.body": "我們已將副本寄到你的電子郵件信箱。如果這則回報成為 GitHub issue，我們會把連結寄給你，方便你追蹤。",
+        "sent.another": "再傳送一則",
+        "viewMyReports": "檢視我的回報",
+        "type.label": "這是關於什麼？",
+        "type.broken": "有東西故障了",
+        "type.broken.hint": "錯誤、當機，或運作不正常的地方",
+        "type.feature": "功能建議",
+        "type.feature.hint": "你希望OpenMarch能做到的事",
+        "type.feedback": "一般意見",
+        "type.feedback.hint": "其他想告訴我們的事",
+        "title.label": "摘要",
+        "title.placeholder": "用一句話說明這是關於什麼",
+        "question.whatWentWrong": "出了什麼問題？",
+        "question.whatWentWrong.placeholder": "描述發生了什麼事",
+        "question.expected": "你原本預期會發生什麼？",
+        "question.expected.placeholder": "描述原本應該發生的事",
+        "question.steps": "我們要怎麼讓它再次發生？",
+        "question.steps.placeholder": "1. 開啟表演\n2. …",
+        "question.feature": "你希望OpenMarch能做什麼？",
+        "question.feature.placeholder": "描述這項功能，以及你會用它來做什麼",
+        "question.ideas": "關於運作方式的想法",
+        "question.ideas.placeholder": "草圖、其他 App 的例子，任何有幫助的內容",
+        "question.feedback": "你想告訴我們什麼？",
+        "question.feedback.placeholder": "你的意見",
+        "optional": "（選填）",
+        "attach.label": "附件",
+        "attach.showFile": "傳送我的表演副本",
+        "attach.showFile.scrubbed": "會先移除表演者姓名與備註。",
+        "attach.music": "包含音樂",
+        "attach.noShow": "開啟表演，即可隨回報傳送其副本。",
+        "attach.diagnostics": "App 最近的操作與錯誤紀錄也會一併傳送，協助我們找出問題。",
+        "record.start": "錄製畫面",
+        "record.microphone": "含麥克風",
+        "record.hint": "只會錄製OpenMarch視窗，最長 5 分鐘。錄製時回報表單會先收起：請一邊示範問題，一邊口頭說明。",
+        "record.recording": "錄製中 {time}",
+        "record.stop": "停止",
+        "record.done": "錄影已就緒（{time}）",
+        "record.discard": "捨棄",
+        "record.failed.denied": "錄製未能開始。請在系統設定中確認已允許OpenMarch使用螢幕與麥克風。",
+        "record.failed.unsupported": "這台電腦無法使用錄製功能。",
+        "public.label": "我們可能公開的內容",
+        "public.notice": "回報內容可能會摘要成公開的 GitHub issue。除非你在下方同意，否則我們絕不會張貼你的姓名、電子郵件或檔案。",
+        "public.video": "我的錄影可以公開張貼",
+        "public.showFile": "我的表演檔案可以公開張貼",
+        "public.credit": "若這則回報成為公開 issue，請列出我的名字",
+        "send": "傳送回報",
+        "sending": "傳送中…",
+        "retention": "隨回報傳送的檔案會在 2 個月後從我們的伺服器刪除。",
+        "error.failed": "無法傳送你的回報。請檢查網路連線後再試一次。",
+        "attach.music.off": "不會傳送音樂。",
+        "attach.music.on": "音樂也會一併傳送。",
+        "sending.recording": "正在上傳錄影…",
+        "sending.show_file": "正在上傳你的表演…",
+        "sending.diagnostics": "正在上傳診斷資料…",
+        "sending.creating": "傳送中…",
+        "sent.view": "檢視這則回報",
+        "error.signedOut": "你已被登出。請重新登入後再傳送回報。",
+        "error.tooMany": "你今天已傳送許多回報，請明天再試。",
+        "error.showChanged": "現在開啟的是另一個表演。請檢查附件後再傳送一次。",
+        "sent.showTooLarge": "你的表演太大（超過 1 GB）而無法附加，因此回報已在未附上表演的情況下送出。",
+        "close": "關閉",
+        "record.stopAndReturn": "停止並返回回報",
+        "record.webHint": "瀏覽器會詢問要分享什麼：請選擇這個分頁。錄製時回報表單會先收起，最長可錄 5 分鐘。請一邊示範問題，一邊口頭說明。",
+        "record.failed.webDenied": "錄製未能開始。瀏覽器詢問時請選擇這個分頁；如果你開啟了麥克風，也請允許使用麥克風。",
+        "record.failed.webUnsupported": "此瀏覽器無法使用錄製功能。",
+        "drawer.show": "顯示回報",
+        "drawer.hide": "隱藏回報",
+        "drawer.resize": "調整回報面板大小",
+        "discard.question": "要捨棄這則回報嗎？",
+        "discard.body": "你寫下和錄製的內容都會遺失。",
+        "discard.confirm": "捨棄",
+        "discard.keep": "繼續編輯",
+        "record.preview": "你的錄影",
+        "error.details": "詳細資訊：{message}",
+        "error.refused": "無法傳送你的回報。請再試一次；如果持續發生，請到 Discord 告訴我們。",
+        "record.failed.microphone": "OpenMarch未獲准使用麥克風。請關閉「含麥克風」以錄製無聲畫面，或在系統設定中允許使用麥克風。",
+        "record.failed.webMicrophone": "瀏覽器未允許使用麥克風。請關閉「含麥克風」以錄製無聲畫面，或允許此網站使用麥克風。"
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "最左與最右的 X 參考線與中央的距離已不再相同",
+            "centerLocked": "兩側一起編輯時，中線會維持在中央",
+            "duplicatePosition": "該位置已有 {axis} 參考線",
+            "invalid": "這項場地變更無效",
+            "invalidStepSize": "步幅必須大於 0",
+            "mirrorIgnored": "只有 X 參考線會鏡像",
+            "noGap": "沒有兩條 {axis} 參考線之間的空隙可供加入。請改為指定位置。",
+            "notFound": "該參考線已不存在",
+            "skippedExisting": "已略過已有參考線的位置",
+            "tooMany": "這樣會加入太多參考線。請使用較大的間距。",
+            "yInFront": "Y 參考線不能位於場地前緣之前。請使用 0 或負的步數。",
+            "mirrorTwinSkipped": "另一側該位置已有參考線，因此只加入了這一條",
+            "outsideField": "已略過超出場地最外側參考線的位置，因此場地大小維持不變",
+            "fieldResized": "場地的大小或中心已變更。隊員會留在原位，請對照線條檢查其位置。",
+            "fieldResizeRefused": "這樣會變更場地的大小或中心，因此未做任何變更"
+        },
+        "nothingAdded": "每個位置都已有參考線",
+        "seriesAdded": "{count, plural, other {已加入 # 條 {axis} 參考線}}",
+        "names": {
+            "yardLine": "{yards} 碼線",
+            "endZone": "端區",
+            "endZoneShort": "EZ",
+            "endZoneLine": "端區 {yards}",
+            "endZoneLineShort": "EZ{yards}",
+            "gridLine": "{line} 線",
+            "sideSteps": "{side} 距中央 {steps} 步",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "距前緣 {steps} 步",
+            "stepsFromFrontShort": "F{steps}"
+        },
+        "failed": "無法儲存場地變更，因此未做任何變更。"
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "場地",
+            "done": "完成",
+            "discard": "捨棄變更",
+            "discardTip": "將場地還原為你開啟此面板時的狀態。復原可以把變更找回來。",
+            "discarded": "已捨棄場地變更。復原可以把它們找回來。",
+            "custom": "自訂場地",
+            "changes": "{count, plural, =0 {與範本沒有差異} other {與範本有 # 處差異}}",
+            "selectMany": "多選",
+            "mirror": "兩側鏡像",
+            "mirrorOnTip": "兩側鏡像已開啟：編輯 50 碼線一側時，也會編輯另一側對應的線",
+            "mirrorOffTip": "兩側鏡像已關閉：每條線各自編輯",
+            "sections": {
+                "size": "大小與步幅",
+                "template": "範本",
+                "names": "名稱與兩側",
+                "markings": "標線與標籤",
+                "image": "背景圖片",
+                "colors": "顏色"
+            },
+            "tabs": {
+                "setup": "設定",
+                "lines": "線條",
+                "appearance": "外觀"
+            }
+        },
+        "ruler": {
+            "x": "從這條尺規向外拖曳即可加入 X 線",
+            "y": "從這條尺規向外拖曳即可加入 Y 線"
+        },
+        "readout": {
+            "newLine": "新線條：",
+            "fromCenter": "{side} · {steps} 步",
+            "center": "位於中央",
+            "behindFront": "前緣後方 {steps} 步",
+            "toLine": "距 {line} {steps} 步",
+            "mirrored": "另一側對應的線也一樣",
+            "releaseToDelete": "{count, plural, other {放開即可刪除這 # 條線}}",
+            "dragOut": "拖到場地上即可加入線條"
+        },
+        "popover": {
+            "position": "位置",
+            "side": "側別",
+            "stepsFromCenter": "距中央的步數",
+            "stepsBehindFront": "前緣後方的步數",
+            "yardLine": "= {yard} 碼線",
+            "typeHint": "可輸入 24、+4 或 85.33/2",
+            "typeHintYards": "可輸入 24、+4、47.5yd 或 85.33/2",
+            "shortName": "簡稱",
+            "shortNameHint": "顯示在場地邊緣與座標中，例如 45 或 FH",
+            "name": "名稱",
+            "nameHint": "用於以文字寫出的座標，以及選擇 3D 檢視的場館",
+            "yardNumber": "碼數",
+            "yardNumberHint": "漆在場地上這條線位置的數字（如果有）",
+            "none": "無",
+            "visible": "顯示",
+            "mirrored": "與 {twin} 鏡像：編輯會套用到兩者",
+            "delete": "刪除"
+        },
+        "numberPad": {
+            "label": "數字鍵盤",
+            "back": "刪除最後一個字元",
+            "clear": "清除",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "這些線條已經使用其位置對應的名稱",
+        "list": {
+            "xHeading": "X · 左右方向",
+            "yHeading": "Y · 前後方向",
+            "center": "中央",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "向後 {steps}",
+            "drawAsHashes": "以 Hash 標記繪製",
+            "asymmetric": "最外側的兩條 X 線與中央的距離不同，因此場地會偏離中央繪製。請移動其中一條，直到兩側一致。",
+            "hidden": "已隱藏",
+            "reference": "座標基準"
+        },
+        "size": {
+            "width": "寬度",
+            "depth": "縱深",
+            "steps": "步",
+            "stepsTo5": "5 碼 {steps} 步",
+            "extent": "{steps} 步 · {length}"
+        },
+        "names": {
+            "fieldNameHint": "3D 檢視會依此名稱選擇場館"
+        },
+        "markings": {
+            "edgeLabels": "邊緣標籤",
+            "yardNumbers": "碼數",
+            "yardNumbersHint": "從前緣到漆上數字各邊緣的步數。清除主場側的數字即可完全不繪製。",
+            "homeBottom": "主場側，下緣",
+            "homeTop": "主場側，上緣",
+            "awayTop": "客場側，上緣",
+            "awayBottom": "客場側，下緣"
+        },
+        "image": {
+            "remove": "移除圖片",
+            "ratios": "場地比例 {field} · 圖片比例 {image}"
+        },
+        "colors": {
+            "field": "場地",
+            "marchers": "隊員與路徑",
+            "shapes": {
+                "circle": "圓形",
+                "square": "方形",
+                "triangle": "三角形",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "要切換為「{template}」嗎？",
+            "lines": "線條：新增 {added} 條、移除 {removed} 條、重新命名或變更 {renamed} 條",
+            "size": "大小：{before} → {after} 步",
+            "keepLook": "保留我的外觀（顏色、標籤、圖片、兩側名稱）",
+            "undoNote": "復原時只需一步。",
+            "cancel": "取消",
+            "apply": "切換",
+            "resetTitle": "要重設為「{template}」嗎？",
+            "resetApply": "重設",
+            "basedOn": "依據範本",
+            "resetShort": "重設為範本"
+        },
+        "fieldPane": "場地線條",
+        "help": {
+            "button": "鍵盤",
+            "title": "鍵盤",
+            "route": "鍵盤焦點在場地上時，<tab></tab>會選取下一條線。<pane></pane>可在場地與「場地」面板之間切換。"
+        },
+        "lines": {
+            "pickedMany": "已選取 {count} 條線",
+            "axis": "要顯示哪些線條",
+            "xTab": "左右方向 · {count}",
+            "yTab": "前後方向 · {count}",
+            "canvasHint": "按一下線條即可選取 · 從尺規拖出即可新增 · <keys></keys>完成",
+            "canvasHintPicked": "拖曳已選取的線條即可移動 · <keys></keys>取消選取"
+        },
+        "line": {
+            "title": "線條",
+            "noneHint": "在場地上或清單中選取一條線。按住 Shift 再按一下可多選。從尺規拖出即可新增。",
+            "reference": "作為座標基準",
+            "mixed": "混合",
+            "add": "新增線條",
+            "everyOther": "每隔一條保留"
+        }
     }
 }
