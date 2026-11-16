@@ -2726,6 +2726,7 @@
                 "groupSplit": "Can't split a group path, or a detached copy of one, yet: remove the path first",
                 "notOnGroupPath": "{marcher} doesn't follow a group path here",
                 "onlyOnPath": "{marcher} is the only marcher on its path here, so there's no group to detach from",
+                "copiesApart": "These marchers' paths aren't the same any more, so they can't be edited as one. Edit each one's path on its own",
                 "rejoinOntoCopy": "That path is a detached copy, not a group path: rejoin the group path it came from instead",
                 "noGroupPath": "{move} has no group path to rejoin",
                 "alreadyOnGroupPath": "Those marchers already follow the group path",
@@ -3916,7 +3917,8 @@
             "reversed": "{marcher} leads now",
             "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}",
             "groupEnded": "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}",
-            "savedSeparate": "Saved as {count} separate paths. Group the marchers to keep them linked."
+            "savedSeparate": "Saved as {count} separate paths. Group the marchers to keep them linked.",
+            "keptLive": "Kept as one group path: {names} share a spot, so they can't each have their own"
         },
         "rings": {
             "group": "Follows the group path",

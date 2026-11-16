@@ -142,8 +142,11 @@ questions:
 
 - A group path drawn for hand-picked marchers before this build stays one until you edit
   it; that first edit saves it as their own paths (with the toast). Marchers you make into
-  a shape after their paths were saved separately show **Path · N** until you edit their
-  line; that edit links them as the shape's **Group path**.
+  a shape after their paths were saved separately still show **Path · N**, and editing that
+  line keeps them separate. To link them, draw their path again with the shape selected (P):
+  a new drawing for exactly a shape's marchers is the shape's **Group path**.
+- If some of the marchers share a spot (they take turns on one place), their path can't be
+  split into copies, so it stays one group path, and a toast says who shares.
 - **Own path** is still the word for one marcher's own drawn path (P with one marcher
   selected). Drawing over a detached copy with P from that marcher alone draws a new path
   of its own, as before.

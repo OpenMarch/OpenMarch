@@ -91,6 +91,11 @@ export const routeRefusal = {
     /** AP-R9: Detach for a marcher whose spot is the only one on its path (a copy, or the last) */
     onlyOnPath: (marcher: string) =>
         text.t("timeline.refusals.route.onlyOnPath", { marcher }),
+    /**
+     * Interaction round 7: an edit of a loose path whose marchers' copies no longer match (one was
+     * edited alone since it was shown), so there's no one path to edit for them all
+     */
+    copiesApart: () => text.t("timeline.refusals.route.copiesApart"),
     /** AP-R10: Rejoin onto a Detached copy (its marcher rejoins the group path it came from) */
     rejoinOntoCopy: () => text.t("timeline.refusals.route.rejoinOntoCopy"),
     /** AP-R10 (step 15): Rejoin with no group path in the move */

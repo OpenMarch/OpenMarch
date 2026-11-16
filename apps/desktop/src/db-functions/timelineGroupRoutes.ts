@@ -577,17 +577,28 @@ export async function detachInTransaction({
     tx,
     timelineId,
     marcherIds,
+    routeId,
 }: {
     tx: DbTransaction;
     timelineId: number;
     marcherIds: readonly number[];
+    /**
+     * Detach from this group path: each marcher's row whose lane is on it (a marcher may have
+     * laned rows in two transitions of the move). Absent: the earliest laned row, as the Detach
+     * command has it.
+     */
+    routeId?: number;
 }): Promise<{ routes: Record<number, number> }> {
     const ids = [...new Set(marcherIds)].sort((a, b) => a - b);
     if (ids.length === 0) refuse("name the marchers to detach");
     const plan: { lane: DatabaseTimelineLane; marcherId: number }[] = [];
     const geometries = new Map<number, string>();
     for (const marcherId of ids) {
-        const found = (await groupLanedRows(tx, timelineId, marcherId))[0];
+        const rows = await groupLanedRows(tx, timelineId, marcherId);
+        const found =
+            routeId === undefined
+                ? rows[0]
+                : rows.find((r) => r.lane.route_id === routeId);
         if (!found)
             refuse(
                 routeRefusal.notOnGroupPath(await marcherName(tx, marcherId)),

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { db } from "@/global/database/db";
 import { toast } from "sonner";
+import { joinList } from "@/timeline/translateTimelineText";
 import {
     drawRoute,
     removeRoute,
@@ -38,9 +39,9 @@ import {
 } from "@/db-functions/timelineGroupRoutes";
 import {
     writeGroupPath,
+    type GroupEdit,
     type GroupWrite,
 } from "@/db-functions/timelineLoosePaths";
-import type { DbTransaction } from "@/db-functions/types";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { runAction } from "@/shortcuts/registry";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
@@ -1409,26 +1410,60 @@ function formsShape(target: PathTarget): boolean {
 }
 
 /**
- * A write on the session's group path (round 7): one undo step that edits it and, unless its
- * marchers are a placed shape, leaves each on its own copy (`writeGroupPath`). The first time a
- * path is saved that way, a toast says so and how to keep the marchers linked.
+ * Whether a write on `target` keeps it one live group path (review of #900): a loose path's edits
+ * (point edits, Re-fit, acknowledge) stay loose even when its marchers have since become a placed
+ * shape, so nothing re-links them silently; only a new drawing (`fresh`: drawn again, or the pen
+ * with the marchers selected) on exactly a placed shape's members makes a live group path, the
+ * way back to linking for marchers grouped later. Any other group path stays live only while its
+ * marchers are a placed shape (round 7).
+ */
+export const keepsLiveFor = (
+    loose: boolean,
+    fresh: boolean,
+    isShape: () => boolean,
+): boolean => (loose && !fresh ? false : isShape());
+
+const keepsLive = (target: PathTarget, fresh: boolean): boolean =>
+    keepsLiveFor(!!target.group?.loose, fresh, () => formsShape(target));
+
+/** Each member's transition on the path shown, so a write takes the lane meant (review of #900) */
+const transitionsOf = (target: PathTarget): Record<number, number> =>
+    Object.fromEntries(
+        target.group!.members.map((m) => [m.marcherId, m.transitionId]),
+    );
+
+/**
+ * A write on the session's group path (round 7): one undo step that edits it and, unless it keeps
+ * one live group path (`keepsLive`), leaves each marcher on its own copy (`writeGroupPath`). The
+ * first time a path is saved that way, a toast says so and how to keep the marchers linked; when
+ * marchers sharing a spot keep it live, a toast names them.
  */
 async function groupWrite<R>(
     target: PathTarget,
     name: string,
-    edit: (tx: DbTransaction, routeId: number | null) => Promise<R>,
-    keepLive = formsShape(target),
+    edit: GroupEdit<R>,
+    keepLive = keepsLive(target, !!edit.draw),
 ): Promise<GroupWrite<R>> {
     const marcherIds = target.group!.members.map((m) => m.marcherId);
-    const done = await writeGroupPath({
+    const done = await writeGroupPath<R>({
         db,
         name,
         timelineId: target.timelineId,
         marcherIds,
         keepLive,
-        edit,
+        transitions: transitionsOf(target),
+        ...edit,
     });
-    if (done.baked && !done.fromCopies)
+    if (done.shared.length > 0)
+        toast.info(
+            tolgee.t(
+                "pathways.toasts.keptLive",
+                "Kept as one group path: {names} share a spot, so they can't each have their own",
+                { names: joinList(done.shared) },
+            ),
+            { id: "path-kept-live" },
+        );
+    else if (done.baked && !done.fromCopies)
         toast.info(
             tolgee.t(
                 "pathways.toasts.savedSeparate",
@@ -1458,41 +1493,49 @@ async function saveGroupPath(
     const { target } = session;
     const routeId = target.routeId;
     if (session.phase === "open" && routeId !== null) {
-        const { result } = await groupWrite(
-            target,
-            "editPathPoints",
-            (tx, rid) =>
+        const { result } = await groupWrite(target, "editPathPoints", {
+            edit: (tx, rid) =>
                 editPathPointsInTransaction({
                     tx,
-                    routeId: rid ?? routeId,
+                    routeId: rid,
                     points: stored,
                     drag,
                     toBulge,
                 }),
-        );
+        });
         reportRehome(result);
         return;
     }
     if (session.byRoute && routeId !== null) {
-        const { result } = await groupWrite(target, "redrawPath", (tx, rid) =>
-            redrawPathInTransaction({
-                tx,
-                routeId: rid ?? routeId,
-                points: stored,
-            }),
+        // Drawn again: a fresh drawing, live when its marchers are exactly a placed shape
+        const { result } = await groupWrite(
+            target,
+            "redrawPath",
+            {
+                edit: (tx, rid) =>
+                    redrawPathInTransaction({
+                        tx,
+                        routeId: rid,
+                        points: stored,
+                    }),
+            },
+            keepsLive(target, true),
         );
         reportRehome(result);
         return;
     }
     const marcherIds = target.group!.members.map((m) => m.marcherId);
-    const { result: drawn } = await groupWrite(target, "drawGroupRoute", (tx) =>
-        drawGroupRouteInTransaction({
-            tx,
-            timelineId: target.timelineId,
-            marcherIds,
-            points: stored,
-        }),
-    );
+    const { result: drawn } = await groupWrite(target, "drawGroupRoute", {
+        draw: true,
+        edit: (tx) =>
+            drawGroupRouteInTransaction({
+                tx,
+                timelineId: target.timelineId,
+                marcherIds,
+                points: stored,
+            }),
+        routeOf: (r) => r.routeId,
+    });
     reportRehome(drawn.rehome);
     reportAdjustsRemoved(drawn.adjustsRemoved);
 }
@@ -1930,12 +1973,10 @@ export async function refitOpenPath(): Promise<void> {
             reportRehome(
                 isGroupWrite(target)
                     ? (
-                          await groupWrite(target, "refitPath", (tx, rid) =>
-                              refitPathInTransaction({
-                                  tx,
-                                  routeId: rid ?? routeId,
-                              }),
-                          )
+                          await groupWrite(target, "refitPath", {
+                              edit: (tx, rid) =>
+                                  refitPathInTransaction({ tx, routeId: rid }),
+                          })
                       ).result
                     : await refitRoute({ db, routeId }),
             ),
@@ -1949,12 +1990,10 @@ export async function acknowledgeOpenPath(): Promise<void> {
     if (!target || routeId === null) return;
     await adjustWrite(adjustFallback, async () => {
         if (isGroupWrite(target))
-            await groupWrite(target, "acknowledgeRehomed", (tx, rid) =>
-                acknowledgeRehomedInTransaction({
-                    tx,
-                    routeId: rid ?? routeId,
-                }),
-            );
+            await groupWrite(target, "acknowledgeRehomed", {
+                edit: (tx, rid) =>
+                    acknowledgeRehomedInTransaction({ tx, routeId: rid }),
+            });
         else await acknowledgeRehomed({ db, routeId });
     });
 }
@@ -1998,11 +2037,11 @@ export async function removePath(): Promise<void> {
                   await groupWrite(
                       target,
                       "removeRoute",
-                      (tx, rid) =>
-                          removeRouteInTransaction({
-                              tx,
-                              routeId: rid ?? routeId,
-                          }),
+                      {
+                          edit: (tx, rid) =>
+                              removeRouteInTransaction({ tx, routeId: rid }),
+                      },
+                      // The route goes: nothing is left to link or Detach
                       true,
                   )
               ).result
