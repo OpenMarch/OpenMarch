@@ -479,12 +479,14 @@ describeDbTests("Group paths (AP-R8 to AP-R10)", (it) => {
         // Rejoin with the group path unedited: bit for bit as before Detach; the copy and its
         // link go
         const before2 = await dataOf(db);
-        await rejoinGroupPath({
+        const unchanged = await rejoinGroupPath({
             db,
             timelineId: timeline.id,
             routeId: drawn.routeId,
             marcherIds: [m],
         });
+        // An unchanged copy loses nothing (sim round 3's Rejoin toast says so)
+        expect(unchanged.dropped).toEqual([]);
         expect(await laneOf(db, m, timeline.id)).toEqual(laneBefore);
         expect(positions(await resolverOf(db), 30)).toEqual(onGroup);
         expect(await readRoutes(db)).toHaveLength(4);
@@ -523,13 +525,15 @@ describeDbTests("Group paths (AP-R8 to AP-R10)", (it) => {
             else expect(row).toEqual(afterGroupEdit[i]);
         });
         // Rejoin after both edits: back on the group path, its offset written against the group
-        // path's `from` now (the first point's edit rewrote it, B1)
-        await rejoinGroupPath({
+        // path's `from` now (the first point's edit rewrote it, B1). Its copy's shape goes, and
+        // Rejoin says so
+        const edited = await rejoinGroupPath({
             db,
             timelineId: timeline.id,
             routeId: drawn.routeId,
             marcherIds: [m],
         });
+        expect(edited.dropped).toEqual([m]);
         const A = r0.positionAt(m, 9);
         const from = (await routeOf(db, drawn.routeId)).from;
         expect(await laneOf(db, m, timeline.id)).toEqual({

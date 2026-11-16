@@ -52,6 +52,8 @@ import type { XY } from "@/shapes/types";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { refitNeeded } from "./pathTarget";
 import { useShapeToolStore } from "@/shapes/tool/shapeToolStore";
+import { selectOnField } from "@/shapes/placed/boxSelection";
+import { setInsideBox } from "@/shapes/placed/boxSelectionStore";
 import { OffCountWarning, TrailCornerCounts } from "./TrailCornerCounts";
 import { offCountTally, trailCornersOf } from "./trailCorners";
 import {
@@ -136,9 +138,14 @@ export function PathEditor({
     // Edit group path, or the whole group selected (round 4): its line is named, so it reads as
     // the line the whole group follows, not as one more marcher's path
     const view = groupViewOf(session, ownable);
+    // With some of its marchers picked (sim round 3), the label is how to pick the whole group again
     const groupLabel =
-        view === "edit" || (view === "whole" && !hidden) ? (
-            <GroupPathLabel session={session} />
+        view === "edit" ||
+        ((view === "whole" || view === "selected") && !hidden) ? (
+            <GroupPathLabel
+                session={session}
+                picksGroup={view === "selected" && !isLoose(session)}
+            />
         ) : null;
     // A quiet path (closed, interaction system rule 4) has the compact bar: Edit path, the member
     // commands and Remove path, so they're found without its menu. A trail keeps its leader's
@@ -228,37 +235,75 @@ function TrailLeaderMark({ session }: { session: PathSession }) {
 }
 
 /**
- * The group path's name by its line while it's edited (interaction round 2): "Group path · 16",
- * over the line's highest point, so the line reads as the middle the members' lanes follow, not as
- * one more marcher's path. It takes no presses.
+ * The group path's name by its line (interaction round 2): "Group path · 16", over the line's
+ * highest point, so the line reads as the middle the members' lanes follow, not as one more
+ * marcher's path. With only some of its marchers picked (`picksGroup`, sim round 3) it's a button
+ * that picks everyone on it; otherwise it takes no presses.
  */
-function GroupPathLabel({ session }: { session: PathSession }) {
+function GroupPathLabel({
+    session,
+    picksGroup,
+}: {
+    session: PathSession;
+    picksGroup: boolean;
+}) {
     const view = useFieldViewStore();
     const outline = pathOutline(shapeOf(session));
     if (outline.length === 0) return null;
     const top = outline
         .map((p) => fieldToElement(view, p.x, p.y))
         .reduce((a, b) => (b.y < a.y ? b : a));
+    const count = session.target.group?.members.length ?? 0;
+    const text = isLoose(session)
+        ? // A loose path's marchers each have their own copy (round 7): no group path, and the
+          // label says so (sim round 3 read "Path · 4" as one shared path)
+          tolgee.t("pathways.editor.looseLabel", "{count} paths", { count })
+        : tolgee.t("pathways.editor.groupLabel", "Group path · {count}", {
+              count,
+          });
+    const className =
+        "rounded-6 border-stroke bg-modal text-sub text-text shadow-modal absolute z-10 -translate-x-1/2 border px-6 py-2 whitespace-nowrap";
+    const style = { left: top.x, top: top.y - 32 };
+    if (!picksGroup)
+        return (
+            <div
+                className={clsx(className, "pointer-events-none")}
+                style={style}
+                data-testid="path-group-label"
+            >
+                {text}
+            </div>
+        );
     return (
-        <div
-            className="rounded-6 border-stroke bg-modal text-sub text-text shadow-modal pointer-events-none absolute z-10 -translate-x-1/2 border px-6 py-2 whitespace-nowrap"
-            style={{ left: top.x, top: top.y - 32 }}
-            data-testid="path-group-label"
+        <Tip
+            label={tolgee.t(
+                "pathways.editor.groupLabelTip",
+                "Select everyone on this group path",
+            )}
         >
-            {isLoose(session)
-                ? // A loose path's marchers each have their own copy (round 7): no group path
-                  tolgee.t("pathways.editor.looseLabel", "Path · {count}", {
-                      count: session.target.group?.members.length ?? 0,
-                  })
-                : tolgee.t(
-                      "pathways.editor.groupLabel",
-                      "Group path · {count}",
-                      {
-                          count: session.target.group?.members.length ?? 0,
-                      },
-                  )}
-        </div>
+            <button
+                type="button"
+                className={clsx(
+                    className,
+                    "hover:border-accent hover:text-accent cursor-pointer",
+                )}
+                style={style}
+                data-testid="path-group-label"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => selectWholeGroup(session)}
+            >
+                {text}
+            </button>
+        </Tip>
     );
+}
+
+/** Picks everyone on the group path, and leaves the shape you were inside (sim round 3) */
+function selectWholeGroup(session: PathSession): void {
+    const members = session.target.group?.members ?? [];
+    if (members.length === 0) return;
+    setInsideBox(null);
+    selectOnField(members.map((m) => m.marcherId));
 }
 
 /** While drawing: who it's for and the Line's ways to go on, the keys as keycaps */
@@ -539,36 +584,26 @@ function PathEditorBar({
                             />
                         </>
                     )}
-                    {laneMember && (
+                    {/* Sim round 3: the lane's "Spot 15 · T15" chip read as noise; a picked bend
+                        point keeps its Remove */}
+                    {laneMember && session.lane?.key !== null && (
                         <>
                             <Divider />
                             <span
                                 className="flex items-center gap-2 px-4"
                                 data-testid="path-lane-picked"
                             >
-                                {tolgee.t(
-                                    "pathways.editor.laneOf",
-                                    "Spot {spot} · {marcher}",
-                                    {
-                                        spot: (laneMember.slot ?? 0) + 1,
-                                        marcher: laneMember.drill,
-                                    },
-                                )}
-                                {session.lane?.key !== null && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "actions.path.adjustRemoveKey",
-                                            "Remove bend point",
-                                        )}
-                                        action="adjustRemoveKey"
-                                        onClick={() =>
-                                            runAction("adjustRemoveKey")
-                                        }
-                                        testId="path-adjust-remove-key"
-                                    >
-                                        <BackspaceIcon size={14} />
-                                    </IconButton>
-                                )}
+                                <IconButton
+                                    label={tolgee.t(
+                                        "actions.path.adjustRemoveKey",
+                                        "Remove bend point",
+                                    )}
+                                    action="adjustRemoveKey"
+                                    onClick={() => runAction("adjustRemoveKey")}
+                                    testId="path-adjust-remove-key"
+                                >
+                                    <BackspaceIcon size={14} />
+                                </IconButton>
                             </span>
                         </>
                     )}
@@ -703,14 +738,9 @@ function PathSlots({ session }: { session: PathSession }) {
                         {editLineLabel(lineDrill)}
                     </IconButton>
                     {/* Back to the group (round 6): Rejoin for detached marchers, else Match group.
-                        A loose path has no group to go back to: the slot holds its place (round 7) */}
-                    {slots.loose ? (
-                        <span
-                            aria-hidden
-                            className={clsx("inline-flex", SLOT_WIDTH)}
-                            data-testid="path-slot-empty"
-                        />
-                    ) : slots.backIsRejoin ? (
+                        A loose path, or a marcher's own path, has no group to go back to: the slot
+                        holds its place (rounds 7 and sim 3) */}
+                    {slots.backIsRejoin ? (
                         <IconButton
                             label={tolgee.t(
                                 "pathways.editor.rejoinTip",
@@ -730,6 +760,12 @@ function PathSlots({ session }: { session: PathSession }) {
                                   )
                                 : tolgee.t("actions.path.rejoin", "Rejoin")}
                         </IconButton>
+                    ) : slots.loose || slots.ownPath ? (
+                        <span
+                            aria-hidden
+                            className={clsx("inline-flex", SLOT_WIDTH)}
+                            data-testid="path-slot-empty"
+                        />
                     ) : (
                         <IconButton
                             label={

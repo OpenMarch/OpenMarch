@@ -1093,7 +1093,9 @@ export interface LaneHit {
 
 /**
  * The point of `walk`'s lane nearest `at` within `radius`, or null (decision C): on its rigid part
- * the place there, measured along the reference walk, and on a leg no place.
+ * the place there, measured along the reference walk, and on a leg no place. The rigid part wins
+ * within reach: at the corner where a leg leaves it, the leg was a hair nearer and a drag on the
+ * handle drawn there was refused (sim round 3).
  */
 export function laneHitOf(
     walk: GroupMemberWalk,
@@ -1129,6 +1131,7 @@ export function laneHitOf(
             samples[i - 1]!.x,
             samples[i]!.x,
         );
+    if (best) return best;
     for (const leg of [walk.first, walk.last]) {
         if (!leg) continue;
         const line = legLine(leg);

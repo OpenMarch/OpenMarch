@@ -141,7 +141,7 @@ describe("FieldContextMenu", () => {
         handle("editPath");
         handle("editLine", {
             enabled: false,
-            reason: "Select one marcher to edit their line",
+            reason: "Click one of them again to pick just that marcher, then edit their line",
         });
         const detach = handle("detachPath", {
             label: "Detach 2 from group path",
@@ -149,7 +149,7 @@ describe("FieldContextMenu", () => {
         handle("rejoinPath", { enabled: false });
         handle("adjustResetSpot", {
             enabled: false,
-            reason: "Select one marcher to match it to the group path",
+            reason: "Click one of them again to pick just that marcher, then match it to the group path",
         });
         handle("refitPath", { enabled: false, reason: "Already centered" });
         handle("detachAllPath", { enabled: false });

@@ -141,15 +141,16 @@ describe("the path's floating editor", () => {
         expect(el.textContent).not.toContain("T4");
     });
 
-    it("quiet (closed): Edit path, the member slots greyed out for an own path, More; none while hidden", () => {
+    it("quiet (closed): Edit path, Edit line greyed out for an own path, no Match group (sim round 3), More; none while hidden", () => {
         act(() => showPath(target(5, 32), "T4"));
         render(<PathEditor fieldProperties={fieldProperties} />);
         expect(bar().dataset.phase).toBe("closed");
         expect(screen.getByTestId("path-edit").textContent).toBe("Edit path");
-        for (const id of ["path-edit-line", "path-adjust-reset"])
-            expect(screen.getByTestId(id).getAttribute("aria-disabled")).toBe(
-                "true",
-            );
+        expect(
+            screen.getByTestId("path-edit-line").getAttribute("aria-disabled"),
+        ).toBe("true");
+        expect(screen.queryByTestId("path-adjust-reset")).toBeNull();
+        expect(screen.getByTestId("path-slot-empty")).toBeTruthy();
         expect(screen.queryByTestId("path-detach")).toBeNull();
         expect(screen.getByTestId("path-more")).toBeTruthy();
         expect(screen.queryByTestId("path-pen-banner")).toBeNull();
@@ -183,12 +184,14 @@ describe("the path's floating editor", () => {
         const line = screen.getByTestId("path-edit-line");
         expect(line.getAttribute("aria-disabled")).toBe("true");
         expect(line.getAttribute("aria-label")).toBe(
-            "Select one marcher to edit their line",
+            "Click one of them again to pick just that marcher, then edit their line",
         );
         expect(line.textContent).toBe("Edit marcher's line");
         expect(
             screen.getByTestId("path-adjust-reset").getAttribute("aria-label"),
-        ).toBe("Select one marcher to match it to the group path");
+        ).toBe(
+            "Click one of them again to pick just that marcher, then match it to the group path",
+        );
         // One bent member selected: every slot acts, in the same places
         act(() => setGroupCommands([12], null));
         expect(order()).toEqual(slots);

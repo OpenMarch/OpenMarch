@@ -1498,7 +1498,7 @@ function buildDrawing(
     };
 }
 
-/** The note by the pointer over a lane: whose spot it is, and how many lanes lie there */
+/** The note by the pointer over a lane: whose line it is, and how many lanes lie there */
 function laneTipOf(session: PathSession): FieldModeDrawing["tip"] | null {
     const hover = session.phase === "open" ? session.hoverLane : null;
     const hoverMember = hover ? memberOf(session, hover.marcherId) : undefined;
@@ -1511,12 +1511,9 @@ function laneTipOf(session: PathSession): FieldModeDrawing["tip"] | null {
                           ? "pathways.lanes.hoverAdjusted"
                           : "pathways.lanes.hover",
                       hoverMember.adjust
-                          ? "Spot {spot} · {marcher} · bent"
-                          : "Spot {spot} · {marcher}",
-                      {
-                          spot: (hoverMember.slot ?? 0) + 1,
-                          marcher: hoverMember.drill,
-                      },
+                          ? "{marcher}'s line · bent"
+                          : "{marcher}'s line",
+                      { marcher: hoverMember.drill },
                   ),
                   ...((hover.stacked ?? 1) > 1
                       ? [

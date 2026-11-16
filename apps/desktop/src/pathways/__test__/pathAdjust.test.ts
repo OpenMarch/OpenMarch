@@ -296,6 +296,11 @@ describe("hit testing a lane", () => {
         expect(laneHitOf(walk, { x: 50, y: 20 }, 5)?.x).toBeNull();
         expect(laneHitOf(walk, { x: 150, y: 40 }, 5)).toBeNull();
     });
+
+    it("at the corner where a leg leaves, the rigid part's end wins even with the leg nearer (sim round 3)", () => {
+        // On the leg's side of the corner p, a hair from the leg and 3 from the rigid part's end
+        expect(laneHitOf(walk, { x: 97, y: 20 }, 5)?.x).toBeCloseTo(100, 9);
+    });
 });
 
 describe("Big steps on an adjusted lane (QA-BS-L1, J.6)", () => {
@@ -435,7 +440,7 @@ describe("Edit <name>'s line, an explicit command (interaction round 3, was Adju
             drill: "B2",
         });
         expect(lineTargetOf(session(), [10, 11])).toEqual({
-            reason: "Select one marcher to edit their line",
+            reason: "Click one of them again to pick just that marcher, then edit their line",
         });
         expect("reason" in lineTargetOf(session(), [])).toBe(true);
         showPath(group({ group: null }), "B1");

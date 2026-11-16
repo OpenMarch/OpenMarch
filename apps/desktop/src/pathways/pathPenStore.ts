@@ -918,7 +918,7 @@ export function lineTargetOf(
         return {
             reason: tolgee.t(
                 "pathways.editLine.severalSelected",
-                "Select one marcher to edit their line",
+                "Click one of them again to pick just that marcher, then edit their line",
             ),
         };
     const one = ownable.length === 1 ? target(ownable[0]!) : null;
@@ -962,6 +962,11 @@ export interface PathSlots {
      * jump; there's no group path to match or rejoin
      */
     loose: boolean;
+    /**
+     * The marcher's own path, on no group path (sim round 3: Match group stayed after Detach
+     * all): the third slot is empty, as a loose path's is
+     */
+    ownPath: boolean;
 }
 
 export function pathSlotsOf(
@@ -1013,7 +1018,7 @@ export function pathSlotsOf(
               (!lanePicked && ownable.length > 1
                   ? tolgee.t(
                         "pathways.slots.matchSeveral",
-                        "Select one marcher to match it to the group path",
+                        "Click one of them again to pick just that marcher, then match it to the group path",
                     )
                   : !lanePicked && ownable.length === 0
                     ? tolgee.t(
@@ -1024,9 +1029,14 @@ export function pathSlotsOf(
                           "pathways.slots.matches",
                           "This marcher already walks the group path exactly: nothing to match",
                       )));
+    const ownPath =
+        shown &&
+        (!session.target.group || !!session.target.lane) &&
+        session.target.lane?.detachedFrom == null;
     return {
         shown,
         line: lineTargetOf(session, ownable),
+        ownPath,
         backIsRejoin,
         detachReason,
         detachAll,
@@ -1463,15 +1473,8 @@ async function groupWrite<R>(
             ),
             { id: "path-kept-live" },
         );
-    else if (done.baked && !done.fromCopies)
-        toast.info(
-            tolgee.t(
-                "pathways.toasts.savedSeparate",
-                "Saved as {count} separate paths. Group the marchers to keep them linked.",
-                { count: marcherIds.length },
-            ),
-            { id: "path-saved-separate" },
-        );
+    // Saved as separate copies says nothing (sim round 3: a toast saying so contradicted the
+    // marchers editing together); the label says "4 paths"
     return done;
 }
 
@@ -2183,12 +2186,27 @@ export async function rejoinFor(target: RejoinTarget | null): Promise<void> {
     if (!target || saving || target.marcherIds.length === 0) return;
     usePathPenStore.setState({ saving: true });
     try {
-        await rejoinGroupPath({
+        const { dropped } = await rejoinGroupPath({
             db,
             timelineId: target.timelineId,
             routeId: target.routeId,
             marcherIds: target.marcherIds,
         });
+        // Sim round 3: Rejoin dropped a bend with nothing said. It says what went, with Undo
+        const count = target.marcherIds.length;
+        toastWithUndo(
+            dropped.length > 0
+                ? tolgee.t(
+                      "pathways.toasts.rejoinedDropped",
+                      "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path. {dropped, plural, one {# line lost its own shape} other {# lines lost their own shapes}}",
+                      { count, dropped: dropped.length },
+                  )
+                : tolgee.t(
+                      "pathways.toasts.rejoined",
+                      "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path",
+                      { count },
+                  ),
+        );
         usePathPenStore.setState((state) => {
             const s = state.session;
             // Rejoined from its copy open as an object: the copy is gone, so the group path it

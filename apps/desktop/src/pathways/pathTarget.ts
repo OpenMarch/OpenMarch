@@ -233,8 +233,8 @@ export interface GroupPathRow {
  * - a Detached copy shown: onto the group path it came from, never onto the copy (review of
  *   #900, S1), its marcher and any other selected marcher off that path;
  * - nothing shown: onto the one group path every selected copy came from (two detached members of
- *   one group, with another group path in the move), else onto the move's only group path that
- *   isn't a copy.
+ *   one group, with another group path in the move). With no selected copy, nothing: sim round 3
+ *   saw Rejoin offered to marchers who were never on the move's group path.
  *
  * `groups` are the move's group paths (`readGroupPaths`), needed unless a non-copy is shown.
  */
@@ -266,16 +266,9 @@ export function rejoinTargetOf(
             )
             .map((g) => g.detachedFrom!),
     );
-    const main = groups.filter(
-        (g) => g.detachedFrom === null && (g.laneCount ?? 2) > 1,
-    );
     const source = copyOf ?? (sources.size === 1 ? [...sources][0]! : null);
     const onto =
-        source !== null
-            ? groups.find((g) => g.routeId === source)
-            : main.length === 1
-              ? main[0]
-              : undefined;
+        source !== null ? groups.find((g) => g.routeId === source) : undefined;
     if (!onto) return null;
     const off = selectedIds.filter((id) => !onto.marcherIds.includes(id));
     return off.length > 0

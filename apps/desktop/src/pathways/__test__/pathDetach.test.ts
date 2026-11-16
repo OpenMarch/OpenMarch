@@ -244,11 +244,12 @@ describe("where Rejoin goes (rejoinTargetOf, AP-R10)", () => {
         ).toEqual({ timelineId: 1, routeId: 5, marcherIds: [7, 8] });
     });
 
-    it("nothing shown: the move's only group path; none with two and copies from both", () => {
-        expect(rejoinTargetOf(null, [R, copy7], 1, [13])).toEqual({
+    it("nothing shown: nothing for marchers with no copy, even with one group path in the move; none with copies from two", () => {
+        expect(rejoinTargetOf(null, [R, copy7], 1, [13])).toBeNull();
+        expect(rejoinTargetOf(null, [R, copy7], 1, [7, 13])).toEqual({
             timelineId: 1,
             routeId: 5,
-            marcherIds: [13],
+            marcherIds: [7, 13],
         });
         expect(
             rejoinTargetOf(null, [R, other, copy7, copyOfOther], 1, [7, 12]),

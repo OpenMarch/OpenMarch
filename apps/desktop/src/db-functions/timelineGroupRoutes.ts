@@ -817,7 +817,7 @@ export async function rejoinGroupPathInTransaction({
     timelineId: number;
     routeId: number;
     marcherIds: readonly number[];
-}): Promise<{ transitions: Record<number, number> }> {
+}): Promise<RejoinResult> {
     const walkers = (await walkersOf(tx, routeId)).filter(
         (w) => w.transition.timeline_id === timelineId,
     );
@@ -850,6 +850,7 @@ export async function rejoinGroupPathInTransaction({
         else newcomers.push(marcherId);
     }
     const members = await readMembers(tx, timelineId, newcomers);
+    const dropped = await changedCopies(tx, routeId, back);
     return await mapDbErrors(async () => {
         const transitions: Record<number, number> = {};
         for (const { marcherId, lane, transitionId, offset } of back) {
@@ -864,8 +865,42 @@ export async function rejoinGroupPathInTransaction({
             transitions[m.marcherId] = m.transition.id;
         }
         await sweepOrphanRoutesInTransaction(tx);
-        return { transitions };
+        return { transitions, dropped };
     });
+}
+
+/** What Rejoin did: each rejoined marcher's row, and who lost changes of their own */
+export interface RejoinResult {
+    transitions: Record<number, number>;
+    /**
+     * The marchers back from Detach whose copy had changed from the group path, or whose line
+     * had bends: Rejoin drops those, and says so (sim round 3)
+     */
+    dropped: number[];
+}
+
+/** Of `back`, the marchers whose copy differs from group path `routeId`, or whose line is bent */
+async function changedCopies(
+    tx: DbTransaction,
+    routeId: number,
+    back: readonly BackFromDetach[],
+): Promise<number[]> {
+    if (back.length === 0) return [];
+    const R = schema.timeline_routes;
+    const textOf = async (id: number) =>
+        (
+            await tx
+                .select({ geometry: R.geometry })
+                .from(R)
+                .where(eq(R.id, id))
+                .limit(1)
+        )[0]?.geometry;
+    const group = await textOf(routeId);
+    const dropped: number[] = [];
+    for (const { marcherId, lane } of back)
+        if (lane.adjust !== null || (await textOf(lane.route_id)) !== group)
+            dropped.push(marcherId);
+    return dropped;
 }
 
 /** AP-R10 as one undoable edit. */
@@ -874,7 +909,7 @@ export async function rejoinGroupPath(args: {
     timelineId: number;
     routeId: number;
     marcherIds: readonly number[];
-}): Promise<{ transitions: Record<number, number> }> {
+}): Promise<RejoinResult> {
     const { db, ...rest } = args;
     return await transactionWithHistory(db, "rejoinPath", (tx) =>
         rejoinGroupPathInTransaction({ tx, ...rest }),

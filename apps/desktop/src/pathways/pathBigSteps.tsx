@@ -224,22 +224,22 @@ function groupBigSteps(
 
 /** How Big steps names a leg of a group path */
 const legWords = (
-    leg: Pick<BigSteps["legs"][number], "where" | "spot" | "from" | "to">,
+    leg: Pick<BigSteps["legs"][number], "where" | "drill" | "from" | "to">,
 ) => {
     const { where } = leg;
     if (where === "adjusted")
         return tolgee.t(
             "pathways.editor.legAdjusted",
-            "spot {spot}, counts {from} to {to} (bent)",
-            { spot: leg.spot ?? 0, from: leg.from ?? 0, to: leg.to ?? 0 },
+            "{marcher}'s bent line, counts {from} to {to}",
+            { marcher: leg.drill ?? "", from: leg.from ?? 0, to: leg.to ?? 0 },
         );
     return where === "onto"
-        ? tolgee.t("pathways.editor.legOnto", "onto the path")
+        ? tolgee.t("pathways.editor.legOnto", "joining the path")
         : where === "off"
-          ? tolgee.t("pathways.editor.legOff", "off the path")
+          ? tolgee.t("pathways.editor.legOff", "leaving the path")
           : where === "straight"
             ? tolgee.t("pathways.editor.legStraight", "straight to the spot")
-            : tolgee.t("pathways.editor.legAlong", "along the path");
+            : tolgee.t("pathways.editor.legAlong", "on the path");
 };
 
 /**
