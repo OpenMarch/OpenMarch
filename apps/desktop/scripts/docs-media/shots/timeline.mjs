@@ -392,7 +392,10 @@ const shots = [
             return {
                 box: union(
                     await pane(around, page),
-                    await around(page.getByTestId("timeline-cue-lanes-menu"), 8),
+                    await around(
+                        page.getByTestId("timeline-cue-lanes-menu"),
+                        8,
+                    ),
                 ),
             };
         },

@@ -137,7 +137,9 @@ async function showEquipmentLane(page, wait) {
 const hideToasts = (page) =>
     page
         .locator("[data-sonner-toast]")
-        .evaluateAll((els) => els.forEach((e) => (e.style.visibility = "hidden")))
+        .evaluateAll((els) =>
+            els.forEach((e) => (e.style.visibility = "hidden")),
+        )
         .catch(() => {});
 
 const SABRES = range("G", 6, 10);
@@ -743,7 +745,12 @@ const shots = [
                 .boundingBox();
             const grab = { x: bar.x + 40, y: bar.y + bar.height / 2 };
             await film.moveTo(page, { x: grab.x, y: grab.y - 120 }, grab, 0.6);
-            await film.drag(page, grab, { x: grab.x + 4 * 24.5, y: grab.y }, 1.2);
+            await film.drag(
+                page,
+                grab,
+                { x: grab.x + 4 * 24.5, y: grab.y },
+                1.2,
+            );
             await film.hold(1.5);
         },
     },
