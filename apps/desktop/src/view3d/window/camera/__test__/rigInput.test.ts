@@ -124,6 +124,35 @@ describe("zooming about the point under the cursor, as CAD tools do", () => {
         expect(camera.position.y).toBeGreaterThanOrEqual(MIN_EYE_Y - 1e-6);
     });
 
+    it("stays above the ground zooming out with the pointer on a seat above the eye", () => {
+        // a seated camera, the pointer on the far upper deck
+        const { camera, rig } = rigAt([0, 4, 60], [0, 0, 0]);
+        const seat: [number, number, number] = [0, 25, -90];
+        for (let i = 0; i < 10; i++) rig.zoomRatioAt(1.5, seat);
+        rig.update(16);
+        expect(camera.position.y).toBeGreaterThanOrEqual(MIN_EYE_Y - 1e-6);
+        expect(rig.target[1]).toBeGreaterThanOrEqual(-1e-9);
+        expect(rig.spherical.radius).toBeGreaterThan(100);
+    });
+
+    it("keeps the target on the ground zooming out about a point above it", () => {
+        const { rig } = rigAt([0, 60, 80], [0, 0, 0]);
+        for (let i = 0; i < 10; i++) rig.zoomRatioAt(1.5, [0, 10, -90]);
+        expect(rig.target[1]).toBeGreaterThanOrEqual(-1e-9);
+        expect(rig.spherical.radius).toBeGreaterThan(200);
+    });
+
+    it("still zooms out about a point on the ground", () => {
+        const { camera, rig } = rigAt([0, 60, 80], [0, 0, 0]);
+        const p: [number, number, number] = [-15, 0, 10];
+        const before = ndc(camera, p);
+        rig.zoomRatioAt(1.5, p);
+        rig.update(16);
+        const after = ndc(camera, p);
+        expect(after[0]).toBeCloseTo(before[0], 6);
+        expect(after[1]).toBeCloseTo(before[1], 6);
+    });
+
     it("zooms out no further than the farthest radius", () => {
         const { rig } = rigAt([0, 60, 80], [0, 0, 0]);
         for (let i = 0; i < 80; i++) rig.zoomRatioAt(1.5, [5, 0, 5]);

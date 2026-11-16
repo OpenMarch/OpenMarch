@@ -322,6 +322,10 @@ export class RigController {
      * CAD tools zoom: the view keeps its angle and the point stays where it
      * is on screen, the zoom stopping `MIN_ZOOM_DISTANCE` short of it, with
      * the eye above the ground and within `MAX_RADIUS` of the target.
+     *
+     * Zooming out about a point above the eye or the target (a seat up in
+     * the stands) lowers them; once one would reach the ground, the rest of
+     * the zoom goes straight back from the target instead.
      */
     private zoomBy(ratio: number, point: Vector3Tuple | null) {
         if (!point) {
@@ -335,9 +339,12 @@ export class RigController {
             maxRadius: MAX_RADIUS,
         });
         const k = Math.min(hi, Math.max(lo, ratio));
-        if (k === 1) return;
-        const next = zoomAbout(position, this.target, point, k);
-        this.setPose(next.position, next.target);
+        if (k !== 1) {
+            const next = zoomAbout(position, this.target, point, k);
+            this.setPose(next.position, next.target);
+        }
+        if (ratio > k && k >= 1)
+            this.setRadius(clampRadius(this.spherical.radius * (ratio / k)));
     }
 
     private setRadius(radius: number) {
