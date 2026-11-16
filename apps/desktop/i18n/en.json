@@ -609,6 +609,11 @@
             "noWebGL": "WebGL is not available",
             "contextLost": "The field's WebGL context was lost, so the video can't be drawn. Try the export again.",
             "offscreenTimeout": "The field didn't start off screen"
+        },
+        "areaCount": {
+            "add": "{count, plural, one {+# marcher} other {+# marchers}}",
+            "select": "{count, plural, one {# marcher} other {# marchers}}",
+            "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
         }
     },
     "fieldDisplay": {

@@ -36,15 +36,15 @@ Most tools act on the selected marchers: moving, aligning, placing them on a sha
 
 ## Drag a box
 
-With <Ui k="fieldSelectTool.box" /> picked at the field's top right (the starting tool), drag on empty field to draw a box. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
+With <Ui k="fieldSelectTool.box" /> picked at the field's top right (the starting tool), drag on empty field to draw a box. While you drag, a small square appears around each marcher the box will take, and the number of marchers shows next to the pointer. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
 
 <Media
   id="marchers-select-box"
   alt="A box is dragged around a row of eight marchers, which become selected. Then a marcher in the row behind them is clicked with Shift held and joins the selection."
 />
 
-- Hold <Kbd keys="Shift" gesture="drag" /> as you start the box to add to the selection.
-- Hold <Kbd keys="Alt" gesture="drag" /> as you start the box to take the marchers it touches out of the selection.
+- Hold <Kbd keys="Shift" gesture="drag" /> as you start the box to add to the selection. Only the marchers it would add get a square, and the number reads "+3 marchers".
+- Hold <Kbd keys="Alt" gesture="drag" /> as you start the box to take the marchers it touches out of the selection. The squares are dashed, and the number reads "−3 marchers".
 
 A drag that starts inside the frame around several selected marchers moves them instead of drawing a box. Start the box outside the frame, or click empty field first to clear the selection.
 
@@ -71,7 +71,7 @@ To draw a lasso:
   alt="With Lasso select picked, a drag on empty field draws a freehand line around a ring of marchers. The line closes back at its start, and every marcher inside it is selected."
 />
 
-Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. As with a box, a drag that starts inside the frame around several selected marchers moves them, so the pointer stays an arrow there. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
+As you draw, the marchers inside the lasso get a square and the number shows next to the pointer, faint until letting go would close the lasso. Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. As with a box, a drag that starts inside the frame around several selected marchers moves them, so the pointer stays an arrow there. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
 
 ## Select everyone
 

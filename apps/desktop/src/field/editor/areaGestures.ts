@@ -22,17 +22,37 @@ import {
  */
 
 /**
+ * The marchers releasing the area now would change, so the overlay can outline them and count
+ * them by the pointer: the ones it selects (or, adding, the ones it adds; subtracting, the ones it
+ * takes out). Positions in field units, x then y for each id.
+ */
+export type AreaPreview = {
+    readonly ids: readonly number[];
+    readonly positions: readonly number[];
+    /** What releasing does with them */
+    readonly choice: AreaChoice;
+    /** The pointer, where the count goes */
+    readonly pointer: FieldPoint;
+};
+
+/**
  * What the overlay draws during a marquee or lasso, in field units. `subtract`: it removes what it
  * covers from the selection (Alt at the press), and is drawn so.
  */
 export type AreaShape =
-    | { kind: "marquee"; rect: FieldRect; subtract: boolean }
+    | {
+          kind: "marquee";
+          rect: FieldRect;
+          subtract: boolean;
+          preview: AreaPreview;
+      }
     | {
           kind: "lasso";
           points: readonly FieldPoint[];
           /** Releasing now closes the lasso and selects: the stroke turns green. */
           closes: boolean;
           subtract: boolean;
+          preview: AreaPreview;
       };
 
 /** What a marquee or lasso reads and writes. */
@@ -70,6 +90,47 @@ export function areaChoice(press: FieldPointer, isMac?: boolean): AreaChoice {
 }
 
 /**
+ * The marchers whose selection releasing an area changes, of those it picks (`inside`): all of
+ * them when it replaces the selection, the unselected ones when it adds, the selected ones when it
+ * subtracts.
+ */
+export function areaChanges(
+    current: readonly number[],
+    inside: readonly number[],
+    choice: AreaChoice,
+): readonly number[] {
+    if (choice === null) return inside;
+    const selected = new Set(current);
+    return inside.filter((id) =>
+        choice === "subtract" ? selected.has(id) : !selected.has(id),
+    );
+}
+
+/** What the overlay shows for an area that picks `inside` with the pointer at `pointer`. */
+function previewOf(
+    ports: AreaPorts,
+    inside: readonly number[],
+    choice: AreaChoice,
+    pointer: FieldPoint,
+): AreaPreview {
+    const ids = areaChanges(ports.selection(), inside, choice);
+    const wanted = new Set(ids);
+    const marchers = ports.marchers();
+    const ordered: number[] = [];
+    const positions: number[] = [];
+    if (wanted.size > 0)
+        for (let i = 0; i < marchers.ids.length; i++) {
+            if (!wanted.has(marchers.ids[i])) continue;
+            ordered.push(marchers.ids[i]);
+            positions.push(
+                marchers.positions[i * 2],
+                marchers.positions[i * 2 + 1],
+            );
+        }
+    return { ids: ordered, positions, choice, pointer };
+}
+
+/**
  * A marquee: the rectangle from the press to the pointer. On release it
  * replaces the selection with every marcher whose dot it touches, leaving out
  * items when performers are among them (`areaPicks`); with Shift held at the
@@ -82,34 +143,42 @@ export function startMarquee(
 ): AreaGesture {
     const choice = areaChoice(start, isMac);
     const subtract = choice === "subtract";
-    let shape: AreaShape = {
+    const picks = (end: FieldPoint) =>
+        areaPicks(
+            marchersInRect(
+                ports.marchers(),
+                rectBetween(start.field, end),
+                hitRadius(ports.zoom()),
+                ports.canSelect,
+            ),
+            (id) => ports.isItem?.(id) ?? false,
+            (id) => ports.isLocked?.(id) ?? false,
+        );
+    const shapeAt = (
+        end: FieldPoint,
+        inside: readonly number[],
+    ): AreaShape => ({
         kind: "marquee",
-        rect: rectBetween(start.field, start.field),
+        rect: rectBetween(start.field, end),
         subtract,
-    };
+        preview: previewOf(ports, inside, choice, end),
+    });
+    let shape = shapeAt(start.field, []);
     return {
         kind: "marquee",
         shape: () => shape,
         move(next) {
-            shape = {
-                kind: "marquee",
-                rect: rectBetween(start.field, next.field),
-                subtract,
-            };
+            shape = shapeAt(next.field, picks(next.field));
             ports.changed();
         },
         end(next) {
-            const inside = areaPicks(
-                marchersInRect(
-                    ports.marchers(),
-                    rectBetween(start.field, next.field),
-                    hitRadius(ports.zoom()),
-                    ports.canSelect,
+            ports.select(
+                selectionAfterArea(
+                    ports.selection(),
+                    picks(next.field),
+                    choice,
                 ),
-                (id) => ports.isItem?.(id) ?? false,
-                (id) => ports.isLocked?.(id) ?? false,
             );
-            ports.select(selectionAfterArea(ports.selection(), inside, choice));
         },
         cancel() {},
     };
@@ -142,7 +211,19 @@ export function startLasso(
             : lassoCloses(start.field, end, ports.zoom());
     // Appended to in place: a long lasso isn't copied on every move
     const points: FieldPoint[] = [start.field];
-    let shape: AreaShape = { kind: "lasso", points, closes: true, subtract };
+    const picks = () =>
+        areaPicks(
+            marchersInPolygon(ports.marchers(), points, ports.canSelect),
+            (id) => ports.isItem?.(id) ?? false,
+            (id) => ports.isLocked?.(id) ?? false,
+        );
+    let shape: AreaShape = {
+        kind: "lasso",
+        points,
+        closes: true,
+        subtract,
+        preview: previewOf(ports, [], choice, start.field),
+    };
     const add = (point: FieldPoint) => {
         points.push(point);
         shape = {
@@ -150,6 +231,8 @@ export function startLasso(
             points,
             closes: closes(point),
             subtract,
+            // What it takes if it closes now: shown faded until it would
+            preview: previewOf(ports, picks(), choice, point),
         };
     };
     return {
@@ -160,14 +243,11 @@ export function startLasso(
             ports.changed();
         },
         end(next) {
-            add(next.field);
+            points.push(next.field);
             if (!closes(next.field)) return;
-            const inside = areaPicks(
-                marchersInPolygon(ports.marchers(), points, ports.canSelect),
-                (id) => ports.isItem?.(id) ?? false,
-                (id) => ports.isLocked?.(id) ?? false,
+            ports.select(
+                selectionAfterArea(ports.selection(), picks(), choice),
             );
-            ports.select(selectionAfterArea(ports.selection(), inside, choice));
         },
         cancel() {},
     };

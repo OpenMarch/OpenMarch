@@ -21,6 +21,7 @@ function setup({
     selected = [] as number[],
     dimmed = [] as number[],
     hidden = [] as number[],
+    locked = [] as number[],
     isMac = false,
     takePress = undefined as (() => boolean) | undefined,
     moveTransform = undefined as MoveTransform | undefined,
@@ -58,6 +59,7 @@ function setup({
         }),
         zoom: () => 2,
         canSelect: (id) => !dimmed.includes(id),
+        isLocked: (id) => locked.includes(id),
         takePress,
         pressSelection,
         doubleClickMarcher,
@@ -1625,6 +1627,12 @@ describe("FieldEditor marquee", () => {
             kind: "marquee",
             rect: { left: 150, top: 50, right: 250, bottom: 150 },
             subtract: false,
+            preview: {
+                ids: [2],
+                positions: [200, 100],
+                choice: null,
+                pointer: { x: 250, y: 150 },
+            },
         });
         // Selects only on release
         expect(state.selected).toEqual([]);
@@ -1634,6 +1642,54 @@ describe("FieldEditor marquee", () => {
         expect(editor.activeGesture()).toBeNull();
         expect(editor.areaShape()).toBeNull();
         expect(state.selected).toEqual([2]);
+    });
+
+    it("previews the marchers it would select, as it would on release", () => {
+        const { editor, state } = setup({ dimmed: [3] });
+        editor.pointerDown(at(150, 50));
+        editor.pointerMove(at(160, 60));
+        expect(editor.areaShape()?.preview.ids).toEqual([]);
+        // Over 2, 3 (dimmed: never taken) and 4
+        editor.pointerMove(at(450, 150));
+        expect(editor.areaShape()?.preview).toEqual({
+            ids: [2, 4],
+            positions: [200, 100, 400, 100],
+            choice: null,
+            pointer: { x: 450, y: 150 },
+        });
+        editor.pointerUp(at(450, 150));
+        expect(state.selected).toEqual([2, 4]);
+    });
+
+    it("leaves locked marchers out of the preview, as release does", () => {
+        const { editor, state } = setup({ locked: [3] });
+        editor.pointerDown(at(150, 50));
+        editor.pointerMove(at(450, 150));
+        expect(editor.areaShape()?.preview.ids).toEqual([2, 4]);
+        editor.pointerUp(at(450, 150));
+        expect(state.selected).toEqual([2, 4]);
+    });
+
+    it("previews only what adding or subtracting would change", () => {
+        const add = setup({ selected: [1, 2] });
+        add.editor.pointerDown(at(150, 50, { shift: true }));
+        add.editor.pointerMove(at(350, 150, { shift: true }));
+        // 2 is already selected: only 3 is added
+        expect(add.editor.areaShape()?.preview).toMatchObject({
+            ids: [3],
+            choice: "add",
+        });
+        add.editor.pointerCancel();
+
+        const subtract = setup({ selected: [1, 2] });
+        subtract.editor.pointerDown(at(150, 50, { alt: true }));
+        subtract.editor.pointerMove(at(350, 150, { alt: true }));
+        // 3 isn't selected: only 2 is taken out
+        expect(subtract.editor.areaShape()?.preview).toMatchObject({
+            ids: [2],
+            choice: "subtract",
+        });
+        subtract.editor.pointerCancel();
     });
 
     it("selects nothing when the pointer is lost", () => {
@@ -1738,6 +1794,27 @@ const lasso = (
 };
 
 describe("FieldEditor lasso", () => {
+    it("previews what it takes if closed now, while it's drawn", () => {
+        const { editor, state } = setup();
+        click(editor, 150, 50);
+        editor.pointerDown(at(150, 50));
+        // Around 2 and 3, not yet back near the start
+        editor.pointerMove(at(350, 50));
+        editor.pointerMove(at(350, 150));
+        editor.pointerMove(at(150, 150));
+        expect(editor.areaShape()).toMatchObject({
+            closes: false,
+            preview: { ids: [2, 3], positions: [200, 100, 300, 100] },
+        });
+        editor.pointerMove(at(150, 60));
+        expect(editor.areaShape()).toMatchObject({
+            closes: true,
+            preview: { ids: [2, 3], pointer: { x: 150, y: 60 } },
+        });
+        editor.pointerUp(at(150, 60));
+        expect(state.selected).toEqual([2, 3]);
+    });
+
     it("starts on a double-click-and-drag on empty field", () => {
         const { editor } = setup();
         click(editor, 150, 50);

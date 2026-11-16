@@ -14,6 +14,7 @@ import {
 } from "@/components/canvas/fieldLayers";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { GlyphText } from "@/shapes/editor/GlyphText";
+import { useTranslate } from "@tolgee/react";
 import { rgbaToString, type FieldTheme } from "@openmarch/core";
 import type {
     FieldEditor,
@@ -32,7 +33,7 @@ import {
     selectionHandles,
     type DrawnSelectionBox,
 } from "./selectionFrame";
-import { dotSizes, SELECTION_COLOR } from "./selectionRing";
+import { dotSizes, ringReach, SELECTION_COLOR } from "./selectionRing";
 import MarkerSvg from "./MarkerSvg";
 import { markerShapeOf, spotShapeOf, type MarkerShape } from "../markerShape";
 import { marcherShapes } from "./useMarcherShapes";
@@ -220,7 +221,9 @@ export default function FieldOverlay({
     return (
         <>
             <HeldRolesChip
-                belowTip={modeDrawing?.tip !== undefined}
+                belowTip={
+                    modeDrawing?.tip !== undefined || areaHasPreview(area)
+                }
                 touch={touch}
             />
             <PivotHint pivot={JSON.parse(pivot)} />
@@ -240,6 +243,9 @@ export default function FieldOverlay({
                     />
                 )}
                 {area?.kind === "lasso" && <Lasso lasso={area} theme={theme} />}
+                {area && (
+                    <AreaPreviewMarks area={area} theme={theme} touch={touch} />
+                )}
                 {modeDrawing && (
                     <ModeDrawing
                         drawing={modeDrawing}
@@ -1386,62 +1392,149 @@ function ModeDrawing({
                         </g>
                     );
                 })()}
-            {drawing.tip &&
-                (() => {
-                    const p = at(drawing.tip.at);
-                    // A solid pill, so the readout reads over any part of the field (owner)
-                    const stack = (
-                        <div className="flex flex-col items-start gap-4">
-                            <div
-                                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
-                                style={{ fontSize: TIP_PX }}
-                                data-testid="fieldShapeTip"
-                            >
-                                <GlyphText text={drawing.tip.text} size={12} />
-                            </div>
-                            {/* The held-roles chip stacks under the readout, never over it */}
-                            <HeldRolesChipBelowTip />
-                        </div>
-                    );
-                    if (touch) {
-                        // Over the whole field, so the stack can center above the finger and
-                        // stay inside the field's edges
-                        return (
-                            <foreignObject
-                                x={0}
-                                y={0}
-                                width={view.width}
-                                height={view.height}
-                            >
-                                <div className="relative h-full w-full">
-                                    <ClearOfFinger
-                                        finger={p}
-                                        bounds={{
-                                            width: view.width,
-                                            height: view.height,
-                                        }}
-                                    >
-                                        {stack}
-                                    </ClearOfFinger>
-                                </div>
-                            </foreignObject>
-                        );
-                    }
-                    return (
-                        <foreignObject
-                            x={p.x + TIP_OFFSET_PX}
-                            y={p.y + TIP_OFFSET_PX}
-                            width={TIP_BOX.width}
-                            height={TIP_BOX.height}
-                            overflow="visible"
-                        >
-                            {stack}
-                        </foreignObject>
-                    );
-                })()}
+            {drawing.tip && (
+                <PointerTip
+                    at={at(drawing.tip.at)}
+                    text={drawing.tip.text}
+                    touch={touch}
+                    testId="fieldShapeTip"
+                />
+            )}
             {/* The guides' names last, over every line, edge and spot, so nothing crosses
                 their text (owner on #427) */}
             <GuideLabels guides={drawing.guides} at={at} view={view} />
+        </g>
+    );
+}
+
+/**
+ * A readout by the pointer, at `p` in element px: a solid pill, so it reads over any part of the
+ * field (owner), with the held-roles chip stacked under it. Below and right of a mouse pointer;
+ * above a finger, clear of it.
+ */
+function PointerTip({
+    at: p,
+    text,
+    touch,
+    testId,
+    opacity,
+}: {
+    at: { x: number; y: number };
+    text: string;
+    touch: boolean;
+    testId: string;
+    opacity?: number;
+}) {
+    const view = useFieldViewStore();
+    const stack = (
+        <div className="flex flex-col items-start gap-4" style={{ opacity }}>
+            <div
+                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
+                style={{ fontSize: TIP_PX }}
+                data-testid={testId}
+            >
+                <GlyphText text={text} size={12} />
+            </div>
+            {/* The held-roles chip stacks under the readout, never over it */}
+            <HeldRolesChipBelowTip />
+        </div>
+    );
+    if (touch) {
+        // Over the whole field, so the stack can center above the finger and stay inside the
+        // field's edges
+        return (
+            <foreignObject x={0} y={0} width={view.width} height={view.height}>
+                <div className="relative h-full w-full">
+                    <ClearOfFinger
+                        finger={p}
+                        bounds={{ width: view.width, height: view.height }}
+                    >
+                        {stack}
+                    </ClearOfFinger>
+                </div>
+            </foreignObject>
+        );
+    }
+    return (
+        <foreignObject
+            x={p.x + TIP_OFFSET_PX}
+            y={p.y + TIP_OFFSET_PX}
+            width={TIP_BOX.width}
+            height={TIP_BOX.height}
+            overflow="visible"
+        >
+            {stack}
+        </foreignObject>
+    );
+}
+
+/** The squares around the marchers a marquee or lasso would change: 1.5 CSS px, clear of the ring */
+const AREA_MARK_WIDTH = 1.5;
+const AREA_MARK_GAP = 1.5;
+/** A lasso that wouldn't close if released now shows what it would take this faintly */
+const AREA_OPEN_OPACITY = 0.55;
+
+/** Whether an area shape has marchers to preview (and so a count by the pointer). */
+export function areaHasPreview(area: AreaShape | null): boolean {
+    return (area?.preview.ids.length ?? 0) > 0;
+}
+
+/**
+ * While a marquee or lasso is drawn: a small square around each marcher releasing it would change
+ * (select, add, or take out), in the area's color, and how many by the pointer, so it's clear when
+ * a marcher registers. Faint while a lasso wouldn't close.
+ */
+function AreaPreviewMarks({
+    area,
+    theme,
+    touch,
+}: {
+    area: AreaShape;
+    theme: FieldTheme;
+    touch: boolean;
+}) {
+    const { t } = useTranslate();
+    const view = useFieldViewStore();
+    const { preview } = area;
+    if (preview.ids.length === 0) return null;
+    const opacity =
+        area.kind === "lasso" && !area.closes ? AREA_OPEN_OPACITY : undefined;
+    // Just outside where a selected marcher's ring would be
+    const half =
+        ringReach(view.zoom) * view.zoom + AREA_MARK_GAP + AREA_MARK_WIDTH / 2;
+    const squares: string[] = [];
+    for (let i = 0; i < preview.ids.length; i++) {
+        const p = fieldToElement(
+            view,
+            preview.positions[i * 2],
+            preview.positions[i * 2 + 1],
+        );
+        squares.push(
+            `M${p.x - half} ${p.y - half}h${half * 2}v${half * 2}h${-half * 2}z`,
+        );
+    }
+    const count = preview.ids.length;
+    const text =
+        preview.choice === "add"
+            ? t("field.areaCount.add", { count })
+            : preview.choice === "subtract"
+              ? t("field.areaCount.subtract", { count })
+              : t("field.areaCount.select", { count });
+    return (
+        <g data-testid="fieldAreaPreview" opacity={opacity}>
+            <path
+                d={squares.join("")}
+                fill="none"
+                stroke={rgbaToString(theme.shape)}
+                strokeWidth={AREA_MARK_WIDTH}
+                strokeDasharray={area.subtract ? "3 2" : undefined}
+            />
+            <PointerTip
+                at={fieldToElement(view, preview.pointer.x, preview.pointer.y)}
+                text={text}
+                touch={touch}
+                testId="fieldAreaCount"
+            />
         </g>
     );
 }
