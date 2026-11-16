@@ -15,7 +15,7 @@ import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 import { Aside } from "@astrojs/starlight/components";
 
-If a show opens but your changes fail with errors such as "Error updating pages" or "Error updating beats", or a change is gone after you undo, redo or reopen the show, the file may be damaged. OpenMarch can copy everything in it into a new, clean file.
+If a show opens but your changes fail with errors such as <Ui k="pages.updateFailed" /> or <Ui k="audio.beats.update.error" />, or a change is gone after you undo, redo or reopen the show, the file may be damaged. OpenMarch can copy everything in it into a new, clean file.
 
 Repairing never changes your show file. It makes a repaired copy next to it, named after it with "- FIXED": `Fall Show.dots` becomes `Fall Show - FIXED.dots`.
 

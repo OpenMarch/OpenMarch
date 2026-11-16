@@ -68,11 +68,7 @@ export const createMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.createFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.addFailed"), e, variables);
         },
     });
 };
@@ -136,11 +132,7 @@ export const createMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.createFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.addFailed"), e, variables);
         },
     });
 };
@@ -163,11 +155,7 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.updateFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.changeFailed"), e, variables);
         },
     });
 };
@@ -182,11 +170,7 @@ export const deleteMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.removeFailed"), e, variables);
         },
     });
 };
@@ -221,11 +205,7 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.removeFailed"), e, variables);
         },
     });
 };

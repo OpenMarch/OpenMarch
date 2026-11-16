@@ -609,7 +609,7 @@ export const _updateTempoGroup = async ({
 export const useUpdateManualTempos = () => {
     return useTempoGroupMutation(
         _updateManualTempos,
-        "tempoGroup.differentBeatsError",
+        "tempoGroup.temposFailed",
         "music.tempoGroupUpdated",
     );
 };

@@ -225,11 +225,7 @@ export const createPagesMutationOptions = (qc: QueryClient) => {
             void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("pages.createError", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("pages.createFailed"), e, variables);
         },
     });
 };
@@ -242,11 +238,7 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
             void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("pages.updateError", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("pages.updateFailed"), e, variables);
         },
     });
 };

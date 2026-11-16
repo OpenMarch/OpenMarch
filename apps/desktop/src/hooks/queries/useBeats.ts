@@ -147,7 +147,7 @@ export const flattenOrderMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e) => {
-            conToastError(tolgee.t("audio.beats.flatten.error"), e);
+            conToastError(tolgee.t("audio.beats.update.error"), e);
         },
     });
 };
