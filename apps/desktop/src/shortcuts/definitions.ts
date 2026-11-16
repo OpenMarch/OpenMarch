@@ -922,6 +922,16 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+A", "Control+A"],
     },
+    // The field's Select tool (`fieldSelectTool.ts`): a mouse drag from empty field draws a box or
+    // a lasso. V, the selection tool's key in Figma and Illustrator (L is Shape › Line)
+    toggleLassoSelect: {
+        labelKey: "actions.select.toggleLasso",
+        keywordsKey: "actions.select.toggleLassoKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: ["V"],
+        ignoreRepeat: true,
+    },
 
     // Set vs Following (#304): the selected marchers Set on the count shown lose that
     // coordinate and follow from earlier; later pages keep their spots. Unbound

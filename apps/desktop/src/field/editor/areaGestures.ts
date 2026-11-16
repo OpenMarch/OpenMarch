@@ -120,8 +120,8 @@ export function startMarquee(
  * `LASSO_CLOSE_DISTANCE` (50) screen px of its start it closes, and replaces
  * the selection with every marcher whose center is inside it, as a marquee
  * picks them (Shift at the press adds them, Alt removes them). Released farther away, it selects
- * nothing and changes nothing; the double-click's first click has already cleared the selection,
- * unless Shift or Alt was held.
+ * nothing and changes nothing. After a double-click, its first click has already cleared the
+ * selection, unless Shift or Alt was held; with the Lasso tool there was no first click.
  *
  * Drawn by a finger or a pen (#933, owner), it closes when released within 150 screen px of its
  * start, or when the path closed back to its start takes in a real area

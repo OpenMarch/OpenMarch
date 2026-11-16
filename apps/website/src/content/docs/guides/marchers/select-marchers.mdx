@@ -14,6 +14,10 @@ covers:
   - i18n:touch.dragMode
   - apps/desktop/src/components/canvas/touch/fieldDragMode.ts
   - apps/desktop/src/field/three/fieldDragModes.ts
+  - apps/desktop/src/field/fieldSelectTool.ts
+  - apps/desktop/src/components/canvas/display/SelectToolBar.tsx
+  - action:toggleLassoSelect
+  - i18n:fieldSelectTool
 sidebar:
   order: 2
 ---
@@ -32,7 +36,7 @@ Most tools act on the selected marchers: moving, aligning, placing them on a sha
 
 ## Drag a box
 
-Drag on empty field to draw a box. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
+With <Ui k="fieldSelectTool.box" /> picked at the field's top right (the starting tool), drag on empty field to draw a box. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
 
 <Media
   id="marchers-select-box"
@@ -46,19 +50,28 @@ A drag that starts inside the frame around several selected marchers moves them 
 
 ## Draw a lasso
 
-For a group that isn't a rectangle, such as a curved line or a block with marchers close around it, draw a lasso:
+For a group that isn't a rectangle, such as a curved line or a block with marchers close around it, draw a lasso. The small bar at the field's top right, above the display buttons, picks what a drag on empty field draws: <Ui k="fieldSelectTool.box" /> or <Ui k="fieldSelectTool.lasso" />.
 
-1. Double-click empty field, and hold the button down on the second click.
+<Media
+  id="marchers-select-tool"
+  alt="The bar at the field's top right with two buttons, Box select and Lasso select, and Lasso select picked. Its tooltip reads Lasso select with the V key: draw around marchers, or double-click and drag with Box for a lasso too."
+/>
+
+To draw a lasso:
+
+1. Pick <Ui k="fieldSelectTool.lasso" /> in that bar, or press <Kbd action="toggleLassoSelect" />. The pointer turns into a lasso over empty field.
 2. Drag around the marchers you want.
 3. Bring the pointer back near where you started. The line turns green when letting go will close it.
 4. Let go.
 
+<Ui k="fieldSelectTool.lasso" /> stays picked until you pick <Ui k="fieldSelectTool.box" /> or press <Kbd action="toggleLassoSelect" /> again, and it's kept on this device. To draw one lasso without switching, double-click empty field with <Ui k="fieldSelectTool.box" /> picked, hold the button down on the second click, and drag.
+
 <Media
   id="marchers-select-lasso"
-  alt="A double-click and drag on empty field draws a freehand line around a ring of marchers. The line closes back at its start, and every marcher inside it is selected."
+  alt="With Lasso select picked, a drag on empty field draws a freehand line around a ring of marchers. The line closes back at its start, and every marcher inside it is selected."
 />
 
-Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
+Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. As with a box, a drag that starts inside the frame around several selected marchers moves them, so the pointer stays an arrow there. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
 
 ## Select everyone
 

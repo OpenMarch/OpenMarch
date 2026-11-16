@@ -266,13 +266,19 @@
         "kind": "clip",
         "width": 1120,
         "height": 720,
-        "seconds": 5.1
+        "seconds": 5
     },
     "marchers-select-tab": {
         "chapter": "marchers",
         "kind": "still",
         "width": 1600,
         "height": 118
+    },
+    "marchers-select-tool": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 920,
+        "height": 368
     },
     "music-count-menu": {
         "chapter": "music",

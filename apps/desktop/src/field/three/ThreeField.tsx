@@ -108,6 +108,7 @@ import FieldContextMenu, { useFieldMenu } from "./FieldContextMenu";
 import { attachFieldPointerInput } from "./fieldPointerInput";
 import { attachFieldGestures } from "./fieldGestures";
 import { fingerRole, holdDragArea, penDrag } from "./fieldDragModes";
+import { useFieldAreaTool } from "@/field/fieldSelectTool";
 import { runFieldHistory } from "./fieldHistory";
 import { cameraBounds, useFieldViewStore } from "./fieldView";
 import {
@@ -514,6 +515,9 @@ function ThreeFieldView() {
         editor.pageChanged();
     }, [editor, pageId]);
     useEffect(() => editor.setPlaying(isPlaying), [editor, isPlaying]);
+    // The Select bar's tool: what a mouse drag from empty field draws
+    const areaTool = useFieldAreaTool();
+    useEffect(() => editor.setAreaTool(areaTool), [editor, areaTool]);
     // #204: the shape tool and placed boxes read this field
     useEffect(() => {
         setShapeField({

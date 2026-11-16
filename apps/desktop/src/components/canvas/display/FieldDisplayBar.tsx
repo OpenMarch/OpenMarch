@@ -16,6 +16,11 @@ import {
 } from "@/stores/UiSettingsStore";
 import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
 import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
+import SelectToolBar from "./SelectToolBar";
+import { useShowsSelectTool } from "@/field/fieldSelectTool";
+
+const BAR_CLASS =
+    "border-stroke bg-bg-1 text-text rounded-8 pointer-events-auto flex flex-col items-center gap-4 border p-4 shadow-lg";
 
 const POPOVER_CLASS =
     "border-stroke bg-modal text-text shadow-modal rounded-6 z-50 flex flex-col gap-4 border p-8 backdrop-blur-32";
@@ -35,40 +40,47 @@ const SHAPE_CHOICES: readonly Choice<ShapeOutlines>[] = [
 /**
  * How the field is displayed, apart from the timeline: a small bar at the field's top right (the
  * zoom controls hold the bottom right). It replaced the toolbar's View tab. Path overlays, marcher
- * labels and placed shapes' outlines.
+ * labels and placed shapes' outlines. The Select tool's Box and Lasso sit above it in a bar of
+ * their own, outside the touch layout (whose pill has its own drag modes).
  */
 export default function FieldDisplayBar() {
     const { t } = useTranslate();
     const layerRef = useFieldLayerRef<HTMLDivElement>();
+    const showsSelectTool = useShowsSelectTool();
     return (
         <TransportTooltipProvider>
             <div
                 ref={layerRef}
-                // #927: the pill and the shape editor bar keep off it
+                // #927: the pill and the shape editor bar keep off both bars
                 data-field-layer="control"
-                role="group"
-                aria-label={t("fieldDisplay.label")}
-                data-testid="field-display-bar"
-                className="border-stroke bg-bg-1 text-text rounded-8 pointer-events-auto absolute top-6 right-6 z-10 flex flex-col items-center gap-4 border p-4 shadow-lg"
+                className="pointer-events-none absolute top-6 right-6 z-10 flex flex-col items-center gap-6"
             >
-                <StartFlagPositionsButton />
-                <ChoiceButton
-                    setting="marcherLabels"
-                    fallback="auto"
-                    choices={LABEL_CHOICES}
-                    icon={TagIcon}
-                    labelKey="toolbar.view.labels"
-                    testId="field-display-labels"
-                />
-                {/* Placed boxes' outlines (docs/timeline/research/shapes/07-placed-boxes.md) */}
-                <ChoiceButton
-                    setting="shapes"
-                    fallback="selected"
-                    choices={SHAPE_CHOICES}
-                    icon={BoundingBoxIcon}
-                    labelKey="toolbar.view.shapes"
-                    testId="field-display-shapes"
-                />
+                {showsSelectTool && <SelectToolBar className={BAR_CLASS} />}
+                <div
+                    role="group"
+                    aria-label={t("fieldDisplay.label")}
+                    data-testid="field-display-bar"
+                    className={BAR_CLASS}
+                >
+                    <StartFlagPositionsButton />
+                    <ChoiceButton
+                        setting="marcherLabels"
+                        fallback="auto"
+                        choices={LABEL_CHOICES}
+                        icon={TagIcon}
+                        labelKey="toolbar.view.labels"
+                        testId="field-display-labels"
+                    />
+                    {/* Placed boxes' outlines (docs/timeline/research/shapes/07-placed-boxes.md) */}
+                    <ChoiceButton
+                        setting="shapes"
+                        fallback="selected"
+                        choices={SHAPE_CHOICES}
+                        icon={BoundingBoxIcon}
+                        labelKey="toolbar.view.shapes"
+                        testId="field-display-shapes"
+                    />
+                </div>
             </div>
         </TransportTooltipProvider>
     );

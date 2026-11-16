@@ -153,7 +153,11 @@
             "removeLastPoint": "Prop: Remove the last corner while drawing"
         },
         "select": {
-            "selectAll": "Select all"
+            "selectAll": "Select all",
+            "toggleLasso": "Switch between box and lasso select",
+            "useLasso": "Use lasso select",
+            "useBox": "Use box select",
+            "toggleLassoKeywords": "lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "No marchers selected",
@@ -607,6 +611,13 @@
     "fieldDisplay": {
         "label": "Field display",
         "valueLabel": "{label}: {value}"
+    },
+    "fieldSelectTool": {
+        "label": "Select tool",
+        "box": "Box select",
+        "lasso": "Lasso select",
+        "boxHint": "Drag on empty field to draw a box",
+        "lassoHint": "Draw around marchers. With Box, double-click and drag draws a lasso too"
     },
     "fieldProperties": {
         "applyFieldType": "Apply Field Type",

@@ -1755,6 +1755,67 @@ describe("FieldEditor lasso", () => {
         expect(editor.activeGesture()).toBe("lasso");
     });
 
+    describe("with the Lasso tool (the Select bar)", () => {
+        it("draws one from a plain drag on empty field, replacing the selection", () => {
+            const { editor, state } = setup({ selected: [4] });
+            editor.setAreaTool("lasso");
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(350, 50));
+            expect(editor.activeGesture()).toBe("lasso");
+            for (const [x, y] of AROUND_2_AND_3.slice(2))
+                editor.pointerMove(at(x, y));
+            editor.pointerUp(at(150, 60));
+            expect(state.selected).toEqual([2, 3]);
+        });
+
+        it("still moves a marcher dragged from it", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.pointerDown(at(100, 100));
+            editor.pointerMove(at(150, 120));
+            expect(editor.activeGesture()).toBe("move");
+        });
+
+        it("shows the lasso cursor over empty field only", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.pointerMove(at(150, 50));
+            expect(editor.cursor()).toBe("lasso");
+            editor.pointerMove(at(100, 100));
+            expect(editor.cursor()).toBe("pointer");
+        });
+
+        it("doesn't show it inside a multi-selection's box, where a drag moves the selection (#196)", () => {
+            const { editor } = setup({ selected: [1, 3] });
+            editor.setAreaTool("lasso");
+            // On empty field between 2 and 3, inside the box from 1 to 3
+            editor.pointerMove(at(250, 100));
+            expect(editor.cursor()).toBe("default");
+            // With Shift the press adds an area there, so the lasso shows
+            editor.pointerMove(at(250, 101, { shift: true }));
+            expect(editor.cursor()).toBe("lasso");
+            editor.pointerDown(at(250, 101, { shift: true }));
+            editor.pointerMove(at(350, 50, { shift: true }));
+            expect(editor.activeGesture()).toBe("lasso");
+        });
+
+        it("draws a box again once Box is picked, and a double-click still lassos", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.setAreaTool("marquee");
+            editor.pointerMove(at(150, 50));
+            expect(editor.cursor()).toBe("default");
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(250, 150));
+            expect(editor.activeGesture()).toBe("marquee");
+            editor.pointerUp(at(250, 150));
+            click(editor, 150, 50);
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(250, 50));
+            expect(editor.activeGesture()).toBe("lasso");
+        });
+    });
+
     it("replaces the selection with the marchers inside it", () => {
         const { editor, state } = setup({ selected: [4] });
         lasso(editor, AROUND_2_AND_3);

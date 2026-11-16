@@ -178,11 +178,42 @@ const shots = [
         },
     },
     {
+        id: "marchers-select-tool",
+        kind: "still",
+        // The Select bar at the field's top right with Lasso picked, and its tooltip naming the key
+        covers: [
+            "apps/desktop/src/components/canvas/display/SelectToolBar.tsx",
+        ],
+        async setup({ page, wait, around, union }) {
+            await toPage1(page, wait);
+            const bar = page.getByTestId("field-select-tool");
+            const lasso = page.getByTestId("field-select-tool-lasso");
+            await lasso.click();
+            // Off and back on, so the tooltip opens from a hover rather than the click
+            await page.mouse.move(800, 500);
+            await wait(300);
+            await lasso.hover();
+            await wait(1500);
+            const tip = page
+                .locator("[data-radix-popper-content-wrapper]")
+                .first();
+            return {
+                box: union(
+                    await around(tip, 12),
+                    await around(page.getByTestId("field-display-bar"), 12),
+                    await around(bar, 12),
+                ),
+            };
+        },
+    },
+    {
         id: "marchers-select-lasso",
         kind: "clip",
-        // Double-click and drag on empty field draws a lasso around a curved group
+        // With Lasso picked on the Select bar, a drag on empty field draws a lasso around a curved group
+        covers: ["apps/desktop/src/field/fieldSelectTool.ts"],
         async setup({ page, wait }) {
             await toPage1(page, wait);
+            await page.getByTestId("field-select-tool-lasso").click();
             const center = (await marchers(page)).get("G4");
             return { box: boxAround(center, 560, 360) };
         },
@@ -200,8 +231,6 @@ const shots = [
             await page.mouse.move(rest.x, rest.y);
             await film.hold(0.3);
             await film.moveTo(page, rest, points[0], 0.5);
-            await page.mouse.click(points[0].x, points[0].y);
-            await film.hold(0.1);
             await page.mouse.down();
             for (let i = 1; i < points.length; i++)
                 await film.moveTo(page, points[i - 1], points[i], 0.06);

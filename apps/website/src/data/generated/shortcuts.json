@@ -462,6 +462,23 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "label": "Switch between box and lasso select",
+                    "other": [
+                        {
+                            "keys": [
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "V"
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -2100,6 +2117,23 @@
                             "keys": [
                                 "⌘",
                                 "A"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Switch between box and lasso select",
+                    "other": [
+                        {
+                            "keys": [
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "V"
                             ]
                         }
                     ]

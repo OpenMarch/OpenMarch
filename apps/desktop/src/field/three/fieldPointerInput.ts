@@ -17,6 +17,19 @@ export type FieldPointerInputOptions = {
     penDrag?: (press: FieldPointer) => "pan" | "lasso" | null;
 };
 
+/** A lasso loop whose rope ends where it draws, dark on a white halo so it shows on any field. */
+const LASSO_SVG =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-linecap='round'>" +
+    "<g stroke='white' stroke-width='3.6'><ellipse cx='14' cy='8.5' rx='7.5' ry='5'/><path d='M8.5 12.2c-1.6 1.7-.9 3.6.9 3.9 1.9.3 1.6 2.6-.3 3.4L3 21'/></g>" +
+    "<g stroke='%23202024' stroke-width='1.6'><ellipse cx='14' cy='8.5' rx='7.5' ry='5'/><path d='M8.5 12.2c-1.6 1.7-.9 3.6.9 3.9 1.9.3 1.6 2.6-.3 3.4L3 21'/></g>" +
+    "</svg>";
+
+/** The CSS for an editor cursor: the lasso is drawn, the rest are CSS names already. */
+export const cssCursor = (cursor: ReturnType<FieldEditor["cursor"]>): string =>
+    cursor === "lasso"
+        ? `url("data:image/svg+xml,${LASSO_SVG.replace(/</g, "%3C").replace(/>/g, "%3E")}") 3 21, crosshair`
+        : cursor;
+
 /**
  * Reports the pointer on the new field's canvas to the editor: positions on
  * the field and on screen, the button and the modifiers, nothing else (ADR
@@ -94,7 +107,7 @@ export function attachFieldPointerInput(
         if (event.buttons === 0) editor.pointerLeave();
     };
     const showCursor = () => {
-        element.style.cursor = editor.cursor();
+        element.style.cursor = cssCursor(editor.cursor());
     };
     element.addEventListener("pointerdown", down);
     element.addEventListener("pointermove", move);
