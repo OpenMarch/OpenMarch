@@ -187,14 +187,31 @@ export function zoomRatioLimits(
         position[2] - target[2],
     );
     let hi = radius > 0 ? limits.maxRadius / radius : Infinity;
-    // Zooming out about a point above them lowers the eye and the target:
-    // keep the eye at `minEyeY` and the target on or above the ground.
+    // Zooming out about a point above the eye lowers the eye: keep it at
+    // `minEyeY`. (The target can sink too; `targetOnGround` lifts it back.)
     if (point[1] > position[1])
         hi = Math.min(
             hi,
             (point[1] - limits.minEyeY) / (point[1] - position[1]),
         );
-    if (point[1] > target[1] && target[1] >= 0)
-        hi = Math.min(hi, point[1] / (point[1] - target[1]));
     return [Math.min(lo, 1), Math.max(hi, 1)];
+}
+
+/**
+ * `target`, moved along the line of sight from `position` up to the ground
+ * when it's below it, so the view doesn't change. Zooming out about a point
+ * above the target (a marcher, a seat) lowers the target; this keeps the
+ * orbit center on the ground without stopping the zoom.
+ */
+export function targetOnGround(
+    position: Vector3Tuple,
+    target: Vector3Tuple,
+): Vector3Tuple {
+    if (target[1] >= 0 || position[1] <= 0) return target;
+    const s = position[1] / (position[1] - target[1]);
+    return [
+        position[0] + (target[0] - position[0]) * s,
+        0,
+        position[2] + (target[2] - position[2]) * s,
+    ];
 }

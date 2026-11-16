@@ -365,6 +365,23 @@ export default function CameraRig() {
         };
 
         /**
+         * True while `point` is still drawn under the client position
+         * (within a pixel). A zoom that backed away from the target
+         * instead of about the point moves it off the pointer.
+         */
+        const underPointer = (
+            point: Vector3Tuple,
+            clientX: number,
+            clientY: number,
+        ): boolean => {
+            rig.sync();
+            const rect = el.getBoundingClientRect();
+            const v = new Vector3(...point).project(camera);
+            const x = rect.left + ((v.x + 1) / 2) * rect.width;
+            const y = rect.top + ((1 - v.y) / 2) * rect.height;
+            return Math.hypot(x - clientX, y - clientY) <= 1;
+        };
+        /**
          * The last zoom point, kept while the pointer stays put: zooming
          * keeps that point under the pointer, so the next wheel event would
          * find it again, and raycasting the stands on every event costs a
@@ -390,7 +407,8 @@ export default function CameraRig() {
                 lastZoom &&
                 lastZoom.x === clientX &&
                 lastZoom.y === clientY &&
-                now - lastZoom.atMs < ZOOM_POINT_REUSE_MS
+                now - lastZoom.atMs < ZOOM_POINT_REUSE_MS &&
+                underPointer(lastZoom.point, clientX, clientY)
             ) {
                 lastZoom.atMs = now;
                 return lastZoom.point;

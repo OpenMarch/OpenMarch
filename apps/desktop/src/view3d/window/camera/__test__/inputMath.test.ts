@@ -4,6 +4,7 @@ import {
     damp,
     groundHit,
     levelHit,
+    targetOnGround,
     canHold,
     MIN_HOLD_SLOPE,
     wheelPixels,
@@ -81,6 +82,19 @@ describe("canHold", () => {
         expect(canHold([0, 20, 0], unit([0, -1, -1]), [0, 0, -300], 250)).toBe(
             false,
         );
+    });
+});
+
+describe("targetOnGround", () => {
+    it("leaves a target on or above the ground alone", () => {
+        expect(targetOnGround([0, 10, 10], [0, 2, 0])).toEqual([0, 2, 0]);
+    });
+
+    it("slides a sunken target up the line of sight to the ground", () => {
+        const t = targetOnGround([0, 10, 10], [0, -10, -10]);
+        expect(t[0]).toBeCloseTo(0, 9);
+        expect(t[1]).toBe(0);
+        expect(t[2]).toBeCloseTo(0, 9);
     });
 });
 
