@@ -3,7 +3,7 @@
  *
  * Vite emits each GLB and the manifest as its own file (`?url`), so they stay
  * out of the JavaScript bundle and nothing is fetched until a show needs it.
- * The window loads them from the app's files (`file://` in the packaged app),
+ * The window loads them from the app's files (`app://openmarch` in the packaged app),
  * never from the network. Each load is cached for the window's lifetime.
  */
 // cspell:ignore gltf
