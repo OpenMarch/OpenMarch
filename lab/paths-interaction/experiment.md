@@ -2,11 +2,15 @@
 # The lab reads this file when this branch's test build is published.
 # Keep `id` stable: feedback is filed under it.
 id: paths-interaction
-title: "Path editing: one line per marcher, Edit a marcher's line, Detach in a menu, Rejoin (interaction MVP)"
-summary: "The path interaction MVP: marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), and Match group, or Rejoin for detached marchers. Detach from group path is under the bar's ··· menu."
+title: "Path editing: only shapes keep a group path, one line per marcher, Edit a marcher's line, Detach, Rejoin (interaction MVP)"
+summary: "The path interaction MVP. New: only a placed shape keeps a group path. A path drawn for marchers you picked by hand is saved as each marcher's own path, so there's nothing to find again later; select the same marchers and you edit them together again. Marchers are the only selection, and one line shows for what you selected: each selected marcher's own line, faint until you edit it, or with the whole group selected just the group path, deep. A small bar beside it keeps its buttons in place: Edit group path, Edit <marcher>'s line (bend one marcher's line by its handles, still linked to the group path), and Match group, or Rejoin for detached marchers. Detach from group path is under the bar's ··· menu."
 status: open
 variants: []
 questions:
+  - "Pick a few marchers by hand (click one, Shift-click two more; not a placed shape) and draw a path for them with P. A toast says 'Saved as 3 separate paths. Group the marchers to keep them linked.' Was it clear what that means for you?"
+  - "Click empty field, then select the same marchers again. Their line shows as Path · 3 with Edit path on the bar. Edit it and drag a point: all three follow. Did you expect that, after the toast said they're separate?"
+  - "Now select only one of those marchers and edit its path. Then select all three again: they no longer share one line. Is that what you expected?"
+  - "Make a placed shape of some marchers (select them, then Ctrl+G or ⌘G) and draw a path for it. This one says Group path and stays linked. Is the difference between a shape's group path and hand-picked marchers' paths clear?"
   - "Draw a group path for a block, select one member, open ··· on the path bar and choose Detach from group path. Its copy opens and the bar offers Rejoin. Did anything on the field move? Was it clear that the open path is now that marcher's own?"
   - "Detach isn't on the path bar any more: it's under ··· as Detach from group path, and Edit <name>'s line changes one marcher's line while it keeps following the group. Did you go looking for Detach on the bar? Was Edit <name>'s line what you wanted most of the time?"
   - "Drag a point of the detached copy, then play the move. Only that marcher's walk changed, and it still reaches each point of its copy on the group's counts. Is that what you expected from 'keeps the group's timing'?"
@@ -22,6 +26,17 @@ questions:
 
 **What's new**
 
+- **Only a placed shape keeps a group path.** Draw a path for marchers you picked by hand
+  (not a placed shape) and it's saved as **each marcher's own path**, all the same shape. A
+  toast says **Saved as 3 separate paths. Group the marchers to keep them linked.** Nothing
+  is left linking them, so there's no group path to find again later. Select the same
+  marchers again and their paths show as one line, named **Path · 3**, with **Edit path**
+  on the bar: edit it and they all follow, and the edit is saved as their own paths again.
+  Once one of them is edited alone, the others no longer share its line. There's no Match
+  group, Detach or Rejoin for them (the bar's third slot stays empty, so the buttons don't
+  move). To keep marchers linked, make them a shape first (select them, then **Ctrl+G** or
+  **⌘G**): a shape's path is a **Group path**, as before. Each edit, and its Undo, is one
+  step. Nothing happens when you deselect.
 - **Detach moved off the bar, into ···** (as a design tool keeps Detach instance in a
   menu). The bar is now **Edit group path · Edit T15's line · Match group · ···**. To
   change one marcher's line and keep it following the group, use **Edit T15's line**. To
@@ -82,43 +97,53 @@ questions:
 
 **Try it**
 
-1. Select a block of 16 on a page, draw a group path through it with **P**, and finish.
+1. Pick three marchers by hand (click one, Shift-click two more), press **P**, click once
+   and press **Enter**. The toast says **Saved as 3 separate paths**. Click empty field,
+   then select the same three again: their line shows as **Path · 3**. Press **Enter** and
+   drag a point: all three follow. Press **Undo** once: the point goes back. Then select one
+   of them alone and edit its path; select all three again: they no longer share a line.
+2. Select a placed shape of 16 (or make one: select a block, then **Ctrl+G** or **⌘G**),
+   draw a group path through it with **P**, and finish. It's a **Group path**, linked.
    Click one member's dot: only that marcher's line shows, faint, with the bar beside it:
    **Edit group path · Edit T15's line · Match group · ···**. Click another member: the
    buttons stay in the same places.
-2. With one member selected, press **Edit T15's line** (its name is on the button). Only
+3. With one member selected, press **Edit T15's line** (its name is on the button). Only
    its line shows, with handles right away: drag a small circle, or a square, somewhere
    between the group path's first and last points, then press **Escape**. The bent line is
    drawn blue. With that marcher selected, **Match group** takes the bend off. The parts
    that run from the marcher's start onto the group path, and off it to the end spot, have
    no handles: they only join the group path.
-3. Drag a box round three members (or click one dot, then Shift-click two more). Edit
+4. Drag a box round three members (or click one dot, then Shift-click two more). Edit
    marcher's line is greyed out ("Select one marcher to edit their line"). Open **···**: it
    has **Detach 3 from group path**. Choose it: a toast says **3 marchers detached** with
    Undo, nothing moves, the group line stays where it was, the three stay selected, and the
    bar's third slot now says **Rejoin 3** where Match group was. Their start rings turn
    dashed orange.
-4. Click one detached marcher's dot: its copy shows. Click the copy's line to edit it, drag
+5. Click one detached marcher's dot: its copy shows. Click the copy's line to edit it, drag
    a point, and play the move with **Space**.
-5. Right-click (or long-press) the detached marcher: the menu's Path group is in the bar's
+6. Right-click (or long-press) the detached marcher: the menu's Path group is in the bar's
    order and has **Rejoin group path**. Choose it, then **Undo**.
-6. Drag a box round the whole block (or click its placed shape): only the group path shows,
+7. Drag a box round the whole block (or click its placed shape): only the group path shows,
    deep, named **Group path · 16**, with the detached and bent marks on their dots and a
    faint line for each of those marchers. Click the group line: its points show. Drag a
    point to reshape the whole group. With a placed shape, its bar and the path bar sit
    one under the other.
-7. With the whole block still selected, open **···**: **Re-center group path** (greyed out
+8. With the whole block still selected, open **···**: **Re-center group path** (greyed out
    unless the block has moved since the path was drawn), then after a line **Detach all 16
    marchers** and **Remove path**. Choose Detach all: a toast says **Group path ended: 16 marchers
    have their own paths** with **Undo**. Undo it, then Remove the path: a toast offers
    **Undo**.
-8. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
+9. Big steps, when a path asks for them, show in the inspector under Step Size, not on the
    bar.
-9. Try it with a finger or pencil on a tablet: every one of these is a button on the bar or
-   an entry in the long-press menu; a press on a greyed-out button says why.
+10. Try it with a finger or pencil on a tablet: every one of these is a button on the bar or
+    an entry in the long-press menu; a press on a greyed-out button says why.
 
 **Good to know**
 
+- A group path drawn for hand-picked marchers before this build stays one until you edit
+  it; that first edit saves it as their own paths (with the toast). Marchers you make into
+  a shape after their paths were saved separately show **Path · N** until you edit their
+  line; that edit links them as the shape's **Group path**.
 - **Own path** is still the word for one marcher's own drawn path (P with one marcher
   selected). Drawing over a detached copy with P from that marcher alone draws a new path
   of its own, as before.
