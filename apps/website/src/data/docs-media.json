@@ -214,6 +214,13 @@
         "width": 768,
         "height": 916
     },
+    "marchers-equipment-drag": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1280,
+        "height": 350,
+        "seconds": 4.5
+    },
     "marchers-equipment-lane": {
         "chapter": "marchers",
         "kind": "still",
@@ -223,8 +230,8 @@
     "marchers-equipment-menu": {
         "chapter": "marchers",
         "kind": "still",
-        "width": 1180,
-        "height": 1044
+        "width": 1516,
+        "height": 1060
     },
     "marchers-inspector": {
         "chapter": "marchers",
