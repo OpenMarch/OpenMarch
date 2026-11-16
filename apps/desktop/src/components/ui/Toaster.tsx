@@ -182,26 +182,30 @@ export default function Toaster() {
                 classNames: {
                     title: "text-body text-text leading-tight",
                     description: "text-sub text-text-subtitle leading-tight",
-                    // The toast wraps: with two buttons (a `cancel` beside the action), or one too long
-                    // to sit beside the text, the text keeps the first line and the buttons go on their
+                    // The toast wraps: with two buttons (a `cancel` beside the action), or a text and button
+                    // too long to share one line, the text keeps the first line and the buttons go on their
                     // own line underneath (#805: "Stop at the end of Page 5" squeezed the text into a column)
-                    toast: "px-12 py-8 flex flex-wrap items-center gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
-                    // Centered on a one-line toast; with a description the icon stays by the title
-                    // (16 px in its 17.5 px line)
-                    icon: "[[data-sonner-toast]:has([data-description])_&]:self-start [[data-sonner-toast]:has([data-description])_&]:mt-[1px]",
-                    // Beside the icon (16 px and the 8 px gap, with room to spare so rounding never wraps
-                    // it; it grows into the rest), or the whole width without one. Sonner
-                    // renders the cancel as `[data-cancel]`
+                    toast: "px-12 py-8 flex flex-wrap items-start gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
+                    // By the first line of text, however many lines it wraps to or a description adds
+                    // (16 px in its 17.5 px line, a pixel low to sit on the letters rather than the line box)
+                    icon: "mt-[2px]",
+                    // The text's own one-line width, at most the row beside the icon (16 px and the 8 px
+                    // gap, with room to spare so rounding never wraps it) or the whole row without one. So
+                    // a button stays beside the text only when text and button fit on one line; a longer
+                    // text fills its row and wraps there, and the button goes underneath (a long message
+                    // beside "Show in folder" made a narrow column of text). Sonner renders the cancel as
+                    // `[data-cancel]`; with one the text always fills its row
                     content:
-                        "min-w-0 flex-1 basis-[120px] [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
-                    // The action keeps to one line: beside the text while the text keeps 120 px (room for "Release notes" or "Switch to Expert"), so a
-                    // long message never squeezes its label into a column; otherwise under it, at the right
+                        "min-w-0 grow basis-auto max-w-[calc(100%-32px)] [[data-sonner-toast]:not(:has([data-icon]))_&]:max-w-full [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
+                    // The action keeps to one line: at the right end of the text's line when both fit,
+                    // otherwise on its own line under the text, still at the right. Its padding is for the hover
+                    // and focus ring; -my-2 keeps it to a line of text's height, so it lines up with the text
                     actionButton:
-                        "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
+                        "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto shrink-0 -my-2 whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
                     // A second, quieter button before the action (sonner's `cancel`); it starts the
                     // buttons' line and pushes both to the right
                     cancelButton:
-                        "ml-auto shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-text hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
+                        "ml-auto shrink-0 -my-2 whitespace-nowrap rounded-6 px-6 py-2 text-body text-text hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
                 },
             }}
             icons={{

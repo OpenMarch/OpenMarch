@@ -34,6 +34,7 @@ import {
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
+import { ACTION_TOAST_DURATION_MS } from "@/components/ui/toastDurations";
 import { useTimingObjects } from "@/hooks";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
@@ -302,15 +303,15 @@ function CoordinateSheetExport() {
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
-            // Add success toast message
             toast.success(
-                <span>
-                    {t("exportCoordinates.exportedCount", {
-                        count: processedMarchers.length,
-                    })}
-                    <button
-                        type="button"
-                        onClick={async () => {
+                t("exportCoordinates.coordinateSheetsExported", {
+                    count: processedMarchers.length,
+                }),
+                {
+                    duration: ACTION_TOAST_DURATION_MS,
+                    action: {
+                        label: t("exportCoordinates.showInFolder"),
+                        onClick: async () => {
                             const error =
                                 await window.electron.openExportDirectory(
                                     result.path,
@@ -323,21 +324,9 @@ function CoordinateSheetExport() {
                                     ),
                                 );
                             }
-                        }}
-                        style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            font: "inherit",
-                            cursor: "pointer",
-                            marginLeft: "0.5em",
-                        }}
-                    >
-                        <T keyName="exportCoordinates.openExportDirectory" />
-                    </button>
-                </span>,
+                        },
+                    },
+                },
             );
         } catch (error) {
             console.error("Export error:", error);
@@ -881,29 +870,14 @@ function DrillChartExport() {
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
-            // Prompt user to open the export directory
-            toast.success(
-                <span>
-                    {t("exportCoordinates.exportPDFSuccess")}{" "}
-                    <button
-                        type="button"
-                        onClick={() =>
-                            window.electron.openExportDirectory(exportDir)
-                        }
-                        style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            font: "inherit",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <T keyName="exportCoordinates.openExportDirectory" />
-                    </button>
-                </span>,
-            );
+            toast.success(t("exportCoordinates.drillChartsExported"), {
+                duration: ACTION_TOAST_DURATION_MS,
+                action: {
+                    label: t("exportCoordinates.showInFolder"),
+                    onClick: () =>
+                        void window.electron.openExportDirectory(exportDir),
+                },
+            });
         } catch (error) {
             toast.error(
                 t("exportCoordinates.pdfExportFailed", {
@@ -1452,20 +1426,14 @@ function VideoExport() {
                 });
                 return;
             }
-            toast.success(
-                <span>
-                    {t("exportCoordinates.videoExportSuccess")}{" "}
-                    <button
-                        type="button"
-                        onClick={() =>
-                            window.electron.openExportDirectory(result.path)
-                        }
-                        className="text-accent cursor-pointer p-0 underline"
-                    >
-                        <T keyName="exportCoordinates.videoOpenFile" />
-                    </button>
-                </span>,
-            );
+            toast.success(t("exportCoordinates.videoExported"), {
+                duration: ACTION_TOAST_DURATION_MS,
+                action: {
+                    label: t("exportCoordinates.openVideo"),
+                    onClick: () =>
+                        void window.electron.openExportDirectory(result.path),
+                },
+            });
         } catch (error) {
             console.error("Video export failed:", error);
             setCurrentStep(t("exportCoordinates.exportFailed"));
