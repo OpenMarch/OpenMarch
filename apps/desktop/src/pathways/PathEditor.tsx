@@ -102,9 +102,6 @@ import {
 // Big steps lives with the inspector's line, which mustn't load the field mode (pathways round 2)
 export { bigSteps, trailDistances, type BigSteps } from "./pathBigSteps";
 
-/** Where the bar docks while drawing: under the banner at the top of the field */
-const DOCKED_TOP_PX = 56;
-
 /** Under a marcher: the field's note there (offset and pill), which the path bar leaves room for */
 const FIELD_NOTE_ROOM_PX = 40;
 /**
@@ -530,11 +527,15 @@ function PathEditorBar({
         shapeBar,
     );
     const drawing = session.phase === "drawing";
-    // While drawing, the bar stays put under the banner (sim round 3: it slid along with the
-    // pointer, so a click meant for Finish landed on the field and added a corner)
-    const docked = drawing && Number.isFinite(size.fw) && size.width > 0;
-    const left = docked ? Math.max(0, (size.fw - size.width) / 2) : place.left;
-    const top = docked ? DOCKED_TOP_PX : place.top;
+    // While drawing, the bar stays where it first appeared, beside the marchers (sim round 3: it
+    // re-placed itself as the line grew, so a click meant for Finish landed on the field and
+    // added a corner). It fades while a point is dragged, as the shape editor's bar does
+    const pinned = useRef<{ left: number; top: number } | null>(null);
+    if (!drawing) pinned.current = null;
+    else if (!pinned.current && size.width > 0 && Number.isFinite(size.fw))
+        pinned.current = { left: place.left, top: place.top };
+    const { left, top } = (drawing && pinned.current) || place;
+    const faded = drawing && session.dragging !== null;
     const quiet = session.phase === "closed";
     // Step 6 (TC-7): a trail's turns that fall between counts
     const offCount = quiet
@@ -571,10 +572,12 @@ function PathEditorBar({
             ref={ref}
             className={clsx(
                 EDITOR_BAR,
-                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap",
+                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap transition-opacity",
+                faded && "pointer-events-none opacity-25",
             )}
             style={{ left, top }}
             data-testid="path-editor"
+            data-faded={faded ? "true" : undefined}
             data-phase={session.phase}
             onPointerDown={(e) => e.stopPropagation()}
         >

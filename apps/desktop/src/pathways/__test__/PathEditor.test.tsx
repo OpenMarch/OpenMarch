@@ -14,8 +14,10 @@ import {
     clearPath,
     openPath,
     setGroupCommands,
+    endNewPoint,
     setOwnLines,
     setPathHidden,
+    shapeNewPoint,
     showPath,
     startDrawing,
 } from "../pathPenStore";
@@ -140,6 +142,16 @@ describe("the path's floating editor", () => {
         expect(screen.queryByTestId("path-big-steps")).toBeNull();
         expect(el.textContent).not.toMatch(PICTOGRAPHIC);
         expect(el.textContent).not.toContain("T4");
+    });
+
+    it("while drawing, the bar fades and lets presses through as a point is dragged, and comes back after (sim round 3)", () => {
+        act(() => startDrawing(target(null), "T4"));
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        expect(bar().dataset.faded).toBeUndefined();
+        act(() => shapeNewPoint([{ at: { x: STEP, y: STEP } }]));
+        expect(bar().dataset.faded).toBe("true");
+        act(() => endNewPoint());
+        expect(bar().dataset.faded).toBeUndefined();
     });
 
     it("several marchers each on their own path (after Detach all): a bar saying so, with Draw path (sim round 3)", () => {

@@ -118,6 +118,7 @@ import {
     shapeOf,
     pathShown,
     groupViewOf,
+    isLoose,
     laneFocusOf,
     usePathPenStore,
     type OwnLine,
@@ -1408,7 +1409,12 @@ function buildDrawing(
     // A quiet group path draws only its selected marchers' lines, and an adjusted lane only
     // itself: no group line then (interaction round 2). With the whole group selected, the group
     // line is the one drawn (round 4)
-    const noLine = view === "selected" || view === "adjust";
+    // A loose path quiet with all its marchers selected (after Detach all, or picked by hand): no
+    // middle line, which nobody walks and read as one shared path (sim round 3); each marcher's
+    // own line, faint, as several selected marchers' lines are
+    const looseQuiet =
+        view === "whole" && session.phase === "closed" && isLoose(session);
+    const noLine = view === "selected" || view === "adjust" || looseQuiet;
     const middle = session.points.map((c) => c.at);
     // While drawing, the next leg runs to where the next point would land, straight
     const outline = noLine
@@ -1469,7 +1475,14 @@ function buildDrawing(
         addHandles: bendSpots,
     } = target.trail
         ? trailParts(target.trail)
-        : groupParts(session, shape, asObject ? "object" : view, selected);
+        : looseQuiet
+          ? groupParts(
+                session,
+                shape,
+                "selected",
+                (target.group?.members ?? []).map((m) => m.marcherId),
+            )
+          : groupParts(session, shape, asObject ? "object" : view, selected);
     const laneTip = moving ? null : laneTipOf(session);
     // Whose end spots and start ghosts show: a quiet group path's or an adjusted lane's own
     // marchers only, so one selected marcher doesn't bring the whole group's along
@@ -1831,8 +1844,10 @@ function groupParts(
     // keeps every lane, thin
     const hovered =
         session.phase === "open" ? session.hoverLane?.marcherId : undefined;
+    // A loose path being edited draws every marcher's line: each moves with the edit, and there's
+    // no group path to read them off
     const drawnWalks =
-        view === "edit"
+        view === "edit" && !isLoose(session)
             ? walks.filter((w) => adjustedIds.has(w.marcherId))
             : walks;
     const adjusted = drawnWalks.flatMap(({ marcherId }, i) =>
@@ -2013,7 +2028,11 @@ function clickableLanes(
         line,
         id: drawn?.laneIds?.[i] ?? members[i]?.marcherId,
     }));
-    if (groupViewOf(s, usePathPenStore.getState().ownable) !== "whole")
+    // A loose path's lines are its marchers' own: a click on one picks that marcher
+    if (
+        isLoose(s) ||
+        groupViewOf(s, usePathPenStore.getState().ownable) !== "whole"
+    )
         return lanes;
     const memberIds = new Set(members.map((m) => m.marcherId));
     return lanes.filter(({ id }) => id === undefined || !memberIds.has(id));
