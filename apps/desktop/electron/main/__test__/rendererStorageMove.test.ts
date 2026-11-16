@@ -72,3 +72,29 @@ describe("moveRendererStorage", () => {
         expect(deps.current).toEqual({ theme: "dark" });
     });
 });
+
+describe("a move that runs late", () => {
+    it("gives up without writing or marking it done, so the next start retries", async () => {
+        vi.useFakeTimers();
+        try {
+            const deps = fakeDeps({ theme: "dark" }, {});
+            let finishRead!: () => void;
+            deps.readOld.mockImplementationOnce(
+                () =>
+                    new Promise((resolve) => {
+                        finishRead = () => resolve({ theme: "dark" });
+                    }),
+            );
+            const moved = moveRendererStorage(deps, 1000);
+            await vi.advanceTimersByTimeAsync(1000);
+            await moved;
+            // The editor opens now; the read finishes after it
+            finishRead();
+            await vi.runAllTimersAsync();
+            expect(deps.writeMissing).not.toHaveBeenCalled();
+            expect(deps.movedTo()).toBeUndefined();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+});

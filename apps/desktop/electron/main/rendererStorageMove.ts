@@ -28,18 +28,38 @@ export interface StorageMoveDeps {
     log(message: string, error?: unknown): void;
 }
 
-let moving = false;
-/** While true, the move's hidden windows may be the only ones, and closing them must not quit */
-export const isMovingRendererStorage = () => moving;
-
-/** Moves the storage unless that's done; never throws. */
-export async function moveRendererStorage(deps: StorageMoveDeps) {
+/**
+ * Moves the storage unless that's done; never throws. Gives up after `timeoutMs` so startup
+ * goes on: once the editor may be writing its own storage, the move neither writes nor marks
+ * itself done, and the next start tries again.
+ */
+export async function moveRendererStorage(
+    deps: StorageMoveDeps,
+    timeoutMs = 10_000,
+): Promise<void> {
     if (deps.movedTo() === APP_ORIGIN) return;
-    moving = true;
+    let late = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<void>((resolve) => {
+        timer = setTimeout(() => {
+            late = true;
+            deps.log(
+                `renderer storage: not moved within ${timeoutMs} ms, will try at the next start`,
+            );
+            resolve();
+        }, timeoutMs);
+    });
+    await Promise.race([move(deps, () => late), deadline]);
+    clearTimeout(timer);
+}
+
+async function move(deps: StorageMoveDeps, isLate: () => boolean) {
     try {
         const old = await deps.readOld();
+        if (isLate()) return;
         const count = Object.keys(old).length;
         const written = count ? await deps.writeMissing(old) : 0;
+        if (isLate()) return;
         deps.setMovedTo(APP_ORIGIN);
         deps.log(
             `renderer storage: ${written} of ${count} keys moved to ${APP_ORIGIN}`,
@@ -47,8 +67,6 @@ export async function moveRendererStorage(deps: StorageMoveDeps) {
     } catch (error) {
         // Not marked done, so the next start tries again
         deps.log("renderer storage: couldn't move it", error);
-    } finally {
-        moving = false;
     }
 }
 
@@ -115,18 +133,23 @@ export function electronStorageMoveDeps(
             );
             if (isNewProfile || !(await fs.stat(storageDir).catch(() => null)))
                 return {};
-            const page = path.join(
-                app.getPath("temp"),
-                `openmarch-storage-move-${process.pid}.html`,
+            // A folder of its own: the temp folder is shared with other users on Linux
+            const dir = await fs.mkdtemp(
+                path.join(app.getPath("temp"), "openmarch-storage-move-"),
             );
-            await fs.writeFile(page, "<!doctype html><title>OpenMarch</title>");
+            const page = path.join(dir, "read.html");
             try {
+                await fs.writeFile(
+                    page,
+                    "<!doctype html><title>OpenMarch</title>",
+                    { mode: 0o600, flag: "wx" },
+                );
                 return await inHiddenPage<Entries>(
                     (window) => window.loadFile(page),
                     READ_ALL,
                 );
             } finally {
-                await fs.rm(page, { force: true });
+                await fs.rm(dir, { recursive: true, force: true });
             }
         },
         writeMissing: (entries) =>

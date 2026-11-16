@@ -91,7 +91,6 @@ import {
 } from "./appProtocol";
 import {
     electronStorageMoveDeps,
-    isMovingRendererStorage,
     moveRendererStorage,
 } from "./rendererStorageMove";
 import {
@@ -232,6 +231,9 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
+/** Until the editor's first window exists; only hidden windows may be open before it */
+let startingUp = true;
+
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.js");
 const view3dPreload = join(__dirname, "../preload/view3d.js");
@@ -596,16 +598,17 @@ void app.whenReady().then(async () => {
 
     if (!url) {
         handleAppScheme(process.env.DIST);
-        // Settings the renderer kept under `file://` (rendererStorageMove.ts); never holds up
-        // startup for long
-        await Promise.race([
-            moveRendererStorage(electronStorageMoveDeps(store, isNewProfile)),
-            new Promise((resolve) => setTimeout(resolve, 10_000)),
-        ]);
+        // Settings the renderer kept under `file://` (rendererStorageMove.ts); gives up after
+        // 10 s so startup goes on
+        await moveRendererStorage(electronStorageMoveDeps(store, isNewProfile));
     }
 
     // i18n-ignore: the product name and a file path, the same in every language
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+    try {
+        await createWindow("OpenMarch - " + store.get("databasePath"));
+    } finally {
+        startingUp = false;
+    }
 
     updates = startUpdates();
 });
@@ -792,7 +795,7 @@ stopConversionWorkersOnQuit(app);
 
 app.on("window-all-closed", async () => {
     // The storage move's hidden windows close before the editor's opens
-    if (isMovingRendererStorage()) return;
+    if (startingUp) return;
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -956,6 +959,8 @@ ipcMain.handle(
 // Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
+    // Startup opens the editor itself (the storage move's windows are hidden)
+    if (startingUp) return;
     const allWindows = BrowserWindow.getAllWindows();
     if (win && !win.isDestroyed()) {
         win.focus();

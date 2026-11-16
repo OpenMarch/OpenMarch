@@ -87,6 +87,10 @@ const CONTENT_TYPES: Record<string, string> = {
     ".svg": "image/svg+xml",
     ".mp4": "video/mp4",
     ".webm": "video/webm",
+    ".mp3": "audio/mpeg",
+    ".m4a": "audio/mp4",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
 };
 
 const BLANK_PAGE = "<!doctype html><title>OpenMarch</title>";
@@ -174,6 +178,8 @@ export function handleAppScheme(root: string) {
         if (!file) return notFound();
         const range = request.headers.get("Range");
         try {
+            // Files only: no directory listings
+            if (!(await fs.promises.stat(file)).isFile()) return notFound();
             const response =
                 (range && (await partOf(file, range))) ||
                 // Electron's own file loader, which reads inside the asar archive
