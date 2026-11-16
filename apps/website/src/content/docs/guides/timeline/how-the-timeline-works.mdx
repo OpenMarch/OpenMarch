@@ -14,6 +14,10 @@ covers:
   - i18n:timeline.readout
   - i18n:timeline.windowLine
   - i18n:timeline.terms
+  - i18n:timeline.lanes
+  - apps/desktop/src/components/timeline/cues/MovesLaneHeader.tsx
+  - action:toggleMovesLane
+  - action:toggleEquipmentLane
 sidebar:
   order: 1
 ---
@@ -75,7 +79,19 @@ In Expert, a move can also start or end in the middle of a page, run across seve
 
 ## Lanes
 
-Under the moves, the timeline can show the Equipment lane: who holds what over the show, a row for each group of performers that changes equipment together. It's hidden until you tick it in the lanes button's menu, and you can drag its changes to other counts. See [The Equipment lane](/guides/marchers/equipment/#the-equipment-lane).
+Under the page row and the count ruler, the timeline's rows are **lanes**: the move bars (<Ui k="timeline.lanes.moves" />) and the Equipment lane, who holds what over the show. Click the lanes button at the right of the timeline's controls (<Ui k="cues.lane.lanesButton" />) for a list of them, and tick each one to show or hide it. The page row and the ruler always show: they're how you read time.
+
+<Media
+  id="timeline-lanes-menu"
+  alt="The timeline with Page 3 selected and a move bar, Move 1, under the music. Over the left end of the move row is the heading Moves with an eye-slash button. The lanes menu is open from the right of the timeline's controls: under Show lanes, Moves is ticked and Equipment isn't."
+/>
+
+- <Ui k="timeline.lanes.moves" /> shows until you hide it. Hidden, the move bars fold into a thin strip where they were, labeled <Ui k="timeline.lanes.movesHidden" />: click or tap the strip to show them again. The moves are still there, and the field shows and edits the drill as before. It's in Expert, where moves have bars.
+- <Ui k="cues.lane.equipment" /> is hidden until you show it. A hidden Equipment lane leaves nothing behind. See [The Equipment lane](/guides/marchers/equipment/#the-equipment-lane).
+- Each lane's heading has an eye-slash button that hides the lane where it is. Tick the lane in the lanes menu to bring it back, or for Moves, click its strip.
+- The same choices are in the View menu and the command palette (<Kbd action="openCommandPalette" />), such as <Ui k="actions.cues.toggleMovesLane" />, where you can give each one a shortcut.
+
+Which lanes show is kept on your computer, for every show you open.
 
 ## Basic and Expert
 

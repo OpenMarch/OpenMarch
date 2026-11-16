@@ -403,8 +403,10 @@ without Equipment cues draw no tags.
 
 One lane per cue type in the main timeline, under the drill rows, grouped as
 in section 3. Each can be shown or hidden from the timeline's Lanes button, a
-checklist of the lanes that are built (`cues/cueLanes.ts`), and all are hidden
-by default. A
+checklist of the lanes that are built (`timeline/timelineLanes.ts`), from its
+own eye button, the View menu or its command; all are hidden by default. The
+move tracks are a lane too (Moves, shown by default); the page row and the
+count ruler always show. A
 lasting cue draws as a bar to the next one and a momentary cue as a block of
 its length. There is no separate workspace: cues are timed against the drill,
 so the drill stays in view (ADR 0015 D-7).

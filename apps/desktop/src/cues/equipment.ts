@@ -121,3 +121,62 @@ export function withRecent(
         RECENT_EQUIPMENT_LIMIT,
     );
 }
+
+/** What setting an Equipment value does: join a matching cue, or make a new one. */
+export type EquipmentSet =
+    | {
+          readonly kind: "join";
+          readonly cue: DatabaseCue;
+          readonly marcherIds: number[];
+      }
+    | { readonly kind: "create"; readonly newCues: NewCueArgs[] }
+    | { readonly kind: "none" };
+
+/**
+ * Setting `choice` for `marcherIds` on `beatId` (owner, fork #992): when a cue of the same type,
+ * value, beat and kind is already there (both lasting, or both momentary with the same length),
+ * the performers join it; performers already in it stay. Otherwise a new lasting cue is made.
+ * `label` names the performers either way: the new cue's, or the joined cue's after joining.
+ */
+export function planEquipmentSet({
+    cues,
+    choice,
+    marcherIds,
+    beatId,
+    labelFor,
+    length = null,
+}: {
+    cues: readonly DatabaseCue[];
+    choice: EquipmentChoice;
+    marcherIds: readonly number[];
+    beatId: number;
+    /** The label for a cue with these performers */
+    labelFor: (marcherIds: readonly number[]) => string | null;
+    /** Null for a lasting cue (what the Equipment commands make) */
+    length?: number | null;
+}): EquipmentSet {
+    if (marcherIds.length === 0) return { kind: "none" };
+    const value = equipmentValueOfChoice(choice);
+    const match = cues.find(
+        (c) =>
+            c.type === "equipment" &&
+            c.value === value &&
+            c.beatId === beatId &&
+            c.length === length,
+    );
+    if (match) {
+        const joined = editedPerformers(match, marcherIds, "add");
+        return joined
+            ? { kind: "join", cue: match, marcherIds: joined }
+            : { kind: "none" };
+    }
+    return {
+        kind: "create",
+        newCues: planEquipmentCues({
+            choice,
+            marcherIds,
+            beatId,
+            label: labelFor(marcherIds),
+        }).map((c) => (length === null ? c : { ...c, length })),
+    };
+}

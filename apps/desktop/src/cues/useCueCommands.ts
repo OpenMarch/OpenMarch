@@ -29,7 +29,7 @@ import {
     equipmentCuesOn,
     equipmentValueOfChoice,
     heldValueAt,
-    planEquipmentCues,
+    planEquipmentSet,
     withRecent,
     type EquipmentChoice,
 } from "./equipment";
@@ -181,23 +181,40 @@ export function useCueCommands(): CueCommands {
                 beat !== null && count !== null && selectedIds.length > 0,
             setEquipment: (choice) => {
                 if (!beat || !show) return;
-                const label = describePerformers({
-                    ids: selectedIds,
-                    marchers: show.marchers,
-                    words,
-                    holders: labelHolders(),
-                });
-                const newCues = planEquipmentCues({
+                // A cue of the same value, beat and kind is joined, not doubled (owner, #992)
+                const plan = planEquipmentSet({
+                    cues: show.cues,
                     choice,
                     marcherIds: selectedIds,
                     beatId: beat.id,
-                    label,
+                    labelFor: (ids) =>
+                        describePerformers({
+                            ids,
+                            marchers: show.marchers,
+                            words,
+                            holders: labelHolders(),
+                        }),
                 });
-                if (newCues.length === 0) return;
+                if (plan.kind === "none") return;
                 rememberChoice(choice);
-                void createCues({ db, newCues })
-                    .then(refresh)
-                    .catch(fail("cues.errors.create"));
+                const write =
+                    plan.kind === "join"
+                        ? updateCues({
+                              db,
+                              modifiedCues: [
+                                  {
+                                      id: plan.cue.id,
+                                      marcherIds: plan.marcherIds,
+                                      label: describePerformers({
+                                          ids: plan.marcherIds,
+                                          marchers: show.marchers,
+                                          words,
+                                      }),
+                                  },
+                              ],
+                          })
+                        : createCues({ db, newCues: plan.newCues });
+                void write.then(refresh).catch(fail("cues.errors.create"));
             },
             holders,
             selectHolding: (values) => {

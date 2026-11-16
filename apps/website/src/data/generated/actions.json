@@ -623,6 +623,11 @@
         "category": "batchEdit",
         "bindings": []
     },
+    "toggleMovesLane": {
+        "label": "Show or hide the Moves lane",
+        "category": "timeline",
+        "bindings": []
+    },
     "toggleEquipmentLane": {
         "label": "Show or hide the Equipment lane",
         "category": "timeline",

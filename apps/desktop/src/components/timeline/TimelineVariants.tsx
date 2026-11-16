@@ -1308,6 +1308,19 @@ const TimelineSurface = memo(function TimelineSurface({
                                     </div>
                                 </div>
                             )}
+                        {!basic && !band && props.movesHiddenStrip && (
+                            // Moves is hidden: it folds into a strip where its tracks were
+                            <div
+                                className="absolute left-0 z-[4]"
+                                style={{
+                                    top: trackTop,
+                                    width,
+                                    height: rowPitch,
+                                }}
+                            >
+                                {props.movesHiddenStrip}
+                            </div>
+                        )}
                         {lanes?.render({
                             top: lanesTop,
                             width,

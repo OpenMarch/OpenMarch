@@ -6,6 +6,7 @@ import {
     editedPerformers,
     equipmentTagsAt,
     planEquipmentCues,
+    planEquipmentSet,
     withRecent,
 } from "../equipment";
 import { describePerformers, type LabelMarcher } from "../cueLabel";
@@ -143,6 +144,81 @@ describe("equipment cues (#992)", () => {
                 })[0]!.value;
             expect(value("usual")).toBe("builtin:equipment.usual");
             expect(value("none")).toBe("builtin:equipment.none");
+        });
+    });
+
+    describe("planEquipmentSet (#992: a matching cue is joined)", () => {
+        const stored = (
+            id: number,
+            value: string,
+            beatId: number,
+            marcherIds: number[],
+            length: number | null = null,
+        ) => ({
+            id,
+            type: "equipment",
+            beatId,
+            value: `builtin:equipment.${value}`,
+            settings: {},
+            length,
+            transition: null,
+            marcherIds,
+            label: "old",
+            notes: null,
+            createdAt: "",
+            updatedAt: "",
+        });
+        const labelFor = (ids: readonly number[]) => ids.join("+");
+
+        it("joins the cue of the same value, beat and kind, keeping who's in it", () => {
+            const cues = [stored(1, "rifle", 5, [1, 2])];
+            expect(
+                planEquipmentSet({
+                    cues,
+                    choice: "rifle",
+                    marcherIds: [2, 3, 4],
+                    beatId: 5,
+                    labelFor,
+                }),
+            ).toEqual({ kind: "join", cue: cues[0], marcherIds: [1, 2, 3, 4] });
+        });
+
+        it("makes a new cue when the value, beat or kind differs", () => {
+            for (const cue of [
+                stored(1, "sabre", 5, [1]),
+                stored(1, "rifle", 6, [1]),
+                stored(1, "rifle", 5, [1], 8),
+            ]) {
+                const plan = planEquipmentSet({
+                    cues: [cue],
+                    choice: "rifle",
+                    marcherIds: [3],
+                    beatId: 5,
+                    labelFor,
+                });
+                expect(plan.kind).toBe("create");
+                expect(plan.kind === "create" && plan.newCues).toEqual([
+                    {
+                        type: "equipment",
+                        beatId: 5,
+                        value: "builtin:equipment.rifle",
+                        marcherIds: [3],
+                        label: "3",
+                    },
+                ]);
+            }
+        });
+
+        it("does nothing when everyone is in the matching cue already", () => {
+            expect(
+                planEquipmentSet({
+                    cues: [stored(1, "rifle", 5, [1, 2])],
+                    choice: "rifle",
+                    marcherIds: [2],
+                    beatId: 5,
+                    labelFor,
+                }).kind,
+            ).toBe("none");
         });
     });
 

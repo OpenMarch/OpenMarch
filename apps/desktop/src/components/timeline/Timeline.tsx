@@ -183,6 +183,8 @@ export interface TimelineProps {
     readonly lanes?: TimelineBand;
     /** The Moves lane's heading, over the move tracks while they show */
     readonly movesHeader?: React.ReactNode;
+    /** The strip where the move tracks were while Moves is hidden */
+    readonly movesHiddenStrip?: React.ReactNode;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -1112,12 +1114,14 @@ export function Timeline(props: TimelineProps) {
               band: props.band,
               lanes: props.lanes,
               movesHeader: props.movesHeader,
+              movesHiddenStrip: props.movesHiddenStrip,
           }
         : {
               ...commonProps,
               band: props.band,
               lanes: props.lanes,
               movesHeader: props.movesHeader,
+              movesHiddenStrip: props.movesHiddenStrip,
           };
 
     return props.mode === "basic" ? (

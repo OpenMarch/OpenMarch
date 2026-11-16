@@ -20,7 +20,11 @@ import {
 import { deleteMarchers } from "../marcher";
 import { deleteBeats, deleteBeatsInTransaction } from "../beat";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
-import { editedPerformers, planEquipmentCues } from "@/cues/equipment";
+import {
+    editedPerformers,
+    planEquipmentCues,
+    planEquipmentSet,
+} from "@/cues/equipment";
 
 /** The show's beat ids in order, without the fixed first beat. */
 const beatIds = async (db: DbConnection) =>
@@ -466,6 +470,59 @@ describeDbTests("cues", (it) => {
                 expect(await ids()).toEqual(
                     [m1!.id, m2!.id].sort((a, b) => a - b),
                 );
+            },
+        );
+    });
+
+    describe("setting an item a cue on that count already has (#992)", () => {
+        testWithHistory(
+            "joins that cue in one undo step, so there is still one cue",
+            async ({ db, marchersAndPages }) => {
+                const [m1, m2, m3, m4] = marchersAndPages.expectedMarchers;
+                const [beat] = await beatIds(db);
+                await createCues({
+                    db,
+                    newCues: planEquipmentCues({
+                        choice: "rifle",
+                        marcherIds: [m1!.id, m2!.id],
+                        beatId: beat!,
+                        label: "first two",
+                    }),
+                });
+                const plan = planEquipmentSet({
+                    cues: await getCues({ db }),
+                    choice: "rifle",
+                    marcherIds: [m3!.id, m4!.id],
+                    beatId: beat!,
+                    labelFor: () => "unused",
+                });
+                if (plan.kind !== "join") throw new Error("expected a join");
+                await updateCues({
+                    db,
+                    modifiedCues: [
+                        {
+                            id: plan.cue.id,
+                            marcherIds: plan.marcherIds,
+                            label: "all four",
+                        },
+                    ],
+                });
+                const after = await getCues({ db });
+                expect(after).toHaveLength(1);
+                expect(after[0]).toMatchObject({
+                    label: "all four",
+                    marcherIds: [m1!.id, m2!.id, m3!.id, m4!.id].sort(
+                        (a, b) => a - b,
+                    ),
+                });
+
+                await performUndo(db);
+                const undone = await getCues({ db });
+                expect(undone).toHaveLength(1);
+                expect(undone[0]).toMatchObject({
+                    label: "first two",
+                    marcherIds: [m1!.id, m2!.id].sort((a, b) => a - b),
+                });
             },
         );
     });

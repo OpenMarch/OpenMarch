@@ -2924,7 +2924,9 @@
             "error": "Couldn't clear the page"
         },
         "lanes": {
-            "moves": "Moves"
+            "moves": "Moves",
+            "movesHidden": "Moves hidden",
+            "showMoves": "Show Moves"
         }
     },
     "titlebar": {

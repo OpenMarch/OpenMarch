@@ -145,6 +145,15 @@
                     "separator": true
                 },
                 {
+                    "label": "Show or Hide Moves Lane"
+                },
+                {
+                    "label": "Show or Hide Equipment Lane"
+                },
+                {
+                    "separator": true
+                },
+                {
                     "label": "Reload",
                     "keys": [
                         "⌘",
@@ -377,6 +386,15 @@
             "items": [
                 {
                     "label": "Open 3D View"
+                },
+                {
+                    "separator": true
+                },
+                {
+                    "label": "Show or Hide Moves Lane"
+                },
+                {
+                    "label": "Show or Hide Equipment Lane"
                 },
                 {
                     "separator": true
