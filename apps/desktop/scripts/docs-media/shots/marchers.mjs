@@ -96,6 +96,26 @@ async function toolbar(page) {
     };
 }
 
+/** Right-clicks a marcher and opens the field menu's Equipment submenu. */
+async function openEquipmentMenu(page, point, wait) {
+    await page.mouse.click(point.x, point.y, { button: "right" });
+    await page.getByTestId("field-menu").waitFor();
+    await page.getByTestId("field-menu-equipment").hover();
+    await page.getByTestId("field-menu-equipment-content").waitFor();
+    await wait(600);
+}
+
+/** Selects the named guard and gives them `entry` from the Equipment submenu (not filmed). */
+async function setEquipment(page, labels, entry, wait) {
+    const all = await marchers(page);
+    const points = named(all, labels);
+    await page.mouse.click(points[0].x, points[0].y);
+    await shiftSelect(page, points.slice(1), wait);
+    await openEquipmentMenu(page, points[0], wait);
+    await page.getByTestId(`field-menu-${entry}`).click();
+    await wait(1200);
+}
+
 const shots = [
     {
         id: "marchers-panel",
@@ -596,6 +616,69 @@ const shots = [
                 await wait(800);
             }
             return { box: await sidebarPanel(page, 270) };
+        },
+    },
+    {
+        id: "marchers-equipment-menu",
+        kind: "still",
+        // G1–G6 selected at the end of Page 1, the field menu open on G1 with its Equipment
+        // submenu: what they hold from the playhead, and Select Rifles and the others
+        async setup({ page, wait, union, around }) {
+            await toPage1(page, wait);
+            const all = await marchers(page);
+            const guard = named(all, range("G", 1, 6));
+            await page.mouse.click(guard[0].x, guard[0].y);
+            await shiftSelect(page, guard.slice(1), wait);
+            await openEquipmentMenu(page, guard[0], wait);
+            await page.getByTestId("field-menu-equipmentRifle").hover();
+            await wait(400);
+            return {
+                box: union(
+                    await around(page.getByTestId("field-menu"), 12),
+                    await around(
+                        page.getByTestId("field-menu-equipment-content"),
+                        12,
+                    ),
+                ),
+            };
+        },
+    },
+    {
+        id: "marchers-equipment-lane",
+        kind: "still",
+        // G6–G10 given sabres and G14, G19 and G22 rifles at the end of Page 1 (guard who stand
+        // apart there): the R and S tags by their drill numbers, and the timeline's Equipment
+        // lane shown, a row for each group
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            const rifles = ["G14", "G19", "G22"];
+            const sabres = range("G", 6, 10);
+            await setEquipment(page, sabres, "equipmentSabre", wait);
+            await setEquipment(page, rifles, "equipmentRifle", wait);
+            await page.getByTestId("timeline-equipment-lane").click();
+            await page.keyboard.press("Escape");
+            await page.mouse.move(800, 990);
+            await wait(1200);
+            await page
+                .locator("[data-sonner-toast]")
+                .evaluateAll((els) =>
+                    els.forEach((e) => (e.style.visibility = "hidden")),
+                )
+                .catch(() => {});
+            const all = await marchers(page);
+            const b = bounds(named(all, [...sabres, ...rifles]));
+            // The field around those guard, down to the lane, without the inspector
+            const pane = await page.getByTestId("timeline-pane").boundingBox();
+            const lane = await page.getByTestId("equipment-lane").boundingBox();
+            const top = Math.max(0, b.top - 40);
+            return {
+                box: {
+                    x: pane.x,
+                    y: top,
+                    width: pane.width,
+                    height: Math.min(1000, lane.y + lane.height + 8) - top,
+                },
+            };
         },
     },
 ];

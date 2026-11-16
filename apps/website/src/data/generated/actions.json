@@ -593,6 +593,86 @@
         "category": "batchEdit",
         "bindings": []
     },
+    "equipmentInstrument": {
+        "label": "Equipment: Instrument",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "equipmentFlag": {
+        "label": "Equipment: Flag",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "equipmentRifle": {
+        "label": "Equipment: Rifle",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "equipmentSabre": {
+        "label": "Equipment: Sabre",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "equipmentNone": {
+        "label": "Equipment: Nothing",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingRifle": {
+        "label": "Select Rifles",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingFlag": {
+        "label": "Select Flags",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingSabre": {
+        "label": "Select Sabres",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingInstrument": {
+        "label": "Select Instruments",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingNone": {
+        "label": "Select Empty Hands",
+        "category": "select",
+        "bindings": []
+    },
+    "cueAddSelected": {
+        "label": "Add selected to this cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueRemoveSelected": {
+        "label": "Remove selected from this cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueMakeLasting": {
+        "label": "Make cue lasting",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueMakeMomentary": {
+        "label": "Make cue momentary",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueDelete": {
+        "label": "Delete cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "toggleEquipmentLane": {
+        "label": "Show or hide the Equipment lane",
+        "category": "timeline",
+        "bindings": []
+    },
     "setAllMarchersToNextPage": {
         "label": "Move to next page's spots (all marchers)",
         "category": "batchEdit",

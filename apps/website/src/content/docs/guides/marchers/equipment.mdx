@@ -1,0 +1,110 @@
+---
+title: Change what performers hold
+description: Give performers a flag, rifle, sabre, their instrument or nothing from a count on, select who holds what, and see it on the field, in the 3D View and on the timeline.
+type: how-to
+covers:
+  - apps/desktop/src/cues
+  - apps/desktop/src/components/timeline/cues
+  - apps/desktop/src/shortcuts/handlers/useCueActionHandlers.ts
+  - apps/desktop/src/field/three/FieldContextMenu.tsx
+  - apps/desktop/src/field/three/layers/LabelsLayer.tsx
+  - apps/desktop/src/view3d/core/marchers/equipmentSpans.ts
+  - action:equipmentInstrument
+  - action:equipmentFlag
+  - action:equipmentRifle
+  - action:equipmentSabre
+  - action:equipmentNone
+  - action:selectHoldingRifle
+  - action:selectHoldingFlag
+  - action:selectHoldingSabre
+  - action:selectHoldingInstrument
+  - action:selectHoldingNone
+  - action:cueAddSelected
+  - action:cueRemoveSelected
+  - action:cueMakeLasting
+  - action:cueMakeMomentary
+  - action:cueDelete
+  - action:toggleEquipmentLane
+  - i18n:cues
+  - i18n:field.menu
+sidebar:
+  order: 6
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Each performer holds their section's usual equipment: the Rifle section holds rifles, the Flag and Color Guard sections hold flags, and winds and drums hold their instruments. When the guard switches from flags to rifles, or someone puts their equipment down, set what they hold from that count on. The field, the 3D View and the timeline all show it, and you can select performers by what they hold.
+
+## Set what performers hold
+
+<Steps>
+
+1. Move the playhead to the count where the change happens.
+2. Select the performers.
+3. Right-click one of them on the field and open <Ui k="field.menu.equipment" />. On a tablet, press and hold a selected performer to open the same menu.
+4. Choose what they hold from the playhead on: <Ui k="actions.cues.equipmentInstrument" />, <Ui k="actions.cues.equipmentFlag" />, <Ui k="actions.cues.equipmentRifle" />, <Ui k="actions.cues.equipmentSabre" /> or <Ui k="actions.cues.equipmentNone" />.
+
+</Steps>
+
+<Media
+  id="marchers-equipment-menu"
+  alt="The field's right-click menu with six guard members selected. Its Equipment submenu is open under the heading From the playhead: Equipment: Instrument is greyed out, Equipment: Flag is checked, and Equipment: Rifle, Sabre and Nothing follow. Below them are Select Rifles, Select Flags, Select Sabres, Select Instruments and Select Empty Hands."
+  maxWidth={560}
+/>
+
+The selected performers hold it from that count until their next change. The one every selected performer already holds is checked. <Ui k="actions.cues.equipmentInstrument" plain /> hands each performer their own section's horn or drum, so it does nothing for the guard. The same commands are in the command palette (<Kbd action="openCommandPalette" />).
+
+The change is a **cue**: it remembers the performers who were selected when you made it. Moving a performer to another section later doesn't change their cues, and a performer added to a section later doesn't get that section's earlier cues.
+
+## See who holds what
+
+- **On the field**, a short tag follows the drill number of each performer holding something other than their section's usual: **R** for a rifle, **F** a flag, **S** a sabre, **H** a horn, **D** a drum and **N** nothing. Performers on their usual equipment have no tag.
+- **In the [3D View](/guides/3d-view/open-the-3d-view/)**, performers hold the new equipment from the count it changes, and go back to their usual way of holding it.
+- **On the timeline**, the Equipment lane shows each change (below).
+
+To select everyone who holds something at the playhead, whatever their section, choose <Ui k="actions.cues.selectHoldingRifle" />, <Ui k="actions.cues.selectHoldingFlag" />, <Ui k="actions.cues.selectHoldingSabre" />, <Ui k="actions.cues.selectHoldingInstrument" /> or <Ui k="actions.cues.selectHoldingNone" /> from the same <Ui k="field.menu.equipment" plain /> menu or the command palette. Before the count where the guard takes rifles, <Ui k="actions.cues.selectHoldingRifle" plain /> doesn't pick them.
+
+## The Equipment lane
+
+Click the flag button at the right of the timeline's controls (<Ui k="actions.cues.showEquipmentLane" />) to show the Equipment lane under the moves. It's hidden until you show it, and stays shown for the next show you open.
+
+<Media
+  id="marchers-equipment-lane"
+  alt="The field with five guard members tagged S and three tagged R by their drill numbers, and under the timeline the Equipment lane with two rows: G6–G10, 5, with a green Sabre bar, and G14, G19, G22, 3, with a yellow Rifle bar, both starting at the playhead."
+/>
+
+- Performers who share the same changes share a row, named after who they are ("Rifles", "Color Guard", "G6–G10"). When everyone changes together the lane is one row; it gets a row for each group that differs. Performers who never change aren't in the lane.
+- A change that lasts is a bar up to that performer's next change. A change for a few counts is a rounded bar. A dashed bar is the section's usual equipment before any change.
+- Click a row's name to select its performers.
+- Click the arrow by <Ui k="cues.lane.equipment" plain /> to fold the lane into one row that shows how many performers hold each thing over the show, with a diamond where each change happens. Click it again to open the rows.
+- Click the eye-slash button by the lane's name to hide it again.
+
+## Change who a cue applies to
+
+<Steps>
+
+1. Click the cue's bar in the Equipment lane to pick it. It gets an outline. With no bar picked, the commands below act on the Equipment cue on the playhead's count, if there's exactly one there.
+2. Select the performers to add or take out.
+3. Right-click the bar, or one of the performers on the field and open <Ui k="field.menu.equipment" />, and choose <Ui k="actions.cues.addSelected" /> or <Ui k="actions.cues.removeSelected" />.
+
+</Steps>
+
+Performers you add hold the cue's equipment from its count. Performers you take out go back to what they held before. The lane's rows change to match, and the cue is renamed for its new performers. Taking out everyone deletes the cue.
+
+The bar's menu (right-click it, or press and hold it on a tablet) also has <Ui k="cues.lane.selectPerformers" />, <Ui k="actions.cues.makeLasting" />, <Ui k="actions.cues.makeMomentary" /> for a number of counts, after which the performers go back to what they held, and <Ui k="actions.cues.delete" />.
+
+Every change is one step of undo (<Kbd action="performUndo" />).
+
+## When you delete counts
+
+Deleting counts that have equipment changes on them moves those changes to the next count that's left, and a note says where, such as "2 cues moved to Page 3 count 4". If a later change already covers a performer there, or there's no count after them, the change is deleted, and the note says so.
+
+## Related
+
+- [Select marchers](/guides/marchers/select-marchers/): other ways to build a selection.
+- [Change how marchers look](/guides/marchers/appearance/): colors and shapes on the field, which don't follow equipment.
+- [Venue and uniforms](/guides/3d-view/venue-and-uniforms/): how performers hold their equipment in the 3D View.
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): the playhead and the rows under it.
