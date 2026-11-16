@@ -79,9 +79,37 @@ export function isActionEnabled(id: ActionId): boolean {
  * buttons to show instead of a toast after a press; undefined while it can run or gives no reason
  */
 export function actionDisabledReason(id: ActionId): string | undefined {
+    // Preview or Edit music turns it off: the handler's reason isn't why
+    if (isActionOffInWorkspace(id)) return undefined;
     const handler = top(id);
     if (!handler || handler.isEnabled()) return undefined;
     return handler.disabledReason?.() || undefined;
+}
+
+const refusedListeners = new Set<(id: ActionId) => boolean>();
+
+/**
+ * Listens for key presses of an action that can't run now but says why
+ * (`notifyRefusedPress`): its button shows the reason briefly instead of a toast. The listener
+ * returns whether it showed it (a button on screen).
+ */
+export function onRefusedPress(
+    listener: (id: ActionId) => boolean,
+): () => void {
+    refusedListeners.add(listener);
+    return () => refusedListeners.delete(listener);
+}
+
+/**
+ * A key for `id` was pressed while it's disabled with a reason (the shortcut dispatcher).
+ * Returns whether any button showed it: if none did, the key is left alone.
+ */
+export function notifyRefusedPress(id: ActionId): boolean {
+    let shown = false;
+    refusedListeners.forEach((listener) => {
+        if (listener(id)) shown = true;
+    });
+    return shown;
 }
 
 /** The label the action's handler gives right now (`useActionHandler`'s `label`), if any */

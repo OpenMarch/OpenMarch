@@ -22,9 +22,35 @@ import { getActionDefinition } from "./definitions";
 import {
     actionDisabledReason,
     isActionEnabled,
+    onRefusedPress,
     runAction,
     subscribeToActionHandlers,
 } from "./registry";
+
+/** How long a refused key press shows the button's reason */
+export const REFUSED_PRESS_MS = 2000;
+
+/**
+ * Whether the button is on screen to point at: not in a closed menu or a hidden panel, not
+ * transparent, and inside the window (not scrolled out of its panel)
+ */
+const isShown = (el: HTMLElement) => {
+    if (!el.isConnected) return false;
+    if (
+        typeof el.checkVisibility === "function" &&
+        !el.checkVisibility({ visibilityProperty: true, opacityProperty: true })
+    )
+        return false;
+    const box = el.getBoundingClientRect();
+    // jsdom lays nothing out: a box of nothing there counts as shown
+    if (box.width === 0 && box.height === 0) return true;
+    return (
+        box.bottom > 0 &&
+        box.right > 0 &&
+        box.top < window.innerHeight &&
+        box.left < window.innerWidth
+    );
+};
 
 /** How long a trackpad pointer rests on the button before its hint shows (touch layout). */
 const HOVER_HINT_MS = 600;
@@ -87,21 +113,69 @@ export default function ActionButton({
         hoverTimer.current = null;
     };
     useEffect(() => clearHoverTimer, []);
-    // Escape closes a shown reason and nothing else: the app's own Escape (cancel a tool) must
-    // not run under it. Listening in the capture phase, it's handled before the shortcuts are
+    const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+    // A key press for this action that can't run now: the button lights up and shows why for a
+    // moment, instead of a toast (or nothing at all). Only a button with a reason to show does
+    const [flash, setFlash] = useState(false);
+    // What opened the reason: a press on the button (Escape is then the bubble's) or a refused
+    // key (Escape still does what it does)
+    const openedBy = useRef<"press" | "key">("press");
+    const reasonRef = useRef(reason);
+    reasonRef.current = reason;
+    useEffect(() => {
+        if (!anchor) return;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const end = () => {
+            if (timer !== null) clearTimeout(timer);
+            timer = null;
+            setFlash(false);
+        };
+        const off = onRefusedPress((id) => {
+            if (id !== action || !reasonRef.current || !isShown(anchor))
+                return false;
+            if (timer !== null) clearTimeout(timer);
+            openedBy.current = "key";
+            setFlash(true);
+            setHintOpen(true);
+            timer = setTimeout(() => {
+                end();
+                setHintOpen(false);
+            }, REFUSED_PRESS_MS);
+            return true;
+        });
+        return () => {
+            off();
+            // A flash that's cut short (the action changed, or the button went) ends now
+            if (timer !== null) {
+                end();
+                setHintOpen(false);
+            }
+        };
+    }, [action, anchor]);
+    // Escape closes a reason the button's press opened, and nothing else: the app's own Escape
+    // (cancel a tool) must not run under it. Listening in the capture phase, it's handled before
+    // the shortcuts are. One a refused key opened just closes, and Escape goes on as usual
     useEffect(() => {
         if (!hintOpen || !reason) return;
         const onKey = (event: KeyboardEvent) => {
             if (event.key !== "Escape") return;
-            event.stopPropagation();
+            if (openedBy.current === "press") event.stopPropagation();
             setHintOpen(false);
+            setFlash(false);
         };
         window.addEventListener("keydown", onKey, true);
         return () => window.removeEventListener("keydown", onKey, true);
     }, [hintOpen, reason]);
-    const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
-    const closeHint = useCallback(() => setHintOpen(false), []);
-    const longPress = useLongPress(() => setHintOpen(true), {
+    // The light goes with the reason (a click elsewhere or a scroll closes it)
+    const closeHint = useCallback(() => {
+        setHintOpen(false);
+        setFlash(false);
+    }, []);
+    const openHint = () => {
+        openedBy.current = "press";
+        setHintOpen(true);
+    };
+    const longPress = useLongPress(openHint, {
         onPointerDown: rest.onPointerDown,
         onPointerMove: rest.onPointerMove,
         onPointerUp: rest.onPointerUp,
@@ -153,10 +227,7 @@ export default function ActionButton({
                 // A trackpad in the touch layout (iPad): Safari shows no title tooltips, so show the hint
                 if (e.pointerType !== "mouse" || !isTouch) return;
                 clearHoverTimer();
-                hoverTimer.current = setTimeout(
-                    () => setHintOpen(true),
-                    HOVER_HINT_MS,
-                );
+                hoverTimer.current = setTimeout(openHint, HOVER_HINT_MS);
             }}
             onPointerLeave={(e) => {
                 rest.onPointerLeave?.(e);
@@ -176,7 +247,7 @@ export default function ActionButton({
                     // Pressing it shows why instead, as the menus' entries do: a press closes
                     // the tooltip, and a finger has no hover
                     event.preventDefault();
-                    setHintOpen(true);
+                    openHint();
                     return;
                 }
                 // A caller's onClick can take the click over with preventDefault
@@ -192,6 +263,7 @@ export default function ActionButton({
                     // Looks as a disabled one does, without the hover color
                     reason &&
                         "cursor-not-allowed opacity-50 enabled:hover:text-inherit",
+                    flash && "ring-accent/50 ring-2",
                 ),
             )}
         >
