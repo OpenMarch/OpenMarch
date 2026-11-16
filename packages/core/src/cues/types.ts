@@ -164,15 +164,30 @@ export type HoldTechnique = "stand" | "markTime" | "highMarkTime";
 export interface CueShowDefaults {
     stepOffFoot?: "left" | "right";
     /**
-     * Feet, with no Feet cue: what a holding performer does on a count where
-     * any performer travels. `markTime` when omitted (marchers mark time while
-     * the band moves). On counts where the whole band holds, they stand.
+     * Feet, with no Feet cue and no hold style (`CompileInput.holdStyles`):
+     * what a holding performer does on a count where any performer travels.
+     * `stand` when omitted (holds stand still unless asked, ADR 0015 D-5). On
+     * counts where the whole band holds, they stand.
      */
     holdWhileBandMoves?: HoldTechnique;
     /** The band's default uniform; `builtin:uniform.band` when omitted. */
     bandUniform?: string;
     /** The guard's default uniform; `builtin:uniform.guard` when omitted. */
     guardUniform?: string;
+}
+
+/**
+ * One performer's hold style over the counts `[from, to)` (ADR 0015 D-5): what
+ * its feet do while its dot holds there. It comes from the hold itself, so it
+ * wins over the show default whether or not the band moves.
+ */
+export interface CueHoldStyle {
+    marcherId: number;
+    /** The first count it covers. */
+    from: number;
+    /** The count after the last one it covers. */
+    to: number;
+    style: HoldTechnique;
 }
 
 export interface CompileInput {
@@ -191,6 +206,13 @@ export interface CompileInput {
      * hold.
      */
     bandTravels?: (count: number) => boolean;
+    /**
+     * The styles the performers' holds carry, for the Feet default. Where two
+     * of one performer's overlap, the later in the list wins. They give way to
+     * Feet cues, as the show default does. A recompile that changes them
+     * names `feet` among its channels.
+     */
+    holdStyles?: readonly CueHoldStyle[];
     /** The marcher's field position at a count's click (x toward side 2, y toward the front). */
     positionAt?: (marcherId: number, count: number) => { x: number; y: number };
     /** Each section's usual equipment and 2D color, for the Carry and Silk defaults. */

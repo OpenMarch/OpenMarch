@@ -32,7 +32,12 @@ import { pickMarchers } from "../camera/inputMath";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import type { CueSection, FieldProperties, RgbaColor } from "@openmarch/core";
+import type {
+    CueHoldStyle,
+    CueSection,
+    FieldProperties,
+    RgbaColor,
+} from "@openmarch/core";
 import {
     Color,
     CylinderGeometry,
@@ -61,6 +66,7 @@ import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import { performerDefaults } from "@/view3d/core/performerDefaults";
+import { useHoldStyles } from "./useHoldStyles";
 import { isPercussionSection } from "@/view3d/core/marchers/crab";
 import { marcherHeading } from "@/view3d/core/marchers/facing";
 import {
@@ -306,10 +312,15 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             ).join(""),
         [slots, clock, fieldProperties],
     );
-    // The show defaults compiled for every marcher (no cues are stored): the
-    // Show settings' hold while the band moves (mark time unless changed),
-    // else stand; face the front; horns up; the Show settings' step-off foot. `carries` decides each marcher's Horn/Equipment
-    // default.
+    // The styles the Held holds carry (ADR 0015 D-5), by count. Keyed on its
+    // content, so only a change of style or of a styled hold's counts
+    // compiles again.
+    const holdStylesKey = useHoldStyles(clock);
+    // The show defaults compiled for every marcher (no cues are stored): a
+    // hold stands, unless it carries a style or the Show settings ask for
+    // mark time while the band moves; face the front; horns up; the Show
+    // settings' step-off foot. `carries` decides each marcher's
+    // Horn/Equipment default.
     const cues = useMemo(() => {
         if (!marchers || !carriesKey || !cueSectionsKey) return null;
         const carries = new Map(
@@ -322,6 +333,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             sections: JSON.parse(cueSectionsKey) as CueSection[],
             bandMoving: Array.from(bandMovingKey, Number),
             holdWhileBandMoves,
+            holdStyles: JSON.parse(holdStylesKey) as CueHoldStyle[],
             carries: (id) => carries.get(id) ?? "none",
         });
     }, [
@@ -332,6 +344,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         bandMovingKey,
         stepOffFoot,
         holdWhileBandMoves,
+        holdStylesKey,
     ]);
     const previousPlans = useRef<ShowPlans | null>(null);
     const showPlans = useMemo(() => {

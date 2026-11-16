@@ -52,6 +52,8 @@ import {
  *   would do for the selection on the current page (`holdEntryStates`, through its handler):
  *   checked and unavailable when every selected marcher is already in the state it sets, and with
  *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
+ * - **Hold style** (ADR 0015 D-5, #775), while a selected marcher is Held at the playhead: the
+ *   show setting, stand, mark time or high mark time for that hold, the one in effect checked.
  * - Arranging the selection: align and distribute, Swap (two marchers), and **Move to next
  *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
@@ -65,11 +67,20 @@ const STATE_GROUP: readonly ActionId[] = [
     "setSelectedMarchersToPreviousPage",
 ];
 
+/** What the feet do over the Held hold at the playhead: one of them is in effect */
+const HOLD_STYLE_GROUP: readonly ActionId[] = [
+    "timelineHoldStyleDefault",
+    "timelineHoldStyleStand",
+    "timelineHoldStyleMarkTime",
+    "timelineHoldStyleHighMarkTime",
+];
+
 const GROUPS: readonly (readonly ActionId[])[] = [
     // An item right-clicked: its edit view
     ["editSelectedItem"],
     ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
     STATE_GROUP,
+    HOLD_STYLE_GROUP,
     [
         "alignHorizontally",
         "alignVertically",
@@ -101,8 +112,14 @@ const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
 /** Entries about the marcher the menu was opened on: shown only when it was opened on one */
 const ON_A_MARCHER: ReadonlySet<ActionId> = new Set(["shapeEnterBox"]);
 
+/** Hold style, shown as a group only while a selected marcher is Held at the playhead */
+const HOLD_STYLES: ReadonlySet<ActionId> = new Set(HOLD_STYLE_GROUP);
+
 /** The entries that can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(STATE_GROUP);
+const CHECKABLE: ReadonlySet<ActionId> = new Set([
+    ...STATE_GROUP,
+    ...HOLD_STYLE_GROUP,
+]);
 
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
@@ -155,14 +172,20 @@ export default function FieldContextMenu({
     }, [open]);
     if (!at) return null;
 
+    // The style in effect is checked, so off: the group shows while any of it can run or is
+    const holdStyles = HOLD_STYLE_GROUP.some(
+        (id) => isActionEnabled(id) || isActionChecked(id),
+    );
     const shown = (id: ActionId) =>
         ON_A_MARCHER.has(id) && marcher === null
             ? false
-            : WHILE_AVAILABLE.has(id)
-              ? isActionEnabled(id)
-              : HOLDS.has(id)
-                ? timelineMode
-                : true;
+            : HOLD_STYLES.has(id)
+              ? holdStyles
+              : WHILE_AVAILABLE.has(id)
+                ? isActionEnabled(id)
+                : HOLDS.has(id)
+                  ? timelineMode
+                  : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = GROUPS.map((group) => group.filter(shown)).filter(

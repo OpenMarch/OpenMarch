@@ -52,6 +52,15 @@ export const VIEW3D_AUTO_OPEN_SETTING = "view3dAutoOpen";
  */
 export const VIEW3D_TIMELINE_QUERY_KEY = ["view3d_timeline"] as const;
 
+/**
+ * The window's query of the Held holds that carry a style (ADR 0015 D-5,
+ * `useHoldStyles`). Held marks aren't in the change log and no editor query
+ * reads them, so the editor sends an invalidation of this key whenever the
+ * timeline's display version changes: after every edit, undo or redo that
+ * touched them.
+ */
+export const VIEW3D_HOLD_STYLES_QUERY_KEY = ["view3d_hold_styles"] as const;
+
 /** The channels the editor publishes and the window may listen to. */
 export const VIEW3D_PUBLISH_CHANNELS = [
     VIEW3D_CLOCK_CHANNEL,

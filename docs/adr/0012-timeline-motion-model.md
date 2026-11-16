@@ -592,6 +592,26 @@ view, which has no time-to-beat function today.
 decision 12). **Define as shown** stays in the page box menu, on right-click of a Not defined
 bar, in the inspector and in the palette. No stored data or format changes.
 
+**Amendment (2026-11-15, project owner): a Held hold carries a style.** The storage half of
+ADR 0015 D-5 (the cue model, fork PR #987; fork #775), which settles why mark time is a property of the
+hold and not a cue.
+
+- `timeline_held_marks` gains a nullable text column `style`: `stand`, `markTime` or
+  `highMarkTime`. `NULL` means the show setting (the `holdWhileBandMoves` performer default, whose
+  built-in value becomes `stand`). Migration `0021_held_mark_style` adds it in place; existing
+  marks read as `NULL`.
+- The value is checked in code, not by a CHECK constraint: a value a build doesn't know reads as
+  `NULL` and stays in the file.
+- It is app data like the rest of the mark: outside `timeline_change_log`, never read by the
+  resolver, inside undo history. The history triggers are rebuilt for the new column when a file
+  opens (`dropStaleHistoryTriggers`).
+- **The style is the whole hold's.** Every write that rewrites a mark keeps it (the upkeep after
+  an edit, page and beat ripples, a dragged end, Split hold here). Holds that join into one take
+  the style of the earliest part that has one, so a hold grown over more counts keeps its style
+  and a new hold that joins a styled one takes it.
+- Only the 3D View reads it: the styled holds become per-marcher count ranges for the cue compile
+  (`CompileInput.holdStyles`), which win over the show setting whether or not the band moves.
+
 ### 3. Undo and redo compatibility (C-1, C-2, C-6)
 
 The app's history mechanism (`history_undo`, `history_redo`, `history_stats`, the

@@ -22,6 +22,7 @@ import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
 import { holdOverWindow } from "@/db-functions/timelineHoldOverWindow";
+import { setHoldStyle } from "@/db-functions/timelineHoldStyle";
 import { useEditorModeStore } from "@/stores/EditorModeStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
@@ -95,6 +96,9 @@ vi.mock("@/db-functions/timelineHoldOverWindow", () => ({
             skipped: [{ marcherId: 2, reason: "followLeader" }],
         }),
     ),
+}));
+vi.mock("@/db-functions/timelineHoldStyle", () => ({
+    setHoldStyle: vi.fn(() => Promise.resolve({ changed: [1] })),
 }));
 vi.mock("@/db-functions/timelineSetAsShown", () => ({
     setAsShownOnPage: vi.fn(() =>
@@ -300,6 +304,92 @@ describe("Expert hold tools (#476)", () => {
         expect(light?.byMarcher.get(3)).toEqual([{ start: 1, end: 13 }]);
         previewAction("timelineHoldOverWindow", false);
         expect(useHoldLightStore.getState().light).toBeNull();
+    });
+});
+
+describe("Hold style (ADR 0015 D-5, #775)", () => {
+    const STYLE_ACTIONS = [
+        "timelineHoldStyleDefault",
+        "timelineHoldStyleStand",
+        "timelineHoldStyleMarkTime",
+        "timelineHoldStyleHighMarkTime",
+    ] as const;
+    /** Marcher `marcherId` Held over page 3, counts 9 to 17 */
+    const held = (
+        marcherId: number,
+        style?: "stand" | "markTime" | "highMarkTime",
+    ) => ({
+        id: marcherId,
+        marcherId,
+        start: 9,
+        end: 17,
+        style: style ?? null,
+    });
+    const playheadAt = (beat: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start: 9, end: beat },
+            isolation: null,
+        });
+    beforeEach(() => {
+        playheadAt(13);
+        vi.mocked(setHoldStyle).mockClear();
+    });
+
+    it("is off while no selected marcher is Held at the playhead", () => {
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) {
+            expect(isActionEnabled(id)).toBe(false);
+            expect(isActionChecked(id)).toBe(false);
+        }
+        cleanup();
+        // Held on page 3, but the playhead is on its arrival, before the hold
+        useHeldMarksStore.setState({ marks: [held(1)] });
+        playheadAt(9);
+        mount([1]);
+        expect(isActionEnabled("timelineHoldStyleMarkTime")).toBe(false);
+    });
+
+    it("sets the style of the holds at the playhead, and checks the one in effect", () => {
+        useHeldMarksStore.setState({ marks: [held(1)] });
+        // Marcher 2 isn't Held: the write leaves it alone
+        mount([1, 2]);
+        // No style of its own: the show setting is in effect
+        expect(isActionChecked("timelineHoldStyleDefault")).toBe(true);
+        expect(isActionEnabled("timelineHoldStyleDefault")).toBe(false);
+        expect(isActionEnabled("timelineHoldStyleMarkTime")).toBe(true);
+
+        expect(runAction("timelineHoldStyleMarkTime")).toBe(true);
+        expect(vi.mocked(setHoldStyle).mock.calls[0]![0]).toMatchObject({
+            marcherIds: [1, 2],
+            beat: 13,
+            style: "markTime",
+        });
+        cleanup();
+
+        useHeldMarksStore.setState({ marks: [held(1, "markTime")] });
+        mount([1, 2]);
+        expect(isActionChecked("timelineHoldStyleMarkTime")).toBe(true);
+        expect(isActionChecked("timelineHoldStyleDefault")).toBe(false);
+        expect(runAction("timelineHoldStyleDefault")).toBe(true);
+        expect(vi.mocked(setHoldStyle).mock.calls[1]![0]).toMatchObject({
+            style: null,
+        });
+    });
+
+    it("checks none where the selected holds differ, and is off while playing", () => {
+        useHeldMarksStore.setState({
+            marks: [held(1, "stand"), held(2, "highMarkTime")],
+        });
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) {
+            expect(isActionChecked(id)).toBe(false);
+            expect(isActionEnabled(id)).toBe(true);
+        }
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) expect(isActionEnabled(id)).toBe(false);
+        expect(setHoldStyle).not.toHaveBeenCalled();
     });
 });
 

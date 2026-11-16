@@ -584,6 +584,12 @@ export const timeline_held_marks = sqliteTable(
             .references(() => marchers.id, { onDelete: "cascade" }),
         start_beat: integer().notNull(),
         end_beat: integer().notNull(),
+        /**
+         * What the marcher's feet do over the hold (ADR 0015 D-5): `stand`, `markTime` or
+         * `highMarkTime`. `NULL` uses the show setting. Checked in code (`holdStyleOf`): a value
+         * this build doesn't know reads as `NULL`.
+         */
+        style: text(),
     },
     (table) => [
         unique().on(table.marcher_id, table.start_beat),

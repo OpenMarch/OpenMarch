@@ -21,6 +21,7 @@ import {
     type CueSection,
     type CueSegment,
     type CueTrace,
+    type HoldTechnique,
     type PerformerCarry,
     type RippleOrder,
 } from "./types";
@@ -804,29 +805,62 @@ function bandTravelsByCount(input: CompileInput): boolean[] | null {
 }
 
 /**
- * The Feet default's spans (performer-behavior.md section 3): a holding
- * performer marks time (or the show's `holdWhileBandMoves`) on counts where
- * any performer travels, and stands where the whole band holds. The hold
+ * The show's Feet default on each count (performer-behavior.md section 3;
+ * ADR 0015 D-5): a holding performer stands, unless the show's
+ * `holdWhileBandMoves` asks for mark time, which it then does on counts where
+ * any performer travels (it still stands where the whole band holds). The hold
  * technique only matters on counts the performer's own dot doesn't travel.
- * The spans give way to Feet cues.
  */
-function feetDefaultSpans(input: CompileInput): DefaultSpan[] {
+function showHoldTechniques(input: CompileInput): HoldTechnique[] {
+    const moving = input.showDefaults?.holdWhileBandMoves ?? "stand";
+    const band = moving === "stand" ? null : bandTravelsByCount(input);
+    return Array.from({ length: input.beats.length }, (_, c) =>
+        band?.[c] ? moving : "stand",
+    );
+}
+
+/**
+ * The Feet default's spans from the hold technique on each count: a new span
+ * wherever it changes. The spans give way to Feet cues.
+ */
+function feetSpans(onHolds: readonly HoldTechnique[]): DefaultSpan[] {
     const value = defaultCueValue("feet", "none");
-    const moving = input.showDefaults?.holdWhileBandMoves ?? "markTime";
-    const band = bandTravelsByCount(input);
-    if (!band || moving === "stand")
-        return [{ at: 0, value, settings: { onHolds: "stand" } }];
     const spans: DefaultSpan[] = [];
-    let last: string | null = null;
-    band.forEach((travels, c) => {
-        const onHolds = travels ? moving : "stand";
-        if (onHolds === last) return;
-        last = onHolds;
-        spans.push({ at: c, value, settings: { onHolds }, underCues: c > 0 });
+    let last: HoldTechnique | null = null;
+    onHolds.forEach((technique, c) => {
+        if (technique === last) return;
+        last = technique;
+        spans.push({
+            at: c,
+            value,
+            settings: { onHolds: technique },
+            underCues: c > 0,
+        });
     });
     return spans.length > 0
         ? spans
         : [{ at: 0, value, settings: { onHolds: "stand" } }];
+}
+
+/**
+ * Each performer's own Feet default spans, for those whose holds carry a
+ * style (`CompileInput.holdStyles`): the show's default with each style laid
+ * over the counts it covers.
+ */
+function ownFeetDefaults(
+    input: CompileInput,
+    show: readonly HoldTechnique[],
+): Map<number, DefaultSpan[]> {
+    const byMarcher = new Map<number, HoldTechnique[]>();
+    for (const hold of input.holdStyles ?? []) {
+        const from = Math.max(Math.ceil(hold.from), 0);
+        const to = Math.min(Math.ceil(hold.to), show.length);
+        if (to <= from) continue;
+        let own = byMarcher.get(hold.marcherId);
+        if (!own) byMarcher.set(hold.marcherId, (own = [...show]));
+        own.fill(hold.style, from, to);
+    }
+    return new Map([...byMarcher].map(([id, own]) => [id, feetSpans(own)]));
 }
 
 /** The default spans a channel starts from. */
@@ -914,8 +948,10 @@ interface Pass {
     /** Whether a channel is reused from the previous compile. */
     reused: (channel: CueChannel) => boolean;
     state: CompileState;
-    /** The Feet default's spans, the same for every performer */
+    /** The Feet default's spans for a performer whose holds carry no style */
     feetDefaults: readonly DefaultSpan[];
+    /** The spans of each performer whose holds do (`ownFeetDefaults`) */
+    ownFeetDefaults: ReadonlyMap<number, readonly DefaultSpan[]>;
 }
 
 /**
@@ -932,11 +968,13 @@ function newPass(input: CompileInput, recompile?: RecompileOptions): Pass {
     }
     const reused = (channel: CueChannel) =>
         previous !== undefined && !edited.has(channel);
+    const showHolds = showHoldTechniques(input);
     return {
         input,
         lookup,
         placed: placeAll(input),
-        feetDefaults: feetDefaultSpans(input),
+        feetDefaults: feetSpans(showHolds),
+        ownFeetDefaults: ownFeetDefaults(input, showHolds),
         time: new TimeMap(input.beats),
         previous,
         reused,
@@ -996,7 +1034,11 @@ function resolve(
             checked.ripples,
             pass.input.beats.length,
             state.channelFlags.get(channel)!,
-            defaultSpans(looks, channel, pass.feetDefaults),
+            defaultSpans(
+                looks,
+                channel,
+                pass.ownFeetDefaults.get(marcher.id) ?? pass.feetDefaults,
+            ),
         );
     state.channels.set(key, result);
     return result;

@@ -506,6 +506,35 @@ const shots = [
         },
     },
     {
+        id: "timeline-hold-style",
+        kind: "still",
+        // T1–T4 held on Page 4, with the playhead still on Page 4 (inside the hold): the
+        // inspector's "Held · since Page 3" line and, under it, the Hold style choice opened on
+        // its four options
+        async setup({ page, wait, around, union }) {
+            await ready(page, wait);
+            await selectPage(page, 12, wait);
+            await select(page, range("T", 1, 4), wait);
+            await page.keyboard.press("Control+KeyH");
+            await wait(1500);
+            await tidy(page);
+            const row = page.getByTestId("timeline-hold-style");
+            await row.evaluate((el) => el.scrollIntoView({ block: "center" }));
+            await wait(400);
+            await row.getByRole("combobox").click();
+            await wait(800);
+            const list = page.getByRole("listbox");
+            const line = page.getByTestId("timeline-hold-line");
+            return {
+                box: union(
+                    await around(line, 12),
+                    await around(row, 12),
+                    await around(list, 12),
+                ),
+            };
+        },
+    },
+    {
         id: "timeline-hold-end",
         kind: "clip",
         // T1–T4 held over Pages 4 and 5 (Hold from last keyframe on each), then the end of the

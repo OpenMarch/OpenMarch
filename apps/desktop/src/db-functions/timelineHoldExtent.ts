@@ -27,7 +27,7 @@ import { readHeldMarks } from "./timelineHeldArrival";
  *   ends (leaving early, decision 6).
  *
  * Holds that touch or overlap afterwards become one (`mergeTouchingMarks`, 04-anchors), keeping
- * the earliest's id. A changed mark keeps its id, so undo restores the same row. One undo step
+ * the earliest's id, and the hold style of the earliest that has one. A changed mark keeps its id, so undo restores the same row. One undo step
  * each; one that changes nothing opens no edit.
  */
 
@@ -88,7 +88,11 @@ async function writeMarks(
     const gone = before.filter((m) => !kept.has(m.id));
     const changed = after.filter((m) => {
         const was = before.find((b) => b.id === m.id)!;
-        return was.start !== m.start || was.end !== m.end;
+        return (
+            was.start !== m.start ||
+            was.end !== m.end ||
+            (was.style ?? null) !== (m.style ?? null)
+        );
     });
     if (gone.length > 0)
         await tx.delete(h).where(
@@ -100,7 +104,11 @@ async function writeMarks(
     for (const mark of changed)
         await tx
             .update(h)
-            .set({ start_beat: mark.start, end_beat: mark.end })
+            .set({
+                start_beat: mark.start,
+                end_beat: mark.end,
+                style: mark.style ?? null,
+            })
             .where(eq(h.id, mark.id));
     return [...new Set([...gone, ...changed].map((m) => m.marcherId))].sort(
         (x, y) => x - y,

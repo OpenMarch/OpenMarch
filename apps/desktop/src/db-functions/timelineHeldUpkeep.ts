@@ -3,6 +3,7 @@ import * as schema from "@om-electron/database/migrations/schema";
 import type { DbTransaction } from "./types";
 import { TimelineCommitViolationError } from "./timelineChanges";
 import { holdReachBack } from "@/timeline/holdExtent";
+import { joinedHoldStyle, type HoldStyle } from "@/timeline/holdStyle";
 import {
     arrivalRowSql,
     readArrival,
@@ -54,6 +55,9 @@ import { readPageGrid, showStartBeat } from "./timelinePageGrid";
  *    over itself (`trimHeldMarksUnderRowsInTransaction`, review R2, #476).
  * 6. **Merge** one marcher's marks that now touch or overlap into one (04-anchors: touching holds
  *    are one hold).
+ *
+ * A mark keeps its **hold style** (ADR 0015 D-5) through all of it; merged marks take the style
+ * of the earliest that has one (`joinedHoldStyle`).
  *
  * A changed mark is deleted and inserted again with its id (`UNIQUE (marcher_id, start_beat)`
  * can't then trip over a neighbor moved in the same step), so undo restores the same row.
@@ -245,6 +249,7 @@ interface KeptMark {
     readonly marcherId: number;
     start: number;
     end: number;
+    style: HoldStyle | null;
 }
 
 /**
@@ -344,7 +349,13 @@ export async function keepHeldMarksTrueInTransaction(
         let end = mark.end;
         for (const r of own) if (r.start < end && start < r.end) end = r.start;
         if (end > start)
-            kept.push({ id: mark.id, marcherId: mark.marcherId, start, end });
+            kept.push({
+                id: mark.id,
+                marcherId: mark.marcherId,
+                start,
+                end,
+                style: mark.style ?? null,
+            });
     }
     if (refused.length > 0)
         throw new TimelineCommitViolationError(
@@ -362,7 +373,10 @@ export async function keepHeldMarksTrueInTransaction(
     await writeKeptMarks(tx, marks, mergeTouching(kept));
 }
 
-/** 6. One marcher's marks that touch or overlap become one, keeping the earliest's id. */
+/**
+ * 6. One marcher's marks that touch or overlap become one, keeping the earliest's id and the
+ * style of the earliest that has one.
+ */
 function mergeTouching(kept: KeptMark[]): KeptMark[] {
     const sorted = [...kept].sort(
         (x, y) => x.marcherId - y.marcherId || x.start - y.start,
@@ -370,9 +384,14 @@ function mergeTouching(kept: KeptMark[]): KeptMark[] {
     const merged: KeptMark[] = [];
     for (const mark of sorted) {
         const last = merged[merged.length - 1];
-        if (last && last.marcherId === mark.marcherId && mark.start <= last.end)
+        if (
+            last &&
+            last.marcherId === mark.marcherId &&
+            mark.start <= last.end
+        ) {
             last.end = Math.max(last.end, mark.end);
-        else merged.push(mark);
+            last.style = joinedHoldStyle([last.style, mark.style]);
+        } else merged.push({ ...mark });
     }
     return merged;
 }
@@ -389,7 +408,11 @@ async function writeKeptMarks(
     const original = new Map(marks.map((m) => [m.id, m]));
     const changed = kept.filter((m) => {
         const was = original.get(m.id)!;
-        return was.start !== m.start || was.end !== m.end;
+        return (
+            was.start !== m.start ||
+            was.end !== m.end ||
+            (was.style ?? null) !== m.style
+        );
     });
     const keptIds = new Set(kept.map((m) => m.id));
     const gone = [
@@ -406,6 +429,7 @@ async function writeKeptMarks(
                 marcher_id: m.marcherId,
                 start_beat: m.start,
                 end_beat: m.end,
+                style: m.style,
             })),
         );
 }

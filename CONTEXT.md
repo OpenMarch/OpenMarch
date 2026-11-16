@@ -87,3 +87,19 @@ The code is `apps/desktop/src/input/modifierRoles.ts`.
   half-step ladder and the pull of guides and marchers for shape and marcher drags on the field,
   and grid snapping for arrow nudges on marchers. Its label is "Snap"; its off state, "Snap off".
   It resets on restart and when a file opens. The timeline keeps its own held Alt = no snap.
+
+## Holds
+
+The page-state words (Defined, Held, Not defined) are in
+`docs/timeline/research/holds/README.md`.
+
+- **Held hold**: a stretch where one marcher stands still on purpose, stored as a Held mark
+  (`timeline_held_marks`, ADR 0012). A marcher with no move and no mark also stands still, but
+  nothing was decided there.
+- **Hold style**: what a marcher's feet do over a Held hold, in the 3D View: **Stand**, **Mark
+  time** or **High mark time**. It belongs to the hold, not to a cue (ADR 0015 D-5), and is the
+  whole hold's. A hold with no style of its own uses the **show setting**.
+  _Avoid_: mark time cue, hold technique (the compile's name for the three values).
+- **Show setting** (for holds): Show settings' "Holding while others move". Stand by default. Set
+  to mark time, a holding marcher marks time on counts where anyone in the band travels and stands
+  while the whole band holds. A hold's own style wins over it.

@@ -476,6 +476,12 @@
         "height": 174,
         "seconds": 6.1
     },
+    "timeline-hold-style": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 656,
+        "height": 444
+    },
     "timeline-isolate": {
         "chapter": "timeline",
         "kind": "still",

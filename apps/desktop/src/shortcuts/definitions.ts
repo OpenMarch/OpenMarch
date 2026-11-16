@@ -473,6 +473,41 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: [],
     },
+    // Hold style (ADR 0015 D-5, #775): what the selected marchers' feet do over the Held hold the
+    // playhead is in, for the 3D View: the show setting, or the hold's own style. The inspector's
+    // Hold style choice and the field menu run these. Unbound
+    timelineHoldStyleDefault: {
+        labelKey: "actions.batchEdit.holdStyleDefault",
+        keywordsKey: "actions.batchEdit.holdStyleKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { style: "default" },
+    },
+    timelineHoldStyleStand: {
+        labelKey: "actions.batchEdit.holdStyleStand",
+        keywordsKey: "actions.batchEdit.holdStyleKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { style: "stand" },
+    },
+    timelineHoldStyleMarkTime: {
+        labelKey: "actions.batchEdit.holdStyleMarkTime",
+        keywordsKey: "actions.batchEdit.holdStyleKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { style: "markTime" },
+    },
+    timelineHoldStyleHighMarkTime: {
+        labelKey: "actions.batchEdit.holdStyleHighMarkTime",
+        keywordsKey: "actions.batchEdit.holdStyleKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { style: "highMarkTime" },
+    },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.moveAllToNextSpots",
         category: "batchEdit",

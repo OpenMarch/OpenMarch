@@ -33,6 +33,11 @@
             "forSelected": "{label} (selected)",
             "holdFromPrevious": "{holdFromPrevious}",
             "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "Hold style: Show setting",
+            "holdStyleHighMarkTime": "Hold style: High mark time",
+            "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d",
+            "holdStyleMarkTime": "Hold style: Mark time",
+            "holdStyleStand": "Hold style: Stand",
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
             "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
             "moveAllToNextSpots": "Move to next page's spots (all marchers)",
@@ -797,6 +802,14 @@
                 "heldSince": "{held} · since Page {page}",
                 "holdFrom": "Last moved on Page {page}",
                 "holdFromStart": "No moves since the start",
+                "holdStyle": {
+                    "default": "Show setting",
+                    "highMarkTime": "High mark time",
+                    "label": "Hold style",
+                    "markTime": "Mark time",
+                    "mixed": "Mixed",
+                    "stand": "Stand"
+                },
                 "movesOnThisPage": "Moves on this page",
                 "notDefinedFromStart": "{notDefined} · showing the start",
                 "notDefinedShowing": "{notDefined} · showing Page {page}",
@@ -2344,7 +2357,8 @@
                 "showEnd": "Stops at the end of the show"
             },
             "changeError": "Couldn't change the hold",
-            "splitError": "Couldn't split the hold"
+            "splitError": "Couldn't split the hold",
+            "styleError": "Couldn't change the hold style"
         },
         "heldBar": {
             "detail": "{held} of {total} selected",

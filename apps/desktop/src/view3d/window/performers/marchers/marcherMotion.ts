@@ -77,13 +77,19 @@ export interface WindowCueInputs {
     sections?: CompileInput["sections"];
     /**
      * 1 for each count on which any performer travels (`bandMovingCounts`),
-     * for the Feet default: marchers mark time while the band moves.
+     * for the Feet default when the show is set to mark time: marchers then
+     * mark time while the band moves.
      */
     bandMoving?: ArrayLike<number> | null;
-    /** The Feet default on those counts (Show settings); mark time when omitted. */
+    /** The Feet default on those counts (Show settings); stand when omitted. */
     holdWhileBandMoves?: NonNullable<
         CompileInput["showDefaults"]
     >["holdWhileBandMoves"];
+    /**
+     * The styles the marchers' Held holds carry, by count (`holdStyleSpans`):
+     * each wins over the show setting for the counts it covers (ADR 0015 D-5).
+     */
+    holdStyles?: CompileInput["holdStyles"];
     /**
      * What each marcher carries, which decides the Horn/Equipment default.
      * Marchers carry nothing when it is left out.
@@ -119,6 +125,7 @@ export function compileWindowCues(
         cues: [],
         sections: inputs.sections,
         bandTravels: bandMoving ? (c) => bandMoving[c] === 1 : undefined,
+        holdStyles: inputs.holdStyles,
         showDefaults: {
             stepOffFoot,
             holdWhileBandMoves: inputs.holdWhileBandMoves,
@@ -205,7 +212,7 @@ export function bandMovingCounts(
 /**
  * Samples every marcher's drill at each count boundary and plans its clips.
  * Each marcher is planned on its own; what a hold does comes from the Feet
- * channel (marking time while the band moves, `compileWindowCues`).
+ * channel (the hold's own style, else the show setting, `compileWindowCues`).
  */
 export function planShow(
     ids: readonly number[],

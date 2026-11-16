@@ -158,6 +158,11 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         db.exec("ALTER TABLE items DROP COLUMN locked");
         db.exec("ALTER TABLE items DROP COLUMN from_preset");
     },
+    // A Held mark's hold style (ADR 0015 D-5): the column goes. The history triggers name it
+    21: (db) => {
+        dropTriggers(db);
+        db.exec("ALTER TABLE timeline_held_marks DROP COLUMN style");
+    },
 };
 
 /**

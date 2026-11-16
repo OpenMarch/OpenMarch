@@ -24,6 +24,7 @@ import {
 } from "./timelineHeldMarks";
 import { HOME_ARRIVAL, marchersWithShapeHome } from "./timelineHeldArrival";
 import { holdReachBack } from "@/timeline/holdExtent";
+import { joinedHoldStyle, type HoldStyle } from "@/timeline/holdStyle";
 import { showStartBeat, type PageGrid } from "./timelinePageGrid";
 
 /**
@@ -196,6 +197,7 @@ export async function holdFromPreviousPageInTransaction({
         marcher_id: number;
         start_beat: number;
         end_beat: number;
+        style: HoldStyle | null;
     }[] = [];
     let firstFilled: number = pageBox.start;
     for (const marcherId of ids) {
@@ -247,6 +249,8 @@ export async function holdFromPreviousPageInTransaction({
             marcher_id: marcherId,
             start_beat: joins?.start ?? growth.from,
             end_beat: next?.end ?? pageBox.end,
+            // The hold it joins keeps its style; a new hold alone has none (the show setting)
+            style: joinedHoldStyle([joins?.style, next?.style]),
         });
         result.held.push(marcherId);
         firstFilled = Math.min(firstFilled, growth.from);

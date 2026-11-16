@@ -573,6 +573,26 @@
         "category": "batchEdit",
         "bindings": []
     },
+    "timelineHoldStyleDefault": {
+        "label": "Hold style: Show setting",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleStand": {
+        "label": "Hold style: Stand",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleMarkTime": {
+        "label": "Hold style: Mark time",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleHighMarkTime": {
+        "label": "Hold style: High mark time",
+        "category": "batchEdit",
+        "bindings": []
+    },
     "setAllMarchersToNextPage": {
         "label": "Move to next page's spots (all marchers)",
         "category": "batchEdit",

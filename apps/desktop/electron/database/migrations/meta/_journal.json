@@ -148,6 +148,13 @@
             "when": 1794759406781,
             "tag": "0020_item_model_and_lock",
             "breakpoints": true
+        },
+        {
+            "idx": 21,
+            "version": "6",
+            "when": 1794797889084,
+            "tag": "0021_held_mark_style",
+            "breakpoints": true
         }
     ]
 }

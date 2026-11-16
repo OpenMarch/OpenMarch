@@ -14,6 +14,9 @@ covers:
   - apps/desktop/src/view3d/core/artworkTemplates
   - apps/desktop/src/view3d/window/overlay/SilkArtworkControls.tsx
   - packages/core/src/cues
+  - apps/desktop/src/view3d/core/performerDefaults.ts
+  - apps/desktop/src/components/sidebar/PerformerDefaultsFields.tsx
+  - i18n:workspaceSettings.performer
   - i18n:view3d.settings
   - i18n:view3d.kit
   - i18n:view3d.lighting
@@ -135,14 +138,14 @@ The marchers march the drill as it's written: every move, at the counts it takes
 - While moving, they step on every count and keep facing the front. Moving sideways, they slide; moving toward the back sideline, they march backward.
 - When a wind player changes direction, the last step of the old move lands on the ball of the foot, pointing partway to the new direction, and the first step of the new move goes straight into the new path. A full turn around re-steps on the first count instead. You can switch this to a plain blend in Show settings (below).
 - Brass play with horns up, mouthpieces at their lips and heads slightly raised; woodwinds play their instruments; the battery plays; and the guard holds their equipment at set.
-- While a marcher holds still and other marchers are moving, they mark time (or what Show settings say, below). When the whole band is still, everyone stands.
+- While a marcher holds still, they stand. You can have them mark time instead: for the whole show in Show settings (below), or for one hold with its hold style ([Stand or mark time on a hold](/guides/timeline/defined-held-not-defined/#stand-or-mark-time-on-a-hold)).
 - When you pause, everyone stands in the closed position on their dot, unless you've turned on <Ui k="view3d.pausedPose.label" plain /> ([When the show is paused](/guides/3d-view/open-the-3d-view/#when-the-show-is-paused)).
 
 - Show settings has a <Ui k="workspaceSettings.performer.title" plain /> section for how the marchers move everywhere in the show:
     - <Ui k="workspaceSettings.performer.stepOffFoot.label" plain />: the foot every move steps off with.
     - <Ui k="workspaceSettings.performer.dotMode.label" plain />: with <Ui k="workspaceSettings.performer.dotMode.foot" plain />, the foot that lands on the last count is on the dot and the marcher centers on it as the feet close; with <Ui k="workspaceSettings.performer.dotMode.body" plain />, the middle of the body is over the dot.
     - <Ui k="workspaceSettings.performer.directionChange.label" plain />: how the moving leg gets to a new direction, <Ui k="workspaceSettings.performer.directionChange.corner" plain /> or <Ui k="workspaceSettings.performer.directionChange.direct" plain />. Round the corner is the handbook's placement and cut for wind players at 8-to-5; other sizes still blend.
-    - <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain />: what a marcher who holds does while others move.
+    - <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain />: what a marcher who holds does while others move. It starts as <Ui k="workspaceSettings.performer.holdWhileBandMoves.stand" plain />. With <Ui k="workspaceSettings.performer.holdWhileBandMoves.markTime" plain /> or <Ui k="workspaceSettings.performer.holdWhileBandMoves.highMarkTime" plain />, a holding marcher marks time on the counts where anyone in the band is moving, and stands while the whole band is still. A hold with its own hold style ignores this setting.
     - <Ui k="workspaceSettings.performer.percussionTravel.label" plain />: <Ui k="workspaceSettings.performer.percussionTravel.crab" plain /> keeps drummers' hips square to the front, or <Ui k="workspaceSettings.performer.percussionTravel.slide" plain /> moves them like the winds.
 
 Apart from those, the 3D View doesn't let you change these: there are no settings for horn moves, facings, equipment work or choreography in this version.

@@ -8,7 +8,9 @@
 - Convergence (2026-11-03): the compiler (`packages/core/src/cues`) shipped
   and drives the 3D View's marcher motion with show defaults only, including
   automatic mark time while the band moves (a Feet show default,
-  `CueShowDefaults.holdWhileBandMoves`). Cue storage (D-1 to D-5's tables),
+  `CueShowDefaults.holdWhileBandMoves`; since ADR 0015 D-5 it is opt-in:
+  holds stand unless the show setting or the hold's own style asks for mark
+  time). Cue storage (D-1 to D-5's tables),
   Visuals mode and item placement (holders, artwork slots, put-down) are
   parked: the code is on branch `archive/pre-convergence`, and their
   migrations stay until the fork's migrations are collapsed.
@@ -557,7 +559,8 @@ of this change until they are tested more.
   (`markTime`, `highMarkTime`, `stand`), plus `percussionTravel` (`crab`,
   `slide`), added with the crab step. Unset fields take the built-in
   defaults: left, foot, corner, mark time, crab
-  (`src/view3d/core/performerDefaults.ts`). An unknown value reads as unset
+  (`src/view3d/core/performerDefaults.ts`; the hold default is `stand` since
+  ADR 0015 D-5, fork #775). An unknown value reads as unset
   instead of failing the whole settings object.
 - Show settings has a "Performer defaults" section for them.
 - The 3D View compiles with the step-off foot and the hold default as the

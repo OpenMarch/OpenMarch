@@ -210,7 +210,7 @@ describe("planning from the window's cues", () => {
     });
 });
 
-describe("automatic mark time", () => {
+describe("mark time on holds", () => {
     // Marchers 1 and 2 move over counts 4-12; marcher 3 holds all show
     const ids = [1, 2, 3];
     const positions = show([
@@ -232,9 +232,25 @@ describe("automatic mark time", () => {
         clock,
         fp,
         manifest,
-        compileWindowCues(marchers, beats, "left", { bandMoving }),
+        compileWindowCues(marchers, beats, "left", {
+            bandMoving,
+            holdWhileBandMoves: "markTime",
+        }),
     ).plans;
     const holder = plans[2]!.events;
+    /** Marcher 3's events with the compile's inputs `inputs`. */
+    const holderWith = (
+        inputs: NonNullable<Parameters<typeof compileWindowCues>[3]>,
+    ) =>
+        planShow(
+            ids,
+            positions,
+            [1, 1, 1],
+            clock,
+            fp,
+            manifest,
+            compileWindowCues(marchers, beats, "left", inputs),
+        ).plans[2]!.events;
 
     it("finds the counts on which anyone travels", () => {
         expect(Array.from(bandMoving)).toEqual([
@@ -242,7 +258,34 @@ describe("automatic mark time", () => {
         ]);
     });
 
-    it("marks time while the band moves, and stands while it holds", () => {
+    it("stands on every hold by default, even while the band moves (ADR 0015 D-5)", () => {
+        const still = holderWith({ bandMoving });
+        expect(still.every((e) => !e.clip.includes("marktime"))).toBe(true);
+        expect(still[0]!.clip.startsWith("attention")).toBe(true);
+    });
+
+    it("a hold's own style marks time over its counts, whatever the show setting", () => {
+        // Counts 0-3: the whole band holds, where the show setting would stand anyway
+        const own = holderWith({
+            bandMoving,
+            holdStyles: [{ marcherId: 3, from: 0, to: 4, style: "markTime" }],
+        });
+        // It steps off into mark time from the first count, and halts where the hold ends
+        expect(own[0]!.clip).toContain("marktime");
+        expect(
+            own.find((e) => e.kind === "rest" && e.clip.startsWith("marktime")),
+        ).toBeDefined();
+        expect(own.at(-1)!.clip.startsWith("attention")).toBe(true);
+        // The other way: the show marks time while the band moves, this hold stands
+        const stands = holderWith({
+            bandMoving,
+            holdWhileBandMoves: "markTime",
+            holdStyles: [{ marcherId: 3, from: 0, to: 16, style: "stand" }],
+        });
+        expect(stands.every((e) => !e.clip.includes("marktime"))).toBe(true);
+    });
+
+    it("with the show set to mark time: marks time while the band moves, and stands while it holds", () => {
         expect(holder.some((e) => e.clip.startsWith("marktime"))).toBe(true);
         expect(holder[0]!.clip.startsWith("attention")).toBe(true);
         expect(holder.at(-1)!.clip.startsWith("attention")).toBe(true);

@@ -2,6 +2,7 @@ import { desc, sql } from "drizzle-orm";
 import path from "path";
 import { schema } from "@/../electron/database/db";
 import { migrationQueriesAfter } from "@/../electron/database/services/DrizzleMigrationService";
+import { addedColumn } from "@/../electron/database/migrations/addColumnGuard";
 import { TIMELINE_MODEL_USER_VERSION } from "@/../electron/database/fileVersion";
 import { transactionWithHistory } from "@/db-functions/history";
 import type { DbConnection } from "@/db-functions/types";
@@ -19,8 +20,10 @@ export const migrationsFolder = path.resolve(
 
 /**
  * Finishes a test file's conversion the way convert on open does: applies the timeline-only
- * migrations (they drop the page-era tables) and sets `user_version` to 8. Writes outside the
- * history wrapper, so undo never brings the tables back.
+ * migrations (they drop the page-era tables) and sets `user_version` to 8. As the app's runner
+ * does, it skips an `ADD COLUMN` the table already has: the page-era test file took the later
+ * migrations' columns when it was built (`pageEraBlankPath`). Writes outside the history wrapper,
+ * so undo never brings the tables back.
  */
 export async function finishTestConversion(db: DbConnection): Promise<void> {
     const last = await db
@@ -34,8 +37,17 @@ export async function finishTestConversion(db: DbConnection): Promise<void> {
         "timeline",
     );
     await db.transaction(async (tx) => {
-        for (const query of queries)
-            if (query.trim()) await tx.run(sql.raw(query));
+        for (const query of queries) {
+            if (!query.trim()) continue;
+            const added = addedColumn(query);
+            if (added) {
+                const has = await tx.all(
+                    sql`SELECT 1 FROM pragma_table_info(${added.table}) WHERE lower(name) = ${added.column.toLowerCase()}`,
+                );
+                if (has.length > 0) continue;
+            }
+            await tx.run(sql.raw(query));
+        }
         await tx.run(
             sql.raw(`PRAGMA user_version = ${TIMELINE_MODEL_USER_VERSION}`),
         );
