@@ -119,7 +119,7 @@ numbers) is in [parity-gate-results.md](parity-gate-results.md).
 72. Look at the handles → filled squares. **(change, look)** Fabric drew outlined squares (owner decision 2026-10-15: keep filled).
 73. Select one marcher → no box, no handles (story 47).
 74. Drag a corner → each axis follows the pointer from the opposite corner; with $mod (constrain), uniformly (story 48). **(change)** Corners were uniform by default and $mod freed them; they now match a box shape's (#545).
-    74a. Turn on a box's ratio lock, then drag a selection's corner or middle handle → it keeps the ratio; with $mod, freely (#545).
+    74a. Turn on a box's ratio lock, then drag a plain selection's corner or middle handle → it scales freely; with $mod it keeps the ratio (#1037).
 75. Drag a middle handle → one axis; hold $mod (constrain) → both axes by the same amount, the other axis about the center line (#545). **(change)** Fabric cancelled the scale while Shift was down (story 49).
     75a. Hold Alt (from center) on a corner or middle handle → the selection scales about its center (#545).
 76. Rotate → snaps to 15°; with fine (Shift), whole degrees at full speed (owner 2026-10-30); with the Snap toggle off, free (story 50).
