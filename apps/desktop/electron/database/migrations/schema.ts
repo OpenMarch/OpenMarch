@@ -812,6 +812,84 @@ export const item_geometry = sqliteTable(
     ],
 );
 
+/* =========================== CUES =========================== */
+
+/**
+ * A performer cue (ADR 0015 D-9): one parameter of the performers in `cue_marchers`, set at a
+ * beat. The cue's moment is the beat's click.
+ *
+ * `type` and `value` are checked in code, not by a CHECK constraint (`@openmarch/core`'s cue
+ * library): a build that doesn't know a type keeps its cues and ignores them, so a new type
+ * needs no migration.
+ */
+export const cues = sqliteTable(
+    "cues",
+    {
+        id: integer().primaryKey(),
+        /** The cue type: equipment, position, silk, look, facing, posture, or a later build's */
+        type: text().notNull(),
+        /**
+         * The write paths carry a cue past a deleted beat first (`carryCuesPastDeletedBeats`);
+         * the cascade is the backstop.
+         */
+        beat_id: integer()
+            .notNull()
+            .references(() => beats.id, { onDelete: "cascade" }),
+        /** A value of the type: a built-in id (`builtin:...`) or one the show adds */
+        value: text().notNull(),
+        /** The value's settings, a JSON object */
+        settings_json: text().notNull().default("{}"),
+        /** `NULL` for a lasting cue; a momentary cue's length in counts, at least 1 */
+        length: integer(),
+        /** Counts the change takes, at least 1 (a snap); `NULL` for the value's default */
+        transition: integer(),
+        /** Display only: how the performers were picked, such as "Trumpets" */
+        label: text(),
+        notes: text(),
+        ...timestamps,
+    },
+    (table) => [
+        index("cues_beat_id_idx").on(table.beat_id),
+        index("cues_type_beat_id_idx").on(table.type, table.beat_id),
+        check("cues_settings_json_check", sql`json_valid(settings_json)`),
+        check(
+            "cues_length_check",
+            sql`length IS NULL OR (typeof(length) = 'integer' AND length >= 1)`,
+        ),
+        check(
+            "cues_transition_check",
+            sql`transition IS NULL OR (typeof(transition) = 'integer' AND transition >= 1)`,
+        ),
+    ],
+);
+
+/**
+ * The performers a cue applies to (ADR 0015 D-4): the ones selected when it was made. Every cue
+ * has its performers here; the marcher deletion write path deletes a cue left with none.
+ *
+ * A surrogate `id`, unique on (cue, marcher): history replays by rowid, so undo has to restore
+ * the same rowid (as `marcher_tags` does).
+ */
+export const cue_marchers = sqliteTable(
+    "cue_marchers",
+    {
+        id: integer().primaryKey(),
+        cue_id: integer()
+            .notNull()
+            .references(() => cues.id, { onDelete: "cascade" }),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+    },
+    (table) => [
+        unique("cue_marchers_cue_marcher_unique").on(
+            table.cue_id,
+            table.marcher_id,
+        ),
+        index("cue_marchers_marcher_id_idx").on(table.marcher_id),
+    ],
+);
+
 /* =========================== VIEWS =========================== */
 /**
  * An ordered list of the beats, pages, and measures in the app.

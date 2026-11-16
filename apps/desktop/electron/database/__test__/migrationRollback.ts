@@ -163,6 +163,11 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         dropTriggers(db);
         db.exec("ALTER TABLE timeline_held_marks DROP COLUMN style");
     },
+    // Performer cues (ADR 0015 D-9): the two tables go, with their history triggers
+    22: (db) => {
+        dropTriggers(db);
+        dropTables(db, ["cue_marchers", "cues"]);
+    },
 };
 
 /**

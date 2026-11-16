@@ -24,7 +24,7 @@ export const AUDIO = Uint8Array.from(
     (_, i) => (i * 37) % 251,
 );
 
-/** A show with names, notes, a tag, an unknown table, history and music in it */
+/** A show with names, notes, a tag, a cue, an unknown table, history and music in it */
 export async function makeShowWithSecrets(showPath: string) {
     await createNewTimelineShow(showPath);
     const db = new DatabaseSync(showPath);
@@ -40,9 +40,13 @@ export async function makeShowWithSecrets(showPath: string) {
                    (NULL, 'Tuba', NULL, 'U', 1);
             UPDATE pages SET notes = 'Talk to Avery''s parents';
             INSERT INTO tags (name, description) VALUES ('Sarah''s squad', 'Seniors only');
-            -- A table this version doesn't know (older fork files have cues, sketches, …)
-            CREATE TABLE cues (id INTEGER PRIMARY KEY, name TEXT, notes TEXT);
-            INSERT INTO cues (name, notes) VALUES ('Mr. Hayes solo', 'Count off from Jordan');
+            -- A cue (ADR 0015): its label says how its performers were picked, often by a tag's name
+            INSERT INTO cues (type, beat_id, value, label, notes)
+            VALUES ('look', 0, 'builtin:look.guard', 'Sarah''s squad', 'Count off from Jordan');
+            INSERT INTO cue_marchers (cue_id, marcher_id) VALUES (1, 1);
+            -- A table this version doesn't know (older fork files have phrase assets, sketches, …)
+            CREATE TABLE phrase_assets (id INTEGER PRIMARY KEY, name TEXT, notes TEXT);
+            INSERT INTO phrase_assets (name, notes) VALUES ('Mr. Hayes solo', 'Count off from Jordan');
             INSERT INTO timeline_change_log (tbl, row_id, before, after)
             VALUES ('marchers', 1, NULL, '{"name":"Jordan Quill"}');
         `);

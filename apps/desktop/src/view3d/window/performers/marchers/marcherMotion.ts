@@ -11,6 +11,7 @@ import {
     compileCues,
     type CompileInput,
     type CompiledCues,
+    type CueInput,
     type FieldProperties,
     type PerformerCarry,
     pixelsToWorld,
@@ -64,7 +65,7 @@ export interface ShowPlans {
         heightClasses: readonly HeightClass[];
         bpm: Float64Array;
         ids: readonly number[];
-        cues: CompiledCues | null;
+        cues: WindowCues | null;
         dotMode: DotMode | readonly DotMode[] | null;
         crabs: readonly boolean[] | null;
         directionChange: DirectionChange | readonly DirectionChange[] | null;
@@ -73,15 +74,17 @@ export interface ShowPlans {
 
 /** What the window's compile reads besides the marchers and beats. */
 export interface WindowCueInputs {
-    /** Each section's usual equipment, for the Carry default (`performers/cueSections`). */
+    /** The show's stored cues (`useStoredCues`); none when left out. */
+    cues?: readonly CueInput[];
+    /** Each section's usual equipment, for the Equipment default (`performers/cueSections`). */
     sections?: CompileInput["sections"];
     /**
      * 1 for each count on which any performer travels (`bandMovingCounts`),
-     * for the Feet default when the show is set to mark time: marchers then
+     * for the hold style when the show is set to mark time: marchers then
      * mark time while the band moves.
      */
     bandMoving?: ArrayLike<number> | null;
-    /** The Feet default on those counts (Show settings); stand when omitted. */
+    /** The hold style on those counts (Show settings); stand when omitted. */
     holdWhileBandMoves?: NonNullable<
         CompileInput["showDefaults"]
     >["holdWhileBandMoves"];
@@ -91,46 +94,51 @@ export interface WindowCueInputs {
      */
     holdStyles?: CompileInput["holdStyles"];
     /**
-     * What each marcher carries, which decides the Horn/Equipment default.
+     * What each marcher carries, which decides the Position default.
      * Marchers carry nothing when it is left out.
      */
     carries?: (marcherId: number) => PerformerCarry;
 }
 
+/** The window's compiled cues, with the show setting the planner reads beside them. */
+export interface WindowCues {
+    compiled: CompiledCues;
+    /** The show's step-off foot: a show setting, not a cue (ADR 0015 D-1). */
+    stepOffFoot: Foot;
+}
+
 /**
- * Compiles the 3D View's performer behavior from the marchers and the timed
- * beats (in the count clock's order) with no stored cues: the show defaults
- * only (ADR 0004; cue storage is parked). `stepOffFoot` is the show's saved
- * default.
+ * Compiles the 3D View's performer behavior from the marchers, the timed
+ * beats (in the count clock's order) and the show's stored cues (ADR 0015):
+ * each cue type's parameter per performer, and the hold style. `stepOffFoot`
+ * is the show's saved default.
  */
 export function compileWindowCues(
     marchers: readonly { id: number; section: string }[],
     beats: readonly { id: number; timestamp: number; duration: number }[],
     stepOffFoot: Foot,
     inputs: WindowCueInputs = {},
-): CompiledCues {
+): WindowCues {
     const { bandMoving, carries = () => "none" } = inputs;
-    return compileCues({
+    const compiled = compileCues({
         beats: beats
             .filter((b) => b.duration > 0)
             .sort((a, b) => a.timestamp - b.timestamp)
             .map((b) => ({ id: b.id, duration: b.duration })),
-        marchers: marchers.map((m, i) => ({
+        marchers: marchers.map((m) => ({
             id: m.id,
             section: m.section,
-            tagIds: [],
-            drillOrder: i,
             carries: carries(m.id),
         })),
-        cues: [],
+        cues: inputs.cues ?? [],
         sections: inputs.sections,
         bandTravels: bandMoving ? (c) => bandMoving[c] === 1 : undefined,
         holdStyles: inputs.holdStyles,
         showDefaults: {
-            stepOffFoot,
             holdWhileBandMoves: inputs.holdWhileBandMoves,
         },
     });
+    return { compiled, stepOffFoot };
 }
 
 const sameArray = (
@@ -211,8 +219,8 @@ export function bandMovingCounts(
 
 /**
  * Samples every marcher's drill at each count boundary and plans its clips.
- * Each marcher is planned on its own; what a hold does comes from the Feet
- * channel (the hold's own style, else the show setting, `compileWindowCues`).
+ * Each marcher is planned on its own; what a hold does comes from the hold
+ * style (the hold's own style, else the show setting, `compileWindowCues`).
  */
 export function planShow(
     ids: readonly number[],
@@ -222,7 +230,7 @@ export function planShow(
     fieldProperties: FieldProperties,
     manifest: Manifest,
     /** The compiled cues; null plays the defaults (front facing, stand). */
-    cues: CompiledCues | null,
+    cues: WindowCues | null,
     previous: ShowPlans | null = null,
     /** What the dot marks, for the show or per count; null is foot on the dot. */
     dotMode: DotMode | readonly DotMode[] | null = null,
@@ -261,13 +269,14 @@ export function planShow(
             return previous!.plans[j];
         replanned++;
         const fromCues = cues
-            ? marcherCueInputs(cues, ids[i], positions, {
+            ? marcherCueInputs(cues.compiled, ids[i], positions, {
                   // a Facing point is in field coordinates, like the dots
                   pointToWorld: (x, y) => {
                       const w = pixelsToWorld(fieldProperties, { x, y });
                       return [w.x, w.z];
                   },
                   secondsPerCount,
+                  stepOffFoot: cues.stepOffFoot,
               })
             : null;
         return planMarcher({

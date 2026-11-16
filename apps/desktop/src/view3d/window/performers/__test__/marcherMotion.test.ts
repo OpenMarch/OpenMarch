@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    compileCues,
     pixelsToWorld,
     type CueInput,
     type PerformerCarry,
@@ -313,40 +312,26 @@ describe("planning from compiled cues", () => {
         timestamp: k * 0.5,
         duration: 0.5,
     }));
-    // The compiler, as the window would call it if the show stored cues
+    const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
+    // The window's compile, given the show's stored cues
     const compiled = (
         cues: CueInput[],
-        tagIds: ReadonlyMap<number, number[]> = new Map(),
         carries: (id: number) => PerformerCarry = () => "none",
-    ) =>
-        compileCues({
-            beats: beats.map((b) => ({ id: b.id, duration: b.duration })),
-            marchers: ids.map((id, i) => ({
-                id,
-                section: "Trumpet",
-                tagIds: tagIds.get(id) ?? [],
-                drillOrder: i,
-                carries: carries(id),
-            })),
-            cues,
-            showDefaults: { stepOffFoot: "left" },
-        });
-    const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
+    ) => compileWindowCues(marchers, beats, "left", { cues, carries });
     const facing = (
         value: string,
         extra: Partial<CueInput> = {},
     ): CueInput => ({
         id: 1,
-        channel: "facing",
-        kind: "state",
-        target: { kind: "band" },
+        type: "facing",
         // count 8
         beatId: 58,
         value,
-        transitionLength: 1,
+        transition: 1,
+        marcherIds: ids,
         ...extra,
     });
-    const headingsOf = (cues: CueInput[], tagIds = new Map()) =>
+    const headingsOf = (cues: CueInput[]) =>
         planShow(
             ids,
             lines,
@@ -354,7 +339,7 @@ describe("planning from compiled cues", () => {
             clock,
             fp,
             manifest,
-            compiled(cues, tagIds),
+            compiled(cues),
         ).plans.map((p) => p!.headings);
 
     it("turns to a Facing cue from its count", () => {
@@ -364,21 +349,18 @@ describe("planning from compiled cues", () => {
         expect(Math.abs(first![12])).toBeCloseTo(Math.PI);
     });
 
-    it("plays a Horn/Equipment cue on carriers' Horn channel", () => {
+    it("plays a Position cue on carriers' Horn channel", () => {
         const down: CueInput = {
             id: 2,
-            channel: "horn_equipment",
-            kind: "state",
-            target: { kind: "band" },
+            type: "position",
             // count 8
             beatId: 58,
             value: "builtin:horn.down",
+            marcherIds: ids,
         };
-        const cues = compiled([down], new Map(), (id) =>
-            id === 1 ? "winds" : "none",
-        );
+        const cues = compiled([down], (id) => (id === 1 ? "winds" : "none"));
         const plan = (id: number) =>
-            planHornChannel(cues.segments(id, "horn_equipment"), {
+            planHornChannel(cues.compiled.segments(id, "position"), {
                 defaultState: "up",
                 secondsPerCount: () => 0.5,
             });
@@ -390,17 +372,29 @@ describe("planning from compiled cues", () => {
         expect(bare[hornEventAt(bare, 12)].state).toBe("up");
     });
 
-    it("reaches tag targets through the marchers' tags", () => {
-        const [tagged, other] = headingsOf(
-            [
-                facing("builtin:facing.back", {
-                    target: { kind: "tag", tagId: 7 },
-                }),
-            ],
-            new Map([[1, [7]]]),
-        );
-        expect(Math.abs(tagged![12])).toBeCloseTo(Math.PI);
+    it("reaches only the performers a cue stores", () => {
+        const [named, other] = headingsOf([
+            facing("builtin:facing.back", { marcherIds: [1] }),
+        ]);
+        expect(Math.abs(named![12])).toBeCloseTo(Math.PI);
         expect(other![12]).toBeCloseTo(0);
+    });
+
+    it("turns back when a momentary Facing cue ends", () => {
+        const [first] = headingsOf([
+            facing("builtin:facing.back", { length: 4 }),
+        ]);
+        expect(Math.abs(first![10])).toBeCloseTo(Math.PI);
+        // counts 8-11 face the back; from count 12 (boundary 13) the front again
+        expect(first![14]).toBeCloseTo(0);
+    });
+
+    it("ignores a cue of a type this build doesn't know", () => {
+        const plain = headingsOf([]);
+        const withUnknown = headingsOf([
+            { ...facing("builtin:lights.on"), type: "lights" },
+        ]);
+        expect(withUnknown).toEqual(plain);
     });
 
     it("reads a Facing point in field coordinates, like the dots", () => {

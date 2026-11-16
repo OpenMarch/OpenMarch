@@ -44,6 +44,9 @@ export const tablesWithHistory = [
     schema.timeline_shape_recipe_marchers,
     // Tempo mode: the music offset tempo edits change
     schema.tempo_settings,
+    // Performer cues and the performers each applies to (ADR 0015 D-9)
+    schema.cues,
+    schema.cue_marchers,
 ];
 
 /**

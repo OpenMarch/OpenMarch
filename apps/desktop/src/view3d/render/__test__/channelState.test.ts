@@ -26,33 +26,28 @@ function hornSegments(cues: CueInput[]) {
             {
                 id: 7,
                 section: "Trumpet",
-                tagIds: [],
-                drillOrder: 0,
                 carries: "winds",
             },
         ],
         cues,
     });
-    return compiled.segments(7, "horn_equipment");
+    return compiled.segments(7, "position");
 }
 
-const band = { kind: "band" } as const;
 const down8: CueInput = {
     id: 1,
-    channel: "horn_equipment",
-    kind: "state",
-    target: band,
+    type: "position",
     beatId: 108, // count 8
     value: "builtin:horn.down",
-    transitionLength: 3,
+    transition: 3,
+    marcherIds: [7],
 };
 const upSnap12: CueInput = {
     id: 2,
-    channel: "horn_equipment",
-    kind: "state",
-    target: band,
+    type: "position",
     beatId: 112, // count 12, the library default: a snap
     value: "builtin:horn.up",
+    marcherIds: [7],
 };
 
 // The bake's rows, as bakeLayout lays them out: holds are one sample (1/30

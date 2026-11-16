@@ -3700,6 +3700,13 @@
             "title": "Error Loading Database"
         }
     },
+    "cues": {
+        "errors": {
+            "create": "Couldn't add the cue",
+            "delete": "Couldn't delete the cue",
+            "update": "Couldn't change the cue"
+        }
+    },
     "coordinates": {
         "full": "{x} - {y}",
         "withSide": "{side}: {position}",

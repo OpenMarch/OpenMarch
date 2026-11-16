@@ -126,6 +126,7 @@ import { clipsToLoad } from "./marchers/marcherBodies";
 import { hornRowsOf } from "./marchers/hornRows";
 import { sectionCueCarry } from "@/view3d/core/marchers/hornChannel";
 import { DEFAULT_HOLD, windowHornEvents } from "./windowHorn";
+import { useStoredCues } from "./useStoredCues";
 import { SilkMotion } from "./marchers/silkMotion";
 
 const CYLINDER_SEGMENTS = 20;
@@ -299,8 +300,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             ),
         );
     }, [marchers, marcherLooks, slots.ids]);
-    // Which counts anyone travels on, for the Feet default (marchers mark
-    // time while the band moves). Keyed on its content, so a drill edit that
+    // Which counts anyone travels on, for the hold style (with the show set
+    // to mark time, marchers mark time while the band moves). Keyed on its content, so a drill edit that
     // keeps the band's moving counts doesn't recompile and replan everyone.
     const bandMovingKey = useMemo(
         () =>
@@ -316,13 +317,15 @@ export default function Performers({ fieldProperties }: PerformersProps) {
     // content, so only a change of style or of a styled hold's counts
     // compiles again.
     const holdStylesKey = useHoldStyles(clock);
-    // The show defaults compiled for every marcher (no cues are stored): a
-    // hold stands, unless it carries a style or the Show settings ask for
-    // mark time while the band moves; face the front; horns up; the Show
-    // settings' step-off foot. `carries` decides each marcher's
-    // Horn/Equipment default.
+    // The show's stored cues (ADR 0015), compiled for every marcher over the
+    // show defaults: a hold stands, unless it carries a style or the Show
+    // settings ask for mark time while the band moves; face the front; horns
+    // up; the Show settings' step-off foot. `carries` decides each marcher's
+    // Position default.
+    const storedCues = useStoredCues();
     const cues = useMemo(() => {
-        if (!marchers || !carriesKey || !cueSectionsKey) return null;
+        if (!marchers || !carriesKey || !cueSectionsKey || !storedCues)
+            return null;
         const carries = new Map(
             JSON.parse(carriesKey) as [
                 number,
@@ -330,6 +333,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             ][],
         );
         return compileWindowCues(marchers, beats, stepOffFoot, {
+            cues: storedCues,
             sections: JSON.parse(cueSectionsKey) as CueSection[],
             bandMoving: Array.from(bandMovingKey, Number),
             holdWhileBandMoves,
@@ -341,6 +345,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         beats,
         carriesKey,
         cueSectionsKey,
+        storedCues,
         bandMovingKey,
         stepOffFoot,
         holdWhileBandMoves,
@@ -422,7 +427,7 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             return {
                 family: carry.family,
                 events: windowHornEvents(
-                    cues.segments(slots.ids[i], "horn_equipment"),
+                    cues.compiled.segments(slots.ids[i], "position"),
                     { secondsPerCount },
                 ),
             };

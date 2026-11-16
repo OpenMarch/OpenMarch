@@ -109,7 +109,11 @@ interface TestHooks {
 
 const CONVERTED_AT = "2026-10-01T12:00:00.000Z";
 /** Tables the fork's migrations after the timeline-only one (0018) add, each with undo triggers. */
-const TABLES_AFTER_0018 = ["view3d_silk_artwork"] as const;
+const TABLES_AFTER_0018 = [
+    "view3d_silk_artwork",
+    "cues",
+    "cue_marchers",
+] as const;
 const fixedNow = () => new Date(CONVERTED_AT);
 
 /** The file's hash just before the convert-on-open step. */
