@@ -168,6 +168,10 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
         dropTriggers(db);
         dropTables(db, ["cue_marchers", "cues"]);
     },
+    // The show asset store (fork #997): two tables, no triggers
+    23: (db) => {
+        dropTables(db, ["show_assets", "show_asset_blobs"]);
+    },
 };
 
 /**

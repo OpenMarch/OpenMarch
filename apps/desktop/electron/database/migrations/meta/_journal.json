@@ -162,6 +162,13 @@
             "when": 1794801102697,
             "tag": "0022_cues",
             "breakpoints": true
+        },
+        {
+            "idx": 23,
+            "version": "6",
+            "when": 1794843401751,
+            "tag": "0023_show_assets",
+            "breakpoints": true
         }
     ]
 }

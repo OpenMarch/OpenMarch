@@ -9,6 +9,7 @@ import {
     unique,
     customType,
     sqliteView,
+    primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -337,6 +338,81 @@ export const view3d_silk_artwork = sqliteTable("view3d_silk_artwork", {
     height: integer().notNull(),
     ...timestamps,
 });
+
+/* ======================== SHOW ASSETS ======================== */
+
+/** A sha256 as 64 lowercase hex digits. */
+const isSha256Hex = (column: string) =>
+    sql.raw(`length(${column}) = 64 AND ${column} NOT GLOB '*[^0-9a-f]*'`);
+
+/** A JSON object (not an array, string or number). */
+const isJsonObject = (column: string) =>
+    sql.raw(`json_valid(${column}) AND json_type(${column}) = 'object'`);
+
+/**
+ * The bytes of the show's assets (ADR 0010 amendment 2026-11-15, fork #997),
+ * stored once by their sha256 however many assets name them. Not in the undo
+ * history, and nothing removes a row automatically.
+ */
+export const show_asset_blobs = sqliteTable(
+    "show_asset_blobs",
+    {
+        /** sha256 of `data`, lowercase hex */
+        hash: text().primaryKey(),
+        data: browserSafeBinaryBlob().notNull(),
+    },
+    (_table) => [
+        check("show_asset_blobs_hash_check", isSha256Hex("hash")),
+        check("show_asset_blobs_data_check", sql`typeof(data) = 'blob'`),
+    ],
+);
+
+/**
+ * The show's assets, one row per Version (ADR 0010 amendment 2026-11-15, fork
+ * #997): imported prop models first, flags and artwork (fork #985) next. An
+ * item names one as `library:<id>@<version_hash>` in `items.model`.
+ *
+ * - `version_hash` covers the parts and the sidecar (`src/showAssets/hash.ts`),
+ *   never the name or credits, so a Version's bytes never change.
+ * - `kind` has no CHECK: a build that doesn't know a kind keeps its rows and
+ *   ignores them, and a new kind needs no table rebuild.
+ * - Not in the undo history, and nothing removes a row automatically.
+ */
+export const show_assets = sqliteTable(
+    "show_assets",
+    {
+        /** Stable for the asset's life, across its Versions: a UUID */
+        id: text().notNull(),
+        /** Names this Version's parts and sidecar; lowercase hex sha256 */
+        version_hash: text().notNull(),
+        /** What it is, such as `model`; read by the code that uses that kind */
+        kind: text().notNull(),
+        /** What people call it */
+        name: text().notNull(),
+        /** JSON object, part role (`model`, `distant`, `thumbnail`…) to `show_asset_blobs.hash` */
+        parts: text().notNull(),
+        /**
+         * JSON object of what the kind's code reads without the bytes (for a model: real size,
+         * facing, top-down outline, stand point, triangle count, import notes), stored as the
+         * canonical text the Version hash covers
+         */
+        sidecar: text().notNull().default("{}"),
+        /** JSON object: license, author, source. Outside the Version hash. */
+        credits: text().notNull().default("{}"),
+        created_at: text()
+            .notNull()
+            .default(sql`(CURRENT_TIMESTAMP)`),
+    },
+    (table) => [
+        primaryKey({ columns: [table.id, table.version_hash] }),
+        index("show_assets_version_hash_idx").on(table.version_hash),
+        check("show_assets_id_check", sql`length(id) > 0`),
+        check("show_assets_version_hash_check", isSha256Hex("version_hash")),
+        check("show_assets_parts_check", isJsonObject("parts")),
+        check("show_assets_sidecar_check", isJsonObject("sidecar")),
+        check("show_assets_credits_check", isJsonObject("credits")),
+    ],
+);
 
 /**
  * The show's 3D View cameras (ADR 0010 D-5, amended 2026-10-16). A single
@@ -720,8 +796,9 @@ export const items = sqliteTable(
         /**
          * A built-in 3D model the item is drawn as, such as `pit/marimba-5.0`: its path under
          * `apps/desktop/src/view3d/assets/pit/` without `.glb`. Null draws the item as a block.
-         * Imported models will use the same column as `library:<uuid>@<version hash>` (ADR 0010,
-         * amendment 2026-11-11); an app that doesn't know a value draws the block.
+         * An imported model is `library:<id>@<version hash>`, naming a row of `show_assets`
+         * (`src/showAssets/ref.ts`; ADR 0010, amendments 2026-11-11 and 2026-11-15); an app that
+         * doesn't know a value draws the block.
          */
         model: text(),
         /**
