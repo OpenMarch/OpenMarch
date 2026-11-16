@@ -29,7 +29,7 @@ The approvals and outside gates the whole customization effort waits on, then th
 
 ```text
 C1.1 approval ─┬─ P8 Library and import (no timeline needed)
-C1.2 legal ────┼──────────────────── gates C1.13 ship, C5.8, om-pose clips in a release
+C1.2 legal ────┼──────────────────── om-pose clips in a release only (2026-11-11)
 C1.3 timeline ─┴─ C1.11 show tables
 ADR 0004 step 2 (C3.1) ─── C2.1 PR 1013 rebuilt ── P9 items on the timeline
 ADR 0004 steps 3, 8 (C3.2-3) ─── P10 Carry, Silk, Uniform cues; Items tab
@@ -78,8 +78,14 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ### C1.2: Legal gate for built-ins and the Starter kit
 
+> Removed by the owner 2026-11-11 for built-ins and the Starter kit, which
+> ship without this gate. The om-pose clips keep their hold: no release that
+> ships them goes out before counsel answers Q3. The other lawyer questions
+> are taken up later (props-spec.md section 10). The rest of this package is
+> kept as the record.
+
 - Owner: human
-- Status: open
+- Status: open for the om-pose clips (Q3) only
 - PR: none
 - Parallel: yes
 - Depends on: —
@@ -290,17 +296,17 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 **Goal:** the official Blender kit, bundled in the app.
 
-**Scope:** template `.blend` files per kind; Artwork templates (the same files as C1.12); clean examples; a one-page guide; a glTF export preset; the "OpenMarch Tools" add-on (GPL-3.0-or-later): set kind, mark `OM_grip_*` and other `OM_*` points, declare artwork slots with real sizes, set stretch zones, stamp `itemId`, `kind`, `kitVersion` and the export license ("All rights reserved" pre-selected), pre-flight checks, and "Export for OpenMarch" (GLB, Y-up, custom properties on, modifiers applied, no quantization on skinned meshes, no Draco); Help ‣ Get the Blender starter kit saves a zip; `LICENSE` files (CC0 for templates, GPL for the add-on). The reference scene and uniform section (seven v4u bodies, v4 rig, `_PART` palette) are derived from upstream om-pose and wait for C1.2 and om-pose's license.
+**Scope:** template `.blend` files per kind; Artwork templates (the same files as C1.12); clean examples; a one-page guide; a glTF export preset; the "OpenMarch Tools" add-on (GPL-3.0-or-later): set kind, mark `OM_grip_*` and other `OM_*` points, declare artwork slots with real sizes, set stretch zones, stamp `itemId`, `kind`, `kitVersion` and the export license ("All rights reserved" pre-selected), pre-flight checks, and "Export for OpenMarch" (GLB, Y-up, custom properties on, modifiers applied, no quantization on skinned meshes, no Draco); Help ‣ Get the Blender starter kit saves a zip; `LICENSE` files (CC0 for templates, GPL for the add-on). The reference scene and uniform section (seven v4u bodies, v4 rig, `_PART` palette) are derived from upstream om-pose and wait for om-pose's license.
 
 **Tickets:** 11, 16.
 
-**Done when:** each template exported with the add-on imports through C1.7 with no "Needs your choice" items. Shipping waits for C1.2.
+**Done when:** each template exported with the add-on imports through C1.7 with no "Needs your choice" items.
 
 **Checks:** round-trip tests on committed exports; the minimum Blender version confirmed upstream; type-check, lint, format, spellcheck.
 
 ## Exit gate
 
-- [ ] C1.1 and C1.3 done; C1.2 answered or still open with shipping held.
+- [ ] C1.1 and C1.3 done (C1.2 now holds only the om-pose clips, 2026-11-11).
 - [ ] Import fixtures pass for models and Artwork; packaged `sharp` runs on macOS, Windows and Linux.
 - [ ] A show with embedded items opens with an empty local Library.
 - [ ] Type-check, lint, format and spellcheck pass on `main`.

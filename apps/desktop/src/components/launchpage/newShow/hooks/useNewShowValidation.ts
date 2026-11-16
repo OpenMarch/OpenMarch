@@ -5,7 +5,11 @@ import {
     type NewShowWizardState,
 } from "../../newShowTypes";
 
-const OPTIONAL_STEPS: Set<NewShowStepId> = new Set(["performers", "audio"]);
+const OPTIONAL_STEPS: Set<NewShowStepId> = new Set([
+    "performers",
+    "frontEnsemble",
+    "audio",
+]);
 
 function isValidTempoOnlyTempo(tempo: number | undefined): boolean {
     return tempo !== undefined && tempo >= 1 && tempo <= 300;

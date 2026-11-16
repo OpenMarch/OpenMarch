@@ -100,7 +100,17 @@ describe("section to instrument", () => {
     });
 
     it("carries nothing for every other section", () => {
-        for (const s of ["Marimba", "Drum Major", "", "Cornet", "Other"])
+        for (const s of [
+            "Marimba",
+            "Glockenspiel",
+            "Drum Set",
+            "Rack",
+            "Timpani",
+            "Drum Major",
+            "",
+            "Cornet",
+            "Other",
+        ])
             expect(carryForSection(s)).toBeNull();
     });
 });

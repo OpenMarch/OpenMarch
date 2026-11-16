@@ -21,6 +21,7 @@ import EnsembleStep from "./newShow/steps/EnsembleStep";
 import FieldStep from "./newShow/steps/FieldStep";
 import PerformersStep from "./newShow/steps/PerformersStep";
 import AudioStep from "./newShow/steps/AudioStep";
+import FrontEnsembleStep from "./newShow/steps/FrontEnsembleStep";
 import TempoStep from "./newShow/steps/TempoStep";
 import { useNewShowValidation } from "./newShow/hooks/useNewShowValidation";
 import {
@@ -28,6 +29,7 @@ import {
     hasNewShowProgress,
     NEW_SHOW_STEPS,
     type NewShowAudioData,
+    type NewShowFrontEnsembleData,
     type NewShowEnsembleData,
     type NewShowFieldData,
     type NewShowPerformersData,
@@ -94,6 +96,10 @@ const STEP_COPY: Record<
     performers: {
         titleKey: "launchpage.newShow.steps.performers.title",
         descriptionKey: "launchpage.newShow.steps.performers.description",
+    },
+    frontEnsemble: {
+        titleKey: "launchpage.newShow.steps.frontEnsemble.title",
+        descriptionKey: "launchpage.newShow.steps.frontEnsemble.description",
     },
     audio: {
         titleKey: "launchpage.newShow.steps.audio.title",
@@ -431,6 +437,13 @@ export default function NewShowDialog({
         [],
     );
 
+    const handleFrontEnsembleChange = useCallback(
+        (frontEnsemble: NewShowFrontEnsembleData) => {
+            setWizardState((prev) => ({ ...prev, frontEnsemble }));
+        },
+        [],
+    );
+
     const handleAudioChange = useCallback((audio: NewShowAudioData) => {
         setWizardState((prev) => ({ ...prev, audio }));
     }, []);
@@ -488,6 +501,13 @@ export default function NewShowDialog({
                         onChange={handlePerformersChange}
                     />
                 );
+            case "frontEnsemble":
+                return (
+                    <FrontEnsembleStep
+                        frontEnsemble={wizardState.frontEnsemble}
+                        onChange={handleFrontEnsembleChange}
+                    />
+                );
             case "audio":
                 return (
                     <AudioStep
@@ -512,6 +532,7 @@ export default function NewShowDialog({
         wizardState.ensemble,
         wizardState.field,
         wizardState.performers,
+        wizardState.frontEnsemble,
         wizardState.audio,
         wizardState.tempo,
         wizardState.previousDotsImport,
@@ -522,6 +543,7 @@ export default function NewShowDialog({
         handleEnsembleChange,
         handleFieldChange,
         handlePerformersChange,
+        handleFrontEnsembleChange,
         handleAudioChange,
         handleTempoChange,
     ]);

@@ -153,6 +153,13 @@ describe("FieldContextMenu", () => {
         expect(item("alignVertically")).toHaveAttribute("data-disabled");
     });
 
+    it("offers editing the item right-clicked, first, only while one is selected", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        handle("editSelectedItem", { enabled: false });
+        open();
+        expect(screen.queryByTestId("field-menu-editSelectedItem")).toBeNull();
+    });
+
     it("lists the actions in groups, with the page state commands together", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
@@ -168,6 +175,7 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
+            ["editSelectedItem"],
             [
                 "timelineHoldFromPrevious",
                 "timelineHoldOverWindow",

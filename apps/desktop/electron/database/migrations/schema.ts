@@ -711,6 +711,23 @@ export const items = sqliteTable(
          * it in the field theme's line color (2D) and neutral grey (3D).
          */
         color: text(),
+        /**
+         * A built-in 3D model the item is drawn as, such as `pit/marimba-5.0`: its path under
+         * `apps/desktop/src/view3d/assets/pit/` without `.glb`. Null draws the item as a block.
+         * Imported models will use the same column as `library:<uuid>@<version hash>` (ADR 0010,
+         * amendment 2026-11-11); an app that doesn't know a value draws the block.
+         */
+        model: text(),
+        /**
+         * One position for the whole show: the item has no moves, so dragging it on any page moves
+         * it on every page, and lasso and select-all skip it. Equipment is created locked.
+         */
+        locked: integer({ mode: "boolean" }).notNull().default(false),
+        /**
+         * Placed by a front ensemble preset. Re-applying a preset replaces only these items, so
+         * hand-added ones stay. Renaming or moving the item keeps it; copies don't take it.
+         */
+        from_preset: integer({ mode: "boolean" }).notNull().default(false),
         ...timestamps,
     },
     (_table) => [

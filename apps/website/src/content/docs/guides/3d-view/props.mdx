@@ -21,6 +21,8 @@ import { Steps } from "@astrojs/starlight/components";
 
 Props are the set pieces on the field: risers, platforms, floor tarps, walls. You draw a prop's outline on the field, give it a height, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
 
+The pit's instruments, speakers and podiums aren't in the Props panel: they're set up in the <Ui k="sidebar.marchers" plain /> panel ([Set up the front ensemble](/guides/3d-view/front-ensemble/)).
+
 ## Draw a prop
 
 <Steps>
@@ -62,6 +64,8 @@ A new prop is on the field from the count the playhead was on, and not before it
 2. In the list, select <Ui k="props.edit" /> (the pencil) next to the prop.
 
 </Steps>
+
+Or right-click the prop on the field (on a tablet, press and hold it) and choose <Ui k="actions.items.editNamed" values={{ name: "Riser" }} />.
 
 <Media
   id="3d-props-edit"

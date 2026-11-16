@@ -40,6 +40,8 @@ export interface DrawnOutline {
     depthPixels: number;
     /** The drawn points of a polygon, arc or freehand Outline */
     points?: Pt[];
+    /** Placed equipment's turn, in degrees clockwise on screen; drawn Outlines have none */
+    rotation?: number;
 }
 
 /** A polyline in field units; a closed one joins its last point to its first. */

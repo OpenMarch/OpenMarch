@@ -307,6 +307,12 @@ export const STEP_AHEAD = 1;
 
 /** A slot's cursor while it stands in the closed position (`updateClosed`). */
 const CLOSED = -2;
+/** A slot's cursor while it plays a pit instrument (`update`'s `players`). */
+const PLAYING = -3;
+/** A slot's cursor while it stands on a podium in its podium stance (`update`'s `podium`). */
+const ON_PODIUM = -4;
+/** The same, standing at attention because the podium stance isn't baked yet. */
+const ON_PODIUM_ATTENTION = -5;
 
 /** Per-frame state: which event each marcher plays. */
 export class MarcherMotion {
@@ -326,6 +332,16 @@ export class MarcherMotion {
          * placing and turning the slots alone.
          */
         private readonly attention: readonly string[] = [],
+        /**
+         * Per slot: the Feet row a pit player holds (`PLAYING_CLIP` for its
+         * height class). None given leaves players on their planned clips.
+         */
+        private readonly playing: readonly string[] = [],
+        /**
+         * Per slot: the Feet row it holds on a podium (`PODIUM_CLIP` for its
+         * height class). None given leaves it at attention there.
+         */
+        private readonly podium: readonly string[] = [],
     ) {
         this.cursor = new Int32Array(plans.length).fill(-1);
         this.hornCursor = new Int32Array(plans.length).fill(-1);
@@ -377,12 +393,23 @@ export class MarcherMotion {
      * each placed slot's position in `xz`, which the caller fills with the
      * drill position `STEP_AHEAD` counts later, with its body position, and
      * its heading in `headings`: the whole performer turns (Facing).
+     *
+     * A slot playing a pit instrument (`players`, from `assignPlayers`) holds
+     * its playing pose instead, still: its place and heading are the
+     * instrument's, which the caller writes after (`writePlayers`).
+     *
+     * A slot on a podium (`onPodium`, from `writeOnPodiums`) holds its
+     * podium stance (attention until that's baked) while its place and
+     * heading follow the plan, for the caller to stand it on the deck
+     * (`writePodiumStands`). Off the podium it plays its plan again.
      */
     update(
         count: number,
         xz: Float32Array,
         placed: Uint8Array,
         headings?: Float32Array,
+        players?: Int32Array,
+        onPodium?: Uint8Array,
     ): void {
         const out = this.out;
         const planCount = count + STEP_AHEAD;
@@ -390,8 +417,11 @@ export class MarcherMotion {
         for (let i = 0; i < this.plans.length; i++) {
             const plan = this.plans[i];
             if (!plan || plan.events.length === 0) continue;
+            if (players && players[i] >= 0 && this.holdPlaying(i)) continue;
             const index = eventIndexAt(plan, planCount, this.cursor[i]);
-            if (
+            if (onPodium && onPodium[i] && this.holdPodium(i)) {
+                // stands in the podium stance; placed and turned below
+            } else if (
                 index !== this.cursor[i] ||
                 plan.events[index].kind === "crossfade" ||
                 plan.events[index].handoff
@@ -423,9 +453,16 @@ export class MarcherMotion {
      * heading at that count, on the dot it stands on; the Horn/Equipment
      * channel is what `update` would show then. A slot whose attention row
      * isn't baked yet keeps the clip it last had. The next `update` writes
-     * every slot's clip again.
+     * every slot's clip again. A slot playing a pit instrument (`players`)
+     * holds its playing pose, and one on a podium (`onPodium`) its podium
+     * stance, as in `update`.
      */
-    updateClosed(count: number, headings?: Float32Array): void {
+    updateClosed(
+        count: number,
+        headings?: Float32Array,
+        players?: Int32Array,
+        onPodium?: Uint8Array,
+    ): void {
         this.updateHorns(count);
         const rows = this.bodies.bake.rows;
         for (let i = 0; i < this.plans.length; i++) {
@@ -433,6 +470,8 @@ export class MarcherMotion {
             if (!plan || plan.events.length === 0) continue;
             // the dot's own count: the plan clock runs a count ahead
             if (headings) headings[i] = headingAt(plan, count);
+            if (players && players[i] >= 0 && this.holdPlaying(i)) continue;
+            if (onPodium && onPodium[i] && this.holdPodium(i)) continue;
             const row = rows[this.attention[i]];
             if (!row) continue; // not baked yet: keeps its last clip
             if (this.cursor[i] !== CLOSED)
@@ -447,6 +486,53 @@ export class MarcherMotion {
             // `update` finds the event again and writes its clip
             this.cursor[i] = CLOSED;
         }
+    }
+
+    /**
+     * Stands slot `i` in its playing pose, if that row is baked: false
+     * leaves it on its plan. The next `update` off the spot finds its event
+     * again and writes its clip.
+     */
+    private holdPlaying(i: number): boolean {
+        if (this.cursor[i] === PLAYING) return true;
+        const row = this.bodies.bake.rows[this.playing[i]];
+        if (!row) return false;
+        this.bodies.setClip(i, {
+            row,
+            row2: null,
+            weight: 0,
+            phase: 0,
+            rate: 1,
+            legYaw: 0,
+        });
+        this.cursor[i] = PLAYING;
+        return true;
+    }
+
+    /**
+     * Stands slot `i` in its podium stance, or at attention while that row
+     * isn't baked: false, with neither baked, leaves it on its plan. Writes
+     * the clip once while it stays on the podium, and again when the stance
+     * gets baked. The next `update` off the podium finds its event again and
+     * writes its clip.
+     */
+    private holdPodium(i: number): boolean {
+        if (this.cursor[i] === ON_PODIUM) return true;
+        const rows = this.bodies.bake.rows;
+        const stance = rows[this.podium[i]];
+        if (!stance && this.cursor[i] === ON_PODIUM_ATTENTION) return true;
+        const row = stance ?? rows[this.attention[i]];
+        if (!row) return false;
+        this.bodies.setClip(i, {
+            row,
+            row2: null,
+            weight: 0,
+            phase: 0,
+            rate: 1,
+            legYaw: 0,
+        });
+        this.cursor[i] = stance ? ON_PODIUM : ON_PODIUM_ATTENTION;
+        return true;
     }
 
     /**

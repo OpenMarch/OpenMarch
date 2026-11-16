@@ -23,7 +23,16 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 export function dropMarchersOnTimeline(
     positions: readonly MarcherPosition[],
     write: (request: TimelineEditRequest) => Promise<unknown>,
+    isLocked: (id: number) => boolean = () => false,
 ): Promise<DropResult> {
+    const locked = lockedItemsDrop(positions, isLocked);
+    if (locked)
+        return write(locked)
+            .then(() => timelinePositionsSettled())
+            .then(
+                () => "saved" as const,
+                () => "refused" as const,
+            );
     return new Promise((resolve) => {
         const save = canvasCoordinateWriter({
             writeTimeline: (request) => {
@@ -46,4 +55,23 @@ export function dropMarchersOnTimeline(
             resolve("refused");
         }
     });
+}
+
+/**
+ * A drop of locked items alone (the pit's equipment, instruments.md section 6): written to their
+ * homes, since a locked item has one position for the whole show, so it is saved on any page,
+ * with or without a window or an isolated move. Null when anyone else was dropped too: the
+ * timeline's rules decide, and the write sets the locked items' homes anyway
+ * (`splitLockedItemMovesInTransaction`).
+ */
+export function lockedItemsDrop(
+    positions: readonly MarcherPosition[],
+    isLocked: (id: number) => boolean,
+): TimelineEditRequest | null {
+    if (positions.length === 0 || !positions.every((p) => isLocked(p.id)))
+        return null;
+    return {
+        target: { kind: "home" },
+        moves: positions.map(({ id, x, y }) => ({ marcherId: id, x, y })),
+    };
 }

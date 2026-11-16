@@ -25,6 +25,7 @@ import {
     planHornChannel,
 } from "@/view3d/core/marchers/hornChannel";
 import { planMarcher } from "@/view3d/core/marchers/planner";
+import { PODIUM_CLIP } from "@/view3d/core/props/platformLift";
 import type { MarcherBodies } from "../marchers/marcherBodies";
 import type { MarcherClip } from "@/view3d/render/instanced-marchers.js";
 
@@ -685,5 +686,223 @@ describe("the closed position while paused", () => {
         );
         m.updateClosed(2.5);
         expect(writes).toHaveLength(0);
+    });
+});
+
+describe("playing a pit instrument", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    rows["playing"] = { row: r++, frames: 60, counts: 2 };
+    function motion(playing = ["playing"]) {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+            playing,
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array([3, 4]),
+            placed: Uint8Array.from([1]),
+            headings: new Float32Array([0.5]),
+        };
+    }
+    const PLAYS = Int32Array.from([0]);
+    const OFF = Int32Array.from([-1]);
+
+    it("holds the playing pose, still, mid-move, leaving its place and heading to the snap", () => {
+        const { m, writes, xz, placed, headings } = motion();
+        m.update(2.5, xz, placed, headings, PLAYS);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows["playing"]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+        expect([...xz]).toEqual([3, 4]);
+        expect(headings[0]).toBeCloseTo(0.5);
+        // once, while it keeps playing
+        m.update(2.75, xz, placed, headings, PLAYS);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("plays its step again off the spot", () => {
+        const { m, writes, xz, placed } = motion();
+        m.update(2.5, xz, placed, undefined, PLAYS);
+        m.update(2.5, xz, placed, undefined, OFF);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes).toHaveLength(2);
+        expect(writes[1].clip.row).toBe(rows[loop.clip]);
+    });
+
+    it("holds the playing pose while paused too", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5, undefined, PLAYS);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows["playing"]]);
+        m.updateClosed(2.5, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows["playing"],
+            rows["attention"],
+        ]);
+    });
+
+    it("stays on its plan while the playing pose isn't baked", () => {
+        const { m, writes, xz, placed } = motion(["not-baked"]);
+        m.update(2.5, xz, placed, undefined, PLAYS);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[loop.clip]]);
+    });
+});
+
+describe("standing on a podium", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    rows[PODIUM_CLIP] = { row: r++, frames: 60, counts: 2 };
+    function motion(podium = [PODIUM_CLIP], bakeRows = rows) {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows: bakeRows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+            [],
+            podium,
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array([0, -20]),
+            placed: Uint8Array.from([1]),
+            headings: new Float32Array([0.5]),
+        };
+    }
+    const ON = Uint8Array.from([1]);
+    const OFF = Uint8Array.from([0]);
+    const loop = plan.events.find((e) => e.kind === "loop")!;
+
+    it("ships the podium stance for every height class", () => {
+        for (const h of manifest.heights)
+            expect(
+                manifest.clips.some(
+                    (c) => c.base === PODIUM_CLIP && c.height === h,
+                ),
+            ).toBe(true);
+    });
+
+    it("holds second position, still, mid-move, with its place and heading from the plan", () => {
+        const { m, writes, xz, placed, headings } = motion();
+        m.update(2.5, xz, placed, headings, undefined, ON);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows[PODIUM_CLIP]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+        // placed and turned as the plan has it, for the podium stand to take over
+        const off = motion();
+        off.m.update(2.5, off.xz, off.placed, off.headings);
+        expect([...xz]).toEqual([...off.xz]);
+        expect(headings[0]).toBe(off.headings[0]);
+        // once, while it stays on the podium
+        m.update(2.75, xz, placed, headings, undefined, ON);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("marches its step again once it steps off", () => {
+        const { m, writes, xz, placed } = motion();
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        m.update(2.5, xz, placed, undefined, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows[PODIUM_CLIP],
+            rows[loop.clip],
+        ]);
+    });
+
+    it("holds second position while paused, and attention off the podium", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5, undefined, undefined, ON);
+        m.updateClosed(2.75, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[PODIUM_CLIP]]);
+        m.updateClosed(2.75, undefined, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows[PODIUM_CLIP],
+            rows["attention"],
+        ]);
+    });
+
+    it("stands at attention while second position isn't baked, then takes it once it is", () => {
+        const partial = { ...rows };
+        delete partial[PODIUM_CLIP];
+        const { m, writes, xz, placed } = motion([PODIUM_CLIP], partial);
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        m.update(2.75, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows["attention"]]);
+        partial[PODIUM_CLIP] = rows[PODIUM_CLIP];
+        m.update(3, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows["attention"],
+            rows[PODIUM_CLIP],
+        ]);
+    });
+
+    it("stays on its plan when neither second position nor attention is baked", () => {
+        const { m, writes, xz, placed } = motion(["not-baked"], {
+            [loop.clip]: rows[loop.clip],
+        });
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[loop.clip]]);
     });
 });

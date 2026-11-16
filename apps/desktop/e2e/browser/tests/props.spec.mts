@@ -239,3 +239,182 @@ test("Escape turns the prop tool off, and nothing is drawn", async ({
         .toBeNull();
     expect(await show.query("SELECT id FROM items")).toEqual([{ id: 1 }]);
 });
+
+/** The front ensemble view, opened from its row at the top of the Marchers panel */
+async function openFrontEnsemble(page: Page) {
+    await page.locator("#sidebar-launcher-marchers").click();
+    await page
+        .getByTestId("front-ensemble-summary")
+        .getByRole("button")
+        .click();
+}
+
+test("places a marimba from the Front ensemble panel with one click, locked, at its model's footprint", async ({
+    show,
+}) => {
+    const { page } = show;
+    await expect.poll(() => drawnItems(page)).toHaveLength(1);
+    await openFrontEnsemble(page);
+    // Add is its own view: the pictures of every model
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const ensemble = page.getByRole("region", { name: "Add equipment" });
+    // Each model is a picture: pick the 5.0 rosewood marimba from the search
+    await ensemble
+        .getByRole("searchbox", { name: "Search equipment" })
+        .fill("marimba 5.0");
+    await ensemble
+        .getByRole("button", { name: "Marimba · 5.0 octaves · Rosewood" })
+        .click();
+    await expect
+        .poll(() => page.evaluate(() => window.fieldTest!.activeGesture()))
+        .toBe("prop");
+
+    // The footprint follows the pointer before the click
+    const box = (await page.getByTestId("fieldCanvas").first().boundingBox())!;
+    const at = { x: box.x + box.width * 0.3, y: box.y + box.height * 0.7 };
+    await page.mouse.move(at.x, at.y);
+    await expect
+        .poll(() =>
+            page.evaluate(() => window.fieldTest!.propTool?.()?.preview),
+        )
+        .not.toBeNull();
+    await page.mouse.click(at.x, at.y);
+    await waitForIdle(page);
+    await expect.poll(() => drawnItems(page)).toHaveLength(2);
+    expect(
+        await page.evaluate(() => window.fieldTest!.activeGesture()),
+    ).toBeNull();
+    expect(
+        await show.query(
+            "SELECT kind, model, locked, name, outline_type, width, depth, beat_id FROM items JOIN item_geometry ON item_geometry.item_id = items.id JOIN marchers ON marchers.id = items.marcher_id WHERE items.id != 1",
+        ),
+    ).toEqual([
+        {
+            kind: "equipment",
+            model: "pit/marimba-5.0",
+            locked: 1,
+            name: "Marimba 1",
+            outline_type: "rectangle",
+            width: 2.54,
+            depth: 1.207,
+            beat_id: 0,
+        },
+    ]);
+    await expectCanvasMatchesShow(show);
+});
+
+test("places a podium behind the back sideline, turned to face the field", async ({
+    show,
+}) => {
+    const { page } = show;
+    await expect.poll(() => drawnItems(page)).toHaveLength(1);
+    await openFrontEnsemble(page);
+    // Add is its own view: the pictures of every model
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const ensemble = page.getByRole("region", { name: "Add equipment" });
+    await ensemble.getByRole("button", { name: /^Podium · Low/ }).click();
+    await expect
+        .poll(() => page.evaluate(() => window.fieldTest!.activeGesture()))
+        .toBe("prop");
+
+    // Field points in the viewport, from the riser's center (700, 300)
+    const [riser] = await drawnItems(page);
+    const { zoom } = (await readField(page)).viewport;
+    const toScreen = (x: number, y: number) => ({
+        x: riser.screen.x + (x - 700) * zoom,
+        y: riser.screen.y + (y - 300) * zoom,
+    });
+    const notchY = () =>
+        page.evaluate(
+            () => window.fieldTest!.propTool?.()?.preview?.points[4]?.y,
+        );
+
+    // On the front half the notch, on the model's audience side as built, is toward the audience
+    const front = toScreen(700, 800);
+    await page.mouse.move(front.x, front.y);
+    await expect.poll(notchY).toBeGreaterThan(800);
+    // Behind the back sideline it turns around, so its performer faces the field
+    const back = toScreen(500, -15);
+    await page.mouse.move(back.x, back.y);
+    await expect.poll(notchY).toBeLessThan(-15);
+    await page.mouse.click(back.x, back.y);
+    await waitForIdle(page);
+    await expect.poll(() => drawnItems(page)).toHaveLength(2);
+    const [placed] = await show.query(
+        "SELECT model, home_y, rotation FROM items JOIN item_geometry ON item_geometry.item_id = items.id JOIN marchers ON marchers.id = items.marcher_id WHERE items.id != 1",
+    );
+    expect(placed).toMatchObject({
+        model: "pit/conductor-podium",
+        rotation: 180,
+    });
+    // Not held to the field
+    expect(placed!.home_y as number).toBeLessThan(0);
+});
+
+test("applies a front ensemble preset with its performers in one undo step, and replaces it with another", async ({
+    show,
+}) => {
+    const { page } = show;
+    await expect.poll(() => drawnItems(page)).toHaveLength(1);
+    await openFrontEnsemble(page);
+    // The presets sit behind a small button in the header, so adding equipment stays in front
+    const presetsButton = page.getByTestId("pit-presets-button");
+    await expect(presetsButton).toHaveText("Start from a preset");
+    await presetsButton.click();
+    const presets = page.getByRole("dialog", { name: "Presets" });
+    await presets.getByRole("radio", { name: "Medium" }).click();
+    await expect(presets.getByRole("checkbox")).toBeChecked();
+    await presets.getByRole("button", { name: "Apply" }).click();
+    await waitForIdle(page);
+
+    // 4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth, 4 speakers, podium,
+    // mixer: 18 pieces of equipment beside the riser, locked
+    await expect.poll(() => drawnItems(page)).toHaveLength(19);
+    expect(
+        await show.query(
+            "SELECT count(*) AS n, min(locked) AS locked FROM items WHERE kind = 'equipment'",
+        ),
+    ).toEqual([{ n: 18, locked: 1 }]);
+    // A player per instrument and a drum major, beside the two trumpets
+    expect(
+        await show.query(
+            "SELECT section, count(*) AS n FROM marchers WHERE type = 'marcher' GROUP BY section ORDER BY section",
+        ),
+    ).toEqual([
+        { section: "Drum Major", n: 1 },
+        { section: "Drum Set", n: 1 },
+        { section: "Glockenspiel", n: 1 },
+        { section: "Marimba", n: 4 },
+        { section: "Rack", n: 1 },
+        { section: "Synthesizer", n: 1 },
+        { section: "Trumpet", n: 2 },
+        { section: "Vibraphone", n: 3 },
+        { section: "Xylophone", n: 1 },
+    ]);
+    await expectCanvasMatchesShow(show);
+
+    // Applying closes the popover; the button now resets to a preset.
+    // Small replaces Medium's equipment, keeps the riser and adds no performers it already has
+    await expect(presets).toBeHidden();
+    await expect(presetsButton).toHaveText("Reset to preset");
+    await presetsButton.click();
+    await expect(
+        presets.getByText("Replaces the equipment the last preset added", {
+            exact: false,
+        }),
+    ).toBeVisible();
+    await presets.getByRole("radio", { name: "Small" }).click();
+    await presets.getByRole("button", { name: "Apply" }).click();
+    await waitForIdle(page);
+    await expect.poll(() => drawnItems(page)).toHaveLength(11);
+    expect(
+        await show.query(
+            "SELECT count(*) AS n FROM marchers WHERE type = 'marcher'",
+        ),
+    ).toEqual([{ n: 15 }]);
+
+    // One undo brings Medium back
+    await page.keyboard.press("ControlOrMeta+z");
+    await waitForIdle(page);
+    await expect.poll(() => drawnItems(page)).toHaveLength(19);
+});

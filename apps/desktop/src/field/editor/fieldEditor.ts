@@ -36,7 +36,7 @@ import {
     type ItemFrame,
     type ItemSize,
 } from "./itemTransform";
-import { PropTool, type PropToolShape } from "./propTool";
+import { PropTool, type PropToolShape, type PropToolStamp } from "./propTool";
 import type { OutlineType } from "@/db-functions/items";
 import type { DrawnOutline } from "@/items/itemOutlines";
 import {
@@ -182,6 +182,11 @@ export type FieldEditorPorts = {
      * hit by their Outline ({@link itemAt}), not by a dot at their center.
      */
     isItem?(id: number): boolean;
+    /**
+     * Whether item `id` is locked to one position for the whole show (the pit's equipment): a
+     * marquee and a lasso never take it, a click still selects it.
+     */
+    isLocked?(id: number): boolean;
     /** The item whose Outline holds `point`, topmost first, or null. */
     itemAt?(point: FieldPoint): number | null;
     /** Item `id`'s Outline as drawn, or null when it isn't drawn. */
@@ -644,6 +649,7 @@ export class FieldEditor {
             canSelect: (id) =>
                 ports.canSelect(id) && !ports.marcherHidden?.(id),
             isItem: (id) => ports.isItem?.(id) ?? false,
+            isLocked: (id) => ports.isLocked?.(id) ?? false,
             selection: () => ports.selection.get(),
             select: (ids) => this.write(ids),
             changed: () => this.emit(),
@@ -1133,10 +1139,14 @@ export class FieldEditor {
 
     /**
      * Turns the prop tool on to draw an Outline of `outlineType` (the Props
-     * panel's Draw), or off with null. Turning it on ends any press or
-     * gesture; turning it on again starts the drawing over.
+     * panel's Draw), or to place a fixed `stamp` with a click (its Front
+     * ensemble), or off with null. Turning it on ends any press or gesture;
+     * turning it on again starts the drawing over.
      */
-    setPropTool(outlineType: OutlineType | null): void {
+    setPropTool(
+        outlineType: OutlineType | null,
+        stamp: PropToolStamp | null = null,
+    ): void {
         if (outlineType === null) {
             if (!this.propTool) return;
             this.propTool = null;
@@ -1147,22 +1157,26 @@ export class FieldEditor {
         this.press = null;
         this.lastClick = null;
         this.lastToolPress = null;
-        this.propTool = new PropTool(outlineType, {
-            snap: (point) => this.ports.snap?.(point) ?? point,
-            finished: (outline) => this.ports.propDrawn?.(outline),
-            changed: () => this.emit(),
-            isDoubleClick: (pointer) => {
-                const last = this.lastToolPress;
-                return (
-                    last !== null &&
-                    this.now() - last.time <= DOUBLE_CLICK_MS &&
-                    Math.hypot(
-                        pointer.screen.x - last.screen.x,
-                        pointer.screen.y - last.screen.y,
-                    ) <= thresholdsFor(pointer.kind).doubleClickSlop
-                );
+        this.propTool = new PropTool(
+            outlineType,
+            {
+                snap: (point) => this.ports.snap?.(point) ?? point,
+                finished: (outline) => this.ports.propDrawn?.(outline),
+                changed: () => this.emit(),
+                isDoubleClick: (pointer) => {
+                    const last = this.lastToolPress;
+                    return (
+                        last !== null &&
+                        this.now() - last.time <= DOUBLE_CLICK_MS &&
+                        Math.hypot(
+                            pointer.screen.x - last.screen.x,
+                            pointer.screen.y - last.screen.y,
+                        ) <= thresholdsFor(pointer.kind).doubleClickSlop
+                    );
+                },
             },
-        });
+            stamp,
+        );
         this.emit();
     }
 

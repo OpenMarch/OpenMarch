@@ -229,7 +229,16 @@
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play",
             "reportFeedback": "Report a bug or send feedback",
             "reportFeedbackKeywords": "bug issue problem feedback feature request support",
-            "viewMyReports": "View my reports"
+            "viewMyReports": "View my reports",
+            "openFrontEnsemble": "Open front ensemble and podiums",
+            "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "Add front ensemble equipment or podium",
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+        },
+        "items": {
+            "edit": "Edit selected prop or equipment",
+            "editNamed": "Edit {name}",
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
         }
     },
     "analyticsOptIn": {
@@ -763,6 +772,7 @@
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
             "itemsSelected": "{count, plural, one {# prop selected. Edit it in the Props panel.} other {# props selected. Edit them in the Props panel.}}",
+            "equipmentSelected": "{count, plural, =1 {# piece of equipment selected. Right-click it to edit it.} other {# pieces of equipment selected. Right-click one to edit it.}}",
             "playing": "Playing. Pause to see and edit the selected marchers.",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
@@ -951,6 +961,11 @@
                     "removeMarcher": "Remove {marcher}",
                     "sectionCount": "{section} ({count})",
                     "title": "Performers"
+                },
+                "frontEnsemble": {
+                    "title": "Front ensemble",
+                    "description": "Does the show have a pit? You can change it later.",
+                    "hint": "A size places the equipment and a performer at each instrument in front of the field, with a podium on the 50."
                 },
                 "project": {
                     "description": "Name your show and choose where to save it.",
@@ -1398,7 +1413,8 @@
             "create": "Couldn't create the prop",
             "delete": "Couldn't delete the prop",
             "outline": "Couldn't change the prop's outline",
-            "update": "Couldn't change the prop"
+            "update": "Couldn't change the prop",
+            "preset": "Couldn't apply the preset"
         },
         "height": "Height",
         "hide": "Hide on the field",
@@ -1436,7 +1452,74 @@
         "width": "Width",
         "units": {
             "meters": "m"
-        }
+        },
+        "locked": "Locked",
+        "lockLabel": "Locked",
+        "lockHint": "One position for the whole show"
+    },
+    "frontEnsemble": {
+        "title": "Front ensemble and podiums",
+        "add": {
+            "title": "Add equipment",
+            "button": "Add"
+        },
+        "empty": "No front ensemble yet. Add equipment and podiums, or start from a preset.",
+        "list": {
+            "equipment": "Equipment",
+            "podiums": "Podiums"
+        },
+        "placeInstructions": "Click the field to place the {name}. It is on the field from the playhead's count.",
+        "equipment": {
+            "block": "Equipment",
+            "delete": "Delete equipment",
+            "edit": "Edit equipment",
+            "editTitle": "Edit Equipment",
+            "model": "{family} model"
+        },
+        "podium": {
+            "delete": "Delete podium",
+            "edit": "Edit podium",
+            "editTitle": "Edit Podium"
+        },
+        "default": "Default",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "Audio",
+            "keyboards": "Keyboards",
+            "percussion": "Percussion",
+            "podiums": "Podiums"
+        },
+        "presets": {
+            "title": "Presets",
+            "size": "Preset size",
+            "small": "Small",
+            "medium": "Medium",
+            "large": "Large",
+            "summary": {
+                "small": "2 marimbas, 2 vibes, a rack, a synth and 2 speakers",
+                "medium": "4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth and 4 speakers",
+                "large": "6 marimbas, 4 vibes, xylophone, glockenspiel, 2 racks, drum set, 2 synths and 6 speakers",
+                "none": "No pit. You can set one up later in the Marchers panel."
+            },
+            "always": "Each also adds a podium on the 50 and a mixer behind the pit.",
+            "addPerformers": "Also add performers",
+            "apply": "Apply",
+            "replaces": "Replaces the equipment the last preset added. Its players move to the new spots; those left without an instrument are removed, unless they have moves later in the show. Undo brings everything back. Equipment you added yourself stays.",
+            "none": "None",
+            "start": "Start from a preset",
+            "reset": "Reset to preset"
+        },
+        "summary": {
+            "title": "Front ensemble and podiums",
+            "none": "No pit yet",
+            "setUp": "Set up",
+            "edit": "Edit",
+            "equipment": "{count, plural, one {# piece of equipment} other {# pieces of equipment}}",
+            "podiums": "{count, plural, one {# podium} other {# podiums}}"
+        },
+        "search": "Search equipment",
+        "noMatch": "No equipment matches.",
+        "results": "{count, plural, =0 {No equipment matches.} one {# model} other {# models}}"
     },
     "section": {
         "drumMajor": "Drum Major",
@@ -1480,8 +1563,12 @@
         "other": "Other",
         "pit": {
             "auxPercussion": "Aux Percussion",
+            "drumSet": "Drum Set",
+            "glockenspiel": "Glockenspiel",
             "marimba": "Marimba",
+            "rack": "Rack",
             "synthesizer": "Synthesizer",
+            "timpani": "Timpani",
             "vibraphone": "Vibraphone",
             "xylophone": "Xylophone"
         },
@@ -3964,6 +4051,57 @@
         "label": "Workspace",
         "editor": "Editor",
         "preview": "Preview"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "Aux rack",
+            "bongos": "Bongos",
+            "chimes": "Chimes",
+            "concertBassDrum": "Concert bass drum",
+            "congas": "Congas",
+            "drumSet": "Drum set",
+            "glockenspiel": "Glockenspiel",
+            "gong": "Gong",
+            "marimba": "Marimba",
+            "mixer": "Mixer",
+            "podium": "Podium",
+            "speaker": "Speaker",
+            "synth": "Synth",
+            "timpani": "Timpani",
+            "trapTable": "Trap table",
+            "vibraphone": "Vibraphone",
+            "xylophone": "Xylophone",
+            "podiumStand": "Podium stand",
+            "podiumTower": "Tower",
+            "rollingPodium": "Rolling podium",
+            "stepladder": "Stepladder",
+            "scaffold": "Scaffold tower"
+        },
+        "variant": {
+            "accessories": "Accessories",
+            "cage": "Cage rack",
+            "covered": "Covered",
+            "double": "Two keyboards",
+            "gold": "Gold",
+            "inches": "{size} in",
+            "keys": "{size} keys",
+            "low": "Low",
+            "mixed": "Mixed",
+            "octaves": "{size} octaves",
+            "open": "Open",
+            "plain": "Standard",
+            "rosewood": "Rosewood",
+            "silver": "Silver",
+            "single": "One keyboard",
+            "square": "Square",
+            "syntheticBlack": "Black synthetic",
+            "tall": "Tall",
+            "toms": "Toms",
+            "wide": "Wide",
+            "aluminum": "Aluminum",
+            "black": "Black",
+            "feet": "{size} ft"
+        }
     },
     "feedback": {
         "window.title": "Report a bug or send feedback",

@@ -3,7 +3,8 @@
  * each prop's Outline footprint extruded to its height, matte, in its color
  * (`items.color`) or a neutral grey, at its timeline position and turn. No
  * textures or artwork. A prop hidden on the field in the editor (the Props
- * panel's "Hide on the field", relayed on `view3d:hidden-props`) isn't drawn.
+ * panel's "Hide on the field", relayed on `view3d:hidden-props`) isn't drawn,
+ * nor is an item drawn as its built-in model (`PitModels.tsx`).
  *
  * - One `InstancedMesh` per footprint the show uses (`propShapes`): every
  *   rectangle prop shares one, every circle another, each custom outline its
@@ -62,6 +63,8 @@ import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { requestDraw } from "../drawWake";
 import { propSolidsAt } from "./performerLift";
+import { modelsByMarcher } from "@/view3d/core/pit/pitModels";
+import { usePitModelFailures } from "./pitModelAssets";
 
 /**
  * A unit footprint extruded 1 m up, base on y = 0. The shape is drawn in
@@ -109,9 +112,13 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
         [showProps],
     );
 
+    const failures = usePitModelFailures();
+
     const tracks = useMemo(() => {
         const rows = items ?? [];
         const colors = propColorsByMarcher(rows);
+        // Items with a built-in model draw as it instead (`PitModels.tsx`)
+        const models = modelsByMarcher(rows, failures);
         return propTracks(
             itemOutlineChanges({
                 items: rows,
@@ -121,7 +128,11 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
             {
                 hidden: new Set(
                     rows
-                        .filter((item) => hiddenItemIds.has(item.id))
+                        .filter(
+                            (item) =>
+                                hiddenItemIds.has(item.id) ||
+                                models.has(item.marcher_id),
+                        )
                         .map((item) => item.marcher_id),
                 ),
                 colorOf: (marcherId) => {
@@ -130,7 +141,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
                 },
             },
         );
-    }, [items, geometry, beats, hiddenItemIds]);
+    }, [items, geometry, beats, hiddenItemIds, failures]);
     const shapes = useMemo(() => propShapes(tracks), [tracks]);
     // Keyed by the parsed outline objects, which every refetch replaces, so a
     // fresh cache per tracks keeps the old ones from piling up.

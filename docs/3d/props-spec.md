@@ -228,8 +228,8 @@ phases [26.24].
   checks; "Export for OpenMarch" (GLB, Y-up, custom properties on, modifiers
   applied, no quantization on skinned meshes, no Draco).
 - The uniform section (seven v4u bodies, v4 rig, `_PART` palette, an example
-  garment with all seven fits) derives from upstream om-pose and waits for the
-  legal gate (section 10).
+  garment with all seven fits) derives from upstream om-pose and waits for
+  om-pose to adopt a license upstream (section 10).
 - Bundled in the app (Help ‣ Get the Blender starter kit saves a zip) and
   mirrored on the website; extensions.blender.org later. The importer notes an
   outdated `kitVersion`. The minimum Blender is the LTS om-pose exports with
@@ -765,11 +765,10 @@ Research basis [14]; policy [16]. Not legal advice.
   Starter kit, om-pose assets) and the per-item `license` field. `SOURCE.json`
   and the om-pose vendor README stop saying "the app's license".
 - **om-pose assets** (correction to ADR 0010 D-7) [16, 26.6]: they don't ship
-  under the app's license. The clips, derived from 2019 Cadets footage, are in
-  the counsel gate: no release that ships them goes out before counsel
-  answers lawyer Q3. The reference bodies and v4 skeleton become CC0 once Q3
-  is answered and om-pose adopts a license upstream (meshes only); `body-v5`
-  (MPFB) sits under the same gate.
+  under the app's license. The om-pose clips, derived from 2019 Cadets
+  footage, stay in the counsel gate: no release that ships them goes out
+  before counsel answers Q3. The reference bodies and v4 skeleton become CC0
+  once om-pose adopts a license upstream (meshes only).
 - **Third-party built-ins:** CC0, or CC-BY 4.0 with a complete attribution
   record. Not BY-SA, NC, ND or store licenses. Each has a manifest entry (SPDX
   license, author, source URL, attribution text, retrieval date) checked in
@@ -797,11 +796,11 @@ Research basis [14]; policy [16]. Not legal advice.
     never "infringing".
   - "Add to my Library" from another show shows a read-only license line with
     the source link.
-- **Legal gate:** nothing built-in ships until counsel answers lawyer Q1 (CC0
-  art beside AGPL code; whether the CLA covers relicensing contributed
-  assets), Q3 (om-pose clips), Q4 (GPL vs AGPL `LICENSE` text) and Q5 (Terms
-  §9.1's reach). The `LICENSE` mismatch and a Terms §9.1 carve-out ship as
-  their own small change, outside this effort, once Q4 and Q5 are answered.
+- **No legal gate for built-ins** (owner, 2026-11-11): built-ins and the
+  Starter kit ship without waiting for counsel. Only the om-pose clips keep
+  their hold (Q3, above). The other lawyer questions (Q1, Q4, Q5 in [16])
+  are taken up later. The `LICENSE` mismatch and a
+  Terms §9.1 carve-out ship as their own small change, outside this effort.
 
 ## 11. Notes
 

@@ -239,6 +239,12 @@ export type FieldTestItem = {
     y: number;
     /** Its center in the viewport */
     screen: ScreenPoint;
+    /** Locked to one position for the whole show: drawn with a lock */
+    locked?: boolean;
+    /** A pit instrument's playing spot as drawn, in field units, or null for none */
+    playingSpot?: { x: number; y: number } | null;
+    /** Drawn as its built-in model from above (silhouette and edges), not as its Outline */
+    drawnAsModel?: boolean;
 };
 
 /**

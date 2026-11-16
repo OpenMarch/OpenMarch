@@ -37,6 +37,21 @@ export interface PropInput {
     surface: SurfaceType;
     /** Its Outline changes, by beat ordinal */
     changes: readonly GeometryChange[];
+    /**
+     * How high performers stand on it (m), in place of its Outline's height: a podium item's
+     * standing height from its model (docs/3d/instruments.md §6). Unset for a prop.
+     */
+    standTop?: number;
+    /**
+     * A podium: whoever stands on it stands at its stand point, faces the band across the field
+     * (`writePodiumStands`), and doesn't ramp up as a platform does
+     */
+    facesAcross?: boolean;
+    /**
+     * A podium's stand point in its model's axes (m, +Z toward the audience, +X the player's
+     * left, before the item's turn), as `writePitModelMatrix` draws the model. Unset: its center.
+     */
+    standAt?: GroundPoint;
 }
 
 /** A prop as the 3D View draws it at one moment. */
@@ -53,6 +68,10 @@ export interface PropSolid {
     /** False for an open freehand path, which has no inside */
     closed: boolean;
     geometry: ItemGeometry;
+    /** A podium, as {@link PropInput.facesAcross} */
+    facesAcross?: boolean;
+    /** A podium's stand point on the ground, placed and turned with it (world meters) */
+    standPoint?: GroundPoint;
 }
 
 type Footprint = Omit<PropSolid, "base">;
@@ -81,10 +100,27 @@ function footprintOf(
         id: input.id,
         surface: input.surface,
         center,
-        height: input.surface === "floor" ? 0 : geometry.height,
+        height:
+            input.surface === "floor" ? 0 : (input.standTop ?? geometry.height),
         outline,
         closed: shape.closed,
         geometry,
+        ...(input.facesAcross ? { facesAcross: true } : {}),
+        ...(input.standAt
+            ? {
+                  // turned as the model is (`writePitModelMatrix`): model +X toward world +Z
+                  standPoint: {
+                      x:
+                          center.x +
+                          input.standAt.x * cos -
+                          input.standAt.z * sin,
+                      z:
+                          center.z +
+                          input.standAt.x * sin +
+                          input.standAt.z * cos,
+                  },
+              }
+            : {}),
     };
 }
 

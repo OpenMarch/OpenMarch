@@ -278,8 +278,9 @@ describe("horns as their own meshes", () => {
         const body = set.group.children.find(
             (o) => o.name === "view3d-marchers-neutral-average",
         ) as THREE.InstancedMesh;
-        const horn = set.group.children.find((o) =>
-            o.name.endsWith("-high"),
+        const horn = set.group.children.find(
+            (o) =>
+                o.name.startsWith("view3d-horn-") && o.name.endsWith("-high"),
         ) as THREE.InstancedMesh;
         const discs = set.group.children.find(
             (o) => o.name === "view3d-marcher-contact",

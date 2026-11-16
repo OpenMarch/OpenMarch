@@ -21,8 +21,12 @@ export type FieldView = {
     panY: number;
 };
 
-/** The field's size in field units. */
-export type FieldSize = { width: number; height: number };
+/**
+ * The area the view shows in field units: the field, and any strip drawn beside it. It runs down
+ * from `top` (0 by default, the field's own top edge; less with a strip behind the back
+ * sideline) and across from 0.
+ */
+export type FieldSize = { width: number; height: number; top?: number };
 
 /** A point in the field element, in CSS pixels from its top-left. */
 export type ElementPoint = { x: number; y: number };
@@ -31,6 +35,8 @@ export const MIN_ZOOM = 0.2;
 export const MAX_ZOOM = 25;
 /** Each press of the zoom buttons multiplies or divides the zoom by this. */
 export const ZOOM_BUTTON_STEP = 1.2;
+
+const topOf = (field: FieldSize) => field.top ?? 0;
 
 export const clampZoom = (zoom: number) =>
     Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
@@ -76,7 +82,14 @@ export function clampPan(view: FieldView, field: FieldSize): FieldView {
     return {
         ...view,
         panX: clamp(view.panX, view.width, field.width),
-        panY: clamp(view.panY, view.height, field.height),
+        // Clamped as the area's top edge, then back to field y = 0
+        panY:
+            clamp(
+                view.panY + topOf(field) * view.zoom,
+                view.height,
+                field.height,
+            ) -
+            topOf(field) * view.zoom,
     };
 }
 
@@ -119,7 +132,7 @@ export function centerAtBase(
             height,
             zoom,
             panX: (width - field.width * zoom) / 2,
-            panY: (height - field.height * zoom) / 2,
+            panY: (height - field.height * zoom) / 2 - topOf(field) * zoom,
         },
         field,
     );
@@ -200,7 +213,8 @@ export function previewFit(
         ...view,
         zoom,
         panX: (container.width - field.width * zoom) / 2,
-        panY: (container.height - field.height * zoom) / 10,
+        panY:
+            (container.height - field.height * zoom) / 10 - topOf(field) * zoom,
     };
 }
 

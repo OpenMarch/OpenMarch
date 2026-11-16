@@ -293,19 +293,34 @@ function itemsOnScreen(field: ThreeFieldState): FieldTestItem[] {
     const view = field.view();
     return field.items
         .outlines()
-        .map(({ id, center, geometry }): FieldTestItem => {
-            const at = fieldToElement(view, center.x, center.y);
-            return {
+        .map(
+            ({
                 id,
-                outlineType: geometry.outlineType,
-                width: geometry.width,
-                depth: geometry.depth,
-                rotation: geometry.rotation,
-                x: center.x,
-                y: center.y,
-                screen: { x: rect.x + at.x, y: rect.y + at.y },
-            };
-        })
+                center,
+                geometry,
+                locked,
+                playingSpot,
+                plan,
+            }): FieldTestItem => {
+                const at = fieldToElement(view, center.x, center.y);
+                return {
+                    id,
+                    outlineType: geometry.outlineType,
+                    width: geometry.width,
+                    depth: geometry.depth,
+                    rotation: geometry.rotation,
+                    x: center.x,
+                    y: center.y,
+                    screen: { x: rect.x + at.x, y: rect.y + at.y },
+                    locked,
+                    playingSpot: playingSpot && {
+                        x: playingSpot.x,
+                        y: playingSpot.y,
+                    },
+                    drawnAsModel: plan !== null,
+                };
+            },
+        )
         .sort((a, b) => a.id - b.id);
 }
 

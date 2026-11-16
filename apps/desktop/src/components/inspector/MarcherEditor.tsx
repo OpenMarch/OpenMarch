@@ -41,6 +41,7 @@ import { usePositionAt } from "@/timeline/timelineStore";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { useTimelineStepSizes } from "@/timeline/useTimelineStepSizes";
 import { useTimingObjects } from "@/hooks";
+import { allItemsQueryOptions } from "@/hooks/queries/useItems";
 import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
@@ -479,12 +480,23 @@ function MarcherEditor() {
     const { t } = useTranslate();
     const { selectedMarchers: selection, setSelectedMarchers } =
         useSelectedMarchers()!;
-    // Performers: items (props and equipment) are edited in the Props panel, not as marchers
+    // Performers: items are edited in their panels, not as marchers: props in the Props panel,
+    // equipment, edited from its right-click menu
     const selectedMarchers = useMemo(
         () => performersOnly(selection),
         [selection],
     );
-    const selectedItemCount = selection.length - selectedMarchers.length;
+    const { data: items } = useQuery(allItemsQueryOptions());
+    const selectedEquipmentCount = useMemo(() => {
+        const equipment = new Set(
+            items
+                ?.filter((item) => item.kind === "equipment")
+                .map((item) => item.marcher_id),
+        );
+        return selection.filter((m) => equipment.has(m.id)).length;
+    }, [items, selection]);
+    const selectedPropCount =
+        selection.length - selectedMarchers.length - selectedEquipmentCount;
     const { selectedPage } = useSelectedPage()!;
     /**
      * Playback (UI-19 review): the section keeps its place and shows a note instead of the
@@ -629,14 +641,25 @@ function MarcherEditor() {
 
     return (
         <>
-            {selectedItemCount > 0 && (
+            {selectedPropCount > 0 && (
                 <p
                     className="text-sub text-text/60 px-6"
                     data-testid="inspector-items-selected"
                 >
                     <T
                         keyName="inspector.marcher.itemsSelected"
-                        params={{ count: selectedItemCount }}
+                        params={{ count: selectedPropCount }}
+                    />
+                </p>
+            )}
+            {selectedEquipmentCount > 0 && (
+                <p
+                    className="text-sub text-text/60 px-6"
+                    data-testid="inspector-equipment-selected"
+                >
+                    <T
+                        keyName="inspector.marcher.equipmentSelected"
+                        params={{ count: selectedEquipmentCount }}
                     />
                 </p>
             )}

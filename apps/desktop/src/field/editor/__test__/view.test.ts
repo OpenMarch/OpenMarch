@@ -176,6 +176,41 @@ describe("viewBetween", () => {
     });
 });
 
+describe("a field area that starts above y = 0 (a back strip)", () => {
+    // The field with 180 units above it: from y = -180 to 960
+    const tall = { width: 1800, height: 1140, top: -180 };
+
+    it("centers the whole area, the strip included", () => {
+        const opened = centerAtBase(2000, 600, tall);
+        const top = opened.panY + tall.top * opened.zoom;
+        const bottom = opened.panY + (tall.top + tall.height) * opened.zoom;
+        expect(top).toBeCloseTo(600 - bottom);
+        expect(top).toBeGreaterThan(0);
+    });
+
+    it("keeps the strip in reach when panning, as for the field's own top", () => {
+        const plain = clampPan(
+            { ...view, zoom: 2, panX: 0, panY: 1e6 },
+            { width: 1800, height: 1140 },
+        );
+        const shifted = clampPan(
+            { ...view, zoom: 2, panX: 0, panY: 1e6 },
+            tall,
+        );
+        expect(shifted.panY).toBeCloseTo(plain.panY - tall.top * 2);
+    });
+
+    it("fits Preview to it too", () => {
+        const fit = previewFit(view, { width: 1600, height: 1000 }, tall)!;
+        const plain = previewFit(
+            view,
+            { width: 1600, height: 1000 },
+            { width: 1800, height: 1140 },
+        )!;
+        expect(fit.panY).toBeCloseTo(plain.panY - tall.top * fit.zoom);
+    });
+});
+
 describe("previewFit", () => {
     it("fits the whole field at 87%, centered across and a tenth of the spare height down", () => {
         const fit = previewFit(view, { width: 1600, height: 1000 }, field)!;

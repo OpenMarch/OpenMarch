@@ -635,6 +635,32 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: [],
     },
+    // Opens the front ensemble and podiums view of the Marchers panel (instruments.md §6), as its
+    // row at the top of the panel does. Unbound by default: a pit is set up about once per show
+    openFrontEnsemble: {
+        labelKey: "actions.ui.openFrontEnsemble",
+        keywordsKey: "actions.ui.openFrontEnsembleKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Opens the one selected item's edit view (a prop, front ensemble equipment, a podium), as its
+    // row's edit button does; the field's right-click menu offers it on an item
+    editSelectedItem: {
+        labelKey: "actions.items.edit",
+        keywordsKey: "actions.items.editKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Opens the front ensemble's Add view (the pictures of every model), as its Add button does
+    addFrontEnsembleEquipment: {
+        labelKey: "actions.ui.addFrontEnsembleEquipment",
+        keywordsKey: "actions.ui.addFrontEnsembleEquipmentKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
     // Preview: watch the show without editing it (the workspace switch's other mode)
     togglePreview: {
         labelKey: "actions.ui.togglePreview",

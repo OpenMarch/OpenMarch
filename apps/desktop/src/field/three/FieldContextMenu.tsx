@@ -40,7 +40,9 @@ import {
  * palette do, and is unavailable when they are. It acts on the selection: the
  * editor selects an unselected marcher right-clicked before it opens.
  *
- * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
+ * - **Edit <name>**, first, while one item (a prop, front ensemble equipment, a podium) is
+ *   selected, as right-clicking one does: it opens the item's edit view.
+ * - **Group** or **Ungroup**, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  *   With one selected whole and the menu opened on one of its marchers, **Select only this
  *   marcher** goes inside it there, as a double-click on that marcher does (tablet 1.5).
@@ -64,6 +66,8 @@ const STATE_GROUP: readonly ActionId[] = [
 ];
 
 const GROUPS: readonly (readonly ActionId[])[] = [
+    // An item right-clicked: its edit view
+    ["editSelectedItem"],
     ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
     STATE_GROUP,
     [
@@ -87,6 +91,7 @@ const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
 
 /** Shown only while available, as Group is: Hold over the window in Expert with a window (#476) */
 const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
+    "editSelectedItem",
     "shapeGroup",
     "shapeUngroup",
     "shapeEnterBox",

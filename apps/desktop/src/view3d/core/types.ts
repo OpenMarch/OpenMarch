@@ -105,6 +105,11 @@ export interface KitBuildInput {
     params: VenueParams;
     /** "low" drops shadows and halves crowd density. */
     quality: "low" | "high";
+    /**
+     * Whether a kit with its own podium (`hs`, `bighs`) draws it. False when the show has a
+     * podium item (docs/3d/instruments.md §6). Defaults to true.
+     */
+    venuePodium?: boolean;
 }
 
 export interface FrameContext {

@@ -969,6 +969,21 @@
         "category": "ui",
         "bindings": []
     },
+    "openFrontEnsemble": {
+        "label": "Open front ensemble and podiums",
+        "category": "ui",
+        "bindings": []
+    },
+    "editSelectedItem": {
+        "label": "Edit selected prop or equipment",
+        "category": "edit",
+        "bindings": []
+    },
+    "addFrontEnsembleEquipment": {
+        "label": "Add front ensemble equipment or podium",
+        "category": "ui",
+        "bindings": []
+    },
     "togglePreview": {
         "label": "Preview the show",
         "category": "ui",

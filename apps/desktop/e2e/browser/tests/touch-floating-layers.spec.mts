@@ -734,14 +734,23 @@ test.describe("a big shape (#936)", () => {
             .poll(async () => (await readField(page)).selection.length)
             .toBe(GRID.length);
         await page.keyboard.press("b");
-        await expect(page.getByTestId("shape-tool-hint")).toBeVisible();
+        const hint = page.getByTestId("shape-tool-hint");
+        await expect(hint).toBeVisible();
+        // The pill moves clear of the hint, which can bring it down over the field's top, and
+        // settles: start the drag only once it has, on the field itself, or the finger lands
+        // on the pill and no box is drawn
+        await pillClearOf(page, hint);
+        await page.waitForTimeout(800);
+        const start = await emptyFieldPoint(page, [
+            [0.12, 0.2],
+            [0.12, 0.28],
+            [0.16, 0.32],
+            [0.2, 0.36],
+        ]);
         // A box across most of the field
-        await touchDrag(
-            page,
-            await onField(page, 0.12, 0.2),
-            await onField(page, 0.85, 0.85),
-            { steps: 16 },
-        );
+        await touchDrag(page, start, await onField(page, 0.85, 0.85), {
+            steps: 16,
+        });
         const readout = page.getByTestId("shape-tool-readout");
         await expect(readout).toBeVisible();
         const place = page.getByTestId("shape-editor-place");

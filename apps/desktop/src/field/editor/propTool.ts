@@ -1,6 +1,7 @@
 import type { OutlineType } from "@/db-functions/items";
 import {
     ITEM_OUTLINES,
+    placeOutline,
     type DrawnOutline,
     type OutlinePath,
 } from "@/items/itemOutlines";
@@ -18,7 +19,21 @@ import type { FieldPoint, FieldPointer } from "./fieldEditor";
  * Points snap as a marcher's coordinates do, except freehand's. A drawing
  * too small to be meant is dropped and the tool stays on; a finished one goes
  * to the app, which makes the prop and turns the tool off.
+ *
+ * With a stamp it places a fixed footprint instead (front ensemble equipment, whose size is its
+ * model's): the footprint follows the pointer, centered and snapped, turned as the stamp says for
+ * that spot, with a notch in the edge built toward the audience so a turn shows, and a click
+ * places it.
+ * Nothing keeps it on the field: equipment can stand past either sideline.
  */
+
+/** A fixed footprint to place with a click, in field units. */
+export type PropToolStamp = {
+    readonly widthPixels: number;
+    readonly depthPixels: number;
+    /** Its turn, in degrees clockwise on screen, centered at `center`; 0 when absent */
+    readonly rotationAt?: (center: FieldPoint) => number;
+};
 
 /** What the overlay draws for the prop tool, and what the field test API reads. */
 export type PropToolShape = {
@@ -56,6 +71,7 @@ export class PropTool {
     constructor(
         readonly outlineType: OutlineType,
         private readonly ports: PropToolPorts,
+        private readonly stamp: PropToolStamp | null = null,
     ) {
         this.handler = ITEM_OUTLINES[outlineType];
         this.snapshot = {
@@ -67,6 +83,10 @@ export class PropTool {
     }
 
     press(pointer: FieldPointer) {
+        if (this.stamp) {
+            this.place(this.stamp, this.ports.snap(pointer.field));
+            return;
+        }
         const { interaction } = this.handler;
         if (interaction === "click") {
             this.click(pointer);
@@ -84,6 +104,24 @@ export class PropTool {
     }
 
     move(pointer: FieldPointer) {
+        if (this.stamp) {
+            const center = this.ports.snap(pointer.field);
+            this.snapshot = {
+                outlineType: this.outlineType,
+                preview: {
+                    points: stampOutline(
+                        this.stamp,
+                        center,
+                        this.stamp.rotationAt?.(center) ?? 0,
+                    ),
+                    closed: true,
+                },
+                points: 0,
+                canFinish: false,
+            };
+            this.ports.changed();
+            return;
+        }
         const { interaction } = this.handler;
         if (interaction === "freehand") {
             if (!this.dragging) return;
@@ -182,6 +220,24 @@ export class PropTool {
         else this.update();
     }
 
+    private place(stamp: PropToolStamp, center: FieldPoint) {
+        this.snapshot = {
+            outlineType: this.outlineType,
+            preview: null,
+            points: 0,
+            canFinish: false,
+        };
+        this.ports.changed();
+        this.ports.finished({
+            outlineType: this.outlineType,
+            centerX: center.x,
+            centerY: center.y,
+            widthPixels: stamp.widthPixels,
+            depthPixels: stamp.depthPixels,
+            rotation: stamp.rotationAt?.(center) ?? 0,
+        });
+    }
+
     private finish(endPoint?: FieldPoint) {
         const outline = this.handler.finalize({
             startPoint: this.start,
@@ -213,4 +269,28 @@ export class PropTool {
         };
         this.ports.changed();
     }
+}
+
+/**
+ * A stamp's outline: its footprint with a notch in the middle of the edge its model has toward the
+ * audience as built (+y, before turning), turned `degrees` clockwise on screen around `center`.
+ */
+function stampOutline(
+    stamp: PropToolStamp,
+    center: FieldPoint,
+    degrees: number,
+): FieldPoint[] {
+    const halfWidth = stamp.widthPixels / 2;
+    const halfDepth = stamp.depthPixels / 2;
+    const notch = Math.min(stamp.widthPixels, stamp.depthPixels) * 0.2;
+    const shape = [
+        { x: -halfWidth, y: -halfDepth },
+        { x: halfWidth, y: -halfDepth },
+        { x: halfWidth, y: halfDepth },
+        { x: notch, y: halfDepth },
+        { x: 0, y: halfDepth - notch },
+        { x: -notch, y: halfDepth },
+        { x: -halfWidth, y: halfDepth },
+    ];
+    return placeOutline({ points: shape, closed: true }, center, degrees);
 }

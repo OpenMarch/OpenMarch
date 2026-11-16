@@ -375,8 +375,10 @@ per height class, loaded only for a show with percussion.
   every guard section's hands, to see the others; it is never saved, starts
   on Follow cues and doesn't change which cues fit (`guardEquipment` in
   `window/sceneStore.ts`, performer-behavior.md section 7.5).
-- The front ensemble and speakers are props, not dots: they need geometry
-  but don't march.
+- The front ensemble and speakers are equipment items, not performers: they
+  need geometry but don't march. Whoever stands on an instrument's playing
+  spot plays it, on the field side facing the audience (owner, 2026-11-11;
+  instruments.md §6).
 
 ## What the models can't do yet
 

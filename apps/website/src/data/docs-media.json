@@ -11,6 +11,24 @@
         "width": 752,
         "height": 836
     },
+    "3d-front-ensemble-3d": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 760
+    },
+    "3d-front-ensemble-add": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
+    "3d-front-ensemble-field": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
     "3d-marchers": {
         "chapter": "3d-view",
         "kind": "still",
