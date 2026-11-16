@@ -2,6 +2,7 @@ import type { PivotKey } from "../frame/frame";
 import { create } from "zustand";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import type { FieldMode } from "@/field/editor/fieldEditor";
+import type { PointerKind } from "@/field/editor/pointerThresholds";
 import type { ShapeField } from "../field/shapeField";
 import type { XY } from "../types";
 import { shapeOutline } from "../frame/gestures";
@@ -21,6 +22,7 @@ import { rolesOf, type Roles } from "@/input/modifierRoles";
 import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
 import {
     cancelGesture,
+    losePress,
     pickMenu,
     pointerMove,
     press,
@@ -34,7 +36,7 @@ import {
 } from "./toolMachine";
 import { updateTool, useShapeToolStore } from "./shapeToolStore";
 import { ShapeGlide } from "./spotGlide";
-import { openHandleMenu } from "../field/handleMenu";
+import { handleMenuSections, openHandleMenu } from "../field/handleMenu";
 import { groupDrawing } from "../field/groupDrawing";
 import { stepDrawing } from "../field/stepDrawing";
 import type { GroupMenuState } from "../field/shapePointer";
@@ -379,11 +381,23 @@ function glidingDrawing(shown: Shown | null) {
     };
 }
 
-/** The env for the roles held: a dragged pivot also snaps to the open shape's spots (#350) */
-const envOf = (field: ShapeField, tool: ToolState, roles?: Roles) =>
+/**
+ * The env for the roles held, with the reach of the pointer `kind` pressing (tablet 1.4): a dragged
+ * pivot also snaps to the open shape's spots (#350)
+ */
+const envOf = (
+    field: ShapeField,
+    tool: ToolState,
+    roles?: Roles,
+    kind: PointerKind = pressKind,
+) =>
     toolEnvFor(field, roles, {
         spots: () => slotsOf(tool, shapeContextFor(field)),
+        kind,
     });
+
+/** What made the last press: a held key's rerun and a keyed change go on with its reach */
+let pressKind: PointerKind = "mouse";
 
 /** The held roles of the gesture under way, from its press to its end */
 let held: HeldFieldGesture | null = null;
@@ -435,6 +449,7 @@ export const shapeToolMode: FieldMode = {
         const tool = useShapeToolStore.getState().tool;
         if (!field || !tool) return;
         endHeld();
+        pressKind = pointer.kind;
         const pressed = pressShapeKeys(
             pointer,
             { kind: tool.kind, params: tool.params, n: tool.spots },
@@ -460,7 +475,7 @@ export const shapeToolMode: FieldMode = {
         if (!field) return;
         const roles = held?.move(pointer);
         updateTool((t) =>
-            pointerMove(t, pointer.field, envOf(field, t, roles)),
+            pointerMove(t, pointer.field, envOf(field, t, roles, pointer.kind)),
         );
     },
     release(_pointer, click) {
@@ -469,7 +484,12 @@ export const shapeToolMode: FieldMode = {
         if (!field) return;
         updateTool((t) => release(t, shapeContextFor(field), click));
     },
-    cancel: cancelShapeGesture,
+    // A press lost (a second finger landed to pan, the window lost focus): while clicking a line's
+    // points only that press's point is dropped, not the points already down
+    cancel() {
+        endHeld();
+        updateTool(losePress);
+    },
     // A right-click on a handle with a menu (a Line's point or segment, #569) opens it. While
     // clicking a line's points it takes the last one back instead, a Mac's Ctrl-click and a long
     // press too, as they open the menu (owner, option A on #522)
@@ -483,7 +503,11 @@ export const shapeToolMode: FieldMode = {
             tool.kind,
             tool.params,
             tool.spots,
-            pressTarget(tool, pointer.field, envOf(field, tool)),
+            pressTarget(
+                tool,
+                pointer.field,
+                envOf(field, tool, undefined, pointer.kind),
+            ),
             pointer.screen,
             (key, value) => {
                 const now = currentShapeField();
@@ -502,18 +526,37 @@ export const shapeToolMode: FieldMode = {
             },
         );
     },
+    // A pen held still on a handle with a menu (a Line's point, tablet 1.5): the press gives way
+    // to the menu, as a right-click there opens it. Any other press is kept: cancelling one while
+    // clicking a line's points would drop the whole line
+    longPress() {
+        const tool = useShapeToolStore.getState().tool;
+        const g = tool?.gesture;
+        return (
+            tool !== null &&
+            tool !== undefined &&
+            tool.params !== null &&
+            g?.type === "handle" &&
+            handleMenuSections(tool.kind, tool.params, tool.spots, g.key) !==
+                null
+        );
+    },
     cursorAt(pointer) {
         const tool = useShapeToolStore.getState().tool;
         const field = currentShapeField();
         if (!tool || !field) return null;
-        const env = envOf(field, tool);
+        const env = envOf(field, tool, undefined, pointer.kind);
         // Between clicked points the next segment follows the pointer (#524), with the roles the
         // pointer's keys hold, so it lands where a click would. A role key pressed or released
         // without a move shows at the next move: no gesture follows the keyboard between clicks.
         if (tool.gesture?.type === "points") {
             const roles = rolesOf(pointer, "shape");
             updateTool((t) =>
-                pointerMove(t, pointer.field, envOf(field, t, roles)),
+                pointerMove(
+                    t,
+                    pointer.field,
+                    envOf(field, t, roles, pointer.kind),
+                ),
             );
             return "crosshair";
         }

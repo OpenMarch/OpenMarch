@@ -109,6 +109,14 @@ describe("SIZE_CATALOG", () => {
             "45 x 78.625, 96 deep",
             "44 x 94, 56 deep",
             "54 x 100, 87 deep",
+            // the owner's chart (fork #973)
+            "36 x 62.375, 54.375 deep",
+            "36 x 56.125, 48.625 deep",
+            "36 x 56.375, 43.875 deep",
+            "36 x 54.25, 46.75 deep",
+            "34 x 53.875, 87.5 deep",
+            "72 x 36",
+            "36 x 116.75",
         ]);
         expect(catalogEntry("pole-8ft")?.special).toBe(true);
     });

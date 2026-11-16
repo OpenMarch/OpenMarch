@@ -561,6 +561,18 @@ export function clearSelection(state: ToolState): ToolState {
     return state.selected ? { ...state, selected: null } : state;
 }
 
+/**
+ * A press lost before its release (a second finger landed to pan, the window lost focus): while
+ * clicking points only that press is dropped, and the points already down stay (tablet 1.4); any
+ * other gesture goes back as {@link cancelGesture} does
+ */
+export function losePress(state: ToolState): ToolState {
+    const g = state.gesture;
+    if (g?.type !== "points") return cancelGesture(state);
+    if (!g.pressed) return state;
+    return { ...state, gesture: { ...g, pressed: false, onLast: false } };
+}
+
 /** Escape during a gesture: everything as it was at the press */
 export function cancelGesture(state: ToolState): ToolState {
     const g = state.gesture;

@@ -343,6 +343,9 @@ export function seekTimeline(
         scrub = null;
         if (ended?.suspended)
             resumeTimelinePlayback(clock, beat, ended.suspended, setIsPlaying);
+        // A cancelled press over playback (a second finger landed, tablet 3.1) only marked where
+        // a click would jump: playback goes on as it was
+        else if (gesture === "cancel" && ended?.playing) return null;
         else if (ended?.playing ?? isPlaying) jumpTimelinePlayback(clock, beat);
         else {
             state.seek(beat);

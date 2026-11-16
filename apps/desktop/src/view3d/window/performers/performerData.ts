@@ -24,6 +24,12 @@ export const PERFORMER_HEIGHT = 1.75;
  */
 export const RING_INNER_RADIUS = 0.34;
 export const RING_OUTER_RADIUS = 0.46;
+/**
+ * Where performers' soles rest: on the field surface, which sits a little
+ * above the kits' ground. At y = 0 their feet sank into the turf and the
+ * field's lines ran over their shoes in close-ups.
+ */
+export const STAND_Y = FIELD_SURFACE_Y;
 /** Just above the field surface, so the ring doesn't z-fight with it. */
 export const RING_Y = FIELD_SURFACE_Y + 0.01;
 /** The accent when the page has no `--color-accent` (dark theme value). */
@@ -165,24 +171,32 @@ function writeTranslation(
 /**
  * Writes the block matrices: a translation to the performer's spot for a
  * placed performer, and a zero matrix (nothing drawn) otherwise. The
- * cylinder geometry has its base at its origin, so blocks stand at y = 0.
+ * cylinder geometry has its base at its origin, so blocks stand at `STAND_Y`,
+ * or `lift` (m) above it where a platform raises them.
  */
 export function writePerformerMatrices(
     count: number,
     xz: Float32Array,
     placed: Uint8Array,
     matrices: Float32Array,
+    lift: Float32Array | null = null,
 ): void {
     for (let i = 0; i < count; i++) {
         if (placed[i])
-            writeTranslation(matrices, i, xz[i * 2], 0, xz[i * 2 + 1]);
+            writeTranslation(
+                matrices,
+                i,
+                xz[i * 2],
+                STAND_Y + (lift?.[i] ?? 0),
+                xz[i * 2 + 1],
+            );
         else matrices.fill(0, i * 16, i * 16 + 16);
     }
 }
 
 /**
  * Writes one ring matrix per selected, placed performer, packed from index
- * 0 in instance order.
+ * 0 in instance order, at the performer's feet (`lift` m up on a platform).
  *
  * @returns how many rings to draw
  */
@@ -192,12 +206,19 @@ export function writeRingMatrices(
     xz: Float32Array,
     placed: Uint8Array,
     matrices: Float32Array,
+    lift: Float32Array | null = null,
 ): number {
     let count = 0;
     if (selected.size === 0) return 0;
     for (let i = 0; i < slots.ids.length; i++) {
         if (!placed[i] || !selected.has(slots.ids[i])) continue;
-        writeTranslation(matrices, count, xz[i * 2], RING_Y, xz[i * 2 + 1]);
+        writeTranslation(
+            matrices,
+            count,
+            xz[i * 2],
+            RING_Y + (lift?.[i] ?? 0),
+            xz[i * 2 + 1],
+        );
         count++;
     }
     return count;

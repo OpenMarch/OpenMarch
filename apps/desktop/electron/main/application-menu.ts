@@ -4,12 +4,12 @@ import { t } from "./i18n";
 import { app, dialog, Menu, shell } from "electron";
 import type { MenuItemConstructorOptions } from "electron";
 import {
+    CHECK_FOR_UPDATES_MENU_ACTION,
     HELP_MENU_ACTIONS,
     PLAYBACK_MENU_ACTIONS,
     type MenuAction,
 } from "../../src/global/menuActions";
-
-const isMacOS = process.platform === "darwin";
+import { SITE_URL, siteUrl } from "../../src/global/siteUrl";
 
 /**
  * A menu item that runs a renderer action (docs/adr/0003-menu-actions-ipc.md). The shortcut is
@@ -17,25 +17,39 @@ const isMacOS = process.platform === "darwin";
  * letters still type in text fields. macOS always registers a menu accelerator, so there the
  * shortcut goes in the label instead.
  */
-const rendererActionItem = ({
-    action,
-    labelKey,
-    accelerator,
-}: MenuAction): MenuItemConstructorOptions =>
-    isMacOS
-        ? {
-              label: t("menu.withShortcut", {
+const rendererActionItem =
+    (isMacOS: boolean) =>
+    ({
+        action,
+        labelKey,
+        accelerator,
+    }: MenuAction): MenuItemConstructorOptions =>
+        !accelerator
+            ? {
                   label: t(labelKey),
-                  shortcut: accelerator.replace("Shift+/", "?"),
-              }),
-              click: () => mainProcess.sendMenuAction(action),
-          }
-        : {
-              label: t(labelKey),
-              accelerator,
-              registerAccelerator: false,
-              click: () => mainProcess.sendMenuAction(action),
-          };
+                  click: () => mainProcess.sendMenuAction(action),
+              }
+            : isMacOS
+              ? {
+                    label: t("menu.withShortcut", {
+                        label: t(labelKey),
+                        shortcut: accelerator.replace("Shift+/", "?"),
+                    }),
+                    click: () => mainProcess.sendMenuAction(action),
+                }
+              : {
+                    label: t(labelKey),
+                    accelerator,
+                    registerAccelerator: false,
+                    click: () => mainProcess.sendMenuAction(action),
+                };
+
+/** "Check for Updates…": the renderer runs the check and says what it found */
+const checkForUpdatesItem = (): MenuItemConstructorOptions => ({
+    label: t(CHECK_FOR_UPDATES_MENU_ACTION.labelKey),
+    click: () =>
+        mainProcess.sendMenuAction(CHECK_FOR_UPDATES_MENU_ACTION.action),
+});
 
 /** A link in the Help menu. */
 const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
@@ -51,8 +65,27 @@ const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
  * Basic the Playback menu leaves out the items whose actions Basic turns off. Role items get their
  * labels here too: Electron's own role labels are English only.
  */
-// eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
 export function buildApplicationMenu({ basic = false } = {}): Menu {
+    return Menu.buildFromTemplate(
+        applicationMenuTemplate({
+            basic,
+            isMacOS: process.platform === "darwin",
+        }),
+    );
+}
+
+/**
+ * The menu's template for one system. Exported for the user guide's Menus page, which shows the
+ * macOS and the Windows/Linux menus (`scripts/docs-reference/generate.mts`).
+ */
+// eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
+export function applicationMenuTemplate({
+    basic,
+    isMacOS,
+}: {
+    basic: boolean;
+    isMacOS: boolean;
+}): MenuItemConstructorOptions[] {
     const appName = app.name;
     const template: MenuItemConstructorOptions[] = [];
 
@@ -61,6 +94,7 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             label: appName,
             submenu: [
                 { role: "about", label: t("menu.app.about", { appName }) },
+                checkForUpdatesItem(),
                 { type: "separator" },
                 { role: "services", label: t("menu.app.services") },
                 { type: "separator" },
@@ -106,7 +140,6 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
                 },
                 {
                     label: t("menu.file.closeFile"),
-                    accelerator: "CommandOrControl+Q",
                     click() {
                         void mainProcess.closeCurrentFile();
                     },
@@ -187,7 +220,7 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             label: t("menu.playback.title"),
             submenu: PLAYBACK_MENU_ACTIONS.filter(
                 (item) => !(basic && item.expertOnly),
-            ).map(rendererActionItem),
+            ).map(rendererActionItem(isMacOS)),
         },
         isMacOS
             ? {
@@ -213,17 +246,20 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
             role: "help",
             label: t("menu.help.title"),
             submenu: [
-                ...HELP_MENU_ACTIONS.map(rendererActionItem),
+                ...HELP_MENU_ACTIONS.map(rendererActionItem(isMacOS)),
                 { type: "separator" },
-                linkItem(t("menu.help.website"), "https://openmarch.com"),
-                linkItem(t("menu.help.guides"), "https://openmarch.com/guides"),
+                linkItem(t("menu.help.website"), SITE_URL),
+                linkItem(t("menu.help.guides"), siteUrl("/guides")),
                 // i18n-ignore: brand name, the same in every language
                 linkItem("Discord", "https://discord.gg/eTsQ98uZzq"),
                 // i18n-ignore: brand name, the same in every language
                 linkItem("GitHub", "https://github.com/OpenMarch"),
+                ...(isMacOS
+                    ? []
+                    : [{ type: "separator" } as const, checkForUpdatesItem()]),
             ],
         },
     );
 
-    return Menu.buildFromTemplate(template);
+    return template;
 }

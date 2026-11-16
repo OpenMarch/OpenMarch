@@ -38,6 +38,10 @@ import {
 } from "./newShowTypes";
 import type { QueryClient } from "@tanstack/react-query";
 import { createAllUndoTriggers } from "@/db-functions/history";
+import { getBeats } from "@/db-functions/beat";
+import { applyPitPreset } from "@/db-functions/pitPreset";
+import { invalidateItemsAndMarchers } from "@/hooks/queries/useItems";
+import { pitPresetApplyArgs } from "@/components/frontEnsemble/pitPresetArgs";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
@@ -416,6 +420,34 @@ async function applyPreviousDotsMarcherTags(
     });
 }
 
+/**
+ * The front ensemble preset picked in the Front ensemble step: its equipment, on
+ * field from the first beat so it is there all show, and a player for each instrument and a drum
+ * major on the podium, as the Front ensemble panel's presets place them.
+ */
+async function applyFrontEnsemble(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const size = form.frontEnsemble?.size;
+    if (!size) return;
+    const [firstBeat] = (await getBeats({ db })).sort(
+        (a, b) => a.position - b.position,
+    );
+    if (!firstBeat) return;
+    await applyPitPreset({
+        db,
+        ...pitPresetApplyArgs({
+            size,
+            field: form.fieldTemplate,
+            beatId: firstBeat.id,
+            addPerformers: true,
+            familyName: (family) => tolgee.t(`pit.family.${family}`),
+        }),
+    });
+    await invalidateItemsAndMarchers(queryClient);
+}
+
 async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
     const currentBeats = await queryClient.fetchQuery(
         allDatabaseBeatsQueryOptions(),
@@ -750,6 +782,7 @@ export async function completeNewShow(
     await applyPreviousDotsCoordinates(form, queryClient);
     await applyPreviousDotsSectionAppearances(form, queryClient);
     await applyPreviousDotsMarcherTags(form, queryClient);
+    await applyFrontEnsemble(form, queryClient);
 
     const finalizeResult = await window.electron.finalizeNewShowDraft(
         targetPath,

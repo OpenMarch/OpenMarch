@@ -3,9 +3,13 @@ import clsx from "clsx";
 import { type ReactNode, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { TouchCaption } from "@/components/ui/InfoTip";
+import { FIELD_EDIT_PANEL_ID } from "@/field/editMode/fieldEditPanelId";
 
 export default function SidebarModal() {
-    const { isOpen, content, setOpen } = useSidebarModalStore();
+    const { isOpen, content, contentId, setOpen } = useSidebarModalStore();
+    // The Field panel takes room beside the field instead of covering it, so the field fits in
+    // the room left and its rulers stay in view (#824)
+    const besideField = contentId === FIELD_EDIT_PANEL_ID;
     const [isFocused, setIsFocused] = useState(false);
 
     const handleFocus = () => {
@@ -18,6 +22,13 @@ export default function SidebarModal() {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
+            // The Field panel's Escape is the Edit field mode's: it closes a line's menu or
+            // popover, then drops the pick, and only then closes the panel (#824)
+            if (
+                useSidebarModalStore.getState().contentId ===
+                FIELD_EDIT_PANEL_ID
+            )
+                return;
             if (event.key === "Escape") {
                 setOpen(false);
             }
@@ -37,7 +48,12 @@ export default function SidebarModal() {
             tabIndex={0}
             onFocus={handleFocus}
             onBlur={handleBlur}
-            className="rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in touch:left-[96px] absolute top-0 left-[50px] z-40 flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden"
+            className={clsx(
+                "rounded-6 border-stroke bg-modal shadow-fg-1 backdrop-blur-32 animate-scale-in flex h-full min-h-0 max-w-[36rem] overflow-hidden border p-12 outline-hidden",
+                besideField
+                    ? "relative ml-8 shrink-0"
+                    : "touch:left-[96px] absolute top-0 left-[50px] z-40",
+            )}
         >
             {content}
         </div>

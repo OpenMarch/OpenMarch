@@ -47,9 +47,21 @@ const BUTTON_SHADOW =
 /** Where the pointer last was, in the window; the ring opens around it */
 let pointer: { x: number; y: number } | null = null;
 
-function ringCenter(): { x: number; y: number } {
+/**
+ * The field's middle, where the ring opens from the Shapes tab's Ring button (touch layout): a
+ * finger leaves no pointer to open around, and its last spot was the button
+ */
+function fieldMiddle(): { x: number; y: number } | null {
+    const box = document
+        .querySelector('[data-testid="threeField"]')
+        ?.getBoundingClientRect();
+    if (!box || box.width === 0 || box.height === 0) return null;
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+}
+
+function ringCenter(from = pointer): { x: number; y: number } {
     const { innerWidth: w, innerHeight: h } = window;
-    const at = pointer ?? { x: w / 2, y: h / 2 };
+    const at = from ?? { x: w / 2, y: h / 2 };
     const clamp = (v: number, size: number) =>
         size < 2 * EDGE ? size / 2 : Math.min(size - EDGE, Math.max(EDGE, v));
     return { x: clamp(at.x, w), y: clamp(at.y, h) };
@@ -93,12 +105,15 @@ export default function FavoritesRing() {
                 setRing(null);
                 return;
             }
+            // From the Ring button: around the field's middle, aimed at nothing yet
+            const from = args?.atField === true ? fieldMiddle() : pointer;
+            const center = ringCenter(from);
             const opened = openRing(
-                ringCenter(),
+                center,
                 performance.now(),
-                pointer ?? undefined,
+                args?.atField === true ? center : (pointer ?? undefined),
             );
-            // From the command palette: latched, as a tap leaves it (#411)
+            // From the command palette or the Ring button: latched, as a tap leaves it (#411)
             setRing(args?.latched === true ? latchRing(opened) : opened);
         },
         {

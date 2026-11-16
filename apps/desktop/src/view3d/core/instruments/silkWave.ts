@@ -15,11 +15,13 @@
  * (X × Y). The origin is the top of the hoist edge, so the silk spans
  * x in [0, fly], y in [−header, 0]. Pure: no three.js.
  *
- * A silk's Cut (`../sizes/silkCuts`) shapes the grid before the wave: each
- * column of the grid runs from the outline's top to its bottom at that
- * point of the fly (the depth field), so the 3D silk ends where the Artwork
- * template's shape mask does. A silk with no Cut is the header × fly
- * rectangle.
+ * A silk's shape (`../sizes/silkShapes`) shapes the grid before the wave:
+ * each column of the grid runs from the outline's top to its bottom at that
+ * point of the fly (the depth field). Where a column crosses the outline
+ * more than twice (a hollow, a hook, a notch) the grid spans the outline's
+ * envelope and the silk shader cuts the rest away with the shape's mask
+ * (`silkMask.ts`), so the 3D silk ends where the Artwork template's shape
+ * mask does. A silk with no shape is the header × fly rectangle.
  */
 import {
     cutPathBounds,
@@ -28,6 +30,7 @@ import {
     silkCutShape,
     type CutPath,
 } from "../sizes/silkCuts";
+import { SILK_SHAPE_IDS, silkShape } from "../sizes/silkShapes";
 import type { Detail } from "./model";
 
 /** The global silk defaults, not editable (props-spec.md section 7, ticket 10). */
@@ -59,11 +62,12 @@ export const SILK_GRID: Record<Detail, { fly: number; header: number }> = {
 export const SILK_CUT_SAMPLES = 16;
 
 /**
- * The traced Cuts the silk shader knows, by catalog id; index 0 in the
- * shader is the rectangle. A flag model names its silk's Cut from these.
+ * The shader's index of a silk's shape: 0 for none (the rectangle), else 1
+ * plus its index in `SILK_SHAPE_IDS`.
  */
-export const SILK_CUT_IDS = ["silk-swing-44x66"] as const;
-export type SilkCutId = (typeof SILK_CUT_IDS)[number];
+export function silkCutIndex(shape: string | undefined): number {
+    return shape ? SILK_SHAPE_IDS.indexOf(shape as never) + 1 : 0;
+}
 
 /**
  * A Cut's depth field: at each of `SILK_CUT_SAMPLES + 1` even steps from
@@ -73,6 +77,8 @@ export type SilkCutId = (typeof SILK_CUT_IDS)[number];
 export interface SilkCutProfile {
     top: readonly number[];
     bottom: readonly number[];
+    /** The outline's lowest point, in headers: 1 unless it hangs below the pole. */
+    depth: number;
 }
 
 /** A Cut's depth field, from a catalog id with a traced shape or a path. */
@@ -85,8 +91,10 @@ export function silkCutProfile(cut: string | CutPath): SilkCutProfile {
     const poly = [...sampleCutPath(path), [0, 0] as const];
     const top: number[] = [];
     const bottom: number[] = [];
+    // the flattened outline can fall a hair short of a curve's true fly
+    const reach = Math.max(...poly.map((p) => p[0]));
     for (let i = 0; i <= SILK_CUT_SAMPLES; i++) {
-        const x = (i / SILK_CUT_SAMPLES) * fly;
+        const x = Math.min((i / SILK_CUT_SAMPLES) * fly, reach);
         let lo = Infinity;
         let hi = -Infinity;
         for (let k = 1; k < poly.length; k++) {
@@ -106,13 +114,40 @@ export function silkCutProfile(cut: string | CutPath): SilkCutProfile {
         top.push(lo / header);
         bottom.push(hi / header);
     }
-    return { top, bottom };
+    return { top, bottom, depth: cutPathBounds(path).maxY / header };
 }
 
 const RECTANGLE: SilkCutProfile = {
     top: new Array<number>(SILK_CUT_SAMPLES + 1).fill(0),
     bottom: new Array<number>(SILK_CUT_SAMPLES + 1).fill(1),
+    depth: 1,
 };
+
+/** Every shape's depth field, in the shader's order: the rectangle first. */
+export function silkCutProfiles(): SilkCutProfile[] {
+    return [
+        RECTANGLE,
+        ...SILK_SHAPE_IDS.map((id) => silkCutProfile(silkShape(id).path)),
+    ];
+}
+
+/**
+ * Where (u, v) of the grid lies on the flat silk, as an Artwork template
+ * and the shape's mask read it: x from the pole (0) to the fly (1), y from
+ * the top of the pole edge (0) down to the outline's lowest point (1).
+ */
+export function silkPlanar(
+    u: number,
+    v: number,
+    cut: SilkCutProfile = RECTANGLE,
+): [x: number, y: number] {
+    const f = Math.min(Math.max(u, 0), 1) * SILK_CUT_SAMPLES;
+    const i = Math.min(Math.floor(f), SILK_CUT_SAMPLES - 1);
+    const w = f - i;
+    const top = cut.top[i] + w * (cut.top[i + 1] - cut.top[i]);
+    const bot = cut.bottom[i] + w * (cut.bottom[i + 1] - cut.bottom[i]);
+    return [u, (top + (1 - v) * (bot - top)) / cut.depth];
+}
 
 /**
  * The shortest column the normal is taken over, as a fraction of the
@@ -271,24 +306,39 @@ export function silkPoint(
     normal[2] = nz / l;
 }
 
-/** Every Cut's depth field as GLSL `vec2(top, bottom)`s, the rectangle first. */
+/**
+ * Every shape's depth field as GLSL `vec2(top, bottom)`s and its depth in
+ * headers, the rectangle first.
+ */
 function cutTable(): string {
-    const cuts = [RECTANGLE, ...SILK_CUT_IDS.map((id) => silkCutProfile(id))];
+    const cuts = silkCutProfiles();
     const n = cuts.length * (SILK_CUT_SAMPLES + 1);
     const values = cuts.flatMap((c) =>
         c.top.map((t, i) => `vec2(${t.toFixed(6)}, ${c.bottom[i].toFixed(6)})`),
     );
-    return `const vec2 SILK_CUTS[${n}] = vec2[${n}](${values.join(", ")});`;
+    const depths = cuts.map((c) => c.depth.toFixed(6));
+    return `const vec2 SILK_CUTS[${n}] = vec2[${n}](${values.join(", ")});
+const float SILK_CUT_DEPTH[${cuts.length}] = float[${cuts.length}](${depths.join(", ")});`;
 }
 
 /**
  * The shader's copy of {@link silkPoint}: `silkPoint(u, v, size, motion,
  * cut, pos, normal)` with `size` (fly, header, mirror), `motion` (wave
- * phase, belly phase, speed, turn) and `cut` the Cut's index (0 for the
- * rectangle, else 1 + its index in {@link SILK_CUT_IDS}).
+ * phase, belly phase, speed, turn) and `cut` the shape's index
+ * ({@link silkCutIndex}); and `silkPlanar(u, v, cut)`, the copy of
+ * {@link silkPlanar}.
  */
 export const SILK_WAVE_SHADER = /* glsl */ `
 ${cutTable()}
+vec2 silkPlanar(float u, float v, float cut) {
+  const int SAMPLES = ${SILK_CUT_SAMPLES};
+  float f = clamp(u, 0.0, 1.0) * float(SAMPLES);
+  int i = min(int(floor(f)), SAMPLES - 1);
+  int c = int(cut + 0.5);
+  int base = c * (SAMPLES + 1);
+  vec2 tb = mix(SILK_CUTS[base + i], SILK_CUTS[base + i + 1], f - float(i));
+  return vec2(u, (tb.x + (1.0 - v) * (tb.y - tb.x)) / SILK_CUT_DEPTH[c]);
+}
 void silkPoint(float u, float v, vec3 size, vec4 motion, float cut, out vec3 pos, out vec3 nrm) {
   const float A = ${SILK_WAVE.amplitude.toFixed(6)};
   const float K = ${(TAU / SILK_WAVE.wavelength).toFixed(8)};

@@ -45,6 +45,7 @@ const pointer = (field: XY): FieldPointer => ({
     field,
     screen: field,
     button: 0,
+    kind: "mouse",
     ...NO_KEYS,
 });
 

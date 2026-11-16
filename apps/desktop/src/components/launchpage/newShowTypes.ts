@@ -1,5 +1,6 @@
 import type { FieldProperties } from "@openmarch/core";
 import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
+import type { PitPresetSize } from "@/view3d/core/pit/presets";
 
 export type NewShowStepId =
     | "start"
@@ -7,6 +8,7 @@ export type NewShowStepId =
     | "ensemble"
     | "field"
     | "performers"
+    | "frontEnsemble"
     | "audio"
     | "tempo";
 
@@ -16,6 +18,7 @@ export const NEW_SHOW_STEPS: NewShowStepId[] = [
     "ensemble",
     "field",
     "performers",
+    "frontEnsemble",
     "audio",
     "tempo",
 ];
@@ -35,6 +38,12 @@ export interface NewShowStartData {
 
 export interface NewShowEnsembleData {
     activity: string;
+}
+
+/** The front ensemble the show starts with (instruments.md section 6) */
+export interface NewShowFrontEnsembleData {
+    /** The preset placed with its players when the show is made; null for none */
+    size: PitPresetSize | null;
 }
 
 export interface NewShowFieldData {
@@ -126,6 +135,7 @@ export interface NewShowWizardState {
     ensemble: NewShowEnsembleData | null;
     field: NewShowFieldData | null;
     performers: NewShowPerformersData | null;
+    frontEnsemble: NewShowFrontEnsembleData | null;
     audio: NewShowAudioData | null;
     tempo: NewShowTempoData | null;
     draftFilePath?: string;
@@ -138,6 +148,7 @@ export const DEFAULT_NEW_SHOW_WIZARD_STATE: NewShowWizardState = {
     ensemble: null,
     field: null,
     performers: null,
+    frontEnsemble: null,
     audio: null,
     tempo: null,
 };
@@ -152,6 +163,7 @@ export type NewShowFormState = {
     defaultTempo: number;
     ensemble?: NewShowEnsembleData | null;
     performers?: NewShowPerformersData | null;
+    frontEnsemble?: NewShowFrontEnsembleData | null;
     audio?: NewShowAudioData | null;
     tempo?: NewShowTempoData | null;
     draftFilePath?: string;
@@ -178,6 +190,7 @@ export function wizardStateToFormState(
         defaultTempo,
         ensemble: state.ensemble,
         performers: state.performers,
+        frontEnsemble: state.frontEnsemble,
         audio: state.audio,
         tempo: state.tempo,
         draftFilePath: state.draftFilePath,
@@ -192,6 +205,7 @@ export function hasNewShowProgress(state: NewShowWizardState): boolean {
         state.ensemble !== null ||
         state.field !== null ||
         state.performers !== null ||
+        state.frontEnsemble !== null ||
         state.audio !== null ||
         state.tempo !== null ||
         !!state.draftFilePath

@@ -78,6 +78,7 @@ const pointer = (field: XY, keys: Partial<HeldKeys> = {}): FieldPointer => ({
     field,
     screen: field,
     button: 0,
+    kind: "mouse",
     ...NO_KEYS,
     ...keys,
 });

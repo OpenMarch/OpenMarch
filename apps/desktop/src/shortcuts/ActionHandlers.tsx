@@ -25,6 +25,14 @@ import {
     useMarcherOrderActions,
 } from "@/pathways/useMarcherOrder";
 import { useMarcherOrderStore } from "@/pathways/marcherOrderStore";
+import { useItemActionHandlers } from "./handlers/useItemActionHandlers";
+import { useFieldEditActionHandlers } from "./handlers/useFieldEditActionHandlers";
+import {
+    useFieldEditModeEntry,
+    useFieldLineActions,
+    useFieldPanelActions,
+} from "@/field/editMode/useFieldEditModeActions";
+import { useFieldEditModeStore } from "@/field/editMode/fieldEditModeStore";
 
 /** Handlers available before a show is open (launch page). */
 export function FileActionHandlers() {
@@ -45,6 +53,9 @@ export function EditorActionHandlers() {
     useShapeToolActions();
     useUnsetActionHandlers();
     useHoldActionHandlers();
+    useFieldEditActionHandlers();
+    useItemActionHandlers();
+    useFieldEditModeEntry();
     useTimelineActionEffects();
     usePathPenActions();
     useMarcherOrderActions();
@@ -58,15 +69,18 @@ export function EditorActionHandlers() {
         (s) => s.selected !== null || s.inside !== null,
     );
     const shapeDiscarded = useShapeToolStore((s) => s.discarded !== null);
+    // The Field panel (#824) takes its keys over everything while it's open
+    const fieldPanelOpen = useFieldEditModeStore((s) => s.active);
     // The path pen drawing, a path open on the field, or a path selected as an object (step 3a)
-    // takes its keys over everything (pathways); a path only shown (closed) takes none
+    // takes its keys over everything else (pathways); a path only shown (closed) takes none
     const pathOpen = usePathPenStore(
         (s) =>
             s.session !== null &&
             (s.session.phase !== "closed" || s.session.object),
     );
-    // Set order (pathways step 4g) takes Enter and Escape over everything while it's on
+    // Set order (pathways step 4g) takes Enter and Escape over a path while it's on
     const sweeping = useMarcherOrderStore((s) => s.sweep !== null);
+    if (fieldPanelOpen) return <FieldPanelKeys />;
     if (sweeping) return <OrderSweepKeys />;
     if (pathOpen) return <PathPenKeys />;
     if (shapeToolOpen && !shapeHidden) return <ShapeToolKeys />;
@@ -77,4 +91,16 @@ export function EditorActionHandlers() {
             {shapeDiscarded && <DiscardedShapeKeys />}
         </>
     );
+}
+
+/** The Field panel's keys while it's open, and Edit lines' while that's on (#824) */
+function FieldPanelKeys() {
+    useFieldPanelActions();
+    const editingLines = useFieldEditModeStore((s) => s.lines);
+    return editingLines ? <FieldLineKeys /> : null;
+}
+
+function FieldLineKeys(): null {
+    useFieldLineActions();
+    return null;
 }

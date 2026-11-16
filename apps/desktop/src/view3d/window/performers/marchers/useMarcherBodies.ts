@@ -15,8 +15,11 @@ import {
     type HeightClass,
 } from "@/view3d/core/marchers/looks";
 import {
+    joinManifests,
     loadBodies,
     loadClassClips,
+    loadCrabClips,
+    loadCrabManifest,
     loadManifest,
     type LoadedBody,
 } from "./marcherAssets";
@@ -28,6 +31,56 @@ import {
     type StepOffFoot,
 } from "./marcherBodies";
 import { hornRowSpec } from "./hornRows";
+import { mirrorClip, shiftLoop, stillClip } from "./mirrorClip";
+
+/**
+ * Clips by name, with the ones a manifest marks `mirror_of` or `still_of`
+ * made the first time they're asked for: crab right's loops and halts are
+ * crab left's mirrored, the loops a count on (`shift`), so they ship once,
+ * and a stop-and-go's still count holds its stop's last pose.
+ */
+export class ClipSet extends Map<string, AnimationClip> {
+    private readonly mirrors = new Map<string, { of: string; shift: number }>();
+    private readonly stills = new Map<string, string>();
+
+    constructor(clips: Iterable<AnimationClip>, manifest: Manifest | null) {
+        super();
+        for (const c of clips) this.set(c.name, c);
+        const entries = manifest
+            ? Array.isArray(manifest)
+                ? manifest
+                : manifest.clips
+            : [];
+        for (const e of entries)
+            if (typeof e.mirror_of === "string")
+                this.mirrors.set(e.name, {
+                    of: e.mirror_of,
+                    shift: typeof e.shift === "number" ? e.shift : 0,
+                });
+            else if (typeof e.still_of === "string")
+                this.stills.set(e.name, e.still_of);
+    }
+
+    override get(name: string): AnimationClip | undefined {
+        const have = super.get(name);
+        if (have) return have;
+        const still = this.stills.get(name);
+        if (still !== undefined) {
+            const source = this.get(still);
+            if (!source) return undefined;
+            const clip = stillClip(source, name);
+            this.set(name, clip);
+            return clip;
+        }
+        const mirror = this.mirrors.get(name);
+        const source = mirror && super.get(mirror.of);
+        if (!mirror || !source) return undefined;
+        const mirrored = mirrorClip(source, name);
+        const clip = mirror.shift ? shiftLoop(mirrored, name) : mirrored;
+        this.set(name, clip);
+        return clip;
+    }
+}
 
 export interface MarcherAssets {
     bodies: Map<BodyType, LoadedBody>;
@@ -35,32 +88,45 @@ export interface MarcherAssets {
     /** Clips by name, for every class loaded so far. */
     clips: Map<string, AnimationClip>;
     classes: ReadonlySet<HeightClass>;
+    /** Which request these assets answer: the classes, and whether the crab clips came too. */
+    key: string;
 }
 
-/** The bodies, the manifest and the clips of `classes`, once loaded. */
+/**
+ * The bodies, the manifest and the clips of `classes`, once loaded. `crab`
+ * adds the crab step's clips, for a show with percussion.
+ */
 export function useMarcherAssets(
     classes: readonly HeightClass[],
+    crab = false,
 ): MarcherAssets | null {
-    const key = [...new Set(classes)].sort().join(",");
+    const classKey = [...new Set(classes)].sort().join(",");
+    const key = `${classKey}|${crab ? "crab" : ""}`;
     const [assets, setAssets] = useState<MarcherAssets | null>(null);
     useEffect(() => {
         let live = true;
-        const wanted = key ? (key.split(",").map(Number) as HeightClass[]) : [];
+        const wanted = classKey
+            ? (classKey.split(",").map(Number) as HeightClass[])
+            : [];
         Promise.all([
             loadBodies(),
             loadManifest(),
             Promise.all(wanted.map(loadClassClips)),
+            crab ? loadCrabManifest() : null,
+            crab ? Promise.all(wanted.map(loadCrabClips)) : [],
         ])
-            .then(([bodies, manifest, perClass]) => {
+            .then(([bodies, manifest, perClass, crabManifest, crabClips]) => {
                 if (!live) return;
-                const clips = new Map<string, AnimationClip>();
-                for (const list of perClass)
-                    for (const c of list) clips.set(c.name, c);
+                const clips = new ClipSet(
+                    [...perClass, ...crabClips].flat(),
+                    crabManifest,
+                );
                 setAssets({
                     bodies,
-                    manifest,
+                    manifest: joinManifests(manifest, crabManifest),
                     clips,
                     classes: new Set(wanted),
+                    key,
                 });
             })
             .catch((e: unknown) => {
@@ -70,10 +136,8 @@ export function useMarcherAssets(
         return () => {
             live = false;
         };
-    }, [key]);
-    return assets && [...assets.classes].sort().join(",") === key
-        ? assets
-        : null;
+    }, [key, classKey, crab]);
+    return assets?.key === key ? assets : null;
 }
 
 /** A clip of a height class by its base name, e.g. ("attention", 1.05). */

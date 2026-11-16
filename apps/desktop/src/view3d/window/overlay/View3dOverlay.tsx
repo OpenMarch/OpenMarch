@@ -16,8 +16,8 @@
  *
  * Keys: Space (Shift+Space from the playhead), Q and E (Shift for a beat,
  * Alt or Home/End for the ends), and
- * ] and [ held for double or half speed, run the editor's playback actions, F toggles fullscreen and C the crowd. Esc
- * closes the settings panel, then the Cameras panel, then leaves fullscreen. The camera rig (P3.2)
+ * ] and [ held for double or half speed, run the editor's playback actions, F toggles fullscreen, C the crowd and S the
+ * paused pose. Esc closes the settings panel, then the Cameras panel, then leaves fullscreen. The camera rig (P3.2)
  * owns 1–9, and Esc for pick-a-seat.
  */
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +29,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { useCameraStore } from "../camera/cameraStore";
+import { useView3dSceneStore } from "../sceneStore";
 import { CameraBar } from "./CameraBar";
 import { CamerasPanel } from "./CamerasPanel";
 import { Panel, ToggleButton } from "./Panel";
@@ -38,7 +39,7 @@ import { AutoOpenQuestion } from "./AutoOpenQuestion";
 import { QualityNotice } from "./QualityNotice";
 import { Readout } from "./Readout";
 import { SettingsPanel } from "./SettingsPanel";
-import { TransportBar } from "./TransportBar";
+import { PAUSED_POSE_KEY, TransportBar } from "./TransportBar";
 import { useFullscreen, usePointerIdle } from "./useFullscreen";
 import { useVenueRequest } from "./VenueControls";
 
@@ -104,8 +105,8 @@ function usePlaybackShortcuts() {
 }
 
 /**
- * F toggles fullscreen and C the crowd. Esc closes the settings panel, else
- * the Cameras panel, else leaves fullscreen, unless the rig used it to
+ * F toggles fullscreen, C the crowd and S the paused pose (closed or the
+ * actual step). Esc closes the settings panel, else the Cameras panel, else leaves fullscreen, unless the rig used it to
  * cancel pick-a-seat.
  */
 function useOverlayShortcuts(
@@ -156,6 +157,12 @@ function useOverlayShortcuts(
                     kind: "crowd",
                     crowd: !current.settings.crowd,
                 });
+            } else if (key === PAUSED_POSE_KEY.toLowerCase()) {
+                event.preventDefault();
+                const scene = useView3dSceneStore.getState();
+                scene.setPausedPose(
+                    scene.pausedPose === "step" ? "closed" : "step",
+                );
             } else if (
                 key === "escape" &&
                 !event.defaultPrevented &&

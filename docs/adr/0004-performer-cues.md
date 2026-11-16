@@ -8,10 +8,16 @@
 - Convergence (2026-11-03): the compiler (`packages/core/src/cues`) shipped
   and drives the 3D View's marcher motion with show defaults only, including
   automatic mark time while the band moves (a Feet show default,
-  `CueShowDefaults.holdWhileBandMoves`). Cue storage (D-1 to D-5's tables),
+  `CueShowDefaults.holdWhileBandMoves`; since ADR 0015 D-5 it is opt-in:
+  holds stand unless the show setting or the hold's own style asks for mark
+  time). Cue storage (D-1 to D-5's tables),
   Visuals mode and item placement (holders, artwork slots, put-down) are
   parked: the code is on branch `archive/pre-convergence`, and their
   migrations stay until the fork's migrations are collapsed.
+- Superseded in part (2026-11-15) by [ADR 0015](0015-cue-model.md): D-1 to
+  D-3, the channels, phrases, take-overs and targets give way to one parameter
+  per cue type, cues that store their performers, and hold style on the hold
+  with Stand as the show default. D-6, D-7 and the beat deletion rule stand.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only, and
@@ -283,7 +289,9 @@ Carry, Silk and Uniform values name Library items (a model, an Artwork, a
 Uniform) at an exact Version, embedded in the show (ADR 0010 D-12), as
 `library:<uuid>@<version hash>`; Carry also takes `none` [06, 26.10, 26.14].
 
-- Save never prunes a Library item a cue names [06].
+- Save never prunes a Library item a cue names [06]. Amended 2026-11-15
+  (ADR 0010, fork #996): nothing prunes the show's assets at all; "Remove
+  unused…" removes only assets nothing names.
 - While a cue uses a Library item, the show's copy can't be deleted. Deleting it
   offers "Replace with…" and lists the cues that use it [26.10].
 
@@ -530,3 +538,50 @@ coordinates are the same place in the 3D View.
 - Prune tests: a phrase asset and a Library Version a cue references survive.
 - E2E or a recorded check: a stored cue drives the 3D window, and deleting
   its beat moves it, with the notice.
+
+## Amendment 2026-11-11: performer defaults in Show settings
+
+### Context
+
+D-4's `performerDefaults` workspace setting (step-off foot and dot mode) and
+its per-set table were parked with the cue tables and dropped by ADR 0011.
+The owner wants the show-wide defaults back now, with dot mode and the new
+direction-change style among them, and wants per-count changes to come from
+cues rather than a per-page setting (owner, 2026-11-11): every visual has a
+show default in settings, and a cue changes it from a count. Cues stay out
+of this change until they are tested more.
+
+### Decision
+
+- The workspace settings get `performerDefaults` back, optional and with
+  every field optional: `stepOffFoot` (`left`, `right`), `dotMode` (`foot`,
+  `body`), `directionChange` (`corner`, `direct`) and `holdWhileBandMoves`
+  (`markTime`, `highMarkTime`, `stand`), plus `percussionTravel` (`crab`,
+  `slide`), added with the crab step. Unset fields take the built-in
+  defaults: left, foot, corner, mark time, crab
+  (`src/view3d/core/performerDefaults.ts`; the hold default is `stand` since
+  ADR 0015 D-5, fork #775). An unknown value reads as unset
+  instead of failing the whole settings object.
+- Show settings has a "Performer defaults" section for them.
+- The 3D View compiles with the step-off foot and the hold default as the
+  cue compile's `showDefaults`, and plans every marcher with the dot mode
+  and direction-change style.
+- No per-set table. D-4's `page_performer_settings` stays dropped; a set's
+  own dot mode, like any other per-count change, will be a cue setting once
+  cues are stored again.
+
+### Consequences
+
+- Fork files saved before ADR 0011 may still hold `performerDefaults` with
+  `stepOffFoot` and `dotMode`; they read with the same meaning.
+- `direct` is what the planner already played. `corner` needs om-pose's
+  direction-change clips; until they are packed, every change plays the
+  crossfade whichever is chosen.
+- No migration.
+
+### Verification
+
+- `src/view3d/core/__test__/performerDefaults.test.ts`: the built-in
+  defaults, saved fields, and unknown values.
+- `e2e/browser/tests/performer-defaults.spec.mts`: the section in Show
+  settings saves what is chosen.

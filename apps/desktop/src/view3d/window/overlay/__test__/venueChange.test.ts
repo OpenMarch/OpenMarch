@@ -100,6 +100,39 @@ describe("uniforms change", () => {
     });
 });
 
+describe("the winds' settings", () => {
+    it("sets the brass finish and the tubas' horn, keeping the rest", () => {
+        const silver = applyVenueChange(hsDusk, {
+            kind: "brassFinish",
+            brassFinish: "silver",
+        });
+        expect(silver).toEqual({ ...hsDusk, brassFinish: "silver" });
+        const sousaphones = applyVenueChange(silver, {
+            kind: "tuba",
+            tuba: "sousaphone",
+        });
+        expect(sousaphones).toEqual({
+            ...hsDusk,
+            brassFinish: "silver",
+            tuba: "sousaphone",
+        });
+    });
+
+    it("counts a change from the defaults, and only that", () => {
+        // absent means lacquer and marching tubas
+        expect(venueChanged(hsDusk, { ...hsDusk, brassFinish: "brass" })).toBe(
+            false,
+        );
+        expect(venueChanged(hsDusk, { ...hsDusk, tuba: "contra" })).toBe(false);
+        expect(venueChanged(hsDusk, { ...hsDusk, brassFinish: "silver" })).toBe(
+            true,
+        );
+        expect(venueChanged(hsDusk, { ...hsDusk, tuba: "sousaphone" })).toBe(
+            true,
+        );
+    });
+});
+
 describe("venueChanged", () => {
     it("compares kit, lighting, crowd, uniforms and params", () => {
         expect(venueChanged(hsDusk, { ...hsDusk })).toBe(false);

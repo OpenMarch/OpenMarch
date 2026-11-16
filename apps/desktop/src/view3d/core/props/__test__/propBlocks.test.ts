@@ -246,6 +246,22 @@ describe("placePropBlocks", () => {
         expect([...frame.colors[0]]).toEqual([0.5, 0.5, 0.5, 1, 0, 0]);
     });
 
+    it("raises each block onto the platform under it (liftOf)", () => {
+        const frame = createPropBlockFrame(keys, 2);
+        placePropBlocks(
+            tracks,
+            5,
+            at(0, 0),
+            frame,
+            cachedShapeKey(),
+            0.01,
+            (id) => (id === 2 ? 0.6 : 0),
+        );
+        // Translation y is the 14th float
+        expect(frame.matrices[keys.indexOf("rectangle")][13]).toBeCloseTo(0.01);
+        expect(frame.matrices[keys.indexOf("circle")][13]).toBeCloseTo(0.61);
+    });
+
     it("skips a prop without a position", () => {
         const frame = createPropBlockFrame(keys, 2);
         placePropBlocks(tracks, 5, () => false, frame, cachedShapeKey());

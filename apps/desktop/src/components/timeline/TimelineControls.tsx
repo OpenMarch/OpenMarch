@@ -144,7 +144,7 @@ export function TimelineSoundButton() {
                     type="button"
                     data-testid="timeline-sound"
                     className={clsx(
-                        "rounded-4 enabled:hover:bg-fg-2 focus-visible:ring-accent relative flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
+                        "rounded-4 enabled:hover:bg-fg-2 focus-visible:ring-accent touch:size-44 relative flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
                         silent
                             ? "text-red"
                             : "text-text enabled:hover:text-accent",
@@ -161,7 +161,7 @@ export function TimelineSoundButton() {
             <Popover.Portal>
                 <Popover.Content
                     side="top"
-                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-50 flex w-232 flex-col gap-10 border px-16 py-12"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 touch:z-[100] z-50 flex w-232 flex-col gap-10 border px-16 py-12"
                 >
                     <div className="flex items-center gap-8">
                         <button
@@ -239,7 +239,7 @@ export function TimelineCompactButton() {
             type="button"
             data-testid="timeline-compact"
             className={clsx(
-                "rounded-4 enabled:hover:bg-fg-2 focus-visible:ring-accent flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
+                "rounded-4 enabled:hover:bg-fg-2 focus-visible:ring-accent touch:size-44 flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
                 compact
                     ? "text-accent bg-accent/10"
                     : "text-text enabled:hover:text-accent",

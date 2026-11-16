@@ -1,4 +1,5 @@
-import type { FieldProperties, RgbaColor } from "@openmarch/core";
+import { FieldProperties, type RgbaColor } from "@openmarch/core";
+import type { FieldRect } from "@/field/editor/selectionArea";
 import {
     BASELINE_BELOW_CENTER,
     planField2d,
@@ -6,14 +7,15 @@ import {
     type FieldPlanOptions,
     type FieldPlanText,
 } from "@/field/fieldPlan";
+import { fieldShapeMesh, type FieldShapeMesh } from "./fieldShapes";
 
 /**
  * The field's rectangles and text in field units.
  *
  * The layout is `planField2d` (`src/field/fieldPlan.ts`), the one the drill
  * chart export draws. This module only turns the plan's lines and border into
- * rectangles for one instanced draw, and its text into SDF labels. Change
- * what the field shows there, once, for both.
+ * rectangles for one instanced draw, its text into SDF labels and its filled
+ * shapes into triangles. Change what the field shows there, once, for both.
  */
 
 export type FieldRects = {
@@ -49,6 +51,8 @@ export type FieldGeometry = {
     /** The lines and border, over the field image. */
     rects: FieldRects;
     texts: FieldText[];
+    /** The painted yard numbers, triangulated, over the lines. */
+    shapes: FieldShapeMesh;
 };
 
 type Rect = [minX: number, minY: number, maxX: number, maxY: number];
@@ -60,12 +64,28 @@ const ALIGN: Record<FieldPlanText["anchor"], FieldText["align"]> = {
 };
 
 /**
+ * A pit area's tone: the field's background with this much of its line color over it, a flat
+ * surface just off the field's own (owner pick 2026-11-15, "flat tone")
+ */
+export const PIT_AREA_INK_ALPHA = 0.07;
+
+export type FieldGeometryOptions = FieldPlanOptions & {
+    /**
+     * The pit areas beside the field (`pitAreasOf`): in front of the front sideline and behind the
+     * back sideline, when there are any
+     */
+    strips?: readonly FieldRect[];
+};
+
+/**
  * Plans the field of `fieldProperties` with the user's line settings. The
- * field image is its own layer (`planFieldImage`).
+ * field image is its own layer (`planFieldImage`). The pit areas beside the
+ * field, when there are any, are flat tones with no lines (`pitAreaFills`); the
+ * yard-line labels stay at the sidelines, over them (owner, 2026-11-15).
  */
 export function fieldGeometry(
     fieldProperties: FieldProperties,
-    options: FieldPlanOptions = { gridLines: true, halfLines: true },
+    options: FieldGeometryOptions = { gridLines: true, halfLines: true },
 ): FieldGeometry {
     const plan = planField2d(fieldProperties, options);
 
@@ -104,6 +124,7 @@ export function fieldGeometry(
         [x1 - sw, y0 + inset, x1, y1 - inset],
     ];
     for (const rect of sides) rects.push({ rect, color: border.color });
+    const strips = options.strips ?? [];
 
     const texts = plan.texts.map(
         (t): FieldText => ({
@@ -120,13 +141,39 @@ export function fieldGeometry(
         }),
     );
 
+    const background: { rect: Rect; color: RgbaColor }[] = [
+        { rect: [0, 0, plan.width, plan.height], color: plan.background },
+    ];
+    for (const strip of strips)
+        background.push(...pitAreaFills(strip, fieldProperties));
     return {
-        background: packRects([
-            { rect: [0, 0, plan.width, plan.height], color: plan.background },
-        ]),
+        background: packRects(background),
         rects: packRects(rects),
         texts,
+        shapes: fieldShapeMesh(plan.shapes),
     };
+}
+
+/**
+ * A pit area's fill: the field's background, opaque so the equipment's lines (in the field's line
+ * color) read on it whatever the app's theme, with a little of the line color over it.
+ */
+function pitAreaFills(
+    area: FieldRect,
+    fieldProperties: FieldProperties,
+): { rect: Rect; color: RgbaColor }[] {
+    const { background, primaryStroke } = fieldProperties.theme;
+    const rect: Rect = [area.left, area.top, area.right, area.bottom];
+    return [
+        { rect, color: { ...background, a: 1 } },
+        {
+            rect,
+            color: {
+                ...primaryStroke,
+                a: primaryStroke.a * PIT_AREA_INK_ALPHA,
+            },
+        },
+    ];
 }
 
 function packRects(rects: { rect: Rect; color: RgbaColor }[]): FieldRects {

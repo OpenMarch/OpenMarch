@@ -61,7 +61,7 @@ describe("marcherPageStates", () => {
 });
 
 describe("holdEntryStates", () => {
-    it("all Held: Hold from previous page is checked; Define as shown changes nobody", () => {
+    it("all Held: Hold from last keyframe is checked; Define as shown changes nobody", () => {
         const entries = holdEntryStates(
             page3({ follows: [1, 2], selected: 2 }),
             [mark(1, 9, 17), mark(2, 1, 17)],

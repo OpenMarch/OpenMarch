@@ -364,7 +364,7 @@ export const splitPage = (
     | { newPageArgs: NewPageArgs; modifyPageRequest?: ModifyPagesRequest }
     | undefined => {
     if (page.beats.length <= 1) {
-        conToastError(tolgee.t("pages.splitTooShort"), page);
+        conToastError(tolgee.t("pages.splitNeedsTwoCounts"), page);
         return;
     }
 
@@ -372,7 +372,7 @@ export const splitPage = (
     const newStartBeat = page.beats[beatIndex];
 
     if (!newStartBeat) {
-        conToastError(tolgee.t("pages.splitNoStartBeat"), {
+        conToastError(tolgee.t("inspector.page.split.error"), {
             page,
             newBeatIndex: Math.floor(page.beats.length / 2),
         });

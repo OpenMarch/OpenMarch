@@ -105,14 +105,14 @@ describe("the app build", () => {
         expect(shadows).toEqual([]);
     });
 
-    it("builds the convert-on-open worker next to the main process", () => {
+    it("builds the convert-on-open and report-copy workers next to the main process", () => {
         const config = fs.readFileSync(
             path.join(root, "vite.config.mts"),
             "utf-8",
         );
-        expect(config).toContain(
-            'entry: "electron/database/convertOnOpenWorker.ts"',
-        );
+        // One worker entry list; reports.ts starts ../worker/reportCopyWorker.js
+        expect(config).toContain('"electron/database/convertOnOpenWorker.ts"');
+        expect(config).toContain('"electron/database/reportCopyWorker.ts"');
         expect(config).toContain('outDir: "dist-electron/worker"');
         expect(
             defaultConvertWorkerPath(path.join(root, "dist-electron/main")),

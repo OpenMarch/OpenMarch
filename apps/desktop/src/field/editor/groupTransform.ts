@@ -67,6 +67,8 @@ export type SelectionFrame = {
     pad: number;
     angle: number;
     covers?: FieldRect | null;
+    /** What `angle` turns the box around: its center when omitted (a pivot, `selectionPivot.ts`). */
+    around?: FieldPoint;
 };
 
 /** The frame's own edges, before it's turned: `box` and `pad`, grown to take in `covers`. */
@@ -92,11 +94,12 @@ export function handlePoints(
     zoom: number,
 ): Record<HandleId, FieldPoint> {
     const { left, right, top, bottom } = frameEdges(frame);
-    // The middles sit on the middle of the frame's sides; it turns about the marchers' center
+    // The middles sit on the middle of the frame's sides; it turns about the pivot, the marchers'
+    // center unless `around` says otherwise
     const middle = { x: (left + right) / 2, y: (top + bottom) / 2 };
-    const center = centerOf(frame.box);
+    const pivot = frame.around ?? centerOf(frame.box);
     const turn = (x: number, y: number) =>
-        rotatePoint({ x, y }, center, frame.angle);
+        rotatePoint({ x, y }, pivot, frame.angle);
     return {
         nw: turn(left, top),
         n: turn(middle.x, top),
@@ -111,16 +114,18 @@ export function handlePoints(
 }
 
 /**
- * The handle a press at `point` lands on: inside its {@link HANDLE_SIZE}
- * square on screen, the nearest when squares overlap (a small box). Null
- * when it misses them all.
+ * The handle a press at `point` lands on: within `reachPx` of it on screen
+ * along each axis (a mouse's is its {@link HANDLE_SIZE} square; a pen or
+ * finger reaches further, `thresholdsFor(kind).handleReach`), the nearest
+ * when they overlap (a small box). Null when it misses them all.
  */
 export function handleAt(
     handles: Record<HandleId, FieldPoint>,
     point: FieldPoint,
     zoom: number,
+    reachPx: number = HANDLE_SIZE / 2,
 ): HandleId | null {
-    const reach = HANDLE_SIZE / 2 / zoom;
+    const reach = reachPx / zoom;
     let found: HandleId | null = null;
     let nearest = Infinity;
     for (const [id, at] of Object.entries(handles) as [
@@ -137,6 +142,63 @@ export function handleAt(
         }
     }
     return found;
+}
+
+/**
+ * Whether a pen or finger press within a handle's reach takes it, or moves the selection instead
+ * (tablet 1.4). A pen's or finger's reach is wider than the handle drawn, so on a narrow selection
+ * (two marchers in a row) it would cover nearly all of it, and a finger meant to move the
+ * selection would scale it. So the handle wins only when:
+ *
+ * - no marcher the press lands on is nearer than the handle (`marcherDistance`, field units;
+ *   Infinity when it lands on none), and
+ * - the press is outside the box drawn, or on the handle as drawn (its {@link HANDLE_SIZE}
+ *   square). Inside the box, the reach beyond the drawn handle is the move's.
+ *
+ * The rotate handle is outside the box, so only the first rule applies to it. A mouse keeps its
+ * own rule: within the drawn square, the handle always wins.
+ */
+export function wideHandleWins({
+    frame,
+    handle,
+    handles,
+    at,
+    zoom,
+    marcherDistance,
+}: {
+    frame: SelectionFrame;
+    handle: HandleId;
+    handles: Record<HandleId, FieldPoint>;
+    at: FieldPoint;
+    zoom: number;
+    marcherDistance: number;
+}): boolean {
+    const point = handles[handle];
+    const dx = Math.abs(at.x - point.x);
+    const dy = Math.abs(at.y - point.y);
+    if (marcherDistance < Math.hypot(dx, dy)) return false;
+    const drawn = HANDLE_SIZE / 2 / zoom;
+    if (dx <= drawn && dy <= drawn) return true;
+    return !insideFrame(frame, at);
+}
+
+/**
+ * Whether `point` is inside the selection box as drawn: around its marchers, `pad` out, grown to
+ * take in `covers`, turned.
+ */
+export function insideFrame(frame: SelectionFrame, point: FieldPoint): boolean {
+    const { left, right, top, bottom } = frameEdges(frame);
+    const local = rotatePoint(
+        point,
+        frame.around ?? centerOf(frame.box),
+        -frame.angle,
+    );
+    return (
+        local.x >= left &&
+        local.x <= right &&
+        local.y >= top &&
+        local.y <= bottom
+    );
 }
 
 /** The cursor over a handle: a resize arrow along its axis, a crosshair to rotate. */

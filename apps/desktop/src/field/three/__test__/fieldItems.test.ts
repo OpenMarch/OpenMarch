@@ -145,3 +145,44 @@ describe("FieldItems", () => {
         expect(items.outlines()[0].color).toEqual(red);
     });
 });
+
+describe("FieldItems for the front ensemble", () => {
+    it("draws a locked pit instrument with its lock and its playing spot on the field side", () => {
+        const marchers = new FieldMarchers(positions);
+        const items = new FieldItems(marchers);
+        items.set({
+            itemIds: new Set([2]),
+            changes: new Map([[2, [change(0)]]]),
+            hidden: new Set(),
+            locked: new Set([2]),
+            models: new Map([[2, "pit/marimba-5.0"]]),
+        });
+        marchers.fill(1);
+        const [outline] = items.outlines();
+        expect(items.isLocked(2)).toBe(true);
+        expect(items.isLocked(1)).toBe(false);
+        expect(outline.locked).toBe(true);
+        // Centered, toward the field (up the screen) from the item at (100, 50)
+        expect(outline.playingSpot!.x).toBeCloseTo(100);
+        expect(outline.playingSpot!.y).toBeLessThan(50 - PIXELS_PER_METER / 2);
+    });
+
+    it("gives no playing spot to an item with no model, or a speaker", () => {
+        for (const models of [
+            new Map<number, string>(),
+            new Map([[2, "pit/speaker-tall"]]),
+        ]) {
+            const marchers = new FieldMarchers(positions);
+            const items = new FieldItems(marchers);
+            items.set({
+                itemIds: new Set([2]),
+                changes: new Map([[2, [change(0)]]]),
+                hidden: new Set(),
+                models,
+            });
+            marchers.fill(1);
+            expect(items.outlines()[0].playingSpot).toBeNull();
+            expect(items.outlines()[0].locked).toBe(false);
+        }
+    });
+});

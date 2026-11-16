@@ -32,7 +32,11 @@ import type {
     SilkSpec,
 } from "./model";
 import { hold } from "./holds";
-import type { SilkCutId } from "./silkWave";
+import {
+    DEFAULT_SILK_SHAPE,
+    silkShape,
+    type SilkShapeId,
+} from "../sizes/silkShapes";
 
 /**
  * Default colors by part: chrome, black, a brass hilt, the white of a drill
@@ -439,7 +443,7 @@ const SILK_BASIS: SilkSpec["basis"] = [1, 0, 0, 0, 0, -1, 0, 1, 0];
 interface SilkSize {
     fly: number;
     header: number;
-    cut?: SilkCutId;
+    cut?: SilkShapeId;
 }
 
 /** The 6 ft flag's silk: 36 × 54 in. */
@@ -555,10 +559,23 @@ function leftSwingFlag(): { m: Mat3; t: Vec3 } {
     return { m, t };
 }
 
-/** The 6 ft flag: a 1.83 m pole (butt below the hand) and a 36 by 54 in silk. */
-function flag6(s: SegmentCounts): Omit<InstrumentModel, "id"> {
+/**
+ * The 6 ft flag's silk in a show's shape (fork #973): the shape's catalog
+ * size and outline. The default, the plain rectangle, stays 36 by 54 in.
+ */
+export function flag6Silk(shape: SilkShapeId = DEFAULT_SILK_SHAPE): SilkSize {
+    if (shape === DEFAULT_SILK_SHAPE) return FLAG6_SILK;
+    const { header, fly } = silkShape(shape);
+    return { fly: fly.m, header: header.m, cut: shape };
+}
+
+/** The 6 ft flag: a 1.83 m pole (butt below the hand) and its silk, 36 by 54 in unless the show picks another shape. */
+function flag6(
+    s: SegmentCounts,
+    options: ModelOptions,
+): Omit<InstrumentModel, "id"> {
     return {
-        ...flag(-0.6, 1.23, 0.012, FLAG6_SILK, s),
+        ...flag(-0.6, 1.23, 0.012, flag6Silk(options.silkShape), s),
         leftGrip: [0, 0, -0.25],
         mouthpiece: [0, 0, 0],
     };
@@ -587,7 +604,7 @@ export const SWING_FLAG = {
 export const SWING_SILK: SilkSize = {
     fly: SWING_FLAG.fly,
     header: SWING_FLAG.header,
-    cut: "silk-swing-44x66",
+    cut: "swing",
 };
 
 /**
@@ -916,7 +933,7 @@ function sabre(s: SegmentCounts): Omit<InstrumentModel, "id"> {
 /** One builder per id: a new id without one is a compile error. */
 const BUILDERS: Record<
     GuardModelId,
-    (s: SegmentCounts) => Omit<InstrumentModel, "id">
+    (s: SegmentCounts, options: ModelOptions) => Omit<InstrumentModel, "id">
 > = { flag6, swingFlag, doubleSwingFlag, rifle, sabre };
 
 export function guardModel(
@@ -925,7 +942,7 @@ export function guardModel(
     options: ModelOptions = {},
 ): InstrumentModel {
     const s = SEGMENTS[detail];
-    const model = BUILDERS[id](s);
+    const model = BUILDERS[id](s, options);
     return {
         id,
         options,

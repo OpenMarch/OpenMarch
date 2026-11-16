@@ -7,6 +7,10 @@ import {
     removeDeletedMarchersFromTimelinesInTransaction,
 } from "./timelineMarchers";
 import { deleteEmptyRecipes, hasShapeRecipes } from "./shapeRecipes";
+import {
+    cueIdsOfMarchersInTransaction,
+    deleteCuesLeftEmptyInTransaction,
+} from "./cues";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -251,10 +255,17 @@ export async function deleteMarchers({
                 tx,
                 marcherIds: [...marcherIds],
             });
+            // The cues these marchers are in: one left with no performers goes too, in
+            // the same edit (ADR 0004 D-2)
+            const cueIds = await cueIdsOfMarchersInTransaction({
+                tx,
+                marcherIds,
+            });
             const deleted = await deleteMarchersInTransaction({
                 marcherIds,
                 tx,
             });
+            await deleteCuesLeftEmptyInTransaction({ tx, cueIds });
             // A shape (ADR 0006) whose last marcher went goes too; a database from before
             // shapes has none
             if (await hasShapeRecipes(tx)) await deleteEmptyRecipes(tx);

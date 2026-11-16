@@ -266,7 +266,8 @@ approved reference, converted to meters (1 ft = 0.3048 m).
   - Motion (`core/marchers/planner.ts`, `countClock.ts`): per count, not per
     page. A count with travel steps along that count's vector (family, leg
     turn and size blend from om-pose's `step-blend.js`); a count without is
-    mark time while the band moves and attention while it holds. Step-offs,
+    attention, or mark time where the hold's style or the show setting asks
+    for it (ADR 0015 D-5). Step-offs,
     loops, halts by parity, change clips (or a cut) between moves, and a
     landing correction that puts the body on its dot at every rest. The
     upper body always faces the front sideline.

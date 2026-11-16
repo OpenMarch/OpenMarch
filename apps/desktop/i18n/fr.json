@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Impossible de reprendre les coordonnées des marcheurs de la page suivante : il n'y a pas de page suivante",
             "noPreviousPage": "Impossible de reprendre les coordonnées des marcheurs de la page précédente : il n'y a pas de page précédente",
-            "setAllToNext": "Copier les positions de la page suivante (tous les marcheurs)",
-            "setAllToNextSuccess": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page suivante ({nextPage})} other {Les # marcheurs de la page {currentPage} ont repris les coordonnées de la page suivante ({nextPage})}}",
-            "setSelectedToNext": "Copier les positions de la page suivante (sélection)",
-            "setSelectedToNextSuccess": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page suivante ({nextPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page suivante ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {Les # marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "Impossible d’afficher le terrain",
             "unavailable.web": "Le rendu graphique WebGL est désactivé ou bloqué dans ce navigateur. Activez l’accélération graphique (dans Chrome ou Edge : Paramètres, Système, « Utiliser l’accélération graphique si disponible »), redémarrez le navigateur, puis rechargez cette page. Votre spectacle ne risque rien."
         },
-        "title": "Terrain",
         "errors": {
             "noWebGL": "WebGL n’est pas disponible",
             "contextLost": "Le contexte WebGL du terrain a été perdu, la vidéo ne peut donc pas être générée. Relancez l’exportation.",
@@ -514,43 +509,17 @@
         "applyFieldTypeWarning": "Les marcheurs ne seront pas déplacés selon la taille du nouveau type de terrain, ils resteront à leur place sur le canevas. Vous pourrez toujours revenir au type de terrain précédent.",
         "buttons": {
             "importImage": "Importer une image",
-            "newXCheckpoint": "Nouveau repère X",
-            "newYCheckpoint": "Nouveau repère Y",
             "resetTheme": "Rétablir le thème par défaut",
             "uploadFloor": "Importer un sol…",
             "removeFloor": "Supprimer le sol"
         },
         "checkpoint": {
             "created": "Repère {axis} à {steps} pas créé",
-            "delete": "Supprimer",
-            "deleted": "Repère {axis} à {steps} pas supprimé – « {name} »",
-            "deleteTooltip": "Supprimer ce repère du terrain",
-            "fieldLabel": "Étiquette sur le terrain",
-            "fieldLabelTooltip": "L’étiquette affichée sur le terrain (par exemple, les numéros des lignes de yard)",
-            "minimumRequired": "Au moins 2 repères {axis} sont requis",
-            "name": "Nom",
-            "nameTooltip": "Nommez votre repère comme vous le souhaitez. Le nom sert uniquement à savoir quel repère vous sélectionnez.",
-            "newXCheckpointName": "Nouveau repère X",
-            "newYCheckpointName": "Nouveau repère Y",
-            "shortName": "Nom court",
-            "shortNameTooltip": "Nom principal du repère. (Ex. : « Ligne de yard 45 – Côté 1 »)",
-            "stepsFromCenter": "Pas depuis le centre",
-            "stepsFromFront": "Pas depuis l’avant",
-            "stepsFromFrontTooltip": "Nombre de pas entre ce repère et l’avant du terrain. Une valeur négative va vers l’arrière.",
-            "useAsReference": "Utiliser comme référence",
-            "useAsReferenceTooltip": "Indique si ce repère sert de référence pour les coordonnées.",
-            "visible": "Visible",
-            "visibleTooltip": "Indique si ce repère est visible sur le terrain",
-            "stepsFromCenterHint": "Nombre de pas entre ce repère et le centre du terrain. Une valeur négative va vers la gauche, vu depuis le public."
+            "minimumRequired": "Au moins 2 repères {axis} sont requis"
         },
-        "customField": "Terrain personnalisé",
         "customFieldDocs": "Voir la doc",
         "customFieldName": "Personnalisé",
-        "customization": "Personnalisation",
-        "customize": "Personnaliser",
         "errors": {
-            "invalidColor": "Couleur non valide",
-            "noPropertiesToLoad": "Aucune propriété de terrain à charger ! Cela ne devrait jamais arriver, veuillez contacter l’assistance.",
             "notDefined": "FieldProperties n’est pas défini. Cela ne devrait jamais arriver, veuillez contacter l’assistance.",
             "invalidJson": "Fichier JSON non valide.\n\nVérifiez que le fichier respecte la syntaxe JSON.",
             "invalidFile": "Fichier de propriétés de terrain non valide.\n\n{details}\n\nVérifiez que le fichier contient tous les champs requis avec des valeurs correctes.",
@@ -566,24 +535,19 @@
         "fieldType": {
             "label": "Type de terrain"
         },
-        "general": "Général",
         "labels": {
             "background": "Arrière-plan",
             "backgroundImageOpacity": "Opacité de l’image d’arrière-plan",
-            "backgroundImageRatio": "Proportions de l’image d’arrière-plan",
             "bottom": "Bas",
-            "conformingMethod": "Méthode d’ajustement",
             "conformMethod": "Méthode d’ajustement",
             "directorsLeft": "Gauche du directeur",
             "directorsRight": "Droite du directeur",
             "externalLabels": "Étiquettes externes",
             "fieldLabels": "Étiquettes du terrain",
             "fieldName": "Nom du terrain",
-            "fieldRatio": "Proportions du terrain",
             "gridLines": "Lignes de grille",
             "halfLineXInterval": "Intervalle des demi-lignes X",
             "halfLineYInterval": "Intervalle des demi-lignes Y",
-            "height": "Hauteur",
             "left": "Gauche",
             "leftAbbreviation": "Abréviation de gauche",
             "marcherFill": "Remplissage des marcheurs",
@@ -599,26 +563,14 @@
             "shapes": "Formes",
             "shapeType": "Type de forme",
             "showBackgroundImage": "Afficher l'image d'arrière-plan",
-            "stepsFromFrontToAwayLabelBottom": "Pas de l'avant au bas des numéros arrière",
-            "stepsFromFrontToAwayLabelTop": "Pas de l'avant au haut des numéros arrière",
-            "stepsFromFrontToHomeLabel": "Pas de l'avant au bas des numéros avant",
-            "stepsFromFrontToHomeLabelTop": "Pas de l'avant au haut des numéros avant",
             "stepSize": "Longueur de pas",
             "stepSizeWarningThreshold": "Seuil d'alerte de longueur de pas",
             "temporaryPath": "Trajet temporaire",
-            "top": "Haut",
-            "useHashes": "Utiliser les marques de hash",
-            "width": "Largeur",
-            "widthHeight": "l/h",
-            "noBackgroundImage": "N/D",
-            "stepSizeWarningRatio": "Seuil d'alerte de longueur de pas ({steps} pour 5)"
+            "top": "Haut"
         },
         "messages": {
-            "fieldRatio": "{ratio} ou {decimal}",
-            "measurementModificationNote": "Ces valeurs peuvent être modifiées en ajustant les coordonnées X et Y, la longueur de pas et l'image d'arrière-plan",
             "noFloor": "Aucun sol",
-            "floorUnnamed": "Sol",
-            "refreshAfterImporting": "Actualiser après l'importation [Ctrl + R]"
+            "floorUnnamed": "Sol"
         },
         "options": {
             "fill": "Remplir",
@@ -627,40 +579,16 @@
             "metric": "Métrique"
         },
         "sections": {
-            "externalLabels": "Étiquettes externes",
-            "fieldLabels": "Étiquettes du terrain",
-            "general": "Général",
-            "imageRendering": "Rendu de l'image",
-            "measurements": "Mesures",
-            "sideDescriptions": "Noms des côtés",
-            "theme": "Thème",
-            "xCheckpoints": "Repères X",
-            "yCheckpoints": "Repères Y"
-        },
-        "tabs": {
-            "checkpoints": "Repères",
-            "general": "Général",
-            "image": "Image",
-            "theme": "Thème"
-        },
-        "themeSubsections": {
-            "grid": "Grille",
-            "labels": "Étiquettes",
-            "marchers": "Marcheurs",
-            "pathways": "Trajets"
+            "sideDescriptions": "Noms des côtés"
         },
         "tooltips": {
-            "importImage": "Importer une image à afficher sur le champ",
             "conformMethod": "Ajuster l'image d'arrière-plan pour qu'elle tienne entièrement dans le terrain, ou lui faire remplir le terrain. Les proportions de l'image sont toujours conservées",
             "directorsLeft": "Par ex. « Côté 1 », « Gauche public » ou « Côté jardin »",
             "directorsRight": "Par ex. « Côté 2 », « Droite public » ou « Côté cour »",
-            "fieldName": "Le nom ou le titre du modèle de terrain",
             "halfLineXInterval": "L'intervalle auquel les demi-lignes apparaissent dans l'interface sur l'axe X, à partir du centre du terrain. Laissez vide pour ne pas afficher de demi-lignes sur l'axe X. C'est purement esthétique et cela n'affecte en rien les coordonnées",
             "halfLineYInterval": "L'intervalle auquel les demi-lignes apparaissent dans l'interface sur l'axe Y, à partir de l'avant du terrain. Laissez vide pour ne pas afficher de demi-lignes sur l'axe Y. C'est purement esthétique et cela n'affecte en rien les coordonnées",
             "leftAbbreviation": "Par ex. « C1 », « GP » ou « CJ » (pour « Côté 1 », « Gauche public » ou « Côté jardin »)",
-            "measurementSystem": "L'unité de mesure utilisée pour définir la longueur de pas. Vous pouvez en changer à tout moment",
             "resetTheme": "Rétablir les valeurs par défaut du thème",
-            "resetToDefault": "Rétablir la valeur par défaut",
             "rightAbbreviation": "Par ex. « C2 », « DP » ou « CC » (pour « Côté 2 », « Droite public » ou « Côté cour »)",
             "stepsFromFrontToAwayLabelBottom": "Nombre de pas entre la ligne de touche avant et l'extérieur du numéro arrière (côté ligne de touche arrière)",
             "stepsFromFrontToAwayLabelTop": "Nombre de pas entre la ligne de touche avant et l'intérieur du numéro arrière (côté centre du terrain)",
@@ -675,15 +603,10 @@
             "inches": "po",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "AVERTISSEMENT - Les repères X le plus à gauche et le plus à droite ne sont pas à égale distance du centre. Cela peut provoquer des artefacts graphiques étranges et doit être corrigé.",
-            "yCheckpointsNegative": "AVERTISSEMENT - Il est fortement recommandé que les pas de tous les repères Y soient inférieurs à zéro (c'est-à-dire des nombres négatifs). Toutes les coordonnées Y doivent se trouver derrière l'avant du terrain. Sinon, des erreurs graphiques et des coordonnées inattendues peuvent se produire."
-        },
         "loading": "Chargement…",
         "measurements": {
             "feet": "{value} pi",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# pas} other {# pas}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -1470,7 +1393,6 @@
         "general.appearance": "Apparence",
         "general.appearance.dark": "Sombre",
         "general.appearance.light": "Clair",
-        "general.automaticUpdates": "Télécharger et installer automatiquement les mises à jour",
         "general.description": "Mode d'édition, langue et autres préférences de l'application.",
         "general.editorMode": "Mode d'édition",
         "general.editorMode.basic": "Basique",
@@ -2016,9 +1938,6 @@
                 "kinds": "Types de forme",
                 "ringHintKeys": "Maintenez <keys></keys> sur le terrain pour l'anneau de formes"
             }
-        },
-        "transform": {
-            "title": "Transformation"
         },
         "validate": {
             "noPosition": "La forme a un emplacement sans position",
@@ -2582,7 +2501,6 @@
             "placeAllMarchers": "Placer tous les marcheurs",
             "placeSelectedMarchers": "Placer les marcheurs sélectionnés",
             "snapToggleCaption": "Magnétisme",
-            "toNextPagePositions": "...aux positions de la page suivante",
             "setMarcherPositionsAriaLabel": "Définir les positions des marcheurs",
             "toPreviousPagePositions": "...aux positions précédentes de la page"
         },
@@ -2634,20 +2552,6 @@
             "shapesSelected": "Si sélectionnée"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Une erreur s'est produite lors de la récupération de la version.",
-            "message": "Erreur : {message}",
-            "noVersion": "Impossible d'obtenir la dernière version."
-        },
-        "installLinux": "Installer pour Linux",
-        "installMacArm": "Installer pour Apple Silicon",
-        "installMacIntel": "Installer pour Mac Intel",
-        "installWindows": "Installer pour Windows",
-        "skipVersion": "Ignorer cette version",
-        "title": "Nouvelle version disponible",
-        "trigger": "Nouvelle version disponible !"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "Vous pourrez modifier ce choix plus tard dans Paramètres › Général.",
@@ -2662,14 +2566,17 @@
             "floor": "Au sol",
             "frontRow": "Premier rang",
             "geJudge": "Juge GE",
+            "judgesTable": "Table des juges",
             "lowerBowl": "Tribune basse",
             "podium": "Podium",
             "pressBox": "Tribune de presse",
             "sideline": "Bord de touche",
             "topDown": "Vue de dessus",
+            "tunnel": "Tunnel",
             "upperDeck": "Tribune haute"
         },
         "kit": {
+            "arena": "Aréna couverte",
             "bighs": "Grand lycée",
             "blank": "Terrain seul",
             "college": "Stade universitaire",
@@ -2797,6 +2704,12 @@
         },
         "venue": {
             "updateFailed": "Échec de la mise à jour du lieu de la vue 3D"
+        },
+        "board": {
+            "designedBy": "Conçu par {name}",
+            "forClient": "Pour {name}",
+            "nowPerforming": "En piste",
+            "untitled": "Spectacle sans titre"
         }
     },
     "web": {
@@ -2952,7 +2865,14 @@
         "unsavedChanges": "Vous avez des modifications non enregistrées",
         "close": "Fermer",
         "saved": "Paramètres du spectacle enregistrés",
-        "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail"
+        "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail",
+        "showInfo": {
+            "projectName": "Nom du spectacle",
+            "projectNamePlaceholder": "Utilise le nom du fichier",
+            "designer": "Concepteur",
+            "client": "Client",
+            "optional": "Facultatif"
+        }
     },
     "canvas": {
         "zoom": {

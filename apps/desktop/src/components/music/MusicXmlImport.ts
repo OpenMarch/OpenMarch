@@ -1,6 +1,7 @@
 import { withTimelinePageRipple } from "@/db-functions/timelineRipple";
 import {
     FIRST_BEAT_ID,
+    remapCuesOntoReplacementBeatsInTransaction,
     remapItemChangesOntoReplacementBeatsInTransaction,
     transactionWithHistory,
 } from "@/db-functions";
@@ -16,6 +17,7 @@ import { updatePagesInTransaction } from "@/db-functions";
 import { db } from "@/global/database/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { itemGeometryKeys } from "@/hooks/queries/useItems";
+import { cueKeys } from "@/hooks/queries/useCues";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import {
@@ -206,9 +208,13 @@ export const _importMusicXmlFile = async ({
                 );
                 if (unusedBeats.length > 0) {
                     const beatIds = new Set(unusedBeats.map((b) => b.id));
-                    // Item changes move to the new beat at their time instead of going with
-                    // the old beats
+                    // Item changes and cues move to the new beat at their time instead of
+                    // going with the old beats
                     await remapItemChangesOntoReplacementBeatsInTransaction({
+                        tx,
+                        beatIds,
+                    });
+                    await remapCuesOntoReplacementBeatsInTransaction({
                         tx,
                         beatIds,
                     });
@@ -242,10 +248,11 @@ const useMusicXmlMutation = <TArgs>(
     return useMutation({
         mutationFn,
         onSuccess: async () => {
-            // Item Outline changes moved to the new beats
+            // Item Outline changes and cues moved to the new beats
             void queryClient.invalidateQueries({
                 queryKey: itemGeometryKeys.all(),
             });
+            void queryClient.invalidateQueries({ queryKey: cueKeys.all() });
             // This happens twice to bypass the errors. There's likely a better solution
             await fetchTimingObjects();
             await fetchTimingObjects();

@@ -4,7 +4,8 @@ Upstream's tablet layout ([`docs/tablet-layout.md`](../tablet-layout.md), upstre
 #1060, merged into the fork on 2026-10-26) was built on the Fabric canvas and the old
 page timeline. The fork replaced both, so the merge kept every piece that doesn't
 depend on them and left out the rest. This page lists what is where, as the
-starting point for porting touch input to the three.js field.
+starting point for porting touch input to the three.js field. The current audit and the
+phased plan are in [`docs/tablet/`](../tablet/plan.md).
 
 To read a removed file, use upstream's merge commit: `git show c9784b34a:<path>`.
 

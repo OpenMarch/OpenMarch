@@ -21,6 +21,8 @@ import {
     type FieldSurfaceStyle,
     type EndZoneStyle,
     END_ZONE_STYLES,
+    venueFootprint,
+    withFootballEndZones,
 } from "..";
 import { MARCHER_MARK, OPENMARCH_LOGO } from "../brandMark";
 import { FIVE_YARDS } from "../turfPlan";
@@ -148,7 +150,7 @@ describe("turf on football fields", () => {
                 );
                 expect(logo.rotation).toBe(0);
                 expect(logo.color).toBe("#f4f6f1");
-                // fits between the middle hash rows, at most 15 yards wide
+                // fits between the middle hash rows, at most 20 yards wide
                 const height = (logo.width * 128) / 230;
                 const mid = (p.footprint.minZ + p.footprint.maxZ) / 2;
                 for (const h of p.items.filter((i) => i.role === "hash"))
@@ -156,7 +158,7 @@ describe("turf on football fields", () => {
                         expect(
                             Math.abs((h.minZ + h.maxZ) / 2 - mid),
                         ).toBeGreaterThan(height / 2);
-                expect(logo.width).toBeLessThanOrEqual(3 * FIVE_YARDS + 1e-9);
+                expect(logo.width).toBeLessThanOrEqual(4 * FIVE_YARDS + 1e-9);
                 // painted over the center yard line, under the numbers
                 const at = (role: FieldRole) =>
                     p.items.findIndex((i) => i.role === role);
@@ -264,11 +266,80 @@ describe("turf on football fields", () => {
             if (t.type === "text" && t.role === "endZoneText")
                 expect(t.leadingMark).toBe(false);
 
-        const noEz = plan(T.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES, "turf");
-        expect(count(noEz, "endZone")).toBe(0);
-        expect(count(noEz, "endZoneText")).toBe(0);
-        expect(count(noEz, "stripe")).toBe(20);
-        expect(count(noEz, "yardLine")).toBe(21);
+        // an indoor grid never gets end zones, even with hashes turned on
+        const indoor = T.INDOOR_50x80_8to5;
+        const hashed = new FieldProperties({ ...indoor, useHashes: true });
+        expect(count(plan(hashed, "turf"), "endZone")).toBe(0);
+    });
+
+    it("always paints a football field's end zones on turf", () => {
+        const withEz = T.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES;
+        const full = plan(withEz, "turf");
+        for (const fp of [
+            T.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
+            // hashes off: still a football field by its name and sidelines
+            new FieldProperties({
+                ...T.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
+                useHashes: false,
+            }),
+        ]) {
+            const p = plan(fp, "turf");
+            expect(count(p, "endZone")).toBe(2);
+            expect(count(p, "endZoneText")).toBe(2);
+            expect(count(p, "stripe")).toBe(20);
+            expect(count(p, "yardLine")).toBe(23);
+            expect(p.footprint).toEqual(full.footprint);
+            expect(venueFootprint(fp, "turf")).toEqual(full.footprint);
+        }
+
+        // a grid cut short of the goal lines gets them back as well
+        const noEz = T.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+        const cropped = new FieldProperties({
+            ...noEz,
+            xCheckpoints: noEz.xCheckpoints.filter(
+                (c) => Math.abs(c.stepsFromCenterFront) <= 64,
+            ),
+        });
+        const p = plan(cropped, "turf");
+        expect(count(p, "endZone")).toBe(2);
+        expect(count(p, "yardLine")).toBe(23);
+        expect(p.footprint).toEqual(full.footprint);
+
+        // a changed step size keeps the added lines on the show's grid
+        for (const stepSizeInches of [21, 24]) {
+            const resized = plan(
+                new FieldProperties({ ...noEz, stepSizeInches }),
+                "turf",
+            );
+            expect(count(resized, "endZone")).toBe(2);
+            expect(count(resized, "yardLine")).toBe(23);
+        }
+
+        // hidden end lines count as missing
+        const hidden = plan(
+            new FieldProperties({
+                ...withEz,
+                xCheckpoints: withEz.xCheckpoints.map((c) =>
+                    c.name === "end zone" ? { ...c, visible: false } : c,
+                ),
+            }),
+            "turf",
+        );
+        expect(count(hidden, "endZone")).toBe(2);
+        expect(count(hidden, "yardLine")).toBe(23);
+
+        // a stadium on an indoor grid keeps the grid's footprint
+        const indoor = T.INDOOR_50x80_8to5;
+        expect(venueFootprint(indoor, "turf")).toEqual(fieldFootprint(indoor));
+
+        // the show's own field keeps its grid on the other styles
+        const theme = plan(noEz, "theme");
+        expect(theme.footprint).toEqual(fieldFootprint(noEz));
+        expect(venueFootprint(noEz, "theme")).toEqual(fieldFootprint(noEz));
+        expect(withFootballEndZones(withEz)).toBe(withEz);
+        expect(withFootballEndZones(T.INDOOR_50x80_8to5)).toBe(
+            T.INDOOR_50x80_8to5,
+        );
     });
 
     it("paints the NCAA real back hash instead of the grid one", () => {

@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "1f988098-6eab-4283-8be1-62b03b55d143",
+    "id": "30991c44-51e4-4a2e-8945-8128aec2e042",
     "prevId": "5468882e-0228-4d23-a7c9-e773a715ca49",
     "tables": {
         "audio_files": {
@@ -1468,35 +1468,6 @@
                 }
             }
         },
-        "timeline_routes": {
-            "name": "timeline_routes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "geometry": {
-                    "name": "geometry",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_routes_geometry_check": {
-                    "name": "timeline_routes_geometry_check",
-                    "value": "json_valid(geometry)"
-                }
-            }
-        },
         "timeline_shape_recipe_marchers": {
             "name": "timeline_shape_recipe_marchers",
             "columns": {
@@ -1842,13 +1813,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "order_mode": {
                     "name": "order_mode",
                     "type": "text",
@@ -1885,11 +1849,6 @@
                     "columns": ["dest_shape_id"],
                     "isUnique": false
                 },
-                "timeline_idx_tr_route": {
-                    "name": "timeline_idx_tr_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
                 "timeline_idx_tr_timeline": {
                     "name": "timeline_idx_tr_timeline",
                     "columns": ["timeline_id"],
@@ -1914,15 +1873,6 @@
                     "columnsTo": ["id"],
                     "onDelete": "restrict",
                     "onUpdate": "no action"
-                },
-                "timeline_transitions_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_transitions_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_transitions",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
                 }
             },
             "compositePrimaryKeys": {},
@@ -1938,7 +1888,7 @@
                 },
                 "timeline_transitions_path_style_check": {
                     "name": "timeline_transitions_path_style_check",
-                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader', 'route')"
+                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader')"
                 },
                 "timeline_transitions_path_params_check": {
                     "name": "timeline_transitions_path_params_check",
@@ -1983,14 +1933,6 @@
                 "timeline_transitions_arc_bulge_check": {
                     "name": "timeline_transitions_arc_bulge_check",
                     "value": "path_style <> 'arc' OR (coalesce(json_type(path_params, '$.bulge'), '') IN ('integer', 'real') AND abs(json_extract(path_params, '$.bulge')) <= 0.5)"
-                },
-                "timeline_transitions_route_id_type_check": {
-                    "name": "timeline_transitions_route_id_type_check",
-                    "value": "route_id IS NULL OR typeof(route_id) = 'integer'"
-                },
-                "timeline_transitions_route_check": {
-                    "name": "timeline_transitions_route_check",
-                    "value": "path_style <> 'route' OR (route_id IS NOT NULL AND dest_shape_id IS NULL AND slot_count = 1)"
                 }
             }
         },
@@ -2135,6 +2077,67 @@
                     "value": "id = 1"
                 }
             }
+        },
+        "view3d_silk_artwork": {
+            "name": "view3d_silk_artwork",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "width": {
+                    "name": "width",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "height": {
+                    "name": "height",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
         },
         "view3d_venue": {
             "name": "view3d_venue",

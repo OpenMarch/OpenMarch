@@ -12,7 +12,8 @@ import {
     resolveKeyEvent,
     type ShortcutOverrides,
 } from "./keymap";
-import { NUDGE_ACTION_IDS, type ActionId } from "./definitions";
+import { ACTIONS, NUDGE_ACTION_IDS, type ActionId } from "./definitions";
+import { fieldEditMode } from "@/field/editMode/fieldEditModeStore";
 import {
     actionIgnoresRepeat,
     isActionEnabled,
@@ -82,10 +83,17 @@ export default function ShortcutDispatcher({
                 event,
                 compiled,
                 readShortcutContext(),
-                // No nudge on a timeline move control (code review)
+                // No nudge on a timeline move control (code review). While the Field panel is
+                // open (#824) the drill's canvas keys are off: a line key that can't run now
+                // (H with nothing picked, X on another tab) must not fall through to the
+                // drill command on the same key
                 (id) =>
                     isActionEnabled(id) &&
-                    !(NUDGE_IDS.has(id) && skipsAppNudge(event, focused)),
+                    !(NUDGE_IDS.has(id) && skipsAppNudge(event, focused)) &&
+                    !(
+                        ACTIONS[id].scope === "canvas" &&
+                        fieldEditMode.isActive()
+                    ),
             );
             if (!entry) return;
             event.preventDefault();

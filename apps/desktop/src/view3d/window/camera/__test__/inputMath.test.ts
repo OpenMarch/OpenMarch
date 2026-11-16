@@ -1,9 +1,12 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
-    classifyWheel,
     damp,
     groundHit,
+    levelHit,
+    targetOnGround,
+    canHold,
+    MIN_HOLD_SLOPE,
     wheelPixels,
     MARCHER_PICK_HEIGHT,
     MARCHER_PICK_RADIUS,
@@ -11,68 +14,6 @@ import {
     zoomAbout,
     zoomRatioLimits,
 } from "../inputMath";
-
-describe("classifyWheel", () => {
-    it("reads a ctrl wheel as a pinch (how macOS reports a trackpad pinch)", () => {
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: -3.2,
-                deltaMode: 0,
-                ctrlKey: true,
-            }),
-        ).toBe("pinch");
-    });
-
-    it("reads a notched wheel as a mouse", () => {
-        // Chromium: a notch is deltaY 100 and wheelDeltaY -120
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 100,
-                deltaMode: 0,
-                ctrlKey: false,
-                wheelDeltaY: -120,
-            }),
-        ).toBe("mouse");
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 3,
-                deltaMode: 1,
-                ctrlKey: false,
-            }),
-        ).toBe("mouse");
-    });
-
-    it("reads fine-grained two-finger scrolls as a trackpad", () => {
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 4,
-                deltaMode: 0,
-                ctrlKey: false,
-                wheelDeltaY: -12,
-            }),
-        ).toBe("trackpad");
-        expect(
-            classifyWheel({
-                deltaX: 6,
-                deltaY: 0,
-                deltaMode: 0,
-                ctrlKey: false,
-            }),
-        ).toBe("trackpad");
-        expect(
-            classifyWheel({
-                deltaX: 0,
-                deltaY: 2.5,
-                deltaMode: 0,
-                ctrlKey: false,
-            }),
-        ).toBe("trackpad");
-    });
-});
 
 describe("wheelPixels", () => {
     it("converts lines and pages to pixels", () => {
@@ -95,6 +36,65 @@ describe("groundHit", () => {
         expect(groundHit([0, 10, 0], [0, 0.1, -1])).toBeNull();
         expect(groundHit([0, 10, 0], [0, 0, -1])).toBeNull();
         expect(groundHit([0, 10, 0], [0, -0.0001, -1])).toBeNull(); // 100 km away
+    });
+});
+
+describe("levelHit", () => {
+    it("meets a raised plane from above", () => {
+        const hit = levelHit([0, 30, 20], [0, -1, -1], 10);
+        expect(hit![0]).toBeCloseTo(0, 9);
+        expect(hit![1]).toBe(10);
+        expect(hit![2]).toBeCloseTo(0, 9);
+    });
+
+    it("meets a plane above the eye when looking up at it", () => {
+        const hit = levelHit([0, 2, 0], [0, 1, -1], 12);
+        expect(hit![1]).toBe(12);
+        expect(hit![2]).toBeCloseTo(-10, 9);
+    });
+
+    it("misses a level ray, one pointing away, and one landing absurdly far", () => {
+        expect(levelHit([0, 2, 0], [0, 0, -1], 12)).toBeNull();
+        expect(levelHit([0, 2, 0], [0, -1, -1], 12)).toBeNull();
+        expect(levelHit([0, 10, 0], [0, -0.0001, -1], 0)).toBeNull();
+    });
+});
+
+describe("canHold", () => {
+    const unit = (v: [number, number, number]): [number, number, number] => {
+        const n = Math.hypot(...v);
+        return [v[0] / n, v[1] / n, v[2] / n];
+    };
+
+    it("holds a point the ray meets steeply, near enough", () => {
+        expect(canHold([0, 20, 0], unit([0, -1, -1]), [0, 0, -20], 250)).toBe(
+            true,
+        );
+    });
+
+    it("lets go of a point the ray meets at a shallow angle, near the horizon or at eye height", () => {
+        const shallow = unit([0, -0.2, -1]);
+        expect(Math.abs(shallow[1])).toBeLessThan(MIN_HOLD_SLOPE);
+        expect(canHold([0, 20, 0], shallow, [0, 0, -100], 250)).toBe(false);
+    });
+
+    it("lets go of a point farther than the limit", () => {
+        expect(canHold([0, 20, 0], unit([0, -1, -1]), [0, 0, -300], 250)).toBe(
+            false,
+        );
+    });
+});
+
+describe("targetOnGround", () => {
+    it("leaves a target on or above the ground alone", () => {
+        expect(targetOnGround([0, 10, 10], [0, 2, 0])).toEqual([0, 2, 0]);
+    });
+
+    it("slides a sunken target up the line of sight to the ground", () => {
+        const t = targetOnGround([0, 10, 10], [0, -10, -10]);
+        expect(t[0]).toBeCloseTo(0, 9);
+        expect(t[1]).toBe(0);
+        expect(t[2]).toBeCloseTo(0, 9);
     });
 });
 

@@ -19,6 +19,8 @@ export class FieldDimming {
     private hideFocus = false;
     /** The edited shape's marchers while it's seen on its own (#558, H): not drawn at all */
     private hidden: ReadonlySet<number> | null = null;
+    /** Everyone, while the field itself is edited (#824): the drill steps back */
+    private everyone = false;
     private readonly listeners = new Set<() => void>();
 
     /** Calls `listener` after each change (a layer asks for a frame). Returns the unsubscribe. */
@@ -69,6 +71,14 @@ export class FieldDimming {
         for (const listener of this.listeners) listener();
     }
 
+    /** Dims every marcher (the Edit field mode, #824), or stops */
+    setEveryoneDimmed(dimmed: boolean) {
+        if (dimmed === this.everyone) return;
+        this.everyone = dimmed;
+        this.version++;
+        for (const listener of this.listeners) listener();
+    }
+
     /** Whether a marcher is hidden by {@link setHidden} */
     isHidden(id: number): boolean {
         return this.hidden?.has(id) ?? false;
@@ -77,6 +87,11 @@ export class FieldDimming {
     /** How opaque a marcher's dot is drawn: hidden 0, faded by a shape, dimmed, or 1 */
     opacityOf(id: number): number {
         if (this.isHidden(id)) return 0;
+        const own = this.ownOpacity(id);
+        return this.everyone ? Math.min(DIMMED_OPACITY, own) : own;
+    }
+
+    private ownOpacity(id: number): number {
         if (this.focus !== null) {
             if (!this.focus.has(id)) return SHAPE_FADED_OPACITY;
             if (this.hideFocus) return 0;
@@ -93,6 +108,7 @@ export class FieldDimming {
 
     isDimmed(id: number): boolean {
         return (
+            this.everyone ||
             (this.members !== null && !this.members.has(id)) ||
             (this.focus !== null && !this.focus.has(id))
         );

@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 /**
  * Every trigger, by name. `transitionRoute` says whether `timeline_transitions` has `route_id`
- * (migration 0019): a file opened with an older migrations folder, as some migration tests do,
+ * (migration 0024): a file opened with an older migrations folder, as some migration tests do,
  * logs transitions without it.
  */
 const buildTriggers = (transitionRoute = true) => ({
@@ -59,7 +59,7 @@ const buildTriggers = (transitionRoute = true) => ({
 });
 const triggers = buildTriggers();
 
-/** Whether the file's `timeline_transitions` has `route_id` (migration 0019). */
+/** Whether the file's `timeline_transitions` has `route_id` (migration 0024). */
 const hasTransitionRoute = (dbConnection: DatabaseSync): boolean =>
     (
         dbConnection
@@ -577,7 +577,7 @@ const triggerFits = (sql: string, tables: ReadonlySet<string>): boolean =>
 
 /**
  * Only the triggers whose table the file has. A table a later migration adds, such as the routes
- * table (0019) or the lanes table (0020), is missing from a page-era file until it converts; its
+ * table (0024) or the lanes table (0025), is missing from a page-era file until it converts; its
  * triggers come with it.
  */
 const onExistingTables = (

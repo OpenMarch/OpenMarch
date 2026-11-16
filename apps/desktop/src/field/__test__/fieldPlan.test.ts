@@ -8,6 +8,7 @@ import {
     planFieldImage,
     textCenterY,
 } from "../fieldPlan";
+import { yardNumberPath } from "../fieldNumbers";
 
 const base: FieldProperties =
     FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
@@ -98,17 +99,122 @@ describe("planField2d", () => {
         );
         expect(roles(false, false)).toEqual(new Set(["yardLine", "hash"]));
     });
+});
 
-    it("turns the away yard numbers about their own center", () => {
-        const numbers = planField2d(base, {
-            gridLines: true,
-            halfLines: true,
-        }).texts.filter((t) => t.role === "yardNumber");
-        const away = numbers.filter((t) => t.flipped);
-        expect(away.length).toBe(numbers.length / 2);
-        for (const t of away) {
-            expect(textCenterY(t)).toBeLessThan(base.height / 2);
+describe("planField2d yard numbers", () => {
+    const options = { gridLines: false, halfLines: false };
+    const { pixelsPerStep, centerFrontPoint } = base;
+    const stepsToY = (steps: number) =>
+        centerFrontPoint.yPixels - steps * pixelsPerStep;
+    const labeled = base.xCheckpoints.filter((c) => c.fieldLabel);
+    const lineX = (c: (typeof labeled)[number]) =>
+        centerFrontPoint.xPixels + c.stepsFromCenterFront * pixelsPerStep;
+    const ys = (path: string) =>
+        (path.match(/-?\d+(\.\d+)?/g) ?? [])
+            .map(Number)
+            .filter((_, i) => i % 2 === 1);
+    const coords = base.yardNumberCoordinates;
+
+    it("paints every labeled yard line's number as a shape, on both sides, in each side's band", () => {
+        const plan = planField2d(base, options);
+        expect(plan.texts.filter((t) => t.role === "yardNumber")).toEqual([]);
+        expect(plan.shapes).toHaveLength(labeled.length * 2);
+        const home = [
+            stepsToY(coords.homeStepsFromFrontToInside!),
+            stepsToY(coords.homeStepsFromFrontToOutside!),
+        ];
+        const away = [
+            stepsToY(coords.awayStepsFromFrontToOutside!),
+            stepsToY(coords.awayStepsFromFrontToInside!),
+        ];
+        const inBand = (path: string, [top, bottom]: number[]) =>
+            ys(path).every((y) => y >= top! - 1e-3 && y <= bottom! + 1e-3);
+        const homeShapes = plan.shapes.filter((s) => inBand(s.path, home));
+        const awayShapes = plan.shapes.filter((s) => inBand(s.path, away));
+        expect(homeShapes).toHaveLength(labeled.length);
+        expect(awayShapes).toHaveLength(labeled.length);
+        for (const shape of plan.shapes)
+            expect(shape.color).toEqual(base.theme.fieldLabel);
+    });
+
+    it("points the arrows at the nearer goal, with none at the 50", () => {
+        const plan = planField2d(base, options);
+        const [insideY, outsideY] = [
+            stepsToY(coords.homeStepsFromFrontToInside!),
+            stepsToY(coords.homeStepsFromFrontToOutside!),
+        ];
+        for (const c of labeled) {
+            const direction =
+                c.stepsFromCenterFront < 0
+                    ? -1
+                    : c.stepsFromCenterFront > 0
+                      ? 1
+                      : 0;
+            expect(plan.shapes.map((s) => s.path)).toContain(
+                yardNumberPath({
+                    label: c.fieldLabel!,
+                    lineX: lineX(c),
+                    insideY,
+                    outsideY,
+                    arrowDirection: direction,
+                }),
+            );
         }
+        expect(labeled.some((c) => c.stepsFromCenterFront === 0)).toBe(true);
+    });
+
+    it("paints only the side that has its coordinates, away without home", () => {
+        const awayOnly = new FieldProperties({
+            ...base,
+            yardNumberCoordinates: {
+                awayStepsFromFrontToInside: coords.awayStepsFromFrontToInside,
+                awayStepsFromFrontToOutside: coords.awayStepsFromFrontToOutside,
+            },
+        });
+        const plan = planField2d(awayOnly, options);
+        expect(plan.shapes).toHaveLength(labeled.length);
+        const top = stepsToY(coords.awayStepsFromFrontToOutside!);
+        const bottom = stepsToY(coords.awayStepsFromFrontToInside!);
+        for (const shape of plan.shapes)
+            for (const y of ys(shape.path)) {
+                expect(y).toBeGreaterThanOrEqual(top - 1e-3);
+                expect(y).toBeLessThanOrEqual(bottom + 1e-3);
+            }
+    });
+
+    it("writes a label that isn't digits as text, the away side's turned about its center", () => {
+        const withGoal = new FieldProperties({
+            ...base,
+            xCheckpoints: base.xCheckpoints.map((c) =>
+                c.fieldLabel === "10" ? { ...c, fieldLabel: "G" } : c,
+            ),
+        });
+        const plan = planField2d(withGoal, options);
+        const texts = plan.texts.filter((t) => t.role === "yardNumber");
+        const goals = labeled.filter((c) => c.fieldLabel === "10");
+        expect(texts).toHaveLength(goals.length * 2);
+        expect(plan.shapes).toHaveLength((labeled.length - goals.length) * 2);
+        for (const t of texts) {
+            expect(t.text).toBe("G");
+            expect(t.anchor).toBe("middle");
+            expect(goals.map(lineX)).toContain(t.x);
+            if (t.flipped) expect(textCenterY(t)).toBeLessThan(base.height / 2);
+            else expect(textCenterY(t)).toBeGreaterThan(base.height / 2);
+        }
+        expect(texts.filter((t) => t.flipped)).toHaveLength(goals.length);
+    });
+
+    it("paints none when neither side has both coordinates", () => {
+        const none = new FieldProperties({
+            ...base,
+            yardNumberCoordinates: {
+                homeStepsFromFrontToInside: coords.homeStepsFromFrontToInside,
+                awayStepsFromFrontToOutside: coords.awayStepsFromFrontToOutside,
+            },
+        });
+        const plan = planField2d(none, options);
+        expect(plan.shapes).toEqual([]);
+        expect(plan.texts.filter((t) => t.role === "yardNumber")).toEqual([]);
     });
 });
 

@@ -4,6 +4,8 @@ Issues and specs for this repo live as GitHub issues on the fork **`AlexDumo/Ope
 
 ## Conventions
 
+- **Work tracking (fork only)**: when creating, starting, pausing or finishing an issue, also follow [work-tracking.md](work-tracking.md): project board, `scripts/om-claim`, `area:` labels, epics and milestones.
+
 - **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
 - **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
 - **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.

@@ -79,6 +79,17 @@ function migrate(db: Database) {
 const toBindable = (value: unknown) =>
     value === undefined ? null : typeof value === "boolean" ? +value : value;
 
+/**
+ * The preview always plays at normal speed and never loops. The window
+ * drops a clock without these fields (`isView3dClock`).
+ */
+const NORMAL_SPEED = {
+    rate: 1,
+    speed: 1,
+    chosenSpeed: 1,
+    playLoops: false,
+} as const;
+
 class WebHost {
     private db: Database | null = null;
     private listeners = new Map<View3dPublishChannel, Set<Listener>>();
@@ -89,7 +100,7 @@ class WebHost {
         playing: false,
         anchorShowMs: 0,
         anchorWallMs: wallNowMs(),
-        rate: 1,
+        ...NORMAL_SPEED,
     };
     private tick: number | null = null;
     private stateListeners = new Set<() => void>();
@@ -154,6 +165,9 @@ class WebHost {
         },
         requestVenueChange: (settings) => this.writeVenue(settings),
         requestCamerasChange: (cameras) => this.writeCameras(cameras),
+        // The demo shows don't take imported Artwork
+        requestSilkArtwork: () =>
+            console.warn("3D View demo: silk Artwork can't be imported here"),
         // The demo has no app settings: never asks to open on launch
         autoOpen: {
             get: () => Promise.resolve(null),
@@ -279,7 +293,7 @@ class WebHost {
             playing,
             anchorShowMs,
             anchorWallMs,
-            rate: 1,
+            ...NORMAL_SPEED,
         };
         this.notify();
     }

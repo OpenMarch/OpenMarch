@@ -496,7 +496,13 @@ export function clearPageOn({
         followBack,
         writeTimeline: (request) =>
             moveMarchersAndOfferFollowUp(request).catch((e: unknown) => {
-                toastTimelineError(e, "Error clearing the page");
+                toastTimelineError(
+                    e,
+                    tolgee.t(
+                        "timeline.clearPage.error",
+                        "Couldn't clear the page",
+                    ),
+                );
                 throw e;
             }),
         notify: {

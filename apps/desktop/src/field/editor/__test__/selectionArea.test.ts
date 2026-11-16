@@ -2,6 +2,8 @@
 import { describe, expect, it } from "vitest";
 import {
     areaPicks,
+    FINGER_LASSO_CLOSE_DISTANCE,
+    fingerLassoCloses,
     LASSO_CLOSE_DISTANCE,
     lassoCloses,
     marchersInPolygon,
@@ -175,5 +177,75 @@ describe("areaPicks", () => {
 
     it("takes nothing from nothing", () => {
         expect(areaPicks([], isItem)).toEqual([]);
+    });
+
+    it("never takes a locked item, even alone", () => {
+        const isLocked = (id: number) => id === 101;
+        expect(areaPicks([100, 101], isItem, isLocked)).toEqual([100]);
+        expect(areaPicks([101], isItem, isLocked)).toEqual([]);
+        expect(areaPicks([1, 101], isItem, isLocked)).toEqual([1]);
+    });
+});
+
+describe("fingerLassoCloses (#933)", () => {
+    const zoom = 2;
+    it("closes within 150 screen px of its start, at any zoom", () => {
+        const near = (FINGER_LASSO_CLOSE_DISTANCE - 1) / zoom;
+        const far = (FINGER_LASSO_CLOSE_DISTANCE + 1) / zoom;
+        expect(
+            fingerLassoCloses(
+                [
+                    { x: 0, y: 0 },
+                    { x: near, y: 0 },
+                ],
+                zoom,
+            ),
+        ).toBe(true);
+        expect(
+            fingerLassoCloses(
+                [
+                    { x: 0, y: 0 },
+                    { x: far, y: 0 },
+                ],
+                zoom,
+            ),
+        ).toBe(false);
+    });
+
+    it("closes a path ending far away that takes in a real area", () => {
+        // Three sides of a 200 × 200 square (screen px at zoom 2)
+        const u = [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 },
+        ];
+        expect(fingerLassoCloses(u, zoom)).toBe(true);
+    });
+
+    it("doesn't close a long swipe, straight or slightly bowed: a sliver", () => {
+        const straight = [
+            { x: 0, y: 0 },
+            { x: 200, y: 2 },
+            { x: 400, y: 0 },
+        ];
+        const bowed = [
+            { x: 0, y: 0 },
+            { x: 200, y: 10 },
+            { x: 400, y: 0 },
+        ];
+        expect(fingerLassoCloses(straight, zoom)).toBe(false);
+        expect(fingerLassoCloses(bowed, zoom)).toBe(false);
+    });
+
+    it("doesn't close a tiny loop ending far from its start", () => {
+        // A long tail with a 10 px curl
+        const tail = [
+            { x: 0, y: 0 },
+            { x: 3, y: 3 },
+            { x: 0, y: 5 },
+            { x: 200, y: 5 },
+        ];
+        expect(fingerLassoCloses(tail, zoom)).toBe(false);
     });
 });

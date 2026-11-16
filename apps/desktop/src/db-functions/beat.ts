@@ -9,6 +9,7 @@ import { schema } from "@/global/database/db";
 import { withTimelinePageRipple } from "./timelineRipple";
 import { realDatabaseBeatToDatabaseBeat } from "./rowMappers";
 import { carryItemChangesPastDeletedBeatsInTransaction } from "./itemBeatRemap";
+import { carryCuesPastDeletedBeatsInTransaction } from "./cues";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -525,10 +526,12 @@ export async function deleteBeats({
 
 /**
  * Deletes beats the user chose to delete (a beat, a measure, a tempo group): their item Outline
- * changes carry forward to the next beat first, in the same transaction.
+ * changes and their cues carry forward to the next beat first, in the same transaction
+ * (`carryCuesPastDeletedBeatsInTransaction`, ADR 0004 amendment of 2026-10-15).
  * Replacing every beat (an import, a tempo edit) uses {@link deleteBeatsInTransaction}; item
- * changes are first re-mapped onto the new beats by time
- * (`remapItemChangesOntoReplacementBeatsInTransaction`).
+ * changes and cues are first re-mapped onto the new beats by time
+ * (`remapItemChangesOntoReplacementBeatsInTransaction`,
+ * `remapCuesOntoReplacementBeatsInTransaction`).
  */
 export const deleteBeatsCarryingItemChangesInTransaction = async ({
     tx,
@@ -538,6 +541,7 @@ export const deleteBeatsCarryingItemChangesInTransaction = async ({
     beatIds: Set<number>;
 }): Promise<DatabaseBeat[]> => {
     await carryItemChangesPastDeletedBeatsInTransaction({ tx, beatIds });
+    await carryCuesPastDeletedBeatsInTransaction({ tx, beatIds });
     return await deleteBeatsInTransaction({ tx, beatIds });
 };
 

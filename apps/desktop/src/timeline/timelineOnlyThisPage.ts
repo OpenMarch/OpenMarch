@@ -237,7 +237,7 @@ function showOnlyThisPageToast({
                         e,
                         tolgee.t(
                             "timeline.keep.followed.keepError",
-                            "Error keeping the later pages",
+                            "Couldn't keep the later pages",
                         ),
                     ),
                 );

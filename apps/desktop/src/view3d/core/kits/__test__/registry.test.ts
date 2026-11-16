@@ -27,13 +27,14 @@ describe("kit registry", () => {
         );
     });
 
-    it("uses turf for the stadiums, tarp for the gym and theme for blank", () => {
+    it("uses turf for the stadiums, tarp indoors and theme for blank", () => {
         expect(KIT_FIELD_STYLE).toEqual({
             hs: "turf",
             bighs: "turf",
             college: "turf",
             pro: "turf",
             gym: "tarp",
+            arena: "tarp",
             blank: "theme",
         });
     });

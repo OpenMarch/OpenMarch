@@ -37,6 +37,7 @@ import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 import { MIGRATIONS_FOLDER } from "./fs";
 import {
     changeState,
+    DatabaseSync,
     deleteDatabase,
     exportDatabase,
     listDatabases,
@@ -44,6 +45,7 @@ import {
     renameDatabase,
     writeDatabase,
 } from "./sqlite";
+import { scrubAndCompact } from "@om-electron/database/reportCopy";
 import { claimStorage } from "./storage";
 import { STORAGE_NAMESPACE } from "../renderer/channel";
 import { hasUnsavedChanges } from "./saveState";
@@ -669,6 +671,28 @@ function registerWebHandlers() {
         markDownloaded();
         return { name: path.split("/").pop()!, bytes };
     });
+    // Bug reports (fork #801): the show is scrubbed here, before it leaves the browser
+    const openShowName = () =>
+        DatabaseServices.getDbPath()?.split("/").pop() || null;
+    ipcMain.handle(WEB_CHANNELS.reportShowInfo, () => {
+        const fileName = openShowName();
+        return fileName ? { fileName } : null;
+    });
+    ipcMain.handle(
+        WEB_CHANNELS.reportCopy,
+        (_, expectedFileName: string, includeAudio: boolean) => {
+            const path = DatabaseServices.getDbPath();
+            if (!path || openShowName() !== expectedFileName) return null;
+            const copyPath = `/report/${crypto.randomUUID()}.dots`;
+            writeDatabase(copyPath, exportDatabase(path));
+            try {
+                scrubAndCompact(new DatabaseSync(copyPath), { includeAudio });
+                return exportDatabase(copyPath);
+            } finally {
+                deleteDatabase(copyPath);
+            }
+        },
+    );
     ipcMain.handle(
         WEB_CHANNELS.readPreviousDots,
         async (_, bytes: Uint8Array) => {

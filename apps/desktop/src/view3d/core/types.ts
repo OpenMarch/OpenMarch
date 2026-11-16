@@ -11,7 +11,14 @@ import type { FieldFootprint } from "@openmarch/core";
 import type { Object3D, Vector3Tuple } from "three";
 
 /** Venue kits shipped in the MVP. `blank` is the field on a plain ground. */
-export type VenueKitId = "hs" | "bighs" | "college" | "pro" | "gym" | "blank";
+export type VenueKitId =
+    | "hs"
+    | "bighs"
+    | "college"
+    | "pro"
+    | "gym"
+    | "arena"
+    | "blank";
 
 /** Lighting presets. Each kit lists the ones it supports. */
 export type LightingPreset =
@@ -21,6 +28,31 @@ export type LightingPreset =
     | "roofClosed"
     | "house"
     | "show";
+
+/** The show's credits for video boards. Blank fields are left off. */
+export interface ShowCredits {
+    /** The show's project name, or the file name when it has none. */
+    title: string;
+    designer?: string;
+    client?: string;
+    /**
+     * The board's words in the app's language, from the window (the core
+     * can't translate). English when absent, as in the gallery and tests.
+     */
+    text?: CreditsText;
+}
+
+/** Translated words on a credits board. */
+export interface CreditsText {
+    /** Above the title, e.g. "Now performing"; the board sets it in capitals. */
+    heading: string;
+    /** The title when the show has no name. */
+    untitled: string;
+    /** The whole designer line, e.g. "Designed by Sam Rivera". */
+    designer?: string;
+    /** The whole client line, e.g. "For Lincoln High School". */
+    client?: string;
+}
 
 /** Small per-show settings stored with the venue (ADR 0010 D-5). */
 export interface VenueParams {
@@ -73,6 +105,11 @@ export interface KitBuildInput {
     params: VenueParams;
     /** "low" drops shadows and halves crowd density. */
     quality: "low" | "high";
+    /**
+     * Whether a kit with its own podium (`hs`, `bighs`) draws it. False when the show has a
+     * podium item (docs/3d/instruments.md §6). Defaults to true.
+     */
+    venuePodium?: boolean;
 }
 
 export interface FrameContext {
@@ -96,10 +133,20 @@ export interface KitResult {
      * and recolor it without rebuilding the kit. Defaults to 0.6.
      */
     crowdDensity?: number;
+    /**
+     * Whether the shared land and horizon (fields, woods, a town) surround
+     * the venue at high quality. Defaults to true; the blank venue stays bare.
+     */
+    surroundings?: boolean;
     lightingPresets: LightingPreset[];
     defaultLighting: LightingPreset;
     /** Applies a preset; ignores ones not in `lightingPresets`. */
     setLighting(preset: LightingPreset): void;
+    /**
+     * Shows the show's credits on the kit's video boards, if it has any.
+     * Called after the build and whenever the credits change; cheap to repeat.
+     */
+    setShowCredits?(credits: ShowCredits): void;
     /** Per-frame hook, e.g. hide the roof when the camera is above it. */
     onFrame?(ctx: FrameContext): void;
     dispose(): void;

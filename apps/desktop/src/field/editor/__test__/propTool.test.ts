@@ -9,6 +9,7 @@ import {
     type FieldPoint,
     type FieldPointer,
 } from "../fieldEditor";
+import type { PropToolStamp } from "../propTool";
 
 const ZOOM = 2;
 
@@ -18,7 +19,7 @@ const snap = (p: FieldPoint) => ({
     y: Math.round(p.y / 10) * 10,
 });
 
-function setup(outlineType: OutlineType) {
+function setup(outlineType: OutlineType, stamp?: PropToolStamp) {
     const clock = { now: 1000 };
     const state = {
         selected: [] as readonly number[],
@@ -43,7 +44,7 @@ function setup(outlineType: OutlineType) {
         propDrawn: (outline) => state.drawn.push(outline),
     };
     const editor = new FieldEditor(ports, { now: () => clock.now });
-    editor.setPropTool(outlineType);
+    editor.setPropTool(outlineType, stamp);
     return { editor, state, clock };
 }
 
@@ -51,6 +52,7 @@ const at = (x: number, y: number): FieldPointer => ({
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,
@@ -163,5 +165,217 @@ describe("the prop tool", () => {
         editor.setPropTool("polygon");
         editor.pointerMove(at(10, 10));
         expect(editor.propToolShape()?.preview).toBeNull();
+    });
+
+    describe("placing a footprint (front ensemble equipment)", () => {
+        const stamp = { widthPixels: 40, depthPixels: 20 };
+
+        /** Points rounded past floating-point noise from a turn */
+        const rounded = (points: readonly FieldPoint[] | undefined) =>
+            points?.map(({ x, y }) => ({
+                x: Math.round(x * 1e6) / 1e6 + 0,
+                y: Math.round(y * 1e6) / 1e6 + 0,
+            }));
+
+        it("shows the footprint centered on the pointer before any press, notched on its audience side", () => {
+            const { editor } = setup("rectangle", stamp);
+            expect(editor.propToolShape()?.preview).toBeNull();
+            editor.pointerMove(at(101, 99));
+            const preview = editor.propToolShape()?.preview;
+            expect(preview?.closed).toBe(true);
+            // The edge toward the audience as built (down the canvas) has a notch in its middle
+            expect(rounded(preview?.points)).toEqual([
+                { x: 80, y: 90 },
+                { x: 120, y: 90 },
+                { x: 120, y: 110 },
+                { x: 104, y: 110 },
+                { x: 100, y: 106 },
+                { x: 96, y: 110 },
+                { x: 80, y: 110 },
+            ]);
+        });
+
+        it("turns the footprint as the stamp says for where the pointer is", () => {
+            const { editor } = setup("rectangle", {
+                ...stamp,
+                rotationAt: (center) => (center.y < 50 ? 180 : 0),
+            });
+            editor.pointerMove(at(100, 20));
+            // Turned: the notch is on the edge toward the back sideline
+            expect(rounded(editor.propToolShape()?.preview?.points)).toEqual([
+                { x: 120, y: 30 },
+                { x: 80, y: 30 },
+                { x: 80, y: 10 },
+                { x: 96, y: 10 },
+                { x: 100, y: 14 },
+                { x: 104, y: 10 },
+                { x: 120, y: 10 },
+            ]);
+            editor.pointerMove(at(100, 80));
+            expect(editor.propToolShape()?.preview?.points[3]).toEqual({
+                x: 104,
+                y: 90,
+            });
+        });
+
+        it("places it with its turn", () => {
+            const { editor, state } = setup("rectangle", {
+                ...stamp,
+                rotationAt: (center) => (center.y < 0 ? 180 : 0),
+            });
+            // Behind the back sideline: nothing keeps it on the field
+            click(editor, 100, -60);
+            click(editor, 100, 60);
+            expect(state.drawn).toEqual([
+                expect.objectContaining({ centerY: -60, rotation: 180 }),
+                expect.objectContaining({ centerY: 60, rotation: 0 }),
+            ]);
+        });
+
+        it("places it with one click, centered on the snapped point", () => {
+            const { editor, state } = setup("rectangle", stamp);
+            click(editor, 158, 141);
+            expect(state.drawn).toEqual([
+                {
+                    outlineType: "rectangle",
+                    centerX: 160,
+                    centerY: 140,
+                    widthPixels: 40,
+                    depthPixels: 20,
+                    rotation: 0,
+                },
+            ]);
+        });
+
+        it("places it where the press was, even if the pointer moves before release", () => {
+            const { editor, state } = setup("rectangle", stamp);
+            editor.pointerDown(at(50, 50));
+            editor.pointerMove(at(90, 90));
+            editor.pointerUp(at(90, 90));
+            expect(state.drawn).toHaveLength(1);
+            expect(state.drawn[0]).toMatchObject({ centerX: 50, centerY: 50 });
+        });
+    });
+});
+
+describe("the prop tool's buttons and lost presses (tablet 1.4)", () => {
+    /** Three corners, each a separate click (a second apart, so none is a double-click) */
+    const triangle = (
+        editor: FieldEditor,
+        clock: { now: number },
+        corners: [number, number][] = [
+            [0, 0],
+            [100, 0],
+            [50, 80],
+        ],
+    ) => {
+        for (const [x, y] of corners) {
+            click(editor, x, y);
+            // The renderer cancels after every release: that loses no corner
+            editor.pointerCancel();
+            clock.now += 1000;
+        }
+    };
+
+    it("finishes a polygon with three corners or more, as its double-click does", () => {
+        const { editor, state, clock } = setup("polygon");
+        click(editor, 0, 0);
+        clock.now += 1000;
+        click(editor, 100, 0);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.finishPropTool()).toBe(false);
+        clock.now += 1000;
+        click(editor, 50, 80);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 3,
+            canFinish: true,
+        });
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn).toHaveLength(1);
+        expect(state.drawn[0].points).toEqual([
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 50, y: 80 },
+        ]);
+    });
+
+    it("takes back the last corner, one a press, and nothing once there are none", () => {
+        const { editor, state, clock } = setup("polygon");
+        triangle(editor, clock);
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({ points: 0 });
+        expect(editor.propToolShape()?.preview).toBeNull();
+        expect(editor.removeLastPropPoint()).toBe(false);
+        // Drawing goes on from there
+        triangle(editor, clock, [
+            [0, 0],
+            [60, 0],
+            [60, 60],
+        ]);
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn[0].points).toEqual([
+            { x: 0, y: 0 },
+            { x: 60, y: 0 },
+            { x: 60, y: 60 },
+        ]);
+    });
+
+    it("takes back an arc's corner too, and has no Finish for it", () => {
+        const { editor, clock } = setup("arc");
+        triangle(editor, clock, [
+            [0, 0],
+            [100, 0],
+        ]);
+        expect(editor.propToolShape()).toMatchObject({
+            points: 2,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(true);
+        expect(editor.propToolShape()).toMatchObject({ points: 1 });
+        expect(editor.finishPropTool()).toBe(false);
+    });
+
+    it("has nothing to take back or finish on a drag", () => {
+        const { editor } = setup("rectangle");
+        editor.pointerDown(at(0, 0));
+        editor.pointerMove(at(50, 50));
+        expect(editor.propToolShape()).toMatchObject({
+            points: 0,
+            canFinish: false,
+        });
+        expect(editor.removeLastPropPoint()).toBe(false);
+        expect(editor.finishPropTool()).toBe(false);
+    });
+
+    it("drops the corner of a press lost before its release (a second finger), keeping the rest", () => {
+        const { editor, state, clock } = setup("polygon");
+        triangle(editor, clock);
+        editor.pointerDown(at(0, 90));
+        expect(editor.propToolShape()).toMatchObject({ points: 4 });
+        editor.pointerCancel();
+        expect(editor.propToolShape()).toMatchObject({ points: 3 });
+        expect(editor.finishPropTool()).toBe(true);
+        expect(state.drawn[0].points).toHaveLength(3);
+    });
+
+    it("drops a drag lost before its release, handing nothing over", () => {
+        const { editor, state } = setup("rectangle");
+        editor.pointerDown(at(0, 0));
+        editor.pointerMove(at(60, 40));
+        expect(editor.propToolShape()?.preview).not.toBeNull();
+        editor.pointerCancel();
+        expect(editor.propToolShape()?.preview).toBeNull();
+        editor.pointerUp(at(60, 40));
+        expect(state.drawn).toEqual([]);
+        expect(editor.propToolShape()).not.toBeNull();
     });
 });

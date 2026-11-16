@@ -17,7 +17,16 @@ export const collections = {
     }),
     docs: defineCollection({
         loader: docsLoader(),
-        schema: docsSchema(),
+        // The user guide's own fields (docs/conventions/user-docs.md): the kind of page, and
+        // what in the app it describes, so a change to that code can find the pages to check.
+        schema: docsSchema({
+            extend: z.object({
+                type: z
+                    .enum(["tutorial", "how-to", "concept", "reference"])
+                    .optional(),
+                covers: z.array(z.string()).optional(),
+            }),
+        }),
     }),
     legal: defineCollection({
         loader: glob({

@@ -1,5 +1,6 @@
+// cspell:ignore raycaster
 import { beforeAll, describe, expect, it } from "vitest";
-import { PerspectiveCamera, Vector2 } from "three";
+import { PerspectiveCamera, Raycaster, Vector2, Vector3 } from "three";
 import { setTexturePainting } from "@/view3d/core/environment";
 import { buildBlank } from "@/view3d/core/kits/blank";
 import { buildGym } from "@/view3d/core/kits/gym";
@@ -109,7 +110,16 @@ describe("pickSeatEye", () => {
             const r = kit.seatRows[Math.min(5, kit.seatRows.length - 1)];
             const p = r.points[0];
             const q = r.points[1];
-            const aim = [(p[0] + q[0]) / 2, p[1], (p[2] + q[2]) / 2] as const;
+            // Aim at the tread under the row: rows may sit at bench height,
+            // and a ray aimed at that height can pass over a front tread.
+            kit.root.updateMatrixWorld(true);
+            const down = new Raycaster(
+                new Vector3((p[0] + q[0]) / 2, p[1] + 2, (p[2] + q[2]) / 2),
+                new Vector3(0, -1, 0),
+            );
+            const tread = down.intersectObjects(kit.pickTargets, true)[0];
+            expect(tread).toBeDefined();
+            const aim = tread.point.toArray();
             const camera = new PerspectiveCamera(45, 1, 0.3, 3000);
             camera.position.set(aim[0] + 2, aim[1] + 30, aim[2] + 60);
             camera.lookAt(aim[0], aim[1], aim[2]);

@@ -126,6 +126,8 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                             type="button"
                             data-testid="basic-point-tick"
                             data-timeline-interactive="true"
+                            // A finger's long press opens its menu (tablet 3.4), not the hint
+                            data-own-long-press={onRemove ? "" : undefined}
                             aria-label={t("timeline.basic.point.label", {
                                 count: point.count,
                                 page: point.page,
@@ -141,6 +143,12 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                                 left: beatToX(point.beat, pixelsPerBeat),
                             }}
                             onClick={() => onSeek?.(point.beat)}
+                            // Kept from the menu's own long press, which opens while a finger
+                            // is still down: the timeline's opens it on release (tablet 3.4)
+                            onPointerDown={(event) => {
+                                if (event.pointerType === "touch")
+                                    event.preventDefault();
+                            }}
                             // The page menu on the surface must not open too
                             onContextMenu={(event) => event.stopPropagation()}
                         >

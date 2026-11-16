@@ -3,6 +3,11 @@ import {
     type Checkpoint,
     type RgbaColor,
 } from "@openmarch/core";
+import {
+    arrowDirectionFor,
+    yardNumberPath,
+    yardNumberSides,
+} from "./fieldNumbers";
 
 /**
  * The 2D field's layout, in field units. Everything sits exactly on its
@@ -42,6 +47,14 @@ export type FieldPlanText = {
     flipped: boolean;
 };
 
+/** A filled outline, such as a painted yard number. */
+export type FieldPlanShape = {
+    role: "yardNumber";
+    /** An SVG path of absolute M, L, Q and Z commands, filled nonzero. */
+    path: string;
+    color: RgbaColor;
+};
+
 export type FieldPlanImage = {
     x: number;
     y: number;
@@ -60,6 +73,8 @@ export type FieldPlan2d = {
     lines: FieldPlanLine[];
     /** In paint order, over the lines. */
     texts: FieldPlanText[];
+    /** Filled shapes (the yard numbers), over the lines with the texts. */
+    shapes: FieldPlanShape[];
     /** A rectangle stroked over everything, the stroke centered on its edge. */
     border: {
         x: number;
@@ -90,6 +105,12 @@ const BASELINE_FROM_TOP = TEXT_BOX * (1 - 0.222);
 /** From the middle of the text box to the baseline, in font sizes */
 export const BASELINE_BELOW_CENTER = BASELINE_FROM_TOP - TEXT_BOX / 2;
 const LABEL_FONT_SIZE = 20;
+/**
+ * How far the labels outside the field reach past its edges, in field pixels: the top and bottom
+ * labels 25 px out plus their text, the side labels 10 px out plus a short name ("F12", about four
+ * characters of the fallback monospace), which is also more than half the widest top label
+ */
+export const OUTSIDE_LABEL_ROOM = { x: 64, y: 32 } as const;
 /** A font that doesn't exist, so the platform's fallback draws the labels. */
 const LABEL_FONT = "mono";
 /** The font the yard numbers use */
@@ -320,6 +341,7 @@ export function planField2d(
     // Border: three grid lines wide, just outside the field's edge
     const borderWidth = GRID_STROKE * 3;
     const inset = (borderWidth - GRID_STROKE) / 2;
+    const numbers = yardNumbers(fp);
 
     return {
         width,
@@ -327,7 +349,8 @@ export function planField2d(
         background: theme.background,
         image: planFieldImage(fp, image),
         lines,
-        texts: [...checkpointLabels(fp), ...yardNumbers(fp)],
+        texts: [...checkpointLabels(fp), ...numbers.texts],
+        shapes: numbers.shapes,
         border: {
             x: -inset,
             y: -inset,
@@ -406,62 +429,62 @@ function checkpointLabels(fp: FieldProperties): FieldPlanText[] {
     return out;
 }
 
-/** Yard numbers on the field, centered on their yard line; the away side's upside down */
-function yardNumbers(fp: FieldProperties): FieldPlanText[] {
-    const { homeStepsFromFrontToInside, homeStepsFromFrontToOutside } =
-        fp.yardNumberCoordinates;
-    if (
-        homeStepsFromFrontToInside === undefined ||
-        homeStepsFromFrontToOutside === undefined
-    )
-        return [];
+/**
+ * Yard numbers on the field, painted like a football field's (`fieldNumbers.ts`): digits and
+ * an arrow toward the nearer goal, as filled shapes, in each side's band that has both of its
+ * coordinates. The far side's read from the back sideline. A label that isn't digits ("G") is
+ * text instead, centered on its yard line in the band.
+ */
+function yardNumbers(fp: FieldProperties): {
+    shapes: FieldPlanShape[];
+    texts: FieldPlanText[];
+} {
     const { pixelsPerStep, centerFrontPoint, theme } = fp;
-    const fontSize =
-        (homeStepsFromFrontToInside - homeStepsFromFrontToOutside) *
-        pixelsPerStep;
-    const away = fp.yardNumberCoordinates.awayStepsFromFrontToOutside;
-    const out: FieldPlanText[] = [];
-    const number = (
-        text: string,
-        x: number,
-        top: number,
-        flipped: boolean,
-    ): FieldPlanText => {
-        const centerY = top + (TEXT_BOX * fontSize) / 2;
-        return {
-            role: "yardNumber",
-            text,
-            x,
-            y: centerY + BASELINE_BELOW_CENTER * fontSize,
-            fontSize,
-            fontFamily: NUMBER_FONT,
-            anchor: "middle",
-            color: theme.fieldLabel,
-            letterSpacing: YARD_NUMBER_SPACING * fontSize,
-            flipped,
-        };
-    };
+    const sides = yardNumberSides(
+        fp.yardNumberCoordinates,
+        (steps) => centerFrontPoint.yPixels - steps * pixelsPerStep,
+    );
+    const shapes: FieldPlanShape[] = [];
+    const texts: FieldPlanText[] = [];
     for (const xCheckpoint of fp.xCheckpoints) {
-        if (!xCheckpoint.fieldLabel) continue;
-        const x = checkpointX(fp, xCheckpoint);
-        out.push(
-            number(
-                xCheckpoint.fieldLabel,
-                x,
-                centerFrontPoint.yPixels -
-                    homeStepsFromFrontToInside * pixelsPerStep,
-                false,
-            ),
+        const label = xCheckpoint.fieldLabel?.trim();
+        if (!label) continue;
+        const lineX = checkpointX(fp, xCheckpoint);
+        const arrowDirection = arrowDirectionFor(
+            xCheckpoint.stepsFromCenterFront,
         );
-        if (away !== undefined)
-            out.push(
-                number(
-                    xCheckpoint.fieldLabel,
-                    x,
-                    centerFrontPoint.yPixels - away * pixelsPerStep,
-                    true,
-                ),
-            );
+        for (const { insideY, outsideY } of sides) {
+            const path = yardNumberPath({
+                label,
+                lineX,
+                insideY,
+                outsideY,
+                arrowDirection,
+            });
+            if (path) {
+                shapes.push({
+                    role: "yardNumber",
+                    path,
+                    color: theme.fieldLabel,
+                });
+                continue;
+            }
+            const fontSize = Math.abs(outsideY - insideY);
+            const centerY =
+                Math.min(insideY, outsideY) + (TEXT_BOX * fontSize) / 2;
+            texts.push({
+                role: "yardNumber",
+                text: label,
+                x: lineX,
+                y: centerY + BASELINE_BELOW_CENTER * fontSize,
+                fontSize,
+                fontFamily: NUMBER_FONT,
+                anchor: "middle",
+                color: theme.fieldLabel,
+                letterSpacing: YARD_NUMBER_SPACING * fontSize,
+                flipped: outsideY < insideY,
+            });
+        }
     }
-    return out;
+    return { shapes, texts };
 }

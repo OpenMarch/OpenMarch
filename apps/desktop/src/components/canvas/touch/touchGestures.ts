@@ -1,26 +1,27 @@
 /**
- * Decides what each finger and pen press on the field does. Pure: the DOM
- * adapter (`touchGestureAdapter.ts`) feeds it pointer events and timer ticks
- * and carries out the effects it returns.
+ * Decides what each finger and pen press on the field does. Pure: the field's
+ * gesture adapter (`field/three/fieldGestures.ts`) feeds it pointer events and
+ * timer ticks and carries out the effects it returns.
  *
  * Rules:
- * - One finger belongs to Fabric (select, drag, rubber band) and its events
- *   pass through.
- * - A second finger turns the press into a two-finger gesture: Fabric's action
- *   is cancelled and every finger then pans and pinches the view until all
- *   fingers are up. Going back down to one finger keeps navigating; it never
- *   resumes editing.
+ * - One finger's press is a "single" press. The adapter decides what it does
+ *   (edit through the field editor, or move the view once it drags; see
+ *   `panSingle`) and gets told when it leaves the tap slop and when it ends.
+ * - A second finger turns the press into a two-finger gesture: whatever the
+ *   first finger started is cancelled and every finger then pans and pinches
+ *   the view until all fingers are up. Going back down to one finger keeps
+ *   navigating; it never resumes editing.
  * - A quick tap with two fingers is undo, with three fingers redo.
- * - Holding one finger still arms a long press. It only takes effect when the
- *   finger lifts without having moved (toggle a marcher in the selection); if
- *   the finger moves instead, the press carries on as a drag (or, from empty
- *   field, turns into the lasso). Deciding on release, not on the timer, means
- *   a slow start to a drag, or moves the browser delivers late, can never be
- *   mistaken for a long press.
- * - A pen edits like a mouse. While a pen is down, fingers on the field are
- *   ignored. Shortly after the pen lifts, a finger can move the view but
- *   never edits (palm rejection by timing; see isPalmContact).
+ * - Holding one finger still arms a long press (`longPressArmed`); lifting
+ *   it without having moved commits it (`longPressCommit`). If the finger
+ *   moves instead, the press carries on as a drag.
+ * - A pen is observed, never steered: its presses go to the editor as a
+ *   mouse's do. While a pen is down, fingers on the field are ignored (a
+ *   resting palm). Shortly after the pen lifts, one finger alone does nothing
+ *   and two fingers only navigate (palm rejection by timing; see
+ *   isPalmContact).
  */
+import { thresholdsFor } from "@/field/editor/pointerThresholds";
 
 export type GesturePointerKind = "touch" | "pen";
 
@@ -77,13 +78,13 @@ export interface NavigationGeometry {
 }
 
 export type GestureEffect =
-    /** First finger down: remember the selection and let Fabric have the press */
+    /** First finger down: the adapter decides what the press does */
     | { type: "singleStart"; id: number; point: GesturePoint }
     /** The first finger moved past the tap slop */
     | { type: "singleDragged"; id: number }
     /** First finger lifted; `tap` when it barely moved and no long press was armed */
     | { type: "singleEnd"; id: number; tap: boolean; point: GesturePoint }
-    /** Undo whatever Fabric started for the first finger, and restore the selection */
+    /** Undo whatever the first finger started, restoring the state from before it */
     | { type: "cancelSingle" }
     /** The first finger has been held still long enough: show that a long press is ready */
     | { type: "longPressArmed"; id: number; point: GesturePoint }
@@ -95,7 +96,7 @@ export type GestureEffect =
      * ordinary drag (or tap).
      */
     | { type: "longPressCancelled"; id: number }
-    /** The finger lifted from an armed long press without moving: carry it out (Fabric doesn't see this release) */
+    /** The finger lifted from an armed long press without moving (no `singleEnd` follows) */
     | { type: "longPressCommit"; id: number; point: GesturePoint }
     /** Start (or restart) navigation from this geometry */
     | { type: "navigationStart"; geometry: NavigationGeometry }
@@ -108,7 +109,7 @@ export type GestureEffect =
 export interface GestureResult {
     state: GestureState;
     effects: GestureEffect[];
-    /** Whether the DOM event should reach Fabric */
+    /** Whether the press is (still) the single finger's: false while navigating or ignored */
     passThrough: boolean;
 }
 
@@ -157,7 +158,7 @@ export const GESTURE_TIMING = {
      */
     longPressLateJumpPx: 40,
     /** A single finger tap moves less than this (px) */
-    tapSlopPx: 10,
+    tapSlopPx: thresholdsFor("touch").clickSlop,
     /** All fingers of a multi-finger tap go down within this */
     multiTapDownWindowMs: 400,
     /** A multi-finger tap is over (all fingers up) within this, from the first finger down */
@@ -305,9 +306,10 @@ function handleTouchDown(
 
     if (state.mode === "idle") {
         if (penRecent(state, input.t)) {
-            // Just after the pen: a finger may move the view but never edits
+            // Just after the pen: likely the hand that held it. One finger
+            // alone does nothing; two fingers may move the view; none edits
             const next = enterGesture(
-                { ...state, pointers, tap: null, twoFingerOnly: false },
+                { ...state, pointers, tap: null, twoFingerOnly: true },
                 effects,
             );
             return result(next, effects, false);

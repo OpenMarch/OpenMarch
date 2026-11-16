@@ -4,16 +4,23 @@ import {
     useLayoutEffect,
     useRef,
     useState,
+    useSyncExternalStore,
 } from "react";
 import clsx from "clsx";
 import {
     ArrowsOutIcon,
+    CaretDownIcon,
     CrosshairSimpleIcon,
     DotsSixVerticalIcon,
     EqualsIcon,
+    HandIcon,
+    LassoIcon,
+    MagicWandIcon,
     MagnetIcon,
+    MinusCircleIcon,
     PlusCircleIcon,
     QuestionIcon,
+    SelectionIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { LongPressBubble, useLongPress } from "@openmarch/ui";
@@ -23,10 +30,39 @@ import { fieldToElement, useFieldViewStore } from "@/field/three/fieldView";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
+    isActionEnabled,
+    runAction,
+    subscribeToActionHandlers,
+} from "@/shortcuts/registry";
+import {
     useTouchModifierStore,
     type TouchToggle,
 } from "@/stores/TouchModifierStore";
-import { choosePillPosition, PILL_EDGE, type Rect } from "./pillPlacement";
+import {
+    MENU_BUTTON_CLASS,
+    MENU_CONTENT_CLASS,
+    MENU_LABEL_CLASS,
+} from "@/components/ui/popupClasses";
+import {
+    choosePillPosition,
+    coversHandle,
+    keepOrSlide,
+    layersKey,
+    PILL_EDGE,
+    type Rect,
+} from "./pillPlacement";
+import {
+    fieldLayersIn,
+    NO_FIELD_OBSTACLES,
+    noteFieldLayersChanged,
+    overlaps,
+    PILL_AVOIDS,
+    type FieldObstacles,
+    type FieldObstacleSource,
+    SAVED_PILL_YIELDS_TO,
+    subscribeFieldLayers,
+} from "@/components/canvas/fieldLayers";
+import { useFieldDragModeStore, type FieldDragMode } from "./fieldDragMode";
 import { swallowPress } from "./swallowPress";
 
 export const TOUCH_MODIFIER_POSITION_KEY = "openmarch:touchModifierPosition";
@@ -36,6 +72,11 @@ const EXPLAIN_MS = 500;
 
 /** How long the view must stay still before the pill finds its spot again */
 const PLACE_AFTER_VIEW_MS = 300;
+
+/** Why a saved spot gives way (`updateSavedBlocked`) */
+type Blocker = "layer" | "handle" | null;
+/** When a saved spot that gave way may come back (`updateSavedBlocked`) */
+type ReturnWhen = "any" | "layer" | "none";
 
 interface Position {
     /** Distance from the left edge of the field (px) */
@@ -77,7 +118,7 @@ const writeStorage = (key: string, value: string) => {
     }
 };
 
-/** The pill's toggles, in order: the held roles, then Add. Named by role, never by key. */
+/** The pill's toggles, in order: the held roles, then Add and Subtract. Named by role, never by key. */
 const TOGGLES: readonly {
     toggle: TouchToggle;
     label: string;
@@ -109,6 +150,52 @@ const TOGGLES: readonly {
         hint: "touch.modifiers.addHint",
         Icon: PlusCircleIcon,
     },
+    {
+        toggle: "subtract",
+        label: "touch.modifiers.subtract",
+        hint: "touch.modifiers.subtractHint",
+        Icon: MinusCircleIcon,
+    },
+];
+
+/** Apple Pencil on Apple devices, a pen elsewhere: the `device` param of the drag mode texts */
+const PEN_DEVICE: "pencil" | "pen" =
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent)
+        ? "pencil"
+        : "pen";
+
+/** The drag modes in the menu's order, with their name, what they do and icon */
+const DRAG_MODES: readonly {
+    mode: FieldDragMode;
+    label: string;
+    describe: string;
+    Icon: Icon;
+}[] = [
+    {
+        mode: "auto",
+        label: "touch.dragMode.auto",
+        describe: "touch.dragMode.autoDescribe",
+        Icon: MagicWandIcon,
+    },
+    {
+        mode: "box",
+        label: "touch.dragMode.box",
+        describe: "touch.dragMode.boxDescribe",
+        Icon: SelectionIcon,
+    },
+    {
+        mode: "lasso",
+        label: "touch.dragMode.lasso",
+        describe: "touch.dragMode.lassoDescribe",
+        Icon: LassoIcon,
+    },
+    {
+        mode: "pan",
+        label: "touch.dragMode.pan",
+        describe: "touch.dragMode.panDescribe",
+        Icon: HandIcon,
+    },
 ];
 
 const EXPLAIN = {
@@ -117,9 +204,14 @@ const EXPLAIN = {
     constrain: "touch.modifiers.explain.constrain",
     fromCenter: "touch.modifiers.explain.fromCenter",
     add: "touch.modifiers.explain.add",
+    subtract: "touch.modifiers.explain.subtract",
+    dragMode: "touch.modifiers.explain.dragMode",
     snap: "touch.modifiers.explain.snap",
     help: "touch.modifiers.explain.help",
-} as const satisfies Record<TouchToggle | "grip" | "snap" | "help", string>;
+} as const satisfies Record<
+    TouchToggle | "grip" | "dragMode" | "snap" | "help",
+    string
+>;
 type Explained = keyof typeof EXPLAIN;
 
 const HELP = [
@@ -127,6 +219,7 @@ const HELP = [
     "touch.modifiers.helpList.fine",
     "touch.modifiers.helpList.fromCenter",
     "touch.modifiers.helpList.add",
+    "touch.modifiers.helpList.dragMode",
 ] as const;
 
 /**
@@ -230,6 +323,12 @@ function useTogglePress(toggle: TouchToggle, onExplain: () => void) {
     };
 }
 
+/** The drag mode menu's width (`w-280`), to keep it inside the field */
+const DRAG_MODE_MENU_WIDTH = 280;
+
+/** How long the layers over the field must stay put before the pill finds its spot again */
+const PLACE_AFTER_LAYERS_MS = 120;
+
 /** The field drawing and the marchers, in the field element's pixels */
 function fieldLayout(marchers: FieldMarchers | null): {
     field: Rect | null;
@@ -257,30 +356,80 @@ function fieldLayout(marchers: FieldMarchers | null): {
     return { field, marchers: points };
 }
 
-/** One of the pill's segments: on is the accent on a light accent tint, as the shape editor's toggles */
-const segment = (on: boolean) =>
+/**
+ * One of the pill's segments: on is the accent on a light accent tint, as the shape editor's
+ * toggles. Compact (the pill doesn't fit its pane): the icon over a short caption.
+ */
+const segment = (on: boolean, compact = false) =>
     clsx(
-        "rounded-4 flex h-44 min-w-44 touch-none items-center justify-center gap-4 px-8 whitespace-nowrap select-none",
+        "rounded-4 flex h-44 min-w-44 touch-none items-center justify-center whitespace-nowrap select-none",
+        compact ? "text-sub flex-col gap-2 px-4 leading-none" : "gap-4 px-8",
         on ? "bg-accent/15 text-accent" : "hover:text-accent",
     );
+
+/**
+ * Whether the pill is too wide for the pane it floats in at full size (a 1024 px tablet with
+ * the Inspector open): then it shows its compact form. The full width is measured while the
+ * pill is full size, and again whenever the pane or what the pill says changes.
+ */
+function useCompactPill(
+    enabled: boolean,
+    pill: React.RefObject<HTMLElement | null>,
+    pane: () => HTMLElement | null,
+    content: unknown,
+) {
+    const [compact, setCompact] = useState(false);
+    const fullWidth = useRef(0);
+    useLayoutEffect(() => {
+        if (!enabled) return;
+        const measure = () => {
+            const el = pill.current;
+            const parent = pane();
+            if (!el || !parent) return;
+            if (!compact)
+                fullWidth.current = Math.max(el.offsetWidth, el.scrollWidth);
+            setCompact(parent.clientWidth - 2 * PILL_EDGE < fullWidth.current);
+        };
+        measure();
+        const parent = pane();
+        const observer =
+            parent && typeof ResizeObserver !== "undefined"
+                ? new ResizeObserver(measure)
+                : null;
+        if (parent) observer?.observe(parent);
+        return () => observer?.disconnect();
+    }, [enabled, compact, pill, pane, content]);
+    return compact;
+}
 
 /**
  * The floating pill over the field in the touch layout, where there is often no keyboard
  * (modifier roles, version A, "Touch and Apple Pencil"):
  * - Fine, Equal and From center: the held roles, as Shift, $mod and Alt are with a keyboard,
- * - Add: adds to the selection, as Shift at the press,
+ * - Add and Subtract: a press adds to the selection, as Shift does, or a box or lasso takes out
+ *   what it covers, as Alt does,
+ * - "Drag" and the mode: what one finger or the pen does on empty field (Auto, Box, Lasso, Pan;
+ *   `fieldDragMode.ts`), kept on this device,
  * - the magnet: the Snap toggle, pressed while snapping is off,
  * - "?" explains them. A long press on any of them explains it too.
  *
  * Each toggle is held while pressed, or latched by a tap. Drag the grip to move the pill; the
- * spot is remembered. Until then it sits at the bottom where it covers the fewest marchers.
+ * spot is remembered. Until then it sits at the bottom where it covers the fewest marchers, and
+ * off the selection box, the open shape and their handles (#933). A spot the user chose gives way
+ * to those handles too, and comes back when the pill is next placed afresh (the view settles), not
+ * on the deselect itself (#936). When a layer comes or goes, or the selection changes, the pill
+ * keeps its spot unless that spot is now covered or covers a handle; then it slides the least way
+ * clear. While a tool waits for a stroke it never moves for less (#936).
  */
 // eslint-disable-next-line max-lines-per-function
 export default function TouchModifierButtons({
     marchers = null,
+    obstacles = null,
 }: {
     /** The marchers drawn, for a spot that covers the fewest */
     marchers?: FieldMarchers | null;
+    /** What's dragged on the field, which the pill keeps off (#933), in the field element's px */
+    obstacles?: FieldObstacleSource | null;
 }) {
     const { t } = useTranslate();
     const isTouchMode = useIsTouchMode();
@@ -288,16 +437,37 @@ export default function TouchModifierButtons({
     const latched = useTouchModifierStore((s) => s.latched);
     const clear = useTouchModifierStore((s) => s.clear);
     const snapOff = useUiSettingsStore((s) => !s.uiSettings.snap);
-    const setSnap = useUiSettingsStore((s) => s.setSnap);
+    // The magnet runs the toolbar's Toggle Snap action: same handler, enabled state and run listeners
+    const snapRunnable = useSyncExternalStore(subscribeToActionHandlers, () =>
+        isActionEnabled("toggleSnap"),
+    );
     const [saved, setSaved] = useState<Position | null>(() =>
         parseModifierPosition(readStorage(TOUCH_MODIFIER_POSITION_KEY)),
     );
     const [auto, setAuto] = useState<Position | null>(null);
-    const [helpOpen, setHelpOpen] = useState(false);
+    const autoRef = useRef(auto);
+    autoRef.current = auto;
+    /**
+     * Why the saved spot gives way, if it does: it's under a task's bar or the toolbar panel
+     * (`layer`), or over a handle on the field (`handle`). The automatic spot meanwhile
+     */
+    const [blockedBy, setBlockedBy] = useState<Blocker>(null);
+    const blockedRef = useRef(blockedBy);
+    blockedRef.current = blockedBy;
+    const savedBlocked = blockedBy !== null;
+    // Read by the placing, so a drag (which changes it on every move) doesn't set it up again
+    const savedRef = useRef(saved);
+    savedRef.current = saved;
+    const dragMode = useFieldDragModeStore((s) => s.mode);
+    const setDragMode = useFieldDragModeStore((s) => s.setMode);
+    /** The help list or the drag mode menu, whichever is open */
+    const [popup, setPopup] = useState<"help" | "dragMode" | null>(null);
     const [explained, setExplained] = useState<Explained | null>(null);
     const anchors = useRef<Partial<Record<Explained, HTMLElement | null>>>({});
     const rootRef = useRef<HTMLDivElement>(null);
     const pillRef = useRef<HTMLDivElement>(null);
+    /** The layers over the field the spot was last worked out for (`layersKey`) */
+    const placedForLayers = useRef("");
     const drag = useRef<{
         id: number;
         startX: number;
@@ -311,12 +481,24 @@ export default function TouchModifierButtons({
             setExplained("fromCenter"),
         ),
         add: useTogglePress("add", () => setExplained("add")),
+        subtract: useTogglePress("subtract", () => setExplained("subtract")),
     } satisfies Record<TouchToggle, unknown>;
+    const dragModeLongPress = useLongPress(() => setExplained("dragMode"));
     const snapLongPress = useLongPress(() => setExplained("snap"));
     const helpLongPress = useLongPress(() => setExplained("help"));
     const gripLongPress = useLongPress(() => setExplained("grip"));
     const closeExplained = useCallback(() => setExplained(null), []);
-    const position = saved ?? auto;
+    const position = saved && !savedBlocked ? saved : auto;
+    /** Where it shows, read by the placing */
+    const shownRef = useRef(position);
+    shownRef.current = position;
+
+    // Moved: what keeps below it (a guide's name tag, #933) finds its place again
+    const shownLeft = position?.left;
+    const shownBottom = position?.bottom;
+    useEffect(() => {
+        if (shownLeft !== undefined) noteFieldLayersChanged();
+    }, [shownLeft, shownBottom]);
 
     // Leaving touch mode (or the field) lets go of anything held or latched
     useEffect(() => {
@@ -324,8 +506,11 @@ export default function TouchModifierButtons({
     }, [isTouchMode, clear]);
     useEffect(() => () => clear(), [clear]);
 
-    const container = () =>
-        (rootRef.current?.offsetParent as HTMLElement | null) ?? null;
+    const container = useCallback(
+        () => (rootRef.current?.offsetParent as HTMLElement | null) ?? null,
+        [],
+    );
+    const compact = useCompactPill(isTouchMode, pillRef, container, dragMode);
 
     const clamp = useCallback((p: Position): Position => {
         const pill = pillRef.current;
@@ -339,24 +524,144 @@ export default function TouchModifierButtons({
         };
     }, []);
 
-    // No saved spot: the bottom spot that covers the fewest marchers. Worked
-    // out again when the field area changes size and when the view settles.
+    /** The pill's box at `p`, in the field area's px (top-left origin) */
+    const rectAt = useCallback((p: Position): Rect | null => {
+        const pill = pillRef.current;
+        const parent = rootRef.current?.offsetParent as HTMLElement | null;
+        if (!pill || !parent) return null;
+        const size = { width: pill.offsetWidth, height: pill.offsetHeight };
+        return {
+            left: p.left,
+            top: parent.clientHeight - p.bottom - size.height,
+            ...size,
+        };
+    }, []);
+    /**
+     * Whether the saved spot gives way: to a task's bar, the panel or a handle on the field. Once
+     * it has, it comes back only as `mayReturn` allows (#936): `any` when the pill is placed again
+     * anyway (the view settled, the field resized), `layer` when it gave way to a layer that's
+     * gone, `none` after a change on the field alone: a deselect doesn't move the pill from under
+     * a finger reaching for it. Returns why it gives way now.
+     */
+    const updateSavedBlocked = useCallback(
+        (onField: FieldObstacles, mayReturn: ReturnWhen = "any"): Blocker => {
+            const last = blockedRef.current;
+            // Not while it's being dragged: it would jump from under the finger
+            if (drag.current) return last;
+            const parent = rootRef.current?.offsetParent as HTMLElement | null;
+            const saved = savedRef.current;
+            const at = saved && rectAt(saved);
+            let next: Blocker = null;
+            if (at && parent) {
+                if (
+                    fieldLayersIn(parent, SAVED_PILL_YIELDS_TO).some((layer) =>
+                        overlaps(at, layer),
+                    )
+                )
+                    next = "layer";
+                else if (coversHandle(at, onField)) next = "handle";
+            }
+            const stays =
+                next === null &&
+                last !== null &&
+                (mayReturn === "none" ||
+                    (mayReturn === "layer" && last !== "layer"));
+            if (stays) return last;
+            blockedRef.current = next;
+            setBlockedBy(next);
+            return next;
+        },
+        [rectAt],
+    );
+
+    /**
+     * After the layers over the field or what's on it change (#936): the pill keeps its spot
+     * unless that spot is now covered or covers a handle, and then slides the least way clear
+     * (`keepOrSlide`), finding a new spot only when no slide will do. A saved spot that gave way to
+     * a layer comes back once the layer's gone; one that gave way to a handle waits for the next
+     * full placing (`updateSavedBlocked`).
+     */
+    const keepOrMove = useCallback(() => {
+        const pill = pillRef.current;
+        const parent = rootRef.current?.offsetParent as HTMLElement | null;
+        if (!pill || !parent) return;
+        const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
+        const layers = fieldLayersIn(parent, PILL_AVOIDS, rootRef.current);
+        placedForLayers.current = layersKey(layers);
+        // Where the pill is now: the saved spot, or the automatic one while that gives way
+        const was = shownRef.current;
+        const blocked = updateSavedBlocked(onField, "layer");
+        // The saved spot shows, clear of them all
+        if (savedRef.current && blocked === null) return;
+        // Slid from where it is, the saved spot included when a layer has just covered it (#936
+        // review), so it moves the least way rather than jumping to an old automatic spot
+        const from = was ?? autoRef.current;
+        const shown = from && rectAt(from);
+        const container = {
+            width: parent.clientWidth,
+            height: parent.clientHeight,
+        };
+        const next = shown
+            ? keepOrSlide(shown, container, layers, onField)
+            : null;
+        if (next === "keep") {
+            // Kept where it is: the automatic spot, if it was the saved one that just gave way
+            if (from && from !== autoRef.current)
+                setAuto({ left: from.left, bottom: from.bottom });
+            return;
+        }
+        const spot =
+            next ??
+            choosePillPosition(
+                container,
+                { width: pill.offsetWidth, height: pill.offsetHeight },
+                fieldLayout(marchers).field,
+                fieldLayout(marchers).marchers,
+                layers,
+                onField,
+            );
+        setAuto((last) =>
+            last?.left === spot.left && last.bottom === spot.bottom
+                ? last
+                : spot,
+        );
+    }, [marchers, obstacles, rectAt, updateSavedBlocked]);
+
+    // No saved spot, or one under a task's bar: the bottom spot that covers the fewest marchers and
+    // none of the other layers over the field (#927). Worked out again when the field area changes
+    // size, when the view settles and when those layers change.
     const placeAutomatically = useCallback(() => {
+        // A tool waiting for a stroke: it stays out of where the user is about to draw (#936)
+        if (obstacles?.armed?.()) {
+            keepOrMove();
+            return;
+        }
         const pill = pillRef.current;
         const parent = rootRef.current?.offsetParent as HTMLElement | null;
         if (!pill || !parent) return;
         const { field, marchers: dots } = fieldLayout(marchers);
-        setAuto(
-            choosePillPosition(
-                { width: parent.clientWidth, height: parent.clientHeight },
-                { width: pill.offsetWidth, height: pill.offsetHeight },
-                field,
-                dots,
-            ),
+        const size = { width: pill.offsetWidth, height: pill.offsetHeight };
+        const onField = obstacles?.read() ?? NO_FIELD_OBSTACLES;
+        const layers = fieldLayersIn(parent, PILL_AVOIDS, rootRef.current);
+        placedForLayers.current = layersKey(layers);
+        const next = choosePillPosition(
+            { width: parent.clientWidth, height: parent.clientHeight },
+            size,
+            field,
+            dots,
+            layers,
+            onField,
         );
-    }, [marchers]);
+        setAuto((last) =>
+            last?.left === next.left && last.bottom === next.bottom
+                ? last
+                : next,
+        );
+        updateSavedBlocked(onField);
+    }, [marchers, obstacles, updateSavedBlocked, keepOrMove]);
+
     useLayoutEffect(() => {
-        if (!isTouchMode || saved) return;
+        if (!isTouchMode) return;
         placeAutomatically();
         // Again once the field has been fitted and the marchers drawn
         const later = setTimeout(placeAutomatically, 800);
@@ -371,28 +676,78 @@ export default function TouchModifierButtons({
             if (settle !== null) clearTimeout(settle);
             settle = setTimeout(placeAutomatically, PLACE_AFTER_VIEW_MS);
         });
+        let layersSettle: ReturnType<typeof setTimeout> | null = null;
+        const offLayers = subscribeFieldLayers(() => {
+            if (layersSettle !== null) clearTimeout(layersSettle);
+            layersSettle = setTimeout(() => {
+                layersSettle = null;
+                // Only when a layer it keeps off came, went or moved: not for its own move, which
+                // it notes for a guide's name tag (#933 review)
+                const parent = container();
+                if (
+                    parent &&
+                    layersKey(
+                        fieldLayersIn(parent, PILL_AVOIDS, rootRef.current),
+                    ) === placedForLayers.current
+                )
+                    return;
+                keepOrMove();
+            }, PLACE_AFTER_LAYERS_MS);
+        });
+        // The selection box or the open shape changing (#933), once it has settled and no drag on
+        // the field is under way (the drag's end tells again): a new spot only when the one shown
+        // now covers a handle, so a tap that selects or deselects doesn't move the pill from under
+        // a finger reaching for it (#933 review). A saved spot gives way to a handle, but doesn't
+        // come back on a deselect (#936): only at the next full placing
+        let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
+        const offObstacles = obstacles?.subscribe(() => {
+            if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
+            obstaclesSettle = setTimeout(() => {
+                obstaclesSettle = null;
+                if (obstacles.busy()) return;
+                const onField = obstacles.read();
+                const shown = shownRef.current && rectAt(shownRef.current);
+                if (!shown || !coversHandle(shown, onField)) return;
+                // A tool waiting for a stroke: the least move (#936)
+                if (obstacles.armed?.()) keepOrMove();
+                else placeAutomatically();
+            }, PLACE_AFTER_LAYERS_MS);
+        });
         return () => {
             clearTimeout(later);
             if (settle !== null) clearTimeout(settle);
+            if (layersSettle !== null) clearTimeout(layersSettle);
+            if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
             observer?.disconnect();
             offView();
+            offLayers();
+            offObstacles?.();
         };
-    }, [isTouchMode, saved, placeAutomatically]);
+        // The compact form is narrower: a new spot for it
+    }, [
+        isTouchMode,
+        placeAutomatically,
+        keepOrMove,
+        compact,
+        container,
+        obstacles,
+        rectAt,
+    ]);
 
     // The help closes on a press anywhere else (which does nothing more), or
     // Escape. Registered as it appears, so no press slips through.
     useLayoutEffect(() => {
-        if (!helpOpen && !explained) return;
+        if (!popup && !explained) return;
         const onDown = (e: PointerEvent) => {
             if (rootRef.current?.contains(e.target as Node)) return;
             e.stopPropagation();
             e.preventDefault();
             swallowPress(e.pointerId);
-            setHelpOpen(false);
+            setPopup(null);
             setExplained(null);
         };
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") setHelpOpen(false);
+            if (e.key === "Escape") setPopup(null);
         };
         document.addEventListener("pointerdown", onDown, true);
         document.addEventListener("keydown", onKey);
@@ -400,7 +755,7 @@ export default function TouchModifierButtons({
             document.removeEventListener("pointerdown", onDown, true);
             document.removeEventListener("keydown", onKey);
         };
-    }, [helpOpen, explained]);
+    }, [popup, explained]);
 
     const onGripDown = (e: React.PointerEvent<HTMLDivElement>) => {
         gripLongPress.onPointerDown(e);
@@ -417,6 +772,13 @@ export default function TouchModifierButtons({
             startY: e.clientY,
             from: position ?? { left: PILL_EDGE, bottom: PILL_EDGE },
         };
+        // Moved aside from its spot (#927): picked up from where it is, so it follows the finger
+        // rather than staying put and jumping on release
+        if (savedBlocked) {
+            if (position) setSaved(position);
+            blockedRef.current = null;
+            setBlockedBy(null);
+        }
     };
     const onGripMove = (e: React.PointerEvent<HTMLDivElement>) => {
         gripLongPress.onPointerMove(e);
@@ -436,6 +798,8 @@ export default function TouchModifierButtons({
         if (!d || d.id !== e.pointerId) return;
         e.stopPropagation();
         drag.current = null;
+        // Let go over a task's bar: it moves off it
+        setTimeout(placeAutomatically, 0);
         setSaved((p) => {
             if (p) writeStorage(TOUCH_MODIFIER_POSITION_KEY, JSON.stringify(p));
             return p;
@@ -444,8 +808,8 @@ export default function TouchModifierButtons({
 
     if (!isTouchMode) return null;
 
-    // The help opens toward the middle of the field, on the side with room,
-    // and scrolls rather than run off the field
+    // The help and the menu open toward the middle of the field, on the side
+    // with room, and scroll rather than run off the field
     const parent = container();
     const pillWidth = pillRef.current?.offsetWidth ?? 0;
     const pillHeight = pillRef.current?.offsetHeight ?? 48;
@@ -462,6 +826,33 @@ export default function TouchModifierButtons({
     const setAnchor = (key: Explained) => (el: HTMLElement | null) => {
         anchors.current[key] = el;
     };
+    const popupStyle = {
+        maxHeight: Math.max(120, openBelow ? roomBelow : roomAbove),
+    };
+    const popupVertical = clsx(
+        "absolute overflow-y-auto",
+        openBelow ? "top-[calc(100%+8px)]" : "bottom-[calc(100%+8px)]",
+    );
+    const popupSide = clsx(popupVertical, onRight ? "right-0" : "left-0");
+    // The drag mode menu opens over or under its own button (#933), lined up with its left edge,
+    // and moved along only as far as it takes to stay inside the field
+    const dragModeButton = anchors.current.dragMode;
+    const dragModeMenuLeft =
+        dragModeButton && parent && position
+            ? Math.max(
+                  PILL_EDGE - position.left,
+                  Math.min(
+                      dragModeButton.offsetLeft,
+                      parent.clientWidth -
+                          PILL_EDGE -
+                          DRAG_MODE_MENU_WIDTH -
+                          position.left,
+                  ),
+              )
+            : 0;
+    const current =
+        DRAG_MODES.find((option) => option.mode === dragMode) ?? DRAG_MODES[0];
+    const describe = (key: string) => t(key, { device: PEN_DEVICE });
 
     return (
         <div
@@ -479,24 +870,17 @@ export default function TouchModifierButtons({
             // Presses on the pill are the pill's, not the field's navigation
             onPointerDown={(e) => e.stopPropagation()}
             data-testid="touch-modifier-buttons"
+            data-field-layer="pill"
         >
-            {helpOpen && (
+            {popup === "help" && (
                 <div
                     role="note"
-                    style={{
-                        maxHeight: Math.max(
-                            120,
-                            openBelow ? roomBelow : roomAbove,
-                        ),
-                    }}
+                    style={popupStyle}
                     className={clsx(
-                        "rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal absolute w-[240px] max-w-[calc(100vw-24px)] overflow-y-auto border p-12 leading-snug",
-                        onRight ? "right-0" : "left-0",
-                        openBelow
-                            ? "top-[calc(100%+8px)]"
-                            : "bottom-[calc(100%+8px)]",
+                        popupSide,
+                        "rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal w-[240px] max-w-[calc(100vw-24px)] border p-12 leading-snug",
                     )}
-                    onClick={() => setHelpOpen(false)}
+                    onClick={() => setPopup(null)}
                 >
                     <ul className="flex flex-col gap-4">
                         {HELP.map((key) => (
@@ -507,10 +891,54 @@ export default function TouchModifierButtons({
                     </ul>
                 </div>
             )}
+            {popup === "dragMode" && (
+                <div
+                    role="menu"
+                    aria-label={t("touch.dragMode.menu")}
+                    style={{ ...popupStyle, left: dragModeMenuLeft }}
+                    className={clsx(
+                        popupVertical,
+                        MENU_CONTENT_CLASS,
+                        "w-280 max-w-[calc(100vw-24px)]",
+                    )}
+                    data-testid="field-drag-mode-menu"
+                >
+                    <div className={MENU_LABEL_CLASS}>
+                        {t("touch.dragMode.menu")}
+                    </div>
+                    {DRAG_MODES.map(({ mode, label, describe: text, Icon }) => (
+                        <button
+                            key={mode}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={mode === dragMode}
+                            className={clsx(
+                                MENU_BUTTON_CLASS,
+                                "touch:min-h-44",
+                                mode === dragMode && "bg-accent/15",
+                            )}
+                            data-testid={`field-drag-mode-${mode}`}
+                            onClick={() => {
+                                setDragMode(mode);
+                                setPopup(null);
+                            }}
+                        >
+                            <Icon size={18} className="shrink-0" />
+                            <span className="flex flex-col">
+                                <span className="font-medium">{t(label)}</span>
+                                <span className="text-sub text-text-subtitle">
+                                    {describe(text)}
+                                </span>
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            )}
             <div
                 ref={pillRef}
                 // These explain themselves on a long press (not the app-wide guard)
                 data-own-long-press
+                data-compact={compact || undefined}
                 className="rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal flex items-center gap-2 border p-2"
             >
                 <div
@@ -528,6 +956,36 @@ export default function TouchModifierButtons({
                 >
                     <DotsSixVerticalIcon size={20} />
                 </div>
+                <button
+                    ref={setAnchor("dragMode")}
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded={popup === "dragMode"}
+                    aria-label={t("touch.dragMode.button", {
+                        label: t(current.label),
+                        describe: describe(current.describe),
+                    })}
+                    className={segment(popup === "dragMode", compact)}
+                    data-testid="field-drag-mode"
+                    {...dragModeLongPress}
+                    onClick={() =>
+                        setPopup((open) =>
+                            open === "dragMode" ? null : "dragMode",
+                        )
+                    }
+                >
+                    {!compact && (
+                        <span className="text-text-subtitle">
+                            {t("touch.dragMode.prefix")}
+                        </span>
+                    )}
+                    <current.Icon size={16} />
+                    <span className="flex items-center gap-2">
+                        {t(current.label)}
+                        <CaretDownIcon size={compact ? 10 : 12} />
+                    </span>
+                </button>
+                <span className="bg-stroke h-24 w-px" aria-hidden />
                 {TOGGLES.map(({ toggle, label, hint, Icon }) => {
                     const isOn = held[toggle] || latched[toggle];
                     return (
@@ -539,7 +997,7 @@ export default function TouchModifierButtons({
                             aria-label={t(label)}
                             title={t(hint)}
                             aria-pressed={isOn}
-                            className={segment(isOn)}
+                            className={segment(isOn, compact)}
                             data-testid={`touch-toggle-${toggle}`}
                             {...presses[toggle]}
                         >
@@ -558,10 +1016,14 @@ export default function TouchModifierButtons({
                     aria-label={t("touch.modifiers.noSnap")}
                     title={t(EXPLAIN.snap)}
                     aria-pressed={snapOff}
-                    className={segment(snapOff)}
+                    disabled={!snapRunnable}
+                    className={clsx(
+                        segment(snapOff, compact),
+                        "disabled:pointer-events-none disabled:opacity-50",
+                    )}
                     data-testid="touch-snap"
                     {...snapLongPress}
-                    onClick={() => setSnap()}
+                    onClick={() => runAction("toggleSnap")}
                 >
                     <MagnetIcon
                         size={16}
@@ -573,10 +1035,12 @@ export default function TouchModifierButtons({
                     ref={setAnchor("help")}
                     type="button"
                     aria-label={t("touch.modifiers.help")}
-                    aria-expanded={helpOpen}
+                    aria-expanded={popup === "help"}
                     className="rounded-4 text-text/60 hover:text-accent flex h-44 w-44 items-center justify-center"
                     {...helpLongPress}
-                    onClick={() => setHelpOpen((open) => !open)}
+                    onClick={() =>
+                        setPopup((open) => (open === "help" ? null : "help"))
+                    }
                 >
                     <QuestionIcon size={20} />
                 </button>

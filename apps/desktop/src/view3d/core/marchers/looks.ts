@@ -25,12 +25,17 @@ import type { RgbaColor } from "@openmarch/core";
 import { FAMILIES, getSectionObjectByName } from "@/global/classes/Sections";
 import {
     carryForSection,
+    finishFor,
     guardCarry,
+    isTuba,
+    tubaCarry,
     type Carry,
     type Finish,
+    type TubaModelId,
 } from "../instruments/catalog";
 import { bassSizesFor } from "../instruments/battery";
 import type { GuardModelId, ModelOptions } from "../instruments/model";
+import { DEFAULT_SILK_SHAPE, type SilkShapeId } from "../sizes/silkShapes";
 import type { HoldState } from "../instruments/holds";
 import {
     DEFAULT_GUARD_UNIFORM_PRESET,
@@ -219,6 +224,11 @@ export interface UniformLook {
          * silks in `carryColor`.
          */
         silk: UniformPresetId | null;
+        /**
+         * The show's imported silk Artwork paints the flag's silks, over
+         * any pattern or fill (fork #973). Not part of the uniform.
+         */
+        silkArtwork: boolean;
         /** Gold lacquer ("brass") or silver lacquer. */
         finish: Finish;
         hold: HoldState;
@@ -242,7 +252,11 @@ export function fillToNumber(c: RgbaColor): number {
  * `fill` (sRGB, the section's 2D fill) colors drum shells and plain flag
  * silks; without one they take the color and silk pattern of the preset
  * that dresses the section. `guard`, when set, is the equipment every guard
- * section carries instead of its own (the settings' guard equipment).
+ * section carries instead of its own (the settings' guard equipment). `winds`
+ * holds the show's other choices: for its wind players, the brass line's
+ * finish and whether the tubas carry marching tubas or sousaphones
+ * (woodwinds keep the finish they are made in); for the 6 ft flag, the
+ * shape of its silk and whether the show's Artwork paints it (fork #973).
  */
 export function sectionUniform(
     section: string,
@@ -252,6 +266,12 @@ export function sectionUniform(
     guard?: GuardModelId,
     preset: UniformPresetId = DEFAULT_UNIFORM_PRESET,
     guardPreset: GuardUniformPresetId = DEFAULT_GUARD_UNIFORM_PRESET,
+    winds: {
+        finish?: Finish;
+        tuba?: TubaModelId;
+        silkShape?: SilkShapeId;
+        silkArtwork?: boolean;
+    } = {},
 ): UniformLook {
     const inGuard = isGuard(section);
     const dressedBy: UniformPresetId = inGuard ? guardPreset : preset;
@@ -260,18 +280,32 @@ export function sectionUniform(
     const carry =
         guard && inGuard
             ? guardCarry(guard)
-            : withOptions(carryForSection(section), options);
+            : winds.tuba && isTuba(section)
+              ? tubaCarry(winds.tuba)
+              : withOptions(carryForSection(section), options);
+    // the show's silk shape and Artwork go on the 6 ft flag
+    const flag6 = carry?.model === "flag6";
+    const shaped =
+        flag6 && winds.silkShape && winds.silkShape !== DEFAULT_SILK_SHAPE
+            ? withOptions(carry, {
+                  ...carry.options,
+                  silkShape: winds.silkShape,
+              })
+            : carry;
     return {
         style: base.style,
         colors: { ...base.colors },
         options: {
             ...base.options,
+            // sousaphone players wear a beret, drawn with the horn, not the shako
+            hat: carry?.model === "sousaphone" ? false : base.options.hat,
             hatType: "shako",
             instrument: "none",
-            carry,
+            carry: shaped,
             carryColor: carry ? (fill ?? dress.carry) : null,
             silk: carry && fill === undefined && dress.silk ? dressedBy : null,
-            finish: "brass",
+            silkArtwork: flag6 && winds.silkArtwork === true,
+            finish: finishFor(carry, winds.finish ?? "brass"),
             hold,
         },
     };
@@ -280,6 +314,8 @@ export function sectionUniform(
 /** The uniform shader's part ids (om-pose `uniforms/uniform-shader.js`). */
 export const PART = {
     shako: [7, 8, 9],
+    /** the shako's plume: drawn as its own mesh (`plumeSet.ts`), not with the body */
+    plume: 8,
     aussie: [10, 11],
     cape: 12,
     /** the shader's placeholder trumpet, mellophone, baritone: never drawn */
@@ -316,6 +352,7 @@ export function uniformKey(look: UniformLook): string {
  */
 export function bodyKey(look: UniformLook): string {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars -- left out of the key
-    const { carry, carryColor, silk, finish, hold, ...drawn } = look.options;
+    const { carry, carryColor, silk, silkArtwork, finish, hold, ...drawn } =
+        look.options;
     return JSON.stringify([look.style, look.colors, drawn]);
 }

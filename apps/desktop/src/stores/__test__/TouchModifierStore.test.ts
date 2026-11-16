@@ -90,3 +90,27 @@ describe("Add, which the Select tab reads as Shift", () => {
         expect(isShiftHeld()).toBe(false);
     });
 });
+
+describe("Subtract, Alt's marquee and lasso choice (tablet 1.3)", () => {
+    it("is on while held or latched, read through the field's toggles, and never a held role or Shift", async () => {
+        const { onScreenToggles } = await import("../TouchModifierStore");
+        store().toggleLatched("subtract");
+        expect(onScreenToggles.subtract()).toBe(true);
+        expect(onScreenToggles.add()).toBe(false);
+        expect(isShiftHeld()).toBe(false);
+        expect([...onScreenRoles()]).toEqual([]);
+    });
+
+    it("latched, lets go of Add's latch, and the other way round; holding one leaves the other", () => {
+        store().toggleLatched("add");
+        store().toggleLatched("subtract");
+        expect(store().latched).toMatchObject({ add: false, subtract: true });
+        store().release("add", true);
+        expect(store().latched).toMatchObject({ add: true, subtract: false });
+        store().setHeld("subtract", true);
+        expect(store().latched.add).toBe(true);
+        // Turning a latch off leaves the other off too
+        store().toggleLatched("add");
+        expect(store().latched).toMatchObject({ add: false, subtract: false });
+    });
+});

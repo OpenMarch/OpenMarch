@@ -462,23 +462,32 @@ describe("pen and palm rejection", () => {
         expect(results[4].effects).toEqual([]);
     });
 
-    it("lets a finger move the view, never edit, shortly after the pen lifted", () => {
+    it("lets one finger do nothing, and two fingers only navigate, shortly after the pen lifted", () => {
         const t0 = 100;
         const { results } = run([
             pen("down", 9, 100, 100, 0),
             pen("up", 9, 100, 100, t0),
             touch("down", 1, 300, 300, t0 + 50),
             touch("move", 1, 340, 300, t0 + 80),
+            touch("down", 2, 400, 300, t0 + 120),
+            touch("move", 2, 440, 300, t0 + 150),
+            touch("up", 1, 340, 300, t0 + 200),
+            touch("move", 2, 480, 300, t0 + 220),
+            touch("up", 2, 480, 300, t0 + 240),
         ]);
-        // Never to Fabric, so it can't select or move marchers
-        expect(results[2].passThrough).toBe(false);
-        expect(results[3].passThrough).toBe(false);
+        // Never a single press, so it can't select or move marchers
+        expect(results.slice(2).every((r) => !r.passThrough)).toBe(true);
         expect(types(results[2].effects)).not.toContain("singleStart");
-        // It navigates
-        expect([
-            ...types(results[2].effects),
-            ...types(results[3].effects),
-        ]).toContain("navigate");
+        // One finger alone (likely the palm between strokes) doesn't move the view
+        expect(results[2].effects).toEqual([]);
+        expect(results[3].effects).toEqual([]);
+        // Two fingers navigate
+        expect(types(results[4].effects)).toEqual(["navigationStart"]);
+        expect(types(results[5].effects)).toEqual(["navigate"]);
+        // Down to one again: nothing moves until it lifts
+        expect(results[6].effects).toEqual([]);
+        expect(results[7].effects).toEqual([]);
+        expect(types(results[8].effects)).toEqual(["navigationEnd"]);
     });
 
     it("doesn't count a hovering pen (moves without contact) as in use", () => {

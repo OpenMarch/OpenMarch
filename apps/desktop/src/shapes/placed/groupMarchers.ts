@@ -32,7 +32,7 @@ export function groupMarchers(
     const plan = planCanvasEdit();
     const failure = tolgee.t(
         "shapes.placed.groupError",
-        "Error grouping the marchers",
+        "Couldn't group the marchers",
     );
     return queueHistoryStep(async () => {
         try {

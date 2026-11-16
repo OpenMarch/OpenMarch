@@ -70,10 +70,10 @@ async function open(page: Page) {
     await expect.poll(async () => (await drawnMarchers(page)).length).toBe(3);
 }
 
-/** Who's drawn faded as Following, by drill number. */
-const following = async (page: Page) =>
+/** Who's drawn Not defined (dashed), by drill number. */
+const notDefined = async (page: Page) =>
     (await drawnMarchers(page))
-        .filter((m) => m.following)
+        .filter((m) => m.notDefined)
         .map((m) => m.drillNumber)
         .sort();
 
@@ -159,7 +159,7 @@ for (const mode of ["expert", "basic"] as const)
             await page.getByTestId("timeline-keyframe-16-filled").click();
             await expect(readout).toHaveText(atPage2Flag!);
             // The field shows that count: T1 and T2 (its stay) are Set there, T3 follows
-            await expect.poll(() => following(page)).toEqual(["T3"]);
+            await expect.poll(() => notDefined(page)).toEqual(["T3"]);
             // The selection stays
             await expect
                 .poll(() => diamonds(page))

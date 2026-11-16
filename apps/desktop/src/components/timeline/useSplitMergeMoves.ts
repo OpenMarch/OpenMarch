@@ -1,6 +1,5 @@
 import { useMemo, useRef } from "react";
 import type { DbConnection } from "@/db-functions/types";
-import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 import {
     selectedStoredTimeline,
     useTimelineSelectionStore,
@@ -40,11 +39,8 @@ export function useSplitMergeCommands({
     selectedMarcherIds: ReadonlySet<number>;
     isPlaying: boolean;
 }): { commands: SplitMergeCommands; context: () => SplitMergeContext } {
-    const { mutate: performHistoryAction } = usePerformHistoryAction();
     const latest = useRef({ selectedMarcherIds, isPlaying });
     latest.current = { selectedMarcherIds, isPlaying };
-    const undoRef = useRef(() => performHistoryAction("undo"));
-    undoRef.current = () => performHistoryAction("undo");
     return useMemo(() => {
         const context = () =>
             splitMergeContext(
@@ -56,7 +52,6 @@ export function useSplitMergeCommands({
             context,
             commands: createSplitMergeCommands({
                 database,
-                undo: () => undoRef.current(),
                 context,
             }),
         };

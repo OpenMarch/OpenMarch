@@ -19,8 +19,11 @@ export interface Piece {
     indices: number[];
     /** Optional linear RGB per vertex (3 numbers each), from `colorPieces`. */
     colors?: number[];
-    /** The bone this piece rides, when not the model's default. */
-    bone?: "handR" | "handL" | "spine002";
+    /**
+     * The bone this piece rides, when not the model's default. A `head`
+     * piece is given in the body's frame at bind, not the instrument's.
+     */
+    bone?: "handR" | "handL" | "spine002" | "head";
 }
 
 /** Part ids for instruments: the metal in the look's finish, chrome, and black hardware. */
@@ -32,6 +35,10 @@ export const PART_BLACK = 22;
 export const PART_WOOD = 23;
 /** A flag's silk, colored like the section. */
 export const PART_SILK = 24;
+/** Satin (bead-blasted) aluminum: marching drum hoops, lugs and carriers. */
+export const PART_ALUMINUM = 25;
+/** Cymbal bronze: keeps its color whatever the brass line's finish. */
+export const PART_BRONZE = 26;
 
 const sub = (a: Vec3, b: Vec3): Vec3 => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
 const cross = (a: Vec3, b: Vec3): Vec3 => [
@@ -193,6 +200,15 @@ export function cylinder(
     part: number,
 ): Piece {
     return tube([from, to], radius, segments, part);
+}
+
+/** A point moved by `m` (column-major, as `transformPiece` reads it). */
+export function applyMat4(m: Mat4, [x, y, z]: Vec3): Vec3 {
+    return [
+        m[0] * x + m[4] * y + m[8] * z + m[12],
+        m[1] * x + m[5] * y + m[9] * z + m[13],
+        m[2] * x + m[6] * y + m[10] * z + m[14],
+    ];
 }
 
 export function transformPiece(p: Piece, m: Mat4): Piece {
@@ -521,4 +537,140 @@ export function colorPieces(
         for (let i = 0; i < p.positions.length / 3; i++) colors.push(r, g, b);
         return { ...p, colors };
     });
+}
+
+// ---- Hardware primitives: boxes, flat bands and plates ----
+
+/**
+ * A flat-shaded box: `center`, half extents along the unit axes `u`, `v`
+ * and `w` (right-handed), each face with its own normal.
+ */
+export function box(
+    center: Vec3,
+    [hu, hv, hw]: Vec3,
+    part: number,
+    u: Vec3 = [1, 0, 0],
+    v: Vec3 = [0, 1, 0],
+): Piece {
+    const p: Piece = { part, positions: [], normals: [], indices: [] };
+    const U = norm(u);
+    const V = norm(sub(v, scale(U, dot(v, U))));
+    const W = cross(U, V);
+    const c = (a: number, b: number, d: number): Vec3 =>
+        add(
+            center,
+            add(scale(U, a * hu), add(scale(V, b * hv), scale(W, d * hw))),
+        );
+    // each face counterclockwise seen from outside
+    quad(p, c(1, -1, -1), c(1, 1, -1), c(1, 1, 1), c(1, -1, 1));
+    quad(p, c(-1, -1, 1), c(-1, 1, 1), c(-1, 1, -1), c(-1, -1, -1));
+    quad(p, c(-1, 1, -1), c(-1, 1, 1), c(1, 1, 1), c(1, 1, -1));
+    quad(p, c(-1, -1, 1), c(-1, -1, -1), c(1, -1, -1), c(1, -1, 1));
+    quad(p, c(-1, -1, 1), c(1, -1, 1), c(1, 1, 1), c(-1, 1, 1));
+    quad(p, c(1, -1, -1), c(-1, -1, -1), c(-1, 1, -1), c(1, 1, -1));
+    return p;
+}
+
+/**
+ * A flat ring about +Y, rectangular in section: inner radius `r0`, outer
+ * `r1`, from height `y0` to `y1`, each face shaded flat across the section
+ * and smooth around (a drum hoop). `faces` leaves out the inner face when
+ * nothing shows it.
+ */
+export function band(
+    r0: number,
+    r1: number,
+    y0: number,
+    y1: number,
+    segments: number,
+    part: number,
+    { inner = true }: { inner?: boolean } = {},
+): Piece[] {
+    const out = [
+        smoothLathe(
+            [
+                [r1, y0],
+                [r1, y1],
+            ],
+            segments,
+            part,
+        ),
+        smoothLathe(
+            [
+                [r1, y1],
+                [r0, y1],
+            ],
+            segments,
+            part,
+        ),
+        smoothLathe(
+            [
+                [r0, y0],
+                [r1, y0],
+            ],
+            segments,
+            part,
+        ),
+    ];
+    if (inner)
+        out.push(
+            smoothLathe(
+                [
+                    [r0, y1],
+                    [r0, y0],
+                ],
+                segments,
+                part,
+            ),
+        );
+    return out;
+}
+
+/**
+ * A flat bar swept along `path`: `width` across, `thickness` through, its
+ * broad face turned toward `faceAt(point)` (made perpendicular to the
+ * path). Flat-shaded faces; both ends capped.
+ */
+export function ribbon(
+    path: Vec3[],
+    width: number,
+    thickness: number,
+    faceAt: (point: Vec3) => Vec3,
+    part: number,
+): Piece {
+    const p: Piece = { part, positions: [], normals: [], indices: [] };
+    const n = path.length;
+    if (n < 2) return p;
+    const corners: Vec3[][] = path.map((pt, i) => {
+        const prev = i > 0 ? norm(sub(pt, path[i - 1])) : null;
+        const next = i + 1 < n ? norm(sub(path[i + 1], pt)) : null;
+        const t = norm(prev && next ? add(prev, next) : (prev ?? next)!);
+        const f0 = faceAt(pt);
+        const f = norm(sub(f0, scale(t, dot(f0, t))));
+        const side = cross(t, f);
+        const a = scale(side, width / 2);
+        const b = scale(f, thickness / 2);
+        // around the section: out-left, out-right, in-right, in-left
+        return [
+            add(pt, add(b, scale(a, -1))),
+            add(pt, add(b, a)),
+            add(pt, sub(a, b)),
+            sub(pt, add(a, b)),
+        ];
+    });
+    for (let i = 0; i + 1 < n; i++)
+        for (let k = 0; k < 4; k++) {
+            const j = (k + 1) % 4;
+            quad(
+                p,
+                corners[i][k],
+                corners[i][j],
+                corners[i + 1][j],
+                corners[i + 1][k],
+            );
+        }
+    const [s0, s1] = [corners[0], corners[n - 1]];
+    quad(p, s0[3], s0[2], s0[1], s0[0]);
+    quad(p, s1[0], s1[1], s1[2], s1[3]);
+    return p;
 }

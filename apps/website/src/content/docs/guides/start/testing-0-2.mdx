@@ -1,0 +1,60 @@
+---
+title: Testing the 0.2 beta
+description: "For Discord testers: how to install the beta, what to try, and how to report what you find."
+type: how-to
+sidebar:
+  order: 6
+---
+
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+Thank you for testing OpenMarch 0.2 before it's released. The beta is the 0.2 desktop app, close to what will ship. Some things will be rough, and that's what your reports are for.
+
+## Before you start
+
+Shows from 0.1.7 open in the beta. The first time you open one, OpenMarch asks to convert it to timelines and saves an untouched copy next to it, named like `Fall Show.pre-conversion.dots`, which 0.1.7 can still open. Once converted, the show itself opens only in 0.2. Conversion also leaves out a few things 0.2 doesn't have yet; [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/) lists them.
+
+If a show matters for this season, test on a copy of it.
+
+## Install the beta
+
+1. Open the [releases page on GitHub](https://github.com/OpenMarch/OpenMarch/releases) and find the newest release marked Pre-release, named like v0.2.0-beta.1.
+2. Under Assets, download the installer for your computer: the `.dmg` for a Mac, the `.exe` for Windows, or the `.AppImage` for Linux.
+3. Install it the way you'd install any app. On a Mac, drag OpenMarch into Applications.
+
+The beta replaces 0.1.7 on your computer. The web editor at editor.openmarch.com stays on the released version until 0.2 ships, so test in the desktop app.
+
+## What to try
+
+Use the beta for real work if you can: write a few pages of a show, or keep working on one from 0.1.7. Things worth trying:
+
+- Open one of your 0.1.7 shows and check that its marchers, pages and music came across.
+- Follow [Write your first show](/guides/start/first-show/) from an empty file.
+- Write a few sets in Basic, then try Expert and make a move that runs across a page line ([Basic and Expert](/guides/start/basic-and-expert/)).
+- Draw boxes, lines and arcs and place marchers in them ([How shapes work](/guides/shapes/)).
+- Line the counts up with your show's music in <Ui k="tempoMode.button.label" /> ([Line the counts up with the music](/guides/music/tempo/)).
+- Open the 3D View and watch the show from the stands.
+- Print coordinate sheets and drill charts and check them against the field.
+
+If the guide is wrong or unclear about something, that's worth reporting too.
+
+## Report what you find
+
+Post in the beta testers' channel on the [OpenMarch Discord](https://discord.openmarch.com). One post per problem is easiest to follow. Include:
+
+1. What you did, step by step.
+2. What happened, and what you expected to happen.
+3. A screenshot or screen recording, if you can.
+4. Your computer (Mac, Windows or Linux) and the beta's version, shown next to OpenMarch in the title bar.
+5. If it's about a particular show and you're willing to share it, the `.dots` file.
+
+Before posting, check [Known issues](/troubleshooting/known-issues/): it lists problems we already know about.
+
+Ideas and "this felt awkward" are as welcome as bugs. Say what you were trying to do, so we can see where the app got in the way.
+
+## Related
+
+- [What's new in 0.2](/guides/start/whats-new/): what changed since 0.1.7.
+- [Open a show in an older version](/troubleshooting/open-in-an-older-version/): going back to 0.1.7.
+- [Get help and send feedback](/guides/start/get-help/).

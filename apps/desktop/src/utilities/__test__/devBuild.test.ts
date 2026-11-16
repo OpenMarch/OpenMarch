@@ -8,7 +8,7 @@ describe("isDevBuildFor", () => {
     });
 
     it("is true for developer web channels", () => {
-        for (const webChannel of ["dev", "preview", "nightly"])
+        for (const webChannel of ["dev", "examples", "nightly"])
             expect(isDevBuildFor({ dev: false, webChannel })).toBe(true);
     });
 
@@ -16,7 +16,7 @@ describe("isDevBuildFor", () => {
         expect(isDevBuildFor({ dev: false, webChannel: undefined })).toBe(
             false,
         );
-        for (const webChannel of ["stable", "lab"])
+        for (const webChannel of ["stable", "preview", "lab"])
             expect(isDevBuildFor({ dev: false, webChannel })).toBe(false);
     });
 });

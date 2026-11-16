@@ -60,9 +60,12 @@ export type ShapeGesture =
     | { readonly type: "pivot"; readonly base: unknown }
     | { readonly type: "move"; readonly base: unknown; readonly grab: XY };
 
-/** How far the knob stands above the shape's back edge, in handle reaches */
+/** How far the knob stands above the shape's back edge, in a mouse's handle reaches (`stemUnit`) */
 const KNOB_STEM = 2.4;
-/** How far outside a corner still turns the shape, in handle reaches */
+/**
+ * How far outside a corner still turns the shape, in a mouse's handle reaches (`stemUnit`); a pen
+ * or finger reaches as much further as its handle reach is longer
+ */
 const CORNER_ROTATE_REACH = 2.6;
 
 /**
@@ -73,7 +76,7 @@ export function frameControls(
     kind: AnyToolKind,
     params: unknown,
     n: number,
-    env: Pick<ToolEnv, "hitRadius">,
+    env: Pick<ToolEnv, "hitRadius" | "stemUnit">,
 ): { knob: XY; stem: XY; center: XY; pivot: XY | null } {
     const frame = kind.frameOf(params, n);
     const back = -frame.halfDepth;
@@ -83,11 +86,17 @@ export function frameControls(
         stem: frameToField(frame, { x: 0, y: back }),
         knob: frameToField(frame, {
             x: 0,
-            y: back - KNOB_STEM * env.hitRadius,
+            y: back - KNOB_STEM * (env.stemUnit ?? env.hitRadius),
         }),
         center: frame.center,
     };
 }
+
+/** How far from a corner, diagonally past it, a press still turns the shape */
+const cornerRotateReach = (env: Pick<ToolEnv, "hitRadius" | "stemUnit">) => {
+    const unit = env.stemUnit ?? env.hitRadius;
+    return (CORNER_ROTATE_REACH - 1) * unit + env.hitRadius;
+};
 
 const near = (a: XY, b: XY, r: number) => Math.hypot(a.x - b.x, a.y - b.y) <= r;
 
@@ -153,9 +162,7 @@ export function shapeTargetAt(
         Math.abs(local.y) > frame.halfDepth;
     if (
         pastCorner &&
-        frameCorners(frame).some((c) =>
-            near(c, at, CORNER_ROTATE_REACH * env.hitRadius),
-        )
+        frameCorners(frame).some((c) => near(c, at, cornerRotateReach(env)))
     )
         return { type: "rotate", from: "corner" };
     if (kind.contains(params, n, at, env)) return { type: "move" };

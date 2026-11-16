@@ -64,6 +64,7 @@ export default function ItemsLayer({
         itemsVersion: -1,
         selectionVersion: -1,
         dimVersion: -1,
+        zoom: -1,
         theme: null as FieldTheme | null,
     });
 
@@ -91,6 +92,8 @@ export default function ItemsLayer({
             last.itemsVersion === items.version &&
             last.selectionVersion === marchers.selectionVersion &&
             last.dimVersion === dimming.version &&
+            // Locks are the same size on screen at every zoom
+            (last.zoom === zoom || !hasLocks(items)) &&
             last.theme === theme
         )
             return;
@@ -102,6 +105,7 @@ export default function ItemsLayer({
             theme,
             selected,
             isDimmed: (id) => dimming.isDimmed(id),
+            zoom,
         });
         layer.strokes.set(plan.strokes);
         writeFills(layer.fills.geometry, plan.fills);
@@ -110,12 +114,16 @@ export default function ItemsLayer({
             itemsVersion: items.version,
             selectionVersion: marchers.selectionVersion,
             dimVersion: dimming.version,
+            zoom,
             theme,
         };
     });
 
     return <primitive object={layer.group} />;
 }
+
+const hasLocks = (items: FieldItems) =>
+    items.outlines().some((outline) => outline.locked);
 
 /** Triangulates each fill into `geometry`, with its color on every vertex. */
 function writeFills(geometry: BufferGeometry, fills: readonly FillPlan[]) {
