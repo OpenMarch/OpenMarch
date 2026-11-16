@@ -179,13 +179,19 @@ export function releaseLive(
                   .handles(g.base, spots, live.selected ?? null)
                   .find((h) => h.key === g.key)
             : undefined;
-    // A single click on a member goes inside unless its handle takes clicks (a Line's point)
+    // A single click on a member goes inside, on the shape's body or on a handle that takes no
+    // clicks (a Box's corner); a Line's point, the pivot and the center dot keep their click
+    // (review of #900: the pivot's double-click back to the center needs its first click)
     const clickEnters =
         !!click &&
         !click.double &&
         click.onDot === true &&
-        (g?.type !== "handle" ||
-            (!kind.clickHandle && !handle?.selects && !handle?.bar));
+        (!g ||
+            g.type === "move" ||
+            (g.type === "handle" &&
+                !kind.clickHandle &&
+                !handle?.selects &&
+                !handle?.bar));
     return {
         live: { ...live, params, gesture: null, selected },
         changed,

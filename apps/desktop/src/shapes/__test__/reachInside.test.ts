@@ -507,6 +507,19 @@ describe("reaching inside through the field editor", () => {
         expect(commitBox).not.toHaveBeenCalled();
     });
 
+    it("a Shift-click on a member of the box selected whole never narrows to that marcher (review of #900)", () => {
+        let time = 0;
+        const { editor, state } = app({ now: () => time });
+        setActiveFieldEditor(editor);
+        click(editor, m(3), {});
+        expect(state.selected).toEqual([1, 2, 3, 4]);
+        time = 2000;
+        click(editor, m(3), { shift: true });
+        setActiveFieldEditor(null);
+        expect(state.selected).not.toEqual([3]);
+        expect(useBoxSelectionStore.getState().inside).toBeNull();
+    });
+
     it("picks just the marcher a $mod-click lands on and goes inside its box", () => {
         const { editor, state } = app();
         click(editor, m(3), { ctrl: true });

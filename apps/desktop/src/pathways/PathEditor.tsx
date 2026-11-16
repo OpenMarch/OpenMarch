@@ -261,13 +261,20 @@ function OwnPathsBar({ lines }: { lines: readonly OwnLine[] }) {
     );
 }
 
-/** The bar's size and the field's, measured as they change */
-function useBarSize(ref: React.RefObject<HTMLDivElement | null>) {
+/**
+ * The bar's size and the field's, measured as they change; `measuredWhile` is the `phase` it was
+ * last measured in, as the bar's contents change with it
+ */
+function useBarSize(
+    ref: React.RefObject<HTMLDivElement | null>,
+    phase?: string,
+) {
     const [size, setSize] = useState({
         width: 0,
         height: 0,
         fw: Infinity,
         fh: Infinity,
+        measuredWhile: undefined as string | undefined,
     });
     useLayoutEffect(() => {
         const el = ref.current;
@@ -279,13 +286,14 @@ function useBarSize(ref: React.RefObject<HTMLDivElement | null>) {
                 height: el.offsetHeight,
                 fw: field.clientWidth,
                 fh: field.clientHeight,
+                measuredWhile: phase,
             });
         measure();
         const observer = new ResizeObserver(measure);
         observer.observe(el);
         observer.observe(field);
         return () => observer.disconnect();
-    }, [ref]);
+    }, [ref, phase]);
     return size;
 }
 
@@ -487,7 +495,7 @@ function PathEditorBar({
     fieldProperties: FieldProperties;
 }) {
     const ref = useRef<HTMLDivElement>(null);
-    const size = useBarSize(ref);
+    const size = useBarSize(ref, session.phase);
     // Beside the lines drawn: under them, above when there's no room, as the shape editor sits. A
     // quiet group path draws only its selected marchers' lines, so the bar goes by those; the
     // group line alone (the whole group selected, or edited) doesn't reach its marchers' starts
@@ -532,7 +540,14 @@ function PathEditorBar({
     // added a corner). It fades while a point is dragged, as the shape editor's bar does
     const pinned = useRef<{ left: number; top: number } | null>(null);
     if (!drawing) pinned.current = null;
-    else if (!pinned.current && size.width > 0 && Number.isFinite(size.fw))
+    // Pinned only once the drawing bar itself was measured: the closed bar's size came first
+    // (review of #900)
+    else if (
+        !pinned.current &&
+        size.measuredWhile === session.phase &&
+        size.width > 0 &&
+        Number.isFinite(size.fw)
+    )
         pinned.current = { left: place.left, top: place.top };
     const { left, top } = (drawing && pinned.current) || place;
     const faded = drawing && session.dragging !== null;

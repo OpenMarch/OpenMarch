@@ -884,11 +884,14 @@ class PathPenMode implements FieldMode {
         // The double-click's second click finishes, as a Line's does, and takes back the corner
         // its first click added (sim round 3: "Double-click to finish" left a kink there)
         if (click?.double) {
+            // A trail that ends at its own last point (From trail ends) keeps it: there the drawing
+            // ends where the double-click is (review of #900)
             const last = s.points.at(-1);
             if (
                 last &&
                 last === this.clickAdded &&
-                s.points.length === this.clickAddedCount
+                s.points.length === this.clickAddedCount &&
+                (!s.follow || intoEndSpots(s.follow))
             )
                 removeLastPoint();
             this.clickAdded = null;

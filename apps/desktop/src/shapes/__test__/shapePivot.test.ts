@@ -451,6 +451,16 @@ describe("a placed box keeps its pivot", () => {
         expect(releaseLive(live, null).enter).toBe(false);
     });
 
+    it("a plain click on its pivot stays the pivot's, even over a member (review of #900)", () => {
+        const box = placed();
+        const at = pivotPoint(boxTool.frameOf(box.params, N), "e");
+        const live = pressLive(openLive(box), at, env())!;
+        expect(live.gesture?.type).toBe("pivot");
+        expect(releaseLive(live, { double: false, onDot: true }).enter).toBe(
+            false,
+        );
+    });
+
     it("a double click on its pivot sends it back to the center", () => {
         const box = placed();
         const at = pivotPoint(boxTool.frameOf(box.params, N), "e");

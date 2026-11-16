@@ -341,7 +341,11 @@ export class LiveBoxMode implements FieldMode {
         const before = this.live;
         const out = releaseLive(
             before,
-            click && { ...click, onDot: this.memberAt(pointer) !== null },
+            // Shift never narrows the selection to one marcher (review of #900)
+            click && {
+                ...click,
+                onDot: !pointer.shift && this.memberAt(pointer) !== null,
+            },
         );
         this.live = out.live;
         if (out.changed) {
