@@ -141,8 +141,14 @@ describe("useActionHandler", () => {
         const t = (key: string) => key;
         const label = vi.fn(() => "Lock X on Page 4");
         const enabled = vi.fn(() => false);
+        // A disabled action is listed only with a reason
+        const disabledReason = () => "Not now";
         const { rerender, unmount } = renderHook(() =>
-            useActionHandler("lockX", () => {}, { label, enabled }),
+            useActionHandler("lockX", () => {}, {
+                label,
+                enabled,
+                disabledReason,
+            }),
         );
         rerender();
         expect(label).not.toHaveBeenCalled();

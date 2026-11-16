@@ -189,11 +189,17 @@ export default function FieldContextMenu({
                 : HOLDS.has(id)
                   ? timelineMode
                   : true;
-    const enabled = (id: ActionId) =>
-        isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
-    const groups = GROUPS.map((group) => group.filter(shown)).filter(
-        (group) => group.length > 0,
-    );
+    // Swap's handler counts the marchers (props aren't swapped), so its own state is the answer
+    const enabled = (id: ActionId) => isActionEnabled(id);
+    // An entry that can't run and can't say why isn't shown: with nobody selected, that's every
+    // selection command (owner rule: no greyed-out entry without a reason)
+    const explained = (id: ActionId) =>
+        enabled(id) ||
+        isActionChecked(id) ||
+        (selectedCount > 0 && actionDisabledReason(id) !== undefined);
+    const groups = GROUPS.map((group) =>
+        group.filter((id) => shown(id) && explained(id)),
+    ).filter((group) => group.length > 0);
 
     return (
         <DropdownMenu.Root
@@ -282,13 +288,10 @@ export default function FieldContextMenu({
                                                 : undefined,
                                         );
                                     // Greyed out with a reason: a ? says why, as the timeline's
-                                    // menus do, instead of a toast after a press. With nobody
-                                    // selected every selection command is off for the same plain
-                                    // reason, so none of them gets a ?
-                                    const reason =
-                                        enabled(id) || selectedCount === 0
-                                            ? undefined
-                                            : actionDisabledReason(id);
+                                    // menus do (entries with none aren't shown, above)
+                                    const reason = enabled(id)
+                                        ? undefined
+                                        : actionDisabledReason(id);
                                     if (reason)
                                         return (
                                             <MenuItemWithReason

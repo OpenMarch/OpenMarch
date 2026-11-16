@@ -18,7 +18,8 @@
             "snapOn": "Snap off: turn it back on",
             "snapToCustomFraction": "Snap to grid",
             "toggleSnap": "Toggle Snap",
-            "toggleSnapKeywords": "snap magnet grid free"
+            "toggleSnapKeywords": "snap magnet grid free",
+            "propsOnly": "Only props are selected: props aren't lined up or spaced"
         },
         "batchEdit": {
             "clearPage": "Clear Page {page}",
@@ -323,6 +324,7 @@
         "title": "Command palette",
         "unavailable": "Not available right now",
         "offInPreview": "Not in Preview — exit Preview to edit",
+        "offInEditMusic": "Not while editing music — select Edit music to go back",
         "shape": "Shape",
         "next": "Next",
         "done": "Done",
@@ -1937,6 +1939,7 @@
                 "steps": "{count, plural, one {{interval} step} other {{interval} steps}}"
             },
             "groupError": "Couldn't group the marchers",
+            "groupNeedsTwo": "Select 2 or more marchers to group them",
             "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
             "leftShape": {
@@ -2384,7 +2387,10 @@
             "none": "Nobody {held} on {page}",
             "notHeldReasons": "Not {heldLower}: {reasons}",
             "shape": "{names}: in a shape on this page",
-            "holdError": "Couldn't hold the marchers"
+            "holdError": "Couldn't hold the marchers",
+            "paused": "Pause to change holds",
+            "styleNoneHeld": "No selected marcher is Held at the playhead",
+            "styleInEffect": "Already the hold style here"
         },
         "keep": {
             "followed": {
@@ -2406,6 +2412,9 @@
             "removeError": "Couldn't remove the keyframes",
             "removeLocked": "{count, plural, =1 {One marcher uses Expert moves on this page, so its keyframe wasn't removed. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so their keyframes weren't removed. Switch to Expert to edit them.}}",
             "removeLockedAll": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
+            "paused": "Pause to change keyframes",
+            "removeNone": "No selected marcher has a keyframe here",
+            "followNone": "No later page follows this spot",
             "title": "Keyframe · Page {page}, count {count}",
             "spoken": "{title}. {detail}"
         },

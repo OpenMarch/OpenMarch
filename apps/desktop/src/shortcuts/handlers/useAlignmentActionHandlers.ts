@@ -22,6 +22,19 @@ export function useAlignmentActionHandlers() {
     const hasSelection = ready && selectedMarchers.length > 0;
     // Align, distribute and swap line performers up: a selected prop isn't one more dot (C2.2)
     const hasPerformers = ready && selectedPerformers.length > 0;
+    // Why they're greyed out: nothing selected, or only props (which don't line up)
+    const noSelection = ready
+        ? t("actions.shape.noMarchersSelected")
+        : undefined;
+    const noPerformers =
+        ready && selectedMarchers.length > 0
+            ? t("actions.alignment.propsOnly")
+            : noSelection;
+    const forPerformers = {
+        enabled: hasPerformers,
+        disabledReason: noPerformers,
+    };
+    const forSelection = { enabled: hasSelection, disabledReason: noSelection };
     const updateCoordinates = useUpdateCoordinates();
 
     useActionHandler(
@@ -49,7 +62,8 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(roundedCoords);
         },
-        { enabled: ready },
+        // Nothing selected, nothing to round: greyed out, saying so, not a click that does nothing
+        forSelection,
     );
 
     useActionHandler("lockX", () => {
@@ -74,7 +88,7 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(alignedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -85,7 +99,7 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(alignedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -99,7 +113,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateCoordinates(distributedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -113,7 +127,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateCoordinates(distributedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -124,7 +138,7 @@ export function useAlignmentActionHandlers() {
             );
             updateCoordinates(flippedCoords);
         },
-        { enabled: hasSelection },
+        forSelection,
     );
 
     useActionHandler(
@@ -135,7 +149,7 @@ export function useAlignmentActionHandlers() {
             );
             updateCoordinates(flippedCoords);
         },
-        { enabled: hasSelection },
+        forSelection,
     );
 
     useActionHandler(

@@ -3,7 +3,7 @@ import {
     type ActionArgs,
     type ActionId,
 } from "./definitions";
-import { isActionOffInWorkspace } from "./workspaceActions";
+import { isActionOffInWorkspace, workspaceOffReason } from "./workspaceActions";
 
 /**
  * Why a held action was let go: its key came up, or the key was lost (the window lost focus, a
@@ -79,8 +79,9 @@ export function isActionEnabled(id: ActionId): boolean {
  * buttons to show instead of a toast after a press; undefined while it can run or gives no reason
  */
 export function actionDisabledReason(id: ActionId): string | undefined {
-    // Preview or Edit music turns it off: the handler's reason isn't why
-    if (isActionOffInWorkspace(id)) return undefined;
+    // Preview or Edit music turns it off, whatever its handler says
+    const offHere = workspaceOffReason(id);
+    if (offHere) return offHere;
     const handler = top(id);
     if (!handler || handler.isEnabled()) return undefined;
     return handler.disabledReason?.() || undefined;

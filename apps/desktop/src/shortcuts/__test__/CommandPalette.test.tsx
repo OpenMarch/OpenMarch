@@ -15,12 +15,20 @@ import { registerActionHandler, runAction } from "../registry";
 import { getPaletteUsageScores, recordPaletteUsage } from "../palette/usage";
 
 const offs: Array<() => void> = [];
+/** A handler; a disabled one gives a reason unless `reason` is null (then it isn't listed) */
 function handle(
     id: Parameters<typeof registerActionHandler>[0],
     enabled = true,
+    reason: string | null = "Not now, for a test",
 ) {
     const run = vi.fn();
-    offs.push(registerActionHandler(id, { run, isEnabled: () => enabled }));
+    offs.push(
+        registerActionHandler(id, {
+            run,
+            isEnabled: () => enabled,
+            disabledReason: () => reason ?? undefined,
+        }),
+    );
     return run;
 }
 
@@ -103,8 +111,22 @@ describe("CommandPalette", () => {
         const last = options[options.length - 1];
         expect(last).toHaveTextContent(/Export video/);
         expect(last).toHaveAttribute("aria-disabled", "true");
+        expect(last).toHaveTextContent(/Not now, for a test/);
         fireEvent.click(last);
         expect(run).not.toHaveBeenCalled();
+    });
+
+    it("doesn't list a disabled action that can't say why", () => {
+        handle("exportVideo", false, null);
+        handle("exportDrillCharts");
+        const input = renderPalette();
+        fireEvent.change(input, { target: { value: "export" } });
+        expect(
+            screen.queryByRole("option", { name: /Export video/ }),
+        ).toBeNull();
+        expect(
+            screen.getByRole("option", { name: /Export drill charts/ }),
+        ).toBeTruthy();
     });
 
     it("includes items from registered sources", async () => {

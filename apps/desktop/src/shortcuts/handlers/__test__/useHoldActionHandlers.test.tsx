@@ -502,12 +502,13 @@ describe("the field menu shows the selection's state on the current page", () =>
         }
     });
 
-    it("on the first page the holds are off, and Clear this page is too, saying why", () => {
+    it("on the first page the holds aren't offered, and Clear this page is off, saying why", () => {
         mocks.selectedPage = PAGES[0];
         openFieldMenu([1]);
-        expect(entry("timelineHoldFromPrevious")).toHaveAttribute(
-            "data-disabled",
-        );
+        // Not offered there at all, as the page box menu leaves it out: no reason to show
+        expect(
+            screen.queryByTestId("field-menu-timelineHoldFromPrevious"),
+        ).toBeNull();
         expect(isActionEnabled("timelineDefineAsShown")).toBe(false);
         expect(isActionEnabled("setSelectedMarchersToPreviousPage")).toBe(
             false,
