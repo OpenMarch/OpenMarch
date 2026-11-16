@@ -30,6 +30,8 @@ export interface ActionHandler {
      * state it sets): menus show it checked. Such an action is disabled too
      */
     checked?: () => boolean;
+    /** Why the action can't run right now, read only while it's disabled; none when unknown */
+    disabledReason?: () => string | undefined;
     /**
      * Shows what the action would change while it's highlighted in the palette (true) and stops
      * (false): a preview with no edit, such as the hold bars a follow-back lights
@@ -70,6 +72,16 @@ export function hasActionHandler(id: ActionId): boolean {
 
 export function isActionEnabled(id: ActionId): boolean {
     return !isActionOffInWorkspace(id) && (top(id)?.isEnabled() ?? false);
+}
+
+/**
+ * Why the action can't run right now (`useActionHandler`'s `disabledReason`), for the palette and
+ * buttons to show instead of a toast after a press; undefined while it can run or gives no reason
+ */
+export function actionDisabledReason(id: ActionId): string | undefined {
+    const handler = top(id);
+    if (!handler || handler.isEnabled()) return undefined;
+    return handler.disabledReason?.() || undefined;
 }
 
 /** The label the action's handler gives right now (`useActionHandler`'s `label`), if any */

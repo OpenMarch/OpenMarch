@@ -38,8 +38,8 @@
             "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d",
             "holdStyleMarkTime": "Hold style: Mark time",
             "holdStyleStand": "Hold style: Stand",
-            "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
-            "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
+            "noPageAfter": "There's no page after this one",
+            "noPageBefore": "There's no page before this one",
             "moveAllToNextSpots": "Move to next page's spots (all marchers)",
             "movedAllToNextSpots": "{count, plural, one {Moved # marcher on Page {currentPage} to their spot on Page {nextPage}} other {Moved all # marchers on Page {currentPage} to their spots on Page {nextPage}}}",
             "moveSelectedToNextSpots": "Move to next page's spots (selected)",
@@ -192,7 +192,7 @@
             "discard": "Shape: Discard"
         },
         "swap": {
-            "mustSelectTwo": "Can only swap when 2 marchers are selected.",
+            "selectTwo": "Select 2 marchers to swap them",
             "swap": "Swap two marchers"
         },
         "timeline": {
@@ -1383,8 +1383,6 @@
     "pages": {
         "undoDeleteUnavailable": "Can't undo the delete: something changed since. Use Undo in the toolbar to step back.",
         "dotModeFailed": "Error setting the dot mode",
-        "noNextPage": "No next page",
-        "noPreviousPage": "No previous page",
         "durationNoBeat": "Failed to update page duration. No suitable beat found.",
         "durationFailed": "Failed to update page duration",
         "yankNegativeCounts": "Cannot yank pages that would result in negative counts",

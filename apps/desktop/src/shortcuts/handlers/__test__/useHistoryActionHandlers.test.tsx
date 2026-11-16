@@ -60,15 +60,23 @@ describe("useHistoryActionHandlers", () => {
         expect(toast).not.toHaveBeenCalled();
     });
 
-    it("a tap with nothing to undo only warns, as a key press does", async () => {
+    it("a tap with nothing to undo says so, quietly", async () => {
         mocks.perform.mockResolvedValue({ nothingToDo: true });
         runFieldHistory("undo");
         await waitFor(() =>
-            expect(toast.warning).toHaveBeenCalledWith(
-                "actions.edit.noUndoAvailable",
-                { duration: 1500 },
-            ),
+            expect(toast).toHaveBeenCalledWith("actions.edit.noUndoAvailable", {
+                duration: 1500,
+            }),
         );
+        expect(toast.warning).not.toHaveBeenCalled();
+    });
+
+    it("a key press with nothing to undo does nothing: the title bar's Undo is greyed out", async () => {
+        mocks.perform.mockResolvedValue({ nothingToDo: true });
+        expect(runAction("performUndo")).toBe(true);
+        await waitFor(() => expect(mocks.perform).toHaveBeenCalledOnce());
+        await new Promise((r) => setTimeout(r, 0));
         expect(toast).not.toHaveBeenCalled();
+        expect(toast.warning).not.toHaveBeenCalled();
     });
 });

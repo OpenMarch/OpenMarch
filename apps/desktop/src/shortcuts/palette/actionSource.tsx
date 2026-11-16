@@ -23,6 +23,7 @@ import {
 import type { ShortcutOverrides } from "../keymap";
 import { getActionLabel, getActionShortcutKeys } from "../labels";
 import {
+    actionDisabledReason,
     actionLabelNow,
     hasActionHandler,
     isActionEnabled,
@@ -112,10 +113,10 @@ export function getActionPaletteItems(
                     : [],
                 shortcut: getActionShortcutKeys(id, { overrides }),
                 disabled: !isActionEnabled(id),
-                // Preview turns every edit off: say so
+                // Preview turns every edit off: say so; otherwise the action's own reason
                 disabledReason: isActionOffInWorkspace(id)
                     ? t("commandPalette.offInPreview")
-                    : undefined,
+                    : actionDisabledReason(id),
                 preview: (on: boolean) => previewAction(id, on),
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)

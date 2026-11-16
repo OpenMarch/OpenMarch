@@ -58,6 +58,81 @@ describe("ActionButton", () => {
     });
     afterEach(() => cleanup());
 
+    it("greyed out with a reason: stays focusable, says why, and a click does nothing", () => {
+        const run = vi.fn();
+        const off = registerActionHandler("swapMarchers", {
+            run,
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        // Not the native disabled: that can't be hovered or focused to read the reason
+        expect(button).not.toBeDisabled();
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        expect(button).toHaveAccessibleDescription(
+            "Select 2 marchers to swap them",
+        );
+        fireEvent.click(button);
+        expect(run).not.toHaveBeenCalled();
+        // A click shows why, as a press on a menu's entry does
+        expect(
+            screen.getAllByText("Select 2 marchers to swap them").length,
+        ).toBeGreaterThan(1);
+        off();
+    });
+
+    it("a clicked reason closes on Escape, which goes no further, and when the mouse leaves", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        const beyond = vi.fn();
+        window.addEventListener("keydown", beyond);
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        const shown = () =>
+            screen.queryAllByText("Select 2 marchers to swap them").length;
+        const hidden = shown();
+        fireEvent.click(button);
+        expect(shown()).toBeGreaterThan(hidden);
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(shown()).toBe(hidden);
+        expect(beyond).not.toHaveBeenCalled();
+
+        fireEvent.click(button);
+        expect(shown()).toBeGreaterThan(hidden);
+        // React makes its pointer leave from a pointerout to outside the button
+        const out = new MouseEvent("pointerout", {
+            bubbles: true,
+            relatedTarget: document.body,
+        });
+        Object.defineProperty(out, "pointerType", { value: "mouse" });
+        fireEvent(button, out);
+        expect(shown()).toBe(hidden);
+        window.removeEventListener("keydown", beyond);
+        off();
+    });
+
+    it("greyed out with no reason stays plainly disabled", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        expect(button).toBeDisabled();
+        expect(button).not.toHaveAttribute("aria-disabled");
+        off();
+    });
+
     it("runs the action on click", () => {
         const run = vi.fn();
         const off = registerActionHandler("flipHorizontal", {

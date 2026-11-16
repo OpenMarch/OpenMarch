@@ -1,6 +1,7 @@
 import {
     useCallback,
     useEffect,
+    useId,
     useLayoutEffect,
     useRef,
     useState,
@@ -19,6 +20,7 @@ import type { ActionArgs, ActionId } from "./definitions";
 import { getActionLabel } from "./labels";
 import { getActionDefinition } from "./definitions";
 import {
+    actionDisabledReason,
     isActionEnabled,
     runAction,
     subscribeToActionHandlers,
@@ -48,7 +50,9 @@ export type ActionButtonProps =
 /**
  * A button that runs a registered action. Its tooltip, the app's own (`Tip`), shows the action's
  * name and current shortcut; in the touch layout a long press (or a resting trackpad) shows them.
- * Disabled while the action has no enabled handler, so a click never silently does nothing.
+ * Disabled while the action has no enabled handler, so a click never silently does nothing. When
+ * the action gives a reason (`useActionHandler`'s `disabledReason`), the button stays focusable
+ * and says why, in its tooltip, long press and description, instead of a toast after a press.
  * An `onClick` runs first, and `preventDefault` there keeps the action from running.
  */
 export default function ActionButton({
@@ -65,9 +69,13 @@ export default function ActionButton({
     ...rest
 }: ActionButtonProps) {
     const { t } = useTranslate();
-    const runnable = useSyncExternalStore(subscribeToActionHandlers, () =>
-        isActionEnabled(action),
+    // Whether it can run, and when it can't, why: a new reason re-renders it too
+    const state = useSyncExternalStore(subscribeToActionHandlers, () =>
+        isActionEnabled(action) ? null : (actionDisabledReason(action) ?? ""),
     );
+    const runnable = state === null;
+    const reason = !disabled && state ? state : undefined;
+    const reasonId = useId();
     const translate = (key: string, params?: Record<string, string | number>) =>
         t(key, params as never);
     // A finger can't hover for the tooltip: a long press explains the button instead of running it
@@ -79,6 +87,18 @@ export default function ActionButton({
         hoverTimer.current = null;
     };
     useEffect(() => clearHoverTimer, []);
+    // Escape closes a shown reason and nothing else: the app's own Escape (cancel a tool) must
+    // not run under it. Listening in the capture phase, it's handled before the shortcuts are
+    useEffect(() => {
+        if (!hintOpen || !reason) return;
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key !== "Escape") return;
+            event.stopPropagation();
+            setHintOpen(false);
+        };
+        window.addEventListener("keydown", onKey, true);
+        return () => window.removeEventListener("keydown", onKey, true);
+    }, [hintOpen, reason]);
     const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
     const closeHint = useCallback(() => setHintOpen(false), []);
     const longPress = useLongPress(() => setHintOpen(true), {
@@ -142,12 +162,23 @@ export default function ActionButton({
                 rest.onPointerLeave?.(e);
                 if (e.pointerType !== "mouse") return;
                 clearHoverTimer();
-                if (isTouch) setHintOpen(false);
+                // The touch layout's hover hint, and a clicked reason, go with the pointer
+                setHintOpen(false);
             }}
             data-own-long-press
             ref={setAnchor}
-            disabled={disabled || !runnable}
+            // With a reason it stays focusable and hoverable, so the reason can be read
+            disabled={reason ? undefined : disabled || !runnable}
+            aria-disabled={reason ? true : undefined}
+            aria-describedby={reason ? reasonId : rest["aria-describedby"]}
             onClick={(event) => {
+                if (reason) {
+                    // Pressing it shows why instead, as the menus' entries do: a press closes
+                    // the tooltip, and a finger has no hover
+                    event.preventDefault();
+                    setHintOpen(true);
+                    return;
+                }
                 // A caller's onClick can take the click over with preventDefault
                 onClick?.(event);
                 if (event.defaultPrevented) return;
@@ -158,6 +189,9 @@ export default function ActionButton({
                 clsx(
                     "enabled:hover:text-accent touch:select-none touch:[-webkit-touch-callout:none] outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
                     className,
+                    // Looks as a disabled one does, without the hover color
+                    reason &&
+                        "cursor-not-allowed opacity-50 enabled:hover:text-inherit",
                 ),
             )}
         >
@@ -170,19 +204,33 @@ export default function ActionButton({
             {/* The touch layout shows the long-press bubble instead */}
             <Tip
                 label={hintLabel || undefined}
+                hint={reason}
                 action={showShortcut ? action : undefined}
                 disabled={isTouch}
             >
                 {button}
             </Tip>
+            {/* The button's description, outside it so it isn't part of the name */}
+            {reason && (
+                <span id={reasonId} className="sr-only">
+                    {reason}
+                </span>
+            )}
             <LongPressBubble
                 anchor={anchor}
                 open={hintOpen}
                 onClose={closeHint}
             >
-                <span className="flex items-center gap-8">
-                    <span>{hintLabel}</span>
-                    {showShortcut && <Shortcut action={action} />}
+                <span className="flex flex-col gap-2">
+                    <span className="flex items-center gap-8">
+                        <span>{hintLabel}</span>
+                        {showShortcut && <Shortcut action={action} />}
+                    </span>
+                    {reason && (
+                        <span className="text-sub text-text-subtitle">
+                            {reason}
+                        </span>
+                    )}
                 </span>
             </LongPressBubble>
         </>

@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { useTranslate } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -142,14 +141,8 @@ export function useAlignmentActionHandlers() {
     useActionHandler(
         "swapMarchers",
         () => {
-            if (selectedPerformers.length !== 2) {
-                console.error(
-                    "Can only swap 2 marchers. Selected marchers:",
-                    selectedPerformers,
-                );
-                toast.error(t("actions.swap.mustSelectTwo"));
-                return;
-            }
+            // Greyed out otherwise, saying why
+            if (selectedPerformers.length !== 2) return;
             // Each marcher takes the other's position where the selection edits
             const pair = getSelectedPerformerPages();
             if (pair.length !== 2) {
@@ -162,6 +155,9 @@ export function useAlignmentActionHandlers() {
                 { ...pair[1], x: pair[0].x, y: pair[0].y },
             ]);
         },
-        { enabled: ready && selectedPerformers.length === 2 },
+        {
+            enabled: ready && selectedPerformers.length === 2,
+            disabledReason: ready ? t("actions.swap.selectTwo") : undefined,
+        },
     );
 }

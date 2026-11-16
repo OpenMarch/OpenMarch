@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button, Switch } from "@openmarch/ui";
 import { measureRangeString } from "../../global/classes/Page";
@@ -33,6 +33,9 @@ function PageEditor() {
     const countsInputId = "page-counts";
     const subsetInputId = "page-subset";
     const formId = "edit-page-form";
+    // A page of 1 count can't be cut in two: the button says why instead of failing
+    const tooShortToSplit = (selectedPage?.beats.length ?? 0) <= 1;
+    const splitReasonId = useId();
 
     const resetForm = () => {
         const form = document.getElementById(formId) as HTMLFormElement;
@@ -111,14 +114,30 @@ function PageEditor() {
                             {measureRangeString(selectedPage)}
                         </p>
                     </div>
-                    <Button
-                        variant="secondary"
-                        size="compact"
-                        onClick={() => splitPage({ page: selectedPage })}
-                        disabled={selectedPage?.beats.length <= 1 || playing}
-                    >
-                        <T keyName="inspector.page.splitPage" />
-                    </Button>
+                    {/* The first page is the show's 0-count start: there's nothing to split */}
+                    {!isFirstPage && (
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            onClick={() => splitPage({ page: selectedPage })}
+                            disabled={tooShortToSplit || playing}
+                            aria-describedby={
+                                tooShortToSplit && !playing
+                                    ? splitReasonId
+                                    : undefined
+                            }
+                        >
+                            <T keyName="inspector.page.splitPage" />
+                        </Button>
+                    )}
+                    {!isFirstPage && tooShortToSplit && !playing && (
+                        <Help
+                            id={splitReasonId}
+                            testId="inspector-page-split-reason"
+                        >
+                            <T keyName="pages.splitNeedsTwoCounts" />
+                        </Help>
+                    )}
                     {/* The page being played changes under the pointer: its edits wait */}
                     {playing && (
                         <Help testId="inspector-page-paused">

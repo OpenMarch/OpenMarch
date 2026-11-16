@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslate } from "@tolgee/react";
 import { isSnapOn, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
 import { useUpdateSelectedMarchersOnSelectedPage } from "@/hooks/queries";
@@ -8,8 +9,14 @@ import { useActionHandlerGroup } from "../useActionHandler";
 import { useEditorReadiness } from "./useEditorReadiness";
 
 export function useNudgeActionHandlers() {
-    const { ready, fieldProperties, getSelectedMarcherPages } =
-        useEditorReadiness();
+    const { t } = useTranslate();
+    const {
+        ready,
+        fieldProperties,
+        getSelectedMarcherPages,
+        selectedMarchers,
+    } = useEditorReadiness();
+    const hasSelection = selectedMarchers.length > 0;
     const coordinateRounding = useUiSettingsStore(
         (s) => s.uiSettings.coordinateRounding,
     );
@@ -41,6 +48,13 @@ export function useNudgeActionHandlers() {
                     isUpdating.current = false;
                 });
         },
-        { enabled: ready },
+        // With nothing selected a nudge key does nothing, as in other editors; the palette says
+        // why beside its greyed-out entries
+        {
+            enabled: ready && hasSelection,
+            disabledReason: ready
+                ? t("actions.shape.noMarchersSelected")
+                : undefined,
+        },
     );
 }
