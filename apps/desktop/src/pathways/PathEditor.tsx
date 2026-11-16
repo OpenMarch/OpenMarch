@@ -72,6 +72,7 @@ import {
     detachAllLabel,
     detachAllNote,
     detachIdsOf,
+    isLoose,
     detachLabel,
     detachNote,
     editGroupPathLabel,
@@ -244,9 +245,18 @@ function GroupPathLabel({ session }: { session: PathSession }) {
             style={{ left: top.x, top: top.y - 32 }}
             data-testid="path-group-label"
         >
-            {tolgee.t("pathways.editor.groupLabel", "Group path · {count}", {
-                count: session.target.group?.members.length ?? 0,
-            })}
+            {isLoose(session)
+                ? // A loose path's marchers each have their own copy (round 7): no group path
+                  tolgee.t("pathways.editor.looseLabel", "Path · {count}", {
+                      count: session.target.group?.members.length ?? 0,
+                  })
+                : tolgee.t(
+                      "pathways.editor.groupLabel",
+                      "Group path · {count}",
+                      {
+                          count: session.target.group?.members.length ?? 0,
+                      },
+                  )}
         </div>
     );
 }
@@ -640,8 +650,10 @@ function PathSlots({ session }: { session: PathSession }) {
     };
     const lineReason = "reason" in slots.line ? slots.line.reason : null;
     const lineDrill = "drill" in slots.line ? slots.line.drill : null;
-    // On a group path, Edit path edits the line every member follows: named so (round 3)
-    const group = !!session.target.group && !session.target.lane;
+    // On a group path, Edit path edits the line every member follows: named so (round 3). A
+    // loose path (round 7) is the marchers' own paths edited together: Edit path
+    const group =
+        !!session.target.group && !session.target.lane && !isLoose(session);
     return (
         <>
             <IconButton
@@ -689,8 +701,15 @@ function PathSlots({ session }: { session: PathSession }) {
                         <BezierCurveIcon size={14} />
                         {editLineLabel(lineDrill)}
                     </IconButton>
-                    {/* Back to the group (round 6): Rejoin for detached marchers, else Match group */}
-                    {slots.backIsRejoin ? (
+                    {/* Back to the group (round 6): Rejoin for detached marchers, else Match group.
+                        A loose path has no group to go back to: the slot holds its place (round 7) */}
+                    {slots.loose ? (
+                        <span
+                            aria-hidden
+                            className={clsx("inline-flex", SLOT_WIDTH)}
+                            data-testid="path-slot-empty"
+                        />
+                    ) : slots.backIsRejoin ? (
                         <IconButton
                             label={tolgee.t(
                                 "pathways.editor.rejoinTip",
@@ -798,7 +817,8 @@ function PathMoreMenu({ session }: { session: PathSession }) {
     const rejoin = usePathPenStore((s) => s.rejoin);
     const [open, setOpen] = useState(false);
     const trail = !!session.target.trail;
-    const group = !!session.target.group && !session.target.lane;
+    const loose = isLoose(session);
+    const group = !!session.target.group && !session.target.lane && !loose;
     const rejoinHere =
         rejoin !== null && detachIdsOf(ownable, session).length > 0;
     const detachAll = detachAllIdsOf(ownable, session);
@@ -814,10 +834,15 @@ function PathMoreMenu({ session }: { session: PathSession }) {
                 "pathways.slots.centered",
                 "The group path already runs through the middle of its marchers",
             )
-          : tolgee.t(
-                "pathways.slots.fits",
-                "The path already fits where its marcher stands",
-            );
+          : loose
+            ? tolgee.t(
+                  "pathways.slots.centeredLoose",
+                  "The path already runs through the middle of these marchers",
+              )
+            : tolgee.t(
+                  "pathways.slots.fits",
+                  "The path already fits where its marcher stands",
+              );
     const more = tolgee.t("pathways.editor.more", "More path commands");
     return (
         <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
@@ -878,7 +903,15 @@ function PathMoreMenu({ session }: { session: PathSession }) {
                                       "actions.path.recenter",
                                       "Re-center group path",
                                   )
-                                : tolgee.t("actions.path.refit", "Re-fit path")}
+                                : loose
+                                  ? tolgee.t(
+                                        "actions.path.recenterLoose",
+                                        "Re-center path",
+                                    )
+                                  : tolgee.t(
+                                        "actions.path.refit",
+                                        "Re-fit path",
+                                    )}
                         </MenuItemWithReason>
                     )}
                     {(rejoinHere || !trail) && (

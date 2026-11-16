@@ -526,7 +526,7 @@ export async function editGroupRoutePoints(args: {
  * with its transition and lane, earliest first. A marcher may have a row without a lane before its laned
  * one (a hold, a join), so the lane is looked for on every row, not only the first.
  */
-async function groupLanedRows(
+export async function groupLanedRows(
     tx: DbTransaction,
     timelineId: number,
     marcherId: number,

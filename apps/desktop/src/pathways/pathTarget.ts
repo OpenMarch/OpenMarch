@@ -172,6 +172,13 @@ export interface GroupTarget {
      * paths read without it (Paths All's)
      */
     detachedMembers?: readonly { marcherId: number; drill: string; from: XY }[];
+    /**
+     * A loose path (interaction round 7): the selected marchers each walk their own copy of one
+     * path (identical, made together and edited together since), shown as one line to edit
+     * together. Every edit is saved as their own copies again (`writeGroupPath`), so it has no
+     * Detach, Rejoin or Match group. `routeId` is the first member's copy. Absent otherwise.
+     */
+    loose?: boolean;
 }
 
 /**
@@ -211,6 +218,8 @@ export interface GroupPathRow {
     routeId: number;
     marcherIds: readonly number[];
     detachedFrom: number | null;
+    /** How many lanes it has: a copy has one, and is nobody's group path to Rejoin */
+    laneCount?: number;
 }
 
 /**
@@ -253,7 +262,9 @@ export function rejoinTargetOf(
             )
             .map((g) => g.detachedFrom!),
     );
-    const main = groups.filter((g) => g.detachedFrom === null);
+    const main = groups.filter(
+        (g) => g.detachedFrom === null && (g.laneCount ?? 2) > 1,
+    );
     const source = copyOf ?? (sources.size === 1 ? [...sources][0]! : null);
     const onto =
         source !== null
@@ -380,7 +391,8 @@ export async function findGroupTarget(
     const selected = new Set(marcherIds);
     const on = groups.filter((g) => g.marcherIds.some((m) => selected.has(m)));
     const group = groupToShow(on) ?? sourceOfCopies(on, groups);
-    if (!group) return null;
+    if (!group)
+        return await looseTarget(db, resolver, move, on, marcherIds, drills);
     // Selected marchers on copies Detached from it are off it, and can Rejoin
     const detached = new Set(
         on
@@ -459,6 +471,74 @@ export async function findGroupTarget(
     return group.laneCount === 1
         ? onItsLane(target, members[0]!.offset, group.detachedFrom)
         : target;
+}
+
+/**
+ * The loose path the selected `marcherIds` (two or more) walk (interaction round 7): when each
+ * walks its own copy (a route with one lane) and every copy has the same geometry, one target over
+ * them, its line the copies' common one and each member on its lane, as a group path's are.
+ * Null otherwise: copies edited apart, or a selected marcher on no copy.
+ */
+async function looseTarget(
+    db: DbConnection,
+    resolver: Pick<Resolver, "explain" | "positionAt">,
+    move: Extract<GroupMove, { kind: "move" }>,
+    on: readonly {
+        routeId: number;
+        marcherIds: readonly number[];
+        laneCount: number;
+    }[],
+    marcherIds: readonly number[],
+    drills: ReadonlyMap<number, string>,
+): Promise<PathTarget | null> {
+    const ids = [...new Set(marcherIds)].sort((a, b) => a - b);
+    if (ids.length < 2 || on.length !== ids.length) return null;
+    if (on.some((g) => g.laneCount !== 1 || g.marcherIds.length !== 1))
+        return null;
+    const walked = new Set(on.map((g) => g.marcherIds[0]!));
+    if (ids.some((id) => !walked.has(id))) return null;
+    const routeIds = new Set(on.map((g) => g.routeId));
+    const routes = (await readRoutes(db, move.timelineId)).filter((r) =>
+        routeIds.has(r.routeId),
+    );
+    const texts = new Set(routes.map((r) => JSON.stringify(r.geometry)));
+    if (texts.size !== 1) return null;
+    const members: GroupMember[] = [];
+    const seen = new Set<number>();
+    for (const r of [...routes].sort((a, b) => a.marcherId - b.marcherId)) {
+        if (seen.has(r.marcherId)) continue;
+        seen.add(r.marcherId);
+        const o = r.offset ?? [0, 0];
+        members.push({
+            marcherId: r.marcherId,
+            transitionId: r.transitionId,
+            drill: drills.get(r.marcherId) ?? `${r.marcherId}`,
+            offset: { x: o[0], y: o[1] },
+            from: xy(resolver.explain(r.marcherId, r.start).origin),
+            to: xy(resolver.positionAt(r.marcherId, r.end)),
+            laneId: r.laneId,
+            slot: r.slot,
+            adjust: r.adjust,
+        });
+    }
+    if (members.length < 2) return null;
+    const first = routes.find((r) => r.marcherId === members[0]!.marcherId)!;
+    const g = first.geometry;
+    return {
+        timelineId: move.timelineId,
+        transitionId: members[0]!.transitionId,
+        marcherId: members[0]!.marcherId,
+        start: move.start,
+        end: move.end,
+        from: xy(g.from),
+        to: xy(g.to),
+        routeId: first.routeId,
+        points: g.points,
+        ends: { from: xy(g.from), to: xy(g.to) },
+        ...toBulgeOf(g),
+        drawnEnds: drawnEndsOf(members),
+        group: { members, outside: [], loose: true },
+    };
 }
 
 /** Who walks a group path or a copy Detached from it: by marcher, where it starts and ends */

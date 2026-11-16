@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
     drawRoute,
     removeRoute,
+    removeRouteInTransaction,
     type RoutePointInput,
 } from "@/db-functions/timelineRoutes";
 import {
@@ -14,11 +15,15 @@ import {
 } from "@/db-functions/timelineTrails";
 import {
     editPathPoints,
+    editPathPointsInTransaction,
     redrawPath,
+    redrawPathInTransaction,
     refitPath as refitRoute,
+    refitPathInTransaction,
 } from "@/db-functions/timelinePathEdits";
 import {
     acknowledgeRehomed,
+    acknowledgeRehomedInTransaction,
     adjustLane,
     removeAdjustKey,
     resetLaneAdjust,
@@ -27,10 +32,15 @@ import {
 import type { RehomeReport } from "@/db-functions/timelineRouteGeometry";
 import type { AdjustProfile } from "@openmarch/core";
 import {
-    drawGroupRoute,
+    drawGroupRouteInTransaction,
     detachFromGroupPath,
     rejoinGroupPath,
 } from "@/db-functions/timelineGroupRoutes";
+import {
+    writeGroupPath,
+    type GroupWrite,
+} from "@/db-functions/timelineLoosePaths";
+import type { DbTransaction } from "@/db-functions/types";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { runAction } from "@/shortcuts/registry";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
@@ -41,7 +51,11 @@ import { drawnAsGroup, type GroupMember, type PathTarget } from "./pathTarget";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { dragTrail } from "@/db-functions/timelineTrailDrag";
 import { rippleTrail } from "@/db-functions/timelineTrailRipple";
-import { invalidatePlacedBoxes } from "@/shapes/placed/placedBoxStore";
+import {
+    invalidatePlacedBoxes,
+    placedBoxesAt,
+} from "@/shapes/placed/placedBoxStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     followSpacingOf,
     intoEndSpots,
@@ -191,6 +205,8 @@ export function detachIdsOf(
     ownable: readonly number[],
     session: PathSession | null,
 ): readonly number[] {
+    // A loose path's marchers each have their own copy already (round 7): nobody to Detach
+    if (isLoose(session)) return [];
     if (ownable.length > 0) return ownable;
     if (
         session?.phase !== "open" ||
@@ -215,11 +231,16 @@ export function detachAllIdsOf(
     if (
         !session ||
         session.phase === "drawing" ||
+        isLoose(session) ||
         !wholeGroupOf(session, ownable)
     )
         return [];
     return session.target.group!.members.map((m) => m.marcherId);
 }
+
+/** Whether the session shows a loose path (round 7): copies edited together, no group path */
+export const isLoose = (session: PathSession | null): boolean =>
+    !!session?.target.group?.loose && !session.target.lane;
 
 /** What Detach and Rejoin act on for the selection now (spec Appendix I.8) */
 export function setGroupCommands(
@@ -435,9 +456,30 @@ export const pathKey = (
 ) =>
     t.trail
         ? `${t.timelineId}:t${t.routeId ?? "new"}`
-        : t.group
-          ? `${t.timelineId}:g${t.routeId ?? "new"}`
-          : `${t.timelineId}:${t.transitionId}:${t.marcherId}`;
+        : t.group?.loose
+          ? `${t.timelineId}:l${looseIds(t.group)}`
+          : t.group
+            ? `${t.timelineId}:g${t.routeId ?? "new"}`
+            : `${t.timelineId}:${t.transitionId}:${t.marcherId}`;
+
+/** A group's marchers, as a loose path's key has them (its copies change with every edit) */
+const looseIds = (g: NonNullable<PathTarget["group"]>) =>
+    g.members
+        .map((m) => m.marcherId)
+        .sort((a, b) => a - b)
+        .join(",");
+
+/**
+ * Whether `next` is `was` saved as a loose path (round 7): the same marchers in the same move, a
+ * group path edited and saved as their own copies, so an open path stays open
+ */
+const becameLoose = (was: PathTarget, next: PathTarget) =>
+    !!next.group?.loose &&
+    !!was.group &&
+    !was.trail &&
+    !was.lane &&
+    was.timelineId === next.timelineId &&
+    looseIds(was.group) === looseIds(next.group);
 
 /** The same path object: the same route (AP-O1), whoever walks it now */
 const sameRoute = (a: PathTarget, b: PathTarget) =>
@@ -877,6 +919,11 @@ export interface PathSlots {
      */
     detachAll: readonly number[];
     matchReason: string | null;
+    /**
+     * A loose path (round 7): the third slot is empty, holding its place so the bar doesn't
+     * jump; there's no group path to match or rejoin
+     */
+    loose: boolean;
 }
 
 export function pathSlotsOf(
@@ -889,7 +936,8 @@ export function pathSlotsOf(
         session.phase !== "drawing" &&
         !session.target.trail;
     const detachIds = detachIdsOf(ownable, session);
-    const backIsRejoin = rejoin !== null && detachIds.length === 0;
+    const loose = isLoose(session);
+    const backIsRejoin = !loose && rejoin !== null && detachIds.length === 0;
     const notGroup =
         !session?.target.group || session.target.lane
             ? session?.target.lane?.detachedFrom != null
@@ -903,24 +951,25 @@ export function pathSlotsOf(
                   )
             : null;
     const detachAll = shown ? detachAllIdsOf(ownable, session) : [];
-    const detachReason =
-        detachAll.length > 0
-            ? tolgee.t(
-                  "pathways.slots.detachWhole",
-                  "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
-                  { count: detachAll.length },
-              )
-            : !shown || detachIds.length > 0 || backIsRejoin
-              ? null
-              : (notGroup ??
-                tolgee.t(
-                    "pathways.slots.detachNone",
-                    "Select marchers on the group path to detach them",
-                ));
+    const detachReason = loose
+        ? null
+        : detachAll.length > 0
+          ? tolgee.t(
+                "pathways.slots.detachWhole",
+                "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
+                { count: detachAll.length },
+            )
+          : !shown || detachIds.length > 0 || backIsRejoin
+            ? null
+            : (notGroup ??
+              tolgee.t(
+                  "pathways.slots.detachNone",
+                  "Select marchers on the group path to detach them",
+              ));
     const resetId = resetTargetOf(session, ownable);
     const lanePicked = session?.phase === "open" && !!session.lane;
     const matchReason =
-        !shown || resetId !== null
+        !shown || resetId !== null || loose
             ? null
             : (notGroup ??
               (!lanePicked && ownable.length > 1
@@ -944,6 +993,7 @@ export function pathSlotsOf(
         detachReason,
         detachAll,
         matchReason,
+        loose,
     };
 }
 
@@ -1034,7 +1084,9 @@ export function showPath(
         session !== null &&
         (object
             ? session.object && sameRoute(session.target, target)
-            : !session.object && pathKey(session.target) === pathKey(target));
+            : !session.object &&
+              (pathKey(session.target) === pathKey(target) ||
+                  becameLoose(session.target, target)));
     const open = next || activated || (session?.phase === "open" && same);
     const kept =
         open && session && session.selected !== null
@@ -1293,6 +1345,121 @@ async function saveFollow(
     invalidatePlacedBoxes();
 }
 
+/**
+ * Whether a group path's marchers are a placed shape (round 7): its walkers, with any marchers
+ * Detached from it, are exactly one placed shape's members at the playhead or at the move's start
+ * or end. Only then does it stay one live group path; any other is saved as their own copies.
+ */
+function formsShape(target: PathTarget): boolean {
+    const group = target.group;
+    if (!group) return false;
+    const ids = new Set([
+        ...group.members.map((m) => m.marcherId),
+        ...(group.detachedMembers ?? []).map((m) => m.marcherId),
+    ]);
+    const beats = [
+        useTimelineSelectionStore.getState().playheadBeat,
+        target.start,
+        target.end,
+    ];
+    return beats.some((beat) =>
+        placedBoxesAt(beat).some(
+            (box) =>
+                box.recipe.members.length === ids.size &&
+                box.recipe.members.every((m) => ids.has(m.marcherId)),
+        ),
+    );
+}
+
+/**
+ * A write on the session's group path (round 7): one undo step that edits it and, unless its
+ * marchers are a placed shape, leaves each on its own copy (`writeGroupPath`). The first time a
+ * path is saved that way, a toast says so and how to keep the marchers linked.
+ */
+async function groupWrite<R>(
+    target: PathTarget,
+    name: string,
+    edit: (tx: DbTransaction, routeId: number | null) => Promise<R>,
+    keepLive = formsShape(target),
+): Promise<GroupWrite<R>> {
+    const marcherIds = target.group!.members.map((m) => m.marcherId);
+    const done = await writeGroupPath({
+        db,
+        name,
+        timelineId: target.timelineId,
+        marcherIds,
+        keepLive,
+        edit,
+    });
+    if (done.baked && !done.fromCopies)
+        toast.info(
+            tolgee.t(
+                "pathways.toasts.savedSeparate",
+                "Saved as {count} separate paths. Group the marchers to keep them linked.",
+                { count: marcherIds.length },
+            ),
+            { id: "path-saved-separate" },
+        );
+    return done;
+}
+
+/** Whether `target` is a group path written by `groupWrite`: not a trail or one marcher's copy */
+const isGroupWrite = (target: PathTarget) =>
+    !!target.group && !target.trail && !target.lane;
+
+/**
+ * `save` on a group path (round 7, `groupWrite`): point edits on the open path move every lane
+ * (AP-R1), the path drawn again keeps its id (AP-O8), or the pen with several marchers draws one
+ * (AP-R8); saved as each marcher's own copy unless its marchers are a placed shape.
+ */
+async function saveGroupPath(
+    session: PathSession,
+    stored: RoutePointInput[],
+    drag: boolean,
+    toBulge: number | null,
+): Promise<void> {
+    const { target } = session;
+    const routeId = target.routeId;
+    if (session.phase === "open" && routeId !== null) {
+        const { result } = await groupWrite(
+            target,
+            "editPathPoints",
+            (tx, rid) =>
+                editPathPointsInTransaction({
+                    tx,
+                    routeId: rid ?? routeId,
+                    points: stored,
+                    drag,
+                    toBulge,
+                }),
+        );
+        reportRehome(result);
+        return;
+    }
+    if (session.byRoute && routeId !== null) {
+        const { result } = await groupWrite(target, "redrawPath", (tx, rid) =>
+            redrawPathInTransaction({
+                tx,
+                routeId: rid ?? routeId,
+                points: stored,
+            }),
+        );
+        reportRehome(result);
+        return;
+    }
+    const marcherIds = target.group!.members.map((m) => m.marcherId);
+    const { result: drawn } = await groupWrite(target, "drawGroupRoute", (tx) =>
+        drawGroupRouteInTransaction({
+            tx,
+            timelineId: target.timelineId,
+            marcherIds,
+            points: stored,
+        }),
+    );
+    reportRehome(drawn.rehome);
+    reportAdjustsRemoved(drawn.adjustsRemoved);
+}
+
 /** Writes `points` as the session's path (AP-R1), smooth ones with their roundness. */
 async function save(
     points: readonly PathPoint[],
@@ -1328,9 +1495,10 @@ async function save(
                 marcherIds: target.trail.members.map((m) => m.marcherId),
                 points: stored,
             });
+        else if (isGroupWrite(target))
+            await saveGroupPath(session, stored, drag, toBulge);
         else if (session.phase === "open" && target.routeId !== null)
-            // Point edits on the open path are path edits, by its route (AP-O8, 07 N3); on a group
-            // path they move every lane (AP-R1)
+            // Point edits on the open path are path edits, by its route (AP-O8, 07 N3)
             reportRehome(
                 await editPathPoints({
                     db,
@@ -1349,19 +1517,10 @@ async function save(
                     points: stored,
                 }),
             );
-        else if (
-            target.group
-        ) // The pen with several marchers: a group path (AP-R8)
-        {
-            const drawn = await drawGroupRoute({
-                db,
-                timelineId: target.timelineId,
-                marcherIds: target.group.members.map((m) => m.marcherId),
-                points: stored,
-            });
-            reportRehome(drawn.rehome);
-            reportAdjustsRemoved(drawn.adjustsRemoved);
-        } else {
+        else if (target.group)
+            // The pen with several marchers: a group path (AP-R8)
+            await saveGroupPath(session, stored, drag, toBulge);
+        else {
             const drawn = await drawRoute({
                 db,
                 timelineId: target.timelineId,
@@ -1725,21 +1884,42 @@ export async function deleteOnLane(
 
 /** Re-fit (decision A), by the session's route. One undo step. */
 export async function refitOpenPath(): Promise<void> {
-    const routeId = usePathPenStore.getState().session?.target.routeId ?? null;
-    if (routeId === null) return;
+    const target = usePathPenStore.getState().session?.target;
+    const routeId = target?.routeId ?? null;
+    if (!target || routeId === null) return;
     await adjustWrite(
         () => tolgee.t("pathways.errors.refit", "Couldn't re-fit the path"),
-        async () => reportRehome(await refitRoute({ db, routeId })),
+        async () =>
+            reportRehome(
+                isGroupWrite(target)
+                    ? (
+                          await groupWrite(target, "refitPath", (tx, rid) =>
+                              refitPathInTransaction({
+                                  tx,
+                                  routeId: rid ?? routeId,
+                              }),
+                          )
+                      ).result
+                    : await refitRoute({ db, routeId }),
+            ),
     );
 }
 
 /** Takes the re-homed badge off the session's path. One undo step. */
 export async function acknowledgeOpenPath(): Promise<void> {
-    const routeId = usePathPenStore.getState().session?.target.routeId ?? null;
-    if (routeId === null) return;
-    await adjustWrite(adjustFallback, () =>
-        acknowledgeRehomed({ db, routeId }),
-    );
+    const target = usePathPenStore.getState().session?.target;
+    const routeId = target?.routeId ?? null;
+    if (!target || routeId === null) return;
+    await adjustWrite(adjustFallback, async () => {
+        if (isGroupWrite(target))
+            await groupWrite(target, "acknowledgeRehomed", (tx, rid) =>
+                acknowledgeRehomedInTransaction({
+                    tx,
+                    routeId: rid ?? routeId,
+                }),
+            );
+        else await acknowledgeRehomed({ db, routeId });
+    });
 }
 
 /**
@@ -1773,10 +1953,23 @@ export async function removePath(): Promise<void> {
             );
             return;
         }
-        const { marcherIds } = await removeRoute({
-            db,
-            routeId: session.target.routeId,
-        });
+        const { target } = session;
+        const routeId = session.target.routeId;
+        // A loose path's copies regroup first, so its marchers' paths all go in one step (round 7)
+        const { marcherIds } = isGroupWrite(target)
+            ? (
+                  await groupWrite(
+                      target,
+                      "removeRoute",
+                      (tx, rid) =>
+                          removeRouteInTransaction({
+                              tx,
+                              routeId: rid ?? routeId,
+                          }),
+                      true,
+                  )
+              ).result
+            : await removeRoute({ db, routeId });
         clearPath();
         if (!session.target.group)
             toastWithUndo(tolgee.t("pathways.toasts.removed", "Path removed"));

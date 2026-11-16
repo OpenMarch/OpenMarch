@@ -417,7 +417,11 @@ export function usePathPenActions(): void {
                 lineReason: "reason" in all.line ? all.line.reason : null,
                 detachReason: all.detachReason,
                 matchReason: all.matchReason,
-                group: !!s.session?.target.group && !s.session.target.lane,
+                group:
+                    !!s.session?.target.group &&
+                    !s.session.target.lane &&
+                    !all.loose,
+                loose: all.loose,
             };
         }),
     );
@@ -474,17 +478,24 @@ export function usePathPenActions(): void {
         enabled: canRefit,
         label: slots.group
             ? tolgee.t("actions.path.recenter", "Re-center group path")
-            : undefined,
+            : slots.loose
+              ? tolgee.t("actions.path.recenterLoose", "Re-center path")
+              : undefined,
         disabledReason: slots.shown
             ? slots.group
                 ? tolgee.t(
                       "pathways.slots.centered",
                       "The group path already runs through the middle of its marchers",
                   )
-                : tolgee.t(
-                      "pathways.slots.fits",
-                      "The path already fits where its marcher stands",
-                  )
+                : slots.loose
+                  ? tolgee.t(
+                        "pathways.slots.centeredLoose",
+                        "The path already runs through the middle of these marchers",
+                    )
+                  : tolgee.t(
+                        "pathways.slots.fits",
+                        "The path already fits where its marcher stands",
+                    )
             : undefined,
     });
     // The named actions on the line or bend point picked on the open group path (decision C)

@@ -10,7 +10,7 @@ import type Marcher from "@/global/classes/Marcher";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { performRedo, performUndo } from "@/db-functions/history";
-import { drawRoute } from "@/db-functions/timelineRoutes";
+import { drawRoute, readRoutes } from "@/db-functions/timelineRoutes";
 import { drawGroupRoute } from "@/db-functions/timelineGroupRoutes";
 import { editPathPoints } from "@/db-functions/timelinePathEdits";
 import { followTrail, readTrails } from "@/db-functions/timelineTrails";
@@ -374,7 +374,7 @@ describeDbTests(
 describeDbTests(
     "usePathPenActions: drawing again from the open path (AP-O8, N5)",
     (it) => {
-        it("P on the open group path, opened through one member, draws the group path again by its route", async ({
+        it("P on the open group path, opened through one member, draws it again by its route, saved as each member's own copy (round 7)", async ({
             db,
             wrapper,
             marchersAndPages: _,
@@ -407,14 +407,20 @@ describeDbTests(
             act(() => addPoint({ x: A[0] - 20, y: A[1] + 30 }));
             await act(() => finishDrawing());
 
-            // The same group path, drawn again: no own path for the member selected
-            const after = await routeOf(db, routeId);
-            expect(after.points.map((p) => p.at)).toEqual([
-                [A[0] - 20, A[1] + 30],
-            ]);
-            expect(await routeCount(db)).toBe(routes);
-            await waitFor(() => expect(session()?.target.group).not.toBeNull());
-            expect(session()!.target.routeId).toBe(routeId);
+            // The group path drawn again, then saved as each member's own copy (its marchers
+            // aren't a placed shape, round 7): no other path for the member selected
+            const copies = (await readRoutes(db, timeline.id)).filter((r) =>
+                [m2, m3!].includes(r.marcherId),
+            );
+            expect(new Set(copies.map((r) => r.routeId)).size).toBe(2);
+            expect(copies.every((r) => r.laneCount === 1)).toBe(true);
+            for (const r of copies)
+                expect(r.geometry.points.map((p) => p.at)).toEqual([
+                    [A[0] - 20, A[1] + 30],
+                ]);
+            expect(await routeCount(db)).toBe(routes + 1);
+            // One member selected: its own copy is shown
+            await waitFor(() => expect(session()?.target.lane).toBeTruthy());
         });
 
         it("P with the path only shown (closed) for the member is still the personal draw", async ({

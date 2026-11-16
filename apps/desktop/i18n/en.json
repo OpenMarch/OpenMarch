@@ -205,7 +205,8 @@
             "reverseOrder": "Reverse order",
             "clearOrder": "Clear order",
             "orderKeywords": "order sequence leader tail first last line follow reverse numbers",
-            "recenter": "Re-center group path"
+            "recenter": "Re-center group path",
+            "recenterLoose": "Re-center path"
         }
     },
     "analyticsOptIn": {
@@ -3855,7 +3856,8 @@
             "resetTip": "Take this marcher's bends off, so it walks the group path like the others again",
             "groupLabel": "Group path · {count}",
             "rejoinCount": "Rejoin {count}",
-            "more": "More path commands"
+            "more": "More path commands",
+            "looseLabel": "Path · {count}"
         },
         "menu": {
             "pointType": "Corner type",
@@ -3913,7 +3915,8 @@
             "removedTrail": "Removed the trail: {count, plural, one {# marcher walks} other {# marchers walk}} straight to the same end spots",
             "reversed": "{marcher} leads now",
             "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}",
-            "groupEnded": "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}"
+            "groupEnded": "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}",
+            "savedSeparate": "Saved as {count} separate paths. Group the marchers to keep them linked."
         },
         "rings": {
             "group": "Follows the group path",
@@ -3972,7 +3975,8 @@
             "matchNone": "Select a marcher on the group path",
             "matches": "This marcher already walks the group path exactly: nothing to match",
             "centered": "The group path already runs through the middle of its marchers",
-            "fits": "The path already fits where its marcher stands"
+            "fits": "The path already fits where its marcher stands",
+            "centeredLoose": "The path already runs through the middle of these marchers"
         },
         "editLine": {
             "groupOnly": "Select a marcher on a group path to edit their line",
