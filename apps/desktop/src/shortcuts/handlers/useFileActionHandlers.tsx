@@ -145,7 +145,6 @@ export function useFileActionHandlers() {
                         setSelectedAudioFile(selectedAudioFileWithoutAudio);
                     });
                     window.dispatchEvent(new CustomEvent("audioFilesUpdated"));
-                    toast.success(t("fileTab.toasts.audioUploaded"));
                 } else {
                     const errorMessage =
                         response?.error?.message ||

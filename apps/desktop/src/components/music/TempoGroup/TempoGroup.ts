@@ -6,7 +6,6 @@ import Beat, {
     fromDatabaseBeat,
 } from "../../../global/classes/Beat";
 import type { NewMeasureArgs } from "@/global/classes/Measure";
-import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import {
     createBeatsInTransaction,
@@ -415,15 +414,11 @@ export const getNewMeasuresFromCreatedBeats = ({
 const useTempoGroupMutation = <TArgs>(
     mutationFn: (args: TArgs) => Promise<void>,
     errorKey: string,
-    successKey?: string,
     callback?: () => void,
 ) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
-        onSuccess: async () => {
-            if (successKey) toast.success(tolgee.t(successKey));
-        },
         onSettled: () => {
             // Invalidate all relevant queries
             // BEATS MUST BE INVALIDATED FIRST - if not, the measures will be incorrect
@@ -448,7 +443,6 @@ export const useCreateFromTempoGroup = (callback?: () => void) => {
     return useTempoGroupMutation(
         _createFromTempoGroup,
         "tempoGroup.createNewBeatsError",
-        "music.tempoGroupCreated",
         callback,
     );
 };
@@ -533,7 +527,6 @@ export const useUpdateTempoGroup = () => {
     return useTempoGroupMutation(
         _updateTempoGroup,
         "tempoGroup.errorUpdatingTempoGroup",
-        "music.tempoGroupUpdated",
     );
 };
 
@@ -610,7 +603,6 @@ export const useUpdateManualTempos = () => {
     return useTempoGroupMutation(
         _updateManualTempos,
         "tempoGroup.temposFailed",
-        "music.tempoGroupUpdated",
     );
 };
 

@@ -18,7 +18,6 @@ import {
 } from "@openmarch/ui";
 import ActionButton from "@/shortcuts/ActionButton";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { toast } from "sonner";
 import { T, useTranslate } from "@tolgee/react";
 
 export default function AudioSelector() {
@@ -56,18 +55,8 @@ export default function AudioSelector() {
                 }
                 refreshAudioFiles();
             });
-            toast.success(
-                t("music.deleteSuccess", {
-                    fileName: selectedAudioFile?.nickname,
-                }),
-            );
         },
-        [
-            refreshAudioFiles,
-            selectedAudioFile?.nickname,
-            setSelectedAudioFile,
-            t,
-        ],
+        [refreshAudioFiles, setSelectedAudioFile],
     );
 
     useEffect(() => {

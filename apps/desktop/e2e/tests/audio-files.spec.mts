@@ -47,11 +47,12 @@ test("Delete audio file", async ({ audioFiles, electronApp }) => {
     await expect(deleteDialog).toContainText(currentlySelectedFile);
     await deleteDialog.getByRole("button", { name: "Cancel" }).click();
     await expect(deleteDialog).toBeHidden();
-    await expect(page.getByText("Successfully deleted")).not.toBeVisible();
+    await expect(page.getByTestId("tempo-music-file")).toContainText(
+        currentlySelectedFile,
+    );
 
     await (await openMusicMenu(page)).getByTestId("tempo-music-delete").click();
     await page.getByTestId("tempo-music-delete-confirm").click();
-    await expect(page.getByText("Successfully deleted")).toBeVisible();
     await expect(page.getByTestId("tempo-music-file")).toContainText(otherFile);
     const menu = await openMusicMenu(page);
     await expect(menu).toContainText(otherFile);

@@ -11,7 +11,6 @@ import { queryClient } from "@/App";
 import { useMutation } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "../singletons/Tolgee";
-import { toast } from "sonner";
 import { deleteMeasuresInTransaction } from "@/db-functions/measures";
 import {
     deleteBeatsCarryingItemChangesInTransaction,
@@ -164,7 +163,6 @@ export const useCascadeDeleteMeasures = () => {
         mutationFn: (measuresToDelete: Measure[]) =>
             _cascadeDeleteMeasures(measuresToDelete),
         onSuccess: async () => {
-            toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
             await queryClient.invalidateQueries({ queryKey: beatKeys.all() });
             void queryClient.invalidateQueries({ queryKey: pageKeys.all() });
             void queryClient.invalidateQueries({ queryKey: measureKeys.all() });

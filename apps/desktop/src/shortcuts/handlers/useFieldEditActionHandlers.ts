@@ -22,22 +22,12 @@ export function useFieldEditActionHandlers() {
 
     const apply = (
         edit: FieldEditRequest,
-        done: (result: FieldEditResult) => void,
+        done?: (result: FieldEditResult) => void,
     ) =>
         void applyFieldEdits(edit).then((result) => {
-            if (result?.diff.ok) done(result);
+            if (result?.diff.ok) done?.(result);
         });
 
-    const addedOne = (axis: "x" | "y") => (result: FieldEditResult) => {
-        const added = result.diff.checkpoints.added[0];
-        if (added)
-            toast.success(
-                t("fieldProperties.checkpoint.created", {
-                    axis: axis.toUpperCase(),
-                    steps: added.stepsFromCenterFront,
-                }),
-            );
-    };
     const addedSeries = (axis: "x" | "y") => (result: FieldEditResult) => {
         const count = result.diff.checkpoints.added.length;
         if (count === 0) toast.message(t("fieldEdits.nothingAdded"));
@@ -56,19 +46,15 @@ export function useFieldEditActionHandlers() {
     useActionHandler(
         "fieldAddXCheckpoint",
         () =>
-            apply(
-                { edit: "addCheckpoint", args: { axis: "x", mirror: true } },
-                addedOne("x"),
-            ),
+            apply({
+                edit: "addCheckpoint",
+                args: { axis: "x", mirror: true },
+            }),
         options,
     );
     useActionHandler(
         "fieldAddYCheckpoint",
-        () =>
-            apply(
-                { edit: "addCheckpoint", args: { axis: "y" } },
-                addedOne("y"),
-            ),
+        () => apply({ edit: "addCheckpoint", args: { axis: "y" } }),
         options,
     );
     useActionHandler(

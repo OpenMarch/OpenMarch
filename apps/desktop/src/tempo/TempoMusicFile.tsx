@@ -15,7 +15,6 @@ import {
     TimerIcon,
     TrashIcon,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -69,9 +68,6 @@ function useAudioFiles() {
         // The last one gone, the show plays silence again
         setSelected?.(next ?? (await AudioFile.getSelectedAudioFile()));
         refresh();
-        toast.success(
-            tolgee.t("music.deleteSuccess", { fileName: file.nickname }),
-        );
     };
     return { files, selected, select, remove };
 }

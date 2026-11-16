@@ -13,7 +13,6 @@ import {
 } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import NewShowModalLayout from "./newShow/NewShowModalLayout";
 import StartStep from "./newShow/steps/StartStep";
 import ProjectStep from "./newShow/steps/ProjectStep";
@@ -389,7 +388,6 @@ export default function NewShowDialog({
             });
 
             await completeNewShow(form, queryClient);
-            toast.success(t("launchpage.newShow.success"));
             resetWizard();
             onCreated();
             onOpenChange(false);
