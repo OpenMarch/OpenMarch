@@ -9,6 +9,7 @@ import {
     sectionUniform,
     type BodyType,
 } from "@/view3d/core/marchers/looks";
+import { guardCarry } from "@/view3d/core/instruments/catalog";
 import type { LoadedBody } from "../marchers/marcherAssets";
 import { HORN_FAR_M, HORN_NEAR_M, HornSet } from "../marchers/hornSet";
 
@@ -181,6 +182,77 @@ describe("HornSet", () => {
         f.placed[1] = 0;
         set.writeFrame(f.xz, f.heading, f.placed, f.scale, [0, 2, 0]);
         expect(set.meshes[0].count + set.meshes[1].count).toBe(1);
+        set.dispose();
+    });
+
+    it("draws each slot's piece only while it holds it (Equipment cues)", async () => {
+        const { bodies } = await setup();
+        const carrying = (section: string, model: "rifle" | "sabre") =>
+            sectionUniform(
+                section,
+                "up",
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                {
+                    carry: guardCarry(model),
+                },
+            );
+        const guard = look(1, "neutral-average", "Color Guard");
+        const major = look(2, "neutral-average", "Drum Major");
+        const set = new HornSet(
+            bodies,
+            [
+                {
+                    ...guard,
+                    held: [guard.uniform, carrying("Color Guard", "rifle")],
+                },
+                {
+                    ...major,
+                    held: [major.uniform, carrying("Drum Major", "sabre")],
+                },
+            ],
+            "low",
+            material(),
+        );
+        const counts = () =>
+            Object.fromEntries(set.meshes.map((m) => [m.name, m.count]));
+        expect(Object.keys(counts()).sort()).toEqual([
+            "view3d-horn-flag6-low",
+            "view3d-horn-rifle-low",
+            "view3d-horn-sabre-low",
+        ]);
+        const f = frame([5, 6]);
+        set.writeFrame(
+            f.xz,
+            f.heading,
+            f.placed,
+            f.scale,
+            null,
+            null,
+            Uint8Array.of(0, 0),
+        );
+        expect(counts()).toEqual({
+            "view3d-horn-flag6-low": 1,
+            "view3d-horn-rifle-low": 0,
+            "view3d-horn-sabre-low": 0,
+        });
+        set.writeFrame(
+            f.xz,
+            f.heading,
+            f.placed,
+            f.scale,
+            null,
+            null,
+            Uint8Array.of(1, 1),
+        );
+        expect(counts()).toEqual({
+            "view3d-horn-flag6-low": 0,
+            "view3d-horn-rifle-low": 1,
+            "view3d-horn-sabre-low": 1,
+        });
         set.dispose();
     });
 });

@@ -256,7 +256,10 @@ export function fillToNumber(c: RgbaColor): number {
  * holds the show's other choices: for its wind players, the brass line's
  * finish and whether the tubas carry marching tubas or sousaphones
  * (woodwinds keep the finish they are made in); for the 6 ft flag, the
- * shape of its silk and whether the show's Artwork paints it (fork #973).
+ * shape of its silk and whether the show's Artwork paints it (fork #973);
+ * and `carry`, when given, the piece an Equipment cue puts in the hands
+ * instead of the section's (null for nothing), colored and finished as the
+ * section's own would be.
  */
 export function sectionUniform(
     section: string,
@@ -271,6 +274,7 @@ export function sectionUniform(
         tuba?: TubaModelId;
         silkShape?: SilkShapeId;
         silkArtwork?: boolean;
+        carry?: Carry | null;
     } = {},
 ): UniformLook {
     const inGuard = isGuard(section);
@@ -278,11 +282,13 @@ export function sectionUniform(
     const dress = UNIFORM_PRESETS[dressedBy];
     const base = inGuard ? guardLookOf(guardPreset) : dress.band;
     const carry =
-        guard && inGuard
-            ? guardCarry(guard)
-            : winds.tuba && isTuba(section)
-              ? tubaCarry(winds.tuba)
-              : withOptions(carryForSection(section), options);
+        winds.carry !== undefined
+            ? winds.carry
+            : guard && inGuard
+              ? guardCarry(guard)
+              : winds.tuba && isTuba(section)
+                ? tubaCarry(winds.tuba)
+                : withOptions(carryForSection(section), options);
     // the show's silk shape and Artwork go on the 6 ft flag
     const flag6 = carry?.model === "flag6";
     const shaped =

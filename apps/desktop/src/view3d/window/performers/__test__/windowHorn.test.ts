@@ -6,6 +6,7 @@ import {
 } from "@/view3d/core/marchers/hornChannel";
 import { compileWindowCues } from "../marchers/marcherMotion";
 import { windowHornEvents } from "../windowHorn";
+import { hornRowsOf } from "../marchers/hornRows";
 
 // 16 counts; beat 58 is count 8
 const beats = Array.from({ length: 16 }, (_, k) => ({
@@ -62,6 +63,26 @@ describe("the window's horn channel", () => {
         expect(hornAt(events, 8)).toBe("carry");
         expect(hornAt(events, 11)).toBe("carry");
         expect(hornAt(events, 12)).toBe("up");
+    });
+
+    it("bakes each event's rows in the family it names, and none for empty hands", () => {
+        const up = { to: 0, state: "up" as const, fromState: null };
+        expect(
+            hornRowsOf(
+                [
+                    { ...up, from: 0 },
+                    { from: 2, to: 4, state: "carry", fromState: "up" },
+                    { ...up, from: 8, family: "rifle" },
+                    { ...up, from: 12, family: null },
+                ],
+                "trumpet",
+            ).sort(),
+        ).toEqual([
+            "hold:rifle:up",
+            "hold:trumpet:carry",
+            "hold:trumpet:up",
+            "trans:trumpet:up>carry",
+        ]);
     });
 
     it("fits cues by each section's own equipment", () => {

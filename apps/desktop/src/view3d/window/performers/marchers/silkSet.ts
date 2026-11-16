@@ -15,6 +15,8 @@
  *   {@link silkPatternTexture} at the grid's (u, v), or with the show's
  *   imported Artwork ({@link setSilkArtwork}), laid flat as its template is.
  *   Silk cues (C5.4) come later.
+ * - A slot whose Equipment cues change what it holds has the silks of each
+ *   piece it holds (`heldLooks`), drawn only while it holds that piece.
  * - Shaped: a silk with a shape (`core/sizes/silkShapes.ts`) clips what
  *   lies outside its outline, read from {@link silkMaskTexture}, with an
  *   antialiased edge (alpha to coverage).
@@ -50,7 +52,7 @@ import {
 } from "@/view3d/core/marchers/uniformPresets";
 import { poseArms } from "./armPose";
 import { instrumentFrames } from "./instrumentGeometry";
-import { isNearCarrier } from "./hornSet";
+import { heldLooks, isNearCarrier } from "./hornSet";
 import type { MarcherQuality, MarcherSlotLook } from "./marcherBodies";
 
 /** How rough the cloth is: matte, with no sheen (ticket 10). */
@@ -369,6 +371,8 @@ export function silkMaterial(composer: Composer): THREE.MeshStandardMaterial {
 /** One silk: whose it is and what the shader needs that never changes. */
 interface SilkInstance {
     slot: number;
+    /** Which of the slot's held looks carries it (`heldLooks`). */
+    held: number;
     seed: number;
     /** INSTANCE_ATTRIBUTES' static values, by name. */
     values: Record<InstanceAttribute, number[]>;
@@ -417,76 +421,82 @@ function silkInstances(
         string,
         { spec: SilkSpec; bone: number; frame: number[] }[]
     >();
-    looks.forEach((l, slot) => {
-        const carry = l.uniform.options.carry;
-        if (!carry) return;
-        const key = uniformKey(l.uniform);
-        let specs = byLook.get(key);
-        if (!specs) {
-            // silk specs don't depend on the detail; the pieces aren't used
-            const model = instrumentModel(
-                carry.model,
-                "low",
-                carry.options ?? {},
-            );
-            const h = holdFor(carry.family, l.uniform.options.hold);
-            const frameOf = instrumentFrames(
-                skeleton,
-                poseArms(skeleton, h),
-                h,
-            );
-            specs = (model.silks ?? []).map((spec) => {
-                const f = frameOf(spec.bone ?? model.bone ?? "handR");
-                const e = silkFrame(spec, f.toBind).elements; // column-major
-                return {
-                    spec,
-                    bone: f.index,
-                    // rows of the 3 × 4 affine
-                    frame: [0, 1, 2].flatMap((r) => [
-                        e[r],
-                        e[4 + r],
-                        e[8 + r],
-                        e[12 + r],
-                    ]),
-                };
-            });
-            byLook.set(key, specs);
-        }
-        const { carryColor, silk, silkArtwork } = l.uniform.options;
-        const color = lin(
-            l.silkColor ?? carryColor ?? l.uniform.colors.primary,
-        );
-        // a Silk cue (`silkColor`) makes the silk plain; else the show's
-        // Artwork paints it; else a fill makes it plain
-        const pattern =
-            l.silkColor !== undefined
-                ? -1
-                : silkArtwork
-                  ? SILK_ARTWORK_PATTERN
-                  : silk
-                    ? SILK_PATTERN_IDS.indexOf(silk)
-                    : -1;
-        specs.forEach(({ spec, bone, frame }, n) =>
-            silks.push({
-                slot,
-                // by slot, so a marcher added earlier in the band doesn't
-                // change the wave of every silk after it
-                seed: silkSeed(slot * 2 + n),
-                values: {
-                    aSlot: [slot],
-                    aSilk: [spec.fly, spec.header, spec.mirror, bone],
-                    aCut: [silkCutIndex(spec.cut)],
-                    aFrame0: frame.slice(0, 4),
-                    aFrame1: frame.slice(4, 8),
-                    aFrame2: frame.slice(8, 12),
-                    aMotion: [0, 0, 0, 0],
-                    aColor: [color.r, color.g, color.b],
-                    aPattern: [pattern],
-                },
-            }),
-        );
-    });
+    looks.forEach((l, slot) =>
+        heldLooks(l).forEach((u, held) =>
+            addSilks(silks, byLook, skeleton, l, u, slot, held),
+        ),
+    );
     return silks;
+}
+
+/** The silks slot `slot` carries in held look `u`, its `held`-th. */
+function addSilks(
+    silks: SilkInstance[],
+    byLook: Map<string, { spec: SilkSpec; bone: number; frame: number[] }[]>,
+    skeleton: THREE.Skeleton,
+    l: MarcherSlotLook,
+    u: MarcherSlotLook["uniform"],
+    slot: number,
+    held: number,
+): void {
+    const carry = u.options.carry;
+    if (!carry) return;
+    const key = uniformKey(u);
+    let specs = byLook.get(key);
+    if (!specs) {
+        // silk specs don't depend on the detail; the pieces aren't used
+        const model = instrumentModel(carry.model, "low", carry.options ?? {});
+        const h = holdFor(carry.family, u.options.hold);
+        const frameOf = instrumentFrames(skeleton, poseArms(skeleton, h), h);
+        specs = (model.silks ?? []).map((spec) => {
+            const f = frameOf(spec.bone ?? model.bone ?? "handR");
+            const e = silkFrame(spec, f.toBind).elements; // column-major
+            return {
+                spec,
+                bone: f.index,
+                // rows of the 3 × 4 affine
+                frame: [0, 1, 2].flatMap((r) => [
+                    e[r],
+                    e[4 + r],
+                    e[8 + r],
+                    e[12 + r],
+                ]),
+            };
+        });
+        byLook.set(key, specs);
+    }
+    const { carryColor, silk, silkArtwork } = u.options;
+    const color = lin(l.silkColor ?? carryColor ?? u.colors.primary);
+    // a Silk cue (`silkColor`) makes the silk plain; else the show's
+    // Artwork paints it; else a fill makes it plain
+    const pattern =
+        l.silkColor !== undefined
+            ? -1
+            : silkArtwork
+              ? SILK_ARTWORK_PATTERN
+              : silk
+                ? SILK_PATTERN_IDS.indexOf(silk)
+                : -1;
+    specs.forEach(({ spec, bone, frame }, n) =>
+        silks.push({
+            slot,
+            held,
+            // by slot, so a marcher added earlier in the band doesn't
+            // change the wave of every silk after it
+            seed: silkSeed(slot * 2 + n),
+            values: {
+                aSlot: [slot],
+                aSilk: [spec.fly, spec.header, spec.mirror, bone],
+                aCut: [silkCutIndex(spec.cut)],
+                aFrame0: frame.slice(0, 4),
+                aFrame1: frame.slice(4, 8),
+                aFrame2: frame.slice(8, 12),
+                aMotion: [0, 0, 0, 0],
+                aColor: [color.r, color.g, color.b],
+                aPattern: [pattern],
+            },
+        }),
+    );
 }
 
 /** One tier's instanced mesh: the grid at `detail`, room for `n` silks. */
@@ -585,6 +595,8 @@ export class SilkSet {
      * distance as the instruments are (`hornSet.ts`), with this frame's
      * motion. `camera` null draws everything at full detail. `lift` raises
      * each slot (m), as onto a platform; null stands them all on the ground.
+     * `held` is which of each slot's held looks it holds
+     * (`MarcherBodies.setHeld`); null holds each slot's own.
      */
     writeFrame(
         xz: Float32Array,
@@ -593,11 +605,12 @@ export class SilkSet {
         scale: Float32Array,
         camera: [number, number, number] | null,
         lift: Float32Array | null = null,
+        held: Uint8Array | null = null,
     ): void {
         if (this.tiers.length === 0) return;
         const lists: number[][] = this.tiers.map(() => []);
         this.silks.forEach((s, i) => {
-            if (!placed[s.slot]) return;
+            if (!placed[s.slot] || (held?.[s.slot] ?? 0) !== s.held) return;
             let tier = 0;
             if (this.tiers.length > 1 && camera) {
                 const near = isNearCarrier(

@@ -29,6 +29,7 @@ import {
     uniformPresetOf,
 } from "../uniformPresets";
 import type { GuardModelId } from "../../instruments/model";
+import { guardCarry } from "../../instruments/catalog";
 
 const assets = path.resolve(__dirname, "../../../assets/om-pose");
 const manifest = JSON.parse(
@@ -114,6 +115,40 @@ describe("performer bodies", () => {
 });
 
 describe("section uniforms", () => {
+    it("carries the piece an Equipment cue gives instead of the section's", () => {
+        const flag = sectionUniform(
+            "Trumpet",
+            "up",
+            undefined,
+            0x112233,
+            undefined,
+            undefined,
+            undefined,
+            {
+                carry: guardCarry("flag6"),
+            },
+        );
+        expect(flag.options.carry).toEqual(guardCarry("flag6"));
+        // colored like the section's own piece would be
+        expect(flag.options.carryColor).toBe(0x112233);
+        const none = sectionUniform(
+            "Trumpet",
+            "up",
+            undefined,
+            0x112233,
+            undefined,
+            undefined,
+            undefined,
+            {
+                carry: null,
+            },
+        );
+        expect(none.options.carry).toBeNull();
+        expect(none.options.carryColor).toBeNull();
+        // the body draws alike whatever is in the hands
+        expect(bodyKey(flag)).toBe(bodyKey(sectionUniform("Trumpet")));
+    });
+
     it("leaves the shako off the guard sections only", () => {
         for (const g of ["Color Guard", "Rifle", "Flag", "Dancer", "Twirler"])
             expect(sectionUniform(g).options.hat).toBe(false);
