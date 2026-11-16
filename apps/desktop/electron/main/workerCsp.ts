@@ -16,22 +16,22 @@ import {
 
 type HeaderMap = Record<string, string | string[]>;
 
-/** The policy a response should carry: the import worker's own, else the page's. */
-export const cspFor = (url: string, pagePolicy: string): string =>
-    isModelImportWorkerUrl(url) ? MODEL_IMPORT_WORKER_CSP : pagePolicy;
-
 /**
- * `headers` with `policy` as the only CSP. Header names are case-insensitive, and two policies
- * would both apply, so any CSP already there (the dev server sends the worker's) is replaced.
+ * The response headers with the app's CSP: the page's policy added as before, except on the
+ * import worker's script, whose headers get the worker's policy as their only CSP. Header names
+ * are case-insensitive and two policies would both apply, so any CSP already on the worker's
+ * response (the dev server sends one) is replaced.
  */
-export function withCsp(
+export function withAppCsp(
+    url: string,
     headers: HeaderMap | undefined,
-    policy: string,
-): Record<string, string[]> {
-    const out: Record<string, string[]> = {};
+    pagePolicy: string,
+): HeaderMap {
+    if (!isModelImportWorkerUrl(url))
+        return { ...headers, "Content-Security-Policy": [pagePolicy] };
+    const out: HeaderMap = {};
     for (const [name, value] of Object.entries(headers ?? {}))
-        if (name.toLowerCase() !== "content-security-policy")
-            out[name] = Array.isArray(value) ? value : [value];
-    out["Content-Security-Policy"] = [policy];
+        if (name.toLowerCase() !== "content-security-policy") out[name] = value;
+    out["Content-Security-Policy"] = [MODEL_IMPORT_WORKER_CSP];
     return out;
 }

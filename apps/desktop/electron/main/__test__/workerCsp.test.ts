@@ -1,39 +1,38 @@
 import { describe, expect, it } from "vitest";
-import { cspFor, withCsp } from "../workerCsp";
+import { withAppCsp } from "../workerCsp";
 
 const PAGE = "script-src 'self'";
+const WORKER = "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'";
+const WORKER_URL =
+    "http://localhost:5173/src/showAssets/modelImport/modelImport.worker.ts?worker_file&type=module";
 
-describe("cspFor", () => {
-    it("gives the import worker its own policy and everything else the page's", () => {
+describe("withAppCsp", () => {
+    it("adds the page's policy to every other response, as before", () => {
+        const headers = {
+            "content-security-policy": ["default-src 'none'"],
+            "Content-Type": ["text/javascript"],
+        };
         expect(
-            cspFor(
-                "http://localhost:5173/src/showAssets/modelImport/modelImport.worker.ts?worker_file&type=module",
-                PAGE,
-            ),
-        ).toBe("default-src 'none'; script-src 'self' 'wasm-unsafe-eval'");
-        expect(cspFor("http://localhost:5173/src/main.tsx", PAGE)).toBe(PAGE);
+            withAppCsp("http://localhost:5173/src/main.tsx", headers, PAGE),
+        ).toEqual({ ...headers, "Content-Security-Policy": [PAGE] });
     });
-});
 
-describe("withCsp", () => {
-    it("replaces any policy already there, whatever its case", () => {
+    it("gives the import worker its own policy as its only CSP", () => {
         expect(
-            withCsp(
+            withAppCsp(
+                WORKER_URL,
                 {
                     "content-security-policy": ["default-src 'none'"],
-                    "Content-Type": "text/javascript",
+                    "Content-Type": ["text/javascript"],
                 },
                 PAGE,
             ),
         ).toEqual({
             "Content-Type": ["text/javascript"],
-            "Content-Security-Policy": [PAGE],
+            "Content-Security-Policy": [WORKER],
         });
-    });
-
-    it("adds one when there's none", () => {
-        expect(withCsp(undefined, PAGE)).toEqual({
-            "Content-Security-Policy": [PAGE],
+        expect(withAppCsp(WORKER_URL, undefined, PAGE)).toEqual({
+            "Content-Security-Policy": [WORKER],
         });
     });
 });

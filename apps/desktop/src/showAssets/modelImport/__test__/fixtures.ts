@@ -82,6 +82,12 @@ export function pngHeaderOnly(width: number, height: number): Uint8Array {
     return out;
 }
 
+/** An IO that can also write Draco (Node's encoder) */
+export const dracoIo = async () =>
+    (await io()).registerDependencies({
+        "draco3d.encoder": await draco3d.createEncoderModule(),
+    });
+
 export async function readGlb(bytes: Uint8Array): Promise<Document> {
     return (await io()).readBinary(bytes);
 }

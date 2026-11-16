@@ -1,4 +1,4 @@
-// cspell:words Mackey nendsolid
+// cspell:words Mackey nendsolid precheck
 // @vitest-environment node
 // cspell:words basisu draco ktx
 /**
@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { getBounds } from "@gltf-transform/functions";
+import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import { validateBytes } from "gltf-validator";
 import { importModel } from "../pipeline";
 import { readImageHeader } from "../imageSize";
@@ -20,6 +21,7 @@ import type {
 } from "../types";
 import {
     chairWith,
+    dracoIo,
     editGlbJson,
     env,
     ktx2Header,
@@ -272,6 +274,65 @@ describe("importModel", () => {
             triangles: 119_808,
             cap: TRIANGLE_CAP,
             limit: 80_000,
+        });
+    });
+
+    it("refuses more than 4× the cap once decoded, whatever the JSON declares", async () => {
+        // Three chairs, Draco-compressed, with each accessor claiming 3 elements: the
+        // precheck counts 1 triangle per primitive, the decoder makes them all
+        const doc = await readGlb(
+            await chairWith((d) => {
+                const scene = d.getRoot().listScenes()[0];
+                const parts = d
+                    .getRoot()
+                    .listNodes()
+                    .filter((n) => n.getMesh());
+                for (const dx of [1, 2]) {
+                    const copy = d.createNode().setTranslation([dx, 0, 0]);
+                    for (const node of parts)
+                        copy.addChild(
+                            d
+                                .createNode()
+                                .setMesh(node.getMesh()!.clone())
+                                .setMatrix(node.getWorldMatrix()),
+                        );
+                    scene.addChild(copy);
+                }
+            }),
+        );
+        doc.createExtension(KHRDracoMeshCompression)
+            .setRequired(true)
+            .setEncoderOptions({});
+        const encoded = await (await dracoIo()).writeBinary(doc);
+        const understated = editGlbJson(encoded, (json) => {
+            for (const accessor of json.accessors as { count: number }[])
+                accessor.count = 3;
+        });
+        expect(
+            refusal(await run([picked("draco-chairs.glb", understated)])),
+        ).toEqual({
+            code: "tooManyTriangles",
+            triangles: 119_808,
+            cap: TRIANGLE_CAP,
+            limit: 80_000,
+        });
+    });
+
+    it("refuses meshopt data that would decode past its budget", async () => {
+        const glb = editGlbJson(read("TextureCoordinateTest.glb"), (json) => {
+            (json.bufferViews as Record<string, unknown>[])[0].extensions = {
+                EXT_meshopt_compression: {
+                    buffer: 0,
+                    byteLength: 4,
+                    byteStride: 4,
+                    count: 100_000_000,
+                    mode: "ATTRIBUTES",
+                },
+            };
+        });
+        expect(refusal(await run([picked("meshopt.glb", glb)]))).toMatchObject({
+            code: "tooLarge",
+            bytes: 400_000_000,
         });
     });
 

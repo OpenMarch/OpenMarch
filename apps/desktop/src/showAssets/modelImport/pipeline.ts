@@ -60,10 +60,12 @@ import {
     PLAUSIBLE_SIZE_M,
     TEXTURE_CAP,
     TRIANGLE_CAP,
+    TRIANGLE_REFUSE_FACTOR,
     UNIT_FIXES,
     Z_UP_FACTOR,
 } from "./rules";
 import {
+    primitiveTriangles,
     sceneNodes,
     sceneOf,
     sceneTriangles,
@@ -214,14 +216,54 @@ async function readClean(
     report: ModelImportReport,
 ): Promise<{ io: WebIO; doc: Document; scene: Scene } | null> {
     const { io, doc } = await readDocument(opened, env, report);
+    // Draco and meshopt size their output from the compressed data, not the JSON the precheck
+    // counted, so the decoded meshes are counted again: every mesh, used or not
+    const decoded = doc
+        .getRoot()
+        .listMeshes()
+        .reduce(
+            (n, mesh) =>
+                n +
+                mesh
+                    .listPrimitives()
+                    .reduce((m, prim) => m + primitiveTriangles(prim), 0),
+            0,
+        );
+    const limit = TRIANGLE_CAP * TRIANGLE_REFUSE_FACTOR;
+    if (decoded > limit) {
+        report.cantImport.push({
+            code: "tooManyTriangles",
+            triangles: decoded,
+            cap: TRIANGLE_CAP,
+            limit,
+        });
+        return null;
+    }
     const scene = keepOneScene(doc, report);
     if (sceneNodes(scene).some((n) => n.getSkin() && n.getMesh())) {
         report.cantImport.push({ code: "rigged" });
         return null;
     }
     await dropExtensions(doc, opened, report);
+    if (sceneTriangles(scene) > limit) {
+        report.cantImport.push({
+            code: "tooManyTriangles",
+            triangles: sceneTriangles(scene),
+            cap: TRIANGLE_CAP,
+            limit,
+        });
+        return null;
+    }
     if (sceneTriangles(scene) === 0) {
         report.cantImport.push({ code: "noGeometry" });
+        return null;
+    }
+    const bounds = getBounds(scene);
+    if (![...bounds.min, ...bounds.max].every(Number.isFinite)) {
+        report.cantImport.push({
+            code: "unreadable",
+            reason: "the model's positions aren't finite numbers",
+        });
         return null;
     }
     return { io, doc, scene };

@@ -37,6 +37,8 @@ export const DISTANT_TEXTURE_CAP = 256;
 export const MAX_IMPORT_BYTES = 200 * 1024 * 1024;
 export const MAX_IMAGE_EDGE = 8192;
 export const MAX_IMAGE_PIXELS = 8192 * 8192;
+/** What meshopt-compressed buffer views may decode to, together (their `count × byteStride`) */
+export const MAX_MESHOPT_DECODED_BYTES = 256 * 1024 * 1024;
 
 /** The editor ends an import that runs longer than this (D-13) and starts a fresh worker. */
 export const IMPORT_TIMEOUT_MS = 120_000;

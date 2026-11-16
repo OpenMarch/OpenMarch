@@ -11,6 +11,7 @@ import {
     ALLOWED_REQUIRED_EXTENSIONS,
     MAX_IMAGE_EDGE,
     MAX_IMAGE_PIXELS,
+    MAX_MESHOPT_DECODED_BYTES,
     TRIANGLE_CAP,
     TRIANGLE_REFUSE_FACTOR,
 } from "./rules";
@@ -48,6 +49,24 @@ export function precheck(model: OpenedModel): Precheck {
             triangles: declaredTriangles,
             cap: TRIANGLE_CAP,
             limit,
+        });
+
+    // Meshopt views decode to `count × byteStride` bytes each, read straight from the JSON,
+    // whether or not anything uses them
+    const meshoptBytes = list(model.json.bufferViews).reduce((n, view) => {
+        const ext = (view.extensions as Record<string, unknown> | undefined)?.[
+            "EXT_meshopt_compression"
+        ] as { count?: unknown; byteStride?: unknown } | undefined;
+        if (!ext) return n;
+        const count = typeof ext.count === "number" ? ext.count : 0;
+        const stride = typeof ext.byteStride === "number" ? ext.byteStride : 0;
+        return n + count * stride;
+    }, 0);
+    if (meshoptBytes > MAX_MESHOPT_DECODED_BYTES)
+        refusals.push({
+            code: "tooLarge",
+            bytes: meshoptBytes,
+            limit: MAX_MESHOPT_DECODED_BYTES,
         });
 
     const images = list(model.json.images).map((image, index) => {

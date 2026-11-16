@@ -1,4 +1,4 @@
-// cspell:words premultiplying
+// cspell:words premultiplying EXIF
 /**
  * Decoding and encoding images for the model import (fork #998). The worker uses the browser's
  * own codecs (`createImageBitmap` and `OffscreenCanvas`, no `sharp`, as spike #995 measured);
@@ -34,6 +34,8 @@ export const browserImageCodec: ImageCodec = {
             resizeQuality: "high",
             premultiplyAlpha: "none",
             colorSpaceConversion: "none",
+            // The size came from the header, which ignores EXIF orientation; so does glTF
+            imageOrientation: "none",
         });
         try {
             const canvas = new OffscreenCanvas(width, height);
@@ -58,6 +60,7 @@ export const browserImageCodec: ImageCodec = {
             resizeQuality: "medium",
             premultiplyAlpha: "none",
             colorSpaceConversion: "none",
+            imageOrientation: "none",
         });
         try {
             const canvas = new OffscreenCanvas(4, 4);
