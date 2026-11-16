@@ -339,7 +339,10 @@ export class LiveBoxMode implements FieldMode {
     release(pointer: FieldPointer, click: LiveClick | null): void {
         this.endHeld();
         const before = this.live;
-        const out = releaseLive(before, click);
+        const out = releaseLive(
+            before,
+            click && { ...click, onDot: this.memberAt(pointer) !== null },
+        );
         this.live = out.live;
         if (out.changed) {
             this.saved = out.live.params;
@@ -485,6 +488,18 @@ export class LiveBoxMode implements FieldMode {
         const field = currentShapeField();
         if (!field) return null;
         return pressLive(this.live, pointer.field, toolEnvFor(field));
+    }
+
+    /** The member whose dot is under `pointer`, within a handle's reach, if any */
+    private memberAt(pointer: FieldPointer): number | null {
+        const field = currentShapeField();
+        if (!field) return null;
+        const reach = toolEnvFor(field).hitRadius;
+        const at = pointer.field;
+        const hit = this.live.box.recipe.members.find(
+            (m) => Math.hypot(m.x - at.x, m.y - at.y) <= reach,
+        );
+        return hit?.marcherId ?? null;
     }
 
     /** Goes inside the box at the member nearest `pointer` */

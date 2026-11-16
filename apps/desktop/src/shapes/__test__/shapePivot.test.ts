@@ -437,6 +437,20 @@ describe("a placed box keeps its pivot", () => {
         ).toBe(true);
     });
 
+    it("a plain click on a member goes inside; off a member, or a drag, it doesn't", () => {
+        const box = placed();
+        const member = box.recipe.members[5]!;
+        const at = { x: member.x, y: member.y };
+        const live = pressLive(openLive(box), at, env())!;
+        expect(releaseLive(live, { double: false, onDot: true }).enter).toBe(
+            true,
+        );
+        expect(releaseLive(live, { double: false, onDot: false }).enter).toBe(
+            false,
+        );
+        expect(releaseLive(live, null).enter).toBe(false);
+    });
+
     it("a double click on its pivot sends it back to the center", () => {
         const box = placed();
         const at = pivotPoint(boxTool.frameOf(box.params, N), "e");
