@@ -319,8 +319,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             cueSectionsOf(
                 slots.ids.map((id, i) => ({
                     section: sectionById.get(id) ?? "",
-                    family:
-                        marcherLooks[i]?.uniform.options.carry?.family ?? null,
+                    model:
+                        marcherLooks[i]?.uniform.options.carry?.model ?? null,
                 })),
             ),
         );

@@ -14,7 +14,18 @@ import {
     TIMELINE_MENU_CONTENT_CLASS,
 } from "@/components/timeline/TimelineRangeMenu";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
-import type { ActionId } from "@/shortcuts/definitions";
+import {
+    EQUIPMENT_FAMILY_KEYS,
+    EQUIPMENT_ITEM_KEYS,
+    equipmentActionOf,
+    selectFamilyActionOf,
+    selectHoldingActionOf,
+    type ActionId,
+    type EquipmentItemKey,
+} from "@/shortcuts/definitions";
+import { equipmentCatalog } from "@openmarch/core";
+import { itemKeyOf } from "@/cues/equipmentItems";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { getActionLabel } from "@/shortcuts/labels";
 import Shortcut from "@/components/ui/Shortcut";
 import {
@@ -95,39 +106,55 @@ const GROUPS: readonly (readonly ActionId[])[] = [
     ["fieldEditMode"],
 ];
 
-/**
- * The Equipment submenu (ADR 0015 D-6; fork #992), after the hold styles: what the selection holds
- * from the playhead on (the one every selected performer holds checked), the picked cue's
- * performers, and selecting who holds each thing at the playhead.
- */
-const EQUIPMENT_GROUPS: readonly (readonly ActionId[])[] = [
-    [
-        "equipmentInstrument",
-        "equipmentFlag",
-        "equipmentRifle",
-        "equipmentSabre",
-        "equipmentNone",
-    ],
-    ["cueAddSelected", "cueRemoveSelected"],
-    [
-        "selectHoldingRifle",
-        "selectHoldingFlag",
-        "selectHoldingSabre",
-        "selectHoldingInstrument",
-        "selectHoldingNone",
-    ],
-];
-
-/** Where the Equipment submenu goes among `GROUPS`: after the hold styles */
+/** Where the Equipment entries go among `GROUPS`: after the hold styles */
 const EQUIPMENT_AT = GROUPS.indexOf(HOLD_STYLE_GROUP) + 1;
 
-/** The picked cue's entries: shown only while they can run */
-const CUE_EDITS: ReadonlySet<ActionId> = new Set(EQUIPMENT_GROUPS[1]);
+/** A family's submenu: its name, and the actions it lists. */
+interface FamilyMenu {
+    readonly family: (typeof EQUIPMENT_FAMILY_KEYS)[number];
+    readonly keys: readonly EquipmentItemKey[];
+    readonly set: readonly ActionId[];
+    readonly select: readonly ActionId[];
+}
 
-/** The actions the menu offers, in order. */
+/** The catalog's families, in a fixed order whatever the selection's section (fork #992). */
+const FAMILY_MENUS: readonly FamilyMenu[] = EQUIPMENT_FAMILY_KEYS.map(
+    (family) => {
+        const keys = equipmentCatalog(family).map(
+            (v) => itemKeyOf(v.id) as EquipmentItemKey,
+        );
+        return {
+            family,
+            keys,
+            set: keys.map(equipmentActionOf),
+            select: [
+                selectFamilyActionOf(family),
+                ...keys.map(selectHoldingActionOf),
+            ],
+        };
+    },
+);
+
+/** The picked cue's entries (the Equipment lane), shown only while they can run */
+const CUE_EDITS: readonly ActionId[] = ["cueAddSelected", "cueRemoveSelected"];
+
+const USUAL = equipmentActionOf("usual");
+const NOTHING = equipmentActionOf("none");
+const SELECT_NOTHING = selectHoldingActionOf("none");
+
+/** The Equipment actions: set what the selection holds, and select by what's held. */
+const EQUIPMENT_ACTIONS: readonly ActionId[] = [
+    USUAL,
+    ...FAMILY_MENUS.flatMap((m) => [...m.set, ...m.select]),
+    NOTHING,
+    SELECT_NOTHING,
+    ...CUE_EDITS,
+];
+
+/** The actions the menu offers. */
 export const FIELD_MENU_ACTIONS: readonly ActionId[] = [
     ...GROUPS.flat(),
-    ...EQUIPMENT_GROUPS.flat(),
+    ...EQUIPMENT_ACTIONS,
 ];
 
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
@@ -152,7 +179,9 @@ const HOLD_STYLES: ReadonlySet<ActionId> = new Set(HOLD_STYLE_GROUP);
 const CHECKABLE: ReadonlySet<ActionId> = new Set([
     ...STATE_GROUP,
     ...HOLD_STYLE_GROUP,
-    ...EQUIPMENT_GROUPS[0],
+    USUAL,
+    NOTHING,
+    ...FAMILY_MENUS.flatMap((m) => m.set),
 ]);
 
 /** The room for a check in front of a checkable entry's words */
@@ -186,6 +215,9 @@ export default function FieldContextMenu({
 }) {
     const { t } = useTranslate();
     const touch = useIsTouchMode();
+    const recentEquipment = useUiSettingsStore(
+        (s) => s.uiSettings.recentEquipment,
+    );
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -229,14 +261,16 @@ export default function FieldContextMenu({
     const before = shownGroups(GROUPS.slice(0, EQUIPMENT_AT));
     const after = shownGroups(GROUPS.slice(EQUIPMENT_AT));
     // Equipment needs a selection and the timeline; the picked cue's entries show while they run
-    const equipmentGroups =
-        timelineMode && selectedCount > 0
-            ? EQUIPMENT_GROUPS.map((group) =>
-                  group.filter((id) => !CUE_EDITS.has(id) || enabled(id)),
-              ).filter((group) => group.length > 0)
-            : [];
-    const entry = (id: ActionId) => {
+    const equipment = timelineMode && selectedCount > 0;
+    const cueEdits = equipment ? CUE_EDITS.filter((id) => enabled(id)) : [];
+    const recent = recentEquipment
+        .filter((key): key is EquipmentItemKey =>
+            (EQUIPMENT_ITEM_KEYS as readonly string[]).includes(key),
+        )
+        .map((key) => ({ id: equipmentActionOf(key), key }));
+    const entry = (id: ActionId, keyPrefix = "", shortLabel?: string) => {
         const label =
+            shortLabel ??
             actionLabelNow(id) ??
             getActionLabel(id, (key, params) => t(key, params as never));
         const shortcut = (
@@ -247,8 +281,8 @@ export default function FieldContextMenu({
         if (isActionChecked(id))
             return (
                 <DropdownMenu.CheckboxItem
-                    key={id}
-                    data-testid={`field-menu-${id}`}
+                    key={keyPrefix + id}
+                    data-testid={`field-menu-${keyPrefix}${id}`}
                     checked
                     disabled
                     className={MENU_ITEM_CLASS}
@@ -264,8 +298,8 @@ export default function FieldContextMenu({
             );
         return (
             <DropdownMenu.Item
-                key={id}
-                data-testid={`field-menu-${id}`}
+                key={keyPrefix + id}
+                data-testid={`field-menu-${keyPrefix}${id}`}
                 disabled={!enabled(id)}
                 onSelect={() =>
                     runAction(
@@ -291,7 +325,7 @@ export default function FieldContextMenu({
                 {i > 0 && (
                     <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
                 )}
-                {group.map(entry)}
+                {group.map((id) => entry(id))}
             </Fragment>
         ));
 
@@ -334,56 +368,120 @@ export default function FieldContextMenu({
                     }
                 >
                     {separatedGroups(before)}
-                    {equipmentGroups.length > 0 && (
+                    {equipment && (
                         <>
                             {before.length > 0 && (
                                 <DropdownMenu.Separator
                                     className={MENU_SEPARATOR_CLASS}
                                 />
                             )}
-                            <DropdownMenu.Sub>
-                                <DropdownMenu.SubTrigger
-                                    data-testid="field-menu-equipment"
-                                    className={MENU_ITEM_CLASS}
-                                >
-                                    <span className={CHECK_SLOT_CLASS} />
-                                    {t("field.menu.equipment")}
-                                    <CaretRightIcon
-                                        size={12}
-                                        className="ml-auto"
+                            <SubMenu
+                                testId="field-menu-equipment"
+                                label={t("field.menu.equipment")}
+                            >
+                                {entry(USUAL, "", t("cues.value.usual"))}
+                                {recent.length > 0 && (
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
                                     />
-                                </DropdownMenu.SubTrigger>
-                                <DropdownMenu.Portal>
-                                    <DropdownMenu.SubContent
-                                        data-testid="field-menu-equipment-content"
-                                        sideOffset={4}
-                                        collisionPadding={8}
-                                        {...KEEP_MENU_EVENTS}
-                                        className={TIMELINE_MENU_CONTENT_CLASS}
+                                )}
+                                {recent.map(({ id, key }) =>
+                                    entry(id, "recent-", t(`cues.item.${key}`)),
+                                )}
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                                {FAMILY_MENUS.map((m) => (
+                                    <SubMenu
+                                        key={m.family}
+                                        testId={`field-menu-equipment-${m.family}`}
+                                        label={t(`cues.family.${m.family}`)}
                                     >
-                                        <DropdownMenu.Label
-                                            className={MENU_LABEL_CLASS}
-                                        >
-                                            {t(
-                                                "field.menu.equipmentFromPlayhead",
-                                            )}
-                                        </DropdownMenu.Label>
-                                        {separatedGroups(equipmentGroups)}
-                                    </DropdownMenu.SubContent>
-                                </DropdownMenu.Portal>
-                            </DropdownMenu.Sub>
+                                        {m.set.map((id, i) =>
+                                            entry(
+                                                id,
+                                                "",
+                                                t(`cues.item.${m.keys[i]}`),
+                                            ),
+                                        )}
+                                    </SubMenu>
+                                ))}
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                                {entry(NOTHING, "", t("cues.value.none"))}
+                            </SubMenu>
+                            <SubMenu
+                                testId="field-menu-select-holding"
+                                label={t("field.menu.selectByEquipment")}
+                            >
+                                {FAMILY_MENUS.map((m) => (
+                                    <SubMenu
+                                        key={m.family}
+                                        testId={`field-menu-select-${m.family}`}
+                                        label={t(`cues.family.${m.family}`)}
+                                    >
+                                        {entry(m.select[0])}
+                                        <DropdownMenu.Separator
+                                            className={MENU_SEPARATOR_CLASS}
+                                        />
+                                        {m.select
+                                            .slice(1)
+                                            .map((id) => entry(id))}
+                                    </SubMenu>
+                                ))}
+                                <DropdownMenu.Separator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
+                                {entry(SELECT_NOTHING)}
+                            </SubMenu>
+                            {cueEdits.map((id) => entry(id))}
                         </>
                     )}
-                    {after.length > 0 &&
-                        (before.length > 0 || equipmentGroups.length > 0) && (
-                            <DropdownMenu.Separator
-                                className={MENU_SEPARATOR_CLASS}
-                            />
-                        )}
+                    {after.length > 0 && (before.length > 0 || equipment) && (
+                        <DropdownMenu.Separator
+                            className={MENU_SEPARATOR_CLASS}
+                        />
+                    )}
                     {separatedGroups(after)}
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>
+    );
+}
+
+/** A submenu of the field's menu: an entry that opens `children` beside it. */
+function SubMenu({
+    testId,
+    label,
+    children,
+}: {
+    testId: string;
+    label: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger
+                data-testid={testId}
+                className={MENU_ITEM_CLASS}
+            >
+                <span className={CHECK_SLOT_CLASS} />
+                {label}
+                <CaretRightIcon size={12} className="ml-auto" />
+            </DropdownMenu.SubTrigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.SubContent
+                    data-testid={`${testId}-content`}
+                    sideOffset={4}
+                    collisionPadding={8}
+                    {...KEEP_MENU_EVENTS}
+                    className={TIMELINE_MENU_CONTENT_CLASS}
+                >
+                    {children}
+                </DropdownMenu.SubContent>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Sub>
     );
 }
 

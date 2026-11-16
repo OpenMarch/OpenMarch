@@ -22,6 +22,15 @@ change (the module is not in a released version yet).
   holds themselves carry, each of which wins over the show setting for its
   counts.
 - New queries: `whoHasValue`, `whoHolds`, `heldAt` and `cueValueAt`.
+- Equipment values are a fixed catalog of real items grouped by family
+  (`EquipmentFamily`, `EQUIPMENT_FAMILIES`, `equipmentCatalog`): guard
+  equipment (flag, swing flag, double swing flags, rifle, sabre), brass,
+  woodwinds and drums, each `builtin:equipment.<item>` with `family` and
+  `holds`. `builtin:equipment.none` holds nothing, and
+  `builtin:equipment.usual` (`EQUIPMENT_USUAL`) is the performer's own
+  section default, which compile resolves to that default's value. The rough
+  `builtin:equipment.winds` and `builtin:equipment.battery` stay only as the
+  default for a section with no catalog item.
 - `RecompileOptions.channels` becomes `types`.
 - `CueNoteKind` loses `silk_aspect`: the note for a silk whose aspect differs
   waits for silk artwork (ADR 0015 keeps Silk a plain color). `carry_mismatch`

@@ -1,3 +1,4 @@
+import { equipmentCatalog } from "@openmarch/core";
 import { describe, expect, it } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import { getActionLabel } from "../labels";
@@ -7,6 +8,7 @@ import {
     ACTIONS,
     ACTION_IDS,
     NUDGE_ACTION_IDS,
+    EQUIPMENT_ITEM_KEYS,
     type ActionId,
 } from "../definitions";
 
@@ -58,6 +60,7 @@ describe("ACTIONS", () => {
             for (const key of [
                 def.labelKey,
                 def.labelSuffixKey,
+                "labelItemKey" in def ? def.labelItemKey : undefined,
                 def.keywordsKey,
                 def.toggleOnKey,
                 def.toggleOffKey,
@@ -65,6 +68,19 @@ describe("ACTIONS", () => {
                 if (key)
                     expect(typeof lookup(key), `${id}: ${key}`).toBe("string");
             }
+        }
+    });
+
+    it("has an Equipment action for every catalog item, and only those (#992)", () => {
+        const keys = equipmentCatalog().map((v) =>
+            v.id.replace("builtin:equipment.", ""),
+        );
+        expect([...EQUIPMENT_ITEM_KEYS]).toEqual(keys);
+        for (const key of keys) {
+            const id = `equipment${key[0]!.toUpperCase()}${key.slice(1)}`;
+            expect(ACTIONS[id as keyof typeof ACTIONS]?.args).toEqual({
+                equipment: key,
+            });
         }
     });
 

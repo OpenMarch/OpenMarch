@@ -14,34 +14,38 @@
  * Pure: no three.js.
  */
 import type { CueSegment, PerformerCarry } from "@openmarch/core";
-import { guardCarry, type Carry } from "../instruments/catalog";
+import { carryForModel, type Carry } from "../instruments/catalog";
+import { modelOfValue } from "@/cues/equipmentItems";
 import type { HoldFamily, HoldState } from "../instruments/holds";
 import { performerCarryOf, type HornEvent } from "./hornChannel";
 
 /**
- * The piece a performer holding `holds` draws, given `base`, the piece
- * their look carries (their section's): their own piece when it is that
- * kind, else the guard's 6 ft flag, rifle or sabre. Null for nothing, and
- * for an instrument their section doesn't play (the editor offers one only
- * to performers whose section plays it).
+ * The piece a performer draws for the Equipment value `value` (fork #992's catalog), given
+ * `base`, the piece their look carries (their section's): the item's own model, kept as `base`
+ * when it is that model (so a show setting such as the sousaphone or a silk shape stays). Null
+ * for nothing. A value without a model (a section without a catalog item, or one this build
+ * doesn't know) falls back on what it counts as holding: `base` when that's the same kind.
  */
-export function carryForHolds(
+export function carryForValue(
+    value: string | null,
     holds: PerformerCarry,
     base: Carry | null,
 ): Carry | null {
     if (holds === "none") return null;
-    if (base && performerCarryOf(base.family) === holds) return base;
-    switch (holds) {
-        case "flag":
-            return guardCarry("flag6");
-        case "rifle":
-            return guardCarry("rifle");
-        case "sabre":
-            return guardCarry("sabre");
-        default:
-            return null;
+    const model = modelOfValue(value);
+    if (model) {
+        if (base && base.model === model) return base;
+        // The section's own kind of flag or tuba stays as the show set it
+        if (base && sameKind(base.model, model)) return base;
+        return carryForModel(model);
     }
+    if (base && performerCarryOf(base.family) === holds) return base;
+    return null;
 }
+
+/** The 6 ft flag and the tuba are the section default, which a show setting may swap. */
+const sameKind = (a: string, b: string) =>
+    (a === "contra" || a === "sousaphone") && b === "contra";
 
 /** From count `from` on, the performer holds `carries[held]`. */
 export interface HeldSpan {
@@ -73,7 +77,7 @@ export function slotEquipment(
     const spans: HeldSpan[] = [];
     for (const seg of segments) {
         if (!(seg.to > seg.from)) continue;
-        const carry = carryForHolds(holdsAt(seg.from), base);
+        const carry = carryForValue(seg.value, holdsAt(seg.from), base);
         const key = JSON.stringify(carry);
         let held = keys.indexOf(key);
         if (held < 0) {

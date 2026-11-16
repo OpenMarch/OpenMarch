@@ -68,7 +68,8 @@ async function screenOf(page: Page, drillNumber: string): Promise<Point> {
 async function emptyField(page: Page): Promise<Point> {
     const t4 = await screenOf(page, "T4");
     const t1 = await screenOf(page, "T1");
-    return { x: (t1.x + t4.x) / 2, y: t4.y + 80 };
+    // Under T1: left of where the long-press menu opens (beside T2), however tall it is
+    return { x: t1.x, y: t4.y + 80 };
 }
 
 /** Taps the middle of the element with test id `testId`. */

@@ -3,8 +3,6 @@
  * "Rifles" or "Color Guard". The cue keeps its own performer list; the label never decides who.
  * Pure, with the words passed in, so tests and the write path read the same answers.
  */
-import type { PerformerCarry } from "@openmarch/core";
-
 export interface LabelMarcher {
     readonly id: number;
     readonly section: string;
@@ -14,10 +12,14 @@ export interface LabelMarcher {
 
 /** The words a label is made of, translated by the caller. */
 export interface LabelWords {
-    /** "Rifles", "Flags", …: everyone holding one at the playhead. */
-    holding: (carry: PerformerCarry) => string;
     /** "12 performers" */
     performers: (count: number) => string;
+}
+
+/** Everyone holding one item at the playhead, and its plural name ("Rifles"). */
+export interface LabelHolders {
+    readonly name: string;
+    readonly ids: readonly number[];
 }
 
 /** At most this many whole sections, or single drill numbers, are named before counting. */
@@ -72,18 +74,15 @@ export function describePerformers({
     ids: readonly number[];
     marchers: readonly LabelMarcher[];
     words: LabelWords;
-    /** Who holds each kind of equipment at the playhead, when that is a fair name. */
-    holders?: ReadonlyMap<PerformerCarry, readonly number[]>;
+    /** Who holds each item at the playhead, when that is a fair name. */
+    holders?: readonly LabelHolders[];
 }): string {
     const unique = [...new Set(ids)];
     const picked = marchers.filter((m) => unique.includes(m.id));
     if (picked.length === 0) return words.performers(unique.length);
     const pickedIds = new Set(picked.map((m) => m.id));
-    for (const carry of ["rifle", "flag", "sabre"] as const) {
-        const who = holders?.get(carry);
-        if (who && who.length > 0 && sameSet(who, pickedIds))
-            return words.holding(carry);
-    }
+    for (const { name, ids: who } of holders ?? [])
+        if (who.length > 0 && sameSet(who, pickedIds)) return name;
     const sections = wholeSections(picked, marchers);
     if (sections && sections.length <= MAX_NAMED) return sections.join(", ");
     const run = drillRun(picked);

@@ -25,6 +25,8 @@ export interface LanePiece {
     /** `default` is the section's usual (not a cue); `lasting` and `momentary` are cues. */
     readonly kind: SegmentKind;
     readonly holds: PerformerCarry;
+    /** The Equipment value held: a catalog item, or a section's fallback. */
+    readonly value: string | null;
     /** The cue that set it; null for the default. */
     readonly cueId: number | null;
 }
@@ -88,6 +90,7 @@ function piecesOf(
             to: seg.to,
             kind: seg.kind === "transition" ? "lasting" : seg.kind,
             holds: holdsOf(seg.value, usual),
+            value: seg.value,
             cueId: seg.cueId,
         };
         const last = out[out.length - 1];
@@ -96,7 +99,7 @@ function piecesOf(
             last.to === piece.from &&
             last.cueId === piece.cueId &&
             last.kind === piece.kind &&
-            last.holds === piece.holds
+            last.value === piece.value
         )
             out[out.length - 1] = { ...last, to: piece.to };
         else out.push(piece);
@@ -105,7 +108,7 @@ function piecesOf(
 }
 
 const pieceKey = (p: LanePiece) =>
-    `${p.from}:${p.to}:${p.kind}:${p.holds}:${p.cueId ?? ""}`;
+    `${p.from}:${p.to}:${p.kind}:${p.value ?? ""}:${p.cueId ?? ""}`;
 
 /**
  * The lane for the show's Equipment cues: a row per group of performers sharing one history, in

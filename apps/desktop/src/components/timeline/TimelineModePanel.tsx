@@ -99,10 +99,7 @@ import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useBasicLocksStore } from "@/timeline/basicLocks";
 import { useBasicPoints } from "./useBasicPoints";
 import type Page from "@/global/classes/Page";
-import {
-    EquipmentLaneButton,
-    useEquipmentLaneBand,
-} from "./cues/EquipmentLane";
+import { CueLanesButton, useEquipmentLaneBand } from "./cues/EquipmentLane";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
 const NO_CLIPS: TimelineInput[] = [];
@@ -164,14 +161,14 @@ const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
 const BASIC_VIEW_CONTROLS = (
     <>
         <TempoModeButton />
-        <EquipmentLaneButton />
+        <CueLanesButton />
     </>
 );
 const EXPERT_VIEW_CONTROLS = (
     <>
         <TempoModeButton />
         <TimelineCompactButton />
-        <EquipmentLaneButton />
+        <CueLanesButton />
     </>
 );
 

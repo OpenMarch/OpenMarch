@@ -1,120 +1,78 @@
 /**
  * Equipment cues (ADR 0015 D-3, D-6; fork #992): what a performer holds, set for the selection at
- * the playhead. The rules here are pure, so the commands, the field menu, the lane and their tests
- * read the same answers.
+ * the playhead from a fixed catalog of real items. The rules here are pure, so the commands, the
+ * field menu, the lane and their tests read the same answers.
  */
 import {
-    cueValueLookup,
-    heldAt,
+    cueValueAt,
+    EQUIPMENT_NONE,
+    EQUIPMENT_USUAL,
     type CompiledCues,
-    type PerformerCarry,
 } from "@openmarch/core";
 import type { DatabaseCue, NewCueArgs } from "@/db-functions/cues";
+import { itemValueId, tagOfValue } from "./equipmentItems";
 
 /**
- * What the Equipment commands set. "instrument" is each performer's own section instrument (a horn
- * or a drum), so one command can hand a mixed selection back their instruments.
+ * What an Equipment command sets: a catalog item's key ("trumpet", "rifle"), "usual" for the
+ * performer's own instrument (their section's default) or "none".
  */
-export type EquipmentChoice =
-    | "instrument"
-    | "flag"
-    | "rifle"
-    | "sabre"
-    | "none";
+export type EquipmentChoice = string;
 
-export const EQUIPMENT_CHOICES: readonly EquipmentChoice[] = [
-    "instrument",
-    "flag",
-    "rifle",
-    "sabre",
-    "none",
-];
-
-/** The Library value of an Equipment cue holding `carry` (`builtin:equipment.<carry>`). */
-export const equipmentValueOf = (carry: PerformerCarry): string =>
-    `builtin:equipment.${carry}`;
-
-/** What `value` counts as holding, or undefined for a value this build doesn't know. */
-export function carryOfEquipmentValue(
-    value: string,
-): PerformerCarry | undefined {
-    return lookup(value)?.holds;
-}
-const lookup = cueValueLookup();
-
-/** Whether a performer whose section usually holds `usual` plays an instrument. */
-export const hasInstrument = (usual: PerformerCarry): boolean =>
-    usual === "winds" || usual === "battery";
-
-/** What `choice` hands a performer whose section usually holds `usual`; null when it can't. */
-export function carryForChoice(
-    choice: EquipmentChoice,
-    usual: PerformerCarry,
-): PerformerCarry | null {
-    if (choice !== "instrument") return choice;
-    return hasInstrument(usual) ? usual : null;
-}
+/** The value an Equipment cue for `choice` stores. */
+export const equipmentValueOfChoice = (choice: EquipmentChoice): string =>
+    choice === "usual"
+        ? EQUIPMENT_USUAL
+        : choice === "none"
+          ? EQUIPMENT_NONE
+          : itemValueId(choice);
 
 /**
- * The cues that set `choice` for `marcherIds` on `beatId`: one per value, since "instrument" is a
- * horn for some and a drum for others. Performers `choice` can't reach (an instrument for the
- * guard) are left out; with nobody left, there are none. Lasting, as Equipment naturally is
- * (ADR 0015 D-2).
+ * The cue that sets `choice` for `marcherIds` on `beatId`, lasting, as Equipment naturally is
+ * (ADR 0015 D-2). Any performer can hold any item.
  */
 export function planEquipmentCues({
     choice,
     marcherIds,
     beatId,
-    usualOf,
     label,
 }: {
     choice: EquipmentChoice;
     marcherIds: readonly number[];
     beatId: number;
-    usualOf: (marcherId: number) => PerformerCarry;
     label: string | null;
 }): NewCueArgs[] {
-    const byCarry = new Map<PerformerCarry, number[]>();
-    for (const id of marcherIds) {
-        const carry = carryForChoice(choice, usualOf(id));
-        if (carry === null) continue;
-        const list = byCarry.get(carry);
-        if (list) list.push(id);
-        else byCarry.set(carry, [id]);
-    }
-    return [...byCarry].map(([carry, ids]) => ({
-        type: "equipment",
-        beatId,
-        value: equipmentValueOf(carry),
-        marcherIds: ids,
-        label,
-    }));
+    if (marcherIds.length === 0) return [];
+    return [
+        {
+            type: "equipment",
+            beatId,
+            value: equipmentValueOfChoice(choice),
+            marcherIds: [...marcherIds],
+            label,
+        },
+    ];
 }
 
-/**
- * The short tag the 2D field draws by a drill number for what a performer holds: only when it
- * isn't their section's usual (fork #992 decision 1), so winds and a guard on its own equipment
- * show none.
- */
-export const EQUIPMENT_TAG: Readonly<Record<PerformerCarry, string>> = {
-    flag: "F",
-    rifle: "R",
-    sabre: "S",
-    winds: "H",
-    battery: "D",
-    none: "N",
-};
+/** The Equipment value a performer holds at `count` (their section's default before any cue). */
+export const heldValueAt = (
+    compiled: CompiledCues,
+    marcherId: number,
+    count: number,
+): string | null => cueValueAt(compiled, marcherId, "equipment", count);
 
-/** Each performer's tag at `count`, for those holding something other than their usual. */
+/**
+ * Each performer's field tag at `count` (fork #992 decision 1), for those holding something other
+ * than their section's usual: "R" for a rifle, "Tp" for a trumpet.
+ */
 export function equipmentTagsAt(
     compiled: CompiledCues,
-    usual: ReadonlyMap<number, PerformerCarry>,
+    usualValue: ReadonlyMap<number, string | null>,
     count: number,
 ): Map<number, string> {
     const tags = new Map<number, string>();
-    for (const [id, carry] of usual) {
-        const held = heldAt(compiled, id, count);
-        if (held !== carry) tags.set(id, EQUIPMENT_TAG[held]);
+    for (const [id, usual] of usualValue) {
+        const held = heldValueAt(compiled, id, count);
+        if (held !== usual) tags.set(id, tagOfValue(held));
     }
     return tags;
 }
@@ -147,4 +105,19 @@ export function editedPerformers(
     if (next.size === current.size && [...next].every((id) => current.has(id)))
         return null;
     return [...next].sort((a, b) => a - b);
+}
+
+/** How many recent Equipment choices the field menu keeps. */
+export const RECENT_EQUIPMENT_LIMIT = 4;
+
+/** The recent catalog items after choosing `key`: it goes first, at most four, no repeats. */
+export function withRecent(
+    recent: readonly string[],
+    key: EquipmentChoice,
+): string[] {
+    if (key === "usual" || key === "none") return [...recent];
+    return [key, ...recent.filter((k) => k !== key)].slice(
+        0,
+        RECENT_EQUIPMENT_LIMIT,
+    );
 }

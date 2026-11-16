@@ -432,7 +432,6 @@ describeDbTests("cues", (it) => {
                         choice: "rifle",
                         marcherIds: [m1!.id, m2!.id],
                         beatId: beat!,
-                        usualOf: () => "flag",
                         label: "Rifles",
                     }),
                 });

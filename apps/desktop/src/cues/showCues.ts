@@ -9,6 +9,7 @@
  */
 import {
     compileCues,
+    defaultCueValue,
     type CompiledCues,
     type CueInput,
     type PerformerCarry,
@@ -38,6 +39,8 @@ export interface ShowCues {
     readonly countOfBeat: ReadonlyMap<number, number>;
     /** Each performer's section's usual equipment, as the compile groups it. */
     readonly usual: ReadonlyMap<number, PerformerCarry>;
+    /** Each performer's section's usual Equipment value (a catalog item, or a fallback). */
+    readonly usualValue: ReadonlyMap<number, string | null>;
 }
 
 /** What a performer of `section` usually holds: the section's instrument, flag or rifle. */
@@ -54,6 +57,22 @@ export function compileShowCues(
         .filter((b) => b.duration > 0)
         .sort((a, b) => a.position - b.position);
     const usual = new Map(marchers.map((m) => [m.id, usualCarryOf(m.section)]));
+    const sections = cueSectionsOf(
+        marchers.map((m) => ({
+            section: m.section,
+            model: carryForSection(m.section)?.model ?? null,
+        })),
+    );
+    const sectionValue = new Map(
+        sections.map((s) => [s.name.trim().toLowerCase(), s.equipment?.id]),
+    );
+    const usualValue = new Map(
+        marchers.map((m) => [
+            m.id,
+            sectionValue.get(m.section.trim().toLowerCase()) ??
+                defaultCueValue("equipment", usual.get(m.id)!),
+        ]),
+    );
     const compiled = compileCues({
         beats: timed.map((b) => ({ id: b.id, duration: b.duration })),
         marchers: marchers.map((m) => ({
@@ -62,17 +81,13 @@ export function compileShowCues(
             carries: usual.get(m.id)!,
         })),
         cues,
-        sections: cueSectionsOf(
-            marchers.map((m) => ({
-                section: m.section,
-                family: carryForSection(m.section)?.family ?? null,
-            })),
-        ),
+        sections,
     });
     return {
         compiled,
         beatIds: timed.map((b) => b.id),
         countOfBeat: new Map(timed.map((b, c) => [b.id, c])),
         usual,
+        usualValue,
     };
 }

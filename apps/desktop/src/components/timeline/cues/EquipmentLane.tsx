@@ -1,14 +1,20 @@
 /**
  * The timeline's Equipment lane (ADR 0015 D-7; fork #991 option E, #992): under the drill rows,
- * hidden until shown. One row per group of performers with the same Equipment history (a cue for
- * the whole guard is one row of bars), folding into a stacked summary of how many hold each thing.
+ * hidden until shown from the timeline's Lanes menu. One row per group of performers with the same
+ * Equipment history (a cue for the whole guard is one row of bars), folding into a stacked summary
+ * of how many hold each thing.
  *
  * - A lasting cue is a bar to the performer's next cue, a momentary one a rounded pill; the
  *   section's usual (not a cue) is a dashed bar.
  * - Click a cue to pick it: the cue commands (Add selected to this cue, Remove selected from this
- *   cue, lasting or momentary, Delete cue) act on it. Right-click or long-press a cue for its menu.
+ *   cue, lasting or momentary, Move cue to playhead, Delete cue) act on it. Right-click or
+ *   long-press a cue for its menu.
+ * - Drag a cue sideways to move it to another count, as a move's clip moves: whole beats, pulled to
+ *   page lines (Alt drags free of them). Drag a momentary cue's end to change its length. Each drag
+ *   is one undo step, and a cue whose performers span several rows moves in all of them.
  * - Click a row's name to select its performers.
- * - Presses stay in the lane: the timeline under it doesn't scrub or select.
+ * - Presses stay in the lane: the timeline under it doesn't scrub or select. Cue bars and grips are
+ *   timeline controls (`data-timeline-interactive`), so a finger drags them rather than panning.
  */
 import {
     useMemo,
@@ -20,10 +26,12 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CaretDownIcon,
     CaretRightIcon,
+    CheckIcon,
     EyeSlashIcon,
-    FlagPennantIcon,
+    RowsPlusBottomIcon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
+import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import type { PerformerCarry } from "@openmarch/core";
 import type {
@@ -35,21 +43,36 @@ import {
     TIMELINE_MENU_CONTENT_CLASS,
 } from "@/components/timeline/TimelineRangeMenu";
 import {
+    clamp,
+    isPageSnapDisabled,
+    snapRangeOffset,
+} from "@/components/timeline/TimelineGeometry";
+import { fingerDragSlop } from "@/components/timeline/timelineGestures";
+import {
     MENU_ITEM_CLASS,
     MENU_LABEL_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { cueKeys } from "@/hooks/queries/useCues";
 import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { runAction, isActionEnabled } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
-import ActionButton from "@/shortcuts/ActionButton";
+import { conToastError } from "@/utilities/utils";
 import { useShowCues, type EditorCues } from "@/cues/useShowCues";
 import { useCueSelectionStore } from "@/cues/cueSelectionStore";
 import { describePerformers } from "@/cues/cueLabel";
+import { writeCueDrag } from "@/cues/useCueCommands";
+import { itemKeyOf } from "@/cues/equipmentItems";
+import {
+    CUE_LANES,
+    setCueLaneFolded,
+    useCueLaneFolded,
+    useCueLaneShown,
+} from "@/cues/cueLanes";
 import {
     countToSpecBeat,
     equipmentLane,
@@ -62,6 +85,8 @@ const ROW = 20;
 const SUMMARY = 24;
 const EMPTY = 22;
 const PAD = 4;
+/** A mouse press on a cue moves this far before it drags, as a move's clip does */
+const DRAG_SLOP_PX = 3;
 
 /** Each thing held, as a lane color. */
 const FILL: Readonly<Record<PerformerCarry, string>> = {
@@ -69,14 +94,9 @@ const FILL: Readonly<Record<PerformerCarry, string>> = {
     rifle: "bg-yellow/70",
     sabre: "bg-green/70",
     winds: "bg-text/20",
-    battery: "bg-text/20",
-    none: "bg-red/40",
+    battery: "bg-red/30",
+    none: "bg-text/10",
 };
-
-/** How long a finger holds still on a cue to open its menu. */
-const LONG_PRESS_MS = 500;
-/** How far a finger may drift during a long press. */
-const LONG_PRESS_SLOP = 10;
 
 const MOMENTARY_LENGTHS = [1, 2, 4, 8, 16] as const;
 
@@ -90,14 +110,12 @@ export function equipmentLaneHeight(
 }
 
 /**
- * The Equipment lane as the timeline's `lanes`, or undefined while it's hidden (the
- * `toggleEquipmentLane` action, saved in the UI settings).
+ * The Equipment lane as the timeline's `lanes`, or undefined while it's hidden (the Lanes menu and
+ * the `toggleEquipmentLane` action, saved in the UI settings).
  */
 export function useEquipmentLaneBand(): TimelineBand | undefined {
-    const shown = useUiSettingsStore((s) => s.uiSettings.timelineEquipmentLane);
-    const folded = useUiSettingsStore(
-        (s) => s.uiSettings.timelineEquipmentLaneFolded,
-    );
+    const shown = useCueLaneShown("equipment");
+    const folded = useCueLaneFolded("equipment");
     const show = useShowCues();
     const beats = useTimingObjects()?.beats;
     const lane = useMemo(
@@ -128,12 +146,9 @@ export function useEquipmentLaneBand(): TimelineBand | undefined {
     }, [shown, folded, lane, show, beats]);
 }
 
-const setFolded = (folded: boolean) => {
-    const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-    setUiSettings({ ...uiSettings, timelineEquipmentLaneFolded: folded });
-};
-
 type CueMenu = { x: number; y: number; cueId: number };
+/** A cue being dragged: moved by `delta` beats, or its length changed by `delta` counts. */
+type LaneDrag = { cueId: number; mode: "move" | "resize"; delta: number };
 
 function EquipmentLaneView({
     geometry,
@@ -149,27 +164,37 @@ function EquipmentLaneView({
     folded: boolean;
 }) {
     const { t } = useTranslate();
+    const queryClient = useQueryClient();
     const picked = useCueSelectionStore((s) => s.cueId);
     const pick = useCueSelectionStore((s) => s.pick);
     const [menu, setMenu] = useState<CueMenu | null>(null);
+    const [drag, setDrag] = useState<LaneDrag | null>(null);
     const rootRef = useRef<HTMLDivElement>(null);
-    const xOf = useMemo(() => {
+    const ppb = geometry.pixelsPerBeat;
+    const { xOf, axis, specOf } = useMemo(() => {
         const axis = createTimelineBeatAxis(beats);
         const specOf = new Map(beats.map((b, i) => [b.id, i]));
         const ids = show?.beatIds ?? [];
-        return (count: number) =>
-            axis.toView(countToSpecBeat(count, ids, specOf)) *
-            geometry.pixelsPerBeat;
-    }, [beats, show, geometry.pixelsPerBeat]);
+        return {
+            axis,
+            specOf,
+            xOf: (count: number) =>
+                axis.toView(countToSpecBeat(count, ids, specOf)) * ppb,
+        };
+    }, [beats, show, ppb]);
     const rows = lane?.rows ?? [];
-    const valueName = (holds: PerformerCarry) => t(`cues.value.${holds}`);
+    const valueName = (value: string | null) => {
+        const key = value === null ? "none" : itemKeyOf(value);
+        if (key === "none" || key === "winds" || key === "battery")
+            return t(`cues.value.${key}`);
+        return key ? t(`cues.item.${key}`) : (value ?? "");
+    };
     const rowName = (ids: readonly number[], label: string | null) =>
         label ??
         describePerformers({
             ids,
             marchers: show?.marchers ?? [],
             words: {
-                holding: (c) => t(`cues.label.holding.${c}`),
                 performers: (n) => t("cues.label.performers", { count: n }),
             },
         });
@@ -179,6 +204,78 @@ function EquipmentLaneView({
         if (!rect) return;
         pick(cueId);
         setMenu({ x: clientX - rect.left, y: clientY - rect.top, cueId });
+    };
+
+    /**
+     * A press on a cue (`move`) or a momentary cue's end (`resize`): past the slop it drags, and
+     * on release it writes the new count or length as one undo step. Short of the slop it's a
+     * click, which only picks the cue.
+     */
+    const startDrag = (
+        e: ReactPointerEvent<HTMLElement>,
+        cueId: number,
+        mode: LaneDrag["mode"],
+    ) => {
+        const cue = show?.cues.find((c) => c.id === cueId);
+        const at = cue ? specOf.get(cue.beatId) : undefined;
+        if (!cue || at === undefined || e.button !== 0) return;
+        if (mode === "resize" && cue.length === null) return;
+        const target = e.currentTarget;
+        target.setPointerCapture(e.pointerId);
+        const startX = e.clientX;
+        const slop = fingerDragSlop(e.pointerType, DRAG_SLOP_PX);
+        const view = axis.toView(at);
+        let dragging = false;
+        let delta = 0;
+        const deltaAt = (ev: PointerEvent) => {
+            const offset = (ev.clientX - startX) / ppb;
+            if (mode === "resize")
+                return Math.max(1 - cue.length!, Math.round(offset));
+            const requested = snapRangeOffset({
+                range: { startBeatIndex: view, endBeatIndex: view },
+                offset,
+                snapBeats: isPageSnapDisabled(ev) ? [] : geometry.snapBeats,
+                pixelsPerBeat: ppb,
+            });
+            // Home and the fixed first beat are one moment: a cue goes no earlier than beat 1
+            return clamp(requested, 1 - at, beats.length - 1 - at);
+        };
+        const onMove = (ev: PointerEvent) => {
+            if (ev.pointerId !== e.pointerId) return;
+            if (!dragging && Math.abs(ev.clientX - startX) < slop) return;
+            dragging = true;
+            delta = deltaAt(ev);
+            setDrag({ cueId, mode, delta });
+        };
+        const done = (commit: boolean) => {
+            target.removeEventListener("pointermove", onMove);
+            target.removeEventListener("pointerup", onUp);
+            target.removeEventListener("pointercancel", onCancel);
+            if (!dragging || !commit || delta === 0) {
+                setDrag(null);
+                return;
+            }
+            const change =
+                mode === "move"
+                    ? { beatId: beats[at + delta]!.id }
+                    : { length: cue.length! + delta };
+            void writeCueDrag(cueId, change, (error) =>
+                conToastError(t("cues.errors.update"), error),
+            )
+                .then(() =>
+                    queryClient.invalidateQueries({ queryKey: cueKeys.all() }),
+                )
+                .finally(() => setDrag(null));
+        };
+        const onUp = (ev: PointerEvent) => {
+            if (ev.pointerId === e.pointerId) done(true);
+        };
+        const onCancel = (ev: PointerEvent) => {
+            if (ev.pointerId === e.pointerId) done(false);
+        };
+        target.addEventListener("pointermove", onMove);
+        target.addEventListener("pointerup", onUp);
+        target.addEventListener("pointercancel", onCancel);
     };
 
     const height = equipmentLaneHeight(lane, folded);
@@ -211,7 +308,7 @@ function EquipmentLaneView({
                     )}
                     aria-expanded={!folded}
                     className="hover:text-text touch:size-44 flex size-16 items-center justify-center rounded-full"
-                    onClick={() => setFolded(!folded)}
+                    onClick={() => setCueLaneFolded("equipment", !folded)}
                 >
                     {folded ? (
                         <CaretRightIcon size={12} />
@@ -233,8 +330,8 @@ function EquipmentLaneView({
                 <button
                     type="button"
                     data-testid="equipment-lane-hide"
-                    aria-label={t("actions.cues.hideEquipmentLane")}
-                    title={t("actions.cues.hideEquipmentLane")}
+                    aria-label={t("cues.lane.hide")}
+                    title={t("cues.lane.hide")}
                     className="hover:text-text touch:size-44 flex size-16 items-center justify-center rounded-full"
                     onClick={() => runAction("toggleEquipmentLane")}
                 >
@@ -259,24 +356,44 @@ function EquipmentLaneView({
                         className="relative"
                         style={{ height: ROW }}
                     >
-                        {row.pieces.map((piece) => (
-                            <Piece
-                                key={`${piece.from}-${piece.cueId ?? "d"}`}
-                                piece={piece}
-                                left={xOf(piece.from)}
-                                width={xOf(piece.to) - xOf(piece.from)}
-                                name={valueName(piece.holds)}
-                                picked={
-                                    piece.cueId !== null &&
-                                    piece.cueId === picked
-                                }
-                                onPick={() => pick(piece.cueId)}
-                                onMenu={(x, y) =>
-                                    piece.cueId !== null &&
-                                    openMenu(piece.cueId, x, y)
-                                }
-                            />
-                        ))}
+                        {row.pieces.map((piece) => {
+                            const dragged =
+                                drag !== null && drag.cueId === piece.cueId;
+                            return (
+                                <Piece
+                                    key={`${piece.from}-${piece.cueId ?? "d"}`}
+                                    piece={piece}
+                                    left={xOf(piece.from)}
+                                    width={xOf(piece.to) - xOf(piece.from)}
+                                    shift={
+                                        dragged && drag.mode === "move"
+                                            ? drag.delta * ppb
+                                            : 0
+                                    }
+                                    extend={
+                                        dragged && drag.mode === "resize"
+                                            ? drag.delta * ppb
+                                            : 0
+                                    }
+                                    dragging={dragged}
+                                    name={valueName(piece.value)}
+                                    resizeLabel={t("cues.lane.resize")}
+                                    picked={
+                                        piece.cueId !== null &&
+                                        piece.cueId === picked
+                                    }
+                                    onPress={(e, mode) => {
+                                        if (piece.cueId === null) return;
+                                        if (e.button === 0) pick(piece.cueId);
+                                        startDrag(e, piece.cueId, mode);
+                                    }}
+                                    onMenu={(x, y) =>
+                                        piece.cueId !== null &&
+                                        openMenu(piece.cueId, x, y)
+                                    }
+                                />
+                            );
+                        })}
                         <button
                             type="button"
                             data-testid="equipment-lane-row-name"
@@ -307,22 +424,40 @@ function EquipmentLaneView({
     );
 }
 
+/** How long a finger holds still on a cue to open its menu. */
+const LONG_PRESS_MS = 500;
+/** How far a finger may drift during a long press. */
+const LONG_PRESS_SLOP = 10;
+
 /** One piece of a row: a cue's bar or pill, or the dashed default. */
 function Piece({
     piece,
     left,
     width,
+    shift,
+    extend,
+    dragging,
     name,
+    resizeLabel,
     picked,
-    onPick,
+    onPress,
     onMenu,
 }: {
     piece: LanePiece;
     left: number;
     width: number;
+    /** How far a drag has moved the cue, in pixels */
+    shift: number;
+    /** How far a drag of its end has stretched it, in pixels */
+    extend: number;
+    dragging: boolean;
     name: string;
+    resizeLabel: string;
     picked: boolean;
-    onPick: () => void;
+    onPress: (
+        e: ReactPointerEvent<HTMLElement>,
+        mode: "move" | "resize",
+    ) => void;
     onMenu: (clientX: number, clientY: number) => void;
 }) {
     const press = useRef<{
@@ -331,26 +466,10 @@ function Piece({
         timer: ReturnType<typeof setTimeout>;
     } | null>(null);
     const isCue = piece.cueId !== null;
+    const momentary = piece.kind === "momentary";
     const end = () => {
         if (press.current) clearTimeout(press.current.timer);
         press.current = null;
-    };
-    const onPointerDown = (e: ReactPointerEvent) => {
-        e.stopPropagation();
-        if (!isCue) return;
-        if (e.button === 0) onPick();
-        if (e.pointerType !== "mouse") {
-            const { clientX, clientY } = e;
-            end();
-            press.current = {
-                x: clientX,
-                y: clientY,
-                timer: setTimeout(() => {
-                    press.current = null;
-                    onMenu(clientX, clientY);
-                }, LONG_PRESS_MS),
-            };
-        }
     };
     return (
         <div
@@ -359,20 +478,42 @@ function Piece({
             }
             data-cue-id={piece.cueId ?? undefined}
             data-holds={piece.holds}
+            data-value={piece.value ?? undefined}
+            data-timeline-interactive={isCue ? "" : undefined}
             className={clsx(
                 "text-micro absolute top-2 flex items-center overflow-hidden px-4 leading-none whitespace-nowrap",
-                piece.kind === "momentary" ? "rounded-full" : "rounded-4",
+                momentary ? "rounded-full" : "rounded-4",
                 isCue
-                    ? clsx(FILL[piece.holds], "text-text font-medium")
+                    ? clsx(
+                          FILL[piece.holds],
+                          "text-text cursor-grab touch-none font-medium",
+                      )
                     : "border-stroke text-text-subtitle border border-dashed",
                 picked && "ring-accent ring-2",
+                dragging && "z-[6] cursor-grabbing opacity-90 shadow-lg",
             )}
             style={{
-                left,
-                width: Math.max(width - 1, 4),
+                left: left + shift,
+                width: Math.max(width - 1 + extend, 4),
                 height: ROW - 4,
             }}
-            onPointerDown={onPointerDown}
+            onPointerDown={(e) => {
+                e.stopPropagation();
+                if (!isCue) return;
+                onPress(e, "move");
+                if (e.pointerType !== "mouse") {
+                    const { clientX, clientY } = e;
+                    end();
+                    press.current = {
+                        x: clientX,
+                        y: clientY,
+                        timer: setTimeout(() => {
+                            press.current = null;
+                            onMenu(clientX, clientY);
+                        }, LONG_PRESS_MS),
+                    };
+                }
+            }}
             onPointerMove={(e) => {
                 const p = press.current;
                 if (
@@ -387,10 +528,26 @@ function Piece({
             onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                end();
                 if (isCue) onMenu(e.clientX, e.clientY);
             }}
         >
-            <span>{name}</span>
+            <span className="truncate">{name}</span>
+            {isCue && momentary && (
+                // The end of a momentary cue: drag it to change how many counts it lasts. A
+                // finger gets a 44 px target over the pill's end
+                <span
+                    data-testid="equipment-lane-cue-end"
+                    data-timeline-interactive=""
+                    title={resizeLabel}
+                    aria-label={resizeLabel}
+                    className="touch:w-44 absolute top-0 right-0 h-full w-6 cursor-ew-resize touch-none"
+                    onPointerDown={(e) => {
+                        e.stopPropagation();
+                        onPress(e, "resize");
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -521,6 +678,7 @@ function CueMenuView({
                         {t("cues.lane.selectPerformers")}
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
+                    {item("cueMoveToPlayhead")}
                     {item("cueMakeLasting")}
                     <DropdownMenu.Label className={MENU_LABEL_CLASS}>
                         {label("cueMakeMomentary")}
@@ -550,28 +708,74 @@ function CueMenuView({
 }
 
 /**
- * The transport's Equipment lane button: shows or hides the lane (`toggleEquipmentLane`), lit
- * while it shows.
+ * The transport's Lanes button: a menu of the cue lanes the timeline can show (`CUE_LANES`), each
+ * with a check mark that shows or hides it, through its own action. Only built lanes are listed.
  */
-export function EquipmentLaneButton() {
-    const shown = useUiSettingsStore((s) => s.uiSettings.timelineEquipmentLane);
+export function CueLanesButton() {
     const { t } = useTranslate();
+    const shown = useUiSettingsLanes();
+    const [open, setOpen] = useState(false);
+    const lit = CUE_LANES.some((lane) => shown.includes(lane.type));
     return (
-        <ActionButton
-            action="toggleEquipmentLane"
-            toggleState={shown ? "off" : "on"}
-            caption={t("cues.lane.equipment")}
-            data-testid="timeline-equipment-lane"
-            aria-pressed={shown}
-            onMouseDown={(event) => event.preventDefault()}
-            className={clsx(
-                "rounded-4 enabled:hover:bg-fg-2 focus-visible:ring-accent touch:size-44 flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
-                shown
-                    ? "text-accent bg-accent/10"
-                    : "text-text enabled:hover:text-accent",
-            )}
-        >
-            <FlagPennantIcon size={16} weight={shown ? "fill" : "regular"} />
-        </ActionButton>
+        <DropdownMenu.Root open={open} onOpenChange={setOpen}>
+            <DropdownMenu.Trigger asChild>
+                <button
+                    type="button"
+                    data-testid="timeline-cue-lanes"
+                    aria-label={t("cues.lane.lanesButton")}
+                    title={t("cues.lane.lanesButton")}
+                    onMouseDown={(event) => event.preventDefault()}
+                    className={clsx(
+                        "rounded-4 hover:bg-fg-2 focus-visible:ring-accent touch:size-44 flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
+                        lit
+                            ? "text-accent bg-accent/10"
+                            : "text-text hover:text-accent",
+                    )}
+                >
+                    <RowsPlusBottomIcon
+                        size={16}
+                        weight={lit ? "fill" : "regular"}
+                    />
+                </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    data-testid="timeline-cue-lanes-menu"
+                    align="end"
+                    sideOffset={4}
+                    collisionPadding={8}
+                    {...KEEP_MENU_EVENTS}
+                    className={TIMELINE_MENU_CONTENT_CLASS}
+                >
+                    <DropdownMenu.Label className={MENU_LABEL_CLASS}>
+                        {t("cues.lane.lanesHeading")}
+                    </DropdownMenu.Label>
+                    {CUE_LANES.map((lane) => (
+                        <DropdownMenu.CheckboxItem
+                            key={lane.type}
+                            data-testid={`timeline-cue-lane-${lane.type}`}
+                            checked={shown.includes(lane.type)}
+                            onSelect={(event) => {
+                                // Stays open, so several lanes can be ticked in a row
+                                event.preventDefault();
+                                runAction(lane.toggleAction);
+                            }}
+                            className={MENU_ITEM_CLASS}
+                        >
+                            <span className="flex w-[14px] shrink-0 justify-center">
+                                <DropdownMenu.ItemIndicator className="flex">
+                                    <CheckIcon size={14} />
+                                </DropdownMenu.ItemIndicator>
+                            </span>
+                            {t(lane.labelKey)}
+                        </DropdownMenu.CheckboxItem>
+                    ))}
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
     );
 }
+
+/** The cue lanes shown, from the UI settings. */
+const useUiSettingsLanes = (): readonly string[] =>
+    useUiSettingsStore((s) => s.uiSettings.timelineCueLanes);

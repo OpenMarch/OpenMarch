@@ -50,10 +50,12 @@ export interface UiSettings {
     timelineZoomFitted: boolean;
     /** How the timeline draws the waveform: simplified rounded bars or precise per-beat detail */
     timelineWaveformStyle: WaveformStyle;
-    /** Whether the timeline shows its Equipment lane (ADR 0015 D-7: hidden by default) */
-    timelineEquipmentLane: boolean;
-    /** Whether the Equipment lane is folded into its summary row (fork #991, option E) */
-    timelineEquipmentLaneFolded: boolean;
+    /** The cue lanes the timeline shows, by cue type (ADR 0015 D-7: all hidden by default) */
+    timelineCueLanes: string[];
+    /** The cue lanes folded into their summary row (fork #991, option E), by cue type */
+    timelineFoldedCueLanes: string[];
+    /** The Equipment items last chosen, newest first, at most four (the field menu's recent) */
+    recentEquipment: string[];
     /** The current audio volume percentage for timeline playback */
     audioVolume: number;
     /** Whether all app audio is muted */
@@ -139,8 +141,9 @@ export const defaultSettings: UiSettings = {
     timelineHeight: null,
     timelineZoomFitted: false,
     timelineWaveformStyle: "simplified",
-    timelineEquipmentLane: false,
-    timelineEquipmentLaneFolded: false,
+    timelineCueLanes: [],
+    timelineFoldedCueLanes: [],
+    recentEquipment: [],
     audioVolume: 100,
     audioMuted: false,
     mouseSettings: {
@@ -170,6 +173,12 @@ const clampZoomSensitivity = (value: number): number =>
 
 // Helper function to parse settings from a JSON string
 // Throws on bad JSON or invalid structure
+/** A saved list of strings, or an empty one for anything else. */
+const stringList = (value: unknown): string[] =>
+    Array.isArray(value)
+        ? value.filter((v): v is string => typeof v === "string")
+        : [];
+
 const parseSettings = (raw: string): UiSettings => {
     // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331), and
     // `focussedComponent` went with the old timeline focus (beat editor)
@@ -199,9 +208,9 @@ const parseSettings = (raw: string): UiSettings => {
         snap: defaultSettings.snap,
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
         timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
-        timelineEquipmentLane: parsed.timelineEquipmentLane === true,
-        timelineEquipmentLaneFolded:
-            parsed.timelineEquipmentLaneFolded === true,
+        timelineCueLanes: stringList(parsed.timelineCueLanes),
+        timelineFoldedCueLanes: stringList(parsed.timelineFoldedCueLanes),
+        recentEquipment: stringList(parsed.recentEquipment).slice(0, 4),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding

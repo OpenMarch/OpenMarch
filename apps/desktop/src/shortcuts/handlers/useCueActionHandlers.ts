@@ -1,90 +1,88 @@
-import type { PerformerCarry } from "@openmarch/core";
+import { equipmentCatalog, EQUIPMENT_NONE } from "@openmarch/core";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCueCommands, type CueCommands } from "@/cues/useCueCommands";
 import { useCueCarryNotices } from "@/cues/useCueCarryNotices";
-import type { EquipmentChoice } from "@/cues/equipment";
-import type { ActionId } from "../definitions";
-import { useActionHandler } from "../useActionHandler";
+import { itemValueId } from "@/cues/equipmentItems";
+import {
+    setCueLaneShown,
+    useCueLaneShown,
+    type CueLaneDefinition,
+    CUE_LANES,
+} from "@/cues/cueLanes";
+import {
+    EQUIPMENT_FAMILY_KEYS,
+    EQUIPMENT_ITEM_KEYS,
+    equipmentActionOf,
+    selectFamilyActionOf,
+    selectHoldingActionOf,
+    type ActionId,
+} from "../definitions";
+import { useActionHandler, useActionHandlerGroup } from "../useActionHandler";
 
-/** The Equipment actions, by what they set. */
-export const EQUIPMENT_ACTIONS = [
-    ["equipmentInstrument", "instrument"],
-    ["equipmentFlag", "flag"],
-    ["equipmentRifle", "rifle"],
-    ["equipmentSabre", "sabre"],
-    ["equipmentNone", "none"],
-] as const satisfies readonly (readonly [ActionId, EquipmentChoice])[];
+/** Every Equipment action, by what it sets: each catalog item, their own instrument, nothing. */
+const SET_CHOICES = ["usual", ...EQUIPMENT_ITEM_KEYS, "none"] as const;
 
-/** The Select-by-equipment actions, by what they select; "instrument" is horns and drums. */
-export const SELECT_HOLDING_ACTIONS = [
-    ["selectHoldingRifle", "rifle"],
-    ["selectHoldingFlag", "flag"],
-    ["selectHoldingSabre", "sabre"],
-    ["selectHoldingInstrument", "instrument"],
-    ["selectHoldingNone", "none"],
-] as const satisfies readonly (readonly [
-    ActionId,
-    Exclude<PerformerCarry, "winds" | "battery"> | "instrument",
-])[];
-
-/** Whether `choice` is what every selected performer holds at the playhead. */
-const holdsAlready = (commands: CueCommands, choice: EquipmentChoice) => {
-    const holds = commands.selectionHolds;
-    if (holds === null) return false;
-    return choice === "instrument"
-        ? holds === "winds" || holds === "battery"
-        : holds === choice;
-};
-
-function useEquipmentAction(
-    [id, choice]: (typeof EQUIPMENT_ACTIONS)[number],
+/** One Equipment action: on with a selection at a count, checked when they all hold it already. */
+function useSetEquipment(
+    choice: (typeof SET_CHOICES)[number],
     commands: CueCommands,
     isPlaying: boolean,
 ) {
-    const checked = holdsAlready(commands, choice);
-    useActionHandler(id, () => commands.setEquipment(choice), {
-        enabled: !isPlaying && commands.canSet(choice) && !checked,
-        checked,
-    });
+    const checked = commands.holdsAlready(choice);
+    useActionHandler(
+        equipmentActionOf(choice),
+        () => commands.setEquipment(choice),
+        { enabled: !isPlaying && commands.canSet(choice) && !checked, checked },
+    );
 }
 
-function useSelectHoldingAction(
-    [id, holds]: (typeof SELECT_HOLDING_ACTIONS)[number],
-    commands: CueCommands,
-    isPlaying: boolean,
-) {
+/** What each Select action selects: the Equipment values it covers, by action. */
+const SELECT_VALUES: ReadonlyMap<ActionId, readonly string[]> = new Map<
+    ActionId,
+    readonly string[]
+>([
+    ...EQUIPMENT_ITEM_KEYS.map((key): [ActionId, string[]] => [
+        selectHoldingActionOf(key),
+        [itemValueId(key)],
+    ]),
+    ...EQUIPMENT_FAMILY_KEYS.map((family): [ActionId, string[]] => [
+        selectFamilyActionOf(family),
+        equipmentCatalog(family).map((v) => v.id),
+    ]),
+    [selectHoldingActionOf("none"), [EQUIPMENT_NONE]],
+]);
+const SELECT_ACTIONS = [...SELECT_VALUES.keys()];
+
+/** One lane's show/hide action, checked while it shows. */
+function useCueLaneToggle(lane: CueLaneDefinition) {
+    const shown = useCueLaneShown(lane.type);
     useActionHandler(
-        id,
-        () => {
-            if (holds === "instrument") {
-                commands.selectHolding("winds", "battery");
-            } else commands.selectHolding(holds);
-        },
-        { enabled: !isPlaying && commands.count !== null },
+        lane.toggleAction,
+        () => setCueLaneShown(lane.type, !shown),
+        { checked: shown },
     );
 }
 
 /**
- * Equipment cues (ADR 0015; fork #992): set what the selection holds from the paused playhead,
- * select who holds something there, edit the picked cue, and show or hide the Equipment lane.
- * Every edit is one undo step (`useCueCommands`). Also says what a beat deletion did to the cues
- * on those beats (`useCueCarryNotices`).
+ * Equipment cues (ADR 0015; fork #992): set what the selection holds from the paused playhead
+ * (an item from the catalog, their own instrument, or nothing), select who holds something there,
+ * edit the picked cue, and show or hide the cue lanes. Every edit is one undo step
+ * (`useCueCommands`). Also says what a beat deletion did to the cues on those beats
+ * (`useCueCarryNotices`).
  */
 export function useCueActionHandlers() {
     useCueCarryNotices();
     const commands = useCueCommands();
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    useEquipmentAction(EQUIPMENT_ACTIONS[0], commands, isPlaying);
-    useEquipmentAction(EQUIPMENT_ACTIONS[1], commands, isPlaying);
-    useEquipmentAction(EQUIPMENT_ACTIONS[2], commands, isPlaying);
-    useEquipmentAction(EQUIPMENT_ACTIONS[3], commands, isPlaying);
-    useEquipmentAction(EQUIPMENT_ACTIONS[4], commands, isPlaying);
-    useSelectHoldingAction(SELECT_HOLDING_ACTIONS[0], commands, isPlaying);
-    useSelectHoldingAction(SELECT_HOLDING_ACTIONS[1], commands, isPlaying);
-    useSelectHoldingAction(SELECT_HOLDING_ACTIONS[2], commands, isPlaying);
-    useSelectHoldingAction(SELECT_HOLDING_ACTIONS[3], commands, isPlaying);
-    useSelectHoldingAction(SELECT_HOLDING_ACTIONS[4], commands, isPlaying);
+    // A fixed list, so the hooks run in the same order every render
+    for (const choice of SET_CHOICES)
+        // eslint-disable-next-line react-hooks/rules-of-hooks -- SET_CHOICES never changes
+        useSetEquipment(choice, commands, isPlaying);
+    useActionHandlerGroup(
+        SELECT_ACTIONS,
+        (id) => commands.selectHolding(SELECT_VALUES.get(id) ?? []),
+        { enabled: !isPlaying && commands.count !== null },
+    );
 
     const editable = !isPlaying && commands.cue !== null;
     useActionHandler("cueAddSelected", () => commands.editPerformers("add"), {
@@ -109,22 +107,17 @@ export function useCueActionHandlers() {
         },
         { enabled: editable },
     );
+    useActionHandler("cueMoveToPlayhead", () => commands.moveToPlayhead(), {
+        enabled:
+            editable &&
+            commands.beatId !== null &&
+            commands.cue?.beatId !== commands.beatId,
+    });
     useActionHandler("cueDelete", () => commands.deleteCue(), {
         enabled: editable,
     });
 
-    const laneShown = useUiSettingsStore(
-        (s) => s.uiSettings.timelineEquipmentLane,
-    );
-    useActionHandler(
-        "toggleEquipmentLane",
-        () => {
-            const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-            setUiSettings({
-                ...uiSettings,
-                timelineEquipmentLane: !uiSettings.timelineEquipmentLane,
-            });
-        },
-        { checked: laneShown },
-    );
+    for (const lane of CUE_LANES)
+        // eslint-disable-next-line react-hooks/rules-of-hooks -- CUE_LANES never changes
+        useCueLaneToggle(lane);
 }

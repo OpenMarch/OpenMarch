@@ -1,9 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { compileCues, heldAt, type CueInput } from "@openmarch/core";
-import { carryForSection, guardCarry } from "../../instruments/catalog";
 import {
-    carryForHolds,
+    carryForModel,
+    carryForSection,
+    guardCarry,
+} from "../../instruments/catalog";
+import {
+    carryForValue,
     heldHornEvents,
     slotEquipment,
 } from "../equipmentSpans";
@@ -13,8 +17,8 @@ const COUNTS = 24;
 const GUARD = {
     name: "Color Guard",
     equipment: {
-        id: "builtin:model.flag6",
-        name: "6 ft flag",
+        id: "builtin:equipment.flag",
+        name: "Flag",
         label: "Flag",
         holds: "flag" as const,
     },
@@ -63,23 +67,41 @@ function compile(section: string, cues: CueInput[] = []) {
     };
 }
 
-describe("carryForHolds", () => {
+describe("carryForValue", () => {
     const flag6 = carryForSection("Color Guard");
     const trumpet = carryForSection("Trumpet");
+    const v = (key: string) => `builtin:equipment.${key}`;
 
-    it("keeps the performer's own piece when it is the kind they hold", () => {
-        expect(carryForHolds("flag", flag6)).toBe(flag6);
-        expect(carryForHolds("winds", trumpet)).toBe(trumpet);
-        const swing = guardCarry("swingFlag");
-        expect(carryForHolds("flag", swing)).toBe(swing);
+    it("keeps the performer's own piece when the item is it", () => {
+        expect(carryForValue(v("flag"), "flag", flag6)).toBe(flag6);
+        expect(carryForValue(v("trumpet"), "winds", trumpet)).toBe(trumpet);
+        // a section without a catalog item: the fallback keeps its own piece
+        expect(carryForValue(v("winds"), "winds", trumpet)).toBe(trumpet);
     });
 
-    it("gives guard equipment to anyone, and nothing for an instrument they don't play", () => {
-        expect(carryForHolds("flag", trumpet)).toEqual(guardCarry("flag6"));
-        expect(carryForHolds("rifle", flag6)).toEqual(guardCarry("rifle"));
-        expect(carryForHolds("sabre", null)).toEqual(guardCarry("sabre"));
-        expect(carryForHolds("winds", flag6)).toBeNull();
-        expect(carryForHolds("none", trumpet)).toBeNull();
+    it("draws the item's own model for anyone, and nothing for Nothing", () => {
+        expect(carryForValue(v("flag"), "flag", trumpet)).toEqual(
+            guardCarry("flag6"),
+        );
+        expect(carryForValue(v("rifle"), "rifle", flag6)).toEqual(
+            guardCarry("rifle"),
+        );
+        expect(carryForValue(v("sabre"), "sabre", null)).toEqual(
+            guardCarry("sabre"),
+        );
+        expect(carryForValue(v("tuba"), "winds", flag6)).toEqual(
+            carryForModel("contra"),
+        );
+        expect(carryForValue(v("altoSax"), "winds", trumpet)).toEqual({
+            model: "altoSax",
+            family: "sax",
+        });
+        expect(carryForValue(v("snare"), "battery", null)).toEqual({
+            model: "snare",
+            family: "snare",
+        });
+        expect(carryForValue(v("none"), "none", trumpet)).toBeNull();
+        expect(carryForValue(v("winds"), "winds", flag6)).toBeNull();
     });
 });
 

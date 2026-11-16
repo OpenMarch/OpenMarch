@@ -48,6 +48,8 @@ export interface ActionDefinition {
     labelSuffixKey?: string;
     /** The label names a page state or a hold command, filled from `holdTerms` */
     labelHoldTerms?: true;
+    /** i18n key of the `{item}` the label names, e.g. "cues.item.trumpet" in "Equipment: {item}" */
+    labelItemKey?: string;
     toggleOnKey?: string;
     toggleOffKey?: string;
     category: ActionCategory;
@@ -165,6 +167,129 @@ function buildNudgeActions(): Record<NudgeActionId, ActionDefinition> {
             };
         }
     }
+    return result;
+}
+
+/**
+ * The Equipment catalog's items (core's `equipmentCatalog`, fork #992), by key: `trumpet` is
+ * `builtin:equipment.trumpet`. The definitions test checks they match the catalog.
+ */
+export const EQUIPMENT_ITEM_KEYS = [
+    "flag",
+    "swingFlag",
+    "doubleSwingFlag",
+    "rifle",
+    "sabre",
+    "trumpet",
+    "mellophone",
+    "baritone",
+    "euphonium",
+    "trombone",
+    "bassTrombone",
+    "tuba",
+    "sousaphone",
+    "piccolo",
+    "flute",
+    "clarinet",
+    "bassClarinet",
+    "sopranoSax",
+    "altoSax",
+    "tenorSax",
+    "bariSax",
+    "snare",
+    "tenors",
+    "bassDrum",
+    "cymbals",
+] as const;
+export type EquipmentItemKey = (typeof EQUIPMENT_ITEM_KEYS)[number];
+export const EQUIPMENT_FAMILY_KEYS = [
+    "guard",
+    "brass",
+    "woodwinds",
+    "drums",
+] as const;
+type EquipmentFamilyKey = (typeof EQUIPMENT_FAMILY_KEYS)[number];
+
+const capitalize = <S extends string>(s: S) =>
+    (s.charAt(0).toUpperCase() + s.slice(1)) as Capitalize<S>;
+
+type EquipmentActionId =
+    | `equipment${Capitalize<EquipmentItemKey>}`
+    | "equipmentUsual"
+    | "equipmentNone"
+    | `selectHolding${Capitalize<EquipmentItemKey>}`
+    | `selectHoldingFamily${Capitalize<EquipmentFamilyKey>}`
+    | "selectHoldingNone";
+
+/** The Equipment action that sets `key` (an item, `usual` or `none`). */
+export const equipmentActionOf = (
+    key: EquipmentItemKey | "usual" | "none",
+): ActionId => `equipment${capitalize(key)}`;
+/** The action that selects who holds `key` (an item or `none`) at the playhead. */
+export const selectHoldingActionOf = (
+    key: EquipmentItemKey | "none",
+): ActionId => `selectHolding${capitalize(key)}`;
+/** The action that selects who holds anything of `family` at the playhead. */
+export const selectFamilyActionOf = (family: EquipmentFamilyKey): ActionId =>
+    `selectHoldingFamily${capitalize(family)}`;
+
+/**
+ * Equipment cues (ADR 0015 D-3, D-6; fork #992): what the selected performers hold from the
+ * paused playhead on, as one lasting cue that stores them (D-4), one action per catalog item, plus
+ * their own instrument (the section default) and nothing. And selecting whoever holds an item, or
+ * anything of a family, at the playhead, whatever their section (D-4, #377's `#rifles`). The field
+ * menu's Equipment submenu runs these. Unbound
+ */
+function buildEquipmentActions(): Record<EquipmentActionId, ActionDefinition> {
+    const set = (args: ActionArgs, extra: Partial<ActionDefinition>) =>
+        ({
+            labelKey: "actions.cues.setEquipment",
+            keywordsKey: "actions.cues.equipmentKeywords",
+            category: "batchEdit",
+            scope: "canvas",
+            defaultBindings: [],
+            args,
+            ...extra,
+        }) satisfies ActionDefinition;
+    const select = (args: ActionArgs, extra: Partial<ActionDefinition>) =>
+        ({
+            labelKey: "actions.cues.selectHolding",
+            keywordsKey: "actions.cues.selectHoldingKeywords",
+            category: "select",
+            scope: "canvas",
+            defaultBindings: [],
+            args,
+            ...extra,
+        }) satisfies ActionDefinition;
+    const result = {
+        equipmentUsual: set(
+            { equipment: "usual" },
+            { labelKey: "actions.cues.equipmentUsual" },
+        ),
+        equipmentNone: set(
+            { equipment: "none" },
+            { labelKey: "actions.cues.equipmentNone" },
+        ),
+        selectHoldingNone: select(
+            { holds: "none" },
+            { labelKey: "actions.cues.selectHoldingNone" },
+        ),
+    } as Record<EquipmentActionId, ActionDefinition>;
+    for (const key of EQUIPMENT_ITEM_KEYS) {
+        result[`equipment${capitalize(key)}`] = set(
+            { equipment: key },
+            { labelItemKey: `cues.item.${key}` },
+        );
+        result[`selectHolding${capitalize(key)}`] = select(
+            { holds: key },
+            { labelItemKey: `cues.plural.${key}` },
+        );
+    }
+    for (const family of EQUIPMENT_FAMILY_KEYS)
+        result[`selectHoldingFamily${capitalize(family)}`] = select(
+            { family },
+            { labelKey: `actions.cues.selectHoldingFamily.${family}` },
+        );
     return result;
 }
 
@@ -508,92 +633,6 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         args: { style: "highMarkTime" },
     },
-    // Equipment cues (ADR 0015 D-3, D-6; fork #992): what the selected performers hold from the
-    // paused playhead on, as one lasting cue that stores them (D-4). "Instrument" hands each their
-    // own section's instrument. The field menu's Equipment submenu and the Equipment lane run these.
-    // Unbound
-    equipmentInstrument: {
-        labelKey: "actions.cues.equipmentInstrument",
-        keywordsKey: "actions.cues.equipmentKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { equipment: "instrument" },
-    },
-    equipmentFlag: {
-        labelKey: "actions.cues.equipmentFlag",
-        keywordsKey: "actions.cues.equipmentKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { equipment: "flag" },
-    },
-    equipmentRifle: {
-        labelKey: "actions.cues.equipmentRifle",
-        keywordsKey: "actions.cues.equipmentKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { equipment: "rifle" },
-    },
-    equipmentSabre: {
-        labelKey: "actions.cues.equipmentSabre",
-        keywordsKey: "actions.cues.equipmentKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { equipment: "sabre" },
-    },
-    equipmentNone: {
-        labelKey: "actions.cues.equipmentNone",
-        keywordsKey: "actions.cues.equipmentKeywords",
-        category: "batchEdit",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { equipment: "none" },
-    },
-    // Selects whoever holds it at the playhead, whatever their section (ADR 0015 D-4, #377's
-    // `#rifles`). Unbound
-    selectHoldingRifle: {
-        labelKey: "actions.cues.selectHoldingRifle",
-        keywordsKey: "actions.cues.selectHoldingKeywords",
-        category: "select",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { holds: "rifle" },
-    },
-    selectHoldingFlag: {
-        labelKey: "actions.cues.selectHoldingFlag",
-        keywordsKey: "actions.cues.selectHoldingKeywords",
-        category: "select",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { holds: "flag" },
-    },
-    selectHoldingSabre: {
-        labelKey: "actions.cues.selectHoldingSabre",
-        keywordsKey: "actions.cues.selectHoldingKeywords",
-        category: "select",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { holds: "sabre" },
-    },
-    selectHoldingInstrument: {
-        labelKey: "actions.cues.selectHoldingInstrument",
-        keywordsKey: "actions.cues.selectHoldingKeywords",
-        category: "select",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { holds: "instrument" },
-    },
-    selectHoldingNone: {
-        labelKey: "actions.cues.selectHoldingNone",
-        keywordsKey: "actions.cues.selectHoldingKeywords",
-        category: "select",
-        scope: "canvas",
-        defaultBindings: [],
-        args: { holds: "none" },
-    },
     // The picked cue (the Equipment lane), else the one Equipment cue on the playhead's count:
     // change who it applies to (owner on #991), make it lasting or momentary, delete it. Unbound
     cueAddSelected: {
@@ -633,6 +672,15 @@ const STATIC_ACTIONS = {
             },
         ],
     },
+    // The touch and keyboard way to move a cue: to the playhead's count (a drag in the lane is
+    // the mouse way)
+    cueMoveToPlayhead: {
+        labelKey: "actions.cues.moveToPlayhead",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     cueDelete: {
         labelKey: "actions.cues.delete",
         keywordsKey: "actions.cues.cueKeywords",
@@ -640,11 +688,10 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: [],
     },
-    // Shows or hides the timeline's Equipment lane (ADR 0015 D-7: hidden by default). Unbound
+    // Shows or hides the timeline's Equipment lane (ADR 0015 D-7: hidden by default), as its
+    // entry in the timeline's lane menu does (`cues/cueLanes.ts`). Unbound
     toggleEquipmentLane: {
         labelKey: "actions.cues.toggleEquipmentLane",
-        toggleOnKey: "actions.cues.showEquipmentLane",
-        toggleOffKey: "actions.cues.hideEquipmentLane",
         keywordsKey: "actions.cues.laneKeywords",
         category: "timeline",
         scope: "global",
@@ -1443,6 +1490,7 @@ export const ACTIONS = {
     ...STATIC_ACTIONS,
     ...buildNudgeActions(),
     ...buildFieldLineNudgeActions(),
+    ...buildEquipmentActions(),
 } as const satisfies Record<string, ActionDefinition>;
 
 export type ActionId = keyof typeof ACTIONS;

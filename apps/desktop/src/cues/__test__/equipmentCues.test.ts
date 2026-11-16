@@ -6,6 +6,7 @@ import {
     editedPerformers,
     equipmentTagsAt,
     planEquipmentCues,
+    withRecent,
 } from "../equipment";
 import { describePerformers, type LabelMarcher } from "../cueLabel";
 import { equipmentLane, countToSpecBeat } from "../equipmentLane";
@@ -62,7 +63,7 @@ describe("equipment cues (#992)", () => {
         expect(whoHolds(show.compiled, "rifle", 0)).toEqual(range(1, 6));
         expect(whoHolds(show.compiled, "flag", 0)).toEqual(range(7, 12));
         expect(whoHolds(show.compiled, "winds", 0)).toEqual([13, 14, 15]);
-        expect(equipmentTagsAt(show.compiled, show.usual, 0).size).toBe(0);
+        expect(equipmentTagsAt(show.compiled, show.usualValue, 0).size).toBe(0);
     });
 
     it("a rifle from a count: Select Rifles picks them there and not before, and the field tags them", () => {
@@ -76,12 +77,32 @@ describe("equipment cues (#992)", () => {
             13,
         ]);
         // Only the performers off their section's usual get a tag
-        expect([...equipmentTagsAt(show.compiled, show.usual, 24)]).toEqual([
+        expect([
+            ...equipmentTagsAt(show.compiled, show.usualValue, 24),
+        ]).toEqual([
             [7, "R"],
             [8, "R"],
             [13, "R"],
         ]);
-        expect(equipmentTagsAt(show.compiled, show.usual, 23).size).toBe(0);
+        expect(equipmentTagsAt(show.compiled, show.usualValue, 23).size).toBe(
+            0,
+        );
+    });
+
+    it("tags a brass item on the guard and a guard item on the brass, and not their own", () => {
+        const cues = [
+            cue(8, "trumpet", [7]),
+            cue(8, "sabre", [13]),
+            cue(8, "trumpet", [14]),
+        ];
+        const show = compileShowCues(MARCHERS, BEATS, cues);
+        expect([...equipmentTagsAt(show.compiled, show.usualValue, 8)]).toEqual(
+            [
+                [7, "Tp"],
+                [13, "S"],
+            ],
+        );
+        expect(whoHolds(show.compiled, "winds", 8)).toContain(7);
     });
 
     it("a momentary sabre goes back to what they held after its counts", () => {
@@ -93,49 +114,53 @@ describe("equipment cues (#992)", () => {
     });
 
     describe("planEquipmentCues", () => {
-        const usualOf = (id: number) =>
-            compileShowCues(MARCHERS, BEATS, []).usual.get(id)!;
-
-        it("makes one lasting cue for a guard choice", () => {
+        it("makes one lasting cue of the item, for any performer", () => {
             expect(
                 planEquipmentCues({
-                    choice: "rifle",
+                    choice: "tuba",
                     marcherIds: [7, 13],
                     beatId: 5,
-                    usualOf,
                     label: "x",
                 }),
             ).toEqual([
                 {
                     type: "equipment",
                     beatId: 5,
-                    value: "builtin:equipment.rifle",
+                    value: "builtin:equipment.tuba",
                     marcherIds: [7, 13],
                     label: "x",
                 },
             ]);
         });
 
-        it("hands each performer their own instrument, and skips the guard", () => {
-            const cues = planEquipmentCues({
-                choice: "instrument",
-                marcherIds: [1, 13, 14],
-                beatId: 5,
-                usualOf,
-                label: null,
-            });
-            expect(cues.map((c) => [c.value, c.marcherIds])).toEqual([
-                ["builtin:equipment.winds", [13, 14]],
-            ]);
-            expect(
+        it("stores their own instrument and nothing as values of their own", () => {
+            const value = (choice: string) =>
                 planEquipmentCues({
-                    choice: "instrument",
-                    marcherIds: [1, 2],
+                    choice,
+                    marcherIds: [1],
                     beatId: 5,
-                    usualOf,
                     label: null,
-                }),
-            ).toEqual([]);
+                })[0]!.value;
+            expect(value("usual")).toBe("builtin:equipment.usual");
+            expect(value("none")).toBe("builtin:equipment.none");
+        });
+    });
+
+    describe("withRecent", () => {
+        it("keeps the last four items picked, newest first, without repeats", () => {
+            let recent: string[] = [];
+            for (const key of [
+                "rifle",
+                "tuba",
+                "flag",
+                "snare",
+                "tuba",
+                "sabre",
+            ])
+                recent = withRecent(recent, key);
+            expect(recent).toEqual(["sabre", "tuba", "snare", "flag"]);
+            expect(withRecent(recent, "usual")).toEqual(recent);
+            expect(withRecent(recent, "none")).toEqual(recent);
         });
     });
 
@@ -152,16 +177,13 @@ describe("equipment cues (#992)", () => {
 });
 
 describe("describePerformers", () => {
-    const words = {
-        holding: (c: string) => `${c}s`,
-        performers: (n: number) => `${n} performers`,
-    };
-    const name = (ids: number[], holders?: Map<"rifle", number[]>) =>
+    const words = { performers: (n: number) => `${n} performers` };
+    const name = (ids: number[], holders?: { name: string; ids: number[] }[]) =>
         describePerformers({ ids, marchers: MARCHERS, words, holders });
 
-    it("names who holds one thing at the playhead first", () => {
-        expect(name(range(1, 6), new Map([["rifle", range(1, 6)]]))).toBe(
-            "rifles",
+    it("names who holds one item at the playhead first", () => {
+        expect(name(range(1, 6), [{ name: "Rifles", ids: range(1, 6) }])).toBe(
+            "Rifles",
         );
     });
     it("names whole sections", () => {

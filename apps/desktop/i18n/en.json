@@ -250,17 +250,9 @@
             "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
         },
         "cues": {
-            "equipmentInstrument": "Equipment: Instrument",
-            "equipmentFlag": "Equipment: Flag",
-            "equipmentRifle": "Equipment: Rifle",
-            "equipmentSabre": "Equipment: Sabre",
             "equipmentNone": "Equipment: Nothing",
             "equipmentKeywords": "equipment cue hold holds carry prop guard rifle flag sabre horn drum instrument",
-            "selectHoldingRifle": "Select Rifles",
-            "selectHoldingFlag": "Select Flags",
-            "selectHoldingSabre": "Select Sabres",
-            "selectHoldingInstrument": "Select Instruments",
-            "selectHoldingNone": "Select Empty Hands",
+            "selectHoldingNone": "Select empty hands",
             "selectHoldingKeywords": "select who holds holding equipment rifles flags sabres playhead",
             "addSelected": "Add selected to this cue",
             "removeSelected": "Remove selected from this cue",
@@ -272,9 +264,17 @@
             "delete": "Delete cue",
             "cueKeywords": "cue equipment performers add remove momentary lasting delete",
             "toggleEquipmentLane": "Show or hide the Equipment lane",
-            "showEquipmentLane": "Show the Equipment lane",
-            "hideEquipmentLane": "Hide the Equipment lane",
-            "laneKeywords": "equipment lane cues timeline row show hide"
+            "laneKeywords": "equipment lane cues timeline row show hide",
+            "selectHoldingFamily": {
+                "guard": "Select all guard equipment",
+                "brass": "Select all brass",
+                "woodwinds": "Select all woodwinds",
+                "drums": "Select all drums"
+            },
+            "setEquipment": "Equipment: {item}",
+            "selectHolding": "Select {item}",
+            "equipmentUsual": "Equipment: Their own instrument",
+            "moveToPlayhead": "Move cue to playhead"
         }
     },
     "analyticsOptIn": {
@@ -644,7 +644,7 @@
         },
         "menu": {
             "equipment": "Equipment",
-            "equipmentFromPlayhead": "From the playhead"
+            "selectByEquipment": "Select by equipment"
         }
     },
     "fieldDisplay": {
@@ -3738,14 +3738,6 @@
             "update": "Couldn't change the cue"
         },
         "label": {
-            "holding": {
-                "rifle": "Rifles",
-                "flag": "Flags",
-                "sabre": "Sabres",
-                "winds": "Horns",
-                "battery": "Drums",
-                "none": "Empty hands"
-            },
             "performers": "{count, plural, one {# performer} other {# performers}}"
         },
         "carry": {
@@ -3754,12 +3746,10 @@
             "dropped": "{count, plural, one {# cue was deleted with those counts} other {# cues were deleted with those counts}}"
         },
         "value": {
-            "flag": "Flag",
-            "rifle": "Rifle",
-            "sabre": "Sabre",
             "winds": "Horn",
             "battery": "Drum",
-            "none": "Nothing"
+            "none": "Nothing",
+            "usual": "Their own instrument"
         },
         "lane": {
             "equipment": "Equipment",
@@ -3769,7 +3759,71 @@
             "empty": "No equipment cues yet. Select performers, then right-click › Equipment.",
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
-            "forCounts": "{count, plural, one {For # count} other {For # counts}}"
+            "forCounts": "{count, plural, one {For # count} other {For # counts}}",
+            "lanesButton": "Lanes",
+            "lanesHeading": "Show lanes",
+            "resize": "Drag to change how many counts it lasts",
+            "hide": "Hide this lane"
+        },
+        "item": {
+            "flag": "Flag",
+            "swingFlag": "Swing flag",
+            "doubleSwingFlag": "Double swing flags",
+            "rifle": "Rifle",
+            "sabre": "Sabre",
+            "trumpet": "Trumpet",
+            "mellophone": "Mellophone",
+            "baritone": "Baritone",
+            "euphonium": "Euphonium",
+            "trombone": "Trombone",
+            "bassTrombone": "Bass trombone",
+            "tuba": "Tuba",
+            "sousaphone": "Sousaphone",
+            "piccolo": "Piccolo",
+            "flute": "Flute",
+            "clarinet": "Clarinet",
+            "bassClarinet": "Bass clarinet",
+            "sopranoSax": "Soprano sax",
+            "altoSax": "Alto sax",
+            "tenorSax": "Tenor sax",
+            "bariSax": "Bari sax",
+            "snare": "Snare",
+            "tenors": "Tenors",
+            "bassDrum": "Bass drum",
+            "cymbals": "Cymbals"
+        },
+        "plural": {
+            "flag": "Flags",
+            "swingFlag": "Swing flags",
+            "doubleSwingFlag": "Double swing flags",
+            "rifle": "Rifles",
+            "sabre": "Sabres",
+            "trumpet": "Trumpets",
+            "mellophone": "Mellophones",
+            "baritone": "Baritones",
+            "euphonium": "Euphoniums",
+            "trombone": "Trombones",
+            "bassTrombone": "Bass trombones",
+            "tuba": "Tubas",
+            "sousaphone": "Sousaphones",
+            "piccolo": "Piccolos",
+            "flute": "Flutes",
+            "clarinet": "Clarinets",
+            "bassClarinet": "Bass clarinets",
+            "sopranoSax": "Soprano saxes",
+            "altoSax": "Alto saxes",
+            "tenorSax": "Tenor saxes",
+            "bariSax": "Bari saxes",
+            "snare": "Snares",
+            "tenors": "Tenors",
+            "bassDrum": "Bass drums",
+            "cymbals": "Cymbals"
+        },
+        "family": {
+            "guard": "Guard equipment",
+            "brass": "Brass",
+            "woodwinds": "Woodwinds",
+            "drums": "Drums"
         }
     },
     "coordinates": {

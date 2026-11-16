@@ -16,7 +16,7 @@ const NONE = { key: "", tags: new Map<number, string>() } as const;
 /**
  * What each performer holds at the field's beat, as the short tag the 2D field draws by their
  * drill number (fork #992 decision 1): only for performers holding something other than their
- * section's usual. `at` takes a spec beat (fractional while playing) and is cheap to call every
+ * section's usual item. `at` takes a spec beat (fractional while playing) and is cheap to call every
  * frame: it works the tags out again only when the count changes.
  */
 export function useEquipmentTags(): LabelTags | null {
@@ -35,7 +35,11 @@ export function useEquipmentTags(): LabelTags | null {
                 const count = at ? show.countOfBeat.get(at.id) : undefined;
                 if (count === undefined) return NONE;
                 if (count === lastCount) return last;
-                const tags = equipmentTagsAt(show.compiled, show.usual, count);
+                const tags = equipmentTagsAt(
+                    show.compiled,
+                    show.usualValue,
+                    count,
+                );
                 lastCount = count;
                 last = { key: tagsKey(tags), tags };
                 return last;
