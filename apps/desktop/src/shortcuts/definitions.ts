@@ -508,6 +508,148 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         args: { style: "highMarkTime" },
     },
+    // Equipment cues (ADR 0015 D-3, D-6; fork #992): what the selected performers hold from the
+    // paused playhead on, as one lasting cue that stores them (D-4). "Instrument" hands each their
+    // own section's instrument. The field menu's Equipment submenu and the Equipment lane run these.
+    // Unbound
+    equipmentInstrument: {
+        labelKey: "actions.cues.equipmentInstrument",
+        keywordsKey: "actions.cues.equipmentKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { equipment: "instrument" },
+    },
+    equipmentFlag: {
+        labelKey: "actions.cues.equipmentFlag",
+        keywordsKey: "actions.cues.equipmentKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { equipment: "flag" },
+    },
+    equipmentRifle: {
+        labelKey: "actions.cues.equipmentRifle",
+        keywordsKey: "actions.cues.equipmentKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { equipment: "rifle" },
+    },
+    equipmentSabre: {
+        labelKey: "actions.cues.equipmentSabre",
+        keywordsKey: "actions.cues.equipmentKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { equipment: "sabre" },
+    },
+    equipmentNone: {
+        labelKey: "actions.cues.equipmentNone",
+        keywordsKey: "actions.cues.equipmentKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { equipment: "none" },
+    },
+    // Selects whoever holds it at the playhead, whatever their section (ADR 0015 D-4, #377's
+    // `#rifles`). Unbound
+    selectHoldingRifle: {
+        labelKey: "actions.cues.selectHoldingRifle",
+        keywordsKey: "actions.cues.selectHoldingKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { holds: "rifle" },
+    },
+    selectHoldingFlag: {
+        labelKey: "actions.cues.selectHoldingFlag",
+        keywordsKey: "actions.cues.selectHoldingKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { holds: "flag" },
+    },
+    selectHoldingSabre: {
+        labelKey: "actions.cues.selectHoldingSabre",
+        keywordsKey: "actions.cues.selectHoldingKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { holds: "sabre" },
+    },
+    selectHoldingInstrument: {
+        labelKey: "actions.cues.selectHoldingInstrument",
+        keywordsKey: "actions.cues.selectHoldingKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { holds: "instrument" },
+    },
+    selectHoldingNone: {
+        labelKey: "actions.cues.selectHoldingNone",
+        keywordsKey: "actions.cues.selectHoldingKeywords",
+        category: "select",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { holds: "none" },
+    },
+    // The picked cue (the Equipment lane), else the one Equipment cue on the playhead's count:
+    // change who it applies to (owner on #991), make it lasting or momentary, delete it. Unbound
+    cueAddSelected: {
+        labelKey: "actions.cues.addSelected",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    cueRemoveSelected: {
+        labelKey: "actions.cues.removeSelected",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    cueMakeLasting: {
+        labelKey: "actions.cues.makeLasting",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    cueMakeMomentary: {
+        labelKey: "actions.cues.makeMomentary",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+        params: [
+            {
+                key: "length",
+                labelKey: "actions.cues.params.length",
+                unit: "count",
+                default: 8,
+                range: { min: 1 },
+            },
+        ],
+    },
+    cueDelete: {
+        labelKey: "actions.cues.delete",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    // Shows or hides the timeline's Equipment lane (ADR 0015 D-7: hidden by default). Unbound
+    toggleEquipmentLane: {
+        labelKey: "actions.cues.toggleEquipmentLane",
+        toggleOnKey: "actions.cues.showEquipmentLane",
+        toggleOffKey: "actions.cues.hideEquipmentLane",
+        keywordsKey: "actions.cues.laneKeywords",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
     setAllMarchersToNextPage: {
         labelKey: "actions.batchEdit.moveAllToNextSpots",
         category: "batchEdit",

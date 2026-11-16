@@ -7,7 +7,7 @@ import {
     useSyncExternalStore,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { CheckIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
@@ -31,6 +31,7 @@ import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
     MENU_ITEM_CLASS,
+    MENU_LABEL_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
 
@@ -94,8 +95,40 @@ const GROUPS: readonly (readonly ActionId[])[] = [
     ["fieldEditMode"],
 ];
 
+/**
+ * The Equipment submenu (ADR 0015 D-6; fork #992), after the hold styles: what the selection holds
+ * from the playhead on (the one every selected performer holds checked), the picked cue's
+ * performers, and selecting who holds each thing at the playhead.
+ */
+const EQUIPMENT_GROUPS: readonly (readonly ActionId[])[] = [
+    [
+        "equipmentInstrument",
+        "equipmentFlag",
+        "equipmentRifle",
+        "equipmentSabre",
+        "equipmentNone",
+    ],
+    ["cueAddSelected", "cueRemoveSelected"],
+    [
+        "selectHoldingRifle",
+        "selectHoldingFlag",
+        "selectHoldingSabre",
+        "selectHoldingInstrument",
+        "selectHoldingNone",
+    ],
+];
+
+/** Where the Equipment submenu goes among `GROUPS`: after the hold styles */
+const EQUIPMENT_AT = GROUPS.indexOf(HOLD_STYLE_GROUP) + 1;
+
+/** The picked cue's entries: shown only while they can run */
+const CUE_EDITS: ReadonlySet<ActionId> = new Set(EQUIPMENT_GROUPS[1]);
+
 /** The actions the menu offers, in order. */
-export const FIELD_MENU_ACTIONS: readonly ActionId[] = GROUPS.flat();
+export const FIELD_MENU_ACTIONS: readonly ActionId[] = [
+    ...GROUPS.flat(),
+    ...EQUIPMENT_GROUPS.flat(),
+];
 
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
 const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
@@ -119,6 +152,7 @@ const HOLD_STYLES: ReadonlySet<ActionId> = new Set(HOLD_STYLE_GROUP);
 const CHECKABLE: ReadonlySet<ActionId> = new Set([
     ...STATE_GROUP,
     ...HOLD_STYLE_GROUP,
+    ...EQUIPMENT_GROUPS[0],
 ]);
 
 /** The room for a check in front of a checkable entry's words */
@@ -188,9 +222,78 @@ export default function FieldContextMenu({
                   : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
-    const groups = GROUPS.map((group) => group.filter(shown)).filter(
-        (group) => group.length > 0,
-    );
+    const shownGroups = (list: readonly (readonly ActionId[])[]) =>
+        list
+            .map((group) => group.filter(shown))
+            .filter((group) => group.length > 0);
+    const before = shownGroups(GROUPS.slice(0, EQUIPMENT_AT));
+    const after = shownGroups(GROUPS.slice(EQUIPMENT_AT));
+    // Equipment needs a selection and the timeline; the picked cue's entries show while they run
+    const equipmentGroups =
+        timelineMode && selectedCount > 0
+            ? EQUIPMENT_GROUPS.map((group) =>
+                  group.filter((id) => !CUE_EDITS.has(id) || enabled(id)),
+              ).filter((group) => group.length > 0)
+            : [];
+    const entry = (id: ActionId) => {
+        const label =
+            actionLabelNow(id) ??
+            getActionLabel(id, (key, params) => t(key, params as never));
+        const shortcut = (
+            <span className="ml-auto pl-16">
+                <Shortcut action={id} />
+            </span>
+        );
+        if (isActionChecked(id))
+            return (
+                <DropdownMenu.CheckboxItem
+                    key={id}
+                    data-testid={`field-menu-${id}`}
+                    checked
+                    disabled
+                    className={MENU_ITEM_CLASS}
+                >
+                    <span className={CHECK_SLOT_CLASS}>
+                        <DropdownMenu.ItemIndicator className="flex">
+                            <CheckIcon size={14} />
+                        </DropdownMenu.ItemIndicator>
+                    </span>
+                    {label}
+                    {shortcut}
+                </DropdownMenu.CheckboxItem>
+            );
+        return (
+            <DropdownMenu.Item
+                key={id}
+                data-testid={`field-menu-${id}`}
+                disabled={!enabled(id)}
+                onSelect={() =>
+                    runAction(
+                        id,
+                        ON_A_MARCHER.has(id) && marcher !== null
+                            ? { marcherId: marcher }
+                            : undefined,
+                    )
+                }
+                onFocus={() => previewAction(id, true)}
+                onBlur={() => previewAction(id, false)}
+                className={MENU_ITEM_CLASS}
+            >
+                {CHECKABLE.has(id) && <span className={CHECK_SLOT_CLASS} />}
+                {label}
+                {shortcut}
+            </DropdownMenu.Item>
+        );
+    };
+    const separatedGroups = (list: readonly (readonly ActionId[])[]) =>
+        list.map((group, i) => (
+            <Fragment key={group[0]}>
+                {i > 0 && (
+                    <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
+                )}
+                {group.map(entry)}
+            </Fragment>
+        ));
 
     return (
         <DropdownMenu.Root
@@ -230,72 +333,54 @@ export default function FieldContextMenu({
                             : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
-                    {groups.map((group, i) => (
-                        <Fragment key={group[0]}>
-                            {i > 0 && (
+                    {separatedGroups(before)}
+                    {equipmentGroups.length > 0 && (
+                        <>
+                            {before.length > 0 && (
                                 <DropdownMenu.Separator
                                     className={MENU_SEPARATOR_CLASS}
                                 />
                             )}
-                            {group.map((id) => {
-                                const label =
-                                    actionLabelNow(id) ??
-                                    getActionLabel(id, (key, params) =>
-                                        t(key, params as never),
-                                    );
-                                const shortcut = (
-                                    <span className="ml-auto pl-16">
-                                        <Shortcut action={id} />
-                                    </span>
-                                );
-                                if (isActionChecked(id))
-                                    return (
-                                        <DropdownMenu.CheckboxItem
-                                            key={id}
-                                            data-testid={`field-menu-${id}`}
-                                            checked
-                                            disabled
-                                            className={MENU_ITEM_CLASS}
-                                        >
-                                            <span className={CHECK_SLOT_CLASS}>
-                                                <DropdownMenu.ItemIndicator className="flex">
-                                                    <CheckIcon size={14} />
-                                                </DropdownMenu.ItemIndicator>
-                                            </span>
-                                            {label}
-                                            {shortcut}
-                                        </DropdownMenu.CheckboxItem>
-                                    );
-                                return (
-                                    <DropdownMenu.Item
-                                        key={id}
-                                        data-testid={`field-menu-${id}`}
-                                        disabled={!enabled(id)}
-                                        onSelect={() =>
-                                            runAction(
-                                                id,
-                                                ON_A_MARCHER.has(id) &&
-                                                    marcher !== null
-                                                    ? { marcherId: marcher }
-                                                    : undefined,
-                                            )
-                                        }
-                                        onFocus={() => previewAction(id, true)}
-                                        onBlur={() => previewAction(id, false)}
-                                        className={MENU_ITEM_CLASS}
+                            <DropdownMenu.Sub>
+                                <DropdownMenu.SubTrigger
+                                    data-testid="field-menu-equipment"
+                                    className={MENU_ITEM_CLASS}
+                                >
+                                    <span className={CHECK_SLOT_CLASS} />
+                                    {t("field.menu.equipment")}
+                                    <CaretRightIcon
+                                        size={12}
+                                        className="ml-auto"
+                                    />
+                                </DropdownMenu.SubTrigger>
+                                <DropdownMenu.Portal>
+                                    <DropdownMenu.SubContent
+                                        data-testid="field-menu-equipment-content"
+                                        sideOffset={4}
+                                        collisionPadding={8}
+                                        {...KEEP_MENU_EVENTS}
+                                        className={TIMELINE_MENU_CONTENT_CLASS}
                                     >
-                                        {CHECKABLE.has(id) && (
-                                            <span
-                                                className={CHECK_SLOT_CLASS}
-                                            />
-                                        )}
-                                        {label}
-                                        {shortcut}
-                                    </DropdownMenu.Item>
-                                );
-                            })}
-                        </Fragment>
-                    ))}
+                                        <DropdownMenu.Label
+                                            className={MENU_LABEL_CLASS}
+                                        >
+                                            {t(
+                                                "field.menu.equipmentFromPlayhead",
+                                            )}
+                                        </DropdownMenu.Label>
+                                        {separatedGroups(equipmentGroups)}
+                                    </DropdownMenu.SubContent>
+                                </DropdownMenu.Portal>
+                            </DropdownMenu.Sub>
+                        </>
+                    )}
+                    {after.length > 0 &&
+                        (before.length > 0 || equipmentGroups.length > 0) && (
+                            <DropdownMenu.Separator
+                                className={MENU_SEPARATOR_CLASS}
+                            />
+                        )}
+                    {separatedGroups(after)}
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>

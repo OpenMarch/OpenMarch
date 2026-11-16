@@ -248,6 +248,33 @@
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
             "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
+        },
+        "cues": {
+            "equipmentInstrument": "Equipment: Instrument",
+            "equipmentFlag": "Equipment: Flag",
+            "equipmentRifle": "Equipment: Rifle",
+            "equipmentSabre": "Equipment: Sabre",
+            "equipmentNone": "Equipment: Nothing",
+            "equipmentKeywords": "equipment cue hold holds carry prop guard rifle flag sabre horn drum instrument",
+            "selectHoldingRifle": "Select Rifles",
+            "selectHoldingFlag": "Select Flags",
+            "selectHoldingSabre": "Select Sabres",
+            "selectHoldingInstrument": "Select Instruments",
+            "selectHoldingNone": "Select Empty Hands",
+            "selectHoldingKeywords": "select who holds holding equipment rifles flags sabres playhead",
+            "addSelected": "Add selected to this cue",
+            "removeSelected": "Remove selected from this cue",
+            "makeLasting": "Make cue lasting",
+            "makeMomentary": "Make cue momentary",
+            "params": {
+                "length": "Counts"
+            },
+            "delete": "Delete cue",
+            "cueKeywords": "cue equipment performers add remove momentary lasting delete",
+            "toggleEquipmentLane": "Show or hide the Equipment lane",
+            "showEquipmentLane": "Show the Equipment lane",
+            "hideEquipmentLane": "Hide the Equipment lane",
+            "laneKeywords": "equipment lane cues timeline row show hide"
         }
     },
     "analyticsOptIn": {
@@ -614,6 +641,10 @@
             "add": "{count, plural, one {+# marcher} other {+# marchers}}",
             "select": "{count, plural, one {# marcher} other {# marchers}}",
             "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
+        },
+        "menu": {
+            "equipment": "Equipment",
+            "equipmentFromPlayhead": "From the playhead"
         }
     },
     "fieldDisplay": {
@@ -3705,6 +3736,40 @@
             "create": "Couldn't add the cue",
             "delete": "Couldn't delete the cue",
             "update": "Couldn't change the cue"
+        },
+        "label": {
+            "holding": {
+                "rifle": "Rifles",
+                "flag": "Flags",
+                "sabre": "Sabres",
+                "winds": "Horns",
+                "battery": "Drums",
+                "none": "Empty hands"
+            },
+            "performers": "{count, plural, one {# performer} other {# performers}}"
+        },
+        "carry": {
+            "movedTo": "{count, plural, one {# cue moved} other {# cues moved}} to {where}",
+            "moved": "{count, plural, one {# cue moved} other {# cues moved}} to the counts after the ones you deleted",
+            "dropped": "{count, plural, one {# cue was deleted with those counts} other {# cues were deleted with those counts}}"
+        },
+        "value": {
+            "flag": "Flag",
+            "rifle": "Rifle",
+            "sabre": "Sabre",
+            "winds": "Horn",
+            "battery": "Drum",
+            "none": "Nothing"
+        },
+        "lane": {
+            "equipment": "Equipment",
+            "fold": "Fold the Equipment lane",
+            "unfold": "Show the Equipment lane's rows",
+            "foldedCount": "{groups, plural, one {# group} other {# groups}} · {count}",
+            "empty": "No equipment cues yet. Select performers, then right-click › Equipment.",
+            "selectRow": "Select these performers",
+            "selectPerformers": "Select its performers",
+            "forCounts": "{count, plural, one {For # count} other {For # counts}}"
         }
     },
     "coordinates": {

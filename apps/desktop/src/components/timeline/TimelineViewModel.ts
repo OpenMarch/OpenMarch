@@ -337,6 +337,11 @@ export interface TimelineCommonProps
     readonly startFlagBeat?: number;
     /** Lanes drawn where the clip rows go, under the waveform (tempo mode's lanes) */
     readonly band?: TimelineBand;
+    /**
+     * Lanes drawn under the clip rows (or under the band), such as the cue lanes (ADR 0015 D-7):
+     * they add their `height` to the timeline. Never focused.
+     */
+    readonly lanes?: TimelineBand;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
     readonly className?: string;

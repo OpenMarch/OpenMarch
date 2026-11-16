@@ -11,7 +11,7 @@ import { and, asc, eq, inArray, notExists, sql } from "drizzle-orm";
 import type { CueInput } from "@openmarch/core";
 import { schema } from "@/global/database/db";
 import { DbConnection, DbTransaction } from "./types";
-import { transactionWithHistory } from "./history";
+import { afterHistoryCommit, transactionWithHistory } from "./history";
 import { nearestSurvivingBeatByTime } from "./itemBeatRemap";
 
 export interface DatabaseCue {
@@ -595,8 +595,56 @@ export const carryCuesPastDeletedBeatsInTransaction = async ({
         return to === null ? null : { to, at: order.get(cue.beatId)! };
     });
     await applyCueCarry(tx, result);
+    if (result.moved.length > 0 || result.dropped.length > 0) {
+        const notice = cueCarryNotice(result, order, beatIds);
+        // Only once the deletion is saved: a refused one moved nothing
+        afterHistoryCommit(() => {
+            for (const listener of [...cueCarryListeners]) listener(notice);
+        });
+    }
     return result;
 };
+
+/** What a beat deletion did to the cues, for the notice the editor shows (ADR 0004, 2026-10-15). */
+export interface CueCarryNotice {
+    /** How many cues moved forward. */
+    moved: number;
+    /** The spec beats they moved to, counted after the deletion, ascending and distinct. */
+    movedTo: number[];
+    /** How many cues were deleted. */
+    dropped: number;
+}
+
+const cueCarryListeners = new Set<(notice: CueCarryNotice) => void>();
+
+/** Hears of every saved beat deletion that moved or deleted cues; returns the unsubscribe. */
+export function subscribeCueCarry(
+    listener: (notice: CueCarryNotice) => void,
+): () => void {
+    cueCarryListeners.add(listener);
+    return () => cueCarryListeners.delete(listener);
+}
+
+/** The notice for a carry: each destination's place among the beats left after the deletion. */
+export function cueCarryNotice(
+    result: CueCarryResult,
+    order: ReadonlyMap<number, number>,
+    deleted: ReadonlySet<number>,
+): CueCarryNotice {
+    const deletedOrders = [...deleted]
+        .map((id) => order.get(id))
+        .filter((o): o is number => o !== undefined);
+    const after = (beatId: number) => {
+        const at = order.get(beatId) ?? 0;
+        return at - deletedOrders.filter((o) => o < at).length;
+    };
+    const movedTo = [...new Set(result.moved.map((m) => after(m.toBeatId)))];
+    return {
+        moved: result.moved.length,
+        movedTo: movedTo.sort((a, b) => a - b),
+        dropped: result.dropped.length,
+    };
+}
 
 /**
  * Moves the cues on `beatIds` to the surviving beat nearest each one's time, before a caller

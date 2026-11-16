@@ -179,6 +179,8 @@ export interface TimelineProps {
     readonly hideStartFlag?: boolean;
     /** Lanes drawn in place of the clip rows, under the waveform (tempo mode's lanes) */
     readonly band?: TimelineBand;
+    /** Lanes under the clip rows (the cue lanes, ADR 0015 D-7) */
+    readonly lanes?: TimelineBand;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -1106,8 +1108,9 @@ export function Timeline(props: TimelineProps) {
                   ? undefined
                   : readOnlyStartFlag(selection),
               band: props.band,
+              lanes: props.lanes,
           }
-        : { ...commonProps, band: props.band };
+        : { ...commonProps, band: props.band, lanes: props.lanes };
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />

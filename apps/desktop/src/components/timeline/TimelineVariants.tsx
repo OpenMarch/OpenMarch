@@ -845,7 +845,10 @@ const TimelineSurface = memo(function TimelineSurface({
     const stretch = useContext(TimelinePaneStretchContext);
     // Lanes in place of the clip rows (tempo mode's lanes)
     const band = basic ? undefined : props.band;
-    const contentHeight = band ? trackTop + band.height : timelineHeight;
+    // Lanes under the clip rows (the cue lanes), in Basic too
+    const lanes = props.lanes;
+    const lanesTop = band ? trackTop + band.height : timelineHeight;
+    const contentHeight = lanesTop + (lanes?.height ?? 0);
     const surfaceHeight = stretch
         ? Math.max(contentHeight, viewportHeight)
         : contentHeight;
@@ -1284,6 +1287,14 @@ const TimelineSurface = memo(function TimelineSurface({
                         )}
                         {band?.render({
                             top: trackTop,
+                            width,
+                            pixelsPerBeat,
+                            beatCount: model.beatCount,
+                            snapBeats: seekSnapBeats,
+                            leadingInset: initialPageWidth,
+                        })}
+                        {lanes?.render({
+                            top: lanesTop,
                             width,
                             pixelsPerBeat,
                             beatCount: model.beatCount,

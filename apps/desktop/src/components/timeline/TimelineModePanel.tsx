@@ -99,6 +99,10 @@ import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useBasicLocksStore } from "@/timeline/basicLocks";
 import { useBasicPoints } from "./useBasicPoints";
 import type Page from "@/global/classes/Page";
+import {
+    EquipmentLaneButton,
+    useEquipmentLaneBand,
+} from "./cues/EquipmentLane";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
 const NO_CLIPS: TimelineInput[] = [];
@@ -157,11 +161,17 @@ const SPEED_BUTTON = <TimelineSpeedButton />;
  * it's the only one: Play loops the selected measures, so no Loop button
  */
 const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
-const BASIC_VIEW_CONTROLS = <TempoModeButton />;
+const BASIC_VIEW_CONTROLS = (
+    <>
+        <TempoModeButton />
+        <EquipmentLaneButton />
+    </>
+);
 const EXPERT_VIEW_CONTROLS = (
     <>
         <TempoModeButton />
         <TimelineCompactButton />
+        <EquipmentLaneButton />
     </>
 );
 
@@ -211,6 +221,8 @@ export default function TimelineModePanel() {
     // Expert parts (clips, the loop, isolation, moves): docs/timeline/research/basic-mode
     // Tempo mode: the timeline shows the tempo lanes in place of the clips, in Basic too
     const tempoMode = useTempoModeStore((s) => s.on);
+    // The cue lanes under the drill rows (ADR 0015 D-7), hidden until shown
+    const equipmentLane = useEquipmentLaneBand();
     const basic = useIsBasicMode() && !tempoMode;
     const basicExtras = useBasicTimelineExtras(pages);
     const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
@@ -578,6 +590,7 @@ export default function TimelineModePanel() {
                     measures={measures}
                     timelines={basic || tempoMode ? NO_CLIPS : offPage}
                     band={tempoMode ? TEMPO_BAND : undefined}
+                    lanes={tempoMode ? undefined : equipmentLane}
                     pageMoves={pageMoves}
                     transportAccessories={
                         basic || tempoMode ? SPEED_BUTTON : LOOP_BUTTONS

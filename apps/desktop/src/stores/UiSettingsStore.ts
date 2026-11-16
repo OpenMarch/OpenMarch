@@ -50,6 +50,10 @@ export interface UiSettings {
     timelineZoomFitted: boolean;
     /** How the timeline draws the waveform: simplified rounded bars or precise per-beat detail */
     timelineWaveformStyle: WaveformStyle;
+    /** Whether the timeline shows its Equipment lane (ADR 0015 D-7: hidden by default) */
+    timelineEquipmentLane: boolean;
+    /** Whether the Equipment lane is folded into its summary row (fork #991, option E) */
+    timelineEquipmentLaneFolded: boolean;
     /** The current audio volume percentage for timeline playback */
     audioVolume: number;
     /** Whether all app audio is muted */
@@ -135,6 +139,8 @@ export const defaultSettings: UiSettings = {
     timelineHeight: null,
     timelineZoomFitted: false,
     timelineWaveformStyle: "simplified",
+    timelineEquipmentLane: false,
+    timelineEquipmentLaneFolded: false,
     audioVolume: 100,
     audioMuted: false,
     mouseSettings: {
@@ -193,6 +199,9 @@ const parseSettings = (raw: string): UiSettings => {
         snap: defaultSettings.snap,
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
         timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
+        timelineEquipmentLane: parsed.timelineEquipmentLane === true,
+        timelineEquipmentLaneFolded:
+            parsed.timelineEquipmentLaneFolded === true,
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding

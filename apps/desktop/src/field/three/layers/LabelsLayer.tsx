@@ -13,6 +13,7 @@ import { useFieldDraw } from "../fieldDrawContext";
 import { labelsShown } from "../marcherLooks";
 import { TextBatch, type GlyphAtlas } from "../sdfText";
 import { autoLabelScale, type LabelBox } from "@/field/labelForms";
+import type { LabelTags } from "@/cues/useEquipmentTags";
 
 /**
  * A marcher label: 14 field units, its center 2.2 dot radii above the dot,
@@ -22,6 +23,10 @@ const LABEL_SIZE = 14;
 const DOT_RADIUS = 5;
 const LABEL_LIFT = DOT_RADIUS * 2.2;
 const LABEL_BESIDE = DOT_RADIUS * 1.6;
+/** A drill number with its equipment tag after it ("G3 R"), or the number alone. */
+const withTag = (label: string, tag: string | undefined) =>
+    tag && label ? `${label} ${tag}` : label;
+
 /** The baseline's offset below the label's center, in em. */
 const CENTER_BASELINE = 0.35;
 
@@ -55,6 +60,7 @@ export default function LabelsLayer({
     atlas,
     style = DEFAULT_STYLE,
     holdAutoSize = false,
+    tags = null,
 }: {
     marchers: FieldMarchers;
     /** Marchers whose labels are drawn dimmed (#201). */
@@ -69,6 +75,12 @@ export default function LabelsLayer({
     style?: LabelStyle;
     /** Keeps Auto's size as it is (during playback), so labels don't change size as marchers pass. */
     holdAutoSize?: boolean;
+    /**
+     * A short tag by some drill numbers at the beat drawn: what a performer holds when it isn't
+     * their section's usual (fork #992). Read every frame; the text is laid out again only when
+     * the tags change.
+     */
+    tags?: LabelTags | null;
 }) {
     const invalidate = useThree((s) => s.invalidate);
     const draw = useFieldDraw();
@@ -91,6 +103,7 @@ export default function LabelsLayer({
         style,
         size: LABEL_SIZE * style.scale,
         shown: new Uint8Array(0) as Uint8Array,
+        tagKey: "",
     });
 
     useEffect(() => {
@@ -99,7 +112,7 @@ export default function LabelsLayer({
     }, [text, invalidate]);
 
     // New labels, a new theme or style lay the text out again on the next frame
-    useEffect(() => invalidate(), [labels, theme, style, invalidate]);
+    useEffect(() => invalidate(), [labels, theme, style, tags, invalidate]);
     useEffect(() => {
         text.setOffset(
             style.beside ? LABEL_BESIDE : 0,
@@ -134,7 +147,10 @@ export default function LabelsLayer({
             const now = labelsShown(marchers.stacks, theme);
             if (!sameBytes(now, shown)) shown = now;
         }
+        const tagged = tags?.at(marchers.drawnBeat) ?? null;
+        const tagKey = tagged?.key ?? "";
         const newLayout =
+            tagKey !== last.tagKey ||
             marchers.idsVersion !== last.idsVersion ||
             labels !== last.labels ||
             theme !== last.theme ||
@@ -153,7 +169,10 @@ export default function LabelsLayer({
                 marchers.ids.map((id, i) => ({
                     text:
                         shown[i] && dimming.labelShown(id)
-                            ? (labels.get(id) ?? "")
+                            ? withTag(
+                                  labels.get(id) ?? "",
+                                  tagged?.tags.get(id),
+                              )
                             : "",
                     size,
                     align: style.beside ? "left" : "center",
@@ -183,6 +202,7 @@ export default function LabelsLayer({
             style,
             size,
             shown,
+            tagKey,
         };
     });
 
