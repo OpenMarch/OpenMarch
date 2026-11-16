@@ -3856,6 +3856,9 @@
             "resetTip": "Take this marcher's bends off, so it walks the group path like the others again",
             "groupLabel": "Group path · {count}",
             "groupLabelTip": "Select everyone on this group path",
+            "ownPaths": "{count} own paths",
+            "drawOneTip": "Draw one path for the selected marchers, in place of their own",
+            "drawPath": "Draw path",
             "rejoinCount": "Rejoin {count}",
             "more": "More path commands",
             "looseLabel": "{count} paths"

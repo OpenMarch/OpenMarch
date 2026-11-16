@@ -17,6 +17,7 @@ import {
     LineSegmentsIcon,
     PathIcon,
     PencilSimpleIcon,
+    PenNibIcon,
     TrashIcon,
     UsersThreeIcon,
     WarningIcon,
@@ -85,9 +86,11 @@ import {
     groupViewOf,
     shapeOf,
     usePathPenStore,
+    ownLinesDrawn,
+    type OwnLine,
     type PathSession,
 } from "./pathPenStore";
-import { drawingOf } from "./pathPenMode";
+import { drawingOf, ownLineDrawingOf } from "./pathPenMode";
 import {
     besideArc,
     besideArcReason,
@@ -98,6 +101,9 @@ import {
 
 // Big steps lives with the inspector's line, which mustn't load the field mode (pathways round 2)
 export { bigSteps, trailDistances, type BigSteps } from "./pathBigSteps";
+
+/** Where the bar docks while drawing: under the banner at the top of the field */
+const DOCKED_TOP_PX = 56;
 
 /** Under a marcher: the field's note there (offset and pill), which the path bar leaves room for */
 const FIELD_NOTE_ROOM_PX = 40;
@@ -134,7 +140,17 @@ export function PathEditor({
     const hidden = usePathPenStore((s) => s.hidden);
     const ownable = usePathPenStore((s) => s.ownable);
     const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
-    if (!session) return null;
+    const ownLines = usePathPenStore((s) => s.ownLines);
+    if (!session) {
+        // Several marchers each on their own path (after Detach all, sim round 3): the bar
+        // stays, saying so, instead of going away as if the selection had lost its paths
+        const lines = ownLinesDrawn(ownLines, null, hidden, shapeToolOpen);
+        return lines.length > 1 ? (
+            <RichTips>
+                <OwnPathsBar lines={lines} />
+            </RichTips>
+        ) : null;
+    }
     // Edit group path, or the whole group selected (round 4): its line is named, so it reads as
     // the line the whole group follows, not as one more marcher's path
     const view = groupViewOf(session, ownable);
@@ -186,6 +202,94 @@ export function PathEditor({
             </RichTips>
         </>
     );
+}
+
+/**
+ * The bar for several selected marchers each on their own path (sim round 3): how many there are,
+ * and the Path pen, which draws one path for all of them
+ */
+function OwnPathsBar({ lines }: { lines: readonly OwnLine[] }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const size = useBarSize(ref);
+    const view = useFieldViewStore();
+    const shapeBar = useShapeEditorRect((s) => s.rect);
+    const outline = useMemo(
+        () =>
+            lines.flatMap((line) => {
+                const drawn = ownLineDrawingOf(line);
+                return [...(drawn.outline ?? []), ...drawn.spots];
+            }),
+        [lines],
+    );
+    const place = stackedPlacement(
+        {
+            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+            width: size.width,
+            height: size.height,
+            fieldWidth: size.fw,
+            fieldHeight: size.fh,
+        },
+        shapeBar,
+    );
+    return (
+        <div
+            ref={ref}
+            className={clsx(
+                EDITOR_BAR,
+                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap",
+            )}
+            style={{ left: place.left, top: place.top }}
+            data-testid="path-own-paths"
+            onPointerDown={(e) => e.stopPropagation()}
+        >
+            <span className="text-text-subtitle px-4">
+                {tolgee.t("pathways.editor.ownPaths", "{count} own paths", {
+                    count: lines.length,
+                })}
+            </span>
+            <Divider />
+            <IconButton
+                label={tolgee.t(
+                    "pathways.editor.drawOneTip",
+                    "Draw one path for the selected marchers, in place of their own",
+                )}
+                action="pathPen"
+                onClick={() => runAction("pathPen")}
+                testId="path-own-draw"
+            >
+                <PenNibIcon size={14} />
+                {tolgee.t("pathways.editor.drawPath", "Draw path")}
+            </IconButton>
+        </div>
+    );
+}
+
+/** The bar's size and the field's, measured as they change */
+function useBarSize(ref: React.RefObject<HTMLDivElement | null>) {
+    const [size, setSize] = useState({
+        width: 0,
+        height: 0,
+        fw: Infinity,
+        fh: Infinity,
+    });
+    useLayoutEffect(() => {
+        const el = ref.current;
+        const field = el?.offsetParent;
+        if (!el || !field) return;
+        const measure = () =>
+            setSize({
+                width: el.offsetWidth,
+                height: el.offsetHeight,
+                fw: field.clientWidth,
+                fh: field.clientHeight,
+            });
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        observer.observe(field);
+        return () => observer.disconnect();
+    }, [ref]);
+    return size;
 }
 
 /**
@@ -386,29 +490,7 @@ function PathEditorBar({
     fieldProperties: FieldProperties;
 }) {
     const ref = useRef<HTMLDivElement>(null);
-    const [size, setSize] = useState({
-        width: 0,
-        height: 0,
-        fw: Infinity,
-        fh: Infinity,
-    });
-    useLayoutEffect(() => {
-        const el = ref.current;
-        const field = el?.offsetParent;
-        if (!el || !field) return;
-        const measure = () =>
-            setSize({
-                width: el.offsetWidth,
-                height: el.offsetHeight,
-                fw: field.clientWidth,
-                fh: field.clientHeight,
-            });
-        measure();
-        const observer = new ResizeObserver(measure);
-        observer.observe(el);
-        observer.observe(field);
-        return () => observer.disconnect();
-    }, []);
+    const size = useBarSize(ref);
     // Beside the lines drawn: under them, above when there's no room, as the shape editor sits. A
     // quiet group path draws only its selected marchers' lines, so the bar goes by those; the
     // group line alone (the whole group selected, or edited) doesn't reach its marchers' starts
@@ -448,6 +530,11 @@ function PathEditorBar({
         shapeBar,
     );
     const drawing = session.phase === "drawing";
+    // While drawing, the bar stays put under the banner (sim round 3: it slid along with the
+    // pointer, so a click meant for Finish landed on the field and added a corner)
+    const docked = drawing && Number.isFinite(size.fw) && size.width > 0;
+    const left = docked ? Math.max(0, (size.fw - size.width) / 2) : place.left;
+    const top = docked ? DOCKED_TOP_PX : place.top;
     const quiet = session.phase === "closed";
     // Step 6 (TC-7): a trail's turns that fall between counts
     const offCount = quiet
@@ -486,7 +573,7 @@ function PathEditorBar({
                 EDITOR_BAR,
                 "text-sub text-text absolute z-10 gap-6 whitespace-nowrap",
             )}
-            style={{ left: place.left, top: place.top }}
+            style={{ left, top }}
             data-testid="path-editor"
             data-phase={session.phase}
             onPointerDown={(e) => e.stopPropagation()}

@@ -270,6 +270,12 @@ const refusalKeys = {
  * The held-roles chip names what a drag reads, from the press, as it does for a shape's handles.
  */
 class PathPenMode implements FieldMode {
+    /**
+     * The corner a click while drawing just added, and how many points there were then: a
+     * double-click's second click takes it back
+     */
+    private clickAdded: PathPoint | null = null;
+    private clickAddedCount = 0;
     private held: {
         start: FieldPointer;
         /** The handle pressed on the open path, or null (drawing, or a miss) */
@@ -874,11 +880,21 @@ class PathPenMode implements FieldMode {
     ) {
         const env = envOf(roles);
         if (!env) return;
-        // The double-click's second click finishes, as a Line's does
+        // The double-click's second click finishes, as a Line's does, and takes back the corner
+        // its first click added (sim round 3: "Double-click to finish" left a kink there)
         if (click?.double) {
+            const last = s.points.at(-1);
+            if (
+                last &&
+                last === this.clickAdded &&
+                s.points.length === this.clickAddedCount
+            )
+                removeLastPoint();
+            this.clickAdded = null;
             void finishDrawing();
             return;
         }
+        this.clickAdded = null;
         // On the last point (a Line's last point), or on the end spot the path goes to
         if (onFinishSpot(s, pointer.field, env)) {
             void finishDrawing(enterAt(s, pointer.field, env));
@@ -892,6 +908,9 @@ class PathPenMode implements FieldMode {
             return;
         }
         addPoint(at);
+        const added = this.session?.points.at(-1) ?? null;
+        this.clickAdded = added;
+        this.clickAddedCount = this.session?.points.length ?? 0;
         this.pointerNow(at);
     }
 

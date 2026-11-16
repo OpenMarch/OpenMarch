@@ -166,6 +166,20 @@ describe("closing it", () => {
 });
 
 describe("finishing a drawing (review of #680)", () => {
+    it("a double-click finishes with the points before it: its first click's corner goes (sim round 3)", () => {
+        startDrawing(target(null), "T4");
+        const click = (x: number, y: number, double: boolean) => {
+            pathPenMode.press(at(x, y), { isMac: false });
+            pathPenMode.release(at(x, y), { double, ownFirst: true });
+        };
+        click(2 * STEP, 4 * STEP, false);
+        click(5 * STEP, 6 * STEP, false);
+        click(5 * STEP, 6 * STEP, true);
+        const points = usePathPenStore.getState().session?.points ?? [];
+        expect(points).toHaveLength(1);
+        expect(points[0]!.at.x).toBeCloseTo(2 * STEP);
+    });
+
     it("a press on the last point that drags past the slop finishes, adding no smooth point", async () => {
         startDrawing(target(null), "T4");
         addPoint({ x: 4 * STEP, y: 4 * STEP });

@@ -14,6 +14,7 @@ import {
     clearPath,
     openPath,
     setGroupCommands,
+    setOwnLines,
     setPathHidden,
     showPath,
     startDrawing,
@@ -139,6 +140,22 @@ describe("the path's floating editor", () => {
         expect(screen.queryByTestId("path-big-steps")).toBeNull();
         expect(el.textContent).not.toMatch(PICTOGRAPHIC);
         expect(el.textContent).not.toContain("T4");
+    });
+
+    it("several marchers each on their own path (after Detach all): a bar saying so, with Draw path (sim round 3)", () => {
+        act(() =>
+            setOwnLines([
+                { target: target(5), drill: "T4" },
+                { target: { ...target(6), marcherId: 4 }, drill: "T5" },
+            ]),
+        );
+        render(<PathEditor fieldProperties={fieldProperties} />);
+        const bar = screen.getByTestId("path-own-paths");
+        expect(bar.textContent).toContain("2 own paths");
+        expect(screen.getByTestId("path-own-draw")).toBeTruthy();
+        act(() => setOwnLines([{ target: target(5), drill: "T4" }]));
+        expect(screen.queryByTestId("path-own-paths")).toBeNull();
+        act(() => setOwnLines([]));
     });
 
     it("quiet (closed): Edit path, Edit line greyed out for an own path, no Match group (sim round 3), More; none while hidden", () => {
