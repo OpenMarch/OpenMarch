@@ -376,6 +376,46 @@ const shots = [
         },
     },
     {
+        id: "timeline-lanes-menu",
+        kind: "still",
+        // Page 3 with a move mid-page, the Lanes menu open from the timeline's controls: Moves
+        // ticked, Equipment not; the Moves heading with its eye button over the move's row
+        async setup({ page, around, union, wait }) {
+            await ready(page, wait);
+            await withMove(page, wait);
+            await page.keyboard.press("Escape");
+            await wait(600);
+            await page.getByTestId("timeline-cue-lanes").click();
+            await page.getByTestId("timeline-cue-lanes-menu").waitFor();
+            await wait(500);
+            await tidy(page);
+            return {
+                box: union(
+                    await pane(around, page),
+                    await around(page.getByTestId("timeline-cue-lanes-menu"), 8),
+                ),
+            };
+        },
+    },
+    {
+        id: "timeline-moves-hidden",
+        kind: "still",
+        // Page 3 with a move mid-page and the Moves lane hidden from its eye button: the
+        // "Moves hidden" strip where the move's bar was
+        async setup({ page, around, wait }) {
+            await ready(page, wait);
+            await withMove(page, wait);
+            await page.keyboard.press("Escape");
+            await wait(600);
+            await page.getByTestId("moves-lane-hide").click();
+            await page.getByTestId("moves-hidden-strip").waitFor();
+            await page.mouse.move(5, 500);
+            await wait(600);
+            await tidy(page);
+            return { box: await pane(around, page) };
+        },
+    },
+    {
         id: "timeline-move-menu",
         kind: "still",
         // The menu on a move's bar

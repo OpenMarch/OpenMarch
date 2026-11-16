@@ -507,6 +507,12 @@
         "width": 1600,
         "height": 1106
     },
+    "timeline-lanes-menu": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 216
+    },
     "timeline-loop": {
         "chapter": "timeline",
         "kind": "clip",
