@@ -175,8 +175,12 @@ export interface GroupTarget {
     /**
      * A loose path (interaction round 7): the selected marchers each walk their own copy of one
      * path (identical, made together and edited together since), shown as one line to edit
-     * together. Every edit is saved as their own copies again (`writeGroupPath`), so it has no
-     * Detach, Rejoin or Match group. `routeId` is the first member's copy. Absent otherwise.
+     * together. Every edit is saved as their own copies again (`writeGroupPath`), even when the
+     * marchers have since become a placed shape (review of #900: nothing re-links them silently);
+     * only drawing it again with exactly a placed shape's members makes a live group path. So it
+     * has no Detach, Rejoin or Match group. `routeId` is the first member's copy, which no write
+     * edits alone: an edit finds the copies, and is refused when they no longer match. Absent
+     * otherwise.
      */
     loose?: boolean;
 }
@@ -498,11 +502,20 @@ async function looseTarget(
     const walked = new Set(on.map((g) => g.marcherIds[0]!));
     if (ids.some((id) => !walked.has(id))) return null;
     const routeIds = new Set(on.map((g) => g.routeId));
+    // The stored geometry text, as a write's `copiesOf` compares it: identical copies only
+    const stored = await db
+        .select({ geometry: schema.timeline_routes.geometry })
+        .from(schema.timeline_routes)
+        .where(inArray(schema.timeline_routes.id, [...routeIds]))
+        .all();
+    if (
+        stored.length !== routeIds.size ||
+        new Set(stored.map((r) => r.geometry)).size !== 1
+    )
+        return null;
     const routes = (await readRoutes(db, move.timelineId)).filter((r) =>
         routeIds.has(r.routeId),
     );
-    const texts = new Set(routes.map((r) => JSON.stringify(r.geometry)));
-    if (texts.size !== 1) return null;
     const members: GroupMember[] = [];
     const seen = new Set<number>();
     for (const r of [...routes].sort((a, b) => a.marcherId - b.marcherId)) {
