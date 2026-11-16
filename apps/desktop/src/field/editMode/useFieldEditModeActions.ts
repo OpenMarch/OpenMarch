@@ -32,6 +32,7 @@ import {
 } from "./lineCommands";
 import type { FieldEditResult } from "@/field/edits";
 import { createCheckpointNamer } from "@/field/edits/messages";
+import { fieldEditRefusal } from "@/field/edits/refusal";
 import { focusFieldEditPane } from "./fieldEditPanes";
 import { useFieldImageActions } from "./useFieldImageActions";
 import {
@@ -295,6 +296,12 @@ export function useFieldLineActions() {
         { enabled: () => hasSelection && keyIsForField() },
     );
 
+    // Greyed out where it would be refused (the last two lines on an axis stay), saying why,
+    // instead of a toast after the press
+    const deleteRefusal = () =>
+        fp
+            ? fieldEditRefusal(fp, deleteLinesEdit(fp, now(), mirrorNow()), t)
+            : undefined;
     useActionHandler(
         "fieldEditDeleteLines",
         () => {
@@ -305,7 +312,14 @@ export function useFieldLineActions() {
                 if (result?.diff.ok) fieldEditMode.select([]);
             });
         },
-        { enabled: () => hasSelection && keyIsForLines() },
+        {
+            enabled: () =>
+                hasSelection &&
+                keyIsForLines() &&
+                deleteRefusal() === undefined,
+            disabledReason: () =>
+                hasSelection && keyIsForLines() ? deleteRefusal() : undefined,
+        },
     );
 
     useActionHandler(
@@ -357,23 +371,24 @@ export function useFieldLineActions() {
         () => fp && fieldEditMode.select(everyOther(fp, now())),
         { enabled: manySelected },
     );
+    // Greyed out when the lines already have their automatic names, saying so
+    const resetEdits = () =>
+        fp
+            ? resetNamesEdits(fp, now(), mirrorNow(), createCheckpointNamer(t))
+            : [];
     useActionHandler(
         "fieldEditResetNames",
         () => {
-            if (!fp) return;
-            const edits = resetNamesEdits(
-                fp,
-                now(),
-                mirrorNow(),
-                createCheckpointNamer(t),
-            );
-            if (edits.length === 0) {
-                toast.message(t("fieldEditMode.namesAlreadyAutomatic"));
-                return;
-            }
-            void apply(edits);
+            const edits = resetEdits();
+            if (edits.length > 0) void apply(edits);
         },
-        { enabled: hasSelection },
+        {
+            enabled: () => hasSelection && resetEdits().length > 0,
+            disabledReason: () =>
+                hasSelection
+                    ? t("fieldEditMode.namesAlreadyAutomatic")
+                    : undefined,
+        },
     );
 
     useActionHandlerGroup(
