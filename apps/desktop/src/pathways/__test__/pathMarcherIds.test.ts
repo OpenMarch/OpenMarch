@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { pathMarcherIds, type PathSession } from "../pathPenStore";
+import {
+    ownLinesDrawn,
+    pathMarcherIds,
+    type OwnLine,
+    type PathSession,
+} from "../pathPenStore";
 
 const session = (phase: PathSession["phase"]): PathSession =>
     ({
@@ -67,5 +72,31 @@ describe("pathMarcherIds", () => {
                 [3],
             ),
         ).toEqual([3]);
+    });
+
+    it("several marchers on their own paths each draw their line, and theirs give way (round 8)", () => {
+        const line = (marcherId: number): OwnLine =>
+            ({
+                target: { marcherId, routeId: marcherId * 10 },
+                drill: `T${marcherId}`,
+            }) as unknown as OwnLine;
+        const lines = [line(4), line(5)];
+        expect(ownLinesDrawn(lines, null, false, false)).toBe(lines);
+        expect(
+            pathMarcherIds(
+                null,
+                false,
+                false,
+                [],
+                [],
+                ownLinesDrawn(lines, null, false, false),
+            ),
+        ).toEqual([4, 5]);
+        // Hidden as a closed path is, under an open shape, or with a session of its own: none
+        expect(ownLinesDrawn(lines, null, true, false)).toEqual([]);
+        expect(ownLinesDrawn(lines, null, false, true)).toEqual([]);
+        expect(ownLinesDrawn(lines, session("closed"), false, false)).toEqual(
+            [],
+        );
     });
 });

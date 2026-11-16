@@ -578,7 +578,7 @@ function PathEditorBar({
                             <Tip
                                 label={tolgee.t(
                                     "pathways.editor.rehomedTip",
-                                    "A point an adjustment was attached to changed, so the adjustment moved to the nearest points left. Check it still does what you meant.",
+                                    "A point a bend was attached to changed, so the bend moved to the nearest points left. Check it still does what you meant.",
                                 )}
                             >
                                 <button
@@ -596,7 +596,7 @@ function PathEditorBar({
                                     />
                                     {tolgee.t(
                                         "pathways.editor.rehomedBadge",
-                                        "Adjustment re-homed",
+                                        "Bend moved",
                                     )}
                                 </button>
                             </Tip>
@@ -672,6 +672,7 @@ function PathSlots({ session }: { session: PathSession }) {
                 pressed={editing}
                 onClick={() => runAction("editPath")}
                 testId="path-edit"
+                className={EDIT_SLOT_WIDTH}
             >
                 <PencilSimpleIcon size={14} />
                 {group
@@ -757,6 +758,12 @@ function PathSlots({ session }: { session: PathSession }) {
         </>
     );
 }
+
+/**
+ * The first slot fits "Edit group path", so the bar keeps its width (and place) when it says
+ * "Edit path" instead (round 8)
+ */
+const EDIT_SLOT_WIDTH = "min-w-[116px] justify-start";
 
 /** Edit <name>'s line's slot fits a long drill number, so the slots after it never move */
 const LINE_SLOT_WIDTH = "min-w-[124px] justify-start";

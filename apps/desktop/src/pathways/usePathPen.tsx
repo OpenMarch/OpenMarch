@@ -59,7 +59,9 @@ import {
     refitOpenPath,
     selectLane,
     setGroupCommands,
+    setOwnLines,
     setPathObjects,
+    type OwnLine,
     type PathObject,
     type RejoinTarget,
     clearPath,
@@ -568,6 +570,7 @@ export function usePathPenActions(): void {
         const clear = () => {
             clearPath();
             setGroupCommands([], null);
+            setOwnLines([]);
         };
         if (isPlaying) {
             clear();
@@ -611,6 +614,7 @@ export function usePathPenActions(): void {
                 const now = usePathPenStore.getState();
                 if (now.session?.phase === "drawing") return;
                 setGroupCommands([], null);
+                setOwnLines([]);
                 showPath(trail, `${trail.trail!.members.length}`);
                 return;
             }
@@ -652,6 +656,7 @@ export function usePathPenActions(): void {
             const now = usePathPenStore.getState();
             if (now.session?.phase === "drawing") return;
             if (group) {
+                setOwnLines([]);
                 const members = new Set(
                     group.group!.members.map((m) => m.marcherId),
                 );
@@ -675,7 +680,15 @@ export function usePathPenActions(): void {
                     selectLane(null);
                 return;
             }
+            // Several marchers, each on their own path: each one's line, faint (round 8)
+            const lines =
+                one === null && selectedIds.length > 1
+                    ? await ownLinesOf(resolver, selectedIds, beat, drills)
+                    : [];
+            if (ask !== asked.current) return;
+            if (usePathPenStore.getState().session?.phase === "drawing") return;
             setGroupCommands([], rejoinTarget);
+            setOwnLines(lines);
             if (!own || own.routeId === null) clearPath();
             else showPath(own, one!.drill_number);
         })();
@@ -684,6 +697,32 @@ export function usePathPenActions(): void {
     }, [selectionKey, playheadBeat, version, ready, isPlaying, saved, drills]);
 
     usePathObjects(drills);
+}
+
+/**
+ * The own paths of `marcherIds` at `beat`, one line each, in marcher id order: an own path, or a
+ * copy Detached from a group path (shown on its lane, as one selected marcher's is). A member of a
+ * group path, a trail or a straight move draws no line here.
+ */
+async function ownLinesOf(
+    resolver: Parameters<typeof findPathTarget>[1],
+    marcherIds: readonly number[],
+    beat: number,
+    drills: ReadonlyMap<number, string>,
+): Promise<OwnLine[]> {
+    const lines: OwnLine[] = [];
+    for (const id of [...marcherIds].sort((a, b) => a - b)) {
+        const drill = drills.get(id) ?? `${id}`;
+        const copy = await findGroupTarget(db, resolver, [id], drills, beat);
+        if (copy) {
+            if (copy.lane && copy.routeId !== null)
+                lines.push({ target: copy, drill });
+            continue;
+        }
+        const own = await findPathTarget(db, resolver, id, beat);
+        if (own && own.routeId !== null) lines.push({ target: own, drill });
+    }
+    return lines;
 }
 
 /** How a path target is named: its marcher's drill number, or its group's size */

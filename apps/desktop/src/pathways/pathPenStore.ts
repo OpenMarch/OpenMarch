@@ -186,6 +186,18 @@ interface PathPenState {
     rejoin: RejoinTarget | null;
     /** The paths Paths All draws as objects at the playhead, or none (step 3a, AP-O2) */
     objects: readonly PathObject[];
+    /**
+     * With several marchers selected who each walk their own path (no group path, trail or loose
+     * path for them), each one's line, drawn faint as a closed path is (round 8: after Detach all
+     * the selection showed nothing). None otherwise.
+     */
+    ownLines: readonly OwnLine[];
+}
+
+/** A selected marcher's own path drawn beside the others' (`PathPenState.ownLines`) */
+export interface OwnLine {
+    readonly target: PathTarget;
+    readonly drill: string;
 }
 
 /** Rejoin's target (AP-R10): the group path in a move, and the selected marchers off it */
@@ -312,6 +324,8 @@ export const pathMarcherIds = (
     objects: readonly PathObject[] = [],
     /** The selected members of the group path shown (the store's `ownable`) */
     selected: readonly number[] = [],
+    /** The selected marchers' own lines drawn (`ownLinesDrawn`): theirs give way too */
+    ownLines: readonly OwnLine[] = [],
 ): readonly number[] => {
     const own =
         !pathShown(session, hidden) ||
@@ -331,7 +345,10 @@ export const pathMarcherIds = (
             ? o.target.group.members.map((m) => m.marcherId)
             : [],
     );
-    return drawn.length === 0 ? own : [...new Set([...own, ...drawn])];
+    const lines = ownLines.map((l) => l.target.marcherId);
+    return drawn.length === 0 && lines.length === 0
+        ? own
+        : [...new Set([...own, ...drawn, ...lines])];
 };
 
 /**
@@ -421,6 +438,25 @@ export function groupLineIds(
     return members;
 }
 
+/**
+ * Sets the selected marchers' own lines (`PathPenState.ownLines`); lines read again the same keep
+ * the list, so nothing is drawn again for nothing
+ */
+export function setOwnLines(lines: readonly OwnLine[]): void {
+    const now = usePathPenStore.getState().ownLines;
+    if (now.length === 0 && lines.length === 0) return;
+    if (JSON.stringify(now) === JSON.stringify(lines)) return;
+    usePathPenStore.setState({ ownLines: lines });
+}
+
+/** The own lines drawn now: none while the closed path is hidden, the pen draws or a shape is open */
+export const ownLinesDrawn = (
+    lines: readonly OwnLine[],
+    session: PathSession | null,
+    hidden: boolean,
+    shapeOpen: boolean,
+): readonly OwnLine[] => (hidden || shapeOpen || session !== null ? [] : lines);
+
 /** Hides or shows the closed path, as start flag positions' paths level in effect says */
 export function setPathHidden(hidden: boolean): void {
     if (usePathPenStore.getState().hidden !== hidden)
@@ -430,6 +466,7 @@ export function setPathHidden(hidden: boolean): void {
 export const usePathPenStore = create<PathPenState>(() => ({
     hidden: false,
     objects: [],
+    ownLines: [],
     openNext: null,
     openRoute: null,
     ownable: [],
@@ -1734,7 +1771,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomed",
-                "Moved the adjustment on {count, plural, one {# spot} other {# spots}} to the nearest points left",
+                "Moved the bend on {count, plural, one {# line} other {# lines}} to the nearest points left",
                 { count: report.rehomedSpots },
             ),
         );
@@ -1742,7 +1779,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomedKeys",
-                "{count, plural, one {# adjustment point} other {# adjustment points}} dropped",
+                "{count, plural, one {# bend point} other {# bend points}} dropped",
                 { count: report.droppedKeys },
             ),
         );
@@ -1750,7 +1787,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomedCleared",
-                "{count, plural, one {# spot} other {# spots}} lost their adjustment",
+                "{count, plural, one {# line lost its bend} other {# lines lost their bends}}",
                 { count: report.clearedSpots },
             ),
         );
@@ -1763,7 +1800,7 @@ function reportAdjustsRemoved(count: number): void {
         toastWithUndo(
             tolgee.t(
                 "pathways.toasts.adjustsRemoved",
-                "{count, plural, one {# adjustment} other {# adjustments}} removed: {count, plural, one {it was} other {they were}} on the old path",
+                "{count, plural, one {# bend} other {# bends}} removed: {count, plural, one {it was} other {they were}} on the old path",
                 { count },
             ),
         );
@@ -1789,7 +1826,7 @@ async function adjustWrite(
 }
 
 const adjustFallback = () =>
-    tolgee.t("pathways.errors.adjust", "Couldn't adjust this spot");
+    tolgee.t("pathways.errors.adjust", "Couldn't bend this line");
 
 /** Reads the lane of a marcher on the session's group path, for an Adjust write */
 const laneArgs = (marcherId: number) => {

@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { pathMarcherIds, usePathPenStore } from "@/pathways/pathPenStore";
+import {
+    ownLinesDrawn,
+    pathMarcherIds,
+    usePathPenStore,
+} from "@/pathways/pathPenStore";
 import { useShapeHidden, useShapeToolStore } from "../tool/shapeToolStore";
 
 /**
@@ -32,6 +36,12 @@ export function useShowingShapeMarchers(): ReadonlySet<number> | null {
                 marchers !== null,
                 s.objects,
                 s.ownable,
+                ownLinesDrawn(
+                    s.ownLines,
+                    s.session,
+                    s.hidden,
+                    marchers !== null,
+                ),
             ),
         ),
     );

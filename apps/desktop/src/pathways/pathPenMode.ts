@@ -120,6 +120,7 @@ import {
     groupViewOf,
     laneFocusOf,
     usePathPenStore,
+    type OwnLine,
     type PathObject,
     type PathSession,
 } from "./pathPenStore";
@@ -1949,6 +1950,36 @@ export function objectDrawingOf(o: PathObject): FieldModeDrawing | null {
         true,
     );
     objectDrawings.set(o.target, drawing);
+    return drawing;
+}
+
+const ownLineDrawings = new WeakMap<PathTarget, FieldModeDrawing>();
+
+/**
+ * How a selected marcher's own line is drawn beside the others' (round 8,
+ * `PathPenState.ownLines`): as that marcher's path shown closed alone, faint, with its ghost and
+ * end spot
+ */
+export function ownLineDrawingOf(line: OwnLine): FieldModeDrawing {
+    let drawing = ownLineDrawings.get(line.target);
+    if (drawing) return drawing;
+    drawing = buildDrawing(
+        {
+            phase: "closed",
+            target: line.target,
+            drill: line.drill,
+            points: pointsOf(line.target),
+            ...(line.target.toBulge === undefined
+                ? {}
+                : { toBulge: line.target.toBulge }),
+            pointer: null,
+            selected: null,
+            dragging: null,
+            object: false,
+        },
+        [],
+    );
+    ownLineDrawings.set(line.target, drawing);
     return drawing;
 }
 
