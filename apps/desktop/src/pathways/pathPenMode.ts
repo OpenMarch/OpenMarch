@@ -889,6 +889,19 @@ class PathPenMode implements FieldMode {
         }
     }
 
+    /**
+     * A finger or pen held still on one of its presses (tablet 1.5) gives way to the menus a
+     * right-click there opens (`openMenu`), as a long press did before touch reached the field's
+     * editor: while drawing, the last point is taken back; on the open path, a point's or a leg's
+     * menu opens, or an adjusted lane's. Given up, the press is cancelled first (`cancel`), and
+     * it has placed nothing yet: a click's point lands on its release, and a smooth point or a
+     * handle the press began to drag within the slop goes back where it was. Only a press that
+     * grabbed one of the Follow tool's ends is kept: lifted, it's the click that grabs it.
+     */
+    longPress(): boolean {
+        return !this.held?.firstLeg;
+    }
+
     cursorAt(
         pointer: FieldPointer,
         hover?: FieldModeHover,
