@@ -7,8 +7,9 @@ summary: "Step 3c of pathways, now the whole path interaction from the MVP round
 status: open
 variants: []
 questions:
-  - "Pick a few marchers by hand (click one, Shift-click two more; not a placed shape) and draw a path for them with P. A toast says 'Saved as 3 separate paths. Group the marchers to keep them linked.' Was it clear what that means for you?"
-  - "Click empty field, then select the same marchers again. Their line shows as Path · 3 with Edit path on the bar. Edit it and drag a point: all three follow. Did you expect that, after the toast said they're separate?"
+  - "Click a member of a placed shape: the whole shape is picked. Click the same marcher again: only that marcher is picked. Did that second click do what you expected? Click the 'Group path · 16' label by the line: is it clear it picks the whole group again?"
+  - "Pick a few marchers by hand (click one, Shift-click two more; not a placed shape) and draw a path for them with P, then finish with a double-click. Did the double-click finish where you expected, without an extra corner? Did the drawing bar stay put?"
+  - "Click empty field, then select the same marchers again. Their line is named '3 paths' with Edit path on the bar. Edit it and drag a point: all three follow. Did '3 paths' make sense to you?"
   - "Now select only one of those marchers and edit its path. Then select all three again: they no longer share one line. Is that what you expected?"
   - "Make a placed shape of some marchers (select them, then Ctrl+G or ⌘G) and draw a path for it. This one says Group path and stays linked. Is the difference between a shape's group path and hand-picked marchers' paths clear?"
   - "Draw a group path for a block, select one member, open ··· on the path bar and choose Detach from group path. Its copy opens and the bar offers Rejoin. Did anything on the field move? Was it clear that the open path is now that marcher's own?"
@@ -26,11 +27,25 @@ questions:
 
 **What's new**
 
+- **From the third simulated-user round:**
+  - **A second click on a shape's member picks just that marcher** (as in Slides or
+    Keynote); a drag still moves the whole shape, and Escape picks the whole shape again.
+  - The **Group path · 16** label picks everyone on the group path when only some are picked.
+  - Hand-picked marchers' paths are named **3 paths**, and the "Saved as separate paths"
+    toast is gone. The bar stays after **Detach all**, saying how many paths there are.
+  - **Edit T15's line**: the corner where the line joins the group path bends too (it was
+    refused), and the "Spot 15 · T15" chip is gone (hovering a line says **T15's line**).
+  - **Match group** leaves the bar once a marcher has a path of its own. **Rejoin** is offered
+    only to detached marchers, and says what it did, with Undo, naming any lines that lost
+    their own shape.
+  - Drawing: the bar stays under the hint at the top, and a **double-click** finishes without
+    adding a corner where you double-clicked.
+  - The inspector's Big steps says **joining / leaving / on the path** instead of onto / off /
+    along.
 - **Only a placed shape keeps a group path.** Draw a path for marchers you picked by hand
-  (not a placed shape) and it's saved as **each marcher's own path**, all the same shape. A
-  toast says **Saved as 3 separate paths. Group the marchers to keep them linked.** Nothing
-  is left linking them, so there's no group path to find again later. Select the same
-  marchers again and their paths show as one line, named **Path · 3**, with **Edit path**
+  (not a placed shape) and it's saved as **each marcher's own path**, all the same shape.
+  Nothing is left linking them, so there's no group path to find again later. Select the same
+  marchers again and their paths show as one line, named **3 paths**, with **Edit path**
   on the bar: edit it and they all follow, and the edit is saved as their own paths again.
   Once one of them is edited alone, the others no longer share its line. There's no Match
   group, Detach or Rejoin for them (the bar's third slot stays empty, so the buttons don't
@@ -98,13 +113,14 @@ questions:
 **Try it**
 
 1. Pick three marchers by hand (click one, Shift-click two more), press **P**, click once
-   and press **Enter**. The toast says **Saved as 3 separate paths**. Click empty field,
-   then select the same three again: their line shows as **Path · 3**. Press **Enter** and
+   and press **Enter**. Click empty field,
+   then select the same three again: their line shows as **3 paths**. Press **Enter** and
    drag a point: all three follow. Press **Undo** once: the point goes back. Then select one
    of them alone and edit its path; select all three again: they no longer share a line.
 2. Select a placed shape of 16 (or make one: select a block, then **Ctrl+G** or **⌘G**),
    draw a group path through it with **P**, and finish. It's a **Group path**, linked.
-   Click one member's dot: only that marcher's line shows, faint, with the bar beside it:
+   Click one member's dot (the whole shape is picked), then click it again: only that
+   marcher is picked, and only its line shows, faint, with the bar beside it:
    **Edit group path · Edit T15's line · Match group · ···**. Click another member: the
    buttons stay in the same places.
 3. With one member selected, press **Edit T15's line** (its name is on the button). Only
