@@ -71,7 +71,10 @@ export interface CueCommands {
     readonly cue: DatabaseCue | null;
     /** The cue's performers after adding or removing the selection; null when nothing changes. */
     readonly edited: (edit: "add" | "remove") => number[] | null;
-    /** Adds or removes the selection, as one undo step; removing everyone deletes the cue. */
+    /**
+     * Adds or removes the selection, as one undo step, and names the cue for its new performers;
+     * removing everyone deletes the cue.
+     */
     readonly editPerformers: (edit: "add" | "remove") => void;
     /** Makes the cue lasting (null) or momentary for `length` counts. */
     readonly setLength: (length: number | null) => void;
@@ -175,7 +178,20 @@ export function useCueCommands(): CueCommands {
                         ? deleteCues({ db, cueIds: new Set([cue.id]) })
                         : updateCues({
                               db,
-                              modifiedCues: [{ id: cue.id, marcherIds: next }],
+                              modifiedCues: [
+                                  {
+                                      id: cue.id,
+                                      marcherIds: next,
+                                      // The old label named who was picked then
+                                      label: show
+                                          ? describePerformers({
+                                                ids: next,
+                                                marchers: show.marchers,
+                                                words,
+                                            })
+                                          : cue.label,
+                                  },
+                              ],
                           });
                 void write.then(refresh).catch(fail("cues.errors.update"));
             },
