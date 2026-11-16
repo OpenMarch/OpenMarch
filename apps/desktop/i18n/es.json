@@ -145,6 +145,12 @@
             "toggleNextPaths": "Alternar trayectorias de la página siguiente",
             "togglePreview": "Previsualizar el show",
             "togglePreviewKeywords": "vista previa previsualizar cinematico ver presentar presentacion pantalla completa reproducir preview cinematic watch present presentation fullscreen play"
+        },
+        "items": {
+            "importModel": "Importar un modelo 3D…",
+            "importModelKeywords": "importar modelo 3d glb gltf utilería objeto subir archivo import 3d model prop upload file object",
+            "placeImportedModel": "Colocar un modelo importado",
+            "placeImportedModelKeywords": "colocar modelo importado utilería 3d personalizado place imported model prop custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1308,6 +1314,153 @@
         "width": "Ancho",
         "units": {
             "meters": "m"
+        },
+        "imported": {
+            "title": "Importados",
+            "import": "Importar…",
+            "empty": "Importa un modelo .glb o .gltf, o suéltalo en la ventana, para colocarlo como cualquier otra utilería.",
+            "place": "Colocar {name}"
+        },
+        "import": {
+            "title": "Importar un modelo",
+            "pictureAlt": "El modelo visto desde el público",
+            "working": "Preparando el modelo…",
+            "turn": {
+                "detail": "El frente debe mirar hacia el público.",
+                "button": "Girar 90°"
+            },
+            "simplify": {
+                "compare": "Antes o después de simplificar",
+                "before": "Antes · {triangles}",
+                "after": "Después · {triangles}",
+                "beforeFailed": "No se pudo dibujar el original.",
+                "title": "Simplificar a {cap} triángulos",
+                "detail": "El archivo tiene {triangles} triángulos. Simplificar mantiene fluida la vista 3D; el campo solo dibuja su huella."
+            },
+            "size": {
+                "title": "Tamaño",
+                "value": "{width} × {depth} m, {height} m de alto",
+                "question": "¿Es su tamaño real? Si no, elige la unidad en la que se hizo el archivo.",
+                "suggested": "Parecía estar hecho en {unit}, así que se convirtió. Revisa el tamaño."
+            },
+            "units": {
+                "label": "Hecho en",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "No se puede importar",
+                "needsChoice": "Necesita tu elección",
+                "fixed": "Corregido automáticamente",
+                "notes": "Notas"
+            },
+            "tryAgain": "Reintentar",
+            "rotate": {
+                "title": "Ponerlo de pie (archivo Z-up)",
+                "detail": "Algunos programas exportan con Z hacia arriba, así que el modelo queda acostado de espaldas."
+            },
+            "name": "Nombre",
+            "saveFailed": "No se pudo agregar el modelo al show.",
+            "cancel": "Cancelar",
+            "add": "Agregar al show",
+            "credits": {
+                "title": "Licencia y créditos",
+                "unknown": "Desconocida",
+                "proprietary": "Todos los derechos reservados",
+                "license": "Licencia",
+                "author": "Autor",
+                "sourceUrl": "Fuente",
+                "attribution": "Atribución",
+                "rights": "Importa solo modelos que tengas derecho a usar."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "No hay ningún modelo en los archivos",
+                    "detail": "Elige un archivo .glb, o un .gltf junto con los archivos que menciona."
+                },
+                "severalModelFiles": {
+                    "title": "Más de un modelo",
+                    "detail": "Importa uno a la vez: {names}"
+                },
+                "tooLarge": {
+                    "title": "Los archivos son demasiado grandes",
+                    "detail": "{size} MB, supera el límite de {limit} MB"
+                },
+                "unreadable": {
+                    "title": "No se puede leer el archivo"
+                },
+                "externalUri": {
+                    "title": "El modelo carga archivos de internet",
+                    "detail": "Menciona {uri}. Descarga el archivo y elígelo junto con el modelo."
+                },
+                "outsidePickedFiles": {
+                    "title": "El modelo menciona un archivo fuera de su carpeta",
+                    "detail": "Menciona {uri}."
+                },
+                "missingFile": {
+                    "title": "Falta un archivo: {uri}",
+                    "detail": "Elígelo junto con el archivo del modelo."
+                },
+                "requiredExtension": {
+                    "title": "El modelo necesita funciones que OpenMarch no puede leer",
+                    "detail": "Requiere: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {El archivo tiene # error} other {El archivo tiene # errores}}"
+                },
+                "imageTooLarge": {
+                    "title": "Una textura es demasiado grande: {image}",
+                    "detail": "{width} × {height} píxeles; el límite es {limit} por lado."
+                },
+                "imageUnreadable": {
+                    "title": "No se puede leer una textura: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Demasiado detallado",
+                    "detail": "{triangles} triángulos; lo máximo que se puede simplificar es {limit}."
+                },
+                "rigged": {
+                    "title": "No se admiten modelos con rig",
+                    "detail": "Importa una versión estática."
+                },
+                "noGeometry": {
+                    "title": "El archivo no tiene nada que dibujar"
+                },
+                "timedOut": {
+                    "title": "Tardó demasiado",
+                    "detail": "Se detuvo después de {seconds} segundos."
+                },
+                "failed": {
+                    "title": "Algo salió mal al prepararlo"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Se redujo # textura a {cap} px} other {Se redujeron # texturas a {cap} px}}"
+                },
+                "dracoDecoded": "Se descomprimió la compresión Draco",
+                "meshoptDecoded": "Se descomprimió la compresión meshopt",
+                "instancesExpanded": "Se convirtieron las copias repetidas en formas simples",
+                "extensionsDropped": "Se omitieron funciones que no necesita",
+                "contentDropped": {
+                    "title": "Se omitió lo que una utilería no usa",
+                    "animations": "{count, plural, one {# animación} other {# animaciones}}",
+                    "cameras": "{count, plural, one {# cámara} other {# cámaras}}",
+                    "morphTargets": "{count, plural, one {# clave de forma} other {# claves de forma}}",
+                    "scenes": "{count, plural, one {# escena adicional} other {# escenas adicionales}}"
+                },
+                "pivotMoved": "Se apoyó en el suelo por su centro"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {El archivo tiene # advertencia} other {El archivo tiene # advertencias}}",
+                "sizeOutOfRange": {
+                    "title": "Tamaño inusual para una utilería",
+                    "detail": "Su lado más largo mide {largest} m; la utilería suele medir de {min} a {max} m."
+                },
+                "overTriangleCap": "Aún muy detallado: {triangles} triángulos (el objetivo es {cap})"
+            }
         }
     },
     "section": {

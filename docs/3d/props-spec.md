@@ -140,6 +140,13 @@ phases [26.24].
   "Models and artwork" (selected), "3D model (glb, gltf)", "Artwork (png,
   jpg, svg, pdf)" and "All Files".
   Drag-and-drop comes later [11].
+  As built in fork #999: the Props panel's Imported group has an **Import…**
+  tile (the `importModel` action), and dropping a `.glb` or `.gltf` with its
+  files on the editor starts an import too. Files are read in the page and
+  passed to the import worker as bytes. The review is a view of the Props panel
+  with the model's picture and a one-click turn, its size with the file's unit,
+  the three groups and the license fields; Add stores the model and lists it
+  under Imported, and its tile places it as a prop (`placeImportedModel`).
 - **Kind** (Prop, Equipment, Garment, Floor prop, Base floor): a picker sets
   it; a plain Library import asks for it as a required choice, pre-selected
   only from the Starter kit stamp, never from a guess. Size range, caps and

@@ -68,11 +68,17 @@
         "height": 604,
         "seconds": 6.2
     },
+    "3d-props-import-review": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
     "3d-props-panel": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1436
+        "height": 1412
     },
     "3d-settings": {
         "chapter": "3d-view",

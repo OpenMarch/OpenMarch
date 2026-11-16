@@ -689,6 +689,24 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
     },
     // Opens the front ensemble's Add view (the pictures of every model), as its Add button does
+    // The Props panel's model import (fork #999): Import… asks for a model's files and shows its
+    // review; an Imported tile places that model with a click on the field (args: the show
+    // asset's `id` and `versionHash`). From the palette, with no model named, the Props panel
+    // opens on its Imported group
+    importModel: {
+        labelKey: "actions.items.importModel",
+        keywordsKey: "actions.items.importModelKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+    },
+    placeImportedModel: {
+        labelKey: "actions.items.placeImportedModel",
+        keywordsKey: "actions.items.placeImportedModelKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
     addFrontEnsembleEquipment: {
         labelKey: "actions.ui.addFrontEnsembleEquipment",
         keywordsKey: "actions.ui.addFrontEnsembleEquipmentKeywords",

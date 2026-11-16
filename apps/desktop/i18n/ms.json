@@ -145,6 +145,12 @@
             "toggleNextPaths": "Togol laluan halaman seterusnya",
             "togglePreview": "Pratonton persembahan",
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play pratonton sinematik tonton bentang pembentangan skrin penuh main"
+        },
+        "items": {
+            "importModel": "Import model 3D…",
+            "importModelKeywords": "import model 3d glb gltf prop objek muat naik fail upload file object",
+            "placeImportedModel": "Letakkan model yang diimport",
+            "placeImportedModelKeywords": "letak letakkan model diimport prop 3d tersuai place imported model custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1307,6 +1313,153 @@
         "width": "Lebar",
         "units": {
             "meters": "m"
+        },
+        "imported": {
+            "title": "Diimport",
+            "import": "Import…",
+            "empty": "Import model .glb atau .gltf, atau lepaskan satu pada tetingkap, untuk meletakkannya seperti prop lain.",
+            "place": "Letakkan {name}"
+        },
+        "import": {
+            "title": "Import model",
+            "pictureAlt": "Model dilihat dari arah penonton",
+            "working": "Menyediakan model…",
+            "turn": {
+                "detail": "Bahagian depan patut menghadap penonton.",
+                "button": "Putar 90°"
+            },
+            "simplify": {
+                "compare": "Sebelum atau selepas dipermudahkan",
+                "before": "Sebelum · {triangles}",
+                "after": "Selepas · {triangles}",
+                "beforeFailed": "Tidak dapat melukis model asal.",
+                "title": "Permudahkan kepada {cap} segi tiga",
+                "detail": "Fail ini mempunyai {triangles} segi tiga. Pemudahan memastikan Paparan 3D lancar; padang hanya melukis tapaknya."
+            },
+            "size": {
+                "title": "Saiz",
+                "value": "{width} × {depth} m, tinggi {height} m",
+                "question": "Adakah itu saiz sebenarnya? Jika tidak, pilih unit yang digunakan semasa fail dibuat.",
+                "suggested": "Model ini kelihatan dibuat dalam {unit}, jadi ia telah ditukar. Semak saiznya."
+            },
+            "units": {
+                "label": "Dibuat dalam",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Tidak dapat diimport",
+                "needsChoice": "Perlu pilihan anda",
+                "fixed": "Dibaiki secara automatik",
+                "notes": "Catatan"
+            },
+            "tryAgain": "Cuba lagi",
+            "rotate": {
+                "title": "Tegakkan (fail Z-up)",
+                "detail": "Sesetengah program mengeksport dengan Z sebagai arah atas, jadi model terbaring telentang."
+            },
+            "name": "Nama",
+            "saveFailed": "Tidak dapat menambah model pada persembahan.",
+            "cancel": "Batal",
+            "add": "Tambah pada persembahan",
+            "credits": {
+                "title": "Lesen dan kredit",
+                "unknown": "Tidak diketahui",
+                "proprietary": "Hak cipta terpelihara",
+                "license": "Lesen",
+                "author": "Pencipta",
+                "sourceUrl": "Sumber",
+                "attribution": "Atribusi",
+                "rights": "Import hanya model yang anda berhak gunakan."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Tiada model dalam fail",
+                    "detail": "Pilih fail .glb, atau fail .gltf bersama fail yang dirujuknya."
+                },
+                "severalModelFiles": {
+                    "title": "Lebih daripada satu model",
+                    "detail": "Import satu demi satu: {names}"
+                },
+                "tooLarge": {
+                    "title": "Fail terlalu besar",
+                    "detail": "{size} MB, melebihi had {limit} MB"
+                },
+                "unreadable": {
+                    "title": "Fail tidak dapat dibaca"
+                },
+                "externalUri": {
+                    "title": "Model memuatkan fail dari internet",
+                    "detail": "Model merujuk {uri}. Muat turun fail itu dan pilih bersama model."
+                },
+                "outsidePickedFiles": {
+                    "title": "Model merujuk fail di luar foldernya",
+                    "detail": "Model merujuk {uri}."
+                },
+                "missingFile": {
+                    "title": "Fail tiada: {uri}",
+                    "detail": "Pilih fail itu bersama fail model."
+                },
+                "requiredExtension": {
+                    "title": "Model memerlukan ciri yang tidak dapat dibaca oleh OpenMarch",
+                    "detail": "Diperlukan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {Fail ini mempunyai # ralat}}"
+                },
+                "imageTooLarge": {
+                    "title": "Tekstur terlalu besar: {image}",
+                    "detail": "{width} × {height} piksel; hadnya {limit} bagi setiap sisi."
+                },
+                "imageUnreadable": {
+                    "title": "Tekstur tidak dapat dibaca: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Terlalu terperinci",
+                    "detail": "{triangles} segi tiga; paling banyak yang boleh dipermudahkan ialah {limit}."
+                },
+                "rigged": {
+                    "title": "Model berig tidak disokong",
+                    "detail": "Import versi pegunnya."
+                },
+                "noGeometry": {
+                    "title": "Fail tidak mengandungi apa-apa untuk dilukis"
+                },
+                "timedOut": {
+                    "title": "Terlalu lama",
+                    "detail": "Dihentikan selepas {seconds} saat."
+                },
+                "failed": {
+                    "title": "Berlaku masalah semasa menyediakannya"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {# tekstur dikecilkan kepada {cap} px}}"
+                },
+                "dracoDecoded": "Mampatan Draco dinyahmampat",
+                "meshoptDecoded": "Mampatan meshopt dinyahmampat",
+                "instancesExpanded": "Salinan berulang ditukar menjadi bentuk biasa",
+                "extensionsDropped": "Ciri yang tidak diperlukan ditinggalkan",
+                "contentDropped": {
+                    "title": "Perkara yang tidak digunakan oleh prop ditinggalkan",
+                    "animations": "{count, plural, other {# animasi}}",
+                    "cameras": "{count, plural, other {# kamera}}",
+                    "morphTargets": "{count, plural, other {# shape key}}",
+                    "scenes": "{count, plural, other {# adegan lain}}"
+                },
+                "pivotMoved": "Diletakkan di atas tanah pada pusatnya"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {Fail ini mempunyai # amaran}}",
+                "sizeOutOfRange": {
+                    "title": "Saiz luar biasa bagi prop",
+                    "detail": "Sisi terpanjangnya {largest} m; prop biasanya {min} hingga {max} m."
+                },
+                "overTriangleCap": "Masih terperinci: {triangles} segi tiga (sasarannya {cap})"
+            }
         }
     },
     "section": {

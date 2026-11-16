@@ -1,3 +1,4 @@
+// cspell:words filechooser Khronos
 // The 3D View and props chapter (guides/3d-view/*).
 //
 // The 3D View is a window of its own: `open3d` opens it, sizes it to the capture window and
@@ -185,6 +186,38 @@ async function propsPanel(page) {
 }
 
 const items = (page) => page.evaluate(() => window.fieldTest.items?.() ?? []);
+
+/** A chair model from the import tests (Khronos glTF sample, CC0) */
+const CHAIR_GLB = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../src/showAssets/modelImport/__test__/fixtures/SheenChair.glb",
+);
+
+/**
+ * Imports the chair through the Props panel's Import… and waits for its review; with `add`, adds
+ * it to the show as "Chair" and waits for its tile under Imported.
+ */
+async function importChair(page, { add = false } = {}) {
+    await propsPanel(page);
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByTestId("import-model-tile").click();
+    await (await chooser).setFiles(CHAIR_GLB);
+    const review = page.getByTestId("model-import-review");
+    await review
+        .getByTestId("model-import-picture")
+        .waitFor({ timeout: 60_000 });
+    await page.waitForFunction(
+        () => !document.querySelector('[aria-label="Preparing the model…"]'),
+        null,
+        { timeout: 60_000 },
+    );
+    if (!add) return;
+    await review.getByTestId("model-import-name").fill("Chair");
+    await review.getByTestId("model-import-add").click();
+    await page
+        .getByRole("button", { name: "Place Chair" })
+        .waitFor({ timeout: 30_000 });
+}
 
 /** Sets a number field in the Edit Prop panel. */
 async function setPropField(page, label, value) {
@@ -556,12 +589,24 @@ const shots = [
     {
         id: "3d-props-panel",
         kind: "still",
-        // The Props panel with two props
+        // The Props panel with a riser drawn and a chair imported
         async setup(ctx) {
             const { page } = ctx;
             await drawRiser(page, { height: 1.2, color: AMBER, name: "Riser" });
+            await importChair(page, { add: true });
             await propsPanel(page);
             await ctx.wait(800);
+            return { box: await sidebarPanelBox(page) };
+        },
+    },
+    {
+        id: "3d-props-import-review",
+        kind: "still",
+        // The import review for a chair: its picture, Turn 90°, its size, Simplify and the rest
+        async setup(ctx) {
+            const { page } = ctx;
+            await importChair(page);
+            await ctx.wait(600);
             return { box: await sidebarPanelBox(page) };
         },
     },

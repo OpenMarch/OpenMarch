@@ -14,6 +14,9 @@ import CommandPalette from "@/shortcuts/palette/CommandPalette";
 import LongPressGuard from "@/components/ui/LongPressGuard";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
+import ModelFileDrop from "@/components/items/modelImport/ModelFileDrop";
+import { configureModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
+import { appModelImportDeps } from "@/showAssets/modelImport/review/modelImportSessionApp";
 import {
     EditorActionHandlers,
     FileActionHandlers,
@@ -100,6 +103,8 @@ export const queryClient = new QueryClient({
         },
     }),
 });
+// The Props panel's model import (fork #999) runs in a worker and saves through this client
+configureModelImportSession(appModelImportDeps(queryClient));
 
 function App() {
     useLoadFileErrorHandler();
@@ -307,6 +312,7 @@ function App() {
                                             <StateInitializer />
                                             <FileActionHandlers />
                                             <EditorActionHandlers />
+                                            <ModelFileDrop />
                                             <ExportCoordinatesModal />
                                             <TimelineResolverHost />
                                             <View3dPublisher />
