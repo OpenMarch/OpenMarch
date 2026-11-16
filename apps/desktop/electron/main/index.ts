@@ -81,6 +81,7 @@ import {
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
+import { cspFor, withCsp } from "./workerCsp";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -260,12 +261,14 @@ async function createWindow(title?: string) {
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
             callback({
-                responseHeaders: {
-                    ...details.responseHeaders,
-                    "Content-Security-Policy": [
+                // The model import worker's script gets its own policy (workerCsp.ts)
+                responseHeaders: withCsp(
+                    details.responseHeaders,
+                    cspFor(
+                        details.url,
                         "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
-                    ],
-                },
+                    ),
+                ),
             });
         },
     );
