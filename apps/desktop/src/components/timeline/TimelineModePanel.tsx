@@ -100,6 +100,8 @@ import { useBasicLocksStore } from "@/timeline/basicLocks";
 import { useBasicPoints } from "./useBasicPoints";
 import type Page from "@/global/classes/Page";
 import { CueLanesButton, useEquipmentLaneBand } from "./cues/EquipmentLane";
+import { MovesLaneHeader } from "./cues/MovesLaneHeader";
+import { useLaneShown } from "@/timeline/timelineLanes";
 
 const NO_WAVEFORM = { peaksByBeat: [] };
 const NO_CLIPS: TimelineInput[] = [];
@@ -153,6 +155,7 @@ const LOOP_BUTTONS = (
     </>
 );
 const SPEED_BUTTON = <TimelineSpeedButton />;
+const MOVES_HEADER = <MovesLaneHeader />;
 /**
  * Tempo mode: the Tempo button leads the transport's view controls. In tempo mode
  * it's the only one: Play loops the selected measures, so no Loop button
@@ -220,6 +223,8 @@ export default function TimelineModePanel() {
     const tempoMode = useTempoModeStore((s) => s.on);
     // The cue lanes under the drill rows (ADR 0015 D-7), hidden until shown
     const equipmentLane = useEquipmentLaneBand();
+    // Moves is a lane too (fork #992): hidden, the move tracks go; the drill doesn't change
+    const movesShown = useLaneShown("moves");
     const basic = useIsBasicMode() && !tempoMode;
     const basicExtras = useBasicTimelineExtras(pages);
     const compact = useUiSettingsStore((s) => s.uiSettings.timelineCompact);
@@ -585,7 +590,10 @@ export default function TimelineModePanel() {
                     beats={beats}
                     pages={pages}
                     measures={measures}
-                    timelines={basic || tempoMode ? NO_CLIPS : offPage}
+                    timelines={
+                        basic || tempoMode || !movesShown ? NO_CLIPS : offPage
+                    }
+                    movesHeader={MOVES_HEADER}
                     band={tempoMode ? TEMPO_BAND : undefined}
                     lanes={tempoMode ? undefined : equipmentLane}
                     pageMoves={pageMoves}

@@ -181,6 +181,8 @@ export interface TimelineProps {
     readonly band?: TimelineBand;
     /** Lanes under the clip rows (the cue lanes, ADR 0015 D-7) */
     readonly lanes?: TimelineBand;
+    /** The Moves lane's heading, over the move tracks while they show */
+    readonly movesHeader?: React.ReactNode;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -1109,8 +1111,14 @@ export function Timeline(props: TimelineProps) {
                   : readOnlyStartFlag(selection),
               band: props.band,
               lanes: props.lanes,
+              movesHeader: props.movesHeader,
           }
-        : { ...commonProps, band: props.band, lanes: props.lanes };
+        : {
+              ...commonProps,
+              band: props.band,
+              lanes: props.lanes,
+              movesHeader: props.movesHeader,
+          };
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />

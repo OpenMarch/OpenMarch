@@ -1293,6 +1293,21 @@ const TimelineSurface = memo(function TimelineSurface({
                             snapBeats: seekSnapBeats,
                             leadingInset: initialPageWidth,
                         })}
+                        {!basic &&
+                            !band &&
+                            rows.length > 0 &&
+                            props.movesHeader && (
+                                // The Moves lane's heading, at the visible left edge over the first
+                                // row of move tracks
+                                <div
+                                    className="pointer-events-none absolute left-0 z-[4] h-0"
+                                    style={{ top: trackTop, width }}
+                                >
+                                    <div className="pointer-events-auto sticky left-0 w-fit">
+                                        {props.movesHeader}
+                                    </div>
+                                </div>
+                            )}
                         {lanes?.render({
                             top: lanesTop,
                             width,

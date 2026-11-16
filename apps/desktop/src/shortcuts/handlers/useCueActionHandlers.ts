@@ -1,14 +1,15 @@
 import { equipmentCatalog, EQUIPMENT_NONE } from "@openmarch/core";
 import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useCueCommands, type CueCommands } from "@/cues/useCueCommands";
 import { useCueCarryNotices } from "@/cues/useCueCarryNotices";
 import { itemValueId } from "@/cues/equipmentItems";
 import {
-    setCueLaneShown,
-    useCueLaneShown,
-    type CueLaneDefinition,
-    CUE_LANES,
-} from "@/cues/cueLanes";
+    setLaneShown,
+    useLaneShown,
+    TIMELINE_LANES,
+    type TimelineLaneDefinition,
+} from "@/timeline/timelineLanes";
 import {
     EQUIPMENT_FAMILY_KEYS,
     EQUIPMENT_ITEM_KEYS,
@@ -53,20 +54,19 @@ const SELECT_VALUES: ReadonlyMap<ActionId, readonly string[]> = new Map<
 ]);
 const SELECT_ACTIONS = [...SELECT_VALUES.keys()];
 
-/** One lane's show/hide action, checked while it shows. */
-function useCueLaneToggle(lane: CueLaneDefinition) {
-    const shown = useCueLaneShown(lane.type);
-    useActionHandler(
-        lane.toggleAction,
-        () => setCueLaneShown(lane.type, !shown),
-        { checked: shown },
-    );
+/** One lane's show/hide action, checked while it shows. Moves has move tracks only in Expert. */
+function useLaneToggle(lane: TimelineLaneDefinition, basic: boolean) {
+    const shown = useLaneShown(lane.id);
+    useActionHandler(lane.toggleAction, () => setLaneShown(lane.id, !shown), {
+        checked: shown,
+        enabled: !(lane.id === "moves" && basic),
+    });
 }
 
 /**
  * Equipment cues (ADR 0015; fork #992): set what the selection holds from the paused playhead
  * (an item from the catalog, their own instrument, or nothing), select who holds something there,
- * edit the picked cue, and show or hide the cue lanes. Every edit is one undo step
+ * edit the picked cue, and show or hide the timeline's lanes (Moves and the cue lanes). Every edit is one undo step
  * (`useCueCommands`). Also says what a beat deletion did to the cues on those beats
  * (`useCueCarryNotices`).
  */
@@ -117,7 +117,8 @@ export function useCueActionHandlers() {
         enabled: editable,
     });
 
-    for (const lane of CUE_LANES)
-        // eslint-disable-next-line react-hooks/rules-of-hooks -- CUE_LANES never changes
-        useCueLaneToggle(lane);
+    const basic = useIsBasicMode();
+    for (const lane of TIMELINE_LANES)
+        // eslint-disable-next-line react-hooks/rules-of-hooks -- TIMELINE_LANES never changes
+        useLaneToggle(lane, basic);
 }

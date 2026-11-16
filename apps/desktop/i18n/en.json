@@ -274,7 +274,8 @@
             "setEquipment": "Equipment: {item}",
             "selectHolding": "Select {item}",
             "equipmentUsual": "Equipment: Their own instrument",
-            "moveToPlayhead": "Move cue to playhead"
+            "moveToPlayhead": "Move cue to playhead",
+            "toggleMovesLane": "Show or hide the Moves lane"
         }
     },
     "analyticsOptIn": {
@@ -2921,6 +2922,9 @@
         },
         "clearPage": {
             "error": "Couldn't clear the page"
+        },
+        "lanes": {
+            "moves": "Moves"
         }
     },
     "titlebar": {
@@ -3687,7 +3691,9 @@
             "resetZoom": "Actual Size",
             "zoomIn": "Zoom In",
             "zoomOut": "Zoom Out",
-            "toggleFullScreen": "Toggle Full Screen"
+            "toggleFullScreen": "Toggle Full Screen",
+            "movesLane": "Show or Hide Moves Lane",
+            "equipmentLane": "Show or Hide Equipment Lane"
         },
         "playback": {
             "title": "Playback",

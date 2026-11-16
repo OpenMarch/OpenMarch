@@ -3441,5 +3441,9 @@
     "cues.lane.lanesHeading": "Heading of the menu of cue lanes the timeline can show.",
     "cues.lane.resize": "Tooltip on the end of a short (momentary) cue in the timeline's Equipment lane.",
     "cues.lane.hide": "Button beside a cue lane's name in the timeline: hides the lane. It can be shown again from the timeline's Lanes menu.",
-    "cues.value.usual": "Entry in the field menu's Equipment submenu: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead on."
+    "cues.value.usual": "Entry in the field menu's Equipment submenu: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead on.",
+    "timeline.lanes.moves": "Name of a timeline lane (row) in the Lanes menu and on the lane itself: the move tracks, the bars for each move of the marchers. It can be shown or hidden.",
+    "actions.cues.toggleMovesLane": "Name of an action in the command palette: shows or hides the timeline's move tracks (the bars for each move). Hiding them doesn't change the drill.",
+    "menu.view.movesLane": "Item in the app's View menu (title case like the other menu items): shows or hides the timeline's move tracks.",
+    "menu.view.equipmentLane": "Item in the app's View menu (title case like the other menu items): shows or hides the timeline's Equipment lane, which shows what performers hold over the show."
 }

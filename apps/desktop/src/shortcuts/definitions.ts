@@ -688,8 +688,15 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: [],
     },
-    // Shows or hides the timeline's Equipment lane (ADR 0015 D-7: hidden by default), as its
-    // entry in the timeline's lane menu does (`cues/cueLanes.ts`). Unbound
+    // Shows or hides one of the timeline's lanes (`timeline/timelineLanes.ts`), as its entry in
+    // the Lanes menu, the View menu and its eye button do. Unbound
+    toggleMovesLane: {
+        labelKey: "actions.cues.toggleMovesLane",
+        keywordsKey: "actions.cues.laneKeywords",
+        category: "timeline",
+        scope: "global",
+        defaultBindings: [],
+    },
     toggleEquipmentLane: {
         labelKey: "actions.cues.toggleEquipmentLane",
         keywordsKey: "actions.cues.laneKeywords",

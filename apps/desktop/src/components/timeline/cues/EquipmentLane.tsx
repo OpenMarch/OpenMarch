@@ -28,7 +28,7 @@ import {
     CaretRightIcon,
     CheckIcon,
     EyeSlashIcon,
-    RowsPlusBottomIcon,
+    RowsIcon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -68,11 +68,12 @@ import { describePerformers } from "@/cues/cueLabel";
 import { writeCueDrag } from "@/cues/useCueCommands";
 import { itemKeyOf } from "@/cues/equipmentItems";
 import {
-    CUE_LANES,
-    setCueLaneFolded,
-    useCueLaneFolded,
-    useCueLaneShown,
-} from "@/cues/cueLanes";
+    laneShown,
+    setLaneFolded,
+    TIMELINE_LANES,
+    useLaneFolded,
+    useLaneShown,
+} from "@/timeline/timelineLanes";
 import {
     countToSpecBeat,
     equipmentLane,
@@ -114,8 +115,8 @@ export function equipmentLaneHeight(
  * the `toggleEquipmentLane` action, saved in the UI settings).
  */
 export function useEquipmentLaneBand(): TimelineBand | undefined {
-    const shown = useCueLaneShown("equipment");
-    const folded = useCueLaneFolded("equipment");
+    const shown = useLaneShown("equipment");
+    const folded = useLaneFolded("equipment");
     const show = useShowCues();
     const beats = useTimingObjects()?.beats;
     const lane = useMemo(
@@ -308,7 +309,7 @@ function EquipmentLaneView({
                     )}
                     aria-expanded={!folded}
                     className="hover:text-text touch:size-44 flex size-16 items-center justify-center rounded-full"
-                    onClick={() => setCueLaneFolded("equipment", !folded)}
+                    onClick={() => setLaneFolded("equipment", !folded)}
                 >
                     {folded ? (
                         <CaretRightIcon size={12} />
@@ -708,14 +709,15 @@ function CueMenuView({
 }
 
 /**
- * The transport's Lanes button: a menu of the cue lanes the timeline can show (`CUE_LANES`), each
- * with a check mark that shows or hides it, through its own action. Only built lanes are listed.
+ * The transport's Lanes button: a menu of the timeline's lanes (`TIMELINE_LANES`: Moves and the
+ * built cue lanes), each with a check mark that shows or hides it through its own action. The page
+ * row and the count ruler always show, so they aren't in it. Moves is off in Basic, which has no
+ * move tracks.
  */
 export function CueLanesButton() {
     const { t } = useTranslate();
-    const shown = useUiSettingsLanes();
+    const saved = useUiSettingsStore((s) => s.uiSettings.timelineLanes);
     const [open, setOpen] = useState(false);
-    const lit = CUE_LANES.some((lane) => shown.includes(lane.type));
     return (
         <DropdownMenu.Root open={open} onOpenChange={setOpen}>
             <DropdownMenu.Trigger asChild>
@@ -727,15 +729,12 @@ export function CueLanesButton() {
                     onMouseDown={(event) => event.preventDefault()}
                     className={clsx(
                         "rounded-4 hover:bg-fg-2 focus-visible:ring-accent touch:size-44 flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
-                        lit
+                        open
                             ? "text-accent bg-accent/10"
                             : "text-text hover:text-accent",
                     )}
                 >
-                    <RowsPlusBottomIcon
-                        size={16}
-                        weight={lit ? "fill" : "regular"}
-                    />
+                    <RowsIcon size={16} />
                 </button>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
@@ -750,11 +749,12 @@ export function CueLanesButton() {
                     <DropdownMenu.Label className={MENU_LABEL_CLASS}>
                         {t("cues.lane.lanesHeading")}
                     </DropdownMenu.Label>
-                    {CUE_LANES.map((lane) => (
+                    {TIMELINE_LANES.map((lane) => (
                         <DropdownMenu.CheckboxItem
-                            key={lane.type}
-                            data-testid={`timeline-cue-lane-${lane.type}`}
-                            checked={shown.includes(lane.type)}
+                            key={lane.id}
+                            data-testid={`timeline-cue-lane-${lane.id}`}
+                            checked={laneShown(saved, lane.id)}
+                            disabled={!isActionEnabled(lane.toggleAction)}
                             onSelect={(event) => {
                                 // Stays open, so several lanes can be ticked in a row
                                 event.preventDefault();
@@ -775,7 +775,3 @@ export function CueLanesButton() {
         </DropdownMenu.Root>
     );
 }
-
-/** The cue lanes shown, from the UI settings. */
-const useUiSettingsLanes = (): readonly string[] =>
-    useUiSettingsStore((s) => s.uiSettings.timelineCueLanes);

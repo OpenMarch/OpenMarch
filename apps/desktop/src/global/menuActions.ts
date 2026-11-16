@@ -1,5 +1,5 @@
 /**
- * The app menu's playback and help items (UI-17 follow-up; docs/adr/0003-menu-actions-ipc.md).
+ * The app menu's playback, view and help items (UI-17 follow-up; docs/adr/0003-menu-actions-ipc.md).
  * The main process builds menu items from this list and sends the chosen item's `action` on
  * `MENU_ACTION_CHANNEL`; the renderer runs the action of that name, and nothing
  * outside this list. Shared by the main process, the preload and the renderer, so it imports
@@ -60,6 +60,19 @@ export const CHECK_FOR_UPDATES_MENU_ACTION = {
     labelKey: "menu.checkForUpdates",
 } as const;
 
+/**
+ * The View menu's timeline lanes (fork #992, `timeline/timelineLanes.ts`): each shows or hides one
+ * lane, as its tick in the timeline's Lanes menu does. Unbound by default.
+ */
+export const VIEW_MENU_ACTIONS: readonly MenuAction[] = [
+    {
+        action: "toggleMovesLane",
+        labelKey: "menu.view.movesLane",
+        expertOnly: true,
+    },
+    { action: "toggleEquipmentLane", labelKey: "menu.view.equipmentLane" },
+];
+
 export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
     {
         action: "showShortcuts",
@@ -73,6 +86,6 @@ export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
 /** Whether `action` is one the menu may send */
 export const isMenuAction = (action: unknown): action is string =>
     typeof action === "string" &&
-    [...PLAYBACK_MENU_ACTIONS, ...HELP_MENU_ACTIONS].some(
+    [...PLAYBACK_MENU_ACTIONS, ...VIEW_MENU_ACTIONS, ...HELP_MENU_ACTIONS].some(
         (item) => item.action === action,
     );

@@ -342,6 +342,8 @@ export interface TimelineCommonProps
      * they add their `height` to the timeline. Never focused.
      */
     readonly lanes?: TimelineBand;
+    /** The Moves lane's heading, drawn at the top left of the move tracks while they show */
+    readonly movesHeader?: React.ReactNode;
     /** Extra transport controls, such as volume, the metronome and fullscreen */
     readonly transportAccessories?: ReactNode;
     readonly className?: string;
