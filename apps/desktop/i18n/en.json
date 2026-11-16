@@ -1144,12 +1144,12 @@
             "laterMoves": "{names} have their own later moves, so they kept their spots",
             "namesOthers": "{count, plural, one {# other} other {# others}}",
             "ownMove": "{count, plural, =1 {{names} has its own move on Page {page}, so it kept its spot} other {{names} have their own move on Page {page}, so they kept their spot}}",
-            "moveError": "Error moving marchers"
+            "moveError": "Couldn't move the marchers"
         },
         "errors": {
-            "move": "Error moving marchers",
-            "removePosition": "Error removing the position",
-            "updateSelected": "Error updating selected marchers"
+            "move": "Couldn't move the marchers",
+            "removePosition": "Couldn't remove the position",
+            "updateSelected": "Couldn't change the selected marchers"
         }
     },
     "measures": {
@@ -1914,14 +1914,14 @@
             "label": "{name} · {count, plural, one {{interval} step} other {{interval} steps}}",
             "name": "{shape} {size}",
             "layoutSize": "{layout, select, full {Full} stagger {Stagger} rounded {Rounded} notched {Notched} other {Short back}} {size}",
-            "editError": "Error editing the shape",
-            "fillError": "Error filling the shape",
+            "editError": "Couldn't edit the shape",
+            "fillError": "Couldn't fill the shape",
             "summary": {
                 "empty": "{count, plural, one {# empty} other {# empty}}",
                 "steps": "{count, plural, one {{interval} step} other {{interval} steps}}"
             },
-            "groupError": "Error grouping the marchers",
-            "ungroupError": "Error ungrouping the shape",
+            "groupError": "Couldn't group the marchers",
+            "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
             "leftShape": {
                 "many": "{count, plural, one {# left the {shape, select, block {box} circle {circle} other {shape}}} other {# left the {shape, select, block {box} circle {circle} other {shape}}}}",
@@ -2203,7 +2203,7 @@
                 "count": "count {count}",
                 "home": "home"
             },
-            "placeError": "Error placing the shape",
+            "placeError": "Couldn't place the shape",
             "ring": {
                 "hint": "Click a shape, or anywhere else to close"
             },
@@ -2343,8 +2343,8 @@
                 "nextMove": "Stops at the next move",
                 "showEnd": "Stops at the end of the show"
             },
-            "changeError": "Error changing the hold",
-            "splitError": "Error splitting the hold"
+            "changeError": "Couldn't change the hold",
+            "splitError": "Couldn't split the hold"
         },
         "heldBar": {
             "detail": "{held} of {total} selected",
@@ -2366,20 +2366,21 @@
             "homeShape": "{names}: a shape sets the starting spot. Ungroup it at the start of the show to hold them one by one",
             "none": "Nobody {held} on {page}",
             "notHeldReasons": "Not {heldLower}: {reasons}",
-            "shape": "{names}: in a shape on this page"
+            "shape": "{names}: in a shape on this page",
+            "holdError": "Couldn't hold the marchers"
         },
         "keep": {
             "followed": {
                 "hadNoPositions": "{count, plural, =1 {Page {first} had no positions of its own for these marchers, so it changed too} other {Pages {first}–{last} had no positions of their own for these marchers, so they changed too}}",
                 "keepAsBefore": "{count, plural, =1 {Keep Page {first} as before} other {Keep Pages {first}–{last} as before}}",
-                "keepError": "Error keeping the later pages"
+                "keepError": "Couldn't keep the later pages"
             },
             "names": {
                 "others": "{count, plural, one {# other} other {# others}}"
             },
             "errors": {
-                "keep": "Error keeping marchers on the page",
-                "readKept": "Error reading the kept spots"
+                "keep": "Couldn't keep the marchers on the page",
+                "readKept": "Couldn't read the kept spots"
             }
         },
         "keyframes": {
@@ -2423,7 +2424,7 @@
             "setAsShown": "{defineAsShown}",
             "holdFromPreviousNone": "Every selected marcher is already {heldLower} on {page}, or partway through a move",
             "setAsShownNone": "Every selected marcher is already {definedLower} or {heldLower} on {page}, or partway through a move",
-            "setAsShownError": "Error setting marchers as shown",
+            "setAsShownError": "Couldn't set the marchers as shown",
             "deletePage": "Delete page",
             "splitHold": "{splitHold}"
         },
@@ -2465,7 +2466,6 @@
             "menu": "{count, plural, one {Split # selected into new move} other {Split # selected into new move}}",
             "menuNone": "Split selected into new move",
             "drag": "Split {count, plural, one {# marcher} other {# marchers}}",
-            "done": "Split {count, plural, one {# marcher} other {# marchers}} into {label}",
             "paused": "Pause to split or merge moves.",
             "nothingOnPage": "Nothing moves on this page yet, so there is nothing to split.",
             "pageSplitOff": "This page has no move of its own. To split a move over it, use the move's clip."
@@ -2475,7 +2475,6 @@
             "menuPairFit": "Merge {source} into {target} · fit to its counts",
             "menuInto": "Merge into {target}",
             "menuIntoFit": "Merge into {target} · fit to its counts",
-            "done": "Merged {source} into {target}",
             "page": "Page {name}",
             "thisPage": "this page",
             "thisMove": "this move",
@@ -2869,6 +2868,9 @@
             "newPage": "New page",
             "newSubset": "New subset",
             "compact": "Compact"
+        },
+        "clearPage": {
+            "error": "Couldn't clear the page"
         }
     },
     "titlebar": {

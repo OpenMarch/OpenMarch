@@ -25,7 +25,7 @@ import type { FieldTestShapeOverlay } from "../../../src/field/fieldTestApi";
 // - the isolation bar's Done.
 // Each button's middle must be the topmost element there, and a tap on it must work.
 // And on the field itself (#933): the pill and the shape editor leave the box's handles and the
-// selection's rotate knob free, and the split toast leaves Done free.
+// selection's rotate knob free, and after a split the isolation bar's Done is free (no toast).
 // And (#936): a big shape's editor bar stays inside the field after a pinch, the pill keeps its
 // spot after a deselect, and arming the Box tool doesn't put the pill where the first stroke goes.
 
@@ -498,7 +498,7 @@ test("the pill leaves the selection's rotate knob and handles free (#933)", asyn
         .toEqual([]);
 });
 
-test("the split toast leaves the isolation bar's Done free, its Undo well away from it (#933)", async ({
+test("after a split, the isolation bar's Done is free and no toast covers the field (#933)", async ({
     show,
 }) => {
     const { page } = show;
@@ -513,7 +513,7 @@ test("the split toast leaves the isolation bar's Done free, its Undo well away f
     await expect
         .poll(() => page.evaluate(() => window.fieldTest!.selection()))
         .toEqual([1]);
-    // Split from the page box's menu: the new move, isolated, and the toast with Undo
+    // Split from the page box's menu: the new move shows isolated, with no toast
     await expect(async () => {
         await pageBox(page, PAGE_2_BOX).click({ button: "right" });
         await page
@@ -522,23 +522,11 @@ test("the split toast leaves the isolation bar's Done free, its Undo well away f
     }).toPass();
     const bar = page.getByTestId("timeline-isolation-bar");
     const done = bar.getByRole("button", { name: /Done/ });
-    const toast = page.locator("[data-sonner-toast]", {
-        hasText: "Split 1 marcher into",
-    });
     await expect(bar).toBeVisible();
-    await expect(toast).toBeVisible();
+    await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
     // No Esc key cap on a touch screen where no key has been pressed (#936)
     await expect(done.locator("kbd")).toHaveCount(0);
     await expect.poll(() => topmostAt(done)).toBe("itself");
-    // Below the bar, with a touch target's room between Done and the toast's Undo
-    const undo = toast.getByRole("button", { name: "Undo" });
-    await expect
-        .poll(async () => {
-            const d = (await done.boundingBox())!;
-            const u = (await undo.boundingBox())!;
-            return u.y - (d.y + d.height);
-        })
-        .toBeGreaterThanOrEqual(40);
     await reachAndTap(page, done);
     await expect(bar).toBeHidden();
 });

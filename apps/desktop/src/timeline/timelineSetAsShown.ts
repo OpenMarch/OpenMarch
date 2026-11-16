@@ -39,7 +39,7 @@ export async function setAsShownOn(
             error,
             tolgee.t(
                 "timeline.rangeMenu.setAsShownError",
-                "Error setting marchers as shown",
+                "Couldn't set the marchers as shown",
             ),
         );
         return NOTHING;

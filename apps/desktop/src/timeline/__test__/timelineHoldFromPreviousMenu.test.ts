@@ -170,6 +170,12 @@ describe("holdFromPreviousMessage", () => {
         ).toEqual({ title: "T1 Held on Pages 3–5", description: null });
     });
 
+    it("says nothing when everyone was held on just this page", () => {
+        expect(
+            holdFromPreviousMessage({ held: [1, 2], skipped: [] }, "3", nameOf),
+        ).toBeNull();
+    });
+
     it("names the page a move ended at when it ended further back without arriving", () => {
         expect(
             holdFromPreviousMessage(

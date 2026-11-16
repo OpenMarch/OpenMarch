@@ -265,7 +265,7 @@ export async function toastLaterOwnMoves(
                             e,
                             tolgee.t(
                                 "marcherPages.moveThemToo.moveError",
-                                "Error moving marchers",
+                                "Couldn't move the marchers",
                             ),
                         ),
                 );

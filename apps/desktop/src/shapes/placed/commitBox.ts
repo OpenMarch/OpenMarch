@@ -224,7 +224,7 @@ async function saveBox(
                 !sameParams(next, box.recipe.params),
         },
         queryClient,
-        tolgee.t("shapes.placed.editError", "Error editing the shape"),
+        tolgee.t("shapes.placed.editError", "Couldn't edit the shape"),
         // Every save goes where it was made, even when the page changed before it ran (#776)
         at.plan,
         // One that waited or was overtaken leaves the playhead where it was moved to
