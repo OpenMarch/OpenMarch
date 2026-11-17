@@ -18,6 +18,7 @@ import FieldContextMenu, {
 } from "../FieldContextMenu";
 import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
+import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -411,6 +412,57 @@ describe("FieldContextMenu", () => {
             });
             localStorage.clear();
         }
+    });
+
+    describe("shortcut caps (#880)", () => {
+        const caps = () =>
+            screen.getByTestId("field-menu").querySelectorAll("kbd.shortcut");
+
+        afterEach(() => {
+            act(() => {
+                useInputModeStore.getState().setPreference("auto");
+            });
+            localStorage.clear();
+            resetKeyboardSeen();
+        });
+
+        it("shows each entry's cap with a mouse layout", () => {
+            handle("selectAllMarchers");
+            open();
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
+
+        it("hides them in the touch layout until a hardware key is pressed, keeping the entries", () => {
+            act(() => {
+                useInputModeStore.getState().setPreference("touch");
+            });
+            handle("selectAllMarchers");
+            handle("setSelectedMarchersToPreviousPage", {
+                label: "Clear Page 3",
+            });
+            open();
+            expect(caps()).toHaveLength(0);
+            // The entries, their words and their enabled states are as they were
+            expect(item("selectAllMarchers")).toHaveTextContent("Select all");
+            expect(item("selectAllMarchers")).not.toHaveAttribute(
+                "data-disabled",
+            );
+            expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
+                "Clear Page 3",
+            );
+
+            // A hardware keyboard's key, outside a text field
+            act(() => {
+                fireEvent.keyDown(window, { key: "Shift" });
+            });
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
     });
 
     it("lists every action it offers by its label", () => {

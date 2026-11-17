@@ -10,6 +10,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { AutoOpenQuestion } from "../AutoOpenQuestion";
+import { _resetAutoOpenSetting, setAutoOpen } from "../autoOpenSetting";
 
 /** The 3D View's "keep opening with your shows?" card, shown until answered. */
 
@@ -32,7 +33,10 @@ const open = () =>
 beforeAll(async () => {
     await tolgee.run();
 });
-afterEach(cleanup);
+afterEach(() => {
+    cleanup();
+    _resetAutoOpenSetting();
+});
 
 describe("AutoOpenQuestion", () => {
     it("asks while the setting was never answered, and saves yes", async () => {
@@ -71,4 +75,31 @@ describe("AutoOpenQuestion", () => {
             ).toBeNull();
         },
     );
+});
+
+describe("the shared auto-open setting", () => {
+    it("hides the question when the Preferences switch answers", async () => {
+        const set = withSetting(undefined);
+        open();
+        await screen.findByTestId("view3d-auto-open-question");
+        act(() => setAutoOpen(false));
+        expect(set).toHaveBeenCalledWith(false);
+        expect(screen.queryByTestId("view3d-auto-open-question")).toBeNull();
+    });
+
+    it("asks again after a failed save", async () => {
+        (window as unknown as { view3d: unknown }).view3d = {
+            autoOpen: {
+                get: () => Promise.resolve(undefined),
+                set: () => Promise.reject(new Error("no")),
+            },
+        };
+        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+        open();
+        fireEvent.click(await screen.findByTestId("view3d-auto-open-yes"));
+        expect(
+            await screen.findByTestId("view3d-auto-open-question"),
+        ).toBeTruthy();
+        warn.mockRestore();
+    });
 });

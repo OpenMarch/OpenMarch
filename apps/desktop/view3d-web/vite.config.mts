@@ -31,11 +31,9 @@ export default defineConfig({
             },
         ],
     },
-    // No Settings window here: the 3D View's own panel offers its graphics
-    // choices instead (`renderPrefs.ts`).
+    // A browser, not the desktop app: the quality notice gives browser advice.
     define: {
-        "import.meta.env.VITE_VIEW3D_NO_SETTINGS_WINDOW":
-            JSON.stringify("true"),
+        "import.meta.env.VITE_VIEW3D_WEB_PREVIEW": JSON.stringify("true"),
     },
     plugins: [tailwindcss(), react()],
     server: { fs: { allow: [path.join(desktop, "..", "..")] } },

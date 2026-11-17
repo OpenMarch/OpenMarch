@@ -464,6 +464,12 @@ test("3D View follows the editor and saves the venue", async ({
     await selectPage(editor, "2");
     await expectWindowPage(view3d, "2");
 
+    // 3D View settings: the show's tabs, then this computer's Preferences.
+    await view3d.getByTestId("view3d-settings-tab-preferences").click();
+    await expect(view3d.getByTestId("view3d-quality-picker")).toBeVisible();
+    await expect(view3d.getByTestId("view3d-controls-picker")).toBeVisible();
+    await view3d.getByTestId("view3d-settings-tab-venue").click();
+
     // Venue and lighting from the window's settings panel.
     const initialKit = (await pickerValue(view3d, "view3d-venue-picker"))!;
     const initialLighting = (await pickerValue(

@@ -1859,7 +1859,6 @@
         "title": "設定",
         "tolgeeApiKeyPlaceholder": "Tolgee APIキー",
         "tolgeeDevToolsToggle": "Tolgeeインコンテキスト翻訳",
-        "view3d": "3Dビュー",
         "view3d.controls": "操作方法",
         "view3d.controls.input.drag": "左ドラッグ",
         "view3d.controls.input.pinch": "ピンチ",
@@ -1889,7 +1888,6 @@
         "view3d.resolution.fast.description": "最もぼやけますが、負荷は約半分です。古いコンピューター向けです。",
         "view3d.resolution.sharp": "高精細",
         "view3d.resolution.sharp.description": "高解像度の画面でも細部まで表示します。",
-        "view3d.summary": "このコンピューターでの3Dビューの描画と操作の方法です。ショーには保存されません。",
         "input": "タッチと入力",
         "input.description": "タブレットレイアウト（指とペン用）またはデスクトップレイアウト（マウスとトラックパッド用）を選択します。",
         "input.interface": "レイアウト",
@@ -3167,7 +3165,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "あとで「設定 › 一般」で変更できます。",
             "no": "いいえ",
             "title": "起動時に3Dビューを開きますか？",
             "yes": "はい"
@@ -3241,10 +3238,6 @@
                 "desktop": "このコンピューターではグラフィックスがソフトウェアで処理されているため、3Dビューは低画質で描画され、それでも動作が遅くなります。フル画質で表示するには、グラフィックスドライバーを更新してOpenMarchを再起動してください。",
                 "web": "このブラウザーではグラフィックスがソフトウェアで処理されているため、3Dビューは低画質で描画され、それでも動作が遅くなります。フル画質で表示するには、グラフィックアクセラレーションを有効にして（ChromeまたはEdgeの場合：「設定」>「システム」>「グラフィック アクセラレーションが使用可能な場合は使用する」）、ブラウザーを再起動してください。"
             },
-            "autoLowered": {
-                "settings": "表示がカクついたため「低」に切り替えました。高画質を維持するには、「設定」の「3Dビュー」で「高」を選択してください。",
-                "panel": "表示がカクついたため「低」に切り替えました。高画質を維持するには、「表示設定」の「画質」で「高」を選択してください。"
-            },
             "softwareHint": "この環境ではグラフィックスがソフトウェアで処理されるため、「低」のままになります。",
             "autoLoweredHint": "表示がカクついたため「低」に切り替えました。高画質を維持するには「高」を選択してください。",
             "dismiss": "OK"
@@ -3253,10 +3246,7 @@
             "label": "再生"
         },
         "settings": {
-            "title": "表示設定",
             "close": "閉じる",
-            "venueSection": "このショー",
-            "venueHint": "ショーファイルに保存されます。エディターで取り消すと変更が元に戻ります。",
             "crowdColors": "観客の色",
             "homeColor": "ホーム",
             "awayColor": "ビジター",
@@ -3264,9 +3254,6 @@
             "endZoneText": "エンドゾーンの文字",
             "endZoneTextPlaceholder": "文字なし",
             "endZoneColor": "色",
-            "graphicsSection": "このコンピューター",
-            "graphicsHint": "ショーには保存されないため、コンピューターごとに異なる場合があります。",
-            "keysSection": "キーボードとマウス",
             "uniforms": "バンドのユニフォーム",
             "guardUniforms": "ガードのユニフォーム",
             "brassFinish": "金管の仕上げ",

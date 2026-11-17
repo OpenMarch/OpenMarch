@@ -12,14 +12,17 @@ sidebar:
 ---
 
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Aside } from "@astrojs/starlight/components";
 
-A show opened in a newer version of OpenMarch is often changed so that it works with that version's features, and older versions can't open it afterwards. Before OpenMarch changes a show's file, it saves a copy of it. To go back to an older version, open that copy in it.
+<InShort>Open the copy OpenMarch saved before it changed the show (`Fall Show.pre-conversion.dots`, or the backups folder) in the older version.</InShort>
+
+A show opened in a newer version of OpenMarch is often changed so that it works with that version's features, and older versions can't open it afterwards. Before OpenMarch changes a show's file, it saves a copy of it.
 
 If something broke after an update, please [tell us](/guides/start/get-help/), so it gets fixed.
 
 <Aside type="caution">
-Don't open a show saved by OpenMarch 0.2 in 0.1.7. 0.1.7 can't read it, and saving it there can leave a file that 0.2 can't open either. Open a copy from before the conversion instead.
+Don't open a converted show in OpenMarch 0.1.7. 0.1.7 can't read it, and saving it there can leave a file that 0.2 can't open either. Open the `.pre-conversion.dots` copy instead, and keep it until you're sure you don't need 0.1.7 any more.
 </Aside>
 
 ## Find the copy
@@ -58,4 +61,4 @@ Installing an older version usually replaces the one you have, so install the cu
 
 - [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/): what the conversion keeps and loses.
 - [Repair a show file](/troubleshooting/repair-a-file/): when a show opens but edits fail.
-- [Get help](/guides/start/get-help/): report a problem with an update.
+- [Get help and send feedback](/guides/start/get-help/): report a problem with an update.

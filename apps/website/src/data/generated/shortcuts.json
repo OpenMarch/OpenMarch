@@ -1619,6 +1619,23 @@
                     ]
                 },
                 {
+                    "label": "Get help",
+                    "other": [
+                        {
+                            "keys": [
+                                "F1"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F1"
+                            ]
+                        }
+                    ]
+                },
+                {
                     "label": "Preview the show",
                     "other": [
                         {
@@ -1975,42 +1992,6 @@
                                 "⇧",
                                 "Z"
                             ]
-                        }
-                    ]
-                },
-                {
-                    "label": "Leave an isolated move",
-                    "other": [
-                        {
-                            "keys": [
-                                "Esc"
-                            ]
-                        }
-                    ],
-                    "mac": [
-                        {
-                            "keys": [
-                                "Esc"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "label": "Draw a range (drag)",
-                    "other": [
-                        {
-                            "keys": [
-                                "Ctrl"
-                            ],
-                            "gesture": "drag"
-                        }
-                    ],
-                    "mac": [
-                        {
-                            "keys": [
-                                "⌘"
-                            ],
-                            "gesture": "drag"
                         }
                     ]
                 },
@@ -3272,6 +3253,23 @@
                             "keys": [
                                 "⌘",
                                 ","
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Get help",
+                    "other": [
+                        {
+                            "keys": [
+                                "F1"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F1"
                             ]
                         }
                     ]

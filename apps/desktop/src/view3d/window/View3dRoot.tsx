@@ -81,7 +81,7 @@ export default function View3dRoot() {
         }
         // Listens to the editor, then says hello for a fresh clock and selection.
         const stopSync = startView3dSync(window.view3d, queryClient);
-        // Graphics choices saved in the Settings window apply at once.
+        // Graphics choices saved elsewhere on this computer apply at once.
         const stopPrefs = startPrefsSync();
         return () => {
             stopSync();

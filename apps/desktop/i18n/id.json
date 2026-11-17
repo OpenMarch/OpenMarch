@@ -1859,7 +1859,6 @@
         "title": "Pengaturan",
         "tolgeeApiKeyPlaceholder": "Kunci API Tolgee",
         "tolgeeDevToolsToggle": "Penerjemahan dalam konteks Tolgee",
-        "view3d": "Tampilan 3D",
         "view3d.controls": "Kontrol",
         "view3d.controls.input.drag": "Seret klik kiri",
         "view3d.controls.input.pinch": "Cubit",
@@ -1889,7 +1888,6 @@
         "view3d.resolution.fast.description": "Paling lembut, dengan beban sekitar setengahnya. Untuk komputer lama.",
         "view3d.resolution.sharp": "Tajam",
         "view3d.resolution.sharp.description": "Detail penuh pada layar beresolusi tinggi.",
-        "view3d.summary": "Cara Tampilan 3D menggambar dan bergerak di komputer ini. Tidak disimpan di pertunjukan.",
         "input": "Sentuh & Input",
         "input.description": "Pilih tata letak tablet (untuk jari dan pena) atau tata letak desktop (untuk mouse dan trackpad).",
         "input.interface": "Tata letak",
@@ -3167,7 +3165,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Ini dapat diubah nanti di Pengaturan › Umum.",
             "no": "Tidak",
             "title": "Buka Tampilan 3D secara otomatis saat dimulai?",
             "yes": "Ya"
@@ -3241,10 +3238,6 @@
                 "desktop": "Grafis di komputer ini dijalankan oleh perangkat lunak, sehingga Tampilan 3D digambar dengan kualitas rendah dan akan tetap lambat. Untuk tampilan penuh, perbarui driver grafis Anda dan mulai ulang OpenMarch.",
                 "web": "Grafis di browser ini dijalankan oleh perangkat lunak, sehingga Tampilan 3D digambar dengan kualitas rendah dan akan tetap lambat. Untuk tampilan penuh, aktifkan akselerasi grafis (di Chrome atau Edge: Setelan, Sistem, \"Gunakan akselerasi grafis jika tersedia\") lalu mulai ulang browser."
             },
-            "autoLowered": {
-                "settings": "Dialihkan ke Rendah karena tampilan tersendat. Untuk mempertahankan kualitas penuh, pilih Tinggi di Pengaturan, Tampilan 3D.",
-                "panel": "Dialihkan ke Rendah karena tampilan tersendat. Untuk mempertahankan kualitas penuh, pilih Tinggi pada Kualitas di Pengaturan tampilan."
-            },
             "softwareHint": "Tetap Rendah karena grafis di sini dijalankan oleh perangkat lunak.",
             "autoLoweredHint": "Dialihkan ke Rendah karena tampilan tersendat. Pilih Tinggi untuk mempertahankan kualitas penuh.",
             "dismiss": "Mengerti"
@@ -3253,10 +3246,7 @@
             "label": "Pemutaran"
         },
         "settings": {
-            "title": "Pengaturan tampilan",
             "close": "Tutup",
-            "venueSection": "Pertunjukan ini",
-            "venueHint": "Disimpan dalam file pertunjukan. Gunakan Urungkan di editor untuk membatalkan perubahan.",
             "crowdColors": "Warna penonton",
             "homeColor": "Tuan rumah",
             "awayColor": "Tamu",
@@ -3264,9 +3254,6 @@
             "endZoneText": "Tulisan zona akhir",
             "endZoneTextPlaceholder": "Tanpa tulisan",
             "endZoneColor": "Warna",
-            "graphicsSection": "Komputer ini",
-            "graphicsHint": "Tidak disimpan dalam pertunjukan, jadi bisa berbeda di setiap komputer.",
-            "keysSection": "Keyboard dan mouse",
             "uniforms": "Seragam band",
             "guardUniforms": "Seragam guard",
             "brassFinish": "Lapisan brass",

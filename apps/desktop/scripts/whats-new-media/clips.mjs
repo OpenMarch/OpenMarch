@@ -625,6 +625,7 @@ export const CLIPS = [
             // The Pro dome venue, then wait for it to draw
             await view.getByTestId("view3d-settings-button").click();
             await view.waitForTimeout(500);
+            await view.getByTestId("view3d-settings-tab-venue").click();
             await view
                 .getByTestId("view3d-venue-picker")
                 .locator('[data-value="pro"]')

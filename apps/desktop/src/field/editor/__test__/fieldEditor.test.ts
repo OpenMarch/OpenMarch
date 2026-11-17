@@ -2990,6 +2990,71 @@ describe("FieldEditor groups a press selects (#204)", () => {
         click(editor, 200, 100);
         expect(doubleClickMarcher).toHaveBeenCalledTimes(1);
     });
+
+    it("counts a double-click when the app only echoes the first click's selection back", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        // React renders the click's selection, in its own order
+        state.selected = [...state.selected].reverse();
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("still counts a double-click when the app trims the first click's selection", () => {
+        // A box member outside an isolated move is dimmed and dropped from the selection
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        state.selected = [1];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("takes a click after Escape as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        // Escape clears the selection outside the editor
+        clock.now += 100;
+        state.selected = [];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
+    });
+
+    it("takes a click after a page change as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        clock.now += 100;
+        // The selection stays, but the field shows another page
+        editor.pageChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
+    });
 });
 
 describe("FieldEditor subtract (Alt) on a marquee or lasso", () => {

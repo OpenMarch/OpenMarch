@@ -17,6 +17,7 @@ import {
 import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
 import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import SelectToolBar from "./SelectToolBar";
+import { MENU_BUTTON_CLASS } from "@/components/ui/popupClasses";
 import { useShowsSelectTool } from "@/field/fieldSelectTool";
 
 const BAR_CLASS =
@@ -178,7 +179,7 @@ function ChoiceButton<K extends "marcherLabels" | "shapes">({
                                 data-testid={`${testId}-${choice.value}`}
                                 onClick={() => choose(choice.value)}
                                 className={clsx(
-                                    "text-body rounded-6 hover:bg-fg-2 focus-visible:ring-accent px-8 py-4 text-left outline-hidden focus-visible:ring-2",
+                                    MENU_BUTTON_CLASS,
                                     value === choice.value && "text-accent",
                                 )}
                             >

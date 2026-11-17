@@ -1,0 +1,115 @@
+---
+title: Make marchers stand still
+description: Keep marchers still for a stretch of counts (a hold), change how long the hold lasts, end or remove it, and choose whether they stand or mark time in it in the 3D View.
+type: how-to
+covers:
+  - apps/desktop/src/timeline/timelineHoldFromPrevious.ts
+  - apps/desktop/src/timeline/holdExtent.ts
+  - apps/desktop/src/timeline/useExpertHolds.ts
+  - apps/desktop/src/db-functions/timelineHoldExtent.ts
+  - apps/desktop/src/db-functions/timelineHoldOverWindow.ts
+  - apps/desktop/src/components/timeline/TimelineHoldEdges.tsx
+  - apps/desktop/src/components/inspector/TimelineHoldStyle.tsx
+  - apps/desktop/src/timeline/holdStyle.ts
+  - apps/desktop/src/db-functions/timelineHoldStyle.ts
+  - action:timelineHoldFromPrevious
+  - action:timelineHoldOverWindow
+  - action:timelineHoldStyleDefault
+  - action:timelineHoldStyleStand
+  - action:timelineHoldStyleMarkTime
+  - action:timelineHoldStyleHighMarkTime
+  - i18n:timeline.holdEdge
+  - i18n:timeline.expertHolds
+  - i18n:timeline.holdFromPrevious
+  - i18n:inspector.marcher.timeline.holdStyle
+sidebar:
+  order: 7
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
+
+<InShort>Select the marchers, right-click the page's box and select <Ui k="timeline.terms.holdFromPrevious" />, or press <Kbd keys="Control+H" />.</InShort>
+
+A hold keeps marchers still on purpose, so they're <Term id="held">Held</Term> on those pages. Marchers you haven't moved yet stand still too, but they're Not defined: [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) explains the difference, and what a drag inside a hold does.
+
+## Hold marchers on a page
+
+<Ui k="timeline.terms.holdFromPrevious" /> keeps marchers still on this page, where their last <Term id="keyframe">keyframe</Term> put them.
+
+1. Go to the page and select the marchers.
+2. Right-click the page's box, or a selected marcher on the field, and select <Ui k="timeline.terms.holdFromPrevious" />. You can also press <Kbd keys="Control+H" />, or find it in the command palette (<Kbd action="openCommandPalette" />).
+
+While you point at the command, before you select it, the timeline shows the hold it would make: the page row fills from the keyframe the hold grows out of to the end of the page, then pulses. Once it's made, a solid line runs under the page.
+
+<Media
+  id="timeline-hold-page"
+  alt="Trumpet marchers selected on Page 4. Page 4's box is right-clicked and the pointer rests on Hold from last keyframe, so Page 4's row fills in to show the hold it would make; once it's selected, a solid line runs under Page 4 from the diamond on Page 3's flag."
+/>
+
+A marcher that had its own move on the page loses it and stays still for the page. When the pages before it are Not defined for the marcher, the hold reaches back over them to its last keyframe, or to the start of the show, so it's one hold over all those pages, and a message says who is now Held and on which pages. A hold that touches another hold of the same marcher joins it.
+
+Some marchers can't be held, such as marchers placed in a shape on the page (the shape already holds them on the pages after; see [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/#the-three-states)) or in the middle of a move that runs past a page's flag; a message names them with the reason.
+
+## Hold from the start flag to the playhead
+
+This needs Expert mode: see [Basic and Expert](/guides/start/basic-and-expert/).
+
+<Ui k="timeline.terms.holdOverWindow" /> keeps the selected marchers still over the counts between the start flag and the playhead, even where that's partway through pages.
+
+1. Put the start flag and the playhead around the counts to hold.
+2. Select the marchers.
+3. Right-click a selected marcher on the field and select <Ui k="timeline.terms.holdOverWindow" />, or find it in the command palette. It has no shortcut.
+
+It works like Hold from last keyframe, and also takes out the marchers' moves between the start flag and the playhead. A move that crosses the start flag is cut there. A move that crosses the playhead keeps its destination, so the marchers walk the rest of it faster, and a step size warning shows if it's too fast.
+
+## Change how long a hold lasts
+
+A hold's end can move: marchers can hold longer, or leave earlier. Its start can't, because it's where the marchers got there.
+
+1. Select the marchers.
+2. Point at the right end of the solid line. The pointer becomes a resize arrow and a small handle shows.
+3. Drag the end earlier or later.
+
+<Media
+  id="timeline-hold-end"
+  alt="Pages 3 to 5A with trumpet marchers Held over Pages 4 and 5. The end of the solid line under Page 5 is dragged back to the middle of Page 5; the rest of Page 5 turns to a dashed line, and a label says where the hold now ends."
+/>
+
+While you drag, a label says where the hold will end, such as <Ui k="timeline.holdEdge.readoutEnd" values={{ held: "Held", page: 4, count: 2 }} plain />, and what stops it: a hold can't run past the marchers' next move or the end of the show, and lasts at least one count. Hold <Kbd keys="Alt" gesture="drag" /> to put the end on any count, and press <Kbd keys="Escape" /> to put it back.
+
+Each selected marcher's hold changes, so you can select one marcher and shorten only its hold.
+
+## End a hold at a count
+
+Right-click the solid line at the count and select <Ui k="timeline.terms.splitHold" />. After the hold ends, the marchers are Not defined: a drag there starts a move from where the hold ends, so they leave early.
+
+## Remove a hold
+
+Select the marchers and use <Ui k="timeline.terms.clearThisPage" /> on the page: it takes their positions and their hold off it, so they're Not defined there again. See [Clear a page's positions](/guides/timeline/reset-marchers/#clear-a-pages-positions).
+
+## Stand or mark time on a hold
+
+In the [3D View](/guides/3d-view/open-the-3d-view/), Held marchers do what every marcher standing still does, as <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain /> in [Show settings](/guides/field/show-settings/) says: they stand, unless it says to mark time. Give a hold a style of its own to choose for its marchers alone. The style changes nothing on the field or the timeline.
+
+1. Put the playhead on a count inside the hold and select the marchers.
+2. In the inspector, choose from <Ui k="inspector.marcher.timeline.holdStyle.label" />: <Ui k="inspector.marcher.timeline.holdStyle.stand" />, <Ui k="inspector.marcher.timeline.holdStyle.markTime" />, <Ui k="inspector.marcher.timeline.holdStyle.highMarkTime" /> or <Ui k="inspector.marcher.timeline.holdStyle.default" />. The same choices are in the menu when you right-click a selected marcher on the field, such as <Ui k="actions.batchEdit.holdStyleMarkTime" />, and in the command palette.
+
+<Media
+  id="timeline-hold-style"
+  alt="The inspector with four trumpet marchers selected and Held on Page 4. Under the line Held, since Page 3, the Hold style choice is open on its options: Show setting, which is checked, then Stand, Mark time and High mark time."
+  maxWidth={360}
+/>
+
+The marchers keep the style for the whole hold, on every page it covers, whether or not anyone else is moving. <Ui k="inspector.marcher.timeline.holdStyle.default" plain /> gives the hold no style of its own, so it follows <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain /> in [Show settings](/guides/field/show-settings/). <Ui k="inspector.marcher.timeline.holdStyle.highMarkTime" plain /> looks the same as <Ui k="inspector.marcher.timeline.holdStyle.markTime" plain /> in this version.
+
+<Ui k="inspector.marcher.timeline.holdStyle.label" plain /> shows only while a selected marcher is Held at the playhead, so to give a Not defined marcher a style, hold it first. A hold keeps its style when it grows, shrinks or joins another; one hold has one style, so marking time for part of a hold and standing for the rest isn't possible yet.
+
+## Related
+
+- [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): what Held means, and what a drag inside a hold does.
+- [Make and change moves](/guides/timeline/moves/): moves that start or end in the middle of a page.
+- [Step size warnings](/guides/field/step-size-warnings/): when a shortened move is too fast.

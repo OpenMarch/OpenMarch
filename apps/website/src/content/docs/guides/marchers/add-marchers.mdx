@@ -1,6 +1,6 @@
 ---
 title: Add, edit and remove marchers
-description: Add marchers by section in the Marchers panel, change their drill numbers and names, and remove them.
+description: Add marchers (performers) by section or from a spreadsheet, change their drill numbers and names, and remove them.
 type: how-to
 covers:
   - apps/desktop/src/components/marcher/MarchersModal.tsx
@@ -16,25 +16,18 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-Every marcher in a show belongs to a section, such as Trumpet or Color Guard, and has a drill number made of the section's prefix and a number: T1 and T2 in the trumpets, G4 in the color guard. You add, rename and remove marchers in the <Ui k="sidebar.marchers" /> panel.
+<InShort>Open the <Ui k="sidebar.marchers" /> panel, select <Ui k="marchers.addMarcher" />, enter how many and choose their section, then select Create.</InShort>
 
-## The Marchers panel
-
-Select <Ui k="sidebar.marchers" /> in the sidebar (the icon of three people) to open the panel. It lists every marcher with their drill number, section and name.
-
-<Media
-  id="marchers-panel"
-  alt="The Marchers panel, with Marcher Appearance and Add buttons at the top and a list of marchers under them, each with a drill number, a section and a name."
-  maxWidth={520}
-/>
+Every marcher belongs to a section, such as Trumpet or Color Guard, and has a drill number made of the section's prefix and a number: T1 and T2 in the trumpets, G4 in the color guard. The <Ui k="sidebar.marchers" /> panel, the icon of three people in the sidebar, lists every marcher with their drill number, section and name.
 
 ## Add marchers
 
 <Steps>
 
-1. In the <Ui k="sidebar.marchers" /> panel, select <Ui k="marchers.addMarcher" />.
+1. Select <Ui k="sidebar.marchers" /> in the sidebar, then <Ui k="marchers.addMarcher" />.
 
 2. Under <Ui k="marchers.addMethod.manual" />, enter how many marchers to add in <Ui k="marchers.quantity" />, up to 100 at a time.
 
@@ -52,9 +45,11 @@ Select <Ui k="sidebar.marchers" /> in the sidebar (the icon of three people) to 
   maxWidth={520}
 />
 
-The new marchers are numbered in order from the number you entered, skipping any number the section already uses. They appear on the field in rows near the back corner of the field, one row for each section and two steps apart, and stand there on every page until you move them. To place them, see [Move marchers](/guides/marchers/move-marchers/) and [Shapes](/guides/shapes/).
+The new marchers are numbered in order from the number you entered, skipping any number the section already uses. They stand in rows near the back corner of the field, one row for each section, on every page until you move them; [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) says why later pages follow. To place them, see [Move marchers](/guides/marchers/move-marchers/) and [How shapes work](/guides/shapes/).
 
-To add a whole band at once from a spreadsheet, select <Ui k="marchers.csv.title" /> instead of <Ui k="marchers.addMethod.manual" />. Choose <Ui k="marchers.csv.mode.section.title" /> to give each row a section and let OpenMarch number the marchers, or <Ui k="marchers.csv.mode.drillNumber.title" /> to give each row its drill number. <Ui k="marchers.csv.downloadExample" /> downloads a file to start from, and the form lists any rows it can't import before you import the rest.
+## Add a whole band from a spreadsheet
+
+To add a whole band at once from a CSV file, select <Ui k="marchers.addMarcher" />, then <Ui k="marchers.csv.title" /> instead of <Ui k="marchers.addMethod.manual" />. Choose <Ui k="marchers.csv.mode.section.title" /> to give each row a section and let OpenMarch number the marchers, or <Ui k="marchers.csv.mode.drillNumber.title" /> to give each row its drill number. <Ui k="marchers.csv.downloadExample" /> downloads a file to start from, and the form lists any rows it can't import before you import the rest.
 
 ## Edit a marcher
 
@@ -76,15 +71,17 @@ A drill number has to be unique: the form says so if another marcher already has
 
 <Steps>
 
-1. In the <Ui k="sidebar.marchers" /> panel, select the menu button at the end of the marcher's row, then <Ui k="marchers.list.deleteButton" />. Repeat for every marcher you want to remove. They leave the list, but nothing is deleted yet.
+1. In the <Ui k="sidebar.marchers" /> panel, select the menu button at the end of the marcher's row, then <Ui k="marchers.list.deleteButton" />.
 
-2. Select <Ui k="formButtons.saveChanges" />, or <Ui k="formButtons.discardChanges" /> to keep them.
+2. Repeat for every marcher you want to remove. They leave the list, but nothing is deleted yet.
 
-3. Check the drill numbers in the warning, then select <Ui k="marchers.deleteButton" />.
+3. Select <Ui k="formButtons.saveChanges" />, or <Ui k="formButtons.discardChanges" /> to keep them.
+
+4. Check the drill numbers in the warning, then select <Ui k="marchers.deleteButton" />.
 
 </Steps>
 
-The marchers are removed from every page of the show. If you removed the wrong one, undo it with <Kbd action="performUndo" />.
+The marchers are removed from every page of the show. Undo (<Kbd action="performUndo" />) brings them back.
 
 ## Related
 

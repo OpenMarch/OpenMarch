@@ -13,8 +13,11 @@ sidebar:
 ---
 
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-When OpenMarch can't open a show, it says why in a message. Find the message's title below.
+<InShort>Find the message's title below. Most file errors go away when you move the show to a folder of your own, such as Documents, and open it from there.</InShort>
+
+When OpenMarch can't open or save a show, it says why in a message, and the message's link opens this page at its section.
 
 ## Invalid file permissions error
 
@@ -61,7 +64,7 @@ Apple's [Mac User Guide](https://support.apple.com/guide/mac-help/mchlp1203/mac)
 <Ui k="fileAccessDialogError.notFound.title" /> means there's no file at the place OpenMarch looked. This usually happens when you open a show from the start page's recent files after the file was moved, renamed or deleted.
 
 1. Find the file where it is now, and open it with <Ui k="launchpage.files.openFile" /> on the start page.
-2. Remove the old entry from <Ui k="launchpage.files.title" /> on the start page.
+2. On the start page, point at the old entry in <Ui k="launchpage.files.title" /> and select <Ui k="launchpage.files.removeFile" />, or select <Ui k="launchpage.files.clearMissingRecentFiles" /> to remove every entry whose file is gone.
 
 If you didn't open it from the recent files, [report it](/guides/start/get-help/).
 
@@ -71,12 +74,10 @@ If you didn't open it from the recent files, [report it](/guides/start/get-help/
 
 ## Couldn't back up or convert your file
 
-These appear when you open a show from OpenMarch 0.1.7, which 0.2 converts after saving a copy of it. In each case your file isn't changed.
+These appear when you open a show from OpenMarch 0.1.7 ([Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/)). In each case your file isn't changed.
 
 - <Ui k="convertShow.openFailed.backupTitle" />: OpenMarch couldn't save the `.pre-conversion.dots` copy, so it didn't convert anything. The message says why. Most often the folder is read-only or you don't have permission to write in it, or the disk is full: move the show to a folder of your own, or free some space, and open it again. If the file is in use by another program, close that program first.
 - <Ui k="convertShow.openFailed.convertTitle" />: the conversion failed and was undone. The message names the copy that was saved. [Report it](/guides/start/get-help/) and include the show if you can.
-
-[Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/) explains the conversion.
 
 ## Server error
 
@@ -86,10 +87,10 @@ These appear when you open a show from OpenMarch 0.1.7, which 0.2 converts after
 
 The message says "Unable to open file", or OpenMarch shows <Ui k="fileAccessDialogError.renderFail.title" />. [Report it](/guides/start/get-help/), and include the show if you can.
 
-If a show opens but you get errors while you edit it, try [repairing it](/troubleshooting/repair-a-file/).
+If a show opens but you get errors while you edit it, see [Repair a show file](/troubleshooting/repair-a-file/).
 
 ## Related
 
 - [Repair a show file](/troubleshooting/repair-a-file/): when a show opens but edits fail.
 - [Open a show in an older version](/troubleshooting/open-in-an-older-version/): the copies OpenMarch keeps.
-- [Get help](/guides/start/get-help/): where to report a problem.
+- [Get help and send feedback](/guides/start/get-help/): where to report a problem.

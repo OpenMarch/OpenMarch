@@ -1,50 +1,60 @@
 ---
 title: Show settings
-description: Name the show and its designer and client, number the first page and measure, set the length of new pages, and set the music offset for this show.
+description: "Settings saved in one show: its name and credits, page and measure numbering, the music offset, and how marchers move in the 3D View (Performer defaults)."
 type: how-to
 covers:
   - apps/desktop/src/components/sidebar/WorkspaceSettingsModal.tsx
   - apps/desktop/src/settings/workspaceSettings.ts
+  - apps/desktop/src/components/sidebar/PerformerDefaultsFields.tsx
+  - apps/desktop/src/view3d/core/performerDefaults.ts
   - i18n:workspaceSettings
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Media from "@/components/docs/Media.astro";
 import Ui from "@/components/docs/Ui.astro";
-import { Steps } from "@astrojs/starlight/components";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-Show settings hold what belongs to one show: its name, designer and client, where page and measure numbering starts, how long new pages are, and where the music starts. They're saved in the show file. Settings that apply to every show, such as the theme and shortcuts, are in the app's settings instead (see [Settings](/guides/reference/settings/)).
+<InShort>Select <Ui k="sidebar.settings" /> in the sidebar, change a setting, then select <Ui k="workspaceSettings.saveChanges" />.</InShort>
 
-## Change a show setting
+Show settings are saved in the show file, so they travel with it. Settings that apply to every show on your computer, such as the theme and shortcuts, are in [Settings](/guides/reference/settings/).
 
-<Steps>
+## Cancel or reset
 
-1. Select <Ui k="sidebar.settings" /> in the sidebar.
-2. Change the settings you want.
-3. Select <Ui k="workspaceSettings.saveChanges" />.
-
-</Steps>
-
-<Ui k="workspaceSettings.cancel" /> closes the panel without saving. <Ui k="workspaceSettings.resetToDefaults" /> puts every number back to its default straight away, without waiting for Save. It keeps the show's name, designer and client.
+<Ui k="workspaceSettings.cancel" /> closes the panel without saving. <Ui k="workspaceSettings.resetToDefaults" /> puts every setting but the show's name, designer and client back to its default straight away, without waiting for Save. Except for <Ui k="workspaceSettings.audioOffsetSeconds" />, which is one step to undo, show settings aren't part of undo, so Undo doesn't bring them back.
 
 <Media
   id="field-show-settings"
-  alt="The Show settings panel: empty Show name, Designer and Client fields, then Default Tempo 120 BPM, Default Beats Per Measure 4 beats, Default New Page Counts 16 counts, Audio Offset 0 seconds, Page Number Offset 0, Measure Number Offset 1."
+  alt="The Show settings panel: Show name, Designer and Client, then Default Tempo 120 BPM, Default Beats Per Measure 4, Default New Page Counts 16, Audio Offset 0 seconds, Page Number Offset 0 and Measure Number Offset 1, the start of Performer defaults with Step off on set to Left foot, and the Save Changes, Cancel and Reset to Defaults buttons."
   maxWidth={520}
 />
 
-## The settings
+## The show's name and credits
 
-- <Ui k="workspaceSettings.showInfo.projectName" />, <Ui k="workspaceSettings.showInfo.designer" /> and <Ui k="workspaceSettings.showInfo.client" />: The show's name, who designed the drill and who it's for. All three are optional. The video boards in the 3D View show them (see [Venue and uniforms](/guides/3d-view/venue-and-uniforms/#the-video-boards)); without a show name, they show the file's name.
-- <Ui k="workspaceSettings.pageNumberOffset" />: The first page's number. The default, 0, numbers pages 0, 1, 2 and so on; enter 1 to start at page 1. Every later page, subsets included, counts on from it.
-- <Ui k="workspaceSettings.measurementOffset" />: The first measure's number. The default is 1. Enter 0 if the music starts with a pickup you want to call measure 0. To renumber from a measure partway through, use Edit music instead (see [Renumber measures](/guides/music/tempo/#renumber-measures)).
-- <Ui k="workspaceSettings.defaultNewPageCounts" />: How many counts a page gets when you add one past the last page with the add-page pill on the timeline. The pill shows this number.
-- <Ui k="workspaceSettings.audioOffsetSeconds" />: How many seconds after count 1 the music starts. It's the same value as the music offset in Edit music; see [Add the show's music](/guides/music/audio/#set-where-the-music-starts).
-- <Ui k="workspaceSettings.defaultTempo" /> and <Ui k="workspaceSettings.defaultBeatsPerMeasure" />: The tempo and time signature chosen when the show was created. Changing them here doesn't change the show's counts; set the tempo and time signatures in Edit music ([Line the counts up with the music](/guides/music/tempo/)).
+<Ui k="workspaceSettings.showInfo.projectName" />, <Ui k="workspaceSettings.showInfo.designer" /> and <Ui k="workspaceSettings.showInfo.client" /> are the show's name, who designed the drill and who it's for. All three are optional. The video boards in the 3D View show them ([Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/#put-the-shows-name-on-the-video-boards)); without a show name, they show the file's name.
+
+## Numbers and timing
+
+- <Ui k="workspaceSettings.pageNumberOffset" />: the first page's number. The default, 0, numbers pages 0, 1, 2 and so on; enter 1 to start at page 1. Every later page, subsets included, counts on from it.
+- <Ui k="workspaceSettings.measurementOffset" />: the first <Term id="measure">measure</Term>'s number. The default is 1; enter 0 to call a pickup measure 0. To renumber from a measure partway through, see [Set the tempo to match the music](/guides/music/tempo/#renumber-measures).
+- <Ui k="workspaceSettings.audioOffsetSeconds" />: how many seconds after count 1 the music starts, the same number as the music offset in Edit music. See [Add the show's music](/guides/music/audio/#set-where-the-music-starts).
+- <Ui k="workspaceSettings.defaultNewPageCounts" />: how long each page is when an export adds pages to the end of the show for moves that run past it (<Ui k="exportCoordinates.addPagesToEnd" />). The add-page button on the timeline doesn't use it: its page runs from the last page to the playhead.
+- <Ui k="workspaceSettings.defaultTempo" /> and <Ui k="workspaceSettings.defaultBeatsPerMeasure" />: the tempo and time signature chosen when the show was created. Changing them doesn't change the show's counts; set tempos and time signatures in Edit music ([Set the tempo to match the music](/guides/music/tempo/)).
+
+## How marchers move in the 3D View
+
+<Ui k="workspaceSettings.performer.title" /> sets how the marchers march in the 3D View, everywhere in the show:
+
+- <Ui k="workspaceSettings.performer.stepOffFoot.label" />: the foot every move steps off with, <Ui k="workspaceSettings.performer.stepOffFoot.left" /> by default.
+- <Ui k="workspaceSettings.performer.dotMode.label" />: with <Ui k="workspaceSettings.performer.dotMode.foot" /> (the default), the foot that lands on the last count is on the dot and the marcher centers on it as the feet close; with <Ui k="workspaceSettings.performer.dotMode.body" />, the middle of the body is over the dot.
+- <Ui k="workspaceSettings.performer.directionChange.label" />: how a wind player's moving leg gets to a new direction. <Ui k="workspaceSettings.performer.directionChange.corner" /> (the default) is the handbook's placement and cut at 8 to 5; other step sizes still blend. <Ui k="workspaceSettings.performer.directionChange.direct" /> is a plain blend.
+- <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" />: what every marcher standing still does while others move, whether it's Held or Not defined. <Ui k="workspaceSettings.performer.holdWhileBandMoves.stand" /> by default. With <Ui k="workspaceSettings.performer.holdWhileBandMoves.markTime" /> or <Ui k="workspaceSettings.performer.holdWhileBandMoves.highMarkTime" />, they mark time on the counts where anyone in the band is moving, and stand while the whole band is still. A <Term id="hold">hold</Term> with its own <Term id="hold-style">hold style</Term> ignores this; to set one hold's style, see [Make marchers stand still](/guides/timeline/holds/#stand-or-mark-time-on-a-hold).
+- <Ui k="workspaceSettings.performer.percussionTravel.label" />: <Ui k="workspaceSettings.performer.percussionTravel.crab" /> (the default) keeps drummers' hips square to the front; <Ui k="workspaceSettings.performer.percussionTravel.slide" /> moves them like the winds.
 
 ## Related
 
-- [Edit the field](/guides/field/edit-the-field/): the field's size, checkpoints and look.
-- [Pages](/guides/timeline/pages/): adding pages and how they're numbered.
+- [Add and change pages](/guides/timeline/pages/): adding pages and how they're numbered.
+- [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/): how the marchers look in the 3D View.
 - [Settings](/guides/reference/settings/): settings for every show.

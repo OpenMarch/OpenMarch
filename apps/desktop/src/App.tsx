@@ -57,6 +57,7 @@ import { InContextTools } from "@tolgee/web/tools";
 import AlertModal from "./components/AlertModal";
 import ConvertShowDialog from "./components/ConvertShowDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
+import HelpDialog from "./components/help/HelpDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
@@ -287,6 +288,7 @@ function App() {
                     {!isWebBuild && <CheckForUpdatesHandler />}
                     <CommandPalette />
                     <ShortcutsDialog />
+                    <HelpDialog />
                     <MusicXmlChecksDialog />
                     <LongPressGuard />
                     <WindowTooSmallNotice size={windowSize} />

@@ -237,6 +237,8 @@
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play",
+            "openHelp": "Get help",
+            "openHelpKeywords": "help guide docs manual how question assistant ai chatgpt claude prompt",
             "reportFeedback": "Report a bug or send feedback",
             "reportFeedbackKeywords": "bug issue problem feedback feature request support",
             "viewMyReports": "View my reports",
@@ -1859,7 +1861,6 @@
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
-        "view3d": "3D View",
         "view3d.controls": "Controls",
         "view3d.controls.input.drag": "Left-click drag",
         "view3d.controls.input.pinch": "Pinch",
@@ -1889,7 +1890,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.summary": "How the 3D View draws and moves on this computer. Not saved in the show.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -3167,7 +3167,7 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "You can change this later in Settings › General.",
+            "changeLater": "You can change this later in 3D View settings or in Settings › General.",
             "no": "No",
             "title": "Open the 3D View on launch?",
             "yes": "Yes"
@@ -3241,22 +3241,19 @@
                 "desktop": "Graphics run in software on this computer, so the 3D View draws at low quality, and it will still be slow. For the full view, update your graphics drivers and restart OpenMarch.",
                 "web": "Graphics run in software in this browser, so the 3D View draws at low quality, and it will still be slow. For the full view, turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\") and restart the browser."
             },
-            "autoLowered": {
-                "settings": "Switched to Low because the view was stuttering. To keep full quality, choose High in Settings, 3D View.",
-                "panel": "Switched to Low because the view was stuttering. To keep full quality, choose High under Quality in View settings."
-            },
             "softwareHint": "Stays on Low because graphics run in software here.",
             "autoLoweredHint": "Switched to Low because the view was stuttering. Choose High to keep full quality.",
-            "dismiss": "Got it"
+            "dismiss": "Got it",
+            "autoLowered": "Switched to Low because the view was stuttering.",
+            "useHigh": "Use High",
+            "keepLow": "Keep Low"
         },
         "playback": {
             "label": "Playback"
         },
         "settings": {
-            "title": "View settings",
+            "panelTitle": "3D View settings",
             "close": "Close",
-            "venueSection": "This show",
-            "venueHint": "Saved in the show file. Undo in the editor reverts a change.",
             "crowdColors": "Crowd colors",
             "homeColor": "Home",
             "awayColor": "Visitors",
@@ -3264,15 +3261,20 @@
             "endZoneText": "End-zone lettering",
             "endZoneTextPlaceholder": "No lettering",
             "endZoneColor": "Color",
-            "graphicsSection": "This computer",
-            "graphicsHint": "Not saved in the show, so it can differ on each computer.",
-            "keysSection": "Keyboard and mouse",
             "uniforms": "Band uniform",
             "guardUniforms": "Guard uniform",
             "brassFinish": "Brass finish",
             "tuba": "Tubas",
             "silkShape": "Flag silk shape",
-            "silkArtwork": "Flag silk artwork"
+            "silkArtwork": "Flag silk artwork",
+            "tabs": {
+                "venue": "Venue",
+                "performers": "Performers",
+                "preferences": "Preferences"
+            },
+            "showNote": "Saved with this show. Undo in the editor reverts a change.",
+            "computerNote": "Saved on this computer only. Not part of the show.",
+            "shortcuts": "Keyboard shortcuts"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3825,6 +3827,7 @@
         },
         "help": {
             "title": "Help",
+            "openHelp": "Get Help…",
             "showShortcuts": "Keyboard Shortcuts",
             "website": "Website",
             "guides": "Docs/Guides",
@@ -4548,6 +4551,30 @@
             "mixed": "Mixed",
             "add": "Add line",
             "everyOther": "Keep every other"
+        }
+    },
+    "help": {
+        "title": "Get help",
+        "description": "Look it up in the user guide, or have an AI assistant such as ChatGPT or Claude find the answer for you.",
+        "guide": {
+            "title": "Read the user guide",
+            "body": "Step-by-step help, with pictures and clips.",
+            "open": "Open the guide"
+        },
+        "ai": {
+            "title": "Ask an AI assistant",
+            "body": "Paste this message into ChatGPT, Claude or any AI assistant. It has the assistant read the OpenMarch guide before it answers.",
+            "questionLabel": "What are you trying to do? (optional)",
+            "questionPlaceholder": "For example: I want the trumpets to stand still for 8 counts, but they keep moving.",
+            "copy": "Copy message",
+            "copied": "Copied. Now paste it into your assistant.",
+            "copyFailed": "Couldn't copy it. Select the text below and copy it yourself:",
+            "whatIsCopied": "See the message",
+            "privacy": "Nothing about your show is included."
+        },
+        "report": {
+            "title": "Something not working?",
+            "body": "Tell us what happened. You can record your screen and send a copy of your show."
         }
     }
 }

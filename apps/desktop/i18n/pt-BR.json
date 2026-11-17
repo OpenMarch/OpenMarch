@@ -1859,7 +1859,6 @@
         "title": "Configurações",
         "tolgeeApiKeyPlaceholder": "Chave de API do Tolgee",
         "tolgeeDevToolsToggle": "Tradução no contexto com Tolgee",
-        "view3d": "Visualização 3D",
         "view3d.controls": "Controles",
         "view3d.controls.input.drag": "Arrastar com botão esquerdo",
         "view3d.controls.input.pinch": "Pinça",
@@ -1889,7 +1888,6 @@
         "view3d.resolution.fast.description": "A menos nítida, com cerca de metade do trabalho. Para computadores mais antigos.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Detalhe máximo em telas de alta resolução.",
-        "view3d.summary": "Como a Visualização 3D é desenhada e se move neste computador. Não fica salvo no show.",
         "input": "Toque e entrada",
         "input.description": "Escolha o layout de tablet (para dedos e caneta) ou o layout de desktop (para mouse e trackpad).",
         "input.interface": "Layout",
@@ -3167,7 +3165,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Você pode alterar isso depois em Configurações › Geral.",
             "no": "Não",
             "title": "Abrir a Visualização 3D ao iniciar?",
             "yes": "Sim"
@@ -3241,10 +3238,6 @@
                 "desktop": "Os gráficos são processados por software neste computador, então a Visualização 3D é desenhada em baixa qualidade e continuará lenta. Para a visualização completa, atualize os drivers de vídeo e reinicie o OpenMarch.",
                 "web": "Os gráficos são processados por software neste navegador, então a Visualização 3D é desenhada em baixa qualidade e continuará lenta. Para a visualização completa, ative a aceleração de gráficos (no Chrome ou no Edge: Configurações, Sistema, \"Usar aceleração de gráficos quando disponível\") e reinicie o navegador."
             },
-            "autoLowered": {
-                "settings": "Mudou para Baixa porque a visualização estava travando. Para manter a qualidade máxima, escolha Alta em Configurações, Visualização 3D.",
-                "panel": "Mudou para Baixa porque a visualização estava travando. Para manter a qualidade máxima, escolha Alta em Qualidade nas Configurações de visualização."
-            },
             "softwareHint": "Fica em Baixa porque os gráficos são processados por software aqui.",
             "autoLoweredHint": "Mudou para Baixa porque a visualização estava travando. Escolha Alta para manter a qualidade máxima.",
             "dismiss": "Entendi"
@@ -3253,10 +3246,7 @@
             "label": "Reprodução"
         },
         "settings": {
-            "title": "Configurações de visualização",
             "close": "Fechar",
-            "venueSection": "Este show",
-            "venueHint": "Salvo no arquivo do show. Desfazer no editor reverte uma alteração.",
             "crowdColors": "Cores do público",
             "homeColor": "Casa",
             "awayColor": "Visitantes",
@@ -3264,9 +3254,6 @@
             "endZoneText": "Letreiro da end zone",
             "endZoneTextPlaceholder": "Sem letreiro",
             "endZoneColor": "Cor",
-            "graphicsSection": "Este computador",
-            "graphicsHint": "Não é salvo no show, então pode ser diferente em cada computador.",
-            "keysSection": "Teclado e mouse",
             "uniforms": "Uniforme da banda",
             "guardUniforms": "Uniforme da color guard",
             "brassFinish": "Acabamento dos metais",

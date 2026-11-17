@@ -1859,7 +1859,6 @@
         "title": "Paramètres",
         "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
         "tolgeeDevToolsToggle": "Traduction en contexte Tolgee",
-        "view3d": "Vue 3D",
         "view3d.controls": "Commandes",
         "view3d.controls.input.drag": "Glisser avec clic gauche",
         "view3d.controls.input.pinch": "Pincer",
@@ -1889,7 +1888,6 @@
         "view3d.resolution.fast.description": "La moins nette, avec environ deux fois moins de travail. Pour les ordinateurs anciens.",
         "view3d.resolution.sharp": "Nette",
         "view3d.resolution.sharp.description": "Tous les détails sur les écrans haute résolution.",
-        "view3d.summary": "Comment la vue 3D s’affiche et se déplace sur cet ordinateur. Non enregistré dans le spectacle.",
         "input": "Tactile et saisie",
         "input.description": "Choisissez la disposition tablette (pour les doigts et le stylet) ou la disposition ordinateur (pour la souris et le trackpad).",
         "input.interface": "Disposition",
@@ -3167,7 +3165,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Vous pourrez modifier ce choix plus tard dans Paramètres › Général.",
             "no": "Non",
             "title": "Ouvrir la vue 3D au démarrage ?",
             "yes": "Oui"
@@ -3241,10 +3238,6 @@
                 "desktop": "Sur cet ordinateur, le rendu graphique est logiciel : la vue 3D s'affiche donc en basse qualité et restera lente. Pour profiter de la vue complète, mettez à jour vos pilotes graphiques et redémarrez OpenMarch.",
                 "web": "Dans ce navigateur, le rendu graphique est logiciel : la vue 3D s'affiche donc en basse qualité et restera lente. Pour profiter de la vue complète, activez l'accélération graphique (dans Chrome ou Edge : Paramètres, Système, « Utiliser l'accélération graphique si disponible ») et redémarrez le navigateur."
             },
-            "autoLowered": {
-                "settings": "Passage en qualité Basse, car l'affichage saccadait. Pour garder la qualité maximale, choisissez Haute dans Paramètres, Vue 3D.",
-                "panel": "Passage en qualité Basse, car l'affichage saccadait. Pour garder la qualité maximale, choisissez Haute sous Qualité dans Paramètres d'affichage."
-            },
             "softwareHint": "Reste en Basse, car le rendu graphique est logiciel ici.",
             "autoLoweredHint": "Passage en Basse, car l'affichage saccadait. Choisissez Haute pour garder la qualité maximale.",
             "dismiss": "Compris"
@@ -3253,10 +3246,7 @@
             "label": "Lecture"
         },
         "settings": {
-            "title": "Paramètres d'affichage",
             "close": "Fermer",
-            "venueSection": "Ce spectacle",
-            "venueHint": "Enregistré dans le fichier du spectacle. La commande Annuler de l'éditeur revient sur une modification.",
             "crowdColors": "Couleurs du public",
             "homeColor": "Locaux",
             "awayColor": "Visiteurs",
@@ -3264,9 +3254,6 @@
             "endZoneText": "Inscription des zones d'en-but",
             "endZoneTextPlaceholder": "Aucune inscription",
             "endZoneColor": "Couleur",
-            "graphicsSection": "Cet ordinateur",
-            "graphicsHint": "Non enregistré dans le spectacle, peut donc varier d'un ordinateur à l'autre.",
-            "keysSection": "Clavier et souris",
             "uniforms": "Uniforme de l'orchestre",
             "guardUniforms": "Uniforme de la color guard",
             "brassFinish": "Finition des cuivres",

@@ -1708,7 +1708,6 @@
         "title": "设置",
         "tolgeeApiKeyPlaceholder": "Tolgee API 密钥",
         "tolgeeDevToolsToggle": "Tolgee 上下文内翻译",
-        "view3d": "3D 视图",
         "view3d.controls": "操控方式",
         "view3d.controls.input.drag": "左键拖动",
         "view3d.controls.input.pinch": "双指捏合",
@@ -1738,7 +1737,6 @@
         "view3d.resolution.fast.description": "最柔和，工作量约减半。适合较旧的电脑。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高分辨率屏幕上显示全部细节。",
-        "view3d.summary": "3D视图在这台电脑上的绘制和操控方式。不保存在表演文件中。",
         "input": "触控与输入",
         "input.description": "选择平板布局（适用于手指和触控笔）或桌面布局（适用于鼠标和触控板）。",
         "input.interface": "布局",
@@ -3016,7 +3014,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "之后可在设置 › 常规中更改。",
             "no": "否",
             "title": "启动时自动打开3D视图？",
             "yes": "是"
@@ -3090,10 +3087,6 @@
                 "desktop": "此电脑使用软件渲染图形，因此3D视图以低质量绘制，且仍会较慢。如需完整画质，请更新显卡驱动程序并重启OpenMarch。",
                 "web": "此浏览器使用软件渲染图形，因此3D视图以低质量绘制，且仍会较慢。如需完整画质，请开启图形加速（在Chrome或Edge中：设置 > 系统 >“使用图形加速功能（如果可用）”），然后重启浏览器。"
             },
-            "autoLowered": {
-                "settings": "由于画面卡顿，已切换为“低”。如需保持完整画质，请在“设置”的“3D视图”中选择“高”。",
-                "panel": "由于画面卡顿，已切换为“低”。如需保持完整画质，请在“视图设置”的“质量”中选择“高”。"
-            },
             "softwareHint": "此处使用软件渲染图形，因此保持为“低”。",
             "autoLoweredHint": "由于画面卡顿，已切换为“低”。选择“高”可保持完整画质。",
             "dismiss": "知道了"
@@ -3102,10 +3095,7 @@
             "label": "播放"
         },
         "settings": {
-            "title": "视图设置",
             "close": "关闭",
-            "venueSection": "本表演",
-            "venueHint": "保存在表演文件中。在编辑器中撤销即可还原更改。",
             "crowdColors": "观众颜色",
             "homeColor": "主队",
             "awayColor": "客队",
@@ -3113,9 +3103,6 @@
             "endZoneText": "端区文字",
             "endZoneTextPlaceholder": "无文字",
             "endZoneColor": "颜色",
-            "graphicsSection": "本电脑",
-            "graphicsHint": "不保存在表演中，因此每台电脑可以不同。",
-            "keysSection": "键盘和鼠标",
             "uniforms": "乐队制服",
             "guardUniforms": "旗队制服",
             "brassFinish": "铜管外观",

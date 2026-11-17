@@ -1708,7 +1708,6 @@
         "title": "設定",
         "tolgeeApiKeyPlaceholder": "Tolgee API 金鑰",
         "tolgeeDevToolsToggle": "Tolgee 情境內翻譯",
-        "view3d": "3D 檢視",
         "view3d.controls": "操控方式",
         "view3d.controls.input.drag": "左鍵拖曳",
         "view3d.controls.input.pinch": "雙指開合",
@@ -1738,7 +1737,6 @@
         "view3d.resolution.fast.description": "最柔和，負擔約減半。適合較舊的電腦。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高解析度螢幕上呈現完整細節。",
-        "view3d.summary": "3D 檢視在這台電腦上的繪製與操控方式。不會儲存在表演中。",
         "input": "觸控與輸入",
         "input.description": "選擇平板版面（適用手指與觸控筆）或桌面版面（適用滑鼠與觸控板）。",
         "input.interface": "版面配置",
@@ -3016,7 +3014,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "你可以稍後在「設定 › 一般」中變更。",
             "no": "否",
             "title": "開啟表演時自動開啟 3D 檢視？",
             "yes": "是"
@@ -3090,10 +3087,6 @@
                 "desktop": "這台電腦以軟體繪製圖形，因此 3D 檢視會以低畫質繪製，且仍會很慢。若要完整畫面，請更新顯示卡驅動程式並重新啟動 OpenMarch。",
                 "web": "此瀏覽器以軟體繪製圖形，因此 3D 檢視會以低畫質繪製，且仍會很慢。若要完整畫面，請開啟圖形加速功能（在 Chrome 或 Edge 中：設定、系統、「使用圖形加速功能 (如果可用)」）並重新啟動瀏覽器。"
             },
-            "autoLowered": {
-                "settings": "因畫面卡頓，已切換為「低」。若要維持完整畫質，請在「設定」的「3D 檢視」中選擇「高」。",
-                "panel": "因畫面卡頓，已切換為「低」。若要維持完整畫質，請在「檢視設定」的「品質」中選擇「高」。"
-            },
             "softwareHint": "此處以軟體繪製圖形，因此維持「低」。",
             "autoLoweredHint": "因畫面卡頓，已切換為「低」。選擇「高」可維持完整畫質。",
             "dismiss": "知道了"
@@ -3102,10 +3095,7 @@
             "label": "播放"
         },
         "settings": {
-            "title": "檢視設定",
             "close": "關閉",
-            "venueSection": "此表演",
-            "venueHint": "儲存在表演檔案中。在編輯器中復原即可還原變更。",
             "crowdColors": "觀眾顏色",
             "homeColor": "主場",
             "awayColor": "客場",
@@ -3113,9 +3103,6 @@
             "endZoneText": "端區文字",
             "endZoneTextPlaceholder": "無文字",
             "endZoneColor": "顏色",
-            "graphicsSection": "這台電腦",
-            "graphicsHint": "不會儲存在表演中，因此每台電腦的設定可以不同。",
-            "keysSection": "鍵盤與滑鼠",
             "uniforms": "樂隊制服",
             "guardUniforms": "旗隊制服",
             "brassFinish": "銅管表面處理",

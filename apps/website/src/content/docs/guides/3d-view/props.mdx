@@ -1,6 +1,6 @@
 ---
-title: Props
-description: Draw props on the field or import your own 3D models, size and turn them, move them during the show, and see them in the 3D View.
+title: Add props to the field
+description: Draw props such as risers, platforms, tarps, walls and backdrops on the field, or import your own 3D models, size and turn them, move them during the show, and see them as blocks in the 3D View.
 type: how-to
 covers:
   - apps/desktop/src/components/items
@@ -14,17 +14,21 @@ covers:
   - action:placeImportedModel
   - i18n:props
 sidebar:
-  order: 4
+  order: 5
 ---
 
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-Props are the set pieces on the field: risers, platforms, floor tarps, walls. You draw a prop's outline on the field, or import a 3D model of it, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
+<InShort>Put the playhead where the prop first appears, select <Ui k="props.title" /> (the cube) in the sidebar, choose an outline such as <Ui k="props.outline.rectangle" plain />, and draw it on the field.</InShort>
 
-The pit's instruments, speakers and podiums aren't in the Props panel: they're set up in the <Ui k="sidebar.marchers" plain /> panel ([Set up the front ensemble](/guides/3d-view/front-ensemble/)).
+A prop is a set piece on the field: a riser, a platform, a floor tarp, a wall or a backdrop. You draw its outline on the field and give it a height, or [import a 3D model](#import-a-3d-model) of it, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
+
+The pit's instruments, speakers and podiums aren't props: see [Set up the front ensemble](/guides/3d-view/front-ensemble/).
 
 ## Draw a prop
 
@@ -40,23 +44,28 @@ The pit's instruments, speakers and podiums aren't in the Props panel: they're s
    - <Ui k="props.outline.rectangle" plain />: drag from one corner to the opposite corner.
    - <Ui k="props.outline.circle" plain />: drag from the center out to the edge.
    - <Ui k="props.outline.arc" plain />: click both ends of the arc, then click to set how far it curves.
-   - <Ui k="props.outline.polygon" plain />: click each corner, then double-click to finish.
+   - <Ui k="props.outline.polygon" plain />: click each corner, then double-click the last one to finish.
    - <Ui k="props.outline.freehand" plain />: drag along the shape you want.
 
 </Steps>
 
-The prop appears as soon as you finish, and the drawing tool turns off. To stop drawing without making a prop, select <Ui k="props.draw.cancel" /> in the note or press <Kbd keys="Escape" />.
-
-On a tablet, draw with one finger or the pen; two fingers move the view. For an arc or a polygon, tap the corners; the note's <Ui k="props.draw.undoPoint" /> takes the last one back, and for a polygon <Ui k="props.draw.finish" /> ends it once it has three corners.
-
 <Media
   id="3d-props-draw"
-  alt="Rectangle is chosen in the Props panel, the panel closes, and a drag behind the band draws a rectangle prop on the field."
+  alt="Rectangle is chosen in the Props panel, the panel closes and a note at the bottom of the field says to drag, then a drag in the open field behind the band draws a rectangle prop about ten yards wide."
 />
 
-Corners and ends snap the way marcher positions do, to the coordinate rounding set in the toolbar's <Ui k="inspector.shape.alignmentTab" plain /> tab. Freehand outlines don't snap.
+The prop appears as soon as you finish, and the drawing tool turns off. To stop drawing without making a prop, select <Ui k="props.draw.cancel" /> in the note or press <Kbd keys="Escape" />.
 
-A new prop is on the field from the count the playhead was on, and not before it. It starts as a <Ui k="props.surface.floor" plain /> prop with no height, like a tarp; give it a height in its settings (below) to make it a riser or a wall.
+<Media
+  id="3d-props-polygon"
+  alt="Polygon is chosen in the Props panel, then three clicks near the back sideline set three corners and a double-click sets the fourth and finishes a four-sided prop."
+/>
+
+Corners and ends snap to the coordinate rounding grid, as dragged marchers do ([Snap to a grid of steps](/guides/marchers/move-marchers/#snap-to-a-grid-of-steps)). Freehand outlines don't snap.
+
+A new prop is on the field from the playhead's count, not before. It starts as a <Ui k="props.surface.floor" plain /> prop with no height, like a tarp; give it a height (below) to make it a riser or a wall.
+
+On a tablet, tap the corners of an arc or a polygon. The note's <Ui k="props.draw.undoPoint" /> takes the last one back, and for a polygon <Ui k="props.draw.finish" /> ends it once it has three corners.
 
 ## Import a 3D model
 
@@ -117,64 +126,57 @@ In this version the field and the 3D View draw an imported prop as its footprint
 
 <Steps>
 
-1. Select <Ui k="props.title" /> in the sidebar.
+1. Right-click the prop on the field and choose the edit item, which carries the prop's name, such as <Ui k="actions.items.editNamed" values={{ name: "Riser" }} />. Or select <Ui k="props.title" /> in the sidebar, then <Ui k="props.edit" /> (the pencil) next to the prop.
 
-2. In the list, select <Ui k="props.edit" /> (the pencil) next to the prop.
+2. Change what you want in the <Ui k="props.editTitle" plain /> panel.
 
 </Steps>
 
-Or right-click the prop on the field (on a tablet, press and hold it) and choose <Ui k="actions.items.editNamed" values={{ name: "Riser" }} />.
-
 <Media
   id="3d-props-edit"
-  alt="The Edit Prop panel: Name, Color, Surface, and under Outline from count 33, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, and Transition 1 counts."
+  alt="The Edit Prop panel: Name Riser, Locked off, Color None, Surface Floor, and under Outline from count 20, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, Transition 1 counts, and Roll-out set to Doesn't roll out."
   maxWidth={480}
 />
 
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
-- <Ui k="props.color" />: colors the prop on the field and in the 3D View. Choose <Ui k="props.colorNone" plain /> to go back to the plain look.
+- <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
+- <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
 - <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In this version the surface doesn't change how the prop is drawn, and marchers don't stand on platforms.
 - <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
+- <Ui k="props.rollOut.label" /> (floor props only): which edge a tarp rolls out from. It's saved with the prop, but in this version it doesn't change how the prop is drawn.
 
-The size and turn are set from a count: the heading reads <Ui k="props.outlineFrom" values={{ count: "N" }} plain />, which is the count at or before the playhead. A change you make applies from that count until the prop's next change. That's how a prop grows, shrinks or turns during the show:
+### Grow, shrink or turn a prop during the show
+
+The size and turn are set at a count. The heading <Ui k="props.outlineFrom" values={{ count: "N" }} plain /> names the count the playhead is on, and a change you make goes on that count. The prop keeps its earlier size until then; if it already has a change on that count, yours replaces it.
 
 <Steps>
 
-1. Move the playhead to the count where the change should be complete.
+1. With the prop's <Ui k="props.editTitle" plain /> panel open, move the playhead to the count where the change should be complete.
 
 2. Change <Ui k="props.width" plain />, <Ui k="props.depth" plain />, <Ui k="props.height" plain /> or <Ui k="props.rotation" plain />.
 
-3. Set <Ui k="props.transition" /> to the number of counts the change takes. With 8, the prop turns or resizes over the 8 counts before that count; with 1, it changes on the count.
+3. Set <Ui k="props.transition" /> to the number of counts the change takes. With 8, the prop turns or resizes over the 8 counts up to that count; with 1, it changes on the count.
 
 </Steps>
 
-If the playhead is before the prop's first count, the panel says the prop is off the field there, and you can't change its size until you move the playhead to a count where it's on the field.
-
-To color several props at once, select them on the field: the Props panel shows how many are selected and one color for all of them.
+Before the prop's first count, the panel says the prop is off the field, and you can't change its size there.
 
 ## Resize and turn a prop on the field
 
-Click inside a prop's outline to select it. Handles appear around it:
-
-- Drag a side or a corner to resize the prop. It grows or shrinks about its center.
-- Drag the round handle to turn it about its center.
+Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, or the round handle to turn it, about its center. Like the panel, a resize or turn is saved at the playhead's count. Dragging the handles never moves the prop.
 
 <Media
   id="3d-props-handles"
   alt="A selected rectangle prop with handles: the round handle is dragged to turn the prop, then a corner handle is dragged to make it larger."
 />
 
-Like the fields in the panel, a resize or turn is saved at the count at or before the playhead. Dragging the handles never moves the prop.
-
 ## Move a prop during the show
 
-A prop moves on the timeline the same way a marcher does. Select it and drag it, or use the alignment tools, on a later page: it travels there during that page's move, and it's held in place when nothing moves it. See [Move marchers](/guides/marchers/move-marchers/) and [Moves](/guides/timeline/moves/).
+Select the prop and drag it on a later page, or use the alignment tools, as you would a marcher ([Move marchers](/guides/marchers/move-marchers/)). It travels there during that page's <Term id="move">move</Term>, and it's held in place when nothing moves it. Props aren't in the marcher list.
 
-Props aren't marchers, though: they aren't in the marcher list.
+## Hide or delete a prop
 
-## Hide props and their names
-
-In the Props panel:
+The Props panel lists every prop:
 
 - The eye next to a prop hides it on the field and in the 3D View, or shows it again. Hiding is a view setting on your computer; it doesn't change the show.
 - <Ui k="props.showNames" /> shows or hides every prop's name on the field.
@@ -189,15 +191,15 @@ In the Props panel:
 
 ## Props in the 3D View
 
-In the 3D View each prop is a solid block: its outline, raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline, as the outlines do on the field. They have no pictures or textures.
+In the 3D View each prop is a solid block: its outline raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline. They have no pictures or textures. Props aren't in exports: not on coordinate sheets, drill charts or videos, and not sent to On the Move.
 
 <Media
   id="3d-props-block"
-  alt="The 3D View with an amber block, 1.2 meters tall, standing behind the band on the field."
+  alt="A close view in the 3D View of an amber block, 1.2 meters tall, standing on the field behind the band near the back sideline."
 />
 
 ## Related
 
-- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, props included, in 3D.
+- [Set up the front ensemble](/guides/3d-view/front-ensemble/): the pit's instruments, which stay put all show.
 - [Move marchers](/guides/marchers/move-marchers/): props move the same way.
-- [Moves](/guides/timeline/moves/): how moves place motion on the timeline.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, props included, in 3D.

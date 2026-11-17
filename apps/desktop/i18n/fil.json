@@ -1859,7 +1859,6 @@
         "title": "Mga Setting",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "In-context na pagsasalin sa Tolgee",
-        "view3d": "3D View",
         "view3d.controls": "Mga kontrol",
         "view3d.controls.input.drag": "Left-click drag",
         "view3d.controls.input.pinch": "Pinch",
@@ -1889,7 +1888,6 @@
         "view3d.resolution.fast.description": "Pinakamalabo, pero mga kalahati lang ang trabaho. Para sa mas lumang computer.",
         "view3d.resolution.sharp": "Matalas",
         "view3d.resolution.sharp.description": "Buong detalye sa mga high-resolution na screen.",
-        "view3d.summary": "Kung paano gumuguhit at gumagalaw ang 3D View sa computer na ito. Hindi naka-save sa palabas.",
         "input": "Touch at Input",
         "input.description": "Piliin ang tablet layout (para sa daliri at pen) o ang desktop layout (para sa mouse at trackpad).",
         "input.interface": "Layout",
@@ -3167,7 +3165,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Mababago mo ito mamaya sa Mga setting › Pangkalahatan.",
             "no": "Hindi",
             "title": "Awtomatikong buksan ang 3D View sa pagbukas ng palabas?",
             "yes": "Oo"
@@ -3241,10 +3238,6 @@
                 "desktop": "Software ang nagpapatakbo ng graphics sa computer na ito, kaya mababa ang kalidad ng 3D View, at mabagal pa rin ito. Para sa buong view, i-update ang iyong mga graphics driver at i-restart ang OpenMarch.",
                 "web": "Software ang nagpapatakbo ng graphics sa browser na ito, kaya mababa ang kalidad ng 3D View, at mabagal pa rin ito. Para sa buong view, i-on ang graphics acceleration (sa Chrome o Edge: Mga Setting, System, \"Gamitin ang graphics acceleration kapag available\") at i-restart ang browser."
             },
-            "autoLowered": {
-                "settings": "Ginawang Mababa dahil nag-i-stutter ang view. Para manatili ang buong kalidad, piliin ang Mataas sa Mga setting, 3D View.",
-                "panel": "Ginawang Mababa dahil nag-i-stutter ang view. Para manatili ang buong kalidad, piliin ang Mataas sa ilalim ng Kalidad sa Mga setting ng view."
-            },
             "softwareHint": "Nananatili sa Mababa dahil software ang nagpapatakbo ng graphics dito.",
             "autoLoweredHint": "Ginawang Mababa dahil nag-i-stutter ang view. Piliin ang Mataas para manatili ang buong kalidad.",
             "dismiss": "Sige"
@@ -3253,10 +3246,7 @@
             "label": "Playback"
         },
         "settings": {
-            "title": "Mga setting ng view",
             "close": "Isara",
-            "venueSection": "Palabas na ito",
-            "venueHint": "Naka-save sa file ng palabas. Binabawi ng pag-undo sa editor ang pagbabago.",
             "crowdColors": "Kulay ng manonood",
             "homeColor": "Home",
             "awayColor": "Bisita",
@@ -3264,9 +3254,6 @@
             "endZoneText": "Letra sa end zone",
             "endZoneTextPlaceholder": "Walang letra",
             "endZoneColor": "Kulay",
-            "graphicsSection": "Computer na ito",
-            "graphicsHint": "Hindi naka-save sa palabas, kaya puwedeng magkaiba sa bawat computer.",
-            "keysSection": "Keyboard at mouse",
             "uniforms": "Uniporme ng banda",
             "guardUniforms": "Uniporme ng guard",
             "brassFinish": "Finish ng brass",

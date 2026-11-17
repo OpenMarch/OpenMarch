@@ -1,6 +1,6 @@
 ---
 title: Basic and Expert
-description: The two editor modes, what Basic leaves out, and how to switch between them.
+description: The two editor modes compared, Basic (page by page, like a drill chart) and Expert (the full timeline), and how to switch between them.
 type: concept
 covers:
   - apps/desktop/src/stores/EditorModeStore.ts
@@ -22,75 +22,70 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
 
-OpenMarch has two editor modes. <Ui k="settings.general.editorMode.basic" /> works in pages, like a drill chart. <Ui k="settings.general.editorMode.expert" /> shows the full timeline, where moves can cross pages and overlap. Both edit the same show, and you can switch at any time.
+OpenMarch has two editor modes. <Ui k="settings.general.editorMode.basic" /> works page by page, like a drill chart. <Ui k="settings.general.editorMode.expert" /> shows the full timeline, where a <Term id="move">move</Term> can start on any count, cross pages and overlap another. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains pages, moves and the start flag.
 
 The mode belongs to the app, not to the show. Switching never changes the open show, and a show made in one mode opens in the other.
 
-## Basic
+## How the modes differ
 
-In Basic, the timeline is one row of page boxes. Each box is as long as its page, with the page's counts and the music inside it.
+| | Basic | Expert |
+| --- | --- | --- |
+| The timeline | One row of page boxes, each with its counts and music. | The page boxes, with a bar under them for each move that doesn't fill a page. |
+| Where Play starts | At the start of the page the playhead is on, playing on to the end of the show. | At the <Term id="start-flag">start flag</Term>, which you place. Play stops at the playhead, and <Kbd action="playOn" /> plays on. See [Play the show](/guides/timeline/play-the-show/). |
+| Moves | Each page has its move. A position in the middle of a page splits it at that count. | Moves start and end on any count, cross pages, cover some marchers and overlap. You drag, resize, split, merge and rename their bars. |
+| Dragging the playhead | Lands on every count. | Lands on measures and pages' flags when it's near one; hold <Kbd keys="Alt" gesture="drag" /> for any count. |
+| Expert-only tools | Not available. | [Selecting a stretch of counts](/guides/timeline/moves/#make-a-move) (<Kbd keys="Mod" gesture="drag" />), [the loop](/guides/timeline/play-the-show/#loop-a-passage) (<Kbd action="toggleLoop" />), [working on one move alone](/guides/timeline/moves/#work-on-one-move-alone), [<Ui k="timeline.terms.holdOverWindow" plain />](/guides/timeline/holds/#hold-from-the-start-flag-to-the-playhead), [dragging the timeline's top edge to make it taller, and the <Ui k="timeline.compact.label" plain /> button](/guides/timeline/play-the-show/#zoom-scroll-and-resize-the-timeline). |
+
+Everything Basic does works the same way in Expert.
 
 <Media
   id="start-timeline-basic"
-  alt="The timeline in Basic: one row of numbered page boxes, each holding its counts, measures and a stretch of the music's waveform, with the playback controls along the top."
+  alt="The timeline in Basic: home and page boxes 0A to 4 under the playback controls, with Page 2 selected and the playhead at its end. Under the boxes run the measure numbers and the music's waveform."
 />
-
-You set each page: select a page, and arrange the marchers where they should be when the page ends. A marcher you don't move on a page stays where the last set left it, and follows along if you change that set later.
-
-You can also set a position in the middle of a page. Put the playhead on a count inside the page and move the marcher there. The page box gets a tick at that count, and the marcher still reaches the page's set at the end of the page. To take that position out again, right-click the tick and select <Ui k="timeline.basic.point.remove" />.
-
-Adding a page, or splitting one, keeps everyone's positions where the new page starts, so no move runs across the new page line.
-
-Play (<Kbd action="playPause" />) plays from the start of the page you're on to the end of the show.
-
-## Expert
-
-Expert shows the full timeline. A move that fills a page is that page's box, as in Basic. A move that doesn't line up with the pages, such as one that starts mid-page, crosses a page line or moves only some marchers, gets its own bar under the pages, so you can see and change when it starts and ends.
 
 <Media
   id="start-timeline-expert"
-  alt="The timeline in Expert: the same pages, with page 2 selected between the yellow start flag and the playhead, a move for a few marchers drawn as a bar under the pages, and Loop and compact timeline buttons in the playback controls."
+  alt="The same pages in Expert: the yellow start flag four counts into Page 2 and the playhead at its end, with the counts between them shaded and labeled counts 5–8, a bar named Move 1 under them for a few marchers who move only in those counts, and a Loop button, off, among the playback controls."
 />
 
-Everything Basic does works the same way in Expert. Expert adds:
+## Basic
 
-- Moves as bars you can drag, resize, split, merge and rename, including moves that cross page lines and moves that overlap.
-- Selecting a stretch of counts by dragging along the timeline, and double-clicking a move to work on it alone.
-- The start flag, which you place to choose where playback starts. Play plays from the start flag to the playhead, and <Kbd action="playOn" /> plays on to the end of the show.
-- The loop, which repeats a stretch while you work (<Kbd action="toggleLoop" />).
-- <Ui k="timeline.terms.holdOverWindow" />, which keeps marchers still between the start flag and the playhead. In Expert, a drag on a later page of a hold ends the hold there; see [Drag marchers that are Held](/guides/timeline/defined-held-not-defined/#drag-marchers-that-are-held).
-- Resizing the timeline by dragging its top edge, and the compact timeline.
+You set each page: select its box, and put the marchers where they should be when the page ends. A marcher you don't move on a page stays where the last set left it.
 
-[How the timeline works](/guides/timeline/how-the-timeline-works/) explains moves and the start flag.
+To put a marcher somewhere in the middle of a page, move it with the playhead on that count; see [Set a position in the middle of a page](/guides/timeline/moves/#set-a-position-in-the-middle-of-a-page-basic). Adding or splitting a page keeps everyone's positions where the new page starts.
+
+## Expert
+
+Expert adds a bar for every move that doesn't fill a page, such as one that starts mid-page or moves only some marchers, so you can see and change when it starts and ends. [Make and change moves](/guides/timeline/moves/) covers making and changing them.
 
 ## Shows edited in Expert, opened in Basic
 
-Some moves made in Expert can't be shown as pages: a move that crosses a page line, moves that overlap, a move into a shape, or a move along a curve. Basic keeps them, plays them and draws them, but doesn't change them.
+Some moves made in Expert can't be shown as pages: a move that crosses a page's flag, moves that overlap, a move into a shape, or a move along a curve. Basic keeps them, plays them and draws them, but doesn't change them. Other Expert moves, such as some marchers split off into a move of their own inside one page, Basic edits like any page's move; [Known issues](/troubleshooting/known-issues/#basic-can-take-a-marcher-out-of-a-move-made-in-expert) has the one case to watch.
 
-A page with such marchers shows an E in its page box; point at it to see how many marchers it is. If you move a group that includes them, the others move and they stay, and a message says so with a <Ui k="timeline.basic.switchToExpert" /> button.
+A page with such marchers shows an E at the start of its box; point at it to see how many marchers it is. If you move a group that includes them, the others move and they stay, and a message says so with a <Ui k="timeline.basic.switchToExpert" /> button.
 
-## Choose a mode
+<Media
+  id="start-basic-expert-mark"
+  alt="Pages 5 and 5A in Basic, each with a small E at the start of its box. The pointer is on the first E, and its tooltip says: 3 marchers use Expert moves on page 5. Basic can't edit them here."
+  maxWidth={640}
+/>
 
-The first time you open OpenMarch, it asks how you want to work. Choose Basic if you write drill page by page, as on a paper chart, or Expert if you want moves that span pages.
+## Switch between Basic and Expert
 
-To switch later:
+The first time you open OpenMarch, it asks how you want to work. Choose Basic if you write drill page by page, as on a paper chart, or Expert if you want moves that span pages. To switch later:
 
 1. Open <Ui k="settings.title" /> (<Kbd action="openSettings" />).
 2. Select <Ui k="settings.timeline" />.
 3. Under <Ui k="settings.general.editorMode" />, choose <Ui k="settings.general.editorMode.basic" /> or <Ui k="settings.general.editorMode.expert" />.
 
-<Media
-  id="start-editor-mode-setting"
-  alt="The Settings window on the Timeline section, with Editor mode at the top as two cards, Basic and Expert, each with a small picture of its timeline, and the Waveform choices below."
-/>
+Or open the command palette (<Kbd action="openCommandPalette" />), type "basic" or "expert", and select <Ui k="actions.timeline.toggleEditorModeToExpert" /> or <Ui k="actions.timeline.toggleEditorModeToBasic" />.
 
-You can also switch from the command palette (<Kbd action="openCommandPalette" />): type "basic" or "expert", and select <Ui k="actions.timeline.toggleEditorModeToExpert" /> in Basic or <Ui k="actions.timeline.toggleEditorModeToBasic" /> in Expert.
-
-The open show changes at once, with no reload. The keyboard shortcuts list, the command palette and the Playback menu leave out what Basic doesn't have.
+The open show changes at once. The keyboard shortcuts list, the command palette and the Playback menu leave out what Basic doesn't have.
 
 ## Related
 
-- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, moves and counts.
+- [How the timeline works](/guides/timeline/how-the-timeline-works/): counts, pages, moves and the start flag.
 - [Play the show](/guides/timeline/play-the-show/): Play, the start flag and the loop.
-- [Settings](/guides/reference/settings/): every setting in the app.
+- [Make and change moves](/guides/timeline/moves/): moves that start mid-page or cross pages.

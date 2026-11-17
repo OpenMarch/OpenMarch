@@ -1,21 +1,21 @@
 {
-    "3d-camera-menu": {
-        "chapter": "3d-view",
-        "kind": "still",
-        "width": 476,
-        "height": 568
-    },
     "3d-cameras-panel": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
         "height": 836
     },
+    "3d-controls": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 900,
+        "height": 132
+    },
     "3d-front-ensemble-3d": {
         "chapter": "3d-view",
         "kind": "still",
-        "width": 1600,
-        "height": 760
+        "width": 1400,
+        "height": 538
     },
     "3d-front-ensemble-add": {
         "chapter": "3d-view",
@@ -29,62 +29,89 @@
         "width": 1600,
         "height": 924
     },
+    "3d-front-ensemble-presets": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1176,
+        "height": 576
+    },
+    "3d-front-ensemble-summary": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 280
+    },
     "3d-marchers": {
         "chapter": "3d-view",
         "kind": "still",
-        "width": 1600,
-        "height": 586
+        "width": 1360,
+        "height": 500
     },
     "3d-move-view": {
         "chapter": "3d-view",
         "kind": "clip",
         "width": 1280,
         "height": 780,
+        "seconds": 4.5
+    },
+    "3d-orbit-view": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 780,
+        "seconds": 4.7
+    },
+    "3d-pick-seat": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 768,
         "seconds": 7.7
     },
     "3d-props-block": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 1600,
-        "height": 934
+        "height": 960
     },
     "3d-props-draw": {
         "chapter": "3d-view",
         "kind": "clip",
         "width": 1280,
-        "height": 1252,
+        "height": 982,
         "seconds": 6.3
     },
     "3d-props-edit": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1436
+        "height": 1240
     },
     "3d-props-handles": {
         "chapter": "3d-view",
         "kind": "clip",
-        "width": 636,
-        "height": 604,
+        "width": 1052,
+        "height": 760,
         "seconds": 6.2
-    },
-    "3d-props-import-review": {
-        "chapter": "3d-view",
-        "kind": "still",
-        "width": 996,
-        "height": 1412
     },
     "3d-props-panel": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1412
+        "height": 652
+    },
+    "3d-props-polygon": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 572,
+        "seconds": 7.8
     },
     "3d-settings": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
-        "height": 1784
+        "height": 1088
     },
     "3d-silk-artwork": {
         "chapter": "3d-view",
@@ -96,7 +123,19 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 684,
-        "height": 1032
+        "height": 1048
+    },
+    "3d-uniforms": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 640
+    },
+    "3d-venue-arena": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1280,
+        "height": 640
     },
     "3d-window": {
         "chapter": "3d-view",
@@ -104,11 +143,24 @@
         "width": 1600,
         "height": 1000
     },
+    "3d-zoom-view": {
+        "chapter": "3d-view",
+        "kind": "clip",
+        "width": 1280,
+        "height": 780,
+        "seconds": 4.3
+    },
+    "field-appearance": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 920,
+        "height": 1256
+    },
     "field-edit-mode": {
         "chapter": "field",
         "kind": "still",
         "width": 1600,
-        "height": 1000
+        "height": 1166
     },
     "field-inspector": {
         "chapter": "field",
@@ -116,42 +168,42 @@
         "width": 920,
         "height": 1364
     },
-    "field-keys-help": {
-        "chapter": "field",
-        "kind": "still",
-        "width": 672,
-        "height": 888
-    },
     "field-line-detail": {
         "chapter": "field",
         "kind": "still",
         "width": 912,
-        "height": 724
+        "height": 720
     },
     "field-ruler-drag": {
         "chapter": "field",
         "kind": "clip",
-        "width": 1280,
-        "height": 1228,
-        "seconds": 4.9
+        "width": 968,
+        "height": 852,
+        "seconds": 6.2
     },
     "field-show-settings": {
         "chapter": "field",
         "kind": "still",
         "width": 1012,
-        "height": 1080
+        "height": 1392
+    },
+    "field-step-inspector": {
+        "chapter": "field",
+        "kind": "still",
+        "width": 600,
+        "height": 200
     },
     "field-step-warnings": {
         "chapter": "field",
         "kind": "still",
-        "width": 1600,
-        "height": 920
+        "width": 1400,
+        "height": 688
     },
     "field-template": {
         "chapter": "field",
         "kind": "still",
-        "width": 912,
-        "height": 660
+        "width": 880,
+        "height": 628
     },
     "files-export-charts": {
         "chapter": "files",
@@ -169,25 +221,32 @@
         "chapter": "files",
         "kind": "still",
         "width": 1552,
-        "height": 1168
+        "height": 956
     },
     "files-file-tab": {
         "chapter": "files",
         "kind": "still",
         "width": 1600,
-        "height": 148
+        "height": 176
     },
     "files-launch": {
         "chapter": "files",
         "kind": "still",
-        "width": 1600,
-        "height": 1000
+        "width": 1436,
+        "height": 660
     },
-    "files-mobile-panel": {
+    "files-video-overlay": {
+        "chapter": "files",
+        "kind": "clip",
+        "width": 1280,
+        "height": 738,
+        "seconds": 6.7
+    },
+    "files-video-settings": {
         "chapter": "files",
         "kind": "still",
-        "width": 1060,
-        "height": 1440
+        "width": 1552,
+        "height": 584
     },
     "marchers-add-form": {
         "chapter": "marchers",
@@ -198,27 +257,21 @@
     "marchers-align": {
         "chapter": "marchers",
         "kind": "clip",
-        "width": 1120,
-        "height": 520,
-        "seconds": 5.6
-    },
-    "marchers-alignment-tab": {
-        "chapter": "marchers",
-        "kind": "still",
-        "width": 1600,
-        "height": 118
+        "width": 1000,
+        "height": 480,
+        "seconds": 3.9
     },
     "marchers-appearance": {
         "chapter": "marchers",
         "kind": "still",
         "width": 1012,
-        "height": 840
+        "height": 524
     },
     "marchers-coordinate-rounding": {
         "chapter": "marchers",
         "kind": "still",
         "width": 768,
-        "height": 916
+        "height": 748
     },
     "marchers-inspector": {
         "chapter": "marchers",
@@ -233,11 +286,11 @@
         "height": 674,
         "seconds": 6.4
     },
-    "marchers-panel": {
+    "marchers-move-pad": {
         "chapter": "marchers",
         "kind": "still",
-        "width": 1012,
-        "height": 1040
+        "width": 636,
+        "height": 444
     },
     "marchers-pivot": {
         "chapter": "marchers",
@@ -245,13 +298,6 @@
         "width": 1240,
         "height": 960,
         "seconds": 7
-    },
-    "marchers-pivot-pick": {
-        "chapter": "marchers",
-        "kind": "clip",
-        "width": 1240,
-        "height": 720,
-        "seconds": 8
     },
     "marchers-rotate": {
         "chapter": "marchers",
@@ -278,7 +324,7 @@
         "chapter": "marchers",
         "kind": "still",
         "width": 1600,
-        "height": 118
+        "height": 160
     },
     "marchers-select-tool": {
         "chapter": "marchers",
@@ -286,23 +332,55 @@
         "width": 920,
         "height": 368
     },
+    "marchers-space": {
+        "chapter": "marchers",
+        "kind": "clip",
+        "width": 1120,
+        "height": 400,
+        "seconds": 4.2
+    },
+    "marchers-tags": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 644,
+        "height": 172
+    },
+    "music-add": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 964,
+        "height": 80
+    },
+    "music-count-ask": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 800,
+        "height": 1020
+    },
     "music-count-menu": {
         "chapter": "music",
         "kind": "still",
-        "width": 1156,
-        "height": 572
+        "width": 800,
+        "height": 520
     },
     "music-edit-music": {
         "chapter": "music",
         "kind": "still",
         "width": 1600,
-        "height": 478
+        "height": 704
     },
     "music-file-menu": {
         "chapter": "music",
         "kind": "still",
-        "width": 1072,
-        "height": 372
+        "width": 1260,
+        "height": 432
+    },
+    "music-gradual": {
+        "chapter": "music",
+        "kind": "clip",
+        "width": 900,
+        "height": 240,
+        "seconds": 7.4
     },
     "music-import-checks": {
         "chapter": "music",
@@ -310,82 +388,120 @@
         "width": 1136,
         "height": 820
     },
+    "music-import-menu": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 992,
+        "height": 236
+    },
     "music-import-score": {
         "chapter": "music",
         "kind": "still",
         "width": 928,
         "height": 552
     },
-    "music-metronome": {
+    "music-metronome-panel": {
         "chapter": "music",
         "kind": "still",
-        "width": 964,
-        "height": 708
+        "width": 1064,
+        "height": 764
     },
     "music-sound": {
         "chapter": "music",
         "kind": "still",
         "width": 512,
-        "height": 284
+        "height": 268
+    },
+    "music-tap-tempo": {
+        "chapter": "music",
+        "kind": "still",
+        "width": 680,
+        "height": 504
     },
     "music-tempo-drag": {
         "chapter": "music",
         "kind": "clip",
         "width": 1280,
-        "height": 382,
-        "seconds": 4.8
+        "height": 390,
+        "seconds": 6.5
     },
     "music-time-signature": {
         "chapter": "music",
         "kind": "still",
-        "width": 1268,
-        "height": 1068
+        "width": 668,
+        "height": 1088
     },
     "music-timeline-waveform": {
         "chapter": "music",
         "kind": "still",
         "width": 1600,
-        "height": 226
-    },
-    "reference-settings-window": {
-        "chapter": "reference",
-        "kind": "still",
-        "width": 1600,
-        "height": 1138
+        "height": 344
     },
     "reference-shortcut-settings": {
         "chapter": "reference",
         "kind": "still",
+        "width": 1256,
+        "height": 1064
+    },
+    "shapes-arc-closed": {
+        "chapter": "shapes",
+        "kind": "still",
         "width": 1600,
-        "height": 1138
+        "height": 1000
+    },
+    "shapes-arc-editor": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 664,
+        "height": 112
+    },
+    "shapes-box-editor": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1280,
+        "height": 188
+    },
+    "shapes-curve-bend": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 6.1
     },
     "shapes-draw-arc": {
         "chapter": "shapes",
         "kind": "clip",
         "width": 1280,
         "height": 800,
-        "seconds": 8.4
+        "seconds": 7.3
     },
     "shapes-draw-box": {
         "chapter": "shapes",
         "kind": "clip",
         "width": 1280,
         "height": 800,
-        "seconds": 6.8
+        "seconds": 6.9
     },
     "shapes-draw-circle": {
         "chapter": "shapes",
         "kind": "clip",
         "width": 1280,
         "height": 800,
-        "seconds": 6.5
+        "seconds": 6.6
     },
     "shapes-draw-line": {
         "chapter": "shapes",
         "kind": "clip",
         "width": 1280,
         "height": 800,
-        "seconds": 7.3
+        "seconds": 7.4
+    },
+    "shapes-draw-straight-line": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 6.7
     },
     "shapes-edit-placed": {
         "chapter": "shapes",
@@ -394,24 +510,55 @@
         "height": 800,
         "seconds": 6.4
     },
-    "shapes-fill-menu": {
+    "shapes-fills": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 852,
+        "seconds": 7.7
+    },
+    "shapes-layout-menu": {
         "chapter": "shapes",
         "kind": "still",
-        "width": 1296,
-        "height": 388
+        "width": 1300,
+        "height": 688
+    },
+    "shapes-line-editor": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1320,
+        "height": 200
     },
     "shapes-modifier-keys": {
         "chapter": "shapes",
         "kind": "clip",
         "width": 1280,
         "height": 800,
-        "seconds": 7.3
+        "seconds": 7.8
     },
     "shapes-open-box": {
         "chapter": "shapes",
         "kind": "still",
-        "width": 1404,
-        "height": 876
+        "width": 1424,
+        "height": 892
+    },
+    "shapes-pathways": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1424,
+        "height": 892
+    },
+    "shapes-ring": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 800,
+        "height": 800
+    },
+    "shapes-snap-button": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1164,
+        "height": 172
     },
     "shapes-snap-guide": {
         "chapter": "shapes",
@@ -426,61 +573,146 @@
         "width": 940,
         "height": 172
     },
+    "shapes-take-out": {
+        "chapter": "shapes",
+        "kind": "clip",
+        "width": 1280,
+        "height": 800,
+        "seconds": 7.1
+    },
+    "start-basic-expert-mark": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1252,
+        "height": 328
+    },
     "start-convert-dialog": {
         "chapter": "start",
         "kind": "still",
         "width": 880,
         "height": 872
     },
-    "start-editor-mode-setting": {
+    "start-first-show-box": {
+        "chapter": "start",
+        "kind": "clip",
+        "width": 1280,
+        "height": 782,
+        "seconds": 7.6
+    },
+    "start-first-show-move": {
+        "chapter": "start",
+        "kind": "clip",
+        "width": 1280,
+        "height": 742,
+        "seconds": 6.4
+    },
+    "start-first-show-play": {
+        "chapter": "start",
+        "kind": "clip",
+        "width": 1280,
+        "height": 1162,
+        "seconds": 5.9
+    },
+    "start-help-window": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1228,
+        "height": 1148
+    },
+    "start-new-show": {
         "chapter": "start",
         "kind": "still",
         "width": 1600,
-        "height": 1138
+        "height": 1000
     },
-    "start-report-drawer": {
+    "start-new-show-performers": {
+        "chapter": "start",
+        "kind": "still",
+        "width": 1280,
+        "height": 1152
+    },
+    "start-report-drawer-form": {
         "chapter": "start",
         "kind": "still",
         "width": 912,
-        "height": 560
+        "height": 1904
+    },
+    "start-select-first-page": {
+        "chapter": "start",
+        "kind": "clip",
+        "width": 1280,
+        "height": 198,
+        "seconds": 5.2
     },
     "start-timeline-basic": {
         "chapter": "start",
         "kind": "still",
-        "width": 1600,
-        "height": 188
+        "width": 1456,
+        "height": 296
     },
     "start-timeline-expert": {
         "chapter": "start",
         "kind": "still",
-        "width": 1600,
-        "height": 216
+        "width": 1456,
+        "height": 340
     },
     "timeline-add-page": {
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 176
+        "height": 192
+    },
+    "timeline-basic-point": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 916,
+        "height": 236
+    },
+    "timeline-clear-page-menu": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 608,
+        "height": 616
     },
     "timeline-cross-pages": {
         "chapter": "timeline",
         "kind": "clip",
-        "width": 1280,
-        "height": 448,
-        "seconds": 5.9
+        "width": 1032,
+        "height": 808,
+        "seconds": 6.9
+    },
+    "timeline-cross-pages-message": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 648,
+        "height": 188
     },
     "timeline-held": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 1600,
-        "height": 216
+        "width": 1184,
+        "height": 264
+    },
+    "timeline-hold-drag": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 888,
+        "height": 640,
+        "seconds": 5.7
     },
     "timeline-hold-end": {
         "chapter": "timeline",
         "kind": "clip",
-        "width": 1280,
-        "height": 174,
+        "width": 1184,
+        "height": 264,
         "seconds": 6.1
+    },
+    "timeline-hold-page": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1184,
+        "height": 876,
+        "seconds": 6.4
     },
     "timeline-hold-style": {
         "chapter": "timeline",
@@ -491,59 +723,91 @@
     "timeline-isolate": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 1600,
-        "height": 1106
+        "width": 1296,
+        "height": 1272
+    },
+    "timeline-later-pages": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1188,
+        "height": 928,
+        "seconds": 5.4
     },
     "timeline-loop": {
         "chapter": "timeline",
         "kind": "clip",
         "width": 1280,
-        "height": 174,
+        "height": 282,
         "seconds": 5.5
     },
     "timeline-make-move": {
         "chapter": "timeline",
         "kind": "clip",
-        "width": 1280,
-        "height": 564,
+        "width": 1080,
+        "height": 1056,
         "seconds": 6.8
+    },
+    "timeline-merge": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 944,
+        "height": 480,
+        "seconds": 6
     },
     "timeline-move-menu": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 816,
+        "width": 776,
         "height": 556
+    },
+    "timeline-next-paths": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1096,
+        "height": 572
     },
     "timeline-not-defined": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 1600,
-        "height": 1354
+        "width": 564,
+        "height": 572
+    },
+    "timeline-not-defined-line": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 468,
+        "height": 84
     },
     "timeline-page-flag": {
         "chapter": "timeline",
         "kind": "clip",
-        "width": 1280,
-        "height": 174,
+        "width": 1184,
+        "height": 264,
         "seconds": 5.6
+    },
+    "timeline-page-inspector": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 636,
+        "height": 420
     },
     "timeline-page-menu": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 608,
+        "width": 676,
         "height": 616
     },
     "timeline-parts": {
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 216
+        "height": 330
     },
     "timeline-paths": {
         "chapter": "timeline",
         "kind": "still",
-        "width": 1600,
-        "height": 920
+        "width": 680,
+        "height": 400
     },
     "timeline-play-guide": {
         "chapter": "timeline",
@@ -554,16 +818,22 @@
     "timeline-resize-move": {
         "chapter": "timeline",
         "kind": "clip",
-        "width": 1280,
-        "height": 174,
+        "width": 1024,
+        "height": 264,
         "seconds": 7.2
     },
     "timeline-scrub": {
         "chapter": "timeline",
         "kind": "clip",
         "width": 1280,
-        "height": 886,
+        "height": 1252,
         "seconds": 5.5
+    },
+    "timeline-speed-slider": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 552,
+        "height": 424
     },
     "timeline-start-flag-positions": {
         "chapter": "timeline",
@@ -571,11 +841,48 @@
         "width": 528,
         "height": 588
     },
+    "timeline-swap": {
+        "chapter": "timeline",
+        "kind": "clip",
+        "width": 1280,
+        "height": 296,
+        "seconds": 6.9
+    },
+    "window-command-palette": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1320,
+        "height": 352
+    },
+    "window-inspector": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 660,
+        "height": 1280
+    },
     "window-overview": {
         "chapter": "workspace",
         "kind": "still",
         "width": 1600,
         "height": 1000
+    },
+    "window-sidebar": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1120,
+        "height": 1400
+    },
+    "window-toolbar": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1600,
+        "height": 214
+    },
+    "window-toolbar-end": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 860,
+        "height": 144
     },
     "workspace-pan-zoom": {
         "chapter": "workspace",
@@ -591,10 +898,28 @@
         "height": 800,
         "seconds": 4.3
     },
+    "workspace-tablet-layout": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1600,
+        "height": 1000
+    },
+    "workspace-touch-buttons": {
+        "chapter": "workspace",
+        "kind": "still",
+        "width": 1328,
+        "height": 140
+    },
     "workspace-zoom-controls": {
         "chapter": "workspace",
         "kind": "still",
         "width": 360,
         "height": 136
+    },
+    "3d-props-import-review": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
     }
 }

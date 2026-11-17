@@ -10,6 +10,7 @@ sidebar:
 ---
 
 import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
 import { LinkCard, CardGrid } from "@astrojs/starlight/components";
 
 OpenMarch is a free, open-source app for writing marching band drill. You place marchers on the field, set where they go on each page of the show, and play it back with the music, on the field or in 3D. This guide describes OpenMarch 0.2: what each part of the app does, and how to get things done with it.
@@ -28,10 +29,54 @@ OpenMarch is a free, open-source app for writing marching band drill. You place 
   <LinkCard title="Basic and Expert" href="/guides/start/basic-and-expert/" description="Two ways to work: page by page, or the full timeline." />
 </CardGrid>
 
+## Find what you need
+
+### Set up a show
+
+- [Install OpenMarch](/guides/start/install/): the desktop app, or the web editor in a browser.
+- [Write your first show](/guides/start/first-show/): a new show, from an empty file to sets playing on the field.
+- [Add, edit and remove marchers](/guides/marchers/add-marchers/): sections, drill numbers and names.
+- [Add the show's music](/guides/music/audio/) and [Set the tempo to match the music](/guides/music/tempo/): the audio file, where it starts, the tempo, a rit. or accel., and time signatures.
+- [Import a MusicXML score](/guides/music/musicxml/): counts and measures from the score.
+- [Edit the field](/guides/field/edit-the-field/) and [Edit the field's lines](/guides/field/field-lines/): a high school, college or pro field, its size and look, and its yard lines and hashes.
+- [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/): touch, a pen and the tablet layout.
+- [Basic and Expert](/guides/start/basic-and-expert/): work page by page, or on the full timeline.
+- [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/): open a show made in 0.1.7.
+
+### Write drill
+
+- [Select marchers](/guides/marchers/select-marchers/) and [Move marchers](/guides/marchers/move-marchers/): click, box, lasso, drag and nudge.
+- [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): what shapes and marchers snap to, turning snapping off, and the keys for fine control.
+- [Draw a box](/guides/shapes/draw-a-box/), [Draw a circle](/guides/shapes/draw-a-circle/), [Draw a line or curve](/guides/shapes/draw-a-line/) and [Draw an arc](/guides/shapes/draw-an-arc/): put marchers in a form.
+- [Align, space and turn marchers](/guides/marchers/align-and-space/): line them up, space them evenly, turn or flip a group around a marcher.
+- [Add and change pages](/guides/timeline/pages/): add a page, add one between two pages without renumbering (a subset), change its counts, split or delete it.
+- [Make and change moves](/guides/timeline/moves/): a move that starts or ends mid-page, crosses pages or moves only some marchers.
+- [Make marchers stand still](/guides/timeline/holds/): a hold over one or more pages, standing or marking time.
+- [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/), [Add props to the field](/guides/3d-view/props/) and [Set up the front ensemble](/guides/3d-view/front-ensemble/): the stadium, uniforms, props and the pit.
+- [Play the show](/guides/timeline/play-the-show/): where Play starts, stop, loop a few counts and change the speed.
+- [See where marchers go](/guides/timeline/see-where-marchers-go/): paths and where each marcher comes from.
+
+### Fix a mistake
+
+- Undo with <Kbd action="performUndo" /> and redo with <Kbd action="performRedo" />.
+- [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): why marchers move on later pages when you change an earlier one.
+- [Reset or lock marchers on a page](/guides/timeline/reset-marchers/): clear a page, remove one position, or keep marchers where they stand when earlier pages change.
+- [Step size warnings](/guides/field/step-size-warnings/): find steps too large to march.
+- [Change a placed shape](/guides/shapes/place-marchers/): resize, respace or reorder marchers in a shape.
+- [File errors](/troubleshooting/file-errors/), [Repair a show file](/troubleshooting/repair-a-file/) and [Known issues](/troubleshooting/known-issues/): when something goes wrong.
+
+### Share and print
+
+- [Print coordinate sheets and drill charts](/guides/files/print-charts/): PDFs for your marchers.
+- [Export a video](/guides/files/export-video/) and [Export to On the Move](/guides/files/on-the-move/): the show on a screen or a phone.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/) and [Move the camera](/guides/3d-view/cameras/): watch it from a seat in the stands.
+- [Watch the show in Preview](/guides/workspace/editor-and-preview/): watch it on the field with nothing to edit.
+- [Save and open shows](/guides/files/save-and-open/): copies, backups and the web editor.
+
 ## How the guide is organized
 
-The chapters follow the app. [The window](/guides/workspace/the-window/) names each part of it. [Marchers](/guides/marchers/add-marchers/) covers adding, selecting, moving and lining up marchers. [Timeline](/guides/timeline/how-the-timeline-works/) explains pages, moves and counts, the heart of writing drill in OpenMarch. [Shapes](/guides/shapes/) covers boxes, lines, arcs and circles. Then come [music](/guides/music/counts-and-music/), the [field](/guides/field/edit-the-field/), the [3D View and props](/guides/3d-view/open-the-3d-view/), and [saving, printing and exporting](/guides/files/save-and-open/).
+The chapters follow the app. [The window](/guides/workspace/the-window/) names each part of it. [Marchers](/guides/marchers/add-marchers/) covers adding, selecting, moving and lining up marchers. [Timeline](/guides/timeline/how-the-timeline-works/) explains pages, moves and counts, the heart of writing drill in OpenMarch. [Shapes](/guides/shapes/) covers boxes, circles, lines, curves and arcs. Then come [music](/guides/music/counts-and-music/), the [field](/guides/field/edit-the-field/), the [3D View and props](/guides/3d-view/open-the-3d-view/), and [saving, printing and exporting](/guides/files/save-and-open/).
 
-Every shortcut is in [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/), shown with your computer's own keys, and every term the guide uses is in the [glossary](/guides/reference/glossary/).
+[Keyboard shortcuts](/guides/reference/keyboard-shortcuts/) lists the keys, shown with your computer's own, and the [glossary](/guides/reference/glossary/) explains every term the guide uses.
 
 If something isn't working, see [Troubleshooting](/troubleshooting/file-errors/) and [Known issues](/troubleshooting/known-issues/), or [ask for help](/guides/start/get-help/).
