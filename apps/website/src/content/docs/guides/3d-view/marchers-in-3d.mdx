@@ -1,0 +1,60 @@
+---
+title: How marchers look and move in the 3D View
+description: Why a marcher carries a trumpet or a flag in 3D, how they step and turn, and how to make them mark time instead of standing still.
+type: concept
+covers:
+  - apps/desktop/src/view3d/core/marchers
+  - apps/desktop/src/view3d/core/instruments/catalog.ts
+  - apps/desktop/src/view3d/core/performerDefaults.ts
+  - packages/core/src/cues
+  - i18n:workspaceSettings.performer
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+
+The 3D View dresses and moves each marcher from what the show already says: their section, their number, and the drill on the timeline. There's nothing to set up for each marcher.
+
+<Media
+  id="3d-marchers"
+  alt="A close view of the band in the 3D View: brass players in uniform with their horns up, a drumline with snares and basses, and the color guard with their flags."
+/>
+
+## What a marcher carries
+
+What a marcher carries comes from their <Term id="section">section</Term>'s name:
+
+- Trumpets, mellophones, baritones, euphoniums, trombones and tubas carry their horns, and woodwind sections their instruments.
+- The battery carries its drums and cymbals.
+- Color Guard and Flag sections carry a 6-foot flag, and Rifle sections a rifle.
+- Sections the 3D View doesn't know, such as Pit or Other, carry nothing.
+
+Each marcher's body and skin tone come from their marcher number, so the same marcher looks the same every time. At High quality, heights vary a little too. The section's color ([Change how marchers look](/guides/marchers/appearance/)) colors drum shells and flag silks, not the uniform. Marchers you hide in the editor are hidden here too, and marchers you select in the editor get a ring at their feet. Uniforms, flag silks and horns are chosen for the whole show ([Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/)).
+
+## How marchers move
+
+The marchers march the drill as written: every <Term id="move">move</Term>, at the counts it takes, at the tempo of the music.
+
+- While moving, they step on every count and keep facing the front. Moving sideways, they slide; moving toward the back sideline, they march backward.
+- When a wind player changes direction, the last step of the old move lands on the ball of the foot, turned partway to the new direction, and the first step of the new move goes straight into the new path. A full turn around re-steps on the first count instead.
+- Brass play with horns up, woodwinds play their instruments, the battery plays, and the guard holds their equipment at set.
+- While a marcher holds still, they stand, unless the show or the hold says to mark time (below).
+- When the show is paused, everyone stands in the closed position on their dot, unless you've chosen to see the actual step ([Open the 3D View](/guides/3d-view/open-the-3d-view/#see-the-marchers-mid-step-when-paused)).
+
+## Make marchers mark time, or change how they step
+
+Two places change how marchers move:
+
+- For the whole show, select <Ui k="sidebar.settings" /> in the sidebar and, under <Ui k="workspaceSettings.performer.title" plain />, set <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain /> to <Ui k="workspaceSettings.performer.holdWhileBandMoves.markTime" plain />: everyone standing still, Held or Not defined, marks time while others move. The same section ([Show settings](/guides/field/show-settings/#how-marchers-move-in-the-3d-view)) sets the foot every move steps off with, whether the foot or the body lands on the dot, how winds turn a corner, and how drummers travel.
+- For one hold, put the playhead inside it, select its marchers and choose <Ui k="inspector.marcher.timeline.holdStyle.markTime" plain /> under <Ui k="inspector.marcher.timeline.holdStyle.label" plain /> in the inspector, whatever Show settings say. [Stand or mark time on a hold](/guides/timeline/holds/#stand-or-mark-time-on-a-hold) has the details.
+
+The 3D View has no settings for horn moves, facings, equipment work or choreography in this version.
+
+## Related
+
+- [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/): what the band wears and where it plays.
+- [Make marchers stand still](/guides/timeline/holds/): holds, and whether marchers stand or mark time in one.
+- [Show settings](/guides/field/show-settings/): the show's defaults for how marchers move.

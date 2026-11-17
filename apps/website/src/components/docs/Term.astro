@@ -1,0 +1,93 @@
+---
+/**
+ * A word from the glossary, linked to its entry, with the entry's first sentence shown when the
+ * reader points at it or tabs to it. Use it the first time a page uses a term it doesn't explain
+ * itself, instead of explaining the term again.
+ *
+ *   The <Term id="start-flag">start flag</Term> marks where Play starts.
+ *   <Term id="held" />                     the entry's own heading as the text
+ *
+ * `id` is the entry's anchor on the Glossary page (its heading, lowercase, hyphens for spaces).
+ * An unknown id fails the build. The hover text lives in an attribute, not in the page's text,
+ * so the plain-text copies for agents get only the word and its link.
+ */
+import { glossaryEntries, GLOSSARY_URL } from "./glossary";
+
+interface Props {
+    id: string;
+}
+
+const { id } = Astro.props;
+const entry = glossaryEntries().get(id);
+if (!entry)
+    throw new Error(
+        `<Term id="${id}">: no such entry on the Glossary page (guides/reference/glossary.mdx)`,
+    );
+const slot = Astro.slots.has("default")
+    ? (await Astro.slots.render("default")).trim()
+    : "";
+---
+
+<a
+    class="docs-term"
+    href={`${GLOSSARY_URL}#${id}`}
+    data-definition={entry.definition}
+    aria-description={entry.definition}
+    >{slot ? <Fragment set:html={slot} /> : entry.term}</a
+>
+
+<style>
+    .docs-term {
+        position: relative;
+        color: inherit;
+        text-decoration: underline dotted;
+        text-decoration-color: var(--sl-color-gray-3);
+        text-underline-offset: 0.2em;
+    }
+    .docs-term:hover,
+    .docs-term:focus-visible {
+        text-decoration-color: var(--sl-color-accent);
+    }
+    .docs-term::after {
+        content: attr(data-definition);
+        /* Empty alt text: the definition is already the link's aria-description. */
+        content: attr(data-definition) / "";
+        position: absolute;
+        left: 0;
+        bottom: calc(100% + 0.4rem);
+        z-index: 10;
+        width: max-content;
+        max-width: min(22rem, 80vw);
+        padding: 0.5rem 0.7rem;
+        border: 1px solid var(--sl-color-gray-5);
+        border-radius: 0.375rem;
+        background: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+        font-size: var(--sl-text-sm);
+        font-weight: normal;
+        line-height: 1.45;
+        white-space: normal;
+        box-shadow: var(--sl-shadow-md);
+        pointer-events: none;
+        /* Not just invisible: a hidden box still widens the page and makes it scroll sideways. */
+        display: none;
+    }
+    .docs-term:hover::after,
+    .docs-term:focus-visible::after {
+        display: block;
+        animation: docs-term-in 0.12s ease 0.25s both;
+    }
+    @keyframes docs-term-in {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+    @media (hover: none) {
+        .docs-term::after {
+            display: none;
+        }
+    }
+</style>

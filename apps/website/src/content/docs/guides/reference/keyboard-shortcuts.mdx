@@ -1,6 +1,6 @@
 ---
 title: Keyboard shortcuts
-description: Every keyboard shortcut in OpenMarch, and how to change them.
+description: The keyboard shortcuts (hotkeys) in OpenMarch for macOS, Windows and Linux, including the 3D View and Edit music, and how to change one.
 type: reference
 covers:
   - apps/desktop/src/shortcuts
@@ -20,11 +20,11 @@ import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 import ShortcutList from "@/components/docs/ShortcutList.astro";
 
-These are OpenMarch's default shortcuts, grouped the way the app's own list groups them. Keys are shown for your system: on a Mac, ⌘ is Command, ⌥ is Option and ⇧ is Shift; on Windows and Linux, the same shortcuts use Ctrl and Alt. Shortcuts marked Expert only work in [Expert mode](/guides/start/basic-and-expert/).
+These are OpenMarch's default shortcuts. The tables are the app's own list, grouped the same way, with one key for each action; [Other keys](#other-keys) after them has the second keys some actions have, and the keys that work only in Edit music, on the timeline or in the 3D View. Keys are shown for your system: on a Mac, ⌘ is Command, ⌥ is Option and ⇧ is Shift; on Windows and Linux, the same shortcuts use Ctrl and Alt. Shortcuts marked Expert only work in [Expert mode](/guides/start/basic-and-expert/).
 
 In the app, press <Kbd action="showShortcuts" /> or choose <Ui k="menu.help.title" /> › <Ui k="menu.help.showShortcuts" /> to see the list, with any keys you have changed. To find a command and its shortcut by name, press <Kbd action="openCommandPalette" /> and start typing.
 
-Some shortcuts in the table are held while you drag, scroll or click; those show the gesture after the keys.
+Some shortcuts in the table are held while you drag, scroll or click; those show the gesture after the keys. On a tablet without a keyboard, buttons over the field stand in for the held keys; see [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/#the-buttons-over-the-field).
 
 A shortcut whose command can't run right now does nothing, such as Delete when the lines you picked can't be deleted. If the command's button is on screen, it lights up and shows why for a moment.
 
@@ -39,10 +39,34 @@ If the keys you press already belong to another action, the app says which one. 
 
 <Media
   id="reference-shortcut-settings"
-  alt="Settings on the Keyboard shortcuts section, searched for play: rows such as Play / stop with Space and Play on from the start flag with Alt+Space, and a + at the end of the rows that have no shortcut yet."
+  alt="The Keyboard shortcuts list in Settings, searched for play. The pointer is on Play from playhead / pause, so its Shift+Space shows an × to remove it and a + to add another key. Play on from the start flag has had its key removed and shows a + and an arrow that puts the default back. Rows with no shortcut, such as Next playback speed, show a +."
 />
 
+On a Mac, the system's Hide and Minimize take Command-H and Command-M, so the tables give the keys that work there: <Kbd keys="Control+H" /> for <Ui k="timeline.terms.holdFromPrevious" plain /> and <Kbd keys="Control+M" /> for the metronome. The app's own list still shows Command.
+
+What <Kbd action="playPause" /> plays depends on the mode; [Play the show](/guides/timeline/play-the-show/#where-play-starts) explains it.
+
 <ShortcutList />
+
+## Other keys
+
+These keys aren't in the list that <Kbd action="showShortcuts" /> shows. The arrow keys and <Kbd keys="Home" /> and <Kbd keys="End" /> can be changed in Settings like any other shortcut ([Change a shortcut](#change-a-shortcut)); the rest can't. The 3D View lists its own keys in <Ui k="view3d.settings.panelTitle" plain /> › <Ui k="view3d.settings.tabs.preferences" plain /> › <Ui k="view3d.settings.shortcuts" plain />.
+
+| Where | Key | What it does |
+| --- | --- | --- |
+| The field | <Kbd keys="Up" />, <Kbd keys="Down" />, <Kbd keys="Left" />, <Kbd keys="Right" /> | Nudge the selected marchers, the same as <Kbd keys="W" />, <Kbd keys="S" />, <Kbd keys="A" />, <Kbd keys="D" />. [Move marchers](/guides/marchers/move-marchers/#nudge-with-the-keyboard) has what <Kbd keys="Shift" />, <Kbd keys="Alt" /> and <Kbd keys="Mod" /> add. |
+| Anywhere | <Kbd keys="Home" /> and <Kbd keys="End" /> | Go to the start of the show (home) and to the end, the same as <Kbd action="firstPage" /> and <Kbd action="lastPage" />. |
+| Anywhere | <Kbd keys="Mod+O" /> and <Kbd keys="Mod+N" /> | Open a show, and make a new one (the File menu's items, desktop app). |
+| The timeline | <Kbd keys="Shift+T" /> | Open or leave Edit music. See [Set the tempo to match the music](/guides/music/tempo/#open-and-leave-edit-music). |
+| Edit music | <Kbd keys="T" /> | Tap the tempo. See [Find the tempo by tapping](/guides/music/tempo/#find-the-tempo-by-tapping). |
+| The timeline | <Kbd keys="F2" />, or <Kbd keys="Enter" /> on a selected bar | Rename a move. |
+| The timeline | <Kbd keys="Tab" />, then <Kbd keys="Left" /> or <Kbd keys="Right" /> | Move a page's flag with the keyboard. See [Add and change pages](/guides/timeline/pages/#change-how-many-counts-a-page-has). |
+| The 3D View | <Kbd action="playPause" />, <Kbd action="nextPage" />, <Kbd action="previousPage" />, <Kbd action="firstPage" /> or <Kbd keys="Home" />, <Kbd action="lastPage" /> or <Kbd keys="End" />, and <Kbd keys="[" /> and <Kbd keys="]" /> held | Play, move through the show and change the speed, as in the editor. |
+| The 3D View | <Kbd keys="1" /> to <Kbd keys="9" /> | Jump to one of the first nine cameras. See [Move the camera](/guides/3d-view/cameras/#go-to-a-camera). |
+| The 3D View | <Kbd keys="S" /> | While paused, show the marchers mid-step or standing. |
+| The 3D View | <Kbd keys="F" /> | Fill the screen, or go back. |
+| The 3D View | <Kbd keys="C" /> | Turn the crowd on or off. |
+| The 3D View | <Kbd keys="Esc" /> | Close the open panel, or leave fill-the-screen. |
 
 ## Related
 

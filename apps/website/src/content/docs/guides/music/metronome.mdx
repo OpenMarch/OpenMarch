@@ -1,6 +1,6 @@
 ---
 title: The metronome
-description: Turn the click on and off, set its volume, accent and sound.
+description: Turn the metronome click on or off, mute the music to hear only the click, and set the volume, accent and click sound.
 type: how-to
 covers:
   - apps/desktop/src/components/music/MetronomeModal.tsx
@@ -16,25 +16,26 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
+
+<InShort>Press <Kbd keys="Control+M" />, or select the speaker button in the timeline's controls and then the metronome item in its menu.</InShort>
 
 The metronome clicks on every count while the show plays. Use it to hear whether the counts sit on the music, and to rehearse a page at its tempo with the music muted.
 
 ## Turn the metronome on or off
 
-Press <Kbd action="toggleMetronome" />, or:
-
-- select the speaker button in the timeline's controls, then <Ui k="timeline.sound.metronomeOff" /> (it reads <Ui k="timeline.sound.metronomeOn" /> while it's on);
-- in Edit music, select <Ui k="tempoMode.toolbar.metronome" /> in the header;
-- in the <Ui k="sidebar.metronome" /> panel in the sidebar, turn on <Ui k="music.onOff" />.
-
-A dot on the speaker button shows the metronome is on.
+The speaker button's metronome item names its state: <Ui k="timeline.sound.metronomeOff" /> until you select it, <Ui k="timeline.sound.metronomeOn" /> after, and a dot shows on the speaker button while it's on. In Edit music, <Ui k="tempoMode.toolbar.metronome" /> in the header does the same.
 
 <Media
   id="music-sound"
-  alt="The timeline's speaker button with its menu open: a speaker icon that mutes the music, a volume slider at 100%, and Metronome off with its shortcut."
+  alt="The timeline's speaker button, with a dot because the metronome is on, and its menu open: a speaker icon that mutes the music, a volume slider at 100%, and Metronome on with its shortcut."
   maxWidth={420}
 />
+
+## Change the volume
+
+The slider in the speaker button's menu sets the volume of the music and the metronome together. To make the click louder or quieter against the music, use <Ui k="music.volume" /> in the <Ui k="sidebar.metronome" /> panel (below).
 
 ## Hear only the metronome
 
@@ -45,7 +46,15 @@ Select the speaker button, then the speaker icon in its menu (<Ui k="timeline.so
 <Steps>
 
 1. Select <Ui k="sidebar.metronome" /> in the sidebar.
+
+   <Media
+     id="music-metronome-panel"
+     alt="The Metronome panel beside the sidebar, its button highlighted: On/Off off, Accent first beat on, measure-only clicks off, Volume at 50%, and Beat style Standard."
+     maxWidth={420}
+   />
+
 2. Change any of these:
+   - <Ui k="music.onOff" />: the metronome itself, as above.
    - <Ui k="music.accent" />: the first count of each measure clicks louder.
    - <Ui k="music.onlyClickOnMeasure" />: the metronome clicks only on the first count of each measure.
    - <Ui k="music.volume" />: how loud the click is against the music.
@@ -53,17 +62,9 @@ Select the speaker button, then the speaker icon in its menu (<Ui k="timeline.so
 
 </Steps>
 
-<Media
-  id="music-metronome"
-  alt="The Metronome panel: switches for On/Off, Accent first beat and clicks on each measure's first count only, a Volume slider at 50%, and Beat style set to Standard."
-  maxWidth={480}
-/>
-
-Stop playback to change the accent, measure-only clicks and beat style; they can't change while the show plays. The volume slider on the timeline's speaker button turns the music and the metronome up and down together.
-
-The metronome's settings last until you close OpenMarch. Each time you open it, the metronome starts off, at 50% volume, with the first count accented.
+Stop playback to change the accent, measure-only clicks and beat style. The metronome's settings last until you close OpenMarch. Each time you open it, the metronome starts off, at 50% volume, with the first count accented.
 
 ## Related
 
-- [Line the counts up with the music](/guides/music/tempo/): use the click to find where the counts drift.
+- [Set the tempo to match the music](/guides/music/tempo/): use the click to find where the counts drift.
 - [Play the show](/guides/timeline/play-the-show/): playback, speed and looping.

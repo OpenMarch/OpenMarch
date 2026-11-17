@@ -16,13 +16,16 @@ sidebar:
 ---
 
 import Media from "@/components/docs/Media.astro";
-import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-Coordinate sheets list where each marcher stands on every page, measured from the yard lines and hashes. Drill charts draw the field on every page with every marcher on it. Both are PDFs you can print or send to your marchers and staff. They need the desktop app; the web editor can't make PDFs.
+<InShort>In the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab, select <Ui k="exportCoordinates.exportButton" />, choose the <Ui k="exportCoordinates.coordinateSheets" plain /> or <Ui k="exportCoordinates.drillCharts" plain /> tab, then select <Ui k="exportCoordinates.export" />.</InShort>
 
-Both show each marcher's position at the end of each page, the set they reach on the page's last count. Where a marcher is partway through a page isn't on them, so if a move ends partway through a page and you want that spot on paper, add a page there (see [Pages](/guides/timeline/pages/)). Props aren't on either.
+Coordinate sheets (dot sheets) list where each marcher stands on every page, measured from the yard lines and hashes. Drill charts draw the field on every page with every marcher on it. Both are PDFs to print or send to your marchers and staff. They need the desktop app; the web editor can't make PDFs.
+
+Both show each marcher's <Term id="set">set</Term>: where they stand at the end of each page. A spot partway through a page isn't on them, so if you want one on paper, add a page there ([Add and change pages](/guides/timeline/pages/)). Props aren't on either.
 
 ## Export coordinate sheets
 
@@ -52,7 +55,7 @@ When the export is done, select the message that appears to open the file or fol
 - <Ui k="exportCoordinates.useXYHeaders" />: heads the columns X and Y instead of <Ui k="exportCoordinates.sideToSideHeader" plain /> and <Ui k="exportCoordinates.frontToBackHeader" plain />.
 - <Ui k="exportCoordinates.quarterPageLayout" />: fits four marchers' sheets on each sheet of paper, to cut into quarters. It turns on short coordinates.
 - <Ui k="exportCoordinates.organizeBySection" />: makes a PDF for each marcher, in a folder for each section. Without it, you get one PDF with every marcher's sheet in score order.
-- <Ui k="exportCoordinates.roundingDenominator" plain />: rounds coordinates to the nearest whole, half, quarter, eighth or tenth of a step.
+- <Ui k="exportCoordinates.roundingDenominator" /> rounds coordinates to the nearest whole, half, quarter, eighth or tenth of a step.
 
 ## Export drill charts
 
@@ -70,7 +73,7 @@ When the export is done, select the message that appears to open the file or fol
 
 <Media
   id="files-export-charts"
-  alt="The Export dialog on the Drill Charts tab: the Individual Drill Charts and Include notes appendix pages checkboxes, and a preview of a drill chart page."
+  alt="The Export dialog on the Drill Charts tab with Individual Drill Charts and Include notes appendix pages on, and a preview of one marcher's chart: a box on where they were, a dotted path to where they stand now, and a solid path to a circle on where they go next."
 />
 
 ### Drill chart options
@@ -82,7 +85,7 @@ The charts draw your show's field, with its markings and field image, and the <U
 
 ## Moves past the end of the show
 
-The exports end at the last page. If a move runs past it, the dialog says how many moves won't be in the export. Select <Ui k="exportCoordinates.addPagesToEnd" /> to add pages up to the end of the last move, then export; or export as it is, without them. Adding pages is one step you can undo.
+The exports end at the last page's flag. In Expert a move can run past it, and then the dialog says how many moves won't be in the export. Select <Ui k="exportCoordinates.addPagesToEnd" /> to add pages after the last one up to the end of the last move, each as long as the show's <Ui k="workspaceSettings.defaultNewPageCounts" plain /> ([Show settings](/guides/field/show-settings/)), then export. Your pages keep their numbers, and adding is one step you can undo. Or export as it is, without those moves.
 
 ## If you can't export
 
@@ -92,5 +95,5 @@ For drill charts, the <Ui k="exportCoordinates.export" plain /> button stays off
 
 - [Export a video](/guides/files/export-video/): a video of the show with its music, for staff and students.
 - [Export to On the Move](/guides/files/on-the-move/): send the show to your marchers' phones.
-- [Pages](/guides/timeline/pages/): the sets the charts and sheets show.
+- [Add and change pages](/guides/timeline/pages/): the sets the charts and sheets show.
 - [Edit the field](/guides/field/edit-the-field/): the field the charts are drawn on.

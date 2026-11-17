@@ -237,6 +237,8 @@
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play",
+            "openHelp": "Get help",
+            "openHelpKeywords": "help guide docs manual how question assistant ai chatgpt claude prompt",
             "reportFeedback": "Report a bug or send feedback",
             "reportFeedbackKeywords": "bug issue problem feedback feature request support",
             "viewMyReports": "View my reports",
@@ -3674,6 +3676,7 @@
         },
         "help": {
             "title": "Help",
+            "openHelp": "Get Help…",
             "showShortcuts": "Keyboard Shortcuts",
             "website": "Website",
             "guides": "Docs/Guides",
@@ -4397,6 +4400,30 @@
             "mixed": "Mixed",
             "add": "Add line",
             "everyOther": "Keep every other"
+        }
+    },
+    "help": {
+        "title": "Get help",
+        "description": "Look it up in the user guide, or have an AI assistant such as ChatGPT or Claude find the answer for you.",
+        "guide": {
+            "title": "Read the user guide",
+            "body": "Step-by-step help, with pictures and clips.",
+            "open": "Open the guide"
+        },
+        "ai": {
+            "title": "Ask an AI assistant",
+            "body": "Paste this message into ChatGPT, Claude or any AI assistant. It has the assistant read the OpenMarch guide before it answers.",
+            "questionLabel": "What are you trying to do? (optional)",
+            "questionPlaceholder": "For example: I want the trumpets to stand still for 8 counts, but they keep moving.",
+            "copy": "Copy message",
+            "copied": "Copied. Now paste it into your assistant.",
+            "copyFailed": "Couldn't copy it. Select the text below and copy it yourself:",
+            "whatIsCopied": "See the message",
+            "privacy": "Nothing about your show is included."
+        },
+        "report": {
+            "title": "Something not working?",
+            "body": "Tell us what happened. You can record your screen and send a copy of your show."
         }
     }
 }
