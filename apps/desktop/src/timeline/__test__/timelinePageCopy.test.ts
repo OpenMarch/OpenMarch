@@ -298,7 +298,7 @@ describeDbTests("set marchers to the previous or next page", (it) => {
         expect(positionAt(3, pageEndBeat(secondToLast))).toEqual([123, 456]);
     });
 
-    it("no neighbor page and an empty selection: a message or nothing, and no write", async ({
+    it("no neighbor page and an empty selection: nothing, quietly, and no write", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -314,9 +314,8 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             scope: "all",
         });
         expect(first.result).toBeNull();
-        expect(first.notify.error).toHaveBeenCalledWith(
-            "actions.batchEdit.noPreviousPage",
-        );
+        // The action is greyed out there, with its reason: no toast
+        expect(first.notify.error).not.toHaveBeenCalled();
 
         const last = await runTimeline(db, {
             page: pages[pages.length - 1]!,
@@ -325,9 +324,8 @@ describeDbTests("set marchers to the previous or next page", (it) => {
             scope: "selected",
             selected: [1],
         });
-        expect(last.notify.error).toHaveBeenCalledWith(
-            "actions.batchEdit.noNextPage",
-        );
+        expect(last.result).toBeNull();
+        expect(last.notify.error).not.toHaveBeenCalled();
 
         const empty = await runTimeline(db, {
             page: pages[3]!,

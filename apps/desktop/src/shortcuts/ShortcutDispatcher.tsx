@@ -15,8 +15,11 @@ import {
 import { ACTIONS, NUDGE_ACTION_IDS, type ActionId } from "./definitions";
 import { fieldEditMode } from "@/field/editMode/fieldEditModeStore";
 import {
+    actionDisabledReason,
     actionIgnoresRepeat,
+    hasActionHandler,
     isActionEnabled,
+    notifyRefusedPress,
     pressAction,
     type ReleaseReason,
 } from "./registry";
@@ -79,23 +82,39 @@ export default function ShortcutDispatcher({
             // theirs; Space still plays
             const focused = document.activeElement;
             if (isTimelineOwnKey(event, focused)) return;
+            // No nudge on a timeline move control (code review). While the Field panel is
+            // open (#824) the drill's canvas keys are off: a line key that can't run now
+            // (H with nothing picked, X on another tab) must not fall through to the
+            // drill command on the same key
+            const available = (id: ActionId) =>
+                !(NUDGE_IDS.has(id) && skipsAppNudge(event, focused)) &&
+                !(ACTIONS[id].scope === "canvas" && fieldEditMode.isActive());
+            const context = readShortcutContext();
             const entry = resolveKeyEvent(
                 event,
                 compiled,
-                readShortcutContext(),
-                // No nudge on a timeline move control (code review). While the Field panel is
-                // open (#824) the drill's canvas keys are off: a line key that can't run now
-                // (H with nothing picked, X on another tab) must not fall through to the
-                // drill command on the same key
-                (id) =>
-                    isActionEnabled(id) &&
-                    !(NUDGE_IDS.has(id) && skipsAppNudge(event, focused)) &&
-                    !(
-                        ACTIONS[id].scope === "canvas" &&
-                        fieldEditMode.isActive()
-                    ),
+                context,
+                (id) => isActionEnabled(id) && available(id),
             );
-            if (!entry) return;
+            if (!entry) {
+                // Nothing runs, but the key is the command's that would run here, which can't
+                // now and says why: its button, if it's on screen, shows the reason briefly,
+                // instead of a toast. With no button to show it, the key is left alone
+                const refused = resolveKeyEvent(
+                    event,
+                    compiled,
+                    context,
+                    (id) => available(id) && hasActionHandler(id),
+                );
+                if (
+                    refused &&
+                    actionDisabledReason(refused.id) !== undefined &&
+                    // A held key keeps it lit
+                    notifyRefusedPress(refused.id)
+                )
+                    event.preventDefault();
+                return;
+            }
             event.preventDefault();
             if (
                 event.repeat &&

@@ -2000,7 +2000,7 @@ export function SnapButton() {
             }
             action="toggleSnap"
             pressed={!on}
-            onClick={() => useUiSettingsStore.getState().setSnap()}
+            onClick={() => runAction("toggleSnap")}
             testId="shape-editor-snap"
         >
             <MagnetIcon size={14} />

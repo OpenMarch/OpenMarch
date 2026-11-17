@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { getActionPaletteItems } from "../palette/actionSource";
 import {
+    actionDisabledReason,
     actionIgnoresRepeat,
     hasActionHandler,
     isActionEnabled,
@@ -140,8 +141,14 @@ describe("useActionHandler", () => {
         const t = (key: string) => key;
         const label = vi.fn(() => "Lock X on Page 4");
         const enabled = vi.fn(() => false);
+        // A disabled action is listed only with a reason
+        const disabledReason = () => "Not now";
         const { rerender, unmount } = renderHook(() =>
-            useActionHandler("lockX", () => {}, { label, enabled }),
+            useActionHandler("lockX", () => {}, {
+                label,
+                enabled,
+                disabledReason,
+            }),
         );
         rerender();
         expect(label).not.toHaveBeenCalled();
@@ -153,6 +160,33 @@ describe("useActionHandler", () => {
         expect(item?.label).toBe("Lock X on Page 4");
         expect(isActionEnabled("lockX")).toBe(false);
         expect(runAction("lockX")).toBe(false);
+        unmount();
+    });
+
+    it("gives a greyed-out action's reason to the palette, read only while it's disabled", () => {
+        const t = (key: string) => key;
+        const reason = vi.fn(() => "Select 2 marchers to swap them");
+        const { rerender, unmount } = renderHook(
+            ({ on }: { on: boolean }) =>
+                useActionHandler("lockX", () => {}, {
+                    enabled: on,
+                    disabledReason: reason,
+                }),
+            { initialProps: { on: true } },
+        );
+        const item = () =>
+            getActionPaletteItems({ t }, {}).find(
+                (i) => i.id === "action:lockX",
+            );
+        expect(item()?.disabledReason).toBeUndefined();
+        expect(reason).not.toHaveBeenCalled();
+
+        rerender({ on: false });
+        expect(item()?.disabled).toBe(true);
+        expect(item()?.disabledReason).toBe("Select 2 marchers to swap them");
+        expect(actionDisabledReason("lockX")).toBe(
+            "Select 2 marchers to swap them",
+        );
         unmount();
     });
 });

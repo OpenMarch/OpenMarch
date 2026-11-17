@@ -18,13 +18,36 @@
             "snapOn": "吸附已关闭：点击重新开启",
             "snapToCustomFraction": "吸附到网格",
             "toggleSnap": "开关吸附",
-            "toggleSnapKeywords": "吸附 磁铁 网格 自由 对齐 snap magnet grid free"
+            "toggleSnapKeywords": "吸附 磁铁 网格 自由 对齐 snap magnet grid free",
+            "propsOnly": "仅选择了道具：道具不参与对齐或分布"
         },
         "batchEdit": {
-            "noNextPage": "无法将队员坐标设为下一页的坐标：没有下一页",
-            "noPreviousPage": "无法将队员坐标设为上一页的坐标：没有上一页",
+            "clearPage": "清除第{page}页",
+            "clearPageAndLater": "{count, plural, =1 {清除第{page}页，第{first}页也随之退回} other {清除第{page}页，第{first}–{last}页也随之退回}}",
+            "clearThisPageAll": "{clearThisPage}（全部队员）",
+            "clearThisPageAllAndFollowing": "{clearThisPage}（全部队员），后续页也随之退回",
+            "clearThisPageHoldsToo": "{count, plural, other {{names}在{pages}上的保持段也已清除}}。",
+            "clearThisPageSelected": "{clearThisPage}（所选队员）",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage}（所选队员），后续页也随之退回",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label}（全部队员）",
+            "forSelected": "{label}（所选队员）",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "保持 保持不动 已设定 未设定 已定义 未定义 保留 停留 设置 关键帧 页 状态 上一个 hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "保持方式：跟随表演设置",
+            "holdStyleHighMarkTime": "保持方式：高抬腿踏步",
+            "holdStyleKeywords": "保持 方式 站立 静止 立定 原地踏步 踏步 高抬腿 脚 3D hold style stand still halt mark time marktime high feet 3d",
+            "holdStyleMarkTime": "保持方式：原地踏步",
+            "holdStyleStand": "保持方式：站立",
+            "noPageAfter": "这一页之后没有页了",
+            "noPageBefore": "这一页之前没有页了",
+            "moveAllToNextSpots": "移到下一页的位置（全部队员）",
+            "movedAllToNextSpots": "{count, plural, other {已将第{currentPage}页全部队员（#名）移到其在第{nextPage}页的位置}}",
+            "moveSelectedToNextSpots": "移到下一页的位置（所选队员）",
+            "movedSelectedToNextSpots": "{count, plural, other {已将第{currentPage}页#名队员移到其在第{nextPage}页的位置}}",
             "setAllToPreviousDone": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为上一页（第{previousPage}页）的坐标}}",
-            "setSelectedToPreviousDone": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为上一页（第{previousPage}页）的坐标}}"
+            "setSelectedToPreviousDone": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为上一页（第{previousPage}页）的坐标}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "没有可重做的操作",
@@ -33,6 +56,49 @@
             "redoFailed": "无法重做，未做任何更改。",
             "undo": "撤销",
             "undoFailed": "无法撤销，未做任何更改。"
+        },
+        "field": {
+            "addXCheckpoint": "在两侧添加X参考线",
+            "addXCheckpointSeries": "每隔若干步添加X参考线",
+            "addYCheckpoint": "添加Y参考线",
+            "addYCheckpointSeries": "每隔若干步添加Y参考线",
+            "checkpointKeywords": "场地 线 线条 网格 码线 Hash 标记 参考线 参考 field line lines grid yard hash reference",
+            "params": {
+                "every": "参考线之间相隔多少步",
+                "toBack": "向后添加到距前沿多少步",
+                "toSide": "向外添加到距中心多少步"
+            },
+            "editField": "编辑场地",
+            "editFieldKeywords": "场地 线条 参考线 码线 Hash 标记 网格 自定义 尺寸 模板 设置 field lines checkpoints yard hash grid customize size template settings",
+            "done": "完成场地编辑",
+            "discard": "放弃场地更改",
+            "mirror": "两侧镜像",
+            "mirrorOn": "开启两侧镜像",
+            "mirrorOff": "关闭两侧镜像",
+            "addXLine": "添加X线条",
+            "addYLine": "添加Y线条",
+            "editLine": "输入所选线条的位置",
+            "deleteLines": "删除线条",
+            "toggleVisible": "隐藏或显示线条",
+            "toggleReference": "切换线条是否用作坐标参照",
+            "nextLine": "选择下一条线",
+            "previousLine": "选择上一条线",
+            "selectAllLines": "全选线条",
+            "selectAllXLines": "全选X线条",
+            "selectAllYLines": "全选Y线条",
+            "everyOther": "隔一条保留选中",
+            "resetNames": "按位置命名线条",
+            "nudgeLeft": "线条左移",
+            "nudgeRight": "线条右移",
+            "nudgeUp": "线条后移",
+            "nudgeDown": "线条前移",
+            "nextPane": "在场地与“场地”面板之间切换",
+            "previousPane": "在“场地”面板与场地之间切换",
+            "importImage": "导入场地背景图片…",
+            "removeImage": "移除场地背景图片",
+            "imageKeywords": "图片 照片 航拍 背景 图像 场地 picture photo aerial background image field",
+            "halfStep": "半步",
+            "editLines": "编辑场地线条"
         },
         "file": {
             "closeFile": "关闭文件",
@@ -88,8 +154,16 @@
             "toggleMetronome": "开关节拍器",
             "toggleLoop": "开/关循环"
         },
+        "prop": {
+            "finishDrawing": "道具：完成绘制",
+            "removeLastPoint": "道具：绘制时删除上一个角点"
+        },
         "select": {
-            "selectAll": "全选"
+            "selectAll": "全选",
+            "toggleLasso": "切换框选与套索选择",
+            "useLasso": "使用套索选择",
+            "useBox": "使用框选",
+            "toggleLassoKeywords": "套索 框选 选框 手绘 选择 工具 lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "未选择队员",
@@ -111,10 +185,15 @@
             "group": "将所选编组",
             "groupKeywords": "编组 组合 形状 冻结 保持原样 保持一起 合并 group shape freeze as is keep together combine",
             "ungroup": "形状：取消编组",
-            "ungroupKeywords": "取消编组 解组 形状 拆开 打散 释放 分离 ungroup shape break apart release separate"
+            "ungroupKeywords": "取消编组 解组 形状 拆开 打散 释放 分离 ungroup shape break apart release separate",
+            "enterBox": "仅选择这名队员",
+            "centerPivot": "形状：将轴心移回中心",
+            "centerPivotKeywords": "轴心 中心 居中 重置 旋转 翻转 围绕 pivot center centre reset turn flip around",
+            "arc": "形状：弧形",
+            "discard": "形状：放弃"
         },
         "swap": {
-            "mustSelectTwo": "仅在选择2名队员时才能交换。",
+            "selectTwo": "选择2名队员以交换位置",
             "swap": "交换两名队员"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "在播放头处拆分动作",
             "unsetHere": "删除关键帧",
             "unsetHereAndFollowing": "删除关键帧，后续页恢复跟随",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}，第{first}页也随之退回} other {{removeKeyframe}，第{first}–{last}页也随之退回}}",
             "unsetHereKeywords": "关键帧 菱形 取消设置 设置 后续 删除 清除 撤回 坐标 位置 keyframe diamond unset set following remove clear take back coordinate position delete",
+            "toggleEditorMode": "切换基础与专家模式",
+            "toggleEditorModeKeywords": "基础 专家 编辑器 模式 简单 完整 时间轴 页 basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "切换到基础模式（当前为专家）",
+            "toggleEditorModeToExpert": "切换到专家模式（当前为基础）",
             "splitSelectedIntoNewMove": "将所选队员拆分为新动作",
-            "mergeMoveIntoPage": "将此动作合并回所属页"
+            "mergeMoveIntoPage": "将此动作合并回所属页",
+            "zoomIn": "放大时间轴",
+            "zoomOut": "缩小时间轴",
+            "zoomKeywords": "缩放 放大 缩小 时间轴 变宽 变窄 拉近 拉远 比例 加 减 zoom magnify timeline wider narrower closer farther scale plus minus",
+            "fit": "让整场表演适应时间轴",
+            "toggleTempoMode": "开关编辑音乐",
+            "toggleTempoModeKeywords": "编辑 音乐 速度 拍号 排练记号 音频 对齐 拍 edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "打开场地菜单",
@@ -134,6 +224,8 @@
             "openCommandPalette": "命令面板",
             "openCommandBar": "命令栏",
             "openSettings": "设置…",
+            "checkForUpdates": "检查更新",
+            "checkForUpdatesKeywords": "更新 升级 版本 下载 安装 新版 发布 update upgrade version download install new release",
             "openView3d": "打开3D视图",
             "openView3dKeywords": "3d 三维 立体 体育场 场馆 窗口 three dimensional stadium venue window",
             "showShortcuts": "键盘快捷键",
@@ -144,7 +236,19 @@
             "showNextPaths": "显示下一页路径",
             "toggleNextPaths": "切换下一页路径",
             "togglePreview": "预览表演",
-            "togglePreviewKeywords": "预览 电影 观看 演示 放映 全屏 播放 preview cinematic watch present presentation fullscreen play"
+            "togglePreviewKeywords": "预览 电影 观看 演示 放映 全屏 播放 preview cinematic watch present presentation fullscreen play",
+            "reportFeedback": "报告错误或发送反馈",
+            "reportFeedbackKeywords": "错误 故障 问题 反馈 功能 建议 请求 支持 bug issue problem feedback feature request support",
+            "viewMyReports": "查看我的报告",
+            "openFrontEnsemble": "打开定点打击乐和指挥台",
+            "openFrontEnsembleKeywords": "定点打击乐 前场 乐池 指挥台 指挥 马林巴 颤音琴 打击乐 音箱 器材 预设 pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "添加定点打击乐器材或指挥台",
+            "addFrontEnsembleEquipmentKeywords": "定点打击乐 乐池 指挥台 指挥 马林巴 颤音琴 打击乐 音箱 调音台 高台 梯子 乐器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+        },
+        "items": {
+            "edit": "编辑所选道具或器材",
+            "editNamed": "编辑{name}",
+            "editKeywords": "编辑 设置 属性 道具 器材 指挥台 乐器 名称 尺寸 锁定 edit settings properties prop equipment podium instrument name size lock"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +268,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "创建节拍时出错",
-                "success": "节拍创建成功"
+                "error": "创建节拍时出错"
             },
             "replace": {
-                "error": "替换节拍时出错",
-                "success": "节拍替换成功"
+                "error": "替换节拍时出错"
             },
             "update": {
                 "error": "更新节拍时出错"
@@ -179,9 +281,6 @@
             },
             "shift": {
                 "error": "移动节拍时出错"
-            },
-            "flatten": {
-                "error": "整理节拍顺序时出错"
             }
         },
         "context": {
@@ -200,6 +299,7 @@
         "signIn": "登录",
         "signInAriaLabel": "登录",
         "signOut": "退出登录",
+        "signOutFailed": "无法退出登录。请检查网络连接后重试。",
         "userFallback": "用户",
         "fullName": "{lastName}{firstName}",
         "api": {
@@ -224,6 +324,7 @@
         "title": "命令面板",
         "unavailable": "当前不可用",
         "offInPreview": "预览中不可用——退出预览以编辑",
+        "offInEditMusic": "编辑音乐时不可用——选择“编辑音乐”以返回",
         "shape": "形状",
         "next": "下一步",
         "done": "完成",
@@ -286,7 +387,9 @@
         "roundToHalf": "将{axis}取整到最接近的半步",
         "roundToSteps": "{steps, plural, other {将{axis}取整到最接近的#步}}",
         "xStepValue": "X：{value}",
-        "yStepValue": "Y：{value}"
+        "yStepValue": "Y：{value}",
+        "aboutSteps": "关于取整步长",
+        "touchStepDescription": "轻点X或Y可依次切换取整选项。要直接选择，请打开“坐标取整”。"
     },
     "coordinateSheet": {
         "countAbbreviation": "拍",
@@ -346,7 +449,7 @@
         "exporting": "正在导出……请稍候",
         "exportNotAvailable": "无法导出",
         "exportNotAvailableDescription": "导出需要场地属性、至少一个非默认页和至少一名队员。",
-        "exportPDFSuccess": "已成功导出为 PDF！",
+        "drillChartsExported": "队形图已导出为PDF",
         "fieldPropertiesNotLoaded": "场地属性未加载",
         "fieldPropertiesRequired": "导出需要场地属性",
         "frontToBackHeader": "前后",
@@ -377,7 +480,7 @@
         "noMarcher": "未提供队员",
         "noMarcherPages": "未提供队员的页",
         "noPages": "未提供页",
-        "openExportDirectory": "点击打开导出内容",
+        "showInFolder": "在文件夹中显示",
         "openExportDirectoryError": "无法打开导出目录：{error}",
         "organizeBySection": "按声部整理",
         "pdfExportFailed": "PDF 导出失败：{error}",
@@ -402,12 +505,17 @@
         "unsortedSection": "未分类",
         "useXYHeaders": "使用 X/Y 列标题",
         "video": "视频",
+        "webMobileUnavailable": {
+            "description": "上传到On the Move应用需要OpenMarch账户，而此测试版本无法登录。请使用editor.openmarch.com上的OpenMarch编辑器，或使用桌面应用。",
+            "openEditor": "打开editor.openmarch.com",
+            "title": "此处无法上传到手机"
+        },
         "videoAudioTrack": "音轨：{name}",
         "videoAudioNoData": "音频文件没有数据",
         "videoBackground": "视频背景",
         "videoBranding": "由{product}制作",
         "videoExportFailed": "视频导出失败：{error}",
-        "videoExportSuccess": "视频导出成功！",
+        "videoExported": "视频已导出",
         "videoFieldFraming": "场地取景",
         "videoFieldOffsetX": "水平偏移",
         "videoFieldOffsetY": "垂直偏移",
@@ -421,7 +529,7 @@
         "videoNoCanvas": "无法创建导出画布",
         "videoNoEncoder": "此系统上没有可用的视频编码器",
         "videoNoWebGL": "视频导出需要 WebGL，但这台电脑目前无法使用。请开启硬件加速或更新显卡驱动程序，然后重新打开此窗口。",
-        "videoOpenFile": "点击打开视频",
+        "openVideo": "打开视频",
         "videoOverlay": "屏幕信息",
         "videoOverlayClock": "已用时间",
         "videoOverlayCount": "第{count}/{total}拍",
@@ -455,7 +563,7 @@
             "savePdfTitle": "保存PDF",
             "videoTitle": "导出视频"
         },
-        "exportedCount": "已成功导出{count}名队员的坐标表！",
+        "coordinateSheetsExported": "{count, plural, other {已导出#名队员的坐标表}}",
         "checkFieldProperties": "场地属性：{status, select, ok {✓} other {✗}}",
         "checkMarcher": "队员：{status, select, ok {✓} other {✗}}",
         "checkPage": "页：{status, select, ok {✓} other {✗}}",
@@ -476,6 +584,11 @@
             "snapOff": "吸附已关闭",
             "wholeDegrees": "整数角度",
             "withKey": "<keys></keys> {word}"
+        },
+        "pivotHint": {
+            "own": "拖动可移动轴心 · 双击可移回中间",
+            "picking": "点击队员或某个位置作为旋转轴心 · <keys></keys>取消",
+            "pull": "<keys></keys>移动轴心"
         },
         "general": {
             "exportField": "导出场地",
@@ -498,22 +611,32 @@
             "noWebGL": "WebGL不可用",
             "contextLost": "场地的WebGL上下文已丢失，无法绘制视频。请重新导出。",
             "offscreenTimeout": "场地未能在后台启动"
+        },
+        "areaCount": {
+            "add": "{count, plural, other {+#名队员}}",
+            "select": "{count, plural, other {#名队员}}",
+            "subtract": "{count, plural, other {−#名队员}}"
         }
     },
     "fieldDisplay": {
         "label": "场地显示",
         "valueLabel": "{label}：{value}"
     },
+    "fieldSelectTool": {
+        "label": "选择工具",
+        "box": "框选",
+        "lasso": "套索选择",
+        "boxHint": "在场地空白处拖动以画出选框",
+        "lassoHint": "围绕队员画圈。使用框选时，双击后拖动也能画出套索"
+    },
     "fieldProperties": {
         "applyFieldType": "应用场地类型",
         "applyFieldTypeWarning": "队员不会随新场地类型的尺寸移动，而是保持在画布上的原位置。你随时可以改回原来的场地类型。",
         "buttons": {
-            "resetTheme": "将主题恢复为默认",
-            "uploadFloor": "上传地板…",
-            "removeFloor": "移除地板"
+            "importImage": "导入图片",
+            "resetTheme": "将主题恢复为默认"
         },
         "checkpoint": {
-            "created": "已创建位于{steps}步处的{axis}参考线",
             "minimumRequired": "至少需要2条{axis}参考线"
         },
         "customFieldDocs": "查看文档",
@@ -567,10 +690,6 @@
             "temporaryPath": "临时路径",
             "top": "上"
         },
-        "messages": {
-            "noFloor": "无地面",
-            "floorUnnamed": "地面"
-        },
         "options": {
             "fill": "填充",
             "fit": "适应",
@@ -595,8 +714,7 @@
             "stepsFromFrontToHomeLabelTop": "从前边线到主队侧码数内缘的步数（靠近场地中心）",
             "stepSize": "场地上每一步的长度，单位为英寸或厘米",
             "stepSizeWarningThreshold": "步幅超过此距离的队员，其路径将以警告色标出。设为0可关闭此警告。",
-            "useHashes": "像橄榄球场一样，用 Hash 标记表示Y参考线。取消勾选则使用整条线。",
-            "uploadFloor": "导入图片作为此表演的地面：用作2D视图、导出文件和3D视图中的场地图片"
+            "useHashes": "像橄榄球场一样，用 Hash 标记表示Y参考线。取消勾选则使用整条线。"
         },
         "units": {
             "inches": "英寸",
@@ -647,7 +765,6 @@
         "saveSpinnerText": "正在保存副本…",
         "toasts": {
             "audioUploadFailed": "音频文件上传失败",
-            "audioUploaded": "音频文件上传成功",
             "error": "无法保存副本",
             "errorWithDetails": "无法保存副本。错误：{error}",
             "noFileOpen": "未打开任何文件。请先新建或打开一个表演。",
@@ -663,10 +780,18 @@
         "valueMissing": "请输入一个值。"
     },
     "inspector": {
+        "arrange": {
+            "title": "排列",
+            "pickPivot": "在场地上选取轴心",
+            "pickPivotHint": "或按住{key}并拖动所选队员中间的圆点",
+            "pivotTip": "绕{pivot}旋转",
+            "pickPivotButton": "在场地上选取"
+        },
         "marcher": {
             "drillNumber": "队形编号",
             "errorLoadingCoords": "加载坐标时出错",
             "itemsSelected": "{count, plural, other {已选择#个道具。请在“道具”面板中编辑。}}",
+            "equipmentSelected": "{count, plural, =1 {已选择#件器材。右键点击可编辑。} other {已选择#件器材。右键点击其中一件可编辑。}}",
             "playing": "正在播放。暂停后可查看和编辑所选队员。",
             "maxStepSize": "最大步幅",
             "minStepSize": "最小步幅",
@@ -677,11 +802,25 @@
             "stepSizeWarning": "步幅超过阈值",
             "swapMarchers": "交换队员位置",
             "timeline": {
+                "goToHeldPage": "转到第{page}页，此保持段从这里开始",
                 "goToPage": "转到第{page}页（这些队员最后一次移动的页）",
                 "goToStart": "转到开头",
+                "heldFromStart": "{held} · 自开头起",
+                "heldSince": "{held} · 自第{page}页起",
                 "holdFrom": "从第{page}页起保持不动",
                 "holdFromStart": "从开头起保持不动",
-                "movesOnThisPage": "在本页移动"
+                "holdStyle": {
+                    "default": "跟随表演设置",
+                    "highMarkTime": "高抬腿踏步",
+                    "label": "保持方式",
+                    "markTime": "原地踏步",
+                    "mixed": "混合",
+                    "stand": "站立"
+                },
+                "movesOnThisPage": "在本页移动",
+                "notDefinedFromStart": "{notDefined} · 显示开头位置",
+                "notDefinedShowing": "{notDefined} · 显示第{page}页位置",
+                "heldOfSelected": "所选{total}名中有{count}名{held}"
             },
             "title": "{count}名队员",
             "titleSingle": "队员{drillNumber}",
@@ -710,17 +849,11 @@
             "removeFromTagCaption": "移除",
             "alignHeading": "对齐",
             "distributeHeading": "分布",
+            "rotateHeading": "旋转",
             "distributeStepsPlaceholder": "步数",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "内侧",
-                "outside": "外侧",
-                "on": "位于",
-                "inFrontOf": "前方",
-                "behind": "后方",
-                "xCheckpoint": "X参考线{id}",
-                "yCheckpoint": "Y参考线{id}"
+                "y": "Y"
             },
             "rotation": "旋转"
         },
@@ -849,6 +982,11 @@
                     "sectionCount": "{section}（{count}）",
                     "title": "队员"
                 },
+                "frontEnsemble": {
+                    "title": "定点打击乐",
+                    "description": "这场表演有定点打击乐吗？之后可以更改。",
+                    "hint": "选择规模后，会在场地前方放置器材，为每件乐器安排一名队员，并在50码线上放置指挥台。"
+                },
                 "project": {
                     "description": "为表演命名并选择保存位置。",
                     "fileType": "OpenMarch文件",
@@ -878,7 +1016,6 @@
                     "waitingDb": "正在准备表演文件…"
                 }
             },
-            "success": "表演已创建",
             "tempo": "默认速度（BPM）",
             "title": "新建表演"
         },
@@ -1029,9 +1166,9 @@
         }
     },
     "measures": {
-        "createFailed": "创建小节失败：{error}",
-        "deleteFailed": "删除小节失败：{error}",
-        "updateFailed": "更新小节失败：{error}"
+        "addFailed": "无法添加小节",
+        "removeFailed": "无法删除小节",
+        "changeFailed": "无法更改小节"
     },
     "mobileExport": {
         "accessError": {
@@ -1088,6 +1225,9 @@
             "validatingAccess": "正在验证On the Move访问权限…"
         },
         "logoAlt": "OTM徽标",
+        "pageLines": {
+            "note": "手机上显示的是队员在每一页的位置，因此页与页之间的动作会显示为直线。"
+        },
         "revision": {
             "audioSyncFailed": "修订版本已上传，但音频同步失败：{msg}",
             "backgroundSyncFailed": "修订版本已上传，但背景图片同步失败：{msg}",
@@ -1128,12 +1268,28 @@
             "noProduction": "未找到制作",
             "title": "移动应用设置"
         },
+        "signInRejected": {
+            "description": "OpenMarch的在线服务未接受你的登录。请退出登录，然后重新登录。",
+            "signOut": "退出登录",
+            "title": "你的登录未被接受"
+        },
         "signedOut": {
             "createAccountPrompt": "还没有账户？立即创建一个！",
+            "errors": {
+                "failed": "登录未成功。请重试。",
+                "sessionExpired": "你的登录已过期。请重新登录以继续上传。",
+                "unavailable": "无法加载登录页面。请检查网络连接后重试。"
+            },
             "setupAccount": "设置账户",
-            "signInPrompt": "已有账户？将其连接到桌面应用，开始用On The Move随身带上你的表演！"
+            "signInPrompt": "已有账户？将其连接到桌面应用，开始用On The Move随身带上你的表演！",
+            "signInPromptWeb": "已有账户？登录后即可开始用On The Move随身带上你的表演！"
         },
-        "title": "导出到移动端"
+        "title": "导出到移动端",
+        "unreachable": {
+            "description": "OpenMarch无法连接到在线服务，或无法确认你的登录。请检查网络连接后重试。",
+            "retry": "重试",
+            "title": "无法连接到OpenMarch"
+        }
     },
     "music": {
         "accent": "强调首个节拍",
@@ -1153,7 +1309,6 @@
         "deleteAllMeasures": "删除所有小节及其关联的页",
         "deleteAudioFile": "删除音频文件",
         "deleteAudioFileDescription": "确定要删除此音频文件吗？此操作无法撤销。",
-        "deleteSuccess": "已成功删除{fileName}",
         "deleteTempoGroupAlert": "确定吗？",
         "deleteTempoGroupDescription": "删除该速度组也会删除与之关联的所有页。",
         "endTempo": "结束速度",
@@ -1198,10 +1353,8 @@
         "tempo": "速度 *",
         "tempoBelowMinimum": "速度不得低于{min}BPM",
         "tempoDescription": "每分钟节拍数",
-        "tempoGroupCreated": "已创建速度组",
         "tempoGroupNamePlaceholder": "可选",
         "tempoGroups": "速度组",
-        "tempoGroupUpdated": "已更新速度组",
         "undoWithShortcut": "此操作可用<keys></keys>撤销",
         "timeSignature": "拍号：{timeSignature}",
         "title": "音乐",
@@ -1225,16 +1378,13 @@
     "pages": {
         "undoDeleteUnavailable": "无法撤销删除：此后内容已发生变化。请使用工具栏中的“撤销”逐步回退。",
         "dotModeFailed": "设置点模式时出错",
-        "noNextPage": "没有下一页",
-        "noPreviousPage": "没有上一页",
         "durationNoBeat": "无法更新页时长。未找到合适的节拍。",
         "durationFailed": "无法更新页时长",
         "yankNegativeCounts": "无法前拉这些页：会导致拍数为负",
         "pushPastEnd": "无法将页推到表演结尾之后",
         "yankEmptyPages": "无法前拉没有节拍的页",
         "yankOutOfBounds": "移动节拍会导致节拍超出范围",
-        "splitTooShort": "无法拆分少于2个节拍的页",
-        "splitNoStartBeat": "找不到新的起始节拍",
+        "splitNeedsTwoCounts": "页至少要有2拍才能拆分",
         "deleteWithMoves": {
             "changed": "{count, plural, other {第{pages}页已更改}}",
             "changedBoth": "{keptCount, plural, other {第{kept}页}}和{renamedCount, plural, other {原第{renamed}页}}已更改",
@@ -1244,12 +1394,15 @@
             "grownOld": "原第{page}页现为{counts, plural, other {#拍}}",
             "noOtherChanged": "其他页均未更改"
         },
-        "createError": "创建页失败：{error}",
-        "updateError": "更新页失败：{error}"
+        "createFailed": "无法创建页",
+        "updateFailed": "无法更改页"
     },
     "props": {
         "back": "返回",
         "close": "关闭",
+        "color": "颜色",
+        "colorMixed": "混合",
+        "colorNone": "无",
         "counts": "拍",
         "delete": "删除道具",
         "depth": "深度",
@@ -1259,9 +1412,13 @@
                 "arc": "点击弧线的两端，再点击一次设置弯曲程度。",
                 "circle": "从中心拖动以设置半径。",
                 "drag": "在场地上拖动以绘制道具。道具从播放头所在的拍起出现在场地上。",
-                "polygon": "依次点击每个角，然后双击完成。"
+                "polygon": "依次点击每个角，然后双击完成。",
+                "polygonTouch": "依次轻点每个角，然后轻点“完成”。",
+                "arcTouch": "轻点弧线的两端，然后再轻点一下设定弯曲程度。"
             },
-            "title": "绘制道具"
+            "title": "绘制道具",
+            "finish": "完成",
+            "undoPoint": "撤销上一点"
         },
         "edit": "编辑道具",
         "editTitle": "编辑道具",
@@ -1270,7 +1427,8 @@
             "create": "无法创建道具",
             "delete": "无法删除道具",
             "outline": "无法更改道具的轮廓",
-            "update": "无法更改道具"
+            "update": "无法更改道具",
+            "preset": "无法应用预设"
         },
         "height": "高度",
         "hide": "在场地上隐藏",
@@ -1294,6 +1452,7 @@
             "right": "从右侧展开"
         },
         "rotation": "旋转",
+        "selectedCount": "{count, plural, other {已选择#个道具}}",
         "show": "在场地上显示",
         "showNames": "显示所有名称",
         "surface": {
@@ -1307,7 +1466,74 @@
         "width": "宽度",
         "units": {
             "meters": "米"
-        }
+        },
+        "locked": "已锁定",
+        "lockLabel": "锁定",
+        "lockHint": "整场表演只有一个位置"
+    },
+    "frontEnsemble": {
+        "title": "定点打击乐和指挥台",
+        "add": {
+            "title": "添加器材",
+            "button": "添加"
+        },
+        "empty": "还没有定点打击乐。请添加器材和指挥台，或从预设开始。",
+        "list": {
+            "equipment": "器材",
+            "podiums": "指挥台"
+        },
+        "placeInstructions": "点击场地以放置{name}。它会从播放头所在的拍开始出现在场地上。",
+        "equipment": {
+            "block": "器材",
+            "delete": "删除器材",
+            "edit": "编辑器材",
+            "editTitle": "编辑器材",
+            "model": "{family}型号"
+        },
+        "podium": {
+            "delete": "删除指挥台",
+            "edit": "编辑指挥台",
+            "editTitle": "编辑指挥台"
+        },
+        "default": "默认",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "音响",
+            "keyboards": "键盘乐器",
+            "percussion": "打击乐",
+            "podiums": "指挥台"
+        },
+        "presets": {
+            "title": "预设",
+            "size": "预设规模",
+            "small": "小",
+            "medium": "中",
+            "large": "大",
+            "summary": {
+                "small": "2台马林巴、2台颤音琴、1个打击乐架、1台合成器和2个音箱",
+                "medium": "4台马林巴、3台颤音琴、木琴、钟琴、打击乐架、架子鼓、合成器和4个音箱",
+                "large": "6台马林巴、4台颤音琴、木琴、钟琴、2个打击乐架、架子鼓、2台合成器和6个音箱",
+                "none": "没有定点打击乐。之后可以在“队员”面板中设置。"
+            },
+            "always": "每种规模还会在50码线上添加一个指挥台，并在定点打击乐后方添加一台调音台。",
+            "addPerformers": "同时添加队员",
+            "apply": "应用",
+            "replaces": "将替换上一个预设添加的器材。其演奏队员会移到新位置；没有乐器可用的队员将被移除，除非他们在表演后面还有动作。撤销可恢复全部内容。你自己添加的器材会保留。",
+            "none": "无",
+            "start": "从预设开始",
+            "reset": "重置为预设"
+        },
+        "summary": {
+            "title": "定点打击乐和指挥台",
+            "none": "还没有定点打击乐",
+            "setUp": "设置",
+            "edit": "编辑",
+            "equipment": "{count, plural, other {#件器材}}",
+            "podiums": "{count, plural, other {#个指挥台}}"
+        },
+        "search": "搜索器材",
+        "noMatch": "没有匹配的器材。",
+        "results": "{count, plural, =0 {没有匹配的器材。} other {#个型号}}"
     },
     "section": {
         "drumMajor": "指挥",
@@ -1351,8 +1577,12 @@
         "other": "其他",
         "pit": {
             "auxPercussion": "辅助打击乐",
+            "drumSet": "架子鼓",
+            "glockenspiel": "钟琴",
             "marimba": "马林巴",
+            "rack": "打击乐架",
             "synthesizer": "合成器",
+            "timpani": "定音鼓",
             "vibraphone": "颤音琴",
             "xylophone": "木琴"
         },
@@ -1392,6 +1622,17 @@
         "general.appearance": "外观",
         "general.appearance.dark": "深色",
         "general.appearance.light": "浅色",
+        "general.updates": "更新",
+        "general.updates.version": "当前版本为OpenMarch {version}。",
+        "general.updates.checking": "当前版本为OpenMarch {version}。正在检查更新…",
+        "general.updates.upToDate": "OpenMarch {version}已是最新版本。",
+        "general.updates.available": "OpenMarch {version}现已可用。",
+        "general.updates.downloading": "正在下载OpenMarch {version}：{percent}%",
+        "general.updates.ready": "OpenMarch {version}已准备就绪。下次退出时将自动安装，也可以点击标题栏中的更新按钮立即安装。",
+        "general.updates.failed": "更新未成功。当前版本为OpenMarch {version}。",
+        "general.checkForUpdates": "检查更新",
+        "general.automaticDownload": "自动下载更新",
+        "general.automaticDownload.description": "更新会在你退出OpenMarch时安装，也可以点击“立即更新”马上安装。",
         "general.description": "编辑器模式、语言及其他全局偏好设置。",
         "general.editorMode": "编辑器模式",
         "general.editorMode.basic": "基础",
@@ -1468,7 +1709,21 @@
         "tolgeeApiKeyPlaceholder": "Tolgee API 密钥",
         "tolgeeDevToolsToggle": "Tolgee 上下文内翻译",
         "view3d": "3D 视图",
-        "view3d.description": "3D 视图在这台电脑上的绘制方式。不会保存在表演中。",
+        "view3d.controls": "操控方式",
+        "view3d.controls.input.drag": "左键拖动",
+        "view3d.controls.input.pinch": "双指捏合",
+        "view3d.controls.input.rightDrag": "右键拖动",
+        "view3d.controls.input.scroll": "滚轮",
+        "view3d.controls.input.swipe": "双指滑动",
+        "view3d.controls.move.orbit": "环绕",
+        "view3d.controls.move.pan": "平移",
+        "view3d.controls.move.zoom": "缩放",
+        "view3d.controls.orbit": "环绕",
+        "view3d.controls.orbit.description": "拖动可环绕，滚动可缩放。用鼠标右键拖动或按住Shift可在场地上平移。",
+        "view3d.controls.map": "地图",
+        "view3d.controls.map.description": "拖动可在场地上平移，滚动可缩放。按住修饰键或使用鼠标右键可环绕。",
+        "view3d.controls.trackpad": "触控板",
+        "view3d.controls.trackpad.description": "滚动和拖动可环绕，双指捏合可缩放。鼠标右键可平移。",
         "view3d.quality": "画质",
         "view3d.quality.auto": "自动",
         "view3d.quality.auto.description": "从“高”开始，如果画面卡顿则切换为“低”。",
@@ -1483,6 +1738,7 @@
         "view3d.resolution.fast.description": "最柔和，工作量约减半。适合较旧的电脑。",
         "view3d.resolution.sharp": "清晰",
         "view3d.resolution.sharp.description": "在高分辨率屏幕上显示全部细节。",
+        "view3d.summary": "3D视图在这台电脑上的绘制和操控方式。不保存在表演文件中。",
         "input": "触控与输入",
         "input.description": "选择平板布局（适用于手指和触控笔）或桌面布局（适用于鼠标和触控板）。",
         "input.interface": "布局",
@@ -1493,7 +1749,8 @@
         "repairDotsFile.reopenFailed": "修复后的文件已保存到{path}，但无法打开（状态码{status}）。",
         "utilityUpdateFailed": "更新实用设置失败",
         "shortcuts.conflictWith": "<keys></keys>已被{actions}使用。",
-        "shortcuts.recordingHint": "请按下按键…（按<keys></keys>取消）"
+        "shortcuts.recordingHint": "请按下按键…（按<keys></keys>取消）",
+        "shortcuts.category.field": "场地"
     },
     "shapes": {
         "box": {
@@ -1588,6 +1845,7 @@
             },
             "pivot": {
                 "aria": "轴心：{pivot}",
+                "backToCenter": "移回中心",
                 "custom": "轴心：拖到场地上的位置",
                 "label": "轴心",
                 "names": {
@@ -1605,9 +1863,16 @@
             },
             "place": "放置",
             "quarterTurn": "顺时针旋转90°",
+            "guides": {
+                "label": "辅助线",
+                "circle": "圆",
+                "angles": "角度线"
+            },
             "ratioLock": {
                 "locked": "两个间距已锁定：点击解锁",
-                "unlocked": "按比例锁定两个间距"
+                "unlocked": "按比例锁定两个间距",
+                "sizesLocked": "宽度和高度已锁定：点击解锁",
+                "sizesUnlocked": "锁定宽度和高度"
             },
             "hideMarchers": {
                 "hide": "隐藏队员",
@@ -1648,7 +1913,13 @@
                 "label": "站位分配"
             },
             "drawHintFor": "在场地上拖动以绘制{shape, select, block {方阵} circle {圆形} line {直线} curve {曲线} arc {弧形} other {图形}} · 按<keys></keys>取消",
-            "drawPointsHintFor": "在场地上拖动以绘制{shape, select, line {直线} curve {曲线} arc {弧形} other {图形}}，或逐点单击 · 按<keys></keys>取消"
+            "drawPointsHintFor": "在场地上拖动以绘制{shape, select, line {直线} curve {曲线} arc {弧形} other {图形}}，或逐点单击 · 按<keys></keys>取消",
+            "finish": "完成",
+            "undoPoint": "撤销上一点",
+            "discard": "放弃",
+            "drawHintTouchFor": "在场地上拖动以绘制{shape, select, block {方阵} circle {圆形} line {直线} curve {曲线} arc {弧形} other {图形}}",
+            "drawPointsHintTouchFor": "在场地上拖动以绘制{shape, select, line {直线} curve {曲线} arc {弧形} other {图形}}，或逐点轻点",
+            "pointsHintTouch": "轻点添加点 · 轻点两下或轻点“完成”结束"
         },
         "placed": {
             "label": "{name} · {count, plural, other {{interval}步}}",
@@ -1661,6 +1932,7 @@
                 "steps": "{count, plural, other {{interval}步}}"
             },
             "groupError": "将队员组合成图形时出错",
+            "groupNeedsTwo": "选择2名或更多队员才能编组",
             "ungroupError": "取消图形编组时出错",
             "ungroupIsolated": "请退出隔离模式后再取消此图形的编组：它来自之前的页",
             "leftShape": {
@@ -1715,6 +1987,25 @@
                 "validate": {
                     "flat": "弧线没有弯曲，因此是一条直线",
                     "sameSpot": "弧线的两端在同一点上"
+                },
+                "params": {
+                    "bend": "弧线转过的角度",
+                    "width": "弧线左右方向的跨度，以步为单位",
+                    "height": "弧线的高度（从两端到最远边缘），以步为单位",
+                    "stretch": "弧线所在椭圆的拉伸程度：高是宽的多少倍，或宽是高的多少倍"
+                },
+                "ends": {
+                    "label": "开放或闭合",
+                    "open": "开放",
+                    "chord": "用直线闭合",
+                    "circle": "闭合成圆",
+                    "round": "闭合成整圈"
+                },
+                "size": {
+                    "steps": "步",
+                    "tall": "高",
+                    "wide": "宽",
+                    "round": "圆"
                 }
             },
             "block": {
@@ -1935,7 +2226,8 @@
             "tab": {
                 "greyed": "{name}：{reason}",
                 "kinds": "形状类型",
-                "ringHintKeys": "在场地上按住<keys></keys>打开形状轮盘"
+                "ringHintKeys": "在场地上按住<keys></keys>打开形状轮盘",
+                "ringCaption": "轮盘"
             }
         },
         "validate": {
@@ -1999,23 +2291,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "创建新节拍时出错",
-        "deletedSuccessfully": "已删除速度组",
         "deleteFailed": "删除速度组失败",
-        "differentBeatsError": "速度组的节拍数不一致。这本不应发生，请联系我们！",
+        "temposFailed": "无法更改速度",
         "errorUpdatingTempoGroup": "更新速度组时出错"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} other {{shapeNames}在图形中}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {，}}}}{leaderCount, plural, =0 {} other {{leaderNames}跟随领队}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {，}}} other {，}}}}{orderCount, plural, =0 {} other {{orderNames}与跟随领队的顺序共用一个曲线动作}}，{count, plural, other {因此此处的动作保持不变}}。",
             "passThrough": {
                 "catchUp": "现在会追上{caughtUp}结束时的定位",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {将第{first}页保留为关键帧} other {将第{first}–{last}页保留为关键帧}}",
-                    "unnamed": "将其保留为关键帧"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {在第{first}页末尾停下} other {在第{first}–{last}页末尾停下}}",
+                    "unnamed": "在这些页的末尾停下"
                 },
-                "keepStopsError": "无法将这些页保留为关键帧",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {第{first}页不再是关键帧} other {第{first}–{last}页不再是关键帧}}",
-                    "unnamed": "此动作中的页不再是关键帧"
+                "stopAtEndError": "无法让队员在这些页的末尾停下",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {现在会直接走过第{first}页的末尾} other {现在会直接走过第{first}–{last}页的末尾}}",
+                    "unnamed": "现在会直接走过此动作内各页的末尾"
                 },
                 "through": "现在会直接穿过{through}",
                 "throughAndCatchUp": "现在会直接穿过{through}，然后追上{caughtUp}结束时的定位"
@@ -2034,7 +2326,18 @@
             "destinationShapeUnsuitable": "该终点与过渡不符。跟随领队过渡不能以网格结束，且网格的位置数必须不少于过渡的槽位数。",
             "followLeaderBlock": "跟随领队过渡不能以网格结束。请改用直线、曲线、圆形或方阵。",
             "followLeaderNeedsShape": "跟随领队过渡需要一个可跟随的形状。",
+            "heldConflict": "{count, plural, =1 {{names}在{pages}处于“{held}”状态。使用“{clearThisPage}”可移除该保持段，也可在其范围内拖动来移动它。} other {{names}在{pages}处于“{held}”状态。使用“{clearThisPage}”可移除这些保持段，也可在其范围内拖动来移动它们。}}",
+            "heldHoldsOverlap": "同一队员不能在相同的拍上有两个“{held}”保持段。",
+            "heldPages": "{count, plural, =1 {第{pages}页} other {第{pages}页}}",
             "legacyConvertedTimeline": "此文件由早期开发版本转换为时间轴格式，该版本将多个页的动作放进了同一个时间轴，因此无法编辑。请重新转换：打开它的备份（转换前保存在它旁边的文件）。",
+            "moveInHeldHold": "这样会把动作放进“{held}”保持段内。使用“{clearThisPage}”可移除该保持段，也可在其范围内拖动来移动它。",
+            "notJoined": {
+                "marcherCount": "{count, plural, other {#名队员}}",
+                "message": "{names}的动作无法合并：{reason}。",
+                "overlap": "合并后的动作会与他们在同一图层上的另一个动作重叠",
+                "partway": "有队员在下一个动作中途加入或离开",
+                "secondMove": "他们会在相同的拍上有两个动作"
+            },
             "notReady": "时间轴仍在加载，请稍后重试。",
             "numberOutOfRange": "某个数值超出范围。节拍、图层、槽位数和位置必须是允许范围内的整数或有限数。",
             "pathParamsInvalid": "该路径设置无效。圆弧的弧高最多为两端距离的一半，途经点必须是场地上的点。",
@@ -2044,11 +2347,47 @@
             "transitionSpansTimeline": "过渡必须覆盖其整个时间轴，与时间轴同时开始和结束。请改为调整时间轴的范围，其中的过渡会随之移动。",
             "unknown": "时间轴无法完成此更改。"
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "第{page}页：{label}。{hint}"
+        "holdEdge": {
+            "endLabel": "“{held}”的结束处。拖动可提前离开或延长保持",
+            "readoutEnd": "{held}至第{page}页第{count}拍",
+            "blocked": {
+                "minimum": "保持段至少持续1拍",
+                "nextMove": "止于下一个动作",
+                "showEnd": "止于表演结尾"
             },
+            "changeError": "无法更改保持段",
+            "splitError": "无法拆分保持段",
+            "styleError": "无法更改保持方式"
+        },
+        "heldBar": {
+            "detail": "已选{total}名中的{held}名",
+            "shape": "其图形在此处延续",
+            "title": "{held} · 第{page}页",
+            "titleRange": "{held} · 第{first}–{last}页",
+            "titleWithDetail": "{title}。{detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}：{page}之前的动作为跟随领队",
+            "arrivalShape": "{names}：{page}之前的动作以图形结束",
+            "count": "{count, plural, other {#名队员}}",
+            "crossesFlag": "{names}：有动作跨过该页的某个页面标记",
+            "done": "{names}在{page}{held}",
+            "endsWithoutArriving": "{names}：有动作在{page}结束，但并未到达那里",
+            "expertMoves": "{names}：此页使用了专家模式动作",
+            "followLeader": "{names}：在此页跟随领队",
+            "held": "{names}：此处已{held}",
+            "homeShape": "{names}：起始位置由图形决定。在表演开头取消其编组，即可逐个设为保持不动",
+            "none": "{page}无人{held}",
+            "notHeldReasons": "未{heldLower}：{reasons}",
+            "shape": "{names}：在此页处于图形中",
+            "holdError": "无法让队员保持不动",
+            "paused": "暂停后才能更改保持段",
+            "styleNoneHeld": "播放头处没有所选队员处于保持不动状态",
+            "styleInEffect": "此处已是该保持方式"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {第{first}页没有这些队员自己的位置，因此也随之改变} other {第{first}–{last}页没有这些队员自己的位置，因此也随之改变}}",
                 "keepAsBefore": "{count, plural, =1 {保持第{first}页原样} other {保持第{first}–{last}页原样}}",
                 "keepError": "保留后续页时出错"
             },
@@ -2066,6 +2405,9 @@
             "removeError": "无法移除关键帧",
             "removeLocked": "{count, plural, =1 {有一名队员在此页使用了专家模式动作，因此未移除其关键帧。请切换到专家模式进行编辑。} other {有#名队员在此页使用了专家模式动作，因此未移除其关键帧。请切换到专家模式进行编辑。}}",
             "removeLockedAll": "{count, plural, =1 {有一名队员在此页使用了专家模式动作。请切换到专家模式进行编辑。} other {有#名队员在此页使用了专家模式动作。请切换到专家模式进行编辑。}}",
+            "paused": "暂停后才能更改关键帧",
+            "removeNone": "所选队员在此处均无关键帧",
+            "followNone": "没有后续页跟随此位置",
             "title": "关键帧 · 第{page}页，第{count}拍",
             "spoken": "{title}。{detail}"
         },
@@ -2078,6 +2420,7 @@
             "message": "已在{where}处拆分{label}",
             "messageAtPlayhead": "已在播放头处拆分{label}",
             "changed": "{count, plural, other {#名队员的路径已重绘：拆分点之前为直线，之后重新开始}}",
+            "restarted": "{count, plural, other {#名队员的曲线路径在其后重新开始}}",
             "paused": "请先暂停再拆分动作。",
             "isolatedOutside": "请将播放头放在正在编辑的动作内再进行拆分。",
             "noneAt": "没有动作经过{where}。请将播放头放在动作内再进行拆分。",
@@ -2091,14 +2434,32 @@
                 "subsetToggle": "子页"
             },
             "label": "第{pageName}页",
+            "optionsLabel": "第{pageName}页选项",
             "homeTooltip": "起点：表演的开始（第{page}页的队形）"
         },
         "rangeMenu": {
             "deleteWithMoves": "删除此页及其动作",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "设为当前显示位置",
+            "holdFromPreviousNone": "所选队员均已在{page}{heldLower}，或正处于动作中途",
             "setAsShownNone": "所选队员均已在{page}上设定位置，或正处于动作中途",
             "setAsShownError": "将队员设为当前显示位置时出错",
-            "deletePage": "删除此页"
+            "deletePage": "删除此页",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "清除本页",
+            "defineAsShown": "按当前显示设定",
+            "defined": "已设定",
+            "definedLower": "已设定",
+            "held": "保持不动",
+            "heldLower": "保持不动",
+            "holdFromPrevious": "从上一关键帧起保持不动",
+            "notDefined": "未设定",
+            "notDefinedLower": "未设定",
+            "removeKeyframe": "删除关键帧",
+            "holdOverWindow": "从起始标记到播放头保持不动",
+            "splitHold": "在此拆分保持段"
         },
         "startFlagPositions": {
             "always": "始终",
@@ -2124,16 +2485,15 @@
             "menu": "{count, plural, other {将#名所选队员拆分为新动作}}",
             "menuNone": "将所选队员拆分为新动作",
             "drag": "拆分{count, plural, other {#名队员}}",
-            "done": "已将{count, plural, other {#名队员}}拆分到{label}",
             "paused": "请先暂停再拆分或合并动作。",
-            "nothingOnPage": "此页尚无任何动作，没有可拆分的内容。"
+            "nothingOnPage": "此页尚无任何动作，没有可拆分的内容。",
+            "pageSplitOff": "此页没有自己的动作。要拆分跨过此页的动作，请使用该动作的片段。"
         },
         "merge": {
             "menuPair": "将{source}合并到{target}",
             "menuPairFit": "将{source}合并到{target} · 适配其拍数",
             "menuInto": "合并到{target}",
             "menuIntoFit": "合并到{target} · 适配其拍数",
-            "done": "已将{source}合并到{target}",
             "page": "第{name}页",
             "thisPage": "此页",
             "thisMove": "此动作",
@@ -2256,6 +2616,8 @@
             "passedSets": "{count, plural, other {定位{names}}}",
             "through": "· 经过{sets}",
             "editingThrough": "{editing}，经过{sets}",
+            "held": "· {total}名中{count}名{held}",
+            "withHeld": "{rest}，{total}名中{count}名{held}",
             "afterPaused": "{paused}。{rest}",
             "withLoop": "{rest}。{key}循环播放{loop}",
             "loops": "<keys></keys>循环播放{loop}"
@@ -2313,6 +2675,11 @@
             "label": "显示整个表演",
             "hint": "再按一次可返回。双指捏合或<keys></keys>可缩放"
         },
+        "zoom": {
+            "in": "放大",
+            "out": "缩小",
+            "hint": "或双指捏合，或<keys></keys>"
+        },
         "transport": {
             "label": "播放控制",
             "more": "更多控件",
@@ -2366,6 +2733,7 @@
         },
         "moveMenu": {
             "edit": "编辑动作",
+            "selectMarchers": "选择队员",
             "rename": "重命名动作…",
             "splitAtPlayhead": "在播放头处拆分",
             "delete": "删除动作",
@@ -2459,6 +2827,15 @@
                 "alreadyInSlot": "该队员已在{slot}号位置"
             },
             "changesNothing": "此操作不会产生任何更改",
+            "defineAsShown": {
+                "wholePage": "“{defineAsShown}”作用于整页，而不是{counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "“{holdFromPrevious}”作用于整页，而不是{counts}"
+            },
+            "holdEdge": {
+                "outside": "保持段无法到达该拍：它止于队员的下一个动作、表演结尾，或距其另一端1拍处。"
+            },
             "moveTimeline": {
                 "tooEarly": "该动作从第{start}个节拍开始，无法提前{count, plural, other {#个节拍}}",
                 "tooLate": "该动作不能移到第{max}个节拍之后"
@@ -2474,6 +2851,45 @@
                 "wholePage": "“保持”只能用于整页，而非{counts}"
             },
             "tooFarPastEnd": "已超出结尾{count, plural, other {#拍}}；单次编辑最多存储{max}拍"
+        },
+        "expertHolds": {
+            "held": "{names}：从起始标记到播放头已{heldLower}",
+            "shape": "{names}：在起始标记与播放头之间处于图形中",
+            "followLeader": "{names}：在起始标记与播放头之间跟随领队",
+            "followLeaderOrder": "{names}：与跟随领队的顺序共用一个曲线动作",
+            "arrivalShape": "{names}：保持段会从图形结束处开始",
+            "arrivalFollowLeader": "{names}：保持段会从跟随领队动作结束处开始",
+            "homeShape": "{names}：起始位置由图形决定。在表演开头取消其编组，即可逐个设为保持不动",
+            "endsWithoutArriving": "{names}：起始标记前的最后一个动作结束时并未到达那里",
+            "count": "{count, plural, other {#名队员}}",
+            "notHeld": "{count, plural, other {#名队员}}未{heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · 第{page}页",
+            "titleRange": "{notDefined} · 第{first}–{last}页"
+        },
+        "departure": {
+            "title": "再次移动 · 第{page}页，第{count}拍"
+        },
+        "touchTransport": {
+            "playMenu": "播放方式",
+            "goTo": "前往",
+            "start": "开头",
+            "countBack": "后退一拍",
+            "countOn": "前进一拍",
+            "end": "结尾",
+            "playback": "播放",
+            "speed": "速度",
+            "sound": "声音",
+            "view": "视图",
+            "fit": "适应",
+            "atPlayhead": "在播放头处",
+            "newPage": "新建页",
+            "newSubset": "新建子页",
+            "compact": "紧凑"
+        },
+        "clearPage": {
+            "error": "无法清除本页"
         }
     },
     "titlebar": {
@@ -2492,6 +2908,8 @@
         }
     },
     "toolbar": {
+        "showControls": "显示工具栏",
+        "hideControls": "隐藏工具栏",
         "alignment": {
             "lockXCaption": "锁定X",
             "lockYCaption": "锁定Y",
@@ -2499,8 +2917,11 @@
             "lockMarchersAriaLabel": "光标移动与队员吸附",
             "placeAllMarchers": "放置所有队员",
             "placeSelectedMarchers": "放置所选队员",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "吸附",
-            "setMarcherPositionsAriaLabel": "设置队员位置"
+            "toNextPageSpots": "…到下一页的位置",
+            "setMarcherPositionsAriaLabel": "设置队员位置",
+            "toPreviousPagePositions": "…到上一页的位置"
         },
         "collisions": {
             "collisionsToolbar": "碰撞",
@@ -2548,6 +2969,49 @@
             "shapesAlways": "始终",
             "shapesOff": "关",
             "shapesSelected": "选中时"
+        },
+        "alignmentTabShort": "对齐"
+    },
+    "updates": {
+        "pill": {
+            "available": "有可用更新",
+            "downloadingUpdate": "正在下载更新",
+            "downloadingProgress": "正在下载更新：{percent}%",
+            "ready": "更新已就绪",
+            "failed": "更新失败"
+        },
+        "popover": {
+            "current": "当前版本为{version}。",
+            "availableBody": "立即下载。选择“立即更新”时或下次退出时会安装。",
+            "downloadingBody": "{transferred}/{total} MB，{speed} MB/s",
+            "downloadingStarting": "正在开始下载…",
+            "readyBody": "“立即更新”会关闭你的表演、安装更新，然后重新打开OpenMarch和你的表演。你的工作已保存。",
+            "moveBody": "macOS只能更新位于“应用程序”文件夹中的OpenMarch。将它移到那里后，OpenMarch会从“应用程序”重新打开。",
+            "errorBody": "更新下载失败。请重试，或下载安装程序并自行运行。",
+            "installFailedBody": "OpenMarch {version}未能安装。请下载安装程序并自行运行。"
+        },
+        "action": {
+            "download": "下载",
+            "updateNow": "立即更新",
+            "later": "稍后",
+            "retry": "重试",
+            "downloadInstaller": "下载安装程序",
+            "moveToApplications": "移到“应用程序”",
+            "whatsNew": "新功能"
+        },
+        "toast": {
+            "checking": "正在检查更新…",
+            "upToDate": "OpenMarch {version}已是最新版本。",
+            "available": "OpenMarch {version}现已可用。",
+            "downloading": "正在下载。左上角的更新按钮会显示进度。",
+            "ready": "OpenMarch {version}已可安装。",
+            "checkFailed": "无法检查更新。"
+        },
+        "unsupported": {
+            "development": "开发版本中已关闭更新。",
+            "snap": "Snap Store会让此OpenMarch保持最新。",
+            "linuxPackage": "此OpenMarch无法自行更新。请从openmarch.com下载新版本。",
+            "noFeed": "此版本的OpenMarch不会自行更新。请手动下载每个新版本。"
         }
     },
     "view3d": {
@@ -2556,6 +3020,12 @@
             "no": "否",
             "title": "启动时自动打开3D视图？",
             "yes": "是"
+        },
+        "board": {
+            "designedBy": "设计：{name}",
+            "forClient": "演出单位：{name}",
+            "nowPerforming": "正在表演",
+            "untitled": "未命名表演"
         },
         "camera": {
             "blimp": "飞艇",
@@ -2600,7 +3070,8 @@
             "pickSeat": "选择座位",
             "pickSeatTooltip": "选择座位：点击看台上的座位即可坐到那里",
             "venue": "场馆",
-            "freeCamera": "自由视角"
+            "freeCamera": "自由视角",
+            "director": "导演"
         },
         "readout": {
             "count": "第{count}拍，共{total}拍",
@@ -2646,7 +3117,11 @@
             "graphicsHint": "不保存在表演中，因此每台电脑可以不同。",
             "keysSection": "键盘和鼠标",
             "uniforms": "乐队制服",
-            "guardUniforms": "旗队制服"
+            "guardUniforms": "旗队制服",
+            "brassFinish": "铜管外观",
+            "tuba": "大号",
+            "silkShape": "旗面形状",
+            "silkArtwork": "旗面图案"
         },
         "keys": {
             "playPause": "播放或暂停",
@@ -2657,11 +3132,23 @@
             "crowd": "显示或隐藏观众",
             "escape": "取消选座、关闭设置、退出全屏",
             "orbit": "环绕",
+            "orbitOrRight": "环绕，或按住鼠标右键拖动",
+            "panPlain": "平移",
+            "zoomOrPinch": "缩放，或在触控板上双指捏合",
             "pan": "平移，或按住鼠标右键拖动",
-            "zoom": "缩放"
+            "zoom": "缩放",
+            "pausedPose": "暂停时：显示实际步态或并脚站姿"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "金漆",
+            "silver": "镀银"
+        },
+        "tuba": {
+            "contra": "行进大号",
+            "sousaphone": "苏萨号"
         },
         "uniformPreset": {
             "fade": "紫外渐变",
@@ -2703,11 +3190,37 @@
         "venue": {
             "updateFailed": "无法更新3D视图场馆"
         },
-        "board": {
-            "designedBy": "设计：{name}",
-            "forClient": "演出单位：{name}",
-            "nowPerforming": "正在表演",
-            "untitled": "未命名表演"
+        "pausedPose": {
+            "label": "暂停时显示实际步态",
+            "tooltip": "暂停时显示队员当时的迈步姿态。关闭时：他们并脚站在各自的点位上"
+        },
+        "silkShape": {
+            "standard": "标准",
+            "curvedTail": "弧形尾",
+            "cSwing": "C形摆旗",
+            "rainbow": "彩虹",
+            "arc": "弧形",
+            "teardrop": "水滴",
+            "distressed": "破边",
+            "rounded": "圆角",
+            "rectangle": "矩形",
+            "curvedAngle": "加大弧角",
+            "wings": "翅膀",
+            "snake": "长蛇",
+            "swing": "摆旗"
+        },
+        "silkArtwork": {
+            "none": "无图案：旗面显示旗队制服的图案或声部的颜色。",
+            "import": "导入PNG…",
+            "replace": "替换…",
+            "remove": "移除",
+            "template": "{shape}的模板：",
+            "preparing": "正在准备…",
+            "notPng": "该文件不是PNG。请将图案导出为PNG后重新导入。",
+            "tooLarge": "该PNG过大。请以较低分辨率导出后重新导入。",
+            "unreadable": "无法读取该PNG。",
+            "templateFailed": "无法生成模板。",
+            "saveFailed": "无法保存旗面图案"
         }
     },
     "web": {
@@ -2839,6 +3352,58 @@
         "welcome": {
             "description": "欢迎来到设计的未来。我们来完成设置吧。",
             "title": "欢迎使用OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "以下是自你上次使用以来的变化。",
+            "title": "欢迎回来"
+        },
+        "whatsNew": {
+            "carousel": "导览",
+            "guides": "在OpenMarch指南中了解更多",
+            "next": "下一步",
+            "position": "第{current}张，共{total}张",
+            "skip": "跳过",
+            "slide": "幻灯片",
+            "slides": {
+                "pathways": {
+                    "label": "路径",
+                    "media": "占位图片：路径笔的演示片段尚未录制。",
+                    "text": "用路径笔为队员绘制带拐点的路径，队员就会沿它行走，而不是走直线。",
+                    "title": "路径"
+                },
+                "props": {
+                    "label": "道具",
+                    "media": "在3D视图中，一个琥珀色的平台沿场地后方滑动并转向，避开行进乐队。",
+                    "text": "在场地上绘制道具，并在时间轴上移动它们。目前它们在3D视图中显示为简单的方块。",
+                    "title": "道具"
+                },
+                "shapes": {
+                    "label": "形状",
+                    "media": "一个声部的队员先被放入方阵，再排成直线，再排成弧线；每个图形都在场地上绘制，并吸附到场地的线上。",
+                    "text": "绘制方阵、直线或弧线，并将所选队员放入其中；它的点会吸附到半步、码线和Hash 标记。",
+                    "title": "形状"
+                },
+                "tempo": {
+                    "label": "编辑音乐",
+                    "media": "在时间轴中编辑音乐：表演以每分钟118个节拍的速度播放，在两个小节内逐渐放慢到81，然后以新的拍号跳回118。播放头在渐变过程中变慢，之后恢复速度。",
+                    "text": "在时间轴中让拍与音乐对齐：拖动速度直到拍落在节拍上，并设置速度变化、延长和拍号。",
+                    "title": "编辑音乐"
+                },
+                "timeline": {
+                    "label": "时间轴",
+                    "media": "20名队员排成一条直线，在一个动作中用16拍向前行进。时间轴上嵌套在它下方的三个较短动作先让两端后摆，再把直线拉开，最后让全部20人弯成一条弧线。",
+                    "text": "页、动作和拍都位于场地下方的同一条时间轴上；在专家模式中，动作可以跨页并相互重叠。",
+                    "title": "时间轴"
+                },
+                "view3d": {
+                    "label": "3D视图",
+                    "media": "乐队以3D方式在队形之间行进，场馆是一座穹顶体育场，从记者席上方的高处俯瞰：身着制服的队员和持旗的旗队。",
+                    "text": "从看台上观看你的表演，队员身着制服。",
+                    "title": "3D视图"
+                }
+            },
+            "steps": "新增功能",
+            "title": "0.2版新功能"
         }
     },
     "workspaceSettings": {
@@ -2862,7 +3427,6 @@
         },
         "unsavedChanges": "有未保存的更改",
         "close": "关闭",
-        "saved": "表演设置已保存",
         "updateFailed": "无法更新工作区设置",
         "showInfo": {
             "projectName": "表演名称",
@@ -2870,6 +3434,36 @@
             "designer": "设计者",
             "client": "客户",
             "optional": "可选"
+        },
+        "performer": {
+            "title": "队员默认设置",
+            "description": "在没有更具体设置的地方，队员在3D视图中的行进方式。",
+            "stepOffFoot": {
+                "label": "起步脚",
+                "left": "左脚",
+                "right": "右脚"
+            },
+            "dotMode": {
+                "label": "点位代表",
+                "foot": "脚踩点位",
+                "body": "身体中心"
+            },
+            "directionChange": {
+                "label": "方向变化",
+                "corner": "绕过拐角",
+                "direct": "直线穿过"
+            },
+            "holdWhileBandMoves": {
+                "label": "他人移动时保持不动",
+                "markTime": "原地踏步",
+                "highMarkTime": "高抬腿踏步",
+                "stand": "站立"
+            },
+            "percussionTravel": {
+                "label": "鼓组横向移动",
+                "crab": "蟹步",
+                "slide": "滑步"
+            }
         }
     },
     "canvas": {
@@ -2901,6 +3495,7 @@
         "marchers": "队员",
         "metronome": "节拍器",
         "mobile": "移动应用",
+        "props": "道具",
         "music": "音乐",
         "renderFail": "侧边栏面板内容渲染失败",
         "settings": "表演设置"
@@ -2925,6 +3520,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "自动",
+            "autoDescribe": "{device, select, pencil {单指移动视图。用Apple Pencil，或长按后拖动，可绘制选框。} other {单指移动视图。用触控笔，或长按后拖动，可绘制选框。}}",
+            "box": "框选",
+            "boxDescribe": "{device, select, pencil {单指或Apple Pencil绘制选框进行选择。双指移动视图。} other {单指或触控笔绘制选框进行选择。双指移动视图。}}",
+            "button": "在场地空白处拖动：{label}。{describe}轻点可更改",
+            "lasso": "套索",
+            "lassoDescribe": "{device, select, pencil {单指或Apple Pencil圈住队员即可选中。双指移动视图。} other {单指或触控笔圈住队员即可选中。双指移动视图。}}",
+            "menu": "在场地空白处拖动",
+            "pan": "平移",
+            "panDescribe": "{device, select, pencil {单指或Apple Pencil移动视图。} other {单指或触控笔移动视图。}}",
+            "prefix": "拖动："
+        },
         "modifiers": {
             "add": "加选",
             "addHint": "加选：按住，或轻点保持开启。轻点队员可将其加入选择",
@@ -2933,11 +3541,13 @@
             "explain": {
                 "add": "轻点队员可将其加入或移出选择。",
                 "constrain": "间距相等，移动时锁定单轴，切换等比缩放。",
+                "dragMode": "单指或触控笔在场地空白处的作用：移动视图，或画选框或套索。",
                 "fine": "队员缓慢移动，不对齐网格。形状脱离半步网格，但仍吸附到线上。旋转以整度进行。",
                 "fromCenter": "方阵从中心绘制和调整大小。",
                 "grip": "拖动以移动。",
                 "help": "手势。",
-                "snap": "开启或关闭吸附到步点和线条。"
+                "snap": "开启或关闭吸附到步点和线条。",
+                "subtract": "用选框或套索将队员移出选择。"
             },
             "fine": "微调",
             "fineHint": "微调：按住，或轻点保持开启。队员缓慢移动，不对齐网格；形状脱离半步网格；旋转以整度进行",
@@ -2948,12 +3558,17 @@
             "help": "这些按钮的作用",
             "helpList": {
                 "add": "<b>加选</b>轻点加入选择 · <b>关闭吸附</b>自由移动",
+                "dragMode": "<b>拖动</b>选择单指在场地空白处的作用：移动视图，或画选框或套索",
                 "fine": "<b>微调</b>精确拖动和旋转 · <b>等距</b>间距相等",
                 "fromCenter": "<b>从中心</b>方阵从中心扩展",
                 "toggles": "<b>轻点</b>按钮可保持开启，或在拖动时<b>按住</b>"
             },
-            "noSnap": "关闭吸附"
-        }
+            "noSnap": "关闭吸附",
+            "subtract": "减选",
+            "subtractHint": "减选：按住，或轻点保持开启。选框或套索会将其覆盖的队员移出选择"
+        },
+        "redone": "已重做",
+        "undone": "已撤销"
     },
     "shortcutsDialog": {
         "movement": {
@@ -2987,7 +3602,8 @@
             "select": "选择",
             "shape": "形状",
             "timeline": "时间轴",
-            "ui": "视图"
+            "ui": "视图",
+            "field": "场地"
         }
     },
     "shortcut": {
@@ -3060,8 +3676,11 @@
             "title": "帮助",
             "showShortcuts": "键盘快捷键",
             "website": "网站",
-            "guides": "文档/指南"
+            "guides": "文档/指南",
+            "reportFeedback": "报告错误或发送反馈…",
+            "viewMyReports": "查看我的报告"
         },
+        "checkForUpdates": "检查更新…",
         "withShortcut": "{label}（{shortcut}）"
     },
     "fileDialog": {
@@ -3079,6 +3698,13 @@
         },
         "openFailed": {
             "title": "加载数据库时出错"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "无法添加提示点",
+            "delete": "无法删除提示点",
+            "update": "无法更改提示点"
         }
     },
     "coordinates": {
@@ -3103,6 +3729,12 @@
             "onX": "在{checkpoint}",
             "onY": "在{checkpoint}",
             "outside": "{steps, plural, =0 {{checkpoint}外} other {{checkpoint}外#}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "中线",
+            "centerLineShort": "中线",
+            "frontEdge": "前边缘",
+            "frontEdgeShort": "前沿"
         }
     },
     "activities": {
@@ -3120,9 +3752,651 @@
         "toFive": "{steps, number}步5码",
         "undefined": "未定义"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "已在{where}添加速度变化点",
+                "curve": "速度曲线",
+                "endsOn": "结束于{tempo}",
+                "endsOnThen": "结束于{tempo}，然后为{next}",
+                "gradual": "速度渐变",
+                "held": "{where}延长{seconds}s",
+                "hold": "延长",
+                "holdDrill": "队形保持不动",
+                "jump": "速度突变",
+                "measureNumber": "小节号",
+                "movedChange": "已将速度变化点移到{where}",
+                "rehearsalMark": "排练记号",
+                "removedChange": "已移除{where}的速度变化点",
+                "tempo": "速度",
+                "timeSignature": "拍号"
+            },
+            "ask": {
+                "add": {
+                    "intro": "适用于音乐在此处多出一个节拍、而拍数里没有的情况。录音不会改变，只改变拍数。",
+                    "keepMeasure": "{measure}在相同时间内变为{count, plural, other {#拍}}（{tempo}）。",
+                    "manyKeep": "{moves, plural, other {跨过此处的#个动作拍数不变}}；其队员在各动作结尾保持不动{count, plural, other {#拍}}。",
+                    "manyShift": "{moves, plural, other {跨过此处的#个动作各延长}}{count, plural, other {#拍}}。",
+                    "noMove": "此处没有动作，队员在这段时间保持不动。",
+                    "oneKeep": "{move}仍为{moveCounts, plural, other {#拍}}，其队员在结尾保持不动{count, plural, other {#拍}}。",
+                    "oneShift": "{move}从{from}拍延长到{to, plural, other {#拍}}。",
+                    "shift": "此处多出{count, plural, other {#拍}}的时间（{seconds}s）：之后的拍和队形相对音乐推后这么多，适用于它们原先偏早的情况。"
+                },
+                "addCountAfter": "在{where}之后添加一拍",
+                "addCountBefore": "在{where}之前添加一拍",
+                "addMeasureBefore": "在第{measure}小节之前添加一个小节（{count, plural, other {#拍}}）",
+                "addedCountAfter": "已在{where}之后添加一拍",
+                "addedCountBefore": "已在{where}之前添加一拍",
+                "addedMeasureBefore": "已在第{measure}小节之前添加一个小节（{count, plural, other {#拍}}）",
+                "breath": {
+                    "many": "{moves, plural, other {跨过此处的#个动作提前1拍结束}}；其队员在这一拍保持不动。",
+                    "noCountAdded": "不添加拍，音乐不变。",
+                    "none": "用于在音乐不变的情况下让队形停顿一下：此处没有可提前结束的动作。",
+                    "one": "{move}：动作{from} → {to, plural, other {#拍}}；队员在{where}保持不动。"
+                },
+                "countsFewer": "{count, plural, other {减少#拍}}",
+                "countsMore": "{count, plural, other {增加#拍}}",
+                "hidden": {
+                    "fewer": "改为移除{where}",
+                    "fewerHint": "在关键帧和标记之间留出一拍。",
+                    "fixHint": "他们在{move}结束前一拍到达定位，同时移除这些拍。撤销一次即可同时恢复两者。",
+                    "fixTooShort": "他们的关键帧将只剩一拍，无法再提前结束。",
+                    "marchersMore": "{names}及另外{count, plural, other {#名}}",
+                    "text": "他们的关键帧将与{move}在同一拍结束。两个动作同时结束时以关键帧为准，因此他们永远不会站到该定位上。",
+                    "theMove": "其下方的动作",
+                    "title": "{marchers}将错过{move}结尾的定位"
+                },
+                "laterCountsStay": "之后的拍仍与音乐对齐：适用于它们已经对齐的情况。",
+                "noMoveHere": "此处没有动作",
+                "pageCounts": "第{page}页：{from} → {to, plural, other {#拍}}",
+                "pagesSentence": "{pages}。",
+                "remove": {
+                    "intro": "适用于音乐在此处的节拍少于拍数的情况。录音不会改变，只改变拍数。",
+                    "keep": "周围的拍填满相同的时间（{where}：{from} → {to, plural, other {#拍}}，{tempo}）。",
+                    "manyKeep": "{moves, plural, other {跨过此处的#个动作通过推后结束来保持拍数}}，前提是那里没有阻挡。",
+                    "manyShift": "{moves, plural, other {跨过此处的#个动作会缩短。}}",
+                    "marksGo": "{count, plural, other {排练记号{marks}将被移除：留在那里的小节保留自己的记号。}}",
+                    "noMove": "此处没有动作。",
+                    "oneKeep": "{move}通过推后{count, plural, other {#拍}}结束来保持{moveCounts, plural, other {#拍}}，前提是那里没有阻挡。",
+                    "oneShift": "{move}缩短{count, plural, other {#拍}}。",
+                    "shift": "这段时间也一并移除：之后的拍和队形相对音乐提前，适用于它们原先偏晚的情况。",
+                    "title": "移除{where}"
+                },
+                "removed": "已移除{where}"
+            },
+            "editor": {
+                "holdHint": "{where}延长的时长（秒）",
+                "markHint": "第{measure}小节的排练记号（留空则移除）",
+                "notATempo": "“{value}”不是速度：请输入120这样的数字，或输入120-90表示渐变",
+                "renumberHint": "从第{measure}小节起重新编号：之后的小节从你输入的数字接着编号。留空则恢复自动编号。",
+                "tempoFromToHint": "{from}到{to}的速度：“120”，或“120-90”表示渐变",
+                "tempoOfHint": "{where}的速度：“120”，或“120-90”表示渐变",
+                "tempoOutOfRange": "“{value}”超出范围：速度应在每分钟20到400拍之间",
+                "wholeStretch": "改为整段{range}（当前♩{tempo}）"
+            },
+            "label": {
+                "beforeMark": "{where}，{mark}之前",
+                "count": "第{count}拍",
+                "measure": "第{measure}小节",
+                "measureCount": "第{measure}小节第{count}拍",
+                "measures": "第{from}–{to}小节",
+                "range": "{from}至{to}"
+            },
+            "lane": {
+                "clearSelection": "取消选择",
+                "clearSelectionTitle": "取消选择（{key}）",
+                "holdLabel": "延长{seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → 第{measure}小节",
+                "markTitle": "第{measure}小节的排练记号{mark}：拖动可移到其他小节；双击可重命名",
+                "renumberedTitle": "第{measure}小节：已手动编号；之后的小节从它接着编号。右键点击或双击可更改。",
+                "shortMeasureTitle": "第{measure}小节：不完整小节，{count, plural, other {#拍}}",
+                "tempoLabelTitle": "{range}：点击输入速度",
+                "timeSignatureTitle": "拍号{meter}：点击可更改从此处到下一个拍号之间的拍号"
+            },
+            "menu": {
+                "addChange": "在此处添加速度变化点",
+                "addCountAfter": "在之后添加一拍…",
+                "addCountBefore": "在之前添加一拍…",
+                "addMark": "添加排练记号…",
+                "addMeasureBefore": "在之前添加小节…",
+                "cancel": "取消",
+                "clearSelection": "取消选择",
+                "countTitle": "第{measure}小节，第{count}拍",
+                "countTitleNoMeasure": "第{count}拍",
+                "editMark": "排练记号…",
+                "gradual": "渐变",
+                "gradualHint": "结束于其后的速度（{tempo}）；范围外的延长保持不变",
+                "gradualNothingHint": "没有可渐变到的速度：其后的速度相同，或只有一拍",
+                "gradualTo": "渐变到{tempo}",
+                "holdLength": "延长时长…",
+                "holdSubtitle": "延长{seconds}s",
+                "makeHold": "设为延长（延长记号）",
+                "markMoveHere": "将{mark}从第{measure}小节移到此处",
+                "markTaken": "第{measure}小节已有{mark}。要再用一次吗？",
+                "markUseAgain": "在第{measure}小节再次使用{mark}",
+                "measureSubtitleMark": "{meter} · 记号{mark}",
+                "measureTitle": "第{measure}小节",
+                "notAHold": "取消延长",
+                "removeChange": "移除此速度变化点",
+                "removeCount": "移除这一拍…",
+                "removeCounts": "移除这些拍…",
+                "removeMeasure": "移除此小节…",
+                "renumber": "从此处重新编号…",
+                "seconds": "{seconds}s",
+                "selectionCounts": "{count, plural, other {#拍}}",
+                "setTempo": "设置速度…",
+                "timeSignature": "拍号…",
+                "toMeasure": "到第{measure}小节"
+            },
+            "meterMenu": {
+                "counted": "{meter}，按{grouping}数拍",
+                "fromSubtitle": "直到下一个拍号",
+                "fromTitle": "从第{measure}小节起",
+                "justThisMeasure": "仅此小节",
+                "justThisMeasureHint": "开启：拍号仅用于此小节；之后的小节保留各自的拍号，并随之移动。关闭：拍号持续到下一个拍号，与乐谱一样。",
+                "onlySubtitle": "之后的小节保留各自的拍号",
+                "onlyTitle": "仅第{measure}小节",
+                "other": "其他…（如11/8 3+3+3+2）",
+                "otherHint": "拍号，以及按八分音符数拍的方式：“7/8 2+2+3”、“5/8 3+2”、“3/2”（按四分音符数拍）"
+            },
+            "move": {
+                "from": "从{where}开始的动作",
+                "its": "该页的动作",
+                "page": "第{page}页",
+                "pagesMove": "第{page}页的动作"
+            },
+            "tip": {
+                "outlier": "{where}（{tempo}）比相邻的拍（{before}、{after}）{direction, select, faster {快} other {慢}}很多：可能没有对上音乐。右键点击它 > 设置速度…可修正；如果音乐确实如此，则不必理会。"
+            },
+            "toast": {
+                "changedFirst": "{action}：未应用，因为表演刚刚发生了更改。请重试。",
+                "failed": "{action}：{error}",
+                "holdInvalid": "延长是以秒为单位的时长，例如2.5",
+                "holdMade": "{where}已设为延长。右键点击它并选择“延长时长…”可设置持续时间。",
+                "markAlreadyThere": "第{measure}小节已有排练记号{mark}",
+                "markMoved": "已将{mark}从第{from}小节移到第{to}小节",
+                "meterSetFrom": "从{where}起为{meter}，每小节{count, plural, other {#拍}}；速度不变",
+                "meterSetOnly": "仅第{measure}小节为{meter}；速度不变",
+                "meterShiftNote": "之后的小节{direction, select, earlier {提前} other {推后}}{count, plural, other {#拍}}开始",
+                "meterShortNote": "下一个拍号之前的最后一个小节不完整：{count, plural, other {#拍}}（标有*）",
+                "movesCouldNotKeep": "{count, plural, other {#个动作无法保持拍数，长度已改变}}",
+                "movesKept": "{count, plural, other {#个动作保持了拍数}}",
+                "movesKeptHold": "{kept, plural, one {跨过此处的动作保持了拍数：其队员} other {#个动作保持了拍数：其队员}}在结尾保持不动{count, plural, other {#拍}}",
+                "notATimeSignature": "“{text}”不是拍号：请尝试7/8，或7/8 2+2+3（按八分音符分组）",
+                "notMeasureNumber": "“{value}”不是小节号",
+                "tooFastOrSlow": "{action}：这会使某一拍过快或过慢"
+            }
+        },
+        "button": {
+            "hint": "音乐文件，以及让拍与音乐对齐：速度、拍号、排练记号",
+            "hintOn": "让拍与音乐对齐。按<escape></escape>或<toggle></toggle>退出。",
+            "label": "编辑音乐",
+            "labelOn": "正在编辑音乐",
+            "text": "编辑音乐"
+        },
+        "errors": {
+            "cantRemoveLastCount": "无法移除最后一拍",
+            "moveOneCountLong": "该动作只有一拍",
+            "wouldHideSet": "这会使关键帧与其下方的动作在同一拍结束，从而隐藏该动作的定位。请少移除几拍，或让关键帧提前一拍结束。",
+            "wouldRemovePage": "这会移除一页。请少移除几拍，或先删除该页。"
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "添加速度变化点",
+                "text": "在速度轨道上需要变化的位置双击。双击变化点的圆点可将其移除。"
+            },
+            "dragChangeDot": {
+                "title": "移动速度变化点",
+                "text": "上下拖动其圆点可更改速度，左右拖动可移动变化的位置。"
+            },
+            "dragEndDot": {
+                "title": "设置渐慢（rit.）的结束位置",
+                "text": "拖动一段末尾的方形点，使下一个速度可以跳回原速（a tempo）。"
+            },
+            "dragLine": {
+                "title": "设置速度",
+                "text": "上下拖动速度线。要输入速度，请右键点击并选择“设置速度…”"
+            },
+            "dragMeasures": {
+                "title": "选择拍",
+                "text": "沿小节或音乐轨道拖动，然后一次性编辑它们。"
+            },
+            "dragRoundHandle": {
+                "title": "让速度渐变",
+                "text": "拖动一段中间的圆形手柄。双击它可恢复为突变。"
+            },
+            "keys": {
+                "escape": "取消选择，或取消拖动；没有可取消的内容时，停止编辑音乐",
+                "play": "从播放头播放，或在当前位置停止",
+                "tap": "测速：在每个节拍上敲击，查看速度有多快",
+                "toggle": "开始或停止编辑音乐",
+                "metronome": "开关节拍器"
+            },
+            "label": "编辑音乐的使用方法",
+            "rightClick": {
+                "title": "延长和拍",
+                "text": "右键点击某一拍，可将其设为延长、让速度渐变，或添加和移除拍。"
+            },
+            "rightClickMeasure": {
+                "title": "小节和排练记号",
+                "text": "右键点击小节，可重新编号、设置拍号或添加记号。拖动记号可移动它。"
+            },
+            "title": "让拍与音乐对齐",
+            "musicFile": {
+                "title": "更换音乐",
+                "text": "点击顶栏中的文件名，可切换、导入或删除音频，或设置音乐偏移。"
+            }
+        },
+        "importScore": {
+            "choose": "选择文件…",
+            "keeps": "页、队形、提示点和道具仍在原来的拍上，因此会按乐谱的速度播放。撤销可全部恢复。",
+            "replaces": "乐谱的速度、拍号、小节和排练记号将替换表演中的相应内容，包括你在此处所做的更改。",
+            "title": "使用乐谱的时间信息？"
+        },
+        "lanes": {
+            "marks": {
+                "name": "记号",
+                "title": "排练记号：双击可命名，或将记号拖到其他小节"
+            },
+            "measures": {
+                "name": "小节",
+                "title": "小节：沿轨道拖动可选择拍，右键点击或双击编号可从该处重新编号，点击拍号可更改"
+            },
+            "music": {
+                "name": "音乐",
+                "title": "音乐：沿轨道拖动可选择拍，点击可移动播放头，或右键点击某处让音乐从那里开始（对应第1拍）"
+            },
+            "tempo": {
+                "name": "速度",
+                "title": "速度：上下拖动速度线；拖动圆点可移动速度变化点，拖动圆形手柄可设为渐变。双击可添加变化点；右键点击 > 设置速度…可输入速度。在线外拖动可选择拍"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "取消",
+                    "fix": "让关键帧提前一拍结束，然后移除"
+                },
+                "footer": "点击其中一项即可执行。<enter></enter>执行带标记的一项，即你上次的选择；<escape></escape>取消；任何一项都可以撤销。",
+                "hold": "改为让队形在此处保持不动",
+                "holdIntro": "音乐没有多出节拍，但队员需要在此处停顿一下？",
+                "keep": "其余内容保持原位",
+                "shift": "之后的内容全部平移"
+            },
+            "measureGlyph": "{number}节"
+        },
+        "tap": {
+            "average": "平均{bpm} · 停顿2s后重新开始",
+            "count": "{count, plural, other {敲击#次}}",
+            "hint": "跟着音乐敲击，大致测出音乐的速度",
+            "instructions": "在每个节拍上按<key></key>或点击按钮",
+            "name": "测速",
+            "reset": "重置",
+            "selectFirst": "请先选择一些拍",
+            "setTarget": "将{target}设为♩{bpm}",
+            "tap": "敲击",
+            "use": "使用",
+            "useBpm": "使用♩{bpm}",
+            "useBpmOn": "使用♩{bpm}<muted>于{target}</muted>",
+            "useHint": "为所选的拍设置恒定速度；未选择时，则用于播放头所在的速度段",
+            "useOn": "使用<muted>于{target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "从播放头播放",
+            "playLoop": "循环播放{measures}",
+            "stopHere": "在此处停止"
+        },
+        "toolbar": {
+            "done": "完成",
+            "doneLabel": "完成：停止编辑音乐",
+            "metronome": "节拍器",
+            "metronomeHint": "每一拍响一声，用来听拍是否与音乐对齐",
+            "metronomeOff": "节拍器：关",
+            "metronomeOn": "节拍器：开",
+            "title": "正在编辑音乐"
+        },
+        "import": {
+            "button": "导入",
+            "hint": "导入音乐文件，或乐谱的速度、拍号、小节和排练记号",
+            "audio": "音频文件…",
+            "score": "MusicXML乐谱…"
+        },
+        "music": {
+            "add": "添加音乐…",
+            "menuLabel": "音乐文件",
+            "pick": "选择音乐",
+            "importAnother": "导入其他音频文件…",
+            "delete": "删除此音频文件…",
+            "offset": "音乐偏移…",
+            "offsetValue": "{seconds}s",
+            "offsetTitle": "音乐偏移",
+            "offsetHelp": "音乐在第1拍之后多少秒开始。负数表示从音乐中途开始。",
+            "offsetSet": "设置",
+            "seconds": "秒"
+        }
+    },
     "workspace": {
         "label": "工作区",
         "editor": "编辑器",
         "preview": "预览"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "辅助打击乐架",
+            "bongos": "邦戈鼓",
+            "chimes": "管钟",
+            "concertBassDrum": "音乐会大鼓",
+            "congas": "康加鼓",
+            "drumSet": "架子鼓",
+            "glockenspiel": "钟琴",
+            "gong": "大锣",
+            "marimba": "马林巴",
+            "mixer": "调音台",
+            "podium": "指挥台",
+            "speaker": "音箱",
+            "synth": "合成器",
+            "timpani": "定音鼓",
+            "trapTable": "小件打击乐桌",
+            "vibraphone": "颤音琴",
+            "xylophone": "木琴",
+            "podiumStand": "指挥矮台",
+            "podiumTower": "指挥塔",
+            "rollingPodium": "移动指挥台",
+            "stepladder": "人字梯",
+            "scaffold": "脚手架塔"
+        },
+        "variant": {
+            "accessories": "小件乐器",
+            "cage": "笼式鼓架",
+            "covered": "带罩",
+            "double": "双键盘",
+            "gold": "金色",
+            "inches": "{size}英寸",
+            "keys": "{size}键",
+            "low": "矮",
+            "mixed": "混合",
+            "octaves": "{size}个八度",
+            "open": "无罩",
+            "plain": "标准",
+            "rosewood": "玫瑰木",
+            "silver": "银色",
+            "single": "单键盘",
+            "square": "方形",
+            "syntheticBlack": "黑色合成材料",
+            "tall": "高",
+            "toms": "通鼓",
+            "wide": "宽",
+            "aluminum": "铝色",
+            "black": "黑色",
+            "feet": "{size}英尺"
+        }
+    },
+    "feedback": {
+        "window.title": "报告错误或发送反馈",
+        "signIn.heading": "登录后发送报告",
+        "signIn.why": "这样你可以跟进自己的报告，我们也能把处理结果告诉你。",
+        "signIn.button": "登录",
+        "signIn.alternatives": "不想登录？<github>在GitHub上报告</github>或<discord>到Discord提问</discord>。",
+        "sent.heading": "感谢你的报告",
+        "sent.body": "我们已通过电子邮件给你发送了一份副本。如果它成为GitHub issue，我们会把链接发到你的邮箱，方便你跟进。",
+        "sent.another": "再发一份",
+        "viewMyReports": "查看我的报告",
+        "type.label": "这是关于什么的？",
+        "type.broken": "出了问题",
+        "type.broken.hint": "错误、崩溃或运行不正常的地方",
+        "type.feature": "功能建议",
+        "type.feature.hint": "你希望OpenMarch能做到的事",
+        "type.feedback": "一般反馈",
+        "type.feedback.hint": "其他想告诉我们的事",
+        "title.label": "摘要",
+        "title.placeholder": "用一句话说明这是关于什么的",
+        "question.whatWentWrong": "出了什么问题？",
+        "question.whatWentWrong.placeholder": "描述发生了什么",
+        "question.expected": "你原本期望发生什么？",
+        "question.expected.placeholder": "描述本应发生什么",
+        "question.steps": "怎样才能让它再次出现？",
+        "question.steps.placeholder": "1. 打开一个表演\n2. …",
+        "question.feature": "你希望OpenMarch做什么？",
+        "question.feature.placeholder": "描述这个功能以及你会用它做什么",
+        "question.ideas": "关于实现方式的想法",
+        "question.ideas.placeholder": "草图、其他应用中的例子，任何有帮助的内容",
+        "question.feedback": "你想告诉我们什么？",
+        "question.feedback.placeholder": "你的反馈",
+        "optional": "（可选）",
+        "attach.label": "附件",
+        "attach.showFile": "发送我的表演副本",
+        "attach.showFile.scrubbed": "会先移除队员姓名和备注。",
+        "attach.music": "包含音乐",
+        "attach.noShow": "打开一个表演，即可随报告发送它的副本。",
+        "attach.diagnostics": "应用最近的操作和错误记录也会一并发送，帮助我们找到问题。",
+        "record.start": "录制屏幕",
+        "record.microphone": "同时录制麦克风",
+        "record.hint": "只录制OpenMarch窗口，最长5分钟。录制时报告会暂时收起：请一边演示问题，一边讲解。",
+        "record.recording": "正在录制{time}",
+        "record.stop": "停止",
+        "record.done": "录制完成（{time}）",
+        "record.discard": "放弃",
+        "record.failed.denied": "录制未能开始。请在系统设置中检查是否允许OpenMarch使用屏幕和麦克风。",
+        "record.failed.unsupported": "此电脑无法录制。",
+        "public.label": "我们可以公开的内容",
+        "public.notice": "报告可能会被整理成公开的GitHub issue。除非你在下方允许，否则我们绝不会公开你的姓名、电子邮件或文件。",
+        "public.video": "可以公开发布我的录屏",
+        "public.showFile": "可以公开发布我的表演文件",
+        "public.credit": "如果这成为公开issue，请署上我的名字",
+        "send": "发送报告",
+        "sending": "正在发送…",
+        "retention": "随报告发送的文件会在2个月后从我们的服务器上删除。",
+        "error.failed": "无法发送报告。请检查网络连接后重试。",
+        "attach.music.off": "不发送音乐。",
+        "attach.music.on": "音乐也会一并发送。",
+        "sending.recording": "正在上传录屏…",
+        "sending.show_file": "正在上传表演…",
+        "sending.diagnostics": "正在上传诊断信息…",
+        "sending.creating": "正在发送…",
+        "sent.view": "查看此报告",
+        "error.signedOut": "你已退出登录。请重新登录后再发送报告。",
+        "error.tooMany": "你今天已发送了很多报告。请明天再试。",
+        "error.showChanged": "现在打开的是另一个表演。请检查附件后重新发送。",
+        "sent.showTooLarge": "表演文件过大（超过1GB），无法附加，因此报告未附带它就发送了。",
+        "close": "关闭",
+        "record.stopAndReturn": "停止并返回报告",
+        "record.webHint": "浏览器会询问要共享什么：请选择此标签页。录制时报告会暂时收起，最长5分钟。请一边演示问题，一边讲解。",
+        "record.failed.webDenied": "录制未能开始。请在浏览器询问时选择此标签页；如果开启了麦克风，请允许使用麦克风。",
+        "record.failed.webUnsupported": "此浏览器无法录制。",
+        "drawer.show": "显示报告",
+        "drawer.hide": "隐藏报告",
+        "drawer.resize": "调整报告宽度",
+        "discard.question": "要放弃此报告吗？",
+        "discard.body": "你写下和录制的内容都将丢失。",
+        "discard.confirm": "放弃",
+        "discard.keep": "继续编辑",
+        "record.preview": "你的录屏",
+        "error.details": "详情：{message}",
+        "error.refused": "无法发送报告。请重试；如果问题一直出现，请在Discord上告诉我们。",
+        "record.failed.microphone": "OpenMarch无权使用麦克风。请关闭“同时录制麦克风”以进行无声录制，或在系统设置中允许使用麦克风。",
+        "record.failed.webMicrophone": "浏览器未允许使用麦克风。请关闭“同时录制麦克风”以进行无声录制，或允许此网站使用麦克风。"
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "最左和最右的X参考线到中心的距离已不相同",
+            "centerLocked": "两侧同时编辑时，中线保持在中心",
+            "duplicatePosition": "该位置已有一条{axis}参考线",
+            "invalid": "该场地更改无效",
+            "invalidStepSize": "步幅必须大于0",
+            "mirrorIgnored": "只有X参考线会镜像",
+            "noGap": "没有可供插入的两条{axis}参考线之间的空隙。请直接指定位置。",
+            "notFound": "该参考线已不存在",
+            "skippedExisting": "已跳过已有参考线的位置",
+            "tooMany": "这样会添加过多参考线。请使用更大的间隔。",
+            "yInFront": "Y参考线不能位于场地前沿之前。请使用0或负的步数。",
+            "mirrorTwinSkipped": "另一侧的该位置已有参考线，因此只添加了这一条",
+            "outsideField": "已略过超出场地最外侧参考线的位置，场地大小保持不变",
+            "fieldResized": "场地的大小或中心已改变。队员位置保持不变，请对照线条检查。",
+            "fieldResizeRefused": "这样会改变场地的大小或中心，因此未做任何更改"
+        },
+        "nothingAdded": "每个位置都已有参考线",
+        "seriesAdded": "{count, plural, other {已添加#条{axis}参考线}}",
+        "names": {
+            "yardLine": "{yards}码线",
+            "endZone": "端区",
+            "endZoneShort": "端区",
+            "endZoneLine": "端区{yards}",
+            "endZoneLineShort": "端{yards}",
+            "gridLine": "{line}号线",
+            "sideSteps": "{side}距中心{steps}步",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "距前沿{steps}步",
+            "stepsFromFrontShort": "前{steps}"
+        },
+        "failed": "无法保存场地更改，因此未做任何更改。"
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "场地",
+            "done": "完成",
+            "discard": "放弃更改",
+            "discardTip": "将场地恢复到打开此面板时的状态。撤销可找回这些更改。",
+            "discarded": "已放弃场地更改。撤销可找回。",
+            "custom": "自定义场地",
+            "changes": "{count, plural, =0 {与模板无差异} other {与模板有#处差异}}",
+            "selectMany": "多选",
+            "mirror": "两侧镜像",
+            "mirrorOnTip": "两侧镜像已开启：编辑50码线一侧的线时，另一侧的对应线也会一起编辑",
+            "mirrorOffTip": "两侧镜像已关闭：每条线单独编辑",
+            "sections": {
+                "size": "大小和步幅",
+                "template": "模板",
+                "names": "名称和两侧",
+                "markings": "标线和标签",
+                "image": "背景图片",
+                "colors": "颜色"
+            },
+            "tabs": {
+                "setup": "设置",
+                "lines": "线条",
+                "appearance": "外观"
+            }
+        },
+        "ruler": {
+            "x": "从此标尺向外拖动以添加X线",
+            "y": "从此标尺向外拖动以添加Y线"
+        },
+        "readout": {
+            "newLine": "新线：",
+            "fromCenter": "{side} · {steps}步",
+            "center": "位于中心",
+            "behindFront": "前沿后方{steps}步",
+            "toLine": "距{line} {steps}步",
+            "mirrored": "另一侧的对应线也一样",
+            "releaseToDelete": "{count, plural, =1 {松开以删除这条线} other {松开以删除这#条线}}",
+            "dragOut": "拖到场地上以添加线"
+        },
+        "popover": {
+            "position": "位置",
+            "side": "侧",
+            "stepsFromCenter": "距中心的步数",
+            "stepsBehindFront": "前沿后方的步数",
+            "yardLine": "= {yard}码线",
+            "typeHint": "可输入24、+4或85.33/2",
+            "typeHintYards": "可输入24、+4、47.5yd或85.33/2",
+            "shortName": "简称",
+            "shortNameHint": "显示在场地边缘和坐标中，例如45或FH",
+            "name": "名称",
+            "nameHint": "用于文字坐标，并用来选择3D视图的场馆",
+            "yardNumber": "码数",
+            "yardNumberHint": "此线处漆在场地上的数字（如有）",
+            "none": "无",
+            "visible": "可见",
+            "mirrored": "与{twin}镜像：编辑会应用到两者",
+            "delete": "删除"
+        },
+        "numberPad": {
+            "label": "数字键盘",
+            "back": "删除最后一个字符",
+            "clear": "清除",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "这些线已使用按位置生成的名称",
+        "list": {
+            "xHeading": "X · 从一侧到另一侧",
+            "yHeading": "Y · 从前到后",
+            "center": "中心",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "向后{steps}",
+            "drawAsHashes": "绘制为 Hash 标记",
+            "asymmetric": "最外侧的两条X线到中心的距离不同，因此场地绘制时会偏离中心。请移动其中一条，直到两侧一致。",
+            "hidden": "已隐藏",
+            "reference": "参照"
+        },
+        "size": {
+            "width": "宽度",
+            "depth": "纵深",
+            "steps": "步",
+            "stepsTo5": "{steps}步5码",
+            "extent": "{steps}步 · {length}"
+        },
+        "names": {
+            "fieldNameHint": "3D视图根据此名称选择场馆"
+        },
+        "markings": {
+            "edgeLabels": "边缘标签",
+            "yardNumbers": "码数",
+            "yardNumbersHint": "从前沿到所漆数字各边缘的步数。清空主队侧数字则不漆任何数字。",
+            "homeBottom": "主队侧，下缘",
+            "homeTop": "主队侧，上缘",
+            "awayTop": "客队侧，上缘",
+            "awayBottom": "客队侧，下缘"
+        },
+        "image": {
+            "remove": "移除图片",
+            "ratios": "场地宽高比{field} · 图片宽高比{image}"
+        },
+        "colors": {
+            "field": "场地",
+            "marchers": "队员和路径",
+            "shapes": {
+                "circle": "圆形",
+                "square": "方形",
+                "triangle": "三角形",
+                "x": "X形"
+            }
+        },
+        "template": {
+            "title": "切换到{template}？",
+            "lines": "线条：新增{added}条，移除{removed}条，重命名或更改{renamed}条",
+            "size": "大小：{before} → {after}步",
+            "keepLook": "保留我的外观（颜色、标签、图片、两侧名称）",
+            "undoNote": "此操作可一步撤销。",
+            "cancel": "取消",
+            "apply": "切换",
+            "resetTitle": "重置为{template}？",
+            "resetApply": "重置",
+            "basedOn": "基于",
+            "resetShort": "重置为模板"
+        },
+        "fieldPane": "场地线条",
+        "help": {
+            "button": "键盘",
+            "title": "键盘",
+            "route": "键盘焦点在场地上时，<tab></tab>选择下一条线。<pane></pane>在场地和“场地”面板之间切换。"
+        },
+        "lines": {
+            "pickedMany": "已选{count}条线",
+            "axis": "显示哪些线",
+            "xTab": "左右排列 · {count}",
+            "yTab": "前后排列 · {count}",
+            "canvasHint": "点击线条以选中 · 从标尺向外拖动以添加 · <keys></keys>完成",
+            "canvasHintPicked": "拖动选中的线以移动 · <keys></keys>取消选中"
+        },
+        "line": {
+            "title": "线条",
+            "noneHint": "在场地上或列表中选一条线。按住Shift点击可多选。从标尺向外拖动可添加一条。",
+            "reference": "用作参照",
+            "mixed": "不一致",
+            "add": "添加线条",
+            "everyOther": "隔一条保留一条"
+        }
     }
 }

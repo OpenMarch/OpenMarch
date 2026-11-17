@@ -18,13 +18,36 @@
             "snapOn": "Magnétisme désactivé : le réactiver",
             "snapToCustomFraction": "Aligner sur la grille",
             "toggleSnap": "Activer ou désactiver le magnétisme",
-            "toggleSnapKeywords": "magnétisme aimant grille libre snap magnet grid free"
+            "toggleSnapKeywords": "magnétisme aimant grille libre snap magnet grid free",
+            "propsOnly": "Seuls des accessoires sont sélectionnés : les accessoires ne sont ni alignés ni espacés"
         },
         "batchEdit": {
-            "noNextPage": "Impossible de reprendre les coordonnées des marcheurs de la page suivante : il n'y a pas de page suivante",
-            "noPreviousPage": "Impossible de reprendre les coordonnées des marcheurs de la page précédente : il n'y a pas de page précédente",
+            "clearPage": "Effacer la page {page}",
+            "clearPageAndLater": "{count, plural, =1 {Effacer la page {page}, la page {first} reprend aussi la position d’avant} other {Effacer la page {page}, les pages {first}–{last} reprennent aussi la position d’avant}}",
+            "clearThisPageAll": "{clearThisPage} (tous les marcheurs)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (tous les marcheurs), les pages suivantes reprennent aussi la position d’avant",
+            "clearThisPageHoldsToo": "{count, plural, one {L’arrêt de {names} sur {pages} a aussi été effacé} other {Les arrêts de {names} sur {pages} ont aussi été effacés}}.",
+            "clearThisPageSelected": "{clearThisPage} (sélection)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (sélection), les pages suivantes reprennent aussi la position d’avant",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (tous les marcheurs)",
+            "forSelected": "{label} (sélection)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "arrêt à l’arrêt immobiliser immobile maintien maintenu défini non défini garder rester fixer image clé page état précédent hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "Style d’arrêt : réglage du spectacle",
+            "holdStyleHighMarkTime": "Style d’arrêt : marquer le pas genoux levés",
+            "holdStyleKeywords": "style d’arrêt maintien immobile arrêt halte marquer le pas genoux levés pieds 3d hold style stand still halt mark time marktime high feet",
+            "holdStyleMarkTime": "Style d’arrêt : marquer le pas",
+            "holdStyleStand": "Style d’arrêt : immobile",
+            "noPageAfter": "Il n’y a pas de page après celle-ci",
+            "noPageBefore": "Il n’y a pas de page avant celle-ci",
+            "moveAllToNextSpots": "Déplacer aux places de la page suivante (tous les marcheurs)",
+            "movedAllToNextSpots": "{count, plural, one {# marcheur de la page {currentPage} déplacé à sa place de la page {nextPage}} other {Les # marcheurs de la page {currentPage} déplacés à leurs places de la page {nextPage}}}",
+            "moveSelectedToNextSpots": "Déplacer aux places de la page suivante (sélection)",
+            "movedSelectedToNextSpots": "{count, plural, one {# marcheur de la page {currentPage} déplacé à sa place de la page {nextPage}} other {# marcheurs de la page {currentPage} déplacés à leurs places de la page {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {Les # marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}",
-            "setSelectedToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}"
+            "setSelectedToPreviousDone": "{count, plural, one {# marcheur de la page {currentPage} a repris les coordonnées de la page précédente ({previousPage})} other {# marcheurs de la page {currentPage} ont repris les coordonnées de la page précédente ({previousPage})}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "Aucune action à rétablir",
@@ -33,6 +56,49 @@
             "redoFailed": "Impossible de rétablir la modification : rien n'a changé.",
             "undo": "Annuler",
             "undoFailed": "Impossible d'annuler la dernière modification : rien n'a changé."
+        },
+        "field": {
+            "addXCheckpoint": "Ajouter un repère X des deux côtés",
+            "addXCheckpointSeries": "Ajouter des repères X espacés de quelques pas",
+            "addYCheckpoint": "Ajouter un repère Y",
+            "addYCheckpointSeries": "Ajouter des repères Y espacés de quelques pas",
+            "checkpointKeywords": "terrain ligne lignes grille yard hash repère référence field line lines grid yard hash reference",
+            "params": {
+                "every": "Pas entre les repères",
+                "toBack": "Jusqu’à combien de pas derrière l’avant du terrain",
+                "toSide": "Jusqu’à combien de pas du centre"
+            },
+            "editField": "Modifier le terrain",
+            "editFieldKeywords": "terrain lignes repères yard hash grille personnaliser taille modèle paramètres field lines checkpoints yard hash grid customize size template settings",
+            "done": "Terminer la modification du terrain",
+            "discard": "Abandonner les modifications du terrain",
+            "mirror": "Côtés en miroir",
+            "mirrorOn": "Activer Côtés en miroir",
+            "mirrorOff": "Désactiver Côtés en miroir",
+            "addXLine": "Ajouter une ligne X",
+            "addYLine": "Ajouter une ligne Y",
+            "editLine": "Saisir la position de la ligne choisie",
+            "deleteLines": "Supprimer les lignes",
+            "toggleVisible": "Masquer ou afficher les lignes",
+            "toggleReference": "Utiliser ou non les lignes comme référence",
+            "nextLine": "Choisir la ligne suivante",
+            "previousLine": "Choisir la ligne précédente",
+            "selectAllLines": "Sélectionner toutes les lignes",
+            "selectAllXLines": "Sélectionner toutes les lignes X",
+            "selectAllYLines": "Sélectionner toutes les lignes Y",
+            "everyOther": "Garder une ligne choisie sur deux",
+            "resetNames": "Nommer les lignes d’après leur position",
+            "nudgeLeft": "Déplacer les lignes à gauche",
+            "nudgeRight": "Déplacer les lignes à droite",
+            "nudgeUp": "Déplacer les lignes vers l’arrière",
+            "nudgeDown": "Déplacer les lignes vers l’avant",
+            "nextPane": "Passer du terrain au panneau Terrain",
+            "previousPane": "Passer du panneau Terrain au terrain",
+            "importImage": "Importer une image de fond du terrain…",
+            "removeImage": "Retirer l’image de fond du terrain",
+            "imageKeywords": "image photo aérienne vue fond arrière-plan terrain picture photo aerial background image field",
+            "halfStep": "demi-pas",
+            "editLines": "Modifier les lignes du terrain"
         },
         "file": {
             "closeFile": "Fermer le fichier",
@@ -88,8 +154,16 @@
             "toggleMetronome": "Activer ou désactiver le métronome",
             "toggleLoop": "Activer ou désactiver la boucle"
         },
+        "prop": {
+            "finishDrawing": "Accessoire : terminer le dessin",
+            "removeLastPoint": "Accessoire : retirer le dernier coin pendant le dessin"
+        },
         "select": {
-            "selectAll": "Tout sélectionner"
+            "selectAll": "Tout sélectionner",
+            "toggleLasso": "Basculer entre sélection rectangulaire et lasso",
+            "useLasso": "Utiliser la sélection au lasso",
+            "useBox": "Utiliser la sélection rectangulaire",
+            "toggleLassoKeywords": "lasso rectangle cadre main levée sélection outil lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "Aucun marcheur sélectionné",
@@ -111,10 +185,15 @@
             "group": "Grouper la sélection",
             "groupKeywords": "grouper groupe forme figer tel quel ensemble combiner group shape freeze as is keep together combine",
             "ungroup": "Forme : dégrouper",
-            "ungroupKeywords": "dégrouper forme séparer détacher libérer ungroup shape break apart release separate"
+            "ungroupKeywords": "dégrouper forme séparer détacher libérer ungroup shape break apart release separate",
+            "enterBox": "Sélectionner seulement ce marcheur",
+            "centerPivot": "Forme : replacer le pivot au centre",
+            "centerPivotKeywords": "pivot centre réinitialiser tourner retourner autour pivot center centre reset turn flip around",
+            "arc": "Forme : arc",
+            "discard": "Forme : abandonner"
         },
         "swap": {
-            "mustSelectTwo": "L'échange n'est possible qu'avec 2 marcheurs sélectionnés.",
+            "selectTwo": "Sélectionnez 2 marcheurs pour les échanger",
             "swap": "Échanger deux marcheurs"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "Scinder le mouvement à la tête de lecture",
             "unsetHere": "Supprimer l'image clé",
             "unsetHereAndFollowing": "Supprimer l'image clé, les pages suivantes suivent à nouveau",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, la page {first} reprend aussi la position d’avant} other {{removeKeyframe}, les pages {first}–{last} reprennent aussi la position d’avant}}",
             "unsetHereKeywords": "image clé losange supprimer effacer retirer annuler coordonnée position suivantes keyframe diamond unset set following remove clear take back coordinate delete",
+            "toggleEditorMode": "Basculer entre Basique et Expert",
+            "toggleEditorModeKeywords": "basique expert éditeur mode simple complet timeline pages basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "Passer en Basique (Expert actif)",
+            "toggleEditorModeToExpert": "Passer en Expert (Basique actif)",
             "splitSelectedIntoNewMove": "Séparer les marcheurs sélectionnés dans un nouveau mouvement",
-            "mergeMoveIntoPage": "Fusionner ce mouvement dans sa page"
+            "mergeMoveIntoPage": "Fusionner ce mouvement dans sa page",
+            "zoomIn": "Zoomer dans la timeline",
+            "zoomOut": "Dézoomer la timeline",
+            "zoomKeywords": "zoom zoomer agrandir timeline plus large plus étroit plus près plus loin échelle plus moins magnify wider narrower closer farther scale minus",
+            "fit": "Ajuster le spectacle à la timeline",
+            "toggleTempoMode": "Modifier la musique : activer / désactiver",
+            "toggleTempoModeKeywords": "modifier musique tempo signature rythmique lettres de répétition repères de répétition chiffrage audio aligner temps edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "Ouvrir le menu du terrain",
@@ -134,6 +224,8 @@
             "openCommandPalette": "Palette de commandes",
             "openCommandBar": "Barre de commandes",
             "openSettings": "Paramètres…",
+            "checkForUpdates": "Rechercher des mises à jour",
+            "checkForUpdatesKeywords": "mise à jour mettre à niveau version télécharger installer nouvelle sortie update upgrade version download install new release",
             "openView3d": "Ouvrir la vue 3D",
             "openView3dKeywords": "3d trois dimensions tridimensionnel stade salle lieu fenêtre vue three dimensional stadium venue window",
             "showShortcuts": "Raccourcis clavier",
@@ -144,9 +236,19 @@
             "showNextPaths": "Afficher les trajectoires de la page suivante",
             "toggleNextPaths": "Afficher/masquer les trajectoires de la page suivante",
             "togglePreview": "Prévisualiser le spectacle",
-            "togglePreviewKeywords": "aperçu prévisualisation cinématique regarder présenter présentation plein écran lire lecture preview cinematic watch present presentation fullscreen play"
+            "togglePreviewKeywords": "aperçu prévisualisation cinématique regarder présenter présentation plein écran lire lecture preview cinematic watch present presentation fullscreen play",
+            "reportFeedback": "Signaler un bug ou envoyer un commentaire",
+            "reportFeedbackKeywords": "bug bogue problème souci commentaire avis fonctionnalité demande assistance aide issue problem feedback feature request support",
+            "viewMyReports": "Voir mes signalements",
+            "openFrontEnsemble": "Ouvrir le pit et les podiums",
+            "openFrontEnsembleKeywords": "pit front ensemble podium tambour-major marimba vibraphone percussions enceinte haut-parleur équipement préréglage drum major percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "Ajouter un équipement de pit ou un podium",
+            "addFrontEnsembleEquipmentKeywords": "pit podium tambour-major marimba vibraphone percussions enceinte haut-parleur table de mixage tour escabeau instrument drum major percussion speaker mixer tower stepladder"
         },
         "items": {
+            "edit": "Modifier l’accessoire ou l’équipement sélectionné",
+            "editNamed": "Modifier {name}",
+            "editKeywords": "modifier paramètres propriétés accessoire équipement podium instrument nom taille verrou verrouiller edit settings properties prop equipment name size lock",
             "importModel": "Importer un modèle 3D…",
             "importModelKeywords": "importer modèle 3d glb gltf accessoire objet fichier téléverser import 3d model prop upload file object",
             "placeImportedModel": "Placer un modèle importé",
@@ -170,12 +272,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Erreur lors de la création des temps",
-                "success": "Temps créés"
+                "error": "Erreur lors de la création des temps"
             },
             "replace": {
-                "error": "Erreur lors du remplacement des temps",
-                "success": "Temps remplacés"
+                "error": "Erreur lors du remplacement des temps"
             },
             "update": {
                 "error": "Erreur lors de la mise à jour des temps"
@@ -185,9 +285,6 @@
             },
             "shift": {
                 "error": "Erreur lors du décalage des temps"
-            },
-            "flatten": {
-                "error": "Erreur lors de la réorganisation de l’ordre des temps"
             }
         },
         "context": {
@@ -206,6 +303,7 @@
         "signIn": "Se connecter",
         "signInAriaLabel": "Se connecter",
         "signOut": "Se déconnecter",
+        "signOutFailed": "Impossible de se déconnecter. Vérifiez votre accès Internet et réessayez.",
         "userFallback": "Utilisateur",
         "fullName": "{firstName} {lastName}",
         "api": {
@@ -230,6 +328,7 @@
         "title": "Palette de commandes",
         "unavailable": "Indisponible pour le moment",
         "offInPreview": "Indisponible en Aperçu — quittez l'Aperçu pour modifier",
+        "offInEditMusic": "Indisponible pendant la modification de la musique — sélectionnez Modifier la musique pour revenir",
         "shape": "Forme",
         "next": "Suivant",
         "done": "Terminé",
@@ -292,7 +391,9 @@
         "roundToHalf": "Arrondir {axis} au demi-pas le plus proche",
         "roundToSteps": "{steps, plural, one {Arrondir {axis} au multiple de # pas le plus proche} other {Arrondir {axis} au multiple de # pas le plus proche}}",
         "xStepValue": "X : {value}",
-        "yStepValue": "Y : {value}"
+        "yStepValue": "Y : {value}",
+        "aboutSteps": "À propos des pas d’arrondi",
+        "touchStepDescription": "Touchez X ou Y pour parcourir les options d’arrondi. Pour en choisir une directement, ouvrez Arrondi des coordonnées."
     },
     "coordinateSheet": {
         "countAbbreviation": "Tps",
@@ -352,7 +453,7 @@
         "exporting": "Exportation... Veuillez patienter",
         "exportNotAvailable": "Exportation non disponible",
         "exportNotAvailableDescription": "L'exportation nécessite les propriétés du terrain, au moins une page autre que la première et au moins un marcheur.",
-        "exportPDFSuccess": "Exportation en PDF réussie !",
+        "drillChartsExported": "Feuilles de drill exportées en PDF",
         "fieldPropertiesNotLoaded": "Propriétés du terrain non chargées",
         "fieldPropertiesRequired": "Les propriétés du terrain sont requises pour l'exportation",
         "frontToBackHeader": "Avant-arrière",
@@ -383,7 +484,7 @@
         "noMarcher": "Aucun marcheur fourni",
         "noMarcherPages": "Aucune page de marcheur fournie",
         "noPages": "Aucune page fournie",
-        "openExportDirectory": "Cliquer pour ouvrir l'exportation",
+        "showInFolder": "Afficher dans le dossier",
         "openExportDirectoryError": "Impossible d'ouvrir le dossier d'exportation : {error}",
         "organizeBySection": "Organiser par pupitre",
         "pdfExportFailed": "Échec de l'exportation PDF : {error}",
@@ -408,12 +509,17 @@
         "unsortedSection": "Non classé",
         "useXYHeaders": "Utiliser les en-têtes X/Y",
         "video": "Vidéo",
+        "webMobileUnavailable": {
+            "description": "L’envoi vers l’application On the Move nécessite votre compte OpenMarch, et cette version de test ne peut pas se connecter. Utilisez l’éditeur OpenMarch sur editor.openmarch.com, ou l’application de bureau.",
+            "openEditor": "Ouvrir editor.openmarch.com",
+            "title": "L’envoi vers le mobile n’est pas disponible ici"
+        },
         "videoAudioTrack": "Piste audio : {name}",
         "videoAudioNoData": "Le fichier audio ne contient aucune donnée",
         "videoBackground": "Arrière-plan de la vidéo",
         "videoBranding": "Créé avec {product}",
         "videoExportFailed": "Échec de l'exportation vidéo : {error}",
-        "videoExportSuccess": "Vidéo exportée avec succès !",
+        "videoExported": "Vidéo exportée",
         "videoFieldFraming": "Cadrage du terrain",
         "videoFieldOffsetX": "Décalage horizontal",
         "videoFieldOffsetY": "Décalage vertical",
@@ -427,7 +533,7 @@
         "videoNoCanvas": "Impossible de créer la zone de dessin pour l'exportation",
         "videoNoEncoder": "Aucun encodeur vidéo compatible n'est disponible sur ce système",
         "videoNoWebGL": "L'exportation vidéo nécessite WebGL, qui n'est pas disponible sur cet ordinateur pour le moment. Activez l'accélération matérielle ou mettez à jour vos pilotes graphiques, puis rouvrez cette fenêtre.",
-        "videoOpenFile": "Cliquer pour ouvrir la vidéo",
+        "openVideo": "Ouvrir la vidéo",
         "videoOverlay": "Informations à l'écran",
         "videoOverlayClock": "Temps écoulé",
         "videoOverlayCount": "Temps {count} / {total}",
@@ -461,7 +567,7 @@
             "savePdfTitle": "Enregistrer le PDF",
             "videoTitle": "Exporter la vidéo"
         },
-        "exportedCount": "{count, plural, one {Les feuilles de coordonnées de {count} marcheur ont été exportées !} many {Les feuilles de coordonnées de {count} marcheurs ont été exportées !} other {Les feuilles de coordonnées de {count} marcheurs ont été exportées !}}",
+        "coordinateSheetsExported": "{count, plural, one {Feuilles de coordonnées exportées pour # marcheur} other {Feuilles de coordonnées exportées pour # marcheurs}}",
         "checkFieldProperties": "Propriétés du terrain : {status, select, ok {✓} other {✗}}",
         "checkMarcher": "Marcheur : {status, select, ok {✓} other {✗}}",
         "checkPage": "Page : {status, select, ok {✓} other {✗}}",
@@ -482,6 +588,11 @@
             "snapOff": "Sans magnétisme",
             "wholeDegrees": "degrés entiers",
             "withKey": "<keys></keys> {word}"
+        },
+        "pivotHint": {
+            "own": "Faites glisser pour déplacer le pivot · double-cliquez pour le remettre au milieu",
+            "picking": "Cliquez sur un marcheur ou un point autour duquel tourner · <keys></keys> pour annuler",
+            "pull": "<keys></keys> déplace le pivot"
         },
         "general": {
             "exportField": "Exporter le terrain",
@@ -504,23 +615,32 @@
             "noWebGL": "WebGL n’est pas disponible",
             "contextLost": "Le contexte WebGL du terrain a été perdu, la vidéo ne peut donc pas être générée. Relancez l’exportation.",
             "offscreenTimeout": "Le terrain hors écran n’a pas démarré"
+        },
+        "areaCount": {
+            "add": "{count, plural, one {+# marcheur} other {+# marcheurs}}",
+            "select": "{count, plural, one {# marcheur} other {# marcheurs}}",
+            "subtract": "{count, plural, one {−# marcheur} other {−# marcheurs}}"
         }
     },
     "fieldDisplay": {
         "label": "Affichage du terrain",
         "valueLabel": "{label} : {value}"
     },
+    "fieldSelectTool": {
+        "label": "Outil de sélection",
+        "box": "Sélection rectangulaire",
+        "lasso": "Sélection au lasso",
+        "boxHint": "Faites glisser sur une zone vide du terrain pour tracer un rectangle",
+        "lassoHint": "Entourez les marcheurs. En mode rectangle, double-cliquez puis faites glisser pour tracer aussi un lasso"
+    },
     "fieldProperties": {
         "applyFieldType": "Appliquer le type de terrain",
         "applyFieldTypeWarning": "Les marcheurs ne seront pas déplacés selon la taille du nouveau type de terrain, ils resteront à leur place sur le canevas. Vous pourrez toujours revenir au type de terrain précédent.",
         "buttons": {
             "importImage": "Importer une image",
-            "resetTheme": "Rétablir le thème par défaut",
-            "uploadFloor": "Importer un sol…",
-            "removeFloor": "Supprimer le sol"
+            "resetTheme": "Rétablir le thème par défaut"
         },
         "checkpoint": {
-            "created": "Repère {axis} à {steps} pas créé",
             "minimumRequired": "Au moins 2 repères {axis} sont requis"
         },
         "customFieldDocs": "Voir la doc",
@@ -574,10 +694,6 @@
             "temporaryPath": "Trajet temporaire",
             "top": "Haut"
         },
-        "messages": {
-            "noFloor": "Aucun sol",
-            "floorUnnamed": "Sol"
-        },
         "options": {
             "fill": "Remplir",
             "fit": "Ajuster",
@@ -602,8 +718,7 @@
             "stepsFromFrontToHomeLabelTop": "Nombre de pas entre la ligne de touche avant et l'intérieur du numéro avant (côté centre du terrain)",
             "stepSize": "La longueur de chaque pas sur le terrain, en pouces ou en centimètres",
             "stepSizeWarningThreshold": "Les marcheurs dont la longueur de pas dépasse cette distance sont signalés par un trajet de couleur d'alerte. Indiquez 0 pour désactiver.",
-            "useHashes": "Utiliser des marques de hash pour les repères Y, comme sur un terrain de football américain. Si l'option est désactivée, des lignes sont utilisées.",
-            "uploadFloor": "Importer une image comme sol de ce spectacle : elle sert d'image du terrain en 2D, dans les exports et en 3D"
+            "useHashes": "Utiliser des marques de hash pour les repères Y, comme sur un terrain de football américain. Si l'option est désactivée, des lignes sont utilisées."
         },
         "units": {
             "inches": "po",
@@ -654,7 +769,6 @@
         "saveSpinnerText": "Enregistrement de la copie…",
         "toasts": {
             "audioUploadFailed": "Échec de l'importation du fichier audio",
-            "audioUploaded": "Fichier audio importé",
             "error": "Impossible d'enregistrer la copie",
             "errorWithDetails": "Impossible d'enregistrer la copie. Erreur : {error}",
             "noFileOpen": "Aucun fichier n'est ouvert. Créez ou ouvrez d'abord un spectacle.",
@@ -670,10 +784,18 @@
         "valueMissing": "Veuillez saisir une valeur."
     },
     "inspector": {
+        "arrange": {
+            "title": "Disposer",
+            "pickPivot": "Choisir le pivot sur le terrain",
+            "pickPivotHint": "Ou maintenez {key} et faites glisser le point au milieu de la sélection",
+            "pivotTip": "Tourner autour du pivot : {pivot}",
+            "pickPivotButton": "Choisir sur le terrain"
+        },
         "marcher": {
             "drillNumber": "Numéro de drill",
             "errorLoadingCoords": "Erreur de chargement des coordonnées",
             "itemsSelected": "{count, plural, one {# accessoire sélectionné. Modifiez-le dans le panneau Accessoires.} other {# accessoires sélectionnés. Modifiez-les dans le panneau Accessoires.}}",
+            "equipmentSelected": "{count, plural, =1 {# équipement sélectionné. Faites un clic droit dessus pour le modifier.} other {# équipements sélectionnés. Faites un clic droit sur l’un d’eux pour le modifier.}}",
             "playing": "Lecture en cours. Mettez en pause pour voir et modifier les marcheurs sélectionnés.",
             "maxStepSize": "Plus grande longueur de pas",
             "minStepSize": "Plus petite longueur de pas",
@@ -684,11 +806,25 @@
             "stepSizeWarning": "La longueur de pas dépasse le seuil",
             "swapMarchers": "Échanger les marcheurs",
             "timeline": {
+                "goToHeldPage": "Aller à la page {page}, où cet arrêt commence",
                 "goToPage": "Aller à la page {page}, où ces marcheurs se sont déplacés pour la dernière fois",
                 "goToStart": "Aller au début",
+                "heldFromStart": "{held} · depuis le début",
+                "heldSince": "{held} · depuis la page {page}",
                 "holdFrom": "Immobiles depuis la page {page}",
                 "holdFromStart": "Immobiles depuis le début",
-                "movesOnThisPage": "Se déplacent sur cette page"
+                "holdStyle": {
+                    "default": "Réglage du spectacle",
+                    "highMarkTime": "Marquer le pas genoux levés",
+                    "label": "Style d’arrêt",
+                    "markTime": "Marquer le pas",
+                    "mixed": "Mixte",
+                    "stand": "Immobile"
+                },
+                "movesOnThisPage": "Se déplacent sur cette page",
+                "notDefinedFromStart": "{notDefined} · affiche le début",
+                "notDefinedShowing": "{notDefined} · affiche la page {page}",
+                "heldOfSelected": "{held} : {count} sur {total} sélectionnés"
             },
             "title": "{count} marcheurs",
             "titleSingle": "Marcheur {drillNumber}",
@@ -717,17 +853,11 @@
             "removeFromTagCaption": "Retirer",
             "alignHeading": "Aligner",
             "distributeHeading": "Répartir",
+            "rotateHeading": "Tourner",
             "distributeStepsPlaceholder": "Pas",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "à l’intérieur",
-                "outside": "à l’extérieur",
-                "on": "Sur",
-                "inFrontOf": "devant",
-                "behind": "derrière",
-                "xCheckpoint": "Repère X {id}",
-                "yCheckpoint": "Repère Y {id}"
+                "y": "Y"
             },
             "rotation": "Rotation"
         },
@@ -856,6 +986,11 @@
                     "sectionCount": "{section} ({count})",
                     "title": "Marcheurs"
                 },
+                "frontEnsemble": {
+                    "title": "Pit",
+                    "description": "Le spectacle a-t-il un pit ? Vous pourrez le modifier plus tard.",
+                    "hint": "Une taille place l’équipement et un interprète à chaque instrument devant le terrain, avec un podium sur le 50."
+                },
                 "project": {
                     "description": "Nommez votre spectacle et choisissez où l’enregistrer.",
                     "fileType": "Fichier OpenMarch",
@@ -885,7 +1020,6 @@
                     "waitingDb": "Préparation du fichier de votre spectacle…"
                 }
             },
-            "success": "Spectacle créé",
             "tempo": "Tempo par défaut (BPM)",
             "title": "Nouveau spectacle"
         },
@@ -1036,9 +1170,9 @@
         }
     },
     "measures": {
-        "createFailed": "Échec de la création des mesures - {error}",
-        "deleteFailed": "Échec de la suppression des mesures - {error}",
-        "updateFailed": "Échec de la mise à jour des mesures - {error}"
+        "addFailed": "Impossible d’ajouter les mesures",
+        "removeFailed": "Impossible de supprimer les mesures",
+        "changeFailed": "Impossible de modifier les mesures"
     },
     "mobileExport": {
         "accessError": {
@@ -1095,6 +1229,9 @@
             "validatingAccess": "Vérification de l'accès à On the Move…"
         },
         "logoAlt": "Logo OTM",
+        "pageLines": {
+            "note": "Le téléphone montre où sont les marcheurs à chaque page : les mouvements entre les pages apparaissent donc en lignes droites."
+        },
         "revision": {
             "audioSyncFailed": "Révision envoyée, mais la synchronisation audio a échoué : {msg}",
             "backgroundSyncFailed": "Révision envoyée, mais la synchronisation de l'image d'arrière-plan a échoué : {msg}",
@@ -1135,12 +1272,28 @@
             "noProduction": "Aucune production trouvée",
             "title": "Paramètres de l'application mobile"
         },
+        "signInRejected": {
+            "description": "Le service en ligne d’OpenMarch n’a pas accepté votre connexion. Déconnectez-vous, puis reconnectez-vous.",
+            "signOut": "Se déconnecter",
+            "title": "Votre connexion n’a pas été acceptée"
+        },
         "signedOut": {
             "createAccountPrompt": "Vous n'avez pas encore de compte ? Créez-en un maintenant !",
+            "errors": {
+                "failed": "La connexion n’a pas fonctionné. Réessayez.",
+                "sessionExpired": "Votre session a expiré. Reconnectez-vous pour continuer l’envoi.",
+                "unavailable": "Le service de connexion n’a pas pu se charger. Vérifiez votre accès Internet et réessayez."
+            },
             "setupAccount": "Configurer votre compte",
-            "signInPrompt": "Vous avez déjà un compte ? Connectez-le à l'application de bureau pour emporter votre spectacle avec On The Move !"
+            "signInPrompt": "Vous avez déjà un compte ? Connectez-le à l'application de bureau pour emporter votre spectacle avec On The Move !",
+            "signInPromptWeb": "Vous avez déjà un compte ? Connectez-vous pour emporter votre spectacle avec On The Move !"
         },
-        "title": "Exporter vers le mobile"
+        "title": "Exporter vers le mobile",
+        "unreachable": {
+            "description": "OpenMarch n’a pas pu joindre son service en ligne ni confirmer votre connexion. Vérifiez votre accès Internet et réessayez.",
+            "retry": "Réessayer",
+            "title": "Impossible de joindre OpenMarch"
+        }
     },
     "music": {
         "accent": "Accentuer le premier temps",
@@ -1160,7 +1313,6 @@
         "deleteAllMeasures": "Supprimer toutes les mesures et leurs pages associées",
         "deleteAudioFile": "Supprimer le fichier audio",
         "deleteAudioFileDescription": "Voulez-vous vraiment supprimer ce fichier audio ? Cette action est irréversible.",
-        "deleteSuccess": "{fileName} a bien été supprimé",
         "deleteTempoGroupAlert": "Voulez-vous continuer ?",
         "deleteTempoGroupDescription": "La suppression du groupe de tempo supprimera également toutes les pages qui lui sont associées.",
         "endTempo": "Tempo final",
@@ -1205,10 +1357,8 @@
         "tempo": "Tempo *",
         "tempoBelowMinimum": "Le tempo doit être d'au moins {min} BPM",
         "tempoDescription": "Temps par minute",
-        "tempoGroupCreated": "Groupe de tempo créé",
         "tempoGroupNamePlaceholder": "Facultatif",
         "tempoGroups": "Groupes de tempo",
-        "tempoGroupUpdated": "Groupe de tempo mis à jour",
         "undoWithShortcut": "Vous pouvez annuler cette action avec <keys></keys>",
         "timeSignature": "Chiffrage de la mesure : {timeSignature}",
         "title": "Musique",
@@ -1232,16 +1382,13 @@
     "pages": {
         "undoDeleteUnavailable": "Impossible d'annuler la suppression : le spectacle a changé entre-temps. Utilisez Annuler dans la barre d'outils pour revenir en arrière.",
         "dotModeFailed": "Erreur lors du changement du mode d'affichage des points",
-        "noNextPage": "Aucune page suivante",
-        "noPreviousPage": "Aucune page précédente",
         "durationNoBeat": "Impossible de modifier la durée de la page. Aucun temps adéquat trouvé.",
         "durationFailed": "Impossible de modifier la durée de la page",
         "yankNegativeCounts": "Impossible de ramener les pages en arrière : une page aurait un nombre de temps négatif",
         "pushPastEnd": "Impossible de repousser les pages au-delà de la fin du spectacle",
         "yankEmptyPages": "Impossible de ramener des pages qui n'ont aucun temps",
         "yankOutOfBounds": "Ce décalage placerait des temps en dehors de la musique",
-        "splitTooShort": "Impossible de diviser une page de moins de 2 temps",
-        "splitNoStartBeat": "Impossible de trouver un nouveau temps de départ",
+        "splitNeedsTwoCounts": "Une page doit compter au moins 2 temps pour être divisée",
         "deleteWithMoves": {
             "changed": "{count, plural, =1 {Page {pages} modifiée} other {Pages {pages} modifiées}}",
             "changedBoth": "{keptCount, plural, =1 {Page {kept}} other {Pages {kept}}} et {renamedCount, plural, =1 {ancienne page {renamed}} other {anciennes pages {renamed}}} modifiées",
@@ -1251,12 +1398,15 @@
             "grownOld": "L'ancienne page {page} dure maintenant {counts, plural, one {# temps} other {# temps}}",
             "noOtherChanged": "Aucune autre page modifiée"
         },
-        "createError": "Impossible de créer la page : {error}",
-        "updateError": "Impossible de modifier la page : {error}"
+        "createFailed": "Impossible de créer la page",
+        "updateFailed": "Impossible de modifier la page"
     },
     "props": {
         "back": "Retour",
         "close": "Fermer",
+        "color": "Couleur",
+        "colorMixed": "Mixte",
+        "colorNone": "Aucune",
         "counts": "temps",
         "delete": "Supprimer l'accessoire",
         "depth": "Profondeur",
@@ -1266,9 +1416,13 @@
                 "arc": "Cliquez sur les deux extrémités de l'arc, puis cliquez pour régler sa courbure.",
                 "circle": "Faites glisser depuis le centre pour régler le rayon.",
                 "drag": "Faites glisser sur le terrain pour dessiner l'accessoire. Il apparaît sur le terrain à partir du temps où se trouve la tête de lecture.",
-                "polygon": "Cliquez sur chaque coin, puis double-cliquez pour terminer."
+                "polygon": "Cliquez sur chaque coin, puis double-cliquez pour terminer.",
+                "polygonTouch": "Touchez chaque coin, puis touchez Terminer.",
+                "arcTouch": "Touchez les deux extrémités de l’arc, puis touchez pour régler sa courbure."
             },
-            "title": "Dessiner un accessoire"
+            "title": "Dessiner un accessoire",
+            "finish": "Terminer",
+            "undoPoint": "Retirer le point"
         },
         "edit": "Modifier l'accessoire",
         "editTitle": "Modifier l'accessoire",
@@ -1277,7 +1431,8 @@
             "create": "Impossible de créer l'accessoire",
             "delete": "Impossible de supprimer l'accessoire",
             "outline": "Impossible de modifier le contour de l'accessoire",
-            "update": "Impossible de modifier l'accessoire"
+            "update": "Impossible de modifier l'accessoire",
+            "preset": "Impossible d’appliquer le préréglage"
         },
         "height": "Hauteur",
         "hide": "Masquer sur le terrain",
@@ -1301,6 +1456,7 @@
             "right": "Se déroule depuis la droite"
         },
         "rotation": "Rotation",
+        "selectedCount": "{count, plural, one {# accessoire sélectionné} other {# accessoires sélectionnés}}",
         "show": "Afficher sur le terrain",
         "showNames": "Afficher tous les noms",
         "surface": {
@@ -1315,6 +1471,9 @@
         "units": {
             "meters": "m"
         },
+        "locked": "Verrouillé",
+        "lockLabel": "Verrouillé",
+        "lockHint": "Une seule position pour tout le spectacle",
         "imported": {
             "title": "Importés",
             "import": "Importer…",
@@ -1463,6 +1622,70 @@
             }
         }
     },
+    "frontEnsemble": {
+        "title": "Pit et podiums",
+        "add": {
+            "title": "Ajouter un équipement",
+            "button": "Ajouter"
+        },
+        "empty": "Pas encore de pit. Ajoutez de l’équipement et des podiums, ou partez d’un préréglage.",
+        "list": {
+            "equipment": "Équipement",
+            "podiums": "Podiums"
+        },
+        "placeInstructions": "Cliquez sur le terrain pour placer l’élément {name}. Il est sur le terrain à partir du temps de la tête de lecture.",
+        "equipment": {
+            "block": "Équipement",
+            "delete": "Supprimer l’équipement",
+            "edit": "Modifier l’équipement",
+            "editTitle": "Modifier l’équipement",
+            "model": "Modèle : {family}"
+        },
+        "podium": {
+            "delete": "Supprimer le podium",
+            "edit": "Modifier le podium",
+            "editTitle": "Modifier le podium"
+        },
+        "default": "Par défaut",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "Audio",
+            "keyboards": "Claviers",
+            "percussion": "Percussions",
+            "podiums": "Podiums"
+        },
+        "presets": {
+            "title": "Préréglages",
+            "size": "Taille du préréglage",
+            "small": "Petit",
+            "medium": "Moyen",
+            "large": "Grand",
+            "summary": {
+                "small": "2 marimbas, 2 vibraphones, un rack, un synthé et 2 enceintes",
+                "medium": "4 marimbas, 3 vibraphones, xylophone, glockenspiel, rack, batterie, synthé et 4 enceintes",
+                "large": "6 marimbas, 4 vibraphones, xylophone, glockenspiel, 2 racks, batterie, 2 synthés et 6 enceintes",
+                "none": "Pas de pit. Vous pourrez en installer un plus tard dans le panneau Marcheurs."
+            },
+            "always": "Chacun ajoute aussi un podium sur le 50 et une table de mixage derrière le pit.",
+            "addPerformers": "Ajouter aussi les interprètes",
+            "apply": "Appliquer",
+            "replaces": "Remplace l’équipement ajouté par le dernier préréglage. Ses musiciens vont aux nouvelles places ; ceux qui se retrouvent sans instrument sont retirés, sauf s’ils ont des mouvements plus loin dans le spectacle. Annuler rétablit tout. L’équipement que vous avez ajouté vous-même reste en place.",
+            "none": "Aucun",
+            "start": "Partir d’un préréglage",
+            "reset": "Revenir à un préréglage"
+        },
+        "summary": {
+            "title": "Pit et podiums",
+            "none": "Pas encore de pit",
+            "setUp": "Installer",
+            "edit": "Modifier",
+            "equipment": "{count, plural, one {# équipement} other {# équipements}}",
+            "podiums": "{count, plural, one {# podium} other {# podiums}}"
+        },
+        "search": "Rechercher un équipement",
+        "noMatch": "Aucun équipement ne correspond.",
+        "results": "{count, plural, =0 {Aucun équipement ne correspond.} one {# modèle} other {# modèles}}"
+    },
     "section": {
         "drumMajor": "Tambour-major",
         "family": {
@@ -1505,8 +1728,12 @@
         "other": "Autre",
         "pit": {
             "auxPercussion": "Percussions auxiliaires",
+            "drumSet": "Batterie",
+            "glockenspiel": "Glockenspiel",
             "marimba": "Marimba",
+            "rack": "Rack",
             "synthesizer": "Synthétiseur",
+            "timpani": "Timbales",
             "vibraphone": "Vibraphone",
             "xylophone": "Xylophone"
         },
@@ -1546,6 +1773,17 @@
         "general.appearance": "Apparence",
         "general.appearance.dark": "Sombre",
         "general.appearance.light": "Clair",
+        "general.updates": "Mises à jour",
+        "general.updates.version": "Vous avez OpenMarch {version}.",
+        "general.updates.checking": "Vous avez OpenMarch {version}. Recherche de mises à jour…",
+        "general.updates.upToDate": "OpenMarch {version} est la dernière version.",
+        "general.updates.available": "OpenMarch {version} est disponible.",
+        "general.updates.downloading": "Téléchargement d’OpenMarch {version} : {percent} %",
+        "general.updates.ready": "OpenMarch {version} est prêt. La mise à jour s’installe la prochaine fois que vous quittez l’application, ou tout de suite avec le bouton de mise à jour dans la barre de titre.",
+        "general.updates.failed": "La mise à jour n’a pas fonctionné. Vous avez OpenMarch {version}.",
+        "general.checkForUpdates": "Rechercher des mises à jour",
+        "general.automaticDownload": "Télécharger les mises à jour automatiquement",
+        "general.automaticDownload.description": "Les mises à jour s’installent quand vous quittez OpenMarch, ou tout de suite avec Mettre à jour maintenant.",
         "general.description": "Mode d'édition, langue et autres préférences de l'application.",
         "general.editorMode": "Mode d'édition",
         "general.editorMode.basic": "Basique",
@@ -1622,7 +1860,21 @@
         "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
         "tolgeeDevToolsToggle": "Traduction en contexte Tolgee",
         "view3d": "Vue 3D",
-        "view3d.description": "Rendu de la vue 3D sur cet ordinateur. Non enregistré dans le spectacle.",
+        "view3d.controls": "Commandes",
+        "view3d.controls.input.drag": "Glisser avec clic gauche",
+        "view3d.controls.input.pinch": "Pincer",
+        "view3d.controls.input.rightDrag": "Glisser avec clic droit",
+        "view3d.controls.input.scroll": "Molette",
+        "view3d.controls.input.swipe": "Défilement à deux doigts",
+        "view3d.controls.move.orbit": "Orbite",
+        "view3d.controls.move.pan": "Panoramique",
+        "view3d.controls.move.zoom": "Zoom",
+        "view3d.controls.orbit": "Orbite",
+        "view3d.controls.orbit.description": "Faire glisser fait tourner la caméra en orbite et la molette zoome. Faites glisser avec le bouton droit de la souris ou maintenez Maj pour vous déplacer sur le terrain.",
+        "view3d.controls.map": "Carte",
+        "view3d.controls.map.description": "Faire glisser déplace la vue sur le terrain et la molette zoome. Maintenez une touche de modification ou utilisez le bouton droit de la souris pour tourner en orbite.",
+        "view3d.controls.trackpad": "Trackpad",
+        "view3d.controls.trackpad.description": "Le défilement et le glissement font tourner en orbite, et un pincement zoome. Le bouton droit de la souris déplace la vue.",
         "view3d.quality": "Qualité",
         "view3d.quality.auto": "Automatique",
         "view3d.quality.auto.description": "Démarre en Élevée et passe en Faible si l’affichage saccade.",
@@ -1637,6 +1889,7 @@
         "view3d.resolution.fast.description": "La moins nette, avec environ deux fois moins de travail. Pour les ordinateurs anciens.",
         "view3d.resolution.sharp": "Nette",
         "view3d.resolution.sharp.description": "Tous les détails sur les écrans haute résolution.",
+        "view3d.summary": "Comment la vue 3D s’affiche et se déplace sur cet ordinateur. Non enregistré dans le spectacle.",
         "input": "Tactile et saisie",
         "input.description": "Choisissez la disposition tablette (pour les doigts et le stylet) ou la disposition ordinateur (pour la souris et le trackpad).",
         "input.interface": "Disposition",
@@ -1647,7 +1900,8 @@
         "repairDotsFile.reopenFailed": "Le fichier réparé a été enregistré dans {path}, mais n’a pas pu être ouvert (statut {status}).",
         "utilityUpdateFailed": "Échec de la mise à jour des paramètres de durée du spectacle",
         "shortcuts.conflictWith": "<keys></keys> est déjà utilisé par {actions}.",
-        "shortcuts.recordingHint": "Appuyez sur des touches… (<keys></keys> pour annuler)"
+        "shortcuts.recordingHint": "Appuyez sur des touches… (<keys></keys> pour annuler)",
+        "shortcuts.category.field": "Terrain"
     },
     "shapes": {
         "box": {
@@ -1742,6 +1996,7 @@
             },
             "pivot": {
                 "aria": "Pivot : {pivot}",
+                "backToCenter": "Revenir au centre",
                 "custom": "Pivot : là où il a été glissé sur le terrain",
                 "label": "Pivot",
                 "names": {
@@ -1759,9 +2014,16 @@
             },
             "place": "Placer",
             "quarterTurn": "Tourner de 90° dans le sens horaire",
+            "guides": {
+                "label": "Guides",
+                "circle": "Cercle",
+                "angles": "Lignes d’angle"
+            },
             "ratioLock": {
                 "locked": "Espacements liés : cliquez pour les délier",
-                "unlocked": "Lier les deux espacements"
+                "unlocked": "Lier les deux espacements",
+                "sizesLocked": "Largeur et hauteur liées : cliquez pour les délier",
+                "sizesUnlocked": "Lier la largeur et la hauteur"
             },
             "hideMarchers": {
                 "hide": "Masquer les marcheurs",
@@ -1802,7 +2064,13 @@
                 "label": "Attribution des places"
             },
             "drawHintFor": "Faites glisser sur le terrain pour dessiner {shape, select, block {un bloc} circle {un cercle} line {une ligne} curve {une courbe} arc {un arc} other {une forme}} · <keys></keys> pour annuler",
-            "drawPointsHintFor": "Faites glisser sur le terrain pour dessiner {shape, select, line {une ligne} curve {une courbe} arc {un arc} other {une forme}}, ou cliquez point par point · <keys></keys> pour annuler"
+            "drawPointsHintFor": "Faites glisser sur le terrain pour dessiner {shape, select, line {une ligne} curve {une courbe} arc {un arc} other {une forme}}, ou cliquez point par point · <keys></keys> pour annuler",
+            "finish": "Terminer",
+            "undoPoint": "Retirer le point",
+            "discard": "Abandonner",
+            "drawHintTouchFor": "Faites glisser sur le terrain pour dessiner {shape, select, block {un bloc} circle {un cercle} line {une ligne} curve {une courbe} arc {un arc} other {une forme}}",
+            "drawPointsHintTouchFor": "Faites glisser sur le terrain pour dessiner {shape, select, line {une ligne} curve {une courbe} arc {un arc} other {une forme}}, ou touchez point par point",
+            "pointsHintTouch": "Touchez pour ajouter des points · Touchez deux fois ou Terminer pour finir"
         },
         "placed": {
             "label": "{name} · {count, plural, one {{interval} pas} other {{interval} pas}}",
@@ -1815,6 +2083,7 @@
                 "steps": "{count, plural, one {{interval} pas} other {{interval} pas}}"
             },
             "groupError": "Erreur lors du regroupement des marcheurs",
+            "groupNeedsTwo": "Sélectionnez au moins 2 marcheurs pour les grouper",
             "ungroupError": "Erreur lors du dégroupement de la forme",
             "ungroupIsolated": "Dégroupez cette forme hors de l'isolement : elle vient d'une page précédente",
             "leftShape": {
@@ -1869,6 +2138,25 @@
                 "validate": {
                     "flat": "L'arc est plat, c'est donc une ligne droite",
                     "sameSpot": "Les extrémités de l'arc sont au même endroit"
+                },
+                "params": {
+                    "bend": "Angle parcouru par l'arc",
+                    "width": "Largeur de l'arc d'un côté à l'autre, en pas",
+                    "height": "Hauteur de l'arc, de ses extrémités à son bord le plus éloigné, en pas",
+                    "stretch": "Étirement de l'ellipse sur laquelle se trouve l'arc : combien de fois plus haute que large, ou plus large que haute"
+                },
+                "ends": {
+                    "label": "Ouvert ou fermé",
+                    "open": "Ouvert",
+                    "chord": "Fermer par une ligne droite",
+                    "circle": "Fermer en cercle",
+                    "round": "Fermer sur tout le tour"
+                },
+                "size": {
+                    "steps": "pas",
+                    "tall": "haut",
+                    "wide": "large",
+                    "round": "cercle"
                 }
             },
             "block": {
@@ -2089,7 +2377,8 @@
             "tab": {
                 "greyed": "{name} : {reason}",
                 "kinds": "Types de forme",
-                "ringHintKeys": "Maintenez <keys></keys> sur le terrain pour l'anneau de formes"
+                "ringHintKeys": "Maintenez <keys></keys> sur le terrain pour l'anneau de formes",
+                "ringCaption": "Anneau"
             }
         },
         "validate": {
@@ -2153,23 +2442,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "Erreur lors de la création des nouveaux temps",
-        "deletedSuccessfully": "Groupe de tempo supprimé avec succès",
         "deleteFailed": "Échec de la suppression du groupe de tempo",
-        "differentBeatsError": "Le groupe de tempo n'a pas le nombre de temps attendu. Cela ne devrait pas arriver. Veuillez nous contacter !",
+        "temposFailed": "Impossible de modifier les tempos",
         "errorUpdatingTempoGroup": "Erreur lors de la mise à jour du groupe de tempo"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} est dans une forme} other {{shapeNames} sont dans une forme}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other { et }}}}{leaderCount, plural, =0 {} one {{leaderNames} suit le meneur} other {{leaderNames} suivent le meneur}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other { et }}} other { et }}}}{orderCount, plural, =0 {} one {{orderNames} partage un mouvement courbe avec un ordre de file indienne} other {{orderNames} partagent un mouvement courbe avec un ordre de file indienne}}, {count, plural, one {il garde donc son} other {ils gardent donc leur}} mouvement ici.",
             "passThrough": {
                 "catchUp": "Rejoint maintenant la formation à la fin de {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Garder la page {first} comme image clé} other {Garder les pages {first}–{last} comme images clés}}",
-                    "unnamed": "Les garder comme images clés"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {S'arrêter à la fin de la page {first}} other {S'arrêter à la fin des pages {first}–{last}}}",
+                    "unnamed": "S'arrêter à la fin de ces pages"
                 },
-                "keepStopsError": "Impossible de garder ces pages comme images clés",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {La page {first} n'est plus une image clé} other {Les pages {first}–{last} ne sont plus des images clés}}",
-                    "unnamed": "Les pages de ce mouvement ne sont plus des images clés"
+                "stopAtEndError": "Impossible d'arrêter les marcheurs à la fin de ces pages",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Traverse désormais la fin de la page {first} sans s'arrêter} other {Traverse désormais la fin des pages {first}–{last} sans s'arrêter}}",
+                    "unnamed": "Traverse désormais sans s'arrêter la fin des pages comprises dans ce mouvement"
                 },
                 "through": "Passe maintenant directement par {through}",
                 "throughAndCatchUp": "Passe maintenant directement par {through}, puis rejoint la formation à la fin de {caughtUp}"
@@ -2188,7 +2477,18 @@
             "destinationShapeUnsuitable": "Cette destination ne convient pas à la transition. Une transition en file indienne ne peut pas se terminer sur une grille, et une grille doit avoir au moins autant de cases que la transition a d'emplacements.",
             "followLeaderBlock": "Une transition en file indienne ne peut pas se terminer sur une grille. Choisissez plutôt une ligne, une courbe, un cercle ou un bloc.",
             "followLeaderNeedsShape": "Une transition en file indienne a besoin d'une forme à suivre.",
+            "heldConflict": "{count, plural, =1 {{names} est {held} sur {pages}. {clearThisPage} pour supprimer l'arrêt, ou faites glisser à l'intérieur pour le déplacer.} other {{names} sont {held} sur {pages}. {clearThisPage} pour supprimer les arrêts, ou faites glisser à l'intérieur pour les déplacer.}}",
+            "heldHoldsOverlap": "Un marcheur ne peut pas avoir deux arrêts ({held}) sur les mêmes temps.",
+            "heldPages": "{count, plural, =1 {la page {pages}} other {les pages {pages}}}",
             "legacyConvertedTimeline": "Ce fichier a été converti en timelines par une ancienne version de développement, qui a placé plusieurs mouvements de page dans une même timeline, si bien qu'il ne peut pas être modifié. Convertissez-le à nouveau à partir de sa sauvegarde (le fichier enregistré à côté de lui avant la conversion).",
+            "moveInHeldHold": "Cela placerait un mouvement dans un arrêt ({held}). {clearThisPage} pour supprimer l'arrêt, ou faites glisser à l'intérieur pour le déplacer.",
+            "notJoined": {
+                "marcherCount": "{count, plural, one {# marcheur} other {# marcheurs}}",
+                "message": "Impossible de joindre les mouvements de {names} : {reason}.",
+                "overlap": "le mouvement joint chevaucherait un autre de leurs mouvements sur le même calque",
+                "partway": "un marcheur rejoint ou quitte le mouvement suivant en cours de route",
+                "secondMove": "ils auraient deux mouvements sur les mêmes temps"
+            },
             "notReady": "La timeline est encore en cours de chargement. Réessayez dans un instant.",
             "numberOutOfRange": "Un nombre est hors limites. Les temps, calques, nombres d'emplacements et positions doivent être des nombres entiers ou finis dans les limites autorisées.",
             "pathParamsInvalid": "Ce paramètre de trajectoire n'est pas valide. Le renflement d'un arc ne peut pas dépasser la moitié de la distance entre ses extrémités, et les points de passage doivent être des points du terrain.",
@@ -2198,11 +2498,47 @@
             "transitionSpansTimeline": "Une transition doit couvrir toute sa timeline, en commençant et en finissant avec elle. Modifiez plutôt la plage de la timeline : ses transitions suivront.",
             "unknown": "La timeline n'a pas pu effectuer cette modification."
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "Page {page} : {label}. {hint}"
+        "holdEdge": {
+            "endLabel": "Fin de l'arrêt ({held}). Faites glisser pour partir plus tôt ou rester plus longtemps",
+            "readoutEnd": "{held} jusqu'à la page {page}, temps {count}",
+            "blocked": {
+                "minimum": "Un arrêt dure au moins un temps",
+                "nextMove": "S'arrête au mouvement suivant",
+                "showEnd": "S'arrête à la fin du spectacle"
             },
+            "changeError": "Impossible de modifier l'arrêt",
+            "splitError": "Impossible de scinder l'arrêt",
+            "styleError": "Impossible de modifier le style d’arrêt"
+        },
+        "heldBar": {
+            "detail": "{held} sur {total} sélectionnés",
+            "shape": "Sa forme se poursuit ici",
+            "title": "{held} · page {page}",
+            "titleRange": "{held} · pages {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names} : le mouvement avant {page} suit le meneur",
+            "arrivalShape": "{names} : le mouvement avant {page} se termine dans une forme",
+            "count": "{count, plural, one {# marcheur} other {# marcheurs}}",
+            "crossesFlag": "{names} : un mouvement traverse l'un des repères de la page",
+            "done": "{names} {held} sur {page}",
+            "endsWithoutArriving": "{names} : un mouvement se termine à {page} sans y arriver",
+            "expertMoves": "{names} : mouvements Expert sur cette page",
+            "followLeader": "{names} : suit le meneur sur cette page",
+            "held": "{names} : déjà {held} ici",
+            "homeShape": "{names} : une forme fixe la position de départ. Dégroupez-la au début du spectacle pour les immobiliser un par un",
+            "none": "Aucun marcheur {held} sur {page}",
+            "notHeldReasons": "Pas {heldLower} : {reasons}",
+            "shape": "{names} : dans une forme sur cette page",
+            "holdError": "Impossible d'immobiliser les marcheurs",
+            "paused": "Mettez en pause pour modifier les arrêts",
+            "styleNoneHeld": "Aucun marcheur sélectionné n'est à l'arrêt à la tête de lecture",
+            "styleInEffect": "C'est déjà le style d'arrêt ici"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {La page {first} n'avait pas de positions propres pour ces marcheurs, elle a donc changé aussi} other {Les pages {first}–{last} n'avaient pas de positions propres pour ces marcheurs, elles ont donc changé aussi}}",
                 "keepAsBefore": "{count, plural, =1 {Garder la page {first} comme avant} other {Garder les pages {first}–{last} comme avant}}",
                 "keepError": "Erreur lors du maintien des pages suivantes"
             },
@@ -2220,6 +2556,9 @@
             "removeError": "Impossible de supprimer les images clés",
             "removeLocked": "{count, plural, =1 {Un marcheur utilise des mouvements Expert sur cette page, son image clé n'a donc pas été supprimée. Passez en mode Expert pour le modifier.} other {# marcheurs utilisent des mouvements Expert sur cette page, leurs images clés n'ont donc pas été supprimées. Passez en mode Expert pour les modifier.}}",
             "removeLockedAll": "{count, plural, =1 {Un marcheur utilise des mouvements Expert sur cette page. Passez en mode Expert pour le modifier.} other {# marcheurs utilisent des mouvements Expert sur cette page. Passez en mode Expert pour les modifier.}}",
+            "paused": "Mettez en pause pour modifier les images clés",
+            "removeNone": "Aucun marcheur sélectionné n'a d'image clé ici",
+            "followNone": "Aucune page suivante ne reprend cette position",
             "title": "Image clé · page {page}, temps {count}",
             "spoken": "{title}. {detail}"
         },
@@ -2232,6 +2571,7 @@
             "message": "Scindé : {label} à {where}",
             "messageAtPlayhead": "Scindé : {label} à la tête de lecture",
             "changed": "{count, plural, one {Trajet de # marcheur redessiné : droit avant la scission, relancé après} other {Trajets de # marcheurs redessinés : droits avant la scission, relancés après}}",
+            "restarted": "{count, plural, one {Le trajet courbe de # marcheur repart de zéro après ce point} other {Les trajets courbes de # marcheurs repartent de zéro après ce point}}",
             "paused": "Mettez en pause pour scinder un mouvement.",
             "isolatedOutside": "Placez la tête de lecture dans le mouvement que vous modifiez pour le scinder.",
             "noneAt": "Aucun mouvement ne passe par {where}. Placez la tête de lecture dans un mouvement pour le scinder.",
@@ -2245,14 +2585,32 @@
                 "subsetToggle": "Sous-page"
             },
             "label": "Page {pageName}",
+            "optionsLabel": "Options de la page {pageName}",
             "homeTooltip": "Départ : le début du spectacle (formation de la page {page})"
         },
         "rangeMenu": {
             "deleteWithMoves": "Supprimer la page et ses mouvements",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "Fixer tel qu'affiché",
+            "holdFromPreviousNone": "Tous les marcheurs sélectionnés sont déjà {heldLower} sur {page}, ou au milieu d'un mouvement",
             "setAsShownNone": "Tous les marcheurs sélectionnés sont déjà fixés sur {page} ou au milieu d'un mouvement",
             "setAsShownError": "Erreur lors de la fixation des marcheurs tels qu'affichés",
-            "deletePage": "Supprimer la page"
+            "deletePage": "Supprimer la page",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "Effacer cette page",
+            "defineAsShown": "Définir tel qu'affiché",
+            "defined": "Défini",
+            "definedLower": "défini",
+            "held": "À l'arrêt",
+            "heldLower": "à l'arrêt",
+            "holdFromPrevious": "Immobiliser depuis la dernière image clé",
+            "notDefined": "Non défini",
+            "notDefinedLower": "non défini",
+            "removeKeyframe": "Supprimer l'image clé",
+            "holdOverWindow": "Immobiliser du repère de début à la tête de lecture",
+            "splitHold": "Scinder l'arrêt ici"
         },
         "startFlagPositions": {
             "always": "Toujours",
@@ -2278,16 +2636,15 @@
             "menu": "{count, plural, one {Séparer # marcheur sélectionné dans un nouveau mouvement} other {Séparer # marcheurs sélectionnés dans un nouveau mouvement}}",
             "menuNone": "Séparer la sélection dans un nouveau mouvement",
             "drag": "Séparer {count, plural, one {# marcheur} other {# marcheurs}}",
-            "done": "{count, plural, one {# marcheur séparé} other {# marcheurs séparés}} dans {label}",
             "paused": "Mettez en pause pour scinder ou fusionner des mouvements.",
-            "nothingOnPage": "Rien ne bouge encore sur cette page, il n'y a donc rien à scinder."
+            "nothingOnPage": "Rien ne bouge encore sur cette page, il n'y a donc rien à scinder.",
+            "pageSplitOff": "Cette page n'a pas de mouvement propre. Pour scinder un mouvement qui la traverse, utilisez le clip du mouvement."
         },
         "merge": {
             "menuPair": "Fusionner {source} dans {target}",
             "menuPairFit": "Fusionner {source} dans {target} · ajuster à ses temps",
             "menuInto": "Fusionner dans {target}",
             "menuIntoFit": "Fusionner dans {target} · ajuster à ses temps",
-            "done": "Fusionné : {source} dans {target}",
             "page": "Page {name}",
             "thisPage": "cette page",
             "thisMove": "ce mouvement",
@@ -2410,6 +2767,8 @@
             "passedSets": "{count, plural, =1 {la formation {names}} other {les formations {names}}}",
             "through": "· en passant par {sets}",
             "editingThrough": "{editing}, en passant par {sets}",
+            "held": "· {count} sur {total} {held}",
+            "withHeld": "{rest}, {count} sur {total} {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. {key} lit {loop} en boucle",
             "loops": "<keys></keys> lit {loop} en boucle"
@@ -2467,6 +2826,11 @@
             "label": "Ajuster au spectacle",
             "hint": "Appuyez à nouveau pour revenir. Pincez ou utilisez <keys></keys> pour zoomer"
         },
+        "zoom": {
+            "in": "Zoom avant",
+            "out": "Zoom arrière",
+            "hint": "Ou pincez, ou <keys></keys>"
+        },
         "transport": {
             "label": "Transport",
             "more": "Plus de commandes",
@@ -2520,6 +2884,7 @@
         },
         "moveMenu": {
             "edit": "Modifier le mouvement",
+            "selectMarchers": "Sélectionner les marcheurs",
             "rename": "Renommer le mouvement…",
             "splitAtPlayhead": "Scinder à la tête de lecture",
             "delete": "Supprimer le mouvement",
@@ -2613,6 +2978,15 @@
                 "alreadyInSlot": "le marcheur est déjà à l’emplacement {slot}"
             },
             "changesNothing": "cela ne change rien",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} s'applique à une page entière, pas à {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} s'applique à une page entière, pas à {counts}"
+            },
+            "holdEdge": {
+                "outside": "L'arrêt ne peut pas atteindre ce temps : il s'arrête au mouvement suivant du marcheur, à la fin du spectacle ou à un temps de son autre extrémité."
+            },
             "moveTimeline": {
                 "tooEarly": "la timeline commence au temps {start}, elle ne peut donc pas être avancée de {count, plural, one {# temps} other {# temps}}",
                 "tooLate": "la timeline ne peut pas aller au-delà du temps {max}"
@@ -2628,6 +3002,45 @@
                 "wholePage": "« Maintenir » s’applique à une page entière, pas à {counts}"
             },
             "tooFarPastEnd": "cela dépasse la fin de {count, plural, one {# temps} other {# temps}} ; une seule modification en ajoute au plus {max}"
+        },
+        "expertHolds": {
+            "held": "{names} : déjà {heldLower} du repère de début à la tête de lecture",
+            "shape": "{names} : dans une forme entre le repère de début et la tête de lecture",
+            "followLeader": "{names} : suit le meneur entre le repère de début et la tête de lecture",
+            "followLeaderOrder": "{names} : partage un mouvement courbe avec un ordre de file indienne",
+            "arrivalShape": "{names} : l'arrêt commencerait là où se termine une forme",
+            "arrivalFollowLeader": "{names} : l'arrêt commencerait là où se termine un mouvement en file indienne",
+            "homeShape": "{names} : une forme fixe la position de départ. Dégroupez-la au début du spectacle pour les immobiliser un par un",
+            "endsWithoutArriving": "{names} : le dernier mouvement avant le repère de début se termine sans y arriver",
+            "count": "{count, plural, one {# marcheur} other {# marcheurs}}",
+            "notHeld": "{count, plural, one {# marcheur n'est pas} other {# marcheurs ne sont pas}} {heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · page {page}",
+            "titleRange": "{notDefined} · pages {first}–{last}"
+        },
+        "departure": {
+            "title": "Repart · page {page}, temps {count}"
+        },
+        "touchTransport": {
+            "playMenu": "Modes de lecture",
+            "goTo": "Aller à",
+            "start": "Début",
+            "countBack": "Temps préc.",
+            "countOn": "Temps suiv.",
+            "end": "Fin",
+            "playback": "Lecture",
+            "speed": "Vitesse",
+            "sound": "Son",
+            "view": "Affichage",
+            "fit": "Ajuster",
+            "atPlayhead": "À la tête de lecture",
+            "newPage": "Nouvelle page",
+            "newSubset": "Nouvelle sous-page",
+            "compact": "Compact"
+        },
+        "clearPage": {
+            "error": "Impossible d'effacer la page"
         }
     },
     "titlebar": {
@@ -2646,6 +3059,8 @@
         }
     },
     "toolbar": {
+        "showControls": "Afficher la barre d'outils",
+        "hideControls": "Masquer la barre d'outils",
         "alignment": {
             "lockXCaption": "Bloquer X",
             "lockYCaption": "Bloquer Y",
@@ -2653,7 +3068,9 @@
             "lockMarchersAriaLabel": "Déplacement du curseur et magnétisme des marcheurs",
             "placeAllMarchers": "Placer tous les marcheurs",
             "placeSelectedMarchers": "Placer les marcheurs sélectionnés",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Magnétisme",
+            "toNextPageSpots": "...aux positions de la page suivante",
             "setMarcherPositionsAriaLabel": "Définir les positions des marcheurs",
             "toPreviousPagePositions": "...aux positions précédentes de la page"
         },
@@ -2703,6 +3120,49 @@
             "shapesAlways": "Toujours",
             "shapesOff": "Désactivé",
             "shapesSelected": "Si sélectionnée"
+        },
+        "alignmentTabShort": "Align."
+    },
+    "updates": {
+        "pill": {
+            "available": "Mise à jour disponible",
+            "downloadingUpdate": "Téléchargement de la mise à jour",
+            "downloadingProgress": "Téléchargement de la mise à jour : {percent} %",
+            "ready": "Mise à jour prête",
+            "failed": "Échec de la mise à jour"
+        },
+        "popover": {
+            "current": "Vous avez la version {version}.",
+            "availableBody": "Téléchargez-la maintenant. Elle s'installe quand vous choisissez Mettre à jour maintenant, ou la prochaine fois que vous quittez l'application.",
+            "downloadingBody": "{transferred} sur {total} Mo, {speed} Mo/s",
+            "downloadingStarting": "Démarrage du téléchargement…",
+            "readyBody": "Mettre à jour maintenant ferme votre spectacle, installe la mise à jour, puis rouvre OpenMarch et votre spectacle. Votre travail est déjà enregistré.",
+            "moveBody": "macOS ne peut mettre à jour OpenMarch que dans votre dossier Applications. Déplacez-le dans ce dossier, et OpenMarch se rouvrira depuis Applications.",
+            "errorBody": "Impossible de télécharger la mise à jour. Réessayez, ou téléchargez le programme d'installation et lancez-le vous-même.",
+            "installFailedBody": "OpenMarch {version} ne s'est pas installé. Téléchargez le programme d'installation et lancez-le vous-même."
+        },
+        "action": {
+            "download": "Télécharger",
+            "updateNow": "Mettre à jour maintenant",
+            "later": "Plus tard",
+            "retry": "Réessayer",
+            "downloadInstaller": "Télécharger le programme d'installation",
+            "moveToApplications": "Placer dans Applications",
+            "whatsNew": "Nouveautés"
+        },
+        "toast": {
+            "checking": "Recherche de mises à jour…",
+            "upToDate": "OpenMarch {version} est la dernière version.",
+            "available": "OpenMarch {version} est disponible.",
+            "downloading": "Le téléchargement est en cours. Le bouton de mise à jour en haut à gauche indique sa progression.",
+            "ready": "OpenMarch {version} est prêt à être installé.",
+            "checkFailed": "Impossible de rechercher des mises à jour."
+        },
+        "unsupported": {
+            "development": "Les mises à jour sont désactivées dans les versions de développement.",
+            "snap": "Le Snap Store maintient cette copie d'OpenMarch à jour.",
+            "linuxPackage": "Cette copie d'OpenMarch ne peut pas se mettre à jour elle-même. Téléchargez les nouvelles versions sur openmarch.com.",
+            "noFeed": "Cette version d'OpenMarch ne se met pas à jour automatiquement. Téléchargez chaque nouvelle version vous-même."
         }
     },
     "view3d": {
@@ -2711,6 +3171,12 @@
             "no": "Non",
             "title": "Ouvrir la vue 3D au démarrage ?",
             "yes": "Oui"
+        },
+        "board": {
+            "designedBy": "Conçu par {name}",
+            "forClient": "Pour {name}",
+            "nowPerforming": "En piste",
+            "untitled": "Spectacle sans titre"
         },
         "camera": {
             "blimp": "Dirigeable",
@@ -2755,7 +3221,8 @@
             "pickSeat": "Choisir une place",
             "pickSeatTooltip": "Choisir une place : cliquez sur une place dans les tribunes pour vous y asseoir",
             "venue": "Lieu",
-            "freeCamera": "Vue libre"
+            "freeCamera": "Vue libre",
+            "director": "Réalisateur"
         },
         "readout": {
             "count": "Temps {count} sur {total}",
@@ -2801,7 +3268,11 @@
             "graphicsHint": "Non enregistré dans le spectacle, peut donc varier d'un ordinateur à l'autre.",
             "keysSection": "Clavier et souris",
             "uniforms": "Uniforme de l'orchestre",
-            "guardUniforms": "Uniforme de la color guard"
+            "guardUniforms": "Uniforme de la color guard",
+            "brassFinish": "Finition des cuivres",
+            "tuba": "Tubas",
+            "silkShape": "Forme de la voile du drapeau",
+            "silkArtwork": "Motif de la voile du drapeau"
         },
         "keys": {
             "playPause": "Lecture ou pause",
@@ -2812,11 +3283,23 @@
             "crowd": "Afficher ou masquer le public",
             "escape": "Annuler le choix de place, fermer les paramètres, quitter le plein écran",
             "orbit": "Orbite",
+            "orbitOrRight": "Orbiter, ou faire glisser avec le bouton droit",
+            "panPlain": "Déplacer la vue",
+            "zoomOrPinch": "Zoomer, ou pincer sur un pavé tactile",
             "pan": "Panoramique, ou glisser avec le bouton droit",
-            "zoom": "Zoom"
+            "zoom": "Zoom",
+            "pausedPose": "En pause : montrer le pas réel ou la position fermée"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "Laqué",
+            "silver": "Argenté"
+        },
+        "tuba": {
+            "contra": "Tuba de marche",
+            "sousaphone": "Soubassophone"
         },
         "uniformPreset": {
             "fade": "Fondu ultraviolet",
@@ -2858,11 +3341,37 @@
         "venue": {
             "updateFailed": "Échec de la mise à jour du lieu de la vue 3D"
         },
-        "board": {
-            "designedBy": "Conçu par {name}",
-            "forClient": "Pour {name}",
-            "nowPerforming": "En piste",
-            "untitled": "Spectacle sans titre"
+        "pausedPose": {
+            "label": "Montrer le pas réel en pause",
+            "tooltip": "En pause, montrer les marcheurs en plein pas, tels qu'ils sont à cet instant. Désactivé : ils se tiennent pieds joints sur leurs points"
+        },
+        "silkShape": {
+            "standard": "Standard",
+            "curvedTail": "Queue courbée",
+            "cSwing": "C-swing",
+            "rainbow": "Arc-en-ciel",
+            "arc": "Arc",
+            "teardrop": "Goutte",
+            "distressed": "Déchiré",
+            "rounded": "Arrondi",
+            "rectangle": "Rectangle",
+            "curvedAngle": "Grand angle courbé",
+            "wings": "Ailes",
+            "snake": "Serpent",
+            "swing": "Swing"
+        },
+        "silkArtwork": {
+            "none": "Aucun motif : les voiles affichent le motif de l'uniforme de la color guard ou la couleur du pupitre.",
+            "import": "Importer un PNG…",
+            "replace": "Remplacer…",
+            "remove": "Supprimer",
+            "template": "Modèle pour {shape} :",
+            "preparing": "Préparation…",
+            "notPng": "Ce fichier n'est pas un PNG. Exportez votre motif en PNG et importez-le à nouveau.",
+            "tooLarge": "Ce PNG est trop volumineux. Exportez-le dans une résolution plus faible et importez-le à nouveau.",
+            "unreadable": "Impossible de lire ce PNG.",
+            "templateFailed": "Impossible de créer le modèle.",
+            "saveFailed": "Impossible d'enregistrer le motif de la voile du drapeau"
         }
     },
     "web": {
@@ -2994,6 +3503,58 @@
         "welcome": {
             "description": "Bienvenue dans l'avenir du design. Configurons tout pour vous.",
             "title": "Bienvenue dans OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "Voici ce qui a changé depuis votre dernière utilisation.",
+            "title": "Bon retour"
+        },
+        "whatsNew": {
+            "carousel": "Présentation",
+            "guides": "En savoir plus dans les guides OpenMarch",
+            "next": "Suivant",
+            "position": "{current} sur {total}",
+            "skip": "Passer",
+            "slide": "Diapositive",
+            "slides": {
+                "pathways": {
+                    "label": "Trajets",
+                    "media": "Image provisoire : la vidéo du stylo de trajet n'est pas encore enregistrée.",
+                    "text": "Dessinez un trajet avec des angles pour un marcheur avec le stylo de trajet : il le suit au lieu d'aller en ligne droite.",
+                    "title": "Trajets"
+                },
+                "props": {
+                    "label": "Accessoires",
+                    "media": "Dans la vue 3D, une estrade ambre glisse le long du fond du terrain et pivote, sans gêner la fanfare.",
+                    "text": "Dessinez des accessoires sur le terrain et déplacez-les dans la timeline. Pour l'instant, ils apparaissent comme de simples blocs dans la vue 3D.",
+                    "title": "Accessoires"
+                },
+                "shapes": {
+                    "label": "Formes",
+                    "media": "Un pupitre de marcheurs est placé dans un bloc, puis sur une ligne, puis sur un arc, chacun dessiné sur le terrain et aimanté aux lignes du terrain.",
+                    "text": "Dessinez un bloc, une ligne ou un arc et placez-y les marcheurs sélectionnés ; ses points s'aimantent aux demi-pas, aux lignes de yard et aux hashs.",
+                    "title": "Formes"
+                },
+                "tempo": {
+                    "label": "Modifier la musique",
+                    "media": "Modification de la musique dans la timeline : le spectacle joue à 118 temps par minute, ralentit progressivement jusqu'à 81 sur deux mesures, puis revient à 118 avec une nouvelle signature rythmique. La tête de lecture ralentit pendant le changement progressif, puis accélère à nouveau.",
+                    "text": "Alignez vos temps sur la musique dans la timeline : faites glisser le tempo jusqu'à ce que les temps tombent sur les battements, et définissez les changements de tempo, les points d'orgue et les signatures rythmiques.",
+                    "title": "Modifier la musique"
+                },
+                "timeline": {
+                    "label": "Timeline",
+                    "media": "Une ligne de 20 marcheurs avance de 16 temps en un seul mouvement. Trois mouvements plus courts, imbriqués en dessous dans la timeline, ramènent les extrémités, ouvrent la ligne, puis courbent les 20 marcheurs en arc.",
+                    "text": "Les pages, les mouvements et les temps sont réunis sur une seule timeline sous le terrain, et en mode Expert, les mouvements peuvent traverser les pages et se chevaucher.",
+                    "title": "La timeline"
+                },
+                "view3d": {
+                    "label": "Vue 3D",
+                    "media": "La fanfare marche d'une formation à l'autre en 3D, dans un stade couvert vu d'en haut, depuis la tribune de presse : des marcheurs en uniforme et une color guard avec des drapeaux.",
+                    "text": "Regardez votre spectacle depuis les tribunes, avec des marcheurs en uniforme.",
+                    "title": "La vue 3D"
+                }
+            },
+            "steps": "Liste des nouveautés",
+            "title": "Nouveautés de la version 0.2"
         }
     },
     "workspaceSettings": {
@@ -3017,7 +3578,6 @@
         },
         "unsavedChanges": "Vous avez des modifications non enregistrées",
         "close": "Fermer",
-        "saved": "Paramètres du spectacle enregistrés",
         "updateFailed": "Échec de la mise à jour des paramètres de l'espace de travail",
         "showInfo": {
             "projectName": "Nom du spectacle",
@@ -3025,6 +3585,36 @@
             "designer": "Concepteur",
             "client": "Client",
             "optional": "Facultatif"
+        },
+        "performer": {
+            "title": "Valeurs par défaut des interprètes",
+            "description": "Comment les marcheurs se déplacent dans la vue 3D quand aucun réglage plus précis n'est défini.",
+            "stepOffFoot": {
+                "label": "Départ du pied",
+                "left": "Gauche",
+                "right": "Droit"
+            },
+            "dotMode": {
+                "label": "Le point marque",
+                "foot": "Le pied sur le point",
+                "body": "Le centre du corps"
+            },
+            "directionChange": {
+                "label": "Changements de direction",
+                "corner": "Contourner l'angle",
+                "direct": "Couper l'angle"
+            },
+            "holdWhileBandMoves": {
+                "label": "Immobile pendant que les autres bougent",
+                "markTime": "Marquer le pas",
+                "highMarkTime": "Marquer le pas genoux levés",
+                "stand": "Immobile"
+            },
+            "percussionTravel": {
+                "label": "Déplacement latéral des percussions",
+                "crab": "Pas de crabe",
+                "slide": "Glissé"
+            }
         }
     },
     "canvas": {
@@ -3056,6 +3646,7 @@
         "marchers": "Marcheurs",
         "metronome": "Métronome",
         "mobile": "App mobile",
+        "props": "Accessoires",
         "music": "Musique",
         "renderFail": "Échec de l'affichage du contenu du panneau latéral",
         "settings": "Paramètres du spectacle"
@@ -3080,6 +3671,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {Un doigt déplace la vue. L'Apple Pencil, ou un appui prolongé puis un glissement, trace un rectangle.} other {Un doigt déplace la vue. Un stylet, ou un appui prolongé puis un glissement, trace un rectangle.}}",
+            "box": "Rectangle",
+            "boxDescribe": "{device, select, pencil {Un doigt ou l'Apple Pencil trace un rectangle de sélection. Deux doigts déplacent la vue.} other {Un doigt ou un stylet trace un rectangle de sélection. Deux doigts déplacent la vue.}}",
+            "button": "Glisser sur une zone vide du terrain : {label}. {describe} Touchez pour changer",
+            "lasso": "Lasso",
+            "lassoDescribe": "{device, select, pencil {Un doigt ou l'Apple Pencil entoure les marcheurs pour les sélectionner. Deux doigts déplacent la vue.} other {Un doigt ou un stylet entoure les marcheurs pour les sélectionner. Deux doigts déplacent la vue.}}",
+            "menu": "Glisser sur une zone vide du terrain",
+            "pan": "Déplacer",
+            "panDescribe": "{device, select, pencil {Un doigt ou l'Apple Pencil déplace la vue.} other {Un doigt ou un stylet déplace la vue.}}",
+            "prefix": "Glisser :"
+        },
         "modifiers": {
             "add": "Ajouter",
             "addHint": "Ajouter : maintenez, ou touchez pour le garder actif. Toucher des marcheurs les ajoute à la sélection",
@@ -3088,11 +3692,13 @@
             "explain": {
                 "add": "Touchez des marcheurs pour les ajouter ou les retirer.",
                 "constrain": "Espacements égaux, un seul axe en déplaçant, inverse la mise à l'échelle proportionnelle.",
+                "dragMode": "Ce que fait un doigt ou le stylet sur une zone vide du terrain : déplacer la vue, ou dessiner un rectangle ou un lasso.",
                 "fine": "Les marcheurs se déplacent lentement, hors de la grille. Les formes quittent les demi-pas mais restent aimantées aux lignes. Les rotations se font degré par degré.",
                 "fromCenter": "Les blocs se dessinent et se redimensionnent depuis leur centre.",
                 "grip": "Glissez pour déplacer.",
                 "help": "Gestes.",
-                "snap": "Active ou désactive le magnétisme aux pas et aux lignes."
+                "snap": "Active ou désactive le magnétisme aux pas et aux lignes.",
+                "subtract": "Un rectangle ou un lasso retire des marcheurs de la sélection."
             },
             "fine": "Précis",
             "fineHint": "Précis : maintenez, ou touchez pour le garder actif. Les marcheurs se déplacent lentement, hors de la grille ; les formes quittent les demi-pas ; les rotations se font degré par degré",
@@ -3103,12 +3709,17 @@
             "help": "À quoi servent ces boutons",
             "helpList": {
                 "add": "<b>Ajouter</b> toucher ajoute à la sélection · <b>Sans magnétisme</b> déplacement libre",
+                "dragMode": "<b>Glisser</b> choisit ce que fait un doigt sur une zone vide du terrain : déplacer la vue, ou dessiner un rectangle ou un lasso",
                 "fine": "<b>Précis</b> glissements et rotations exacts · <b>Égal</b> espacements égaux",
                 "fromCenter": "<b>Depuis le centre</b> les blocs grandissent depuis le milieu",
                 "toggles": "<b>Touchez</b> un bouton pour le garder actif, ou <b>maintenez-le</b> pendant que vous faites glisser"
             },
-            "noSnap": "Sans magnétisme"
-        }
+            "noSnap": "Sans magnétisme",
+            "subtract": "Retirer",
+            "subtractHint": "Retirer : maintenez, ou touchez pour le garder actif. Un rectangle ou un lasso retire de la sélection les marcheurs qu'il couvre"
+        },
+        "redone": "Rétabli",
+        "undone": "Annulé"
     },
     "shortcutsDialog": {
         "movement": {
@@ -3142,7 +3753,8 @@
             "select": "Sélection",
             "shape": "Formes",
             "timeline": "Timeline",
-            "ui": "Affichage"
+            "ui": "Affichage",
+            "field": "Terrain"
         }
     },
     "shortcut": {
@@ -3215,8 +3827,11 @@
             "title": "Aide",
             "showShortcuts": "Raccourcis clavier",
             "website": "Site web",
-            "guides": "Documentation/guides"
+            "guides": "Documentation/guides",
+            "reportFeedback": "Signaler un bug ou envoyer un avis…",
+            "viewMyReports": "Voir mes signalements"
         },
+        "checkForUpdates": "Rechercher des mises à jour…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {
@@ -3234,6 +3849,13 @@
         },
         "openFailed": {
             "title": "Erreur de chargement de la base de données"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "Impossible d'ajouter le top",
+            "delete": "Impossible de supprimer le top",
+            "update": "Impossible de modifier le top"
         }
     },
     "coordinates": {
@@ -3258,6 +3880,12 @@
             "onX": "Sur {checkpoint}",
             "onY": "Sur {checkpoint}",
             "outside": "{steps, plural, =0 {EXT {checkpoint}} other {# EXT {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "ligne centrale",
+            "centerLineShort": "LC",
+            "frontEdge": "bord avant",
+            "frontEdgeShort": "BA"
         }
     },
     "activities": {
@@ -3275,9 +3903,651 @@
         "toFive": "{steps, number} pour 5",
         "undefined": "Non défini"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "Changement de tempo ajouté à {where}",
+                "curve": "Courbe de tempo",
+                "endsOn": "Finit à {tempo}",
+                "endsOnThen": "Finit à {tempo}, puis {next}",
+                "gradual": "Changement de tempo progressif",
+                "held": "Point d'orgue de {seconds} s à {where}",
+                "hold": "Point d'orgue",
+                "holdDrill": "Pause dans le drill",
+                "jump": "Saut de tempo",
+                "measureNumber": "Numéro de mesure",
+                "movedChange": "Changement de tempo déplacé à {where}",
+                "rehearsalMark": "Lettre de répétition",
+                "removedChange": "Changement de tempo supprimé à {where}",
+                "tempo": "Tempo",
+                "timeSignature": "Chiffrage de mesure"
+            },
+            "ask": {
+                "add": {
+                    "intro": "Pour quand la musique a ici un temps de plus que les temps du spectacle. L'enregistrement ne change pas : seuls les temps changent.",
+                    "keepMeasure": "{measure} passe à {count, plural, one {# temps} other {# temps}} dans la même durée ({tempo}).",
+                    "manyKeep": "{moves, plural, other {Les # mouvements qui le couvrent gardent leurs temps}} ; leurs marcheurs restent en place {count, plural, one {# temps} other {# temps}} à la fin de chacun.",
+                    "manyShift": "{moves, plural, other {Les # mouvements qui le couvrent s'allongent chacun de}} {count, plural, one {# temps} other {# temps}}.",
+                    "noMove": "Aucun mouvement ne le couvre : les marcheurs restent donc en place.",
+                    "oneKeep": "{move} reste à {moveCounts, plural, one {# temps} other {# temps}} et ses marcheurs restent en place {count, plural, one {# temps} other {# temps}} à sa fin.",
+                    "oneShift": "{move} passe de {from} à {to, plural, one {# temps} other {# temps}}.",
+                    "shift": "{count, plural, one {# temps de plus} other {# temps de plus}} ici ({seconds} s) : les temps et le drill qui suivent sont décalés d'autant plus tard par rapport à la musique, pour quand ils étaient en avance."
+                },
+                "addCountAfter": "Ajouter un temps après {where}",
+                "addCountBefore": "Ajouter un temps avant {where}",
+                "addMeasureBefore": "Ajouter une mesure ({count, plural, one {# temps} other {# temps}}) avant la mesure {measure}",
+                "addedCountAfter": "Temps ajouté après {where}",
+                "addedCountBefore": "Temps ajouté avant {where}",
+                "addedMeasureBefore": "Mesure ({count, plural, one {# temps} other {# temps}}) ajoutée avant la mesure {measure}",
+                "breath": {
+                    "many": "{moves, plural, other {Les # mouvements qui le couvrent finissent 1 temps plus tôt}} ; leurs marcheurs restent en place pendant ce temps.",
+                    "noCountAdded": "Aucun temps n'est ajouté et la musique ne change pas.",
+                    "none": "Pour une pause dans le drill sans toucher à la musique : aucun mouvement ne couvre cet endroit, rien ne peut donc finir plus tôt.",
+                    "one": "{move} : mouvement de {from} → {to, plural, one {# temps} other {# temps}} ; les marcheurs restent en place à {where}."
+                },
+                "countsFewer": "{count, plural, one {# temps de moins} other {# temps de moins}}",
+                "countsMore": "{count, plural, one {# temps de plus} other {# temps de plus}}",
+                "hidden": {
+                    "fewer": "Supprimer plutôt {where}",
+                    "fewerHint": "Laisse un temps entre l'image clé et le repère.",
+                    "fixHint": "Ils atteignent la formation un temps avant la fin de {move}, puis les temps sont supprimés. Une seule annulation défait les deux.",
+                    "fixTooShort": "Leur image clé ne durerait qu'un temps : elle ne peut pas finir plus tôt.",
+                    "marchersMore": "{names} et {count, plural, one {# autre} other {# autres}}",
+                    "text": "Leur image clé finirait sur le même temps que {move}. Quand deux mouvements finissent ensemble, l'image clé l'emporte : ils ne seraient donc jamais sur cette formation.",
+                    "theMove": "le mouvement en dessous",
+                    "title": "{marchers} manqueraient la formation à la fin de {move}"
+                },
+                "laterCountsStay": "Les temps suivants restent calés sur la musique : pour quand ils le sont déjà.",
+                "noMoveHere": "aucun mouvement ici",
+                "pageCounts": "Page {page} : {from} → {to, plural, one {# temps} other {# temps}}",
+                "pagesSentence": "{pages}.",
+                "remove": {
+                    "intro": "Pour quand la musique a ici moins de temps que le spectacle. L'enregistrement ne change pas : seuls les temps changent.",
+                    "keep": "Les temps autour remplissent la même durée ({where} : {from} → {to, plural, one {# temps} other {# temps}}, {tempo}).",
+                    "manyKeep": "{moves, plural, other {Les # mouvements qui les couvrent gardent leurs temps en finissant plus tard}}, si rien ne gêne à cet endroit.",
+                    "manyShift": "{moves, plural, other {Les # mouvements qui les couvrent raccourcissent.}}",
+                    "marksGo": "{count, plural, one {La lettre de répétition {marks} est supprimée : la mesure restante garde la sienne.} other {Les lettres de répétition {marks} sont supprimées : la mesure restante garde la sienne.}}",
+                    "noMove": "Aucun mouvement ne les couvre.",
+                    "oneKeep": "{move} garde ses {moveCounts, plural, one {# temps} other {# temps}} en finissant {count, plural, one {# temps} other {# temps}} plus tard, si rien ne gêne à cet endroit.",
+                    "oneShift": "{move} raccourcit de {count, plural, one {# temps} other {# temps}}.",
+                    "shift": "Leur durée est aussi supprimée : les temps et le drill qui suivent sont décalés plus tôt par rapport à la musique, pour quand ils étaient en retard.",
+                    "title": "Supprimer {where}"
+                },
+                "removed": "{where} supprimé"
+            },
+            "editor": {
+                "holdHint": "Durée du point d'orgue à {where}, en secondes",
+                "markHint": "Lettre de répétition à la mesure {measure} (vide pour la supprimer)",
+                "notATempo": "« {value} » n'est pas un tempo : saisissez un nombre comme 120, ou 120-90 pour un changement progressif",
+                "renumberHint": "Renuméroter depuis mes. {measure} : les mesures suivantes continuent à partir du numéro saisi. Laissez vide pour revenir à la numérotation automatique.",
+                "tempoFromToHint": "Tempo de {from} à {to} : « 120 », ou « 120-90 » pour un changement progressif",
+                "tempoOfHint": "Tempo de {where} : « 120 », ou « 120-90 » pour un changement progressif",
+                "tempoOutOfRange": "« {value} » est hors limites : un tempo va de 20 à 400 battements par minute",
+                "wholeStretch": "Plutôt tout le segment {range} (actuellement ♩{tempo})"
+            },
+            "label": {
+                "beforeMark": "{where}, avant {mark}",
+                "count": "temps {count}",
+                "measure": "mes. {measure}",
+                "measureCount": "mes. {measure} temps {count}",
+                "measures": "mes. {from}–{to}",
+                "range": "{from} à {to}"
+            },
+            "lane": {
+                "clearSelection": "Effacer la sélection",
+                "clearSelectionTitle": "Effacer la sélection ({key})",
+                "holdLabel": "tenue {seconds} s",
+                "holdLabelShort": "{seconds} s",
+                "markDrag": "{mark} → mes. {measure}",
+                "markTitle": "Lettre de répétition {mark} à mes. {measure} : faites-la glisser vers une autre mesure ; double-cliquez pour la renommer",
+                "renumberedTitle": "Mesure {measure} : numérotée à la main ; les mesures suivantes continuent à partir d'elle. Clic droit ou double-clic pour la modifier.",
+                "shortMeasureTitle": "Mesure {measure} : mesure incomplète, {count, plural, one {# temps} other {# temps}}",
+                "tempoLabelTitle": "{range} : cliquez pour saisir un tempo",
+                "timeSignatureTitle": "Chiffrage {meter} : cliquez pour le modifier d'ici jusqu'au chiffrage suivant"
+            },
+            "menu": {
+                "addChange": "Ajouter un changement de tempo ici",
+                "addCountAfter": "Ajouter un temps après…",
+                "addCountBefore": "Ajouter un temps avant…",
+                "addMark": "Ajouter une lettre de répétition…",
+                "addMeasureBefore": "Ajouter une mesure avant…",
+                "cancel": "Annuler",
+                "clearSelection": "Effacer la sélection",
+                "countTitle": "mes. {measure}, temps {count}",
+                "countTitleNoMeasure": "Temps {count}",
+                "editMark": "Lettre de répétition…",
+                "gradual": "Changement progressif",
+                "gradualHint": "Finit au tempo suivant ({tempo}) ; les points d'orgue en dehors ne changent pas",
+                "gradualNothingHint": "Rien à modifier : le tempo suivant est identique, ou il n'y a qu'un temps",
+                "gradualTo": "Changement progressif vers {tempo}",
+                "holdLength": "Durée du point d'orgue…",
+                "holdSubtitle": "point d'orgue {seconds} s",
+                "makeHold": "Créer un point d'orgue",
+                "markMoveHere": "Déplacer {mark} ici depuis mes. {measure}",
+                "markTaken": "{mark} est déjà à mes. {measure}. La réutiliser ?",
+                "markUseAgain": "Réutiliser {mark} à mes. {measure}",
+                "measureSubtitleMark": "{meter} · lettre {mark}",
+                "measureTitle": "Mesure {measure}",
+                "notAHold": "Retirer le point d'orgue",
+                "removeChange": "Supprimer ce changement de tempo",
+                "removeCount": "Supprimer ce temps…",
+                "removeCounts": "Supprimer ces temps…",
+                "removeMeasure": "Supprimer cette mesure…",
+                "renumber": "Renuméroter à partir d'ici…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, one {# temps} other {# temps}}",
+                "setTempo": "Définir le tempo…",
+                "timeSignature": "Chiffrage de mesure…",
+                "toMeasure": "jusqu'à mes. {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} compté {grouping}",
+                "fromSubtitle": "jusqu'au chiffrage suivant",
+                "fromTitle": "À partir de mes. {measure}",
+                "justThisMeasure": "Cette mesure seulement",
+                "justThisMeasureHint": "Activé : le chiffrage ne s'applique qu'à cette mesure ; les mesures suivantes gardent le leur et se décalent en conséquence. Désactivé : il dure jusqu'au chiffrage suivant, comme dans une partition.",
+                "onlySubtitle": "les mesures suivantes gardent le leur",
+                "onlyTitle": "mes. {measure} seulement",
+                "other": "Autre… (comme 11/8 3+3+3+2)",
+                "otherHint": "Chiffrage de mesure, et comptage en croches : « 7/8 2+2+3 », « 5/8 3+2 », « 3/2 » (compté en noires)"
+            },
+            "move": {
+                "from": "Le mouvement à partir de {where}",
+                "its": "Son mouvement",
+                "page": "Page {page}",
+                "pagesMove": "Le mouvement de la page {page}"
+            },
+            "tip": {
+                "outlier": "{where} est beaucoup plus {direction, select, faster {rapide} other {lent}} ({tempo}) que ses voisins ({before}, {after}) : il est peut-être décalé par rapport à la musique. Clic droit dessus > Définir le tempo… pour le corriger, ou laissez-le si la musique le fait vraiment."
+            },
+            "toast": {
+                "changedFirst": "{action} : non appliqué, car le spectacle venait de changer. Réessayez.",
+                "failed": "{action} : {error}",
+                "holdInvalid": "Un point d'orgue est une durée en secondes, par exemple 2,5",
+                "holdMade": "{where} est un point d'orgue. Clic droit dessus > Durée du point d'orgue… pour régler sa durée.",
+                "markAlreadyThere": "mes. {measure} a déjà la lettre de répétition {mark}",
+                "markMoved": "{mark} déplacée de mes. {from} à mes. {to}",
+                "meterSetFrom": "{meter} à partir de {where}, {count, plural, one {# temps} other {# temps}} par mesure ; le tempo est inchangé",
+                "meterSetOnly": "{meter} pour mes. {measure} seulement ; le tempo est inchangé",
+                "meterShiftNote": "Les mesures suivantes commencent {count, plural, one {# temps} other {# temps}} plus {direction, select, earlier {tôt} other {tard}}",
+                "meterShortNote": "La dernière mesure avant le chiffrage suivant est incomplète : {count, plural, one {# temps} other {# temps}} (marquée *)",
+                "movesCouldNotKeep": "{count, plural, one {# mouvement n'a pas pu garder ses temps et a changé de durée} other {# mouvements n'ont pas pu garder leurs temps et ont changé de durée}}",
+                "movesKept": "{count, plural, one {# mouvement a gardé ses temps} other {# mouvements ont gardé leurs temps}}",
+                "movesKeptHold": "{kept, plural, one {Le mouvement qui le couvre a gardé ses temps : ses marcheurs restent en place} other {# mouvements ont gardé leurs temps : leurs marcheurs restent en place}} {count, plural, one {# temps} other {# temps}} à la fin",
+                "notATimeSignature": "« {text} » n'est pas un chiffrage de mesure : essayez 7/8, ou 7/8 2+2+3 (le regroupement en croches)",
+                "notMeasureNumber": "« {value} » n'est pas un numéro de mesure",
+                "tooFastOrSlow": "{action} : un temps deviendrait trop rapide ou trop lent"
+            }
+        },
+        "button": {
+            "hint": "Le fichier musical, et le calage des temps sur celui-ci : tempo, chiffrages de mesure, lettres de répétition",
+            "hintOn": "Calez les temps sur la musique. <escape></escape> ou <toggle></toggle> pour quitter.",
+            "label": "Modifier la musique",
+            "labelOn": "Modification de la musique",
+            "text": "Musique"
+        },
+        "errors": {
+            "cantRemoveLastCount": "Impossible de supprimer le dernier temps",
+            "moveOneCountLong": "Ce mouvement ne dure qu'un temps",
+            "wouldHideSet": "Une image clé finirait alors sur le même temps que le mouvement en dessous, ce qui masquerait la formation de ce mouvement. Supprimez moins de temps, ou faites finir l'image clé un temps plus tôt.",
+            "wouldRemovePage": "Cela supprimerait une page. Supprimez moins de temps, ou supprimez d'abord la page."
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "Ajouter un changement de tempo",
+                "text": "Double-cliquez sur la piste de tempo là où il doit changer. Double-cliquez sur le point d'un changement pour le supprimer."
+            },
+            "dragChangeDot": {
+                "title": "Déplacer un changement de tempo",
+                "text": "Faites glisser son point vers le haut ou le bas pour changer le tempo, ou sur le côté pour déplacer l'endroit où il change."
+            },
+            "dragEndDot": {
+                "title": "Régler la fin d'un rit.",
+                "text": "Faites glisser le point carré à la fin d'un segment, pour que le tempo suivant puisse revenir d'un coup (a tempo)."
+            },
+            "dragLine": {
+                "title": "Régler un tempo",
+                "text": "Faites glisser la ligne de tempo vers le haut ou le bas. Pour saisir un tempo, faites un clic droit et choisissez Définir le tempo…"
+            },
+            "dragMeasures": {
+                "title": "Sélectionner des temps",
+                "text": "Faites glisser le long des mesures ou de la musique, puis modifiez-les tous en une fois."
+            },
+            "dragRoundHandle": {
+                "title": "Changer le tempo progressivement",
+                "text": "Faites glisser la poignée ronde au milieu d'un segment. Double-cliquez dessus pour revenir à un saut."
+            },
+            "keys": {
+                "escape": "Effacer la sélection ou annuler un glissement ; s'il n'y a rien à effacer, arrêter de modifier la musique",
+                "play": "Lire depuis la tête de lecture, ou arrêter là où elle est",
+                "tap": "Tap tempo : tapez sur chaque temps pour voir à quelle vitesse il va",
+                "toggle": "Commencer ou arrêter de modifier la musique",
+                "metronome": "Activer ou désactiver le métronome"
+            },
+            "label": "Comment fonctionne la modification de la musique",
+            "rightClick": {
+                "title": "Points d'orgue et temps",
+                "text": "Faites un clic droit sur un temps pour en faire un point d'orgue, changer le tempo progressivement, ou ajouter et supprimer des temps."
+            },
+            "rightClickMeasure": {
+                "title": "Mesures et lettres de répétition",
+                "text": "Faites un clic droit sur une mesure pour la renuméroter, régler son chiffrage ou ajouter une lettre. Faites glisser une lettre pour la déplacer."
+            },
+            "title": "Caler les temps sur la musique",
+            "musicFile": {
+                "title": "Changer la musique",
+                "text": "Cliquez sur le nom du fichier dans l'en-tête pour changer, importer ou supprimer l'audio, ou régler le décalage de la musique."
+            }
+        },
+        "importScore": {
+            "choose": "Choisir un fichier…",
+            "keeps": "Les pages, le drill, les tops et les accessoires restent sur leurs temps : ils suivent donc les tempos de la partition. Annuler rétablit tout.",
+            "replaces": "Les tempos, chiffrages de mesure, mesures et lettres de répétition de la partition remplacent ceux du spectacle, y compris ce que vous avez modifié ici.",
+            "title": "Utiliser le minutage d'une partition ?"
+        },
+        "lanes": {
+            "marks": {
+                "name": "Lettres",
+                "title": "Lettres de répétition : double-cliquez pour en nommer une, ou faites-en glisser une vers une autre mesure"
+            },
+            "measures": {
+                "name": "Mes.",
+                "title": "Mesures : faites glisser le long pour sélectionner des temps, clic droit ou double-clic sur un numéro pour renuméroter à partir de là, cliquez sur un chiffrage pour le modifier"
+            },
+            "music": {
+                "name": "Musique",
+                "title": "La musique : faites glisser le long pour sélectionner des temps, cliquez pour déplacer la tête de lecture, ou faites un clic droit sur un endroit pour y faire commencer la musique (au temps 1)"
+            },
+            "tempo": {
+                "name": "Tempo",
+                "title": "Tempo : faites glisser la ligne vers le haut ou le bas ; faites glisser un point pour déplacer un changement de tempo, ou une poignée ronde pour un changement progressif. Double-cliquez pour ajouter un changement ; clic droit > Définir le tempo… pour en saisir un. Faites glisser hors de la ligne pour sélectionner des temps"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "Annuler",
+                    "fix": "Finir l'image clé un temps plus tôt, puis supprimer"
+                },
+                "footer": "Cliquez sur un choix pour l'appliquer. <enter></enter> applique celui qui est marqué, votre dernier choix ; <escape></escape> annule, et Annuler défait n'importe lequel.",
+                "hold": "Faire plutôt une pause dans le drill ici",
+                "holdIntro": "La musique n'a pas de temps en plus, mais les marcheurs ont besoin d'une respiration ici ?",
+                "keep": "Garder tout le reste en place",
+                "shift": "Décaler tout ce qui suit"
+            },
+            "measureGlyph": "m{number}"
+        },
+        "tap": {
+            "average": "Moyenne {bpm} · recommence après 2 s",
+            "count": "{count, plural, one {# tape} other {# tapes}}",
+            "hint": "Tapez en rythme pour trouver à peu près le tempo de la musique",
+            "instructions": "Tapez <key></key> ou le bouton à chaque temps",
+            "name": "Tap tempo",
+            "reset": "Réinitialiser",
+            "selectFirst": "Sélectionnez d'abord des temps",
+            "setTarget": "Régler {target} à ♩{bpm}",
+            "tap": "Taper",
+            "use": "Appliquer",
+            "useBpm": "Appliquer ♩{bpm}",
+            "useBpmOn": "Appliquer ♩{bpm} <muted>à {target}</muted>",
+            "useHint": "Un tempo fixe sur les temps sélectionnés, sinon sur le segment de tempo sous la tête de lecture",
+            "useOn": "Appliquer <muted>à {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "Lire depuis la tête de lecture",
+            "playLoop": "Lire en boucle {measures}",
+            "stopHere": "Arrêter ici"
+        },
+        "toolbar": {
+            "done": "Terminé",
+            "doneLabel": "Terminé : arrêter de modifier la musique",
+            "metronome": "Métronome",
+            "metronomeHint": "Un clic à chaque temps, pour entendre si les temps sont calés sur la musique",
+            "metronomeOff": "Métronome : désactivé",
+            "metronomeOn": "Métronome : activé",
+            "title": "Modification de la musique"
+        },
+        "import": {
+            "button": "Importer",
+            "hint": "Importer le fichier musical, ou les tempos, chiffrages de mesure, mesures et lettres de répétition d'une partition",
+            "audio": "Fichier audio…",
+            "score": "Partition MusicXML…"
+        },
+        "music": {
+            "add": "Ajouter de la musique…",
+            "menuLabel": "Fichier musical",
+            "pick": "Choisir la musique",
+            "importAnother": "Importer un autre fichier audio…",
+            "delete": "Supprimer ce fichier audio…",
+            "offset": "Décalage de la musique…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Décalage de la musique",
+            "offsetHelp": "Secondes après le temps 1 auxquelles la musique commence. Une valeur négative démarre plus loin dans la musique.",
+            "offsetSet": "Appliquer",
+            "seconds": "secondes"
+        }
+    },
     "workspace": {
         "label": "Espace de travail",
         "editor": "Éditeur",
         "preview": "Aperçu"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "Rack auxiliaire",
+            "bongos": "Bongos",
+            "chimes": "Cloches tubulaires",
+            "concertBassDrum": "Grosse caisse de concert",
+            "congas": "Congas",
+            "drumSet": "Batterie",
+            "glockenspiel": "Glockenspiel",
+            "gong": "Gong",
+            "marimba": "Marimba",
+            "mixer": "Table de mixage",
+            "podium": "Podium",
+            "speaker": "Enceinte",
+            "synth": "Synthé",
+            "timpani": "Timbale",
+            "trapTable": "Table d’accessoires",
+            "vibraphone": "Vibraphone",
+            "xylophone": "Xylophone",
+            "podiumStand": "Estrade",
+            "podiumTower": "Tour",
+            "rollingPodium": "Podium roulant",
+            "stepladder": "Escabeau",
+            "scaffold": "Tour d’échafaudage"
+        },
+        "variant": {
+            "accessories": "Accessoires",
+            "cage": "Rack cage",
+            "covered": "Couverte",
+            "double": "Deux claviers",
+            "gold": "Doré",
+            "inches": "{size} po",
+            "keys": "{size} touches",
+            "low": "Bas",
+            "mixed": "Mixte",
+            "octaves": "{size} octaves",
+            "open": "Ouverte",
+            "plain": "Standard",
+            "rosewood": "Palissandre",
+            "silver": "Argenté",
+            "single": "Un clavier",
+            "square": "Carrée",
+            "syntheticBlack": "Synthétique noir",
+            "tall": "Grand modèle",
+            "toms": "Toms",
+            "wide": "Large",
+            "aluminum": "Aluminium",
+            "black": "Noir",
+            "feet": "{size} pi"
+        }
+    },
+    "feedback": {
+        "window.title": "Signaler un bug ou donner un avis",
+        "signIn.heading": "Connectez-vous pour envoyer un signalement",
+        "signIn.why": "Pour que vous puissiez suivre votre signalement et que nous vous disions ce qu’il devient.",
+        "signIn.button": "Se connecter",
+        "signIn.alternatives": "Vous préférez ne pas vous connecter ? <github>Signalez-le sur GitHub</github> ou <discord>posez la question sur Discord</discord>.",
+        "sent.heading": "Merci pour votre signalement",
+        "sent.body": "Nous vous en avons envoyé une copie par e-mail. S’il devient un ticket GitHub, nous vous enverrons le lien par e-mail pour que vous puissiez le suivre.",
+        "sent.another": "En envoyer un autre",
+        "viewMyReports": "Voir mes signalements",
+        "type.label": "De quoi s’agit-il ?",
+        "type.broken": "Quelque chose ne marche pas",
+        "type.broken.hint": "Un bug, un plantage ou quelque chose qui ne fonctionne pas correctement",
+        "type.feature": "Demande de fonctionnalité",
+        "type.feature.hint": "Quelque chose que vous aimeriez qu’OpenMarch fasse",
+        "type.feedback": "Avis général",
+        "type.feedback.hint": "Tout ce que vous aimeriez nous dire d’autre",
+        "title.label": "Résumé",
+        "title.placeholder": "En une ligne, de quoi s’agit-il ?",
+        "question.whatWentWrong": "Qu’est-ce qui n’a pas marché ?",
+        "question.whatWentWrong.placeholder": "Décrivez ce qui s’est passé",
+        "question.expected": "À quoi vous attendiez-vous ?",
+        "question.expected.placeholder": "Décrivez ce qui aurait dû se passer",
+        "question.steps": "Comment pouvons-nous reproduire le problème ?",
+        "question.steps.placeholder": "1. Ouvrir un spectacle\n2. …",
+        "question.feature": "Qu’aimeriez-vous qu’OpenMarch fasse ?",
+        "question.feature.placeholder": "Décrivez la fonctionnalité et à quoi elle vous servirait",
+        "question.ideas": "Des idées sur son fonctionnement",
+        "question.ideas.placeholder": "Croquis, exemples d’autres applis, tout ce qui peut aider",
+        "question.feedback": "Que souhaitez-vous nous dire ?",
+        "question.feedback.placeholder": "Votre avis",
+        "optional": "(facultatif)",
+        "attach.label": "Pièces jointes",
+        "attach.showFile": "Envoyer une copie de mon spectacle",
+        "attach.showFile.scrubbed": "Les noms des interprètes et les notes sont supprimés au préalable.",
+        "attach.music": "Inclure la musique",
+        "attach.noShow": "Ouvrez un spectacle pour en envoyer une copie avec votre signalement.",
+        "attach.diagnostics": "Les actions et erreurs récentes de l’application sont aussi envoyées, pour nous aider à trouver le problème.",
+        "record.start": "Enregistrer l’écran",
+        "record.microphone": "Avec le micro",
+        "record.hint": "Enregistre uniquement la fenêtre d’OpenMarch, jusqu’à 5 minutes. Le signalement s’efface pendant l’enregistrement : montrez-nous le problème tout en nous l’expliquant.",
+        "record.recording": "Enregistrement {time}",
+        "record.stop": "Arrêter",
+        "record.done": "Enregistrement prêt ({time})",
+        "record.discard": "Supprimer",
+        "record.failed.denied": "L’enregistrement n’a pas démarré. Vérifiez dans les paramètres du système qu’OpenMarch peut utiliser l’écran et le micro.",
+        "record.failed.unsupported": "L’enregistrement n’est pas disponible sur cet ordinateur.",
+        "public.label": "Ce que nous pouvons partager",
+        "public.notice": "Les signalements peuvent être résumés dans un ticket GitHub public. Nous ne publions jamais votre nom, votre e-mail ni vos fichiers, sauf si vous l’autorisez ci-dessous.",
+        "public.video": "Mon enregistrement peut être rendu public",
+        "public.showFile": "Mon fichier de spectacle peut être rendu public",
+        "public.credit": "Me citer par mon nom si cela devient un ticket public",
+        "send": "Envoyer le signalement",
+        "sending": "Envoi…",
+        "retention": "Les fichiers envoyés avec un signalement sont supprimés de nos serveurs au bout de 2 mois.",
+        "error.failed": "Impossible d’envoyer votre signalement. Vérifiez votre connexion et réessayez.",
+        "attach.music.off": "La musique n’est pas envoyée.",
+        "attach.music.on": "La musique est aussi envoyée.",
+        "sending.recording": "Envoi de l’enregistrement…",
+        "sending.show_file": "Envoi de votre spectacle…",
+        "sending.diagnostics": "Envoi des diagnostics…",
+        "sending.creating": "Envoi…",
+        "sent.view": "Voir ce signalement",
+        "error.signedOut": "Vous avez été déconnecté. Reconnectez-vous et renvoyez le signalement.",
+        "error.tooMany": "Vous avez envoyé beaucoup de signalements aujourd’hui. Veuillez réessayer demain.",
+        "error.showChanged": "Un autre spectacle est désormais ouvert. Vérifiez la pièce jointe et renvoyez le signalement.",
+        "sent.showTooLarge": "Votre spectacle était trop volumineux pour être joint (plus de 1 Go) : le signalement a été envoyé sans lui.",
+        "close": "Fermer",
+        "record.stopAndReturn": "Arrêter et revenir au signalement",
+        "record.webHint": "Votre navigateur vous demande quoi partager : choisissez cet onglet. Le signalement s’efface pendant l’enregistrement, jusqu’à 5 minutes. Montrez-nous le problème tout en nous l’expliquant.",
+        "record.failed.webDenied": "L’enregistrement n’a pas démarré. Choisissez cet onglet quand votre navigateur le demande, et autorisez le micro si vous l’avez activé.",
+        "record.failed.webUnsupported": "L’enregistrement n’est pas disponible dans ce navigateur.",
+        "drawer.show": "Afficher le signalement",
+        "drawer.hide": "Masquer le signalement",
+        "drawer.resize": "Redimensionner le signalement",
+        "discard.question": "Abandonner ce signalement ?",
+        "discard.body": "Ce que vous avez écrit et enregistré sera perdu.",
+        "discard.confirm": "Abandonner",
+        "discard.keep": "Continuer",
+        "record.preview": "Votre enregistrement",
+        "error.details": "Détails : {message}",
+        "error.refused": "Impossible d’envoyer votre signalement. Réessayez et, si le problème persiste, prévenez-nous sur Discord.",
+        "record.failed.microphone": "OpenMarch n’a pas accès au micro. Désactivez Avec le micro pour enregistrer sans le son, ou autorisez le micro dans les paramètres du système.",
+        "record.failed.webMicrophone": "Votre navigateur n’a pas autorisé le micro. Désactivez Avec le micro pour enregistrer sans le son, ou autorisez le micro pour ce site."
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "Les repères X le plus à gauche et le plus à droite ne sont plus à la même distance du centre",
+            "centerLocked": "La ligne centrale reste au centre lorsque les deux côtés sont modifiés ensemble",
+            "duplicatePosition": "Il y a déjà un repère {axis} à cet endroit",
+            "invalid": "Cette modification du terrain n’est pas valide",
+            "invalidStepSize": "La longueur de pas doit être supérieure à 0",
+            "mirrorIgnored": "Seuls les repères X sont mis en miroir",
+            "noGap": "Il n’y a pas d’intervalle entre deux repères {axis} où en ajouter un. Indiquez plutôt sa position.",
+            "notFound": "Ce repère n’existe plus",
+            "skippedExisting": "Les emplacements qui ont déjà un repère ont été ignorés",
+            "tooMany": "Cela ajouterait trop de repères. Utilisez un espacement plus grand.",
+            "yInFront": "Les repères Y ne peuvent pas se trouver devant l’avant du terrain. Utilisez 0 ou un nombre de pas négatif.",
+            "mirrorTwinSkipped": "L’autre côté a déjà un repère à cet endroit : seul celui-ci a été ajouté",
+            "outsideField": "Les emplacements au-delà des repères extérieurs du terrain ont été ignorés : le terrain garde sa taille",
+            "fieldResized": "La taille ou le centre du terrain a changé. Les marcheurs restent à leur place : vérifiez-les par rapport aux lignes.",
+            "fieldResizeRefused": "Cela changerait la taille ou le centre du terrain : rien n’a été modifié"
+        },
+        "nothingAdded": "Chaque emplacement a déjà un repère",
+        "seriesAdded": "{count, plural, one {# repère {axis} ajouté} other {# repères {axis} ajoutés}}",
+        "names": {
+            "yardLine": "ligne de yard {yards}",
+            "endZone": "zone d’en-but",
+            "endZoneShort": "EB",
+            "endZoneLine": "zone d’en-but {yards}",
+            "endZoneLineShort": "EB{yards}",
+            "gridLine": "ligne {line}",
+            "sideSteps": "{side} à {steps} pas du centre",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "à {steps} pas de l’avant",
+            "stepsFromFrontShort": "A{steps}"
+        },
+        "failed": "Impossible d’enregistrer la modification du terrain : rien n’a changé."
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "Terrain",
+            "done": "Terminé",
+            "discard": "Annuler les modifications",
+            "discardTip": "Remettre le terrain tel qu’il était à l’ouverture de ce panneau. La commande Annuler rétablit les modifications.",
+            "discarded": "Modifications du terrain annulées. La commande Annuler les rétablit.",
+            "custom": "Terrain personnalisé",
+            "changes": "{count, plural, =0 {Aucune modification par rapport au modèle} one {# modification par rapport au modèle} other {# modifications par rapport au modèle}}",
+            "selectMany": "Sélection multiple",
+            "mirror": "Côtés en miroir",
+            "mirrorOnTip": "Côtés en miroir activé : une modification d’un côté du 50 modifie aussi la ligne jumelle",
+            "mirrorOffTip": "Côtés en miroir désactivé : chaque ligne est modifiée séparément",
+            "sections": {
+                "size": "Taille et pas",
+                "template": "Modèle",
+                "names": "Noms et côtés",
+                "markings": "Marquages et étiquettes",
+                "image": "Image d’arrière-plan",
+                "colors": "Couleurs"
+            },
+            "tabs": {
+                "setup": "Réglages",
+                "lines": "Lignes",
+                "appearance": "Apparence"
+            }
+        },
+        "ruler": {
+            "x": "Faites glisser depuis cette règle pour ajouter une ligne X",
+            "y": "Faites glisser depuis cette règle pour ajouter une ligne Y"
+        },
+        "readout": {
+            "newLine": "Nouvelle ligne :",
+            "fromCenter": "{side} · {steps} pas",
+            "center": "Au centre",
+            "behindFront": "{steps} pas derrière l’avant",
+            "toLine": "{steps} jusqu’à {line}",
+            "mirrored": "Sa jumelle de l’autre côté aussi",
+            "releaseToDelete": "{count, plural, one {Relâchez pour supprimer cette ligne} other {Relâchez pour supprimer ces # lignes}}",
+            "dragOut": "Faites glisser sur le terrain pour ajouter une ligne"
+        },
+        "popover": {
+            "position": "Position",
+            "side": "Côté",
+            "stepsFromCenter": "pas depuis le centre",
+            "stepsBehindFront": "pas derrière l’avant",
+            "yardLine": "= ligne de yard {yard}",
+            "typeHint": "saisissez 24, +4 ou 85.33/2",
+            "typeHintYards": "saisissez 24, +4, 47.5yd ou 85.33/2",
+            "shortName": "Nom court",
+            "shortNameHint": "Affiché sur les bords du terrain et dans les coordonnées, par ex. 45 ou FH",
+            "name": "Nom",
+            "nameHint": "Utilisé dans les coordonnées rédigées et pour choisir le lieu de la vue 3D",
+            "yardNumber": "Numéro de yard",
+            "yardNumberHint": "Le numéro peint sur le terrain à cette ligne, s’il y en a un",
+            "none": "aucun",
+            "visible": "Visible",
+            "mirrored": "En miroir avec {twin} : les modifications s’appliquent aux deux",
+            "delete": "Supprimer"
+        },
+        "numberPad": {
+            "label": "Pavé numérique",
+            "back": "Supprimer le dernier caractère",
+            "clear": "Effacer",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "Ces lignes portent déjà le nom que leur donne leur position",
+        "list": {
+            "xHeading": "X · d’un côté à l’autre",
+            "yHeading": "Y · de l’avant à l’arrière",
+            "center": "centre",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "{steps} en arrière",
+            "drawAsHashes": "Afficher en hash",
+            "asymmetric": "Les lignes X extérieures ne sont pas à la même distance du centre : le terrain est donc affiché décentré. Déplacez l’une d’elles jusqu’à ce que les deux côtés correspondent.",
+            "hidden": "Masquée",
+            "reference": "Référence"
+        },
+        "size": {
+            "width": "Largeur",
+            "depth": "Profondeur",
+            "steps": "pas",
+            "stepsTo5": "{steps} pour 5",
+            "extent": "{steps} pas · {length}"
+        },
+        "names": {
+            "fieldNameHint": "La vue 3D choisit son lieu d’après ce nom"
+        },
+        "markings": {
+            "edgeLabels": "Étiquettes des bords",
+            "yardNumbers": "Numéros de yard",
+            "yardNumbersHint": "Pas depuis l’avant jusqu’à chaque bord des numéros peints. Videz les numéros avant pour n’en peindre aucun.",
+            "homeBottom": "Avant, bas",
+            "homeTop": "Avant, haut",
+            "awayTop": "Arrière, haut",
+            "awayBottom": "Arrière, bas"
+        },
+        "image": {
+            "remove": "Supprimer l’image",
+            "ratios": "Proportions du terrain {field} · de l’image {image}"
+        },
+        "colors": {
+            "field": "Terrain",
+            "marchers": "Marcheurs et trajets",
+            "shapes": {
+                "circle": "Cercle",
+                "square": "Carré",
+                "triangle": "Triangle",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "Passer à {template} ?",
+            "lines": "Lignes : {added} ajoutées, {removed} supprimées, {renamed} renommées ou modifiées",
+            "size": "Taille : {before} → {after} pas",
+            "keepLook": "Conserver mon apparence (couleurs, étiquettes, image, noms des côtés)",
+            "undoNote": "Une seule annulation suffit pour revenir en arrière.",
+            "cancel": "Annuler",
+            "apply": "Changer",
+            "resetTitle": "Rétablir {template} ?",
+            "resetApply": "Rétablir",
+            "basedOn": "Basé sur",
+            "resetShort": "Rétablir le modèle"
+        },
+        "fieldPane": "Lignes du terrain",
+        "help": {
+            "button": "Clavier",
+            "title": "Clavier",
+            "route": "<tab></tab> sélectionne la ligne suivante quand le terrain a le focus clavier. <pane></pane> passe du terrain au panneau Terrain et inversement."
+        },
+        "lines": {
+            "pickedMany": "{count} lignes sélectionnées",
+            "axis": "Quelles lignes",
+            "xTab": "D’un côté à l’autre · {count}",
+            "yTab": "De l’avant à l’arrière · {count}",
+            "canvasHint": "Cliquez sur une ligne pour la sélectionner · Faites glisser depuis une règle pour en ajouter une · <keys></keys> pour terminer",
+            "canvasHintPicked": "Faites glisser les lignes sélectionnées pour les déplacer · <keys></keys> pour désélectionner"
+        },
+        "line": {
+            "title": "Ligne",
+            "noneHint": "Sélectionnez une ligne sur le terrain ou dans la liste. Maj+clic en sélectionne d’autres. Faites glisser depuis une règle pour en ajouter une.",
+            "reference": "Utiliser comme référence",
+            "mixed": "Mixte",
+            "add": "Ajouter une ligne",
+            "everyOther": "Garder une sur deux"
+        }
     }
 }

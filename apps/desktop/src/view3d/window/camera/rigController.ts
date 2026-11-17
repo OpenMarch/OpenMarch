@@ -24,7 +24,7 @@ import {
     type Spherical,
     type Tween,
 } from "./rigMath";
-import { damp, zoomAbout, zoomRatioLimits } from "./inputMath";
+import { damp, targetOnGround, zoomAbout, zoomRatioLimits } from "./inputMath";
 
 /** A wheel zoom eases in with this half-life (ms): quick, but not a jump. */
 export const ZOOM_HALF_LIFE_MS = 45;
@@ -322,6 +322,12 @@ export class RigController {
      * CAD tools zoom: the view keeps its angle and the point stays where it
      * is on screen, the zoom stopping `MIN_ZOOM_DISTANCE` short of it, with
      * the eye above the ground and within `MAX_RADIUS` of the target.
+     *
+     * Zooming out about a point above the target (a marcher, a seat) lowers
+     * the target: it slides back up the line of sight to the ground, which
+     * doesn't change the view, unless that would bring it nearer than before. About a point above the eye, it lowers the
+     * eye too: once the eye would reach `MIN_EYE_Y`, the rest of the zoom
+     * goes straight back from the target.
      */
     private zoomBy(ratio: number, point: Vector3Tuple | null) {
         if (!point) {
@@ -335,9 +341,23 @@ export class RigController {
             maxRadius: MAX_RADIUS,
         });
         const k = Math.min(hi, Math.max(lo, ratio));
-        if (k === 1) return;
-        const next = zoomAbout(position, this.target, point, k);
-        this.setPose(next.position, next.target);
+        if (k !== 1) {
+            const next = zoomAbout(position, this.target, point, k);
+            const lifted = targetOnGround(next.position, next.target);
+            // Seen at a shallow angle, the ground meets the line of sight
+            // close to the eye: keep the sunken target rather than pull the
+            // orbit center in.
+            const lift =
+                k > 1 &&
+                Math.hypot(
+                    lifted[0] - next.position[0],
+                    lifted[1] - next.position[1],
+                    lifted[2] - next.position[2],
+                ) >= this.spherical.radius;
+            this.setPose(next.position, lift ? lifted : next.target);
+        }
+        if (ratio > k && k >= 1)
+            this.setRadius(clampRadius(this.spherical.radius * (ratio / k)));
     }
 
     private setRadius(radius: number) {
