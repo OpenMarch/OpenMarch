@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Tidak dapat menetapkan koordinat pemain mengikut halaman seterusnya. Tiada halaman seterusnya",
             "noPreviousPage": "Tidak dapat menetapkan koordinat pemain mengikut halaman sebelumnya. Tiada halaman sebelumnya",
-            "setAllToNext": "Salin kedudukan dari halaman seterusnya (semua pemain)",
-            "setAllToNextSuccess": "{count, plural, =1 {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})} other {Berjaya menetapkan koordinat kesemua # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})}}",
-            "setSelectedToNext": "Salin kedudukan dari halaman seterusnya (dipilih)",
-            "setSelectedToNextSuccess": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman seterusnya ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, =1 {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})} other {Berjaya menetapkan koordinat kesemua # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "Padang tidak dapat dilukis",
             "unavailable.web": "Grafik WebGL dimatikan atau disekat dalam pelayar ini. Hidupkan pecutan grafik (dalam Chrome atau Edge: Tetapan, Sistem, \"Gunakan pecutan grafik apabila tersedia\"), mulakan semula pelayar, kemudian muat semula halaman web ini. Persembahan anda selamat."
         },
-        "title": "Padang",
         "errors": {
             "noWebGL": "WebGL tidak tersedia",
             "contextLost": "Konteks WebGL padang telah hilang, jadi video tidak dapat dilukis. Cuba eksport sekali lagi.",
@@ -513,43 +508,17 @@
         "applyFieldType": "Guna jenis padang",
         "applyFieldTypeWarning": "Pemain tidak akan dialihkan mengikut saiz jenis padang baharu; mereka kekal di tempat asal pada kanvas. Anda boleh menukar semula jenis padang pada bila-bila masa.",
         "buttons": {
-            "newXCheckpoint": "Garisan rujukan X baharu",
-            "newYCheckpoint": "Garisan rujukan Y baharu",
             "resetTheme": "Tetapkan semula tema kepada lalai",
             "uploadFloor": "Muat naik lantai…",
             "removeFloor": "Buang lantai"
         },
         "checkpoint": {
             "created": "Garisan rujukan {axis} pada {steps} langkah dicipta",
-            "delete": "Padam",
-            "deleted": "Garisan rujukan {axis} pada {steps} langkah dipadam - \"{name}\"",
-            "deleteTooltip": "Padam garisan rujukan ini daripada padang",
-            "fieldLabel": "Label padang",
-            "fieldLabelTooltip": "Label yang dipaparkan pada padang (iaitu penanda ela)",
-            "minimumRequired": "Sekurang-kurangnya 2 garisan rujukan {axis} diperlukan",
-            "name": "Nama",
-            "nameTooltip": "Namakan garisan rujukan anda mengikut kehendak anda. Nama ini hanya untuk membantu anda mengenal pasti garisan rujukan yang sedang dipilih.",
-            "newXCheckpointName": "Garisan rujukan X baharu",
-            "newYCheckpointName": "Garisan rujukan Y baharu",
-            "shortName": "Nama ringkas",
-            "shortNameTooltip": "Nama utama garisan rujukan. (Cth. \"Garisan 45 Ela - Sisi 1\")",
-            "stepsFromCenter": "Langkah dari tengah",
-            "stepsFromFront": "Langkah dari hadapan",
-            "stepsFromFrontTooltip": "Bilangan langkah garisan rujukan ini dari bahagian hadapan padang. Nilai negatif menghala ke belakang.",
-            "useAsReference": "Guna sebagai rujukan",
-            "useAsReferenceTooltip": "Sama ada garisan rujukan ini digunakan sebagai rujukan untuk koordinat.",
-            "visible": "Kelihatan",
-            "visibleTooltip": "Sama ada garisan rujukan ini kelihatan pada padang",
-            "stepsFromCenterHint": "Bilangan langkah garisan rujukan ini dari tengah padang. Nilai negatif menghala ke kiri, seperti yang dilihat oleh penonton."
+            "minimumRequired": "Sekurang-kurangnya 2 garisan rujukan {axis} diperlukan"
         },
-        "customField": "Padang tersuai",
         "customFieldDocs": "Lihat dokumentasi",
         "customFieldName": "Tersuai",
-        "customization": "Penyesuaian",
-        "customize": "Sesuaikan",
         "errors": {
-            "invalidColor": "Warna tidak sah",
-            "noPropertiesToLoad": "Tiada sifat padang untuk dimuatkan! Perkara ini tidak sepatutnya berlaku, sila hubungi sokongan",
             "notDefined": "FieldProperties tidak ditakrifkan. Perkara ini tidak sepatutnya berlaku, sila hubungi sokongan.",
             "invalidJson": "Fail JSON tidak sah.\n\nSila pastikan fail mengandungi sintaks JSON yang sah.",
             "invalidFile": "Fail sifat padang tidak sah.\n\n{details}\n\nSila pastikan fail mengandungi semua medan yang diperlukan dengan nilai yang betul.",
@@ -565,24 +534,19 @@
         "fieldType": {
             "label": "Jenis padang"
         },
-        "general": "Umum",
         "labels": {
             "background": "Latar belakang",
             "backgroundImageOpacity": "Kelegapan imej latar belakang",
-            "backgroundImageRatio": "Nisbah imej latar belakang",
             "bottom": "Bawah",
-            "conformingMethod": "Kaedah penyesuaian imej",
             "conformMethod": "Kaedah penyesuaian",
             "directorsLeft": "Kiri pengarah",
             "directorsRight": "Kanan pengarah",
             "externalLabels": "Label luaran",
             "fieldLabels": "Label padang",
             "fieldName": "Nama padang",
-            "fieldRatio": "Nisbah padang",
             "gridLines": "Garisan grid",
             "halfLineXInterval": "Jarak garisan separuh X",
             "halfLineYInterval": "Jarak garisan separuh Y",
-            "height": "Tinggi",
             "left": "Kiri",
             "leftAbbreviation": "Singkatan kiri",
             "marcherFill": "Isian pemain",
@@ -598,23 +562,12 @@
             "shapes": "Bentuk",
             "shapeType": "Jenis bentuk",
             "showBackgroundImage": "Papar imej latar belakang",
-            "stepsFromFrontToAwayLabelBottom": "Langkah dari depan ke tepi bawah label tandang",
-            "stepsFromFrontToAwayLabelTop": "Langkah dari depan ke tepi atas label tandang",
-            "stepsFromFrontToHomeLabel": "Langkah dari depan ke tepi bawah label tuan rumah",
-            "stepsFromFrontToHomeLabelTop": "Langkah dari depan ke tepi atas label tuan rumah",
             "stepSize": "Saiz langkah",
             "stepSizeWarningThreshold": "Ambang amaran saiz langkah",
             "temporaryPath": "Laluan sementara",
-            "top": "Atas",
-            "useHashes": "Guna hash",
-            "width": "Lebar",
-            "widthHeight": "l/t",
-            "noBackgroundImage": "T/B",
-            "stepSizeWarningRatio": "Ambang amaran saiz langkah ({steps} ke 5)"
+            "top": "Atas"
         },
         "messages": {
-            "fieldRatio": "{ratio} atau {decimal}",
-            "measurementModificationNote": "Nilai ini boleh diubah dengan melaraskan koordinat X dan Y, saiz langkah dan imej latar belakang",
             "noFloor": "Tiada lantai",
             "floorUnnamed": "Lantai"
         },
@@ -625,39 +578,16 @@
             "metric": "Metrik"
         },
         "sections": {
-            "externalLabels": "Label luaran",
-            "fieldLabels": "Label padang",
-            "general": "Umum",
-            "imageRendering": "Pemaparan imej",
-            "measurements": "Ukuran",
-            "sideDescriptions": "Penerangan sisi",
-            "theme": "Tema",
-            "xCheckpoints": "Garisan rujukan X",
-            "yCheckpoints": "Garisan rujukan Y"
-        },
-        "tabs": {
-            "checkpoints": "Garisan rujukan",
-            "general": "Umum",
-            "image": "Imej",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Grid",
-            "labels": "Label",
-            "marchers": "Pemain",
-            "pathways": "Laluan"
+            "sideDescriptions": "Penerangan sisi"
         },
         "tooltips": {
             "conformMethod": "Sama ada imej latar belakang dimuatkan di dalam padang atau mengisi padang. Nisbah aspek sentiasa dikekalkan",
             "directorsLeft": "Cth. \"Sisi 1\", \"Kiri penonton\" atau \"Kanan pentas\"",
             "directorsRight": "Cth. \"Sisi 2\", \"Kanan penonton\" atau \"Kiri pentas\"",
-            "fieldName": "Nama atau tajuk templat padang",
             "halfLineXInterval": "Jarak garisan separuh dipaparkan dalam antara muka pada paksi X dari tengah padang. Biarkan kosong untuk tidak memaparkan garisan separuh pada paksi X. Ini hanya untuk paparan dan tidak menjejaskan koordinat sama sekali",
             "halfLineYInterval": "Jarak garisan separuh dipaparkan dalam antara muka pada paksi Y dari hadapan padang. Biarkan kosong untuk tidak memaparkan garisan separuh pada paksi Y. Ini hanya untuk paparan dan tidak menjejaskan koordinat sama sekali",
             "leftAbbreviation": "Cth. \"S1\", \"KiPn\" atau \"KaPt\" (singkatan untuk \"Sisi 1\", \"Kiri penonton\" atau \"Kanan pentas\")",
-            "measurementSystem": "Unit ukuran untuk menentukan saiz langkah. Boleh ditukar bila-bila masa",
             "resetTheme": "Tetapkan semula tema kepada nilai lalai",
-            "resetToDefault": "Tetapkan semula kepada lalai",
             "rightAbbreviation": "Cth. \"S2\", \"KaPn\" atau \"KiPt\" (singkatan untuk \"Sisi 2\", \"Kanan penonton\" atau \"Kiri pentas\")",
             "stepsFromFrontToAwayLabelBottom": "Bilangan langkah dari garisan tepi hadapan ke bahagian luar nombor tandang (lebih dekat ke garisan tepi belakang)",
             "stepsFromFrontToAwayLabelTop": "Bilangan langkah dari garisan tepi hadapan ke bahagian dalam nombor tandang (lebih dekat ke tengah padang)",
@@ -672,15 +602,10 @@
             "inches": "in",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "AMARAN - Garisan rujukan X paling kiri dan paling kanan tidak sama jarak dari tengah. Ini boleh menyebabkan artifak grafik yang pelik dan perlu dibetulkan.",
-            "yCheckpointsNegative": "AMARAN - Amat disyorkan agar langkah semua garisan rujukan Y kurang daripada sifar (iaitu nombor negatif). Semua koordinat Y sepatutnya berada di belakang hadapan padang. Jika tidak, ralat grafik dan koordinat yang tidak dijangka mungkin berlaku."
-        },
         "loading": "Memuatkan...",
         "measurements": {
             "feet": "{value} kaki",
-            "meters": "{value} m",
-            "steps": "{count, plural, other {# langkah}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -1467,7 +1392,6 @@
         "general.appearance": "Penampilan",
         "general.appearance.dark": "Gelap",
         "general.appearance.light": "Cerah",
-        "general.automaticUpdates": "Muat turun dan pasang kemas kini secara automatik",
         "general.description": "Mod editor, bahasa dan keutamaan lain untuk seluruh aplikasi.",
         "general.editorMode": "Mod editor",
         "general.editorMode.basic": "Asas",
@@ -2013,9 +1937,6 @@
                 "kinds": "Jenis bentuk",
                 "ringHintKeys": "Tahan <keys></keys> pada padang untuk lingkaran bentuk"
             }
-        },
-        "transform": {
-            "title": "Transformasi"
         },
         "validate": {
             "noPosition": "Bentuk mempunyai tempat tanpa kedudukan",
@@ -2579,7 +2500,6 @@
             "placeAllMarchers": "Letakkan semua pemain",
             "placeSelectedMarchers": "Letakkan pemain dipilih",
             "snapToggleCaption": "Lekap",
-            "toNextPagePositions": "...ke kedudukan halaman seterusnya",
             "setMarcherPositionsAriaLabel": "Tetapkan kedudukan pemain"
         },
         "collisions": {
@@ -2630,20 +2550,6 @@
             "shapesSelected": "Apabila dipilih"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Ralat berlaku semasa mendapatkan versi.",
-            "message": "Ralat: {message}",
-            "noVersion": "Tidak dapat mendapatkan versi terkini."
-        },
-        "installLinux": "Pasang untuk Linux",
-        "installMacArm": "Pasang untuk Apple Silicon",
-        "installMacIntel": "Pasang untuk Mac Intel",
-        "installWindows": "Pasang untuk Windows",
-        "skipVersion": "Langkau versi ini",
-        "title": "Versi baharu tersedia",
-        "trigger": "Versi baharu tersedia!"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "Anda boleh mengubah ini kemudian dalam Tetapan › Umum.",
@@ -2658,14 +2564,17 @@
             "floor": "Di lantai",
             "frontRow": "Barisan hadapan",
             "geJudge": "Hakim GE",
+            "judgesTable": "Meja hakim",
             "lowerBowl": "Aras bawah",
             "podium": "Podium",
             "pressBox": "Bilik akhbar",
             "sideline": "Garisan tepi",
             "topDown": "Dari atas",
+            "tunnel": "Terowong",
             "upperDeck": "Aras atas"
         },
         "kit": {
+            "arena": "Arena tertutup",
             "bighs": "Sekolah menengah besar",
             "blank": "Padang sahaja",
             "college": "Stadium kolej",
@@ -2793,6 +2702,12 @@
         },
         "venue": {
             "updateFailed": "Gagal mengemas kini lokasi Paparan 3D"
+        },
+        "board": {
+            "designedBy": "Direka oleh {name}",
+            "forClient": "Untuk {name}",
+            "nowPerforming": "Sedang membuat persembahan",
+            "untitled": "Persembahan tanpa tajuk"
         }
     },
     "web": {
@@ -2948,7 +2863,14 @@
         "unsavedChanges": "Anda mempunyai perubahan yang belum disimpan",
         "close": "Tutup",
         "saved": "Tetapan persembahan disimpan",
-        "updateFailed": "Gagal mengemas kini tetapan ruang kerja"
+        "updateFailed": "Gagal mengemas kini tetapan ruang kerja",
+        "showInfo": {
+            "projectName": "Nama persembahan",
+            "projectNamePlaceholder": "Menggunakan nama fail",
+            "designer": "Pereka",
+            "client": "Klien",
+            "optional": "Pilihan"
+        }
     },
     "canvas": {
         "zoom": {

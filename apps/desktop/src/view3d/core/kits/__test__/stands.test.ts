@@ -22,7 +22,6 @@ import type {
 } from "../../types";
 import { buildBighs } from "../bighs";
 import { buildBlank } from "../blank";
-import { buildCollege } from "../college";
 import { buildHs } from "../hs";
 
 beforeAll(() => setTexturePainting(false));
@@ -44,7 +43,7 @@ const PARAMS: VenueParams = {
 };
 
 const KITS: {
-    id: Extract<VenueKitId, "hs" | "bighs" | "college" | "blank">;
+    id: Extract<VenueKitId, "hs" | "bighs" | "blank">;
     build: KitBuilder;
     cameras: string[];
     defaultLighting: LightingPreset;
@@ -75,13 +74,6 @@ const KITS: {
             "blimp",
             "topDown",
         ],
-        defaultLighting: "night",
-        stands: true,
-    },
-    {
-        id: "college",
-        build: buildCollege,
-        cameras: ["pressBox", "frontRow", "endZone", "blimp", "topDown"],
         defaultLighting: "night",
         stands: true,
     },
@@ -341,7 +333,8 @@ describe("stand kit proportions (meters)", () => {
         expect(first.depth).toBeCloseTo(0.79, 2);
         // the first tread's seat line is 15.8 m + 0.42 tread in front of the sideline
         expect(first.points[0][2]).toBeCloseTo(15.85 + 0.33, 0);
-        expect(first.points[0][1]).toBeCloseTo(1.22, 1);
+        // people sit on the bench: the 1.22 m first tread plus the 0.41 m bench lift
+        expect(first.points[0][1]).toBeCloseTo(1.63, 1);
         kit.dispose();
     });
 
@@ -354,20 +347,73 @@ describe("stand kit proportions (meters)", () => {
         kit.dispose();
     });
 
-    it("college: 50 rows each side, 34 on each end, 122 m long", () => {
-        const kit = build(buildCollege);
-        expect(rowCount(kit, "home")).toBe(50);
-        expect(rowCount(kit, "away")).toBe(50);
-        expect(rowCount(kit, "neutral")).toBe(68);
-        expect(length(kit, "home")).toBeCloseTo(121.9, 0);
-        const track = kit.root.getObjectByName("track");
-        expect(track).toBeUndefined();
-        kit.dispose();
+    it("hs and bighs drop the campus on the low path", () => {
+        for (const kit of [buildHs, buildBighs]) {
+            const high = build(kit);
+            const low = build(kit, FOOTBALL, "low");
+            for (const name of ["trees", "cars", "buildings", "fence"]) {
+                expect(high.root.getObjectByName(name), name).toBeDefined();
+                expect(low.root.getObjectByName(name), name).toBeUndefined();
+            }
+            high.dispose();
+            low.dispose();
+        }
     });
 
-    it("hs and bighs have a track; college and blank do not", () => {
+    it("hs is an aluminum stand on a frame; bighs is concrete", () => {
+        const hs = build(buildHs);
+        const bighs = build(buildBighs);
+        expect(hs.root.getObjectByName("standRear")).toBeUndefined();
+        expect(bighs.root.getObjectByName("standRear")).toBeDefined();
+        expect(hs.root.getObjectByName("scoreboard")).toBeDefined();
+        expect(bighs.root.getObjectByName("videoBoard")).toBeDefined();
+        hs.dispose();
+        bighs.dispose();
+    });
+
+    it("hs and bighs have a track; blank does not", () => {
         expect(build(buildHs).root.getObjectByName("track")).toBeDefined();
         expect(build(buildBighs).root.getObjectByName("track")).toBeDefined();
         expect(build(buildBlank).root.getObjectByName("track")).toBeUndefined();
     });
+});
+
+describe("the venue's podium", () => {
+    /** Boxes standing where `hs` and `bighs` put the podium, 26 ft past the front sideline. */
+    const podiumBoxes = (kit: KitResult) => {
+        const x = (FOOTBALL.minX + FOOTBALL.maxX) / 2;
+        const z = FOOTBALL.maxZ + 26 * 0.3048;
+        return solids(kit.root).filter((m) => {
+            const p = new Vector3().setFromMatrixPosition(m);
+            return Math.abs(p.x - x) < 2.5 && Math.abs(p.z - z) < 2.5;
+        }).length;
+    };
+
+    it.each([
+        ["hs", buildHs],
+        ["bighs", buildBighs],
+    ] as const)(
+        "%s draws it unless the show has its own (venuePodium: false)",
+        (_, builder) => {
+            for (const quality of ["high", "low"] as const) {
+                const kit = builder({
+                    footprint: FOOTBALL,
+                    params: PARAMS,
+                    quality,
+                });
+                expect(podiumBoxes(kit), quality).toBeGreaterThan(0);
+                kit.dispose();
+                const without = builder({
+                    footprint: FOOTBALL,
+                    params: PARAMS,
+                    quality,
+                    venuePodium: false,
+                });
+                expect(podiumBoxes(without), quality).toBe(0);
+                // The podium camera seat stays: saved camera lists don't change
+                expect(without.cameras.map((c) => c.id)).toContain("podium");
+                without.dispose();
+            }
+        },
+    );
 });

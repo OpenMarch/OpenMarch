@@ -216,35 +216,6 @@ function heldConflictMessage(
     );
 }
 
-export const HELD_DROPPED_MESSAGE: TimelineErrorMessage = {
-    key: "timeline.errors.heldDropped",
-    defaultMessage:
-        "{count, plural, =1 {{names} is no longer {held} on {pages}: it was {heldLower} from the starting spot, and now a move before it ends somewhere else.} other {{names} are no longer {held} on {pages}: they were {heldLower} from the starting spot, and now a move before it ends somewhere else.}}",
-};
-
-/**
- * What an edit says when it dropped holds from the starting spots on later pages
- * (`droppedHolds`, #619): who and where. `null` when it dropped none.
- */
-export function heldDroppedMessage(
-    held: HeldConflict | undefined,
-    translate: TimelineTranslate = defaultTranslate,
-): string | null {
-    if (!held || held.names.length === 0 || held.pages.length === 0)
-        return null;
-    return translate(
-        HELD_DROPPED_MESSAGE.key,
-        HELD_DROPPED_MESSAGE.defaultMessage,
-        heldParams(held, translate),
-    );
-}
-
-/** A warning naming the holds an edit dropped (`heldDroppedMessage`), if it dropped any. */
-export function toastDroppedHolds(held: HeldConflict | undefined): void {
-    const message = heldDroppedMessage(held);
-    if (message) toast.warning(message, { id: "timeline-held-dropped" });
-}
-
 /** Held pages by name, as the hold messages say them: "Page 3", "Pages 3 and 4". */
 export const heldPagesText = (
     pages: readonly string[],

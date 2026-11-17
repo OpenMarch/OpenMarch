@@ -17,7 +17,7 @@ import type { Target } from "./e2e/browser/fixtures.mjs";
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-export default defineConfig<object, { target: Target }>({
+export default defineConfig<{ touchScreen: boolean }, { target: Target }>({
     testDir: "./e2e",
     fullyParallel: false,
     workers: 1,
@@ -43,6 +43,17 @@ export default defineConfig<object, { target: Target }>({
             testDir: "./e2e/browser/tests",
             fullyParallel: true,
             use: { target: "browser" },
+        },
+        {
+            // The browser scenarios on a touch screen (touch points, a coarse
+            // pointer, no hover), still driven by the mouse: the app lays
+            // itself out for touch. For no-regression runs of mouse
+            // scenarios with touch emulation on (docs/conventions/tablet-parity.md).
+            // Needs `build:browser`.
+            name: "browser-touch",
+            testDir: "./e2e/browser/tests",
+            fullyParallel: true,
+            use: { target: "browser", touchScreen: true },
         },
         {
             // The same scenarios in the packaged app, to catch the browser

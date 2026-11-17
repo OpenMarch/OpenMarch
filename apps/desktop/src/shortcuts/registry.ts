@@ -36,6 +36,11 @@ export interface ActionHandler {
      * when it can run, or when there's nothing useful to say
      */
     disabledReason?: () => string | undefined;
+    /**
+     * Shows what the action would change while it's highlighted in the palette (true) and stops
+     * (false): a preview with no edit, such as the hold bars a follow-back lights
+     */
+    preview?: (on: boolean) => void;
 }
 
 const handlers = new Map<ActionId, ActionHandler[]>();
@@ -87,6 +92,11 @@ export function isActionChecked(id: ActionId): boolean {
 export function actionDisabledReason(id: ActionId): string | undefined {
     if (isActionEnabled(id)) return undefined;
     return top(id)?.disabledReason?.();
+}
+
+/** Shows (`on`) or stops the action's preview (`useActionHandler`'s `preview`), if it has one */
+export function previewAction(id: ActionId, on: boolean): void {
+    top(id)?.preview?.(on);
 }
 
 /** Whether the action's handler skips key repeats right now (`useActionHandler`'s `ignoreRepeat`) */

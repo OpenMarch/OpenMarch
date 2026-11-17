@@ -9,7 +9,8 @@ import {
     PART_WOOD,
     PART_METAL,
     PART_BLACK,
-    PART_CHROME,
+    PART_ALUMINUM,
+    PART_BRONZE,
     type Piece,
 } from "../mesh";
 import { hold } from "../holds";
@@ -62,12 +63,20 @@ describe("battery models", () => {
     });
 
     it("spreads bass sizes evenly, smallest first", () => {
-        expect(BASS_SIZES_IN).toEqual([18, 20, 22, 24, 26, 28, 30, 32]);
+        expect(BASS_SIZES_IN).toEqual([14, 16, 18, 20, 22, 24, 26, 28, 30, 32]);
+        expect(bassSizesFor(0)).toEqual([]);
         expect(bassSizesFor(1)).toEqual([26]);
         expect(bassSizesFor(2)).toEqual([18, 32]);
         expect(bassSizesFor(5)).toEqual([18, 22, 26, 28, 32]);
-        expect(bassSizesFor(8)).toEqual([18, 20, 22, 24, 26, 28, 30, 32]);
-        expect(bassSizesFor(0)).toEqual([]);
+    });
+
+    it("reaches below 18 in only for lines longer than five", () => {
+        expect(bassSizesFor(6)).toEqual([16, 20, 22, 26, 28, 32]);
+        expect(bassSizesFor(7)).toEqual([14, 18, 20, 24, 26, 30, 32]);
+        expect(bassSizesFor(10)).toEqual([...BASS_SIZES_IN]);
+        for (let n = 1; n <= 10; n++)
+            expect(new Set(bassSizesFor(n)).size).toBe(n);
+        expect(bassSizesFor(12)).toHaveLength(12);
     });
 
     it("hangs a cymbal from each hand, facing each other", () => {
@@ -76,9 +85,16 @@ describe("battery models", () => {
         const right = m.pieces.filter((p) => p.bone === "handR");
         expect(left.length).toBeGreaterThan(0);
         expect(right.length).toBeGreaterThan(0);
-        for (const p of [...left, ...right]) expect(p.part).toBe(PART_METAL);
-        const bl = bounds(left);
-        const br = bounds(right);
+        // bronze plates, whatever the brass finish, each with a black pad
+        for (const side of [left, right]) {
+            expect(side.filter((p) => p.part === PART_BRONZE)).toHaveLength(1);
+            expect(
+                side.every((p) => [PART_BRONZE, PART_BLACK].includes(p.part)),
+            ).toBe(true);
+        }
+        expect(m.pieces.some((p) => p.part === PART_METAL)).toBe(false);
+        const bl = bounds(left.filter((p) => p.part === PART_BRONZE));
+        const br = bounds(right.filter((p) => p.part === PART_BRONZE));
         expect(bl.max[1] - bl.min[1]).toBeCloseTo(0.457, 1);
         expect(bl.min[0]).toBeGreaterThan(br.max[0] - 0.05);
     });
@@ -102,18 +118,19 @@ describe("battery placement", () => {
         // forward is instrument −X: the 32 sits about 0.18 further out
         expect(small[0] - big[0]).toBeCloseTo(0.178, 2);
         expect(bassForward(18)).toBeCloseTo(0.0886, 3);
-        // the drum's back (toward the player, +X) stays at the carrier, 0.14 ahead of the hold's origin
-        for (const inches of [18, 26, 32]) {
+        // the drum's back (toward the player, +X) stays at the carrier, 0.14
+        // ahead of the hold's origin; its wood hoops stand 0.02 proud of it
+        for (const inches of [14, 18, 26, 32]) {
             const b = bounds(
                 batteryModel("bass", "high", {
                     bassInches: inches,
                 }).pieces.filter((p) => p.part === PART_SHELL),
             );
-            expect(b.max[0]).toBeCloseTo(0.14, 2);
+            expect(b.max[0]).toBeCloseTo(0.16, 2);
         }
     });
 
-    it("carries every bass drum high: centers at the chest, tops no higher than 1.6 m", () => {
+    it("carries every bass drum high: centers about the shoulders, tops no higher than 1.85 m", () => {
         for (const inches of [18, 22, 26, 32]) {
             const b = bounds(
                 batteryModel("bass", "high", {
@@ -122,9 +139,10 @@ describe("battery placement", () => {
             );
             // the origin sits at 1.0 m
             const center = 1.0 + (b.max[1] + b.min[1]) / 2;
-            expect(center).toBeGreaterThan(1.15);
-            expect(center).toBeLessThan(1.45);
-            expect(1.0 + b.max[1]).toBeLessThanOrEqual(1.6001);
+            // photos put every size's center at about shoulder height
+            expect(center).toBeGreaterThan(1.25);
+            expect(center).toBeLessThan(1.55);
+            expect(1.0 + b.max[1]).toBeLessThanOrEqual(1.8501);
         }
     });
 
@@ -244,16 +262,16 @@ const vertices = (pieces: Piece[]) =>
 
 describe("drum carriers", () => {
     it.each(["snare", "tenors", "bass"] as const)(
-        "%s hangs from shoulder hoops over both shoulders and down the back",
+        "%s hangs from aluminum bars over both shoulders and down the back",
         (id) => {
             const body = toBody(id);
-            const chrome = vertices(
+            const metal = vertices(
                 batteryModel(id).pieces.filter(
-                    (p) => p.part === PART_CHROME && !p.bone,
+                    (p) => p.part === PART_ALUMINUM && !p.bone,
                 ),
             ).map(body);
             for (const side of [-1, 1]) {
-                const mine = chrome.filter(
+                const mine = metal.filter(
                     (v) => Math.sign(v[0]) === side && Math.abs(v[0]) < 0.16,
                 );
                 // over the shoulder top (1.46 on every body) ...
@@ -263,22 +281,25 @@ describe("drum carriers", () => {
                 // ... and down the back behind the shoulder blades
                 expect(mine.some((v) => v[1] < 1.4 && v[2] < -0.17)).toBe(true);
             }
-            // a black plate on the belly
-            const plate = vertices(
-                batteryModel(id).pieces.filter(
-                    (p) => p.part === PART_BLACK && !p.bone,
-                ),
-            ).map(body);
+            // a plate down the middle of the chest and belly, clear of the body
             expect(
-                plate.some(
+                metal.some(
                     (v) =>
                         Math.abs(v[0]) < 0.05 &&
                         v[1] > 1.0 &&
                         v[1] < 1.3 &&
-                        v[2] > 0.15 &&
-                        v[2] < 0.2,
+                        v[2] > 0.18 &&
+                        v[2] < 0.21,
                 ),
             ).toBe(true);
+            const chest = metal.filter(
+                (v) =>
+                    Math.abs(v[0]) < 0.12 &&
+                    v[1] > 1.0 &&
+                    v[1] < 1.3 &&
+                    v[2] > 0,
+            );
+            for (const v of chest) expect(v[2]).toBeGreaterThan(0.17);
         },
     );
 

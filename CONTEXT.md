@@ -51,6 +51,18 @@ Terms the code, docs and issues use. Add a term when a design decision settles i
   interval: a drag changes only what the interval doesn't pin. Interval on the path counts as
   locked.
 
+## Cues
+
+From ADR 0015.
+
+- **Cue**: a value set for some performers at a moment (a count), for one cue type. Only things
+  that change independently of the drill are cues. _Avoid_: event, channel.
+- **Cue type**: what a cue controls, exactly one parameter of a performer: Equipment, Position,
+  Silk, Look, Facing, Posture (Lights later). Each is a lane on the timeline.
+- **Lasting / momentary**: a lasting cue holds until that performer's next lasting cue of the
+  type; a momentary one applies for a length in counts, then the lasting value shows again.
+- **Transition length**: how many counts a cue's change takes; each value has a default.
+
 ## Modifier keys
 
 From the modifier roles design, `docs/timeline/research/shapes/modifier-roles.md` (version A).
@@ -75,3 +87,19 @@ The code is `apps/desktop/src/input/modifierRoles.ts`.
   half-step ladder and the pull of guides and marchers for shape and marcher drags on the field,
   and grid snapping for arrow nudges on marchers. Its label is "Snap"; its off state, "Snap off".
   It resets on restart and when a file opens. The timeline keeps its own held Alt = no snap.
+
+## Holds
+
+The page-state words (Defined, Held, Not defined) are in
+`docs/timeline/research/holds/README.md`.
+
+- **Held hold**: a stretch where one marcher stands still on purpose, stored as a Held mark
+  (`timeline_held_marks`, ADR 0012). A marcher with no move and no mark also stands still, but
+  nothing was decided there.
+- **Hold style**: what a marcher's feet do over a Held hold, in the 3D View: **Stand**, **Mark
+  time** or **High mark time**. It belongs to the hold, not to a cue (ADR 0015 D-5), and is the
+  whole hold's. A hold with no style of its own uses the **show setting**.
+  _Avoid_: mark time cue, hold technique (the compile's name for the three values).
+- **Show setting** (for holds): Show settings' "Holding while others move". Stand by default. Set
+  to mark time, a holding marcher marks time on counts where anyone in the band travels and stands
+  while the whole band holds. A hold's own style wins over it.

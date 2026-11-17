@@ -28,6 +28,7 @@ const at = (x: number, y = 0): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 const CLICK = { double: false, ownFirst: false };
 const sweep = () => useMarcherOrderStore.getState().sweep;

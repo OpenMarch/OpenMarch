@@ -1,0 +1,102 @@
+---
+title: Change how marchers look
+description: Give each section its own colors and dot shape, hide marchers or their drill numbers, and change the look of tagged marchers from a page on.
+type: how-to
+covers:
+  - apps/desktop/src/components/marcher/appearance
+  - apps/desktop/src/components/inspector/marcher/TagEditor.tsx
+  - apps/desktop/src/entity-components/appearance.ts
+  - apps/desktop/src/services/appearance/appearanceSteps.ts
+  - i18n:marchers.list
+  - i18n:marchers.sectionAppearances
+  - i18n:tags
+sidebar:
+  order: 5
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Each marcher is drawn as a dot with its drill number. Until you change it, every dot looks the same, in the field's own colors. The <Ui k="sidebar.appearance" /> panel lets you give each section its own fill color, outline color and dot shape, and change the look of a tagged group of marchers from a chosen page on, for example to show who changes equipment. Appearances show on the field and in printed drill charts.
+
+## Style a section
+
+<Steps>
+
+1. Select <Ui k="sidebar.appearance" /> in the sidebar (the palette icon), or <Ui k="marchers.marcherAppearance" /> in the <Ui k="sidebar.marchers" /> panel.
+
+2. On the <Ui k="marchers.sectionText" /> tab, select <Ui k="marchers.list.addSectionStyle" />.
+
+3. Choose the section. <Ui k="marchers.sectionAppearances.inShowTab" /> lists the sections that have marchers in this show; <Ui k="marchers.sectionAppearances.allTab" /> lists every section.
+
+4. In the new style, choose the <Ui k="marchers.list.fillColor" />, the <Ui k="marchers.list.outlineColor" /> and the <Ui k="marchers.list.shape" />: a circle, square, triangle or X.
+
+</Steps>
+
+<Media
+  id="marchers-appearance"
+  alt="The Marcher Appearance panel on its Section tab, with a style for one section: buttons to delete it, hide the marchers and hide their labels, then fill color, outline color and shape."
+  maxWidth={520}
+/>
+
+The change shows on the field at once and applies on every page. Each section has one style; a section that already has one is dimmed in the list.
+
+Each style also has three buttons:
+
+- The trash can removes the style, and the section goes back to the default look.
+- The eye hides the section's marchers on the field, dots and drill numbers both. Select it again to show them.
+- The T hides only their drill numbers.
+
+A new style starts with no colors set, shown as dashed boxes. A color that isn't set keeps the default for that part of the look, so you can change only the fill, for example.
+
+## Change a tagged group's look from a page on
+
+A tag is a named group of marchers you choose yourself, such as "Flags on page 12" or "Soloists". Tag appearances change how the tagged marchers look starting at a page.
+
+First make the tag:
+
+<Steps>
+
+1. Select the marchers on the field.
+
+2. In the inspector, near the bottom of the selected marchers' section, select <Ui k="tags.createWithSelected" /> (the tag icon with a sparkle).
+
+3. Type a name if you want one, then select <Ui k="tags.create" />.
+
+</Steps>
+
+The tag appears in the inspector whenever any of its marchers are selected. To add more marchers to it later, select them and use <Ui k="tags.addSelectedTo" /> (the tag icon with a plus); <Ui k="tags.removeSelectedFrom" /> takes them out. Select a tag's name to rename or delete it.
+
+Then give it a look:
+
+<Steps>
+
+1. Open the <Ui k="sidebar.appearance" /> panel and select the <Ui k="marchers.tagText" /> tab. It lists every page of the show.
+
+2. Under the page where the new look should start, select <Ui k="marchers.list.addTagAppearance" /> and choose the tag.
+
+3. Set its colors, shape and visibility as for a section.
+
+</Steps>
+
+You can also start from the tag itself: select its name in the inspector, then <Ui k="tags.editAppearance" />. That adds an appearance for the tag on the page you're on, if there isn't one, and shows it in the panel.
+
+The look starts at the end of that page, where the marchers arrive at the set, and lasts until the tag has another appearance on a later page. As the show plays, marchers change look as they reach each page.
+
+## Which look wins
+
+A marcher can have a section style and several tag appearances at once. For each part of the look (fill, outline, shape, shown or hidden), OpenMarch uses the first of these that sets it:
+
+1. The tag appearances on that page, from the top of the page's list down. Drag a tag appearance by its handle to move it up or down the list.
+2. The marcher's section style.
+3. The field's default look.
+
+So a tag appearance that only sets a fill color changes the fill and keeps the section's outline and shape.
+
+## Related
+
+- [Add, edit and remove marchers](/guides/marchers/add-marchers/): sections come from here.
+- [Select marchers](/guides/marchers/select-marchers/): select a tag's marchers from the Select tab.
+- [Print drill charts](/guides/files/print-charts/): charts use the same looks.

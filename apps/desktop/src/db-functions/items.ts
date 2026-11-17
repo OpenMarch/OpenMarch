@@ -15,6 +15,7 @@ import { transactionWithHistory } from "./history";
 import { storedBeatIdInTransaction } from "./endlessCounts";
 import { createMarchersInTransaction } from "./marcher";
 import { updateMarcherHomesInTransaction } from "./marcherHome";
+import { lockItemsInTransaction } from "./lockedItems";
 
 export type DatabaseItem = typeof schema.items.$inferSelect;
 export type DatabaseItemGeometry = typeof schema.item_geometry.$inferSelect;
@@ -44,6 +45,12 @@ export interface NewItemArgs {
     name?: string | null;
     /** Props only */
     surfaceType?: SurfaceType;
+    /** A built-in 3D model id such as `pit/marimba-5.0`; none (a block) by default */
+    model?: string | null;
+    /** One position for the whole show; equipment is locked and props unlocked by default */
+    locked?: boolean;
+    /** Placed by a front ensemble preset; false by default */
+    fromPreset?: boolean;
     /** Where it was drawn: its home, `[x, y]` in canvas coordinates like a marcher's */
     home: XY;
     /** The beat it was created on: Off field before it, on field from it */
@@ -145,6 +152,9 @@ export async function createItemsInTransaction({
                     newItem.kind === "prop"
                         ? (newItem.surfaceType ?? "obstacle")
                         : null,
+                model: newItem.model ?? null,
+                locked: newItem.locked ?? newItem.kind === "equipment",
+                from_preset: newItem.fromPreset ?? false,
             })
             .returning()
             .get();
@@ -278,9 +288,26 @@ export interface ModifiedItemArgs {
     surfaceType?: SurfaceType;
     /** The prop's color as `rgba(r, g, b, a)` (`propColorToString`); null clears it */
     color?: string | null;
+    /** A built-in 3D model id such as `pit/marimba-5.0`; null draws the item as a block */
+    model?: string | null;
+    /**
+     * Locks the item to one position for the whole show, or unlocks it. Locking clears its moves
+     * and keeps it where it is at `lockAtBeat` (`lockItemsInTransaction`)
+     */
+    locked?: boolean;
+    /** The beat a lock keeps the item's position from: the playhead. 0 (its home) by default */
+    lockAtBeat?: number;
+    /**
+     * Sizes every Outline change of the item to this, in meters, keeping their turns: a new
+     * model's footprint, set with `model`
+     */
+    footprint?: { width: number; depth: number; height: number };
 }
 
-/** Renames items, changes props' surface types and colors. */
+/**
+ * Renames items, changes props' surface types and colors, sets items' models and locks, and
+ * resizes them to a model's footprint.
+ */
 export async function updateItemsInTransaction({
     tx,
     modifiedItems,
@@ -288,7 +315,16 @@ export async function updateItemsInTransaction({
     tx: DbTransaction;
     modifiedItems: readonly ModifiedItemArgs[];
 }): Promise<void> {
-    for (const { itemId, name, surfaceType, color } of modifiedItems) {
+    for (const {
+        itemId,
+        name,
+        surfaceType,
+        color,
+        model,
+        locked,
+        lockAtBeat,
+        footprint,
+    } of modifiedItems) {
         const item = await tx
             .select()
             .from(schema.items)
@@ -301,11 +337,24 @@ export async function updateItemsInTransaction({
                 .set({ name })
                 .where(eq(schema.marchers.id, item.marcher_id))
                 .run();
-        if (color !== undefined)
+        // Locking an unlocked item gives it one position first, from the moves it has now
+        if (locked === true && !item.locked)
+            await lockItemsInTransaction(tx, [item.marcher_id], lockAtBeat);
+        if (color !== undefined || model !== undefined || locked !== undefined)
             await tx
                 .update(schema.items)
-                .set({ color })
+                .set({ color, model, locked })
                 .where(eq(schema.items.id, itemId))
+                .run();
+        if (footprint !== undefined)
+            await tx
+                .update(schema.item_geometry)
+                .set({
+                    width: footprint.width,
+                    depth: footprint.depth,
+                    height: footprint.height,
+                })
+                .where(eq(schema.item_geometry.item_id, itemId))
                 .run();
         if (surfaceType !== undefined) {
             if (item.kind !== "prop")

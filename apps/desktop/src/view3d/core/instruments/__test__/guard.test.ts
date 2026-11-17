@@ -23,6 +23,7 @@ import { hold, HOLD_STATES, type Hold } from "../holds";
 import type { Piece, Vec3 } from "../mesh";
 import type { Detail, GuardModelId, InstrumentModel, SilkSpec } from "../model";
 import { SILK_GRID, silkCutProfile, silkPoint } from "../silkWave";
+import { silkShape } from "../../sizes/silkShapes";
 
 /** Triangles drawn for a model: its pieces and its silks' grids. */
 const drawn = (m: InstrumentModel, detail: Detail) =>
@@ -57,7 +58,9 @@ function silkPoints(silk: SilkSpec, speed = 0, turn = 0): Vec3[] {
                     fly: silk.fly,
                     header: silk.header,
                     mirror: silk.mirror,
-                    cut: silk.cut ? silkCutProfile(silk.cut) : undefined,
+                    cut: silk.cut
+                        ? silkCutProfile(silkShape(silk.cut).path)
+                        : undefined,
                     wavePhase: 1,
                     bellyPhase: 1,
                     speed,

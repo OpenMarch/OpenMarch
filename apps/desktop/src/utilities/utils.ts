@@ -6,14 +6,18 @@ import { toast } from "sonner";
 export { mainProcessLog } from "./mainProcessLog";
 export { assert } from "./assert";
 /**
- * Logs an error message to the console and displays a toast error notification.
+ * Logs an error to the console and shows a short toast for people.
  *
- * @param message The primary error message to log and display. This goes to the console and toast.
- * @param additional Optional additional parameters to log alongside the message. These will not be displayed in the toast.
+ * @param message What went wrong, written for people ("Couldn't change the tag"). Never put a
+ * raw error message in it; pass the error in `additional`, which only goes to the console.
+ * @param additional The error and anything else useful for debugging. Not shown in the toast.
+ *
+ * The same message replaces its toast instead of stacking, so a burst of failed edits shows
+ * one toast.
  */
 export const conToastError = (message: string, ...additional: any[]) => {
     console.error(message, ...additional);
-    toast.error(message);
+    toast.error(message, { id: `error:${message}` });
 };
 
 /**

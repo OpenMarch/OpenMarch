@@ -284,6 +284,30 @@ export const SECTIONS: { [key: string]: Section } = {
         tName: "section.pit.xylophone",
         prefix: "X",
     }),
+    Glockenspiel: new Section({
+        family: FAMILIES.Pit,
+        name: "Glockenspiel",
+        tName: "section.pit.glockenspiel",
+        prefix: "GL",
+    }),
+    DrumSet: new Section({
+        family: FAMILIES.Pit,
+        name: "Drum Set",
+        tName: "section.pit.drumSet",
+        prefix: "DS",
+    }),
+    Rack: new Section({
+        family: FAMILIES.Pit,
+        name: "Rack",
+        tName: "section.pit.rack",
+        prefix: "RK",
+    }),
+    Timpani: new Section({
+        family: FAMILIES.Pit,
+        name: "Timpani",
+        tName: "section.pit.timpani",
+        prefix: "TI",
+    }),
     AuxPercussion: new Section({
         family: FAMILIES.Pit,
         name: "Aux Percussion",

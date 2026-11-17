@@ -7,6 +7,7 @@ import {
 } from "@openmarch/core";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { FIELD_SURFACE_Y } from "@/view3d/core/field";
 import {
     fakeShowPositions,
     linearTrack,
@@ -139,7 +140,7 @@ describe("performer matrices", () => {
         return { xz, placed };
     };
 
-    it("places each block at its world position, standing on the ground", () => {
+    it("places each block at its world position, standing on the field surface", () => {
         const { xz, placed } = positionsAt(1000);
         expect([...placed]).toEqual([1, 1, 0]);
         const matrices = new Float32Array(48).fill(7);
@@ -149,7 +150,7 @@ describe("performer matrices", () => {
         const m = new Matrix4().fromArray(matrices, 0);
         const p = new Vector3().applyMatrix4(m);
         expect(p.x).toBeCloseTo(expected.x, 4);
-        expect(p.y).toBe(0);
+        expect(p.y).toBeCloseTo(FIELD_SURFACE_Y, 6);
         expect(p.z).toBeCloseTo(expected.z, 4);
         // No rotation or scale.
         expect(new Vector3(1, 1, 1).applyMatrix4(m).sub(p)).toEqual(
@@ -157,6 +158,20 @@ describe("performer matrices", () => {
         );
         // A marcher with no positions draws nothing (zero matrix).
         expect([...matrices.slice(32)]).toEqual(new Array(16).fill(0));
+    });
+
+    it("stands a block on its platform", () => {
+        const { xz, placed } = positionsAt(1000);
+        const matrices = new Float32Array(48);
+        writePerformerMatrices(
+            3,
+            xz,
+            placed,
+            matrices,
+            Float32Array.from([0.6, 0, 0]),
+        );
+        expect(matrices[13]).toBeCloseTo(FIELD_SURFACE_Y + 0.6, 6);
+        expect(matrices[16 + 13]).toBeCloseTo(FIELD_SURFACE_Y, 6);
     });
 
     it("follows the resolver between sets", () => {
@@ -208,6 +223,19 @@ describe("writeRingMatrices", () => {
             -2,
         ]);
         expect([second.x, second.z]).toEqual([5, -6]);
+    });
+
+    it("rings a lifted marcher at its feet on the platform", () => {
+        const matrices = new Float32Array(48);
+        writeRingMatrices(
+            slots,
+            new Set([10]),
+            xz,
+            new Uint8Array([1, 1, 1]),
+            matrices,
+            Float32Array.from([0.6, 0, 0]),
+        );
+        expect(matrices[13]).toBeCloseTo(RING_Y + 0.6, 6);
     });
 
     it("skips selected marchers that aren't placed, and empty selections", () => {

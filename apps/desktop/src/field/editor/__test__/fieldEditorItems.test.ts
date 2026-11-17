@@ -20,6 +20,7 @@ function setup({
     selected = [] as number[],
     rotation = 0,
     save = "saved" as DropResult,
+    locked = false,
 } = {}) {
     const state = {
         selected: [...selected] as readonly number[],
@@ -47,6 +48,7 @@ function setup({
             positions: Float64Array.from([100, 100, 300, 100, 300, 100]),
         }),
         isItem: (id) => id === 2,
+        isLocked: (id) => locked && id === 2,
         itemAt: (point: FieldPoint) =>
             point.x >= 250 && point.x <= 350 && point.y >= 80 && point.y <= 120
                 ? 2
@@ -78,6 +80,7 @@ const at = (
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,
@@ -127,6 +130,39 @@ describe("FieldEditor with items", () => {
         editor.pointerMove(at(400, 150));
         editor.pointerUp(at(400, 150));
         expect(state.selected).toEqual([2]);
+    });
+
+    it("never marquees a locked item, even with nothing else inside", () => {
+        const { editor, state } = setup({ dimmed: [3], locked: true });
+        editor.pointerDown(at(200, 50));
+        editor.pointerMove(at(400, 150));
+        editor.pointerUp(at(400, 150));
+        expect(state.selected).toEqual([]);
+    });
+
+    it("never lassos a locked item", () => {
+        const { editor, state } = setup({ dimmed: [3], locked: true });
+        // A double-click's second press starts a lasso; it closes back at its start
+        click(editor, 200, 50);
+        editor.pointerDown(at(200, 50));
+        for (const [x, y] of [
+            [400, 50],
+            [400, 150],
+            [200, 150],
+            [200, 60],
+        ])
+            editor.pointerMove(at(x, y));
+        editor.pointerUp(at(200, 60));
+        expect(state.selected).toEqual([]);
+    });
+
+    it("still selects a locked item clicked, and drags it", () => {
+        const { editor, state } = setup({ locked: true });
+        editor.pointerDown(at(340, 115));
+        editor.pointerMove(at(360, 115));
+        editor.pointerUp(at(360, 115));
+        expect(state.selected).toEqual([2]);
+        expect(state.drops).toEqual([[{ id: 2, x: 320, y: 100 }]]);
     });
 
     it("passes over a dimmed item", () => {

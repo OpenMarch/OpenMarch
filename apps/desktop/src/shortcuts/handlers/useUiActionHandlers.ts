@@ -1,7 +1,14 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useStartFlagKeyStore } from "@/stores/StartFlagKeyStore";
 import { useShortcutsDialogStore } from "@/stores/ShortcutsDialogStore";
+import { isBasicMode, useEditorModeStore } from "@/stores/EditorModeStore";
+import tolgee from "@/global/singletons/Tolgee";
 import { useActionHandler } from "../useActionHandler";
+import { useTempoModeStore } from "@/tempo/tempoModeStore";
+import {
+    openFrontEnsemble,
+    openFrontEnsembleAdd,
+} from "@/components/marcher/MarchersModal";
 
 export function useUiActionHandlers() {
     // Read when an action runs, so a settings change (such as a timeline zoom save) doesn't
@@ -27,11 +34,31 @@ export function useUiActionHandlers() {
                     : startFlagKey().blurRelease(),
         },
     );
+    // Tablet 3.5 (#888): Edit music (tempo mode) on or off, as its button and Shift+T do
+    useActionHandler("toggleTempoMode", () =>
+        useTempoModeStore.getState().toggle(),
+    );
     useActionHandler("openView3d", () => {
         void window.electron.openView3d();
     });
+    useActionHandler("openFrontEnsemble", openFrontEnsemble);
+    useActionHandler("addFrontEnsembleEquipment", openFrontEnsembleAdd);
     // UI-17 follow-up: ? lists every shortcut
     useActionHandler("showShortcuts", () =>
         useShortcutsDialogStore.getState().setOpen(true),
     );
+    // Tablet 0.6 (#846): Basic or Expert, through the same setter as Settings › Timeline (no
+    // confirmation there either). Unset or loading counts as Expert, as everywhere else. The
+    // palette names the mode it switches to and the one that is on
+    useActionHandler("toggleEditorMode", toggleEditorMode, {
+        label: () =>
+            isBasicMode()
+                ? tolgee.t("actions.timeline.toggleEditorModeToExpert")
+                : tolgee.t("actions.timeline.toggleEditorModeToBasic"),
+    });
+}
+
+/** Switches to the other editor mode and saves it, as the Editor mode setting does */
+export function toggleEditorMode() {
+    useEditorModeStore.getState().setMode(isBasicMode() ? "expert" : "basic");
 }

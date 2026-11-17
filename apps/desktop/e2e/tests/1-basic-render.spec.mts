@@ -98,181 +98,39 @@ test("Sidebars are visible", async ({ electronApp }) => {
     await expect(
         page.locator("#workspace div").filter({ hasText: "Marchers" }).nth(1),
     ).toBeVisible();
+    await page.locator("#sidebar-launcher-marchers").click();
+    // The Field button opens the Field panel, and the canvas edits the field (#824)
     await page.locator("#sidebar-launcher-field").click();
-    await expect(
-        page
-            .locator("#workspace div")
-            .filter({ hasText: "FieldGeneralImport" })
-            .nth(1),
-    ).toBeVisible();
+    await expect(page.getByTestId("field-edit-panel")).toBeVisible();
     await expect(page.locator("header")).toBeVisible();
+    await page.getByTestId("field-edit-done").click();
+    await expect(page.getByTestId("field-edit-panel")).toBeHidden();
 });
-// eslint-disable-next-line max-lines-per-function
-test("Field properties customizer tabs are visible", async ({
-    electronApp,
-}) => {
+
+test("Field panel sections are visible", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.locator("#sidebar-launcher-field").click();
-    await expect(page.getByText("Field Template")).toBeVisible();
-    await page
-        .getByRole("combobox", { name: "High school football field (" })
-        .click();
-    for (let i = 0; i < 20; i++) {
-        await page.keyboard.press("ArrowUp");
-    }
-    await page.keyboard.press("Enter");
-    await page
-        .getByRole("group")
-        .getByText("High school football field (no end zones)")
-        .isVisible();
-
-    await page.getByRole("button", { name: "Customize" }).click();
+    const inspector = page.getByTestId("field-edit-panel");
+    await expect(inspector).toBeVisible();
+    // It opens on Setup; Lines and Appearance are the other tabs
     await expect(
-        page.getByRole("heading", { name: "Custom Field" }),
+        inspector.getByText("Step size", { exact: true }),
     ).toBeVisible();
+    await expect(inspector.getByText("Measurement system")).toBeVisible();
+    await expect(inspector.getByText("Side descriptions")).toBeVisible();
+    await page.getByTestId("field-tab-lines").click();
+    await expect(page.getByTestId("field-lines-axis")).toBeVisible();
+    await expect(page.getByTestId("field-line-detail")).toBeVisible();
+    await page.getByTestId("field-tab-appearance").click();
+    for (const inside of ["Yard numbers", "Marchers and paths"])
+        await expect(inspector.getByText(inside)).toBeVisible();
     await expect(
-        page.getByLabel("General").getByRole("heading", { name: "General" }),
+        inspector.getByRole("button", { name: "Import Image" }),
     ).toBeVisible();
+    await page.getByTestId("field-tab-setup").click();
     await expect(
-        page.getByRole("heading", { name: "Side Descriptions" }),
+        inspector.getByRole("button", { name: "Import Field" }),
     ).toBeVisible();
-    await expect(
-        page.getByRole("heading", { name: "Field Labels" }),
-    ).toBeVisible();
-    await expect(page.getByText("Measurement System")).toBeVisible();
-    await page.getByRole("tab", { name: "Checkpoints" }).click();
-    await expect(
-        page.getByRole("heading", { name: "X-Checkpoints" }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Checkpoints")).toMatchAriaSnapshot(`
-     - heading "X-Checkpoints" [level=4]
-     - button /0 yard line -\\d+ steps/:
-       - paragraph: 0 yard line
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /5 yard line -\\d+ steps/:
-       - paragraph: 5 yard line
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -\\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /\\d+ yard line -8 steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: "-8 steps"
-       - img
-     - button /\\d+ yard line 0 steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: 0 steps
-       - img
-     - button /\\d+ yard line 8 steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: 8 steps
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /\\d+ yard line \\d+ steps/:
-       - paragraph: /\\d+ yard line/
-       - paragraph: /\\d+ steps/
-       - img
-     - button /5 yard line \\d+ steps/:
-       - paragraph: 5 yard line
-       - paragraph: /\\d+ steps/
-       - img
-     - button /0 yard line \\d+ steps/:
-       - paragraph: 0 yard line
-       - paragraph: /\\d+ steps/
-       - img
-     - button "New X-Checkpoint"
-     `);
-    await expect(
-        page.getByRole("heading", { name: "Y-Checkpoints" }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Checkpoints")).toMatchAriaSnapshot(`
-     - text: Use Hashes
-     - button:
-       - img
-     - switch "Use Hashes" [checked]
-     - button /real back sideline -\\d+\\.\\d+ steps/:
-       - paragraph: real back sideline
-       - paragraph: /-\\d+\\.\\d+ steps/
-       - img
-     - button /grid back sideline -\\d+ steps/:
-       - paragraph: grid back sideline
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /HS back hash -\\d+ steps/:
-       - paragraph: HS back hash
-       - paragraph: /-\\d+ steps/
-       - img
-     - button /HS front hash -\\d+ steps/:
-       - paragraph: HS front hash
-       - paragraph: /-\\d+ steps/
-       - img
-     - button "front sideline 0 steps":
-       - paragraph: front sideline
-       - paragraph: 0 steps
-       - img
-     `);
-    await expect(page.getByText("Use Hashes")).toBeVisible();
-    await page.getByRole("tab", { name: "Image" }).click();
-    await expect(
-        page.getByRole("heading", { name: "Image Rendering" }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole("button", { name: "Import Image" }),
-    ).toBeVisible();
-    await expect(
-        page.getByRole("heading", { name: "Measurements" }),
-    ).toBeVisible();
-    await page.getByRole("tab", { name: "Theme" }).click();
-    await expect(page.getByRole("heading", { name: "Theme" })).toBeVisible();
-    await expect(page.getByText("Background")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(inspector).toBeHidden();
 });

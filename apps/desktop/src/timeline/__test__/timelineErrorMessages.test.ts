@@ -15,7 +15,6 @@ import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
     HELD_CONFLICT_MESSAGE,
-    HELD_DROPPED_MESSAGE,
     TIMELINE_LEGACY_CONVERSION_MESSAGE,
     TIMELINE_NOT_READY_MESSAGE,
     isLegacyConversionViolation,
@@ -423,16 +422,14 @@ describe("en.json", () => {
             NOT_JOINED_MESSAGE,
             ...Object.values(NOT_JOINED_REASONS),
             HELD_CONFLICT_MESSAGE,
-            HELD_DROPPED_MESSAGE,
         ])
             expect(lookup(m.key), m.key).toBe(m.defaultMessage);
     });
 
-    it("carries the Define as shown entry, the chain's name and the Delete-move toast (pre-merge review U8)", () => {
+    it("carries the Define as shown entry and the Delete-move toast (pre-merge review U8)", () => {
         for (const [key, text] of Object.entries({
             "timeline.rangeMenu.setAsShown": "{defineAsShown}",
             "timeline.rangeMenu.deleteWithMoves": "Delete page and its moves",
-            "timeline.keep.chain.ariaLabel": "Page {page}: {label}. {hint}",
             "timeline.moveDeleted.message": "Deleted {label}",
             "timeline.moveDeleted.withPages":
                 "{count, plural, =1 {Deleted {label} · Page {pages} changed} other {Deleted {label} · Pages {pages} changed}}",

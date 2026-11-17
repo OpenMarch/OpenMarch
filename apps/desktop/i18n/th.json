@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าถัดไปได้ เนื่องจากไม่มีหน้าถัดไป",
             "noPreviousPage": "ไม่สามารถตั้งพิกัดของผู้แสดงตามหน้าก่อนหน้าได้ เนื่องจากไม่มีหน้าก่อนหน้า",
-            "setAllToNext": "คัดลอกตำแหน่งจากหน้าถัดไป (ผู้แสดงทั้งหมด)",
-            "setAllToNextSuccess": "{count, plural, other {ตั้งพิกัดของผู้แสดงทั้งหมด # คนในหน้า {currentPage} ตามพิกัดของหน้าถัดไป ({nextPage}) เรียบร้อยแล้ว}}",
-            "setSelectedToNext": "คัดลอกตำแหน่งจากหน้าถัดไป (ที่เลือก)",
-            "setSelectedToNextSuccess": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าถัดไป ({nextPage}) เรียบร้อยแล้ว}}",
             "setAllToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดงทั้งหมด # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}",
             "setSelectedToPreviousDone": "{count, plural, other {ตั้งพิกัดของผู้แสดง # คนในหน้า {currentPage} ตามพิกัดของหน้าก่อนหน้า ({previousPage}) เรียบร้อยแล้ว}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "ไม่สามารถแสดงผลสนามได้",
             "unavailable.web": "เบราว์เซอร์นี้ปิดหรือบล็อกกราฟิก WebGL ไว้ ให้เปิดการเร่งกราฟิก (ใน Chrome หรือ Edge: การตั้งค่า > ระบบ > \"ใช้การเร่งกราฟิกเมื่อพร้อมใช้งาน\") รีสตาร์ทเบราว์เซอร์ แล้วโหลดหน้านี้ใหม่ โชว์ของคุณไม่ได้สูญหาย"
         },
-        "title": "สนาม",
         "errors": {
             "noWebGL": "WebGL ไม่พร้อมใช้งาน",
             "contextLost": "บริบท WebGL ของสนามสูญหาย จึงไม่สามารถวาดวิดีโอได้ ลองส่งออกอีกครั้ง",
@@ -513,43 +508,17 @@
         "applyFieldType": "ใช้ประเภทสนาม",
         "applyFieldTypeWarning": "ผู้แสดงจะไม่ย้ายตามขนาดของประเภทสนามใหม่ แต่จะอยู่ที่ตำแหน่งเดิมบนพื้นที่วาด คุณเปลี่ยนประเภทสนามกลับได้ทุกเมื่อ",
         "buttons": {
-            "newXCheckpoint": "เส้นอ้างอิง X ใหม่",
-            "newYCheckpoint": "เส้นอ้างอิง Y ใหม่",
             "resetTheme": "รีเซ็ตธีมเป็นค่าเริ่มต้น",
             "uploadFloor": "อัปโหลดพื้น…",
             "removeFloor": "ลบพื้น"
         },
         "checkpoint": {
             "created": "สร้างเส้นอ้างอิง {axis} ที่ {steps} ก้าวแล้ว",
-            "delete": "ลบ",
-            "deleted": "ลบเส้นอ้างอิง {axis} ที่ {steps} ก้าวแล้ว - \"{name}\"",
-            "deleteTooltip": "ลบเส้นอ้างอิงนี้ออกจากสนาม",
-            "fieldLabel": "ป้ายบนสนาม",
-            "fieldLabelTooltip": "ป้ายที่จะแสดงบนสนาม (เช่น ตัวเลขบอกหลา)",
-            "minimumRequired": "ต้องมีเส้นอ้างอิง {axis} อย่างน้อย 2 เส้น",
-            "name": "ชื่อ",
-            "nameTooltip": "ตั้งชื่อเส้นอ้างอิงได้ตามต้องการ ชื่อนี้มีไว้ให้คุณรู้ว่ากำลังเลือกเส้นอ้างอิงใดอยู่",
-            "newXCheckpointName": "เส้นอ้างอิง X ใหม่",
-            "newYCheckpointName": "เส้นอ้างอิง Y ใหม่",
-            "shortName": "ชื่อสั้น",
-            "shortNameTooltip": "ชื่อหลักของเส้นอ้างอิง (เช่น \"เส้น 45 หลา - ฝั่ง 1\")",
-            "stepsFromCenter": "จำนวนก้าวจากกึ่งกลาง",
-            "stepsFromFront": "จำนวนก้าวจากด้านหน้า",
-            "stepsFromFrontTooltip": "จำนวนก้าวที่เส้นอ้างอิงนี้อยู่ห่างจากด้านหน้าสนาม ค่าลบคือไปทางด้านหลัง",
-            "useAsReference": "ใช้เป็นจุดอ้างอิง",
-            "useAsReferenceTooltip": "กำหนดว่าจะใช้เส้นอ้างอิงนี้เป็นจุดอ้างอิงของพิกัดหรือไม่",
-            "visible": "แสดง",
-            "visibleTooltip": "กำหนดว่าจะแสดงเส้นอ้างอิงนี้บนสนามหรือไม่",
-            "stepsFromCenterHint": "จำนวนก้าวที่เส้นอ้างอิงนี้อยู่ห่างจากกึ่งกลางสนาม ค่าลบคือไปทางซ้ายเมื่อมองจากฝั่งผู้ชม"
+            "minimumRequired": "ต้องมีเส้นอ้างอิง {axis} อย่างน้อย 2 เส้น"
         },
-        "customField": "สนามแบบกำหนดเอง",
         "customFieldDocs": "ดูเอกสาร",
         "customFieldName": "กำหนดเอง",
-        "customization": "การปรับแต่ง",
-        "customize": "ปรับแต่ง",
         "errors": {
-            "invalidColor": "สีไม่ถูกต้อง",
-            "noPropertiesToLoad": "ไม่มีคุณสมบัติสนามให้โหลด! กรณีนี้ไม่ควรเกิดขึ้น โปรดติดต่อฝ่ายสนับสนุน",
             "notDefined": "ไม่ได้กำหนด FieldProperties กรณีนี้ไม่ควรเกิดขึ้น โปรดติดต่อฝ่ายสนับสนุน",
             "invalidJson": "ไฟล์ JSON ไม่ถูกต้อง\n\nโปรดตรวจสอบว่าไฟล์มีไวยากรณ์ JSON ที่ถูกต้อง",
             "invalidFile": "ไฟล์คุณสมบัติสนามไม่ถูกต้อง\n\n{details}\n\nโปรดตรวจสอบว่าไฟล์มีรายการที่จำเป็นครบถ้วนและมีค่าที่ถูกต้อง",
@@ -565,24 +534,19 @@
         "fieldType": {
             "label": "ประเภทสนาม"
         },
-        "general": "ทั่วไป",
         "labels": {
             "background": "พื้นหลัง",
             "backgroundImageOpacity": "ความทึบของภาพพื้นหลัง",
-            "backgroundImageRatio": "อัตราส่วนภาพพื้นหลัง",
             "bottom": "ล่าง",
-            "conformingMethod": "วิธีปรับภาพให้พอดี",
             "conformMethod": "วิธีปรับให้พอดี",
             "directorsLeft": "ด้านซ้ายของผู้ควบคุมวง",
             "directorsRight": "ด้านขวาของผู้ควบคุมวง",
             "externalLabels": "ป้ายด้านนอก",
             "fieldLabels": "ป้ายบนสนาม",
             "fieldName": "ชื่อสนาม",
-            "fieldRatio": "อัตราส่วนสนาม",
             "gridLines": "เส้นกริด",
             "halfLineXInterval": "ระยะห่างเส้นครึ่งแกน X",
             "halfLineYInterval": "ระยะห่างเส้นครึ่งแกน Y",
-            "height": "ความสูง",
             "left": "ซ้าย",
             "leftAbbreviation": "ตัวย่อด้านซ้าย",
             "marcherFill": "สีภายในผู้แสดง",
@@ -598,23 +562,12 @@
             "shapes": "รูปทรง",
             "shapeType": "ประเภทรูปทรง",
             "showBackgroundImage": "แสดงภาพพื้นหลัง",
-            "stepsFromFrontToAwayLabelBottom": "ก้าวจากด้านหน้าถึงขอบล่างของตัวเลขฝั่งเยือน",
-            "stepsFromFrontToAwayLabelTop": "ก้าวจากด้านหน้าถึงขอบบนของตัวเลขฝั่งเยือน",
-            "stepsFromFrontToHomeLabel": "ก้าวจากด้านหน้าถึงขอบล่างของตัวเลขฝั่งเหย้า",
-            "stepsFromFrontToHomeLabelTop": "ก้าวจากด้านหน้าถึงขอบบนของตัวเลขฝั่งเหย้า",
             "stepSize": "ขนาดก้าว",
             "stepSizeWarningThreshold": "เกณฑ์เตือนขนาดก้าว",
             "temporaryPath": "เส้นทางชั่วคราว",
-            "top": "บน",
-            "useHashes": "ใช้เส้นแฮช",
-            "width": "ความกว้าง",
-            "widthHeight": "ก/ส",
-            "noBackgroundImage": "ไม่มี",
-            "stepSizeWarningRatio": "เกณฑ์เตือนขนาดก้าว ({steps} ต่อ 5)"
+            "top": "บน"
         },
         "messages": {
-            "fieldRatio": "{ratio} หรือ {decimal}",
-            "measurementModificationNote": "ค่าเหล่านี้แก้ไขได้โดยปรับพิกัด X และ Y ขนาดก้าว และภาพพื้นหลัง",
             "noFloor": "ไม่มีพื้น",
             "floorUnnamed": "พื้น"
         },
@@ -625,39 +578,16 @@
             "metric": "เมตริก"
         },
         "sections": {
-            "externalLabels": "ป้ายด้านนอก",
-            "fieldLabels": "ป้ายสนาม",
-            "general": "ทั่วไป",
-            "imageRendering": "การแสดงผลภาพ",
-            "measurements": "ขนาด",
-            "sideDescriptions": "ชื่อด้าน",
-            "theme": "ธีม",
-            "xCheckpoints": "เส้นอ้างอิง X",
-            "yCheckpoints": "เส้นอ้างอิง Y"
-        },
-        "tabs": {
-            "checkpoints": "เส้นอ้างอิง",
-            "general": "ทั่วไป",
-            "image": "ภาพ",
-            "theme": "ธีม"
-        },
-        "themeSubsections": {
-            "grid": "เส้นตาราง",
-            "labels": "ป้าย",
-            "marchers": "ผู้แสดง",
-            "pathways": "เส้นทาง"
+            "sideDescriptions": "ชื่อด้าน"
         },
         "tooltips": {
             "conformMethod": "เลือกว่าจะปรับภาพพื้นหลังให้พอดีภายในสนามหรือเติมเต็มสนาม โดยคงอัตราส่วนภาพไว้เสมอ",
             "directorsLeft": "เช่น \"ด้าน 1\" \"ซ้ายผู้ชม\" หรือ \"ขวาเวที\"",
             "directorsRight": "เช่น \"ด้าน 2\" \"ขวาผู้ชม\" หรือ \"ซ้ายเวที\"",
-            "fieldName": "ชื่อหรือหัวเรื่องของเทมเพลตสนาม",
             "halfLineXInterval": "ระยะห่างของเส้นครึ่งที่แสดงบนแกน X ในหน้าจอ วัดจากกึ่งกลางสนาม เว้นว่างไว้หากไม่ต้องการแสดงเส้นครึ่งบนแกน X ค่านี้มีผลต่อการแสดงผลเท่านั้น ไม่มีผลต่อพิกัดใดๆ",
             "halfLineYInterval": "ระยะห่างของเส้นครึ่งที่แสดงบนแกน Y ในหน้าจอ วัดจากด้านหน้าสนาม เว้นว่างไว้หากไม่ต้องการแสดงเส้นครึ่งบนแกน Y ค่านี้มีผลต่อการแสดงผลเท่านั้น ไม่มีผลต่อพิกัดใดๆ",
             "leftAbbreviation": "เช่น \"ด1\" \"ซผ\" หรือ \"ขว\" (ย่อจาก \"ด้าน 1\" \"ซ้ายผู้ชม\" หรือ \"ขวาเวที\")",
-            "measurementSystem": "หน่วยวัดที่ใช้กำหนดขนาดก้าว สลับไปมาได้",
             "resetTheme": "รีเซ็ตธีมเป็นค่าเริ่มต้น",
-            "resetToDefault": "รีเซ็ตเป็นค่าเริ่มต้น",
             "rightAbbreviation": "เช่น \"ด2\" \"ขผ\" หรือ \"ซว\" (ย่อจาก \"ด้าน 2\" \"ขวาผู้ชม\" หรือ \"ซ้ายเวที\")",
             "stepsFromFrontToAwayLabelBottom": "จำนวนก้าวจากเส้นข้างด้านหน้าถึงขอบนอกของตัวเลขฝั่งเยือน (ด้านที่ใกล้เส้นข้างด้านหลัง)",
             "stepsFromFrontToAwayLabelTop": "จำนวนก้าวจากเส้นข้างด้านหน้าถึงขอบในของตัวเลขฝั่งเยือน (ด้านที่ใกล้กึ่งกลางสนาม)",
@@ -672,15 +602,10 @@
             "inches": "นิ้ว",
             "centimeters": "ซม."
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "คำเตือน - เส้นอ้างอิง X ซ้ายสุดและขวาสุดอยู่ห่างจากกึ่งกลางไม่เท่ากัน ซึ่งอาจทำให้ภาพแสดงผลผิดปกติ และควรแก้ไข",
-            "yCheckpointsNegative": "คำเตือน - ขอแนะนำอย่างยิ่งให้ค่าก้าวของเส้นอ้างอิง Y ทั้งหมดน้อยกว่าศูนย์ (คือเป็นจำนวนลบ) พิกัด Y ทั้งหมดควรอยู่หลังด้านหน้าของสนาม หากไม่ทำเช่นนั้น อาจทำให้กราฟิกแสดงผลผิดพลาดและพิกัดไม่เป็นไปตามที่คาดไว้"
-        },
         "loading": "กำลังโหลด...",
         "measurements": {
             "feet": "{value} ฟุต",
-            "meters": "{value} ม.",
-            "steps": "{count, plural, other {# ก้าว}}"
+            "meters": "{value} ม."
         }
     },
     "fileAccessDialogError": {
@@ -1467,7 +1392,6 @@
         "general.appearance": "รูปลักษณ์",
         "general.appearance.dark": "มืด",
         "general.appearance.light": "สว่าง",
-        "general.automaticUpdates": "ดาวน์โหลดและติดตั้งอัปเดตโดยอัตโนมัติ",
         "general.description": "โหมดตัวแก้ไข ภาษา และการตั้งค่าอื่นๆ ที่ใช้ทั้งแอป",
         "general.editorMode": "โหมดตัวแก้ไข",
         "general.editorMode.basic": "พื้นฐาน",
@@ -2013,9 +1937,6 @@
                 "kinds": "ชนิดรูปทรง",
                 "ringHintKeys": "กด <keys></keys> ค้างไว้บนสนามเพื่อเปิดวงรูปทรง"
             }
-        },
-        "transform": {
-            "title": "การแปลง"
         },
         "validate": {
             "noPosition": "รูปทรงมีจุดที่ไม่มีตำแหน่ง",
@@ -2579,7 +2500,6 @@
             "placeAllMarchers": "วางผู้แสดงทั้งหมด",
             "placeSelectedMarchers": "วางผู้แสดงที่เลือก",
             "snapToggleCaption": "สแนป",
-            "toNextPagePositions": "...ตามตำแหน่งในหน้าถัดไป",
             "setMarcherPositionsAriaLabel": "กำหนดตำแหน่งผู้แสดง"
         },
         "collisions": {
@@ -2630,20 +2550,6 @@
             "shapesSelected": "เมื่อเลือก"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "เกิดข้อผิดพลาดขณะดึงข้อมูลเวอร์ชัน",
-            "message": "ข้อผิดพลาด: {message}",
-            "noVersion": "ไม่สามารถดึงข้อมูลเวอร์ชันล่าสุดได้"
-        },
-        "installLinux": "ติดตั้งสำหรับ Linux",
-        "installMacArm": "ติดตั้งสำหรับ Apple Silicon",
-        "installMacIntel": "ติดตั้งสำหรับ Intel Mac",
-        "installWindows": "ติดตั้งสำหรับ Windows",
-        "skipVersion": "ข้ามเวอร์ชันนี้",
-        "title": "มีเวอร์ชันใหม่",
-        "trigger": "มีเวอร์ชันใหม่!"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "คุณสามารถเปลี่ยนได้ภายหลังใน การตั้งค่า › ทั่วไป",
@@ -2658,14 +2564,17 @@
             "floor": "บนพื้น",
             "frontRow": "แถวหน้า",
             "geJudge": "กรรมการ GE",
+            "judgesTable": "โต๊ะกรรมการ",
             "lowerBowl": "อัฒจันทร์ชั้นล่าง",
             "podium": "โพเดียม",
             "pressBox": "ห้องสื่อมวลชน",
             "sideline": "ข้างสนาม",
             "topDown": "มุมมองด้านบน",
+            "tunnel": "อุโมงค์",
             "upperDeck": "อัฒจันทร์ชั้นบน"
         },
         "kit": {
+            "arena": "อารีน่าในร่ม",
             "bighs": "โรงเรียนมัธยมขนาดใหญ่",
             "blank": "เฉพาะสนาม",
             "college": "สนามมหาวิทยาลัย",
@@ -2793,6 +2702,12 @@
         },
         "venue": {
             "updateFailed": "อัปเดตสถานที่ของมุมมอง 3D ไม่สำเร็จ"
+        },
+        "board": {
+            "designedBy": "ออกแบบโดย {name}",
+            "forClient": "สำหรับ {name}",
+            "nowPerforming": "กำลังแสดง",
+            "untitled": "โชว์ไม่มีชื่อ"
         }
     },
     "web": {
@@ -2948,7 +2863,14 @@
         "unsavedChanges": "คุณมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก",
         "close": "ปิด",
         "saved": "บันทึกการตั้งค่าโชว์แล้ว",
-        "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ"
+        "updateFailed": "อัปเดตการตั้งค่าโชว์ไม่สำเร็จ",
+        "showInfo": {
+            "projectName": "ชื่อโชว์",
+            "projectNamePlaceholder": "ใช้ชื่อไฟล์",
+            "designer": "ผู้ออกแบบ",
+            "client": "ลูกค้า",
+            "optional": "ไม่บังคับ"
+        }
     },
     "canvas": {
         "zoom": {

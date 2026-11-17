@@ -15,7 +15,7 @@ import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import { twMerge } from "tailwind-merge";
 import { TouchCaption } from "@/components/ui/InfoTip";
-import type { ActionId } from "./definitions";
+import type { ActionArgs, ActionId } from "./definitions";
 import { getActionLabel } from "./labels";
 import { getActionDefinition } from "./definitions";
 import {
@@ -30,6 +30,8 @@ const HOVER_HINT_MS = 600;
 export type ActionButtonProps =
     React.ButtonHTMLAttributes<HTMLButtonElement> & {
         action: ActionId;
+        /** Passed to the action when the button runs it, e.g. a variant its key doesn't need */
+        args?: ActionArgs;
         /** Overrides the generated tooltip (then without the shortcut); "" for none */
         tooltip?: string;
         /** Selects the toggle on/off label for toggle actions */
@@ -51,6 +53,7 @@ export type ActionButtonProps =
  */
 export default function ActionButton({
     action,
+    args,
     tooltip,
     toggleState,
     caption,
@@ -148,7 +151,7 @@ export default function ActionButton({
                 // A caller's onClick can take the click over with preventDefault
                 onClick?.(event);
                 if (event.defaultPrevented) return;
-                runAction(action);
+                runAction(action, args);
                 onRun?.();
             }}
             className={twMerge(

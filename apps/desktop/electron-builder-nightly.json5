@@ -1,36 +1,50 @@
 /**
- * Electron builder configuration for nightly builds (internal testing).
- * Extends the base config so a nightly installs next to the released app
- * instead of replacing it, with its own settings, and never auto-updates.
- * Used by .github/workflows/nightly.yaml, which picks the targets on the command
- * line (dmg, nsis, AppImage) because `extends` merges target lists instead of replacing them.
+ * Electron builder configuration for nightly builds (internal testing; fork #404).
+ * A nightly installs as "OpenMarch Nightly" next to the released app, with its own settings,
+ * and updates itself from the nightly feed: the rolling `v0.0.0-nightly` release that
+ * .github/workflows/nightly.yaml replaces on every build. It never takes a release build, and
+ * releases never take it.
+ *
+ * Signed like a release (macOS notarized, Windows through Azure, from electron-builder-sign.json5):
+ * macOS only lets a signed app replace itself. Builds without the signing secrets (forks) use
+ * electron-builder-nightly-unsigned.json5 instead.
+ *
+ * The workflow picks the targets on the command line (dmg and zip, nsis, AppImage), because
+ * `extends` merges target lists instead of replacing them. macOS updates from the zip.
  * @see https://www.electron.build/configuration/configuration
  */
 {
-    extends: "./electron-builder.json5",
+    extends: "./electron-builder-sign.json5",
     appId: "com.openmarch.app.nightly",
     productName: "OpenMarch Nightly",
-    artifactName: "OpenMarch-Nightly-${platform}-${arch}.${ext}",
-    mac: {
-        artifactName: "OpenMarch-Nightly-macos-${arch}.${ext}",
-        notarize: false,
-        // Ad-hoc sign the whole bundle. Left unsigned, the renamed main binary and
-        // Electron's prebuilt frameworks keep mismatched signatures and macOS refuses
-        // to load "Electron Framework" ("different Team IDs").
-        identity: "-",
-        // Hardened runtime only matters for notarization, which nightlies skip.
-        hardenedRuntime: false,
+    // The app's own name at runtime too (Electron reads it from package.json), so its settings
+    // and show list live apart from the released app's on Windows and Linux, as on macOS
+    // `name` also names electron-updater's download cache (`<name>-updater`), which would
+    // otherwise be the released app's: each would clear the other's staged update
+    extraMetadata: {
+        name: "openmarch-nightly",
+        productName: "OpenMarch Nightly",
     },
-    dmg: {
-        sign: false,
+    // Each build's files have their own names, so a download that starts while the next
+    // nightly uploads still finds its file. The workflow deletes the old ones afterwards.
+    artifactName: "OpenMarch-Nightly-${version}-${platform}-${arch}.${ext}",
+    mac: {
+        artifactName: "OpenMarch-Nightly-${version}-macos-${arch}.${ext}",
     },
     win: {
-        artifactName: "OpenMarch-Nightly-windows-${arch}.${ext}",
+        artifactName: "OpenMarch-Nightly-${version}-windows-${arch}.${ext}",
     },
+    // The AppImage keeps one name: an update replaces it in place, where a versioned name would
+    // make electron-updater rename the file each time and break launchers that point at it
     linux: {
         artifactName: "OpenMarch-Nightly-linux-${arch}.${ext}",
         executableName: "openmarch-nightly",
     },
-    // No app-update.yml: nightlies must not pull a release build over themselves.
-    publish: null,
+    // One object, not a list: a list would merge with the release's GitHub feed. The tag is
+    // a semver prerelease ("nightly") so the GitHub feed of beta builds skips this release.
+    publish: {
+        provider: "generic",
+        url: "https://github.com/OpenMarch/OpenMarch/releases/download/v0.0.0-nightly",
+        channel: "nightly-${arch}",
+    },
 }

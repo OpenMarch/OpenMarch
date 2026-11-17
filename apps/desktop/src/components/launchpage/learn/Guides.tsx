@@ -1,21 +1,22 @@
 import { T } from "@tolgee/react";
+import { siteUrl } from "@/global/siteUrl";
 
 /** The guides on the website, with the keys of their titles and descriptions. */
 const GUIDES = [
     {
         titleKey: "launchpage.learn.guides.gettingStarted.title",
         descriptionKey: "launchpage.learn.guides.gettingStarted.description",
-        link: "https://openmarch.com/guides/getting-started/",
+        link: siteUrl("/guides/getting-started/"),
     },
     {
         titleKey: "launchpage.learn.guides.music.title",
         descriptionKey: "launchpage.learn.guides.music.description",
-        link: "https://openmarch.com/guides/music/",
+        link: siteUrl("/guides/music/"),
     },
     {
         titleKey: "launchpage.learn.guides.customizeField.title",
         descriptionKey: "launchpage.learn.guides.customizeField.description",
-        link: "https://openmarch.com/guides/editing-the-grid/",
+        link: siteUrl("/guides/editing-the-grid/"),
     },
 ] as const;
 

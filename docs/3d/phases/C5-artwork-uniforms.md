@@ -15,7 +15,7 @@ updated: 2026-10-11
 
 Follow the protocol in [../README.md](../README.md). Claim a work package before you start, and append to the progress log as you go.
 
-> Draft for the owner's approval (2026-10-11). **Gates:** no package here starts before the integrated-GPU run (C4.7) and the per-look uniform texture (C4.3, merged after ADR 0004 step 6 in C4.8). Built-ins ship only after the legal gate (C1.2).
+> Draft for the owner's approval (2026-10-11). **Gates:** no package here starts before the integrated-GPU run (C4.7) and the per-look uniform texture (C4.3, merged after ADR 0004 step 6 in C4.8). The legal gate (C1.2) was removed 2026-11-11; built-ins don't wait for counsel.
 
 ## Goal
 
@@ -164,7 +164,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 - Status: open
 - PR: none
 - Parallel: yes
-- Depends on: C1.6, C1.2
+- Depends on: C1.6
 
 **Goal:** the built-in Library, licensed to ship.
 
@@ -178,7 +178,7 @@ Each field is on its own line so that concurrent claims merge cleanly. Edit only
 
 ## Exit gate
 
-- [ ] C4.7 and C4.3 done before any package here merged; C1.2 done before built-ins shipped.
+- [ ] C4.7 and C4.3 done before any package here merged.
 - [ ] Uniforms, uniform Artwork, Garments, silk swaps and Floor prop roll-outs recorded for the owner.
 - [ ] Budget notes and reduced-texture label shown on a heavy show.
 - [ ] Type-check, lint, format and spellcheck pass on `main`.

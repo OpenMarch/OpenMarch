@@ -23,6 +23,8 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { beatKeys } from "./useBeats";
+import { cueKeys } from "./useCues";
+import { itemGeometryKeys } from "./useItems";
 import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "measures";
@@ -68,11 +70,7 @@ export const createMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.createFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.addFailed"), e, variables);
         },
     });
 };
@@ -136,11 +134,7 @@ export const createMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.createFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.addFailed"), e, variables);
         },
     });
 };
@@ -163,11 +157,7 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.updateFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.changeFailed"), e, variables);
         },
     });
 };
@@ -182,11 +172,7 @@ export const deleteMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.removeFailed"), e, variables);
         },
     });
 };
@@ -219,13 +205,12 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                         queryKey: beatKeys.all(),
                     });
                 });
+            // Item Outline changes and cues on the deleted beats were carried to other beats
+            void qc.invalidateQueries({ queryKey: itemGeometryKeys.all() });
+            void qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(
-                tolgee.t("measures.deleteFailed", { error: e.message }),
-                e,
-                variables,
-            );
+            conToastError(tolgee.t("measures.removeFailed"), e, variables);
         },
     });
 };

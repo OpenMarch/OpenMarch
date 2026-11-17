@@ -1,0 +1,48 @@
+---
+title: Keyboard shortcuts
+description: Every keyboard shortcut in OpenMarch, and how to change them.
+type: reference
+covers:
+  - apps/desktop/src/shortcuts
+  - apps/desktop/src/components/ShortcutsDialog.tsx
+  - apps/desktop/src/components/launchpage/settings/ShortcutSettings.tsx
+  - action:showShortcuts
+  - action:openCommandPalette
+  - action:openSettings
+  - i18n:settings.shortcuts
+  - i18n:shortcutsDialog
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import ShortcutList from "@/components/docs/ShortcutList.astro";
+
+These are OpenMarch's default shortcuts, grouped the way the app's own list groups them. Keys are shown for your system: on a Mac, ⌘ is Command, ⌥ is Option and ⇧ is Shift; on Windows and Linux, the same shortcuts use Ctrl and Alt. Shortcuts marked Expert only work in [Expert mode](/guides/start/basic-and-expert/).
+
+In the app, press <Kbd action="showShortcuts" /> or choose <Ui k="menu.help.title" /> › <Ui k="menu.help.showShortcuts" /> to see the list, with any keys you have changed. To find a command and its shortcut by name, press <Kbd action="openCommandPalette" /> and start typing.
+
+Some shortcuts in the table are held while you drag, scroll or click; those show the gesture after the keys.
+
+## Change a shortcut
+
+1. Open <Ui k="settings.title" /> (<Kbd action="openSettings" />) and select <Ui k="settings.shortcuts" />.
+2. Find the action in the list, or type part of its name in <Ui k="settings.shortcuts.search" />.
+3. Point at the row and select the + after its keys, then press the new keys. Press <Kbd keys="Esc" /> to stop without changing anything.
+4. To remove one of an action's shortcuts, point at it and select its ×. A row you've changed gets an arrow at its end that puts its default back, and <Ui k="settings.shortcuts.resetAll" /> puts every shortcut back.
+
+If the keys you press already belong to another action, the app says which one. Select <Ui k="settings.shortcuts.reassign" /> to move them to the new action, or <Ui k="settings.shortcuts.cancel" /> to keep them where they were. Changes apply right away.
+
+<Media
+  id="reference-shortcut-settings"
+  alt="Settings on the Keyboard shortcuts section, searched for play: rows such as Play / stop with Space and Play on from the start flag with Alt+Space, and a + at the end of the rows that have no shortcut yet."
+/>
+
+<ShortcutList />
+
+## Related
+
+- [Settings](/guides/reference/settings/): every setting in the app.
+- [The window](/guides/workspace/the-window/): where to find commands, including the command palette.

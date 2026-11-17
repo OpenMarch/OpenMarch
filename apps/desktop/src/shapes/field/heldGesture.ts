@@ -1,4 +1,4 @@
-import { CLICK_SLOP, type FieldPointer } from "@/field/editor/fieldEditor";
+import { isPastSlop, type FieldPointer } from "@/field/editor/fieldEditor";
 import { startGestureKeys } from "@/input/gestureKeys";
 import {
     clearGestureChip,
@@ -186,11 +186,7 @@ export function pressShapeKeys(
             end: held.end,
             move(p) {
                 lastScreen = p.screen;
-                dragging ||=
-                    Math.hypot(
-                        p.screen.x - pointer.screen.x,
-                        p.screen.y - pointer.screen.y,
-                    ) >= CLICK_SLOP;
+                dragging ||= isPastSlop(pointer, p);
                 return held.move(p, dragging ? p.field : null);
             },
         },

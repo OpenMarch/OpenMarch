@@ -1,4 +1,5 @@
 import { ArrowUUpLeftIcon, XIcon } from "@phosphor-icons/react";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useShapeAway, useShapeToolStore } from "../tool/shapeToolStore";
@@ -20,10 +21,15 @@ export function ShapeAwayChip() {
     const away = useShapeAway();
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
     const preview = usePreviewModeStore((s) => s.isPreview);
+    const layerRef = useFieldLayerRef<HTMLDivElement>();
     if (!moment || !away || playing || preview) return null;
     return (
         <div
-            className="rounded-6 bg-accent text-body text-text-invert shadow-modal absolute top-12 left-1/2 z-10 flex -translate-x-1/2 items-center gap-8 py-4 pr-4 pl-12 whitespace-nowrap"
+            ref={layerRef}
+            // #927: Go back and Dismiss stay reachable: the pill keeps off the chip, and it sits
+            // below the touch toolbar's panel when that's open
+            data-field-layer="task"
+            className="rounded-6 bg-accent text-body text-text-invert shadow-modal touch:z-30 absolute top-[calc(var(--field-top-inset,0px)+12px)] left-1/2 z-10 flex -translate-x-1/2 items-center gap-8 py-4 pr-4 pl-12 whitespace-nowrap"
             data-testid="shape-away-chip"
             onPointerDown={(e) => e.stopPropagation()}
         >

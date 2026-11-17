@@ -391,3 +391,64 @@ describe("describePageFlagBlock", () => {
         ).toBe("A move starts or ends on this flag");
     });
 });
+
+describe("page flag grips on a tablet (3.3)", () => {
+    const finger = (target: Element, type: string, clientX: number) => {
+        const event = new MouseEvent(type, {
+            bubbles: true,
+            button: 0,
+            clientX,
+        });
+        Object.defineProperty(event, "pointerType", { value: "touch" });
+        fireEvent(target, event);
+    };
+
+    it("a finger that grabbed a grip off its line keeps that offset", async () => {
+        const { commit } = show();
+        // 18px right of the line at 80px, then 32px further
+        finger(grip(2), "pointerdown", 98);
+        await settle();
+        finger(grip(2), "pointermove", 130);
+        finger(grip(2), "pointerup", 130);
+        // The line moved 32px, to 112px (view beat 11, spec beat 12)
+        expect(commit).toHaveBeenCalledWith(2, 12);
+    });
+
+    it("a mouse still drags the line to the pointer", async () => {
+        const { commit } = show();
+        pointer(grip(2), "pointerdown", 82);
+        await settle();
+        pointer(grip(2), "pointermove", 112);
+        pointer(grip(2), "pointerup", 112);
+        expect(commit).toHaveBeenCalledWith(2, 12);
+    });
+
+    it("the selected page's grips are marked selected, and a grip under the start flag has no hit area", () => {
+        render(
+            <Timeline
+                mode="expanded"
+                beats={BEATS}
+                pages={PAGES}
+                measures={[]}
+                timelines={[]}
+                showTransport={false}
+                pixelsPerBeat={10}
+                playback={{ positionBeat: 3, isPlaying: false }}
+                selection={{
+                    kind: "range",
+                    range: { startBeatIndex: 9, endBeatIndex: 17 },
+                }}
+                onSelectionChange={() => {}}
+                pageFlagMove={{ limits: async () => LIMITS, commit: vi.fn() }}
+            />,
+        );
+        const hits = grips().map((g) =>
+            g
+                .querySelector("[data-touch-hit]")
+                ?.hasAttribute("data-touch-selected"),
+        );
+        // Page 2 (spec beats 9–17) is selected: its end grip is selected. Its start grip
+        // (page 1's flag) has the start flag on it, where the line wins: no hit area
+        expect(hits).toEqual([undefined, true]);
+    });
+});

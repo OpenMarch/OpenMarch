@@ -3,6 +3,7 @@ import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import {
+    DEFAULT_PIVOT,
     PIVOT_KEYS,
     isPivotKey,
     type Pivot,
@@ -14,6 +15,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { setPivotPreview } from "../field/shapePointer";
 import { screenCellOf, shapeKeyAt } from "./pivotScreen";
 import { arrowFocus, useEditorMenu, useMenuFocus } from "./menuFocus";
+import ActionButton from "@/shortcuts/ActionButton";
 
 export const PIVOT_NAMES: Record<PivotKey, string> = {
     nw: "back left",
@@ -33,19 +35,25 @@ export const pivotName = (key: PivotKey): string =>
 
 /**
  * What turns, flips and scales go around: a corner, an edge's middle or the center. A shape's
- * pivot dragged elsewhere on the field (#350) lights none of them. In the inspector's Transform
+ * pivot dragged elsewhere on the field (#350) lights none of them. In the inspector's Arrange
  * section for a plain selection, and in the floating editor's pivot menu for a shape (#435).
  */
 export function PivotGrid({
     pivot,
     onPick,
     onPreview,
+    tip,
+    disabled = false,
     testId = "transform-pivot",
 }: {
     pivot: Pivot;
     onPick: (key: PivotKey) => void;
     /** A cell pointed at or keyboard-focused, and null as it's left: shown, not picked (#437) */
     onPreview?: (key: PivotKey | null) => void;
+    /** A cell's tooltip from the pivot's name; a shape's turns and flips around it by default */
+    tip?: (name: string) => string;
+    /** Greyed out and inert, as the controls beside it are (a shape owns the selection) */
+    disabled?: boolean;
     testId?: string;
 }) {
     // One stop for Tab, on the pivot picked (the center for one dragged on the field); the arrows
@@ -55,6 +63,7 @@ export function PivotGrid({
         <div
             role="radiogroup"
             aria-label={tolgee.t("shapes.edit.pivot.label", "Pivot")}
+            aria-disabled={disabled || undefined}
             onKeyDown={(e) =>
                 arrowFocus(
                     e,
@@ -66,22 +75,30 @@ export function PivotGrid({
                     3,
                 )
             }
-            className="rounded-4 border-stroke grid shrink-0 grid-cols-3 gap-2 border p-4"
+            className={clsx(
+                "rounded-4 border-stroke grid shrink-0 grid-cols-3 gap-2 border p-4",
+                disabled && "opacity-50",
+            )}
             data-testid={testId}
         >
             {PIVOT_KEYS.map((key) => (
                 <Tip
                     key={key}
-                    label={tolgee.t(
-                        "shapes.edit.pivot.tip",
-                        "Turn and flip around the {pivot}",
-                        { pivot: pivotName(key) },
-                    )}
+                    label={
+                        tip
+                            ? tip(pivotName(key))
+                            : tolgee.t(
+                                  "shapes.edit.pivot.tip",
+                                  "Turn and flip around the {pivot}",
+                                  { pivot: pivotName(key) },
+                              )
+                    }
                 >
                     <button
                         type="button"
                         role="radio"
                         aria-checked={key === pivot}
+                        disabled={disabled}
                         tabIndex={key === stop ? 0 : -1}
                         aria-label={tolgee.t(
                             "shapes.edit.pivot.aria",
@@ -102,7 +119,10 @@ export function PivotGrid({
                                 "block rounded-full",
                                 key === pivot
                                     ? "bg-accent size-8"
-                                    : "bg-text/30 hover:bg-accent/60 size-6",
+                                    : clsx(
+                                          "bg-text/30 size-6",
+                                          !disabled && "hover:bg-accent/60",
+                                      ),
                             )}
                         />
                     </button>
@@ -137,6 +157,8 @@ function PivotGlyph({ pivot }: { pivot: Pivot }) {
  * The floating editor's pivot (#435): a small button beside the turn whose icon shows the pivot,
  * opening the 3 × 3 grid. Picking one closes it. The grid is in screen terms (#437): its top-left
  * cell is whichever of the shape's points is at the top left now, however the shape is turned.
+ * With the pivot away from the center, a row under the grid sends it back there, as a double-click
+ * on the pivot does (`shapeCenterPivot`, tablet 1.5).
  */
 export function PivotMenu({
     pivot,
@@ -208,6 +230,19 @@ export function PivotMenu({
                         }
                         testId={`${testId}-grid`}
                     />
+                    {pivot !== DEFAULT_PIVOT && (
+                        <ActionButton
+                            action="shapeCenterPivot"
+                            onRun={() => setOpen(false)}
+                            data-testid={`${testId}-center`}
+                            className="rounded-4 text-sub text-text hover:text-accent touch:min-h-44 mt-4 flex w-full items-center px-4 py-2"
+                        >
+                            {tolgee.t(
+                                "shapes.edit.pivot.backToCenter",
+                                "Back to the center",
+                            )}
+                        </ActionButton>
+                    )}
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>

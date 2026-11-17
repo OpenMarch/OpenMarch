@@ -14,7 +14,7 @@
  *   with its floor's image put back as the field image (`parkedFloor.ts`).
  * - 10: route model (ADR 0014, pathways steps 1 to 15, fork lab builds only). A move could follow
  *   a drawn path, stored in `timeline_routes` and walked by one-slot `route` transitions. Such a
- *   file opens here: migration 0020 moves its paths to lanes, and it is then written as 11.
+ *   file opens here: migration 0025 moves its paths to lanes, and it is then written as 11.
  * - 11: lane model (ADR 0015 §9, pathways step 24). A slot walks a route through a lane
  *   (`timeline_lanes`), so a path no longer moves a marcher out of its move. A build that doesn't
  *   know lanes would play such a file wrong and edit it wrong (compact, split or recast a laned
@@ -174,7 +174,7 @@ export function fileTooNewMessage(userVersion: number): string {
 
 /**
  * Writes the lane-model version (11) when the file has a lane and an older version: a version-10
- * file whose paths migration 0020 moved to lanes. Run after the migrations, on every open; a file
+ * file whose paths migration 0025 moved to lanes. Run after the migrations, on every open; a file
  * without lanes, or already at 11, is left as it is (ADR 0015 §9, QA-FV-L1).
  */
 export function markLaneModelIfLaned(db: DatabaseSync): void {

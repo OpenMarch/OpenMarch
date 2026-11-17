@@ -1,0 +1,201 @@
+---
+/**
+ * Every menu of the desktop app and its items, with their shortcuts. Generated from the app's
+ * menu template (src/data/generated/menus.json), so it can't drift. macOS and Windows/Linux
+ * build different menus; the page shows the reader's system, and a switch shows the other.
+ */
+import data from "../../data/generated/menus.json";
+
+type Entry = {
+    label?: string;
+    keys?: string[];
+    action?: string;
+    expertOnly?: boolean;
+    items?: Entry[];
+    separator?: boolean;
+};
+type Row = {
+    label: string;
+    keys?: string[];
+    expertOnly?: boolean;
+    groupStart: boolean;
+};
+
+/** A menu's items as table rows; a submenu's items follow it, as "Speech › Start Speaking". */
+function rows(entries: Entry[], prefix = ""): Row[] {
+    const out: Row[] = [];
+    let groupStart = false;
+    for (const e of entries) {
+        if (e.separator) {
+            groupStart = true;
+            continue;
+        }
+        const label = prefix + (e.label ?? "");
+        if (e.items?.length) {
+            const start = out.length;
+            out.push(...rows(e.items, `${label} › `));
+            if (out[start]) out[start].groupStart ||= groupStart;
+        } else
+            out.push({
+                label,
+                keys: e.keys,
+                expertOnly: e.expertOnly,
+                groupStart,
+            });
+        groupStart = false;
+    }
+    return out;
+}
+
+const systems = [
+    { os: "mac", menus: data.mac as Entry[] },
+    { os: "other", menus: data.other as Entry[] },
+];
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+---
+
+<div class="menu-os-switch" role="group" aria-label="Show the menus for">
+    <button type="button" data-show-os="mac">macOS</button>
+    <button type="button" data-show-os="other">Windows and Linux</button>
+</div>
+
+{
+    systems.map(({ os, menus }) => (
+        <div class={`menu-os menu-os-${os}`}>
+            {menus.map((menu) => (
+                <section class="menu-group">
+                    <h2
+                        id={`${os === "mac" ? "mac-" : ""}${slug(menu.label ?? "")}`}
+                    >
+                        {menu.label}
+                    </h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Shortcut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows(menu.items ?? []).map((row) => (
+                                <tr class={row.groupStart ? "group-start" : ""}>
+                                    <td>
+                                        {row.label}
+                                        {row.expertOnly && (
+                                            <span class="expert-tag">
+                                                Expert
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td>
+                                        {row.keys && (
+                                            <kbd class="docs-kbd">
+                                                {os === "mac"
+                                                    ? row.keys.join("")
+                                                    : row.keys.map((k, j) => (
+                                                          <>
+                                                              {j > 0 && (
+                                                                  <span class="docs-kbd-plus">
+                                                                      +
+                                                                  </span>
+                                                              )}
+                                                              {k}
+                                                          </>
+                                                      ))}
+                                            </kbd>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </section>
+            ))}
+        </div>
+    ))
+}
+
+<script>
+    // Show the other system's menus (and keys) on request; the site picks the reader's at load.
+    const buttons =
+        document.querySelectorAll<HTMLButtonElement>("[data-show-os]");
+    const sync = () =>
+        buttons.forEach((b) =>
+            b.setAttribute(
+                "aria-pressed",
+                String(
+                    (document.documentElement.dataset.os ?? "other") ===
+                        b.dataset.showOs,
+                ),
+            ),
+        );
+    buttons.forEach((b) =>
+        b.addEventListener("click", () => {
+            document.documentElement.dataset.os = b.dataset.showOs;
+            sync();
+        }),
+    );
+    sync();
+</script>
+
+<style>
+    .menu-os-switch {
+        display: inline-flex;
+        gap: 0.25rem;
+        padding: 0.2rem;
+        border: 1px solid var(--sl-color-gray-5);
+        border-radius: 0.5rem;
+    }
+    .menu-os-switch button {
+        padding: 0.2rem 0.75rem;
+        border: 0;
+        border-radius: 0.35rem;
+        background: transparent;
+        color: var(--sl-color-gray-2);
+        font: inherit;
+        font-size: var(--sl-text-sm);
+        cursor: pointer;
+    }
+    .menu-os-switch button[aria-pressed="true"] {
+        background: var(--sl-color-accent-low);
+        color: var(--sl-color-accent-high);
+        font-weight: 600;
+    }
+    tr.group-start td {
+        border-top: 2px solid var(--sl-color-gray-5);
+    }
+    .expert-tag {
+        margin-left: 0.5em;
+        padding: 0 0.4em;
+        border-radius: 4px;
+        font-size: 0.75em;
+        font-weight: 500;
+        background: var(--sl-color-accent-low);
+        color: var(--sl-color-accent-high);
+    }
+    .docs-kbd {
+        display: inline-flex;
+        align-items: baseline;
+        padding: 0.05em 0.45em;
+        border: 1px solid var(--sl-color-gray-5);
+        border-bottom-width: 2px;
+        border-radius: 5px;
+        background: var(--sl-color-gray-6);
+        color: var(--sl-color-white);
+        font-size: 0.85em;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .menu-os-mac .docs-kbd {
+        letter-spacing: 0.08em;
+    }
+    .docs-kbd-plus {
+        margin: 0 0.12em;
+        opacity: 0.5;
+        font-weight: 400;
+    }
+    :global(html[data-os="mac"]) .menu-os-other,
+    :global(html:not([data-os="mac"])) .menu-os-mac {
+        display: none;
+    }
+</style>

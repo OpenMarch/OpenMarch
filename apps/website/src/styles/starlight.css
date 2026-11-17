@@ -198,3 +198,8 @@
         --sl-mobile-toc-height: 0rem;
     }
 }
+
+/* A shortcut as plain text, for the llms.txt files only (src/components/docs/shortcutText.ts) */
+.docs-kbd-text {
+    display: none;
+}

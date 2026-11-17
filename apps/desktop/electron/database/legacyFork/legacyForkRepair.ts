@@ -93,7 +93,9 @@ export const FORK_MIGRATION_DATES: ReadonlyMap<number, string> = new Map([
 /**
  * Tables of features parked before the merge with upstream, dropped by the repair with their rows:
  * the Asset Library (old 0021), performer cues (0022), Item Placement (0025), Artwork slots (0026)
- * and saved shapes (0028). Kept spots (0018) went in 0029.
+ * and saved shapes (0028). Kept spots (0018) went in 0029. `0022_cues` makes `cues` and
+ * `cue_marchers` again, empty and in ADR 0015's shape, after the repair dropped the old ones. It
+ * also drops any it finds itself, for a file the repair didn't touch.
  */
 export const PARKED_TABLES = [
     "library_blobs",

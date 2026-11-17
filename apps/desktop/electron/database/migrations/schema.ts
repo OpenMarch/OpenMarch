@@ -9,6 +9,7 @@ import {
     unique,
     customType,
     sqliteView,
+    primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -317,6 +318,100 @@ export const view3d_venue = sqliteTable(
         json_data: text().notNull(),
     },
     (_table) => [check("view3d_venue_id_check", sql`id = 1`)],
+);
+
+/**
+ * Silk Artwork the show imported (fork #973, ADR 0010 amendment 2026-11-15):
+ * a painted silk template, as the PNG's own bytes. Rows are referenced by
+ * id: the venue settings' `silkArtwork` names the one the guard's flags
+ * start the show with, and Silk cues can name others later. In the undo
+ * history, so an import or a removal is one undo step.
+ */
+export const view3d_silk_artwork = sqliteTable("view3d_silk_artwork", {
+    id: integer().primaryKey(),
+    /** The imported file's name, shown beside the picture. */
+    name: text().notNull(),
+    /** The PNG file, as imported. */
+    data: browserSafeBinaryBlob().notNull(),
+    /** Its size in pixels. */
+    width: integer().notNull(),
+    height: integer().notNull(),
+    ...timestamps,
+});
+
+/* ======================== SHOW ASSETS ======================== */
+
+/** A sha256 as 64 lowercase hex digits. */
+const isSha256Hex = (column: string) =>
+    sql.raw(`length(${column}) = 64 AND ${column} NOT GLOB '*[^0-9a-f]*'`);
+
+/** A JSON object (not an array, string or number). */
+const isJsonObject = (column: string) =>
+    sql.raw(`json_valid(${column}) AND json_type(${column}) = 'object'`);
+
+/**
+ * The bytes of the show's assets (ADR 0010 amendment 2026-11-15, fork #997),
+ * stored once by their sha256 however many assets name them. Not in the undo
+ * history, and nothing removes a row automatically.
+ */
+export const show_asset_blobs = sqliteTable(
+    "show_asset_blobs",
+    {
+        /** sha256 of `data`, lowercase hex */
+        hash: text().primaryKey(),
+        data: browserSafeBinaryBlob().notNull(),
+    },
+    (_table) => [
+        check("show_asset_blobs_hash_check", isSha256Hex("hash")),
+        check("show_asset_blobs_data_check", sql`typeof(data) = 'blob'`),
+    ],
+);
+
+/**
+ * The show's assets, one row per Version (ADR 0010 amendment 2026-11-15, fork
+ * #997): imported prop models first, flags and artwork (fork #985) next. An
+ * item names one as `library:<id>@<version_hash>` in `items.model`.
+ *
+ * - `version_hash` covers the parts and the sidecar (`src/showAssets/hash.ts`),
+ *   never the name or credits, so a Version's bytes never change.
+ * - `kind` has no CHECK: a build that doesn't know a kind keeps its rows and
+ *   ignores them, and a new kind needs no table rebuild.
+ * - Not in the undo history, and nothing removes a row automatically.
+ */
+export const show_assets = sqliteTable(
+    "show_assets",
+    {
+        /** Stable for the asset's life, across its Versions: a UUID */
+        id: text().notNull(),
+        /** Names this Version's parts and sidecar; lowercase hex sha256 */
+        version_hash: text().notNull(),
+        /** What it is, such as `model`; read by the code that uses that kind */
+        kind: text().notNull(),
+        /** What people call it */
+        name: text().notNull(),
+        /** JSON object, part role (`model`, `distant`, `thumbnail`…) to `show_asset_blobs.hash` */
+        parts: text().notNull(),
+        /**
+         * JSON object of what the kind's code reads without the bytes (for a model: real size,
+         * facing, top-down outline, stand point, triangle count, import notes), stored as the
+         * canonical text the Version hash covers
+         */
+        sidecar: text().notNull().default("{}"),
+        /** JSON object: license, author, source. Outside the Version hash. */
+        credits: text().notNull().default("{}"),
+        created_at: text()
+            .notNull()
+            .default(sql`(CURRENT_TIMESTAMP)`),
+    },
+    (table) => [
+        primaryKey({ columns: [table.id, table.version_hash] }),
+        index("show_assets_version_hash_idx").on(table.version_hash),
+        check("show_assets_id_check", sql`length(id) > 0`),
+        check("show_assets_version_hash_check", isSha256Hex("version_hash")),
+        check("show_assets_parts_check", isJsonObject("parts")),
+        check("show_assets_sidecar_check", isJsonObject("sidecar")),
+        check("show_assets_credits_check", isJsonObject("credits")),
+    ],
 );
 
 /**
@@ -661,6 +756,12 @@ export const timeline_held_marks = sqliteTable(
             .references(() => marchers.id, { onDelete: "cascade" }),
         start_beat: integer().notNull(),
         end_beat: integer().notNull(),
+        /**
+         * What the marcher's feet do over the hold (ADR 0015 D-5): `stand`, `markTime` or
+         * `highMarkTime`. `NULL` uses the show setting. Checked in code (`holdStyleOf`): a value
+         * this build doesn't know reads as `NULL`.
+         */
+        style: text(),
     },
     (table) => [
         unique().on(table.marcher_id, table.start_beat),
@@ -788,6 +889,24 @@ export const items = sqliteTable(
          * it in the field theme's line color (2D) and neutral grey (3D).
          */
         color: text(),
+        /**
+         * A built-in 3D model the item is drawn as, such as `pit/marimba-5.0`: its path under
+         * `apps/desktop/src/view3d/assets/pit/` without `.glb`. Null draws the item as a block.
+         * An imported model is `library:<id>@<version hash>`, naming a row of `show_assets`
+         * (`src/showAssets/ref.ts`; ADR 0010, amendments 2026-11-11 and 2026-11-15); an app that
+         * doesn't know a value draws the block.
+         */
+        model: text(),
+        /**
+         * One position for the whole show: the item has no moves, so dragging it on any page moves
+         * it on every page, and lasso and select-all skip it. Equipment is created locked.
+         */
+        locked: integer({ mode: "boolean" }).notNull().default(false),
+        /**
+         * Placed by a front ensemble preset. Re-applying a preset replaces only these items, so
+         * hand-added ones stay. Renaming or moving the item keeps it; copies don't take it.
+         */
+        from_preset: integer({ mode: "boolean" }).notNull().default(false),
         ...timestamps,
     },
     (_table) => [
@@ -863,6 +982,84 @@ export const item_geometry = sqliteTable(
                 `(rolls_out = 0 AND leading_edge IS NULL) OR (rolls_out = 1 AND leading_edge IS NOT NULL AND leading_edge IN (${sqlList(LEADING_EDGES)}))`,
             ),
         ),
+    ],
+);
+
+/* =========================== CUES =========================== */
+
+/**
+ * A performer cue (ADR 0015 D-9): one parameter of the performers in `cue_marchers`, set at a
+ * beat. The cue's moment is the beat's click.
+ *
+ * `type` and `value` are checked in code, not by a CHECK constraint (`@openmarch/core`'s cue
+ * library): a build that doesn't know a type keeps its cues and ignores them, so a new type
+ * needs no migration.
+ */
+export const cues = sqliteTable(
+    "cues",
+    {
+        id: integer().primaryKey(),
+        /** The cue type: equipment, position, silk, look, facing, posture, or a later build's */
+        type: text().notNull(),
+        /**
+         * The write paths carry a cue past a deleted beat first (`carryCuesPastDeletedBeats`);
+         * the cascade is the backstop.
+         */
+        beat_id: integer()
+            .notNull()
+            .references(() => beats.id, { onDelete: "cascade" }),
+        /** A value of the type: a built-in id (`builtin:...`) or one the show adds */
+        value: text().notNull(),
+        /** The value's settings, a JSON object */
+        settings_json: text().notNull().default("{}"),
+        /** `NULL` for a lasting cue; a momentary cue's length in counts, at least 1 */
+        length: integer(),
+        /** Counts the change takes, at least 1 (a snap); `NULL` for the value's default */
+        transition: integer(),
+        /** Display only: how the performers were picked, such as "Trumpets" */
+        label: text(),
+        notes: text(),
+        ...timestamps,
+    },
+    (table) => [
+        index("cues_beat_id_idx").on(table.beat_id),
+        index("cues_type_beat_id_idx").on(table.type, table.beat_id),
+        check("cues_settings_json_check", sql`json_valid(settings_json)`),
+        check(
+            "cues_length_check",
+            sql`length IS NULL OR (typeof(length) = 'integer' AND length >= 1)`,
+        ),
+        check(
+            "cues_transition_check",
+            sql`transition IS NULL OR (typeof(transition) = 'integer' AND transition >= 1)`,
+        ),
+    ],
+);
+
+/**
+ * The performers a cue applies to (ADR 0015 D-4): the ones selected when it was made. Every cue
+ * has its performers here; the marcher deletion write path deletes a cue left with none.
+ *
+ * A surrogate `id`, unique on (cue, marcher): history replays by rowid, so undo has to restore
+ * the same rowid (as `marcher_tags` does).
+ */
+export const cue_marchers = sqliteTable(
+    "cue_marchers",
+    {
+        id: integer().primaryKey(),
+        cue_id: integer()
+            .notNull()
+            .references(() => cues.id, { onDelete: "cascade" }),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+    },
+    (table) => [
+        unique("cue_marchers_cue_marcher_unique").on(
+            table.cue_id,
+            table.marcher_id,
+        ),
+        index("cue_marchers_marcher_id_idx").on(table.marcher_id),
     ],
 );
 

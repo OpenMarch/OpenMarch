@@ -73,9 +73,20 @@ export function buildKeymap(
     return entries;
 }
 
+/**
+ * Whether two scopes' keys can collide: `global` collides with everything, the others only with
+ * themselves (a `fieldEdit` key only works while its mode is on, and wins there)
+ */
 function scopesOverlap(a: ActionScope, b: ActionScope): boolean {
     return a === b || a === "global" || b === "global";
 }
+
+/** Which of several actions on one key runs: the Edit field mode's, then the canvas's, then global */
+const SCOPE_RANK: Record<ActionScope, number> = {
+    fieldEdit: 0,
+    canvas: 1,
+    global: 2,
+};
 
 export function findConflicts(
     overrides: ShortcutOverrides = {},
@@ -281,7 +292,9 @@ export function pickAction(
             (!context.modalOpen || c.allowInModals) &&
             isRunnable(c.id),
     );
-    return allowed.find((c) => c.scope !== "global") ?? allowed[0];
+    return [...allowed].sort(
+        (a, b) => SCOPE_RANK[a.scope] - SCOPE_RANK[b.scope],
+    )[0];
 }
 
 export function resolveKeyEvent(

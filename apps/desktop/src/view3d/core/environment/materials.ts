@@ -43,8 +43,8 @@ export function createSharedMaterials(): SharedMaterials {
     };
     return {
         unitBox,
-        concrete: std(0x8e9098, { roughness: 0.95 }),
-        bench: std(0xc8ccd4, { metalness: 0.5, roughness: 0.45 }),
+        concrete: std(0x7a7b80, { roughness: 0.95 }),
+        bench: std(0x9fa4ad, { metalness: 0.35, roughness: 0.6 }),
         metal: std(0x9a9da4, { metalness: 0.6, roughness: 0.4 }),
         seat: std(0x1f3f8f, { roughness: 0.8 }),
         glass: std(0x16202e, {

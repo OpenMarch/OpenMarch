@@ -1,4 +1,5 @@
 // @vitest-environment node
+// cspell:words clearcoat envmap
 import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,12 +15,16 @@ import {
     gripMatrix,
     instrumentGeometry,
     instrumentMaterial,
-    matteShader,
+    surfaceOf,
+    surfaceShader,
 } from "../marchers/instrumentGeometry";
 import {
+    PART_ALUMINUM,
     PART_BLACK,
+    PART_BRONZE,
     PART_CHROME,
     PART_METAL,
+    PART_SHELL,
     PART_SILK,
     PART_WOOD,
 } from "@/view3d/core/instruments/mesh";
@@ -48,7 +53,7 @@ async function body() {
 describe("instrumentGeometry", () => {
     it("weights every vertex to the prop bone and keeps the parts", async () => {
         const mesh = await body();
-        const h = hold("brass", "up");
+        const h = hold("trumpet", "up");
         const g = instrumentGeometry(
             mesh.skeleton,
             poseArms(mesh.skeleton, h),
@@ -67,13 +72,13 @@ describe("instrumentGeometry", () => {
         const parts = new Set<number>();
         const part = g.getAttribute("_part");
         for (let i = 0; i < part.count; i++) parts.add(part.getX(i));
-        // gold, chrome, black, and the pearl valve buttons
-        expect([...parts].sort()).toEqual([16, 18, 22, 23]);
+        // the finish metal, nickel trim, and the pearl valve buttons
+        expect([...parts].sort()).toEqual([16, 18, 23]);
     });
 
     it("lands on the hold's placement once skinned with the prop bone: the posed hand times the grip", async () => {
         const mesh = await body();
-        const h = hold("brass", "up");
+        const h = hold("trumpet", "up");
         const pose = poseArms(mesh.skeleton, h);
         const g = instrumentGeometry(
             mesh.skeleton,
@@ -99,7 +104,8 @@ describe("instrumentGeometry", () => {
         // the trumpet runs forward from the grip: its center is ahead of the origin, near face height
         expect(c.z).toBeGreaterThan(h.instrument.origin[2]);
         expect(Math.abs(c.y - h.instrument.origin[1])).toBeLessThan(0.1);
-        expect(box.max.z - box.min.z).toBeCloseTo(0.48, 1);
+        // a B♭ trumpet with its mouthpiece, rim to bell
+        expect(box.max.z - box.min.z).toBeCloseTo(0.56, 1);
     });
 });
 
@@ -173,7 +179,7 @@ describe("pieces on other bones", () => {
 describe("instrument color and material", () => {
     it("carries per-vertex linear colors from the model", async () => {
         const mesh = await body();
-        const h = hold("brass", "up");
+        const h = hold("trumpet", "up");
         const g = instrumentGeometry(
             mesh.skeleton,
             poseArms(mesh.skeleton, h),
@@ -187,7 +193,7 @@ describe("instrument color and material", () => {
 
     it("recolors the metal for a silver finish", async () => {
         const mesh = await body();
-        const h = hold("brass", "up");
+        const h = hold("trumpet", "up");
         const gold = instrumentGeometry(
             mesh.skeleton,
             poseArms(mesh.skeleton, h),
@@ -225,6 +231,7 @@ describe("instrument color and material", () => {
         const m = instrumentMaterial(new Composer(bake, 1));
         expect(m.metalness).toBeGreaterThan(0.9);
         expect(m.roughness).toBeLessThan(0.4);
+        expect(m.clearcoat).toBe(1);
         expect(m.vertexColors).toBe(true);
         expect(m.flatShading).toBe(false);
         // bells and tube ends are open surfaces: their insides must draw too
@@ -232,26 +239,80 @@ describe("instrument color and material", () => {
         expect(m.customProgramCacheKey()).toContain("composed-instances");
     });
 
-    it("draws the rifle's stock, silks and rubber matte, the metal shiny", () => {
+    it("gives each vertex its part's surface: lacquer under a clear coat, bare silver, matte rubber", async () => {
         expect(MATTE_PARTS).toEqual(
             expect.arrayContaining([PART_WOOD, PART_SILK, PART_BLACK]),
         );
         expect(MATTE_PARTS).not.toContain(PART_METAL);
         expect(MATTE_PARTS).not.toContain(PART_CHROME);
-        // every hook the patch needs is in three's standard shader, so it
-        // can't silently do nothing
+        // lacquered brass is metal under a glossy coat; silver plate is
+        // bare and sharper; rubber and paint are not metal at all
+        const lacquer = surfaceOf(PART_METAL, "brass");
+        const silver = surfaceOf(PART_METAL, "silver");
+        expect(lacquer).toMatchObject({ metalness: 1, coat: 1 });
+        expect(silver).toMatchObject({ metalness: 1, coat: 0 });
+        expect(silver.roughness).toBeLessThan(lacquer.roughness);
+        expect(surfaceOf(PART_CHROME, "brass").metalness).toBe(1);
+        expect(surfaceOf(PART_BLACK, "brass")).toMatchObject({
+            metalness: 0,
+            coat: 0,
+        });
+        // a drum shell is paint under clear coat, its hoops satin metal, and
+        // cymbals bronze in either finish
+        for (const finish of ["brass", "silver"] as const) {
+            expect(surfaceOf(PART_SHELL, finish)).toMatchObject({
+                metalness: 0,
+                coat: 1,
+            });
+            expect(surfaceOf(PART_ALUMINUM, finish).metalness).toBe(1);
+            expect(surfaceOf(PART_BRONZE, finish).metalness).toBe(1);
+        }
+        expect(surfaceOf(PART_ALUMINUM, "brass").roughness).toBeGreaterThan(
+            surfaceOf(PART_CHROME, "brass").roughness,
+        );
+
+        const mesh = await body();
+        const h = hold("trumpet", "up");
+        const g = instrumentGeometry(
+            mesh.skeleton,
+            poseArms(mesh.skeleton, h),
+            h,
+            brassModel("trumpet"),
+            "silver",
+        );
+        const part = g.getAttribute("_part");
+        const surface = g.getAttribute("_surface");
+        expect(surface.count).toBe(part.count);
+        for (let i = 0; i < part.count; i += 97) {
+            const want = surfaceOf(part.getX(i), "silver");
+            expect(surface.getX(i)).toBeCloseTo(want.metalness, 5);
+            expect(surface.getY(i)).toBeCloseTo(want.roughness, 5);
+            expect(surface.getZ(i)).toBeCloseTo(want.coat, 5);
+        }
+    });
+
+    it("patches every hook it needs in three's physical shader", () => {
+        // each hook is in the shader, so the patch can't silently do nothing
         const shader = {
-            vertexShader: THREE.ShaderLib.standard.vertexShader,
-            fragmentShader: THREE.ShaderLib.standard.fragmentShader,
+            vertexShader: THREE.ShaderLib.physical.vertexShader,
+            fragmentShader: THREE.ShaderLib.physical.fragmentShader,
         };
-        matteShader(shader);
-        expect(shader.vertexShader).toContain("vMatte = (");
-        expect(shader.vertexShader).toContain("attribute float _part;");
+        surfaceShader(shader);
+        expect(shader.vertexShader).toContain("attribute vec3 _surface;");
+        expect(shader.vertexShader).toContain("vSurface = _surface;");
         expect(shader.fragmentShader).toContain(
-            "metalnessFactor *= 1.0 - vMatte;",
+            "metalnessFactor = vSurface.x;",
         );
         expect(shader.fragmentShader).toContain(
-            "roughnessFactor = mix(roughnessFactor",
+            "roughnessFactor = vSurface.y;",
+        );
+        expect(shader.fragmentShader).toContain(
+            "material.clearcoat *= vSurface.z;",
+        );
+        // the environment's boost replaced the chunk's own intensity
+        expect(shader.fragmentShader).toContain("(envMapIntensity * ");
+        expect(shader.fragmentShader).not.toContain(
+            "#include <envmap_physical_pars_fragment>",
         );
     });
 });

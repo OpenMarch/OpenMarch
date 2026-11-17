@@ -84,7 +84,7 @@ export function ungroupShape(
 }
 
 const failure = () =>
-    tolgee.t("shapes.placed.ungroupError", "Error ungrouping the shape");
+    tolgee.t("shapes.placed.ungroupError", "Couldn't ungroup the shape");
 
 /** A later page: its members set where they stand, with a mark that they're ungrouped */
 async function markUngrouped(

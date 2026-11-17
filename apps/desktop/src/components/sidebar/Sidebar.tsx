@@ -4,7 +4,6 @@ import MetronomeModal from "@/components/music/MetronomeModal";
 import WorkspaceSettingsModal from "@/components/sidebar/WorkspaceSettingsModal";
 import AppearanceModal from "@/components/marcher/appearance/AppearanceModal";
 import MobileExportModal from "../mobile/MobileExportModal";
-import { isWebBuild } from "@/utilities/webBuild";
 import PropsModal from "@/components/items/PropsModal";
 
 export default function Sidebar() {
@@ -22,8 +21,8 @@ export default function Sidebar() {
                 <PropsModal />
             </div>
             <div className="flex flex-col gap-16">
-                {/* Uploading to the mobile app needs sign-in, which needs Electron. */}
-                {!isWebBuild && <MobileExportModal />}
+                {/* On the web, where sign-in can't run the panel says so. */}
+                <MobileExportModal />
                 <WorkspaceSettingsModal />
             </div>
         </div>

@@ -55,11 +55,11 @@ describe("warmLightingPresets", () => {
             current: "day",
         });
 
-        // hs offers day, dusk and night: dusk lights sun and lamps, night
-        // only the lamps.
+        // hs offers day, dusk and night: both light the lamps, and night's
+        // moon uses the sun's light (without a shadow).
         expect(compiled).toEqual([
             { sun: true, spots: true },
-            { sun: false, spots: true },
+            { sun: true, spots: true },
         ]);
         env.dispose();
         kit.dispose();
@@ -70,6 +70,8 @@ describe("warmLightingPresets", () => {
         env.setLighting("night", kit.focus);
         kit.setLighting("night");
         const exposure = env.exposure;
+        const sunVisible = env.sun.visible;
+        const sunIntensity = env.sun.intensity;
 
         await warmLightingPresets(gl, scene, new PerspectiveCamera(), {
             env,
@@ -77,7 +79,8 @@ describe("warmLightingPresets", () => {
             current: "night",
         });
 
-        expect(env.sun.visible).toBe(false);
+        expect(env.sun.visible).toBe(sunVisible);
+        expect(env.sun.intensity).toBe(sunIntensity);
         expect(env.exposure).toBe(exposure);
         expect(spots.every((s) => s.visible && s.intensity > 0)).toBe(true);
         env.dispose();

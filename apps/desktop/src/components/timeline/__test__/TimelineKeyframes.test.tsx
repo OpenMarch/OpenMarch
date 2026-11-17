@@ -230,6 +230,38 @@ describe.each([
             expect(menu.onUnset).not.toHaveBeenCalled();
         });
 
+        it("lights the pages that would follow back while that entry is focused or hovered, and stops on leave and close (#477)", () => {
+            const light = {
+                marcherIds: [1],
+                ranges: [{ start: 16, end: 32 }],
+            };
+            const menu = {
+                ...keyframeMenu({ followingLight: light }),
+                onFollowingPreview: vi.fn(),
+            };
+            render(
+                <Variant
+                    {...commonProps}
+                    keyframes={KEYFRAMES}
+                    keyframeMenu={menu}
+                />,
+            );
+            fireEvent.contextMenu(
+                screen.getByTestId("timeline-keyframe-16-filled"),
+            );
+            const followBack = screen.getByTestId(
+                "timeline-keyframe-menu-follow-back",
+            );
+            fireEvent.focus(followBack);
+            expect(menu.onFollowingPreview).toHaveBeenLastCalledWith(light);
+            fireEvent.blur(followBack);
+            expect(menu.onFollowingPreview).toHaveBeenLastCalledWith(null);
+            fireEvent.focus(followBack);
+            fireEvent.keyDown(followBack, { key: "Escape" });
+            expect(menuItems()).toEqual([]);
+            expect(menu.onFollowingPreview).toHaveBeenLastCalledWith(null);
+        });
+
         it.each([
             ["the context-menu key", { key: "ContextMenu" }],
             ["Shift+F10", { key: "F10", shiftKey: true }],

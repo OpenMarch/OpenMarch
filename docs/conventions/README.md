@@ -31,4 +31,6 @@ Use these references when their condition applies:
 - Read [testing](testing.md) before writing or running unit tests.
 - Read [UI styling](ui-styling.md) before building or restyling any UI: radii,
   font sizes, spacing, popovers, menus and buttons.
+- Read [tablet parity](tablet-parity.md) before adding a control, gesture or field
+  interaction: how a desktop-first feature reaches the same action on a tablet.
 - Read [troubleshooting](troubleshooting.md) when local hooks or formatting misbehave.

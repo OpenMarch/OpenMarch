@@ -16,7 +16,9 @@ import {
 } from "three";
 import {
     createSharedMaterials,
+    GROUND_LAYER,
     lightingValues,
+    setGroundLayer,
     setLightIntensity,
     type SharedMaterials,
 } from "../environment";
@@ -27,7 +29,7 @@ import type {
     LightingPreset,
     SeatRow,
 } from "../types";
-import { bannerTexture, floorTexture } from "./gym/textures";
+import { floorTexture, logoBannerTexture } from "./gym/textures";
 
 /** Room and bleacher dimensions in meters (design.md section 6, "gym"). */
 export const GYM_ROOM_MARGIN = 9;
@@ -42,12 +44,8 @@ export const GYM_BLEACHER_GAP = 3;
 const BLEACHER_WALL_GAP = 0.6;
 const EYE_ABOVE_TREAD = 1.22;
 
-const BANNERS: [string[], string][] = [
-    [["REGIONAL", "FINALIST", "2024"], "#6442ff"],
-    [["STATE", "CHAMPIONS", "2025"], "#1f2a5c"],
-    [["WINTER", "GUARD", "A CLASS"], "#a33a3a"],
-    [["INDOOR", "PERCUSSION", "2025"], "#1f5c46"],
-];
+/** Wall banner fabrics, each with the OpenMarch logo (`logoBannerTexture`). */
+const BANNERS: string[] = ["#1b1834", "#1b1834", "#1b1834", "#1b1834"];
 
 const m4 = new Matrix4();
 const quat = new Quaternion();
@@ -105,11 +103,13 @@ export const buildGym: KitBuilder = ({ footprint, quality }) => {
     const end = () => std(0xc9c2b2, { side: BackSide });
     const roomGeo = new BoxGeometry(roomW, RH, roomD);
     geometries.push(roomGeo);
+    // No bottom face: the maple floor covers it exactly, and it lay 10 cm
+    // under the floor, close enough to show through it at a distance.
     const shell = new Mesh(roomGeo, [
         wall(),
         wall(),
         std(0x2a2b31, { side: BackSide }),
-        std(0x2a2b31, { side: BackSide }),
+        std(0x2a2b31, { side: BackSide, visible: false }),
         end(),
         end(),
     ]);
@@ -118,15 +118,19 @@ export const buildGym: KitBuilder = ({ footprint, quality }) => {
     shell.receiveShadow = true;
     root.add(shell);
 
-    // Maple floor with court lines and safety tape.
+    // Maple floor with court lines and safety tape: over the land under
+    // it, behind the field tarp on it (2 cm up), at any distance.
     const floorGeo = new PlaneGeometry(roomW, roomD);
     geometries.push(floorGeo);
     const floor = new Mesh(
         floorGeo,
-        std(0xffffff, {
-            map: floorTexture({ ...room, footprint: fp }),
-            roughness: 0.45,
-        }),
+        setGroundLayer(
+            std(0xffffff, {
+                map: floorTexture({ ...room, footprint: fp }),
+                roughness: 0.45,
+            }),
+            GROUND_LAYER.site,
+        ),
     );
     floor.name = "gym-floor";
     floor.rotation.x = -Math.PI / 2;
@@ -230,10 +234,10 @@ export const buildGym: KitBuilder = ({ footprint, quality }) => {
     const bannerGeo = new PlaneGeometry(2.7, 3.84);
     geometries.push(bannerGeo);
     const spacing = Math.min(7.3, (roomW - 4) / BANNERS.length);
-    BANNERS.forEach(([lines, color], i) => {
+    BANNERS.forEach((color, i) => {
         const m = new Mesh(
             bannerGeo,
-            std(0xffffff, { map: bannerTexture(lines, color), roughness: 0.9 }),
+            std(0xffffff, { map: logoBannerTexture(color), roughness: 0.9 }),
         );
         m.name = `gym-banner-${i}`;
         m.position.set(

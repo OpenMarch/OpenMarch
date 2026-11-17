@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Tidak dapat menyalin koordinat pemain dari halaman berikutnya. Tidak ada halaman berikutnya",
             "noPreviousPage": "Tidak dapat menyalin koordinat pemain dari halaman sebelumnya. Tidak ada halaman sebelumnya",
-            "setAllToNext": "Salin posisi dari halaman berikutnya (semua pemain)",
-            "setAllToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
-            "setSelectedToNext": "Salin posisi dari halaman berikutnya (yang dipilih)",
-            "setSelectedToNextSuccess": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman berikutnya ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, other {Berhasil mengatur koordinat # pemain di halaman {currentPage} sesuai koordinat halaman sebelumnya ({previousPage})}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "Lapangan tidak dapat ditampilkan",
             "unavailable.web": "Grafis WebGL dinonaktifkan atau diblokir di browser ini. Aktifkan akselerasi grafis (di Chrome atau Edge: Setelan, Sistem, \"Gunakan akselerasi grafis jika tersedia\"), mulai ulang browser, lalu muat ulang halaman ini. Pertunjukan Anda aman."
         },
-        "title": "Lapangan",
         "errors": {
             "noWebGL": "WebGL tidak tersedia",
             "contextLost": "Konteks WebGL lapangan hilang, sehingga video tidak dapat digambar. Coba ekspor lagi.",
@@ -513,43 +508,17 @@
         "applyFieldType": "Terapkan jenis lapangan",
         "applyFieldTypeWarning": "Pemain tidak akan berpindah mengikuti ukuran jenis lapangan yang baru; mereka tetap berada di posisinya pada kanvas. Anda selalu dapat mengubah kembali jenis lapangan.",
         "buttons": {
-            "newXCheckpoint": "Tambah garis acuan X",
-            "newYCheckpoint": "Tambah garis acuan Y",
             "resetTheme": "Setel ulang tema ke default",
             "uploadFloor": "Unggah lantai…",
             "removeFloor": "Hapus lantai"
         },
         "checkpoint": {
             "created": "Garis acuan {axis} pada {steps} langkah berhasil dibuat",
-            "delete": "Hapus",
-            "deleted": "Garis acuan {axis} pada {steps} langkah dihapus - \"{name}\"",
-            "deleteTooltip": "Hapus garis acuan ini dari lapangan",
-            "fieldLabel": "Label lapangan",
-            "fieldLabelTooltip": "Label yang muncul di lapangan (misalnya, angka penanda yard)",
-            "minimumRequired": "Diperlukan minimal 2 garis acuan {axis}",
-            "name": "Nama",
-            "nameTooltip": "Beri nama garis acuan sesuka Anda. Nama ini hanya untuk membantu Anda mengenali garis acuan yang sedang dipilih.",
-            "newXCheckpointName": "Garis acuan X baru",
-            "newYCheckpointName": "Garis acuan Y baru",
-            "shortName": "Nama pendek",
-            "shortNameTooltip": "Nama utama garis acuan. (Mis. \"Garis yard 45 - Sisi 1\")",
-            "stepsFromCenter": "Langkah dari tengah",
-            "stepsFromFront": "Langkah dari depan",
-            "stepsFromFrontTooltip": "Jumlah langkah garis acuan ini dari bagian depan lapangan. Nilai negatif mengarah ke belakang.",
-            "useAsReference": "Gunakan sebagai acuan",
-            "useAsReferenceTooltip": "Apakah garis acuan ini digunakan sebagai acuan untuk koordinat.",
-            "visible": "Terlihat",
-            "visibleTooltip": "Apakah garis acuan ini ditampilkan di lapangan",
-            "stepsFromCenterHint": "Jumlah langkah garis acuan ini dari tengah lapangan. Nilai negatif mengarah ke kiri, dilihat dari sisi penonton."
+            "minimumRequired": "Diperlukan minimal 2 garis acuan {axis}"
         },
-        "customField": "Lapangan kustom",
         "customFieldDocs": "Lihat dokumentasi",
         "customFieldName": "Kustom",
-        "customization": "Kustomisasi",
-        "customize": "Sesuaikan",
         "errors": {
-            "invalidColor": "Warna tidak valid",
-            "noPropertiesToLoad": "Tidak ada properti lapangan untuk dimuat! Ini seharusnya tidak terjadi, silakan hubungi dukungan",
             "notDefined": "FieldProperties tidak ditentukan. Ini seharusnya tidak terjadi, silakan hubungi dukungan.",
             "invalidJson": "File JSON tidak valid.\n\nPastikan file berisi sintaks JSON yang valid.",
             "invalidFile": "File properti lapangan tidak valid.\n\n{details}\n\nPastikan file berisi semua entri wajib dengan nilai yang benar.",
@@ -565,24 +534,19 @@
         "fieldType": {
             "label": "Jenis lapangan"
         },
-        "general": "Umum",
         "labels": {
             "background": "Latar belakang",
             "backgroundImageOpacity": "Opasitas gambar latar",
-            "backgroundImageRatio": "Rasio gambar latar",
             "bottom": "Bawah",
-            "conformingMethod": "Metode penyesuaian",
             "conformMethod": "Metode penyesuaian",
             "directorsLeft": "Kiri direktur",
             "directorsRight": "Kanan direktur",
             "externalLabels": "Label luar",
             "fieldLabels": "Label lapangan",
             "fieldName": "Nama lapangan",
-            "fieldRatio": "Rasio lapangan",
             "gridLines": "Garis kisi",
             "halfLineXInterval": "Jarak garis setengah X",
             "halfLineYInterval": "Jarak garis setengah Y",
-            "height": "Tinggi",
             "left": "Kiri",
             "leftAbbreviation": "Singkatan kiri",
             "marcherFill": "Isi pemain",
@@ -598,23 +562,12 @@
             "shapes": "Bentuk",
             "shapeType": "Jenis bentuk",
             "showBackgroundImage": "Tampilkan gambar latar",
-            "stepsFromFrontToAwayLabelBottom": "Langkah dari depan ke bawah label tandang",
-            "stepsFromFrontToAwayLabelTop": "Langkah dari depan ke atas label tandang",
-            "stepsFromFrontToHomeLabel": "Langkah dari depan ke bawah label kandang",
-            "stepsFromFrontToHomeLabelTop": "Langkah dari depan ke atas label kandang",
             "stepSize": "Ukuran langkah",
             "stepSizeWarningThreshold": "Ambang peringatan ukuran langkah",
             "temporaryPath": "Jalur sementara",
-            "top": "Atas",
-            "useHashes": "Gunakan hash",
-            "width": "Lebar",
-            "widthHeight": "l/t",
-            "noBackgroundImage": "T/A",
-            "stepSizeWarningRatio": "Ambang peringatan ukuran langkah ({steps} banding 5)"
+            "top": "Atas"
         },
         "messages": {
-            "fieldRatio": "{ratio} atau {decimal}",
-            "measurementModificationNote": "Nilai ini dapat diubah dengan menyesuaikan koordinat X dan Y, ukuran langkah, dan gambar latar",
             "noFloor": "Tidak ada lantai",
             "floorUnnamed": "Lantai"
         },
@@ -625,39 +578,16 @@
             "metric": "Metrik"
         },
         "sections": {
-            "externalLabels": "Label luar",
-            "fieldLabels": "Label lapangan",
-            "general": "Umum",
-            "imageRendering": "Rendering gambar",
-            "measurements": "Ukuran",
-            "sideDescriptions": "Deskripsi sisi",
-            "theme": "Tema",
-            "xCheckpoints": "Garis acuan X",
-            "yCheckpoints": "Garis acuan Y"
-        },
-        "tabs": {
-            "checkpoints": "Garis acuan",
-            "general": "Umum",
-            "image": "Gambar",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Kisi",
-            "labels": "Label",
-            "marchers": "Pemain",
-            "pathways": "Jalur"
+            "sideDescriptions": "Deskripsi sisi"
         },
         "tooltips": {
             "conformMethod": "Pilih apakah gambar latar dimuat utuh di dalam lapangan atau memenuhi lapangan. Rasio aspek selalu dipertahankan",
             "directorsLeft": "Mis. \"Sisi 1\", \"Kiri Penonton\", atau \"Kanan Panggung\"",
             "directorsRight": "Mis. \"Sisi 2\", \"Kanan Penonton\", atau \"Kiri Panggung\"",
-            "fieldName": "Nama atau judul templat lapangan",
             "halfLineXInterval": "Jarak kemunculan garis setengah di antarmuka pada sumbu X, diukur dari tengah lapangan. Biarkan kosong agar tidak ada garis setengah pada sumbu X. Ini hanya untuk tampilan dan sama sekali tidak memengaruhi koordinat",
             "halfLineYInterval": "Jarak kemunculan garis setengah di antarmuka pada sumbu Y, diukur dari depan lapangan. Biarkan kosong agar tidak ada garis setengah pada sumbu Y. Ini hanya untuk tampilan dan sama sekali tidak memengaruhi koordinat",
             "leftAbbreviation": "Mis. \"S1\", \"KiP\", atau \"KaPg\" (singkatan dari \"Sisi 1\", \"Kiri Penonton\", atau \"Kanan Panggung\")",
-            "measurementSystem": "Satuan ukuran untuk menentukan ukuran langkah. Dapat diganti bolak-balik",
             "resetTheme": "Kembalikan tema ke nilai default",
-            "resetToDefault": "Kembalikan ke default",
             "rightAbbreviation": "Mis. \"S2\", \"KaP\", atau \"KiPg\" (singkatan dari \"Sisi 2\", \"Kanan Penonton\", atau \"Kiri Panggung\")",
             "stepsFromFrontToAwayLabelBottom": "Jumlah langkah dari garis samping depan ke sisi luar angka tandang (lebih dekat ke garis samping belakang)",
             "stepsFromFrontToAwayLabelTop": "Jumlah langkah dari garis samping depan ke sisi dalam angka tandang (lebih dekat ke tengah lapangan)",
@@ -672,15 +602,10 @@
             "inches": "inci",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "PERINGATAN - Garis acuan X paling kiri dan paling kanan tidak berjarak sama dari tengah. Hal ini dapat menyebabkan gangguan grafis yang aneh dan sebaiknya diperbaiki.",
-            "yCheckpointsNegative": "PERINGATAN - Sangat disarankan agar nilai langkah semua garis acuan Y kurang dari nol (yaitu bilangan negatif). Semua koordinat Y harus berada di belakang bagian depan lapangan. Jika tidak, dapat terjadi kesalahan grafis dan koordinat yang tidak terduga."
-        },
         "loading": "Memuat...",
         "measurements": {
             "feet": "{value} kaki",
-            "meters": "{value} m",
-            "steps": "{count, plural, other {# langkah}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -1467,7 +1392,6 @@
         "general.appearance": "Tampilan",
         "general.appearance.dark": "Gelap",
         "general.appearance.light": "Terang",
-        "general.automaticUpdates": "Unduh dan instal pembaruan secara otomatis",
         "general.description": "Mode editor, bahasa, dan preferensi aplikasi lainnya.",
         "general.editorMode": "Mode editor",
         "general.editorMode.basic": "Dasar",
@@ -2013,9 +1937,6 @@
                 "kinds": "Jenis bentuk",
                 "ringHintKeys": "Tahan <keys></keys> di lapangan untuk membuka cincin bentuk"
             }
-        },
-        "transform": {
-            "title": "Transformasi"
         },
         "validate": {
             "noPosition": "Bentuk memiliki titik tanpa posisi",
@@ -2579,7 +2500,6 @@
             "placeAllMarchers": "Tempatkan semua pemain",
             "placeSelectedMarchers": "Tempatkan pemain terpilih",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...ke posisi halaman berikutnya",
             "setMarcherPositionsAriaLabel": "Atur posisi pemain"
         },
         "collisions": {
@@ -2630,20 +2550,6 @@
             "shapesSelected": "Saat dipilih"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Terjadi kesalahan saat mengambil versi.",
-            "message": "Kesalahan: {message}",
-            "noVersion": "Tidak dapat mengambil versi terbaru."
-        },
-        "installLinux": "Instal untuk Linux",
-        "installMacArm": "Instal untuk Apple Silicon",
-        "installMacIntel": "Instal untuk Mac Intel",
-        "installWindows": "Instal untuk Windows",
-        "skipVersion": "Lewati versi ini",
-        "title": "Versi baru tersedia",
-        "trigger": "Versi baru tersedia!"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "Ini dapat diubah nanti di Pengaturan › Umum.",
@@ -2658,14 +2564,17 @@
             "floor": "Di lantai",
             "frontRow": "Baris depan",
             "geJudge": "Juri GE",
+            "judgesTable": "Meja juri",
             "lowerBowl": "Tribun bawah",
             "podium": "Podium",
             "pressBox": "Ruang pers",
             "sideline": "Pinggir lapangan",
             "topDown": "Dari atas",
+            "tunnel": "Terowongan",
             "upperDeck": "Tribun atas"
         },
         "kit": {
+            "arena": "Arena dalam ruangan",
             "bighs": "SMA besar",
             "blank": "Lapangan saja",
             "college": "Stadion kampus",
@@ -2793,6 +2702,12 @@
         },
         "venue": {
             "updateFailed": "Gagal memperbarui venue Tampilan 3D"
+        },
+        "board": {
+            "designedBy": "Dirancang oleh {name}",
+            "forClient": "Untuk {name}",
+            "nowPerforming": "Sedang tampil",
+            "untitled": "Pertunjukan tanpa judul"
         }
     },
     "web": {
@@ -2948,7 +2863,14 @@
         "unsavedChanges": "Ada perubahan yang belum disimpan",
         "close": "Tutup",
         "saved": "Pengaturan pertunjukan disimpan",
-        "updateFailed": "Gagal memperbarui pengaturan pertunjukan"
+        "updateFailed": "Gagal memperbarui pengaturan pertunjukan",
+        "showInfo": {
+            "projectName": "Nama pertunjukan",
+            "projectNamePlaceholder": "Memakai nama file",
+            "designer": "Desainer",
+            "client": "Klien",
+            "optional": "Opsional"
+        }
     },
     "canvas": {
         "zoom": {

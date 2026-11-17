@@ -5,8 +5,17 @@ import {
     render,
     screen,
 } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TolgeeProvider } from "@tolgee/react";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { isSnapOn, useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -17,6 +26,17 @@ import {
     useTouchModifierStore,
 } from "@/stores/TouchModifierStore";
 import "@/shapes/editor/__test__/pointerEvents";
+import { useAlignmentActionHandlers } from "@/shortcuts/handlers/useAlignmentActionHandlers";
+import { subscribeToActionRuns } from "@/shortcuts/registry";
+import type { ActionId } from "@/shortcuts/definitions";
+import { FIELD_DRAG_MODE_KEY, useFieldDragModeStore } from "../fieldDragMode";
+import {
+    aroundPoints,
+    noteFieldLayersChanged,
+    type FieldObstacles,
+    type FieldObstacleSource,
+} from "@/components/canvas/fieldLayers";
+import { useFieldViewStore } from "@/field/three/fieldView";
 import TouchModifierButtons, {
     parseModifierPosition,
     TOUCH_MODIFIER_POSITION_KEY,
@@ -24,7 +44,7 @@ import TouchModifierButtons, {
 
 /**
  * The touch pill over the field: Fine, Equal and From center (held roles), Add (the old Shift)
- * and a magnet for the Snap toggle, each named by what it does, never by a key. Shown only in the
+ * and a magnet that runs the Toggle Snap action, each named by what it does, never by a key. Shown only in the
  * touch layout.
  */
 
@@ -72,6 +92,7 @@ afterEach(() => {
     useInputModeStore.getState().setPreference("auto");
     localStorage.removeItem(TOUCH_MODIFIER_POSITION_KEY);
     useUiSettingsStore.getState().setSnap(true);
+    useFieldDragModeStore.getState().setMode("auto");
 });
 
 describe("the pill", () => {
@@ -87,7 +108,14 @@ describe("the pill", () => {
         touchMode(true);
         renderPill();
         const pill = screen.getByTestId("touch-modifier-buttons");
-        for (const name of ["Fine", "Equal", "From center", "Add"])
+        for (const name of [
+            "Fine",
+            "Equal",
+            "From center",
+            "Add",
+            "Subtract",
+            "Drag:",
+        ])
             expect(pill.textContent).toContain(name);
         const labels = [...pill.querySelectorAll("[aria-label]")]
             .map((el) => el.getAttribute("aria-label"))
@@ -215,6 +243,7 @@ describe.each([
     ["constrain", "Equal", "Equal spacings"],
     ["fromCenter", "From center", "from their center"],
     ["add", "Add", "adds them to the selection"],
+    ["subtract", "Subtract", "out of the selection"],
 ] as const)("%s, for assistive tech", (toggle, name, hint) => {
     const pressed = () =>
         screen.getByRole("button", { name }).getAttribute("aria-pressed");
@@ -273,10 +302,32 @@ describe.each([
     });
 });
 
+/** The app's alignment handlers, Toggle Snap among them, as `ActionHandlers` mounts them */
+function AlignmentHandlers() {
+    useAlignmentActionHandlers();
+    return null;
+}
+
+/** The pill at a saved spot, with the Toggle Snap action's handler registered */
+function renderPlacedPillWithHandlers() {
+    localStorage.setItem(
+        TOUCH_MODIFIER_POSITION_KEY,
+        JSON.stringify({ left: 40, bottom: 60 }),
+    );
+    return render(
+        <QueryClientProvider client={new QueryClient()}>
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <AlignmentHandlers />
+                <TouchModifierButtons />
+            </TolgeeProvider>
+        </QueryClientProvider>,
+    );
+}
+
 describe("the magnet", () => {
     it("a tap turns the Snap toggle off, pressed, and another turns it back on", () => {
         touchMode(true);
-        renderPlacedPill();
+        renderPlacedPillWithHandlers();
         const magnet = screen.getByRole("button", { name: "Snap off" });
         expect(isSnapOn()).toBe(true);
         expect(magnet.getAttribute("aria-pressed")).toBe("false");
@@ -288,9 +339,31 @@ describe("the magnet", () => {
         expect(magnet.getAttribute("aria-pressed")).toBe("false");
     });
 
-    it("shows the Snap toggle turned off elsewhere (Shift+M)", () => {
+    it("runs the Toggle Snap action, as the toolbar's magnet and Shift+M do", () => {
+        touchMode(true);
+        renderPlacedPillWithHandlers();
+        const runs: ActionId[] = [];
+        const stop = subscribeToActionRuns((id) => runs.push(id));
+        try {
+            fireEvent.click(screen.getByRole("button", { name: "Snap off" }));
+        } finally {
+            stop();
+        }
+        expect(runs).toEqual(["toggleSnap"]);
+    });
+
+    it("is disabled while the action can't run, and a press then does nothing", () => {
         touchMode(true);
         renderPlacedPill();
+        const magnet = screen.getByRole("button", { name: "Snap off" });
+        expect(magnet).toHaveProperty("disabled", true);
+        fireEvent.click(magnet);
+        expect(isSnapOn()).toBe(true);
+    });
+
+    it("shows the Snap toggle turned off elsewhere (Shift+M)", () => {
+        touchMode(true);
+        renderPlacedPillWithHandlers();
         act(() => {
             useUiSettingsStore.getState().setSnap(false);
         });
@@ -338,6 +411,82 @@ describe("where it sits", () => {
         ).toEqual({ left: 70, bottom: 80 });
     });
 
+    it("moves aside from its saved spot for a task's bar, and a drag then follows the finger (#927)", () => {
+        // A field area of 800 × 600 with the line tool's card across its bottom, over the saved
+        // spot (40 from the left, 60 from the bottom)
+        const area = document.createElement("div");
+        Object.defineProperty(area, "clientWidth", { value: 800 });
+        Object.defineProperty(area, "clientHeight", { value: 600 });
+        document.body.append(area);
+        const card = document.createElement("div");
+        card.setAttribute("data-field-layer", "task");
+        card.getBoundingClientRect = () =>
+            ({ left: 0, top: 500, width: 400, height: 100 }) as DOMRect;
+        document.body.append(card);
+        const offsetParent = Object.getOwnPropertyDescriptor(
+            HTMLElement.prototype,
+            "offsetParent",
+        );
+        Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+            configurable: true,
+            get() {
+                return area;
+            },
+        });
+        try {
+            localStorage.setItem(
+                TOUCH_MODIFIER_POSITION_KEY,
+                JSON.stringify({ left: 40, bottom: 60 }),
+            );
+            touchMode(true);
+            render(
+                <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                    <TouchModifierButtons />
+                </TolgeeProvider>,
+                { container: area },
+            );
+            const pill = screen.getByTestId("touch-modifier-buttons");
+            // Off the card: its automatic spot, at the bottom right
+            expect(pill.style.left).toBe("788px");
+            expect(pill.style.bottom).toBe("112px");
+
+            const grip = screen.getByRole("button", {
+                name: "Move these buttons",
+            });
+            fireEvent.pointerDown(grip, {
+                pointerId: 3,
+                clientX: 100,
+                clientY: 100,
+            });
+            fireEvent.pointerMove(grip, {
+                pointerId: 3,
+                clientX: 90,
+                clientY: 80,
+            });
+            // Following the finger from where it was, mid-drag
+            expect(pill.style.left).toBe("778px");
+            expect(pill.style.bottom).toBe("132px");
+            fireEvent.pointerUp(grip, {
+                pointerId: 3,
+                clientX: 90,
+                clientY: 80,
+            });
+            expect(pill.style.left).toBe("778px");
+            expect(
+                JSON.parse(localStorage.getItem(TOUCH_MODIFIER_POSITION_KEY)!),
+            ).toEqual({ left: 778, bottom: 132 });
+        } finally {
+            if (offsetParent)
+                Object.defineProperty(
+                    HTMLElement.prototype,
+                    "offsetParent",
+                    offsetParent,
+                );
+            card.remove();
+            area.remove();
+        }
+    });
+
     it("reads a stored spot, and nothing for anything else", () => {
         expect(parseModifierPosition('{"left":12,"bottom":30}')).toEqual({
             left: 12,
@@ -349,5 +498,460 @@ describe("where it sits", () => {
         expect(parseModifierPosition('{"left":12}')).toBeNull();
         expect(parseModifierPosition('{"left":"12","bottom":30}')).toBeNull();
         expect(parseModifierPosition('{"left":null,"bottom":30}')).toBeNull();
+    });
+});
+
+describe("keeping its spot while the field changes (#933)", () => {
+    // A change note an earlier test sent on a real timer goes out first, or this test's notes
+    // would wait behind it
+    beforeEach(() => new Promise((done) => setTimeout(done, 50)));
+
+    /** A field area of 800 × 600 the pill sits in (there's no layout here: the pill is 0 × 0) */
+    function inArea(
+        run: (resize: (width: number, height: number) => void) => void,
+    ) {
+        const size = { width: 800, height: 600 };
+        const area = document.createElement("div");
+        Object.defineProperty(area, "clientWidth", { get: () => size.width });
+        Object.defineProperty(area, "clientHeight", {
+            get: () => size.height,
+        });
+        document.body.append(area);
+        const offsetParent = Object.getOwnPropertyDescriptor(
+            HTMLElement.prototype,
+            "offsetParent",
+        );
+        Object.defineProperty(HTMLElement.prototype, "offsetParent", {
+            configurable: true,
+            get() {
+                return area;
+            },
+        });
+        // The layers' change notes wait for a frame
+        vi.useFakeTimers({
+            toFake: [
+                "setTimeout",
+                "clearTimeout",
+                "requestAnimationFrame",
+                "cancelAnimationFrame",
+            ],
+        });
+        try {
+            run((width, height) => {
+                size.width = width;
+                size.height = height;
+            });
+        } finally {
+            // A frame still waiting would keep the layers' next change note from being sent
+            act(() => {
+                vi.runOnlyPendingTimers();
+            });
+            vi.useRealTimers();
+            if (offsetParent)
+                Object.defineProperty(
+                    HTMLElement.prototype,
+                    "offsetParent",
+                    offsetParent,
+                );
+            area.remove();
+        }
+    }
+
+    /** What the field says is dragged on it, changed by the test */
+    function fakeField() {
+        let now: FieldObstacles = { handles: [], areas: [] };
+        let busy = false;
+        let armed = false;
+        const listeners = new Set<() => void>();
+        const source: FieldObstacleSource = {
+            read: () => now,
+            subscribe(listener) {
+                listeners.add(listener);
+                return () => void listeners.delete(listener);
+            },
+            busy: () => busy,
+            armed: () => armed,
+        };
+        return {
+            source,
+            /** A tool waits for a stroke on the field, or doesn't */
+            arm(on: boolean) {
+                armed = on;
+            },
+            /** The obstacles change, and the field says so */
+            change(
+                next: { x: number; y: number }[],
+                pressing = false,
+                areas: FieldObstacles["areas"] = [],
+            ) {
+                now = { handles: aroundPoints(next), areas };
+                busy = pressing;
+                act(() => listeners.forEach((listener) => listener()));
+            },
+            settle() {
+                act(() => {
+                    vi.advanceTimersByTime(200);
+                });
+            },
+        };
+    }
+
+    const renderWith = (source: FieldObstacleSource) => {
+        const result = render(
+            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                <TouchModifierButtons obstacles={source} />
+            </TolgeeProvider>,
+            { container: document.body.lastElementChild as HTMLElement },
+        );
+        // Past its second placing once the field is fitted, 800 ms after it shows
+        act(() => {
+            vi.advanceTimersByTime(1000);
+        });
+        return result;
+    };
+    const spot = () => {
+        const pill = screen.getByTestId("touch-modifier-buttons");
+        return `${pill.style.left},${pill.style.bottom}`;
+    };
+    // Its automatic spot with nothing in the way: bottom right, over the zoom box's room. At
+    // 0 × 0, its box is the point (788, 488) in the area
+    const AUTO = "788px,112px";
+
+    it("keeps its spot after a tap-select whose box it's over but whose handles it isn't", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe(AUTO);
+            // A selection box around the pill's spot, its handles well away from it
+            field.change([{ x: 300, y: 300 }], false, [
+                { left: 280, top: 280, width: 520, height: 300 },
+            ]);
+            field.settle();
+            expect(spot()).toBe(AUTO);
+        });
+    });
+
+    it("moves off a handle that lands under it, once no drag is under way", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            // Mid-drag: it waits
+            field.change([{ x: 788, y: 488 }], true);
+            field.settle();
+            expect(spot()).toBe(AUTO);
+            // The drag ends and the field tells again
+            field.change([{ x: 788, y: 488 }]);
+            field.settle();
+            expect(spot()).not.toBe(AUTO);
+            // Off the handle now, a change elsewhere doesn't move it again
+            const moved = spot();
+            field.change([
+                { x: 788, y: 488 },
+                { x: 100, y: 100 },
+            ]);
+            field.settle();
+            expect(spot()).toBe(moved);
+        });
+    });
+
+    it("gives up its saved spot to a handle, keeps the spot it moved to after a deselect, and goes back once the view settles (#936)", () => {
+        inArea(() => {
+            localStorage.setItem(
+                TOUCH_MODIFIER_POSITION_KEY,
+                JSON.stringify({ left: 40, bottom: 60 }),
+            );
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe("40px,60px");
+            // The saved spot is the point (40, 540)
+            field.change([{ x: 40, y: 540 }]);
+            field.settle();
+            const moved = spot();
+            expect(moved).not.toBe("40px,60px");
+            // Deselected: a finger reaching for Fine 250 ms on, and long after, finds it where it was
+            field.change([]);
+            act(() => {
+                vi.advanceTimersByTime(250);
+            });
+            expect(spot()).toBe(moved);
+            act(() => {
+                vi.advanceTimersByTime(2000);
+            });
+            expect(spot()).toBe(moved);
+            // A pan or zoom settles: it's placed afresh, and the saved spot is back
+            act(() => {
+                useFieldViewStore.setState({
+                    panX: useFieldViewStore.getState().panX + 10,
+                });
+            });
+            act(() => {
+                vi.advanceTimersByTime(400);
+            });
+            expect(spot()).toBe("40px,60px");
+        });
+    });
+
+    it("keeps its spot after a deselect even when a layer changes meanwhile (#936)", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            field.change([{ x: 788, y: 488 }]);
+            field.settle();
+            const moved = spot();
+            expect(moved).not.toBe(AUTO);
+            // Deselected, and a layer elsewhere comes (the toolbar panel's contents change)
+            field.change([]);
+            const card = document.createElement("div");
+            card.setAttribute("data-field-layer", "task");
+            card.getBoundingClientRect = () =>
+                ({ left: 300, top: 10, width: 200, height: 40 }) as DOMRect;
+            document.body.append(card);
+            try {
+                act(() => {
+                    noteFieldLayersChanged();
+                });
+                act(() => {
+                    vi.advanceTimersByTime(1000);
+                });
+                expect(spot()).toBe(moved);
+            } finally {
+                card.remove();
+            }
+        });
+    });
+
+    it("slides the least way off a layer that lands on it, rather than jumping elsewhere (#936)", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe(AUTO);
+            // A bar over the pill's spot (the point (788, 488)), 100 px tall
+            const bar = document.createElement("div");
+            bar.setAttribute("data-field-layer", "task");
+            bar.getBoundingClientRect = () =>
+                ({ left: 600, top: 440, width: 200, height: 100 }) as DOMRect;
+            document.body.append(bar);
+            try {
+                act(() => {
+                    noteFieldLayersChanged();
+                });
+                act(() => {
+                    vi.advanceTimersByTime(400);
+                });
+                // Beside it, 4 px off its left edge, at the same height
+                expect(spot()).toBe("596px,112px");
+            } finally {
+                bar.remove();
+            }
+        });
+    });
+
+    /** A layer over the field area, in its px; gone again with `remove()` */
+    const layer = (
+        kind: string,
+        rect: { left: number; top: number; width: number; height: number },
+    ) => {
+        const el = document.createElement("div");
+        el.setAttribute("data-field-layer", kind);
+        el.getBoundingClientRect = () => rect as DOMRect;
+        document.body.append(el);
+        act(() => {
+            noteFieldLayersChanged();
+        });
+        return el;
+    };
+    const wait = (ms: number) =>
+        act(() => {
+            vi.advanceTimersByTime(ms);
+        });
+    const saveSpot = () =>
+        localStorage.setItem(
+            TOUCH_MODIFIER_POSITION_KEY,
+            JSON.stringify({ left: 40, bottom: 60 }),
+        );
+
+    it("with a saved spot, a handle pushes it off, and after a deselect a layer change doesn't bring it back (#936)", () => {
+        inArea(() => {
+            saveSpot();
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe("40px,60px");
+            // The saved spot is the point (40, 540): a handle there pushes the pill off it
+            field.change([{ x: 40, y: 540 }]);
+            field.settle();
+            const moved = spot();
+            expect(moved).not.toBe("40px,60px");
+            // Deselected, then a layer elsewhere changes: it stays where it moved to
+            field.change([]);
+            wait(250);
+            const card = layer("task", {
+                left: 300,
+                top: 10,
+                width: 200,
+                height: 40,
+            });
+            try {
+                wait(1000);
+                expect(spot()).toBe(moved);
+            } finally {
+                card.remove();
+            }
+        });
+    });
+
+    it("with a tool armed, a layer over its saved spot slides it the least way from there (#936 review)", () => {
+        inArea(() => {
+            saveSpot();
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            field.arm(true);
+            expect(spot()).toBe("40px,60px");
+            // A card over the saved spot, the point (40, 540)
+            const card = layer("task", {
+                left: 0,
+                top: 500,
+                width: 200,
+                height: 100,
+            });
+            try {
+                wait(400);
+                // Beside the card, 4 px off its right edge, at the saved spot's height
+                expect(spot()).toBe("204px,60px");
+            } finally {
+                card.remove();
+            }
+        });
+    });
+
+    it("with a tool armed, the field shrinking under it pulls it back onto the field (#936 review)", () => {
+        inArea((resize) => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            expect(spot()).toBe(AUTO);
+            field.arm(true);
+            // The Inspector opens: the field is 600 wide, and the pill at x 788 is past its edge
+            resize(600, 600);
+            act(() => {
+                useFieldViewStore.setState({
+                    width: useFieldViewStore.getState().width + 1,
+                });
+            });
+            wait(400);
+            expect(spot()).toBe("600px,112px");
+        });
+    });
+
+    it("with a tool armed, stays put when the view settles and a layer comes that doesn't cover it (#936)", () => {
+        inArea(() => {
+            touchMode(true);
+            const field = fakeField();
+            renderWith(field.source);
+            field.change([{ x: 788, y: 488 }]);
+            field.settle();
+            const moved = spot();
+            // The Box tool armed: its card shows at the field's top, and the handles go
+            field.arm(true);
+            field.change([]);
+            const card = document.createElement("div");
+            card.setAttribute("data-field-layer", "task");
+            card.getBoundingClientRect = () =>
+                ({ left: 300, top: 10, width: 200, height: 40 }) as DOMRect;
+            document.body.append(card);
+            try {
+                act(() => {
+                    noteFieldLayersChanged();
+                });
+                act(() => {
+                    useFieldViewStore.setState({
+                        panX: useFieldViewStore.getState().panX + 10,
+                    });
+                });
+                act(() => {
+                    vi.advanceTimersByTime(1000);
+                });
+                expect(spot()).toBe(moved);
+            } finally {
+                card.remove();
+            }
+        });
+    });
+});
+
+describe("Subtract", () => {
+    it("a tap latches it, which the field reads as Alt's subtract, and lets go of Add", () => {
+        touchMode(true);
+        renderPill();
+        tap(button("add"));
+        tap(button("subtract"));
+        expect(button("subtract").getAttribute("aria-pressed")).toBe("true");
+        expect(button("add").getAttribute("aria-pressed")).toBe("false");
+        expect(isShiftHeld()).toBe(false);
+        expect(onScreenRoles().size).toBe(0);
+    });
+});
+
+describe("the drag mode menu (tablet 1.3)", () => {
+    it("says the mode on the button, Auto to start with", () => {
+        touchMode(true);
+        renderPlacedPill();
+        const mode = screen.getByTestId("field-drag-mode");
+        expect(mode.textContent).toContain("Auto");
+        expect(mode.getAttribute("aria-label")).toContain(
+            "One finger moves the view",
+        );
+        expect(mode.getAttribute("aria-expanded")).toBe("false");
+    });
+
+    it("opens a menu of the four modes, the current one checked", () => {
+        touchMode(true);
+        renderPlacedPill();
+        fireEvent.click(screen.getByTestId("field-drag-mode"));
+        const menu = screen.getByRole("menu", { name: "Drag on empty field" });
+        const entries = [
+            ...menu.querySelectorAll("[role='menuitemradio']"),
+        ] as HTMLElement[];
+        expect(entries.map((e) => e.textContent?.split(/One|\s/)[0])).toEqual([
+            "Auto",
+            "Box",
+            "Lasso",
+            "Pan",
+        ]);
+        expect(entries.map((e) => e.getAttribute("aria-checked"))).toEqual([
+            "true",
+            "false",
+            "false",
+            "false",
+        ]);
+        expect(menu.textContent).toContain("Two fingers move the view");
+    });
+
+    it("picking a mode keeps it on this device, shows it, and closes the menu", () => {
+        touchMode(true);
+        renderPlacedPill();
+        fireEvent.click(screen.getByTestId("field-drag-mode"));
+        fireEvent.click(screen.getByTestId("field-drag-mode-box"));
+        expect(useFieldDragModeStore.getState().mode).toBe("box");
+        expect(localStorage.getItem(FIELD_DRAG_MODE_KEY)).toBe("box");
+        expect(screen.queryByRole("menu")).toBeNull();
+        expect(screen.getByTestId("field-drag-mode").textContent).toContain(
+            "Box",
+        );
+    });
+
+    it("closes on a press elsewhere, which does nothing more, changing nothing", () => {
+        touchMode(true);
+        renderPlacedPill();
+        fireEvent.click(screen.getByTestId("field-drag-mode"));
+        fireEvent.pointerDown(document.body, { pointerId: 9 });
+        expect(screen.queryByRole("menu")).toBeNull();
+        expect(useFieldDragModeStore.getState().mode).toBe("auto");
     });
 });

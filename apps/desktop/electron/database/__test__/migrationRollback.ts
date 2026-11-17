@@ -102,14 +102,14 @@ const restoreUpstreamTable = (db: DatabaseSync, table: string) => {
             db.exec(object.sql);
 };
 
-/** Pieces of `timeline_transitions`' DDL that 0019 added, removed again by its rollback */
+/** Pieces of `timeline_transitions`' DDL that 0024 added, removed again by its rollback */
 const ROUTE_DDL_PIECES = [
     "\t`route_id` integer,\n",
     "\tFOREIGN KEY (`route_id`) REFERENCES `timeline_routes`(`id`) ON UPDATE no action ON DELETE restrict,\n",
     `,\n\tCONSTRAINT "timeline_transitions_route_id_type_check" CHECK(route_id IS NULL OR typeof(route_id) = 'integer'),\n\tCONSTRAINT "timeline_transitions_route_check" CHECK(path_style <> 'route' OR (route_id IS NOT NULL AND dest_shape_id IS NULL AND slot_count = 1))`,
 ];
 
-/** Rebuilds `timeline_transitions` as it was before 0019 (no routes), keeping its rows and ids. */
+/** Rebuilds `timeline_transitions` as it was before 0024 (no routes), keeping its rows and ids. */
 export const rollBackRoutesSchema = (db: DatabaseSync) => {
     let { sql } = db
         .prepare(
@@ -125,7 +125,7 @@ export const rollBackRoutesSchema = (db: DatabaseSync) => {
     }
     sql = sql
         .replace("'follow_the_leader', 'route')", "'follow_the_leader')")
-        // 0022 (trails) let a trail route stand in for the shape: back to 0017's I-T5
+        // 0027 (trails) let a trail route stand in for the shape: back to 0017's I-T5
         .replace(
             "CHECK(dest_shape_id IS NOT NULL OR route_id IS NOT NULL OR path_style",
             "CHECK(dest_shape_id IS NOT NULL OR path_style",
@@ -209,16 +209,43 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
             if (object.type === "index" && PAGE_ERA_TABLES.includes(object.tbl))
                 db.exec(object.sql);
     },
+    // Imported silk Artwork (fork #973): its table and the undo triggers on it
+    19: (db) => {
+        dropTriggers(db);
+        dropTables(db, ["view3d_silk_artwork"]);
+    },
+    // An item's built-in 3D model and lock. Its history triggers name the columns
+    20: (db) => {
+        for (const suffix of ["it", "ut", "dt"])
+            db.exec(`DROP TRIGGER IF EXISTS \`items_${suffix}\``);
+        db.exec("ALTER TABLE items DROP COLUMN model");
+        db.exec("ALTER TABLE items DROP COLUMN locked");
+        db.exec("ALTER TABLE items DROP COLUMN from_preset");
+    },
+    // A Held mark's hold style (ADR 0015 D-5): the column goes. The history triggers name it
+    21: (db) => {
+        dropTriggers(db);
+        db.exec("ALTER TABLE timeline_held_marks DROP COLUMN style");
+    },
+    // Performer cues (ADR 0015 D-9): the two tables go, with their history triggers
+    22: (db) => {
+        dropTriggers(db);
+        dropTables(db, ["cue_marchers", "cues"]);
+    },
+    // The show asset store (fork #997): two tables, no triggers
+    23: (db) => {
+        dropTables(db, ["show_assets", "show_asset_blobs"]);
+    },
     // Routes, pathways step 1 (ADR 0014). The schema is left as it is: older migrations' tests
-    // write timeline rows through this build's schema, which has `route_id`. Re-running 0019 on
+    // write timeline rows through this build's schema, which has `route_id`. Re-running 0024 on
     // it is safe (it runs twice in a conversion too); rolling back 0017 drops its table.
-    // `rollBackRoutesSchema` restores the real older schema for 0019's own test.
-    19: () => {},
+    // `rollBackRoutesSchema` restores the real older schema for 0024's own test.
+    24: () => {},
     // Lanes, pathways step 24 (ADR 0015): a new table, dropped (its indexes and triggers go with
-    // it). Re-running 0020 is safe (IF NOT EXISTS; it runs twice in a conversion too).
-    20: (db) => db.exec("DROP TABLE IF EXISTS timeline_lanes"),
+    // it). Re-running 0025 is safe (IF NOT EXISTS; it runs twice in a conversion too).
+    25: (db) => db.exec("DROP TABLE IF EXISTS timeline_lanes"),
     // Adjust, pathways step 3b: the column goes, once what reads it is off the table
-    21: (db) =>
+    26: (db) =>
         db.exec(`
             DROP VIEW IF EXISTS timeline_route_violations;
             DROP TRIGGER IF EXISTS timeline_log_lanes_ins;
@@ -229,9 +256,9 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
             ALTER TABLE timeline_lanes DROP COLUMN adjust;
         `),
     // Trails, pathways step 4: only a CHECK on `timeline_transitions` changed (I-T5′). The schema
-    // is left as it is, as for 0019: re-running 0022 rebuilds the table and copies every row.
-    // 0022's own test restores the older CHECK itself.
-    22: () => {},
+    // is left as it is, as for 0024: re-running 0027 rebuilds the table and copies every row.
+    // 0027's own test restores the older CHECK itself.
+    27: () => {},
 };
 
 /**

@@ -1,36 +1,14 @@
 {
-    "$comment": "The built-in catalog's licenses (props-spec.md section 10, ADR 0010 D-21), checked by src/view3d/core/builtinLicenses.ts in the desktop tests. Paths are relative to apps/desktop. Folders: the om-pose assets (in the counsel gate, ADR 0010 D-7), with a LICENSE that says so. Entries: third-party built-ins, CC0-1.0 or CC-BY-4.0 only. `retrieved` is the date the source was first used in the repository where the download date wasn't recorded.",
+    "$comment": "The built-in catalog's licenses (props-spec.md section 10, ADR 0010 D-21), checked by src/view3d/core/builtinLicenses.ts in the desktop tests. Paths are relative to apps/desktop. Folders: the om-pose assets (in the counsel gate, ADR 0010 D-7) and OpenMarch-made models (CC0-1.0), each with a LICENSE that says so. Entries: third-party built-ins, CC0-1.0 or CC-BY-4.0 only. `retrieved` is the date the source was first used in the repository where the download date wasn't recorded.",
     "folders": [
         {
             "path": "src/view3d/assets/om-pose",
             "license": "LicenseRef-Counsel-Gate"
-        }
-    ],
-    "entries": [
-        {
-            "name": "Trumpet",
-            "files": ["src/view3d/assets/instruments/trumpet.json"],
-            "license": "CC-BY-4.0",
-            "author": "Kagelok",
-            "sourceUrl": "https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c",
-            "attribution": "\"Trumpet\" by Kagelok (https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), licensed under CC BY 4.0; moved, scaled, given mapped materials and decimated for OpenMarch",
-            "retrieved": "2026-10-09",
-            "modified": true
         },
         {
-            "name": "Mellophone, baritone, euphonium and contra valve blocks",
-            "files": [
-                "src/view3d/assets/instruments/mellophone.json",
-                "src/view3d/assets/instruments/baritone.json",
-                "src/view3d/assets/instruments/euphonium.json",
-                "src/view3d/assets/instruments/contra.json"
-            ],
-            "license": "CC-BY-4.0",
-            "author": "Kagelok",
-            "sourceUrl": "https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c",
-            "attribution": "Valve block and mouthpiece from \"Trumpet\" by Kagelok (https://sketchfab.com/3d-models/trumpet-1dc9efd37bf14d1b9d1e3de0ca90435c), licensed under CC BY 4.0; scaled to each horn with new tubing and bells by OpenMarch",
-            "retrieved": "2026-10-09",
-            "modified": true
+            "path": "src/view3d/assets/pit",
+            "license": "CC0-1.0"
         }
-    ]
+    ],
+    "entries": []
 }

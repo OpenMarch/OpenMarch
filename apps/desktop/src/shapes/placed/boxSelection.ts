@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useActionHandler } from "@/shortcuts/useActionHandler";
 import {
     displayedBeat,
     useTimelineSelectionStore,
@@ -10,6 +11,7 @@ import { useTimelineResolverStore } from "@/timeline/timelineStore";
 import { useShapeToolStore } from "../tool/shapeToolStore";
 import { clickOnMarcher } from "./boxClick";
 import {
+    savingBoxAt,
     setInsideBox,
     useBoxSelectionStore,
     useSavingBoxStore,
@@ -117,13 +119,31 @@ export function useBoxSelection({ isPlaying }: { isPlaying: boolean }): void {
         useBoxSelectionStore.setState({ enabled });
     }, [enabled]);
 
+    // A double-click on a member as a menu entry (tablet 1.5): the field's menu, opened on a member
+    // of the box selected whole, goes inside at that marcher
+    const boxSelected = useBoxSelectionStore((s) => s.selected !== null);
+    useActionHandler(
+        "shapeEnterBox",
+        (args) => {
+            const box = useBoxSelectionStore.getState().selected;
+            const marcherId = args?.marcherId;
+            if (
+                box &&
+                typeof marcherId === "number" &&
+                box.recipe.members.some((m) => m.marcherId === marcherId)
+            )
+                enterBox(marcherId);
+        },
+        { enabled: enabled && boxSelected },
+    );
+
     // The box selected as a whole: its members are exactly the selection
     const selected = useSelectedMarchers()?.selectedMarchers;
     const recipes = usePlacedBoxStore((s) => s.recipes);
     const version = useTimelineResolverStore((s) => s.version);
     const beat = usePlacedBoxBeat();
     const ends = usePlacedBoxStore((s) => s.ends);
-    const saving = useSavingBoxStore((s) => s.box);
+    const saving = useSavingBoxStore((s) => savingBoxAt(s, beat));
     useEffect(() => {
         const ids = new Set((selected ?? []).map((m) => m.id));
         const boxes = enabled ? placedBoxesAt(beat, recipes) : [];

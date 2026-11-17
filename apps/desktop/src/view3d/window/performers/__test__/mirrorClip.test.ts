@@ -4,7 +4,8 @@ import fs from "node:fs";
 import path from "node:path";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { mirrorClip, mirrorName } from "../marchers/mirrorClip";
+import { mirrorClip, mirrorName, shiftLoop } from "../marchers/mirrorClip";
+import { restoreStillPose } from "@/view3d/window/performers/marchers/stillPose";
 
 async function load() {
     const b = fs.readFileSync(
@@ -24,7 +25,7 @@ async function load() {
         c.buffer.slice(c.byteOffset, c.byteOffset + c.byteLength),
         "",
     );
-    return { scene: body.scene, clips: clips.animations };
+    return { scene: body.scene, clips: restoreStillPose(clips.animations) };
 }
 
 /** World position of a bone after posing `scene` with `clip` at `t`. */
@@ -91,12 +92,17 @@ describe("mirrorName", () => {
         expect(mirrorName("slideL8to5")).toBe("slideR8to5");
         expect(mirrorName("stepoff_slideR12to5")).toBe("stepoff_slideL12to5");
         expect(mirrorName("halt2_back8to5_L45")).toBe("halt2_back8to5_R45");
+        expect(mirrorName("place2_8to5_L45__back8to5_R90")).toBe(
+            "place2_8to5_R45__back8to5_L90",
+        );
         expect(mirrorName("change_8to5__slideL8to5")).toBe(
             "change_8to5__slideR8to5",
         );
         expect(mirrorName("change2_slideR8to5__slideL8to5")).toBe(
             "change2_slideL8to5__slideR8to5",
         );
+        expect(mirrorName("crabL045_8to5-h095")).toBe("crabR045_8to5-h095");
+        expect(mirrorName("halt2_crabR090_6to5")).toBe("halt2_crabL090_6to5");
         expect(mirrorName("8to5-h105")).toBe("8to5-h105");
         expect(mirrorName("marktime")).toBe("marktime");
     });
@@ -129,5 +135,43 @@ describe("the step-off foot is the performer's own", () => {
         );
         expect(right.x).toBeLessThan(0);
         expect(right.z).toBeGreaterThan(0.2);
+    });
+});
+
+describe("shiftLoop", () => {
+    const loop = () => {
+        // 5 keys: the last repeats the first; and a held track of 2 keys
+        const times = [0, 0.25, 0.5, 0.75, 1];
+        return new THREE.AnimationClip("loop", 1, [
+            new THREE.VectorKeyframeTrack(
+                "DEF-spine.position",
+                times,
+                [0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0, 0, 0, 0],
+            ),
+            new THREE.VectorKeyframeTrack(
+                "DEF-footL.scale",
+                [0, 1],
+                [1, 1, 1, 1, 1, 1],
+            ),
+        ]);
+    };
+
+    it("starts the loop half way round and still closes", () => {
+        const shifted = shiftLoop(loop(), "later");
+        const x = Array.from(shifted.tracks[0].values).filter(
+            (_, i) => i % 3 === 0,
+        );
+        expect(x).toEqual([2, 3, 0, 1, 2]);
+        expect(shifted.name).toBe("later");
+        expect(shifted.duration).toBe(1);
+    });
+
+    it("leaves held tracks and the source alone", () => {
+        const source = loop();
+        const shifted = shiftLoop(source, "later");
+        expect(Array.from(shifted.tracks[1].values)).toEqual([
+            1, 1, 1, 1, 1, 1,
+        ]);
+        expect(source.tracks[0].values[0]).toBe(0);
     });
 });

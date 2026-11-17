@@ -21,7 +21,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { screen } from "@testing-library/react";
 import FieldContextMenu from "@/field/three/FieldContextMenu";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
-import { isActionChecked, isActionEnabled, runAction } from "../../registry";
+import { holdOverWindow } from "@/db-functions/timelineHoldOverWindow";
+import { setHoldStyle } from "@/db-functions/timelineHoldStyle";
+import { useEditorModeStore } from "@/stores/EditorModeStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import {
+    isActionChecked,
+    isActionEnabled,
+    previewAction,
+    runAction,
+} from "../../registry";
+import { useHoldLightStore } from "@/timeline/holdLight";
 import { useHoldActionHandlers } from "../useHoldActionHandlers";
 import { useBatchEditActionHandlers } from "../useBatchEditActionHandlers";
 
@@ -78,6 +88,17 @@ vi.mock("@/db-functions/timelineHoldFromPrevious", () => ({
             skipped: [{ marcherId: 2, reason: "noArrival" }],
         }),
     ),
+}));
+vi.mock("@/db-functions/timelineHoldOverWindow", () => ({
+    holdOverWindow: vi.fn(() =>
+        Promise.resolve({
+            held: [1],
+            skipped: [{ marcherId: 2, reason: "followLeader" }],
+        }),
+    ),
+}));
+vi.mock("@/db-functions/timelineHoldStyle", () => ({
+    setHoldStyle: vi.fn(() => Promise.resolve({ changed: [1] })),
 }));
 vi.mock("@/db-functions/timelineSetAsShown", () => ({
     setAsShownOnPage: vi.fn(() =>
@@ -157,7 +178,7 @@ afterEach(() => {
 });
 
 describe("hold actions", () => {
-    it("Hold from previous page: the action on the current page does what the page box menu does there", async () => {
+    it("Hold from last keyframe: the action on the current page does what the page box menu does there", async () => {
         const ids = [1, 2];
         mount(ids);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(true);
@@ -219,6 +240,159 @@ describe("hold actions", () => {
     });
 });
 
+describe("Expert hold tools (#476)", () => {
+    const setWindow = (start: number, end: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start, end },
+            isolation: null,
+        });
+    beforeEach(() => {
+        useEditorModeStore.setState({ mode: "expert" });
+        setWindow(9, 13);
+        vi.mocked(holdOverWindow).mockClear();
+    });
+    afterEach(() => useEditorModeStore.setState({ mode: null }));
+
+    it("Hold from start flag to playhead holds the selection over the window, and names only who it left alone", async () => {
+        mount([1, 2]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(true);
+        expect(runAction("timelineHoldOverWindow")).toBe(true);
+        await waitFor(() => expect(toast.info).toHaveBeenCalledTimes(1));
+        expect(vi.mocked(holdOverWindow).mock.calls[0]![0]).toMatchObject({
+            window: { start: 9, end: 13 },
+            marcherIds: [1, 2],
+        });
+        expect(vi.mocked(toast.info).mock.calls[0]).toEqual([
+            "1 marcher not held",
+            {
+                description:
+                    "T2: follows the leader between the start flag and the playhead",
+            },
+        ]);
+    });
+
+    it("is off in Basic, without a selection, and while playing", () => {
+        useEditorModeStore.setState({ mode: "basic" });
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        useEditorModeStore.setState({ mode: "expert" });
+        mount([]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1]);
+        expect(isActionEnabled("timelineHoldOverWindow")).toBe(false);
+        expect(holdOverWindow).not.toHaveBeenCalled();
+    });
+
+    it("highlighting it shows the hold it would make, reaching back like the write", () => {
+        setWindow(11, 13);
+        // The show's page boxes: the preview stays inside the show, which ends at page 3's end
+        useTimelineSelectionStore.setState({
+            pageBoxes: [
+                { start: 1, end: 9 },
+                { start: 9, end: 17 },
+            ],
+        });
+        useHeldMarksStore.setState({ marks: [] });
+        mount([3]);
+        previewAction("timelineHoldOverWindow", true);
+        const light = useHoldLightStore.getState().light;
+        expect(light?.wouldHold).toBe(true);
+        // Marcher 3 stands on its starting spot: reaches back to the show's first page
+        expect(light?.byMarcher.get(3)).toEqual([{ start: 1, end: 13 }]);
+        previewAction("timelineHoldOverWindow", false);
+        expect(useHoldLightStore.getState().light).toBeNull();
+    });
+});
+
+describe("Hold style (ADR 0015 D-5, #775)", () => {
+    const STYLE_ACTIONS = [
+        "timelineHoldStyleDefault",
+        "timelineHoldStyleStand",
+        "timelineHoldStyleMarkTime",
+        "timelineHoldStyleHighMarkTime",
+    ] as const;
+    /** Marcher `marcherId` Held over page 3, counts 9 to 17 */
+    const held = (
+        marcherId: number,
+        style?: "stand" | "markTime" | "highMarkTime",
+    ) => ({
+        id: marcherId,
+        marcherId,
+        start: 9,
+        end: 17,
+        style: style ?? null,
+    });
+    const playheadAt = (beat: number) =>
+        useTimelineSelectionStore.setState({
+            selection: { kind: "range", start: 9, end: beat },
+            isolation: null,
+        });
+    beforeEach(() => {
+        playheadAt(13);
+        vi.mocked(setHoldStyle).mockClear();
+    });
+
+    it("is off while no selected marcher is Held at the playhead", () => {
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) {
+            expect(isActionEnabled(id)).toBe(false);
+            expect(isActionChecked(id)).toBe(false);
+        }
+        cleanup();
+        // Held on page 3, but the playhead is on its arrival, before the hold
+        useHeldMarksStore.setState({ marks: [held(1)] });
+        playheadAt(9);
+        mount([1]);
+        expect(isActionEnabled("timelineHoldStyleMarkTime")).toBe(false);
+    });
+
+    it("sets the style of the holds at the playhead, and checks the one in effect", () => {
+        useHeldMarksStore.setState({ marks: [held(1)] });
+        // Marcher 2 isn't Held: the write leaves it alone
+        mount([1, 2]);
+        // No style of its own: the show setting is in effect
+        expect(isActionChecked("timelineHoldStyleDefault")).toBe(true);
+        expect(isActionEnabled("timelineHoldStyleDefault")).toBe(false);
+        expect(isActionEnabled("timelineHoldStyleMarkTime")).toBe(true);
+
+        expect(runAction("timelineHoldStyleMarkTime")).toBe(true);
+        expect(vi.mocked(setHoldStyle).mock.calls[0]![0]).toMatchObject({
+            marcherIds: [1, 2],
+            beat: 13,
+            style: "markTime",
+        });
+        cleanup();
+
+        useHeldMarksStore.setState({ marks: [held(1, "markTime")] });
+        mount([1, 2]);
+        expect(isActionChecked("timelineHoldStyleMarkTime")).toBe(true);
+        expect(isActionChecked("timelineHoldStyleDefault")).toBe(false);
+        expect(runAction("timelineHoldStyleDefault")).toBe(true);
+        expect(vi.mocked(setHoldStyle).mock.calls[1]![0]).toMatchObject({
+            style: null,
+        });
+    });
+
+    it("checks none where the selected holds differ, and is off while playing", () => {
+        useHeldMarksStore.setState({
+            marks: [held(1, "stand"), held(2, "highMarkTime")],
+        });
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) {
+            expect(isActionChecked(id)).toBe(false);
+            expect(isActionEnabled(id)).toBe(true);
+        }
+        cleanup();
+        mocks.isPlaying = true;
+        mount([1, 2]);
+        for (const id of STYLE_ACTIONS) expect(isActionEnabled(id)).toBe(false);
+        expect(setHoldStyle).not.toHaveBeenCalled();
+    });
+});
+
 /** The field menu with the real handlers: the hold actions and Clear this page */
 function FieldMenuHarness() {
     useHoldActionHandlers();
@@ -256,14 +430,14 @@ const heldOnPage3 = (marcherId: number) => ({
 });
 
 describe("the field menu shows the selection's state on the current page", () => {
-    it("all Held: Hold from previous page is checked, and off for the palette and H too", () => {
+    it("all Held: Hold from last keyframe is checked, and off for the palette and H too", () => {
         // Marcher 1 has no move on page 3; its mark makes it Held there
         useHeldMarksStore.setState({ marks: [heldOnPage3(1)] });
         openFieldMenu([1]);
         const hold = entry("timelineHoldFromPrevious");
         expect(hold).toHaveAttribute("aria-checked", "true");
         expect(hold).toHaveAttribute("data-disabled");
-        expect(hold).toHaveTextContent(/^Hold from previous page/);
+        expect(hold).toHaveTextContent(/^Hold from last keyframe/);
         expect(isActionEnabled("timelineHoldFromPrevious")).toBe(false);
         expect(isActionChecked("timelineHoldFromPrevious")).toBe(true);
         expect(runAction("timelineHoldFromPrevious")).toBe(false);
@@ -286,7 +460,7 @@ describe("the field menu shows the selection's state on the current page", () =>
         expect(isActionEnabled("timelineDefineAsShown")).toBe(true);
         // Ctrl+H after it is its shortcut (the test runs as Windows/Linux)
         expect(entry("timelineHoldFromPrevious")).toHaveTextContent(
-            /^Hold from previous page.*Ctrl\+H$/,
+            /^Hold from last keyframe.*Ctrl\+H$/,
         );
         // #573: it names the page
         expect(entry("setSelectedMarchersToPreviousPage")).toHaveTextContent(

@@ -37,6 +37,25 @@
  *   into count 1 instead of snapping on the downbeat. When the last count
  *   can't host it (a step-off, or another change), the fade covers the first
  *   count alone;
+ * - a wind player's change of direction at 8-to-5 (docs/3d/technique.md,
+ *   "Wind direction changes", the Bluecoats handbook): a travel turn of
+ *   90 degrees or less makes the old move's last count `place_<a>__<b>`
+ *   (the placement, on the platform) and the new move's first
+ *   `cut_<a>__<b>` (cutting the corner); a bigger one keeps the old move's
+ *   last loop step, landing on the platform (its prep row), and re-steps
+ *   with `restep_<a>__<b>`. `2` after the kind when the clip starts at loop
+ *   time 1. The moves are a grid (`turnMove`); what the grid leaves of the
+ *   leg turn turns at runtime over the clip's `turn_window`. Off the grid
+ *   (other sizes), a crossfade;
+ * - crab left to crab right or back, the travel turning more than
+ *   STOP_GO_TURN: a stop-and-go (docs/3d/technique.md, "The crab step"),
+ *   not a fade. The old move's last count is `stop_<old>` (the weight
+ *   stops over one foot and the other touches down), the new move's first
+ *   is `hold_<old>` (nothing moves) and its second `go_<new>`, which hands
+ *   over from the hold while the free foot is in the air (`handoff`) and
+ *   lands it in the new step and path. `stop2_`, `hold2_` and `go2_` are
+ *   the same with the weight on the other foot, when the old move's last
+ *   count starts at loop time 1;
  * - step to rest: `halt_<move>` when the loop is at time 0, `halt2_<move>`
  *   when it is at 0.5 s (to mark time: `change_<move>__marktime` when it
  *   exists, or a crossfade).
@@ -58,7 +77,9 @@
  * Pure: no three.js, React or database.
  */
 
+import type { DirectionChange, DotMode } from "../performerDefaults";
 import {
+    isCrabFamily,
     pickBlend,
     turnedClips,
     turnEase,
@@ -72,6 +93,7 @@ import {
     type TurnedPair,
 } from "../../render/step-blend.js";
 import { classSuffix, type HeightClass } from "./looks";
+import { crabDirection } from "./crab";
 import { isSlide, travelDirection, type SlideSense } from "./facing";
 
 /** Less travel than this in a count is a rest (meters). */
@@ -88,12 +110,90 @@ export const TURN_EPS = (1 * Math.PI) / 180;
  * just ease to the new direction (radians).
  */
 export const SHARP_TURN = (10 * Math.PI) / 180;
+/**
+ * Crab left into crab right (or back) with the travel turning more than
+ * this is a stop-and-go; smaller turns fade (radians).
+ */
+export const STOP_GO_TURN = (90 * Math.PI) / 180;
+/**
+ * A go hands over from the still pose over this part of its count: after
+ * the free foot lifts and before the body sets off (om-pose `GO_LIFT`,
+ * `GO_BODY`).
+ */
+export const GO_HANDOFF: readonly [number, number] = [0.3, 0.45];
 /** A halt's residual leg turn starts this far into its count: after the foot has closed. */
 export const HALT_TURN_START = 0.8;
 /** Between rests, a landing correction anchor at least this often (counts). */
 export const MAX_ANCHOR_SPAN = 16;
 /** A change in the foot-on-dot target bigger than this (meters) pins the boundaries around it. */
 export const TARGET_EPS = 0.01;
+
+/** Degrees to radians. */
+const DEG = Math.PI / 180;
+/**
+ * A wind player's travel turn up to this is a placement and cut the
+ * corner; past it, a re-step (radians).
+ */
+export const PLACE_TURN = (90 * Math.PI) / 180;
+
+/**
+ * A wind move on the grid of built direction changes (om-pose
+ * `turns.py`): an 8-to-5 forward or backward march with the legs turned
+ * 0, 45 or 90 degrees either way, by the app's name for it, and what the
+ * runtime turns on top (radians).
+ */
+interface TurnMove {
+    name: string;
+    gait: "F" | "B";
+    /** The built turn, degrees, + toward the performer's left. */
+    yaw: number;
+    residual: number;
+}
+
+const TURN_YAWS = [-90, -45, 0, 45, 90];
+
+/** A move's place on the direction change grid, or null off it (another size, a crab). */
+export function turnMove(st: {
+    family: Family;
+    dir: Direction;
+    pick: Pick;
+}): TurnMove | null {
+    const base = nearestBase(st.pick);
+    const legs = st.dir.legYaw / DEG;
+    let gait: "F" | "B";
+    let deg: number;
+    if (st.family === "forward" && base === "8to5") {
+        gait = "F";
+        deg = legs;
+    } else if (st.family === "slideL" && base === "slideL8to5") {
+        gait = "F";
+        deg = 90 + legs;
+    } else if (st.family === "slideR" && base === "slideR8to5") {
+        gait = "F";
+        deg = -90 + legs;
+    } else if (st.family === "backward" && base === "back8to5") {
+        gait = "B";
+        deg = legs;
+    } else return null;
+    let yaw = TURN_YAWS[0];
+    for (const y of TURN_YAWS)
+        if (Math.abs(y - deg) < Math.abs(yaw - deg)) yaw = y;
+    const side = yaw > 0 ? "L" : "R";
+    const name =
+        gait === "F" && Math.abs(yaw) === 90
+            ? `slide${side}8to5`
+            : `${gait === "F" ? "8to5" : "back8to5"}${yaw === 0 ? "" : `_${side}${Math.abs(yaw)}`}`;
+    const residual = (deg - yaw) * DEG;
+    return {
+        name,
+        gait,
+        yaw,
+        residual: Math.abs(residual) <= 1e-9 ? 0 : residual,
+    };
+}
+
+/** Which way a grid move travels, degrees from straight forward (+ to the left). */
+const turnTravel = (m: TurnMove) => (m.gait === "F" ? m.yaw : m.yaw + 180);
 
 /** How often the feet step: once a count, every two counts, twice a count. */
 export type Pace = "single" | "half" | "double";
@@ -149,14 +249,24 @@ export interface PlanInput {
      * count 0..K-1 (a set's mode covers the counts of the move into it):
      * `foot` (the default) puts the landing foot's ankle on the dot at the
      * end of each count of a move, the body half a step behind it with the
-     * weight 50-50; `body` keeps the body's center over the dot. Not offered
-     * in the UI yet.
+     * weight 50-50; `body` keeps the body's center over the dot. The show
+     * default is in Show settings (`core/performerDefaults.ts`).
      */
     dotMode?: DotMode | readonly DotMode[];
+    /**
+     * How the leg in motion gets to a new direction, per count or for the
+     * whole show (`core/performerDefaults.ts`): `corner` (the default) or
+     * `direct`.
+     */
+    directionChange?: DirectionChange | readonly DirectionChange[];
+    /**
+     * Travels in a crab step (`crab.ts`): percussion. Plays as usual when
+     * the manifest has no crab clips.
+     */
+    crab?: boolean;
 }
 
-/** What a marcher's dot marks: the landing foot's ankle, or the body's center. */
-export type DotMode = "foot" | "body";
+export type { DirectionChange, DotMode };
 
 export type EventKind = "rest" | "loop" | "transition" | "crossfade";
 
@@ -194,6 +304,12 @@ export interface PlanEvent {
     prep: number | null;
     /** Transitions: the pair whose root travel places the body. */
     root: TurnedPair | ClipPair | null;
+    /**
+     * A stop-and-go's go: `clip` is the still pose it starts from and
+     * `clip2` the go, blended from 0 to 1 over the fade window like a
+     * crossfade; the go's root travel places the body.
+     */
+    handoff: boolean;
     /**
      * Transitions: drill position at `count` plus the offset then (the body
      * is base + root(u)). Loops and rests: the offset (body - drill).
@@ -234,6 +350,18 @@ type State =
 
 const clipsOf = (m: Manifest): ManifestClip[] =>
     Array.isArray(m) ? m : m.clips;
+
+const crabCache = new WeakMap<object, boolean>();
+/** Whether the manifest has the crab clips (they load only for shows with percussion). */
+function hasCrabClips(manifest: Manifest): boolean {
+    const key = manifest as object;
+    let has = crabCache.get(key);
+    if (has === undefined) {
+        has = clipsOf(manifest).some((c) => c.gait === "crab");
+        crabCache.set(key, has);
+    }
+    return has;
+}
 
 const namesCache = new WeakMap<object, Set<string>>();
 function clipNames(manifest: Manifest): Set<string> {
@@ -337,6 +465,8 @@ interface Steps {
     heading: Float64Array;
     feet: FeetSettings[];
     dot: DotMode[];
+    /** How a change of direction landing on this step goes. */
+    turnStyle: DirectionChange[];
 }
 
 /**
@@ -364,6 +494,11 @@ function buildSteps(input: PlanInput, headings: Float64Array): Steps {
     const spm: number[] = [];
     const feet: FeetSettings[] = [];
     const dot: DotMode[] = [];
+    const turnOf = (k: number): DirectionChange =>
+        (typeof input.directionChange === "string"
+            ? input.directionChange
+            : input.directionChange?.[k]) ?? "corner";
+    const turnStyle: DirectionChange[] = [];
     /** A step of count k's settings ending at count clock `end`, on the drill there. */
     const push = (k: number, end: number, r: number) => {
         const i = Math.floor(end - 1e-9);
@@ -378,6 +513,7 @@ function buildSteps(input: PlanInput, headings: Float64Array): Steps {
         spm.push(bpm[k] * r);
         feet.push(feetOf(k));
         dot.push(dotOf(k));
+        turnStyle.push(turnOf(k));
     };
     let k = 0;
     while (k < K) {
@@ -412,6 +548,7 @@ function buildSteps(input: PlanInput, headings: Float64Array): Steps {
         heading,
         feet,
         dot,
+        turnStyle,
     };
 }
 
@@ -460,6 +597,7 @@ function stepStates(input: PlanInput, steps: Steps): State[] {
     const { manifest, heightClass } = input;
     const { pos: positions, bpm, heading, feet, n: K } = steps;
     const senses = slideSenses(steps);
+    const crab = input.crab === true && hasCrabClips(manifest);
     const out: State[] = [];
     for (let k = 0; k < K; k++) {
         const dx = positions[(k + 1) * 2] - positions[k * 2];
@@ -473,7 +611,9 @@ function stepStates(input: PlanInput, steps: Steps): State[] {
             continue;
         }
         // bent leg and high step play straight leg for now
-        const dir = travelDirection(dx, dz, heading[k], senses[k]);
+        const dir = crab
+            ? crabDirection(dx, dz, heading[k])
+            : travelDirection(dx, dz, heading[k], senses[k]);
         const family = dir.family as Family;
         const pick = snapPick(
             pickBlend(manifest, family, d, {
@@ -508,6 +648,8 @@ interface Draft {
     continued?: boolean;
     /** See `PlanEvent.prep`. */
     prep?: number | null;
+    /** See `PlanEvent.handoff`. */
+    handoff?: boolean;
 }
 
 /** A single clip's root travel as a pair (for change and mark time clips). */
@@ -560,6 +702,10 @@ export function planMarcher(input: PlanInput): MarcherPlan {
     let prevYaw = 0;
     let prevRate = steps.rate[0] ?? 1;
     let foot: Foot = "left"; // the current move's step-off foot
+    // a stop-and-go's go, played on the step after its still count
+    let pendingGo = null as { from: string; to: string } | null;
+    // the first step (the stop) of each stop-and-go
+    const stopGos: number[] = [];
     for (let k = 0; k < K; k++) {
         const s = states[k];
         const rate = steps.rate[k];
@@ -614,6 +760,87 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                           1,
                       ],
                   };
+        const transitionAt = (pair: ClipPair, at: number): Draft => ({
+            kind: "transition",
+            clip: pair.a,
+            clip2: null,
+            weight: 0,
+            legYaw: 0,
+            phaseStart: T[at],
+            rate,
+            foot: moveFoot,
+            root: pair,
+        });
+        /**
+         * Crab left into crab right or back, turning sharply, after a plain
+         * loop of the old move and with the new move running at least two
+         * steps: the old move's last step becomes the stop, this one the
+         * still count, and the next the go. Null when it doesn't fit.
+         */
+        const stopAndGo = (
+            from: State,
+            to: State,
+        ): { draft: Draft; go: { from: string; to: string } } | null => {
+            if (from.type !== "move" || to.type !== "move") return null;
+            const a = from.family;
+            const b = to.family;
+            if (!isCrabFamily(a) || !isCrabFamily(b) || a[4] === b[4])
+                return null;
+            const turn = Math.acos(
+                Math.max(
+                    -1,
+                    Math.min(
+                        1,
+                        (from.dx * to.dx + from.dz * to.dz) / (from.d * to.d),
+                    ),
+                ),
+            );
+            if (turn <= STOP_GO_TURN) return null;
+            const last = drafts[k - 1];
+            const next = states[k + 1];
+            if (
+                k === 0 ||
+                !last ||
+                last.kind !== "loop" ||
+                last.continued ||
+                last.rate !== rate ||
+                next?.type !== "move" ||
+                next.family !== b ||
+                steps.rate[k + 1] !== rate
+            )
+                return null;
+            // the old move's last step started at loop time p ^ 1
+            const two = (p ^ 1) === 1 ? "2" : "";
+            const old = nearestBase(from.pick);
+            const stop = `stop${two}_${old}`;
+            const hold = `hold${two}_${old}`;
+            const go = `go${two}_${nearestBase(to.pick)}`;
+            if (!has(stop) || !has(hold) || !has(go)) return null;
+            drafts[k - 1] = transitionAt(soloPair(manifest, stop + sfx), k - 1);
+            // the stop moves the body by its own travel, not the drill's
+            const [rx, rz] = rootAt(
+                manifest,
+                soloPair(manifest, stop + sfx),
+                1,
+            );
+            const cos = Math.cos(steps.heading[k - 1]);
+            const sin = Math.sin(steps.heading[k - 1]);
+            ox[k] =
+                ox[k - 1] +
+                rx * cos +
+                rz * sin -
+                (positions[k * 2] - positions[(k - 1) * 2]);
+            oz[k] =
+                oz[k - 1] -
+                rx * sin +
+                rz * cos -
+                (positions[k * 2 + 1] - positions[(k - 1) * 2 + 1]);
+            stopGos.push(k - 1);
+            return {
+                draft: transitionAt(soloPair(manifest, hold + sfx), k),
+                go: { from: hold + sfx, to: go + sfx },
+            };
+        };
         const transition = (pair: TurnedPair | ClipPair): Draft => {
             const turned: TurnedPair | ClipPair =
                 "legYaw" in pair ? lateTurn(pair) : pair;
@@ -685,7 +912,123 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             return fade;
         };
 
-        if (s.type === "move") {
+        /**
+         * A transition clip turned at runtime by what the grid of built
+         * turns leaves over: `y0` at its start to `y1` at its end, eased
+         * over the clip's `turn_window` about its `turn_pivot`.
+         */
+        const turnedAt = (
+            name: string,
+            y0: number,
+            y1: number,
+            at: number,
+        ): Draft => {
+            const c = clipByName(manifest, name + sfx);
+            const window = c.turn_window ?? [0, 1];
+            const root: TurnedPair = {
+                a: name + sfx,
+                b: null,
+                weight: 0,
+                clipA: c,
+                clipB: c,
+                built: 0,
+                // nonzero whenever the legs turn, so turnRoot turns the travel
+                residual: Math.max(Math.abs(y0), Math.abs(y1)),
+                window,
+                pivot: c.turn_pivot ?? [0, 0],
+                kind: "turn",
+                legYaw: [y0, y1, window[0], window[1]],
+            };
+            return {
+                kind: "transition",
+                clip: name + sfx,
+                clip2: null,
+                weight: 0,
+                legYaw: root.legYaw,
+                phaseStart: T[at],
+                rate,
+                foot: moveFoot,
+                root,
+            };
+        };
+        /**
+         * A wind player's change of direction (docs/3d/technique.md,
+         * "Direction changes"), after a plain loop of the old move at the
+         * same pace. A travel turn of 90 degrees or less: the old move's
+         * last step becomes the placement (`place_`) and this one cuts the
+         * corner (`cut_`). A bigger one: the old move's last step lands on
+         * the platform (its prep row) and this one re-steps (`restep_`).
+         * Null when it doesn't fit or the clips aren't there.
+         */
+        const windTurn = (from: State, to: State): Draft | null => {
+            if (from.type !== "move" || to.type !== "move") return null;
+            if (isCrabFamily(from.family) || isCrabFamily(to.family))
+                return null;
+            const a = turnMove(from);
+            const b = turnMove(to);
+            if (!a || !b || a.name === b.name) return null;
+            const turn = Math.abs(
+                angleDelta(turnTravel(a) * DEG, turnTravel(b) * DEG),
+            );
+            if (turn < 1e-6) return null;
+            const last = drafts[k - 1];
+            if (
+                k === 0 ||
+                !last ||
+                last.kind !== "loop" ||
+                last.continued ||
+                last.rate !== rate
+            )
+                return null;
+            const pair = `${a.name}__${b.name}`;
+            if (turn > PLACE_TURN + 1e-6) {
+                const restep = `restep${p === 1 ? "2" : ""}_${pair}`;
+                if (!has(restep)) return null;
+                // count 8 places the platform: the loop's landing at boundary k
+                drafts[k - 1] = {
+                    ...last,
+                    prep: mod2((T[k] - last.phaseStart) * rate),
+                };
+                return turnedAt(restep, a.residual, b.residual, k);
+            }
+            // the old move's last step started at loop time p ^ 1
+            const place = `place${(p ^ 1) === 1 ? "2" : ""}_${pair}`;
+            const cut = `cut${p === 1 ? "2" : ""}_${pair}`;
+            if (!has(place) || !has(cut)) return null;
+            const mid = (a.residual + b.residual) / 2;
+            const placed = turnedAt(place, a.residual, mid, k - 1);
+            drafts[k - 1] = placed;
+            // the placement moves the body by its own travel, not the drill's
+            const [rx, rz] = rootAt(manifest, placed.root!, 1);
+            const cos = Math.cos(steps.heading[k - 1]);
+            const sin = Math.sin(steps.heading[k - 1]);
+            ox[k] =
+                ox[k - 1] +
+                rx * cos +
+                rz * sin -
+                (positions[k * 2] - positions[(k - 1) * 2]);
+            oz[k] =
+                oz[k - 1] -
+                rx * sin +
+                rz * cos -
+                (positions[k * 2 + 1] - positions[(k - 1) * 2 + 1]);
+            return turnedAt(cut, mid, b.residual, k);
+        };
+
+        if (pendingGo && s.type === "move") {
+            const go = soloPair(manifest, pendingGo.to);
+            draft = {
+                ...transitionAt(go, k),
+                clip: pendingGo.from,
+                clip2: pendingGo.to,
+                handoff: true,
+                fadeStart: T[k] + GO_HANDOFF[0] * dur,
+                fadeEnd: T[k] + GO_HANDOFF[1] * dur,
+            };
+            pendingGo = null;
+            prevYaw = s.dir.legYaw;
+            parity ^= 1;
+        } else if (s.type === "move") {
             if (prev.type === "attention") {
                 draft = transition(
                     turnedClips(manifest, s.pick, s.dir, "stepoff"),
@@ -709,10 +1052,20 @@ export function planMarcher(input: PlanInput): MarcherPlan {
                     );
                 } else {
                     // from mark time, the hand-made change clip when it exists
-                    draft =
-                        (prev.type === "marktime" && unturned(s)
+                    const fromMarkTime =
+                        prev.type === "marktime" && unturned(s)
                             ? change("marktime", baseOf(s))
-                            : null) ?? crossfade(prev, s);
+                            : null;
+                    const stopGo = fromMarkTime ? null : stopAndGo(prev, s);
+                    if (stopGo) pendingGo = stopGo.go;
+                    draft =
+                        fromMarkTime ??
+                        stopGo?.draft ??
+                        // "straight across" (Show settings) fades instead
+                        (steps.turnStyle[k] === "corner"
+                            ? windTurn(prev, s)
+                            : null) ??
+                        crossfade(prev, s);
                 }
                 prevYaw = s.dir.legYaw;
                 parity ^= 1;
@@ -818,6 +1171,14 @@ export function planMarcher(input: PlanInput): MarcherPlan {
         cx[k] = ox[k] - tx[k];
         cz[k] = oz[k] - tz[k];
     }
+    // A stop-and-go's stop and still count keep the correction they start
+    // with, so the standing foot stays put: the go and the counts after
+    // it make up the difference.
+    for (const k of stopGos) {
+        anchor[k] = anchor[k + 1] = anchor[k + 2] = 1;
+        cx[k + 1] = cx[k + 2] = cx[k];
+        cz[k + 1] = cz[k + 2] = cz[k];
+    }
     let last = 0;
     for (let b = 1; b <= K; b++) {
         if (anchor[b]) {
@@ -902,6 +1263,7 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             lastEvent.clip2 === d.clip2 &&
             lastEvent.rate === d.rate &&
             lastEvent.foot === d.foot &&
+            lastEvent.prep === (d.prep ?? null) &&
             Math.abs(lastEvent.heading - heading) < 1e-9 &&
             Math.abs(lastEvent.weight - d.weight) < 1e-6 &&
             typeof lastEvent.legYaw === "number" &&
@@ -932,6 +1294,7 @@ export function planMarcher(input: PlanInput): MarcherPlan {
             phaseStart: d.phaseStart,
             root: d.root,
             prep: d.prep ?? null,
+            handoff: d.handoff ?? false,
             fadeStart: d.fadeStart ?? T[k],
             fadeEnd: d.fadeEnd ?? T[k + 1],
             baseX: isTransition ? positions[k * 2] + ox[k] : ox[k],

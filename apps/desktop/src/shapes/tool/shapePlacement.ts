@@ -84,6 +84,8 @@ export async function writePlacement(
      * moment moved on goes where it was drawn, and the playhead stays where it was moved to
      */
     plan: CanvasEditPlan | null = null,
+    /** Inside isolation, leave the playhead where it is; always with a `plan`, unless told */
+    keepPlayhead: boolean = plan !== null,
 ): Promise<boolean> {
     const { members, replaces } = placement;
     const to = new Map(members.map((m) => [m.marcherId, m]));
@@ -100,7 +102,8 @@ export async function writePlacement(
                         ? [{ marcher_id: c.marcher_id, x: spot.x, y: spot.y }]
                         : [];
                 }),
-            ...(plan ? { plan, keepPlayhead: true } : {}),
+            ...(plan ? { plan } : {}),
+            keepPlayhead,
             writesShapes: true,
             // Every member is set where the shape is, the one at its pivot included, so each
             // is in the move its recipe keeps; a change that moves nobody sets no one, unless

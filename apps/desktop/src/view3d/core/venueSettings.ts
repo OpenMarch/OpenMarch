@@ -11,6 +11,22 @@ import {
     GUARD_UNIFORM_PRESET_IDS,
     UNIFORM_PRESET_IDS,
 } from "./marchers/uniformPresets";
+import {
+    FINISHES,
+    TUBA_MODELS,
+    type Finish,
+    type TubaModelId,
+} from "./instruments/catalog";
+
+/** The brass finish a show's settings name; lacquer when they name none. */
+export const brassFinishOf = (value: unknown): Finish =>
+    FINISHES.includes(value as Finish) ? (value as Finish) : "brass";
+
+/** The Tuba section's horn a show's settings name; marching tubas by default. */
+export const tubaModelOf = (value: unknown): TubaModelId =>
+    TUBA_MODELS.includes(value as TubaModelId)
+        ? (value as TubaModelId)
+        : "contra";
 
 export const VENUE_SETTINGS_VERSION = 1;
 
@@ -20,6 +36,7 @@ export const VENUE_KIT_IDS = [
     "college",
     "pro",
     "gym",
+    "arena",
     "blank",
 ] as const satisfies readonly VenueKitId[];
 
@@ -59,6 +76,32 @@ export const venueSettingsSchema = z.object({
     uniforms: z.enum(UNIFORM_PRESET_IDS).optional(),
     /** The preset the guard wears, as `uniforms`; absent means Royal Sash. */
     guardUniforms: z.enum(GUARD_UNIFORM_PRESET_IDS).optional(),
+    /**
+     * The brass line's finish: clear gold lacquer ("brass") or silver
+     * plate; absent means lacquer. Added 2026-11-09 without a version
+     * bump, like `uniforms`: older builds ignore it.
+     */
+    brassFinish: z.enum(FINISHES).optional(),
+    /**
+     * What the Tuba section carries: marching tubas on the shoulder
+     * ("contra") or sousaphones; absent means marching tubas. Added
+     * 2026-11-09 without a version bump.
+     */
+    tuba: z.enum(TUBA_MODELS).optional(),
+    /**
+     * The shape of the guard's 6 ft flag silks (`sizes/silkShapes.ts`);
+     * absent means the plain rectangle. Added 2026-11-15 (fork #973)
+     * without a version bump, like `brassFinish`. A plain string, read
+     * through `silkShapeOf`, so a shape a later build adds falls back to the
+     * rectangle here instead of failing the whole venue.
+     */
+    silkShape: z.string().max(64).optional(),
+    /**
+     * The `view3d_silk_artwork` row the guard's flag silks are painted with
+     * at the start of the show; absent means no Artwork. Added 2026-11-15
+     * (fork #973) without a version bump.
+     */
+    silkArtwork: z.number().int().positive().optional(),
 });
 
 export type VenueSettings = z.infer<typeof venueSettingsSchema>;
@@ -104,6 +147,7 @@ export const KIT_LIGHTING: Readonly<
         defaultLighting: "roofClosed",
     },
     gym: { presets: ["house", "show"], defaultLighting: "house" },
+    arena: { presets: ["house", "show"], defaultLighting: "show" },
     blank: { presets: ["day", "dusk", "night"], defaultLighting: "day" },
 };
 

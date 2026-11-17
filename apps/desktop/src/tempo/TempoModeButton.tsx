@@ -1,38 +1,20 @@
 /**
  * Edit music: the timeline bar's "Edit music" button turns tempo mode on and off (Shift+T). Lit
  * while on. Tempo mode is the code's name; the app calls it editing the music (owner, 2026-11-04).
+ * Shift+T and tempo mode's key guard are the timeline panel's (`useTempoModeKeys`), so they work
+ * in the touch layout too, where this button isn't shown.
  */
 import { MusicNotesIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
-import { useEffect } from "react";
 import { T } from "@tolgee/react";
 import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTempoModeStore } from "./tempoModeStore";
-import { dialogHasKeys, installTempoKeyGuard } from "./tempoShortcuts";
 
 export function TempoModeButton() {
     const on = useTempoModeStore((s) => s.on);
     const toggle = useTempoModeStore((s) => s.toggle);
-    // Tempo mode leaves only navigation keys on (and its own)
-    useEffect(() => installTempoKeyGuard(), []);
-    useEffect(() => {
-        const onKey = (e: KeyboardEvent) => {
-            if (!e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
-            if (e.key !== "T" && e.key !== "t") return;
-            const target = e.target as HTMLElement | null;
-            if (target?.closest("input, textarea, [contenteditable=true]"))
-                return;
-            // not behind a dialog, nor from a held key flicking it on and off
-            if (dialogHasKeys(target)) return;
-            e.preventDefault();
-            if (e.repeat) return;
-            useTempoModeStore.getState().toggle();
-        };
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-    }, []);
     return (
         <ShortcutTooltip
             label={

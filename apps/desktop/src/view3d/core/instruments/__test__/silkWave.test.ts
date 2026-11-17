@@ -1,18 +1,21 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
-    SILK_CUT_IDS,
     SILK_CUT_SAMPLES,
     SILK_GRID,
     SILK_WAVE,
     SILK_WAVE_SHADER,
     silkPhases,
     silkPoint,
+    silkCutIndex,
     silkCutProfile,
+    silkCutProfiles,
+    silkPlanar,
     silkSeed,
     type SilkWaveInput,
 } from "../silkWave";
 import { curveCutPath, silkCutShape } from "../../sizes/silkCuts";
+import { SILK_SHAPE_IDS } from "../../sizes/silkShapes";
 
 const SIX_FT: SilkWaveInput = {
     fly: 1.37,
@@ -214,11 +217,38 @@ describe("silk wave", () => {
             expect(swing.top[SILK_CUT_SAMPLES / 4]).toBeLessThan(0.1);
         });
 
-        it("names every cut the shader knows", () => {
-            expect(SILK_CUT_IDS).toContain("silk-swing-44x66");
-            expect(SILK_WAVE_SHADER).toContain(
-                `vec2 SILK_CUTS[${(SILK_CUT_IDS.length + 1) * (SILK_CUT_SAMPLES + 1)}]`,
+        it("knows every shape, after the rectangle", () => {
+            expect(silkCutIndex(undefined)).toBe(0);
+            expect(silkCutIndex("swing")).toBe(
+                SILK_SHAPE_IDS.indexOf("swing") + 1,
             );
+            expect(silkCutProfiles()).toHaveLength(SILK_SHAPE_IDS.length + 1);
+            expect(SILK_WAVE_SHADER).toContain(
+                `vec2 SILK_CUTS[${(SILK_SHAPE_IDS.length + 1) * (SILK_CUT_SAMPLES + 1)}]`,
+            );
+            expect(SILK_WAVE_SHADER).toContain(
+                `float SILK_CUT_DEPTH[${SILK_SHAPE_IDS.length + 1}]`,
+            );
+        });
+
+        it("lays the grid flat as the template does: the pole's top at (0, 0), the lowest point at y = 1", () => {
+            expect(silkPlanar(0, 1)).toEqual([0, 0]);
+            expect(silkPlanar(1, 0)).toEqual([1, 1]);
+            const profiles = silkCutProfiles();
+            for (const [k, id] of SILK_SHAPE_IDS.entries()) {
+                const p = profiles[k + 1];
+                let lowest = 0;
+                for (let i = 0; i <= SILK_CUT_SAMPLES; i++) {
+                    const u = i / SILK_CUT_SAMPLES;
+                    const [, top] = silkPlanar(u, 1, p);
+                    const [, bottom] = silkPlanar(u, 0, p);
+                    expect(top, id).toBeGreaterThanOrEqual(-1e-9);
+                    expect(bottom, id).toBeLessThanOrEqual(1 + 1e-9);
+                    lowest = Math.max(lowest, bottom);
+                }
+                // the sampled columns come within a sample of the lowest point
+                expect(lowest, id).toBeGreaterThan(0.85);
+            }
         });
 
         it("spans the cut's outline when flat and lifted", () => {

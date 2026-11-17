@@ -147,6 +147,8 @@ export function fieldSvg(
     for (const l of plan.lines)
         out.push(line(l.x1, l.y1, l.x2, l.y2, l.color, l.width));
     for (const t of plan.texts) out.push(fieldTextSvg(t));
+    for (const shape of plan.shapes)
+        out.push(`<path d="${shape.path}" ${paint("fill", shape.color)} />`);
 
     const { border } = plan;
     out.push(

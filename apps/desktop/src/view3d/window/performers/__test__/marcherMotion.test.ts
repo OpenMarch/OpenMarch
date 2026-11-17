@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-    compileCues,
     pixelsToWorld,
     type CueInput,
     type PerformerCarry,
@@ -11,7 +10,7 @@ import type { Manifest } from "@/view3d/render/step-blend.js";
 import { fakeShowPositions, type Track } from "@/view3d/__test__/fakePositions";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { buildCountClock } from "@/view3d/core/marchers/countClock";
-import { eventRows } from "@/view3d/core/marchers/planner";
+import { eventRows, headingAt } from "@/view3d/core/marchers/planner";
 import {
     bandMovingCounts,
     compileWindowCues,
@@ -25,6 +24,7 @@ import {
     planHornChannel,
 } from "@/view3d/core/marchers/hornChannel";
 import { planMarcher } from "@/view3d/core/marchers/planner";
+import { PODIUM_CLIP } from "@/view3d/core/props/platformLift";
 import type { MarcherBodies } from "../marchers/marcherBodies";
 import type { MarcherClip } from "@/view3d/render/instanced-marchers.js";
 
@@ -209,7 +209,7 @@ describe("planning from the window's cues", () => {
     });
 });
 
-describe("automatic mark time", () => {
+describe("mark time on holds", () => {
     // Marchers 1 and 2 move over counts 4-12; marcher 3 holds all show
     const ids = [1, 2, 3];
     const positions = show([
@@ -231,9 +231,25 @@ describe("automatic mark time", () => {
         clock,
         fp,
         manifest,
-        compileWindowCues(marchers, beats, "left", { bandMoving }),
+        compileWindowCues(marchers, beats, "left", {
+            bandMoving,
+            holdWhileBandMoves: "markTime",
+        }),
     ).plans;
     const holder = plans[2]!.events;
+    /** Marcher 3's events with the compile's inputs `inputs`. */
+    const holderWith = (
+        inputs: NonNullable<Parameters<typeof compileWindowCues>[3]>,
+    ) =>
+        planShow(
+            ids,
+            positions,
+            [1, 1, 1],
+            clock,
+            fp,
+            manifest,
+            compileWindowCues(marchers, beats, "left", inputs),
+        ).plans[2]!.events;
 
     it("finds the counts on which anyone travels", () => {
         expect(Array.from(bandMoving)).toEqual([
@@ -241,7 +257,34 @@ describe("automatic mark time", () => {
         ]);
     });
 
-    it("marks time while the band moves, and stands while it holds", () => {
+    it("stands on every hold by default, even while the band moves (ADR 0015 D-5)", () => {
+        const still = holderWith({ bandMoving });
+        expect(still.every((e) => !e.clip.includes("marktime"))).toBe(true);
+        expect(still[0]!.clip.startsWith("attention")).toBe(true);
+    });
+
+    it("a hold's own style marks time over its counts, whatever the show setting", () => {
+        // Counts 0-3: the whole band holds, where the show setting would stand anyway
+        const own = holderWith({
+            bandMoving,
+            holdStyles: [{ marcherId: 3, from: 0, to: 4, style: "markTime" }],
+        });
+        // It steps off into mark time from the first count, and halts where the hold ends
+        expect(own[0]!.clip).toContain("marktime");
+        expect(
+            own.find((e) => e.kind === "rest" && e.clip.startsWith("marktime")),
+        ).toBeDefined();
+        expect(own.at(-1)!.clip.startsWith("attention")).toBe(true);
+        // The other way: the show marks time while the band moves, this hold stands
+        const stands = holderWith({
+            bandMoving,
+            holdWhileBandMoves: "markTime",
+            holdStyles: [{ marcherId: 3, from: 0, to: 16, style: "stand" }],
+        });
+        expect(stands.every((e) => !e.clip.includes("marktime"))).toBe(true);
+    });
+
+    it("with the show set to mark time: marks time while the band moves, and stands while it holds", () => {
         expect(holder.some((e) => e.clip.startsWith("marktime"))).toBe(true);
         expect(holder[0]!.clip.startsWith("attention")).toBe(true);
         expect(holder.at(-1)!.clip.startsWith("attention")).toBe(true);
@@ -269,40 +312,26 @@ describe("planning from compiled cues", () => {
         timestamp: k * 0.5,
         duration: 0.5,
     }));
-    // The compiler, as the window would call it if the show stored cues
+    const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
+    // The window's compile, given the show's stored cues
     const compiled = (
         cues: CueInput[],
-        tagIds: ReadonlyMap<number, number[]> = new Map(),
         carries: (id: number) => PerformerCarry = () => "none",
-    ) =>
-        compileCues({
-            beats: beats.map((b) => ({ id: b.id, duration: b.duration })),
-            marchers: ids.map((id, i) => ({
-                id,
-                section: "Trumpet",
-                tagIds: tagIds.get(id) ?? [],
-                drillOrder: i,
-                carries: carries(id),
-            })),
-            cues,
-            showDefaults: { stepOffFoot: "left" },
-        });
-    const marchers = ids.map((id) => ({ id, section: "Trumpet" }));
+    ) => compileWindowCues(marchers, beats, "left", { cues, carries });
     const facing = (
         value: string,
         extra: Partial<CueInput> = {},
     ): CueInput => ({
         id: 1,
-        channel: "facing",
-        kind: "state",
-        target: { kind: "band" },
+        type: "facing",
         // count 8
         beatId: 58,
         value,
-        transitionLength: 1,
+        transition: 1,
+        marcherIds: ids,
         ...extra,
     });
-    const headingsOf = (cues: CueInput[], tagIds = new Map()) =>
+    const headingsOf = (cues: CueInput[]) =>
         planShow(
             ids,
             lines,
@@ -310,7 +339,7 @@ describe("planning from compiled cues", () => {
             clock,
             fp,
             manifest,
-            compiled(cues, tagIds),
+            compiled(cues),
         ).plans.map((p) => p!.headings);
 
     it("turns to a Facing cue from its count", () => {
@@ -320,21 +349,18 @@ describe("planning from compiled cues", () => {
         expect(Math.abs(first![12])).toBeCloseTo(Math.PI);
     });
 
-    it("plays a Horn/Equipment cue on carriers' Horn channel", () => {
+    it("plays a Position cue on carriers' Horn channel", () => {
         const down: CueInput = {
             id: 2,
-            channel: "horn_equipment",
-            kind: "state",
-            target: { kind: "band" },
+            type: "position",
             // count 8
             beatId: 58,
             value: "builtin:horn.down",
+            marcherIds: ids,
         };
-        const cues = compiled([down], new Map(), (id) =>
-            id === 1 ? "winds" : "none",
-        );
+        const cues = compiled([down], (id) => (id === 1 ? "winds" : "none"));
         const plan = (id: number) =>
-            planHornChannel(cues.segments(id, "horn_equipment"), {
+            planHornChannel(cues.compiled.segments(id, "position"), {
                 defaultState: "up",
                 secondsPerCount: () => 0.5,
             });
@@ -346,17 +372,29 @@ describe("planning from compiled cues", () => {
         expect(bare[hornEventAt(bare, 12)].state).toBe("up");
     });
 
-    it("reaches tag targets through the marchers' tags", () => {
-        const [tagged, other] = headingsOf(
-            [
-                facing("builtin:facing.back", {
-                    target: { kind: "tag", tagId: 7 },
-                }),
-            ],
-            new Map([[1, [7]]]),
-        );
-        expect(Math.abs(tagged![12])).toBeCloseTo(Math.PI);
+    it("reaches only the performers a cue stores", () => {
+        const [named, other] = headingsOf([
+            facing("builtin:facing.back", { marcherIds: [1] }),
+        ]);
+        expect(Math.abs(named![12])).toBeCloseTo(Math.PI);
         expect(other![12]).toBeCloseTo(0);
+    });
+
+    it("turns back when a momentary Facing cue ends", () => {
+        const [first] = headingsOf([
+            facing("builtin:facing.back", { length: 4 }),
+        ]);
+        expect(Math.abs(first![10])).toBeCloseTo(Math.PI);
+        // counts 8-11 face the back; from count 12 (boundary 13) the front again
+        expect(first![14]).toBeCloseTo(0);
+    });
+
+    it("ignores a cue of a type this build doesn't know", () => {
+        const plain = headingsOf([]);
+        const withUnknown = headingsOf([
+            { ...facing("builtin:lights.on"), type: "lights" },
+        ]);
+        expect(withUnknown).toEqual(plain);
     });
 
     it("reads a Facing point in field coordinates, like the dots", () => {
@@ -589,5 +627,319 @@ describe("landing each foot on its click", () => {
         );
         m.update(5.01, xz, placed); // the hold's first count
         expect(writes.at(-1)!.clip.row).toBe(rows["attention"]);
+    });
+});
+
+describe("the closed position while paused", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    function motion() {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array(2),
+            placed: Uint8Array.from([1]),
+        };
+    }
+
+    it("stands at attention mid-move", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows["attention"]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+    });
+
+    it("writes the attention clip once while it stays paused", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5);
+        m.updateClosed(2.75);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("faces its heading at the dot's own count, not the plan's lead", () => {
+        const { m } = motion();
+        const closed = new Float32Array(1);
+        m.updateClosed(2.5, closed);
+        expect(closed[0]).toBe(headingAt(plan, 2.5));
+    });
+
+    it("plays the step again on the next update", () => {
+        const { m, writes, xz, placed } = motion();
+        m.updateClosed(2.5);
+        m.update(2.5, xz, placed);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes).toHaveLength(2);
+        expect(writes[1].clip.row).toBe(rows[loop.clip]);
+    });
+
+    it("writes no clip when attention isn't baked yet", () => {
+        const writes: unknown[] = [];
+        const bodies = {
+            bake: { rows: {} },
+            setClip: (...args: unknown[]) => writes.push(args),
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+        );
+        m.updateClosed(2.5);
+        expect(writes).toHaveLength(0);
+    });
+});
+
+describe("playing a pit instrument", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    rows["playing"] = { row: r++, frames: 60, counts: 2 };
+    function motion(playing = ["playing"]) {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+            playing,
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array([3, 4]),
+            placed: Uint8Array.from([1]),
+            headings: new Float32Array([0.5]),
+        };
+    }
+    const PLAYS = Int32Array.from([0]);
+    const OFF = Int32Array.from([-1]);
+
+    it("holds the playing pose, still, mid-move, leaving its place and heading to the snap", () => {
+        const { m, writes, xz, placed, headings } = motion();
+        m.update(2.5, xz, placed, headings, PLAYS);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows["playing"]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+        expect([...xz]).toEqual([3, 4]);
+        expect(headings[0]).toBeCloseTo(0.5);
+        // once, while it keeps playing
+        m.update(2.75, xz, placed, headings, PLAYS);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("plays its step again off the spot", () => {
+        const { m, writes, xz, placed } = motion();
+        m.update(2.5, xz, placed, undefined, PLAYS);
+        m.update(2.5, xz, placed, undefined, OFF);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes).toHaveLength(2);
+        expect(writes[1].clip.row).toBe(rows[loop.clip]);
+    });
+
+    it("holds the playing pose while paused too", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5, undefined, PLAYS);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows["playing"]]);
+        m.updateClosed(2.5, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows["playing"],
+            rows["attention"],
+        ]);
+    });
+
+    it("stays on its plan while the playing pose isn't baked", () => {
+        const { m, writes, xz, placed } = motion(["not-baked"]);
+        m.update(2.5, xz, placed, undefined, PLAYS);
+        const loop = plan.events.find((e) => e.kind === "loop")!;
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[loop.clip]]);
+    });
+});
+
+describe("standing on a podium", () => {
+    // a hold, 4 counts of 8-to-5 forward, then 3 holds
+    const positions = new Float64Array(2 * 9);
+    for (let k = 0; k < 9; k++) {
+        positions[k * 2] = 0;
+        positions[k * 2 + 1] = -20 + Math.min(Math.max(k - 1, 0), 4) * 0.5715;
+    }
+    const plan = planMarcher({
+        manifest,
+        heightClass: 1,
+        positions,
+        heading: 0,
+        bpm: new Float64Array(8).fill(120),
+    });
+    const rows: Record<
+        string,
+        { row: number; frames: number; counts: number }
+    > = { attention: { row: 0, frames: 60, counts: 2 } };
+    let r = 1;
+    for (const e of plan.events) {
+        rows[e.clip] ??= { row: r++, frames: 60, counts: 2 };
+        if (e.clip2) rows[e.clip2] ??= { row: r++, frames: 60, counts: 2 };
+    }
+    rows[PODIUM_CLIP] = { row: r++, frames: 60, counts: 2 };
+    function motion(podium = [PODIUM_CLIP], bakeRows = rows) {
+        const writes: { slot: number; clip: MarcherClip }[] = [];
+        const bodies = {
+            bake: { rows: bakeRows },
+            setClip(slot: number, clip: MarcherClip) {
+                writes.push({ slot, clip });
+            },
+        } as unknown as MarcherBodies;
+        const m = new MarcherMotion(
+            [plan],
+            manifest,
+            bodies,
+            [],
+            ["attention"],
+            [],
+            podium,
+        );
+        return {
+            m,
+            writes,
+            xz: new Float32Array([0, -20]),
+            placed: Uint8Array.from([1]),
+            headings: new Float32Array([0.5]),
+        };
+    }
+    const ON = Uint8Array.from([1]);
+    const OFF = Uint8Array.from([0]);
+    const loop = plan.events.find((e) => e.kind === "loop")!;
+
+    it("ships the podium stance for every height class", () => {
+        for (const h of manifest.heights)
+            expect(
+                manifest.clips.some(
+                    (c) => c.base === PODIUM_CLIP && c.height === h,
+                ),
+            ).toBe(true);
+    });
+
+    it("holds second position, still, mid-move, with its place and heading from the plan", () => {
+        const { m, writes, xz, placed, headings } = motion();
+        m.update(2.5, xz, placed, headings, undefined, ON);
+        expect(writes).toHaveLength(1);
+        expect(writes[0].clip.row).toBe(rows[PODIUM_CLIP]);
+        expect(writes[0].clip.row2).toBeNull();
+        expect(writes[0].clip.legYaw).toBe(0);
+        // placed and turned as the plan has it, for the podium stand to take over
+        const off = motion();
+        off.m.update(2.5, off.xz, off.placed, off.headings);
+        expect([...xz]).toEqual([...off.xz]);
+        expect(headings[0]).toBe(off.headings[0]);
+        // once, while it stays on the podium
+        m.update(2.75, xz, placed, headings, undefined, ON);
+        expect(writes).toHaveLength(1);
+    });
+
+    it("marches its step again once it steps off", () => {
+        const { m, writes, xz, placed } = motion();
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        m.update(2.5, xz, placed, undefined, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows[PODIUM_CLIP],
+            rows[loop.clip],
+        ]);
+    });
+
+    it("holds second position while paused, and attention off the podium", () => {
+        const { m, writes } = motion();
+        m.updateClosed(2.5, undefined, undefined, ON);
+        m.updateClosed(2.75, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[PODIUM_CLIP]]);
+        m.updateClosed(2.75, undefined, undefined, OFF);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows[PODIUM_CLIP],
+            rows["attention"],
+        ]);
+    });
+
+    it("stands at attention while second position isn't baked, then takes it once it is", () => {
+        const partial = { ...rows };
+        delete partial[PODIUM_CLIP];
+        const { m, writes, xz, placed } = motion([PODIUM_CLIP], partial);
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        m.update(2.75, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows["attention"]]);
+        partial[PODIUM_CLIP] = rows[PODIUM_CLIP];
+        m.update(3, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([
+            rows["attention"],
+            rows[PODIUM_CLIP],
+        ]);
+    });
+
+    it("stays on its plan when neither second position nor attention is baked", () => {
+        const { m, writes, xz, placed } = motion(["not-baked"], {
+            [loop.clip]: rows[loop.clip],
+        });
+        m.update(2.5, xz, placed, undefined, undefined, ON);
+        expect(writes.map((w) => w.clip.row)).toEqual([rows[loop.clip]]);
     });
 });

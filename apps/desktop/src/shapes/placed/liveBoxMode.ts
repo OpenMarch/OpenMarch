@@ -23,6 +23,10 @@ import {
 } from "../frame/gestures";
 import { toolEnvFor } from "../tool/toolEnv";
 import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
+import {
+    displayedBeat,
+    useTimelineSelectionStore,
+} from "@/stores/TimelineSelectionStore";
 import { commitBox, sameParams } from "./commitBox";
 import {
     clearLiveSelection,
@@ -50,6 +54,7 @@ import type { GroupMenuState } from "../field/shapePointer";
 import type { AnyToolKind } from "../tool/toolKind";
 import type { XY } from "../types";
 import type { Roles } from "@/input/modifierRoles";
+import type { PointerKind } from "@/field/editor/pointerThresholds";
 import {
     setShapeDragging,
     setShapePointerOver,
@@ -181,6 +186,14 @@ export const setActiveLiveBox = (mode: LiveBoxMode | null): void => {
 };
 
 /**
+ * The live mode to keep for `box`, though it's a new recipe: the one with a gesture under way on
+ * these marchers at this moment. An earlier save reading back as this page's own copy of the shape
+ * mustn't end a drag that's still held.
+ */
+export const liveBoxHolding = (box: PlacedBox): LiveBoxMode | null =>
+    activeLive?.holds(box) ? activeLive : null;
+
+/**
  * Escape on a selected placed shape with a handle selected (#557): clears that, and says whether
  * there was one, so the same press doesn't also deselect the shape
  */
@@ -208,6 +221,12 @@ export class LiveBoxMode implements FieldMode {
     private held: HeldFieldGesture | null = null;
     /** The shape this mode last saved, until it's read back: the selection outlives only that */
     private saved: unknown = undefined;
+    /** The beat shown when the gesture under way was pressed */
+    private pressedAt: number | null = null;
+    /** The box as last read during a gesture, for when the gesture changes nothing */
+    private readDuringGesture: PlacedBox | null = null;
+    /** What made the last press: a held key's rerun goes on with its reach (tablet 1.4) */
+    private pressKind: PointerKind = "mouse";
 
     constructor(
         box: PlacedBox,
@@ -229,13 +248,33 @@ export class LiveBoxMode implements FieldMode {
      * selected handle stays only through this mode's own save (#557): an undo or redo clears it.
      */
     setBox(box: PlacedBox): void {
-        if (this.live.gesture) return;
+        if (this.live.gesture) {
+            this.readDuringGesture = box;
+            return;
+        }
+        this.readDuringGesture = null;
         const saved = this.saved;
         // Read again unchanged (the playhead moved), the save may still be on its way
         if (!sameParams(box.params, this.live.box.params))
             this.saved = undefined;
         this.live = reopenLive(this.live, box, saved);
         this.emit();
+    }
+
+    /** Whether a gesture is under way on `box`'s marchers, at the moment it was pressed */
+    holds(box: PlacedBox): boolean {
+        if (!this.live.gesture) return false;
+        if (
+            this.pressedAt !==
+            displayedBeat(useTimelineSelectionStore.getState())
+        )
+            return false;
+        const ids = new Set(box.recipe.members.map((m) => m.marcherId));
+        const { members } = this.live.box.recipe;
+        return (
+            members.length === ids.size &&
+            members.every((m) => ids.has(m.marcherId))
+        );
     }
 
     /** Escape with a handle selected (#557): clears it, and says whether there was one */
@@ -274,7 +313,10 @@ export class LiveBoxMode implements FieldMode {
             params,
             spots,
             pointer.field,
-            { ...toolEnvFor(field), reachInside: true },
+            {
+                ...toolEnvFor(field, undefined, { kind: pointer.kind }),
+                reachInside: true,
+            },
             this.live.selected,
         );
         return !target || !OWN_CONTROLS.has(target.type);
@@ -297,16 +339,21 @@ export class LiveBoxMode implements FieldMode {
                     this.live.box.params,
                     this.live.box.spots,
                     pointer.field,
-                    { ...toolEnvFor(field), reachInside },
+                    {
+                        ...toolEnvFor(field, undefined, { kind: pointer.kind }),
+                        reachInside,
+                    },
                     this.live.selected,
                 ),
             (at, roles) => this.rerun(at, roles),
             isMac,
         );
         this.held = held;
+        this.pressedAt = displayedBeat(useTimelineSelectionStore.getState());
+        this.pressKind = pointer.kind;
         this.live =
             pressLive(this.live, pointer.field, {
-                ...toolEnvFor(field, held.roles()),
+                ...toolEnvFor(field, held.roles(), { kind: pointer.kind }),
                 reachInside,
             }) ?? this.live;
         this.emit();
@@ -318,7 +365,7 @@ export class LiveBoxMode implements FieldMode {
         this.live = moveLive(
             this.live,
             pointer.field,
-            toolEnvFor(field, this.held?.move(pointer)),
+            toolEnvFor(field, this.held?.move(pointer), { kind: pointer.kind }),
         );
         this.emit();
     }
@@ -327,7 +374,11 @@ export class LiveBoxMode implements FieldMode {
     private rerun(at: XY, roles: Roles): void {
         const field = currentShapeField();
         if (!field) return;
-        this.live = moveLive(this.live, at, toolEnvFor(field, roles));
+        this.live = moveLive(
+            this.live,
+            at,
+            toolEnvFor(field, roles, { kind: this.pressKind }),
+        );
         this.emit();
     }
 
@@ -347,9 +398,20 @@ export class LiveBoxMode implements FieldMode {
             // The next press goes on from the shape as saved, before the selection hears of it
             const saving = useSavingBoxStore.getState().box;
             if (saving) this.live = openLive(saving, this.live.selected);
+            this.readDuringGesture = null;
         }
+        this.catchUp();
         this.emit();
         if (!out.changed && out.enter) this.enterAt(pointer);
+    }
+
+    /**
+     * A press held still for a long press (a pen, tablet 1.5) gives way to the menus a right-click
+     * there opens: a handle's, else the field's for the box's marchers. Cancelled, it saves
+     * nothing.
+     */
+    longPress(): boolean {
+        return true;
     }
 
     /** A right-click on a handle with a menu (a Line's point or segment, #569) opens it */
@@ -362,7 +424,7 @@ export class LiveBoxMode implements FieldMode {
             this.live.params,
             spots,
             pointer.field,
-            toolEnvFor(field),
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
             this.live.selected,
         );
         return openHandleMenu(
@@ -412,7 +474,13 @@ export class LiveBoxMode implements FieldMode {
     cancel(): void {
         this.endHeld();
         this.live = openLive(this.live.box, this.live.selected);
+        this.catchUp();
         this.emit();
+    }
+
+    /** A gesture that ended without a save takes the box read while it was held */
+    private catchUp(): void {
+        if (this.readDuringGesture) this.setBox(this.readDuringGesture);
     }
 
     leave(): void {
@@ -428,7 +496,7 @@ export class LiveBoxMode implements FieldMode {
             this.live.params,
             this.live.box.spots,
             pointer.field,
-            toolEnvFor(field),
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
             this.live.selected,
         );
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
@@ -484,7 +552,11 @@ export class LiveBoxMode implements FieldMode {
     private pressed(pointer: FieldPointer): LiveBox | null {
         const field = currentShapeField();
         if (!field) return null;
-        return pressLive(this.live, pointer.field, toolEnvFor(field));
+        return pressLive(
+            this.live,
+            pointer.field,
+            toolEnvFor(field, undefined, { kind: pointer.kind }),
+        );
     }
 
     /** Goes inside the box at the member nearest `pointer` */

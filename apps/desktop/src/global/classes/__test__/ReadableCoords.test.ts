@@ -1,5 +1,7 @@
 import FieldPropertiesTemplates from "../FieldProperties.templates";
+import { Checkpoint, FieldProperties } from "@openmarch/core";
 import {
+    findClosestCheckpoint,
     ReadableCoords,
     X_DESCRIPTION,
     Y_DESCRIPTION,
@@ -314,5 +316,97 @@ describe("ReadableCoords", () => {
                 expect(readableCoords.yDescription).toBe(Y_DESCRIPTION.BEHIND);
             });
         });
+    });
+});
+
+describe("findClosestCheckpoint", () => {
+    beforeAll(async () => {
+        await tolgee.run();
+    });
+
+    const line = (
+        id: number,
+        steps: number,
+        useAsReference = true,
+    ): Checkpoint => ({
+        id,
+        name: `line ${id}`,
+        terseName: `${id}`,
+        axis: "x",
+        stepsFromCenterFront: steps,
+        useAsReference,
+        visible: true,
+    });
+
+    it("skips a non-reference first checkpoint, even when it is the closest", () => {
+        const lines = [line(0, 0, false), line(1, -8), line(2, 8)];
+        expect(findClosestCheckpoint(1, lines, "x").id).toBe(2);
+        expect(findClosestCheckpoint(-1, lines, "x").id).toBe(1);
+    });
+
+    it("never picks a non-reference checkpoint over a farther reference", () => {
+        const lines = [line(0, -16), line(1, -8, false), line(2, 8, false)];
+        expect(findClosestCheckpoint(7, lines, "x").id).toBe(0);
+    });
+
+    it("of two equally close references, picks the one nearer the center", () => {
+        const lines = [line(0, 8), line(1, 0)];
+        expect(findClosestCheckpoint(4, lines, "x").id).toBe(1);
+    });
+
+    it("falls back to the closest checkpoint when the axis has no reference", () => {
+        const lines = [line(0, -8, false), line(1, 8, false)];
+        expect(findClosestCheckpoint(6, lines, "x").id).toBe(1);
+    });
+
+    it("describes from 0 steps when the axis has no checkpoints", () => {
+        const closest = findClosestCheckpoint(3, [], "y");
+        expect(closest.stepsFromCenterFront).toBe(0);
+        expect(closest.axis).toBe("y");
+    });
+
+    it("names the fallback for where it is, so readouts don't end in a blank", () => {
+        const college =
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+        const noCheckpoints = new FieldProperties({
+            ...college,
+            xCheckpoints: [],
+            yCheckpoints: [],
+        });
+        ReadableCoords.setFieldProperties(noCheckpoints);
+        const { centerFrontPoint, pixelsPerStep } = noCheckpoints;
+        const coords = new ReadableCoords({
+            x: centerFrontPoint.xPixels - 2 * pixelsPerStep,
+            y: centerFrontPoint.yPixels - 4 * pixelsPerStep,
+        });
+        expect(coords.toVerboseStringX({ includeStepsString: true })).toMatch(
+            /2 steps outside center line$/,
+        );
+        expect(coords.toTerseStringX()).toMatch(/2 OUT CL$/);
+        expect(coords.toVerboseStringY({ includeStepsString: true })).toBe(
+            "4 steps behind front edge",
+        );
+        expect(coords.toTerseStringY()).toBe("4 BE FE");
+    });
+
+    it("gives coordinates on a field with no Y reference instead of throwing", () => {
+        const college =
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+        const noYReference = new FieldProperties({
+            ...college,
+            yCheckpoints: college.yCheckpoints.map((c) => ({
+                ...c,
+                useAsReference: false,
+            })),
+        });
+        ReadableCoords.setFieldProperties(noYReference);
+        const { centerFrontPoint, pixelsPerStep } = noYReference;
+        const coords = new ReadableCoords({
+            x: centerFrontPoint.xPixels,
+            y: centerFrontPoint.yPixels - 2 * pixelsPerStep,
+        });
+        expect(coords.yCheckpoint.name).toBe("front sideline");
+        expect(coords.ySteps).toBe(2);
+        expect(coords.yDescription).toBe(Y_DESCRIPTION.BEHIND);
     });
 });

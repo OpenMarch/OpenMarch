@@ -3,6 +3,7 @@ import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import {
     Box3,
     DoubleSide,
+    InstancedMesh,
     Mesh,
     Raycaster,
     SpotLight,
@@ -16,9 +17,11 @@ import { buildCrowd, ft, setTexturePainting } from "../../environment";
 import { outlineOffset } from "../bowl";
 import {
     buildProKit,
+    PRO_AISLE,
     PRO_BOARD,
     PRO_BOWL_MARGIN,
     PRO_CORNER_RADIUS,
+    PRO_CROSS_AISLE_ROW,
     PRO_ROOF_Y,
     PRO_TIERS,
 } from "../pro";
@@ -52,6 +55,9 @@ const build = (footprint = football, quality: "low" | "high" = "high") => {
 afterEach(() => {
     kits.splice(0).forEach((k) => k.dispose());
 });
+
+/** Named parts that lie outside the building's reach by design. */
+const OUTSIDE_BUILDING = new Set(["pro.ground", "pro.site", "pro.structure"]);
 
 const meshes = (root: Object3D) => {
     const out: Mesh[] = [];
@@ -99,7 +105,7 @@ describe("pro dome kit", () => {
             const kit = build(fp);
             const box = new Box3();
             for (const m of meshes(kit.root)) {
-                if (m.name === "pro.ground") continue;
+                if (OUTSIDE_BUILDING.has(m.name)) continue;
                 const pos = m.geometry.getAttribute("position");
                 for (let i = 0; i < pos.array.length; i++)
                     expect(Number.isNaN(pos.array[i])).toBe(false);
@@ -115,7 +121,7 @@ describe("pro dome kit", () => {
             expect(box.min.z).toBeGreaterThan(o.centerZ - reachZ);
             expect(box.max.z).toBeLessThan(o.centerZ + reachZ);
             expect(box.min.y).toBeGreaterThan(-0.5);
-            expect(box.max.y).toBeLessThan(PRO_ROOF_Y + ft(10));
+            expect(box.max.y).toBeLessThan(PRO_ROOF_Y + ft(10) + 0.5);
             // The bowl surrounds the field on every side.
             expect(box.min.x).toBeLessThan(fp.minX - 50);
             expect(box.max.z).toBeGreaterThan(fp.maxZ + 50);
@@ -128,7 +134,9 @@ describe("pro dome kit", () => {
         const roof = new Box3().setFromObject(
             byName(kit.root, "pro.roofFrame")[0],
         );
-        expect((roof.min.y + roof.max.y) / 2).toBeCloseTo(51.2, 1);
+        // The deck is centered on 51.2 m; a 0.9 m coping stands on its edge.
+        expect(roof.min.y).toBeCloseTo(51.2 - ft(2), 1);
+        expect(roof.max.y).toBeCloseTo(51.2 + ft(2) + 0.9, 1);
         const suites = new Box3().setFromObject(
             byName(kit.root, "pro.suites")[0],
         );
@@ -141,27 +149,48 @@ describe("pro dome kit", () => {
         expect(panels[0].scale.z).toBeCloseTo(73.2, 0);
     });
 
-    it("returns closed seat rows that follow the bowl outline", () => {
+    it("returns open seat rows per section that follow the bowl outline", () => {
         const kit = build();
-        const rows = PRO_TIERS[0].rows + PRO_TIERS[1].rows;
-        expect(kit.seatRows).toHaveLength(rows);
         const o = outline(football);
-        let prev = -Infinity;
-        kit.seatRows.forEach((row, i) => {
-            expect(row.closed).toBe(true);
-            expect(row.points.length).toBeGreaterThan(100);
+        const depths = new Set<number>();
+        const heights = new Set<number>();
+        kit.seatRows.forEach((row) => {
+            expect(row.closed).toBe(false);
+            expect(row.points.length).toBeGreaterThanOrEqual(2);
             const d = outlineOffset(o, row.points[0][0], row.points[0][2]);
             for (const [x, y, z] of row.points) {
-                expect(outlineOffset(o, x, z)).toBeCloseTo(d, 5);
+                // Section ends are cut on the ring's chords, a little inside it.
+                expect(Math.abs(outlineOffset(o, x, z) - d)).toBeLessThan(0.05);
                 expect(y).toBe(row.points[0][1]);
             }
-            // Rows step outward within a tier; the upper deck overhangs.
-            if (i !== PRO_TIERS[0].rows) expect(d).toBeGreaterThan(prev);
-            prev = d;
-            expect(row.depth).toBe(
-                i < PRO_TIERS[0].rows ? PRO_TIERS[0].depth : PRO_TIERS[1].depth,
-            );
+            depths.add(row.depth);
+            heights.add(row.points[0][1]);
         });
+        expect([...depths].sort()).toEqual(
+            [PRO_TIERS[0].depth, PRO_TIERS[1].depth].sort(),
+        );
+        // Every row of both tiers is there except the cross aisle.
+        expect(heights.size).toBe(PRO_TIERS[0].rows + PRO_TIERS[1].rows - 1);
+        const crossY =
+            PRO_TIERS[0].base +
+            PRO_CROSS_AISLE_ROW * PRO_TIERS[0].rise +
+            ft(1.35);
+        expect([...heights].some((y) => Math.abs(y - crossY) < 1e-6)).toBe(
+            false,
+        );
+
+        // The aisles between sections stay clear of seats.
+        const lengths = kit.seatRows.map((row) => {
+            let total = 0;
+            for (let i = 1; i < row.points.length; i++) {
+                const [ax, , az] = row.points[i - 1];
+                const [bx, , bz] = row.points[i];
+                total += Math.hypot(bx - ax, bz - az);
+            }
+            return total;
+        });
+        expect(Math.max(...lengths)).toBeLessThan(40);
+        expect(PRO_AISLE).toBeGreaterThan(0.6);
 
         const crowd = buildCrowd(kit.seatRows, { density: 0.6 });
         expect(crowd.count).toBeGreaterThan(10000);
@@ -187,9 +216,14 @@ describe("pro dome kit", () => {
 
         const triangles = bandTriangles(kit);
         const boxes = meshes(kit.root)
-            .filter((m) => m.geometry.type === "BoxGeometry")
+            .filter(
+                (m) =>
+                    m.geometry.type === "BoxGeometry" &&
+                    !(m instanceof InstancedMesh),
+            )
             .map((m) => new Box3().setFromObject(m));
-        const solid = meshes(kit.root).filter((m) => m.name !== "pro.ground");
+        const solid = meshes(kit.root);
+        const hittable = solid.filter((m) => m.name !== "pro.site");
         // Raycast both faces of every mesh.
         solid.forEach(
             (m) =>
@@ -222,12 +256,12 @@ describe("pro dome kit", () => {
             expect(near, `${c.id} clearance`).toBeGreaterThan(0.3);
             // Something is underfoot within a few meters, nothing overhead within 1.5 m.
             ray.set(p, new Vector3(0, -1, 0));
-            const below = ray.intersectObjects(solid, false)[0];
+            const below = ray.intersectObjects(hittable, false)[0];
             expect(below, c.id).toBeDefined();
             expect(below.distance, c.id).toBeGreaterThan(0.3);
             expect(below.distance, c.id).toBeLessThan(3);
             ray.set(p, new Vector3(0, 1, 0));
-            const above = ray.intersectObjects(solid, false)[0];
+            const above = ray.intersectObjects(hittable, false)[0];
             if (above) expect(above.distance, c.id).toBeGreaterThan(1.5);
             // Every camera looks toward the field.
             const t = new Vector3(...c.target);
@@ -281,13 +315,11 @@ describe("pro dome kit", () => {
         crowd.dispose();
     });
 
-    it("opens and closes the roof in onFrame, and hides it from above", () => {
+    it("opens and closes the roof in onFrame", () => {
         const kit = build();
         expect(kit.lightingPresets).toEqual(["day", "night", "roofClosed"]);
         expect(kit.defaultLighting).toBe("roofClosed");
         const panels = byName(kit.root, "pro.roofPanel") as Mesh[];
-        const roof = byName(kit.root, "pro.roof")[0];
-        const clerestory = byName(kit.root, "pro.clerestory")[0];
         const closedX = panels.map((p) => p.position.x);
         const inside: Vector3Tuple = [0, 10, -24];
         const run = (frames: number) => {
@@ -327,14 +359,72 @@ describe("pro dome kit", () => {
         kit.setLighting("show");
         run(400);
         expect(panels[0].position.x).toBeCloseTo(closedX[0] - ox, 5);
+    });
 
-        expect(roof.visible).toBe(true);
-        expect(clerestory.visible).toBe(true);
-        kit.onFrame!({ cameraPosition: [0, PRO_ROOF_Y + 5, 0], dt: 1 / 60 });
-        expect(roof.visible).toBe(false);
-        expect(clerestory.visible).toBe(false);
-        kit.onFrame!({ cameraPosition: inside, dt: 1 / 60 });
-        expect(roof.visible).toBe(true);
+    it("from above, cuts away only the roof between the camera and the field", () => {
+        const kit = build();
+        const frames = byName(kit.root, "pro.roofFrame") as Mesh[];
+        const steel = byName(kit.root, "pro.steel");
+        const panels = byName(kit.root, "pro.roofPanel");
+        const bars = byName(kit.root, "pro.roofBar")[0];
+        const [cx, cz] = [0, (football.minZ + football.maxZ) / 2];
+        const frameSide = (m: Mesh) => {
+            const c = new Box3().setFromObject(m).getCenter(new Vector3());
+            return Math.abs(c.x - cx) > Math.abs(c.z - cz)
+                ? c.x - cx > 0
+                    ? "xp"
+                    : "xn"
+                : c.z - cz > 0
+                  ? "zp"
+                  : "zn";
+        };
+        expect(frames.map(frameSide).sort()).toEqual(["xn", "xp", "zn", "zp"]);
+
+        // Inside the building everything shows.
+        kit.onFrame!({ cameraPosition: [0, 10, -24], dt: 1 / 60 });
+        [...frames, ...steel, ...panels, bars].forEach((m) =>
+            expect(m.visible).toBe(true),
+        );
+
+        // Straight overhead the whole roof goes, and both boards stay.
+        const top = kit.cameras.find((c) => c.id === "topDown")!;
+        for (const preset of ["day", "night", "roofClosed"] as const) {
+            kit.setLighting(preset);
+            kit.onFrame!({ cameraPosition: top.position, dt: 1 / 60 });
+            [...frames, ...steel, ...panels, bars].forEach((m) =>
+                expect(m.visible).toBe(false),
+            );
+            byName(kit.root, "videoBoard").forEach((b) =>
+                expect(b.visible).toBe(true),
+            );
+        }
+
+        // Blimp, from the side-1 audience corner: the near sides are cut.
+        kit.onFrame!({ cameraPosition: [-190, 195, 160], dt: 1 / 60 });
+        const shown = frames.filter((m) => m.visible).map(frameSide);
+        expect(shown.sort()).toEqual(["xp", "zn"]);
+        expect(steel.filter((m) => m.visible)).toHaveLength(2);
+        const boards = byName(kit.root, "videoBoard");
+        const nearBoard = boards.find((b) => b.position.x < cx)!;
+        const farBoard = boards.find((b) => b.position.x > cx)!;
+        expect(nearBoard.visible).toBe(false);
+        expect(farBoard.visible).toBe(true);
+    });
+
+    it("hides the whole roof from above at low quality", () => {
+        const kit = build(football, "low");
+        const frames = byName(kit.root, "pro.roofFrame");
+        expect(frames).toHaveLength(1);
+        kit.onFrame!({ cameraPosition: [0, 10, -24], dt: 1 / 60 });
+        expect(frames[0].visible).toBe(true);
+        kit.onFrame!({ cameraPosition: [0, PRO_ROOF_Y + 50, -24], dt: 1 / 60 });
+        expect(frames[0].visible).toBe(false);
+    });
+
+    it("lets nothing on the roof cast a shadow on the field", () => {
+        const kit = build();
+        const casters = meshes(kit.root).filter((m) => m.castShadow);
+        expect(casters.map((m) => m.name)).toEqual(["pro.facade"]);
     });
 
     it("drives the roof lights from the preset's kit values", () => {
@@ -360,7 +450,8 @@ describe("pro dome kit", () => {
             kit.root.traverse((o) => {
                 if (o instanceof Mesh) draws++;
             });
-            expect(draws).toBeLessThan(300);
+            // Sky, field and performers aren't the kit's; low has 18 in all.
+            expect(draws).toBeLessThanOrEqual(quality === "low" ? 15 : 40);
             const casters = meshes(kit.root).filter((m) => m.castShadow);
             if (quality === "low") expect(casters).toHaveLength(0);
             else expect(casters.length).toBeGreaterThan(0);

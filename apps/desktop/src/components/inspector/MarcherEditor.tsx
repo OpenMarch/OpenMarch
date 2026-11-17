@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ReactNode,
+} from "react";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     fieldPropertiesQueryOptions,
@@ -34,6 +41,7 @@ import { usePositionAt } from "@/timeline/timelineStore";
 import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { useTimelineStepSizes } from "@/timeline/useTimelineStepSizes";
 import { useTimingObjects } from "@/hooks";
+import { allItemsQueryOptions } from "@/hooks/queries/useItems";
 import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
@@ -45,7 +53,8 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
-import TimelineHoldLine from "./TimelineHoldLine";
+import TimelineHoldLine, { TimelineHeldCount } from "./TimelineHoldLine";
+import TimelineHoldStyle from "./TimelineHoldStyle";
 import MovePad from "./marcher/MovePad";
 import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { formatList } from "@/utilities/formatList";
@@ -167,20 +176,18 @@ const evenlyDistributeVertically = ({
     });
 };
 
-/**
- * Component that renders all alignment, distribution, and transformation buttons
- * for multiple selected marchers
- */
 /** In touch mode the caption stacks under the icon and the button grows to fit. */
 const alignButtonClassName =
     "flex flex-1 items-center justify-center touch:h-auto touch:min-h-44 touch:flex-col touch:gap-2 touch:py-4";
 
-function AlignmentButtons() {
+/**
+ * The Arrange section's buttons for two or more selected marchers: align and flip, then
+ * `rotate` (the rotation and its pivot), then distribute.
+ */
+export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
     const { t } = useTranslate();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
-    const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
-    const closePlaceMenu = () => setPlaceMenuOpen(false);
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -322,6 +329,8 @@ function AlignmentButtons() {
                 </ActionButton>
             </div>
 
+            {rotate}
+
             {/* Distribute buttons */}
             <div className="flex flex-col gap-8">
                 <h5 className="text-h5">
@@ -400,8 +409,16 @@ function AlignmentButtons() {
                     />
                 </div>
             </div>
+        </>
+    );
+}
 
-            <hr className="border-stroke w-full border" />
+/** Puts the selected marchers where they stand on the page before or after */
+function PlaceMenu() {
+    const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
+    const closePlaceMenu = () => setPlaceMenuOpen(false);
+    return (
+        <>
             {/* Set Marcher Positions Dropdowns */}
             <div className="flex flex-col gap-8">
                 <Dropdown.Root
@@ -434,7 +451,7 @@ function AlignmentButtons() {
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
-                                <T keyName="toolbar.alignment.toNextPagePositions" />
+                                <T keyName="toolbar.alignment.toNextPageSpots" />
                             </ActionButton>
                         </Dropdown.Content>
                     </Dropdown.Portal>
@@ -464,12 +481,23 @@ function MarcherEditor() {
     const { t } = useTranslate();
     const { selectedMarchers: selection, setSelectedMarchers } =
         useSelectedMarchers()!;
-    // Performers: items (props and equipment) are edited in the Props panel, not as marchers
+    // Performers: items are edited in their panels, not as marchers: props in the Props panel,
+    // equipment, edited from its right-click menu
     const selectedMarchers = useMemo(
         () => performersOnly(selection),
         [selection],
     );
-    const selectedItemCount = selection.length - selectedMarchers.length;
+    const { data: items } = useQuery(allItemsQueryOptions());
+    const selectedEquipmentCount = useMemo(() => {
+        const equipment = new Set(
+            items
+                ?.filter((item) => item.kind === "equipment")
+                .map((item) => item.marcher_id),
+        );
+        return selection.filter((m) => equipment.has(m.id)).length;
+    }, [items, selection]);
+    const selectedPropCount =
+        selection.length - selectedMarchers.length - selectedEquipmentCount;
     const { selectedPage } = useSelectedPage()!;
     /**
      * Playback (UI-19 review): the section keeps its place and shows a note instead of the
@@ -614,14 +642,25 @@ function MarcherEditor() {
 
     return (
         <>
-            {selectedItemCount > 0 && (
+            {selectedPropCount > 0 && (
                 <p
                     className="text-sub text-text/60 px-6"
                     data-testid="inspector-items-selected"
                 >
                     <T
                         keyName="inspector.marcher.itemsSelected"
-                        params={{ count: selectedItemCount }}
+                        params={{ count: selectedPropCount }}
+                    />
+                </p>
+            )}
+            {selectedEquipmentCount > 0 && (
+                <p
+                    className="text-sub text-text/60 px-6"
+                    data-testid="inspector-equipment-selected"
+                >
+                    <T
+                        keyName="inspector.marcher.equipmentSelected"
+                        params={{ count: selectedEquipmentCount }}
                     />
                 </p>
             )}
@@ -641,6 +680,10 @@ function MarcherEditor() {
                                 playingNote
                             ) : (
                                 <>
+                                    {/* Under the marcher count, above the fold (#805) */}
+                                    <TimelineHeldCount
+                                        marcherIds={selectedMarcherIdList}
+                                    />
                                     <MovePad />
                                     <p className="text-sub text-text/80 w-full px-6 font-mono">
                                         {formatList(
@@ -720,6 +763,10 @@ function MarcherEditor() {
                                     <TimelineHoldLine
                                         marcherIds={selectedMarcherIdList}
                                     />
+                                    {/* What their feet do over a Held hold (#775) */}
+                                    <TimelineHoldStyle
+                                        marcherIds={selectedMarcherIdList}
+                                    />
                                     {selectedMarchers.length === 2 && (
                                         <ActionButton
                                             action="swapMarchers"
@@ -735,8 +782,8 @@ function MarcherEditor() {
                                         </ActionButton>
                                     )}
 
-                                    {/* Alignment, distribution, and transformation buttons */}
-                                    <AlignmentButtons />
+                                    {/* Align, flip, rotate and distribute are in the Arrange section above */}
+                                    <PlaceMenu />
 
                                     <TagButtons
                                         selectedMarcherIds={
@@ -982,6 +1029,12 @@ function MarcherEditor() {
                                                 )}
                                                 {/* Under Step Size: hold or move on this page (UI-18) */}
                                                 <TimelineHoldLine
+                                                    marcherIds={
+                                                        selectedMarcherIdList
+                                                    }
+                                                />
+                                                {/* What its feet do over a Held hold (#775) */}
+                                                <TimelineHoldStyle
                                                     marcherIds={
                                                         selectedMarcherIdList
                                                     }

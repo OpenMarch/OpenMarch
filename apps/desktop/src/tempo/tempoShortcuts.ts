@@ -1,8 +1,9 @@
 /**
  * Tempo mode: while tempo mode is on, only navigation works besides tempo editing
- * (owner, 2026-10-21): moving around the show, playback, go-to, undo and redo, and saving. Every
- * other action is off, from a key, the palette or a button (`isActionOffInWorkspace`), and keys
- * that would reach the field's or the timeline's own key handlers are stopped here first.
+ * (owner, 2026-10-21): moving around the show, playback, go-to, undo and redo, and saving, plus
+ * the import its own toolbar runs. Every other action is off, from a key, the palette or a button
+ * (`isActionOffInWorkspace`), and keys that would reach the field's or the timeline's own key
+ * handlers are stopped here first.
  */
 import type { ActionId } from "@/shortcuts/definitions";
 import { getEffectiveBindings } from "@/shortcuts/keymap";
@@ -22,6 +23,12 @@ export const TEMPO_MODE_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "nextBeat",
     "previousBeat",
     "timelineGoTo",
+    // the timeline's zoom (tablet 3.5: the touch transport's ± and Fit)
+    "timelineZoomIn",
+    "timelineZoomOut",
+    "timelineFit",
+    // leaving tempo mode from the touch transport's "…"
+    "toggleTempoMode",
     // playback (Click is the metronome)
     "playPause",
     "playPage",
@@ -37,6 +44,8 @@ export const TEMPO_MODE_ACTIONS: ReadonlySet<ActionId> = new Set<ActionId>([
     "performRedo",
     "launchSaveFileDialogue",
     "showShortcuts",
+    // tempo mode's own Add music and Import buttons run this
+    "launchInsertAudioFileDialogue",
 ]);
 
 export const isTempoModeOn = (): boolean => useTempoModeStore.getState().on;

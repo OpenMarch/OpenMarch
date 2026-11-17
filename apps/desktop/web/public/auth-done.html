@@ -1,0 +1,50 @@
+<!doctype html>
+<!--
+    Where Clerk's hosted sign-in sends the tab the web editor opened
+    (web/renderer/auth.ts). It tells the editor's tab, on the channel
+    `openmarch-auth-done:` + `?channel=` (the build's storage namespace), and
+    closes. Static, so it doesn't load the editor (or take its tab lock).
+-->
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="robots" content="noindex" />
+        <title>Signed in · OpenMarch</title>
+        <style>
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: grid;
+                place-items: center;
+                font-family: system-ui, sans-serif;
+                background: #ecebf0;
+                color: #1a1922;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background: #0f0e13;
+                    color: #ecebf0;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <p>You're signed in. You can close this tab and go back to OpenMarch.</p>
+        <script>
+            (function () {
+                var channel = new URLSearchParams(location.search).get(
+                    "channel",
+                );
+                if (channel && typeof BroadcastChannel !== "undefined") {
+                    var broadcast = new BroadcastChannel(
+                        "openmarch-auth-done:" + channel,
+                    );
+                    broadcast.postMessage("signed-in");
+                    broadcast.close();
+                }
+                window.close();
+            })();
+        </script>
+    </body>
+</html>

@@ -31,7 +31,7 @@ const context = (): SplitMergeContext => ({
 });
 
 const commands = (db: DbConnection) =>
-    createSplitMergeCommands({ database: db, undo: () => {}, context });
+    createSplitMergeCommands({ database: db, context });
 
 const timelines = async (db: DbConnection) =>
     await db

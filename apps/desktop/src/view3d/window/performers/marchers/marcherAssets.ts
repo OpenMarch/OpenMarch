@@ -10,6 +10,7 @@
 import type { AnimationClip, Group, SkinnedMesh } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import manifestUrl from "@/view3d/assets/om-pose/manifest.json?url";
+import crabManifestUrl from "@/view3d/assets/om-pose/crab/manifest.json?url";
 import type { Manifest } from "@/view3d/render/step-blend.js";
 import {
     BODY_TYPES,
@@ -17,6 +18,7 @@ import {
     type BodyType,
     type HeightClass,
 } from "@/view3d/core/marchers/looks";
+import { restoreStillPose } from "./stillPose";
 
 const bodyUrls = import.meta.glob<string>(
     "../../../assets/om-pose/bodies/*.glb",
@@ -24,6 +26,11 @@ const bodyUrls = import.meta.glob<string>(
 );
 const clipUrls = import.meta.glob<string>(
     "../../../assets/om-pose/clips/*.glb",
+    { query: "?url", import: "default", eager: true },
+);
+
+const crabClipUrls = import.meta.glob<string>(
+    "../../../assets/om-pose/crab/*.glb",
     { query: "?url", import: "default", eager: true },
 );
 
@@ -41,6 +48,8 @@ export interface LoadedBody {
 let manifestPromise: Promise<Manifest> | null = null;
 let bodiesPromise: Promise<Map<BodyType, LoadedBody>> | null = null;
 const classPromises = new Map<HeightClass, Promise<AnimationClip[]>>();
+let crabManifestPromise: Promise<Manifest> | null = null;
+const crabPromises = new Map<HeightClass, Promise<AnimationClip[]>>();
 
 /** The clip manifest (what each clip is, how far it travels). */
 export function loadManifest(): Promise<Manifest> {
@@ -49,6 +58,37 @@ export function loadManifest(): Promise<Manifest> {
         return r.json() as Promise<Manifest>;
     });
     return manifestPromise;
+}
+
+/** The crab clips' manifest: shows without percussion never fetch it. */
+export function loadCrabManifest(): Promise<Manifest> {
+    crabManifestPromise ??= fetch(crabManifestUrl).then((r) => {
+        if (!r.ok) throw new Error(`3D View: crab manifest ${r.status}`);
+        return r.json() as Promise<Manifest>;
+    });
+    return crabManifestPromise;
+}
+
+/** Both manifests as one; `crab` is the crab pack's, or null. */
+export function joinManifests(base: Manifest, crab: Manifest | null): Manifest {
+    if (!crab) return base;
+    const clips = (m: Manifest) => (Array.isArray(m) ? m : m.clips);
+    return {
+        ...(Array.isArray(base) ? {} : base),
+        clips: [...clips(base), ...clips(crab)],
+    };
+}
+
+/** Every crab clip of one height class (one packed GLB). */
+export function loadCrabClips(h: HeightClass): Promise<AnimationClip[]> {
+    let p = crabPromises.get(h);
+    if (!p) {
+        p = new GLTFLoader()
+            .loadAsync(urlFor(crabClipUrls, `clips-${classTag(h)}.glb`))
+            .then((gltf) => restoreStillPose(gltf.animations));
+        crabPromises.set(h, p);
+    }
+    return p;
 }
 
 async function loadBody(type: BodyType): Promise<LoadedBody> {
@@ -71,13 +111,13 @@ export function loadBodies(): Promise<Map<BodyType, LoadedBody>> {
     return bodiesPromise;
 }
 
-/** Every clip of one height class (one packed GLB, about 5.9 MB). */
+/** Every clip of one height class (one packed GLB, about 2 MB). */
 export function loadClassClips(h: HeightClass): Promise<AnimationClip[]> {
     let p = classPromises.get(h);
     if (!p) {
         p = new GLTFLoader()
             .loadAsync(urlFor(clipUrls, `clips-${classTag(h)}.glb`))
-            .then((gltf) => gltf.animations);
+            .then((gltf) => restoreStillPose(gltf.animations));
         classPromises.set(h, p);
     }
     return p;

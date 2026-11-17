@@ -1,9 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { Button } from "@openmarch/ui";
 import { FlagIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import Shortcut from "@/components/ui/Shortcut";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { TRANSPORT_SHORTCUTS } from "./TransportButtons";
 import clsx from "clsx";
 import { START_INK } from "./startFlagInk";
@@ -22,6 +24,9 @@ import { pageFlags, type FlagPage } from "@/timeline/timelinePlayhead";
 import { isPageTimeline, moveLabels } from "@/timeline/timelineViewModel";
 import { joinList } from "@/timeline/translateTimelineText";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
+import { useExpertHolds } from "@/timeline/useExpertHolds";
+import { holdTerms } from "@/timeline/holdTerms";
 import {
     basicPageBox,
     planCanvasEdit,
@@ -277,12 +282,16 @@ export const passedSets = (names: readonly string[]) =>
  * ordinary page: a whole page box. Prominent, and flashed
  * once, when anything is unusual: a partial window, a window
  * passing page flags (that part never truncates), or past the last flag. With looping on it
- * names it while it is elsewhere ("Space loops Page 3's move", UI-17). Only the buttons take the pointer, so the field under it stays
+ * names it while it is elsewhere ("Space loops Page 3's move", UI-17). When only some of the
+ * selection is Held at the playhead it says how many ("· 1 of 2 Held", #805), since a drag edits
+ * each marcher by its own kind and you're looking at the field when you drag. Only the buttons take the pointer, so the field under it stays
  * usable. Screen readers hear the sentence once it settles, not on every scrubbed beat. Hidden
  * while isolated: the isolation bar says it instead.
  */
 export function TimelineFromStartBadge() {
     const { t } = useTranslate();
+    // Its words change on every scrubbed beat: not watched for size, so the pill isn't placed again
+    const layerRef = useFieldLayerRef<HTMLDivElement>({ watchSize: false });
     const selection = useTimelineSelectionStore((s) => s.selection);
     const isolated = useTimelineSelectionStore((s) => s.isolation !== null);
     const playing = useTimelineSelectionStore((s) => s.playback !== null);
@@ -310,6 +319,18 @@ export function TimelineFromStartBadge() {
             ? basicEditSpot(plan.target, pages)
             : null;
     const through = range && !basic ? flagsInside(range, pages) : [];
+    // #805: "· 1 of 2 Held" where only some of the selection is Held at the playhead
+    const selectedMarchers = useSelectedMarchers()?.selectedMarchers;
+    const marcherIds = useMemo(
+        () => (selectedMarchers ?? []).map((m) => m.id),
+        [selectedMarchers],
+    );
+    const partlyHeld = useExpertHolds(marcherIds).partlyHeld;
+    const heldParams = partlyHeld && {
+        ...holdTerms(),
+        count: partlyHeld.held,
+        total: partlyHeld.total,
+    };
     // UI-25: a move split off a page's timeline has the page's range; the line names the move
     const splitMoveName = useTimelineSelectionStore((s) => {
         const move = basic ? null : windowMove(s);
@@ -382,7 +403,12 @@ export function TimelineFromStartBadge() {
             : null;
     const movedOn = stopped !== null;
     const editing = editingWords(basic ? plan : null, name);
-    const unusual = loopShown || through.length > 0 || !wholePage || movedOn;
+    const unusual =
+        loopShown ||
+        through.length > 0 ||
+        !wholePage ||
+        movedOn ||
+        heldParams !== null;
     let sentence = "";
     if (selection.kind !== "none") {
         sentence = through.length
@@ -391,6 +417,11 @@ export function TimelineFromStartBadge() {
                   sets: passedSets(through),
               })
             : editing;
+        if (heldParams)
+            sentence = t("timeline.windowLine.withHeld", {
+                ...heldParams,
+                rest: sentence,
+            });
         if (stopped)
             sentence = t("timeline.windowLine.afterPaused", {
                 paused: stopped,
@@ -432,10 +463,14 @@ export function TimelineFromStartBadge() {
     if (hidden) return null;
     return (
         <div
+            ref={layerRef}
             data-testid="timeline-window-line"
             data-prominent={unusual || undefined}
+            // #927: the pill's own spot keeps off it, though one the user chose doesn't give way
+            // (no buttons here); below the touch toolbar's panel when that's open
+            data-field-layer="info"
             className={clsx(
-                "rounded-6 text-sub pointer-events-none absolute top-8 left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
+                "rounded-6 text-sub touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+8px)] left-8 z-10 flex max-w-[calc(50%-24px)] items-center gap-8 px-8 py-4 whitespace-nowrap transition-[opacity,box-shadow] duration-300",
                 unusual
                     ? clsx(
                           "bg-bg-1 text-text border shadow-md",
@@ -481,6 +516,15 @@ export function TimelineFromStartBadge() {
                     })}
                 </span>
             )}
+            {heldParams && (
+                <span
+                    data-testid="timeline-window-held"
+                    aria-hidden="true"
+                    className="shrink-0 font-medium"
+                >
+                    {t("timeline.windowLine.held", heldParams)}
+                </span>
+            )}
             {loopShown && (
                 <span
                     data-testid="timeline-loop-badge"
@@ -520,17 +564,24 @@ export default function TimelineIsolationBar() {
             isPageTimeline(timeline, s.storedTimelines ?? [], s.pageBoxes),
     );
     const { pages } = useTimingObjects()!;
+    const layerRef = useFieldLayerRef<HTMLDivElement>();
+    // #936: no Esc key cap on a touch screen until a keyboard is used
+    const showHints = useShowShortcutHints();
     if (!timeline) return null;
     const count = timeline.marcherIds.size;
     return (
         <div
+            ref={layerRef}
             data-testid="timeline-isolation-bar"
+            // #927: Done stays reachable: the pill keeps off the bar, and it sits below the touch
+            // toolbar's panel when that's open
+            data-field-layer="task"
             // UI-14 round-2 review: Enter presses Done, Space plays
             data-timeline-own-keys="true"
             onKeyDown={spaceStaysPlay}
             onKeyUp={spaceStaysPlay}
             role="status"
-            className="border-accent bg-bg-1 text-text rounded-6 text-sub pointer-events-auto absolute top-8 left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
+            className="border-accent bg-bg-1 text-text rounded-6 text-sub touch:z-30 pointer-events-auto absolute top-[calc(var(--field-top-inset,0px)+8px)] left-1/2 z-10 flex max-w-[calc(100%-32px)] -translate-x-1/2 items-center gap-12 border px-12 py-6 whitespace-nowrap shadow-md"
         >
             <span className="text-accent font-medium">
                 {t("timeline.isolation.title")}
@@ -573,7 +624,10 @@ export default function TimelineIsolationBar() {
             >
                 <T
                     keyName="timeline.isolation.done"
-                    params={{ keys: () => <Shortcut binding="Escape" /> }}
+                    params={{
+                        keys: () =>
+                            showHints ? <Shortcut binding="Escape" /> : null,
+                    }}
                 />
             </Button>
         </div>

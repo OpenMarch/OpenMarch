@@ -3,6 +3,8 @@ words:
   - rehomed
   - rehoming
   - bpms
+  - APPIMAGE
+  - pipefail
   - nyquist
   - respace
   - neighbours
@@ -26,6 +28,8 @@ words:
   - tuplets
   - senza
   - wsola
+  - ompose
+  - restep
   - hann
   - unstretched
   - LANCZOS
@@ -51,6 +55,7 @@ words:
   - Noto
   - notdef
   - cmap
+  - sublicensable
   - subsetter
   - unicodes
   - stepoff
@@ -64,6 +69,8 @@ words:
   - metalness
   - leadpipe
   - mellophone
+  - mellophones
+  - scorewriter
   - crossfade
   - crossfades
   - smootherstep
@@ -72,6 +79,7 @@ words:
   - frameless
   - headlessly
   - llvmpipe
+  - llms
   - softpipe
   - jank
   - janky
@@ -191,6 +199,7 @@ words:
   - musescore
   - musicxml
   - Nativewind
+  - NFHS
   - noopener
   - noreferrer
   - nosniff
@@ -330,6 +339,8 @@ ignorePaths:
   # Verbatim SIL Open Font License for the vendored text symbols fonts
   - packages/ui/src/fonts/OFL.txt
   - "**/view3d/assets/om-pose/**"
+  # Verbatim third-party license for the vendored front ensemble models
+  - "**/view3d/assets/pit/LICENSE"
   - "**/view3d/assets/instruments/*.json"
   - "**/node_modules/**"
   - "**/dist/**"
@@ -342,6 +353,7 @@ ignorePaths:
   - "**/locales/**"
   - locales/**
   - patreonMembers.json
+  - "**/*.LICENSE.txt"
   - "**/mock-databases/**"
   - "**/_journal.json"
   - pnpm-lock.yaml

@@ -94,6 +94,16 @@ export const WEB_CHANNELS = {
      * the open show (the page then reloads into it).
      */
     restoreVersion: "web:restoreVersion",
+
+    /** () => { fileName: string } | null: the open show's file name, for a bug report */
+    reportShowInfo: "web:reportShowInfo",
+    /**
+     * (expectedFileName: string, includeAudio: boolean) => Uint8Array | null:
+     * a scrubbed copy of the open show for a bug report (names and notes
+     * removed, the music too unless included). Null if the open show isn't
+     * `expectedFileName`.
+     */
+    reportCopy: "web:reportCopy",
 } as const;
 
 export type FlushResult = { safe: boolean; memoryOnly?: true; error?: string };

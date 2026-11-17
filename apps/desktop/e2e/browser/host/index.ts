@@ -17,6 +17,7 @@ import * as DatabaseServices from "@om-electron/database/database.services";
 import { getOrm } from "@om-electron/database/db";
 import { DrizzleMigrationService } from "@om-electron/database/services/DrizzleMigrationService";
 import { GPU_CRASHED_CHANNEL } from "@om-electron/main/gpu";
+import { UPDATE_IPC_CHANNELS } from "../../../src/global/updates";
 import { ipcHandlers, ipcListeners, ipcMain } from "./electron";
 
 export type ShowHost = {
@@ -63,6 +64,8 @@ function registerHandlers() {
         );
     });
     ipcMain.handle("settings:get", (_, key: string) => settings.get(key));
+    // No updater here, as in a development build: the title bar shows no update pill
+    ipcMain.handle(UPDATE_IPC_CHANNELS.getState, () => null);
     ipcMain.on("settings:set", (_, values: Record<string, unknown>) => {
         for (const [key, value] of Object.entries(values))
             settings.set(key, value);

@@ -11,6 +11,9 @@ import { useTranslate } from "@tolgee/react";
 import { START_INK } from "./startFlagInk";
 import { beatToX, TIMELINE_HEADROOM_HEIGHT } from "./TimelineGeometry";
 import type { TimelineBeatRange } from "./TimelineViewModel";
+import { fingerDragSlop } from "./timelineGestures";
+import { touchGrabOffset } from "./touchTargets";
+import { TouchHitArea } from "./TouchHitArea";
 
 /** Snaps a dragged loop end to the nearest snap beat within this many pixels */
 const SNAP_PX = 8;
@@ -26,6 +29,10 @@ const HANDLE_INSET = 2;
  * flag's grip. Each handle reaches outward, away from the loop, so a start flag's pennant on the
  * loop's start (it points right, and is grabbed above the handles) leaves the handle room.
  * Moving the playhead never changes the loop; the owner of `loop` moves it on page navigation.
+ *
+ * In the touch layout each end has a 44px hit area centered on it (tablet plan 3.3). A finger
+ * drags an end once it has moved 12px, keeping the offset it grabbed the end at, and a second
+ * finger's cancel puts the loop back; a mouse drags from the first pixel, as before.
  */
 export const TimelineLoopBar = memo(function TimelineLoopBar({
     loop,
@@ -50,6 +57,12 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
         edge: "start" | "end";
         pointerId: number;
         surface: Element;
+        startClientX: number;
+        /** How far it moves before it drags: none for a mouse, a finger's 12px (`fingerDragSlop`) */
+        slop: number;
+        moved: boolean;
+        /** A finger's offset from the end it grabbed (`touchGrabOffset`); 0 for a mouse */
+        grab: number;
     } | null>(null);
     useEffect(() => setPreview(null), [loop.startBeatIndex, loop.endBeatIndex]);
     const shown = preview ?? loop;
@@ -120,6 +133,15 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                         edge,
                         pointerId: event.pointerId,
                         surface,
+                        startClientX: event.clientX,
+                        slop: fingerDragSlop(event.pointerType, 0),
+                        moved: false,
+                        grab: touchGrabOffset(
+                            event.pointerType,
+                            event.clientX,
+                            surface.getBoundingClientRect().left +
+                                beatToX(beat, pixelsPerBeat),
+                        ),
                     };
                     event.currentTarget.setPointerCapture?.(event.pointerId);
                 }}
@@ -127,11 +149,18 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                     const current = drag.current;
                     if (!current || current.pointerId !== event.pointerId)
                         return;
+                    if (
+                        !current.moved &&
+                        Math.abs(event.clientX - current.startClientX) <
+                            current.slop
+                    )
+                        return;
+                    current.moved = true;
                     setPreview(
                         moved(
                             current.edge,
                             beatAt(
-                                event.clientX,
+                                event.clientX + current.grab,
                                 current.surface,
                                 event.altKey,
                             ),
@@ -147,9 +176,22 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                     event.currentTarget.releasePointerCapture?.(
                         event.pointerId,
                     );
+                    // A finger's tap that wobbled moves nothing
+                    if (
+                        !current.moved &&
+                        Math.abs(event.clientX - current.startClientX) <
+                            current.slop
+                    ) {
+                        setPreview(null);
+                        return;
+                    }
                     const next = moved(
                         current.edge,
-                        beatAt(event.clientX, current.surface, event.altKey),
+                        beatAt(
+                            event.clientX + current.grab,
+                            current.surface,
+                            event.altKey,
+                        ),
                         loop,
                     );
                     if (
@@ -158,6 +200,12 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                     )
                         onChange?.(next);
                     else setPreview(null);
+                }}
+                // A second finger (or the browser) cancels the drag: the loop goes back
+                onPointerCancel={() => {
+                    if (!drag.current) return;
+                    drag.current = null;
+                    setPreview(null);
                 }}
                 onLostPointerCapture={() => {
                     if (!drag.current) return;
@@ -187,10 +235,21 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
                     height: TIMELINE_HEADROOM_HEIGHT,
                 }}
             >
+                {onChange && (
+                    <TouchHitArea
+                        style={{
+                            left:
+                                edge === "start"
+                                    ? HANDLE_WIDTH - HANDLE_INSET
+                                    : HANDLE_INSET,
+                        }}
+                    />
+                )}
                 {/* At rest the bar's rounded end is the handle; hovered or focused, a knob shows,
                     centered on the end */}
                 <span
                     aria-hidden="true"
+                    data-touch-drawn=""
                     className={clsx(
                         "absolute top-0 size-8 -translate-x-1/2 rounded-full opacity-0 transition-opacity duration-100 group-hover:opacity-100 group-focus-visible:opacity-100",
                         START_INK.bg,

@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { compileCues, type CueInput } from "@openmarch/core";
+import { compileCues, type CompileInput, type CueInput } from "@openmarch/core";
 import { marcherCueInputs } from "../cueInputs";
 import { headingAt, type MarcherPlan } from "../planner";
 
@@ -33,8 +33,9 @@ const holds = (n: number) => Array.from({ length: n }, () => "hold" as const);
 /** Compiles `cues` for one marcher (id 1) over as many counts as the drill has. */
 function inputs(
     positions: Float64Array,
-    cues: Omit<CueInput, "target" | "kind">[] = [],
+    cues: Omit<CueInput, "marcherIds">[] = [],
     stepOffFoot?: "left" | "right",
+    extra: Partial<CompileInput> = {},
 ) {
     const K = positions.length / 2 - 1;
     const compiled = compileCues({
@@ -42,23 +43,11 @@ function inputs(
             id: 100 + i,
             duration: 0.5,
         })),
-        marchers: [
-            {
-                id: 1,
-                section: "Trumpet",
-                tagIds: [],
-                drillOrder: 0,
-                carries: "winds",
-            },
-        ],
-        cues: cues.map((c) => ({
-            kind: "state" as const,
-            target: { kind: "band" as const },
-            ...c,
-        })),
-        showDefaults: stepOffFoot ? { stepOffFoot } : undefined,
+        marchers: [{ id: 1, section: "Trumpet", carries: "winds" }],
+        cues: cues.map((c) => ({ marcherIds: [1], ...c })),
+        ...extra,
     });
-    return marcherCueInputs(compiled, 1, positions);
+    return marcherCueInputs(compiled, 1, positions, { stepOffFoot });
 }
 
 /** A cue on show count `count`. */
@@ -69,11 +58,7 @@ const on = (
     extra: Partial<CueInput> = {},
 ) => ({
     id,
-    channel: value.startsWith("builtin:feet")
-        ? ("feet" as const)
-        : value.startsWith("builtin:body")
-          ? ("body" as const)
-          : ("facing" as const),
+    type: value.startsWith("builtin:posture") ? "posture" : "facing",
     beatId: 100 + count,
     value,
     ...extra,
@@ -104,53 +89,78 @@ describe("with no cues", () => {
     });
 });
 
-describe("Feet cues", () => {
-    it("change the pace from the step that lands on the cue's click", () => {
-        // performer-behavior.md 2.2: a cue's instant is its count's click,
-        // where that count's step lands (planner count 4)
-        const out = inputs(drill(holds(8)), [
-            on(1, 4, "builtin:feet.step", { settings: { pace: "half" } }),
-        ]);
-        expect(out.feet.map((f) => f.pace)).toEqual([
-            "single",
-            "single",
-            "single",
-            "single",
-            "half",
-            "half",
-            "half",
-            "half",
-        ]);
+describe("the hold style", () => {
+    // the band travels on counts 2-5
+    const bandTravels = (c: number) => c >= 2 && c < 6;
+
+    /** The show set to mark time on holds (Show settings). */
+    const markTime = {
+        showDefaults: { holdWhileBandMoves: "markTime" },
+    } as const;
+
+    it("stands by default, though the band moves (ADR 0015 D-5)", () => {
+        const out = inputs(drill(holds(8)), [], undefined, { bandTravels });
+        expect(out.feet.every((f) => f.onHolds === "stand")).toBe(true);
     });
 
-    it("carry the techniques and the step-off foot", () => {
-        const out = inputs(drill(holds(4)), [
-            on(1, 0, "builtin:feet.step", {
-                settings: {
-                    moving: "highStep",
-                    onHolds: "highMarkTime",
-                    stepOffFoot: "right",
-                },
-            }),
-        ]);
-        expect(out.feet[2]).toEqual({
-            pace: "single",
-            moving: "highStep",
-            onHolds: "highMarkTime",
-            stepOffFoot: "right",
+    it("marks time on the counts the band moves when the show asks, from the compile's hold style", () => {
+        const out = inputs(drill(holds(8)), [], undefined, {
+            bandTravels,
+            ...markTime,
         });
+        expect(out.feet.map((f) => f.onHolds)).toEqual([
+            "stand",
+            "stand",
+            "markTime",
+            "markTime",
+            "markTime",
+            "markTime",
+            "stand",
+            "stand",
+        ]);
     });
 
-    it("stand while a kneel takes the feet over", () => {
-        const out = inputs(drill(holds(8)), [
-            on(1, 0, "builtin:feet.step", {
-                settings: { onHolds: "markTime" },
-            }),
-            on(2, 4, "builtin:body.kneel"),
+    it("takes the show's own style", () => {
+        const out = inputs(drill(holds(8)), [], undefined, {
+            bandTravels,
+            showDefaults: { holdWhileBandMoves: "highMarkTime" },
+        });
+        expect(out.feet[3].onHolds).toBe("highMarkTime");
+    });
+
+    it("takes a hold's own style over the show's, for its counts", () => {
+        const out = inputs(drill(holds(8)), [], undefined, {
+            bandTravels,
+            ...markTime,
+            holdStyles: [
+                { marcherId: 1, from: 3, to: 5, style: "stand" },
+                { marcherId: 1, from: 6, to: 8, style: "highMarkTime" },
+            ],
+        });
+        expect(out.feet.map((f) => f.onHolds)).toEqual([
+            "stand",
+            "stand",
+            "markTime",
+            "stand",
+            "stand",
+            "markTime",
+            "highMarkTime",
+            "highMarkTime",
         ]);
+    });
+
+    it("stands under a kneel, from the count it starts going down", () => {
+        const out = inputs(
+            drill(holds(8)),
+            [on(2, 5, "builtin:posture.kneel")],
+            undefined,
+            { bandTravels: () => true, ...markTime },
+        );
         expect(out.feet[1].onHolds).toBe("markTime");
-        // kneel takes 3 counts, landing on 4: the feet are its from count 2
-        expect(out.feet[6].onHolds).toBe("stand");
+        // kneel takes 3 counts, landing on 5: the feet are its from count 3
+        expect(out.feet[2].onHolds).toBe("markTime");
+        expect(out.feet[3].onHolds).toBe("stand");
+        expect(out.feet[7].onHolds).toBe("stand");
     });
 });
 
@@ -169,7 +179,7 @@ describe("Facing cues", () => {
     it("snap in fixed time: 0.2 s before the click, not over the count", () => {
         // "back on 6" as a snap, at 120 bpm: 0.2 s is 0.4 of a count
         const out = inputs(drill(holds(10)), [
-            on(1, 6, "builtin:facing.back", { transitionLength: 1 }),
+            on(1, 6, "builtin:facing.back", { transition: 1 }),
         ]);
         expect(out.turnSpan[7]).toBeCloseTo(0.4, 9); // into show click 6
         expect(out.turnSpan[6]).toBe(1);
@@ -190,7 +200,7 @@ describe("Facing cues", () => {
     it("ease through a longer transition, halfway at its middle", () => {
         // side 2 on 6 over 5 counts: from the click of 2 to the click of 6
         const out = inputs(drill(holds(10)), [
-            on(1, 6, "builtin:facing.side2", { transitionLength: 5 }),
+            on(1, 6, "builtin:facing.side2", { transition: 5 }),
         ]);
         expect(out.heading[3]).toBeCloseTo(0, 9); // show click 2
         expect(out.heading[5]).toBeCloseTo(45 * DEG, 9); // show click 4
@@ -222,6 +232,18 @@ describe("Facing cues", () => {
             on(1, 0, "builtin:facing.point", { settings: { x: 10, y: -20 } }),
         ]);
         expect(out.heading[2]).toBeCloseTo(90 * DEG, 9);
+    });
+
+    it("turn back when a momentary cue ends", () => {
+        // back for counts 4 and 5, as a snap
+        const out = inputs(drill(holds(10)), [
+            on(1, 4, "builtin:facing.back", { length: 2, transition: 1 }),
+        ]);
+        const h = [...out.heading];
+        expect(h[4]).toBeCloseTo(0, 9); // show click 3
+        expect(Math.abs(h[5])).toBeCloseTo(Math.PI, 9); // show click 4
+        expect(Math.abs(h[6])).toBeCloseTo(Math.PI, 9);
+        expect(h[7]).toBeCloseTo(0, 9); // show click 6: the front again
     });
 
     it("face the direction of travel, and keep it on a hold", () => {

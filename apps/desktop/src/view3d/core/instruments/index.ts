@@ -28,6 +28,7 @@ const BRASS: ReadonlySet<string> = new Set<BrassModelId>([
     "trombone",
     "bassTrombone",
     "contra",
+    "sousaphone",
 ]);
 const WOODWINDS: ReadonlySet<string> = new Set<WoodwindModelId>([
     "piccolo",

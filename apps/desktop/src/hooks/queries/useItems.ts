@@ -5,12 +5,14 @@ import {
 } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import {
+    applyPitPreset,
     createItems,
     deleteMarchers,
     getItemGeometry,
     getItems,
     setItemGeometry,
     updateItems,
+    type ApplyPitPresetArgs,
     type ItemGeometryArgs,
     type ModifiedItemArgs,
     type NewItemArgs,
@@ -33,7 +35,7 @@ export const itemGeometryKeys = {
 };
 
 /** After items are added or removed: their marchers rows, canvas visuals, items and Outlines */
-const invalidateItemsAndMarchers = async (qc: QueryClient) => {
+export const invalidateItemsAndMarchers = async (qc: QueryClient) => {
     // The marchers first: the canvas makes an item's Outline from its visual group
     await qc.invalidateQueries({ queryKey: marcherKeys.all() });
     void qc.invalidateQueries({ queryKey: itemKeys.all() });
@@ -105,5 +107,19 @@ export const deleteItemsMutationOptions = (qc: QueryClient) =>
         onSuccess: () => invalidateItemsAndMarchers(qc),
         onError: (e, variables) => {
             conToastError(tolgee.t("props.errors.delete"), e, variables);
+        },
+    });
+
+/**
+ * Applies a front ensemble preset in one undo step: its equipment, replacing the previous
+ * preset's, and the performers the show lacks
+ */
+export const applyPitPresetMutationOptions = (qc: QueryClient) =>
+    mutationOptions({
+        mutationFn: (args: ApplyPitPresetArgs) =>
+            applyPitPreset({ db, ...args }),
+        onSuccess: () => invalidateItemsAndMarchers(qc),
+        onError: (e, variables) => {
+            conToastError(tolgee.t("props.errors.preset"), e, variables);
         },
     });

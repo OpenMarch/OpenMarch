@@ -6,6 +6,7 @@ import {
     bowlTiers,
     outlineOffset,
     RING_POINTS,
+    ringSections,
     type BowlOutlineOptions,
 } from "../bowl";
 
@@ -47,6 +48,42 @@ describe("outlineOffset", () => {
         expect(outlineOffset(options, 0, options.centerZ)).toBeCloseTo(-32);
         expect(outlineOffset(options, 0, options.centerZ + 40)).toBeCloseTo(8);
         expect(outlineOffset(options, 70, options.centerZ)).toBeCloseTo(7.5);
+    });
+});
+
+describe("ringSections", () => {
+    it("starts sections on segment boundaries and counts them in u", () => {
+        const { starts, u } = ringSections({ x: 4, z: 7, arc: 4 });
+        expect(starts[0]).toBe(0);
+        expect(u).toHaveLength(RING_POINTS + 1);
+        expect(starts).toHaveLength(7 + 4 + 2 + 4 + 7 + 4 + 2 + 4);
+        expect(u[u.length - 1]).toBeCloseTo(starts.length, 6);
+        for (let i = 1; i < starts.length; i++)
+            expect(starts[i]).toBeGreaterThan(starts[i - 1]);
+    });
+
+    it("rejects a layout that doesn't divide a ring part", () => {
+        expect(() => ringSections({ x: 3, z: 7, arc: 4 })).toThrow();
+    });
+
+    it("uses section u on treads when a tier has sections", () => {
+        const layout = { x: 4, z: 7, arc: 4 };
+        const tiers = bowlTiers(bowlOutline(options), [
+            {
+                offset: 0,
+                rows: 1,
+                depth: 1,
+                rise: 0.5,
+                base: 1,
+                bottom: 0,
+                sections: layout,
+            },
+        ]);
+        const geo = bandGeometry(tiers.treads);
+        const uv = geo.getAttribute("uv");
+        // The first quad spans a quarter section along the front straight.
+        expect(uv.getX(1) - uv.getX(0)).toBeCloseTo(0.25, 6);
+        geo.dispose();
     });
 });
 

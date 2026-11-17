@@ -15,6 +15,17 @@ const NOTHING_TO_DO_KEYS = {
     redo: "actions.edit.noRedoAvailable",
 } as const;
 
+const DONE_KEYS = {
+    undo: "touch.undone",
+    redo: "touch.redone",
+} as const;
+
+/**
+ * The action argument that adds a short "Undone"/"Redone" note when the step did something.
+ * Field finger taps pass it (tablet plan 1.6): there's no menu or key to show what happened.
+ */
+export const ANNOUNCE_HISTORY_ARG = "announce";
+
 export function useHistoryActionHandlers() {
     const { t } = useTranslate();
     const databaseReady = useDatabaseReady();
@@ -57,16 +68,29 @@ export function useHistoryActionHandlers() {
     // A held key's repeats are skipped while a press is still running or waiting, so holding
     // Ctrl+Z undoes as fast as the app can, with nothing left to run after release.
     const [pending] = useState(() => ({ count: 0 }));
-    const press = (direction: HistoryDirection) => {
+    const press = (direction: HistoryDirection, announce = false) => {
         pending.count++;
-        void queueHistoryAction(direction).finally(() => {
-            pending.count--;
-        });
+        void queueHistoryAction(direction)
+            .then((did) => {
+                if (did && announce)
+                    toast(t(DONE_KEYS[direction]), { duration: 1200 });
+            })
+            .finally(() => {
+                pending.count--;
+            });
     };
     const options = {
         enabled: databaseReady,
         ignoreRepeat: () => pending.count > 0,
     };
-    useActionHandler("performUndo", () => press("undo"), options);
-    useActionHandler("performRedo", () => press("redo"), options);
+    useActionHandler(
+        "performUndo",
+        (args) => press("undo", args?.[ANNOUNCE_HISTORY_ARG] === true),
+        options,
+    );
+    useActionHandler(
+        "performRedo",
+        (args) => press("redo", args?.[ANNOUNCE_HISTORY_ARG] === true),
+        options,
+    );
 }
