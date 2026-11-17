@@ -218,14 +218,14 @@
         "chapter": "marchers",
         "kind": "clip",
         "width": 1280,
-        "height": 350,
+        "height": 364,
         "seconds": 4.5
     },
     "marchers-equipment-lane": {
         "chapter": "marchers",
         "kind": "still",
         "width": 1600,
-        "height": 678
+        "height": 660
     },
     "marchers-equipment-menu": {
         "chapter": "marchers",
@@ -511,7 +511,7 @@
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 216
+        "height": 264
     },
     "timeline-loop": {
         "chapter": "timeline",
@@ -532,6 +532,12 @@
         "kind": "still",
         "width": 816,
         "height": 556
+    },
+    "timeline-moves-hidden": {
+        "chapter": "timeline",
+        "kind": "still",
+        "width": 1600,
+        "height": 252
     },
     "timeline-not-defined": {
         "chapter": "timeline",
@@ -556,7 +562,7 @@
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 216
+        "height": 252
     },
     "timeline-paths": {
         "chapter": "timeline",
