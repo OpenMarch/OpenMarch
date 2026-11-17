@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "Pas",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "à l’intérieur",
-                "outside": "à l’extérieur",
-                "on": "Sur",
-                "inFrontOf": "devant",
-                "behind": "derrière",
-                "xCheckpoint": "Repère X {id}",
-                "yCheckpoint": "Repère Y {id}"
+                "y": "Y"
             },
             "rotation": "Rotation"
         },

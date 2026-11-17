@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "歩数",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "内側",
-                "outside": "外側",
-                "on": "線上",
-                "inFrontOf": "前",
-                "behind": "後ろ",
-                "xCheckpoint": "X基準線{id}",
-                "yCheckpoint": "Y基準線{id}"
+                "y": "Y"
             },
             "rotation": "回転"
         },

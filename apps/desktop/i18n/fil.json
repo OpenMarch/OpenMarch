@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "Hakbang",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "sa loob ng",
-                "outside": "sa labas ng",
-                "on": "Nasa",
-                "inFrontOf": "sa harap ng",
-                "behind": "sa likod ng",
-                "xCheckpoint": "Linya ng sanggunian X {id}",
-                "yCheckpoint": "Linya ng sanggunian Y {id}"
+                "y": "Y"
             },
             "rotation": "Pag-ikot"
         },

@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "Pasos",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "adentro de",
-                "outside": "afuera de",
-                "on": "Sobre",
-                "inFrontOf": "delante de",
-                "behind": "detrás de",
-                "xCheckpoint": "Línea de referencia X {id}",
-                "yCheckpoint": "Línea de referencia Y {id}"
+                "y": "Y"
             },
             "rotation": "Rotación"
         },

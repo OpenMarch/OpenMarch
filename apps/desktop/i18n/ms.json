@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "Langkah",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "di dalam",
-                "outside": "di luar",
-                "on": "Pada",
-                "inFrontOf": "di hadapan",
-                "behind": "di belakang",
-                "xCheckpoint": "Garisan rujukan X {id}",
-                "yCheckpoint": "Garisan rujukan Y {id}"
+                "y": "Y"
             },
             "rotation": "Putaran"
         },

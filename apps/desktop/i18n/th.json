@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "ก้าว",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "ด้านใน",
-                "outside": "ด้านนอก",
-                "on": "บน",
-                "inFrontOf": "ด้านหน้า",
-                "behind": "ด้านหลัง",
-                "xCheckpoint": "เส้นอ้างอิง X {id}",
-                "yCheckpoint": "เส้นอ้างอิง Y {id}"
+                "y": "Y"
             },
             "rotation": "การหมุน"
         },

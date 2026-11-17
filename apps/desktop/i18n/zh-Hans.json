@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "步数",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "内侧",
-                "outside": "外侧",
-                "on": "位于",
-                "inFrontOf": "前方",
-                "behind": "后方",
-                "xCheckpoint": "X参考线{id}",
-                "yCheckpoint": "Y参考线{id}"
+                "y": "Y"
             },
             "rotation": "旋转"
         },

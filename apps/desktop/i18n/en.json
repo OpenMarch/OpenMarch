@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "Steps",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "inside",
-                "outside": "outside",
-                "on": "On",
-                "inFrontOf": "in front of",
-                "behind": "behind",
-                "xCheckpoint": "X-Checkpoint {id}",
-                "yCheckpoint": "Y-Checkpoint {id}"
+                "y": "Y"
             },
             "rotation": "Rotation"
         },

@@ -853,14 +853,7 @@
             "distributeStepsPlaceholder": "步數",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "內側",
-                "outside": "外側",
-                "on": "位於",
-                "inFrontOf": "前方",
-                "behind": "後方",
-                "xCheckpoint": "X參考線{id}",
-                "yCheckpoint": "Y參考線{id}"
+                "y": "Y"
             },
             "rotation": "旋轉"
         },
