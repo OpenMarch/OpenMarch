@@ -37,7 +37,7 @@ import {
     walkersOf,
     type Walker,
 } from "./timelineGroupRoutes";
-import { isGroupLane, lanesOfRoute } from "./timelineLanes";
+import { isGroupLane, laneOffset, lanesOfRoute } from "./timelineLanes";
 import {
     lastLegBulge,
     writeRouteGeometryInTransaction,
@@ -127,9 +127,48 @@ async function editOwnRoutePointsInTransaction(
 }
 
 /**
+ * A path with one lane that carries an offset (a Detached copy, AP-R9, or a group path every other
+ * spot left) is shown and edited as that lane (AP-R9 "the editor shows and edits the copy's lane"):
+ * its points plus the offset. Returns the offset, or null for every other path.
+ */
+async function oneLaneOffset(
+    tx: DbTransaction,
+    routeId: number,
+): Promise<XY | null> {
+    const lanes = await lanesOfRoute(tx, routeId);
+    return lanes.length === 1 ? laneOffset(lanes[0]!) : null;
+}
+
+/**
+ * Points given on a one-lane path's lane (`oneLaneOffset`) back on its route: each less the
+ * offset, except a point whose id and place are a stored point's, shown as `stored + o`, which
+ * keeps the stored place exactly, so a point edit elsewhere never moves it by rounding (AP-R1
+ * keeps `from` and `to` only while the end points are unchanged, bit for bit).
+ */
+export function fromLaneSpace(
+    points: readonly RoutePointInput[],
+    current: RouteGeometry,
+    o: XY,
+): RoutePointInput[] {
+    const stored = new Map(current.points.map((p) => [p.id, p.at]));
+    return points.map((p) => {
+        const was = p.id === undefined ? undefined : stored.get(p.id);
+        const shown =
+            was !== undefined &&
+            Object.is(p.at[0], was[0] + o[0]) &&
+            Object.is(p.at[1], was[1] + o[1]);
+        return {
+            ...p,
+            at: shown ? [was[0], was[1]] : [p.at[0] - o[0], p.at[1] - o[1]],
+        };
+    });
+}
+
+/**
  * AP-R1 "editing a route's points" (spec J.8, I.10 AP-O8): the path `routeId`'s points become
  * `points`, own or group, whoever is selected and whoever holds its spots now. A group path's
- * offsets are kept, so every lane moves with the edit.
+ * offsets are kept, so every lane moves with the edit. A one-lane path's points are given on its
+ * lane, as the editor shows it (`oneLaneOffset`, AP-R9).
  */
 export async function editPathPointsInTransaction({
     tx,
@@ -149,14 +188,23 @@ export async function editPathPointsInTransaction({
      */
     toBulge?: number | null;
 }): Promise<RehomeReport> {
-    if (await isGroupRoute(tx, routeId))
+    if (await isGroupRoute(tx, routeId)) {
+        const o = await oneLaneOffset(tx, routeId);
         return await editGroupRoutePointsInTransaction({
             tx,
             routeId,
-            points,
+            points:
+                o === null
+                    ? points
+                    : fromLaneSpace(
+                          points,
+                          await routeGeometryOf(tx, routeId),
+                          o,
+                      ),
             drag,
             toBulge,
         });
+    }
     return await editOwnRoutePointsInTransaction(
         tx,
         routeId,
@@ -290,8 +338,16 @@ export async function refitPathInTransaction({
     }
     if (!members.some((m) => founds(resolver, m.w)))
         refuse(routeRefusal.refitNoFounder());
-    const from = meanOf(members.map((m) => m.A));
-    const to = meanOf(members.map((m) => m.B));
+    // A one-lane path (a Detached copy, AP-R9) keeps the group's `to` and its offset, whose end
+    // side already follows the marcher's end spot (AP-R5): Re-fit moves its start side only, to
+    // where its marcher starts now
+    const o = await oneLaneOffset(tx, routeId);
+    const founder = members.find((m) => founds(resolver, m.w))!;
+    const from: XY =
+        o === null
+            ? meanOf(members.map((m) => m.A))
+            : [founder.A[0] - o[0], founder.A[1] - o[1]];
+    const to = o === null ? meanOf(members.map((m) => m.B)) : current.to;
     if (!routeEndsChanged(current, { from, to }))
         refuse(routeRefusal.refitNotNeeded());
     const geometry = refitGeometry(current, from, to);
@@ -301,7 +357,7 @@ export async function refitPathInTransaction({
             routeId,
             geometry,
         );
-        if (lanes.some(isGroupLane)) {
+        if (o === null && lanes.some(isGroupLane)) {
             const done = new Set<number>();
             for (const { w, A } of members) {
                 if (done.has(w.lane.id) || !founds(resolver, w)) continue;

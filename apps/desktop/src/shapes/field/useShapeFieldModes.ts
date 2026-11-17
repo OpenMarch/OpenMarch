@@ -25,10 +25,15 @@ import { forgetDiscardedShape } from "../tool/shapeLeave";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { shapeToolMode } from "../tool/shapeToolMode";
 import { resetShapePointer, watchShapeEditorFocus } from "./shapePointer";
-import { objectsDrawn, usePathPenStore } from "@/pathways/pathPenStore";
+import {
+    objectsDrawn,
+    ownLinesDrawn,
+    usePathPenStore,
+} from "@/pathways/pathPenStore";
 import {
     drawingOf,
     objectDrawingOf,
+    ownLineDrawingOf,
     pathPenMode,
 } from "@/pathways/pathPenMode";
 import {
@@ -140,23 +145,41 @@ export function useShapeFieldModes(
         setFieldUnderlay(underBox ? drawingOf(underBox) : null);
     }, [underBox]);
     useEffect(() => () => setFieldUnderlay(null), []);
-    // Paths All's group paths, each as its one line with faint lanes (step 3a, AP-O7)
-    const session = usePathPenStore((s) => s.session);
-    const objects = usePathPenStore((s) => s.objects);
-    useEffect(() => {
-        setFieldObjects(
-            isPlaying
-                ? []
-                : objectsDrawn(objects, session, toolOpen).flatMap(
-                      (o) => objectDrawingOf(o) ?? [],
-                  ),
-        );
-    }, [objects, session, toolOpen, isPlaying]);
-    useEffect(() => () => setFieldObjects([]), []);
+    usePathFieldObjects(toolOpen, isPlaying);
     // Keyboard focus in the floating editor shows the shape's controls (#430)
     useEffect(() => watchShapeEditorFocus(), []);
 
     useShapeWaits(isPlaying, toolOpen);
+}
+
+/**
+ * The path drawings under the field mode's own: Paths All's group paths, each as its one line with
+ * faint lanes (step 3a, AP-O7), and with several marchers on their own paths selected, each one's
+ * line, faint (round 8)
+ */
+function usePathFieldObjects(toolOpen: boolean, isPlaying: boolean): void {
+    const session = usePathPenStore((s) => s.session);
+    const objects = usePathPenStore((s) => s.objects);
+    const ownLines = usePathPenStore((s) => s.ownLines);
+    const pathHidden = usePathPenStore((s) => s.hidden);
+    useEffect(() => {
+        setFieldObjects(
+            isPlaying
+                ? []
+                : [
+                      ...objectsDrawn(objects, session, toolOpen).flatMap(
+                          (o) => objectDrawingOf(o) ?? [],
+                      ),
+                      ...ownLinesDrawn(
+                          ownLines,
+                          session,
+                          pathHidden,
+                          toolOpen,
+                      ).map(ownLineDrawingOf),
+                  ],
+        );
+    }, [objects, session, toolOpen, isPlaying, ownLines, pathHidden]);
+    useEffect(() => () => setFieldObjects([]), []);
 }
 
 /**

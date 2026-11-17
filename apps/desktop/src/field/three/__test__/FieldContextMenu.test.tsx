@@ -18,6 +18,7 @@ import FieldContextMenu, {
 } from "../FieldContextMenu";
 import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
+import { PATH_FIELD_MENU } from "@/pathways/pathPenMode";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -143,10 +144,125 @@ describe("FieldContextMenu", () => {
         expect(item("removePath")?.querySelector("svg")).not.toBeNull();
         expect(item("removePath")?.querySelector("kbd")).toBeNull();
         // None of the field's own
-        for (const id of FIELD_MENU_ACTIONS) expect(item(id)).toBeNull();
+        for (const id of FIELD_MENU_ACTIONS)
+            if (id !== "editPath" && id !== "removePath")
+                expect(item(id)).toBeNull();
         fireEvent.click(item("editPath")!);
         expect(edit).toHaveBeenCalledTimes(1);
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it("keeps the path bar's slots in their places, greyed out with the reason; Detach from group path after the line, before Remove path (round 6)", () => {
+        handle("editPath");
+        handle("editLine", {
+            enabled: false,
+            reason: "Click one of them again to pick just that marcher, then edit their line",
+        });
+        const detach = handle("detachPath", {
+            label: "Detach 2 from group path",
+        });
+        handle("rejoinPath", { enabled: false });
+        handle("adjustResetSpot", {
+            enabled: false,
+            reason: "Click one of them again to pick just that marcher, then match it to the group path",
+        });
+        handle("refitPath", { enabled: false, reason: "Already centered" });
+        handle("detachAllPath", { enabled: false });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        const ids = Array.from(
+            screen.getByTestId("field-menu").querySelectorAll("[data-testid]"),
+        )
+            .map((e) => e.getAttribute("data-testid")!)
+            .filter((id) => /^field-menu-[a-zA-Z]+$/.test(id))
+            .map((id) => id.replace("field-menu-", ""));
+        // The bar's order: Edit group path, Edit <name>'s line, Match group (Rejoin only while it
+        // can act); Re-fit only while it can act; Detach all only with the whole group selected
+        expect(ids).toEqual([
+            "editPath",
+            "editLine",
+            "adjustResetSpot",
+            "detachPath",
+            "removePath",
+        ]);
+        // Detach and Remove path after a line, apart from the routine entries, as under ···
+        const separators = screen
+            .getByTestId("field-menu")
+            .querySelectorAll('[role="separator"]');
+        expect(separators).toHaveLength(1);
+        expect(separators[0]!.nextElementSibling).toBe(item("detachPath"));
+        expect(item("detachPath")!.nextElementSibling).toBe(item("removePath"));
+        expect(item("detachPath")!.textContent).toContain(
+            "Detach 2 from group path",
+        );
+        expect(
+            screen.getByTestId("field-menu-detachPath-note").textContent,
+        ).toBe("Stops following group path changes");
+        expect(item("editLine")).toHaveAttribute("aria-disabled", "true");
+        expect(item("adjustResetSpot")).toHaveAttribute(
+            "aria-disabled",
+            "true",
+        );
+        fireEvent.click(item("detachPath")!);
+        expect(detach).toHaveBeenCalledTimes(1);
+    });
+
+    it("detached marchers selected: Rejoin before Match group, no Detach (round 6)", () => {
+        handle("editPath");
+        handle("editLine", { enabled: false, reason: "Own path" });
+        handle("detachPath", { enabled: false });
+        handle("rejoinPath");
+        handle("adjustResetSpot", {
+            enabled: false,
+            reason: "This marcher is detached: Rejoin puts it back on the group path",
+        });
+        handle("refitPath", { enabled: false });
+        handle("detachAllPath", { enabled: false });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        expect(item("detachPath")).toBeNull();
+        expect(item("rejoinPath")!.nextElementSibling).toBe(
+            item("adjustResetSpot"),
+        );
+    });
+
+    it("the whole group selected: no Detach, Detach all after a line beside Remove path, saying what it does (round 5)", () => {
+        handle("editPath");
+        handle("detachPath", {
+            enabled: false,
+            reason: "Select some marchers to detach them. To detach everyone, use ··· › Detach all 16 marchers",
+        });
+        const all = handle("detachAllPath", {
+            label: "Detach all 16 marchers",
+        });
+        handle("removePath");
+        open({ actions: PATH_FIELD_MENU });
+        expect(item("detachPath")).toBeNull();
+        const detachAll = item("detachAllPath")!;
+        expect(detachAll.textContent).toContain("Detach all 16 marchers");
+        expect(
+            screen.getByTestId("field-menu-detachAllPath-note").textContent,
+        ).toBe("Ends the group path; each marcher gets their own copy");
+        const separator = screen
+            .getByTestId("field-menu")
+            .querySelector('[role="separator"]')!;
+        expect(separator.nextElementSibling).toBe(detachAll);
+        expect(detachAll.nextElementSibling).toBe(item("removePath"));
+        fireEvent.click(detachAll);
+        expect(all).toHaveBeenCalledTimes(1);
+    });
+
+    it("on a path's line, shows the Path group's entries only where they apply", () => {
+        handle("editPath");
+        handle("detachPath", { enabled: false });
+        handle("rejoinPath");
+        handle("removePath");
+        open({
+            actions: ["editPath", "detachPath", "rejoinPath", "removePath"],
+        });
+        expect(item("detachPath")).toBeNull();
+        expect(item("rejoinPath")?.textContent).toContain("Rejoin group path");
+        expect(item("rejoinPath")?.querySelector("svg")).not.toBeNull();
     });
 
     it("previews an entry while highlighted, and stops on leaving it or the menu closing", () => {
@@ -190,6 +306,15 @@ describe("FieldContextMenu", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
         handle("shapeGroup", { enabled: false });
         handle("shapeUngroup", { enabled: false });
+        // The Path group shows only what applies: here Edit path, Edit <name>'s line, then after a
+        // line Detach, Detach all and Remove path
+        for (const id of [
+            "rejoinPath",
+            "adjustResetSpot",
+            "reverseTrail",
+            "refitPath",
+        ] as const)
+            handle(id, { enabled: false });
         open();
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
@@ -202,6 +327,8 @@ describe("FieldContextMenu", () => {
         }
         expect(groups).toEqual([
             ["editSelectedItem"],
+            ["editPath", "editLine"],
+            ["detachPath", "detachAllPath", "removePath"],
             [
                 "timelineHoldFromPrevious",
                 "timelineHoldOverWindow",

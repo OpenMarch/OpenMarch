@@ -55,6 +55,7 @@ import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
 import TimelineHoldLine, { TimelineHeldCount } from "./TimelineHoldLine";
 import TimelineHoldStyle from "./TimelineHoldStyle";
+import { PathBigStepsLine } from "@/pathways/pathBigSteps";
 import MovePad from "./marcher/MovePad";
 import { sectionDisplayName } from "@/components/marcher/sectionDisplayName";
 import { formatList } from "@/utilities/formatList";
@@ -767,6 +768,12 @@ function MarcherEditor() {
                                     <TimelineHoldStyle
                                         marcherIds={selectedMarcherIdList}
                                     />
+                                    {/* The path shown takes big steps (pathways round 2) */}
+                                    {fieldProperties && (
+                                        <PathBigStepsLine
+                                            fieldProperties={fieldProperties}
+                                        />
+                                    )}
                                     {selectedMarchers.length === 2 && (
                                         <ActionButton
                                             action="swapMarchers"
@@ -1039,6 +1046,14 @@ function MarcherEditor() {
                                                         selectedMarcherIdList
                                                     }
                                                 />
+                                                {/* The path shown takes big steps (pathways round 2) */}
+                                                {fieldProperties && (
+                                                    <PathBigStepsLine
+                                                        fieldProperties={
+                                                            fieldProperties
+                                                        }
+                                                    />
+                                                )}
                                             </div>
                                             {/* Hidden, so the form submits when Enter is pressed */}
                                             <button

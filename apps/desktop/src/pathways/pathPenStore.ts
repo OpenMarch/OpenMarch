@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { db } from "@/global/database/db";
 import { toast } from "sonner";
+import { joinList } from "@/timeline/translateTimelineText";
 import {
     drawRoute,
     removeRoute,
+    removeRouteInTransaction,
     type RoutePointInput,
 } from "@/db-functions/timelineRoutes";
 import {
@@ -14,11 +16,15 @@ import {
 } from "@/db-functions/timelineTrails";
 import {
     editPathPoints,
+    editPathPointsInTransaction,
     redrawPath,
+    redrawPathInTransaction,
     refitPath as refitRoute,
+    refitPathInTransaction,
 } from "@/db-functions/timelinePathEdits";
 import {
     acknowledgeRehomed,
+    acknowledgeRehomedInTransaction,
     adjustLane,
     removeAdjustKey,
     resetLaneAdjust,
@@ -27,20 +33,30 @@ import {
 import type { RehomeReport } from "@/db-functions/timelineRouteGeometry";
 import type { AdjustProfile } from "@openmarch/core";
 import {
-    drawGroupRoute,
-    ownPath,
+    drawGroupRouteInTransaction,
+    detachFromGroupPath,
     rejoinGroupPath,
 } from "@/db-functions/timelineGroupRoutes";
+import {
+    writeGroupPath,
+    type GroupEdit,
+    type GroupWrite,
+} from "@/db-functions/timelineLoosePaths";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { runAction } from "@/shortcuts/registry";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import tolgee from "@/global/singletons/Tolgee";
 import type { XY } from "@/shapes/types";
 import { SMOOTH } from "@/shapes/line/lineGeometry";
-import type { GroupMember, PathTarget } from "./pathTarget";
+import { drawnAsGroup, type GroupMember, type PathTarget } from "./pathTarget";
+import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { dragTrail } from "@/db-functions/timelineTrailDrag";
 import { rippleTrail } from "@/db-functions/timelineTrailRipple";
-import { invalidatePlacedBoxes } from "@/shapes/placed/placedBoxStore";
+import {
+    invalidatePlacedBoxes,
+    placedBoxesAt,
+} from "@/shapes/placed/placedBoxStore";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     followSpacingOf,
     intoEndSpots,
@@ -156,16 +172,33 @@ interface PathPenState {
      */
     hidden: boolean;
     /**
-     * After Own path for one marcher (step 15): that marcher's own path opens once it's read
-     * again, as the spec's "its own path is then shown, open" says; null otherwise
+     * After Detach for one marcher (AP-R9): that marcher's copy opens once it's read again, as the
+     * spec's "its own path is then shown, open" says; null otherwise
      */
     openNext: number | null;
-    /** Selected marchers on the shown group path, whom Own path gives a lane each (step 15) */
+    /**
+     * A click on a path's line made it active and changed the selection: the path read for the
+     * new selection opens if it's this route (`activatePath`); null otherwise
+     */
+    openRoute: number | null;
+    /** Selected marchers on the shown group path, whom Detach gives a copy each (AP-R9) */
     ownable: readonly number[];
     /** Whom Rejoin puts on which group path, or null when it isn't offered (step 15) */
     rejoin: RejoinTarget | null;
     /** The paths Paths All draws as objects at the playhead, or none (step 3a, AP-O2) */
     objects: readonly PathObject[];
+    /**
+     * With several marchers selected who each walk their own path (no group path, trail or loose
+     * path for them), each one's line, drawn faint as a closed path is (round 8: after Detach all
+     * the selection showed nothing). None otherwise.
+     */
+    ownLines: readonly OwnLine[];
+}
+
+/** A selected marcher's own path drawn beside the others' (`PathPenState.ownLines`) */
+export interface OwnLine {
+    readonly target: PathTarget;
+    readonly drill: string;
 }
 
 /** Rejoin's target (AP-R10): the group path in a move, and the selected marchers off it */
@@ -175,7 +208,54 @@ export interface RejoinTarget {
     marcherIds: readonly number[];
 }
 
-/** What Own path and Rejoin act on for the selection now (spec Appendix I.8) */
+/**
+ * Whom Detach acts on (AP-R9): the selected members of the shown group path, or, with none
+ * selected, the member whose lane is picked on the open group path (decision C's pick), so a
+ * group path opened as an object (a click on its line lets go of the marchers) can still Detach a
+ * spot from its bar. None on a one-lane path, which has nobody to Detach from.
+ */
+export function detachIdsOf(
+    ownable: readonly number[],
+    session: PathSession | null,
+): readonly number[] {
+    // A loose path's marchers each have their own copy already (round 7): nobody to Detach
+    if (isLoose(session)) return [];
+    if (ownable.length > 0) return ownable;
+    if (
+        session?.phase !== "open" ||
+        !session.lane ||
+        !session.target.group ||
+        session.target.lane
+    )
+        return [];
+    return [session.lane.marcherId];
+}
+
+/**
+ * Whom Detach all ends the group path for (owner, round 5): every member of the shown group path,
+ * when the selection takes them all in (`wholeGroupOf`); none otherwise. Detach on the bar is
+ * greyed out then: detaching everyone leaves no group path to rejoin, so it's its own command,
+ * under ···, beside Remove path.
+ */
+export function detachAllIdsOf(
+    ownable: readonly number[],
+    session: PathSession | null,
+): readonly number[] {
+    if (
+        !session ||
+        session.phase === "drawing" ||
+        isLoose(session) ||
+        !wholeGroupOf(session, ownable)
+    )
+        return [];
+    return session.target.group!.members.map((m) => m.marcherId);
+}
+
+/** Whether the session shows a loose path (round 7): copies edited together, no group path */
+export const isLoose = (session: PathSession | null): boolean =>
+    !!session?.target.group?.loose && !session.target.lane;
+
+/** What Detach and Rejoin act on for the selection now (spec Appendix I.8) */
 export function setGroupCommands(
     ownable: readonly number[],
     rejoin: RejoinTarget | null,
@@ -243,6 +323,10 @@ export const pathMarcherIds = (
     closedUnder: boolean,
     /** Paths All's group path objects (step 3a): their members give way to the line and lanes */
     objects: readonly PathObject[] = [],
+    /** The selected members of the group path shown (the store's `ownable`) */
+    selected: readonly number[] = [],
+    /** The selected marchers' own lines drawn (`ownLinesDrawn`): theirs give way too */
+    ownLines: readonly OwnLine[] = [],
 ): readonly number[] => {
     const own =
         !pathShown(session, hidden) ||
@@ -255,13 +339,124 @@ export const pathMarcherIds = (
                   ? []
                   : session.target.trail.members.map((m) => m.marcherId)
               : session.target.group
-                ? session.target.group.members.map((m) => m.marcherId)
+                ? groupLineIds(session, selected)
                 : [session.target.marcherId];
     const drawn = objectsDrawn(objects, session, closedUnder).flatMap((o) =>
-        o.target.group ? o.target.group.members.map((m) => m.marcherId) : [],
+        o.target.group && drawnAsGroup(o.target)
+            ? o.target.group.members.map((m) => m.marcherId)
+            : [],
     );
-    return drawn.length === 0 ? own : [...new Set([...own, ...drawn])];
+    const lines = ownLines.map((l) => l.target.marcherId);
+    return drawn.length === 0 && lines.length === 0
+        ? own
+        : [...new Set([...own, ...drawn, ...lines])];
 };
+
+/**
+ * How a group path (not a one-lane copy, not a trail) is drawn now (pathways interaction round 2),
+ * or null for any other path:
+ *
+ * - `drawing`: a new group path being drawn, its line with every member's faint lane.
+ * - `selected`: quiet, with some of its marchers selected: only the line each selected marcher
+ *   walks, at a shown path's weight, and no group line (testers read the two as "two paths").
+ * - `whole`: quiet, with every member selected (interaction round 4, "one line for what you
+ *   selected"): the group line alone, deep, the one line to click; only a bent member's lane and
+ *   the selected marchers off it keep a faint line of their own.
+ * - `edit`: open for editing (Edit group path): the group line, named; of the members' lanes only
+ *   the bent ones (round 4: a plain lane is the group line moved over, and many of them hid it).
+ * - `adjust`: one member's lane picked (Edit <name>'s line, or a click on its line): that lane
+ *   alone, editable.
+ */
+export type GroupView = "drawing" | "selected" | "whole" | "edit" | "adjust";
+
+/** The spot whose lane is being worked on, picked or in mid-drag, or null */
+export function laneFocusOf(s: PathSession): number | null {
+    if (s.phase !== "open") return null;
+    return s.laneEdit?.marcherId ?? s.lane?.marcherId ?? null;
+}
+
+/**
+ * Whether `selected` takes in every member of the group path shown, two or more (interaction
+ * round 4): the group is selected as a whole, so its one line is what's drawn. Marchers off it
+ * selected as well don't change that. One member alone is one marcher, drawn as its own line.
+ */
+export function wholeGroupOf(
+    s: PathSession,
+    selected: readonly number[],
+): boolean {
+    const group = s.target.group;
+    if (!group || s.target.lane || s.target.trail || group.members.length < 2)
+        return false;
+    const on = new Set(selected);
+    return group.members.every((m) => on.has(m.marcherId));
+}
+
+/**
+ * How the session's group path is drawn now (`GroupView`), `selected` being the selected members
+ * of it (the store's `ownable`), or null for any other path
+ */
+export function groupViewOf(
+    s: PathSession,
+    selected: readonly number[] = [],
+): GroupView | null {
+    if (!s.target.group || s.target.lane || s.target.trail) return null;
+    if (s.phase === "drawing") return "drawing";
+    if (s.phase === "closed")
+        return wholeGroupOf(s, selected) ? "whole" : "selected";
+    return laneFocusOf(s) !== null ? "adjust" : "edit";
+}
+
+/**
+ * Whose lines a group path session draws (`GroupView`): the selected members and the selected
+ * marchers off it while quiet, with the whole group selected every member (the group line is
+ * drawn for them) and the detached ones too (a faint line each), the one lane while adjusting,
+ * every member otherwise
+ */
+export function groupLineIds(
+    s: PathSession,
+    selected: readonly number[],
+): number[] {
+    const group = s.target.group;
+    if (!group) return [];
+    const members = group.members.map((m) => m.marcherId);
+    const view = groupViewOf(s, selected);
+    if (view === "whole")
+        return [
+            ...new Set([
+                ...members,
+                ...group.outside.map((m) => m.marcherId),
+                ...(group.detachedMembers ?? []).map((m) => m.marcherId),
+            ]),
+        ];
+    if (view === "selected") {
+        const on = new Set(members);
+        return [
+            ...selected.filter((id) => on.has(id)),
+            ...group.outside.map((m) => m.marcherId),
+        ];
+    }
+    if (view === "adjust") return [laneFocusOf(s)!];
+    return members;
+}
+
+/**
+ * Sets the selected marchers' own lines (`PathPenState.ownLines`); lines read again the same keep
+ * the list, so nothing is drawn again for nothing
+ */
+export function setOwnLines(lines: readonly OwnLine[]): void {
+    const now = usePathPenStore.getState().ownLines;
+    if (now.length === 0 && lines.length === 0) return;
+    if (JSON.stringify(now) === JSON.stringify(lines)) return;
+    usePathPenStore.setState({ ownLines: lines });
+}
+
+/** The own lines drawn now: none while the closed path is hidden, the pen draws or a shape is open */
+export const ownLinesDrawn = (
+    lines: readonly OwnLine[],
+    session: PathSession | null,
+    hidden: boolean,
+    shapeOpen: boolean,
+): readonly OwnLine[] => (hidden || shapeOpen || session !== null ? [] : lines);
 
 /** Hides or shows the closed path, as start flag positions' paths level in effect says */
 export function setPathHidden(hidden: boolean): void {
@@ -272,7 +467,9 @@ export function setPathHidden(hidden: boolean): void {
 export const usePathPenStore = create<PathPenState>(() => ({
     hidden: false,
     objects: [],
+    ownLines: [],
     openNext: null,
+    openRoute: null,
     ownable: [],
     rejoin: null,
     session: null,
@@ -297,9 +494,30 @@ export const pathKey = (
 ) =>
     t.trail
         ? `${t.timelineId}:t${t.routeId ?? "new"}`
-        : t.group
-          ? `${t.timelineId}:g${t.routeId ?? "new"}`
-          : `${t.timelineId}:${t.transitionId}:${t.marcherId}`;
+        : t.group?.loose
+          ? `${t.timelineId}:l${looseIds(t.group)}`
+          : t.group
+            ? `${t.timelineId}:g${t.routeId ?? "new"}`
+            : `${t.timelineId}:${t.transitionId}:${t.marcherId}`;
+
+/** A group's marchers, as a loose path's key has them (its copies change with every edit) */
+const looseIds = (g: NonNullable<PathTarget["group"]>) =>
+    g.members
+        .map((m) => m.marcherId)
+        .sort((a, b) => a - b)
+        .join(",");
+
+/**
+ * Whether `next` is `was` saved as a loose path (round 7): the same marchers in the same move, a
+ * group path edited and saved as their own copies, so an open path stays open
+ */
+const becameLoose = (was: PathTarget, next: PathTarget) =>
+    !!next.group?.loose &&
+    !!was.group &&
+    !was.trail &&
+    !was.lane &&
+    was.timelineId === next.timelineId &&
+    looseIds(was.group) === looseIds(next.group);
 
 /** The same path object: the same route (AP-O1), whoever walks it now */
 const sameRoute = (a: PathTarget, b: PathTarget) =>
@@ -445,20 +663,133 @@ export function switchDrawing(target: PathTarget, drill: string): boolean {
     return true;
 }
 
+/** Who walks `target`'s path: a trail's line, a group path's members, or its one marcher */
+export const walkersOf = (target: PathTarget): number[] =>
+    target.trail
+        ? target.trail.members.map((m) => m.marcherId)
+        : target.group
+          ? target.group.members.map((m) => m.marcherId)
+          : [target.marcherId];
+
 /**
- * Selects the path `target` as an object (a click, a tap or a right-click on its line, AP-O3):
- * drawn selected, closed. The marcher selection is let go of by `usePathPenActions`. Already
- * selected or open, it stays as it is.
+ * The marcher selection as the pen reads and writes it: the field's editor's, which writes the
+ * app's (the one selection). Marchers are the only selection (interaction system, rule 1): a
+ * click on a path's line selects its walkers instead of the path. Tests put their own in.
  */
-export function selectPathObject(target: PathTarget, drill: string): void {
+export interface PathSelectionPort {
+    get(): readonly number[];
+    set(ids: readonly number[]): void;
+}
+
+const fieldSelection: PathSelectionPort = {
+    get: () => activeFieldEditor()?.selected() ?? [],
+    set: (ids) => activeFieldEditor()?.select(ids),
+};
+let selectionPort: PathSelectionPort = fieldSelection;
+
+/** Puts in the selection the pen writes (tests); null puts the field's back */
+export function setPathSelectionPort(port: PathSelectionPort | null): void {
+    selectionPort = port ?? fieldSelection;
+}
+
+/**
+ * The selection a click (or a right-click) on a path's line makes, as a click on a placed shape's
+ * member selects the shape: `walkers` (all of them, or the one marcher whose lane was clicked).
+ * The selection is kept when it's already some of them, so a marquee of three, then a click on
+ * their line, still acts on those three. Shift adds the walkers. True when the selection changes.
+ */
+export function selectWalkers(
+    walkers: readonly number[],
+    {
+        add = false,
+        keepSubset = true,
+    }: { add?: boolean; keepSubset?: boolean } = {},
+): boolean {
+    const now = selectionPort.get();
+    const theirs = new Set(walkers);
+    let next: readonly number[];
+    if (add) next = [...new Set([...now, ...walkers])];
+    else if (keepSubset && now.length > 0 && now.every((id) => theirs.has(id)))
+        next = now;
+    else next = walkers;
+    const same =
+        next.length === now.length &&
+        [...next].sort((a, b) => a - b).join(",") ===
+            [...now].sort((a, b) => a - b).join(",");
+    if (same) return false;
+    selectionPort.set(next);
+    return true;
+}
+
+/** Shift-click on a lane: that marcher in or out of the selection. True when it's now in. */
+export function toggleWalker(marcherId: number): boolean {
+    const now = selectionPort.get();
+    const isIn = now.includes(marcherId);
+    selectionPort.set(
+        isIn ? now.filter((id) => id !== marcherId) : [...now, marcherId],
+    );
+    return !isIn;
+}
+
+/**
+ * Makes `target`'s path active (interaction system, rule 2): handles and the full bar, at once,
+ * from one click on its line (or Enter). The marchers it's for are selected by the caller; the
+ * path read for them again keeps it active (`showPath`, by `openRoute` and its key). `lane`: the
+ * member whose lane was clicked, picked on the group path.
+ */
+export function activatePath(
+    target: PathTarget,
+    drill: string,
+    lane: number | null = null,
+    selectionChanges = false,
+): void {
+    const { session } = usePathPenStore.getState();
+    const same =
+        session !== null &&
+        session.phase !== "drawing" &&
+        pathKey(session.target) === pathKey(target);
+    const picked =
+        lane !== null && target.group && !target.lane
+            ? { marcherId: lane, key: null }
+            : null;
+    usePathPenStore.setState({
+        openRoute: selectionChanges ? target.routeId : null,
+        session:
+            same && session
+                ? {
+                      ...session,
+                      phase: "open",
+                      lane: picked ?? (lane === null ? null : session.lane),
+                  }
+                : {
+                      phase: "open",
+                      target,
+                      drill,
+                      points: pointsOf(target),
+                      ...toBulgeOf(target),
+                      pointer: null,
+                      selected: null,
+                      dragging: null,
+                      object: false,
+                      lane: picked,
+                  },
+    });
+}
+
+/**
+ * Shows `target`'s path quiet (a right-click or long press on its line, whose walkers the caller
+ * selects), so the menu that opens acts on it; the same path already shown stays as it is.
+ */
+export function focusPath(target: PathTarget, drill: string): void {
     const { session } = usePathPenStore.getState();
     if (
-        session?.object &&
+        session !== null &&
         session.phase !== "drawing" &&
-        sameRoute(session.target, target)
+        pathKey(session.target) === pathKey(target)
     )
         return;
     usePathPenStore.setState({
+        openRoute: null,
         session: {
             phase: "closed",
             target,
@@ -468,36 +799,280 @@ export function selectPathObject(target: PathTarget, drill: string): void {
             pointer: null,
             selected: null,
             dragging: null,
-            object: true,
+            object: false,
         },
     });
 }
 
 /**
- * Escape on a selected path (AP-O4): an open one goes back to selected, as leaving a vector's
- * edit mode does; a selected one is let go of. False when no path object is selected.
+ * Whose adjustment Reset adjustment takes off (AP-R11; one ladder with Rejoin, interaction
+ * system rule 5): the lane picked on the group path, or the one selected member, when it has an
+ * adjustment. Null otherwise.
  */
-export function escapePathObject(): boolean {
-    const { session } = usePathPenStore.getState();
-    if (!session?.object || session.phase === "drawing") return false;
-    if (session.phase === "open")
-        usePathPenStore.setState({
-            session: {
-                ...session,
-                phase: "closed",
-                selected: null,
-                dragging: null,
-            },
-        });
-    else clearPath();
-    return true;
+export function resetTargetOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+): number | null {
+    if (!session || session.phase === "drawing" || !session.target.group)
+        return null;
+    if (session.target.lane) return null;
+    const lane = session.phase === "open" ? session.lane : null;
+    const id = lane
+        ? lane.marcherId
+        : ownable.length === 1
+          ? ownable[0]!
+          : null;
+    return id !== null && memberOf(session, id)?.adjust ? id : null;
 }
 
-/** Lets go of a selected path object (a click on empty field, AP-O4); false when there's none. */
-export function deselectPathObject(): boolean {
-    if (!usePathPenStore.getState().session?.object) return false;
-    clearPath();
-    return true;
+/** Edit path's name on a group path (round 3): it edits the line every member follows */
+export const editGroupPathLabel = () =>
+    tolgee.t("actions.path.editGroup", "Edit group path");
+
+/**
+ * Detach's name in ··· and the Path menus (round 6, off the bar): "Detach from group path", with
+ * the count when several, "Detach 3 from group path"
+ */
+export const detachLabel = (count: number) =>
+    count > 1
+        ? tolgee.t(
+              "pathways.editor.detachFromGroupCount",
+              "Detach {count} from group path",
+              { count },
+          )
+        : tolgee.t("actions.path.detachFromGroup", "Detach from group path");
+
+/** What Detach does, under its name in the menus (round 6) */
+export const detachNote = () =>
+    tolgee.t(
+        "pathways.editor.detachNote",
+        "Stops following group path changes",
+    );
+
+/** Detach all's name (round 5): how many marchers it detaches, so its size reads */
+export const detachAllLabel = (count: number) =>
+    tolgee.t("pathways.editor.detachAllCount", "Detach all {count} marchers", {
+        count,
+    });
+
+/** What Detach all does, under its name in the menus (round 5) */
+export const detachAllNote = () =>
+    tolgee.t(
+        "pathways.editor.detachAllNote",
+        "Ends the group path; each marcher gets their own copy",
+    );
+
+/** Edit <name>'s line's name: the marcher's drill number, or no name while it can't act */
+export const editLineLabel = (drill: string | null) =>
+    drill === null
+        ? tolgee.t("actions.path.editLine", "Edit marcher's line")
+        : tolgee.t("actions.path.editLineOf", "Edit {marcher}'s line", {
+              marcher: drill,
+          });
+
+/**
+ * Whose line Edit <name>'s line opens (interaction round 3, was Adjust), or why it can't: the one
+ * selected member of the group path shown, or the member whose line is being edited. Only that
+ * member's line is drawn then, editable, so nobody has to find its faint lane by dragging. One
+ * marcher at a time: two members' bends are two separate edits.
+ */
+export function lineTargetOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+): { marcherId: number; drill: string } | { reason: string } {
+    const groupOnly = () =>
+        tolgee.t(
+            "pathways.editLine.groupOnly",
+            "Select a marcher on a group path to edit their line",
+        );
+    if (!session || session.phase === "drawing" || session.target.trail)
+        return { reason: groupOnly() };
+    if (!session.target.group)
+        return {
+            reason: tolgee.t(
+                "pathways.editLine.ownPath",
+                "This marcher walks its own path: Edit path changes it",
+            ),
+        };
+    if (session.target.lane)
+        return {
+            reason:
+                session.target.lane.detachedFrom != null
+                    ? tolgee.t(
+                          "pathways.editLine.detached",
+                          "This marcher is detached: Edit path changes its own copy, or Rejoin puts it back on the group path",
+                      )
+                    : tolgee.t(
+                          "pathways.editLine.alone",
+                          "This marcher is alone on its path: Edit path changes it",
+                      ),
+        };
+    const target = (marcherId: number) => {
+        const member = memberOf(session, marcherId);
+        return member ? { marcherId, drill: member.drill } : null;
+    };
+    const lane = session.phase === "open" ? session.lane : null;
+    const picked = lane ? target(lane.marcherId) : null;
+    if (picked) return picked;
+    if (ownable.length > 1)
+        return {
+            reason: tolgee.t(
+                "pathways.editLine.severalSelected",
+                "Click one of them again to pick just that marcher, then edit their line",
+            ),
+        };
+    const one = ownable.length === 1 ? target(ownable[0]!) : null;
+    if (one) return one;
+    return {
+        reason: tolgee.t(
+            "pathways.editLine.noneSelected",
+            "Select a marcher on the group path to edit their line",
+        ),
+    };
+}
+
+/**
+ * The path bar's fixed slots (interaction round 2: they stay put, so a press after the selection
+ * changes lands where it did): Edit group path (Edit path for a path of one) · Edit <name>'s line ·
+ * Match group or Rejoin · More. Detach left the bar for ··· (round 6). Each slot is there for any
+ * path but a trail; one that can't act now says why (its tooltip, and the menus' reason). Null
+ * reasons where the slot acts, or for a trail (or no path), whose bar has no slot.
+ */
+export interface PathSlots {
+    /** Whether the bar has the member slots at all: any shown path but a trail */
+    shown: boolean;
+    /** Edit <name>'s line: whose, or why it can't */
+    line: { marcherId: number; drill: string } | { reason: string };
+    /**
+     * The third slot, back to the group (round 6): Rejoin when the selection is detached marchers
+     * (Rejoin can act and Detach can't), Match group otherwise. A mixed selection keeps Match group
+     * there, Rejoin under ···
+     */
+    backIsRejoin: boolean;
+    /** Why Detach (under ··· and in the menus since round 6) can't act, or null */
+    detachReason: string | null;
+    /**
+     * The members Detach all would detach, with the whole group selected (round 5): Detach is
+     * greyed out then, pointing at ··· › Detach all; none otherwise
+     */
+    detachAll: readonly number[];
+    matchReason: string | null;
+    /**
+     * A loose path (round 7): the third slot is empty, holding its place so the bar doesn't
+     * jump; there's no group path to match or rejoin
+     */
+    loose: boolean;
+    /**
+     * The marcher's own path, on no group path (sim round 3: Match group stayed after Detach
+     * all): the third slot is empty, as a loose path's is
+     */
+    ownPath: boolean;
+}
+
+export function pathSlotsOf(
+    session: PathSession | null,
+    ownable: readonly number[],
+    rejoin: RejoinTarget | null,
+): PathSlots {
+    const shown =
+        session !== null &&
+        session.phase !== "drawing" &&
+        !session.target.trail;
+    const detachIds = detachIdsOf(ownable, session);
+    const loose = isLoose(session);
+    const backIsRejoin = !loose && rejoin !== null && detachIds.length === 0;
+    const notGroup =
+        !session?.target.group || session.target.lane
+            ? session?.target.lane?.detachedFrom != null
+                ? tolgee.t(
+                      "pathways.slots.detached",
+                      "This marcher is detached: Rejoin puts it back on the group path",
+                  )
+                : tolgee.t(
+                      "pathways.slots.ownPath",
+                      "This marcher walks its own path, not a group path",
+                  )
+            : null;
+    const detachAll = shown ? detachAllIdsOf(ownable, session) : [];
+    const detachReason = loose
+        ? null
+        : detachAll.length > 0
+          ? tolgee.t(
+                "pathways.slots.detachWhole",
+                "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
+                { count: detachAll.length },
+            )
+          : !shown || detachIds.length > 0 || backIsRejoin
+            ? null
+            : (notGroup ??
+              tolgee.t(
+                  "pathways.slots.detachNone",
+                  "Select marchers on the group path to detach them",
+              ));
+    const resetId = resetTargetOf(session, ownable);
+    const lanePicked = session?.phase === "open" && !!session.lane;
+    const matchReason =
+        !shown || resetId !== null || loose
+            ? null
+            : (notGroup ??
+              (!lanePicked && ownable.length > 1
+                  ? tolgee.t(
+                        "pathways.slots.matchSeveral",
+                        "Click one of them again to pick just that marcher, then match it to the group path",
+                    )
+                  : !lanePicked && ownable.length === 0
+                    ? tolgee.t(
+                          "pathways.slots.matchNone",
+                          "Select a marcher on the group path",
+                      )
+                    : tolgee.t(
+                          "pathways.slots.matches",
+                          "This marcher already walks the group path exactly: nothing to match",
+                      )));
+    const ownPath =
+        shown &&
+        (!session.target.group || !!session.target.lane) &&
+        session.target.lane?.detachedFrom == null;
+    return {
+        shown,
+        line: lineTargetOf(session, ownable),
+        ownPath,
+        backIsRejoin,
+        detachReason,
+        detachAll,
+        matchReason,
+        loose,
+    };
+}
+
+/**
+ * Edit <name>'s line (interaction round 3, was Adjust): `marcherId`'s lane of the group path shown
+ * is the only line drawn and the only one editable, its bend handles shown at once; the path is
+ * active, as Edit path makes it. Escape, or a click on empty field, leaves it.
+ */
+export function editMemberLine(marcherId: number): void {
+    const { session } = usePathPenStore.getState();
+    if (
+        !session ||
+        session.phase === "drawing" ||
+        !memberOf(session, marcherId) ||
+        session.target.lane
+    )
+        return;
+    if (
+        session.phase === "open" &&
+        session.lane?.marcherId === marcherId &&
+        !session.lane.keyGone
+    )
+        return;
+    usePathPenStore.setState({
+        session: {
+            ...session,
+            phase: "open",
+            selected: null,
+            lane: { marcherId, key: null },
+        },
+    });
 }
 
 /**
@@ -540,16 +1115,27 @@ export function showPath(
     const { session } = usePathPenStore.getState();
     const points = pointsOf(target);
     const { openNext } = usePathPenStore.getState();
+    // A Detached copy is shown on its lane (`target.lane`), its marcher its one member
     const next =
-        openNext !== null && !target.group && target.marcherId === openNext;
+        openNext !== null &&
+        (target.lane
+            ? (target.group?.members.some((m) => m.marcherId === openNext) ??
+              false)
+            : !target.group && target.marcherId === openNext);
     if (next) usePathPenStore.setState({ openNext: null });
+    // Made active by a click on its line, which selected its walkers (`activatePath`)
+    const { openRoute } = usePathPenStore.getState();
+    const activated = openRoute !== null && target.routeId === openRoute;
+    if (openRoute !== null) usePathPenStore.setState({ openRoute: null });
     // A path object is the same path while it's the same route (AP-O1)
     const same =
         session !== null &&
         (object
             ? session.object && sameRoute(session.target, target)
-            : !session.object && pathKey(session.target) === pathKey(target));
-    const open = next || (session?.phase === "open" && same);
+            : !session.object &&
+              (pathKey(session.target) === pathKey(target) ||
+                  becameLoose(session.target, target)));
+    const open = next || activated || (session?.phase === "open" && same);
     const kept =
         open && session && session.selected !== null
             ? Number(session.selected.slice(1)) < points.length
@@ -567,18 +1153,23 @@ export function showPath(
             selected: kept,
             dragging: null,
             object,
-            lane: open && session ? laneAfterRead(session, target) : null,
+            lane:
+                open && session && same ? laneAfterRead(session, target) : null,
         },
     });
 }
 
-/** Opens the path shown for editing (a double-click on it, or Edit path); false when none is. */
+/**
+ * Opens the path shown for editing (Edit path, Enter); false when none is. Adjusting one lane of a
+ * group path, it lets the lane go, so the group path itself is edited (interaction round 2: the
+ * group line shows only then).
+ */
 export function openPath(): boolean {
     const { session } = usePathPenStore.getState();
     if (!session || session.phase === "drawing") return false;
-    if (session.phase === "closed")
+    if (session.phase === "closed" || session.lane)
         usePathPenStore.setState({
-            session: { ...session, phase: "open", selected: null },
+            session: { ...session, phase: "open", selected: null, lane: null },
         });
     return true;
 }
@@ -608,14 +1199,16 @@ export function closePath(): void {
             pointer: null,
             selected: null,
             dragging: null,
+            lane: null,
         },
     });
 }
 
 /** Takes the path off the field: no marcher with a path selected, or playback. */
 export function clearPath(): void {
-    if (usePathPenStore.getState().session)
-        usePathPenStore.setState({ session: null });
+    const { session, openRoute } = usePathPenStore.getState();
+    if (session || openRoute !== null)
+        usePathPenStore.setState({ session: null, openRoute: null });
 }
 
 export const isDrawing = () =>
@@ -800,6 +1393,156 @@ async function saveFollow(
     invalidatePlacedBoxes();
 }
 
+/**
+ * Whether a group path's marchers are a placed shape (round 7): its walkers, with any marchers
+ * Detached from it, are exactly one placed shape's members at the playhead or at the move's start
+ * or end. Only then does it stay one live group path; any other is saved as their own copies.
+ */
+function formsShape(target: PathTarget): boolean {
+    const group = target.group;
+    if (!group) return false;
+    const ids = new Set([
+        ...group.members.map((m) => m.marcherId),
+        ...(group.detachedMembers ?? []).map((m) => m.marcherId),
+    ]);
+    const beats = [
+        useTimelineSelectionStore.getState().playheadBeat,
+        target.start,
+        target.end,
+    ];
+    return beats.some((beat) =>
+        placedBoxesAt(beat).some(
+            (box) =>
+                box.recipe.members.length === ids.size &&
+                box.recipe.members.every((m) => ids.has(m.marcherId)),
+        ),
+    );
+}
+
+/**
+ * Whether a write on `target` keeps it one live group path (review of #900): a loose path's edits
+ * (point edits, Re-fit, acknowledge) stay loose even when its marchers have since become a placed
+ * shape, so nothing re-links them silently; only a new drawing (`fresh`: drawn again, or the pen
+ * with the marchers selected) on exactly a placed shape's members makes a live group path, the
+ * way back to linking for marchers grouped later. Any other group path stays live only while its
+ * marchers are a placed shape (round 7).
+ */
+export const keepsLiveFor = (
+    loose: boolean,
+    fresh: boolean,
+    isShape: () => boolean,
+): boolean => (loose && !fresh ? false : isShape());
+
+const keepsLive = (target: PathTarget, fresh: boolean): boolean =>
+    keepsLiveFor(!!target.group?.loose, fresh, () => formsShape(target));
+
+/** Each member's transition on the path shown, so a write takes the lane meant (review of #900) */
+const transitionsOf = (target: PathTarget): Record<number, number> =>
+    Object.fromEntries(
+        target.group!.members.map((m) => [m.marcherId, m.transitionId]),
+    );
+
+/**
+ * A write on the session's group path (round 7): one undo step that edits it and, unless it keeps
+ * one live group path (`keepsLive`), leaves each marcher on its own copy (`writeGroupPath`). The
+ * first time a path is saved that way, a toast says so and how to keep the marchers linked; when
+ * marchers sharing a spot keep it live, a toast names them.
+ */
+async function groupWrite<R>(
+    target: PathTarget,
+    name: string,
+    edit: GroupEdit<R>,
+    keepLive = keepsLive(target, !!edit.draw),
+): Promise<GroupWrite<R>> {
+    const marcherIds = target.group!.members.map((m) => m.marcherId);
+    const done = await writeGroupPath<R>({
+        db,
+        name,
+        timelineId: target.timelineId,
+        marcherIds,
+        keepLive,
+        transitions: transitionsOf(target),
+        ...edit,
+    });
+    if (done.shared.length > 0)
+        toast.info(
+            tolgee.t(
+                "pathways.toasts.keptLive",
+                "Kept as one group path: {names} share a spot, so they can't each have their own",
+                { names: joinList(done.shared) },
+            ),
+            { id: "path-kept-live" },
+        );
+    // Saved as separate copies says nothing (sim round 3: a toast saying so contradicted the
+    // marchers editing together); the label says "4 paths"
+    return done;
+}
+
+/** Whether `target` is a group path written by `groupWrite`: not a trail or one marcher's copy */
+const isGroupWrite = (target: PathTarget) =>
+    !!target.group && !target.trail && !target.lane;
+
+/**
+ * `save` on a group path (round 7, `groupWrite`): point edits on the open path move every lane
+ * (AP-R1), the path drawn again keeps its id (AP-O8), or the pen with several marchers draws one
+ * (AP-R8); saved as each marcher's own copy unless its marchers are a placed shape.
+ */
+async function saveGroupPath(
+    session: PathSession,
+    stored: RoutePointInput[],
+    drag: boolean,
+    toBulge: number | null,
+): Promise<void> {
+    const { target } = session;
+    const routeId = target.routeId;
+    if (session.phase === "open" && routeId !== null) {
+        const { result } = await groupWrite(target, "editPathPoints", {
+            edit: (tx, rid) =>
+                editPathPointsInTransaction({
+                    tx,
+                    routeId: rid,
+                    points: stored,
+                    drag,
+                    toBulge,
+                }),
+        });
+        reportRehome(result);
+        return;
+    }
+    if (session.byRoute && routeId !== null) {
+        // Drawn again: a fresh drawing, live when its marchers are exactly a placed shape
+        const { result } = await groupWrite(
+            target,
+            "redrawPath",
+            {
+                edit: (tx, rid) =>
+                    redrawPathInTransaction({
+                        tx,
+                        routeId: rid,
+                        points: stored,
+                    }),
+            },
+            keepsLive(target, true),
+        );
+        reportRehome(result);
+        return;
+    }
+    const marcherIds = target.group!.members.map((m) => m.marcherId);
+    const { result: drawn } = await groupWrite(target, "drawGroupRoute", {
+        draw: true,
+        edit: (tx) =>
+            drawGroupRouteInTransaction({
+                tx,
+                timelineId: target.timelineId,
+                marcherIds,
+                points: stored,
+            }),
+        routeOf: (r) => r.routeId,
+    });
+    reportRehome(drawn.rehome);
+    reportAdjustsRemoved(drawn.adjustsRemoved);
+}
+
 /** Writes `points` as the session's path (AP-R1), smooth ones with their roundness. */
 async function save(
     points: readonly PathPoint[],
@@ -835,9 +1578,10 @@ async function save(
                 marcherIds: target.trail.members.map((m) => m.marcherId),
                 points: stored,
             });
+        else if (isGroupWrite(target))
+            await saveGroupPath(session, stored, drag, toBulge);
         else if (session.phase === "open" && target.routeId !== null)
-            // Point edits on the open path are path edits, by its route (AP-O8, 07 N3); on a group
-            // path they move every lane (AP-R1)
+            // Point edits on the open path are path edits, by its route (AP-O8, 07 N3)
             reportRehome(
                 await editPathPoints({
                     db,
@@ -856,19 +1600,10 @@ async function save(
                     points: stored,
                 }),
             );
-        else if (
-            target.group
-        ) // The pen with several marchers: a group path (AP-R8)
-        {
-            const drawn = await drawGroupRoute({
-                db,
-                timelineId: target.timelineId,
-                marcherIds: target.group.members.map((m) => m.marcherId),
-                points: stored,
-            });
-            reportRehome(drawn.rehome);
-            reportAdjustsRemoved(drawn.adjustsRemoved);
-        } else {
+        else if (target.group)
+            // The pen with several marchers: a group path (AP-R8)
+            await saveGroupPath(session, stored, drag, toBulge);
+        else {
             const drawn = await drawRoute({
                 db,
                 timelineId: target.timelineId,
@@ -1082,7 +1817,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomed",
-                "Moved the adjustment on {count, plural, one {# spot} other {# spots}} to the nearest points left",
+                "Moved the bend on {count, plural, one {# line} other {# lines}} to the nearest points left",
                 { count: report.rehomedSpots },
             ),
         );
@@ -1090,7 +1825,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomedKeys",
-                "{count, plural, one {# adjustment point} other {# adjustment points}} dropped",
+                "{count, plural, one {# bend point} other {# bend points}} dropped",
                 { count: report.droppedKeys },
             ),
         );
@@ -1098,7 +1833,7 @@ export function reportRehome(report: RehomeReport): void {
         parts.push(
             tolgee.t(
                 "pathways.toasts.rehomedCleared",
-                "{count, plural, one {# spot} other {# spots}} lost their adjustment",
+                "{count, plural, one {# line lost its bend} other {# lines lost their bends}}",
                 { count: report.clearedSpots },
             ),
         );
@@ -1111,7 +1846,7 @@ function reportAdjustsRemoved(count: number): void {
         toastWithUndo(
             tolgee.t(
                 "pathways.toasts.adjustsRemoved",
-                "{count, plural, one {# adjustment} other {# adjustments}} removed: {count, plural, one {it was} other {they were}} on the old path",
+                "{count, plural, one {# bend} other {# bends}} removed: {count, plural, one {it was} other {they were}} on the old path",
                 { count },
             ),
         );
@@ -1137,7 +1872,7 @@ async function adjustWrite(
 }
 
 const adjustFallback = () =>
-    tolgee.t("pathways.errors.adjust", "Couldn't adjust this spot");
+    tolgee.t("pathways.errors.adjust", "Couldn't bend this line");
 
 /** Reads the lane of a marcher on the session's group path, for an Adjust write */
 const laneArgs = (marcherId: number) => {
@@ -1232,21 +1967,38 @@ export async function deleteOnLane(
 
 /** Re-fit (decision A), by the session's route. One undo step. */
 export async function refitOpenPath(): Promise<void> {
-    const routeId = usePathPenStore.getState().session?.target.routeId ?? null;
-    if (routeId === null) return;
+    const target = usePathPenStore.getState().session?.target;
+    const routeId = target?.routeId ?? null;
+    if (!target || routeId === null) return;
     await adjustWrite(
         () => tolgee.t("pathways.errors.refit", "Couldn't re-fit the path"),
-        async () => reportRehome(await refitRoute({ db, routeId })),
+        async () =>
+            reportRehome(
+                isGroupWrite(target)
+                    ? (
+                          await groupWrite(target, "refitPath", {
+                              edit: (tx, rid) =>
+                                  refitPathInTransaction({ tx, routeId: rid }),
+                          })
+                      ).result
+                    : await refitRoute({ db, routeId }),
+            ),
     );
 }
 
 /** Takes the re-homed badge off the session's path. One undo step. */
 export async function acknowledgeOpenPath(): Promise<void> {
-    const routeId = usePathPenStore.getState().session?.target.routeId ?? null;
-    if (routeId === null) return;
-    await adjustWrite(adjustFallback, () =>
-        acknowledgeRehomed({ db, routeId }),
-    );
+    const target = usePathPenStore.getState().session?.target;
+    const routeId = target?.routeId ?? null;
+    if (!target || routeId === null) return;
+    await adjustWrite(adjustFallback, async () => {
+        if (isGroupWrite(target))
+            await groupWrite(target, "acknowledgeRehomed", {
+                edit: (tx, rid) =>
+                    acknowledgeRehomedInTransaction({ tx, routeId: rid }),
+            });
+        else await acknowledgeRehomed({ db, routeId });
+    });
 }
 
 /**
@@ -1280,12 +2032,27 @@ export async function removePath(): Promise<void> {
             );
             return;
         }
-        const { marcherIds } = await removeRoute({
-            db,
-            routeId: session.target.routeId,
-        });
+        const { target } = session;
+        const routeId = session.target.routeId;
+        // A loose path's copies regroup first, so its marchers' paths all go in one step (round 7)
+        const { marcherIds } = isGroupWrite(target)
+            ? (
+                  await groupWrite(
+                      target,
+                      "removeRoute",
+                      {
+                          edit: (tx, rid) =>
+                              removeRouteInTransaction({ tx, routeId: rid }),
+                      },
+                      // The route goes: nothing is left to link or Detach
+                      true,
+                  )
+              ).result
+            : await removeRoute({ db, routeId });
         clearPath();
-        if (session.target.group)
+        if (!session.target.group)
+            toastWithUndo(tolgee.t("pathways.toasts.removed", "Path removed"));
+        else
             toastWithUndo(
                 tolgee.t(
                     "pathways.toasts.removedGroup",
@@ -1343,25 +2110,60 @@ export async function reverseShownTrail(): Promise<void> {
 }
 
 /**
- * Own path (AP-R9, step 15): the selected marchers on the shown group path each get a copy of
- * their lane, one undo step. With one marcher, its own path is then shown, open (the hook reads
- * it again after the save and keeps it open).
+ * Detach (AP-R9, step 3c): the selected marchers on the shown group path each get a verbatim copy
+ * of it, keeping their offset and Adjust, so nobody moves; one undo step however many. With one
+ * marcher, its copy is then shown, open (the hook reads it again after the save and keeps it open).
+ * `all` for Detach all (round 5): every member, so the group path ends, and the toast says so.
  */
-export async function ownPathFor(marcherIds: readonly number[]): Promise<void> {
+export async function detachFor(
+    marcherIds: readonly number[],
+    all = false,
+): Promise<void> {
     const { session, saving } = usePathPenStore.getState();
     if (!session?.target.group || saving || marcherIds.length === 0) return;
+    const one = marcherIds.length === 1;
     // Opened again after the save (`openNext`), not kept open as the group path
-    if (marcherIds.length === 1) clearPath();
+    if (one && !session.object) clearPath();
     usePathPenStore.setState({ saving: true });
     try {
-        await ownPath({
+        const { routes } = await detachFromGroupPath({
             db,
             timelineId: session.target.timelineId,
             marcherIds,
         });
+        const copy = one ? routes[marcherIds[0]!] : undefined;
+        // Said in words, with Undo (interaction round 2: testers couldn't tell Detach worked)
+        toastWithUndo(
+            all
+                ? tolgee.t(
+                      "pathways.toasts.groupEnded",
+                      "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}",
+                      { count: marcherIds.length },
+                  )
+                : tolgee.t(
+                      "pathways.toasts.detached",
+                      "{count, plural, one {# marcher detached} other {# marchers detached}}",
+                      { count: marcherIds.length },
+                  ),
+        );
         usePathPenStore.setState((state) => ({
             saved: state.saved + 1,
-            openNext: marcherIds.length === 1 ? marcherIds[0]! : null,
+            openNext: one && !session.object ? marcherIds[0]! : null,
+            // A spot Detached from the group path open as an object: its copy is the object now,
+            // read again by its route and kept open
+            ...(copy !== undefined &&
+            session.object &&
+            state.session?.object &&
+            state.session.target.routeId === session.target.routeId
+                ? {
+                      session: {
+                          ...state.session,
+                          target: { ...state.session.target, routeId: copy },
+                          lane: null,
+                          selected: null,
+                      },
+                  }
+                : {}),
         }));
     } catch (error) {
         toastTimelineError(
@@ -1374,22 +2176,65 @@ export async function ownPathFor(marcherIds: readonly number[]): Promise<void> {
 }
 
 /**
- * Rejoin (AP-R10, step 15): the selected marchers off the group path follow it, one undo step: a
- * member that took Own path gets its lane back, another marcher joins the group. The group path
- * is the one shown, or with only marchers off any group path selected, the move's only one.
+ * Rejoin (AP-R10): the selected marchers off the group path follow it, one undo step: a Detached
+ * marcher goes back to its spot's lane without its copy or Adjust (owner Q4), another marcher joins
+ * the group. The group path is the one shown, the one a shown copy was Detached from, or with only
+ * marchers off any group path selected, the move's only one.
  */
 export async function rejoinFor(target: RejoinTarget | null): Promise<void> {
     const { saving } = usePathPenStore.getState();
     if (!target || saving || target.marcherIds.length === 0) return;
     usePathPenStore.setState({ saving: true });
     try {
-        await rejoinGroupPath({
+        const { dropped } = await rejoinGroupPath({
             db,
             timelineId: target.timelineId,
             routeId: target.routeId,
             marcherIds: target.marcherIds,
         });
-        usePathPenStore.setState((state) => ({ saved: state.saved + 1 }));
+        // Sim round 3: Rejoin dropped a bend with nothing said. It says what went, with Undo
+        const count = target.marcherIds.length;
+        toastWithUndo(
+            dropped.length > 0
+                ? tolgee.t(
+                      "pathways.toasts.rejoinedDropped",
+                      "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path. {dropped, plural, one {# line lost its own shape} other {# lines lost their own shapes}}",
+                      { count, dropped: dropped.length },
+                  )
+                : tolgee.t(
+                      "pathways.toasts.rejoined",
+                      "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path",
+                      { count },
+                  ),
+        );
+        usePathPenStore.setState((state) => {
+            const s = state.session;
+            // Rejoined from its copy open as an object: the copy is gone, so the group path it
+            // went back to is the object now, open, with the rejoined lane picked
+            const fromCopy =
+                s?.object &&
+                s.phase === "open" &&
+                s.target.lane?.detachedFrom === target.routeId;
+            return {
+                saved: state.saved + 1,
+                ...(fromCopy
+                    ? {
+                          session: {
+                              ...s,
+                              target: { ...s.target, routeId: target.routeId },
+                              selected: null,
+                              lane:
+                                  target.marcherIds.length === 1
+                                      ? {
+                                            marcherId: target.marcherIds[0]!,
+                                            key: null,
+                                        }
+                                      : null,
+                          },
+                      }
+                    : {}),
+            };
+        });
     } catch (error) {
         toastTimelineError(
             error,

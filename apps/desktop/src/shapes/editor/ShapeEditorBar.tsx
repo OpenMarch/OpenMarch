@@ -17,6 +17,7 @@ import {
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
+import { setShapeEditorRect } from "./shapeEditorRect";
 import { clearPlacement, oneRowRoom } from "./editorPlacement";
 import {
     coverInset,
@@ -1712,6 +1713,13 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             prefersReducedMotion();
         shown.current = { view, placed: true, gliding, held: false };
         setAbove(target.above);
+        // Where it's going, for the path bar to stack clear of (pathways interaction round 4)
+        setShapeEditorRect({
+            left: target.left,
+            top: target.top,
+            width: room.width,
+            height: room.height,
+        });
         const started = api.start({
             left: target.left,
             top: target.top,
@@ -1759,6 +1767,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],
     );
+    useEffect(() => () => setShapeEditorRect(null), []);
     return {
         ref,
         above,

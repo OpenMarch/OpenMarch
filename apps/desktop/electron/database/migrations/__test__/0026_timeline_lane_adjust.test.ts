@@ -160,6 +160,6 @@ describe(`Migration ${ADJUST_MIGRATION.tag}`, () => {
             LANE_MODEL_USER_VERSION,
         );
         expect(decideFileVersion(12, false).action).toBe("accept");
-        expect(decideFileVersion(14, false).action).toBe("refuse-too-new");
+        expect(decideFileVersion(15, false).action).toBe("refuse-too-new");
     });
 });

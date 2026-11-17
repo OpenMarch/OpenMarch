@@ -21,6 +21,8 @@ import {
     type RoutePath,
     MAX_ROUTE_BULGE,
     ROUTE_ARC_SAMPLES,
+    S_MIN,
+    laneRigidPart,
 } from "@openmarch/core";
 import tolgee from "@/global/singletons/Tolgee";
 import {
@@ -351,6 +353,16 @@ function fromSegment(at: XY, a: XY, b: XY): number {
                   Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / l2),
               );
     return Math.hypot(at.x - (a.x + dx * t), at.y - (a.y + dy * t));
+}
+
+/** How far `at` is from the polyline `line` (Infinity for a line of one point or none) */
+export function lineDistance(line: readonly XY[], at: XY): number {
+    return line
+        .slice(1)
+        .reduce(
+            (d, b, i) => Math.min(d, fromSegment(at, line[i]!, b)),
+            Infinity,
+        );
 }
 
 /** Whether `at` is within `radius` of the polyline `line` */
@@ -871,7 +883,7 @@ function adjustMenu(onKey: boolean): ToolMenuSection[] {
                               value: "removeKey",
                               label: tolgee.t(
                                   "actions.path.adjustRemoveKey",
-                                  "Remove adjustment point",
+                                  "Remove bend point",
                               ),
                           },
                       ]
@@ -880,7 +892,7 @@ function adjustMenu(onKey: boolean): ToolMenuSection[] {
                     value: "resetSpot",
                     label: tolgee.t(
                         "actions.path.adjustResetSpot",
-                        "Reset this spot",
+                        "Match group",
                     ),
                     icon: "trash" as const,
                     destructive: true,
@@ -1031,6 +1043,34 @@ export function adjustHandlesOf(
     });
 }
 
+/**
+ * What a line being edited offers to grab besides its bend points (interaction round 3), so even a
+ * line with no bends has something to drag, as Edit path's points and midpoints are: each of the
+ * group path's points on the line, and the middle of each stretch between those and the bend
+ * points. All lie on the part that bends, between the group path's first and last points: the legs
+ * onto and off it take none. None within a step of a bend point, where a press takes that point.
+ */
+export function laneBendSpotsOf(walk: GroupMemberWalk): XY[] {
+    const part = laneRigidPart(walk.schedule);
+    if (!part || part.to - part.from < 2 * S_MIN) return [];
+    const { W } = walk.schedule;
+    const corners = W.D.slice(1, W.V.length - 1);
+    const keys = walk.adjust?.xs ?? [];
+    const anchors = [...new Set([...corners, ...keys])].sort((a, b) => a - b);
+    const middles = anchors.slice(1).flatMap((x, i) => {
+        const before = anchors[i]!;
+        return x - before >= 2 * S_MIN ? [(before + x) / 2] : [];
+    });
+    return [...corners, ...middles]
+        .filter((x) => keys.every((k) => Math.abs(k - x) >= S_MIN))
+        .sort((a, b) => a - b)
+        .map((x) => {
+            const plain = lanePlain(walk, x);
+            const d = laneDelta(walk, x);
+            return { x: plain.x + d.x, y: plain.y + d.y };
+        });
+}
+
 /** The lane's reference place at `x`, before its Adjust: `walk(x) + o` */
 export function lanePlain(walk: GroupMemberWalk, x: number): XY {
     const q = routePoint(walk.schedule.W, x / walk.schedule.W.L);
@@ -1053,7 +1093,9 @@ export interface LaneHit {
 
 /**
  * The point of `walk`'s lane nearest `at` within `radius`, or null (decision C): on its rigid part
- * the place there, measured along the reference walk, and on a leg no place.
+ * the place there, measured along the reference walk, and on a leg no place. The rigid part wins
+ * within reach: at the corner where a leg leaves it, the leg was a hair nearer and a drag on the
+ * handle drawn there was refused (sim round 3).
  */
 export function laneHitOf(
     walk: GroupMemberWalk,
@@ -1089,6 +1131,7 @@ export function laneHitOf(
             samples[i - 1]!.x,
             samples[i]!.x,
         );
+    if (best) return best;
     for (const leg of [walk.first, walk.last]) {
         if (!leg) continue;
         const line = legLine(leg);

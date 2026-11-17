@@ -972,6 +972,17 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         ignoreRepeat: true,
     },
+    // Edit <name>'s line (pathways interaction round 3, was Adjust): the selected member's line
+    // alone, editable, its handles shown at once. On the floating path bar, the Path menus and in
+    // the palette; no keys
+    editLine: {
+        labelKey: "actions.path.editLine",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
     adjustResetSpot: {
         labelKey: "actions.path.adjustResetSpot",
         keywordsKey: "actions.path.keywords",
@@ -989,10 +1000,21 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
-    // Pathways step 15: a group path's members break off with a copy of their lane (Own path,
-    // AP-R9) or follow it (Rejoin, AP-R10). On the floating path bar and in the palette; no keys
-    ownPath: {
-        labelKey: "actions.path.ownPath",
+    // Pathways step 3c: a group path's members break off with a copy of it that keeps the group's
+    // counts (Detach, AP-R9) or follow it again (Rejoin, AP-R10). On the floating path bar and in
+    // the palette; no keys
+    detachPath: {
+        labelKey: "actions.path.detachFromGroup",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Detach all (round 5): with every member of a group path selected, each gets its own copy and
+    // the group path ends. Under the bar's ···, beside Remove path, and in the Path menus and palette
+    detachAllPath: {
+        labelKey: "actions.path.detachAll",
         keywordsKey: "actions.path.keywords",
         category: "path",
         scope: "canvas",
@@ -1000,7 +1022,7 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
     rejoinPath: {
-        labelKey: "actions.path.rejoin",
+        labelKey: "actions.path.rejoinGroup",
         keywordsKey: "actions.path.keywords",
         category: "path",
         scope: "canvas",

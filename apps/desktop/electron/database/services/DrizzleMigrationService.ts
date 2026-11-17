@@ -51,6 +51,9 @@ export const CONVERTER_SCHEMA_MIGRATION_TAGS = [
     "0024_timeline_routes",
     "0025_timeline_lanes",
     "0026_timeline_lane_adjust",
+    // Route sources (K6, pathways step 3c): not read by the converter or the resolver, but a new
+    // table, so it is made here with the others and the conversion's own stage only drops tables
+    "0028_timeline_route_sources",
 ];
 
 /** The migrations folder, also found from a built `dist-electron/main`. */

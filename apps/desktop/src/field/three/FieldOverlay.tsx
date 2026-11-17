@@ -94,6 +94,8 @@ const GUIDE_REACH = 100_000;
 const SPOT_RADIUS = 4;
 const SPOT_WIDTH = 1.5;
 const WALK_WIDTH = 1;
+/** A shape's walks, the faint line from each marcher to its spot, in the shape's color this strong */
+const WALK_ALPHA = 0.4;
 const SHAPE_HANDLE_SIZE = 9;
 /** A handle that adds a point (a line's midpoint, #524): a small ring, over the center dot */
 const ADD_HANDLE_RADIUS = 3;
@@ -154,7 +156,7 @@ const CALM_CONTROLS_OPACITY = 0.25;
 const SPOT_LABEL_PX = 10;
 const TIP_PX = 12;
 const TIP_OFFSET_PX = 14;
-/** Room for the tip's pill; it lays itself out inside, from the top left */
+/** Room for a readout's pill in the overlay's SVG; it lays itself out inside, from the top left */
 const TIP_BOX = { width: 360, height: 32 };
 
 /**
@@ -285,7 +287,6 @@ export default function FieldOverlay({
                         theme={theme}
                         marchers={marchers}
                         testId="fieldPathObject"
-                        touch={touch}
                     />
                 ))}
                 {pathUnder && pathUnder !== modeDrawing && (
@@ -294,7 +295,6 @@ export default function FieldOverlay({
                         theme={theme}
                         marchers={marchers}
                         testId="fieldPathUnderBox"
-                        touch={touch}
                     />
                 )}
                 {area && (
@@ -305,11 +305,13 @@ export default function FieldOverlay({
                         drawing={modeDrawing}
                         theme={theme}
                         marchers={marchers}
-                        touch={touch}
                     />
                 )}
                 {propTool && <PropToolPreview tool={propTool} theme={theme} />}
             </svg>
+            {modeDrawing?.tip && (
+                <ModeTip tip={modeDrawing.tip} touch={touch} />
+            )}
         </>
     );
 }
@@ -633,9 +635,17 @@ const LANE_HIGHLIGHT_WIDTH = 1.5;
 const PATH_LINE_WIDTH = {
     edited: 2.5,
     shown: 1.75,
+    quiet: 1.75,
     selected: 2.5,
     context: 1.25,
 } as const;
+/**
+ * A line that isn't being edited, in the faint path color (pathways interaction round 3): the
+ * selected marchers' lines while quiet, and the members' lanes round the group path being edited.
+ * The walks' color, at a shown path's weight, so only the line being edited reads deep; the
+ * lanes' fainter one lost a single selected marcher's line on the field.
+ */
+const QUIET_LINE_ALPHA = WALK_ALPHA;
 /** How far the group path's line goes to grey behind the lane being worked on (0 to 1), and its alpha */
 const PATH_CONTEXT_GREY = 0.75;
 const PATH_CONTEXT_ALPHA = 0.7;
@@ -662,6 +672,10 @@ const GROUP_RING = "rgb(59, 130, 246)";
 const OWN_RING = "rgb(249, 115, 22)";
 const MEMBER_RING_SCALE = 1.9;
 const MEMBER_RING_WIDTH = 2;
+/** A detached member's ring: dashed, off the group path (interaction system, rule 5) */
+const MEMBER_RING_DASH = "3 2";
+/** An adjusted lane, in the group ring's color: quieter than the line being edited */
+const LANE_ADJUSTED_ALPHA = 0.7;
 /** The Follow tool's pull arrows (pathways step 4d), in dot radii, and their loop in seconds */
 const PULL_ARROW = {
     /** From the end's center to the first chevron */
@@ -942,7 +956,8 @@ const ShapeBody = memo(function ShapeBody({
     spotShape: MarkerShape;
 }) {
     const shape = rgbaToString(theme.shape);
-    const walk = rgbaToString({ ...theme.shape, a: 0.4 });
+    const quietLine = rgbaToString({ ...theme.shape, a: QUIET_LINE_ALPHA });
+    const walk = rgbaToString({ ...theme.shape, a: WALK_ALPHA });
     const fill = rgbaToString({ ...theme.shape, a: 0.06 });
     const open = drawing.stage === "open";
     const dots = drawing.stage === "drawing";
@@ -1002,26 +1017,73 @@ const ShapeBody = memo(function ShapeBody({
                     />
                 ))}
             {/* Under the path's line, which is the one being edited */}
-            {drawing.lanes?.map((lane, i) => (
-                <polyline
-                    key={`lane${i}`}
-                    points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
-                    fill="none"
-                    stroke={rgbaToString({
-                        ...theme.shape,
-                        a: drawing.laneHighlights?.includes(i)
-                            ? LANE_HIGHLIGHT_ALPHA
-                            : LANE_ALPHA,
-                    })}
-                    strokeWidth={
-                        drawing.laneHighlights?.includes(i)
-                            ? LANE_HIGHLIGHT_WIDTH
-                            : LANE_WIDTH
-                    }
-                    vectorEffect="non-scaling-stroke"
-                    data-testid="pathGroupLane"
-                />
-            ))}
+            {drawing.lanes?.map((lane, i) =>
+                drawing.lanesWeight === "quiet" ? (
+                    // A marcher's own walked line, at a shown path's weight, faint unless pointed at
+                    <polyline
+                        key={`lane${i}`}
+                        points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="none"
+                        stroke={
+                            drawing.laneHighlights?.includes(i)
+                                ? shape
+                                : quietLine
+                        }
+                        strokeWidth={
+                            drawing.laneHighlights?.includes(i)
+                                ? PATH_LINE_WIDTH.selected
+                                : PATH_LINE_WIDTH.shown
+                        }
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathMemberLine"
+                        data-marcher={drawing.laneIds?.[i]}
+                    />
+                ) : (
+                    <polyline
+                        key={`lane${i}`}
+                        points={lane.map((p) => `${p.x},${p.y}`).join(" ")}
+                        fill="none"
+                        stroke={rgbaToString({
+                            ...theme.shape,
+                            a: drawing.laneHighlights?.includes(i)
+                                ? LANE_HIGHLIGHT_ALPHA
+                                : LANE_ALPHA,
+                        })}
+                        strokeWidth={
+                            drawing.laneHighlights?.includes(i)
+                                ? LANE_HIGHLIGHT_WIDTH
+                                : LANE_WIDTH
+                        }
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathGroupLane"
+                    />
+                ),
+            )}
+            {/* Adjusted lanes (pathways, interaction system rule 5), over the faint ones */}
+            {drawing.lanesAdjusted?.map((i) =>
+                drawing.lanes?.[i] ? (
+                    <polyline
+                        key={`laneAdjusted${i}`}
+                        points={drawing.lanes[i]!.map(
+                            (p) => `${p.x},${p.y}`,
+                        ).join(" ")}
+                        fill="none"
+                        stroke={GROUP_RING}
+                        strokeOpacity={LANE_ADJUSTED_ALPHA}
+                        strokeWidth={
+                            drawing.lanesWeight === "quiet"
+                                ? PATH_LINE_WIDTH.quiet
+                                : LANE_HIGHLIGHT_WIDTH
+                        }
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        data-testid="pathAdjustedLane"
+                    />
+                ) : null,
+            )}
             {drawing.outline && drawing.pathLine === "selected" && (
                 <polyline
                     points={drawing.outline
@@ -1050,7 +1112,9 @@ const ShapeBody = memo(function ShapeBody({
                                 ? SELECTION_COLOR
                                 : drawing.pathLine === "context"
                                   ? contextLineColor(theme.shape)
-                                  : shape
+                                  : drawing.pathLine === "quiet"
+                                    ? quietLine
+                                    : shape
                         }
                         strokeWidth={
                             drawing.pathLine
@@ -1115,9 +1179,11 @@ const ShapeBody = memo(function ShapeBody({
                     fill="none"
                     stroke={ring.kind === "group" ? GROUP_RING : OWN_RING}
                     strokeWidth={MEMBER_RING_WIDTH}
+                    strokeDasharray={ring.dashed ? MEMBER_RING_DASH : undefined}
                     vectorEffect="non-scaling-stroke"
                     data-testid="pathMemberRing"
                     data-kind={ring.kind}
+                    data-dashed={ring.dashed || undefined}
                     data-pulse={ring.pulse || undefined}
                     // The pull arrows carry the motion (step 4d); the ring stays still beside them
                     className={
@@ -1390,20 +1456,60 @@ function useSpotShape(
     }, [ringKey, looks, marchers, theme]);
 }
 
+/**
+ * The note by the pointer (a drag's readout, a lane's name): a solid pill, so it reads over any
+ * part of the field (owner). Over the field's floating bars too, outside the overlay's SVG: the
+ * path bar sits beside the lines, so a note by a hovered line often lands on it (owner, MVP lab).
+ */
+function ModeTip({
+    tip,
+    touch,
+}: {
+    tip: NonNullable<FieldModeDrawing["tip"]>;
+    /** The press is a finger's: the tip sits above it, clear of the finger */
+    touch: boolean;
+}) {
+    const view = useFieldViewStore();
+    const p = fieldToElement(view, tip.at.x, tip.at.y);
+    const stack = <PointerTipStack text={tip.text} testId="fieldShapeTip" />;
+    if (touch) {
+        // Over the whole field, so the stack can center above the finger and stay inside the
+        // field's edges
+        return (
+            <div className="pointer-events-none absolute inset-0 z-20">
+                <ClearOfFinger
+                    finger={p}
+                    bounds={{ width: view.width, height: view.height }}
+                >
+                    {stack}
+                </ClearOfFinger>
+            </div>
+        );
+    }
+    return (
+        <div
+            className="pointer-events-none absolute z-20"
+            style={{
+                left: p.x + TIP_OFFSET_PX,
+                top: p.y + TIP_OFFSET_PX,
+            }}
+        >
+            {stack}
+        </div>
+    );
+}
+
 function ModeDrawing({
     drawing,
     theme,
     marchers,
     testId = "fieldShapeMode",
-    touch,
 }: {
     drawing: FieldModeDrawing;
     theme: FieldTheme;
     marchers: FieldMarchers;
     /** Another drawing than the mode's, under it, names itself */
     testId?: string;
-    /** The press is a finger's: the tip sits above it, clear of the finger */
-    touch: boolean;
 }) {
     const view = useFieldViewStore();
     const shape = rgbaToString(theme.shape);
@@ -1642,14 +1748,17 @@ function ModeDrawing({
                         />
                     );
                 })()}
+            {/* A line's bend points, squares as a path's points are; the round spots beside them
+                (addHandles) are where to grab it for a new bend (round 3) */}
             {drawing.adjustHandles?.map(({ at: point, selected }, i) => {
                 const p = at(point);
                 return (
-                    <circle
+                    <rect
                         key={`adjust${i}`}
-                        cx={p.x}
-                        cy={p.y}
-                        r={ADD_HANDLE_RADIUS}
+                        x={p.x - half}
+                        y={p.y - half}
+                        width={SHAPE_HANDLE_SIZE}
+                        height={SHAPE_HANDLE_SIZE}
                         fill={selected ? shape : "white"}
                         stroke={shape}
                         strokeWidth={SHAPE_HANDLE_WIDTH}
@@ -1715,18 +1824,34 @@ function ModeDrawing({
                         </g>
                     );
                 })()}
-            {drawing.tip && (
-                <PointerTip
-                    at={at(drawing.tip.at)}
-                    text={drawing.tip.text}
-                    touch={touch}
-                    testId="fieldShapeTip"
-                />
-            )}
             {/* The guides' names last, over every line, edge and spot, so nothing crosses
                 their text (owner on #427) */}
             <GuideLabels guides={drawing.guides} at={at} view={view} />
         </g>
+    );
+}
+
+/** A readout's solid pill, with the held-roles chip stacked under it, never over it */
+function PointerTipStack({
+    text,
+    testId,
+    opacity,
+}: {
+    text: string;
+    testId: string;
+    opacity?: number;
+}) {
+    return (
+        <div className="flex flex-col items-start gap-4" style={{ opacity }}>
+            <div
+                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
+                style={{ fontSize: TIP_PX }}
+                data-testid={testId}
+            >
+                <GlyphText text={text} size={12} />
+            </div>
+            <HeldRolesChipBelowTip />
+        </div>
     );
 }
 
@@ -1750,17 +1875,7 @@ function PointerTip({
 }) {
     const view = useFieldViewStore();
     const stack = (
-        <div className="flex flex-col items-start gap-4" style={{ opacity }}>
-            <div
-                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
-                style={{ fontSize: TIP_PX }}
-                data-testid={testId}
-            >
-                <GlyphText text={text} size={12} />
-            </div>
-            {/* The held-roles chip stacks under the readout, never over it */}
-            <HeldRolesChipBelowTip />
-        </div>
+        <PointerTipStack text={text} testId={testId} opacity={opacity} />
     );
     if (touch) {
         // Over the whole field, so the stack can center above the finger and stay inside the

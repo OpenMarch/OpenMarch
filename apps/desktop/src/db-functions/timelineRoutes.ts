@@ -18,7 +18,7 @@
  * Range edits (AP-R4) and end and start changes (AP-R5) leave routes alone: R-14 always walks from
  * the marcher's real start to its real destination.
  */
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import {
     createResolver,
     EPS_GEOM,
@@ -49,6 +49,7 @@ import {
     type RehomeReport,
 } from "./timelineRouteGeometry";
 import {
+    deleteRouteSourcesInTransaction,
     firstLanedRow,
     laneOn,
     lanesOfRoute,
@@ -82,11 +83,21 @@ export const routeRefusal = {
     /** The marcher has no part in the move */
     notInMove: (marcher: string) =>
         text.t("timeline.refusals.route.notInMove", { marcher }),
-    /** AP-R7 (step 15): split at the playhead on a group path */
+    /** AP-R7 (step 15): split at the playhead on a group path, or a Detached copy of one */
     groupSplit: () => text.t("timeline.refusals.route.groupSplit"),
-    /** AP-R9 (step 15): Own path for a marcher not on a group path */
+    /** AP-R9: Detach for a marcher not on a group path */
     notOnGroupPath: (marcher: string) =>
         text.t("timeline.refusals.route.notOnGroupPath", { marcher }),
+    /** AP-R9: Detach for a marcher whose spot is the only one on its path (a copy, or the last) */
+    onlyOnPath: (marcher: string) =>
+        text.t("timeline.refusals.route.onlyOnPath", { marcher }),
+    /**
+     * Interaction round 7: an edit of a loose path whose marchers' copies no longer match (one was
+     * edited alone since it was shown), so there's no one path to edit for them all
+     */
+    copiesApart: () => text.t("timeline.refusals.route.copiesApart"),
+    /** AP-R10: Rejoin onto a Detached copy (its marcher rejoins the group path it came from) */
+    rejoinOntoCopy: () => text.t("timeline.refusals.route.rejoinOntoCopy"),
     /** AP-R10 (step 15): Rejoin with no group path in the move */
     noGroupPath: (move: TimelineTextArg) =>
         text.t("timeline.refusals.route.noGroupPath", { move }),
@@ -104,9 +115,6 @@ export const routeRefusal = {
     adjustTooClose: () => text.t("timeline.refusals.route.adjustTooClose"),
     /** AP-R11: a shared part shorter than two steps */
     adjustTooShort: () => text.t("timeline.refusals.route.adjustTooShort"),
-    /** Step 15's Own path can't carry an Adjust; Detach (step 3c) will */
-    ownPathAdjusted: (marcher: string) =>
-        text.t("timeline.refusals.route.ownPathAdjusted", { marcher }),
     /** Re-fit with the ends where the path already has them */
     refitNotNeeded: () => text.t("timeline.refusals.route.refitNotNeeded"),
     /** Re-fit with nobody starting on the path */
@@ -250,6 +258,10 @@ export interface MoveRoute {
     /** The spot's Adjust, or null (spec J.2) */
     adjust: AdjustProfile | null;
     geometry: RouteGeometry;
+    /** How many lanes the route has, vacant ones too */
+    laneCount: number;
+    /** The group path the route was Detached from (K6, AP-R9), or null */
+    detachedFrom: number | null;
 }
 
 /**
@@ -278,6 +290,10 @@ export async function readRoutes(
             offsetX: L.offset_x,
             offsetY: L.offset_y,
             adjust: L.adjust,
+            laneCount: sql<number>`(SELECT count(*) FROM timeline_lanes c WHERE c.route_id = ${R.id})`,
+            detachedFrom: sql<
+                number | null
+            >`(SELECT s.source_route_id FROM timeline_route_sources s WHERE s.route_id = ${R.id} AND s.kind = 'detached_from' ORDER BY s.id LIMIT 1)`,
         })
         .from(L)
         .innerJoin(R, eq(R.id, L.route_id))
@@ -298,6 +314,8 @@ export async function readRoutes(
         .all();
     return rows.map(({ offsetX, offsetY, geometry, adjust, ...r }) => ({
         ...r,
+        laneCount: Number(r.laneCount),
+        detachedFrom: r.detachedFrom === null ? null : Number(r.detachedFrom),
         offset:
             offsetX === null || offsetY === null ? null : [offsetX, offsetY],
         adjust: adjust === null ? null : (JSON.parse(adjust) as AdjustProfile),
@@ -607,6 +625,7 @@ export async function removeRouteInTransaction({
                 lanes.map((l) => l.id),
             ),
         );
+        await deleteRouteSourcesInTransaction(tx, [rid]);
         await tx
             .delete(schema.timeline_routes)
             .where(eq(schema.timeline_routes.id, rid));

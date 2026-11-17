@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { toast } from "sonner";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { T } from "@tolgee/react";
 import {
     ArrowCounterClockwiseIcon,
@@ -9,10 +10,14 @@ import {
     ArrowsOutLineHorizontalIcon,
     ArrowsSplitIcon,
     BackspaceIcon,
+    BezierCurveIcon,
+    DotsThreeIcon,
     FlagPennantIcon,
     PlayIcon,
     LineSegmentsIcon,
     PathIcon,
+    PencilSimpleIcon,
+    PenNibIcon,
     TrashIcon,
     UsersThreeIcon,
     WarningIcon,
@@ -26,9 +31,18 @@ import { RichTips, Tip } from "@/components/ui/Tip";
 import { runAction } from "@/shortcuts/registry";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import { getActionShortcutKeys } from "@/shortcuts/labels";
-import { StepSize } from "@/global/classes/StepSize";
 import { fieldToElement, useFieldViewStore } from "@/field/three/fieldView";
-import { editorPlacement } from "@/shapes/editor/editorPlacement";
+import { stackedPlacement } from "@/shapes/editor/editorPlacement";
+import { useShapeEditorRect } from "@/shapes/editor/shapeEditorRect";
+import {
+    KEEP_MENU_EVENTS,
+    MenuItemWithReason,
+} from "@/components/timeline/TimelineRangeMenu";
+import {
+    MENU_CONTENT_CLASS,
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
 import {
     Divider,
     EDITOR_BAR,
@@ -38,6 +52,9 @@ import {
 import type { XY } from "@/shapes/types";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { refitNeeded } from "./pathTarget";
+import { useShapeToolStore } from "@/shapes/tool/shapeToolStore";
+import { selectOnField } from "@/shapes/placed/boxSelection";
+import { setInsideBox } from "@/shapes/placed/boxSelectionStore";
 import { OffCountWarning, TrailCornerCounts } from "./TrailCornerCounts";
 import { offCountTally, trailCornersOf } from "./trailCorners";
 import {
@@ -48,40 +65,45 @@ import {
     followMarchersOf,
     followPlanOf,
     followSpacingOf,
-    keepsEndSpots,
     rippleDrawnPlanOf,
     ripplesIn,
     setFollowSpacing,
 } from "./followDrag";
 import { rippleArrivalCount } from "@/db-functions/timelineTrailRipplePlan";
 import {
-    memberNow,
+    detachAllIdsOf,
+    detachAllLabel,
+    detachAllNote,
+    detachIdsOf,
+    isLoose,
+    detachLabel,
+    detachNote,
+    editGroupPathLabel,
+    editLineLabel,
+    laneFocusOf,
+    pathSlotsOf,
     memberOf,
+    groupViewOf,
     shapeOf,
     usePathPenStore,
+    ownLinesDrawn,
+    type OwnLine,
     type PathSession,
 } from "./pathPenStore";
+import { drawingOf, ownLineDrawingOf } from "./pathPenMode";
 import {
-    curveOf,
-    groupLegDistances,
     besideArc,
     besideArcReason,
     isSmooth,
-    memberWalkOf,
     pathOutline,
     pointOf,
-    scheduleOf,
-    type LegWhere,
 } from "./pathEdit";
+
+// Big steps lives with the inspector's line, which mustn't load the field mode (pathways round 2)
+export { bigSteps, trailDistances, type BigSteps } from "./pathBigSteps";
 
 /** Under a marcher: the field's note there (offset and pill), which the path bar leaves room for */
 const FIELD_NOTE_ROOM_PX = 40;
-/**
- * The Big steps advice for a path (spec v0.9 Appendix I.2, I.5): one steady speed means every leg
- * has the same step size, the path's length (curves included) over the move's counts, tested as
- * straight moves are (`StepSize`, the field's step-size warning). Null when the steps aren't big,
- * or with the warning off.
- */
 /**
  * Reverse leader's tooltip, or why it's off: a dragged-out line ends along its trail, so the
  * other end can't lead (owner, 2026-11-10)
@@ -98,210 +120,6 @@ function reverseLabel(along: boolean | undefined): string {
           );
 }
 
-export function bigSteps(
-    session: PathSession,
-    fieldProperties: FieldProperties,
-): BigSteps | null {
-    const { target } = session;
-    const counts = target.end - target.start;
-    if (target.trail) return trailBigSteps(session, fieldProperties);
-    if (target.group) return groupBigSteps(session, fieldProperties);
-    const size = StepSize.fromDistance({
-        marcher_id: target.marcherId,
-        distance: curveOf(shapeOf(session)).L,
-        counts,
-        fieldProperties,
-    });
-    if (!size.exceedsThreshold(fieldProperties.stepSizeWarningThresholdInches))
-        return null;
-    return {
-        steps: size.displayString(),
-        inches: Math.round(size.inchesPerStep),
-        where: null,
-        legs: [],
-    };
-}
-
-/**
- * How far each member of a trail's line walks (R-9′, R-10): the rest of the line-up from where it
- * stands, the drawn part, then the end line as far as its own spot. Tail first, as the members.
- */
-export function trailDistances(
-    members: readonly { from: XY; to: XY }[],
-    drawnLength: number,
-): number[] {
-    const along = (points: readonly XY[]) => {
-        const cum = [0];
-        for (let i = 1; i < points.length; i++)
-            cum.push(
-                cum[i - 1]! +
-                    Math.hypot(
-                        points[i]!.x - points[i - 1]!.x,
-                        points[i]!.y - points[i - 1]!.y,
-                    ),
-            );
-        return cum;
-    };
-    const lineUp = along(members.map((m) => m.from));
-    const endLine = along(members.map((m) => m.to));
-    const lineLength = lineUp.at(-1) ?? 0;
-    return members.map(
-        (_, q) => lineLength - lineUp[q]! + drawnLength + endLine[q]!,
-    );
-}
-
-/**
- * Big steps on a trail (pathways step 4): each member walks its own distance at its own steady
- * speed (R-10), so each is tested as a straight move is, and the worst is named.
- */
-function trailBigSteps(
-    session: PathSession,
-    fieldProperties: FieldProperties,
-): BigSteps | null {
-    const { target } = session;
-    const trail = target.trail!;
-    const counts = target.end - target.start;
-    // A trail dragged out (step 4b): each walks the way to where it stops (R-13″). With Keep
-    // end spots it is step 4's trail into the spots they have, read as step 4 reads it (AP-T9)
-    const plan =
-        session.follow && !keepsEndSpots(session.follow)
-            ? ripplesIn(session.follow)
-                ? rippleDrawnPlanOf(session)
-                : followPlanOf(session)
-            : null;
-    // Ripple in (step 9): each member's whole way into the next form, the connector included
-    const distances = plan
-        ? ("endDist" in plan ? plan.endDist : plan.ends).map(
-              (e, q) => e - plan.startDist[q]!,
-          )
-        : trailDistances(trail.members, curveOf(shapeOf(session)).L);
-    const threshold = fieldProperties.stepSizeWarningThresholdInches;
-    let worst: { size: StepSize; drill: string } | null = null;
-    trail.members.forEach((m, q) => {
-        const size = StepSize.fromDistance({
-            marcher_id: m.marcherId,
-            distance: distances[q]!,
-            counts,
-            fieldProperties,
-        });
-        if (!size.exceedsThreshold(threshold)) return;
-        if (!worst || size.inchesPerStep > worst.size.inchesPerStep)
-            worst = { size, drill: m.drill };
-    });
-    if (!worst) return null;
-    const { size, drill } = worst as { size: StepSize; drill: string };
-    return {
-        steps: size.displayString(),
-        inches: Math.round(size.inchesPerStep),
-        where: null,
-        legs: [],
-        marcher: drill,
-    };
-}
-
-/** Big steps' verdict: the worst big leg, and every big leg (a group path's, step 15) */
-export interface BigSteps {
-    steps: string;
-    inches: number;
-    /** Which leg of a group path is worst; null for one marcher's own path */
-    where: LegWhere | null;
-    /** The worst leg itself, for its words */
-    worst?: BigSteps["legs"][number];
-    /** On a trail (step 4): whose steps are the biggest */
-    marcher?: string;
-    legs: {
-        where: LegWhere;
-        drill: string | null;
-        steps: string;
-        /** An adjusted stretch (J.6): its spot and the counts it runs over */
-        spot?: number;
-        from?: number;
-        to?: number;
-    }[];
-}
-
-/**
- * Big steps on a group path (spec Appendix I.8): each member's first leg onto the path, the middle
- * along it (the same for every member, judged once) and each member's last leg off it, each with
- * the straight moves' test. A leg whose speed is unbounded (its time rounds to nothing) is big.
- */
-function groupBigSteps(
-    session: PathSession,
-    fieldProperties: FieldProperties,
-): BigSteps | null {
-    const { target } = session;
-    const group = target.group!;
-    const counts = target.end - target.start;
-    const schedule = scheduleOf(shapeOf(session));
-    const points = shapeOf(session).points;
-    const walks = group.members.map((m) => ({
-        marcherId: m.marcherId,
-        walk: memberWalkOf(schedule, memberNow(session, m), points),
-    }));
-    const drill = new Map(group.members.map((m) => [m.marcherId, m.drill]));
-    const slots = new Map(group.members.map((m) => [m.marcherId, m.slot ?? 0]));
-    const L = schedule.W.L;
-    const tenth = (v: number) => Math.round(v * 10) / 10;
-    const threshold = fieldProperties.stepSizeWarningThresholdInches;
-    const big: (BigSteps["legs"][number] & { inches: number })[] = [];
-    for (const leg of groupLegDistances(schedule, walks)) {
-        const size = StepSize.fromDistance({
-            marcher_id: leg.marcherId ?? target.marcherId,
-            distance: Number.isFinite(leg.distance)
-                ? leg.distance
-                : Number.MAX_SAFE_INTEGER,
-            counts,
-            fieldProperties,
-        });
-        if (!size.exceedsThreshold(threshold)) continue;
-        big.push({
-            where: leg.where,
-            drill:
-                leg.marcherId === null
-                    ? null
-                    : (drill.get(leg.marcherId) ?? null),
-            steps: size.displayString(),
-            inches: size.inchesPerStep,
-            ...(leg.x0 === undefined || leg.x1 === undefined
-                ? {}
-                : {
-                      spot: (slots.get(leg.marcherId ?? -1) ?? 0) + 1,
-                      from: tenth((leg.x0 / L) * counts),
-                      to: tenth((leg.x1 / L) * counts),
-                  }),
-        });
-    }
-    if (big.length === 0) return null;
-    const worst = big.reduce((a, b) => (b.inches > a.inches ? b : a));
-    return {
-        steps: worst.steps,
-        inches: Math.round(worst.inches),
-        where: worst.where,
-        worst,
-        legs: big.map(({ inches: _inches, ...leg }) => leg),
-    };
-}
-
-/** How Big steps names a leg of a group path */
-const legWords = (
-    leg: Pick<BigSteps["legs"][number], "where" | "spot" | "from" | "to">,
-) => {
-    const { where } = leg;
-    if (where === "adjusted")
-        return tolgee.t(
-            "pathways.editor.legAdjusted",
-            "spot {spot}, counts {from} to {to} (adjusted)",
-            { spot: leg.spot ?? 0, from: leg.from ?? 0, to: leg.to ?? 0 },
-        );
-    return where === "onto"
-        ? tolgee.t("pathways.editor.legOnto", "onto the path")
-        : where === "off"
-          ? tolgee.t("pathways.editor.legOff", "off the path")
-          : where === "straight"
-            ? tolgee.t("pathways.editor.legStraight", "straight to the spot")
-            : tolgee.t("pathways.editor.legAlong", "along the path");
-};
-
 /**
  * The path pen's hint and floating editor (pathways steps 1 and 2). While drawing, a hint over the field
  * says how the pen works, as the shape tool's hint does while a Line's points are clicked. Beside
@@ -317,18 +135,55 @@ export function PathEditor({
 }) {
     const session = usePathPenStore((s) => s.session);
     const hidden = usePathPenStore((s) => s.hidden);
-    if (!session) return null;
-    // A path only shown (closed) has no editor: a double-click or its menu opens it. A trail
-    // keeps its leader's mark, which says who leads and turns the line around (step 4)
-    if (session.phase === "closed")
-        return session.target.trail && (!hidden || session.object) ? (
+    const ownable = usePathPenStore((s) => s.ownable);
+    const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
+    const ownLines = usePathPenStore((s) => s.ownLines);
+    if (!session) {
+        // Several marchers each on their own path (after Detach all, sim round 3): the bar
+        // stays, saying so, instead of going away as if the selection had lost its paths
+        const lines = ownLinesDrawn(ownLines, null, hidden, shapeToolOpen);
+        return lines.length > 1 ? (
             <RichTips>
-                <TrailLeaderMark session={session} />
-                <TrailCornerCounts session={session} />
+                <OwnPathsBar lines={lines} />
             </RichTips>
         ) : null;
+    }
+    // Edit group path, or the whole group selected (round 4): its line is named, so it reads as
+    // the line the whole group follows, not as one more marcher's path
+    const view = groupViewOf(session, ownable);
+    // With some of its marchers picked (sim round 3), the label is how to pick the whole group again
+    const groupLabel =
+        view === "edit" ||
+        ((view === "whole" || view === "selected") && !hidden) ? (
+            <GroupPathLabel
+                session={session}
+                picksGroup={view === "selected" && !isLoose(session)}
+            />
+        ) : null;
+    // A quiet path (closed, interaction system rule 4) has the compact bar: Edit path, the member
+    // commands and Remove path, so they're found without its menu. A trail keeps its leader's
+    // mark, which says who leads and turns the line around (step 4). Not drawn, nothing shows
+    if (session.phase === "closed")
+        return hidden || shapeToolOpen ? null : (
+            <RichTips>
+                {groupLabel}
+                {session.target.trail && (
+                    <>
+                        <TrailLeaderMark session={session} />
+                        <TrailCornerCounts session={session} />
+                    </>
+                )}
+                {session.target.routeId !== null && (
+                    <PathEditorBar
+                        session={session}
+                        fieldProperties={fieldProperties}
+                    />
+                )}
+            </RichTips>
+        );
     return (
         <>
+            {groupLabel}
             {session.phase === "drawing" && <PathPenBanner session={session} />}
             {session.target.trail && session.follow?.grabbed !== null && (
                 <RichTips>
@@ -344,6 +199,102 @@ export function PathEditor({
             </RichTips>
         </>
     );
+}
+
+/**
+ * The bar for several selected marchers each on their own path (sim round 3): how many there are,
+ * and the Path pen, which draws one path for all of them
+ */
+function OwnPathsBar({ lines }: { lines: readonly OwnLine[] }) {
+    const ref = useRef<HTMLDivElement>(null);
+    const size = useBarSize(ref);
+    const view = useFieldViewStore();
+    const shapeBar = useShapeEditorRect((s) => s.rect);
+    const outline = useMemo(
+        () =>
+            lines.flatMap((line) => {
+                const drawn = ownLineDrawingOf(line);
+                return [...(drawn.outline ?? []), ...drawn.spots];
+            }),
+        [lines],
+    );
+    const place = stackedPlacement(
+        {
+            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+            width: size.width,
+            height: size.height,
+            fieldWidth: size.fw,
+            fieldHeight: size.fh,
+        },
+        shapeBar,
+    );
+    return (
+        <div
+            ref={ref}
+            className={clsx(
+                EDITOR_BAR,
+                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap",
+            )}
+            style={{ left: place.left, top: place.top }}
+            data-testid="path-own-paths"
+            onPointerDown={(e) => e.stopPropagation()}
+        >
+            <span className="text-text-subtitle px-4">
+                {tolgee.t("pathways.editor.ownPaths", "{count} own paths", {
+                    count: lines.length,
+                })}
+            </span>
+            <Divider />
+            <IconButton
+                label={tolgee.t(
+                    "pathways.editor.drawOneTip",
+                    "Draw one path for the selected marchers, in place of their own",
+                )}
+                action="pathPen"
+                onClick={() => runAction("pathPen")}
+                testId="path-own-draw"
+            >
+                <PenNibIcon size={14} />
+                {tolgee.t("pathways.editor.drawPath", "Draw path")}
+            </IconButton>
+        </div>
+    );
+}
+
+/**
+ * The bar's size and the field's, measured as they change; `measuredWhile` is the `phase` it was
+ * last measured in, as the bar's contents change with it
+ */
+function useBarSize(
+    ref: React.RefObject<HTMLDivElement | null>,
+    phase?: string,
+) {
+    const [size, setSize] = useState({
+        width: 0,
+        height: 0,
+        fw: Infinity,
+        fh: Infinity,
+        measuredWhile: undefined as string | undefined,
+    });
+    useLayoutEffect(() => {
+        const el = ref.current;
+        const field = el?.offsetParent;
+        if (!el || !field) return;
+        const measure = () =>
+            setSize({
+                width: el.offsetWidth,
+                height: el.offsetHeight,
+                fw: field.clientWidth,
+                fh: field.clientHeight,
+                measuredWhile: phase,
+            });
+        measure();
+        const observer = new ResizeObserver(measure);
+        observer.observe(el);
+        observer.observe(field);
+        return () => observer.disconnect();
+    }, [ref, phase]);
+    return size;
 }
 
 /**
@@ -392,6 +343,78 @@ function TrailLeaderMark({ session }: { session: PathSession }) {
     );
 }
 
+/**
+ * The group path's name by its line (interaction round 2): "Group path · 16", over the line's
+ * highest point, so the line reads as the middle the members' lanes follow, not as one more
+ * marcher's path. With only some of its marchers picked (`picksGroup`, sim round 3) it's a button
+ * that picks everyone on it; otherwise it takes no presses.
+ */
+function GroupPathLabel({
+    session,
+    picksGroup,
+}: {
+    session: PathSession;
+    picksGroup: boolean;
+}) {
+    const view = useFieldViewStore();
+    const outline = pathOutline(shapeOf(session));
+    if (outline.length === 0) return null;
+    const top = outline
+        .map((p) => fieldToElement(view, p.x, p.y))
+        .reduce((a, b) => (b.y < a.y ? b : a));
+    const count = session.target.group?.members.length ?? 0;
+    const text = isLoose(session)
+        ? // A loose path's marchers each have their own copy (round 7): no group path, and the
+          // label says so (sim round 3 read "Path · 4" as one shared path)
+          tolgee.t("pathways.editor.looseLabel", "{count} paths", { count })
+        : tolgee.t("pathways.editor.groupLabel", "Group path · {count}", {
+              count,
+          });
+    const className =
+        "rounded-6 border-stroke bg-modal text-sub text-text shadow-modal absolute z-10 -translate-x-1/2 border px-6 py-2 whitespace-nowrap";
+    const style = { left: top.x, top: top.y - 32 };
+    if (!picksGroup)
+        return (
+            <div
+                className={clsx(className, "pointer-events-none")}
+                style={style}
+                data-testid="path-group-label"
+            >
+                {text}
+            </div>
+        );
+    return (
+        <Tip
+            label={tolgee.t(
+                "pathways.editor.groupLabelTip",
+                "Select everyone on this group path",
+            )}
+        >
+            <button
+                type="button"
+                className={clsx(
+                    className,
+                    "hover:border-accent hover:text-accent cursor-pointer",
+                )}
+                style={style}
+                data-testid="path-group-label"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={() => selectWholeGroup(session)}
+            >
+                {text}
+            </button>
+        </Tip>
+    );
+}
+
+/** Picks everyone on the group path, and leaves the shape you were inside (sim round 3) */
+function selectWholeGroup(session: PathSession): void {
+    const members = session.target.group?.members ?? [];
+    if (members.length === 0) return;
+    setInsideBox(null);
+    selectOnField(members.map((m) => m.marcherId));
+}
+
 /** While drawing: who it's for and the Line's ways to go on, the keys as keycaps */
 function PathPenBanner({ session }: { session: PathSession }) {
     const overrides = useShortcutOverridesStore((s) => s.overrides);
@@ -430,7 +453,11 @@ function PathPenBanner({ session }: { session: PathSession }) {
                         esc,
                     }}
                 />
-            ) : session.target.group ? (
+            ) : session.target.group &&
+              !(
+                  session.target.lane &&
+                  session.target.group.members.length === 1
+              ) ? (
                 <T
                     keyName="pathways.banner.groupDrawing"
                     defaultValue="Group path for {count} marchers: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel"
@@ -468,53 +495,67 @@ function PathEditorBar({
     fieldProperties: FieldProperties;
 }) {
     const ref = useRef<HTMLDivElement>(null);
-    const [size, setSize] = useState({
-        width: 0,
-        height: 0,
-        fw: Infinity,
-        fh: Infinity,
-    });
-    useLayoutEffect(() => {
-        const el = ref.current;
-        const field = el?.offsetParent;
-        if (!el || !field) return;
-        const measure = () =>
-            setSize({
-                width: el.offsetWidth,
-                height: el.offsetHeight,
-                fw: field.clientWidth,
-                fh: field.clientHeight,
-            });
-        measure();
-        const observer = new ResizeObserver(measure);
-        observer.observe(el);
-        observer.observe(field);
-        return () => observer.disconnect();
-    }, []);
-    // Beside the path: under it, above when there's no room, as the shape editor sits
+    const size = useBarSize(ref, session.phase);
+    // Beside the lines drawn: under them, above when there's no room, as the shape editor sits. A
+    // quiet group path draws only its selected marchers' lines, so the bar goes by those; the
+    // group line alone (the whole group selected, or edited) doesn't reach its marchers' starts
+    // and end spots, so those count too, and the bar stays put from one to the other (round 4)
     const view = useFieldViewStore();
-    const outline: XY[] = useMemo(
-        () => pathOutline(shapeOf(session)),
-        [session],
-    );
+    const ownableNow = usePathPenStore((s) => s.ownable);
+    const outline: XY[] = useMemo(() => {
+        const drawn = drawingOf(session, ownableNow);
+        const lines = drawn?.outline
+            ? [
+                  ...drawn.outline,
+                  ...(drawn.lanes?.flat() ?? []),
+                  ...(session.target.group && !session.target.trail
+                      ? [...(drawn.rings ?? []), ...drawn.spots]
+                      : []),
+              ]
+            : (drawn?.lanes?.flat() ?? []);
+        return lines.length > 0 ? lines : pathOutline(shapeOf(session));
+    }, [session, ownableNow]);
+    // A selected placed shape's bar is on the field too: the path bar stacks clear of it
+    const shapeBar = useShapeEditorRect((s) => s.rect);
     // The Follow tool's line, its end spots and the pointer stay clear too, with room under each
     // for the field's note (the hover note, the step readout), so the bar never covers the work
     const footprint = useMemo(() => followFootprint(session), [session]);
-    const place = editorPlacement({
-        outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
-        handles: footprint.flatMap((p) => {
-            const e = fieldToElement(view, p.x, p.y);
-            return [e, { x: e.x, y: e.y + FIELD_NOTE_ROOM_PX }];
-        }),
-        width: size.width,
-        height: size.height,
-        fieldWidth: size.fw,
-        fieldHeight: size.fh,
-    });
-    const big = bigSteps(session, fieldProperties);
-    // Step 6 (TC-7): a trail's turns that fall between counts
-    const offCount = offCountTally(trailCornersOf(session));
+    const place = stackedPlacement(
+        {
+            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+            handles: footprint.flatMap((p) => {
+                const e = fieldToElement(view, p.x, p.y);
+                return [e, { x: e.x, y: e.y + FIELD_NOTE_ROOM_PX }];
+            }),
+            width: size.width,
+            height: size.height,
+            fieldWidth: size.fw,
+            fieldHeight: size.fh,
+        },
+        shapeBar,
+    );
     const drawing = session.phase === "drawing";
+    // While drawing, the bar stays where it first appeared, beside the marchers (sim round 3: it
+    // re-placed itself as the line grew, so a click meant for Finish landed on the field and
+    // added a corner). It fades while a point is dragged, as the shape editor's bar does
+    const pinned = useRef<{ left: number; top: number } | null>(null);
+    if (!drawing) pinned.current = null;
+    // Pinned only once the drawing bar itself was measured: the closed bar's size came first
+    // (review of #900)
+    else if (
+        !pinned.current &&
+        size.measuredWhile === session.phase &&
+        size.width > 0 &&
+        Number.isFinite(size.fw)
+    )
+        pinned.current = { left: place.left, top: place.top };
+    const { left, top } = (drawing && pinned.current) || place;
+    const faded = drawing && session.dragging !== null;
+    const quiet = session.phase === "closed";
+    // Step 6 (TC-7): a trail's turns that fall between counts
+    const offCount = quiet
+        ? { turns: 0, corners: 0 }
+        : offCountTally(trailCornersOf(session));
     const stored = session.target.routeId !== null;
     // The open path's selected point: Corner | Smooth for it, as its menu has (step 2)
     const shape = shapeOf(session);
@@ -522,12 +563,6 @@ function PathEditorBar({
     const smooth = picked >= 0 && isSmooth(shape, picked);
     // R-14″: a point at an end of an arc stays a corner, and Smooth says why
     const cornerOnly = picked >= 0 && !smooth && besideArc(shape, picked);
-    // Own path and Rejoin for a group path (step 15): who they act on comes from the selection
-    const ownable = usePathPenStore((s) => s.ownable);
-    const rejoin = usePathPenStore((s) => s.rejoin);
-    const groupControls = !drawing && (ownable.length > 0 || rejoin !== null);
-    // Re-fit shows only when the ends have moved, as Own path shows only when it can act (decision A)
-    const refit = !drawing && refitNeeded(session.target);
     // The lane picked on the open group path (decision C), and any Adjust the app moved
     const laneMember =
         !drawing && session.lane
@@ -552,72 +587,17 @@ function PathEditorBar({
             ref={ref}
             className={clsx(
                 EDITOR_BAR,
-                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap",
+                "text-sub text-text absolute z-10 gap-6 whitespace-nowrap transition-opacity",
+                faded && "pointer-events-none opacity-25",
             )}
-            style={{ left: place.left, top: place.top }}
+            style={{ left, top }}
             data-testid="path-editor"
+            data-faded={faded ? "true" : undefined}
             data-phase={session.phase}
             onPointerDown={(e) => e.stopPropagation()}
         >
-            {big && (
-                <Tip
-                    label={
-                        big.marcher !== undefined
-                            ? tolgee.t(
-                                  "pathways.editor.bigStepsTipTrail",
-                                  "{marcher} has the farthest to go: {inches} in a step. Each marcher walks its own way along the trail at a steady speed. Lengthen the move, or shorten the trail.",
-                                  {
-                                      marcher: big.marcher,
-                                      inches: big.inches,
-                                  },
-                              )
-                            : big.where === null
-                              ? tolgee.t(
-                                    "pathways.editor.bigStepsTipPoints",
-                                    "{inches} in a step, all along the path. Lengthen the move, or move or take out points to shorten the path.",
-                                    { inches: big.inches },
-                                )
-                              : tolgee.t(
-                                    "pathways.editor.bigStepsTipLegs",
-                                    "Big steps on {legs}. Every marcher passes each point of the path at the same moment, so only the legs onto and off the path change speed. Lengthen the move, or move points to even out the legs.",
-                                    {
-                                        legs: big.legs
-                                            .map((l) =>
-                                                l.drill === null
-                                                    ? `${legWords(l)} (${l.steps})`
-                                                    : l.where === "adjusted"
-                                                      ? `${legWords(l)} (${l.steps})`
-                                                      : `${l.drill} ${legWords(l)} (${l.steps})`,
-                                            )
-                                            .join(", "),
-                                    },
-                                )
-                    }
-                >
-                    <span
-                        className="text-yellow flex items-center gap-4 px-4"
-                        data-testid="path-big-steps"
-                    >
-                        <WarningIcon size={14} weight="bold" aria-hidden />
-                        {big.where === null
-                            ? tolgee.t(
-                                  "pathways.editor.bigStepsShort",
-                                  "Big steps · {steps}",
-                                  { steps: big.steps },
-                              )
-                            : tolgee.t(
-                                  "pathways.editor.bigStepsLeg",
-                                  "Big steps · {steps} {where}",
-                                  {
-                                      steps: big.steps,
-                                      where: legWords(big.worst!),
-                                  },
-                              )}
-                    </span>
-                </Tip>
-            )}
             {offCount.turns > 0 && <OffCountWarning tally={offCount} />}
-            {(big || offCount.turns > 0) && controls && <Divider />}
+            {offCount.turns > 0 && controls && <Divider />}
             {drawing ? (
                 <>
                     {kindChoice && (
@@ -699,96 +679,46 @@ function PathEditorBar({
                 </>
             ) : (
                 <>
+                    <PathSlots session={session} />
                     {picked >= 0 && (
                         <>
+                            <Divider />
+                            <PointTypeButtons
+                                smooth={smooth}
+                                cornerOnly={cornerOnly}
+                            />
+                        </>
+                    )}
+                    {/* Sim round 3: the lane's "Spot 15 · T15" chip read as noise; a picked bend
+                        point keeps its Remove */}
+                    {laneMember && session.lane?.key !== null && (
+                        <>
+                            <Divider />
                             <span
-                                className="flex items-center gap-2"
-                                role="group"
-                                aria-label={tolgee.t(
-                                    "pathways.editor.pointType",
-                                    "Point type",
-                                )}
+                                className="flex items-center gap-2 px-4"
+                                data-testid="path-lane-picked"
                             >
                                 <IconButton
                                     label={tolgee.t(
-                                        "actions.path.pointCorner",
-                                        "Corner point",
+                                        "actions.path.adjustRemoveKey",
+                                        "Remove bend point",
                                     )}
-                                    action="pathPointCorner"
-                                    pressed={!smooth}
-                                    onClick={() => runAction("pathPointCorner")}
-                                    testId="path-point-corner"
+                                    action="adjustRemoveKey"
+                                    onClick={() => runAction("adjustRemoveKey")}
+                                    testId="path-adjust-remove-key"
                                 >
-                                    <LineSegmentsIcon size={14} />
-                                </IconButton>
-                                <IconButton
-                                    label={
-                                        cornerOnly
-                                            ? besideArcReason()
-                                            : tolgee.t(
-                                                  "actions.path.pointSmooth",
-                                                  "Smooth point",
-                                              )
-                                    }
-                                    action="pathPointSmooth"
-                                    disabled={cornerOnly}
-                                    pressed={smooth}
-                                    onClick={() => runAction("pathPointSmooth")}
-                                    testId="path-point-smooth"
-                                >
-                                    <WaveSineIcon size={14} />
+                                    <BackspaceIcon size={14} />
                                 </IconButton>
                             </span>
-                            {stored && <Divider />}
-                        </>
-                    )}
-                    {groupControls && (
-                        <>
-                            <span className="flex items-center gap-2">
-                                {ownable.length > 0 && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "pathways.editor.ownPathTip",
-                                            "Give the selected marchers their own copy of their part of the path",
-                                        )}
-                                        action="ownPath"
-                                        onClick={() => runAction("ownPath")}
-                                        testId="path-own"
-                                    >
-                                        <ArrowsSplitIcon size={14} />
-                                        {tolgee.t(
-                                            "actions.path.ownPath",
-                                            "Own path",
-                                        )}
-                                    </IconButton>
-                                )}
-                                {rejoin !== null && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "pathways.editor.rejoinTip",
-                                            "Put the selected marchers back on the group path, each from where it stands",
-                                        )}
-                                        action="rejoinPath"
-                                        onClick={() => runAction("rejoinPath")}
-                                        testId="path-rejoin"
-                                    >
-                                        <ArrowsMergeIcon size={14} />
-                                        {tolgee.t(
-                                            "actions.path.rejoin",
-                                            "Rejoin",
-                                        )}
-                                    </IconButton>
-                                )}
-                            </span>
-                            {stored && <Divider />}
                         </>
                     )}
                     {rehomed && (
                         <>
+                            <Divider />
                             <Tip
                                 label={tolgee.t(
                                     "pathways.editor.rehomedTip",
-                                    "A point an adjustment was attached to changed, so the adjustment moved to the nearest points left. Check it still does what you meant.",
+                                    "A point a bend was attached to changed, so the bend moved to the nearest points left. Check it still does what you meant.",
                                 )}
                             >
                                 <button
@@ -806,80 +736,15 @@ function PathEditorBar({
                                     />
                                     {tolgee.t(
                                         "pathways.editor.rehomedBadge",
-                                        "Adjustment re-homed",
+                                        "Bend moved",
                                     )}
                                 </button>
                             </Tip>
-                            <Divider />
-                        </>
-                    )}
-                    {laneMember && (
-                        <>
-                            <span
-                                className="flex items-center gap-2 px-4"
-                                data-testid="path-lane-picked"
-                            >
-                                {tolgee.t(
-                                    "pathways.editor.laneOf",
-                                    "Spot {spot} · {marcher}",
-                                    {
-                                        spot: (laneMember.slot ?? 0) + 1,
-                                        marcher: laneMember.drill,
-                                    },
-                                )}
-                                {session.lane?.key !== null && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "actions.path.adjustRemoveKey",
-                                            "Remove adjustment point",
-                                        )}
-                                        action="adjustRemoveKey"
-                                        onClick={() =>
-                                            runAction("adjustRemoveKey")
-                                        }
-                                        testId="path-adjust-remove-key"
-                                    >
-                                        <BackspaceIcon size={14} />
-                                    </IconButton>
-                                )}
-                                {laneMember.adjust && (
-                                    <IconButton
-                                        label={tolgee.t(
-                                            "actions.path.adjustResetSpot",
-                                            "Reset this spot",
-                                        )}
-                                        action="adjustResetSpot"
-                                        onClick={() =>
-                                            runAction("adjustResetSpot")
-                                        }
-                                        testId="path-adjust-reset"
-                                    >
-                                        <ArrowCounterClockwiseIcon size={14} />
-                                    </IconButton>
-                                )}
-                            </span>
-                            <Divider />
-                        </>
-                    )}
-                    {refit && (
-                        <>
-                            <IconButton
-                                label={tolgee.t(
-                                    "pathways.editor.refitTip",
-                                    "Move this path's ends to where its marchers stand now and stretch its corners to match",
-                                )}
-                                action="refitPath"
-                                onClick={() => runAction("refitPath")}
-                                testId="path-refit"
-                            >
-                                <ArrowsOutLineHorizontalIcon size={14} />
-                                {tolgee.t("actions.path.refit", "Re-fit path")}
-                            </IconButton>
-                            <Divider />
                         </>
                     )}
                     {stored && trail && (
                         <>
+                            <Divider />
                             <IconButton
                                 label={reverseLabel(trail.along)}
                                 disabled={trail.along}
@@ -893,32 +758,376 @@ function PathEditorBar({
                                     "Reverse leader",
                                 )}
                             </IconButton>
-                            <Divider />
                         </>
                     )}
                     {stored && (
-                        <IconButton
-                            label={
-                                trail
-                                    ? tolgee.t(
-                                          "actions.path.removeTrail",
-                                          "Remove trail",
-                                      )
-                                    : tolgee.t(
-                                          "actions.path.remove",
-                                          "Remove path",
-                                      )
-                            }
-                            action="removePath"
-                            onClick={() => runAction("removePath")}
-                            testId="path-remove"
-                        >
-                            <TrashIcon size={14} />
-                        </IconButton>
+                        <>
+                            <Divider />
+                            <PathMoreMenu session={session} />
+                        </>
                     )}
                 </>
             )}
         </div>
+    );
+}
+
+/**
+ * The path bar's fixed slots (interaction round 2): Edit group path (Edit path for a path of one) ·
+ * Edit <name>'s line · Match group or Rejoin (round 6: Detach moved to ···, like a design tool's
+ * Detach instance), in the same places for every marcher, so a press after the selection changes
+ * lands on what it did before. A slot that can't act stays, greyed out, its tooltip saying why (a press on
+ * it says so too, for a finger). A trail has only Edit path: its members have no lanes.
+ */
+function PathSlots({ session }: { session: PathSession }) {
+    const ownable = usePathPenStore((s) => s.ownable);
+    const rejoin = usePathPenStore((s) => s.rejoin);
+    const slots = pathSlotsOf(session, ownable, rejoin);
+    const editing = session.phase === "open" && !session.lane;
+    const lineId = laneFocusOf(session);
+    const sayWhy = (why: string | null) => () => {
+        if (why !== null) toast.info(why, { id: "path-slot-why" });
+    };
+    const lineReason = "reason" in slots.line ? slots.line.reason : null;
+    const lineDrill = "drill" in slots.line ? slots.line.drill : null;
+    // On a group path, Edit path edits the line every member follows: named so (round 3). A
+    // loose path (round 7) is the marchers' own paths edited together: Edit path
+    const group =
+        !!session.target.group && !session.target.lane && !isLoose(session);
+    return (
+        <>
+            <IconButton
+                label={
+                    group
+                        ? tolgee.t(
+                              "pathways.editor.editGroupTip",
+                              "Show the group path's points to drag. Every marcher on it follows",
+                          )
+                        : tolgee.t(
+                              "pathways.editor.editTip",
+                              "Show this path's points to drag. A click on its line does it too",
+                          )
+                }
+                action="editPath"
+                pressed={editing}
+                onClick={() => runAction("editPath")}
+                testId="path-edit"
+                className={EDIT_SLOT_WIDTH}
+            >
+                <PencilSimpleIcon size={14} />
+                {group
+                    ? editGroupPathLabel()
+                    : tolgee.t("actions.path.edit", "Edit path")}
+            </IconButton>
+            {slots.shown && (
+                <>
+                    <Divider />
+                    <IconButton
+                        label={
+                            lineReason ??
+                            tolgee.t(
+                                "pathways.editor.editLineTip",
+                                "Bend only {marcher}'s line, by its handles. It keeps following the group path's edits. A click on the line does it too",
+                                { marcher: lineDrill ?? "" },
+                            )
+                        }
+                        action="editLine"
+                        disabled={lineReason !== null}
+                        pressed={lineId !== null}
+                        onClick={() => runAction("editLine")}
+                        onDisabledClick={sayWhy(lineReason)}
+                        testId="path-edit-line"
+                        className={LINE_SLOT_WIDTH}
+                    >
+                        <BezierCurveIcon size={14} />
+                        {editLineLabel(lineDrill)}
+                    </IconButton>
+                    {/* Back to the group (round 6): Rejoin for detached marchers, else Match group.
+                        A loose path, or a marcher's own path, has no group to go back to: the slot
+                        holds its place (rounds 7 and sim 3) */}
+                    {slots.backIsRejoin ? (
+                        <IconButton
+                            label={tolgee.t(
+                                "pathways.editor.rejoinTip",
+                                "Put the selected marchers back on the group path. A detached marcher's copy goes, and so do any bends on its line",
+                            )}
+                            action="rejoinPath"
+                            onClick={() => runAction("rejoinPath")}
+                            testId="path-rejoin"
+                            className={SLOT_WIDTH}
+                        >
+                            <ArrowsMergeIcon size={14} />
+                            {rejoin!.marcherIds.length > 1
+                                ? tolgee.t(
+                                      "pathways.editor.rejoinCount",
+                                      "Rejoin {count}",
+                                      { count: rejoin!.marcherIds.length },
+                                  )
+                                : tolgee.t("actions.path.rejoin", "Rejoin")}
+                        </IconButton>
+                    ) : slots.loose || slots.ownPath ? (
+                        <span
+                            aria-hidden
+                            className={clsx("inline-flex", SLOT_WIDTH)}
+                            data-testid="path-slot-empty"
+                        />
+                    ) : (
+                        <IconButton
+                            label={
+                                slots.matchReason ??
+                                tolgee.t(
+                                    "pathways.editor.resetTip",
+                                    "Take this marcher's bends off, so it walks the group path like the others again",
+                                )
+                            }
+                            action="adjustResetSpot"
+                            disabled={slots.matchReason !== null}
+                            onClick={() => runAction("adjustResetSpot")}
+                            onDisabledClick={sayWhy(slots.matchReason)}
+                            testId="path-adjust-reset"
+                            className={SLOT_WIDTH}
+                        >
+                            <ArrowCounterClockwiseIcon size={14} />
+                            {tolgee.t(
+                                "actions.path.adjustResetSpot",
+                                "Match group",
+                            )}
+                        </IconButton>
+                    )}
+                </>
+            )}
+        </>
+    );
+}
+
+/**
+ * The first slot fits "Edit group path", so the bar keeps its width (and place) when it says
+ * "Edit path" instead (round 8)
+ */
+const EDIT_SLOT_WIDTH = "min-w-[116px] justify-start";
+
+/** Edit <name>'s line's slot fits a long drill number, so the slots after it never move */
+const LINE_SLOT_WIDTH = "min-w-[124px] justify-start";
+
+/** The third slot holds Match group or Rejoin 12 at one width, so ··· never moves */
+const SLOT_WIDTH = "min-w-[104px] justify-start";
+
+/** The open path's selected point: Corner | Smooth, as its menu has (step 2) */
+function PointTypeButtons({
+    smooth,
+    cornerOnly,
+}: {
+    smooth: boolean;
+    cornerOnly: boolean;
+}) {
+    return (
+        <span
+            className="flex items-center gap-2"
+            role="group"
+            aria-label={tolgee.t("pathways.editor.pointType", "Point type")}
+        >
+            <IconButton
+                label={tolgee.t("actions.path.pointCorner", "Corner point")}
+                action="pathPointCorner"
+                pressed={!smooth}
+                onClick={() => runAction("pathPointCorner")}
+                testId="path-point-corner"
+            >
+                <LineSegmentsIcon size={14} />
+            </IconButton>
+            <IconButton
+                label={
+                    cornerOnly
+                        ? besideArcReason()
+                        : tolgee.t("actions.path.pointSmooth", "Smooth point")
+                }
+                action="pathPointSmooth"
+                disabled={cornerOnly}
+                pressed={smooth}
+                onClick={() => runAction("pathPointSmooth")}
+                testId="path-point-smooth"
+            >
+                <WaveSineIcon size={14} />
+            </IconButton>
+        </span>
+    );
+}
+
+/**
+ * The bar's ··· (interaction round 2): what's rarer, kept off the bar so the slots stay few and
+ * still: Rejoin when Match group holds its slot (a mixed selection), Re-center group path (Re-fit),
+ * then after a line Detach from group path (some of the group selected, round 6: it left the bar),
+ * Detach all (the whole group) and Remove path. The same commands, in the same order, as the Path
+ * menus, Re-fit greyed out with the reason where it can't act.
+ */
+function PathMoreMenu({ session }: { session: PathSession }) {
+    const ownable = usePathPenStore((s) => s.ownable);
+    const rejoin = usePathPenStore((s) => s.rejoin);
+    const [open, setOpen] = useState(false);
+    const trail = !!session.target.trail;
+    const loose = isLoose(session);
+    const group = !!session.target.group && !session.target.lane && !loose;
+    const rejoinHere =
+        rejoin !== null && detachIdsOf(ownable, session).length > 0;
+    const detachAll = detachAllIdsOf(ownable, session);
+    // Detach (round 6): only while it can act; the whole group selected gets Detach all instead
+    const detachIds =
+        detachAll.length === 0 && session.phase !== "drawing"
+            ? detachIdsOf(ownable, session)
+            : [];
+    const refitReason = refitNeeded(session.target)
+        ? null
+        : group
+          ? tolgee.t(
+                "pathways.slots.centered",
+                "The group path already runs through the middle of its marchers",
+            )
+          : loose
+            ? tolgee.t(
+                  "pathways.slots.centeredLoose",
+                  "The path already runs through the middle of these marchers",
+              )
+            : tolgee.t(
+                  "pathways.slots.fits",
+                  "The path already fits where its marcher stands",
+              );
+    const more = tolgee.t("pathways.editor.more", "More path commands");
+    return (
+        <DropdownMenu.Root open={open} onOpenChange={setOpen} modal={false}>
+            <Tip label={more}>
+                <DropdownMenu.Trigger asChild>
+                    <button
+                        type="button"
+                        aria-label={more}
+                        className={clsx(
+                            "rounded-4 flex min-h-24 min-w-24 items-center justify-center p-4",
+                            open
+                                ? "bg-accent/15 text-accent"
+                                : "hover:text-accent",
+                        )}
+                        data-testid="path-more"
+                    >
+                        <DotsThreeIcon size={16} weight="bold" />
+                    </button>
+                </DropdownMenu.Trigger>
+            </Tip>
+            <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                    align="end"
+                    side="bottom"
+                    sideOffset={6}
+                    collisionPadding={8}
+                    onCloseAutoFocus={(event) => event.preventDefault()}
+                    {...KEEP_MENU_EVENTS}
+                    className={MENU_CONTENT_CLASS}
+                    data-testid="path-more-menu"
+                >
+                    {rejoinHere && (
+                        <DropdownMenu.Item
+                            className={MENU_ITEM_CLASS}
+                            onSelect={() => runAction("rejoinPath")}
+                            data-testid="path-more-rejoin"
+                        >
+                            <ArrowsMergeIcon size={14} aria-hidden />
+                            {tolgee.t(
+                                "actions.path.rejoinGroup",
+                                "Rejoin group path",
+                            )}
+                        </DropdownMenu.Item>
+                    )}
+                    {!trail && (
+                        <MenuItemWithReason
+                            testId="path-refit"
+                            reason={refitReason}
+                            reasonTestId="path-refit-reason"
+                            onSelect={() => runAction("refitPath")}
+                        >
+                            <ArrowsOutLineHorizontalIcon
+                                size={14}
+                                aria-hidden
+                            />
+                            {group
+                                ? tolgee.t(
+                                      "actions.path.recenter",
+                                      "Re-center group path",
+                                  )
+                                : loose
+                                  ? tolgee.t(
+                                        "actions.path.recenterLoose",
+                                        "Re-center path",
+                                    )
+                                  : tolgee.t(
+                                        "actions.path.refit",
+                                        "Re-fit path",
+                                    )}
+                        </MenuItemWithReason>
+                    )}
+                    {(rejoinHere || !trail) && (
+                        <DropdownMenu.Separator
+                            className={MENU_SEPARATOR_CLASS}
+                        />
+                    )}
+                    {detachIds.length > 0 && (
+                        // Off the bar (round 6), as a design tool keeps Detach instance in a menu:
+                        // Edit <name>'s line is how a member's line is changed and kept following
+                        <DropdownMenu.Item
+                            className={clsx(MENU_ITEM_CLASS, "items-start")}
+                            onSelect={() => runAction("detachPath")}
+                            data-testid="path-more-detach"
+                        >
+                            <ArrowsSplitIcon
+                                size={14}
+                                aria-hidden
+                                className="mt-2 shrink-0"
+                            />
+                            <span className="flex flex-col">
+                                {detachLabel(detachIds.length)}
+                                <span className="text-sub text-text-subtitle">
+                                    {detachNote()}
+                                </span>
+                            </span>
+                        </DropdownMenu.Item>
+                    )}
+                    {detachAll.length > 0 && (
+                        // Ends the group path (round 5): kept apart from the routine commands,
+                        // beside Remove path, saying what it does
+                        <DropdownMenu.Item
+                            className={clsx(MENU_ITEM_CLASS, "items-start")}
+                            onSelect={() => runAction("detachAllPath")}
+                            data-testid="path-detach-all"
+                        >
+                            <ArrowsSplitIcon
+                                size={14}
+                                aria-hidden
+                                className="mt-2 shrink-0"
+                            />
+                            <span className="flex flex-col">
+                                {detachAllLabel(detachAll.length)}
+                                <span className="text-sub text-text-subtitle">
+                                    {detachAllNote()}
+                                </span>
+                            </span>
+                        </DropdownMenu.Item>
+                    )}
+                    <DropdownMenu.Item
+                        className={clsx(
+                            MENU_ITEM_CLASS,
+                            "data-[highlighted]:text-red",
+                        )}
+                        onSelect={() => runAction("removePath")}
+                        data-testid="path-remove"
+                    >
+                        <TrashIcon size={14} aria-hidden />
+                        {trail
+                            ? tolgee.t(
+                                  "actions.path.removeTrail",
+                                  "Remove trail",
+                              )
+                            : tolgee.t("actions.path.remove", "Remove path")}
+                    </DropdownMenu.Item>
+                </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+        </DropdownMenu.Root>
     );
 }
 

@@ -16,10 +16,11 @@ import { seedShowSql, type SeedPosition } from "../seed.mjs";
 // Enter saves it as one undo step: one route, each member's transition walking it with
 // its own offset, every lane drawn faint and every member ringed ("Follows the group
 // path"). Undo takes it away and redo brings back the same route. With one member selected
-// the group path shows; a double-click on its line opens it, and Own path on the floating
-// bar gives that member its own copy (one undo step), shown open, where Rejoin puts it back
-// on the group path with its old offset. Remove path with one member selected removes the
-// whole group's path, and the toast says for how many marchers.
+// the group path shows, and Detach (the palette here; the bar's ··· too) gives that
+// member its own copy of the group path, keeping its offset (one undo step), shown open,
+// where Rejoin puts it back on the group path. Remove path with one member selected
+// removes the whole group's path, and the toast says for how many marchers. Since step 24
+// a path is lanes on the members' own slots, so their moves stay `direct`.
 
 const HOME: SeedPosition[] = [
     [1, 500, 300],
@@ -64,17 +65,20 @@ const routes = (show: Show) =>
         "SELECT id, geometry FROM timeline_routes ORDER BY id",
     );
 
-/** Each marcher's transition in move `timelineId`: its route and path_params */
+/** Each marcher in move `timelineId`: the lane on its slot (route and offset), and its move's style */
 const walkers = (show: Show, timelineId: number) =>
     show.query<{
         marcher: number;
         route: number | null;
-        params: string | null;
+        ox: number | null;
+        oy: number | null;
         style: string;
     }>(
-        `SELECT a.marcher_id AS marcher, t.route_id AS route, t.path_params AS params,
-                t.path_style AS style
+        `SELECT a.marcher_id AS marcher, l.route_id AS route, l.offset_x AS ox,
+                l.offset_y AS oy, t.path_style AS style
            FROM timeline_assignments a JOIN timeline_transitions t ON t.id = a.transition_id
+           LEFT JOIN timeline_lanes l
+             ON l.transition_id = a.transition_id AND l.slot_index = a.slot_index
           WHERE t.timeline_id = ${timelineId} ORDER BY a.marcher_id`,
     );
 
@@ -97,7 +101,7 @@ const undoSteps = async (show: Show) => {
     return row.count;
 };
 
-test("change: P with a block selected draws one group path; Own path and Rejoin; Remove path removes the group's", async ({
+test("change: P with a block selected draws one group path; Detach and Rejoin; Remove path removes the group's", async ({
     show,
 }) => {
     const { page } = show;
@@ -142,7 +146,9 @@ test("change: P with a block selected draws one group path; Own path and Rejoin;
     expect(geometry.to).toEqual([920, 320]);
     expect(geometry.points.map((p) => p.at)).toEqual([[corner.x, corner.y]]);
     const [{ timeline }] = await show.query<{ timeline: number }>(
-        `SELECT timeline_id AS timeline FROM timeline_transitions WHERE route_id = ${route!.id} LIMIT 1`,
+        `SELECT t.timeline_id AS timeline FROM timeline_lanes l
+           JOIN timeline_transitions t ON t.id = l.transition_id
+          WHERE l.route_id = ${route!.id} LIMIT 1`,
     );
     const drawn = await walkers(show, timeline);
     expect(drawn.map((w) => w.route)).toEqual([
@@ -151,7 +157,8 @@ test("change: P with a block selected draws one group path; Own path and Rejoin;
         route!.id,
         route!.id,
     ]);
-    expect(drawn.map((w) => JSON.parse(w.params!).offset)).toEqual([
+    expect(drawn.map((w) => w.style)).toEqual(Array(4).fill("direct"));
+    expect(drawn.map((w) => [w.ox, w.oy])).toEqual([
         [-20, -20],
         [20, -20],
         [-20, 20],
@@ -175,35 +182,36 @@ test("change: P with a block selected draws one group path; Own path and Rejoin;
         .poll(async () => (await routes(show)).map((r) => r.id))
         .toEqual([route!.id]);
 
-    // One member selected: the group path shows; a double-click on its line opens it, and
-    // Own path gives T2 a copy of its lane, shown open
+    // One member selected: the group path shows. Detach (from the palette) gives T2 a verbatim
+    // copy of the group path, keeping its offset, and the copy opens
     await clickMarcher(page, "T2");
     await expect.poll(() => overlay(page)).not.toBeNull();
     const line = await toScreen(page, corner);
-    await page.mouse.move(line.x, line.y, { steps: 4 });
-    await page.mouse.dblclick(line.x, line.y);
-    await expect(page.getByTestId("path-editor")).toHaveAttribute(
-        "data-phase",
-        "open",
-    );
-    await page.getByTestId("path-own").click();
+    const beforeDetach = await undoSteps(show);
+    await page.keyboard.press("ControlOrMeta+k");
+    await page.keyboard.type("Detach");
+    await page.keyboard.press("Enter");
     await waitForIdle(page);
     await expect.poll(async () => (await routes(show)).length).toBe(2);
-    const own = (await walkers(show, timeline)).find((w) => w.marcher === 2)!;
-    expect(own.params).toBeNull();
-    expect(own.route).not.toBe(route!.id);
+    const copy = (await walkers(show, timeline)).find((w) => w.marcher === 2)!;
+    expect(copy.route).not.toBe(route!.id);
+    expect([copy.ox, copy.oy]).toEqual([20, -20]);
+    expect(
+        (await routes(show)).find((r) => r.id === copy.route)!.geometry,
+    ).toBe(route!.geometry);
+    expect(await undoSteps(show)).toBe(beforeDetach + 1);
     await expect(page.getByTestId("path-editor")).toHaveAttribute(
         "data-phase",
         "open",
     );
 
-    // Rejoin puts it back on the group path with its old offset; its own path goes
+    // Rejoin, on the open copy's bar, puts it back on the group path; its copy goes
     await page.getByTestId("path-rejoin").click();
     await waitForIdle(page);
     await expect.poll(async () => (await routes(show)).length).toBe(1);
     const back = (await walkers(show, timeline)).find((w) => w.marcher === 2)!;
     expect(back.route).toBe(route!.id);
-    expect(JSON.parse(back.params!).offset).toEqual([20, -20]);
+    expect([back.ox, back.oy]).toEqual([20, -20]);
 
     // Remove path with one member selected removes the whole group's path
     await clickMarcher(page, "T1");
@@ -216,7 +224,7 @@ test("change: P with a block selected draws one group path; Own path and Rejoin;
         page.getByText("Removed the path for 4 marchers"),
     ).toBeVisible();
     await expect.poll(async () => (await routes(show)).length).toBe(0);
-    expect((await walkers(show, timeline)).map((w) => w.style)).toEqual(
-        Array(4).fill("direct"),
+    expect((await walkers(show, timeline)).map((w) => w.route)).toEqual(
+        Array(4).fill(null),
     );
 });

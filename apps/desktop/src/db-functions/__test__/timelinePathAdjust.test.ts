@@ -19,14 +19,15 @@ import {
     type XY,
 } from "@openmarch/core";
 import { DbConnection, describeDbTests, schema } from "@/test/base";
+import { refusalText } from "@/test/refusalText";
 import { keepFixturesInPageMode } from "@/test/timelineMode";
 import { convertPagesToTimeline } from "@/test/convertPages";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { performRedo, performUndo, transactionWithHistory } from "../history";
 import { drawRoute } from "../timelineRoutes";
 import {
+    detachFromGroupPath,
     drawGroupRoute,
-    ownPath,
     rejoinGroupPath,
 } from "../timelineGroupRoutes";
 import { editPathPoints, redrawPath, refitPath } from "../timelinePathEdits";
@@ -46,6 +47,7 @@ const TABLES = [
     schema.timeline_slot_destinations,
     schema.timeline_routes,
     schema.timeline_lanes,
+    schema.timeline_route_sources,
 ];
 const dataOf = async (db: DbConnection) => {
     const out: Record<string, unknown[]> = {};
@@ -576,7 +578,7 @@ describeDbTests("Adjust and Re-fit", (it) => {
         expect(await profileOf(db, f.lane1.id)).toBeNull();
     });
 
-    it("Own path refuses an adjusted spot rather than drop its Adjust", async ({
+    it("QA-AP-L10: Detach keeps an adjusted spot's Adjust and every position; Rejoin drops it (Q4), undo brings it back", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -588,14 +590,163 @@ describeDbTests("Adjust and Re-fit", (it) => {
             x: f.placeP + 100,
             d: [0, 30],
         });
-        const before = await dataOf(db);
-        await expect(
-            ownPath({ db, timelineId: f.timeline.id, marcherIds: [f.m1] }),
-        ).rejects.toThrow();
-        expect(await dataOf(db)).toEqual(before);
+        const adjusted = await profileOf(db, f.lane1.id);
+        const walk = async () => {
+            const r = await resolverOf(db);
+            return [f.m1, f.m2].map((m) =>
+                Array.from({ length: 65 }, (_, i) =>
+                    r.positionAt(m, 9 + i / 8),
+                ),
+            );
+        };
+        const before = await walk();
+        const beforeData = await dataOf(db);
+        const { routes } = await detachFromGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            marcherIds: [f.m1],
+        });
+        const copy = routes[f.m1]!;
+        // The same lane, on the copy, with its offset and Adjust; nobody moves, bit for bit
+        const lane = (await lanesOf(db, copy))[0]!;
+        expect(lane.id).toBe(f.lane1.id);
+        expect([lane.offset_x, lane.offset_y]).toEqual([
+            f.lane1.offset_x,
+            f.lane1.offset_y,
+        ]);
+        expect(await profileOf(db, f.lane1.id)).toEqual(adjusted);
+        expect(await walk()).toEqual(before);
+        await expectOneUndoStep(db, beforeData);
+
+        // Rejoin: back on the group path with its offset, the Adjust gone (no toast, owner Q4)
+        const detached = await dataOf(db);
+        await rejoinGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            routeId: f.routeId,
+            marcherIds: [f.m1],
+        });
+        const back = (await lanesOf(db, f.routeId)).find(
+            (l) => l.id === f.lane1.id,
+        )!;
+        expect([back.offset_x, back.offset_y]).toEqual([
+            f.lane1.offset_x,
+            f.lane1.offset_y,
+        ]);
+        expect(back.adjust).toBeNull();
+        expect(await lanesOf(db, copy)).toEqual([]);
+        expect(
+            await db.select().from(schema.timeline_route_sources).all(),
+        ).toEqual([]);
+        // The other spot never moved; this one walks the plain lane
+        const after = await walk();
+        expect(after[1]).toEqual(before[1]);
+        expect(after[0]).not.toEqual(before[0]);
+        // Undo brings the copy, its link and the Adjust back
+        expect((await performUndo(db)).success).toBe(true);
+        expect(await dataOf(db)).toEqual(detached);
+        expect(await profileOf(db, f.lane1.id)).toEqual(adjusted);
+        expect(await walk()).toEqual(before);
     });
 
-    it("QA-AP-L2 (D-22): own path, group path, Own path and Adjust on a spot another marcher holds later are refused, naming them", async ({
+    it("an Adjust on a Detached copy and a point edit of the copy write the copy only", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const f = await groupFixture(db);
+        const { routes } = await detachFromGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            marcherIds: [f.m1],
+        });
+        const copy = routes[f.m1]!;
+        const group = await routeOf(db, f.routeId);
+        const r0 = await resolverOf(db);
+        // The copy is still a lane with an offset, so it takes an Adjust (AP-R11)
+        await adjustLane({
+            db,
+            laneId: f.lane1.id,
+            marcherId: f.m1,
+            x: f.placeP + 100,
+            d: [0, 30],
+        });
+        expect(await profileOf(db, f.lane1.id)).not.toBeNull();
+        const r1 = await resolverOf(db);
+        for (let b = 9; b <= 17; b += 0.25)
+            expect(r1.positionAt(f.m2, b)).toEqual(r0.positionAt(f.m2, b));
+        // A point drag on the copy, given where the editor shows it (its points plus the offset)
+        const o: XY = [f.lane1.offset_x!, f.lane1.offset_y!];
+        const shown = (await routeOf(db, copy)).points.map((p) => ({
+            id: p.id,
+            at: [p.at[0] + o[0], p.at[1] + o[1]] as XY,
+        }));
+        await editPathPoints({
+            db,
+            routeId: copy,
+            points: shown.map((p, i) =>
+                i === 1 ? { id: p.id, at: [p.at[0], p.at[1] + 10] } : p,
+            ),
+        });
+        const edited = await routeOf(db, copy);
+        // Unmoved points and both ends kept exactly (so the group's counts stay), the dragged one
+        // moved by 10 on the route
+        expect(edited.from).toEqual(group.from);
+        expect(edited.to).toEqual(group.to);
+        expect(edited.points[0]!.at).toEqual(group.points[0]!.at);
+        expect(edited.points[2]!.at).toEqual(group.points[2]!.at);
+        expect(edited.points[1]!.at[1]).toBeCloseTo(
+            group.points[1]!.at[1] + 10,
+            9,
+        );
+        // The group path is untouched, and so is its walker
+        expect(await routeOf(db, f.routeId)).toEqual(group);
+        const r2 = await resolverOf(db);
+        for (let b = 9; b <= 17; b += 0.25)
+            expect(r2.positionAt(f.m2, b)).toEqual(r0.positionAt(f.m2, b));
+    });
+
+    it("Re-fit on a Detached copy moves its start side only, to where its marcher starts", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const f = await groupFixture(db);
+        const { routes } = await detachFromGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            marcherIds: [f.m1],
+        });
+        const copy = routes[f.m1]!;
+        // Nothing moved: refused, as for any path that fits
+        await expect(refitPath({ db, routeId: copy })).rejects.toThrow();
+        // The marcher's start moves (its previous move's end): the copy fits its new start
+        const group = await routeOf(db, copy);
+        const T = schema.timeline_transitions;
+        const D = schema.timeline_slot_destinations;
+        const first = (await db
+            .select()
+            .from(T)
+            .where(eq(T.end_beat, 9))
+            .all())!;
+        expect(first.length).toBeGreaterThan(0);
+        const A = schema.timeline_assignments;
+        const row = (
+            await db.select().from(A).where(eq(A.marcher_id, f.m1)).all()
+        ).find((a) => a.end_beat === 9)!;
+        await db.run(
+            sql`UPDATE ${D} SET x = x + 8 WHERE transition_id = ${row.transition_id} AND slot_index = ${row.slot_index}`,
+        );
+        await refitPath({ db, routeId: copy });
+        const refit = await routeOf(db, copy);
+        expect(refit.to).toEqual(group.to);
+        expect(refit.from[0]).toBeCloseTo(group.from[0] + 8, 9);
+        const lane = (await lanesOf(db, copy))[0]!;
+        expect([lane.offset_x, lane.offset_y]).toEqual([
+            f.lane1.offset_x,
+            f.lane1.offset_y,
+        ]);
+    });
+
+    it("QA-AP-L2 (D-22): own path, group path, Detach and Adjust on a spot another marcher holds later are refused, naming them", async ({
         db,
         marchersAndPages: _,
     }) => {
@@ -614,13 +765,29 @@ describeDbTests("Adjust and Re-fit", (it) => {
         await db.run(
             sql`UPDATE ${A} SET end_beat = 13 WHERE marcher_id = ${f.m1} AND start_beat = 9`,
         );
+        const ownRow = (
+            await db.select().from(A).where(eq(A.marcher_id, third)).all()
+        ).find((a) => a.start_beat === 9)!;
         await db.run(
             sql`UPDATE ${A} SET start_beat = 13, slot_index = ${f.lane1.slot_index} WHERE marcher_id = ${third} AND start_beat = 9`,
+        );
+        // m3 also keeps its own spot (no lane) until count 4: an earlier row with no lane before
+        // its laned one (review of #900, S3)
+        await db.run(
+            sql`INSERT INTO ${A} (marcher_id, transition_id, slot_index, start_beat, end_beat) VALUES (${third}, ${ownRow.transition_id}, ${ownRow.slot_index}, 9, 13)`,
         );
         const before = await dataOf(db);
         const named = expect.objectContaining({
             message: expect.stringMatching(/4/),
         });
+        // Detach finds m3's lane on its later row (it isn't "not on a group path"), and refuses
+        // the shared spot, naming m1
+        const m3Detach = await detachFromGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            marcherIds: [third],
+        }).catch((e: unknown) => e);
+        expect(refusalText(m3Detach)).toMatch(/is also walked by/);
         await expect(
             adjustLane({
                 db,
@@ -639,7 +806,11 @@ describeDbTests("Adjust and Re-fit", (it) => {
             }),
         ).rejects.toEqual(named);
         await expect(
-            ownPath({ db, timelineId: f.timeline.id, marcherIds: [f.m1] }),
+            detachFromGroupPath({
+                db,
+                timelineId: f.timeline.id,
+                marcherIds: [f.m1],
+            }),
         ).rejects.toEqual(named);
         await expect(
             drawGroupRoute({
@@ -656,6 +827,69 @@ describeDbTests("Adjust and Re-fit", (it) => {
             routeId: f.routeId,
             points: [{ id: f.p.id, at: [f.p.at[0], f.p.at[1] + 8] }],
         });
+    });
+
+    it("Rejoin finds a Detached lane on a later row of the marcher, and restores its offset (review of #900, S3)", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const f = await groupFixture(db);
+        const { routes } = await detachFromGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            marcherIds: [f.m1],
+        });
+        const third = (await resolverOf(db)).marcherIds()[2]!;
+        const A = schema.timeline_assignments;
+        await db.run(
+            sql.raw("DROP INDEX timeline_assignments_transition_slot_unique"),
+        );
+        await db.run(
+            sql.raw(
+                "DROP INDEX timeline_assignments_transition_marcher_unique",
+            ),
+        );
+        const thirdRow = (
+            await db.select().from(A).where(eq(A.marcher_id, third)).all()
+        ).find((a) => a.start_beat === 9)!;
+        // m1 holds m3's spot (no lane) until count 4, then its own detached spot; m3 takes its
+        // spot from count 4
+        await db.run(
+            sql`UPDATE ${A} SET start_beat = 13 WHERE marcher_id = ${third} AND start_beat = 9`,
+        );
+        await db.run(
+            sql`UPDATE ${A} SET start_beat = 13 WHERE marcher_id = ${f.m1} AND start_beat = 9`,
+        );
+        await db.run(
+            sql`INSERT INTO ${A} (marcher_id, transition_id, slot_index, start_beat, end_beat) VALUES (${f.m1}, ${thirdRow.transition_id}, ${thirdRow.slot_index}, 9, 13)`,
+        );
+        await rejoinGroupPath({
+            db,
+            timelineId: f.timeline.id,
+            routeId: f.routeId,
+            marcherIds: [f.m1],
+        });
+        const lane = (await lanesOf(db, f.routeId)).find(
+            (l) => l.id === f.lane1.id,
+        )!;
+        // Back on the group path, not a second lane on m1's earlier spot; R's `from` is as it
+        // was at Detach, so the recorded offset is restored (m1 doesn't start on this spot)
+        expect(lane).toMatchObject({
+            route_id: f.routeId,
+            offset_x: f.lane1.offset_x,
+            offset_y: f.lane1.offset_y,
+            adjust: null,
+        });
+        expect(await lanesOf(db, routes[f.m1]!)).toEqual([]);
+        expect(
+            await db
+                .select()
+                .from(schema.timeline_lanes)
+                .where(
+                    eq(schema.timeline_lanes.slot_index, thirdRow.slot_index),
+                )
+                .all(),
+        ).toEqual([]);
     });
 
     it("E-J3, E-J5 and E-R4 refuse at commit", async ({

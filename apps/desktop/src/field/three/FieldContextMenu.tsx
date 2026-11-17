@@ -9,8 +9,12 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CheckIcon,
+    ArrowCounterClockwiseIcon,
     ArrowsLeftRightIcon,
+    ArrowsMergeIcon,
+    ArrowsSplitIcon,
     ArrowsOutLineHorizontalIcon,
+    BezierCurveIcon,
     PencilSimpleIcon,
     TrashIcon,
     type Icon,
@@ -58,6 +62,13 @@ import {
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  *   With one selected whole and the menu opened on one of its marchers, **Select only this
  *   marcher** goes inside it there, as a double-click on that marcher does (tablet 1.5).
+ * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
+ *   group path** (Edit path), **Edit <name>'s line**, **Rejoin group path**, **Match group**,
+ *   **Re-fit path** (Re-center group path), then after a line, as under the bar's ···, **Detach
+ *   from group path** (some of the group selected; "Detach 3 from group path"), **Detach all N
+ *   marchers** (the whole group selected: it ends the group path), each saying what it does under
+ *   its name, and **Remove path**. Edit <name>'s line and Match group stay in their places, greyed
+ *   out with the reason, for any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from last keyframe** (timeline mode only), **Hold from start flag to playhead** while
  *   it's available (Expert with a window, #476), then **Clear this page**. Each says what it
@@ -78,9 +89,44 @@ import {
  * - **Edit field**, which puts the canvas into the Edit field mode (#824).
  *
  * A right-click on what a field mode draws can offer its own actions instead (`actions`): on a
- * marcher's path, **Edit path** and **Remove path** (pathways). That menu is tighter, sized to its
- * words, each entry with its icon, as a shape handle's menu (`HandleMenu`) has.
+ * path's line, the same Path group (pathways), each entry shown only while it applies. That menu
+ * is tighter, sized to its words, each entry with its icon, as a shape handle's menu
+ * (`HandleMenu`) has.
  */
+/** The Path group (pathways), on a marcher and on a path's line: each shown only when it applies */
+const PATH: readonly ActionId[] = [
+    "editPath",
+    "editLine",
+    "rejoinPath",
+    "adjustResetSpot",
+    "reverseTrail",
+    "refitPath",
+];
+/**
+ * The Path group's weighty end, kept apart from the routine entries by a line (round 5): Detach
+ * (round 6: off the bar, under ···), Detach all, which ends the group path (with the whole group
+ * selected), and Remove path
+ */
+const PATH_END: readonly ActionId[] = [
+    "detachPath",
+    "detachAllPath",
+    "removePath",
+];
+const PATH_END_SET: ReadonlySet<ActionId> = new Set(PATH_END);
+const PATH_SET: ReadonlySet<ActionId> = new Set([...PATH, ...PATH_END]);
+/**
+ * The path bar's fixed slots (pathways interaction round 2): shown greyed out with their reason
+ * where they can't act, so the entries stay in the same places from one marcher to the next. The
+ * others show only while they apply: Rejoin, and Detach (off the bar since round 6).
+ */
+const PATH_SLOTS: ReadonlySet<ActionId> = new Set([
+    "editLine",
+    "adjustResetSpot",
+]);
+const pathShown = (id: ActionId) =>
+    isActionEnabled(id) ||
+    (PATH_SLOTS.has(id) && actionDisabledReason(id) !== undefined);
+
 /** The page state commands: the group whose entries can show checked */
 const STATE_GROUP: readonly ActionId[] = [
     "timelineHoldFromPrevious",
@@ -100,6 +146,8 @@ const GROUPS: readonly (readonly ActionId[])[] = [
     // An item right-clicked: its edit view
     ["editSelectedItem"],
     ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
+    PATH,
+    PATH_END,
     STATE_GROUP,
     HOLD_STYLE_GROUP,
     ["splitSelectedIntoNewMove", "timelineSplitMoveAtPlayhead"],
@@ -168,10 +216,21 @@ const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
 /** A mode's entries' icons */
 const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
     editPath: PencilSimpleIcon,
+    editLine: BezierCurveIcon,
+    detachPath: ArrowsSplitIcon,
+    detachAllPath: ArrowsSplitIcon,
+    rejoinPath: ArrowsMergeIcon,
+    adjustResetSpot: ArrowCounterClockwiseIcon,
     refitPath: ArrowsOutLineHorizontalIcon,
     reverseTrail: ArrowsLeftRightIcon,
     removePath: TrashIcon,
 };
+/** A second line under an entry's name, saying what a weighty one does (its i18n key) */
+const NOTES: Partial<Record<ActionId, string>> = {
+    detachPath: "pathways.editor.detachNote",
+    detachAllPath: "pathways.editor.detachAllNote",
+};
+
 /** Entries that delete something: red where highlighted, as a shape handle's Delete */
 const DESTRUCTIVE: ReadonlySet<ActionId> = new Set(["removePath"]);
 
@@ -234,26 +293,35 @@ export default function FieldContextMenu({
         (id) => isActionEnabled(id) || isActionChecked(id),
     );
     const shown = (id: ActionId) =>
-        ON_A_MARCHER.has(id) && marcher === null
-            ? false
-            : HOLD_STYLES.has(id)
-              ? holdStyles
-              : WHILE_AVAILABLE.has(id)
-                ? isActionEnabled(id)
-                : HOLDS.has(id)
-                  ? timelineMode
-                  : MOVES.has(id)
-                    ? timelineMode && hasActionHandler(id)
-                    : ORDER.has(id)
-                      ? timelineMode && selectedCount >= 2
-                      : true;
+        PATH_SET.has(id)
+            ? pathShown(id)
+            : ON_A_MARCHER.has(id) && marcher === null
+              ? false
+              : HOLD_STYLES.has(id)
+                ? holdStyles
+                : WHILE_AVAILABLE.has(id)
+                  ? isActionEnabled(id)
+                  : HOLDS.has(id)
+                    ? timelineMode
+                    : MOVES.has(id)
+                      ? timelineMode && hasActionHandler(id)
+                      : ORDER.has(id)
+                        ? timelineMode && selectedCount >= 2
+                        : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
-    const groups = actions
-        ? [actions]
-        : GROUPS.map((group) => group.filter(shown)).filter(
-              (group) => group.length > 0,
-          );
+    const groups = (
+        actions
+            ? // A path's entries show only where they apply, as on a marcher; Detach all and
+              // Remove path after a line
+              [
+                  actions.filter((id) => !PATH_END_SET.has(id)),
+                  actions.filter((id) => PATH_END_SET.has(id)),
+              ].map((group) =>
+                  group.filter((id) => !PATH_SET.has(id) || pathShown(id)),
+              )
+            : GROUPS.map((group) => group.filter(shown))
+    ).filter((group) => group.length > 0);
 
     return (
         <DropdownMenu.Root
@@ -317,6 +385,7 @@ export default function FieldContextMenu({
                                 const ModeIcon = actions
                                     ? MODE_ICONS[id]
                                     : null;
+                                const note = NOTES[id];
                                 if (isActionChecked(id))
                                     return (
                                         <DropdownMenu.CheckboxItem
@@ -378,13 +447,17 @@ export default function FieldContextMenu({
                                             actions &&
                                                 DESTRUCTIVE.has(id) &&
                                                 "data-[highlighted]:text-red",
+                                            note && "items-start",
                                         )}
                                     >
                                         {ModeIcon && (
                                             <ModeIcon
                                                 size={14}
                                                 aria-hidden
-                                                className="shrink-0"
+                                                className={clsx(
+                                                    "shrink-0",
+                                                    note && "mt-2",
+                                                )}
                                             />
                                         )}
                                         {CHECKABLE.has(id) && (
@@ -392,7 +465,19 @@ export default function FieldContextMenu({
                                                 className={CHECK_SLOT_CLASS}
                                             />
                                         )}
-                                        {label}
+                                        {note ? (
+                                            <span className="flex flex-col">
+                                                {label}
+                                                <span
+                                                    className="text-sub text-text-subtitle"
+                                                    data-testid={`field-menu-${id}-note`}
+                                                >
+                                                    {t(note)}
+                                                </span>
+                                            </span>
+                                        ) : (
+                                            label
+                                        )}
                                         {shortcut}
                                     </DropdownMenu.Item>
                                 );

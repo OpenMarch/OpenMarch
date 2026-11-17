@@ -363,11 +363,13 @@ export type FieldModeDrawing = {
     /**
      * The outline is a drawn path (pathways): drawn solid and heavier than a shape's outline, so it
      * reads over a group's faint lanes; heaviest while drawn or open (`edited`), a little lighter
-     * while only shown (`shown`, closed); `selected` while the path is selected as an object
+     * while only shown (`shown`, closed: Paths All's lines); `quiet` for the selected marchers'
+     * path while it's closed, in the faint path color, so only a line being edited is deep
+     * (pathways interaction round 3); `selected` while the path is selected as an object
      * (pathways step 3a), drawn in the selection color with a halo; `context` thin and grey behind
      * the one lane being worked on (pathways step 3b)
      */
-    pathLine?: "shown" | "edited" | "selected" | "context";
+    pathLine?: "shown" | "quiet" | "edited" | "selected" | "context";
     /**
      * Circles the shape is drawn on, quiet solid lines under it: an Arc's whole circle (#634)
      */
@@ -403,10 +405,24 @@ export type FieldModeDrawing = {
      * along its copy of the path to its end spot
      */
     lanes?: readonly (readonly FieldPoint[])[];
+    /** The marcher who walks each of `lanes`, in the same order (pathways), when known */
+    laneIds?: readonly number[];
+    /**
+     * How `lanes` are drawn: `faint` (thin, under a group path's line, the default) or `quiet`
+     * (each one the line a marcher walks, at a shown path's weight in the faint path color: a
+     * quiet group path's selected marchers, or every member while the group path is edited, so
+     * only the line being edited is deep; pathways interaction rounds 2 and 3)
+     */
+    lanesWeight?: "faint" | "quiet";
     /** Which of `lanes` the pointer is on: tinted, lighter than a picked lane (pathways step 3b) */
     laneHighlights?: readonly number[];
     /** Which of `lanes` is being worked on: the only heavy line, over the path's (pathways step 3b) */
     lanePicked?: number;
+    /**
+     * Which of `lanes` have an adjustment (pathways, interaction system rule 5): drawn in the
+     * group ring's color, so who bends off the group path reads whenever it shows
+     */
+    lanesAdjusted?: readonly number[];
     /** An adjusted lane's keys, small round handles while its path is open (pathways step 3b) */
     adjustHandles?: readonly { at: FieldPoint; selected: boolean }[];
     /**
@@ -422,6 +438,8 @@ export type FieldModeDrawing = {
         label: string;
         /** Pulses, asking to be pressed: the Follow tool's ends (pathways step 4b) */
         pulse?: boolean;
+        /** Drawn dashed: a marcher detached from the group path shown (pathways step 3c) */
+        dashed?: boolean;
     }[];
     /**
      * The Follow tool's grab cue (pathways step 4d): on each end of the line, chevrons pointing
@@ -1209,6 +1227,11 @@ export class FieldEditor {
                     !this.ports.marcherHidden?.(id),
             ),
         );
+    }
+
+    /** The marchers selected now: the app's selection, as the editor reads it. */
+    selected(): readonly number[] {
+        return this.ports.selection.get();
     }
 
     /** Selects the marchers in `ids` that are drawn and can be selected (an app action, such as "Select box"). */

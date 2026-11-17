@@ -1,5 +1,6 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { translateTimelineText } from "@/timeline/translateTimelineText";
 import { allMarchersQueryOptions } from "@/hooks/queries";
@@ -34,36 +35,45 @@ import {
     findGroupDrawTarget,
     findGroupTarget,
     findPathTarget,
-    findRouteTarget,
+    drawnAsGroup,
     findTrailDrawTarget,
-    findTrailRouteTarget,
     findTrailTarget,
     groupMoveAt,
     pathObjectsAt,
     refitNeeded,
     readPathObjectIndex,
+    rejoinTargetOf,
     type PathObjectIndex,
     type PathTarget,
 } from "./pathTarget";
 import {
     acknowledgeOpenPath,
+    editMemberLine,
+    pathSlotsOf,
+    editGroupPathLabel,
+    editLineLabel,
     deleteAdjustKey,
     deleteOnLane,
     resetSpot,
-    memberOf,
+    resetTargetOf,
     refitOpenPath,
     selectLane,
     setGroupCommands,
+    setOwnLines,
     setPathObjects,
+    type OwnLine,
     type PathObject,
     type RejoinTarget,
     clearPath,
     closePath,
     deletePoint,
-    escapePathObject,
     finishDrawing,
     openPath,
-    ownPathFor,
+    detachAllIdsOf,
+    detachAllLabel,
+    detachFor,
+    detachIdsOf,
+    detachLabel,
     rejoinFor,
     removeLastPoint,
     removePath,
@@ -93,10 +103,11 @@ export function penRefusal(selectedCount: number): string | null {
 /**
  * The Path pen's command (P), the path shown and its commands (pathways step 1). P with one
  * marcher selected starts drawing its move at the playhead; with several, it refuses ("one marcher
- * for now"). With one marcher selected whose move at the playhead has a path, the path is drawn on
- * the field, closed: nothing to grab, no floating editor. A double-click on it, its right-click
- * menu or Edit path opens it for editing (owner, 2026-11-04), until Escape, a click on empty field
- * or a selection change, or a move of the playhead off the move. Remove path works open or closed.
+ * for now"). With marchers selected whose move at the playhead has a path, the path is drawn on
+ * the field quiet (closed): nothing to grab, and a compact bar with Edit path, the member commands
+ * and Remove path. One click on its line, Enter or Edit path makes it active for editing
+ * (interaction system, rule 2), until Escape, a selection off its marchers, or a move of the
+ * playhead off the move. Remove path works active or quiet.
  */
 export function usePathPenActions(): void {
     const selectedContext = useSelectedMarchers();
@@ -385,17 +396,70 @@ export function usePathPenActions(): void {
             : undefined,
     });
 
-    // The closed path shows by start flag positions' paths level in effect, as the straight paths
-    // do: the setting, and N held or tapped (owner, 2026-11-04). The marcher is selected, so
-    // Selected and All both show it. Edit path still opens a hidden one
-    const pathsLevel = useStartFlagLevelsInEffect().paths;
-    useEffect(() => setPathHidden(pathsLevel === "off"), [pathsLevel]);
+    // The selected marchers' paths always show, whatever start flag positions' paths level says:
+    // that level is for the marchers not selected (interaction round 2: with Paths Off, testers
+    // couldn't find the path of the marcher they had selected)
+    useEffect(() => setPathHidden(false), []);
 
     // Edit path: opens the selected marcher's path at the playhead, as a double-click on it does.
     // No key of its own: the shape tool has none for editing points (Enter places a shape)
+    // Editing one marcher's line, it goes back to editing the group path (its line shows only then)
+    const lineEdited = usePathPenStore(
+        (s) => s.session?.phase === "open" && !!s.session.lane,
+    );
+    // The bar's fixed slots (interaction round 2): each says why it can't act, for any path but
+    // a trail, so the menus can show it greyed out in its place
+    const slots = usePathPenStore(
+        useShallow((s) => {
+            const all = pathSlotsOf(s.session, s.ownable, s.rejoin);
+            return {
+                shown: all.shown,
+                lineId: "marcherId" in all.line ? all.line.marcherId : null,
+                lineDrill: "drill" in all.line ? all.line.drill : null,
+                lineReason: "reason" in all.line ? all.line.reason : null,
+                detachReason: all.detachReason,
+                matchReason: all.matchReason,
+                group:
+                    !!s.session?.target.group &&
+                    !s.session.target.lane &&
+                    !all.loose,
+                loose: all.loose,
+            };
+        }),
+    );
+    const reason = (why: string | null) =>
+        slots.shown && why !== null ? why : undefined;
+    // On a group path it's named for what it edits: the line every member follows (round 3)
+    const editLabel = slots.group ? editGroupPathLabel() : undefined;
     useActionHandler("editPath", () => void openPath(), {
-        enabled: phase === "closed",
+        enabled: phase === "closed" || lineEdited,
+        label: editLabel,
     });
+    // Edit <name>'s line (interaction round 3, was Adjust): the one selected member's line alone,
+    // its handles shown at once
+    const lineId = slots.lineId;
+    useActionHandler(
+        "editLine",
+        () => {
+            if (lineId !== null) editMemberLine(lineId);
+        },
+        {
+            enabled: lineId !== null,
+            label: editLineLabel(slots.lineDrill),
+            disabledReason: reason(slots.lineReason),
+        },
+    );
+    // Enter makes the selection's quiet path active, as a click on its line does (interaction
+    // system, rule 2), and as Edit path does a hidden one. Not while a shape tool has Enter (Set
+    // order's keys sit on top)
+    const quietShown = usePathPenStore((s) => s.session?.phase === "closed");
+    const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
+    useActionHandler(
+        "applyShape",
+        () => void openPath(),
+        { label: editLabel ?? tolgee.t("actions.path.edit", "Edit path") },
+        quietShown && !shapeToolOpen && !isPlaying,
+    );
     // Remove path (AP-R2), open or closed, not while a new one is drawn
     useActionHandler("removePath", () => void removePath(), {
         enabled: hasRoute && phase !== "drawing",
@@ -411,18 +475,38 @@ export function usePathPenActions(): void {
             s.session.phase !== "drawing" &&
             refitNeeded(s.session.target),
     );
+    // On a group path it's named for what it does: the line through the middle of its marchers
     useActionHandler("refitPath", () => void refitOpenPath(), {
         enabled: canRefit,
+        label: slots.group
+            ? tolgee.t("actions.path.recenter", "Re-center group path")
+            : slots.loose
+              ? tolgee.t("actions.path.recenterLoose", "Re-center path")
+              : undefined,
+        disabledReason: slots.shown
+            ? slots.group
+                ? tolgee.t(
+                      "pathways.slots.centered",
+                      "The group path already runs through the middle of its marchers",
+                  )
+                : slots.loose
+                  ? tolgee.t(
+                        "pathways.slots.centeredLoose",
+                        "The path already runs through the middle of these marchers",
+                    )
+                  : tolgee.t(
+                        "pathways.slots.fits",
+                        "The path already fits where its marcher stands",
+                    )
+            : undefined,
     });
-    // Adjust's named actions, on the lane or key picked on the open group path (decision C)
+    // The named actions on the line or bend point picked on the open group path (decision C)
     const lane = usePathPenStore((s) =>
         s.session?.phase === "open" ? (s.session.lane ?? null) : null,
     );
-    const laneAdjusted = usePathPenStore((s) =>
-        s.session?.phase === "open" && s.session.lane
-            ? !!memberOf(s.session, s.session.lane.marcherId)?.adjust
-            : false,
-    );
+    // Match group: the lane picked, or the one member selected, when it's adjusted (one
+    // ladder with Rejoin, interaction system rule 5)
+    const resetId = usePathPenStore((s) => resetTargetOf(s.session, s.ownable));
     const rehomedOpen = usePathPenStore(
         (s) =>
             s.session?.target.group?.members.some((m) => m.adjust?.rehomed) ??
@@ -439,18 +523,39 @@ export function usePathPenActions(): void {
     useActionHandler(
         "adjustResetSpot",
         () => {
-            if (lane) void resetSpot(lane.marcherId);
+            if (resetId !== null) void resetSpot(resetId);
         },
-        { enabled: laneAdjusted },
+        {
+            enabled: resetId !== null && phase !== "drawing",
+            disabledReason: reason(slots.matchReason),
+        },
     );
     useActionHandler("adjustAcknowledge", () => void acknowledgeOpenPath(), {
         enabled: rehomedOpen,
     });
-    // Own path and Rejoin (step 15), enabled whenever a group path is shown, closed too
-    const ownIds = usePathPenStore((s) => s.ownable);
+    // Detach and Rejoin (AP-R9, AP-R10), enabled whenever a group path is shown, closed too
+    const selectedMembers = usePathPenStore((s) => s.ownable);
+    const detachSession = usePathPenStore((s) => s.session);
+    const ownIds = detachIdsOf(selectedMembers, detachSession);
+    // The whole group selected (round 5): Detach is greyed out, and Detach all ends the group
+    // path, its own command beside Remove path, so it isn't pressed by mistake
+    const allIds = detachAllIdsOf(selectedMembers, detachSession);
     const rejoin = usePathPenStore((s) => s.rejoin);
-    useActionHandler("ownPath", () => void ownPathFor(ownIds), {
-        enabled: ownIds.length > 0 && phase !== "drawing",
+    // Off the bar since round 6: under ··· and in the Path menus, "Detach 3 from group path"
+    const canDetach =
+        ownIds.length > 0 && allIds.length === 0 && phase !== "drawing";
+    useActionHandler("detachPath", () => void detachFor(ownIds), {
+        enabled: canDetach,
+        label: canDetach ? detachLabel(ownIds.length) : undefined,
+        disabledReason: reason(slots.detachReason),
+    });
+    useActionHandler("detachAllPath", () => void detachFor(allIds, true), {
+        enabled: allIds.length > 0,
+        label: allIds.length > 0 ? detachAllLabel(allIds.length) : undefined,
+        disabledReason: tolgee.t(
+            "pathways.slots.detachAllNone",
+            "Select every marcher on a group path to detach them all",
+        ),
     });
     useActionHandler("rejoinPath", () => void rejoinFor(rejoin), {
         enabled: rejoin !== null && phase !== "drawing",
@@ -465,6 +570,7 @@ export function usePathPenActions(): void {
         const clear = () => {
             clearPath();
             setGroupCommands([], null);
+            setOwnLines([]);
         };
         if (isPlaying) {
             clear();
@@ -488,34 +594,6 @@ export function usePathPenActions(): void {
             if (drawnFor !== selectionKey) clearPath();
             return;
         }
-        // A path selected as an object (step 3a, AP-O1, AP-O4): read again by its route while no
-        // marcher is selected; let go of once the playhead leaves its move or the route is gone
-        if (session?.object && selectedIds.length === 0 && ready && resolver) {
-            const ask = ++asked.current;
-            const { routeId } = session.target;
-            // Its transitions' whole reach: a group's members can be in several (AP-R8)
-            const { start, end } = session.target.span ?? session.target;
-            if (
-                routeId === null ||
-                playheadBeat < start - 1e-9 ||
-                playheadBeat > end + 1e-9
-            ) {
-                clear();
-                return;
-            }
-            void (
-                session.target.trail ? findTrailRouteTarget : findRouteTarget
-            )(db, resolver, routeId, drills).then((target) => {
-                if (ask !== asked.current) return;
-                const now = usePathPenStore.getState().session;
-                if (!now?.object || now.phase === "drawing") return;
-                // Own path and Rejoin act on selected marchers, and none are
-                setGroupCommands([], null);
-                if (target) showPath(target, drillOf(target, drills), true);
-                else clear();
-            });
-            return;
-        }
         if (selectedIds.length === 0 || !ready || !resolver) {
             clear();
             return;
@@ -535,8 +613,8 @@ export function usePathPenActions(): void {
                 if (ask !== asked.current) return;
                 const now = usePathPenStore.getState();
                 if (now.session?.phase === "drawing") return;
-                if (now.session?.object && now.session !== session) return;
                 setGroupCommands([], null);
+                setOwnLines([]);
                 showPath(trail, `${trail.trail!.members.length}`);
                 return;
             }
@@ -552,44 +630,65 @@ export function usePathPenActions(): void {
                 group === null && one
                     ? await findPathTarget(db, resolver, one.id, beat)
                     : null;
-            // Rejoin onto the move's only group path, with only marchers off it selected
-            let rejoinTarget: RejoinTarget | null = null;
-            if (group === null) {
-                const move = await groupMoveAt(db, selectedIds, beat);
-                if (move.kind === "move") {
-                    const groups = await readGroupPaths(db, move.timelineId);
-                    if (groups.length === 1)
-                        rejoinTarget = {
-                            timelineId: move.timelineId,
-                            routeId: groups[0]!.routeId,
-                            marcherIds: selectedIds,
-                        };
-                }
-            }
+            // Where Rejoin goes (AP-R10): read the move's group paths unless a group path that
+            // isn't a copy is shown (its outside marchers are the only ones it takes)
+            const move =
+                group === null || group.lane?.detachedFrom != null
+                    ? await groupMoveAt(db, selectedIds, beat)
+                    : null;
+            const rejoinTarget: RejoinTarget | null =
+                move === null
+                    ? rejoinTargetOf(
+                          group,
+                          null,
+                          group!.timelineId,
+                          selectedIds,
+                      )
+                    : move.kind === "move"
+                      ? rejoinTargetOf(
+                            group,
+                            await readGroupPaths(db, move.timelineId),
+                            move.timelineId,
+                            selectedIds,
+                        )
+                      : null;
             if (ask !== asked.current) return;
             const now = usePathPenStore.getState();
             if (now.session?.phase === "drawing") return;
-            // A path selected as an object meanwhile (a click on its line) is the selection now
-            if (now.session?.object && now.session !== session) return;
             if (group) {
+                setOwnLines([]);
                 const members = new Set(
                     group.group!.members.map((m) => m.marcherId),
                 );
-                showPath(group, `${members.size}`);
-                const outside = group.group!.outside.map((m) => m.marcherId);
-                setGroupCommands(
-                    selectedIds.filter((id) => members.has(id)),
-                    outside.length > 0
-                        ? {
-                              timelineId: group.timelineId,
-                              routeId: group.routeId!,
-                              marcherIds: outside,
-                          }
-                        : null,
+                // A Detached copy is its marcher's path: named by its drill number
+                showPath(
+                    group,
+                    group.lane && members.size === 1
+                        ? group.group!.members[0]!.drill
+                        : `${members.size}`,
                 );
+                setGroupCommands(
+                    // A one-lane path has nobody to Detach from
+                    group.lane
+                        ? []
+                        : selectedIds.filter((id) => members.has(id)),
+                    rejoinTarget,
+                );
+                // The lane picked is a selected marcher's: selected away, it's let go
+                const picked = usePathPenStore.getState().session?.lane;
+                if (picked && !selectedIds.includes(picked.marcherId))
+                    selectLane(null);
                 return;
             }
+            // Several marchers, each on their own path: each one's line, faint (round 8)
+            const lines =
+                one === null && selectedIds.length > 1
+                    ? await ownLinesOf(resolver, selectedIds, beat, drills)
+                    : [];
+            if (ask !== asked.current) return;
+            if (usePathPenStore.getState().session?.phase === "drawing") return;
             setGroupCommands([], rejoinTarget);
+            setOwnLines(lines);
             if (!own || own.routeId === null) clearPath();
             else showPath(own, one!.drill_number);
         })();
@@ -597,41 +696,44 @@ export function usePathPenActions(): void {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectionKey, playheadBeat, version, ready, isPlaying, saved, drills]);
 
-    // A marcher selected (a click on a dot) replaces a selected path at once, before the path for
-    // the marchers is read, so a Delete in between can't remove the old path (AP-O4, AP-O6)
-    const selectedBefore = useRef(selectionKey);
-    useLayoutEffect(() => {
-        const was = selectedBefore.current;
-        selectedBefore.current = selectionKey;
-        const { session } = usePathPenStore.getState();
-        if (
-            was === "" &&
-            selectionKey !== "" &&
-            session?.object &&
-            session.phase !== "drawing"
-        )
-            clearPath();
-    }, [selectionKey]);
-
-    // A path selected as an object is the selection (AP-O3): the marchers selected are let go of
-    const objectSelected = usePathPenStore((s) => s.session?.object ?? false);
-    useEffect(() => {
-        if (objectSelected && (selected?.length ?? 0) > 0)
-            selectedContext?.setSelectedMarchers([]);
-        // Only when a path becomes the selection: a marcher selected afterwards replaces it
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [objectSelected]);
-
     usePathObjects(drills);
+}
+
+/**
+ * The own paths of `marcherIds` at `beat`, one line each, in marcher id order: an own path, or a
+ * copy Detached from a group path (shown on its lane, as one selected marcher's is). A member of a
+ * group path, a trail or a straight move draws no line here.
+ */
+async function ownLinesOf(
+    resolver: Parameters<typeof findPathTarget>[1],
+    marcherIds: readonly number[],
+    beat: number,
+    drills: ReadonlyMap<number, string>,
+): Promise<OwnLine[]> {
+    const lines: OwnLine[] = [];
+    for (const id of [...marcherIds].sort((a, b) => a - b)) {
+        const drill = drills.get(id) ?? `${id}`;
+        const copy = await findGroupTarget(db, resolver, [id], drills, beat);
+        if (copy) {
+            if (copy.lane && copy.routeId !== null)
+                lines.push({ target: copy, drill });
+            continue;
+        }
+        const own = await findPathTarget(db, resolver, id, beat);
+        if (own && own.routeId !== null) lines.push({ target: own, drill });
+    }
+    return lines;
 }
 
 /** How a path target is named: its marcher's drill number, or its group's size */
 const drillOf = (target: PathTarget, drills: ReadonlyMap<number, string>) =>
     target.trail
         ? `${target.trail.members.length}`
-        : target.group
-          ? `${target.group.members.length}`
-          : (drills.get(target.marcherId) ?? `${target.marcherId}`);
+        : target.lane && target.group?.members.length === 1
+          ? target.group.members[0]!.drill
+          : target.group
+            ? `${target.group.members.length}`
+            : (drills.get(target.marcherId) ?? `${target.marcherId}`);
 
 /** How many points an own path object's drawn walk is sampled at, for its click test */
 const WALK_SAMPLES = 96;
@@ -681,7 +783,7 @@ function objectOf(
         o = {
             target,
             drill: drillOf(target, drills),
-            walk: target.group ? null : () => walkOf(target),
+            walk: drawnAsGroup(target) ? null : () => walkOf(target),
         };
         objectsByTarget.set(target, o);
     }
@@ -770,25 +872,24 @@ function usePathObjects(drills: ReadonlyMap<number, string>): void {
  *
  * - Drawing: Enter (applyShape) finishes, Backspace or Delete (shapeRemoveLastPoint) and undo take
  *   the last point back, Escape (cancelAlignmentUpdates) cancels.
- * - Open: Escape clears the selected point, then closes the path (it stays drawn); Backspace
- *   deletes the selected point (its last removes the path). Remove path has no key (the
- *   path's menu and bar have it), open or closed, in `usePathPenActions`.
- * - A path selected as an object (step 3a): Escape lets it go (open, it goes back to selected
- *   first, AP-O4); Backspace or Delete removes it, as Remove path does (AP-O6).
+ * - Active (open): Escape lets go of the picked lane or point, then makes the path quiet (it
+ *   stays drawn, and the next Escape deselects, the field's); Backspace or Delete deletes the
+ *   selected point (its last removes the path), and with none selected removes the path, one
+ *   undo step, with a "Path removed" toast and Undo (interaction system, Q7).
  */
 export function PathPenKeys(): null {
     const phase = usePathPenStore((s) => s.session?.phase ?? null);
     const picked = usePathPenStore((s) => s.session?.selected ?? null);
-    const object = usePathPenStore((s) => s.session?.object ?? false);
     const pickedLane = usePathPenStore((s) => s.session?.lane ?? null);
     const drawing = phase === "drawing";
-    const objectSelected = object && phase === "closed";
     useActionHandler(
         "cancelAlignmentUpdates",
         () => {
-            if (!drawing && pickedLane !== null) selectLane(null);
+            // Adjusting a lane: its picked handle goes first, then back to quiet (round 2)
+            if (!drawing && pickedLane?.key != null)
+                selectLane({ marcherId: pickedLane.marcherId, key: null });
+            else if (!drawing && pickedLane !== null) closePath();
             else if (!drawing && picked !== null) selectPoint(null);
-            else if (!drawing && escapePathObject()) return;
             // The Follow tool (step 4b): Escape cancels the trail drawn, then leaves the tool
             else if (drawing && cancelFollowDrawing()) return;
             else closePath();
@@ -796,13 +897,11 @@ export function PathPenKeys(): null {
         {
             label: drawing
                 ? tolgee.t("actions.path.cancel", "Cancel path")
-                : pickedLane !== null
-                  ? tolgee.t("actions.path.deselectSpot", "Deselect spot")
+                : pickedLane?.key != null
+                  ? tolgee.t("actions.path.deselectPoint", "Deselect point")
                   : picked !== null
                     ? tolgee.t("actions.path.deselectPoint", "Deselect point")
-                    : objectSelected
-                      ? tolgee.t("actions.path.deselect", "Deselect path")
-                      : tolgee.t("actions.path.close", "Close path"),
+                    : tolgee.t("actions.path.close", "Close path"),
         },
     );
     useActionHandler(
@@ -824,9 +923,9 @@ export function PathPenKeys(): null {
                 if (Number.isInteger(index))
                     void deletePoint(index, { selectNeighbor: true });
             }
-            // The open path with no point selected, or the path selected as an object (owner,
-            // 2026-11-04 and 2026-11-06): the path goes, one undo step. Not on a path only shown
-            // for its marchers, so a stray key there removes nothing
+            // The active path with no point selected (owner, 2026-11-04; interaction system Q7):
+            // the path goes, one undo step, with a toast and Undo. Not on a quiet path, so a
+            // stray key there removes nothing
             else void removePath();
         },
         {
@@ -840,7 +939,7 @@ export function PathPenKeys(): null {
                       ? tolgee.t("actions.path.deletePoint", "Delete point")
                       : tolgee.t("actions.path.remove", "Remove path"),
         },
-        drawing || phase === "open" || objectSelected,
+        drawing || phase === "open",
     );
     // While drawing, undo takes points back first, as a Line's points are; with none left it
     // cancels

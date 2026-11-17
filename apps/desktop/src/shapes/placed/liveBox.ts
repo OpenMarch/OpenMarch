@@ -125,6 +125,8 @@ export const newLayout = (box: PlacedBox, params: unknown): boolean =>
 export type LiveClick = {
     readonly double: boolean;
     readonly ownFirst?: boolean;
+    /** The press was on a member's dot */
+    readonly onDot?: boolean;
 };
 
 /**
@@ -135,6 +137,9 @@ export type LiveClick = {
  * Box, a Circle) goes inside there, as before #557. A click on a handle that adds a point
  * adds it (#524), and on one that selects selects it. A double-click whose first click was the
  * editor's (the click on a member that selected the box) is no handle's: it goes inside the box.
+ * A plain click on a member of the box selected whole goes inside too, picking that marcher, as a
+ * second click on a group does in Slides or Keynote (pathways sim round 3: a double-click was the
+ * only way in, and nobody found it). A handle a click selects or acts on keeps its click.
  */
 export function releaseLive(
     live: LiveBox,
@@ -168,15 +173,35 @@ export function releaseLive(
         ? selectionAfter(kind, spots, g, click, live.selected, params)
         : (live.selected ?? null);
     const changed = !sameShape(kind, spots, params, live.box.params);
+    const handle =
+        g?.type === "handle"
+            ? kind
+                  .handles(g.base, spots, live.selected ?? null)
+                  .find((h) => h.key === g.key)
+            : undefined;
+    // A single click on a member goes inside, on the shape's body or on a handle that takes no
+    // clicks (a Box's corner); a Line's point, the pivot and the center dot keep their click
+    // (review of #900: the pivot's double-click back to the center needs its first click)
+    const clickEnters =
+        !!click &&
+        !click.double &&
+        click.onDot === true &&
+        (!g ||
+            g.type === "move" ||
+            (g.type === "handle" &&
+                !kind.clickHandle &&
+                !handle?.selects &&
+                !handle?.bar));
     return {
         live: { ...live, params, gesture: null, selected },
         changed,
         // Only a kind whose handles take a double-click keeps it from going inside: a Box's or a
         // Circle's handle sits on a member, whose double-click goes inside as anywhere else
         enter:
-            !!click?.double &&
             !changed &&
-            (g?.type !== "handle" || !kind.doubleClickHandle),
+            ((!!click?.double &&
+                (g?.type !== "handle" || !kind.doubleClickHandle)) ||
+                clickEnters),
     };
 }
 

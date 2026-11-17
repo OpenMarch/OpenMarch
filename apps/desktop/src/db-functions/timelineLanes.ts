@@ -10,12 +10,14 @@
  *   re-points lanes or rows, a route none of whose lanes has a marcher goes, with its lanes;
  * - **AP-R3** (`deleteLanesOfTransitionsInTransaction`): a deleted transition's lanes go first;
  * - **AP-R20** (`deleteLanesFromSlotInTransaction`): lanes above a lowered slot count go first;
+ * - K6 links (`timeline_route_sources`, spec J.1): the group path a Detached copy came from, and
+ *   deleting the links that name routes about to go (AP-H3 step 3, AP-R2);
  * - the file version (11) written with a file's first lane (ADR 0015 §9).
  *
  * Standalone on purpose (schema and drizzle only), so the transition and membership procedures
  * can use it without importing the route procedures.
  */
-import { and, asc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gte, inArray, or, sql } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
 import {
     ADJUST_MODEL_USER_VERSION,
@@ -170,10 +172,50 @@ export async function sweepOrphanRoutesInTransaction(
     if (orphans.length === 0) return [];
     const L = schema.timeline_lanes;
     await tx.delete(L).where(inArray(L.route_id, orphans));
+    await deleteRouteSourcesInTransaction(tx, orphans);
     await tx
         .delete(schema.timeline_routes)
         .where(inArray(schema.timeline_routes.id, orphans));
     return orphans;
+}
+
+/**
+ * K6 (spec J.1): the group path route `routeId` was Detached from (AP-R9), or null when it isn't a
+ * Detached copy or that group path is gone.
+ */
+export async function detachedSourceOf(
+    db: DbConnection | DbTransaction,
+    routeId: number,
+): Promise<number | null> {
+    const S = schema.timeline_route_sources;
+    const row = await db
+        .select({ source: S.source_route_id })
+        .from(S)
+        .where(and(eq(S.route_id, routeId), eq(S.kind, "detached_from")))
+        .orderBy(asc(S.id))
+        .get();
+    return row?.source ?? null;
+}
+
+/**
+ * AP-H3 step 3 and AP-R2: deletes the K6 links naming any of `routeIds` (as the route or as its
+ * source), before the routes go. The columns cascade too, but a delete written here is in the
+ * edit's undo step by the history triggers, whatever the foreign-key setting.
+ */
+export async function deleteRouteSourcesInTransaction(
+    tx: DbTransaction,
+    routeIds: readonly number[],
+): Promise<void> {
+    if (routeIds.length === 0) return;
+    const S = schema.timeline_route_sources;
+    await tx
+        .delete(S)
+        .where(
+            or(
+                inArray(S.route_id, [...routeIds]),
+                inArray(S.source_route_id, [...routeIds]),
+            ),
+        );
 }
 
 /** Raises the file's version to `version`; never lowers it. */

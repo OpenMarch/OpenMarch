@@ -24,9 +24,9 @@ import {
     clearPath,
     openPath,
     pathMarcherIds,
-    pathShown,
-    selectPathObject,
+    activatePath,
     setPathHidden,
+    setPathSelectionPort,
     setPathObjects,
     showPath,
     startDrawing,
@@ -45,11 +45,11 @@ import {
 import { PathPenKeys } from "../usePathPen";
 
 /**
- * Paths as objects, pathways step 3a (spec Appendix I.10): a click or tap on a path's line selects
- * the path (AP-O3), with nothing selected too when Paths All draws it (AP-O2, AP-O7); a selected
- * path is drawn selected, and Escape or a click on empty field lets it go (AP-O4); a double-click
- * opens it (step 1); Delete removes it (AP-O6). Dragging a dot is never the path's (P-1).
- * QA-AP-O1 to QA-AP-O4.
+ * Paths on the field, the interaction system (rules 1 and 2): a click or tap on a path's line
+ * selects the marchers who walk it (with nothing selected too when Paths All draws it, AP-O2,
+ * AP-O7) and makes the path active; a right-click selects them and opens the Path group; Escape
+ * makes it quiet; Delete removes the active path (Q7). Dragging a dot, or a quiet line, is never
+ * the path's (P-1, Q6).
  */
 
 const fieldProperties =
@@ -142,6 +142,13 @@ const EMPTY = at(30 * STEP, 30 * STEP);
 const session = () => usePathPenStore.getState().session;
 
 beforeEach(() => {
+    picked.ids = [];
+    setPathSelectionPort({
+        get: () => picked.ids,
+        set: (ids) => {
+            picked.ids = ids;
+        },
+    });
     setShapeField({
         fieldProperties: () => fieldProperties,
         zoom: () => ZOOM,
@@ -157,34 +164,58 @@ afterEach(() => {
         setPathHidden(false);
         closeHandleMenu();
     });
+    setPathSelectionPort(null);
     cleanup();
     setShapeField(null);
 });
 
-describe("hit-testing a path's line (QA-AP-O1)", () => {
-    it("a click on the shown path's line selects it as an object; it stays closed", () => {
+/** The selection the pen writes, as the field's editor would hold it */
+const picked = { ids: [] as readonly number[] };
+const selectedNow = () => [...picked.ids].sort((a, b) => a - b);
+
+describe("a click on a path's line selects its walkers (interaction system, rule 1)", () => {
+    it("on the shown path's line: its marcher is selected and the path is active at once", () => {
         showPath(own(5), "T4");
-        expect(session()!.object).toBe(false);
         expect(pathPenMode.takeClick(ON_OWN, false)).toBe(true);
-        expect(session()).toMatchObject({ phase: "closed", object: true });
+        expect(selectedNow()).toEqual([3]);
+        expect(session()).toMatchObject({ phase: "open", object: false });
         expect(session()!.target.routeId).toBe(5);
     });
 
-    it("with nothing selected, a click on Paths All's group path (its line or a lane) selects it", () => {
+    it("on Paths All's group path: every member on its line, the one marcher on its lane", () => {
         setPathObjects([groupObject(9)]);
         expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(true);
-        expect(session()).toMatchObject({ phase: "closed", object: true });
+        expect(selectedNow()).toEqual([10, 11]);
+        expect(session()).toMatchObject({ phase: "open" });
         expect(session()!.target.routeId).toBe(9);
-        clearPath();
+        // The path read for the new selection opens too (`openRoute`)
+        expect(usePathPenStore.getState().openRoute).toBe(9);
+        act(() => {
+            clearPath();
+            picked.ids = [];
+        });
         expect(pathPenMode.takeClick(ON_LANE, false)).toBe(true);
-        expect(session()!.target.routeId).toBe(9);
+        expect(selectedNow()).toEqual([10]);
+        expect(session()!.lane).toEqual({ marcherId: 10, key: null });
     });
 
-    it("with nothing selected, a click on an own path's drawn walk selects that path", () => {
+    it("on an own path's drawn walk: that marcher", () => {
         setPathObjects([ownObject(5)]);
         expect(pathPenMode.takeClick(ON_WALK, false)).toBe(true);
-        expect(session()).toMatchObject({ object: true, drill: "T4" });
-        expect(session()!.target.marcherId).toBe(4);
+        expect(selectedNow()).toEqual([4]);
+        expect(session()).toMatchObject({ phase: "open", drill: "T4" });
+    });
+
+    it("keeps a selection that's already some of its walkers; Shift adds them", () => {
+        setPathObjects([groupObject(9)]);
+        picked.ids = [11];
+        pathPenMode.takeClick(ON_GROUP, false);
+        expect(selectedNow()).toEqual([11]);
+        expect(usePathPenStore.getState().openRoute).toBeNull();
+        act(() => clearPath());
+        picked.ids = [2];
+        pathPenMode.takeClick({ ...ON_GROUP, shift: true }, false);
+        expect(selectedNow()).toEqual([2, 10, 11]);
     });
 
     it("a miss is the field's, and the pointer shows over a line only", () => {
@@ -196,70 +227,83 @@ describe("hit-testing a path's line (QA-AP-O1)", () => {
         expect(pathPenMode.cursorAt(EMPTY)).toBeNull();
     });
 
-    it("a press on a path's line is never the path's: a drag from there (or from a dot) is the field's (P-1)", () => {
+    it("a press on a quiet path's line is never the path's: a drag from there is the field's marquee (P-1, Q6)", () => {
         setPathObjects([groupObject(9)]);
         const press = { reachesInside: () => false, isMac: false };
         expect(pathPenMode.claims(ON_GROUP, press)).toBe(false);
-        selectPathObject(group(9), "2");
-        expect(pathPenMode.claims(ON_GROUP, press)).toBe(false);
+        showPath(group(9), "2");
+        expect(pathPenMode.claims(ON_LANE, press)).toBe(false);
     });
 });
 
-describe("selection state (QA-AP-O2)", () => {
-    it("is drawn selected, whatever the paths level; a click on empty field lets it go", () => {
-        showPath(own(5), "T4");
-        setPathHidden(true);
-        expect(pathShown(session(), true)).toBe(false);
-        selectPathObject(own(5), "T4");
-        expect(pathShown(session(), true)).toBe(true);
-        expect(drawingOf(session())!.pathLine).toBe("selected");
-        expect(pathPenMode.takeClick(EMPTY, false)).toBe(false);
-        expect(session()).toBeNull();
-    });
-
-    it("the second click of a double-click opens it; Escape goes back to selected, then lets it go", () => {
+describe("quiet and active (interaction system, rule 2)", () => {
+    it("a double-click opens nothing more than a click; Escape makes the path quiet", () => {
         render(<PathPenKeys />);
         setPathObjects([groupObject(9)]);
         act(() => void pathPenMode.takeClick(ON_GROUP, false));
         act(() => void pathPenMode.takeClick(ON_GROUP, true));
-        expect(session()).toMatchObject({ phase: "open", object: true });
+        expect(session()).toMatchObject({ phase: "open", object: false });
         expect(drawingOf(session())!.pathLine).toBe("edited");
+        expect(actionLabelNow("cancelAlignmentUpdates")).toBe("Close path");
         act(() => void runAction("cancelAlignmentUpdates"));
-        expect(session()).toMatchObject({ phase: "closed", object: true });
-        expect(actionLabelNow("cancelAlignmentUpdates")).toBe("Deselect path");
-        act(() => void runAction("cancelAlignmentUpdates"));
-        expect(session()).toBeNull();
+        expect(session()).toMatchObject({ phase: "closed" });
+        expect(drawingOf(session())!.pathLine).toBe("quiet");
+        expect(selectedNow()).toEqual([10, 11]);
     });
 
-    it("a right-click (or long press) on a line selects it and offers Edit path and Remove path", () => {
+    it("the second click of the double-click that made it active adds no point on a midpoint", () => {
+        showPath(own(5), "T4");
+        pathPenMode.takeClick(ON_OWN, false);
+        expect(session()!.phase).toBe("open");
+        let saving = false;
+        const unsubscribe = usePathPenStore.subscribe((s) => {
+            saving ||= s.saving;
+        });
+        const press = { reachesInside: () => false, isMac: false };
+        expect(pathPenMode.claims(ON_OWN, press)).toBe(true);
+        pathPenMode.press(ON_OWN, { isMac: false });
+        pathPenMode.release(ON_OWN, { double: true, ownFirst: false });
+        unsubscribe();
+        expect(saving).toBe(false);
+        expect(session()!.points).toHaveLength(1);
+    });
+
+    it("a right-click (or long press) on a line selects its walkers, shows it quiet and offers the Path group", () => {
         setPathObjects([groupObject(9)]);
         expect(pathPenMode.fieldMenuAt(ON_GROUP)).toEqual(PATH_FIELD_MENU);
-        expect(session()).toMatchObject({ object: true });
+        expect(session()).toMatchObject({ phase: "closed", object: false });
+        expect(selectedNow()).toEqual([10, 11]);
         expect(pathPenMode.fieldMenuAt(EMPTY)).toBeNull();
     });
 
-    it("a click on the open path's line keeps it open", () => {
-        selectPathObject(own(5), "T4");
-        openPath();
-        expect(pathPenMode.takeClick(ON_OWN, false)).toBe(true);
-        expect(session()!.phase).toBe("open");
+    it("a click on the active path's line keeps it active; with a lane adjusted the line isn't drawn", () => {
+        activatePath(group(9), "2");
+        expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(true);
+        expect(session()).toMatchObject({ phase: "open", lane: null });
+        activatePath(group(9), "2", 10);
+        picked.ids = [10];
+        expect(pathPenMode.takeClick(ON_GROUP, false)).toBe(false);
+        expect(session()).toMatchObject({
+            phase: "open",
+            lane: { marcherId: 10 },
+        });
     });
 
-    it("selecting another path replaces the selection", () => {
+    it("a click on another path makes that one active", () => {
         setPathObjects([groupObject(9), ownObject(5)]);
         pathPenMode.takeClick(ON_GROUP, false);
         pathPenMode.takeClick(ON_WALK, false);
         expect(session()!.target.routeId).toBe(5);
+        expect(selectedNow()).toEqual([4]);
     });
 });
 
-describe("Delete on a selected path (QA-AP-O3)", () => {
-    it("Backspace or Delete removes the selected path; not a path only shown for its marchers", () => {
+describe("Delete on the active path (interaction system, Q7)", () => {
+    it("removes the active path; a quiet path takes no Delete", () => {
         render(<PathPenKeys />);
         act(() => showPath(own(5), "T4"));
-        // A closed path shown for its marchers takes no keys at all: Delete there does nothing,
-        // no remove starts and the path stays shown
-        expect(session()!.object).toBe(false);
+        // A quiet path takes no keys at all: Delete there does nothing, no remove starts and the
+        // path stays shown
         const shown = session();
         let removing = false;
         const unsubscribe = usePathPenStore.subscribe((s) => {
@@ -270,9 +314,82 @@ describe("Delete on a selected path (QA-AP-O3)", () => {
         unsubscribe();
         expect(removing).toBe(false);
         expect(session()).toBe(shown);
-        act(() => selectPathObject(own(5), "T4"));
+        act(() => void openPath());
         expect(isActionEnabled("shapeRemoveLastPoint")).toBe(true);
         expect(actionLabelNow("shapeRemoveLastPoint")).toBe("Remove path");
+    });
+});
+
+describe("member state on the field, whenever a group path shows (interaction system, rule 5)", () => {
+    const adjusted = (): PathTarget => {
+        const t = group(9);
+        return {
+            ...t,
+            group: {
+                ...t.group!,
+                members: t.group!.members.map((m) =>
+                    m.marcherId === 11
+                        ? {
+                              ...m,
+                              adjust: {
+                                  v: 1,
+                                  keys: [
+                                      { a: "from", b: "g1", f: 0.5, d: [0, 8] },
+                                  ],
+                              },
+                          }
+                        : m,
+                ),
+                detachedMembers: [
+                    { marcherId: 12, drill: "B3", from: { x: 0, y: 0 } },
+                ],
+            },
+        };
+    };
+
+    it("quiet: an adjusted member's line is marked, a detached member's start is ringed dashed", () => {
+        usePathPenStore.setState({ ownable: [11] });
+        showPath(adjusted(), "2");
+        const one = drawingOf(session())!;
+        expect(one.laneIds).toEqual([11]);
+        expect(one.lanesAdjusted).toEqual([0]);
+        // The whole group selected: the group line, and of the members only the bent one's line
+        usePathPenStore.setState({ ownable: [10, 11] });
+        const d = drawingOf(session())!;
+        expect(d.outline).not.toBeNull();
+        expect(d.laneIds).toEqual([11]);
+        expect(d.lanesAdjusted).toEqual([0]);
+        const rings = d.memberRings!;
+        expect(rings.find((r) => r.marcherId === 11)!.label).toMatch(
+            /^Has bends of its own/,
+        );
+        expect(rings.find((r) => r.marcherId === 12)).toMatchObject({
+            kind: "own",
+            dashed: true,
+            label: "Detached: walks its own copy of the group path",
+        });
+        // A plain member has no ring: only who's different is marked
+        expect(rings.find((r) => r.marcherId === 10)).toBeUndefined();
+        usePathPenStore.setState({ ownable: [] });
+    });
+
+    it("the marks show while the group path is edited too", () => {
+        activatePath(adjusted(), "2");
+        const rings = drawingOf(session())!.memberRings!;
+        expect(rings.map((r) => r.marcherId)).toEqual([11, 12]);
+    });
+
+    it("Paths All with nothing selected still marks the adjusted lane and the detached start", () => {
+        const d = objectDrawingOf({
+            target: adjusted(),
+            drill: "2",
+            walk: null,
+        })!;
+        expect(d.lanesAdjusted).toEqual([1]);
+        expect(d.memberRings!.map((r) => [r.marcherId, !!r.dashed])).toEqual([
+            [11, false],
+            [12, true],
+        ]);
     });
 });
 
@@ -291,8 +408,8 @@ describe("Paths All draws a group path as its one line (QA-AP-O4)", () => {
         expect(pathMarcherIds(null, false, false, objects)).toEqual([10, 11]);
         // Under an open shape, nothing is drawn, so nobody gives way
         expect(pathMarcherIds(null, false, true, objects)).toEqual([]);
-        // The selected path is drawn by the session, not twice
-        selectPathObject(group(9), "2");
+        // The active path is drawn by the session, not twice
+        activatePath(group(9), "2");
         expect(pathMarcherIds(session(), false, false, objects)).toEqual([
             10, 11,
         ]);
@@ -340,6 +457,7 @@ function fieldWithPen(selected: number[]) {
     };
     const editor = new FieldEditor(ports, { now: () => 1000 });
     editor.setMode(pathPenMode);
+    setPathSelectionPort(ports.selection);
     const right = (p: FieldPointer) => {
         editor.pointerDown({ ...p, button: 2 });
         editor.pointerUp({ ...p, button: 2 });
@@ -384,11 +502,12 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
         expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
     });
 
-    it("off the dots, a right-click on the line still selects the path and offers its actions", () => {
+    it("off the dots, a right-click on the line selects its walkers and offers the Path group", () => {
         setPathObjects([groupObject(9)]);
-        const { ports, right } = fieldWithPen([]);
+        const { ports, right, state } = fieldWithPen([]);
         right(ON_GROUP);
-        expect(session()).toMatchObject({ object: true });
+        expect(session()).toMatchObject({ phase: "closed", object: false });
+        expect(state.selected).toEqual([10, 11]);
         expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toEqual(
             PATH_FIELD_MENU,
         );
@@ -453,7 +572,7 @@ describe("a long press on the path being drawn or edited (tablet 1.5, review of 
     });
 
     it("on the open path's corner, opens the corner's menu and leaves no drag behind", () => {
-        selectPathObject(own(5), "T4");
+        showPath(own(5), "T4");
         openPath();
         const before = session()!.points;
         const { editor, ports } = fieldWithPen([3]);
@@ -468,7 +587,7 @@ describe("a long press on the path being drawn or edited (tablet 1.5, review of 
     });
 
     it("on the open path's line, opens that leg's menu at its midpoint, and the field's with Remove path elsewhere on it", () => {
-        selectPathObject(own(5), "T4");
+        showPath(own(5), "T4");
         openPath();
         const { editor, ports } = fieldWithPen([3]);
         expect(editor.pointerDown(touch(LEG))).toBe(true);
@@ -493,7 +612,7 @@ describe("a long press on the path being drawn or edited (tablet 1.5, review of 
     });
 
     it("on a marcher's dot or empty field, opens the field's own menu, as without a path", () => {
-        selectPathObject(own(5), "T4");
+        showPath(own(5), "T4");
         openPath();
         const { editor, ports, state } = fieldWithPen([]);
         const menuCall = () => vi.mocked(ports.openMenu!).mock.calls.at(-1)!;

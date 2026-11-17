@@ -661,6 +661,45 @@ export const timeline_lanes = sqliteTable(
     ],
 );
 
+/**
+ * Where a route came from (spec v0.10 J.1, K6): app data beside the routes, never read by the
+ * resolver and outside the change log. Pathways step 3c writes `detached_from` (AP-R9 Detach), so
+ * Rejoin (AP-R10) knows the group path a copy came back from; the other kinds are for later steps
+ * (paste, mirror, split). Both route columns cascade, so a build that doesn't know this table and
+ * deletes a route leaves no link naming it; this build deletes the links itself first (AP-H3).
+ */
+export const timeline_route_sources = sqliteTable(
+    "timeline_route_sources",
+    {
+        id: integer().primaryKey(),
+        route_id: integer()
+            .notNull()
+            .references(() => timeline_routes.id, { onDelete: "cascade" }),
+        kind: text().notNull(),
+        source_route_id: integer().references(() => timeline_routes.id, {
+            onDelete: "cascade",
+        }),
+        data: text(),
+    },
+    (table) => [
+        integerTypeCheck("timeline_route_sources", "route_id"),
+        check(
+            "timeline_route_sources_source_route_id_type_check",
+            sql`source_route_id IS NULL OR typeof(source_route_id) = 'integer'`,
+        ),
+        check(
+            "timeline_route_sources_kind_check",
+            sql`kind IN ('detached_from', 'recipe', 'mirror_of', 'pasted_from', 'split_from', 'continues')`,
+        ),
+        check(
+            "timeline_route_sources_data_check",
+            sql`data IS NULL OR json_valid(data)`,
+        ),
+        index("timeline_idx_route_sources_route").on(table.route_id),
+        index("timeline_idx_route_sources_source").on(table.source_route_id),
+    ],
+);
+
 /** A marcher filling one slot of a transition over a beat range, at a layer (spec §5.1 `assignments`). */
 export const timeline_assignments = sqliteTable(
     "timeline_assignments",

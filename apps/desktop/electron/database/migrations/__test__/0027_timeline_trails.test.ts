@@ -118,9 +118,11 @@ async function fileBefore0027(file: string) {
         db.exec(
             "CREATE INDEX `timeline_idx_tr_timeline` ON `timeline_transitions` (`timeline_id`)",
         );
-        db.prepare("DELETE FROM __drizzle_migrations WHERE created_at = ?").run(
-            TRAIL_MIGRATION.when,
-        );
+        // 0027 and every later migration: drizzle applies only what is newer than the last one
+        // recorded. 0028 (route sources) creates its table IF NOT EXISTS, so it runs again safely
+        db.prepare(
+            "DELETE FROM __drizzle_migrations WHERE created_at >= ?",
+        ).run(TRAIL_MIGRATION.when);
         db.exec(`
             INSERT INTO marchers (id, section, drill_prefix, drill_order, home_x, home_y) VALUES (1, 'Brass', 'B', 1, 0, 0), (2, 'Brass', 'B', 2, 4, 0);
             INSERT INTO timelines (id, start_beat, end_beat) VALUES (7, 0, 8);
