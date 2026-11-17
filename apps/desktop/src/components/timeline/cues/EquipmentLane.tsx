@@ -59,6 +59,7 @@ import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import {
     actionDisabledReason,
     runAction,
+    isActionChecked,
     isActionEnabled,
 } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
@@ -656,9 +657,12 @@ function CueMenuView({
         getActionLabel(id, (key, params) => t(key, params as never));
     /** A cue command: runnable, greyed out with its reason (#1039), or left out without one */
     const item = (id: ActionId, args?: Record<string, number>) => {
-        const reason = isActionEnabled(id)
-            ? null
-            : (actionDisabledReason(id) ?? undefined);
+        // In effect (a lasting cue's Make cue lasting) it shows chosen, not greyed out
+        const checked = isActionChecked(id);
+        const reason =
+            isActionEnabled(id) || checked
+                ? null
+                : (actionDisabledReason(id) ?? undefined);
         if (reason === undefined) return null;
         return (
             <MenuItemWithReason
@@ -666,7 +670,8 @@ function CueMenuView({
                 testId={`cue-menu-${id}`}
                 reason={reason}
                 reasonTestId={`cue-menu-${id}-reason`}
-                onSelect={() => runAction(id, args)}
+                checked={checked || undefined}
+                onSelect={() => !checked && runAction(id, args)}
             >
                 {label(id)}
             </MenuItemWithReason>
