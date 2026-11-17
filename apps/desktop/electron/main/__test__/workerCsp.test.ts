@@ -35,4 +35,18 @@ describe("withAppCsp", () => {
             "Content-Security-Policy": [WORKER],
         });
     });
+
+    it("gives the audio worker its own, narrower policy", () => {
+        expect(
+            withAppCsp(
+                "http://localhost:5173/src/workers/audioOffset.worker.ts?worker_file&type=module",
+                undefined,
+                PAGE,
+            ),
+        ).toEqual({
+            "Content-Security-Policy": [
+                "default-src 'none'; script-src 'self'",
+            ],
+        });
+    });
 });

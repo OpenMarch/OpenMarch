@@ -8,7 +8,7 @@ import { parse as parseYaml } from "yaml";
 import { version } from "./package.json";
 import { thirdPartyNotices } from "./vite.notices.mjs";
 import { modelImportWorker, ndarrayAliases } from "./vite.modelImport.mjs";
-import { MODEL_IMPORT_WORKER_CSP } from "./src/showAssets/modelImport/protocol";
+import { WORKER_POLICIES } from "./src/security/appCsp";
 import { DEMOS } from "./web/demos";
 
 /**
@@ -201,10 +201,12 @@ const writeHeaders = (): Plugin => ({
                 `${webBase}*`,
                 "  X-Content-Type-Options: nosniff",
                 "  Referrer-Policy: strict-origin-when-cross-origin",
-                // The model import worker's own policy (fork #998): a URL worker takes its
-                // CSP from its own response, never from the page
-                `${webBase}assets/modelImport.worker-*`,
-                `  Content-Security-Policy: ${MODEL_IMPORT_WORKER_CSP}`,
+                // Each worker's own policy (fork #998, #1011): a URL worker takes its CSP
+                // from its own response, never from the page
+                ...WORKER_POLICIES.flatMap(({ file, csp }) => [
+                    `${webBase}assets/${file}-*`,
+                    `  Content-Security-Policy: ${csp}`,
+                ]),
                 "",
             ].join("\n"),
         );
