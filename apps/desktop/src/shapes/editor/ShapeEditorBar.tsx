@@ -1428,13 +1428,13 @@ const FillPill = memo(function FillPill({
                 <ReshuffleButton
                     target={target}
                     envFor={env}
-                    className="rounded-4 hover:text-accent hover:bg-fg-2 min-h-24 px-4 py-2"
+                    className="rounded-4 hover:text-accent hover:bg-text/10 min-h-24 px-4 py-2"
                     testId="shape-editor-reshuffle"
                 />
                 <EdgeToggle
                     target={target}
                     envFor={env}
-                    className="rounded-4 hover:text-accent hover:bg-fg-2 min-h-24 px-4 py-2"
+                    className="rounded-4 hover:text-accent hover:bg-text/10 min-h-24 px-4 py-2"
                     testId="shape-editor-edge"
                 />
             </span>
