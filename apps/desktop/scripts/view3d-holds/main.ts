@@ -4,7 +4,7 @@
  * instrument, drawn from several sides so the hands can be checked against
  * the instrument. Uses the real body, `poseArms` and the instrument models;
  * the instrument is placed by the hold exactly as the window places it.
- * Hands are drawn orange. See README.md.
+ * Hands are drawn orange, their palms yellow. See README.md.
  */
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -123,6 +123,8 @@ fill.position.set(2, 1, -1);
 scene.add(fill);
 
 const HAND = new THREE.Color(0xff7a1a);
+/** The palm side of each hand, so a hand's turn about its fingers shows. */
+const PALM = new THREE.Color(0xffe45c);
 const SKIN = new THREE.Color(0xa7b0ba);
 const PART_COLORS: Record<number, number> = {
     [PART_METAL]: 0xd9a93a,
@@ -178,12 +180,26 @@ async function loadBody() {
             .map((b, i) => (/DEF-hand[LR]/.test(b.name) ? i : -1))
             .filter((i) => i >= 0),
     );
+    // a hand's palm is its bone's +X face on the left hand and −X on the right
+    const palmSide = new Map(
+        body.skeleton.bones.map((b, i) => [i, b.name.endsWith("L") ? 1 : -1]),
+    );
+    const pos = g.getAttribute("position");
+    const local = new THREE.Vector3();
     const col = new Float32Array(si.count * 3);
     for (let i = 0; i < si.count; i++) {
         let best = 0;
         for (let k = 1; k < 4; k++)
             if (sw.getComponent(i, k) > sw.getComponent(i, best)) best = k;
-        const c = handBones.has(si.getComponent(i, best)) ? HAND : SKIN;
+        const bone = si.getComponent(i, best);
+        let c = SKIN;
+        if (handBones.has(bone)) {
+            local
+                .fromBufferAttribute(pos, i)
+                .applyMatrix4(body.bindMatrix)
+                .applyMatrix4(body.skeleton.boneInverses[bone]);
+            c = local.x * palmSide.get(bone)! > 0.004 ? PALM : HAND;
+        }
         col.set([c.r, c.g, c.b], i * 3);
     }
     g.setAttribute("color", new THREE.BufferAttribute(col, 3));
@@ -392,12 +408,67 @@ function show(entry: Entry, state: HoldState) {
     };
 }
 
+/** One view of a section's hold filling the canvas: `shoot.mjs --close` (README.md). */
+export interface CloseUp {
+    /** What the camera looks at, in the body's rest frame, or a hand's grip. */
+    at: [number, number, number] | "handR" | "handL" | "hands";
+    /** From the target toward the camera. */
+    dir: [number, number, number];
+    up?: [number, number, number];
+    /** Half the view's height, meters. */
+    half: number;
+    width: number;
+    height: number;
+    seeThrough?: boolean;
+}
+
+function closeUp(entry: Entry, state: HoldState, view: CloseUp) {
+    const { hold: h } = show(entry, state);
+    const grip = (a: typeof h.right) =>
+        new THREE.Vector3(...a.wrist).addScaledVector(
+            new THREE.Vector3(...a.fingers),
+            0.07,
+        );
+    const at =
+        view.at === "handR"
+            ? grip(h.right)
+            : view.at === "handL"
+              ? grip(h.left)
+              : view.at === "hands"
+                ? grip(h.right).add(grip(h.left)).multiplyScalar(0.5)
+                : new THREE.Vector3(...view.at);
+    renderer.setSize(view.width, view.height);
+    const w = (view.half * view.width) / view.height;
+    const cam = new THREE.OrthographicCamera(
+        -w,
+        w,
+        view.half,
+        -view.half,
+        0.01,
+        20,
+    );
+    cam.position
+        .copy(at)
+        .addScaledVector(new THREE.Vector3(...view.dir).normalize(), 6);
+    cam.up.set(...(view.up ?? [0, 1, 0]));
+    cam.lookAt(at);
+    renderer.setViewport(0, 0, view.width, view.height);
+    renderer.setScissor(0, 0, view.width, view.height);
+    renderer.setClearColor(0x323c4a);
+    const mat = instrument!.material as THREE.MeshStandardMaterial;
+    mat.transparent = !!view.seeThrough;
+    mat.opacity = view.seeThrough ? 0.3 : 1;
+    mat.depthWrite = !view.seeThrough;
+    renderer.render(scene, cam);
+}
+
 declare global {
     interface Window {
         holds: {
             entries: string[];
             views: string[];
             show: (i: number, state: HoldState) => unknown;
+            closeUp: (i: number, state: HoldState, view: CloseUp) => void;
         };
     }
 }
@@ -407,5 +478,6 @@ window.holds = {
     entries: ENTRIES.map((e) => e.name),
     views: VIEWS,
     show: (i, state) => show(ENTRIES[i], state),
+    closeUp: (i, state, view) => closeUp(ENTRIES[i], state, view),
 };
 document.title = "holds-ready";
