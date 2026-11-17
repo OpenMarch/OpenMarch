@@ -30,6 +30,7 @@ import {
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
@@ -62,6 +63,9 @@ import {
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
  * - **Edit field**, which puts the canvas into the Edit field mode (#824).
+ *
+ * Each entry shows its shortcut, except in the touch layout before a hardware keyboard has been
+ * used (`useShowShortcutHints`, #880).
  */
 /** The page state commands: the group whose entries can show checked */
 const STATE_GROUP: readonly ActionId[] = [
@@ -155,6 +159,8 @@ export default function FieldContextMenu({
 }) {
     const { t } = useTranslate();
     const touch = useIsTouchMode();
+    // A finger-only tablet has no keys to press: the caps wait for a hardware keyboard (#880)
+    const showHints = useShowShortcutHints();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -254,7 +260,7 @@ export default function FieldContextMenu({
                                         getActionLabel(id, (key, params) =>
                                             t(key, params as never),
                                         );
-                                    const shortcut = (
+                                    const shortcut = showHints && (
                                         <span className="ml-auto pl-16">
                                             <Shortcut action={id} />
                                         </span>
