@@ -3437,8 +3437,6 @@
     "actions.cues.equipmentUsual": "Name of an action in the command palette: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead's count on.",
     "actions.cues.moveToPlayhead": "Name of an action in the command palette and a cue's menu in the timeline's Equipment lane: moves the picked cue (a change of what performers hold) to the playhead's count.",
     "field.menu.selectByEquipment": "A submenu in the field's right-click menu: commands that select everyone holding a piece of equipment (or a group of them) at the playhead.",
-    "cues.lane.lanesButton": "Tooltip and name of a button in the timeline's controls that opens a menu of cue lanes (rows showing changes over the show, such as what performers hold), each with a check mark to show or hide it.",
-    "cues.lane.lanesHeading": "Heading of the menu of cue lanes the timeline can show.",
     "cues.lane.resize": "Tooltip on the end of a short (momentary) cue in the timeline's Equipment lane.",
     "cues.lane.hide": "Button beside a cue lane's name in the timeline: hides the lane. It can be shown again from the timeline's Lanes menu.",
     "cues.value.usual": "Entry in the field menu's Equipment submenu: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead on.",
@@ -3447,5 +3445,16 @@
     "menu.view.movesLane": "Item in the app's View menu (title case like the other menu items): shows or hides the timeline's move tracks.",
     "menu.view.equipmentLane": "Item in the app's View menu (title case like the other menu items): shows or hides the timeline's Equipment lane, which shows what performers hold over the show.",
     "timeline.lanes.movesHidden": "Label on a thin strip in the timeline where the move tracks (the bars for each move) were, shown while the Moves lane is hidden. Clicking it shows them again.",
-    "timeline.lanes.showMoves": "Tooltip and accessible name of the 'Moves hidden' strip in the timeline: clicking it shows the move tracks again."
+    "timeline.lanes.showMoves": "Tooltip and accessible name of the 'Moves hidden' strip in the timeline: clicking it shows the move tracks again.",
+    "cues.lane.lanes": "A small button under the lane names on the left of the timeline (and an entry in a lane's right-click menu) that opens the list of timeline lanes: the rows showing moves and cues (such as what performers hold), each of which can be shown or hidden.",
+    "cues.lane.hiddenCount": "Beside 'Lanes' on the timeline's Lanes button: how many of the show's lanes are hidden right now. ICU number.",
+    "cues.lane.find": "Placeholder and accessible name of the search box at the top of the timeline's lane list: typing filters the lanes listed under it.",
+    "cues.lane.inThisShow": "Heading in the timeline's lane list: the lanes this show uses (moves, and kinds of cues it has), each with a check mark for shown or hidden.",
+    "cues.lane.addLane": "Heading in the timeline's lane list: kinds of cue lanes the show doesn't use yet, grouped by family. Ticking one adds an empty lane, ready for cues.",
+    "cues.lane.cueCount": "Muted count beside a lane in the timeline's lane list: how many cues of that kind the show has. ICU plural.",
+    "cues.lane.noMatch": "Shown in the timeline's lane list when the search finds nothing.",
+    "cues.lane.hideNamed": "Entry in the menu on a timeline lane's name: hides that lane. {lane} is the lane's name, such as 'Equipment' or 'Moves'.",
+    "cues.lane.collapseRows": "Entry in the menu on a cue lane's name: folds the lane's rows into one summary row.",
+    "cues.lane.expandRows": "Entry in the menu on a cue lane's name: opens the folded summary back into a row per group of performers.",
+    "cues.laneFamily.equipment": "A family of cue lanes in the timeline's 'Add a lane' list: lanes about what performers hold and how (equipment, how it's held, flag silks)."
 }

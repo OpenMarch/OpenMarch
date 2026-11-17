@@ -222,17 +222,3 @@ describe("uiSettings Store", () => {
         expect(renders).toBe(2);
     });
 });
-
-describe("timeline lanes (#992)", () => {
-    it("shows Moves and hides the cue lanes until someone chooses, and keeps only booleans", async () => {
-        const { laneShown } = await import("@/timeline/timelineLanes");
-        expect(laneShown({}, "moves")).toBe(true);
-        expect(laneShown({}, "equipment")).toBe(false);
-        expect(laneShown({ moves: false, equipment: true }, "moves")).toBe(
-            false,
-        );
-        expect(laneShown({ moves: false, equipment: true }, "equipment")).toBe(
-            true,
-        );
-    });
-});

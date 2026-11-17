@@ -15,6 +15,7 @@ import { isPerformer } from "@/global/classes/Marcher";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { setLaneShown, type TimelineLaneId } from "@/timeline/timelineLanes";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import { conToastError } from "@/utilities/utils";
 import { useShowCues, type EditorCues } from "./useShowCues";
@@ -46,6 +47,12 @@ export function playheadCueBeat<B extends { id: number }>(
 ): B | null {
     const index = Math.max(1, Math.round(playheadBeat));
     return beats[index] ?? null;
+}
+
+/** Shows lane `id` when the user had hidden it (saved with the UI settings). */
+function revealLane(id: TimelineLaneId) {
+    const { uiSettings } = useUiSettingsStore.getState();
+    if (uiSettings.timelineLanes[id] === false) setLaneShown(id, true);
 }
 
 /** Remembers `choice` among the field menu's recent items (saved with the UI settings). */
@@ -197,6 +204,9 @@ export function useCueCommands(): CueCommands {
                 });
                 if (plan.kind === "none") return;
                 rememberChoice(choice);
+                // A first Equipment cue makes its lane appear, even one hidden before (#992)
+                if (!show.cues.some((c) => c.type === "equipment"))
+                    revealLane("equipment");
                 const write =
                     plan.kind === "join"
                         ? updateCues({

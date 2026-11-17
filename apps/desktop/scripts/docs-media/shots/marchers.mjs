@@ -124,11 +124,8 @@ async function setEquipment(page, labels, family, entry, wait) {
     await wait(1200);
 }
 
-/** Shows the Equipment lane from the timeline's Lanes menu (not filmed). */
+/** Waits for the Equipment lane, which appears with the show's first equipment change (not filmed). */
 async function showEquipmentLane(page, wait) {
-    await page.getByTestId("timeline-cue-lanes").click();
-    await page.getByTestId("timeline-cue-lane-equipment").click();
-    await page.keyboard.press("Escape");
     await page.getByTestId("equipment-lane").waitFor();
     await wait(600);
 }

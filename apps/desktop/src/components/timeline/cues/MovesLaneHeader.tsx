@@ -1,6 +1,7 @@
 import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import { runAction } from "@/shortcuts/registry";
+import { useLaneNameMenu } from "./LanesMenu";
 
 /**
  * The Moves lane's heading (fork #992): its name and an eye button that hides the move tracks,
@@ -11,11 +12,15 @@ import { runAction } from "@/shortcuts/registry";
  */
 export function MovesLaneHeader() {
     const { t } = useTranslate();
+    const nameMenu = useLaneNameMenu("moves");
     return (
         <div
             data-testid="moves-lane-header"
+            // Right-click (or a long press) on the lane's name: hide it, or the lanes
+            onContextMenu={nameMenu.onContextMenu}
             className="bg-bg-1/80 text-micro text-text-subtitle flex w-fit items-center gap-4 rounded-full px-6 backdrop-blur-sm"
         >
+            {nameMenu.menu}
             <span className="text-text font-medium">
                 {t("timeline.lanes.moves")}
             </span>

@@ -99,7 +99,7 @@ import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useBasicLocksStore } from "@/timeline/basicLocks";
 import { useBasicPoints } from "./useBasicPoints";
 import type Page from "@/global/classes/Page";
-import { CueLanesButton, useEquipmentLaneBand } from "./cues/EquipmentLane";
+import { useEquipmentLaneBand } from "./cues/EquipmentLane";
 import { MovesHiddenStrip, MovesLaneHeader } from "./cues/MovesLaneHeader";
 import { useLaneShown } from "@/timeline/timelineLanes";
 
@@ -162,17 +162,11 @@ const MOVES_HIDDEN_STRIP = <MovesHiddenStrip />;
  * it's the only one: Play loops the selected measures, so no Loop button
  */
 const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
-const BASIC_VIEW_CONTROLS = (
-    <>
-        <TempoModeButton />
-        <CueLanesButton />
-    </>
-);
+const BASIC_VIEW_CONTROLS = <TempoModeButton />;
 const EXPERT_VIEW_CONTROLS = (
     <>
         <TempoModeButton />
         <TimelineCompactButton />
-        <CueLanesButton />
     </>
 );
 

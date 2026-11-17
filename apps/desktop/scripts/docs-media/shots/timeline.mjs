@@ -378,22 +378,23 @@ const shots = [
     {
         id: "timeline-lanes-menu",
         kind: "still",
-        // Page 3 with a move mid-page, the Lanes menu open from the timeline's controls: Moves
-        // ticked, Equipment not; the Moves heading with its eye button over the move's row
+        // Page 3 with a move mid-page, the list open from the Lanes row under the lane names:
+        // the search box, Moves ticked under In this show, and Equipment to add; the Moves heading
+        // with its eye button over the move's row
         async setup({ page, around, union, wait }) {
             await ready(page, wait);
             await withMove(page, wait);
             await page.keyboard.press("Escape");
             await wait(600);
-            await page.getByTestId("timeline-cue-lanes").click();
-            await page.getByTestId("timeline-cue-lanes-menu").waitFor();
+            await page.getByTestId("timeline-lanes-row").click();
+            await page.getByTestId("timeline-lanes-menu").waitFor();
             await wait(500);
             await tidy(page);
             return {
                 box: union(
                     await pane(around, page),
                     await around(
-                        page.getByTestId("timeline-cue-lanes-menu"),
+                        page.getByTestId("timeline-lanes-menu"),
                         8,
                     ),
                 ),

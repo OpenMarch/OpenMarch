@@ -1,6 +1,6 @@
 /**
  * The timeline's Equipment lane (ADR 0015 D-7; fork #991 option E, #992): under the drill rows,
- * hidden until shown from the timeline's Lanes menu. One row per group of performers with the same
+ * shown while the show has Equipment cues or the user added it from the Lanes row. One row per group of performers with the same
  * Equipment history (a cue for the whole guard is one row of bars), folding into a stacked summary
  * of how many hold each thing.
  *
@@ -26,9 +26,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
     CaretDownIcon,
     CaretRightIcon,
-    CheckIcon,
     EyeSlashIcon,
-    RowsIcon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -54,7 +52,6 @@ import {
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
-import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { cueKeys } from "@/hooks/queries/useCues";
 import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
@@ -68,12 +65,11 @@ import { describePerformers } from "@/cues/cueLabel";
 import { writeCueDrag } from "@/cues/useCueCommands";
 import { itemKeyOf } from "@/cues/equipmentItems";
 import {
-    laneShown,
     setLaneFolded,
-    TIMELINE_LANES,
     useLaneFolded,
     useLaneShown,
 } from "@/timeline/timelineLanes";
+import { LANES_ROW_HEIGHT, LanesRow, useLaneNameMenu } from "./LanesMenu";
 import {
     countToSpecBeat,
     equipmentLane,
@@ -131,17 +127,37 @@ export function useEquipmentLaneBand(): TimelineBand | undefined {
         [show],
     );
     return useMemo(() => {
-        if (!shown || !beats) return undefined;
+        if (!beats) return undefined;
+        // The lanes area: the cue lanes that show, then the Lanes row, always last
+        const equipmentHeight = shown ? equipmentLaneHeight(lane, folded) : 0;
         return {
-            height: equipmentLaneHeight(lane, folded),
+            height: equipmentHeight + LANES_ROW_HEIGHT,
             render: (geometry) => (
-                <EquipmentLaneView
-                    geometry={geometry}
-                    lane={lane}
-                    show={show}
-                    beats={beats}
-                    folded={folded}
-                />
+                <>
+                    {shown && (
+                        <EquipmentLaneView
+                            geometry={geometry}
+                            lane={lane}
+                            show={show}
+                            beats={beats}
+                            folded={folded}
+                        />
+                    )}
+                    <div
+                        data-testid="timeline-lanes-row-area"
+                        className="absolute left-0 flex items-center"
+                        style={{
+                            top: geometry.top + equipmentHeight,
+                            width: geometry.width,
+                            height: LANES_ROW_HEIGHT,
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
+                        <div className="sticky left-0 z-[5] px-4">
+                            <LanesRow />
+                        </div>
+                    </div>
+                </>
             ),
         };
     }, [shown, folded, lane, show, beats]);
@@ -279,6 +295,7 @@ function EquipmentLaneView({
         target.addEventListener("pointercancel", onCancel);
     };
 
+    const nameMenu = useLaneNameMenu("equipment");
     const height = equipmentLaneHeight(lane, folded);
     return (
         <div
@@ -298,9 +315,13 @@ function EquipmentLaneView({
             }}
         >
             <div
+                data-testid="equipment-lane-header"
                 className="text-micro text-text-subtitle sticky left-0 z-10 flex w-fit items-center gap-4 px-4"
                 style={{ height: HEADER }}
+                // Right-click (or a long press) on the lane's name: hide it, fold it, or the lanes
+                onContextMenu={nameMenu.onContextMenu}
             >
+                {nameMenu.menu}
                 <button
                     type="button"
                     data-testid="equipment-lane-fold"
@@ -702,74 +723,6 @@ function CueMenuView({
                     ))}
                     <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
                     {item("cueDelete")}
-                </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-        </DropdownMenu.Root>
-    );
-}
-
-/**
- * The transport's Lanes button: a menu of the timeline's lanes (`TIMELINE_LANES`: Moves and the
- * built cue lanes), each with a check mark that shows or hides it through its own action. The page
- * row and the count ruler always show, so they aren't in it. Moves is off in Basic, which has no
- * move tracks.
- */
-export function CueLanesButton() {
-    const { t } = useTranslate();
-    const saved = useUiSettingsStore((s) => s.uiSettings.timelineLanes);
-    const [open, setOpen] = useState(false);
-    return (
-        <DropdownMenu.Root open={open} onOpenChange={setOpen}>
-            <DropdownMenu.Trigger asChild>
-                <button
-                    type="button"
-                    data-testid="timeline-cue-lanes"
-                    aria-label={t("cues.lane.lanesButton")}
-                    title={t("cues.lane.lanesButton")}
-                    onMouseDown={(event) => event.preventDefault()}
-                    className={clsx(
-                        "rounded-4 hover:bg-fg-2 focus-visible:ring-accent touch:size-44 flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2",
-                        open
-                            ? "text-accent bg-accent/10"
-                            : "text-text hover:text-accent",
-                    )}
-                >
-                    <RowsIcon size={16} />
-                </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                    data-testid="timeline-cue-lanes-menu"
-                    align="end"
-                    sideOffset={4}
-                    collisionPadding={8}
-                    {...KEEP_MENU_EVENTS}
-                    className={TIMELINE_MENU_CONTENT_CLASS}
-                >
-                    <DropdownMenu.Label className={MENU_LABEL_CLASS}>
-                        {t("cues.lane.lanesHeading")}
-                    </DropdownMenu.Label>
-                    {TIMELINE_LANES.map((lane) => (
-                        <DropdownMenu.CheckboxItem
-                            key={lane.id}
-                            data-testid={`timeline-cue-lane-${lane.id}`}
-                            checked={laneShown(saved, lane.id)}
-                            disabled={!isActionEnabled(lane.toggleAction)}
-                            onSelect={(event) => {
-                                // Stays open, so several lanes can be ticked in a row
-                                event.preventDefault();
-                                runAction(lane.toggleAction);
-                            }}
-                            className={MENU_ITEM_CLASS}
-                        >
-                            <span className="flex w-[14px] shrink-0 justify-center">
-                                <DropdownMenu.ItemIndicator className="flex">
-                                    <CheckIcon size={14} />
-                                </DropdownMenu.ItemIndicator>
-                            </span>
-                            {t(lane.labelKey)}
-                        </DropdownMenu.CheckboxItem>
-                    ))}
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>

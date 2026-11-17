@@ -3768,10 +3768,18 @@
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
-            "lanesButton": "Lanes",
-            "lanesHeading": "Show lanes",
             "resize": "Drag to change how many counts it lasts",
-            "hide": "Hide this lane"
+            "hide": "Hide this lane",
+            "lanes": "Lanes",
+            "hiddenCount": "· {count} hidden",
+            "find": "Find a lane…",
+            "inThisShow": "In this show",
+            "addLane": "Add a lane",
+            "cueCount": "{count, plural, one {# cue} other {# cues}}",
+            "noMatch": "No lanes match",
+            "hideNamed": "Hide {lane}",
+            "collapseRows": "Collapse rows",
+            "expandRows": "Expand rows"
         },
         "item": {
             "flag": "Flag",
@@ -3832,6 +3840,9 @@
             "brass": "Brass",
             "woodwinds": "Woodwinds",
             "drums": "Drums"
+        },
+        "laneFamily": {
+            "equipment": "Equipment"
         }
     },
     "coordinates": {

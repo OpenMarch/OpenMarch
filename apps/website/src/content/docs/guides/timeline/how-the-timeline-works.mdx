@@ -79,16 +79,26 @@ In Expert, a move can also start or end in the middle of a page, run across seve
 
 ## Lanes
 
-Under the page row and the count ruler, the timeline's rows are **lanes**: the move bars (<Ui k="timeline.lanes.moves" />) and the Equipment lane, who holds what over the show. Click the lanes button at the right of the timeline's controls (<Ui k="cues.lane.lanesButton" />) for a list of them, and tick each one to show or hide it. The page row and the ruler always show: they're how you read time.
+Under the page row and the count ruler, the timeline's rows are **lanes**: the move bars (<Ui k="timeline.lanes.moves" />) and a lane for each kind of cue the show uses, such as Equipment, who holds what over the show. The page row and the ruler always show: they're how you read time.
+
+Only the lanes the show uses appear: Moves (in Expert, where moves have bars) and each cue lane the show has cues for. Giving performers equipment for the first time makes the Equipment lane appear.
+
+Under the lane names on the left is the <Ui k="cues.lane.lanes" /> row. When some of the show's lanes are hidden, it says how many, such as "Lanes · 2 hidden". Click it for the list of lanes:
+
+- Type in <Ui k="cues.lane.find" plain /> to filter the list.
+- Under <Ui k="cues.lane.inThisShow" />, each lane has a check mark: clear it to hide the lane, tick it to show it again. Cue lanes show how many cues they have.
+- Under <Ui k="cues.lane.addLane" />, the kinds of cue lanes the show doesn't use yet, grouped by family. Tick one to add it, empty and ready for cues. This part is left out when there's nothing to add.
 
 <Media
   id="timeline-lanes-menu"
-  alt="The timeline with Page 3 selected and a move bar, Move 1, under the music. Over the left end of the move row is the heading Moves with an eye-slash button. The lanes menu is open from the right of the timeline's controls: under Show lanes, Moves is ticked and Equipment isn't."
+  alt="The timeline with Page 3 selected and a move bar, Move 1, under the music. Over the left end of the move row is the heading Moves with an eye-slash button. Under the lanes is the Lanes row, and its menu is open above it: a Find a lane box, then In this show with Moves ticked, then Add a lane with an Equipment family."
 />
 
-- <Ui k="timeline.lanes.moves" /> shows until you hide it. Hidden, the move bars fold into a thin strip where they were, labeled <Ui k="timeline.lanes.movesHidden" />: click or tap the strip to show them again. The moves are still there, and the field shows and edits the drill as before. It's in Expert, where moves have bars.
-- <Ui k="cues.lane.equipment" /> is hidden until you show it. A hidden Equipment lane leaves nothing behind. See [The Equipment lane](/guides/marchers/equipment/#the-equipment-lane).
-- Each lane's heading has an eye-slash button that hides the lane where it is. Tick the lane in the lanes menu to bring it back, or for Moves, click its strip.
+You can also right-click a lane's name, or press and hold it on a tablet: <Ui k="cues.lane.hideNamed" plain /> hides it, <Ui k="cues.lane.collapseRows" plain /> or <Ui k="cues.lane.expandRows" plain /> folds a cue lane's rows into one, and <Ui k="cues.lane.lanes" plain /> opens the same list.
+
+- Hiding Moves folds the move bars into a thin strip where they were, labeled <Ui k="timeline.lanes.movesHidden" />: click or tap the strip to show them again. The moves are still there, and the field shows and edits the drill as before.
+- Any other lane, hidden, leaves nothing behind. A hidden lane with no cues goes back under <Ui k="cues.lane.addLane" plain />.
+- Each lane's heading also has an eye-slash button that hides the lane where it is.
 - The same choices are in the View menu and the command palette (<Kbd action="openCommandPalette" />), such as <Ui k="actions.cues.toggleMovesLane" />, where you can give each one a shortcut.
 
 Which lanes show is kept on your computer, for every show you open.
