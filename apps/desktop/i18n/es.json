@@ -1708,7 +1708,6 @@
         "title": "Configuración",
         "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
         "tolgeeDevToolsToggle": "Traducción en contexto de Tolgee",
-        "view3d": "Vista 3D",
         "view3d.controls": "Controles",
         "view3d.controls.input.drag": "Arrastrar con clic izquierdo",
         "view3d.controls.input.pinch": "Pellizcar",
@@ -1738,7 +1737,6 @@
         "view3d.resolution.fast.description": "La menos nítida, con alrededor de la mitad del trabajo. Para computadoras antiguas.",
         "view3d.resolution.sharp": "Nítida",
         "view3d.resolution.sharp.description": "Máximo detalle en pantallas de alta resolución.",
-        "view3d.summary": "Cómo dibuja y se mueve la Vista 3D en esta computadora. No se guarda en el show.",
         "input": "Táctil y entrada",
         "input.description": "Elige el diseño para tableta (dedos y lápiz) o el diseño de escritorio (mouse y trackpad).",
         "input.interface": "Diseño",
@@ -3016,7 +3014,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Puedes cambiarlo más tarde en Configuración › General.",
             "no": "No",
             "title": "¿Abrir la vista 3D al iniciar?",
             "yes": "Sí"
@@ -3090,10 +3087,6 @@
                 "desktop": "Los gráficos se procesan por software en esta computadora, así que la vista 3D se dibuja en baja calidad y seguirá siendo lenta. Para ver la vista completa, actualiza los controladores de gráficos y reinicia OpenMarch.",
                 "web": "Los gráficos se procesan por software en este navegador, así que la vista 3D se dibuja en baja calidad y seguirá siendo lenta. Para ver la vista completa, activa la aceleración de gráficos (en Chrome o Edge: Configuración, Sistema, \"Usar la aceleración de gráficos cuando esté disponible\") y reinicia el navegador."
             },
-            "autoLowered": {
-                "settings": "Se cambió a Baja porque la vista se trababa. Para mantener la calidad completa, elige Alta en Configuración, Vista 3D.",
-                "panel": "Se cambió a Baja porque la vista se trababa. Para mantener la calidad completa, elige Alta en Calidad, dentro de Configuración de vista."
-            },
             "softwareHint": "Se mantiene en Baja porque aquí los gráficos se procesan por software.",
             "autoLoweredHint": "Se cambió a Baja porque la vista se trababa. Elige Alta para mantener la calidad completa.",
             "dismiss": "Entendido"
@@ -3102,10 +3095,7 @@
             "label": "Reproducción"
         },
         "settings": {
-            "title": "Configuración de vista",
             "close": "Cerrar",
-            "venueSection": "Este show",
-            "venueHint": "Se guarda en el archivo del show. Deshacer en el editor revierte un cambio.",
             "crowdColors": "Colores del público",
             "homeColor": "Local",
             "awayColor": "Visitantes",
@@ -3113,9 +3103,6 @@
             "endZoneText": "Texto de la zona de anotación",
             "endZoneTextPlaceholder": "Sin texto",
             "endZoneColor": "Color",
-            "graphicsSection": "Esta computadora",
-            "graphicsHint": "No se guarda en el show, así que puede variar en cada computadora.",
-            "keysSection": "Teclado y mouse",
             "uniforms": "Uniforme de banda",
             "guardUniforms": "Uniforme de color guard",
             "brassFinish": "Acabado de los metales",

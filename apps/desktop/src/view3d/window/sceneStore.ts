@@ -38,8 +38,8 @@
  *   position or the actual step (`pausedPose.ts`), saved per computer. The
  *   transport bar toggles it with `setPausedPose`.
  *
- * The app's Settings window saves the quality, power, resolution and controls choices;
- * `startPrefsSync()` picks them up while the window is open.
+ * The quality, resolution and controls choices are saved in local storage;
+ * `startPrefsSync()` picks up a change saved elsewhere while the window is open.
  *
  * Read it in React with `useView3dSceneStore(selector)`, and in `useFrame` or
  * event handlers with `useView3dSceneStore.getState()`.
@@ -239,8 +239,8 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
 }));
 
 /**
- * Applies the quality, power, resolution and controls choices the Settings window
- * saves, as it saves them. Returns the function that stops listening.
+ * Applies the quality, resolution and controls choices when another page on
+ * this computer saves them. Returns the function that stops listening.
  */
 export function startPrefsSync(): () => void {
     const onStorage = (event: StorageEvent) =>

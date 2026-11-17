@@ -8,14 +8,16 @@
  *   Explained each time it happens.
  *
  * The window has no toasts, so it is a small card at the bottom right that
- * stays until the viewer dismisses it.
+ * stays until the viewer answers it. After Automatic lowered the quality it
+ * offers the fix in place: Use High (a fixed choice, so it stays high) or
+ * Keep Low. The same choice is under Quality in 3D View settings ›
+ * Preferences.
  */
 import { useEffect, useState } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
 import { isWebBuild } from "@/utilities/webBuild";
 import { useView3dSceneStore } from "../sceneStore";
-import { HAS_SETTINGS_WINDOW } from "../renderPrefs";
 
 export type QualityNoticeReason = "software" | "autoLowered";
 
@@ -51,21 +53,8 @@ function useQualityNoticeReason(): [QualityNoticeReason | null, () => void] {
 export function QualityNotice() {
     const { t } = useTranslate();
     const [reason, dismiss] = useQualityNoticeReason();
+    const setQualityMode = useView3dSceneStore((s) => s.setQualityMode);
     if (!reason) return null;
-    // The web preview runs in a browser too, without a Settings window.
-    const inBrowser = isWebBuild || !HAS_SETTINGS_WINDOW;
-    const description =
-        reason === "software"
-            ? t(
-                  inBrowser
-                      ? "view3d.quality.software.web"
-                      : "view3d.quality.software.desktop",
-              )
-            : t(
-                  HAS_SETTINGS_WINDOW
-                      ? "view3d.quality.autoLowered.settings"
-                      : "view3d.quality.autoLowered.panel",
-              );
     return (
         <div
             role="status"
@@ -74,12 +63,45 @@ export function QualityNotice() {
             className="border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text pointer-events-auto flex w-[22rem] max-w-full flex-col gap-8 border p-12"
         >
             <p className="text-body font-medium">{t("view3d.quality.title")}</p>
-            <p className="text-sub text-text/60">{description}</p>
-            <div>
-                <Button size="compact" onClick={dismiss}>
-                    {t("view3d.quality.dismiss")}
-                </Button>
-            </div>
+            <p className="text-sub text-text/60">
+                {reason === "software"
+                    ? t(
+                          // The 3D View web preview runs in a browser too
+                          isWebBuild ||
+                              import.meta.env.VITE_VIEW3D_WEB_PREVIEW === "true"
+                              ? "view3d.quality.software.web"
+                              : "view3d.quality.software.desktop",
+                      )
+                    : t("view3d.quality.autoLowered")}
+            </p>
+            {reason === "software" ? (
+                <div>
+                    <Button size="compact" onClick={dismiss}>
+                        {t("view3d.quality.dismiss")}
+                    </Button>
+                </div>
+            ) : (
+                <div className="flex gap-8">
+                    <Button
+                        size="compact"
+                        data-testid="view3d-quality-use-high"
+                        onClick={() => {
+                            setQualityMode("high");
+                            dismiss();
+                        }}
+                    >
+                        {t("view3d.quality.useHigh")}
+                    </Button>
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        data-testid="view3d-quality-keep-low"
+                        onClick={dismiss}
+                    >
+                        {t("view3d.quality.keepLow")}
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }

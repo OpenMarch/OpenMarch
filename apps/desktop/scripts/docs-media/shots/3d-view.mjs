@@ -16,13 +16,14 @@ const SILK_ARTWORK = path.join(
 );
 
 /**
- * Opens View settings, picks the Standard silk and imports the demo Artwork;
- * leaves the panel open and returns it.
+ * Opens 3D View settings › Performers, picks the Standard silk and imports
+ * the demo Artwork; leaves the panel open and returns it.
  */
 async function paintSilks(view) {
     await view.getByTestId("view3d-settings-button").click();
     const panel = view.getByTestId("view3d-settings");
     await panel.waitFor();
+    await view.getByTestId("view3d-settings-tab-performers").click();
     await view
         .getByTestId("view3d-silk-shape-picker")
         .locator('[data-value="standard"]')
@@ -460,6 +461,7 @@ const shots = [
             await view.getByTestId("view3d-settings-button").click();
             const panel = view.getByTestId("view3d-settings");
             await panel.waitFor();
+            await view.getByTestId("view3d-settings-tab-venue").click();
             await view.mouse.move(4, ctx.window.height / 2);
             await ctx.wait(800);
             return {
@@ -471,7 +473,7 @@ const shots = [
     {
         id: "3d-silk-settings",
         kind: "still",
-        // The flag silk rows of View settings: the shapes, and imported Artwork
+        // The flag silk rows of 3D View settings › Performers: the shapes, and imported Artwork
         async setup(ctx) {
             await seekInPage(ctx.page, 3, 0.5);
             const { view } = await open3d(ctx);

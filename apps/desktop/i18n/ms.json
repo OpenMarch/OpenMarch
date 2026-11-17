@@ -1708,7 +1708,6 @@
         "title": "Tetapan",
         "tolgeeApiKeyPlaceholder": "Kunci API Tolgee",
         "tolgeeDevToolsToggle": "Terjemahan dalam konteks Tolgee",
-        "view3d": "Paparan 3D",
         "view3d.controls": "Kawalan",
         "view3d.controls.input.drag": "Seret klik kiri",
         "view3d.controls.input.pinch": "Cubit",
@@ -1738,7 +1737,6 @@
         "view3d.resolution.fast.description": "Paling lembut, dengan kira-kira separuh kerja. Untuk komputer lama.",
         "view3d.resolution.sharp": "Tajam",
         "view3d.resolution.sharp.description": "Perincian penuh pada skrin beresolusi tinggi.",
-        "view3d.summary": "Cara Paparan 3D melukis dan bergerak pada komputer ini. Tidak disimpan dalam persembahan.",
         "input": "Sentuhan & input",
         "input.description": "Pilih susun atur tablet (untuk jari dan pen) atau susun atur desktop (untuk tetikus dan pad sentuh).",
         "input.interface": "Susun atur",
@@ -3016,7 +3014,6 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Anda boleh mengubah ini kemudian dalam Tetapan › Umum.",
             "no": "Tidak",
             "title": "Buka Paparan 3D setiap kali persembahan dibuka?",
             "yes": "Ya"
@@ -3090,10 +3087,6 @@
                 "desktop": "Grafik dijalankan secara perisian pada komputer ini, jadi Paparan 3D dilukis pada kualiti rendah dan masih akan perlahan. Untuk paparan penuh, kemas kini pemacu grafik anda dan mulakan semula OpenMarch.",
                 "web": "Grafik dijalankan secara perisian dalam pelayar ini, jadi Paparan 3D dilukis pada kualiti rendah dan masih akan perlahan. Untuk paparan penuh, hidupkan pecutan grafik (dalam Chrome atau Edge: Tetapan, Sistem, \"Gunakan pecutan grafik apabila tersedia\") dan mulakan semula pelayar."
             },
-            "autoLowered": {
-                "settings": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Untuk mengekalkan kualiti penuh, pilih Tinggi dalam Tetapan, Paparan 3D.",
-                "panel": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Untuk mengekalkan kualiti penuh, pilih Tinggi di bawah Kualiti dalam Tetapan paparan."
-            },
             "softwareHint": "Kekal pada Rendah kerana grafik dijalankan secara perisian di sini.",
             "autoLoweredHint": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Pilih Tinggi untuk mengekalkan kualiti penuh.",
             "dismiss": "Faham"
@@ -3102,10 +3095,7 @@
             "label": "Main balik"
         },
         "settings": {
-            "title": "Tetapan paparan",
             "close": "Tutup",
-            "venueSection": "Persembahan ini",
-            "venueHint": "Disimpan dalam fail persembahan. Buat asal dalam penyunting akan membatalkan perubahan.",
             "crowdColors": "Warna penonton",
             "homeColor": "Tuan rumah",
             "awayColor": "Pelawat",
@@ -3113,9 +3103,6 @@
             "endZoneText": "Tulisan zon hujung",
             "endZoneTextPlaceholder": "Tiada tulisan",
             "endZoneColor": "Warna",
-            "graphicsSection": "Komputer ini",
-            "graphicsHint": "Tidak disimpan dalam persembahan, jadi boleh berbeza pada setiap komputer.",
-            "keysSection": "Papan kekunci dan tetikus",
             "uniforms": "Seragam pancaragam",
             "guardUniforms": "Seragam color guard",
             "brassFinish": "Kemasan brass",
