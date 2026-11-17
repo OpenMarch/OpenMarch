@@ -486,13 +486,13 @@
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 216
+        "height": 252
     },
     "timeline-hold-end": {
         "chapter": "timeline",
         "kind": "clip",
         "width": 1280,
-        "height": 174,
+        "height": 202,
         "seconds": 6.1
     },
     "timeline-hold-style": {
@@ -531,7 +531,7 @@
         "chapter": "timeline",
         "kind": "still",
         "width": 816,
-        "height": 556
+        "height": 588
     },
     "timeline-moves-hidden": {
         "chapter": "timeline",
@@ -568,7 +568,7 @@
         "chapter": "timeline",
         "kind": "still",
         "width": 1600,
-        "height": 920
+        "height": 884
     },
     "timeline-play-guide": {
         "chapter": "timeline",
@@ -580,7 +580,7 @@
         "chapter": "timeline",
         "kind": "clip",
         "width": 1280,
-        "height": 174,
+        "height": 202,
         "seconds": 7.2
     },
     "timeline-scrub": {
