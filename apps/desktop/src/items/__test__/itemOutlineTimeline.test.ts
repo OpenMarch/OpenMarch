@@ -113,6 +113,19 @@ describe("fieldOutlineWrite", () => {
         });
     });
 
+    it("gives an imported model's prop the height of its width, in the model's proportions (#1078)", () => {
+        const write = fieldOutlineWrite({
+            itemId: 7,
+            beatId: 13,
+            drawn,
+            // Already drawn at the new size, as the drag's preview leaves it
+            shown: { ...shown, width: 3, depth: 1.5 },
+            rows: [],
+            modelSizeM: { width: 2, depth: 1, height: 0.5 },
+        });
+        expect(write.geometry.height).toBeCloseTo(0.75);
+    });
+
     it("keeps the transition of a change already on the beat", () => {
         expect(
             fieldOutlineWrite({

@@ -21,6 +21,7 @@ function setup({
     rotation = 0,
     save = "saved" as DropResult,
     locked = false,
+    keepsProportions = false,
 } = {}) {
     const state = {
         selected: [...selected] as readonly number[],
@@ -35,6 +36,7 @@ function setup({
         width: 100,
         depth: 40,
         rotation,
+        ...(keepsProportions ? { keepsProportions } : {}),
     };
     const ports: FieldEditorPorts = {
         selection: {
@@ -223,6 +225,19 @@ describe("FieldEditor with items", () => {
             expect(state.saves).toEqual([
                 { width: 120, depth: 60, rotation: 0 },
             ]);
+        });
+
+        it("resizes an imported model's prop evenly, from a side or a corner (#1078)", () => {
+            const side = setup({ selected: [2], keepsProportions: true });
+            drag(side.editor, { x: 350, y: 100 }, { x: 370, y: 100 });
+            expect(side.state.saves).toEqual([
+                { width: 140, depth: 56, rotation: 0 },
+            ]);
+            // A corner grows by its larger pull: here the depth, 40 to 60
+            const corner = setup({ selected: [2], keepsProportions: true });
+            drag(corner.editor, { x: 350, y: 120 }, { x: 360, y: 130 });
+            expect(corner.state.saves[0].width).toBeCloseTo(150);
+            expect(corner.state.saves[0].depth).toBeCloseTo(60);
         });
 
         it("resizes along the item's own sides when it's turned", () => {

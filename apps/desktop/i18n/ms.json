@@ -1438,6 +1438,7 @@
         "hide": "Sembunyikan di padang",
         "name": "Nama",
         "offField": "Tiada di padang pada kepala main. Alihkan kepala main ke kiraan ketika prop berada di padang untuk menukar garis luarnya.",
+        "keepsProportions": "Lebar, kedalaman dan tinggi berubah bersama, jadi model kekal pada bentuknya.",
         "outline": {
             "arc": "Lengkok",
             "circle": "Bulatan",

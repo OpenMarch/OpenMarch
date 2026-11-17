@@ -1438,6 +1438,7 @@
         "hide": "Ocultar en el campo",
         "name": "Nombre",
         "offField": "Fuera del campo en el cabezal de reproducción. Mueve el cabezal a un tiempo en que la utilería esté en el campo para cambiar su contorno.",
+        "keepsProportions": "El ancho, la profundidad y la altura cambian juntos, así el modelo conserva su forma.",
         "outline": {
             "arc": "Arco",
             "circle": "Círculo",

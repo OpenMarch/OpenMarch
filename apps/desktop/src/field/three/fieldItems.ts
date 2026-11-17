@@ -241,7 +241,23 @@ export class FieldItems implements FieldItemSource {
             width: geometry.width * PIXELS_PER_METER,
             depth: geometry.depth * PIXELS_PER_METER,
             rotation: geometry.rotation,
+            ...(this.keepsProportions(id) ? { keepsProportions: true } : {}),
         };
+    }
+
+    /** Whether item `id` is drawn as an imported model, which resizes evenly (fork #1078). */
+    keepsProportions(id: number): boolean {
+        return this.modelSizeOf(id) !== undefined;
+    }
+
+    /** The real size of the imported model item `id` is drawn as, if it's drawn as one. */
+    modelSizeOf(
+        id: number,
+    ): { width: number; depth: number; height: number } | undefined {
+        const model = this.models.get(id);
+        return model === undefined
+            ? undefined
+            : this.library.get(model)?.sidecar.sizeM;
     }
 
     /** Calls `listener` whenever the items, their Outlines or a preview change. */

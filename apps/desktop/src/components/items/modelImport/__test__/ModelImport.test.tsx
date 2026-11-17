@@ -33,6 +33,7 @@ import {
 import type { PickedFile } from "@/showAssets/modelImport/types";
 import { env, picked } from "@/showAssets/modelImport/__test__/fixtures";
 import { showModelImportReview } from "../openModelImport";
+import { openItemEditor } from "@/components/items/openItemEditor";
 
 /**
  * The model import in the Props panel (fork #999): the review on one screen, Add, the Imported
@@ -221,6 +222,23 @@ describeDbTests("Model import", (it) => {
             depth: sizeM.depth,
             height: sizeM.height,
         });
+
+        // Its sides change together: a wider chair is deeper and taller too (#1078)
+        await act(async () => openItemEditor(item));
+        expect(
+            await screen.findByTestId("item-keeps-proportions"),
+        ).toBeTruthy();
+        const width = screen.getByLabelText("Width");
+        fireEvent.change(width, { target: { value: String(sizeM.width * 2) } });
+        fireEvent.keyDown(width, { key: "Enter" });
+        await waitFor(async () => {
+            const rows = await getItemGeometry({ db });
+            expect(rows.at(-1)!.width).toBeCloseTo(sizeM.width * 2);
+        });
+        const resized = (await getItemGeometry({ db })).at(-1)!;
+        expect(resized.depth).toBeCloseTo(sizeM.depth * 2);
+        expect(resized.height).toBeCloseTo(sizeM.height * 2);
+        await performUndo(db);
 
         // One undo removes the prop and keeps the model
         await performUndo(db);

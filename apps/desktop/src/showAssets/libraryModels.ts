@@ -72,3 +72,26 @@ export function modelScale(
         return 1;
     return Math.sqrt((size.width / sizeM.width) * (size.depth / sizeM.depth));
 }
+
+/** An Outline side a model prop's size can be given by */
+export type ModelSide = "width" | "depth" | "height";
+
+/**
+ * A model prop's Outline size with one side set to `value` (m) and the others in the model's
+ * proportions (ADR 0010 amendment 2026-11-15: one factor for all three, fork #1078). Null when the
+ * model has no size on that side, such as the height of a flat model: that side then changes on
+ * its own.
+ */
+export function proportionalSize(
+    sizeM: { width: number; depth: number; height: number },
+    side: ModelSide,
+    value: number,
+): { width: number; depth: number; height: number } | null {
+    if (!(sizeM[side] > TINY_M) || !(value > 0)) return null;
+    const scale = value / sizeM[side];
+    return {
+        width: sizeM.width * scale,
+        depth: sizeM.depth * scale,
+        height: sizeM.height * scale,
+    };
+}

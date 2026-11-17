@@ -1438,6 +1438,7 @@
         "hide": "Sembunyikan di lapangan",
         "name": "Nama",
         "offField": "Tidak ada di lapangan pada playhead. Pindahkan playhead ke hitungan saat properti ada di lapangan untuk mengubah bentuknya.",
+        "keepsProportions": "Lebar, kedalaman, dan tinggi berubah bersama, sehingga model tetap pada bentuknya.",
         "outline": {
             "arc": "Busur",
             "circle": "Lingkaran",

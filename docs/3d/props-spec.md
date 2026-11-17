@@ -357,8 +357,10 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   dropped. Draco and meshopt input is decoded, never stored.
 - **As built in fork #1000:** an imported model draws at one factor of its
   real size, the one that keeps its Outline's footprint area, so a prop
-  stretched one way grows evenly instead of distorting. Stretch zones and a
-  scale badge are still to come. The distant version switches in beyond about
+  stretched one way grows evenly instead of distorting. Since fork #1078 the
+  handles and the Edit Prop fields resize it evenly too, so the stored size
+  stays the model's proportions. Stretch zones and a scale badge are still to
+  come. The distant version switches in beyond about
   38 m and back inside 30 m, as the built-in equipment does.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A

@@ -1141,6 +1141,7 @@
     "props.hide": "Tooltip and screen-reader label of the eye button on a prop's row. Shown while the prop is visible; pressing it hides the prop on the field (it is not deleted).",
     "props.name": "Label of the text field for a prop's name. Optional; when empty the prop shows its generated number.",
     "props.offField": "Notice shown instead of the outline fields when the prop is not on the field at the playhead's current count. A prop's outline can only be changed at a count where it is on the field.",
+    "props.keepsProportions": "Hint under a prop's Width, Depth and Height fields when the prop is an imported 3D model: changing any one of them changes the other two in proportion, so the model isn't stretched or squashed.",
     "props.outline.arc": "Name of the Arc outline for drawing a prop: a curved line. Label of a button under \"Draw a prop\" and also shown as its tooltip.",
     "props.outline.circle": "Name of the Circle outline for drawing a prop. Label of a button under \"Draw a prop\" and also shown as its tooltip.",
     "props.outline.freehand": "Name of the Freehand outline for drawing a prop: the user draws any shape by dragging. Label of a button under \"Draw a prop\" and also shown as its tooltip.",

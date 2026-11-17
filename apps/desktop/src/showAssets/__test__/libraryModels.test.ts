@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ShowAsset } from "@/db-functions/showAssets";
-import { libraryModels, modelScale } from "../libraryModels";
+import { libraryModels, modelScale, proportionalSize } from "../libraryModels";
 
 const asset = (more: Partial<ShowAsset> = {}): ShowAsset => ({
     id: "0b6f4a52-4f1e-4f8e-9a51-8e9c1c2b3d4e",
@@ -58,5 +58,29 @@ describe("modelScale", () => {
         expect(modelScale({ width: 2, depth: 1 }, { width: 2, depth: 0 })).toBe(
             1,
         );
+    });
+});
+
+describe("proportionalSize", () => {
+    const sizeM = { width: 2, depth: 1, height: 0.5 };
+
+    it("sets one side and keeps the model's proportions in the others", () => {
+        expect(proportionalSize(sizeM, "width", 4)).toEqual({
+            width: 4,
+            depth: 2,
+            height: 1,
+        });
+        expect(proportionalSize(sizeM, "height", 0.25)).toEqual({
+            width: 1,
+            depth: 0.5,
+            height: 0.25,
+        });
+    });
+
+    it("leaves a side the model has no size on to change alone", () => {
+        expect(
+            proportionalSize({ width: 2, depth: 1, height: 0 }, "height", 1),
+        ).toBeNull();
+        expect(proportionalSize(sizeM, "width", 0)).toBeNull();
     });
 });

@@ -1438,6 +1438,7 @@
         "hide": "Itago sa field",
         "name": "Pangalan",
         "offField": "Wala sa field sa playhead. Ilipat ang playhead sa bilang kung saan nasa field ang prop para mabago ang outline nito.",
+        "keepsProportions": "Sabay na nagbabago ang lapad, lalim at taas, kaya napapanatili ng modelo ang hugis nito.",
         "outline": {
             "arc": "Arko",
             "circle": "Bilog",

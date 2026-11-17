@@ -1438,6 +1438,7 @@
         "hide": "Ocultar no campo",
         "name": "Nome",
         "offField": "Fora do campo no indicador de reprodução. Mova o indicador de reprodução para um tempo em que o adereço esteja no campo para alterar o contorno.",
+        "keepsProportions": "Largura, profundidade e altura mudam juntas, para que o modelo mantenha a forma.",
         "outline": {
             "arc": "Arco",
             "circle": "Círculo",

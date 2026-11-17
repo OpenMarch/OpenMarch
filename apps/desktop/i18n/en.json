@@ -1440,6 +1440,7 @@
         "hide": "Hide on the field",
         "name": "Name",
         "offField": "Off field at the playhead. Move the playhead to a count where the prop is on the field to change its outline.",
+        "keepsProportions": "Width, depth and height change together, so the model keeps its shape.",
         "outline": {
             "arc": "Arc",
             "circle": "Circle",

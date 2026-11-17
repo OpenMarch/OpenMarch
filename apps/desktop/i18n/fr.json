@@ -1438,6 +1438,7 @@
         "hide": "Masquer sur le terrain",
         "name": "Nom",
         "offField": "Hors du terrain à la tête de lecture. Placez la tête de lecture sur un temps où l'accessoire est sur le terrain pour modifier son contour.",
+        "keepsProportions": "La largeur, la profondeur et la hauteur changent ensemble : le modèle garde sa forme.",
         "outline": {
             "arc": "Arc",
             "circle": "Cercle",

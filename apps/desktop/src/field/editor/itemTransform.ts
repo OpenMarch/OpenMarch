@@ -25,6 +25,11 @@ export type ItemFrame = {
     width: number;
     depth: number;
     rotation: number;
+    /**
+     * An imported model's prop (fork #1078): every handle resizes it evenly, keeping its
+     * proportions, and its height follows (`useFieldItemWrites`)
+     */
+    keepsProportions?: boolean;
 };
 
 /** An Outline's size in field units and turn in degrees, as a handle leaves it. */
@@ -112,7 +117,8 @@ abstract class ItemHandleGesture implements FieldGesture {
  * A side or corner: the Outline's sides it pulls follow the pointer, the
  * opposite ones following too, so the center stays where it is. Nothing
  * snaps, so fine needs no re-anchoring: the slow drag goes on from wherever
- * the pointer had taken the sides.
+ * the pointer had taken the sides. An Outline that keeps its proportions
+ * grows evenly instead: by the side pulled, or a corner's larger pull.
  */
 export class ItemResizeGesture extends ItemHandleGesture {
     readonly kind: FieldTestGesture = "scale";
@@ -154,11 +160,17 @@ export class ItemResizeGesture extends ItemHandleGesture {
             pull === 0
                 ? size
                 : Math.max(MIN_ITEM_SIZE, 2 * Math.max(0, offset * pull));
-        return {
+        const pulled = {
             width: half(local.x - center.x, pulls.x, width),
             depth: half(local.y - center.y, pulls.y, depth),
-            rotation,
         };
+        if (!this.frame.keepsProportions) return { ...pulled, rotation };
+        const factor = Math.max(
+            pulls.x === 0 ? 0 : pulled.width / width,
+            pulls.y === 0 ? 0 : pulled.depth / depth,
+            MIN_ITEM_SIZE / Math.min(width, depth),
+        );
+        return { width: width * factor, depth: depth * factor, rotation };
     }
 }
 
