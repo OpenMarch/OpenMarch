@@ -94,11 +94,17 @@
         "height": 760,
         "seconds": 6.2
     },
+    "3d-props-import-review": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
     "3d-props-panel": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 652
+        "height": 1008
     },
     "3d-props-polygon": {
         "chapter": "3d-view",
@@ -915,11 +921,5 @@
         "kind": "still",
         "width": 360,
         "height": 136
-    },
-    "3d-props-import-review": {
-        "chapter": "3d-view",
-        "kind": "still",
-        "width": 996,
-        "height": 1412
     }
 }
