@@ -56,7 +56,7 @@ export function useFieldItemWrites(
                         shown,
                         rows,
                         // An imported model resizes evenly: its height follows (#1078)
-                        modelSizeM: items.modelSizeOf(marcherId),
+                        heightScalesFrom: items.heightScalesFrom(marcherId),
                     }),
                 );
                 return "saved";

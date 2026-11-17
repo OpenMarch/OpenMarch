@@ -2,7 +2,6 @@
  * Items' Outlines over the show, for the field: their stored geometry changes keyed by marcher
  * and counted by beat index, the same beat numbers the timeline resolver and playhead use.
  */
-import { proportionalSize } from "@/showAssets/libraryModels";
 import { endlessIdOf } from "@/timeline/endlessTimeline";
 import { type GeometryChange, type ItemGeometry } from "@openmarch/core";
 import type { DatabaseItem, DatabaseItemGeometry } from "@/db-functions/items";
@@ -93,8 +92,9 @@ export function outlineWriteBeat(
 /**
  * The geometry write for an Outline resized or turned on the field: the drawn size and turn,
  * on `beatId`, keeping the rest of the Outline as shown. A change already on that beat keeps its
- * transition length; a new one is instant. An imported model's prop (`modelSizeM`, fork #1078)
- * takes its height from its width, in the model's proportions, as its handles resize it evenly.
+ * transition length; a new one is instant. An imported model's prop resizes evenly (fork #1078):
+ * given `heightScalesFrom`, its width before the edit, the height scales by as much as the width
+ * did, so a turn alone keeps it.
  */
 export function fieldOutlineWrite({
     itemId,
@@ -102,7 +102,7 @@ export function fieldOutlineWrite({
     drawn,
     shown,
     rows,
-    modelSizeM,
+    heightScalesFrom,
 }: {
     itemId: number;
     beatId: number;
@@ -110,8 +110,8 @@ export function fieldOutlineWrite({
     /** The Outline drawn before the edit */
     shown: ItemGeometry;
     rows: readonly DatabaseItemGeometry[];
-    /** The real size of the imported model the item draws as, if it draws as one */
-    modelSizeM?: { width: number; depth: number; height: number };
+    /** The stored width before the edit, for an Outline whose height follows its width */
+    heightScalesFrom?: number;
 }): SetItemGeometryArgs {
     const existing = rows.find(
         (r) => r.item_id === itemId && r.beat_id === beatId,
@@ -125,10 +125,9 @@ export function fieldOutlineWrite({
             width: drawn.width,
             depth: drawn.depth,
             height:
-                (modelSizeM &&
-                    proportionalSize(modelSizeM, "width", drawn.width)
-                        ?.height) ??
-                shown.height,
+                heightScalesFrom && heightScalesFrom > 0
+                    ? shown.height * (drawn.width / heightScalesFrom)
+                    : shown.height,
             rotation: drawn.rotation,
             transitionLength: existing?.transition_length ?? 1,
             rollsOutFrom: shown.rollsOut ? shown.leadingEdge : null,

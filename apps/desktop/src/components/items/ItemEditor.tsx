@@ -36,6 +36,7 @@ import { parsePropColor, propColorToString } from "@/items/propColor";
 import EquipmentModelControl from "@/components/frontEnsemble/EquipmentModelControl";
 import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
 import {
+    hasModelHeight,
     libraryModels,
     proportionalSize,
     type ModelSide,
@@ -150,6 +151,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
     const item = items?.find((i) => i.id === itemId);
     // An imported model's prop keeps its proportions: its sides change together (#1078)
     const model = item?.model ? library.get(item.model) : undefined;
+    const standsUp = model ? hasModelHeight(model.sidecar.sizeM) : false;
     const changes = useMemo(
         () =>
             item && rows
@@ -332,7 +334,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                         <CommitNumber
                             label={t("props.height")}
                             unit={t("props.units.meters")}
-                            min={0}
+                            min={standsUp ? 0.01 : 0}
                             step={0.1}
                             value={shown.height}
                             onCommit={(height) => writeSide("height", height)}
@@ -358,7 +360,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                                 })
                             }
                         />
-                        {model && (
+                        {standsUp && (
                             <p
                                 className="text-sub text-text-subtitle col-span-2"
                                 data-testid="item-keeps-proportions"

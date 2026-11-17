@@ -77,10 +77,13 @@ describe("proportionalSize", () => {
         });
     });
 
-    it("leaves a side the model has no size on to change alone", () => {
-        expect(
-            proportionalSize({ width: 2, depth: 1, height: 0 }, "height", 1),
-        ).toBeNull();
+    it("links a flat model's width and depth, and leaves its height alone", () => {
+        const flat = { width: 2, depth: 1, height: 0 };
+        expect(proportionalSize(flat, "width", 4)).toEqual({
+            width: 4,
+            depth: 2,
+        });
+        expect(proportionalSize(flat, "height", 1)).toBeNull();
         expect(proportionalSize(sizeM, "width", 0)).toBeNull();
     });
 });

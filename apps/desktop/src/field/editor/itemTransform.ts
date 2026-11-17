@@ -118,7 +118,7 @@ abstract class ItemHandleGesture implements FieldGesture {
  * opposite ones following too, so the center stays where it is. Nothing
  * snaps, so fine needs no re-anchoring: the slow drag goes on from wherever
  * the pointer had taken the sides. An Outline that keeps its proportions
- * grows evenly instead: by the side pulled, or a corner's larger pull.
+ * grows evenly instead: by the side pulled, or along a corner's diagonal.
  */
 export class ItemResizeGesture extends ItemHandleGesture {
     readonly kind: FieldTestGesture = "scale";
@@ -165,9 +165,20 @@ export class ItemResizeGesture extends ItemHandleGesture {
             depth: half(local.y - center.y, pulls.y, depth),
         };
         if (!this.frame.keepsProportions) return { ...pulled, rotation };
+        // A side scales by its own pull; a corner by the pointer projected on its diagonal, so it
+        // grows and shrinks alike whichever way the pointer leans
+        const reach = {
+            x: pulls.x * (local.x - center.x),
+            y: pulls.y * (local.y - center.y),
+        };
+        const along =
+            (reach.x * pulls.x * pulls.x * width) / 2 +
+            (reach.y * pulls.y * pulls.y * depth) / 2;
+        const span =
+            (pulls.x * pulls.x * width * width) / 4 +
+            (pulls.y * pulls.y * depth * depth) / 4;
         const factor = Math.max(
-            pulls.x === 0 ? 0 : pulled.width / width,
-            pulls.y === 0 ? 0 : pulled.depth / depth,
+            along / span,
             MIN_ITEM_SIZE / Math.min(width, depth),
         );
         return { width: width * factor, depth: depth * factor, rotation };

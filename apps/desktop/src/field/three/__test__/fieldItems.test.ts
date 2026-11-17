@@ -257,6 +257,9 @@ describe("FieldItems for imported models", () => {
         });
         marchers.fill(1);
         expect(items.frameOf(2)!.keepsProportions).toBe(true);
+        // A resize scales the height from the stored width, not one being dragged
+        items.setPreview(2, { width: 9, depth: 4.5, rotation: 0 } as never);
+        expect(items.heightScalesFrom(2)).toBe(2);
         items.set({
             itemIds: new Set([2]),
             changes: new Map([[2, [change(0)]]]),

@@ -233,11 +233,26 @@ describe("FieldEditor with items", () => {
             expect(side.state.saves).toEqual([
                 { width: 140, depth: 56, rotation: 0 },
             ]);
-            // A corner grows by its larger pull: here the depth, 40 to 60
+            // A corner scales along its diagonal: the pointer at (60, 30) from the center, of
+            // a (50, 20) half-diagonal, is 3600 / 2900 of the way out
             const corner = setup({ selected: [2], keepsProportions: true });
             drag(corner.editor, { x: 350, y: 120 }, { x: 360, y: 130 });
-            expect(corner.state.saves[0].width).toBeCloseTo(150);
-            expect(corner.state.saves[0].depth).toBeCloseTo(60);
+            expect(corner.state.saves[0].width).toBeCloseTo(
+                100 * (3600 / 2900),
+            );
+            expect(corner.state.saves[0].depth).toBeCloseTo(40 * (3600 / 2900));
+        });
+
+        it("shrinks an imported model's prop from a corner pulled in one way only", () => {
+            const { editor, state } = setup({
+                selected: [2],
+                keepsProportions: true,
+            });
+            drag(editor, { x: 350, y: 120 }, { x: 340, y: 120 });
+            expect(state.saves[0].width).toBeLessThan(100);
+            expect(state.saves[0].depth / state.saves[0].width).toBeCloseTo(
+                0.4,
+            );
         });
 
         it("resizes along the item's own sides when it's turned", () => {

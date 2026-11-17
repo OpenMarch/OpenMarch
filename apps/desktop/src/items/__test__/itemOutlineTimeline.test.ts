@@ -113,7 +113,7 @@ describe("fieldOutlineWrite", () => {
         });
     });
 
-    it("gives an imported model's prop the height of its width, in the model's proportions (#1078)", () => {
+    it("scales an imported model's height by as much as its width grew (#1078)", () => {
         const write = fieldOutlineWrite({
             itemId: 7,
             beatId: 13,
@@ -121,9 +121,23 @@ describe("fieldOutlineWrite", () => {
             // Already drawn at the new size, as the drag's preview leaves it
             shown: { ...shown, width: 3, depth: 1.5 },
             rows: [],
-            modelSizeM: { width: 2, depth: 1, height: 0.5 },
+            heightScalesFrom: 2,
         });
         expect(write.geometry.height).toBeCloseTo(0.75);
+    });
+
+    it("keeps an imported model's height when it's only turned, even if it was stretched before", () => {
+        // Stretched to 4 m wide with its height left at 0.5, before sizes were linked
+        const stretched = { ...shown, width: 4, depth: 1 };
+        const write = fieldOutlineWrite({
+            itemId: 7,
+            beatId: 13,
+            drawn: { width: 4, depth: 1, rotation: 15 },
+            shown: stretched,
+            rows: [],
+            heightScalesFrom: 4,
+        });
+        expect(write.geometry.height).toBe(0.5);
     });
 
     it("keeps the transition of a change already on the beat", () => {
