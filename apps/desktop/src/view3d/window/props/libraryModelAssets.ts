@@ -6,11 +6,22 @@
  * Every item drawn as the same model shares one parse. Unlike the built-ins, which stay loaded for
  * the window's lifetime, an imported model is counted: when the last user lets go its geometry,
  * materials and textures leave the GPU, so a show that swaps models doesn't pile them up.
+ *
+ * A downloaded model can be many small meshes. Meshes that share a material are merged into one
+ * part as it loads, so a model costs a draw per material, not per mesh (each part is one
+ * `InstancedMesh`, `PitModels.tsx`).
  */
 // cspell:ignore gltf
 import { useSyncExternalStore } from "react";
-import { Texture, type Material } from "three";
+import {
+    Texture,
+    type BufferAttribute,
+    type BufferGeometry,
+    type InterleavedBufferAttribute,
+    type Material,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { showAssetBlobCache } from "@/hooks/queries/useShowAssets";
 import { partsOf, type PitPart } from "./pitModelAssets";
 
@@ -45,7 +56,67 @@ async function parse(hash: string): Promise<PitPart[]> {
     if (!bytes) throw new Error(`the show has no model part ${hash}`);
     // The cache's array is shared with every reader: parse a copy
     const gltf = await new GLTFLoader().parseAsync(bytes.slice().buffer, "");
-    return partsOf(gltf.scene, `model part ${hash.slice(0, 12)}`);
+    return mergeByMaterial(
+        partsOf(gltf.scene, `model part ${hash.slice(0, 12)}`),
+    );
+}
+
+type Attribute = BufferAttribute | InterleavedBufferAttribute;
+
+/** What two geometries must share to merge: the same attributes, laid out the same way */
+function layoutOf(geometry: BufferGeometry): string | null {
+    const names = Object.keys(geometry.attributes).sort();
+    const attributes = names.map(
+        (name) => geometry.attributes[name] as Attribute,
+    );
+    // Interleaved buffers and morph targets stay as they are (the import drops morphs anyway)
+    if (
+        attributes.some((a) => "isInterleavedBufferAttribute" in a) ||
+        Object.keys(geometry.morphAttributes).length > 0
+    )
+        return null;
+    return [
+        geometry.index ? "indexed" : "flat",
+        ...attributes.map(
+            (a, i) =>
+                `${names[i]}:${a.itemSize}:${a.normalized}:${a.array.constructor.name}`,
+        ),
+    ].join("|");
+}
+
+/**
+ * Merges the parts that share a material and a vertex layout into one part each (one draw); the
+ * others are kept as they are. The merged parts' own geometries are disposed.
+ */
+export function mergeByMaterial(parts: readonly PitPart[]): PitPart[] {
+    const out: PitPart[] = [];
+    const groups = new Map<Material, Map<string, PitPart[]>>();
+    for (const part of parts) {
+        const layout = layoutOf(part.geometry);
+        if (Array.isArray(part.material) || layout === null) {
+            out.push(part);
+            continue;
+        }
+        let byLayout = groups.get(part.material);
+        if (!byLayout) groups.set(part.material, (byLayout = new Map()));
+        const list = byLayout.get(layout);
+        if (list) list.push(part);
+        else byLayout.set(layout, [part]);
+    }
+    for (const [material, byLayout] of groups)
+        for (const list of byLayout.values()) {
+            const merged =
+                list.length > 1
+                    ? mergeGeometries(list.map((part) => part.geometry))
+                    : null;
+            if (!merged) {
+                out.push(...list);
+                continue;
+            }
+            for (const part of list) part.geometry.dispose();
+            out.push({ geometry: merged, material });
+        }
+    return out;
 }
 
 /** Frees a model's GPU memory: its geometry, its materials and their textures. */
@@ -60,7 +131,12 @@ export function disposeParts(parts: readonly PitPart[]): void {
     }
     for (const material of materials) {
         for (const value of Object.values(material))
-            if (value instanceof Texture) value.dispose();
+            if (value instanceof Texture) {
+                value.dispose();
+                // Disposing leaves a decoded ImageBitmap (GLTFLoader's, in Chromium) to be closed
+                const image = value.image as { close?: () => void } | null;
+                image?.close?.();
+            }
         material.dispose();
     }
 }
@@ -101,6 +177,23 @@ export function releaseLibraryModel(hash: string): void {
     entries.delete(hash);
     entry.released = true;
     if (entry.parts) disposeParts(entry.parts);
+}
+
+/**
+ * What a view must change to hold exactly the parts it `needed` (part key to hash) when it holds
+ * `held`: the parts to start holding, and those to let go, including a key whose hash changed.
+ */
+export function holdChanges(
+    held: ReadonlyMap<string, string>,
+    needed: ReadonlyMap<string, string>,
+): { acquire: [string, string][]; release: [string, string][] } {
+    const acquire: [string, string][] = [];
+    const release: [string, string][] = [];
+    for (const [k, hash] of needed)
+        if (held.get(k) !== hash) acquire.push([k, hash]);
+    for (const [k, hash] of held)
+        if (needed.get(k) !== hash) release.push([k, hash]);
+    return { acquire, release };
 }
 
 /** How many parts are held now, for tests. */

@@ -14,12 +14,16 @@ import {
     _heldLibraryModelCount,
     _setLibraryModelBytes,
     acquireLibraryModel,
+    holdChanges,
+    mergeByMaterial,
     LibraryModelReleased,
     releaseLibraryModel,
     setDrawnLibraryModels,
     useDrawnLibraryModels,
 } from "../libraryModelAssets";
 import { renderHook, act } from "@testing-library/react";
+import { BoxGeometry, MeshStandardMaterial, SphereGeometry } from "three";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 /**
  * Imported models in the 3D View (fork #1000): each stored GLB, read by hash and parsed once for
@@ -68,12 +72,13 @@ describe("acquireLibraryModel", () => {
         expect(_heldLibraryModelCount()).toBe(0);
     });
 
-    it("leaves the shared bytes alone: it parses a copy", async () => {
-        const bytes = glb.slice();
-        _setLibraryModelBytes(async () => bytes);
+    it("parses a copy, never the cache's shared bytes", async () => {
+        _setLibraryModelBytes(async () => glb);
+        const parse = vi.spyOn(GLTFLoader.prototype, "parseAsync");
         await acquireLibraryModel("copy");
         releaseLibraryModel("copy");
-        expect(bytes).toEqual(glb);
+        expect(parse.mock.calls[0][0]).not.toBe(glb.buffer);
+        parse.mockRestore();
     });
 
     it("ends a load whose last user let go before it finished", async () => {
@@ -103,5 +108,64 @@ describe("setDrawnLibraryModels", () => {
         expect(result.current).toBe(first);
         act(() => setDrawnLibraryModels(new Set()));
         expect(result.current.size).toBe(0);
+    });
+});
+
+describe("mergeByMaterial", () => {
+    it("draws the meshes that share a material as one part", () => {
+        const wood = new MeshStandardMaterial();
+        const cloth = new MeshStandardMaterial();
+        const parts = mergeByMaterial([
+            { geometry: new BoxGeometry(), material: wood },
+            { geometry: new BoxGeometry(2), material: wood },
+            { geometry: new SphereGeometry(), material: wood },
+            { geometry: new BoxGeometry(), material: cloth },
+        ]);
+        expect(parts).toHaveLength(2);
+        const merged = parts.find((p) => p.material === wood)!;
+        // Three boxes' and a sphere's vertices, in one geometry
+        expect(merged.geometry.attributes.position.count).toBe(
+            24 * 2 + new SphereGeometry().attributes.position.count,
+        );
+    });
+
+    it("keeps a part whose layout can't merge as it is", () => {
+        const wood = new MeshStandardMaterial();
+        const plain = new BoxGeometry();
+        plain.deleteAttribute("uv");
+        const parts = mergeByMaterial([
+            { geometry: new BoxGeometry(), material: wood },
+            { geometry: plain, material: wood },
+        ]);
+        expect(parts).toHaveLength(2);
+    });
+});
+
+describe("holdChanges", () => {
+    it("holds what's newly needed and lets go of the rest, a changed part included", () => {
+        const held = new Map([
+            ["chair|high", "a"],
+            ["chair|low", "b"],
+            ["table|low", "c"],
+        ]);
+        const needed = new Map([
+            ["chair|low", "b"],
+            ["table|low", "c2"],
+            ["stool|low", "d"],
+        ]);
+        expect(holdChanges(held, needed)).toEqual({
+            acquire: [
+                ["table|low", "c2"],
+                ["stool|low", "d"],
+            ],
+            release: [
+                ["chair|high", "a"],
+                ["table|low", "c"],
+            ],
+        });
+        expect(holdChanges(needed, needed)).toEqual({
+            acquire: [],
+            release: [],
+        });
     });
 });

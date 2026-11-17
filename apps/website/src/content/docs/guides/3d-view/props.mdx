@@ -120,7 +120,7 @@ The prop takes the model's footprint and height, and from then on it's like any 
 
 You can also find both steps in the command palette: <Ui k="actions.items.importModel" plain /> and <Ui k="actions.items.placeImportedModel" plain />.
 
-The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. Resizing the prop resizes the model evenly, so it keeps its shape: stretching one side makes the whole model bigger. While the model loads, or if the show doesn't have it, the prop draws as its outline (a block in the 3D View).
+The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. The model's size follows the prop's width and depth, evenly, so it keeps its shape: stretching one side makes the whole model bigger. In this version the prop's Height doesn't change the model. While the model loads in the 3D View, or if the show doesn't have it, the prop draws there as a block.
 
 <Media
   id="3d-props-imported"
@@ -146,7 +146,7 @@ The field draws an imported prop as the model seen from above, with a small mark
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
 - <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
 - <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
-- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on its top, over its middle, rather than at its full height.
+- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on the top surface the import found over its middle, when it found one, rather than at its full height.
 - <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
 - <Ui k="props.rollOut.label" /> (floor props only): which edge a tarp rolls out from. It's saved with the prop, but in this version it doesn't change how the prop is drawn.
 

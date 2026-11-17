@@ -12,12 +12,14 @@
  *   when no item uses it any more (`libraryModelAssets.ts`).
  * - At high quality each model has two tiers, detailed near the camera and its distant version
  *   beyond (a built-in's `-low`, an imported model's `distant` part), switched with hysteresis as
- *   the instruments are (`hornSet.ts`); at low quality only the distant version draws.
+ *   the instruments are (`hornSet.ts`); at low quality only the distant version draws. While one
+ *   version is still loading the other draws at every distance, so a model already drawn stays
+ *   drawn when the quality changes.
  * - Matrices update in `useFrame` from the sync store's `showMs()`, like the blocks, and also
  *   when the camera moves while there are two tiers. A model stands on the platform under it,
  *   from the same layout the blocks and performers use.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { itemGeometryAt, type FieldProperties } from "@openmarch/core";
@@ -31,7 +33,11 @@ import {
     itemGeometryQueryOptions,
 } from "@/hooks/queries/useItems";
 import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
-import { libraryModels, modelScale } from "@/showAssets/libraryModels";
+import {
+    libraryModels,
+    modelScale,
+    type LibraryModel,
+} from "@/showAssets/libraryModels";
 import {
     beatIndexesById,
     itemOutlineChanges,
@@ -62,6 +68,7 @@ import {
 import { propSolidsAt } from "./performerLift";
 import {
     acquireLibraryModel,
+    holdChanges,
     LibraryModelReleased,
     releaseLibraryModel,
     setDrawnLibraryModels,
@@ -108,7 +115,13 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
     );
     const failures = usePitModelFailures();
     const { data: assets } = useQuery(showAssetsQueryOptions());
-    const library = useMemo(() => libraryModels(assets), [assets]);
+    // Kept while its models are the same, so adding artwork doesn't rebuild every model's meshes
+    const libraryRef = useRef<ReadonlyMap<string, LibraryModel>>(new Map());
+    const library = useMemo(() => {
+        const next = libraryModels(assets);
+        if (!sameLibrary(libraryRef.current, next)) libraryRef.current = next;
+        return libraryRef.current;
+    }, [assets]);
 
     const details: Detail[] = useMemo(
         () => (quality === "high" ? ["high", "low"] : ["low"]),
@@ -121,8 +134,10 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
         const models = modelsByMarcher(rows, failures);
         for (const item of rows) {
             if (!item.model || pitModelName(item.model) !== null) continue;
-            if (!library.has(item.model)) logUnknownPitModel(item.model);
-            else if (!failures.has(item.model))
+            // Until the show's assets have been read, an imported model isn't unknown
+            if (!library.has(item.model)) {
+                if (assets) logUnknownPitModel(item.model);
+            } else if (!failures.has(item.model))
                 models.set(item.marcher_id, item.model);
         }
         const hidden = new Set(
@@ -150,7 +165,7 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
             else out.set(name, [track]);
         }
         return out;
-    }, [items, geometry, beats, hiddenItemIds, failures, library]);
+    }, [items, geometry, beats, hiddenItemIds, failures, library, assets]);
 
     // The loaded versions of the models in use, by name and detail
     const [loaded, setLoaded] = useState<ReadonlyMap<string, PitPart[]>>(
@@ -167,26 +182,11 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                 const k = key(name, detail);
                 const imported = library.get(name);
                 if (imported) {
-                    const hash =
+                    needed.set(
+                        k,
                         detail === "high"
                             ? imported.modelHash
-                            : imported.distantHash;
-                    needed.set(k, hash);
-                    if (held.current.get(k) === hash) continue;
-                    held.current.set(k, hash);
-                    acquireLibraryModel(hash).then(
-                        (parts) => {
-                            // Still wanted, and this view still mounted
-                            if (held.current.get(k) !== hash) return;
-                            setLoaded((before) =>
-                                new Map(before).set(k, parts),
-                            );
-                            requestDraw(1000);
-                        },
-                        (error: unknown) => {
-                            if (error instanceof LibraryModelReleased) return;
-                            markPitModelFailed(name, error);
-                        },
+                            : imported.distantHash,
                     );
                     continue;
                 }
@@ -202,14 +202,30 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                     (error: unknown) => markPitModelFailed(name, error),
                 );
             }
-        // Let go of the imported parts no item needs any more: they leave the GPU
+        // Hold the imported parts the items need, and let go of the rest: they leave the GPU
+        const { acquire, release } = holdChanges(held.current, needed);
         const dropped: string[] = [];
-        for (const [k, hash] of held.current)
-            if (needed.get(k) !== hash) {
-                held.current.delete(k);
-                releaseLibraryModel(hash);
-                dropped.push(k);
-            }
+        for (const [k, hash] of release) {
+            held.current.delete(k);
+            releaseLibraryModel(hash);
+            dropped.push(k);
+        }
+        for (const [k, hash] of acquire) {
+            const name = k.slice(0, k.lastIndexOf("|"));
+            held.current.set(k, hash);
+            acquireLibraryModel(hash).then(
+                (parts) => {
+                    // Still wanted, and this view still mounted
+                    if (held.current.get(k) !== hash) return;
+                    setLoaded((before) => new Map(before).set(k, parts));
+                    requestDraw(1000);
+                },
+                (error: unknown) => {
+                    if (error instanceof LibraryModelReleased) return;
+                    markPitModelFailed(name, error);
+                },
+            );
+        }
         if (dropped.length > 0)
             setLoaded((before) => {
                 const next = new Map(before);
@@ -234,8 +250,10 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
     const groups = useMemo(() => {
         const out: ModelGroup[] = [];
         for (const [name, tracks] of byName) {
-            const versions = details.map((d) => loaded.get(key(name, d)));
-            if (versions.some((v) => !v)) continue;
+            // The versions loaded so far: with one of two, it draws at every distance
+            const drawn = details.filter((d) => loaded.has(key(name, d)));
+            if (drawn.length === 0) continue;
+            const versions = drawn.map((d) => loaded.get(key(name, d))!);
             const sizeM = library.get(name)?.sidecar.sizeM ?? null;
             const count = tracks.length;
             const tiers = versions.map((parts, k): Tier => {
@@ -249,8 +267,8 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                         count,
                     );
                     mesh.name = sizeM
-                        ? `view3d-imported-${name}-${details[k]}`
-                        : `view3d-pit-${name}-${details[k]}`;
+                        ? `view3d-imported-${name}-${drawn[k]}`
+                        : `view3d-pit-${name}-${drawn[k]}`;
                     // Every part of a version reads the same instances
                     mesh.instanceMatrix = attribute;
                     // Items stand anywhere on the field; skip the stale bounds test.
@@ -273,8 +291,8 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
         [groups],
     );
 
-    // Imported models drawn now stop drawing as blocks
-    useEffect(() => {
+    // Imported models drawn now stop drawing as blocks, before the next frame draws either
+    useLayoutEffect(() => {
         setDrawnLibraryModels(
             new Set(groups.filter((g) => g.sizeM).map((g) => g.name)),
         );
@@ -384,3 +402,21 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
 }
 
 const scratch: WorldPoint = { x: 0, z: 0 };
+
+/** Whether two sets of imported models name the same parts. */
+function sameLibrary(
+    a: ReadonlyMap<string, LibraryModel>,
+    b: ReadonlyMap<string, LibraryModel>,
+): boolean {
+    if (a.size !== b.size) return false;
+    for (const [value, model] of b) {
+        const other = a.get(value);
+        if (
+            !other ||
+            other.modelHash !== model.modelHash ||
+            other.distantHash !== model.distantHash
+        )
+            return false;
+    }
+    return true;
+}
