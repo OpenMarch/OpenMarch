@@ -19,9 +19,12 @@ import {
     surfaceShader,
 } from "../marchers/instrumentGeometry";
 import {
+    PART_ALUMINUM,
     PART_BLACK,
+    PART_BRONZE,
     PART_CHROME,
     PART_METAL,
+    PART_SHELL,
     PART_SILK,
     PART_WOOD,
 } from "@/view3d/core/instruments/mesh";
@@ -254,6 +257,19 @@ describe("instrument color and material", () => {
             metalness: 0,
             coat: 0,
         });
+        // a drum shell is paint under clear coat, its hoops satin metal, and
+        // cymbals bronze in either finish
+        for (const finish of ["brass", "silver"] as const) {
+            expect(surfaceOf(PART_SHELL, finish)).toMatchObject({
+                metalness: 0,
+                coat: 1,
+            });
+            expect(surfaceOf(PART_ALUMINUM, finish).metalness).toBe(1);
+            expect(surfaceOf(PART_BRONZE, finish).metalness).toBe(1);
+        }
+        expect(surfaceOf(PART_ALUMINUM, "brass").roughness).toBeGreaterThan(
+            surfaceOf(PART_CHROME, "brass").roughness,
+        );
 
         const mesh = await body();
         const h = hold("trumpet", "up");

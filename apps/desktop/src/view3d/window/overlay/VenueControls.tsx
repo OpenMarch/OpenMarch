@@ -29,6 +29,14 @@ import {
     type TubaModelId,
 } from "@/view3d/core/instruments/catalog";
 import { brassFinishOf, tubaModelOf } from "@/view3d/core/venueSettings";
+import {
+    SILK_SHAPE_IDS,
+    silkShape,
+    silkShapeOf,
+    type SilkShapeId,
+} from "@/view3d/core/sizes/silkShapes";
+import { cutPathBounds, cutPathData } from "@/view3d/core/sizes/silkCuts";
+import { ToggleGroup, ToggleGroupItem } from "@openmarch/ui";
 import { Segmented } from "./Panel";
 import {
     applyVenueChange,
@@ -185,5 +193,80 @@ export function TubaPicker() {
             label={t("view3d.settings.tuba")}
             testId="view3d-tuba-picker"
         />
+    );
+}
+
+/**
+ * A silk shape's outline as a small picture: the pole edge on the left,
+ * drawn at the shape's own proportions inside a fixed box.
+ */
+export function SilkShapeIcon({
+    shape,
+    className,
+}: {
+    shape: SilkShapeId;
+    className?: string;
+}) {
+    const { path } = silkShape(shape);
+    const b = cutPathBounds(path);
+    // a stroke that stays about 1.5 px wide at the icon's size
+    const stroke = Math.max(b.maxX, b.maxY) / 28;
+    const pad = stroke;
+    return (
+        <svg
+            viewBox={`${-pad} ${-pad} ${b.maxX + 2 * pad} ${b.maxY + 2 * pad}`}
+            preserveAspectRatio="xMidYMid meet"
+            aria-hidden="true"
+            className={className}
+        >
+            <path
+                d={cutPathData(path)}
+                fill="currentColor"
+                fillOpacity={0.25}
+                stroke="currentColor"
+                strokeWidth={stroke}
+                strokeLinejoin="round"
+                fillRule="evenodd"
+            />
+        </svg>
+    );
+}
+
+/**
+ * The guard's flag silk shape (fork #973): every shape on the owner's
+ * chart, as its outline and its name, three to a row.
+ */
+export function SilkShapePicker() {
+    const { t } = useTranslate();
+    const { settings, request } = useVenueRequest();
+    const value = settings ? silkShapeOf(settings.silkShape) : "";
+    return (
+        <ToggleGroup
+            type="single"
+            value={value}
+            // Radix sends "" when the active item is clicked again; keep it.
+            onValueChange={(next: string) => {
+                if (next)
+                    request({
+                        kind: "silkShape",
+                        silkShape: next as SilkShapeId,
+                    });
+            }}
+            aria-label={t("view3d.settings.silkShape")}
+            data-testid="view3d-silk-shape-picker"
+            className="grid! h-auto! shrink-0 grid-cols-3 gap-2 border-0! bg-transparent! bg-none!"
+        >
+            {SILK_SHAPE_IDS.map((shape) => (
+                <ToggleGroupItem
+                    key={shape}
+                    value={shape}
+                    data-value={shape}
+                    className="text-sub rounded-4! hover:bg-text/10! data-[state=on]:bg-accent! data-[state=on]:hover:bg-accent! data-[state=on]:text-text-invert! flex h-auto! flex-col items-center gap-4 border-0! px-4! py-6! text-center leading-tight whitespace-normal"
+                >
+                    <SilkShapeIcon shape={shape} className="h-32 w-56" />
+                    <span>{t(`view3d.silkShape.${shape}`)}</span>
+                </ToggleGroupItem>
+            ))}
+        </ToggleGroup>
     );
 }

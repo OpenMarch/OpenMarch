@@ -1,6 +1,6 @@
 ---
 title: The window
-description: What each part of the OpenMarch window is for, and where to find things.
+description: The parts of the OpenMarch window (the field, timeline, toolbar, sidebar and inspector), what each is for, and where to find a command.
 type: concept
 covers:
   - apps/desktop/src/components/titlebar
@@ -8,6 +8,7 @@ covers:
   - apps/desktop/src/components/sidebar
   - apps/desktop/src/components/inspector
   - apps/desktop/src/components/timeline
+  - apps/desktop/src/components/canvas/display
   - action:openCommandPalette
   - action:togglePreview
   - action:openView3d
@@ -18,56 +19,85 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
 
-When a show is open, the field takes up most of the window. You arrange marchers on it, and the timeline holds the show's counts, pages and moves, so you can see and change when everything happens.
+When a show is open, the field takes up most of the window. You arrange marchers on it, and the timeline under it holds the show's counts, pages and moves, so you can see and change when everything happens.
 
 <Media
   id="window-overview"
-  alt="The OpenMarch window with a show open: the toolbar across the top, the sidebar down the left edge, the field in the middle, the inspector on the right and the timeline along the bottom."
+  alt="The OpenMarch window with a show open: the title bar and the toolbar across the top, the sidebar's icons down the left edge, the field in the middle, the inspector on the right and the timeline along the bottom."
+  caption="From the top: the title bar and the toolbar, then the sidebar (left), the field, the inspector (right) and the timeline (bottom)."
 />
 
 ## The field
 
-The field shows where every marcher is at the playhead's count. Select marchers by clicking them or dragging a box around them, and drag them to move them. The yard lines, hashes and grid come from the field's settings, which you can change to match the field you rehearse on.
+The field shows where every marcher is at the <Term id="playhead">playhead</Term>'s count. Select marchers by clicking them or dragging around them, and drag them to move them. The yard lines, hashes and grid come from the field's settings, which you can change to match where you rehearse ([Edit the field](/guides/field/edit-the-field/)).
 
-A line on the field says what your next edit changes, for example "Editing Page 1's move". The field display buttons on the field choose what's drawn on it, such as drill number labels, and the zoom controls zoom in and out and fit the field again. To pan and zoom, see [Move around the field](/guides/workspace/move-around-the-field/).
+The editing line at the field's top left says what your next edit changes, for example "Editing Page 1's move". At the field's top right, a small bar chooses whether a drag draws a box or a lasso, and the field display buttons under it choose what's drawn, such as drill numbers. The zoom controls sit at the bottom right; [Move around the field](/guides/workspace/move-around-the-field/) covers panning and zooming.
 
 ## The timeline
 
-The timeline has the playback controls, the pages of the show, its counts and measures, and the music's waveform. The playhead marks the count the field is showing: drag it, or play the show, and the marchers move.
-
-Pages and moves are how you shape the drill over time. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains them.
+The timeline has the playback controls, the pages of the show, its counts and measures, and the music's waveform. The playhead marks the count the field shows: drag it, or play the show, and the marchers move. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains pages and moves.
 
 ## The toolbar
 
+<Media
+  id="window-toolbar"
+  alt="The left end of the title bar and the toolbar: the menu, the app's name and version, and undo and redo; under them the File, Alignment, Shapes and Select tabs, with the Alignment tab's controls showing."
+/>
+
 The toolbar's tabs hold:
 
-- <Ui k="inspector.shape.fileTab" />: open, create, save and close shows, export charts, coordinate sheets and video, and open the app's settings.
-- <Ui k="inspector.shape.alignmentTab" />: coordinate rounding (the step grid marchers snap to), locking movement to one axis, and placing all marchers where they stand on the previous or next page.
+- <Ui k="inspector.shape.fileTab" />: open, create, save and close shows, export charts, coordinate sheets and video, and open Settings.
+- <Ui k="inspector.shape.alignmentTab" />: coordinate rounding (the step grid marchers snap to), locking movement to one direction, and placing all marchers where they stand on the previous or next page.
 - <Ui k="inspector.shape.shapesTab" />: drawing a box, circle, line, curve or arc and placing marchers in it.
-- <Ui k="inspector.shape.selectTab" />: selecting marchers by section, tag, family or drill prefix, or selecting all of them.
+- <Ui k="inspector.shape.selectTab" />: selecting marchers by section, tag, family or drill prefix, or all of them.
 
-After the toolbar's tabs, <Ui k="view3d.open" /> opens the show in the 3D View, and the <Ui k="workspace.editor" /> and <Ui k="workspace.preview" /> switch changes between editing the show and watching it (<Kbd action="togglePreview" />).
+<Media
+  id="window-toolbar-end"
+  alt="The right end of the title bar and the toolbar: the search button, the question mark for help, and Submit bug or feedback in the title bar, and under them Open 3D View and the Editor and Preview switch."
+  maxWidth={430}
+/>
 
-In the tablet layout, the toolbar's tabs are in the title bar, so the field gets more of the screen. Tap a tab to open its controls in a panel over the top of the field, and tap the same tab again, or the arrow after the tabs, to close it. The panel covers only the field, so the sidebar and the field display buttons stay within reach. It is closed when you first open OpenMarch, and it stays the way you left it, on the same tab, the next time. <Ui k="view3d.open" /> and the <Ui k="workspace.editor" /> and <Ui k="workspace.preview" /> switch are in the title bar too, after the tabs. When the screen is narrow, such as an iPad held upright, the tabs get shorter, with <Ui k="inspector.shape.alignmentTab" /> shown as <Ui k="toolbar.alignmentTabShort" />, and the arrow is left out: tap a tab to open its controls and tap it again to close them. In a narrow desktop window, where the title bar also holds the window buttons, the tabs scroll sideways. A tab's controls go onto more lines when they don't fit across the panel.
+At the right end, <Ui k="view3d.open" /> opens the show in the 3D View, and the <Ui k="workspace.editor" /> and <Ui k="workspace.preview" /> switch changes between editing the show and watching it (<Kbd action="togglePreview" />). In the tablet layout the tabs are in the title bar instead; see [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/#the-tablet-layout).
 
 ## The sidebar
 
-The sidebar's icons open panels for the show as a whole: <Ui k="sidebar.marchers" />, <Ui k="sidebar.field" />, <Ui k="sidebar.metronome" />, marchers' <Ui k="sidebar.appearance" />, and <Ui k="props.title" />. Set apart from them are the <Ui k="sidebar.mobile" /> export and <Ui k="sidebar.settings" />, such as the default tempo and the number the first page starts at. Hold the pointer over an icon to see its name.
+<Media
+  id="window-sidebar"
+  alt="The sidebar's column of icons down the left edge of the window, with the Marchers panel open beside it listing the show's marchers by section."
+  maxWidth={560}
+/>
 
-The music has no panel in the sidebar. It lives on the timeline, where <Ui k="tempoMode.button.text" /> changes it; see [Audio](/guides/music/audio/).
+The sidebar's icons open panels for the show as a whole: <Ui k="sidebar.marchers" />, <Ui k="sidebar.metronome" />, marchers' <Ui k="sidebar.appearance" />, and <Ui k="props.title" />. Set apart at the bottom are the <Ui k="sidebar.mobile" /> export and <Ui k="sidebar.settings" /> ([Show settings](/guides/field/show-settings/)), such as the default tempo and the number the first page starts at. Point at an icon to see its name. <Ui k="sidebar.field" /> puts the field itself up for editing instead of opening a panel.
+
+The music has no panel. It lives on the timeline; see [Add the show's music](/guides/music/audio/).
 
 ## The inspector
 
-The inspector shows the details of what you've selected: a page's counts and measures when no marchers are selected, or the selected marchers, their positions and the tools for arranging them (<Ui k="inspector.marcher.alignHeading" />, <Ui k="inspector.marcher.distributeHeading" /> and, for two or more marchers, <Ui k="shapes.transform.title" />). Each page's notes are at the end of the inspector.
+<Media
+  id="window-inspector"
+  alt="The inspector with three marchers selected: the Arrange section at the top, with Align, Rotate and Distribute, and the page's counts and measures under it."
+  maxWidth={360}
+/>
 
-## Finding a command
+The inspector shows the details of what you've selected. With no marchers selected, it shows the page: its counts and measures. With two or more marchers selected, the <Ui k="inspector.arrange.title" /> section at the top lines them up, turns them and spaces them ([Align, space and turn marchers](/guides/marchers/align-and-space/)). Each page's notes are at the end of the inspector.
 
-Every command in OpenMarch can be found by name in the command palette. Select the magnifying glass in the title bar, or press <Kbd action="openCommandPalette" />, and start typing what you want to do. Commands that can't run right now are listed but dimmed. The list shows each command's shortcut, so it's also a quick way to learn them (in the tablet layout, once you've used a keyboard). All shortcuts are listed in [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/), and the app shows them too with <Kbd action="showShortcuts" />.
+## Find a command by name
+
+Every command in OpenMarch can be found by name in the command palette. Select the magnifying glass in the title bar, or press <Kbd action="openCommandPalette" /> (or <Kbd action="openCommandBar" /> when you're not typing in a box), and start typing what you want to do. Commands that can't run right now are dimmed, with the reason beside them, such as <Ui k="actions.shape.noMarchersSelected" />; a command that can't say why isn't listed. Each command shows its shortcut.
+
+Anywhere in the app, a greyed-out button or menu item says why when you point at it, select it, or hold a finger on it. Its shortcut does nothing then, but the button, if it's on screen, lights up and shows the reason for a moment. [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/) lists the shortcuts.
+
+<Media
+  id="window-command-palette"
+  alt="The command palette with split typed: Split the move at the playhead, dimmed, with the reason beside it: no move crosses the playhead's count."
+  maxWidth={560}
+/>
 
 ## Related
 
 - [Move around the field](/guides/workspace/move-around-the-field/): pan, zoom and fit the field.
-- [Editor and Preview](/guides/workspace/editor-and-preview/): watch the show without the editing panels.
+- [Watch the show in Preview](/guides/workspace/editor-and-preview/): watch the show without the editing panels.
+- [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/): the tablet layout and touch.
 - [Basic and Expert](/guides/start/basic-and-expert/): what each editor mode shows.
-- [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, moves and counts.

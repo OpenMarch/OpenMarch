@@ -200,3 +200,61 @@ describe("fieldGeometry variants", () => {
         ).toHaveLength(0);
     });
 });
+
+describe("fieldGeometry with a pit area", () => {
+    // Around the 50, narrower than the field, 180 deep
+    const pit = {
+        left: xPixels - 300,
+        right: xPixels + 300,
+        top: yPixels,
+        bottom: yPixels + 180,
+    };
+    const plain = fieldGeometry(fp);
+    const withPit = fieldGeometry(fp, {
+        gridLines: true,
+        halfLines: true,
+        strips: [pit],
+    });
+
+    it("fills it with an opaque flat tone just off the field's", () => {
+        // The field, then the pit's paper, then a little ink over it
+        expect(withPit.background.count).toBe(3);
+        expect(Array.from(withPit.background.bounds.subarray(4, 8))).toEqual(
+            [pit.left, pit.top, pit.right, pit.bottom].map(Math.fround),
+        );
+        expect(withPit.background.colors[7]).toBe(1);
+        const ink = withPit.background.colors[11];
+        expect(ink).toBeGreaterThan(0);
+        expect(ink).toBeLessThan(0.15);
+    });
+
+    it("draws no lines on it: the field's own lines are unchanged", () => {
+        expect(rects(withPit)).toEqual(rects(plain));
+    });
+
+    it("leaves the yard-line labels at the front sideline, over it", () => {
+        const labels = (g: ReturnType<typeof fieldGeometry>) =>
+            g.texts.filter((t) => t.font === "label").map((t) => t.y);
+        expect(labels(withPit)).toEqual(labels(plain));
+    });
+});
+
+describe("fieldGeometry with a pit area behind the field", () => {
+    const back = {
+        left: xPixels - 60,
+        right: xPixels + 60,
+        top: -180,
+        bottom: 0,
+    };
+    const geometry = fieldGeometry(fp, {
+        gridLines: true,
+        halfLines: true,
+        strips: [back],
+    });
+
+    it("fills it behind the back sideline", () => {
+        expect(Array.from(geometry.background.bounds.subarray(4, 8))).toEqual(
+            [back.left, -180, back.right, 0].map(Math.fround),
+        );
+    });
+});

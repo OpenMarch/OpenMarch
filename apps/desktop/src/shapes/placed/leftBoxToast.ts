@@ -73,7 +73,7 @@ async function refill(
     } catch (e) {
         toastTimelineError(
             e,
-            tolgee.t("shapes.placed.fillError", "Error filling the shape"),
+            tolgee.t("shapes.placed.fillError", "Couldn't fill the shape"),
         );
     }
 }

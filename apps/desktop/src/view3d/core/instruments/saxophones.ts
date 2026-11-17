@@ -394,10 +394,12 @@ interface SaxShape {
     neck: [number, number][];
     /**
      * Bari only: the body runs on up past the neck to a top bow, down a
-     * short tube beside itself (−X) and through a small crook to the
-     * receiver, where the neck comes over from the mouthpiece. `yb` is the
-     * body's axis, `bowTop` the top bow's center height, `r1` and `r2` the
-     * two crooks' radii, `drop` the short tube's foot and `receiver` the
+     * short tube beside itself on the side away from the bell (−X as
+     * built, toward the player once turned) and through a small crook
+     * (toward −Y as built, the player's left once turned) to the receiver,
+     * where the neck comes over from the mouthpiece. `yb` is the body's
+     * axis, `bowTop` the top bow's center height, `r1` and `r2` the two
+     * crooks' radii, `drop` the short tube's foot and `receiver` the
      * receiver's top.
      */
     pigtail?: {
@@ -457,13 +459,14 @@ export const SAX_SHAPES: Record<"altoSax" | "tenorSax" | "bariSax", SaxShape> =
         },
         bariSax: {
             mpHeading: 90,
-            mpLength: 0.1,
+            mpLength: 0.085,
             mpRadius: 0.016,
             neckLine: 0,
             neck: [],
-            // the body's axis sits where the alto's does under the sax hold
+            // the body's axis far enough out for the mouthpiece and the neck's
+            // bend to reach the receiver on the near side of the top bow
             pigtail: {
-                yb: 0.11,
+                yb: 0.19,
                 bowTop: 0.1,
                 r1: 0.033,
                 drop: 0.15,
@@ -482,7 +485,10 @@ export const SAX_SHAPES: Record<"altoSax" | "tenorSax" | "bariSax", SaxShape> =
 
 /**
  * The neck from the mouthpiece to the top of the body, and for the bari the
- * coil the body's top makes on its way to the neck's receiver.
+ * coil the body's top makes on its way to the neck's receiver. The coil is
+ * part of the body, as built (keys +Y, bell +X); the neck is in the
+ * instrument frame, so it meets the coil's receiver where the body's turn
+ * carries it.
  */
 function saxTop(shape: SaxShape, s: SegmentCounts) {
     const mpEnd = turtle([0, 0, 0], shape.mpHeading).line(shape.mpLength).end();
@@ -502,11 +508,11 @@ function saxTop(shape: SaxShape, s: SegmentCounts) {
     const top: Vec3 = [0, yb, shape.bodyTop];
     const x1 = -2 * r1;
     const n = s.crook * 2;
-    const coil: Vec3[] = [[x1, yb + 2 * r2, receiver]];
+    const coil: Vec3[] = [[x1, yb - 2 * r2, receiver]];
     // the small crook at the foot, back toward the body's line
     for (let i = 0; i <= n; i++) {
         const a = (i / n) * Math.PI;
-        coil.push([x1, yb + r2 + r2 * Math.cos(a), drop + r2 * Math.sin(a)]);
+        coil.push([x1, yb - r2 - r2 * Math.cos(a), drop + r2 * Math.sin(a)]);
     }
     // the top bow across to the body
     for (let i = 0; i <= n; i++) {
@@ -514,11 +520,12 @@ function saxTop(shape: SaxShape, s: SegmentCounts) {
         coil.push([-r1 - r1 * Math.cos(a), yb, bowTop - r1 * Math.sin(a)]);
     }
     coil.push(top);
-    const end = coil[0];
+    // the neck runs on from the mouthpiece and bends down into the receiver
+    const end = saxTurned(coil[0], yb);
     const neck = bezier(
         mpEnd,
-        add3(mpEnd, [0, 0.055, -0.014]),
-        add3(end, [0, 0, -0.085]),
+        add3(mpEnd, [0, 0.045, -0.004]),
+        add3(end, [0, 0, -0.075]),
         end,
         s.crook * 3,
     );
@@ -530,14 +537,15 @@ export const SAX_BELL_TILT = (25 * Math.PI) / 180;
 
 /**
  * How a curved sax's body is turned about its own axis under the neck, as
- * it is played: the neck runs straight back to the mouth, the bell stands
- * in front of the body tube a little to the player's left, and the pearls
- * face the player's front-right where the fingers curl onto them. The body
- * is built with its keys toward +Y and its bell toward +X, then turned by
- * this angle (radians) from +X toward +Y, so the bell ends 25° left of
- * straight ahead and the keys 65° right of it.
+ * it is played (owner, 2026-11-14): the mouthpiece comes straight back to
+ * the mouth and the bell opens straight away from the player, directly in
+ * front of the body tube, so neck, body and bell lie in one plane front to
+ * back. The pearls face the player's right, where the right hand comes onto
+ * them and the left hand's fingers wrap round from the front. The body is
+ * built with its keys toward +Y and its bell toward +X, then turned by this
+ * angle (radians) from +X toward +Y.
  */
-export const SAX_BODY_TURN = (65 * Math.PI) / 180;
+export const SAX_BODY_TURN = Math.PI / 2;
 
 /** A point of a curved sax's body, as built (keys +Y, bell +X), turned into the instrument frame. */
 export function saxTurned(p: Vec3, yb: number): Vec3 {
@@ -669,7 +677,7 @@ export function curvedSax(
     ];
     if (coil.length) {
         const rc = taper(coil, neckEnd * 1.06, sh.rTop);
-        fixed.push(
+        pieces.push(
             smoothTube(coil, rc, s.fine ? 16 : s.tube, PART_METAL, {
                 capStart: false,
                 capEnd: false,
@@ -845,22 +853,26 @@ export function curvedSax(
                 ),
             );
     }
-    const [tc, ts] = [Math.cos(SAX_BODY_TURN), Math.sin(SAX_BODY_TURN)];
+    // the body turned under the neck: one matrix, column-major, from three
+    // points it carries
+    const o = saxTurned([0, 0, 0], yb);
+    const ex = saxTurned([1, 0, 0], yb);
+    const ey = saxTurned([0, 1, 0], yb);
     const turn = [
-        tc,
-        ts,
+        ex[0] - o[0],
+        ex[1] - o[1],
         0,
         0,
-        -ts,
-        tc,
+        ey[0] - o[0],
+        ey[1] - o[1],
         0,
         0,
         0,
         0,
         1,
         0,
-        yb * ts,
-        yb * (1 - tc),
+        o[0],
+        o[1],
         0,
         1,
     ];
@@ -870,4 +882,31 @@ export function curvedSax(
         [...fixed, ...pieces.map((p) => transformPiece(p, turn))],
         [0, yb, top[2] + 0.12],
     );
+}
+
+/**
+ * A point on the pearls' side of a curved sax's body at fraction `k` from
+ * the body's top (where the neck goes in) to the bow, `off` out from the
+ * tube, in the instrument frame: where the hands find the stacks.
+ */
+export function saxStack(
+    id: "altoSax" | "tenorSax" | "bariSax",
+    k: number,
+    off = 0,
+): Vec3 {
+    const sh = SAX_SHAPES[id];
+    const { top } = saxTop(sh, SEGMENTS.low);
+    const yb = top[1];
+    const bowZ = WOODWIND_DIMENSIONS[id].length - sh.bowWidth / 2 - sh.rBow;
+    const z = lerp(top[2], bowZ, k);
+    const r = lerp(sh.rTop, sh.rBow, k);
+    return saxTurned([0, yb + r + off, z], yb);
+}
+
+/** A point on a curved sax's body axis at fraction `k` from its top to the bow, in the instrument frame. */
+export function saxAxis(
+    id: "altoSax" | "tenorSax" | "bariSax",
+    k: number,
+): Vec3 {
+    return saxStack(id, k, -lerp(SAX_SHAPES[id].rTop, SAX_SHAPES[id].rBow, k));
 }

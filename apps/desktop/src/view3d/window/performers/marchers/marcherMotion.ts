@@ -11,6 +11,7 @@ import {
     compileCues,
     type CompileInput,
     type CompiledCues,
+    type CueInput,
     type FieldProperties,
     type PerformerCarry,
     pixelsToWorld,
@@ -64,7 +65,7 @@ export interface ShowPlans {
         heightClasses: readonly HeightClass[];
         bpm: Float64Array;
         ids: readonly number[];
-        cues: CompiledCues | null;
+        cues: WindowCues | null;
         dotMode: DotMode | readonly DotMode[] | null;
         crabs: readonly boolean[] | null;
         directionChange: DirectionChange | readonly DirectionChange[] | null;
@@ -73,57 +74,71 @@ export interface ShowPlans {
 
 /** What the window's compile reads besides the marchers and beats. */
 export interface WindowCueInputs {
-    /** Each section's usual equipment, for the Carry default (`performers/cueSections`). */
+    /** The show's stored cues (`useStoredCues`); none when left out. */
+    cues?: readonly CueInput[];
+    /** Each section's usual equipment, for the Equipment default (`performers/cueSections`). */
     sections?: CompileInput["sections"];
     /**
      * 1 for each count on which any performer travels (`bandMovingCounts`),
-     * for the Feet default: marchers mark time while the band moves.
+     * for the hold style when the show is set to mark time: marchers then
+     * mark time while the band moves.
      */
     bandMoving?: ArrayLike<number> | null;
-    /** The Feet default on those counts (Show settings); mark time when omitted. */
+    /** The hold style on those counts (Show settings); stand when omitted. */
     holdWhileBandMoves?: NonNullable<
         CompileInput["showDefaults"]
     >["holdWhileBandMoves"];
     /**
-     * What each marcher carries, which decides the Horn/Equipment default.
+     * The styles the marchers' Held holds carry, by count (`holdStyleSpans`):
+     * each wins over the show setting for the counts it covers (ADR 0015 D-5).
+     */
+    holdStyles?: CompileInput["holdStyles"];
+    /**
+     * What each marcher carries, which decides the Position default.
      * Marchers carry nothing when it is left out.
      */
     carries?: (marcherId: number) => PerformerCarry;
 }
 
+/** The window's compiled cues, with the show setting the planner reads beside them. */
+export interface WindowCues {
+    compiled: CompiledCues;
+    /** The show's step-off foot: a show setting, not a cue (ADR 0015 D-1). */
+    stepOffFoot: Foot;
+}
+
 /**
- * Compiles the 3D View's performer behavior from the marchers and the timed
- * beats (in the count clock's order) with no stored cues: the show defaults
- * only (ADR 0004; cue storage is parked). `stepOffFoot` is the show's saved
- * default.
+ * Compiles the 3D View's performer behavior from the marchers, the timed
+ * beats (in the count clock's order) and the show's stored cues (ADR 0015):
+ * each cue type's parameter per performer, and the hold style. `stepOffFoot`
+ * is the show's saved default.
  */
 export function compileWindowCues(
     marchers: readonly { id: number; section: string }[],
     beats: readonly { id: number; timestamp: number; duration: number }[],
     stepOffFoot: Foot,
     inputs: WindowCueInputs = {},
-): CompiledCues {
+): WindowCues {
     const { bandMoving, carries = () => "none" } = inputs;
-    return compileCues({
+    const compiled = compileCues({
         beats: beats
             .filter((b) => b.duration > 0)
             .sort((a, b) => a.timestamp - b.timestamp)
             .map((b) => ({ id: b.id, duration: b.duration })),
-        marchers: marchers.map((m, i) => ({
+        marchers: marchers.map((m) => ({
             id: m.id,
             section: m.section,
-            tagIds: [],
-            drillOrder: i,
             carries: carries(m.id),
         })),
-        cues: [],
+        cues: inputs.cues ?? [],
         sections: inputs.sections,
         bandTravels: bandMoving ? (c) => bandMoving[c] === 1 : undefined,
+        holdStyles: inputs.holdStyles,
         showDefaults: {
-            stepOffFoot,
             holdWhileBandMoves: inputs.holdWhileBandMoves,
         },
     });
+    return { compiled, stepOffFoot };
 }
 
 const sameArray = (
@@ -204,8 +219,8 @@ export function bandMovingCounts(
 
 /**
  * Samples every marcher's drill at each count boundary and plans its clips.
- * Each marcher is planned on its own; what a hold does comes from the Feet
- * channel (marking time while the band moves, `compileWindowCues`).
+ * Each marcher is planned on its own; what a hold does comes from the hold
+ * style (the hold's own style, else the show setting, `compileWindowCues`).
  */
 export function planShow(
     ids: readonly number[],
@@ -215,7 +230,7 @@ export function planShow(
     fieldProperties: FieldProperties,
     manifest: Manifest,
     /** The compiled cues; null plays the defaults (front facing, stand). */
-    cues: CompiledCues | null,
+    cues: WindowCues | null,
     previous: ShowPlans | null = null,
     /** What the dot marks, for the show or per count; null is foot on the dot. */
     dotMode: DotMode | readonly DotMode[] | null = null,
@@ -254,13 +269,14 @@ export function planShow(
             return previous!.plans[j];
         replanned++;
         const fromCues = cues
-            ? marcherCueInputs(cues, ids[i], positions, {
+            ? marcherCueInputs(cues.compiled, ids[i], positions, {
                   // a Facing point is in field coordinates, like the dots
                   pointToWorld: (x, y) => {
                       const w = pixelsToWorld(fieldProperties, { x, y });
                       return [w.x, w.z];
                   },
                   secondsPerCount,
+                  stepOffFoot: cues.stepOffFoot,
               })
             : null;
         return planMarcher({
@@ -307,6 +323,12 @@ export const STEP_AHEAD = 1;
 
 /** A slot's cursor while it stands in the closed position (`updateClosed`). */
 const CLOSED = -2;
+/** A slot's cursor while it plays a pit instrument (`update`'s `players`). */
+const PLAYING = -3;
+/** A slot's cursor while it stands on a podium in its podium stance (`update`'s `podium`). */
+const ON_PODIUM = -4;
+/** The same, standing at attention because the podium stance isn't baked yet. */
+const ON_PODIUM_ATTENTION = -5;
 
 /** Per-frame state: which event each marcher plays. */
 export class MarcherMotion {
@@ -326,6 +348,16 @@ export class MarcherMotion {
          * placing and turning the slots alone.
          */
         private readonly attention: readonly string[] = [],
+        /**
+         * Per slot: the Feet row a pit player holds (`PLAYING_CLIP` for its
+         * height class). None given leaves players on their planned clips.
+         */
+        private readonly playing: readonly string[] = [],
+        /**
+         * Per slot: the Feet row it holds on a podium (`PODIUM_CLIP` for its
+         * height class). None given leaves it at attention there.
+         */
+        private readonly podium: readonly string[] = [],
     ) {
         this.cursor = new Int32Array(plans.length).fill(-1);
         this.hornCursor = new Int32Array(plans.length).fill(-1);
@@ -377,12 +409,23 @@ export class MarcherMotion {
      * each placed slot's position in `xz`, which the caller fills with the
      * drill position `STEP_AHEAD` counts later, with its body position, and
      * its heading in `headings`: the whole performer turns (Facing).
+     *
+     * A slot playing a pit instrument (`players`, from `assignPlayers`) holds
+     * its playing pose instead, still: its place and heading are the
+     * instrument's, which the caller writes after (`writePlayers`).
+     *
+     * A slot on a podium (`onPodium`, from `writeOnPodiums`) holds its
+     * podium stance (attention until that's baked) while its place and
+     * heading follow the plan, for the caller to stand it on the deck
+     * (`writePodiumStands`). Off the podium it plays its plan again.
      */
     update(
         count: number,
         xz: Float32Array,
         placed: Uint8Array,
         headings?: Float32Array,
+        players?: Int32Array,
+        onPodium?: Uint8Array,
     ): void {
         const out = this.out;
         const planCount = count + STEP_AHEAD;
@@ -390,8 +433,11 @@ export class MarcherMotion {
         for (let i = 0; i < this.plans.length; i++) {
             const plan = this.plans[i];
             if (!plan || plan.events.length === 0) continue;
+            if (players && players[i] >= 0 && this.holdPlaying(i)) continue;
             const index = eventIndexAt(plan, planCount, this.cursor[i]);
-            if (
+            if (onPodium && onPodium[i] && this.holdPodium(i)) {
+                // stands in the podium stance; placed and turned below
+            } else if (
                 index !== this.cursor[i] ||
                 plan.events[index].kind === "crossfade" ||
                 plan.events[index].handoff
@@ -423,9 +469,16 @@ export class MarcherMotion {
      * heading at that count, on the dot it stands on; the Horn/Equipment
      * channel is what `update` would show then. A slot whose attention row
      * isn't baked yet keeps the clip it last had. The next `update` writes
-     * every slot's clip again.
+     * every slot's clip again. A slot playing a pit instrument (`players`)
+     * holds its playing pose, and one on a podium (`onPodium`) its podium
+     * stance, as in `update`.
      */
-    updateClosed(count: number, headings?: Float32Array): void {
+    updateClosed(
+        count: number,
+        headings?: Float32Array,
+        players?: Int32Array,
+        onPodium?: Uint8Array,
+    ): void {
         this.updateHorns(count);
         const rows = this.bodies.bake.rows;
         for (let i = 0; i < this.plans.length; i++) {
@@ -433,6 +486,8 @@ export class MarcherMotion {
             if (!plan || plan.events.length === 0) continue;
             // the dot's own count: the plan clock runs a count ahead
             if (headings) headings[i] = headingAt(plan, count);
+            if (players && players[i] >= 0 && this.holdPlaying(i)) continue;
+            if (onPodium && onPodium[i] && this.holdPodium(i)) continue;
             const row = rows[this.attention[i]];
             if (!row) continue; // not baked yet: keeps its last clip
             if (this.cursor[i] !== CLOSED)
@@ -447,6 +502,53 @@ export class MarcherMotion {
             // `update` finds the event again and writes its clip
             this.cursor[i] = CLOSED;
         }
+    }
+
+    /**
+     * Stands slot `i` in its playing pose, if that row is baked: false
+     * leaves it on its plan. The next `update` off the spot finds its event
+     * again and writes its clip.
+     */
+    private holdPlaying(i: number): boolean {
+        if (this.cursor[i] === PLAYING) return true;
+        const row = this.bodies.bake.rows[this.playing[i]];
+        if (!row) return false;
+        this.bodies.setClip(i, {
+            row,
+            row2: null,
+            weight: 0,
+            phase: 0,
+            rate: 1,
+            legYaw: 0,
+        });
+        this.cursor[i] = PLAYING;
+        return true;
+    }
+
+    /**
+     * Stands slot `i` in its podium stance, or at attention while that row
+     * isn't baked: false, with neither baked, leaves it on its plan. Writes
+     * the clip once while it stays on the podium, and again when the stance
+     * gets baked. The next `update` off the podium finds its event again and
+     * writes its clip.
+     */
+    private holdPodium(i: number): boolean {
+        if (this.cursor[i] === ON_PODIUM) return true;
+        const rows = this.bodies.bake.rows;
+        const stance = rows[this.podium[i]];
+        if (!stance && this.cursor[i] === ON_PODIUM_ATTENTION) return true;
+        const row = stance ?? rows[this.attention[i]];
+        if (!row) return false;
+        this.bodies.setClip(i, {
+            row,
+            row2: null,
+            weight: 0,
+            phase: 0,
+            rate: 1,
+            legYaw: 0,
+        });
+        this.cursor[i] = stance ? ON_PODIUM : ON_PODIUM_ATTENTION;
+        return true;
     }
 
     /**

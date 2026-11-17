@@ -193,6 +193,8 @@ export function createPropBlockFrame(
  * @param positionInto - the prop's center in world meters at this moment
  *   into `out`, or false when it has none
  * @param keyOf - caches {@link propShapeKey}; pass a Map kept per show
+ * @param liftOf - how far above `baseY` the prop stands, in meters: the top
+ *   of the platform under it (C4.5), or 0 on the ground
  */
 export function placePropBlocks(
     tracks: readonly PropTrack[],
@@ -201,6 +203,7 @@ export function placePropBlocks(
     frame: PropBlockFrame,
     keyOf: (geometry: ItemGeometry) => string,
     baseY = 0,
+    liftOf?: (marcherId: number) => number,
 ): void {
     frame.counts.fill(0);
     for (const track of tracks) {
@@ -209,7 +212,8 @@ export function placePropBlocks(
         const k = frame.keys.indexOf(keyOf(geometry));
         if (k < 0) continue;
         const index = frame.counts[k]++;
-        writePropMatrix(frame.matrices[k], index, geometry, scratch, baseY);
+        const y = baseY + (liftOf?.(track.marcherId) ?? 0);
+        writePropMatrix(frame.matrices[k], index, geometry, scratch, y);
         const color = track.color ?? frame.defaultColor;
         frame.colors[k].set(color, index * 3);
     }

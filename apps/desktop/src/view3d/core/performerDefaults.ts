@@ -32,12 +32,16 @@ export const DIRECTION_CHANGES: readonly DirectionChange[] = [
     "direct",
 ];
 
-/** What a holding marcher does on a count where others travel. */
+/**
+ * What a holding marcher does on a count where others travel, unless its
+ * Held hold carries a style of its own (ADR 0015 D-5): stand, the default, or
+ * mark time. On a count where the whole band holds, it stands.
+ */
 export type HoldWhileBandMoves = "stand" | "markTime" | "highMarkTime";
 export const HOLDS_WHILE_BAND_MOVES: readonly HoldWhileBandMoves[] = [
+    "stand",
     "markTime",
     "highMarkTime",
-    "stand",
 ];
 
 /**
@@ -59,12 +63,12 @@ export interface PerformerDefaults {
     percussionTravel: PercussionTravel;
 }
 
-/** Left foot, foot on the dot, round the corner, mark time, drums crab. */
+/** Left foot, foot on the dot, round the corner, stand on holds, drums crab. */
 export const BUILT_IN_PERFORMER_DEFAULTS: PerformerDefaults = {
     stepOffFoot: "left",
     dotMode: "foot",
     directionChange: "corner",
-    holdWhileBandMoves: "markTime",
+    holdWhileBandMoves: "stand",
     percussionTravel: "crab",
 };
 

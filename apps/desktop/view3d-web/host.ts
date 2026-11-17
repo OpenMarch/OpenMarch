@@ -165,6 +165,9 @@ class WebHost {
         },
         requestVenueChange: (settings) => this.writeVenue(settings),
         requestCamerasChange: (cameras) => this.writeCameras(cameras),
+        // The demo shows don't take imported Artwork
+        requestSilkArtwork: () =>
+            console.warn("3D View demo: silk Artwork can't be imported here"),
         // The demo has no app settings: never asks to open on launch
         autoOpen: {
             get: () => Promise.resolve(null),

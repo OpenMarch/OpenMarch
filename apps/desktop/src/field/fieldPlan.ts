@@ -105,6 +105,12 @@ const BASELINE_FROM_TOP = TEXT_BOX * (1 - 0.222);
 /** From the middle of the text box to the baseline, in font sizes */
 export const BASELINE_BELOW_CENTER = BASELINE_FROM_TOP - TEXT_BOX / 2;
 const LABEL_FONT_SIZE = 20;
+/**
+ * How far the labels outside the field reach past its edges, in field pixels: the top and bottom
+ * labels 25 px out plus their text, the side labels 10 px out plus a short name ("F12", about four
+ * characters of the fallback monospace), which is also more than half the widest top label
+ */
+export const OUTSIDE_LABEL_ROOM = { x: 64, y: 32 } as const;
 /** A font that doesn't exist, so the platform's fallback draws the labels. */
 const LABEL_FONT = "mono";
 /** The font the yard numbers use */

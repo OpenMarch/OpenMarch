@@ -5,8 +5,9 @@ import { editSurpriseToastId } from "@/utilities/moveThemToo";
 import Toaster from "../Toaster";
 
 /**
- * A toast's action stays on one line beside its text (defined-coordinates 08: "Start from Page 4"
- * wrapped into a column). With two buttons the text takes the first line and the buttons go
+ * A toast's action stays on one line, beside its text only when both fit on one line, else under it
+ * (defined-coordinates 08: "Start from Page 4" wrapped into a column; a long message beside "Show in
+ * folder" squeezed the text into one). With two buttons the text takes the first line and the buttons go
  * underneath, right-aligned (wp14: the combined Move them too toast squeezed its text into a
  * 70 px column). jsdom doesn't lay out, so these check the classes that do it.
  */
@@ -48,7 +49,7 @@ describe("Toaster", () => {
         }
     });
 
-    it("keeps the icon by the title when the toast has a description", async () => {
+    it("keeps the icon by the first line of text, with or without a description", async () => {
         render(<Toaster />);
         act(() => {
             toast.warning("The field is drawing slowly", {
@@ -59,10 +60,8 @@ describe("Toaster", () => {
             await screen.findByText("The field is drawing slowly")
         ).closest("[data-sonner-toast]") as HTMLElement;
         const icon = li.querySelector("[data-icon]") as HTMLElement;
-        expect(li.className).toMatch(/(^| )items-center( |$)/);
-        expect(icon.className).toContain(
-            "[[data-sonner-toast]:has([data-description])_&]:self-start",
-        );
+        expect(li.className).toMatch(/(^| )items-start( |$)/);
+        expect(icon.className).toMatch(/(^| )mt-\[2px\]( |$)/);
     });
 
     it("keeps an action's label on one line, with a focus ring", async () => {
@@ -83,7 +82,7 @@ describe("Toaster", () => {
         expect(button.className).toMatch(/focus-visible:ring/);
     });
 
-    it("with one button, keeps it beside the text while the text keeps 120 px, else under it at the right (#805)", async () => {
+    it("with one button, keeps it beside the text only when both fit on one line, else under it at the right (#805)", async () => {
         render(<Toaster />);
         act(() => {
             toast.info("Now walks straight through the end of Page 3", {
@@ -98,10 +97,16 @@ describe("Toaster", () => {
         });
         const { li, content } = toastOf(button);
         expect(li.querySelector("[data-cancel]")).toBeNull();
-        // The text never gets narrower than 120 px: a label too long to fit beside it wraps
+        // The text starts at its one-line width, capped at the row beside the icon: when it and the
+        // button don't fit on one line, the text fills its row and the button wraps underneath
         expect(li.className).toMatch(/(^| )flex-wrap( |$)/);
-        expect(content.className).toMatch(/(^| )flex-1( |$)/);
-        expect(content.className).toMatch(/(^| )basis-\[120px\]( |$)/);
+        expect(content.className).toMatch(/(^| )grow( |$)/);
+        expect(content.className).toMatch(/(^| )basis-auto( |$)/);
+        expect(content.className).toMatch(
+            /(^| )max-w-\[calc\(100%-32px\)\]( |$)/,
+        );
+        // No narrow column: the button never shares its line with wrapped text, and lines up with it
+        expect(button.className).toMatch(/(^| )-my-2( |$)/);
         // Only when it is the one button: with a cancel, the cancel pushes both right
         expect(button.className).toContain(
             "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto",

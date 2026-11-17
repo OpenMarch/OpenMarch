@@ -6,6 +6,7 @@ import {
     ArrowUUpLeftIcon,
     CursorIcon,
     FileIcon,
+    GridFourIcon,
     PlayIcon,
     SelectionAllIcon,
     ShapesIcon,
@@ -22,13 +23,14 @@ import {
 import type { ShortcutOverrides } from "../keymap";
 import { getActionLabel, getActionShortcutKeys } from "../labels";
 import {
+    actionDisabledReason,
     actionLabelNow,
     hasActionHandler,
     isActionEnabled,
     previewAction,
     runAction,
 } from "../registry";
-import { isActionOffInWorkspace } from "../workspaceActions";
+
 import { isBasicMode } from "@/stores/EditorModeStore";
 import { paramsCommand } from "./commandBar";
 import type { PaletteContext, PaletteItem } from "./sources";
@@ -46,6 +48,7 @@ const CATEGORY_ICONS: Record<ActionCategory, Icon> = {
     shape: ShapesIcon,
     ui: SidebarSimpleIcon,
     timeline: WaveformIcon,
+    field: GridFourIcon,
 };
 
 /** Drill-writing tools first; file, playback and app settings after. */
@@ -60,6 +63,7 @@ const PALETTE_CATEGORY_ORDER: readonly ActionCategory[] = [
     "file",
     "edit",
     "timeline",
+    "field",
     "movement",
     "ui",
 ];
@@ -86,50 +90,55 @@ export function getActionPaletteItems(
     overrides: ShortcutOverrides,
 ): PaletteItem[] {
     const basic = isBasicMode();
-    return ACTION_IDS.filter((id) => {
-        const def = getActionDefinition(id);
-        return (
-            !def.hiddenFromPalette &&
-            !(basic && def.expertOnly) &&
-            hasActionHandler(id)
-        );
-    })
-        .sort((a, b) => categoryRank(a) - categoryRank(b))
-        .map((id: ActionId) => {
+    return (
+        ACTION_IDS.filter((id) => {
             const def = getActionDefinition(id);
-            const CategoryIcon = CATEGORY_ICONS[def.category];
-            const label = actionLabelNow(id) ?? getActionLabel(id, t);
-            return {
-                id: `action:${id}`,
-                label,
-                group: t(`settings.shortcuts.category.${def.category}`),
-                icon: <CategoryIcon size={18} />,
-                keywords: def.keywordsKey
-                    ? t(def.keywordsKey).split(/\s+/)
-                    : [],
-                shortcut: getActionShortcutKeys(id, { overrides }),
-                disabled: !isActionEnabled(id),
-                // Preview turns every edit off: say so
-                disabledReason: isActionOffInWorkspace(id)
-                    ? t("commandPalette.offInPreview")
-                    : undefined,
-                preview: (on: boolean) => previewAction(id, on),
-                suggestedRank: SUGGESTED_ACTIONS.includes(id)
-                    ? SUGGESTED_ACTIONS.indexOf(id)
-                    : undefined,
-                // An action with typed params asks them in the docked bar first (#354)
-                ...(def.params
-                    ? {
-                          command: paramsCommand(
-                              [label],
-                              def.params.map(({ labelKey, ...param }) => ({
-                                  ...param,
-                                  label: t(labelKey),
-                              })),
-                              (values) => runAction(id, values),
-                          ),
-                      }
-                    : { run: () => runAction(id, def.paletteArgs) }),
-            };
-        });
+            return (
+                !def.hiddenFromPalette &&
+                !(basic && def.expertOnly) &&
+                hasActionHandler(id)
+            );
+        })
+            .sort((a, b) => categoryRank(a) - categoryRank(b))
+            .map((id: ActionId) => {
+                const def = getActionDefinition(id);
+                const CategoryIcon = CATEGORY_ICONS[def.category];
+                const label = actionLabelNow(id) ?? getActionLabel(id, t);
+                return {
+                    id: `action:${id}`,
+                    label,
+                    group: t(`settings.shortcuts.category.${def.category}`),
+                    icon: <CategoryIcon size={18} />,
+                    keywords: def.keywordsKey
+                        ? t(def.keywordsKey).split(/\s+/)
+                        : [],
+                    shortcut: getActionShortcutKeys(id, { overrides }),
+                    disabled: !isActionEnabled(id),
+                    // Why it's off: Preview or Edit music, else the action's own reason
+                    disabledReason: actionDisabledReason(id),
+                    preview: (on: boolean) => previewAction(id, on),
+                    suggestedRank: SUGGESTED_ACTIONS.includes(id)
+                        ? SUGGESTED_ACTIONS.indexOf(id)
+                        : undefined,
+                    // An action with typed params asks them in the docked bar first (#354)
+                    ...(def.params
+                        ? {
+                              command: paramsCommand(
+                                  [label],
+                                  def.params.map(({ labelKey, ...param }) => ({
+                                      ...param,
+                                      label: t(labelKey),
+                                  })),
+                                  (values) => runAction(id, values),
+                              ),
+                          }
+                        : { run: () => runAction(id, def.paletteArgs) }),
+                };
+            })
+            // A command that can't run and can't say why isn't listed: a dimmed row with no reason
+            // only leaves you guessing (owner rule, 2026-11-16)
+            .filter(
+                (item) => !item.disabled || item.disabledReason !== undefined,
+            )
+    );
 }

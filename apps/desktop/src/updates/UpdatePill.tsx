@@ -17,10 +17,10 @@ import {
 /**
  * The update pill beside the version in the title bar (fork #404). It shows only when there is
  * something to do or watch: an update to download, one downloading, one ready to install, or one
- * that failed. A download the person asked for shows its text and progress bar; an automatic
- * one is only a small progress ring, with the percentage in its tooltip. The popover holds the
- * step to take: Download, Update now, Move to Applications (macOS, outside Applications), or
- * Try again and Download installer.
+ * that failed. A download shows a small progress ring, with the percentage in its tooltip; one
+ * the person asked for also says "Downloading update", an automatic one is the ring alone. The
+ * popover holds the step to take: Download, Update now, Move to Applications (macOS, outside
+ * Applications), or Try again and Download installer.
  */
 export default function UpdatePill() {
     const { t } = useTranslate();
@@ -38,9 +38,9 @@ export default function UpdatePill() {
     const active =
         kind === "available" || kind === "downloading" || kind === "downloaded";
     if (!version || (!failed && !active)) return null;
+    const downloading = !failed && state.phase.kind === "downloading";
     // An automatic download: a quiet ring, not text
-    const quiet =
-        !failed && state.phase.kind === "downloading" && !state.phase.requested;
+    const quiet = downloading && !state.phase.requested;
     const percent =
         state.phase.kind === "downloading"
             ? Math.floor(state.phase.percent)
@@ -48,13 +48,11 @@ export default function UpdatePill() {
     const label = t(
         failed
             ? "updates.pill.failed"
-            : quiet
-              ? "updates.pill.downloadingQuiet"
+            : downloading
+              ? "updates.pill.downloadingProgress"
               : kind === "downloaded"
                 ? "updates.pill.ready"
-                : kind === "downloading"
-                  ? "updates.pill.downloading"
-                  : "updates.pill.available",
+                : "updates.pill.available",
         { percent },
     );
 
@@ -79,7 +77,7 @@ export default function UpdatePill() {
             >
                 {failed ? (
                     <WarningCircleIcon size={14} />
-                ) : quiet ? (
+                ) : downloading ? (
                     <ProgressRing percent={percent} />
                 ) : (
                     <ArrowCircleUpIcon size={14} />
@@ -95,7 +93,7 @@ export default function UpdatePill() {
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
-            {quiet ? (
+            {downloading ? (
                 <Tip label={label} side="bottom">
                     {trigger}
                 </Tip>
@@ -129,20 +127,12 @@ function PillLabel({ state, failed }: { state: UpdateState; failed: boolean }) {
     const { phase } = state;
     if (failed) return <T keyName="updates.pill.failed" />;
     if (phase.kind === "downloading")
-        return (
-            <span className="flex items-center gap-6">
-                <T
-                    keyName="updates.pill.downloading"
-                    params={{ percent: Math.floor(phase.percent) }}
-                />
-                <ProgressBar percent={phase.percent} className="w-48" />
-            </span>
-        );
+        return <T keyName="updates.pill.downloadingUpdate" />;
     if (phase.kind === "downloaded") return <T keyName="updates.pill.ready" />;
     return <T keyName="updates.pill.available" />;
 }
 
-/** A download's progress as a small ring, for an automatic download */
+/** A download's progress as a small ring */
 function ProgressRing({ percent }: { percent: number }) {
     const radius = 5.5;
     const circumference = 2 * Math.PI * radius;

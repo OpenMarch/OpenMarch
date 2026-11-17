@@ -10,9 +10,8 @@ import {
     type Piece,
     type Vec3,
 } from "../mesh";
-import { SAX_BODY_TURN } from "../saxophones";
+import { SAX_BODY_TURN, saxTurned } from "../saxophones";
 import { SAX_SHAPES, WOODWIND_DIMENSIONS, woodwindModel } from "../woodwinds";
-import { hold } from "../holds";
 import type { WoodwindModelId } from "../model";
 
 const IDS: WoodwindModelId[] = [
@@ -115,32 +114,31 @@ describe("woodwind key work and placement", () => {
         expect(checked).toBeGreaterThan(100);
     });
 
-    it("hangs the bari's body as far in front of the chest as the alto's under the sax hold", () => {
-        const h = hold("sax", "up");
-        const zAxis = h.instrument.bellAxis;
-        const len = Math.hypot(...zAxis);
-        const z = zAxis.map((v) => v / len);
-        const c = h.instrument.capsAxis;
-        const d = c[0] * z[0] + c[1] * z[1] + c[2] * z[2];
-        const y = c.map((v, i) => v - d * z[i]);
-        const yl = Math.hypot(...y);
-        // world forward (body +Z) of the body's front at its top
-        const front = (id: "altoSax" | "bariSax") => {
-            const [, yb, grip] = woodwindModel(id).leftGrip;
-            const top = grip - 0.12;
-            return (
-                h.instrument.origin[2] +
-                (yb * y[2]) / yl +
-                top * z[2] -
-                SAX_SHAPES[id].rTop
-            );
-        };
-        // the chest's front is at z 0.12
-        expect(front("altoSax")).toBeGreaterThan(0.15);
-        expect(front("bariSax")).toBeGreaterThan(0.15);
-        expect(Math.abs(front("bariSax") - front("altoSax"))).toBeLessThan(
-            0.02,
+    it("brings the bari's neck from the mouthpiece down into the receiver on the coil", () => {
+        // the coil is part of the body and turns with it; the neck must end
+        // where the turned coil's receiver is, in front of the mouthpiece
+        const sh = SAX_SHAPES.bariSax;
+        const pig = sh.pigtail!;
+        const receiver = saxTurned(
+            [-2 * pig.r1, pig.yb - 2 * pig.r2, pig.receiver],
+            pig.yb,
         );
+        expect(receiver[1]).toBeGreaterThan(sh.mpLength);
+        expect(receiver[1]).toBeLessThan(pig.yb);
+        const m = woodwindModel("bariSax", "low");
+        const near = m.pieces.some((p) => {
+            for (let i = 0; i < p.positions.length; i += 3)
+                if (
+                    Math.hypot(
+                        p.positions[i] - receiver[0],
+                        p.positions[i + 1] - receiver[1],
+                        p.positions[i + 2] - receiver[2],
+                    ) < 0.02
+                )
+                    return true;
+            return false;
+        });
+        expect(near).toBe(true);
     });
 });
 

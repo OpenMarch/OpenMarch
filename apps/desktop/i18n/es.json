@@ -18,13 +18,36 @@
             "snapOn": "Ajuste desactivado: actívalo de nuevo",
             "snapToCustomFraction": "Ajustar a la cuadrícula",
             "toggleSnap": "Activar o desactivar el ajuste",
-            "toggleSnapKeywords": "ajuste ajustar imán cuadrícula libre snap magnet grid free"
+            "toggleSnapKeywords": "ajuste ajustar imán cuadrícula libre snap magnet grid free",
+            "propsOnly": "Solo hay utilería seleccionada: la utilería no se alinea ni se espacia"
         },
         "batchEdit": {
-            "noNextPage": "No se pueden copiar las coordenadas de los integrantes desde la página siguiente. No hay página siguiente",
-            "noPreviousPage": "No se pueden copiar las coordenadas de los integrantes desde la página anterior. No hay página anterior",
+            "clearPage": "Vaciar la página {page}",
+            "clearPageAndLater": "{count, plural, =1 {Vaciar la página {page}; la página {first} también vuelve atrás} other {Vaciar la página {page}; las páginas {first}–{last} también vuelven atrás}}",
+            "clearThisPageAll": "{clearThisPage} (todos los integrantes)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (todos los integrantes); las páginas siguientes también vuelven atrás",
+            "clearThisPageHoldsToo": "{count, plural, one {También se quitó la parada de {names} en {pages}} other {También se quitaron las paradas de {names} en {pages}}}.",
+            "clearThisPageSelected": "{clearThisPage} (seleccionados)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (seleccionados); las páginas siguientes también vuelven atrás",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (todos los integrantes)",
+            "forSelected": "{label} (seleccionados)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "mantener mantenido parada en su lugar definido no definido conservar quedarse quieto fotograma clave página estado anterior hold held defined not defined keep stay set keyframe page state previous",
+            "holdStyleDefault": "Estilo de parada: según la configuración del show",
+            "holdStyleHighMarkTime": "Estilo de parada: Marcar el paso alto",
+            "holdStyleKeywords": "estilo parada mantener quieto parado alto marcar paso marcar el paso alto pies 3d hold style stand still halt mark time marktime high feet",
+            "holdStyleMarkTime": "Estilo de parada: Marcar el paso",
+            "holdStyleStand": "Estilo de parada: Quieto",
+            "noPageAfter": "No hay ninguna página después de esta",
+            "noPageBefore": "No hay ninguna página antes de esta",
+            "moveAllToNextSpots": "Mover a las posiciones de la página siguiente (todos los integrantes)",
+            "movedAllToNextSpots": "{count, plural, one {Se movió # integrante de la página {currentPage} a su posición en la página {nextPage}} other {Se movieron los # integrantes de la página {currentPage} a sus posiciones en la página {nextPage}}}",
+            "moveSelectedToNextSpots": "Mover a las posiciones de la página siguiente (seleccionados)",
+            "movedSelectedToNextSpots": "{count, plural, one {Se movió # integrante de la página {currentPage} a su posición en la página {nextPage}} other {Se movieron # integrantes de la página {currentPage} a sus posiciones en la página {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página anterior, {previousPage}} other {Se igualaron las coordenadas de los # integrantes en la página {currentPage} a las de la página anterior, {previousPage}}}",
-            "setSelectedToPreviousDone": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página anterior, {previousPage}} other {Se igualaron las coordenadas de # integrantes en la página {currentPage} a las de la página anterior, {previousPage}}}"
+            "setSelectedToPreviousDone": "{count, plural, one {Se igualaron las coordenadas de # integrante en la página {currentPage} a las de la página anterior, {previousPage}} other {Se igualaron las coordenadas de # integrantes en la página {currentPage} a las de la página anterior, {previousPage}}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "No hay ninguna acción para rehacer",
@@ -33,6 +56,49 @@
             "redoFailed": "No se pudo rehacer, así que no cambió nada.",
             "undo": "Deshacer",
             "undoFailed": "No se pudo deshacer, así que no cambió nada."
+        },
+        "field": {
+            "addXCheckpoint": "Agregar línea de referencia X en ambos lados",
+            "addXCheckpointSeries": "Agregar líneas de referencia X cada pocos pasos",
+            "addYCheckpoint": "Agregar línea de referencia Y",
+            "addYCheckpointSeries": "Agregar líneas de referencia Y cada pocos pasos",
+            "checkpointKeywords": "campo línea líneas cuadrícula yarda hash referencia field line lines grid yard hash reference",
+            "params": {
+                "every": "Pasos entre líneas de referencia",
+                "toBack": "¿Hasta cuántos pasos detrás del frente?",
+                "toSide": "¿Hasta cuántos pasos desde el centro?"
+            },
+            "editField": "Editar campo",
+            "editFieldKeywords": "campo líneas de referencia yarda hash cuadrícula personalizar tamaño plantilla configuración field lines checkpoints yard hash grid customize size template settings",
+            "done": "Terminar de editar el campo",
+            "discard": "Descartar cambios del campo",
+            "mirror": "Reflejar lados",
+            "mirrorOn": "Activar Reflejar lados",
+            "mirrorOff": "Desactivar Reflejar lados",
+            "addXLine": "Agregar línea X",
+            "addYLine": "Agregar línea Y",
+            "editLine": "Escribir la posición de la línea elegida",
+            "deleteLines": "Eliminar líneas",
+            "toggleVisible": "Ocultar o mostrar líneas",
+            "toggleReference": "Usar o no las líneas como referencia",
+            "nextLine": "Elegir la línea siguiente",
+            "previousLine": "Elegir la línea anterior",
+            "selectAllLines": "Seleccionar todas las líneas",
+            "selectAllXLines": "Seleccionar todas las líneas X",
+            "selectAllYLines": "Seleccionar todas las líneas Y",
+            "everyOther": "Dejar elegida una línea sí y una no",
+            "resetNames": "Nombrar las líneas según su posición",
+            "nudgeLeft": "Mover líneas a la izquierda",
+            "nudgeRight": "Mover líneas a la derecha",
+            "nudgeUp": "Mover líneas hacia atrás",
+            "nudgeDown": "Mover líneas hacia adelante",
+            "nextPane": "Pasar del campo al panel Campo",
+            "previousPane": "Pasar del panel Campo al campo",
+            "importImage": "Importar imagen de fondo del campo…",
+            "removeImage": "Quitar imagen de fondo del campo",
+            "imageKeywords": "imagen foto aérea fondo campo picture photo aerial background image field",
+            "halfStep": "medio paso",
+            "editLines": "Editar líneas del campo"
         },
         "file": {
             "closeFile": "Cerrar archivo",
@@ -88,8 +154,16 @@
             "toggleMetronome": "Activar o desactivar metrónomo",
             "toggleLoop": "Activar / desactivar bucle"
         },
+        "prop": {
+            "finishDrawing": "Utilería: Terminar el dibujo",
+            "removeLastPoint": "Utilería: Quitar la última esquina al dibujar"
+        },
         "select": {
-            "selectAll": "Seleccionar todo"
+            "selectAll": "Seleccionar todo",
+            "toggleLasso": "Alternar entre selección con rectángulo y con lazo",
+            "useLasso": "Usar selección con lazo",
+            "useBox": "Usar selección con rectángulo",
+            "toggleLassoKeywords": "lazo rectángulo marco mano alzada seleccionar herramienta lasso box marquee freehand select tool"
         },
         "shape": {
             "noMarchersSelected": "No hay integrantes seleccionados",
@@ -111,10 +185,15 @@
             "group": "Agrupar selección",
             "groupKeywords": "agrupar forma congelar tal cual mantener juntos combinar group shape freeze as is keep together combine",
             "ungroup": "Forma: Desagrupar",
-            "ungroupKeywords": "desagrupar forma separar soltar dividir ungroup shape break apart release separate"
+            "ungroupKeywords": "desagrupar forma separar soltar dividir ungroup shape break apart release separate",
+            "enterBox": "Seleccionar solo este integrante",
+            "centerPivot": "Forma: Devolver el pivote al centro",
+            "centerPivotKeywords": "pivote centro restablecer girar voltear alrededor pivot center centre reset turn flip around",
+            "arc": "Forma: Arco",
+            "discard": "Forma: Descartar"
         },
         "swap": {
-            "mustSelectTwo": "Solo se puede intercambiar con 2 integrantes seleccionados.",
+            "selectTwo": "Selecciona 2 integrantes para intercambiarlos",
             "swap": "Intercambiar dos integrantes"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "Dividir el movimiento en el cabezal de reproducción",
             "unsetHere": "Quitar fotograma clave",
             "unsetHereAndFollowing": "Quitar fotograma clave, las páginas posteriores vuelven a seguir",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}; la página {first} también vuelve atrás} other {{removeKeyframe}; las páginas {first}–{last} también vuelven atrás}}",
             "unsetHereKeywords": "fotograma clave rombo diamante quitar eliminar borrar limpiar deshacer coordenada posición siguientes keyframe diamond unset set following remove clear take back coordinate position delete",
+            "toggleEditorMode": "Alternar entre Básico y Experto",
+            "toggleEditorModeKeywords": "básico experto editor modo simple completo línea de tiempo páginas basic expert editor mode simple full timeline pages",
+            "toggleEditorModeToBasic": "Cambiar a Básico (Experto está activo)",
+            "toggleEditorModeToExpert": "Cambiar a Experto (Básico está activo)",
             "splitSelectedIntoNewMove": "Separar los integrantes seleccionados en un movimiento nuevo",
-            "mergeMoveIntoPage": "Fusionar este movimiento con su página"
+            "mergeMoveIntoPage": "Fusionar este movimiento con su página",
+            "zoomIn": "Acercar la línea de tiempo",
+            "zoomOut": "Alejar la línea de tiempo",
+            "zoomKeywords": "zoom acercar alejar ampliar línea de tiempo más ancho más estrecho escala más menos zoom magnify timeline wider narrower closer farther scale plus minus",
+            "fit": "Ajustar el show a la línea de tiempo",
+            "toggleTempoMode": "Editar música: activar / desactivar",
+            "toggleTempoModeKeywords": "editar música tempo compás métrica ensayo marcas audio alinear tiempos edit music tempo time signature rehearsal marks audio align counts"
         },
         "ui": {
             "openFieldMenu": "Abrir el menú del campo",
@@ -134,6 +224,8 @@
             "openCommandPalette": "Paleta de comandos",
             "openCommandBar": "Barra de comandos",
             "openSettings": "Configuración…",
+            "checkForUpdates": "Buscar actualizaciones",
+            "checkForUpdatesKeywords": "actualizar actualización versión descargar instalar nueva update upgrade version download install new release",
             "openView3d": "Abrir vista 3D",
             "openView3dKeywords": "3d tres dimensiones tridimensional estadio sede recinto ventana three dimensional stadium venue window",
             "showShortcuts": "Atajos de teclado",
@@ -144,7 +236,19 @@
             "showNextPaths": "Mostrar trayectorias de la página siguiente",
             "toggleNextPaths": "Alternar trayectorias de la página siguiente",
             "togglePreview": "Previsualizar el show",
-            "togglePreviewKeywords": "vista previa previsualizar cinematico ver presentar presentacion pantalla completa reproducir preview cinematic watch present presentation fullscreen play"
+            "togglePreviewKeywords": "vista previa previsualizar cinematico ver presentar presentacion pantalla completa reproducir preview cinematic watch present presentation fullscreen play",
+            "reportFeedback": "Informar un error o enviar comentarios",
+            "reportFeedbackKeywords": "error falla problema comentarios sugerencia función solicitud soporte ayuda bug issue problem feedback feature request support",
+            "viewMyReports": "Ver mis reportes",
+            "openFrontEnsemble": "Abrir front ensemble y podios",
+            "openFrontEnsembleKeywords": "pit front ensemble podio tambor mayor drum major marimba vibráfono percusión altavoz bocina equipo preajuste podium vibraphone percussion speaker equipment preset",
+            "addFrontEnsembleEquipment": "Agregar equipo del front ensemble o podio",
+            "addFrontEnsembleEquipmentKeywords": "pit podio tambor mayor drum major marimba vibráfono percusión altavoz bocina consola mezcladora torre escalera instrumento podium vibraphone percussion speaker mixer tower stepladder instrument"
+        },
+        "items": {
+            "edit": "Editar utilería o equipo seleccionado",
+            "editNamed": "Editar {name}",
+            "editKeywords": "editar configuración propiedades utilería equipo podio instrumento nombre tamaño bloquear edit settings properties prop equipment podium instrument name size lock"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +268,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error al crear pulsos",
-                "success": "Pulsos creados correctamente"
+                "error": "Error al crear pulsos"
             },
             "replace": {
-                "error": "Error al reemplazar pulsos",
-                "success": "Pulsos reemplazados correctamente"
+                "error": "Error al reemplazar pulsos"
             },
             "update": {
                 "error": "Error al actualizar pulsos"
@@ -179,9 +281,6 @@
             },
             "shift": {
                 "error": "Error al desplazar pulsos"
-            },
-            "flatten": {
-                "error": "Error al normalizar el orden de los pulsos"
             }
         },
         "context": {
@@ -200,6 +299,7 @@
         "signIn": "Iniciar sesión",
         "signInAriaLabel": "Iniciar sesión",
         "signOut": "Cerrar sesión",
+        "signOutFailed": "No se pudo cerrar sesión. Revisa tu conexión a internet e inténtalo de nuevo.",
         "userFallback": "Usuario",
         "fullName": "{firstName} {lastName}",
         "api": {
@@ -224,6 +324,7 @@
         "title": "Paleta de comandos",
         "unavailable": "No disponible ahora",
         "offInPreview": "No disponible en Vista previa — sal de Vista previa para editar",
+        "offInEditMusic": "No disponible mientras editas la música: selecciona Editar música para volver",
         "shape": "Forma",
         "next": "Siguiente",
         "done": "Listo",
@@ -286,7 +387,9 @@
         "roundToHalf": "Redondear {axis} al medio paso más cercano",
         "roundToSteps": "{steps, plural, one {Redondear {axis} a múltiplos de # paso} other {Redondear {axis} a múltiplos de # pasos}}",
         "xStepValue": "X: {value}",
-        "yStepValue": "Y: {value}"
+        "yStepValue": "Y: {value}",
+        "aboutSteps": "Acerca de los pasos de redondeo",
+        "touchStepDescription": "Toca X o Y para recorrer las opciones de redondeo. Para elegir una directamente, abre Redondeo de coordenadas."
     },
     "coordinateSheet": {
         "countAbbreviation": "Tpo.",
@@ -346,7 +449,7 @@
         "exporting": "Exportando... Espera, por favor",
         "exportNotAvailable": "Exportación no disponible",
         "exportNotAvailableDescription": "Para exportar se necesitan las propiedades del campo, al menos una página además de la predeterminada y al menos un integrante.",
-        "exportPDFSuccess": "¡Exportado correctamente como PDF!",
+        "drillChartsExported": "Hojas de drill exportadas como PDF",
         "fieldPropertiesNotLoaded": "No se cargaron las propiedades del campo",
         "fieldPropertiesRequired": "Se necesitan las propiedades del campo para exportar",
         "frontToBackHeader": "Frente a fondo",
@@ -377,7 +480,7 @@
         "noMarcher": "No se proporcionó ningún integrante",
         "noMarcherPages": "No se proporcionaron páginas del integrante",
         "noPages": "No se proporcionaron páginas",
-        "openExportDirectory": "Haz clic para abrir la exportación",
+        "showInFolder": "Mostrar en carpeta",
         "openExportDirectoryError": "No se pudo abrir la carpeta de exportación: {error}",
         "organizeBySection": "Organizar por sección",
         "pdfExportFailed": "Exportación de PDF fallida: {error}",
@@ -402,12 +505,17 @@
         "unsortedSection": "Sin sección",
         "useXYHeaders": "Usar encabezados X/Y",
         "video": "Video",
+        "webMobileUnavailable": {
+            "description": "Para subir a la app On the Move necesitas tu cuenta de OpenMarch, y esta versión de prueba no puede iniciar sesión. Usa el editor de OpenMarch en editor.openmarch.com o la aplicación de escritorio.",
+            "openEditor": "Abrir editor.openmarch.com",
+            "title": "La subida al celular no está disponible aquí"
+        },
         "videoAudioTrack": "Pista de audio: {name}",
         "videoAudioNoData": "El archivo de audio no tiene datos",
         "videoBackground": "Fondo del video",
         "videoBranding": "Hecho con {product}",
         "videoExportFailed": "Exportación de video fallida: {error}",
-        "videoExportSuccess": "¡Video exportado correctamente!",
+        "videoExported": "Video exportado",
         "videoFieldFraming": "Encuadre del campo",
         "videoFieldOffsetX": "Desplazamiento horizontal",
         "videoFieldOffsetY": "Desplazamiento vertical",
@@ -421,7 +529,7 @@
         "videoNoCanvas": "No se pudo crear el lienzo de exportación",
         "videoNoEncoder": "No hay ningún codificador de video compatible disponible en este sistema",
         "videoNoWebGL": "Para exportar video se necesita WebGL, que esta computadora no tiene disponible en este momento. Activa la aceleración por hardware o actualiza los controladores gráficos y luego vuelve a abrir esta ventana.",
-        "videoOpenFile": "Haz clic para abrir el video",
+        "openVideo": "Abrir video",
         "videoOverlay": "Información en pantalla",
         "videoOverlayClock": "Tiempo transcurrido",
         "videoOverlayCount": "Tiempo {count} / {total}",
@@ -455,7 +563,7 @@
             "savePdfTitle": "Guardar PDF",
             "videoTitle": "Exportar video"
         },
-        "exportedCount": "{count, plural, one {¡Se exportaron las hojas de coordenadas de {count} integrante!} other {¡Se exportaron las hojas de coordenadas de {count} integrantes!}}",
+        "coordinateSheetsExported": "{count, plural, one {Hojas de coordenadas exportadas para # integrante} other {Hojas de coordenadas exportadas para # integrantes}}",
         "checkFieldProperties": "Propiedades del campo: {status, select, ok {✓} other {✗}}",
         "checkMarcher": "Integrante: {status, select, ok {✓} other {✗}}",
         "checkPage": "Página: {status, select, ok {✓} other {✗}}",
@@ -477,6 +585,11 @@
             "wholeDegrees": "grados enteros",
             "withKey": "<keys></keys> {word}"
         },
+        "pivotHint": {
+            "own": "Arrastra para mover el pivote · doble clic para devolverlo al centro",
+            "picking": "Haz clic en un integrante o un punto para girar alrededor · <keys></keys> cancelar",
+            "pull": "<keys></keys> mover el pivote"
+        },
         "general": {
             "exportField": "Exportar campo",
             "exportField.tooltip": "Exporta este campo a un archivo para usarlo en otros shows",
@@ -494,59 +607,41 @@
             "unavailable.title": "No se puede dibujar el campo",
             "unavailable.web": "Este navegador tiene los gráficos WebGL desactivados o bloqueados. Activa la aceleración de gráficos (en Chrome o Edge: Configuración, Sistema, \"Usar aceleración de gráficos cuando esté disponible\"), reinicia el navegador y vuelve a cargar esta página. Tu show está a salvo."
         },
-        "title": "Campo",
         "errors": {
             "noWebGL": "WebGL no está disponible",
             "contextLost": "Se perdió el contexto WebGL del campo, así que no se puede dibujar el video. Vuelve a intentar la exportación.",
             "offscreenTimeout": "El campo no se inició fuera de pantalla"
+        },
+        "areaCount": {
+            "add": "{count, plural, one {+# integrante} other {+# integrantes}}",
+            "select": "{count, plural, one {# integrante} other {# integrantes}}",
+            "subtract": "{count, plural, one {−# integrante} other {−# integrantes}}"
         }
     },
     "fieldDisplay": {
         "label": "Visualización del campo",
         "valueLabel": "{label}: {value}"
     },
+    "fieldSelectTool": {
+        "label": "Herramienta de selección",
+        "box": "Selección con rectángulo",
+        "lasso": "Selección con lazo",
+        "boxHint": "Arrastra sobre un área vacía del campo para dibujar un rectángulo",
+        "lassoHint": "Dibuja alrededor de los integrantes. Con Rectángulo, doble clic y arrastrar también dibuja un lazo"
+    },
     "fieldProperties": {
         "applyFieldType": "Aplicar tipo de campo",
         "applyFieldTypeWarning": "Los integrantes no se moverán al tamaño del nuevo tipo de campo; se quedarán donde están en el lienzo. Siempre puedes volver al tipo de campo anterior.",
         "buttons": {
             "importImage": "Importar Imagen",
-            "newXCheckpoint": "Nueva línea de referencia X",
-            "newYCheckpoint": "Nueva línea de referencia Y",
-            "resetTheme": "Restablecer tema predeterminado",
-            "uploadFloor": "Cargar piso…",
-            "removeFloor": "Quitar piso"
+            "resetTheme": "Restablecer tema predeterminado"
         },
         "checkpoint": {
-            "created": "Se creó la línea de referencia {axis} a {steps} pasos",
-            "delete": "Eliminar",
-            "deleted": "Se eliminó la línea de referencia {axis} a {steps} pasos - \"{name}\"",
-            "deleteTooltip": "Eliminar esta línea de referencia del campo",
-            "fieldLabel": "Etiqueta en el campo",
-            "fieldLabelTooltip": "La etiqueta que aparece en el campo (p. ej., los números de las yardas)",
-            "minimumRequired": "Se requieren al menos 2 líneas de referencia {axis}",
-            "name": "Nombre",
-            "nameTooltip": "Ponle a tu línea de referencia el nombre que quieras. Solo sirve para que sepas qué línea de referencia estás seleccionando.",
-            "newXCheckpointName": "Nueva línea de referencia X",
-            "newYCheckpointName": "Nueva línea de referencia Y",
-            "shortName": "Nombre corto",
-            "shortNameTooltip": "El nombre principal de la línea de referencia. (P. ej., \"Línea de yarda 45 - Lado 1\")",
-            "stepsFromCenter": "Pasos desde el centro",
-            "stepsFromFront": "Pasos desde el frente",
-            "stepsFromFrontTooltip": "La cantidad de pasos que separan esta línea de referencia del frente del campo. Los valores negativos van hacia atrás.",
-            "useAsReference": "Usar como referencia",
-            "useAsReferenceTooltip": "Si esta línea se debe usar como referencia para las coordenadas.",
-            "visible": "Visible",
-            "visibleTooltip": "Si esta línea de referencia debe verse en el campo",
-            "stepsFromCenterHint": "La cantidad de pasos que separan esta línea de referencia del centro del campo. Los valores negativos van hacia la izquierda, tal como el público ve el campo."
+            "minimumRequired": "Se requieren al menos 2 líneas de referencia {axis}"
         },
-        "customField": "Campo personalizado",
         "customFieldDocs": "Ver documentación",
         "customFieldName": "Personalizado",
-        "customization": "Personalización",
-        "customize": "Personalizar",
         "errors": {
-            "invalidColor": "Color no válido",
-            "noPropertiesToLoad": "¡No hay propiedades del campo para cargar! Esto nunca debería pasar; comunícate con soporte",
             "notDefined": "FieldProperties no está definido. Esto nunca debería pasar; comunícate con soporte.",
             "invalidJson": "Archivo JSON no válido.\n\nAsegúrate de que el archivo tenga una sintaxis JSON válida.",
             "invalidFile": "Archivo de propiedades del campo no válido.\n\n{details}\n\nAsegúrate de que el archivo contenga todas las entradas obligatorias con valores correctos.",
@@ -562,24 +657,19 @@
         "fieldType": {
             "label": "Tipo de campo"
         },
-        "general": "General",
         "labels": {
             "background": "Fondo",
             "backgroundImageOpacity": "Opacidad de la imagen de fondo",
-            "backgroundImageRatio": "Proporción de la imagen de fondo",
             "bottom": "Abajo",
-            "conformingMethod": "Método de ajuste",
             "conformMethod": "Método de ajuste",
             "directorsLeft": "Izquierda del director",
             "directorsRight": "Derecha del director",
             "externalLabels": "Etiquetas externas",
             "fieldLabels": "Etiquetas del campo",
             "fieldName": "Nombre del campo",
-            "fieldRatio": "Proporción del campo",
             "gridLines": "Líneas de cuadrícula",
             "halfLineXInterval": "Intervalo X de medias líneas",
             "halfLineYInterval": "Intervalo Y de medias líneas",
-            "height": "Altura",
             "left": "Izquierda",
             "leftAbbreviation": "Abreviatura de izquierda",
             "marcherFill": "Relleno de integrante",
@@ -595,26 +685,10 @@
             "shapes": "Formas",
             "shapeType": "Tipo de forma",
             "showBackgroundImage": "Mostrar imagen de fondo",
-            "stepsFromFrontToAwayLabelBottom": "Pasos desde el frente hasta el borde inferior del número visitante",
-            "stepsFromFrontToAwayLabelTop": "Pasos desde el frente hasta el borde superior del número visitante",
-            "stepsFromFrontToHomeLabel": "Pasos desde el frente hasta el borde inferior del número local",
-            "stepsFromFrontToHomeLabelTop": "Pasos desde el frente hasta el borde superior del número local",
             "stepSize": "Tamaño del paso",
             "stepSizeWarningThreshold": "Umbral de aviso de tamaño de paso",
             "temporaryPath": "Ruta temporal",
-            "top": "Superior",
-            "useHashes": "Usar hashes",
-            "width": "Ancho",
-            "widthHeight": "a/h",
-            "noBackgroundImage": "N/D",
-            "stepSizeWarningRatio": "Umbral de aviso de tamaño de paso ({steps} a 5)"
-        },
-        "messages": {
-            "fieldRatio": "{ratio} o {decimal}",
-            "measurementModificationNote": "Estos valores se pueden modificar ajustando las coordenadas X e Y, el tamaño del paso y la imagen de fondo",
-            "noFloor": "Sin piso",
-            "floorUnnamed": "Piso",
-            "refreshAfterImporting": "Actualizar después de importar [Ctrl + R]"
+            "top": "Superior"
         },
         "options": {
             "fill": "Rellenar",
@@ -623,40 +697,16 @@
             "metric": "Métrico"
         },
         "sections": {
-            "externalLabels": "Etiquetas externas",
-            "fieldLabels": "Etiquetas del campo",
-            "general": "General",
-            "imageRendering": "Visualización de la imagen",
-            "measurements": "Medidas",
-            "sideDescriptions": "Descripciones de los lados",
-            "theme": "Tema",
-            "xCheckpoints": "Líneas de referencia X",
-            "yCheckpoints": "Líneas de referencia Y"
-        },
-        "tabs": {
-            "checkpoints": "Líneas de referencia",
-            "general": "General",
-            "image": "Imagen",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Cuadrícula",
-            "labels": "Etiquetas",
-            "marchers": "Integrantes",
-            "pathways": "Rutas"
+            "sideDescriptions": "Descripciones de los lados"
         },
         "tooltips": {
-            "importImage": "Importar una imagen para mostrar en el campo",
             "conformMethod": "Indica si la imagen de fondo se ajusta dentro del campo o lo rellena. Siempre se mantiene la relación de aspecto",
             "directorsLeft": "P. ej., \"Lado 1\", \"Izquierda del público\" o \"Derecha del escenario\"",
             "directorsRight": "P. ej., \"Lado 2\", \"Derecha del público\" o \"Izquierda del escenario\"",
-            "fieldName": "El nombre o título de la plantilla de campo",
             "halfLineXInterval": "El intervalo, desde el centro del campo, en el que aparecen las medias líneas en la interfaz en el eje X. Déjalo vacío para omitir las medias líneas en el eje X. Es puramente visual y no afecta las coordenadas de ninguna manera",
             "halfLineYInterval": "El intervalo, desde el frente del campo, en el que aparecen las medias líneas en la interfaz en el eje Y. Déjalo vacío para omitir las medias líneas en el eje Y. Es puramente visual y no afecta las coordenadas de ninguna manera",
             "leftAbbreviation": "P. ej., \"L1\", \"IP\" o \"DE\" (abreviaturas de \"Lado 1\", \"Izquierda del público\" o \"Derecha del escenario\")",
-            "measurementSystem": "La unidad de medida con la que se define el tamaño del paso. Puedes cambiarla cuando quieras",
             "resetTheme": "Restablecer el tema a los valores predeterminados",
-            "resetToDefault": "Restablecer valor predeterminado",
             "rightAbbreviation": "P. ej., \"L2\", \"DP\" o \"IE\" (abreviaturas de \"Lado 2\", \"Derecha del público\" o \"Izquierda del escenario\")",
             "stepsFromFrontToAwayLabelBottom": "Número de pasos desde la línea lateral delantera hasta el borde exterior del número visitante (más cerca de la línea lateral trasera)",
             "stepsFromFrontToAwayLabelTop": "Número de pasos desde la línea lateral delantera hasta el borde interior del número visitante (más cerca del centro del campo)",
@@ -664,22 +714,16 @@
             "stepsFromFrontToHomeLabelTop": "Número de pasos desde la línea lateral delantera hasta el borde interior del número local (más cerca del centro del campo)",
             "stepSize": "El tamaño de cada paso en el campo, en pulgadas o centímetros",
             "stepSizeWarningThreshold": "Los integrantes cuyo tamaño de paso supere esta distancia se marcan con una ruta de color de aviso. Pon 0 para desactivarlo.",
-            "useHashes": "Usa hashes para las líneas de referencia Y, como en un campo de fútbol americano. Si está desactivado, se usarán líneas.",
-            "uploadFloor": "Importa una imagen como piso de este show: la imagen del campo en 2D, en las exportaciones y en 3D"
+            "useHashes": "Usa hashes para las líneas de referencia Y, como en un campo de fútbol americano. Si está desactivado, se usarán líneas."
         },
         "units": {
             "inches": "pulg.",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "ADVERTENCIA: las líneas de referencia X de los extremos izquierdo y derecho no están a la misma distancia del centro. Esto puede causar fallas gráficas extrañas y debe corregirse.",
-            "yCheckpointsNegative": "ADVERTENCIA: se recomienda encarecidamente que los pasos de todas las líneas de referencia Y sean menores que cero (es decir, números negativos). Todas las coordenadas Y deben quedar detrás del frente del campo. De lo contrario, pueden producirse errores gráficos y coordenadas inesperadas."
-        },
         "loading": "Cargando...",
         "measurements": {
             "feet": "{value} pies",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# paso} other {# pasos}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -721,7 +765,6 @@
         "saveSpinnerText": "Guardando copia...",
         "toasts": {
             "audioUploadFailed": "No se pudo cargar el archivo de audio",
-            "audioUploaded": "Archivo de audio cargado correctamente",
             "error": "No se pudo guardar la copia",
             "errorWithDetails": "No se pudo guardar la copia. Error: {error}",
             "noFileOpen": "No hay ningún archivo abierto. Crea o abre un show primero.",
@@ -737,10 +780,18 @@
         "valueMissing": "Ingresa un valor."
     },
     "inspector": {
+        "arrange": {
+            "title": "Organizar",
+            "pickPivot": "Elegir el pivote en el campo",
+            "pickPivotHint": "O mantén {key} y arrastra el punto en el centro de la selección",
+            "pivotTip": "Girar alrededor de: {pivot}",
+            "pickPivotButton": "Elegir en el campo"
+        },
         "marcher": {
             "drillNumber": "Número de drill",
             "errorLoadingCoords": "Error al cargar las coordenadas",
             "itemsSelected": "{count, plural, one {# elemento de utilería seleccionado. Edítalo en el panel Utilería.} other {# elementos de utilería seleccionados. Edítalos en el panel Utilería.}}",
+            "equipmentSelected": "{count, plural, =1 {# equipo seleccionado. Haz clic derecho en él para editarlo.} other {# equipos seleccionados. Haz clic derecho en uno para editarlo.}}",
             "playing": "Reproduciendo. Pausa para ver y editar a los integrantes seleccionados.",
             "maxStepSize": "Tamaño de paso más grande",
             "minStepSize": "Tamaño de paso más pequeño",
@@ -751,11 +802,25 @@
             "stepSizeWarning": "El tamaño del paso supera el umbral",
             "swapMarchers": "Intercambiar integrantes",
             "timeline": {
+                "goToHeldPage": "Ir a la página {page}, donde empieza esta parada",
                 "goToPage": "Ir a la página {page}, donde estos integrantes se movieron por última vez",
                 "goToStart": "Ir al inicio",
+                "heldFromStart": "{held} · desde el inicio",
+                "heldSince": "{held} · desde la página {page}",
                 "holdFrom": "Sin moverse desde la página {page}",
                 "holdFromStart": "Sin moverse desde el inicio",
-                "movesOnThisPage": "Se mueven en esta página"
+                "holdStyle": {
+                    "default": "Configuración del show",
+                    "highMarkTime": "Marcar el paso alto",
+                    "label": "Estilo de parada",
+                    "markTime": "Marcar el paso",
+                    "mixed": "Mixto",
+                    "stand": "Quieto"
+                },
+                "movesOnThisPage": "Se mueven en esta página",
+                "notDefinedFromStart": "{notDefined} · se muestra el inicio",
+                "notDefinedShowing": "{notDefined} · se muestra la página {page}",
+                "heldOfSelected": "{count} de {total} seleccionados: {held}"
             },
             "title": "{count} integrantes",
             "titleSingle": "Integrante {drillNumber}",
@@ -784,17 +849,11 @@
             "removeFromTagCaption": "Quitar",
             "alignHeading": "Alinear",
             "distributeHeading": "Distribuir",
+            "rotateHeading": "Rotar",
             "distributeStepsPlaceholder": "Pasos",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "adentro de",
-                "outside": "afuera de",
-                "on": "Sobre",
-                "inFrontOf": "delante de",
-                "behind": "detrás de",
-                "xCheckpoint": "Línea de referencia X {id}",
-                "yCheckpoint": "Línea de referencia Y {id}"
+                "y": "Y"
             },
             "rotation": "Rotación"
         },
@@ -923,6 +982,11 @@
                     "sectionCount": "{section} ({count})",
                     "title": "Integrantes"
                 },
+                "frontEnsemble": {
+                    "title": "Front ensemble",
+                    "description": "¿El show tiene pit? Puedes cambiarlo después.",
+                    "hint": "Al elegir un tamaño se colocan el equipo y un ejecutante en cada instrumento frente al campo, con un podio en la 50."
+                },
                 "project": {
                     "description": "Ponle nombre a tu show y elige dónde guardarlo.",
                     "fileType": "Archivo de OpenMarch",
@@ -952,7 +1016,6 @@
                     "waitingDb": "Preparando el archivo de tu show…"
                 }
             },
-            "success": "Show creado correctamente",
             "tempo": "Tempo predeterminado (BPM)",
             "title": "Nuevo show"
         },
@@ -1103,9 +1166,9 @@
         }
     },
     "measures": {
-        "createFailed": "Error al crear compases - {error}",
-        "deleteFailed": "Error al eliminar compases - {error}",
-        "updateFailed": "Error al actualizar compases - {error}"
+        "addFailed": "No se pudieron agregar los compases",
+        "removeFailed": "No se pudieron eliminar los compases",
+        "changeFailed": "No se pudieron cambiar los compases"
     },
     "mobileExport": {
         "accessError": {
@@ -1162,6 +1225,9 @@
             "validatingAccess": "Verificando el acceso a On the Move..."
         },
         "logoAlt": "Logotipo de OTM",
+        "pageLines": {
+            "note": "El celular muestra dónde están los integrantes en cada página, así que los movimientos entre páginas se ven como líneas rectas."
+        },
         "revision": {
             "audioSyncFailed": "Revisión subida, pero falló la sincronización del audio: {msg}",
             "backgroundSyncFailed": "Revisión subida, pero falló la sincronización de la imagen de fondo: {msg}",
@@ -1202,12 +1268,28 @@
             "noProduction": "No se encontró ninguna producción",
             "title": "Configuración de la aplicación móvil"
         },
+        "signInRejected": {
+            "description": "El servicio en línea de OpenMarch no aceptó tu inicio de sesión. Cierra sesión y vuelve a iniciarla.",
+            "signOut": "Cerrar sesión",
+            "title": "No se aceptó tu inicio de sesión"
+        },
         "signedOut": {
             "createAccountPrompt": "¿No tienes una cuenta todavía? ¡Crea una ahora!",
+            "errors": {
+                "failed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+                "sessionExpired": "Tu sesión caducó. Vuelve a iniciar sesión para seguir subiendo.",
+                "unavailable": "No se pudo cargar el inicio de sesión. Revisa tu conexión a internet e inténtalo de nuevo."
+            },
             "setupAccount": "Configurar tu cuenta",
-            "signInPrompt": "¿Ya tienes una cuenta? ¡Conéctala a la aplicación de escritorio para empezar a llevar tu show a On The Move!"
+            "signInPrompt": "¿Ya tienes una cuenta? ¡Conéctala a la aplicación de escritorio para empezar a llevar tu show a On The Move!",
+            "signInPromptWeb": "¿Ya tienes una cuenta? ¡Inicia sesión para empezar a llevar tu show a On The Move!"
         },
-        "title": "Exportar a móvil"
+        "title": "Exportar a móvil",
+        "unreachable": {
+            "description": "OpenMarch no pudo conectarse a su servicio en línea ni confirmar tu inicio de sesión. Revisa tu conexión a internet e inténtalo de nuevo.",
+            "retry": "Reintentar",
+            "title": "No se puede conectar con OpenMarch"
+        }
     },
     "music": {
         "accent": "Acentuar el primer pulso",
@@ -1227,7 +1309,6 @@
         "deleteAllMeasures": "Eliminar todos los compases y sus páginas asociadas",
         "deleteAudioFile": "Eliminar archivo de audio",
         "deleteAudioFileDescription": "¿Seguro que quieres eliminar este archivo de audio? Esta acción no se puede deshacer.",
-        "deleteSuccess": "Se eliminó {fileName}",
         "deleteTempoGroupAlert": "¿Seguro que quieres continuar?",
         "deleteTempoGroupDescription": "Al eliminar el grupo de tempo también se eliminarán todas las páginas asociadas a él.",
         "endTempo": "Tempo final",
@@ -1272,10 +1353,8 @@
         "tempo": "Tempo *",
         "tempoBelowMinimum": "El tempo debe ser de al menos {min} BPM",
         "tempoDescription": "Pulsos por minuto",
-        "tempoGroupCreated": "Grupo de tempo creado",
         "tempoGroupNamePlaceholder": "Opcional",
         "tempoGroups": "Grupos de tempo",
-        "tempoGroupUpdated": "Grupo de tempo actualizado",
         "undoWithShortcut": "Puedes deshacer esta acción con <keys></keys>",
         "timeSignature": "Indicación de compás: {timeSignature}",
         "title": "Música",
@@ -1299,16 +1378,13 @@
     "pages": {
         "undoDeleteUnavailable": "No se puede deshacer la eliminación: algo cambió desde entonces. Usa Deshacer en la barra de herramientas para retroceder.",
         "dotModeFailed": "Error al cambiar el modo de puntos",
-        "noNextPage": "No hay página siguiente",
-        "noPreviousPage": "No hay página anterior",
         "durationNoBeat": "No se pudo actualizar la duración de la página. No se encontró un pulso adecuado.",
         "durationFailed": "No se pudo actualizar la duración de la página",
         "yankNegativeCounts": "No se pueden adelantar páginas si eso deja tiempos negativos",
         "pushPastEnd": "No se pueden atrasar las páginas más allá del final del show",
         "yankEmptyPages": "No se pueden adelantar páginas que no tienen pulsos",
         "yankOutOfBounds": "Al desplazar las páginas, algunos pulsos quedarían fuera del rango de la música",
-        "splitTooShort": "No se puede dividir una página con menos de 2 pulsos",
-        "splitNoStartBeat": "No se encontró un nuevo pulso de inicio",
+        "splitNeedsTwoCounts": "Una página necesita al menos 2 tiempos para dividirse",
         "deleteWithMoves": {
             "changed": "{count, plural, =1 {Cambió la página {pages}} other {Cambiaron las páginas {pages}}}",
             "changedBoth": "Cambiaron {keptCount, plural, =1 {la página {kept}} other {las páginas {kept}}} y {renamedCount, plural, =1 {la antigua página {renamed}} other {las antiguas páginas {renamed}}}",
@@ -1318,12 +1394,15 @@
             "grownOld": "La antigua página {page} ahora dura {counts, plural, one {# tiempo} other {# tiempos}}",
             "noOtherChanged": "No cambió ninguna otra página"
         },
-        "createError": "No se pudo crear la página: {error}",
-        "updateError": "No se pudo actualizar la página: {error}"
+        "createFailed": "No se pudo crear la página",
+        "updateFailed": "No se pudo cambiar la página"
     },
     "props": {
         "back": "Atrás",
         "close": "Cerrar",
+        "color": "Color",
+        "colorMixed": "Mixto",
+        "colorNone": "Ninguno",
         "counts": "tiempos",
         "delete": "Eliminar utilería",
         "depth": "Profundidad",
@@ -1333,9 +1412,13 @@
                 "arc": "Haz clic en ambos extremos del arco y luego haz clic para definir su curva.",
                 "circle": "Arrastra desde el centro para definir el radio.",
                 "drag": "Arrastra en el campo para dibujar la utilería. Aparece en el campo desde el tiempo del cabezal de reproducción.",
-                "polygon": "Haz clic en cada esquina y luego doble clic para terminar."
+                "polygon": "Haz clic en cada esquina y luego doble clic para terminar.",
+                "polygonTouch": "Toca cada esquina y luego toca Terminar.",
+                "arcTouch": "Toca los dos extremos del arco y luego toca para definir su curva."
             },
-            "title": "Dibujar utilería"
+            "title": "Dibujar utilería",
+            "finish": "Terminar",
+            "undoPoint": "Deshacer punto"
         },
         "edit": "Editar utilería",
         "editTitle": "Editar utilería",
@@ -1344,7 +1427,8 @@
             "create": "No se pudo crear la utilería",
             "delete": "No se pudo eliminar la utilería",
             "outline": "No se pudo cambiar el contorno de la utilería",
-            "update": "No se pudo modificar la utilería"
+            "update": "No se pudo modificar la utilería",
+            "preset": "No se pudo aplicar el preajuste"
         },
         "height": "Altura",
         "hide": "Ocultar en el campo",
@@ -1368,6 +1452,7 @@
             "right": "Se despliega desde la derecha"
         },
         "rotation": "Rotación",
+        "selectedCount": "{count, plural, one {# elemento de utilería seleccionado} other {# elementos de utilería seleccionados}}",
         "show": "Mostrar en el campo",
         "showNames": "Mostrar todos los nombres",
         "surface": {
@@ -1381,7 +1466,74 @@
         "width": "Ancho",
         "units": {
             "meters": "m"
-        }
+        },
+        "locked": "Bloqueado",
+        "lockLabel": "Bloqueado",
+        "lockHint": "Una sola posición para todo el show"
+    },
+    "frontEnsemble": {
+        "title": "Front ensemble y podios",
+        "add": {
+            "title": "Agregar equipo",
+            "button": "Agregar"
+        },
+        "empty": "Todavía no hay front ensemble. Agrega equipo y podios, o empieza desde un preajuste.",
+        "list": {
+            "equipment": "Equipo",
+            "podiums": "Podios"
+        },
+        "placeInstructions": "Haz clic en el campo para colocar: {name}. Estará en el campo desde el tiempo del cabezal de reproducción.",
+        "equipment": {
+            "block": "Equipo",
+            "delete": "Eliminar equipo",
+            "edit": "Editar equipo",
+            "editTitle": "Editar equipo",
+            "model": "Modelo de {family}"
+        },
+        "podium": {
+            "delete": "Eliminar podio",
+            "edit": "Editar podio",
+            "editTitle": "Editar podio"
+        },
+        "default": "Predeterminado",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "Audio",
+            "keyboards": "Teclados",
+            "percussion": "Percusión",
+            "podiums": "Podios"
+        },
+        "presets": {
+            "title": "Preajustes",
+            "size": "Tamaño del preajuste",
+            "small": "Pequeño",
+            "medium": "Mediano",
+            "large": "Grande",
+            "summary": {
+                "small": "2 marimbas, 2 vibráfonos, un rack, un sintetizador y 2 altavoces",
+                "medium": "4 marimbas, 3 vibráfonos, xilófono, glockenspiel, rack, batería, sintetizador y 4 altavoces",
+                "large": "6 marimbas, 4 vibráfonos, xilófono, glockenspiel, 2 racks, batería, 2 sintetizadores y 6 altavoces",
+                "none": "Sin pit. Puedes configurarlo más tarde en el panel Integrantes."
+            },
+            "always": "Cada uno agrega también un podio en la 50 y una consola detrás del pit.",
+            "addPerformers": "Agregar también ejecutantes",
+            "apply": "Aplicar",
+            "replaces": "Reemplaza el equipo que agregó el último preajuste. Sus ejecutantes pasan a las nuevas posiciones; los que quedan sin instrumento se eliminan, a menos que tengan movimientos más adelante en el show. Deshacer lo devuelve todo. El equipo que agregaste tú se queda.",
+            "none": "Ninguno",
+            "start": "Empezar desde un preajuste",
+            "reset": "Restablecer preajuste"
+        },
+        "summary": {
+            "title": "Front ensemble y podios",
+            "none": "Todavía no hay pit",
+            "setUp": "Configurar",
+            "edit": "Editar",
+            "equipment": "{count, plural, one {# equipo} other {# equipos}}",
+            "podiums": "{count, plural, one {# podio} other {# podios}}"
+        },
+        "search": "Buscar equipo",
+        "noMatch": "Ningún equipo coincide.",
+        "results": "{count, plural, =0 {Ningún equipo coincide.} one {# modelo} other {# modelos}}"
     },
     "section": {
         "drumMajor": "Tambor mayor",
@@ -1425,8 +1577,12 @@
         "other": "Otro",
         "pit": {
             "auxPercussion": "Percusión auxiliar",
+            "drumSet": "Batería",
+            "glockenspiel": "Glockenspiel",
             "marimba": "Marimba",
+            "rack": "Rack",
             "synthesizer": "Sintetizador",
+            "timpani": "Timbales",
             "vibraphone": "Vibráfono",
             "xylophone": "Xilófono"
         },
@@ -1466,6 +1622,17 @@
         "general.appearance": "Apariencia",
         "general.appearance.dark": "Oscuro",
         "general.appearance.light": "Claro",
+        "general.updates": "Actualizaciones",
+        "general.updates.version": "Tienes OpenMarch {version}.",
+        "general.updates.checking": "Tienes OpenMarch {version}. Buscando actualizaciones…",
+        "general.updates.upToDate": "OpenMarch {version} es la versión más reciente.",
+        "general.updates.available": "OpenMarch {version} está disponible.",
+        "general.updates.downloading": "Descargando OpenMarch {version}: {percent}%",
+        "general.updates.ready": "OpenMarch {version} está lista. Se instala la próxima vez que salgas, o ahora con el botón de actualización de la barra de título.",
+        "general.updates.failed": "La actualización no funcionó. Tienes OpenMarch {version}.",
+        "general.checkForUpdates": "Buscar actualizaciones",
+        "general.automaticDownload": "Descargar actualizaciones automáticamente",
+        "general.automaticDownload.description": "Las actualizaciones se instalan cuando sales de OpenMarch, o de inmediato con Actualizar ahora.",
         "general.description": "Modo del editor, idioma y otras preferencias de toda la aplicación.",
         "general.editorMode": "Modo del editor",
         "general.editorMode.basic": "Básico",
@@ -1541,8 +1708,21 @@
         "title": "Configuración",
         "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
         "tolgeeDevToolsToggle": "Traducción en contexto de Tolgee",
-        "view3d": "Vista 3D",
-        "view3d.description": "Cómo se dibuja la Vista 3D en esta computadora. No se guarda en el show.",
+        "view3d.controls": "Controles",
+        "view3d.controls.input.drag": "Arrastrar con clic izquierdo",
+        "view3d.controls.input.pinch": "Pellizcar",
+        "view3d.controls.input.rightDrag": "Arrastrar con clic derecho",
+        "view3d.controls.input.scroll": "Rueda",
+        "view3d.controls.input.swipe": "Desplazar con dos dedos",
+        "view3d.controls.move.orbit": "Orbitar",
+        "view3d.controls.move.pan": "Desplazar",
+        "view3d.controls.move.zoom": "Zoom",
+        "view3d.controls.orbit": "Órbita",
+        "view3d.controls.orbit.description": "Arrastrar orbita y la rueda hace zoom. Arrastra con el botón derecho del mouse o mantén Shift para moverte por el campo.",
+        "view3d.controls.map": "Mapa",
+        "view3d.controls.map.description": "Arrastrar te mueve por el campo y la rueda hace zoom. Mantén una tecla modificadora o usa el botón derecho del mouse para orbitar.",
+        "view3d.controls.trackpad": "Trackpad",
+        "view3d.controls.trackpad.description": "Desplazar y arrastrar orbitan, y pellizcar hace zoom. El botón derecho del mouse desplaza la vista.",
         "view3d.quality": "Calidad",
         "view3d.quality.auto": "Automática",
         "view3d.quality.auto.description": "Empieza en Alta y cambia a Baja si la vista se traba.",
@@ -1567,7 +1747,8 @@
         "repairDotsFile.reopenFailed": "El archivo reparado se guardó en {path}, pero no se pudo abrir (estado {status}).",
         "utilityUpdateFailed": "No se pudieron guardar los ajustes internos de tiempo del show",
         "shortcuts.conflictWith": "<keys></keys> ya está asignado a {actions}.",
-        "shortcuts.recordingHint": "Presiona las teclas… (<keys></keys> para cancelar)"
+        "shortcuts.recordingHint": "Presiona las teclas… (<keys></keys> para cancelar)",
+        "shortcuts.category.field": "Campo"
     },
     "shapes": {
         "box": {
@@ -1662,6 +1843,7 @@
             },
             "pivot": {
                 "aria": "Pivote: {pivot}",
+                "backToCenter": "Volver al centro",
                 "custom": "Pivote: donde se arrastró en el campo",
                 "label": "Pivote",
                 "names": {
@@ -1679,9 +1861,16 @@
             },
             "place": "Colocar",
             "quarterTurn": "Girar 90° en sentido horario",
+            "guides": {
+                "label": "Guías",
+                "circle": "Círculo",
+                "angles": "Líneas de ángulo"
+            },
             "ratioLock": {
                 "locked": "Espaciados vinculados: haz clic para desvincular",
-                "unlocked": "Vincular los dos espaciados"
+                "unlocked": "Vincular los dos espaciados",
+                "sizesLocked": "Ancho y alto bloqueados juntos: haz clic para desbloquear",
+                "sizesUnlocked": "Bloquear el ancho y el alto juntos"
             },
             "hideMarchers": {
                 "hide": "Ocultar a los integrantes",
@@ -1722,7 +1911,13 @@
                 "label": "Asignación de lugares"
             },
             "drawHintFor": "Arrastra en el campo para dibujar {shape, select, block {un bloque} circle {un círculo} line {una línea} curve {una curva} arc {un arco} other {una forma}} · <keys></keys> para cancelar",
-            "drawPointsHintFor": "Arrastra en el campo para dibujar {shape, select, line {una línea} curve {una curva} arc {un arco} other {una forma}}, o haz clic punto por punto · <keys></keys> para cancelar"
+            "drawPointsHintFor": "Arrastra en el campo para dibujar {shape, select, line {una línea} curve {una curva} arc {un arco} other {una forma}}, o haz clic punto por punto · <keys></keys> para cancelar",
+            "finish": "Terminar",
+            "undoPoint": "Deshacer punto",
+            "discard": "Descartar",
+            "drawHintTouchFor": "Arrastra en el campo para dibujar {shape, select, block {un bloque} circle {un círculo} line {una línea} curve {una curva} arc {un arco} other {una forma}}",
+            "drawPointsHintTouchFor": "Arrastra en el campo para dibujar {shape, select, line {una línea} curve {una curva} arc {un arco} other {una forma}}, o toca punto por punto",
+            "pointsHintTouch": "Toca para agregar puntos · Doble toque o Terminar para acabar"
         },
         "placed": {
             "label": "{name} · {count, plural, one {{interval} paso} other {{interval} pasos}}",
@@ -1735,6 +1930,7 @@
                 "steps": "{count, plural, one {{interval} paso} other {{interval} pasos}}"
             },
             "groupError": "Error al agrupar a los integrantes",
+            "groupNeedsTwo": "Selecciona 2 o más integrantes para agruparlos",
             "ungroupError": "Error al desagrupar la forma",
             "ungroupIsolated": "Desagrupa esta forma fuera del aislamiento: viene de una página anterior",
             "leftShape": {
@@ -1789,6 +1985,25 @@
                 "validate": {
                     "flat": "El arco es plano, así que es una línea recta",
                     "sameSpot": "Los extremos del arco están en el mismo punto"
+                },
+                "params": {
+                    "bend": "Cuánto gira el arco",
+                    "width": "Cuánto abarca el arco de lado a lado, en pasos",
+                    "height": "Qué tan alto es el arco, de sus extremos a su borde más lejano, en pasos",
+                    "stretch": "Qué tan estirada está la elipse del arco: cuántas veces es más alta que ancha, o más ancha que alta"
+                },
+                "ends": {
+                    "label": "Abierto o cerrado",
+                    "open": "Abierto",
+                    "chord": "Cerrar con una línea recta",
+                    "circle": "Cerrar en círculo",
+                    "round": "Cerrar por completo"
+                },
+                "size": {
+                    "steps": "pasos",
+                    "tall": "alto",
+                    "wide": "ancho",
+                    "round": "círculo"
                 }
             },
             "block": {
@@ -2009,11 +2224,9 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Tipos de forma",
-                "ringHintKeys": "Mantén <keys></keys> en el campo para abrir el anillo de formas"
+                "ringHintKeys": "Mantén <keys></keys> en el campo para abrir el anillo de formas",
+                "ringCaption": "Anillo"
             }
-        },
-        "transform": {
-            "title": "Transformar"
         },
         "validate": {
             "noPosition": "La forma tiene un punto sin posición",
@@ -2076,23 +2289,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "Error al crear los nuevos pulsos",
-        "deletedSuccessfully": "Grupo de tempo eliminado correctamente",
         "deleteFailed": "No se pudo eliminar el grupo de tempo",
-        "differentBeatsError": "El grupo de tempo tiene un número distinto de pulsos. Esto no debería ocurrir. ¡Contáctanos, por favor!",
+        "temposFailed": "No se pudieron cambiar los tempos",
         "errorUpdatingTempoGroup": "Error al actualizar el grupo de tempo"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} está en una forma} other {{shapeNames} están en una forma}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other { y }}}}{leaderCount, plural, =0 {} one {{leaderNames} sigue al líder} other {{leaderNames} siguen al líder}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other { y }}} other { y }}}}{orderCount, plural, =0 {} one {{orderNames} comparte un movimiento curvo con un orden de seguir al líder} other {{orderNames} comparten un movimiento curvo con un orden de seguir al líder}}, así que {count, plural, one {conserva su} other {conservan su}} movimiento aquí.",
             "passThrough": {
                 "catchUp": "Ahora alcanza la formación al final de {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Conservar la página {first} como fotograma clave} other {Conservar las páginas {first}–{last} como fotogramas clave}}",
-                    "unnamed": "Conservarlas como fotogramas clave"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {Detenerse al final de la página {first}} other {Detenerse al final de las páginas {first}–{last}}}",
+                    "unnamed": "Detenerse al final de esas páginas"
                 },
-                "keepStopsError": "No se pudieron conservar esas páginas como fotogramas clave",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {La página {first} ya no es un fotograma clave} other {Las páginas {first}–{last} ya no son fotogramas clave}}",
-                    "unnamed": "Las páginas dentro de este movimiento ya no son fotogramas clave"
+                "stopAtEndError": "No se pudo detener a los integrantes al final de esas páginas",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Ahora sigue de largo al final de la página {first}} other {Ahora sigue de largo al final de las páginas {first}–{last}}}",
+                    "unnamed": "Ahora sigue de largo al final de las páginas dentro de este movimiento"
                 },
                 "through": "Ahora pasa directamente por {through}",
                 "throughAndCatchUp": "Ahora pasa directamente por {through} y luego alcanza la formación al final de {caughtUp}"
@@ -2111,7 +2324,18 @@
             "destinationShapeUnsuitable": "Ese destino no encaja en la transición. Una transición de seguir al líder no puede terminar en una cuadrícula, y una cuadrícula necesita al menos tantos lugares como puestos tiene la transición.",
             "followLeaderBlock": "Una transición de seguir al líder no puede terminar en una cuadrícula. Elige una línea, curva, círculo o bloque.",
             "followLeaderNeedsShape": "Una transición de seguir al líder necesita una figura que seguir.",
+            "heldConflict": "{count, plural, =1 {{names} está {held} en {pages}. Usa {clearThisPage} para quitar la parada, o arrastra dentro de ella para moverla.} other {{names} están {held} en {pages}. Usa {clearThisPage} para quitar las paradas, o arrastra dentro de ellas para moverlas.}}",
+            "heldHoldsOverlap": "Un integrante no puede tener dos paradas {held} sobre los mismos tiempos.",
+            "heldPages": "{count, plural, =1 {la página {pages}} other {las páginas {pages}}}",
             "legacyConvertedTimeline": "Una versión de desarrollo anterior convirtió este archivo a líneas de tiempo y puso varios movimientos de página en una sola línea de tiempo, así que no se puede editar. Conviértelo de nuevo: abre su copia de seguridad (el archivo guardado junto a él antes de la conversión).",
+            "moveInHeldHold": "Eso pondría un movimiento dentro de una parada {held}. Usa {clearThisPage} para quitar la parada, o arrastra dentro de ella para moverla.",
+            "notJoined": {
+                "marcherCount": "{count, plural, one {# integrante} other {# integrantes}}",
+                "message": "No se pudieron unir los movimientos de {names}: {reason}.",
+                "overlap": "el movimiento unido chocaría con otro de sus movimientos en la misma capa",
+                "partway": "un integrante entra o sale del siguiente movimiento a mitad de camino",
+                "secondMove": "tendrían dos movimientos sobre los mismos tiempos"
+            },
             "notReady": "La línea de tiempo aún se está cargando. Inténtalo de nuevo en un momento.",
             "numberOutOfRange": "Un número está fuera de rango. Los pulsos, las capas, la cantidad de puestos y las posiciones deben ser números enteros o finitos dentro de los límites permitidos.",
             "pathParamsInvalid": "Ese ajuste de trayectoria no es válido. La curvatura de un arco puede ser como máximo la mitad de la distancia entre sus extremos, y los puntos de paso deben ser puntos en el campo.",
@@ -2121,11 +2345,47 @@
             "transitionSpansTimeline": "Una transición debe abarcar toda su línea de tiempo, empezando y terminando con ella. Cambia mejor el rango de la línea de tiempo y sus transiciones se moverán con él.",
             "unknown": "La línea de tiempo no pudo hacer ese cambio."
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "Página {page}: {label}. {hint}"
+        "holdEdge": {
+            "endLabel": "Fin de la parada ({held}). Arrastra para salir antes o mantenerte más tiempo",
+            "readoutEnd": "{held} hasta la página {page}, tiempo {count}",
+            "blocked": {
+                "minimum": "Una parada dura al menos un tiempo",
+                "nextMove": "Se detiene en el siguiente movimiento",
+                "showEnd": "Se detiene al final del show"
             },
+            "changeError": "No se pudo cambiar la parada",
+            "splitError": "No se pudo dividir la parada",
+            "styleError": "No se pudo cambiar el estilo de parada"
+        },
+        "heldBar": {
+            "detail": "{held} de {total} seleccionados",
+            "shape": "Su forma continúa aquí",
+            "title": "{held} · Página {page}",
+            "titleRange": "{held} · Páginas {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}: el movimiento antes de {page} sigue al líder",
+            "arrivalShape": "{names}: el movimiento antes de {page} termina en una forma",
+            "count": "{count, plural, one {# integrante} other {# integrantes}}",
+            "crossesFlag": "{names}: un movimiento cruza uno de los marcadores de la página",
+            "done": "{names}: {held} en {page}",
+            "endsWithoutArriving": "{names}: un movimiento termina en {page} sin llegar allí",
+            "expertMoves": "{names}: movimientos de Experto en esta página",
+            "followLeader": "{names}: sigue al líder en esta página",
+            "held": "{names}: ya está {held} aquí",
+            "homeShape": "{names}: una forma define el punto de partida. Desagrúpala al inicio del show para mantenerlos uno por uno",
+            "none": "Nadie quedó {held} en {page}",
+            "notHeldReasons": "No quedaron {heldLower}: {reasons}",
+            "shape": "{names}: en una forma en esta página",
+            "holdError": "No se pudo mantener a los integrantes",
+            "paused": "Pausa la reproducción para cambiar las paradas",
+            "styleNoneHeld": "Ningún integrante seleccionado está En su lugar en el cabezal de reproducción",
+            "styleInEffect": "Ya es el estilo de parada aquí"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {La página {first} no tenía posiciones propias para estos integrantes, así que también cambió} other {Las páginas {first}–{last} no tenían posiciones propias para estos integrantes, así que también cambiaron}}",
                 "keepAsBefore": "{count, plural, =1 {Dejar la página {first} como antes} other {Dejar las páginas {first}–{last} como antes}}",
                 "keepError": "Error al conservar las páginas posteriores"
             },
@@ -2143,6 +2403,9 @@
             "removeError": "No se pudieron eliminar los fotogramas clave",
             "removeLocked": "{count, plural, =1 {Un integrante usa movimientos de Experto en esta página, así que no se eliminó su fotograma clave. Cambia a Experto para editarlo.} other {# integrantes usan movimientos de Experto en esta página, así que no se eliminaron sus fotogramas clave. Cambia a Experto para editarlos.}}",
             "removeLockedAll": "{count, plural, =1 {Un integrante usa movimientos de Experto en esta página. Cambia a Experto para editarlo.} other {# integrantes usan movimientos de Experto en esta página. Cambia a Experto para editarlos.}}",
+            "paused": "Pausa la reproducción para cambiar los fotogramas clave",
+            "removeNone": "Ningún integrante seleccionado tiene un fotograma clave aquí",
+            "followNone": "Ninguna página posterior sigue este punto",
             "title": "Fotograma clave · Página {page}, tiempo {count}",
             "spoken": "{title}. {detail}"
         },
@@ -2155,6 +2418,7 @@
             "message": "Se dividió {label} en {where}",
             "messageAtPlayhead": "Se dividió {label} en el cabezal de reproducción",
             "changed": "{count, plural, one {Se redibujó la trayectoria de # integrante: recta antes del punto, reiniciada después} other {Se redibujaron las trayectorias de # integrantes: rectas antes del punto, reiniciadas después}}",
+            "restarted": "{count, plural, one {La trayectoria curva de # integrante vuelve a empezar después} other {Las trayectorias curvas de # integrantes vuelven a empezar después}}",
             "paused": "Pausa la reproducción para dividir un movimiento.",
             "isolatedOutside": "Coloca el cabezal de reproducción dentro del movimiento que estás editando para dividirlo.",
             "noneAt": "Ningún movimiento pasa por {where}. Coloca el cabezal de reproducción dentro de un movimiento para dividirlo.",
@@ -2168,14 +2432,32 @@
                 "subsetToggle": "Subconjunto"
             },
             "label": "Página {pageName}",
+            "optionsLabel": "Opciones de la página {pageName}",
             "homeTooltip": "Inicio: el comienzo del show (la formación de la página {page})"
         },
         "rangeMenu": {
             "deleteWithMoves": "Eliminar página y sus movimientos",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "Fijar como se muestra",
+            "holdFromPreviousNone": "Todos los integrantes seleccionados ya están {heldLower} en {page}, o a mitad de un movimiento",
             "setAsShownNone": "Todos los integrantes seleccionados ya están fijos en {page} o están a mitad de un movimiento",
             "setAsShownError": "Error al fijar los integrantes como se muestran",
-            "deletePage": "Eliminar página"
+            "deletePage": "Eliminar página",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "Limpiar esta página",
+            "defineAsShown": "Definir como se muestra",
+            "defined": "Definido",
+            "definedLower": "definido",
+            "held": "En su lugar",
+            "heldLower": "en su lugar",
+            "holdFromPrevious": "Mantener desde el último fotograma clave",
+            "notDefined": "Sin definir",
+            "notDefinedLower": "sin definir",
+            "removeKeyframe": "Eliminar fotograma clave",
+            "holdOverWindow": "Mantener del marcador de inicio al cabezal de reproducción",
+            "splitHold": "Dividir la parada aquí"
         },
         "startFlagPositions": {
             "always": "Siempre",
@@ -2201,16 +2483,15 @@
             "menu": "{count, plural, one {Separar # seleccionado en un movimiento nuevo} other {Separar # seleccionados en un movimiento nuevo}}",
             "menuNone": "Separar seleccionados en un movimiento nuevo",
             "drag": "Separar {count, plural, one {# integrante} other {# integrantes}}",
-            "done": "{count, plural, one {Se separó # integrante en {label}} other {Se separaron # integrantes en {label}}}",
             "paused": "Pausa la reproducción para dividir o fusionar movimientos.",
-            "nothingOnPage": "Todavía nada se mueve en esta página, así que no hay nada que dividir."
+            "nothingOnPage": "Todavía nada se mueve en esta página, así que no hay nada que dividir.",
+            "pageSplitOff": "Esta página no tiene un movimiento propio. Para dividir un movimiento que la cruza, usa el clip del movimiento."
         },
         "merge": {
             "menuPair": "Fusionar {source} en {target}",
             "menuPairFit": "Fusionar {source} en {target} · ajustar a sus tiempos",
             "menuInto": "Fusionar en {target}",
             "menuIntoFit": "Fusionar en {target} · ajustar a sus tiempos",
-            "done": "Se fusionó {source} en {target}",
             "page": "Página {name}",
             "thisPage": "esta página",
             "thisMove": "este movimiento",
@@ -2333,6 +2614,8 @@
             "passedSets": "{count, plural, =1 {la formación {names}} other {las formaciones {names}}}",
             "through": "· pasando por {sets}",
             "editingThrough": "{editing}, pasando por {sets}",
+            "held": "· {count} de {total} {held}",
+            "withHeld": "{rest}, {count} de {total} {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. {key} repite {loop} en bucle",
             "loops": "<keys></keys> repite {loop} en bucle"
@@ -2390,6 +2673,11 @@
             "label": "Ajustar el show",
             "hint": "Presiona de nuevo para volver. Pellizca o usa <keys></keys> para hacer zoom"
         },
+        "zoom": {
+            "in": "Acercar",
+            "out": "Alejar",
+            "hint": "O pellizca, o <keys></keys>"
+        },
         "transport": {
             "label": "Transporte",
             "more": "Más controles",
@@ -2443,6 +2731,7 @@
         },
         "moveMenu": {
             "edit": "Editar movimiento",
+            "selectMarchers": "Seleccionar integrantes",
             "rename": "Renombrar movimiento…",
             "splitAtPlayhead": "Dividir en el cabezal",
             "delete": "Eliminar movimiento",
@@ -2536,6 +2825,15 @@
                 "alreadyInSlot": "el integrante ya está en el lugar {slot}"
             },
             "changesNothing": "eso no cambia nada",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} funciona en una página completa, no en {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} funciona en una página completa, no en {counts}"
+            },
+            "holdEdge": {
+                "outside": "La parada no puede llegar a ese tiempo: se detiene en el siguiente movimiento del integrante, al final del show o a un tiempo de su otro extremo."
+            },
             "moveTimeline": {
                 "tooEarly": "la línea de tiempo empieza en el pulso {start}, así que no puede moverse {count, plural, one {# pulso} other {# pulsos}} antes",
                 "tooLate": "la línea de tiempo no puede moverse más allá del pulso {max}"
@@ -2551,6 +2849,45 @@
                 "wholePage": "Mantener funciona con una página completa, no con {counts}"
             },
             "tooFarPastEnd": "eso está {count, plural, one {# tiempo} other {# tiempos}} después del final; una sola edición agrega como máximo {max}"
+        },
+        "expertHolds": {
+            "held": "{names}: ya está {heldLower} del marcador de inicio al cabezal de reproducción",
+            "shape": "{names}: en una forma entre el marcador de inicio y el cabezal de reproducción",
+            "followLeader": "{names}: sigue al líder entre el marcador de inicio y el cabezal de reproducción",
+            "followLeaderOrder": "{names}: comparte un movimiento curvo con un orden de seguir al líder",
+            "arrivalShape": "{names}: la parada empezaría donde termina una forma",
+            "arrivalFollowLeader": "{names}: la parada empezaría donde termina un movimiento de seguir al líder",
+            "homeShape": "{names}: una forma define el punto de partida. Desagrúpala al inicio del show para mantenerlos uno por uno",
+            "endsWithoutArriving": "{names}: el último movimiento antes del marcador de inicio termina sin llegar allí",
+            "count": "{count, plural, one {# integrante} other {# integrantes}}",
+            "notHeld": "{count, plural, one {# integrante no quedó} other {# integrantes no quedaron}} {heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · Página {page}",
+            "titleRange": "{notDefined} · Páginas {first}–{last}"
+        },
+        "departure": {
+            "title": "Se mueve de nuevo · Página {page}, tiempo {count}"
+        },
+        "touchTransport": {
+            "playMenu": "Formas de reproducir",
+            "goTo": "Ir a",
+            "start": "Inicio",
+            "countBack": "Tiempo atrás",
+            "countOn": "Tiempo adelante",
+            "end": "Final",
+            "playback": "Reproducción",
+            "speed": "Velocidad",
+            "sound": "Sonido",
+            "view": "Vista",
+            "fit": "Ajustar",
+            "atPlayhead": "En el cabezal de reproducción",
+            "newPage": "Nueva página",
+            "newSubset": "Nuevo subconjunto",
+            "compact": "Compacta"
+        },
+        "clearPage": {
+            "error": "No se pudo limpiar la página"
         }
     },
     "titlebar": {
@@ -2569,6 +2906,8 @@
         }
     },
     "toolbar": {
+        "showControls": "Mostrar la barra de herramientas",
+        "hideControls": "Ocultar la barra de herramientas",
         "alignment": {
             "lockXCaption": "Bloquear X",
             "lockYCaption": "Bloquear Y",
@@ -2576,7 +2915,9 @@
             "lockMarchersAriaLabel": "Movimiento del cursor y ajuste de integrantes",
             "placeAllMarchers": "Colocar a todos los integrantes",
             "placeSelectedMarchers": "Colocar integrantes seleccionados",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Ajuste",
+            "toNextPageSpots": "...en sus puntos de la página siguiente",
             "setMarcherPositionsAriaLabel": "Establecer posiciones de integrantes",
             "toPreviousPagePositions": "...a posiciones en la página anterior"
         },
@@ -2626,14 +2967,62 @@
             "shapesAlways": "Siempre",
             "shapesOff": "Desactivado",
             "shapesSelected": "Al estar seleccionada"
+        },
+        "alignmentTabShort": "Alinear"
+    },
+    "updates": {
+        "pill": {
+            "available": "Actualización disponible",
+            "downloadingUpdate": "Descargando actualización",
+            "downloadingProgress": "Descargando actualización: {percent} %",
+            "ready": "Actualización lista",
+            "failed": "Error al actualizar"
+        },
+        "popover": {
+            "current": "Tienes la versión {version}.",
+            "availableBody": "Descárgala ahora. Se instala cuando elijas Actualizar ahora, o la próxima vez que salgas.",
+            "downloadingBody": "{transferred} de {total} MB, {speed} MB/s",
+            "downloadingStarting": "Iniciando la descarga…",
+            "readyBody": "Actualizar ahora cierra tu show, instala la actualización y vuelve a abrir OpenMarch y tu show. Tu trabajo ya está guardado.",
+            "moveBody": "macOS solo puede actualizar OpenMarch en tu carpeta Aplicaciones. Muévelo allí y OpenMarch se volverá a abrir desde Aplicaciones.",
+            "errorBody": "No se pudo descargar la actualización. Inténtalo de nuevo, o descarga el instalador y ejecútalo tú mismo.",
+            "installFailedBody": "OpenMarch {version} no se instaló. Descarga el instalador y ejecútalo tú mismo."
+        },
+        "action": {
+            "download": "Descargar",
+            "updateNow": "Actualizar ahora",
+            "later": "Más tarde",
+            "retry": "Reintentar",
+            "downloadInstaller": "Descargar instalador",
+            "moveToApplications": "Mover a Aplicaciones",
+            "whatsNew": "Novedades"
+        },
+        "toast": {
+            "checking": "Buscando actualizaciones…",
+            "upToDate": "OpenMarch {version} es la versión más reciente.",
+            "available": "OpenMarch {version} está disponible.",
+            "downloading": "Se está descargando ahora. El botón de actualización arriba a la izquierda muestra el progreso.",
+            "ready": "OpenMarch {version} está listo para instalarse.",
+            "checkFailed": "No se pudo buscar actualizaciones."
+        },
+        "unsupported": {
+            "development": "Las actualizaciones están desactivadas en las compilaciones de desarrollo.",
+            "snap": "Snap Store mantiene actualizada esta copia de OpenMarch.",
+            "linuxPackage": "Esta copia de OpenMarch no puede actualizarse sola. Descarga las nuevas versiones desde openmarch.com.",
+            "noFeed": "Esta compilación de OpenMarch no se actualiza sola. Descarga cada nueva compilación a mano."
         }
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Puedes cambiarlo más tarde en Configuración › General.",
             "no": "No",
             "title": "¿Abrir la vista 3D al iniciar?",
             "yes": "Sí"
+        },
+        "board": {
+            "designedBy": "Diseñado por {name}",
+            "forClient": "Para {name}",
+            "nowPerforming": "Ahora en escena",
+            "untitled": "Show sin título"
         },
         "camera": {
             "blimp": "Dirigible",
@@ -2678,7 +3067,8 @@
             "pickSeat": "Elegir un asiento",
             "pickSeatTooltip": "Elegir un asiento: haz clic en un asiento de las gradas para sentarte ahí",
             "venue": "Recinto",
-            "freeCamera": "Vista libre"
+            "freeCamera": "Vista libre",
+            "director": "Director"
         },
         "readout": {
             "count": "Tiempo {count} de {total}",
@@ -2697,10 +3087,6 @@
                 "desktop": "Los gráficos se procesan por software en esta computadora, así que la vista 3D se dibuja en baja calidad y seguirá siendo lenta. Para ver la vista completa, actualiza los controladores de gráficos y reinicia OpenMarch.",
                 "web": "Los gráficos se procesan por software en este navegador, así que la vista 3D se dibuja en baja calidad y seguirá siendo lenta. Para ver la vista completa, activa la aceleración de gráficos (en Chrome o Edge: Configuración, Sistema, \"Usar la aceleración de gráficos cuando esté disponible\") y reinicia el navegador."
             },
-            "autoLowered": {
-                "settings": "Se cambió a Baja porque la vista se trababa. Para mantener la calidad completa, elige Alta en Configuración, Vista 3D.",
-                "panel": "Se cambió a Baja porque la vista se trababa. Para mantener la calidad completa, elige Alta en Calidad, dentro de Configuración de vista."
-            },
             "softwareHint": "Se mantiene en Baja porque aquí los gráficos se procesan por software.",
             "autoLoweredHint": "Se cambió a Baja porque la vista se trababa. Elige Alta para mantener la calidad completa.",
             "dismiss": "Entendido"
@@ -2709,10 +3095,7 @@
             "label": "Reproducción"
         },
         "settings": {
-            "title": "Configuración de vista",
             "close": "Cerrar",
-            "venueSection": "Este show",
-            "venueHint": "Se guarda en el archivo del show. Deshacer en el editor revierte un cambio.",
             "crowdColors": "Colores del público",
             "homeColor": "Local",
             "awayColor": "Visitantes",
@@ -2720,11 +3103,12 @@
             "endZoneText": "Texto de la zona de anotación",
             "endZoneTextPlaceholder": "Sin texto",
             "endZoneColor": "Color",
-            "graphicsSection": "Esta computadora",
-            "graphicsHint": "No se guarda en el show, así que puede variar en cada computadora.",
-            "keysSection": "Teclado y mouse",
             "uniforms": "Uniforme de banda",
-            "guardUniforms": "Uniforme de color guard"
+            "guardUniforms": "Uniforme de color guard",
+            "brassFinish": "Acabado de los metales",
+            "tuba": "Tubas",
+            "silkShape": "Forma de la seda",
+            "silkArtwork": "Diseño de la seda"
         },
         "keys": {
             "playPause": "Reproducir o pausar",
@@ -2735,11 +3119,23 @@
             "crowd": "Mostrar u ocultar el público",
             "escape": "Cancelar la elección de asiento, cerrar la configuración, salir de pantalla completa",
             "orbit": "Orbitar",
+            "orbitOrRight": "Orbitar, o arrastrar con el botón derecho del mouse",
+            "panPlain": "Desplazar",
+            "zoomOrPinch": "Zoom, o pellizcar en un trackpad",
             "pan": "Desplazar, o arrastrar con el botón derecho del mouse",
-            "zoom": "Zoom"
+            "zoom": "Zoom",
+            "pausedPose": "En pausa: mostrar el paso real o la posición cerrada"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "Laca",
+            "silver": "Plateado"
+        },
+        "tuba": {
+            "contra": "Tuba de marcha",
+            "sousaphone": "Sousafón"
         },
         "uniformPreset": {
             "fade": "Degradado ultravioleta",
@@ -2781,11 +3177,37 @@
         "venue": {
             "updateFailed": "No se pudo actualizar el recinto de la Vista 3D"
         },
-        "board": {
-            "designedBy": "Diseñado por {name}",
-            "forClient": "Para {name}",
-            "nowPerforming": "Ahora en escena",
-            "untitled": "Show sin título"
+        "pausedPose": {
+            "label": "Mostrar el paso real en pausa",
+            "tooltip": "Muestra a los integrantes a mitad de paso en pausa, tal como están en ese momento. Desactivado: quedan en posición cerrada sobre sus puntos"
+        },
+        "silkShape": {
+            "standard": "Estándar",
+            "curvedTail": "Cola curva",
+            "cSwing": "Swing en C",
+            "rainbow": "Arcoíris",
+            "arc": "Arco",
+            "teardrop": "Lágrima",
+            "distressed": "Desgarrada",
+            "rounded": "Redondeada",
+            "rectangle": "Rectángulo",
+            "curvedAngle": "Ángulo curvo grande",
+            "wings": "Alas",
+            "snake": "Serpiente",
+            "swing": "Swing"
+        },
+        "silkArtwork": {
+            "none": "Sin diseño: las sedas muestran el patrón del uniforme del color guard o el color de la sección.",
+            "import": "Importar PNG…",
+            "replace": "Reemplazar…",
+            "remove": "Quitar",
+            "template": "Plantilla para {shape}:",
+            "preparing": "Preparando…",
+            "notPng": "Ese archivo no es un PNG. Exporta tu diseño como PNG e impórtalo de nuevo.",
+            "tooLarge": "Ese PNG es demasiado grande. Expórtalo con menor resolución e impórtalo de nuevo.",
+            "unreadable": "No se pudo leer ese PNG.",
+            "templateFailed": "No se pudo crear la plantilla.",
+            "saveFailed": "No se pudo guardar el diseño de la seda"
         }
     },
     "web": {
@@ -2917,6 +3339,58 @@
         "welcome": {
             "description": "Te damos la bienvenida al futuro del diseño. Vamos a dejarte todo listo.",
             "title": "Te damos la bienvenida a OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "Esto es lo que cambió desde la última vez que lo usaste.",
+            "title": "Bienvenido de nuevo"
+        },
+        "whatsNew": {
+            "carousel": "Recorrido",
+            "guides": "Más información en las guías de OpenMarch",
+            "next": "Siguiente",
+            "position": "{current} de {total}",
+            "skip": "Omitir",
+            "slide": "Diapositiva",
+            "slides": {
+                "pathways": {
+                    "label": "Trayectorias",
+                    "media": "Imagen provisional: el clip de la pluma de trayectorias aún no está grabado.",
+                    "text": "Dibuja una trayectoria con esquinas para un integrante con la pluma de trayectorias, y la recorrerá en lugar de ir en línea recta.",
+                    "title": "Trayectorias"
+                },
+                "props": {
+                    "label": "Utilería",
+                    "media": "En la vista 3D, una tarima ámbar se desliza por el fondo del campo y gira, sin chocar con la banda.",
+                    "text": "Dibuja utilería en el campo y muévela en la línea de tiempo. Por ahora se ve como bloques simples en la vista 3D.",
+                    "title": "Utilería"
+                },
+                "shapes": {
+                    "label": "Formas",
+                    "media": "Una sección de integrantes se coloca en un bloque, luego en una línea y luego en un arco, cada uno dibujado en el campo y ajustándose a las líneas del campo.",
+                    "text": "Dibuja un bloque, una línea o un arco y coloca en él a los integrantes seleccionados; sus puntos se ajustan a medios pasos, líneas de yarda y hashes.",
+                    "title": "Formas"
+                },
+                "tempo": {
+                    "label": "Editar música",
+                    "media": "Editando la música en la línea de tiempo: el show suena a 118 pulsos por minuto, se ralentiza poco a poco hasta 81 en dos compases y luego vuelve a 118 con un nuevo compás. El cabezal de reproducción se ralentiza durante el cambio gradual y vuelve a acelerar después.",
+                    "text": "Alinea tus tiempos con la música en la línea de tiempo: arrastra el tempo hasta que los tiempos caigan en los pulsos, y define cambios de tempo, calderones y compases.",
+                    "title": "Editar música"
+                },
+                "timeline": {
+                    "label": "Línea de tiempo",
+                    "media": "Una línea de 20 integrantes avanza 16 tiempos en un solo movimiento. Tres movimientos más cortos anidados debajo en la línea de tiempo giran los extremos hacia atrás, abren la línea y luego curvan a los 20 en un arco.",
+                    "text": "Las páginas, los movimientos y los tiempos están en una sola línea de tiempo bajo el campo, y en Experto los movimientos pueden cruzar páginas y superponerse.",
+                    "title": "La línea de tiempo"
+                },
+                "view3d": {
+                    "label": "Vista 3D",
+                    "media": "La banda marchando entre formaciones en 3D, en un estadio techado visto desde lo alto de la cabina de prensa: integrantes con uniforme y un color guard con banderas.",
+                    "text": "Mira tu show desde las gradas, con los integrantes de uniforme.",
+                    "title": "La vista 3D"
+                }
+            },
+            "steps": "Funciones nuevas",
+            "title": "Novedades de la 0.2"
         }
     },
     "workspaceSettings": {
@@ -2940,7 +3414,6 @@
         },
         "unsavedChanges": "Tienes cambios sin guardar",
         "close": "Cerrar",
-        "saved": "Configuración del show guardada",
         "updateFailed": "No se pudo actualizar la configuración del show",
         "showInfo": {
             "projectName": "Nombre del show",
@@ -2948,6 +3421,36 @@
             "designer": "Diseñador",
             "client": "Cliente",
             "optional": "Opcional"
+        },
+        "performer": {
+            "title": "Valores predeterminados de los integrantes",
+            "description": "Cómo se mueven los integrantes en la vista 3D cuando no hay nada más específico definido.",
+            "stepOffFoot": {
+                "label": "Arrancar con",
+                "left": "Pie izquierdo",
+                "right": "Pie derecho"
+            },
+            "dotMode": {
+                "label": "El punto marca",
+                "foot": "Pie sobre el punto",
+                "body": "Centro del cuerpo"
+            },
+            "directionChange": {
+                "label": "Cambios de dirección",
+                "corner": "Doblar la esquina",
+                "direct": "En línea recta"
+            },
+            "holdWhileBandMoves": {
+                "label": "En parada mientras otros se mueven",
+                "markTime": "Marcar el paso",
+                "highMarkTime": "Marcar el paso alto",
+                "stand": "Quieto"
+            },
+            "percussionTravel": {
+                "label": "Percusión en desplazamiento lateral",
+                "crab": "Paso de cangrejo",
+                "slide": "Deslizar"
+            }
         }
     },
     "canvas": {
@@ -2979,6 +3482,7 @@
         "marchers": "Integrantes",
         "metronome": "Metrónomo",
         "mobile": "App móvil",
+        "props": "Utilería",
         "music": "Música",
         "renderFail": "No se pudo mostrar el contenido del panel lateral",
         "settings": "Ajustes del show"
@@ -3003,6 +3507,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {Un dedo mueve la vista. El Apple Pencil, o mantener presionado y arrastrar, dibuja un rectángulo.} other {Un dedo mueve la vista. Un lápiz, o mantener presionado y arrastrar, dibuja un rectángulo.}}",
+            "box": "Rectángulo",
+            "boxDescribe": "{device, select, pencil {Un dedo o el Apple Pencil dibuja un rectángulo para seleccionar. Dos dedos mueven la vista.} other {Un dedo o un lápiz dibuja un rectángulo para seleccionar. Dos dedos mueven la vista.}}",
+            "button": "Arrastrar en el campo vacío: {label}. {describe} Toca para cambiar",
+            "lasso": "Lazo",
+            "lassoDescribe": "{device, select, pencil {Un dedo o el Apple Pencil rodea a los integrantes para seleccionarlos. Dos dedos mueven la vista.} other {Un dedo o un lápiz rodea a los integrantes para seleccionarlos. Dos dedos mueven la vista.}}",
+            "menu": "Arrastrar en el campo vacío",
+            "pan": "Desplazar",
+            "panDescribe": "{device, select, pencil {Un dedo o el Apple Pencil mueve la vista.} other {Un dedo o un lápiz mueve la vista.}}",
+            "prefix": "Arrastrar:"
+        },
         "modifiers": {
             "add": "Agregar",
             "addHint": "Agregar: mantén presionado o toca para dejarlo activo. Tocar integrantes los agrega a la selección",
@@ -3011,11 +3528,13 @@
             "explain": {
                 "add": "Toca integrantes para agregarlos o quitarlos.",
                 "constrain": "Espaciados iguales, un solo eje al mover, alterna el escalado proporcional.",
+                "dragMode": "Lo que hace un dedo o el lápiz en una parte vacía del campo: mover la vista o dibujar un rectángulo o un lazo.",
                 "fine": "Los integrantes se mueven despacio, fuera de la cuadrícula. Las formas dejan los medios pasos, pero siguen ajustándose a las líneas. Los giros van de grado en grado.",
                 "fromCenter": "Los bloques se dibujan y cambian de tamaño desde su centro.",
                 "grip": "Arrastra para mover.",
                 "help": "Gestos.",
-                "snap": "Activa o desactiva el ajuste a pasos y líneas."
+                "snap": "Activa o desactiva el ajuste a pasos y líneas.",
+                "subtract": "Un rectángulo o un lazo quita integrantes de la selección."
             },
             "fine": "Fino",
             "fineHint": "Fino: mantén presionado o toca para dejarlo activo. Los integrantes se mueven despacio, fuera de la cuadrícula; las formas dejan los medios pasos; los giros van de grado en grado",
@@ -3026,12 +3545,17 @@
             "help": "Qué hacen estos botones",
             "helpList": {
                 "add": "<b>Agregar</b> los toques agregan a la selección · <b>Sin ajuste</b> mueve libremente",
+                "dragMode": "<b>Arrastrar</b> elige lo que hace un dedo en una parte vacía del campo: mover la vista o dibujar un rectángulo o un lazo",
                 "fine": "<b>Fino</b> arrastres y giros precisos · <b>Igual</b> espaciados iguales",
                 "fromCenter": "<b>Desde el centro</b> los bloques crecen desde el medio",
                 "toggles": "<b>Toca</b> un botón para dejarlo activo o <b>mantenlo presionado</b> mientras arrastras"
             },
-            "noSnap": "Sin ajuste"
-        }
+            "noSnap": "Sin ajuste",
+            "subtract": "Quitar",
+            "subtractHint": "Quitar: mantén presionado o toca para dejarlo activado. Un rectángulo o un lazo quita de la selección a los integrantes que cubre"
+        },
+        "redone": "Rehecho",
+        "undone": "Deshecho"
     },
     "shortcutsDialog": {
         "movement": {
@@ -3065,7 +3589,8 @@
             "select": "Selección",
             "shape": "Formas",
             "timeline": "Línea de tiempo",
-            "ui": "Vista"
+            "ui": "Vista",
+            "field": "Campo"
         }
     },
     "shortcut": {
@@ -3138,8 +3663,11 @@
             "title": "Ayuda",
             "showShortcuts": "Atajos de teclado",
             "website": "Sitio web",
-            "guides": "Documentación/Guías"
+            "guides": "Documentación/Guías",
+            "reportFeedback": "Informar un error o enviar comentarios…",
+            "viewMyReports": "Ver mis informes"
         },
+        "checkForUpdates": "Buscar actualizaciones…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {
@@ -3157,6 +3685,13 @@
         },
         "openFailed": {
             "title": "Error al cargar la base de datos"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "No se pudo agregar el cue",
+            "delete": "No se pudo eliminar el cue",
+            "update": "No se pudo cambiar el cue"
         }
     },
     "coordinates": {
@@ -3181,6 +3716,12 @@
             "onX": "En {checkpoint}",
             "onY": "En {checkpoint}",
             "outside": "{steps, plural, =0 {FUE {checkpoint}} other {# FUE {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "línea central",
+            "centerLineShort": "LC",
+            "frontEdge": "borde frontal",
+            "frontEdgeShort": "BF"
         }
     },
     "activities": {
@@ -3198,9 +3739,651 @@
         "toFive": "{steps, number} a 5",
         "undefined": "Sin definir"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "Se agregó un cambio de tempo en {where}",
+                "curve": "Curva de tempo",
+                "endsOn": "Termina en {tempo}",
+                "endsOnThen": "Termina en {tempo} y luego {next}",
+                "gradual": "Cambio de tempo gradual",
+                "held": "Calderón en {where} de {seconds} s",
+                "hold": "Calderón",
+                "holdDrill": "Pausar el drill",
+                "jump": "Salto de tempo",
+                "measureNumber": "Número de compás",
+                "movedChange": "Se movió el cambio de tempo a {where}",
+                "rehearsalMark": "Marca de ensayo",
+                "removedChange": "Se eliminó el cambio de tempo en {where}",
+                "tempo": "Tempo",
+                "timeSignature": "Indicación de compás"
+            },
+            "ask": {
+                "add": {
+                    "intro": "Para cuando la música tiene aquí un pulso extra que a los tiempos les falta. La grabación no cambia: solo cambian los tiempos.",
+                    "keepMeasure": "{measure} tiene {count, plural, one {# tiempo} other {# tiempos}} en el mismo lapso ({tempo}).",
+                    "manyKeep": "{moves, plural, other {Los # movimientos que pasan por aquí conservan sus tiempos}}; sus integrantes se quedan quietos {count, plural, one {# tiempo} other {# tiempos}} al final de cada uno.",
+                    "manyShift": "{moves, plural, other {Los # movimientos que pasan por aquí se alargan}} {count, plural, one {# tiempo} other {# tiempos}} cada uno.",
+                    "noMove": "Ningún movimiento pasa por aquí, así que los integrantes se quedan quietos.",
+                    "oneKeep": "{move} sigue con {moveCounts, plural, one {# tiempo} other {# tiempos}} y sus integrantes se quedan quietos {count, plural, one {# tiempo} other {# tiempos}} al final.",
+                    "oneShift": "{move} pasa de {from} a {to, plural, one {# tiempo} other {# tiempos}}.",
+                    "shift": "{count, plural, one {# tiempo} other {# tiempos}} más aquí ({seconds} s): los tiempos y el drill posteriores se atrasan eso mismo respecto a la música, para cuando iban adelantados."
+                },
+                "addCountAfter": "Agregar un tiempo después de {where}",
+                "addCountBefore": "Agregar un tiempo antes de {where}",
+                "addMeasureBefore": "Agregar un compás ({count, plural, one {# tiempo} other {# tiempos}}) antes del compás {measure}",
+                "addedCountAfter": "Se agregó un tiempo después de {where}",
+                "addedCountBefore": "Se agregó un tiempo antes de {where}",
+                "addedMeasureBefore": "Se agregó un compás ({count, plural, one {# tiempo} other {# tiempos}}) antes del compás {measure}",
+                "breath": {
+                    "many": "{moves, plural, other {Los # movimientos que pasan por aquí terminan 1 tiempo antes}}; sus integrantes se quedan quietos durante ese tiempo.",
+                    "noCountAdded": "No se agrega ningún tiempo y la música no cambia.",
+                    "none": "Para una pausa en el drill sin cambiar la música: ningún movimiento pasa por aquí que pueda terminar antes.",
+                    "one": "{move}: movimiento de {from} → {to, plural, one {# tiempo} other {# tiempos}}; los integrantes se quedan quietos en {where}."
+                },
+                "countsFewer": "{count, plural, one {# tiempo menos} other {# tiempos menos}}",
+                "countsMore": "{count, plural, one {# tiempo más} other {# tiempos más}}",
+                "hidden": {
+                    "fewer": "Eliminar {where} en su lugar",
+                    "fewerHint": "Deja un tiempo entre el fotograma clave y el marcador.",
+                    "fixHint": "Llegan a la formación un tiempo antes de que termine {move} y se eliminan los tiempos. Un solo Deshacer revierte ambas cosas.",
+                    "fixTooShort": "Su fotograma clave duraría solo un tiempo, así que no puede terminar antes.",
+                    "marchersMore": "{names} y {count, plural, one {# más} other {# más}}",
+                    "text": "Su fotograma clave terminaría en el mismo tiempo que {move}. Cuando dos movimientos terminan juntos, gana el fotograma clave, así que nunca llegarían a esa formación.",
+                    "theMove": "el movimiento de abajo",
+                    "title": "{marchers} no llegarían a la formación al final de {move}"
+                },
+                "laterCountsStay": "Los tiempos posteriores se quedan donde están en la música: para cuando ya coinciden.",
+                "noMoveHere": "aquí no hay movimiento",
+                "pageCounts": "Página {page}: {from} → {to, plural, one {# tiempo} other {# tiempos}}",
+                "pagesSentence": "{pages}.",
+                "remove": {
+                    "intro": "Para cuando la música tiene aquí menos pulsos que tiempos. La grabación no cambia: solo cambian los tiempos.",
+                    "keep": "Los tiempos de alrededor ocupan el mismo lapso ({where}: {from} → {to, plural, one {# tiempo} other {# tiempos}}, {tempo}).",
+                    "manyKeep": "{moves, plural, other {Los # movimientos que pasan por aquí conservan sus tiempos terminando más tarde}}, si no hay nada en medio.",
+                    "manyShift": "{moves, plural, other {Los # movimientos que pasan por aquí se acortan.}}",
+                    "marksGo": "{count, plural, one {Se elimina la marca de ensayo {marks}: el compás que queda ahí conserva la suya.} other {Se eliminan las marcas de ensayo {marks}: el compás que queda ahí conserva la suya.}}",
+                    "noMove": "Ningún movimiento pasa por aquí.",
+                    "oneKeep": "{move} conserva sus {moveCounts, plural, one {# tiempo} other {# tiempos}} terminando {count, plural, one {# tiempo} other {# tiempos}} más tarde, si no hay nada en medio.",
+                    "oneShift": "{move} se acorta {count, plural, one {# tiempo} other {# tiempos}}.",
+                    "shift": "Su duración también se elimina: los tiempos y el drill posteriores se adelantan respecto a la música, para cuando iban atrasados.",
+                    "title": "Eliminar {where}"
+                },
+                "removed": "Se eliminó {where}"
+            },
+            "editor": {
+                "holdHint": "Duración del calderón en {where}, en segundos",
+                "markHint": "Marca de ensayo en el compás {measure} (vacía para eliminarla)",
+                "notATempo": "“{value}” no es un tempo: escribe un número como 120, o 120-90 para un cambio gradual",
+                "renumberHint": "Renumerar desde c. {measure}: los compases siguientes continúan a partir del número que indiques. Vacío vuelve a la numeración automática.",
+                "tempoFromToHint": "Tempo de {from} a {to}: “120”, o “120-90” para un cambio gradual",
+                "tempoOfHint": "Tempo de {where}: “120”, o “120-90” para un cambio gradual",
+                "tempoOutOfRange": "“{value}” está fuera del rango: el tempo va de 20 a 400 pulsos por minuto",
+                "wholeStretch": "Todo el tramo {range} (ahora ♩{tempo}) en su lugar"
+            },
+            "label": {
+                "beforeMark": "{where}, antes de {mark}",
+                "count": "tiempo {count}",
+                "measure": "c. {measure}",
+                "measureCount": "c. {measure} tiempo {count}",
+                "measures": "c. {from}–{to}",
+                "range": "{from} a {to}"
+            },
+            "lane": {
+                "clearSelection": "Borrar la selección",
+                "clearSelectionTitle": "Borrar la selección ({key})",
+                "holdLabel": "calderón {seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → c. {measure}",
+                "markTitle": "Marca de ensayo {mark} en c. {measure}: arrástrala a otro compás; haz doble clic para cambiarle el nombre",
+                "renumberedTitle": "Compás {measure}: numerado a mano; los compases siguientes continúan a partir de él. Haz clic derecho o doble clic para cambiarlo.",
+                "shortMeasureTitle": "Compás {measure}: un compás corto, de {count, plural, one {# tiempo} other {# tiempos}}",
+                "tempoLabelTitle": "{range}: haz clic para escribir un tempo",
+                "timeSignatureTitle": "Indicación de compás {meter}: haz clic para cambiarla desde aquí hasta la siguiente indicación de compás"
+            },
+            "menu": {
+                "addChange": "Agregar un cambio de tempo aquí",
+                "addCountAfter": "Agregar un tiempo después…",
+                "addCountBefore": "Agregar un tiempo antes…",
+                "addMark": "Agregar una marca de ensayo…",
+                "addMeasureBefore": "Agregar un compás antes…",
+                "cancel": "Cancelar",
+                "clearSelection": "Borrar la selección",
+                "countTitle": "c. {measure}, tiempo {count}",
+                "countTitleNoMeasure": "Tiempo {count}",
+                "editMark": "Marca de ensayo…",
+                "gradual": "Cambio gradual",
+                "gradualHint": "Termina en el tempo siguiente ({tempo}); los calderones de fuera no cambian",
+                "gradualNothingHint": "No hay nada que cambiar: el tempo siguiente es el mismo o es un solo tiempo",
+                "gradualTo": "Cambio gradual a {tempo}",
+                "holdLength": "Duración del calderón…",
+                "holdSubtitle": "calderón {seconds} s",
+                "makeHold": "Convertir en calderón (fermata)",
+                "markMoveHere": "Mover {mark} aquí desde c. {measure}",
+                "markTaken": "{mark} ya está en c. {measure}. ¿Usarla otra vez?",
+                "markUseAgain": "Usar {mark} otra vez en c. {measure}",
+                "measureSubtitleMark": "{meter} · marca {mark}",
+                "measureTitle": "Compás {measure}",
+                "notAHold": "Quitar el calderón",
+                "removeChange": "Eliminar este cambio de tempo",
+                "removeCount": "Eliminar este tiempo…",
+                "removeCounts": "Eliminar estos tiempos…",
+                "removeMeasure": "Eliminar este compás…",
+                "renumber": "Renumerar desde aquí…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, one {# tiempo} other {# tiempos}}",
+                "setTempo": "Definir tempo…",
+                "timeSignature": "Indicación de compás…",
+                "toMeasure": "hasta c. {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} contado {grouping}",
+                "fromSubtitle": "hasta la siguiente indicación de compás",
+                "fromTitle": "Desde c. {measure}",
+                "justThisMeasure": "Solo este compás",
+                "justThisMeasureHint": "Activado: la indicación de compás es solo para este compás; los compases siguientes conservan la suya y se desplazan para seguirlo. Desactivado: dura hasta la siguiente indicación de compás, como en una partitura.",
+                "onlySubtitle": "los compases siguientes conservan la suya",
+                "onlyTitle": "Solo c. {measure}",
+                "other": "Otra… (como 11/8 3+3+3+2)",
+                "otherHint": "Indicación de compás y cómo se cuenta en corcheas: “7/8 2+2+3”, “5/8 3+2”, “3/2” (contado en negras)"
+            },
+            "move": {
+                "from": "El movimiento desde {where}",
+                "its": "Su movimiento",
+                "page": "Página {page}",
+                "pagesMove": "El movimiento de la página {page}"
+            },
+            "tip": {
+                "outlier": "{where} es mucho más {direction, select, faster {rápido} other {lento}} ({tempo}) que sus vecinos ({before}, {after}): puede que no coincida con la música. Haz clic derecho > Definir tempo… para corregirlo, o déjalo así si la música realmente lo hace."
+            },
+            "toast": {
+                "changedFirst": "{action}: no se aplicó porque el show cambió justo antes. Inténtalo de nuevo.",
+                "failed": "{action}: {error}",
+                "holdInvalid": "Un calderón es una duración en segundos, como 2.5",
+                "holdMade": "{where} es un calderón. Haz clic derecho > Duración del calderón… para definir cuánto dura.",
+                "markAlreadyThere": "c. {measure} ya tiene la marca de ensayo {mark}",
+                "markMoved": "Se movió {mark} de c. {from} a c. {to}",
+                "meterSetFrom": "{meter} desde {where}, {count, plural, one {# tiempo} other {# tiempos}} por compás; el tempo no cambió",
+                "meterSetOnly": "{meter} solo para c. {measure}; el tempo no cambió",
+                "meterShiftNote": "Los compases siguientes empiezan {count, plural, one {# tiempo} other {# tiempos}} {direction, select, earlier {antes} other {después}}",
+                "meterShortNote": "El último compás antes de la siguiente indicación de compás es corto: {count, plural, one {# tiempo} other {# tiempos}} (marcado con *)",
+                "movesCouldNotKeep": "{count, plural, one {# movimiento no pudo conservar sus tiempos y cambió de duración} other {# movimientos no pudieron conservar sus tiempos y cambiaron de duración}}",
+                "movesKept": "{count, plural, one {# movimiento conservó sus tiempos} other {# movimientos conservaron sus tiempos}}",
+                "movesKeptHold": "{kept, plural, one {El movimiento que pasa por aquí conservó sus tiempos: sus integrantes se quedan quietos} other {# movimientos conservaron sus tiempos: sus integrantes se quedan quietos}} {count, plural, one {# tiempo} other {# tiempos}} al final",
+                "notATimeSignature": "“{text}” no es una indicación de compás: prueba 7/8, o 7/8 2+2+3 (la agrupación en corcheas)",
+                "notMeasureNumber": "“{value}” no es un número de compás",
+                "tooFastOrSlow": "{action}: un tiempo quedaría demasiado rápido o demasiado lento"
+            }
+        },
+        "button": {
+            "hint": "El archivo de música y la alineación de los tiempos con ella: tempo, indicaciones de compás, marcas de ensayo",
+            "hintOn": "Alinea los tiempos con la música. <escape></escape> o <toggle></toggle> para salir.",
+            "label": "Editar música",
+            "labelOn": "Editando música",
+            "text": "Editar música"
+        },
+        "errors": {
+            "cantRemoveLastCount": "No se puede eliminar el último tiempo",
+            "moveOneCountLong": "Ese movimiento dura solo un tiempo",
+            "wouldHideSet": "Eso dejaría un fotograma clave terminando en el mismo tiempo que el movimiento de abajo, lo que ocultaría la formación de ese movimiento. Elimina menos tiempos o haz que el fotograma clave termine un tiempo antes.",
+            "wouldRemovePage": "Eso eliminaría una página. Elimina menos tiempos o borra primero la página."
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "Agregar un cambio de tempo",
+                "text": "Haz doble clic en el carril de tempo donde debe cambiar. Haz doble clic en el punto de un cambio para eliminarlo."
+            },
+            "dragChangeDot": {
+                "title": "Mover un cambio de tempo",
+                "text": "Arrastra su punto hacia arriba o hacia abajo para cambiar el tempo, o hacia los lados para mover dónde cambia."
+            },
+            "dragEndDot": {
+                "title": "Definir dónde termina un rit.",
+                "text": "Arrastra el punto cuadrado al final de un tramo para que el tempo siguiente pueda volver de golpe (a tempo)."
+            },
+            "dragLine": {
+                "title": "Definir un tempo",
+                "text": "Arrastra la línea de tempo hacia arriba o hacia abajo. Para escribir un tempo, haz clic derecho y elige Definir tempo…"
+            },
+            "dragMeasures": {
+                "title": "Seleccionar tiempos",
+                "text": "Arrastra a lo largo de los compases o de la música y luego edítalos todos a la vez."
+            },
+            "dragRoundHandle": {
+                "title": "Cambiar el tempo gradualmente",
+                "text": "Arrastra el control redondo en medio de un tramo. Haz doble clic en él para volver a un salto."
+            },
+            "keys": {
+                "escape": "Borrar la selección o cancelar un arrastre; si no hay nada que borrar, dejar de editar la música",
+                "play": "Reproducir desde el cabezal de reproducción o detener donde está",
+                "tap": "Tap tempo: toca en cada pulso para ver qué tan rápida es la música",
+                "toggle": "Empezar o dejar de editar la música",
+                "metronome": "Activar o desactivar el metrónomo"
+            },
+            "label": "Cómo funciona la edición de música",
+            "rightClick": {
+                "title": "Calderones y tiempos",
+                "text": "Haz clic derecho en un tiempo para convertirlo en calderón, cambiar el tempo gradualmente o agregar y eliminar tiempos."
+            },
+            "rightClickMeasure": {
+                "title": "Compases y marcas de ensayo",
+                "text": "Haz clic derecho en un compás para renumerarlo, definir su indicación de compás o agregar una marca. Arrastra una marca para moverla."
+            },
+            "title": "Alinea los tiempos con la música",
+            "musicFile": {
+                "title": "Cambiar la música",
+                "text": "Haz clic en el nombre del archivo en el encabezado para cambiar, importar o eliminar el audio, o para definir el desfase de la música."
+            }
+        },
+        "importScore": {
+            "choose": "Elegir un archivo…",
+            "keeps": "Las páginas, el drill, los cues y la utilería se quedan en sus tiempos, así que se reproducen a los tempos de la partitura. Deshacer lo revierte todo.",
+            "replaces": "Los tempos, las indicaciones de compás, los compases y las marcas de ensayo de la partitura reemplazan los del show, incluido lo que cambiaste aquí.",
+            "title": "¿Usar la métrica de una partitura?"
+        },
+        "lanes": {
+            "marks": {
+                "name": "Marcas",
+                "title": "Marcas de ensayo: haz doble clic para nombrar una o arrastra una a otro compás"
+            },
+            "measures": {
+                "name": "Comp.",
+                "title": "Compases: arrastra a lo largo para seleccionar tiempos, haz clic derecho o doble clic en un número para renumerar desde ahí, haz clic en una indicación de compás para cambiarla"
+            },
+            "music": {
+                "name": "Música",
+                "title": "La música: arrastra a lo largo para seleccionar tiempos, haz clic para mover el cabezal de reproducción o haz clic derecho en un punto para que la música empiece ahí (en el tiempo 1)"
+            },
+            "tempo": {
+                "name": "Tempo",
+                "title": "Tempo: arrastra la línea hacia arriba o hacia abajo; arrastra un punto para mover un cambio de tempo, o un control redondo para un cambio gradual. Haz doble clic para agregar un cambio; clic derecho > Definir tempo… para escribir uno. Arrastra fuera de la línea para seleccionar tiempos"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "Cancelar",
+                    "fix": "Terminar el fotograma clave un tiempo antes y eliminar"
+                },
+                "footer": "Haz clic en una para aplicarla. <enter></enter> aplica la marcada, tu última elección; <escape></escape> cancela, y Deshacer revierte cualquiera de ellas.",
+                "hold": "Pausar el drill aquí en su lugar",
+                "holdIntro": "¿La música no tiene un pulso extra, pero los integrantes necesitan una pausa aquí?",
+                "keep": "Dejar todo lo demás en su lugar",
+                "shift": "Desplazar todo lo posterior"
+            },
+            "measureGlyph": "c{number}"
+        },
+        "tap": {
+            "average": "Promedio {bpm} · se reinicia tras 2 s",
+            "count": "{count, plural, one {# toque} other {# toques}}",
+            "hint": "Toca al ritmo para saber aproximadamente qué tempo tiene la música",
+            "instructions": "Toca <key></key> o el botón en cada pulso",
+            "name": "Tap tempo",
+            "reset": "Reiniciar",
+            "selectFirst": "Primero selecciona algunos tiempos",
+            "setTarget": "Definir {target} a ♩{bpm}",
+            "tap": "Tocar",
+            "use": "Usar",
+            "useBpm": "Usar ♩{bpm}",
+            "useBpmOn": "Usar ♩{bpm} <muted>en {target}</muted>",
+            "useHint": "Un tempo constante en los tiempos seleccionados o, si no hay, en el tramo de tempo bajo el cabezal de reproducción",
+            "useOn": "Usar <muted>en {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "Reproducir desde el cabezal de reproducción",
+            "playLoop": "Repetir en bucle {measures}",
+            "stopHere": "Detener aquí"
+        },
+        "toolbar": {
+            "done": "Listo",
+            "doneLabel": "Listo: dejar de editar la música",
+            "metronome": "Metrónomo",
+            "metronomeHint": "Un clic en cada tiempo, para oír si los tiempos coinciden con la música",
+            "metronomeOff": "Metrónomo: desactivado",
+            "metronomeOn": "Metrónomo: activado",
+            "title": "Editando música"
+        },
+        "import": {
+            "button": "Importar",
+            "hint": "Trae el archivo de música, o los tempos, las indicaciones de compás, los compases y las marcas de ensayo de una partitura",
+            "audio": "Archivo de audio…",
+            "score": "Partitura MusicXML…"
+        },
+        "music": {
+            "add": "Agregar música…",
+            "menuLabel": "Archivo de música",
+            "pick": "Elegir música",
+            "importAnother": "Importar otro archivo de audio…",
+            "delete": "Eliminar este archivo de audio…",
+            "offset": "Desfase de la música…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Desfase de la música",
+            "offsetHelp": "Segundos después del tiempo 1 en que empieza la música. Un valor negativo salta hacia dentro de la música.",
+            "offsetSet": "Aplicar",
+            "seconds": "segundos"
+        }
+    },
     "workspace": {
         "label": "Espacio de trabajo",
         "editor": "Editor",
         "preview": "Vista previa"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "Rack auxiliar",
+            "bongos": "Bongós",
+            "chimes": "Campanas tubulares",
+            "concertBassDrum": "Bombo de concierto",
+            "congas": "Congas",
+            "drumSet": "Set de batería",
+            "glockenspiel": "Glockenspiel",
+            "gong": "Gong",
+            "marimba": "Marimba",
+            "mixer": "Consola",
+            "podium": "Podio",
+            "speaker": "Altavoz",
+            "synth": "Sintetizador",
+            "timpani": "Timbal",
+            "trapTable": "Mesa de accesorios",
+            "vibraphone": "Vibráfono",
+            "xylophone": "Xilófono",
+            "podiumStand": "Tarima",
+            "podiumTower": "Torre",
+            "rollingPodium": "Podio con ruedas",
+            "stepladder": "Escalera de tijera",
+            "scaffold": "Torre de andamio"
+        },
+        "variant": {
+            "accessories": "Accesorios",
+            "cage": "Rack tipo jaula",
+            "covered": "Cubierta",
+            "double": "Dos teclados",
+            "gold": "Dorado",
+            "inches": "{size} pulg.",
+            "keys": "{size} teclas",
+            "low": "Bajo",
+            "mixed": "Mixto",
+            "octaves": "{size} octavas",
+            "open": "Abierta",
+            "plain": "Estándar",
+            "rosewood": "Palo de rosa",
+            "silver": "Plateado",
+            "single": "Un teclado",
+            "square": "Cuadrado",
+            "syntheticBlack": "Sintético negro",
+            "tall": "Alto",
+            "toms": "Toms",
+            "wide": "Ancho",
+            "aluminum": "Aluminio",
+            "black": "Negro",
+            "feet": "{size} pies"
+        }
+    },
+    "feedback": {
+        "window.title": "Reportar un error o enviar comentarios",
+        "signIn.heading": "Inicia sesión para enviar un reporte",
+        "signIn.why": "Así podrás dar seguimiento a tu reporte y podremos contarte qué pasa con él.",
+        "signIn.button": "Iniciar sesión",
+        "signIn.alternatives": "¿Prefieres no iniciar sesión? <github>Repórtalo en GitHub</github> o <discord>pregunta en Discord</discord>.",
+        "sent.heading": "Gracias por tu reporte",
+        "sent.body": "Te enviamos una copia por correo. Si se convierte en un issue de GitHub, te enviaremos el enlace por correo para que puedas darle seguimiento.",
+        "sent.another": "Enviar otro",
+        "viewMyReports": "Ver mis reportes",
+        "type.label": "¿De qué se trata?",
+        "type.broken": "Algo no funciona",
+        "type.broken.hint": "Un error, un cierre inesperado o algo que no funciona bien",
+        "type.feature": "Solicitar una función",
+        "type.feature.hint": "Algo que te gustaría que OpenMarch hiciera",
+        "type.feedback": "Comentarios generales",
+        "type.feedback.hint": "Cualquier otra cosa que quieras contarnos",
+        "title.label": "Resumen",
+        "title.placeholder": "En una línea, ¿de qué se trata?",
+        "question.whatWentWrong": "¿Qué salió mal?",
+        "question.whatWentWrong.placeholder": "Describe lo que pasó",
+        "question.expected": "¿Qué esperabas que pasara?",
+        "question.expected.placeholder": "Describe lo que debería haber pasado",
+        "question.steps": "¿Cómo podemos hacer que vuelva a pasar?",
+        "question.steps.placeholder": "1. Abre un show\n2. …",
+        "question.feature": "¿Qué te gustaría que hiciera OpenMarch?",
+        "question.feature.placeholder": "Describe la función y para qué la usarías",
+        "question.ideas": "Ideas de cómo podría funcionar",
+        "question.ideas.placeholder": "Bocetos, ejemplos de otras aplicaciones, lo que ayude",
+        "question.feedback": "¿Qué te gustaría contarnos?",
+        "question.feedback.placeholder": "Tus comentarios",
+        "optional": "(opcional)",
+        "attach.label": "Archivos adjuntos",
+        "attach.showFile": "Enviar una copia de mi show",
+        "attach.showFile.scrubbed": "Primero se quitan los nombres de los integrantes y las notas.",
+        "attach.music": "Incluir la música",
+        "attach.noShow": "Abre un show para enviar una copia con tu reporte.",
+        "attach.diagnostics": "También se envían las acciones y los errores recientes de tu aplicación, para ayudarnos a encontrar el problema.",
+        "record.start": "Grabar la pantalla",
+        "record.microphone": "Con micrófono",
+        "record.hint": "Graba solo la ventana de OpenMarch, hasta 5 minutos. El reporte se aparta mientras grabas: muéstranos el problema mientras nos lo explicas.",
+        "record.recording": "Grabando {time}",
+        "record.stop": "Detener",
+        "record.done": "Grabación lista ({time})",
+        "record.discard": "Descartar",
+        "record.failed.denied": "La grabación no empezó. Revisa en la configuración del sistema que OpenMarch pueda usar la pantalla y el micrófono.",
+        "record.failed.unsupported": "La grabación no está disponible en esta computadora.",
+        "public.label": "Qué podemos compartir",
+        "public.notice": "Los reportes pueden resumirse en un issue público de GitHub. Nunca publicamos tu nombre, correo ni archivos, a menos que lo permitas abajo.",
+        "public.video": "Mi grabación puede publicarse",
+        "public.showFile": "Mi archivo del show puede publicarse",
+        "public.credit": "Menciona mi nombre si esto se vuelve un issue público",
+        "send": "Enviar reporte",
+        "sending": "Enviando…",
+        "retention": "Los archivos que envías con un reporte se eliminan de nuestros servidores después de 2 meses.",
+        "error.failed": "No se pudo enviar tu reporte. Revisa tu conexión e inténtalo de nuevo.",
+        "attach.music.off": "La música no se envía.",
+        "attach.music.on": "La música también se envía.",
+        "sending.recording": "Subiendo la grabación…",
+        "sending.show_file": "Subiendo tu show…",
+        "sending.diagnostics": "Subiendo el diagnóstico…",
+        "sending.creating": "Enviando…",
+        "sent.view": "Ver este reporte",
+        "error.signedOut": "Se cerró tu sesión. Vuelve a iniciar sesión y envía el reporte.",
+        "error.tooMany": "Enviaste muchos reportes hoy. Vuelve a intentarlo mañana.",
+        "error.showChanged": "Ahora hay otro show abierto. Revisa el archivo adjunto y vuelve a enviarlo.",
+        "sent.showTooLarge": "Tu show era demasiado grande para adjuntarlo (más de 1 GB), así que el reporte se envió sin él.",
+        "close": "Cerrar",
+        "record.stopAndReturn": "Detener y volver al reporte",
+        "record.webHint": "Tu navegador te preguntará qué compartir: elige esta pestaña. El reporte se aparta mientras grabas, hasta 5 minutos. Muéstranos el problema mientras nos lo explicas.",
+        "record.failed.webDenied": "La grabación no empezó. Elige esta pestaña cuando el navegador te pregunte y permite el micrófono si lo activaste.",
+        "record.failed.webUnsupported": "La grabación no está disponible en este navegador.",
+        "drawer.show": "Mostrar el reporte",
+        "drawer.hide": "Ocultar el reporte",
+        "drawer.resize": "Cambiar el tamaño del reporte",
+        "discard.question": "¿Descartar este reporte?",
+        "discard.body": "Se perderá lo que escribiste y grabaste.",
+        "discard.confirm": "Descartar",
+        "discard.keep": "Seguir editando",
+        "record.preview": "Tu grabación",
+        "error.details": "Detalles: {message}",
+        "error.refused": "No se pudo enviar tu reporte. Inténtalo de nuevo y, si sigue pasando, avísanos en Discord.",
+        "record.failed.microphone": "OpenMarch no tiene permiso para usar el micrófono. Desactiva Con micrófono para grabar sin sonido, o permite el micrófono en la configuración del sistema.",
+        "record.failed.webMicrophone": "Tu navegador no permitió el micrófono. Desactiva Con micrófono para grabar sin sonido, o permite el micrófono para este sitio."
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "Las líneas de referencia X de los extremos izquierdo y derecho ya no están a la misma distancia del centro",
+            "centerLocked": "La línea central se queda en el centro mientras se editan ambos lados a la vez",
+            "duplicatePosition": "Ya hay una línea de referencia {axis} ahí",
+            "invalid": "Ese cambio del campo no es válido",
+            "invalidStepSize": "El tamaño de paso debe ser mayor que 0",
+            "mirrorIgnored": "Solo se reflejan las líneas de referencia X",
+            "noGap": "No hay un espacio entre dos líneas de referencia {axis} donde agregar una. Indica su posición.",
+            "notFound": "Esa línea de referencia ya no existe",
+            "skippedExisting": "Se omitieron los lugares que ya tienen una línea de referencia",
+            "tooMany": "Eso agregaría demasiadas líneas de referencia. Usa un espaciado mayor.",
+            "yInFront": "Las líneas de referencia Y no pueden estar delante del frente del campo. Usa 0 o un número negativo de pasos.",
+            "mirrorTwinSkipped": "El otro lado ya tiene una línea de referencia ahí, así que solo se agregó esta",
+            "outsideField": "Se omitieron los lugares más allá de las líneas de referencia exteriores, así que el campo conserva su tamaño",
+            "fieldResized": "Cambió el tamaño o el centro del campo. Los integrantes conservan sus lugares, así que revísalos respecto a las líneas.",
+            "fieldResizeRefused": "Eso cambiaría el tamaño o el centro del campo, así que no cambió nada"
+        },
+        "nothingAdded": "Todos los lugares ya tienen una línea de referencia",
+        "seriesAdded": "{count, plural, one {Se agregó # línea de referencia {axis}} other {Se agregaron # líneas de referencia {axis}}}",
+        "names": {
+            "yardLine": "línea de yarda {yards}",
+            "endZone": "zona de anotación",
+            "endZoneShort": "ZA",
+            "endZoneLine": "zona de anotación {yards}",
+            "endZoneLineShort": "ZA{yards}",
+            "gridLine": "línea {line}",
+            "sideSteps": "{side} a {steps} pasos del centro",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "{steps} pasos desde el frente",
+            "stepsFromFrontShort": "F{steps}"
+        },
+        "failed": "No se pudo guardar el cambio del campo, así que no cambió nada."
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "Campo",
+            "done": "Listo",
+            "discard": "Descartar cambios",
+            "discardTip": "Devuelve el campo a como estaba cuando abriste este panel. Deshacer recupera los cambios.",
+            "discarded": "Se descartaron los cambios del campo. Deshacer los recupera.",
+            "custom": "Campo personalizado",
+            "changes": "{count, plural, =0 {Sin cambios respecto a la plantilla} one {# cambio respecto a la plantilla} other {# cambios respecto a la plantilla}}",
+            "selectMany": "Seleccionar varias",
+            "mirror": "Reflejar lados",
+            "mirrorOnTip": "Reflejar lados está activado: una edición en un lado de la 50 también edita su gemela",
+            "mirrorOffTip": "Reflejar lados está desactivado: cada línea se edita por separado",
+            "sections": {
+                "size": "Tamaño y pasos",
+                "template": "Plantilla",
+                "names": "Nombres y lados",
+                "markings": "Marcas y etiquetas",
+                "image": "Imagen de fondo",
+                "colors": "Colores"
+            },
+            "tabs": {
+                "setup": "Configuración",
+                "lines": "Líneas",
+                "appearance": "Apariencia"
+            }
+        },
+        "ruler": {
+            "x": "Arrastra desde esta regla para agregar una línea X",
+            "y": "Arrastra desde esta regla para agregar una línea Y"
+        },
+        "readout": {
+            "newLine": "Nueva línea:",
+            "fromCenter": "{side} · {steps} pasos",
+            "center": "En el centro",
+            "behindFront": "{steps} pasos detrás del frente",
+            "toLine": "{steps} hasta {line}",
+            "mirrored": "También su gemela del otro lado",
+            "releaseToDelete": "{count, plural, one {Suelta para eliminar esta línea} other {Suelta para eliminar estas # líneas}}",
+            "dragOut": "Arrastra hasta el campo para agregar una línea"
+        },
+        "popover": {
+            "position": "Posición",
+            "side": "Lado",
+            "stepsFromCenter": "pasos desde el centro",
+            "stepsBehindFront": "pasos detrás del frente",
+            "yardLine": "= línea de yarda {yard}",
+            "typeHint": "escribe 24, +4 o 85.33/2",
+            "typeHintYards": "escribe 24, +4, 47.5yd o 85.33/2",
+            "shortName": "Nombre corto",
+            "shortNameHint": "Se muestra en los bordes del campo y en las coordenadas, como 45 o FH",
+            "name": "Nombre",
+            "nameHint": "Se usa en las coordenadas escritas y para elegir el estadio de la Vista 3D",
+            "yardNumber": "Número de yarda",
+            "yardNumberHint": "El número pintado en el campo en esta línea, si lo hay",
+            "none": "ninguno",
+            "visible": "Visible",
+            "mirrored": "Reflejada con {twin}: los cambios se aplican a ambas",
+            "delete": "Eliminar"
+        },
+        "numberPad": {
+            "label": "Teclado numérico",
+            "back": "Borrar el último carácter",
+            "clear": "Borrar todo",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "Esas líneas ya tienen los nombres que les da su posición",
+        "list": {
+            "xHeading": "X · de lado a lado",
+            "yHeading": "Y · de adelante hacia atrás",
+            "center": "centro",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "{steps} atrás",
+            "drawAsHashes": "Dibujar como hashes",
+            "asymmetric": "Las líneas X de los extremos no están a la misma distancia del centro, así que el campo se dibuja descentrado. Mueve una de ellas hasta que ambos lados coincidan.",
+            "hidden": "Oculta",
+            "reference": "Referencia"
+        },
+        "size": {
+            "width": "Ancho",
+            "depth": "Profundidad",
+            "steps": "pasos",
+            "stepsTo5": "{steps} a 5",
+            "extent": "{steps} pasos · {length}"
+        },
+        "names": {
+            "fieldNameHint": "La Vista 3D elige su estadio a partir de este nombre"
+        },
+        "markings": {
+            "edgeLabels": "Etiquetas de los bordes",
+            "yardNumbers": "Números de yarda",
+            "yardNumbersHint": "Pasos desde el frente hasta cada borde de los números pintados. Borra los números locales para no pintar ninguno.",
+            "homeBottom": "Local, abajo",
+            "homeTop": "Local, arriba",
+            "awayTop": "Visitante, arriba",
+            "awayBottom": "Visitante, abajo"
+        },
+        "image": {
+            "remove": "Quitar imagen",
+            "ratios": "Proporción del campo {field} · proporción de la imagen {image}"
+        },
+        "colors": {
+            "field": "Campo",
+            "marchers": "Integrantes y rutas",
+            "shapes": {
+                "circle": "Círculo",
+                "square": "Cuadrado",
+                "triangle": "Triángulo",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "¿Cambiar a {template}?",
+            "lines": "Líneas: {added} agregadas, {removed} eliminadas, {renamed} renombradas o cambiadas",
+            "size": "Tamaño: {before} → {after} pasos",
+            "keepLook": "Conservar mi aspecto (colores, etiquetas, imagen, nombres de los lados)",
+            "undoNote": "Esto se deshace en un solo paso.",
+            "cancel": "Cancelar",
+            "apply": "Cambiar",
+            "resetTitle": "¿Restablecer a {template}?",
+            "resetApply": "Restablecer",
+            "basedOn": "Basado en",
+            "resetShort": "Restablecer plantilla"
+        },
+        "fieldPane": "Líneas del campo",
+        "help": {
+            "button": "Teclado",
+            "title": "Teclado",
+            "route": "<tab></tab> selecciona la siguiente línea mientras el campo tiene el teclado. <pane></pane> pasa del campo al panel Campo y viceversa."
+        },
+        "lines": {
+            "pickedMany": "{count} líneas seleccionadas",
+            "axis": "Qué líneas",
+            "xTab": "De lado a lado · {count}",
+            "yTab": "De adelante hacia atrás · {count}",
+            "canvasHint": "Haz clic en una línea para seleccionarla · Arrastra desde una regla para agregar una · <keys></keys> para terminar",
+            "canvasHintPicked": "Arrastra las líneas seleccionadas para moverlas · <keys></keys> para quitar la selección"
+        },
+        "line": {
+            "title": "Línea",
+            "noneHint": "Selecciona una línea en el campo o en la lista. Mayús + clic selecciona más. Arrastra desde una regla para agregar una.",
+            "reference": "Usar como referencia",
+            "mixed": "Mixto",
+            "add": "Agregar línea",
+            "everyOther": "Conservar una de cada dos"
+        }
     }
 }

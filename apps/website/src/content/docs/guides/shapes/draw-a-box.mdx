@@ -1,6 +1,6 @@
 ---
 title: Draw a box
-description: Put the selected marchers in a block, round the edge of a box, or spread inside one, by dragging on the field.
+description: Put the selected marchers in a block (rows and files), round the edge of a rectangle, or spread inside one, by dragging on the field.
 type: how-to
 covers:
   - apps/desktop/src/shapes/box
@@ -19,17 +19,19 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-A box puts the selected marchers in rows and files, round the edge of a rectangle, or spread evenly inside one. You draw it by dragging from one corner to the other, then change its numbers before you place it.
+<InShort>Select the marchers, press <Kbd action="shapeBlock" />, drag on the field from one corner of the box to the other, then select <Ui k="shapes.edit.place" /> (<Kbd action="applyShape" />).</InShort>
 
-**Before you start:** select the marchers who go in the box, and put the playhead on the count where they should stand in it, usually the end of a move.
+**Before you start:** select the marchers who go in the box, and put the <Term id="playhead">playhead</Term> on the count where they should stand in it, usually the end of a move.
 
 <Steps>
 
 1. In the toolbar's <Ui k="inspector.shape.shapesTab" /> tab, select <Ui k="shapes.kinds.block.label" />, or press <Kbd action="shapeBlock" />.
 
-2. Drag on the field from one corner of the box to the opposite corner. A marcher stands on the corner you pressed, and the box picks how many files across suit the shape you drag.
+2. Drag on the field from one corner of the box to the opposite corner. A marcher stands on the corner you pressed, and the box picks how many across suit the shape you drag.
 
 3. Change the box if you need to: drag its handles, or use its floating editor (below).
 
@@ -37,66 +39,84 @@ A box puts the selected marchers in rows and files, round the edge of a rectangl
 
 </Steps>
 
-The marchers take their spots, as one step you can undo. Until you place it, nobody moves, and <Kbd action="cancelAlignmentUpdates" /> throws the box away. On a tablet, drag with one finger to draw the box (two fingers move the view), and select <Ui k="shapes.edit.discard" /> beside <Ui k="shapes.edit.place" /> to throw it away. A finger reaches a shape's handles from a little further away than the pointer does.
-
 <Media
   id="shapes-draw-box"
-  alt="B is pressed, and a drag above a row of trumpets draws a 4 × 3 box of spots with a faint line from each trumpet to its spot. The pointer moves to Place and clicks it, and the trumpets move onto the spots."
+  alt="B is pressed, and a drag on empty field beside a row of trumpets draws a 4 × 3 box of spots. The pointer moves to Place and clicks it, and the trumpets move onto the spots."
 />
+
+The marchers take their spots, as one step you can undo. Until you place it, nobody moves, and <Kbd action="cancelAlignmentUpdates" /> throws the box away. On a tablet, drag with one finger, and select <Ui k="shapes.edit.discard" /> beside <Ui k="shapes.edit.place" /> to throw it away.
 
 ## Change the box on the field
 
-- Drag a side or corner handle to stretch the box. The rows and files stay the same and the spacing between them changes.
+- Drag a side or corner handle to stretch the box. The rows stay the same and the spacing between them changes.
 - Drag inside the box, or the dot in its middle, to move it.
-- Drag the round knob to turn it. It turns in 15° steps.
+- Drag the round knob to turn it, in 15° steps.
 
-The handles, the knob and the editor fade while the pointer is away from the box, so you can see the field under them.
+The handles, knob and editor fade while the pointer is away from the box, so you can see the field under them.
 
-## The floating editor
+## Change the box's numbers
+
+The <Term id="floating-editor">floating editor</Term> under the box holds its numbers and buttons. To change a number, click it and type, then press <Kbd keys="Enter" />, or drag it. [How shapes work](/guides/shapes/#spots-intervals-and-steps) says how spacings can be typed.
 
 <Media
-  id="shapes-fill-menu"
-  alt="The floating editor of an open box, with its Fill menu open below it listing Grid, Outline and Spread, each with a small picture."
+  id="shapes-box-editor"
+  alt="The floating editor of an open box. First row: minus, 4 × 3, plus; the side-to-side spacing 9 and front-to-back spacing 7½ steps with a chain button; a turn button, 0°, and the pivot menu; two flip buttons, Shrink, Expand and Recalculate; an eye, a magnet and a pathways button; and Place. Second row: Fill set to Grid and Layout set to Full."
 />
 
-The first row of the editor holds the box's numbers and tools:
+From left to right, the first row has:
 
-- The size, such as 4 × 3: how many across and how many deep. Select − or + for one fewer or one more across, or drag the number sideways to change how many across and up or down to change how many deep. With the Short back layout, when the marchers don't fill the last rank, the size says how many spots are short.
-- ↔ and ↕: the side-to-side and front-to-back spacing, in steps. The chain button after them locks the two together, so changing one changes the other in proportion.
-- **↻** turns the box 90° clockwise (<Kbd action="shapeQuarterTurn" />), and the degrees beside it turn it to any angle. The pivot button picks the point it turns and flips around, from a 3 × 3 grid of its corners, sides and center.
+- The size, such as 4 × 3: how many across and how many deep. − and + give one fewer or one more across. Drag the number sideways to change how many across, or up and down for how many deep.
+- The side-to-side and front-to-back spacing, in steps. The chain button locks the two together, so changing one changes the other in proportion.
+- ↻ turns the box 90° clockwise (<Kbd action="shapeQuarterTurn" />), and the degrees beside it turn it to any angle. The pivot menu picks the point it turns and flips around: a corner, the middle of a side or the center.
 - The two flip buttons mirror it side to side (<Kbd action="flipHorizontal" />) or front to back (<Kbd action="flipVertical" />).
-- Expand and Shrink make the box bigger or smaller, keeping its proportions.
-- <Ui k="shapes.edit.recalculate.label" /> works out who goes where again (<Kbd action="shapeRecalculate" />). It's greyed out when nothing would change.
+- Shrink and Expand make the box smaller or bigger a half step at a time, keeping its proportions. Hold either to repeat it.
+- <Ui k="shapes.edit.recalculate.label" /> works out [who goes where](/guides/shapes/#who-goes-where) again (<Kbd action="shapeRecalculate" />).
+- The eye hides the marchers and spots, so you see the outline (<Kbd action="shapeHideMarchers" />). The magnet turns [snapping](/guides/shapes/snapping-and-modifier-keys/#turn-snapping-off) off. The last button shows each marcher's path to their spot.
 
-To change a number, click it and type, then press <Kbd keys="Enter" />; or drag it. Spacings can be typed as whole steps, halves or fractions: 2, 2.5, 2½, 1⅔ or 5/3. A dragged spacing moves in half steps.
+## Choose how the box is filled
 
-The second row says how the box is filled. Its <Ui k="shapes.edit.mode.label" /> menu has three choices:
+The <Ui k="shapes.edit.mode.label" /> menu on the editor's second row has three choices:
+
+<Media
+  id="shapes-fills"
+  alt="An open 4 × 3 box of twelve trumpets in Grid. The Fill menu is opened and Outline chosen: the marchers move to the box's edge, a marcher on every corner and the middle empty. Then Spread is chosen, and they scatter evenly over the whole box in no rows."
+/>
 
 | Fill                                 | What it does                                                                                                                                                         |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <Ui k="shapes.edit.mode.files" plain />   | Rows and files. The <Ui k="shapes.edit.layout.label" plain /> menu beside it lays the block out <Ui k="shapes.distribute.layout.full" plain />, <Ui k="shapes.distribute.layout.stagger" plain />, <Ui k="shapes.distribute.layout.rounded" plain />, <Ui k="shapes.distribute.layout.shortBack" plain /> or <Ui k="shapes.distribute.layout.notched" plain />, and says how many marchers to add or remove for a layout that can't take this many. |
+| <Ui k="shapes.edit.mode.files" plain />   | In rows, across and deep. The <Ui k="shapes.edit.layout.label" plain /> menu beside it lays the block out <Ui k="shapes.distribute.layout.full" plain />, <Ui k="shapes.distribute.layout.stagger" plain />, <Ui k="shapes.distribute.layout.rounded" plain />, <Ui k="shapes.distribute.layout.shortBack" plain /> or <Ui k="shapes.distribute.layout.notched" plain />, and says how many marchers to add or remove for a layout that can't take this many. |
 | <Ui k="shapes.edit.mode.outline" plain /> | Round the edge, with a marcher on every corner and the middle empty. When the count doesn't go round evenly, the Leftover menu picks the side that has one fewer marcher, and whether it leaves a gap or spreads its marchers wider. <Ui k="shapes.edit.evenOut.label" plain /> spaces everyone as evenly as the box allows. |
 | <Ui k="shapes.edit.mode.spread" plain />  | Evenly over the whole box, in no rows. <Ui k="shapes.edit.reshuffle.label" plain /> gives another even layout in the same box; the arrow beside it shows the layout's <Ui k="shapes.edit.seed.label" plain />, which you can copy, or type back in to get that exact spread again. <Ui k="shapes.edit.edge.label" plain /> stands some marchers along the outline and spreads the rest inside. |
 
-Switching between them keeps the box where you drew it, and each fill remembers its own numbers, so switching back gives you what you had.
+In <Ui k="shapes.edit.mode.files" plain />, the <Ui k="shapes.edit.layout.label" plain /> menu shows a small picture of each layout, and beside it the sizes that layout can make for your marchers:
+
+<Media
+  id="shapes-layout-menu"
+  alt="The floating editor of an open 4 × 3 box in Grid, with its Layout menu open: Full, Stagger, Rounded, Short back and Notched, each with a small picture of the block. Notched is greyed out and reads add 1 / remove 2. Beside the list, Full offers two sizes for these twelve marchers, 6 × 2 and 4 × 3, with 4 × 3 picked."
+  maxWidth={520}
+/>
+
+With <Ui k="shapes.distribute.layout.shortBack" plain />, when the marchers don't fill the last row, the size says how many spots are short.
+
+Switching fills keeps the box where you drew it, and each fill remembers its own numbers, so switching back gives you what you had.
 
 ## Type a box instead
 
 <Steps>
 
-1. With the marchers selected, press <Kbd action="openCommandBar" /> to open the command bar.
+1. With the marchers selected, press <Kbd action="openCommandBar" /> or <Kbd action="openCommandPalette" /> to open the <Term id="command-palette">command palette</Term>.
 
 2. Type "box", then press <Kbd keys="Enter" />.
 
-3. Answer each question in the command bar: the fill, the size (such as 6x4), the side-to-side spacing, the front-to-back spacing and the layout. Each answer starts with a default, so <Kbd keys="Enter" /> keeps it. The box shows on the field as you type.
+3. Answer each question: the fill, the size (such as 6x4), the side-to-side spacing, the front-to-back spacing and the layout. Each answer starts with a default, so <Kbd keys="Enter" /> keeps it. The box shows on the field as you type.
 
 </Steps>
 
-The last answer places the box. You can also type the numbers in one go: "box 6x4 2" is a box 6 across and 4 deep, 2 steps apart. <Kbd keys="Backspace" /> in an empty answer goes back a question, and <Kbd action="cancelAlignmentUpdates" /> cancels.
+The last answer places the box. You can also type it in one go: "box 6x4 2" is a box 6 across and 4 deep, 2 steps apart. <Kbd keys="Backspace" /> in an empty answer goes back a question, and <Kbd action="cancelAlignmentUpdates" /> cancels.
 
 ## Related
 
 - [How shapes work](/guides/shapes/): spots, intervals and who goes where.
 - [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): land edges on yard lines and hashes, draw from the center, or make the spacings equal.
-- [Place marchers in a shape](/guides/shapes/place-marchers/): change a box after it's placed.
+- [Change a placed shape](/guides/shapes/place-marchers/): change a box after it's placed.
 - [Draw a circle](/guides/shapes/draw-a-circle/): the other filled shape.

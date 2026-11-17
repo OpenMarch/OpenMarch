@@ -155,6 +155,29 @@ describe("mergeTouchingMarks and applyHoldEdgeDrag", () => {
         ).toEqual([mark(1, 9, 33, 9), mark(2, 9, 17), mark(2, 20, 24)]);
     });
 
+    it("gives joined holds the style of the earliest that has one (#775)", () => {
+        const styled = (
+            start: number,
+            end: number,
+            style?: "stand" | "markTime" | null,
+        ) => ({ ...mark(1, start, end), ...(style ? { style } : {}) });
+        // The earlier hold has none: the later one's style
+        expect(
+            mergeTouchingMarks([styled(9, 17), styled(17, 25, "markTime")]),
+        ).toEqual([{ ...mark(1, 9, 25, 9), style: "markTime" }]);
+        // The earlier hold's own style wins
+        expect(
+            mergeTouchingMarks([
+                styled(9, 17, "stand"),
+                styled(17, 25, "markTime"),
+            ]),
+        ).toEqual([{ ...mark(1, 9, 25, 9), style: "stand" }]);
+        // Holds that don't touch keep their own
+        expect(
+            mergeTouchingMarks([styled(9, 13, "stand"), styled(17, 25)]),
+        ).toEqual([styled(9, 13, "stand"), styled(17, 25)]);
+    });
+
     it("drags only the selected marchers' edges at `from`, then joins", () => {
         const marks = [mark(1, 9, 17), mark(1, 25, 33), mark(2, 9, 17)];
         expect(

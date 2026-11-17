@@ -25,6 +25,8 @@ export const tablesWithHistory = [
     schema.marcher_tags,
     // The show's 3D View venue (ADR 0010 D-5)
     schema.view3d_venue,
+    // Silk Artwork the venue and cues name (fork #973)
+    schema.view3d_silk_artwork,
     // Timeline data tables (ADR 0012 §3, spec §6.1). `timeline_change_log` is bookkeeping and
     // gets no history triggers.
     schema.timelines,
@@ -42,6 +44,9 @@ export const tablesWithHistory = [
     schema.timeline_shape_recipe_marchers,
     // Tempo mode: the music offset tempo edits change
     schema.tempo_settings,
+    // Performer cues and the performers each applies to (ADR 0015 D-9)
+    schema.cues,
+    schema.cue_marchers,
 ];
 
 /**

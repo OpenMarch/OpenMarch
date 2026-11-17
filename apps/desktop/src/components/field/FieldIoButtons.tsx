@@ -47,11 +47,10 @@ export default function FieldIoButtons() {
                 style={{ display: "none" }}
                 onChange={handleFileInputChange}
             />
-            <div className="grid grid-cols-2 gap-8">
+            <div className="flex gap-8">
                 <Button
-                    className="w-full"
                     tooltipText={t("field.general.importField.tooltip")}
-                    variant="primary"
+                    variant="secondary"
                     size="compact"
                     onClick={handleImportClick}
                     disabled={isImporting || isExporting}
@@ -59,7 +58,6 @@ export default function FieldIoButtons() {
                     <T keyName="field.general.importField" />
                 </Button>
                 <Button
-                    className="w-full"
                     tooltipText={t("field.general.exportField.tooltip")}
                     variant="secondary"
                     size="compact"

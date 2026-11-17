@@ -18,6 +18,7 @@ import FieldContextMenu, {
 } from "../FieldContextMenu";
 import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
+import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -31,7 +32,14 @@ function handle(
         enabled = true,
         label,
         checked = false,
-    }: { enabled?: boolean; label?: string; checked?: boolean } = {},
+        reason = "Not now, for a test",
+    }: {
+        enabled?: boolean;
+        label?: string;
+        checked?: boolean;
+        /** Why it's disabled; null for none (then the menu leaves it out) */
+        reason?: string | null;
+    } = {},
 ) {
     const run = vi.fn();
     handlers.push(
@@ -40,6 +48,7 @@ function handle(
             isEnabled: () => enabled,
             label: () => label,
             checked: () => checked,
+            disabledReason: () => reason ?? undefined,
         }),
     );
     return run;
@@ -143,21 +152,36 @@ describe("FieldContextMenu", () => {
         expect(preview).toHaveBeenLastCalledWith(false);
     });
 
-    it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
+    it("shows an action that can't run with its reason, and running it does nothing", () => {
         const run = handle("alignHorizontally", { enabled: false });
         open();
         const align = item("alignHorizontally")!;
-        expect(align).toHaveAttribute("data-disabled");
+        expect(align).toHaveAttribute("aria-disabled", "true");
+        expect(item("alignHorizontally-reason-icon")).toBeTruthy();
         fireEvent.click(align);
         expect(run).not.toHaveBeenCalled();
-        expect(item("alignVertically")).toHaveAttribute("data-disabled");
+    });
+
+    it("leaves out an action that can't run and can't say why, or has no handler", () => {
+        handle("alignHorizontally", { enabled: false, reason: null });
+        open();
+        expect(item("alignHorizontally")).toBeNull();
+        expect(item("alignVertically")).toBeNull();
+    });
+
+    it("offers editing the item right-clicked, first, only while one is selected", () => {
+        for (const id of FIELD_MENU_ACTIONS) handle(id);
+        handle("editSelectedItem", { enabled: false });
+        open();
+        expect(screen.queryByTestId("field-menu-editSelectedItem")).toBeNull();
     });
 
     it("lists the actions in groups, with the page state commands together", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        handle("shapeGroup", { enabled: false });
-        handle("shapeUngroup", { enabled: false });
-        open();
+        handle("shapeGroup", { enabled: false, reason: null });
+        handle("shapeUngroup", { enabled: false, reason: null });
+        // Two selected, so Swap can run
+        open({ selectedCount: 2 });
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
         for (const el of Array.from(content.children)) {
@@ -168,10 +192,17 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
+            ["editSelectedItem"],
             [
                 "timelineHoldFromPrevious",
                 "timelineHoldOverWindow",
                 "setSelectedMarchersToPreviousPage",
+            ],
+            [
+                "timelineHoldStyleDefault",
+                "timelineHoldStyleStand",
+                "timelineHoldStyleMarkTime",
+                "timelineHoldStyleHighMarkTime",
             ],
             [
                 "alignHorizontally",
@@ -182,6 +213,7 @@ describe("FieldContextMenu", () => {
                 "setSelectedMarchersToNextPage",
             ],
             ["selectAllMarchers"],
+            ["fieldEditMode"],
         ]);
         expect(item("timelineHoldFromPrevious")).toHaveTextContent(
             "Hold from last keyframe",
@@ -195,6 +227,43 @@ describe("FieldContextMenu", () => {
         expect(item("setSelectedMarchersToNextPage")).toHaveTextContent(
             "Move to next page's spots (selected)",
         );
+    });
+
+    it("shows Hold style as a group while any of it can run, with the style in effect checked (#775)", () => {
+        const styles = [
+            "timelineHoldStyleDefault",
+            "timelineHoldStyleStand",
+            "timelineHoldStyleMarkTime",
+            "timelineHoldStyleHighMarkTime",
+        ] as const;
+        // Nobody Held at the playhead: none can run, and none is in effect
+        for (const id of styles) handle(id, { enabled: false });
+        open();
+        for (const id of styles) expect(item(id)).toBeNull();
+        cleanup();
+        handlers.splice(0).forEach((off) => off());
+
+        // A Held hold on the show setting: that entry is checked (so off), the others run
+        handle("timelineHoldStyleDefault", { enabled: false, checked: true });
+        const markTime = handle("timelineHoldStyleMarkTime");
+        handle("timelineHoldStyleStand");
+        handle("timelineHoldStyleHighMarkTime");
+        open();
+        expect(item("timelineHoldStyleDefault")).toHaveAttribute(
+            "aria-checked",
+            "true",
+        );
+        expect(item("timelineHoldStyleDefault")).toHaveTextContent(
+            "Hold style: Show setting",
+        );
+        expect(item("timelineHoldStyleStand")).toHaveTextContent(
+            "Hold style: Stand",
+        );
+        expect(item("timelineHoldStyleHighMarkTime")).toHaveTextContent(
+            "Hold style: High mark time",
+        );
+        fireEvent.click(item("timelineHoldStyleMarkTime")!);
+        expect(markTime).toHaveBeenCalledTimes(1);
     });
 
     it("keeps room for a check only in front of the page state commands", () => {
@@ -225,14 +294,15 @@ describe("FieldContextMenu", () => {
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(blocked).not.toHaveBeenCalled();
         expect(item("timelineHoldFromPrevious")).toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
+            "true",
         );
         cleanup();
         handlers.splice(0).forEach((off) => off());
         const hold = handle("timelineHoldFromPrevious");
         open();
         expect(item("timelineHoldFromPrevious")).not.toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
         );
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(hold).toHaveBeenCalledTimes(1);
@@ -301,11 +371,17 @@ describe("FieldContextMenu", () => {
     });
 
     it("offers Swap only with two marchers selected", () => {
-        const run = handle("swapMarchers");
+        // Three selected: its handler says it can't, and why
+        const off = handle("swapMarchers", {
+            enabled: false,
+            reason: "Select 2 marchers to swap them",
+        });
         open({ selectedCount: 3 });
-        fireEvent.click(item("swapMarchers")!);
-        expect(run).not.toHaveBeenCalled();
+        expect(item("swapMarchers")).toHaveAttribute("aria-disabled", "true");
         cleanup();
+        handlers.splice(0).forEach((h) => h());
+        void off;
+        const run = handle("swapMarchers");
         open({ selectedCount: 2 });
         fireEvent.click(item("swapMarchers")!);
         expect(run).toHaveBeenCalledTimes(1);
@@ -338,9 +414,60 @@ describe("FieldContextMenu", () => {
         }
     });
 
+    describe("shortcut caps (#880)", () => {
+        const caps = () =>
+            screen.getByTestId("field-menu").querySelectorAll("kbd.shortcut");
+
+        afterEach(() => {
+            act(() => {
+                useInputModeStore.getState().setPreference("auto");
+            });
+            localStorage.clear();
+            resetKeyboardSeen();
+        });
+
+        it("shows each entry's cap with a mouse layout", () => {
+            handle("selectAllMarchers");
+            open();
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
+
+        it("hides them in the touch layout until a hardware key is pressed, keeping the entries", () => {
+            act(() => {
+                useInputModeStore.getState().setPreference("touch");
+            });
+            handle("selectAllMarchers");
+            handle("setSelectedMarchersToPreviousPage", {
+                label: "Clear Page 3",
+            });
+            open();
+            expect(caps()).toHaveLength(0);
+            // The entries, their words and their enabled states are as they were
+            expect(item("selectAllMarchers")).toHaveTextContent("Select all");
+            expect(item("selectAllMarchers")).not.toHaveAttribute(
+                "data-disabled",
+            );
+            expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
+                "Clear Page 3",
+            );
+
+            // A hardware keyboard's key, outside a text field
+            act(() => {
+                fireEvent.keyDown(window, { key: "Shift" });
+            });
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
+    });
+
     it("lists every action it offers by its label", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        open();
+        open({ selectedCount: 2 });
         expect(
             screen.getAllByRole("menuitem").map((el) => el.textContent),
         ).toEqual(

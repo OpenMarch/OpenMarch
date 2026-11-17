@@ -42,6 +42,7 @@ const DISPLAY_GROUPS: readonly {
     { id: "select", categories: ["select"] },
     { id: "cursor", categories: ["cursor"] },
     { id: "shape", categories: ["shape"] },
+    { id: "field", categories: ["field"] },
     { id: "ui", categories: ["ui"] },
 ];
 

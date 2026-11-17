@@ -1,7 +1,9 @@
+// cspell:words ndarray
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { modelImportWorker, ndarrayAliases } from "./vite.modelImport.mjs";
 
 /**
  * Builds the app for the browser end-to-end harness (`e2e/browser/`), which
@@ -66,20 +68,25 @@ export default defineConfig(({ mode }) => {
 
     return {
         resolve: {
-            alias: {
-                ...alias,
-                electron: path.join(
-                    __dirname,
-                    "e2e/browser/preload/electron.ts",
-                ),
-                "@sentry/electron/renderer": path.join(
-                    __dirname,
-                    "e2e/browser/preload/sentry.ts",
-                ),
-            },
+            alias: [
+                ...Object.entries({
+                    ...alias,
+                    electron: path.join(
+                        __dirname,
+                        "e2e/browser/preload/electron.ts",
+                    ),
+                    "@sentry/electron/renderer": path.join(
+                        __dirname,
+                        "e2e/browser/preload/sentry.ts",
+                    ),
+                }).map(([find, replacement]) => ({ find, replacement })),
+                ...ndarrayAliases,
+            ],
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
-        plugins: [tailwindcss(), react(), injectPreload()],
+        // The model import worker's Draco decoder (fork #998)
+        worker: { plugins: () => [modelImportWorker()] },
+        plugins: [modelImportWorker(), tailwindcss(), react(), injectPreload()],
         define: {
             // The preload runs in Node under Electron; a browser has no `process`.
             "process.platform": JSON.stringify(process.platform),

@@ -4,6 +4,7 @@ import { FieldEditor, type FieldEditorPorts } from "@/field/editor/fieldEditor";
 import type { FieldPoint } from "@/field/editor/view";
 import {
     attachFieldPointerInput,
+    cssCursor,
     type FieldPointerInputOptions,
 } from "../fieldPointerInput";
 import { useFieldViewStore } from "../fieldView";
@@ -344,5 +345,21 @@ describe("attachFieldPointerInput, a pen held still in Pan (tablet 1.3 with 1.5)
         fire("pointerup", { x: 401, y: 300, ...pen });
         expect(state.menus).toBe(1);
         expect(editor.activeGesture()).toBeNull();
+    });
+});
+
+describe("cssCursor", () => {
+    it("draws the lasso as an SVG pointing at the rope's end, falling back to a crosshair", () => {
+        const css = cssCursor("lasso");
+        expect(css.startsWith('url("data:image/svg+xml,')).toBe(true);
+        expect(css.endsWith('") 3 21, crosshair')).toBe(true);
+        // Nothing in the data URI that would end the url() or the string early
+        const data = css.slice(css.indexOf(",") + 1, css.lastIndexOf('")'));
+        expect(data).not.toMatch(/["<>#]/);
+    });
+
+    it("passes the other cursors through as CSS names", () => {
+        expect(cssCursor("pointer")).toBe("pointer");
+        expect(cssCursor("default")).toBe("default");
     });
 });

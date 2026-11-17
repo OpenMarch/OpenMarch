@@ -16,6 +16,7 @@ import {
     type VenueSettings,
 } from "@/view3d/core/venueSettings";
 import type { Finish, TubaModelId } from "@/view3d/core/instruments/catalog";
+import { silkShapeOf, type SilkShapeId } from "@/view3d/core/sizes/silkShapes";
 import {
     guardUniformPresetOf,
     uniformPresetOf,
@@ -31,7 +32,8 @@ export type VenueChange =
     | { kind: "uniforms"; uniforms: UniformPresetId }
     | { kind: "guardUniforms"; guardUniforms: GuardUniformPresetId }
     | { kind: "brassFinish"; brassFinish: Finish }
-    | { kind: "tuba"; tuba: TubaModelId };
+    | { kind: "tuba"; tuba: TubaModelId }
+    | { kind: "silkShape"; silkShape: SilkShapeId };
 
 /**
  * Applies one change to the current settings and validates the result.
@@ -75,6 +77,11 @@ export function applyVenueChange(
             });
         case "tuba":
             return parseVenueSettings({ ...current, tuba: change.tuba });
+        case "silkShape":
+            return parseVenueSettings({
+                ...current,
+                silkShape: change.silkShape,
+            });
         case "params":
             return parseVenueSettings({
                 ...current,
@@ -94,6 +101,7 @@ export function venueChanged(a: VenueSettings, b: VenueSettings): boolean {
             guardUniformPresetOf(b.guardUniforms) ||
         brassFinishOf(a.brassFinish) !== brassFinishOf(b.brassFinish) ||
         tubaModelOf(a.tuba) !== tubaModelOf(b.tuba) ||
+        silkShapeOf(a.silkShape) !== silkShapeOf(b.silkShape) ||
         a.params.homeColor !== b.params.homeColor ||
         a.params.awayColor !== b.params.awayColor ||
         a.params.endZoneText !== b.params.endZoneText ||

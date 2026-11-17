@@ -18,6 +18,7 @@ import { readHoldGrowth, type HoldGrowth } from "./timelineHoldFromPrevious";
 import { readPageGrid } from "./timelineRipple";
 import { showEndBeat, showStartBeat } from "./timelinePageGrid";
 import { holdOverWindowStart, holdWindowInShow } from "@/timeline/holdExtent";
+import { joinedHoldStyle } from "@/timeline/holdStyle";
 
 /**
  * **Hold over the window** (holds, fork #476; holds README decision 3, review R8, 01-edit-rules
@@ -305,16 +306,17 @@ const sorted = <R extends string>(result: {
 /**
  * Writes one Held mark over `[start, end)` for its marcher, joined with each of `own` (that
  * marcher's marks before the edit) it overlaps or touches, which are replaced by it (touching
- * holds are one hold, 04-anchors; no two of a marcher's marks overlap, H-3).
+ * holds are one hold, 04-anchors; no two of a marcher's marks overlap, H-3). It takes the hold
+ * style of the earliest of them that has one (`joinedHoldStyle`); alone, it has none.
  */
 export async function writeJoinedHeldMarkInTransaction(
     tx: DbTransaction,
     own: readonly HeldMark[],
     mark: { marcherId: number; start: number; end: number },
 ): Promise<void> {
-    const joined = own.filter(
-        (m) => m.start <= mark.end && mark.start <= m.end,
-    );
+    const joined = own
+        .filter((m) => m.start <= mark.end && mark.start <= m.end)
+        .sort((x, y) => x.start - y.start);
     const start = Math.min(mark.start, ...joined.map((m) => m.start));
     const end = Math.max(mark.end, ...joined.map((m) => m.end));
     const h = schema.timeline_held_marks;
@@ -329,5 +331,6 @@ export async function writeJoinedHeldMarkInTransaction(
         marcher_id: mark.marcherId,
         start_beat: start,
         end_beat: end,
+        style: joinedHoldStyle(joined.map((m) => m.style)),
     });
 }

@@ -573,6 +573,26 @@
         "category": "batchEdit",
         "bindings": []
     },
+    "timelineHoldStyleDefault": {
+        "label": "Hold style: Show setting",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleStand": {
+        "label": "Hold style: Stand",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleMarkTime": {
+        "label": "Hold style: Mark time",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "timelineHoldStyleHighMarkTime": {
+        "label": "Hold style: High mark time",
+        "category": "batchEdit",
+        "bindings": []
+    },
     "setAllMarchersToNextPage": {
         "label": "Move to next page's spots (all marchers)",
         "category": "batchEdit",
@@ -949,6 +969,24 @@
             }
         ]
     },
+    "openHelp": {
+        "label": "Get help",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "F1"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F1"
+                    ]
+                }
+            }
+        ]
+    },
     "reportFeedback": {
         "label": "Report a bug or send feedback",
         "category": "ui",
@@ -966,6 +1004,21 @@
     },
     "openView3d": {
         "label": "Open 3D View",
+        "category": "ui",
+        "bindings": []
+    },
+    "openFrontEnsemble": {
+        "label": "Open front ensemble and podiums",
+        "category": "ui",
+        "bindings": []
+    },
+    "editSelectedItem": {
+        "label": "Edit selected prop or equipment",
+        "category": "edit",
+        "bindings": []
+    },
+    "addFrontEnsembleEquipment": {
+        "label": "Add front ensemble equipment or podium",
         "category": "ui",
         "bindings": []
     },
@@ -1399,6 +1452,24 @@
             }
         ]
     },
+    "toggleLassoSelect": {
+        "label": "Switch between box and lasso select",
+        "category": "select",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
     "timelineUnsetHere": {
         "label": "Remove keyframe",
         "category": "timeline",
@@ -1503,6 +1574,353 @@
     "toggleTempoMode": {
         "label": "Edit music on / off",
         "category": "timeline",
+        "bindings": []
+    },
+    "fieldAddXCheckpoint": {
+        "label": "Add X checkpoint on both sides",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddYCheckpoint": {
+        "label": "Add Y checkpoint",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddXCheckpointSeries": {
+        "label": "Add X checkpoints every few steps",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldAddYCheckpointSeries": {
+        "label": "Add Y checkpoints every few steps",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditMode": {
+        "label": "Edit field",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "E"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "E"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "E"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditLines": {
+        "label": "Edit field lines",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditDone": {
+        "label": "Done editing the field",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Esc"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Esc"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditDiscard": {
+        "label": "Discard field changes",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditMirror": {
+        "label": "Mirror sides",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "M"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "M"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditAddXLine": {
+        "label": "Add X line",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "X"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "X"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditAddYLine": {
+        "label": "Add Y line",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Y"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Y"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditEditLine": {
+        "label": "Type the picked line's position",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "↩"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Enter"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "F2"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F2"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditDeleteLines": {
+        "label": "Delete lines",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌦"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Del"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌫"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Backspace"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditToggleVisible": {
+        "label": "Hide or show lines",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "H"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "H"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditToggleReference": {
+        "label": "Use lines as reference or not",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "R"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "R"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNextLine": {
+        "label": "Pick the next line",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "Tab"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Tab"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditPreviousLine": {
+        "label": "Pick the previous line",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "Tab"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "Tab"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNextPane": {
+        "label": "Go between the field and the Field panel",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "F6"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F6"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditPreviousPane": {
+        "label": "Go between the Field panel and the field",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "F6"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "F6"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditImportImage": {
+        "label": "Import field background image…",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditRemoveImage": {
+        "label": "Remove field background image",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditSelectAllLines": {
+        "label": "Select all lines",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditSelectAllXLines": {
+        "label": "Select all X lines",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditSelectAllYLines": {
+        "label": "Select all Y lines",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditEveryOther": {
+        "label": "Keep every other line picked",
+        "category": "field",
+        "bindings": []
+    },
+    "fieldEditResetNames": {
+        "label": "Name lines from their position",
+        "category": "field",
         "bindings": []
     },
     "moveSelectedMarchersUp": {
@@ -2346,6 +2764,158 @@
                     "keys": [
                         "Ctrl",
                         "Alt",
+                        "Shift",
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeUp": {
+        "label": "Move lines back",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeUpFine": {
+        "label": "Move lines back (half step)",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "↑"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "↑"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeDown": {
+        "label": "Move lines forward",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeDownFine": {
+        "label": "Move lines forward (half step)",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "↓"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "↓"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeLeft": {
+        "label": "Move lines left",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeLeftFine": {
+        "label": "Move lines left (half step)",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "←"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "←"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeRight": {
+        "label": "Move lines right",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "→"
+                    ]
+                }
+            }
+        ]
+    },
+    "fieldEditNudgeRightFine": {
+        "label": "Move lines right (half step)",
+        "category": "field",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "→"
+                    ]
+                },
+                "other": {
+                    "keys": [
                         "Shift",
                         "→"
                     ]

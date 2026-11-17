@@ -12,8 +12,12 @@
  * - Cloth, not metal: metalness 0, matte, double-sided. A silk is plain in
  *   its color (the section's 2D fill, else its uniform preset's carry), or
  *   painted with its preset's pattern (`uniformPresets.ts`), sampled from
- *   {@link silkPatternTexture} at the grid's (u, v). Silk cues (C5.4) come
- *   later.
+ *   {@link silkPatternTexture} at the grid's (u, v), or with the show's
+ *   imported Artwork ({@link setSilkArtwork}), laid flat as its template is.
+ *   Silk cues (C5.4) come later.
+ * - Shaped: a silk with a shape (`core/sizes/silkShapes.ts`) clips what
+ *   lies outside its outline, read from {@link silkMaskTexture}, with an
+ *   antialiased edge (alpha to coverage).
  * - No shadows at any quality (props-spec.md section 7, "Rendering").
  * - The wave reads only per-instance inputs written from the count, so a
  *   scrub back to a count draws the same silks as playing there.
@@ -26,12 +30,18 @@ import { instrumentModel, type Detail } from "@/view3d/core/instruments";
 import { hold as holdFor } from "@/view3d/core/instruments/holds";
 import type { SilkSpec } from "@/view3d/core/instruments/model";
 import {
-    SILK_CUT_IDS,
     SILK_GRID,
     SILK_WAVE_SHADER,
+    silkCutIndex,
     silkPhases,
     silkSeed,
 } from "@/view3d/core/instruments/silkWave";
+import {
+    SILK_MASK_EDGE,
+    SILK_MASK_SIZE,
+    silkMaskField,
+} from "@/view3d/core/instruments/silkMask";
+import { SILK_SHAPE_IDS, silkShape } from "@/view3d/core/sizes/silkShapes";
 import { uniformKey } from "@/view3d/core/marchers/looks";
 import {
     UNIFORM_PRESET_IDS,
@@ -122,12 +132,81 @@ export function silkPatternTexture(): THREE.DataTexture {
     return texture;
 }
 
+let maskTexture: THREE.DataTexture | null = null;
+
+/**
+ * Every shape's mask (`silkMask.ts`), one band of {@link SILK_MASK_SIZE}
+ * squared each, in the shader's cut order: band 0, the rectangle, is all
+ * inside. Built once, on first use.
+ */
+export function silkMaskTexture(): THREE.DataTexture {
+    if (maskTexture) return maskTexture;
+    const n = SILK_SHAPE_IDS.length + 1;
+    const band = SILK_MASK_SIZE * SILK_MASK_SIZE;
+    const data = new Uint8Array(band * n);
+    data.fill(255, 0, band);
+    SILK_SHAPE_IDS.forEach((id, k) =>
+        data.set(silkMaskField(silkShape(id).path), (k + 1) * band),
+    );
+    const texture = new THREE.DataTexture(
+        data,
+        SILK_MASK_SIZE,
+        SILK_MASK_SIZE * n,
+        THREE.RedFormat,
+        THREE.UnsignedByteType,
+    );
+    texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearFilter;
+    texture.generateMipmaps = false;
+    texture.needsUpdate = true;
+    maskTexture = texture;
+    return texture;
+}
+
+/** Where the Artwork lies in its image: the trim's offset and size, in uv. */
+export interface SilkArtworkRect {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}
+
+const blank = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1);
+blank.needsUpdate = true;
+
+/**
+ * The show's silk Artwork, shared by every silk material: the image, and
+ * the trim's rectangle in it (a template's PNG carries the bleed around
+ * it). Silks marked for Artwork sample it.
+ */
+const artworkUniforms = {
+    uSilkArtwork: { value: blank as THREE.Texture },
+    uSilkArtworkRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+};
+
+/** Sets the show's silk Artwork; null puts the blank back. */
+export function setSilkArtwork(
+    texture: THREE.Texture | null,
+    rect: SilkArtworkRect = { x: 0, y: 0, width: 1, height: 1 },
+): void {
+    artworkUniforms.uSilkArtwork.value = texture ?? blank;
+    artworkUniforms.uSilkArtworkRect.value.set(
+        rect.x,
+        rect.y,
+        rect.width,
+        rect.height,
+    );
+}
+
+/** `aPattern` for a silk painted with the show's Artwork. */
+export const SILK_ARTWORK_PATTERN = -2;
+
 /** Per-instance attributes and how many floats each takes. */
 const INSTANCE_ATTRIBUTES = {
     aSlot: 1,
     /** (fly, header, mirror, bone index) */
     aSilk: 4,
-    /** The Cut: 0 the rectangle, else 1 + its index in `SILK_CUT_IDS` */
+    /** The shape: 0 the rectangle, else `silkCutIndex` of its id */
     aCut: 1,
     /** The silk frame to its bone's bind pose: three rows of a 3 × 4 affine. */
     aFrame0: 4,
@@ -137,7 +216,10 @@ const INSTANCE_ATTRIBUTES = {
     aMotion: 4,
     /** Linear RGB, for a plain silk. */
     aColor: 3,
-    /** The silk's pattern: its index in `SILK_PATTERN_IDS`, or -1 for plain. */
+    /**
+     * The silk's pattern: its index in `SILK_PATTERN_IDS`, -1 for plain, or
+     * `SILK_ARTWORK_PATTERN` for the show's Artwork.
+     */
     aPattern: 1,
 } as const;
 type InstanceAttribute = keyof typeof INSTANCE_ATTRIBUTES;
@@ -166,15 +248,43 @@ attribute vec3 aColor;
 attribute float aPattern;
 varying vec3 vSilkColor;
 varying vec2 vSilkUv;
+varying vec2 vSilkPlanar;
 varying float vSilkPattern;
+varying float vSilkCut;
 `;
 
 const SILK_FRAGMENT_HEAD = /* glsl */ `
 uniform sampler2D uSilkPatterns;
 uniform float uSilkPatternCount;
+uniform sampler2D uSilkMasks;
+uniform float uSilkMaskCount;
+uniform sampler2D uSilkArtwork;
+uniform vec4 uSilkArtworkRect;
 varying vec3 vSilkColor;
 varying vec2 vSilkUv;
+varying vec2 vSilkPlanar;
 varying float vSilkPattern;
+varying float vSilkCut;
+/**
+ * How far the flat silk point p lies inside its shape's outline, as an
+ * alpha: 0.5 on the outline, rising to 1 inside and falling to 0 outside
+ * across the mask's distance band. The material's alpha to coverage turns
+ * that into a smooth, pixel-wide edge.
+ */
+float silkCutAlpha(vec2 p, float cut) {
+  if (cut < 0.5) return 1.0;
+  float inset = 0.5 / ${SILK_MASK_SIZE.toFixed(1)};
+  vec2 q = clamp(p, inset, 1.0 - inset);
+  float m = texture2D(uSilkMasks, vec2(q.x, (floor(cut + 0.5) + q.y) / uSilkMaskCount)).r;
+  return clamp(0.5 + (m - ${(SILK_MASK_EDGE / 255).toFixed(6)}) * ${(255 / (2 * (SILK_MASK_EDGE - 1))).toFixed(6)}, 0.0, 1.0);
+}
+/** The show's Artwork at the flat silk point p, over the plain color. */
+vec3 silkArtworkColor(vec2 p, vec3 plain) {
+  vec2 a = uSilkArtworkRect.xy + p * uSilkArtworkRect.zw;
+  // images load flipped: their top row is at v = 1
+  vec4 art = texture2D(uSilkArtwork, vec2(a.x, 1.0 - a.y));
+  return mix(plain, art.rgb, art.a);
+}
 /** The silk's pattern at (u, v), kept inside its own band of the texture. */
 vec3 silkPatternColor(vec2 uv, float pattern) {
   float inset = 0.5 / ${SILK_PATTERN_SIZE.v.toFixed(1)};
@@ -195,12 +305,20 @@ export function silkMaterial(composer: Composer): THREE.MeshStandardMaterial {
         side: THREE.DoubleSide,
         envMapIntensity: 1,
     });
+    // a shaped silk's outline comes from its mask as an alpha (silkCutAlpha):
+    // clipped at 0.5 and smoothed over the pixel, as the plume's cards are
+    material.alphaTest = 0.5;
+    material.alphaToCoverage = true;
     material.onBeforeCompile = (shader) => {
         shader.uniforms.uComposed = composer.uniform;
         shader.uniforms.uSilkPatterns = { value: silkPatternTexture() };
         shader.uniforms.uSilkPatternCount = {
             value: Math.max(1, SILK_PATTERN_IDS.length),
         };
+        shader.uniforms.uSilkMasks = { value: silkMaskTexture() };
+        shader.uniforms.uSilkMaskCount = { value: SILK_SHAPE_IDS.length + 1 };
+        shader.uniforms.uSilkArtwork = artworkUniforms.uSilkArtwork;
+        shader.uniforms.uSilkArtworkRect = artworkUniforms.uSilkArtworkRect;
         shader.vertexShader = shader.vertexShader
             .replace("#include <common>", `#include <common>\n${SILK_HEAD}`)
             .replace(
@@ -211,7 +329,9 @@ export function silkMaterial(composer: Composer): THREE.MeshStandardMaterial {
   vec3 objectNormal = mat3(silkFrame) * silkNormal;
   vSilkColor = aColor;
   vSilkUv = position.xy;
-  vSilkPattern = aPattern;`,
+  vSilkPlanar = silkPlanar(position.x, position.y, aCut);
+  vSilkPattern = aPattern;
+  vSilkCut = aCut;`,
             )
             .replace(
                 "#include <skinbase_vertex>",
@@ -234,7 +354,10 @@ export function silkMaterial(composer: Composer): THREE.MeshStandardMaterial {
             .replace(
                 "#include <color_fragment>",
                 `#include <color_fragment>
-  diffuseColor.rgb *= vSilkPattern < -0.5
+  diffuseColor.a *= silkCutAlpha(vSilkPlanar, vSilkCut);
+  diffuseColor.rgb *= vSilkPattern < -1.5
+    ? silkArtworkColor(vSilkPlanar, vSilkColor)
+    : vSilkPattern < -0.5
     ? vSilkColor
     : silkPatternColor(vSilkUv, floor(vSilkPattern + 0.5));`,
             );
@@ -329,15 +452,20 @@ function silkInstances(
             });
             byLook.set(key, specs);
         }
-        const { carryColor, silk } = l.uniform.options;
+        const { carryColor, silk, silkArtwork } = l.uniform.options;
         const color = lin(
             l.silkColor ?? carryColor ?? l.uniform.colors.primary,
         );
-        // a fill or a Silk cue (`silkColor`) makes the silk plain
+        // a Silk cue (`silkColor`) makes the silk plain; else the show's
+        // Artwork paints it; else a fill makes it plain
         const pattern =
-            silk && l.silkColor === undefined
-                ? SILK_PATTERN_IDS.indexOf(silk)
-                : -1;
+            l.silkColor !== undefined
+                ? -1
+                : silkArtwork
+                  ? SILK_ARTWORK_PATTERN
+                  : silk
+                    ? SILK_PATTERN_IDS.indexOf(silk)
+                    : -1;
         specs.forEach(({ spec, bone, frame }, n) =>
             silks.push({
                 slot,
@@ -347,7 +475,7 @@ function silkInstances(
                 values: {
                     aSlot: [slot],
                     aSilk: [spec.fly, spec.header, spec.mirror, bone],
-                    aCut: [spec.cut ? SILK_CUT_IDS.indexOf(spec.cut) + 1 : 0],
+                    aCut: [silkCutIndex(spec.cut)],
                     aFrame0: frame.slice(0, 4),
                     aFrame1: frame.slice(4, 8),
                     aFrame2: frame.slice(8, 12),
@@ -455,7 +583,8 @@ export class SilkSet {
     /**
      * Places every placed slot's silks in its tier's mesh, packed by
      * distance as the instruments are (`hornSet.ts`), with this frame's
-     * motion. `camera` null draws everything at full detail.
+     * motion. `camera` null draws everything at full detail. `lift` raises
+     * each slot (m), as onto a platform; null stands them all on the ground.
      */
     writeFrame(
         xz: Float32Array,
@@ -463,6 +592,7 @@ export class SilkSet {
         placed: Uint8Array,
         scale: Float32Array,
         camera: [number, number, number] | null,
+        lift: Float32Array | null = null,
     ): void {
         if (this.tiers.length === 0) return;
         const lists: number[][] = this.tiers.map(() => []);
@@ -499,7 +629,7 @@ export class SilkSet {
                     xz[slot * 2 + 1],
                     heading[slot],
                     scale[slot],
-                    STAND_Y,
+                    STAND_Y + (lift?.[slot] ?? 0),
                 );
                 for (let c = 0; c < 4; c++)
                     motion.array[i * 4 + c] = this.motion[silk * 4 + c];

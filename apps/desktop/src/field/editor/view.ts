@@ -21,8 +21,12 @@ export type FieldView = {
     panY: number;
 };
 
-/** The field's size in field units. */
-export type FieldSize = { width: number; height: number };
+/**
+ * The area the view shows in field units: the field, and any strip drawn beside it. It runs down
+ * from `top` (0 by default, the field's own top edge; less with a strip behind the back
+ * sideline) and across from 0.
+ */
+export type FieldSize = { width: number; height: number; top?: number };
 
 /** A point in the field element, in CSS pixels from its top-left. */
 export type ElementPoint = { x: number; y: number };
@@ -31,6 +35,8 @@ export const MIN_ZOOM = 0.2;
 export const MAX_ZOOM = 25;
 /** Each press of the zoom buttons multiplies or divides the zoom by this. */
 export const ZOOM_BUTTON_STEP = 1.2;
+
+const topOf = (field: FieldSize) => field.top ?? 0;
 
 export const clampZoom = (zoom: number) =>
     Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom));
@@ -76,7 +82,14 @@ export function clampPan(view: FieldView, field: FieldSize): FieldView {
     return {
         ...view,
         panX: clamp(view.panX, view.width, field.width),
-        panY: clamp(view.panY, view.height, field.height),
+        // Clamped as the area's top edge, then back to field y = 0
+        panY:
+            clamp(
+                view.panY + topOf(field) * view.zoom,
+                view.height,
+                field.height,
+            ) -
+            topOf(field) * view.zoom,
     };
 }
 
@@ -119,10 +132,39 @@ export function centerAtBase(
             height,
             zoom,
             panX: (width - field.width * zoom) / 2,
-            panY: (height - field.height * zoom) / 2,
+            panY: (height - field.height * zoom) / 2 - topOf(field) * zoom,
         },
         field,
     );
+}
+
+/**
+ * The Edit field mode's view (#824), which holds still while the mode is on: the whole field
+ * fitted and centered in the part of the element the rulers leave, `inset` px along the top and
+ * down the left, with a small margin on each side and room for what's drawn outside the field
+ * (its labels).
+ */
+export function fieldEditFit(
+    width: number,
+    height: number,
+    field: FieldSize,
+    inset: number,
+    /** Room kept past the field's edges on each side, in field units (its outside labels) */
+    outside: { readonly x: number; readonly y: number } = { x: 0, y: 0 },
+): FieldView {
+    const roomWidth = Math.max(1, width - inset);
+    const roomHeight = Math.max(1, height - inset);
+    const zoom = baseZoom(roomWidth, roomHeight, {
+        width: field.width + 2 * outside.x,
+        height: field.height + 2 * outside.y,
+    });
+    return {
+        width,
+        height,
+        zoom,
+        panX: inset + (roomWidth - field.width * zoom) / 2,
+        panY: inset + (roomHeight - field.height * zoom) / 2,
+    };
 }
 
 /**
@@ -171,7 +213,8 @@ export function previewFit(
         ...view,
         zoom,
         panX: (container.width - field.width * zoom) / 2,
-        panY: (container.height - field.height * zoom) / 10,
+        panY:
+            (container.height - field.height * zoom) / 10 - topOf(field) * zoom,
     };
 }
 

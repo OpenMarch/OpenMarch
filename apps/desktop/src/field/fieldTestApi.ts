@@ -95,6 +95,7 @@ export type FieldTestGesture =
     | "move"
     | "scale"
     | "rotate"
+    | "pivot"
     | "pan"
     | "shape"
     | "box"
@@ -130,6 +131,16 @@ export interface FieldTestApi {
     viewport(): { zoom: number; pan: { x: number; y: number } };
     /** The selection box's handles, or null when none are shown. */
     handles(): Record<FieldTestHandle, ScreenPoint> | null;
+    /**
+     * A plain selection's pivot crosshair, in the viewport, with where it is in field units and
+     * whether it's out of the center; null when none is shown.
+     */
+    selectionPivot?(): {
+        screen: ScreenPoint;
+        x: number;
+        y: number;
+        own: boolean;
+    } | null;
     /** The gesture in progress, or null. */
     activeGesture(): FieldTestGesture | null;
     /** The id of the page the field shows, or null before one is shown. */
@@ -162,7 +173,49 @@ export interface FieldTestApi {
     items?(): FieldTestItem[];
     /** The prop tool while it's on, or null when it's off (C2.1). */
     propTool?(): FieldTestPropTool | null;
+    /** The Edit field mode (#824) while it's on, or null when it's off. */
+    fieldEdit?(): FieldTestFieldEdit | null;
 }
+
+/**
+ * The Edit field mode as the field shows it (#824). Lines are the field's checkpoints; steps are
+ * as stored (X from the center, side 1 negative; Y from the front, at most 0).
+ */
+export type FieldTestFieldEdit = {
+    /** Edits on an X line also edit its twin across the center */
+    mirror: boolean;
+    /** Every line: X side 1 to side 2, then Y front to back */
+    lines: {
+        axis: "x" | "y";
+        id: number;
+        name: string;
+        shortName: string;
+        /** As readouts and lists name it ("S1 45", "50", "FH") */
+        label: string;
+        steps: number;
+        visible: boolean;
+        reference: boolean;
+        /** The yard number painted for it, or null */
+        fieldLabel: string | null;
+        /** Picked */
+        selected: boolean;
+        /** Drawn picked: picked, or the twin of a picked line with mirror on */
+        highlighted: boolean;
+        /** A point on the line, in the middle of the field on screen, to press it */
+        screen: ScreenPoint;
+        /** Its tab on its ruler */
+        tab: ScreenPoint;
+    }[];
+    /** Each ruler's long middle line, from end to end, in the viewport */
+    rulers: Record<"x" | "y", { from: ScreenPoint; to: ScreenPoint }>;
+    /** A drag in progress: where it would put its line(s), and whether it's over its ruler */
+    drag: {
+        kind: "add" | "move";
+        axis: "x" | "y";
+        steps: number;
+        overRuler: boolean;
+    } | null;
+};
 
 /** The prop tool as the field shows it. */
 export type FieldTestPropTool = {
@@ -186,6 +239,12 @@ export type FieldTestItem = {
     y: number;
     /** Its center in the viewport */
     screen: ScreenPoint;
+    /** Locked to one position for the whole show: drawn with a lock */
+    locked?: boolean;
+    /** A pit instrument's playing spot as drawn, in field units, or null for none */
+    playingSpot?: { x: number; y: number } | null;
+    /** Drawn as its built-in model from above (silhouette and edges), not as its Outline */
+    drawnAsModel?: boolean;
 };
 
 /**

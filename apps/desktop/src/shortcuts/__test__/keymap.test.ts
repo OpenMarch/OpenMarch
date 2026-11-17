@@ -311,10 +311,33 @@ describe("page navigation shortcuts", () => {
     });
 
     it("arrow keys nudge marchers", () => {
+        // Outside the Edit field mode its actions have no handlers, so they can't run
+        const outsideFieldEdit = (id: ActionId) => !id.startsWith("fieldEdit");
         for (const key of ["ArrowRight", "ArrowLeft"]) {
-            const id = resolve(press(key, key), canvas);
+            const id = resolveKeyEvent(
+                press(key, key),
+                compileKeymap(buildKeymap({}, ACTIONS, false)),
+                canvas,
+                outsideFieldEdit,
+            )?.id;
             expect(NUDGE_ACTION_IDS).toContain(id);
         }
+    });
+
+    it("the Edit field mode's keys win while it's on (#824)", () => {
+        // Its handlers exist only while it's on: then they beat the canvas's on the same key
+        expect(resolve(press("ArrowRight", "ArrowRight"), canvas)).toBe(
+            "fieldEditNudgeRight",
+        );
+        expect(resolve(press("Delete", "Delete"), canvas)).toBe(
+            "fieldEditDeleteLines",
+        );
+        expect(resolve(press("KeyH", "h"), canvas)).toBe(
+            "fieldEditToggleVisible",
+        );
+        expect(resolve(press("Escape", "Escape"), canvas)).toBe(
+            "fieldEditDone",
+        );
     });
 
     it("default bindings have no conflicts", () => {

@@ -314,7 +314,8 @@ export function buildStandsKit(
         boards.push(board);
     }
 
-    if (cfg.podium) {
+    // The show's own podium item replaces it; its camera seat stays
+    if (cfg.podium && input.venuePodium !== false) {
         dress.buildPodium([f.cx, 0, f.maxZ + PODIUM.z], PODIUM);
     }
 

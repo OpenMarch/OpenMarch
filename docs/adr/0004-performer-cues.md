@@ -8,10 +8,16 @@
 - Convergence (2026-11-03): the compiler (`packages/core/src/cues`) shipped
   and drives the 3D View's marcher motion with show defaults only, including
   automatic mark time while the band moves (a Feet show default,
-  `CueShowDefaults.holdWhileBandMoves`). Cue storage (D-1 to D-5's tables),
+  `CueShowDefaults.holdWhileBandMoves`; since ADR 0015 D-5 it is opt-in:
+  holds stand unless the show setting or the hold's own style asks for mark
+  time). Cue storage (D-1 to D-5's tables),
   Visuals mode and item placement (holders, artwork slots, put-down) are
   parked: the code is on branch `archive/pre-convergence`, and their
   migrations stay until the fork's migrations are collapsed.
+- Superseded in part (2026-11-15) by [ADR 0015](0015-cue-model.md): D-1 to
+  D-3, the channels, phrases, take-overs and targets give way to one parameter
+  per cue type, cues that store their performers, and hold style on the hold
+  with Stand as the show default. D-6, D-7 and the beat deletion rule stand.
 - Date: 2026-10-10
 - Amended: 2026-10-11, approved by the owner: Carry, Silk and Uniform
   channels, and item tables beside cues; 2026-10-15: timelines only, and
@@ -283,7 +289,9 @@ Carry, Silk and Uniform values name Library items (a model, an Artwork, a
 Uniform) at an exact Version, embedded in the show (ADR 0010 D-12), as
 `library:<uuid>@<version hash>`; Carry also takes `none` [06, 26.10, 26.14].
 
-- Save never prunes a Library item a cue names [06].
+- Save never prunes a Library item a cue names [06]. Amended 2026-11-15
+  (ADR 0010, fork #996): nothing prunes the show's assets at all; "Remove
+  unused…" removes only assets nothing names.
 - While a cue uses a Library item, the show's copy can't be deleted. Deleting it
   offers "Replace with…" and lists the cues that use it [26.10].
 
@@ -551,7 +559,8 @@ of this change until they are tested more.
   (`markTime`, `highMarkTime`, `stand`), plus `percussionTravel` (`crab`,
   `slide`), added with the crab step. Unset fields take the built-in
   defaults: left, foot, corner, mark time, crab
-  (`src/view3d/core/performerDefaults.ts`). An unknown value reads as unset
+  (`src/view3d/core/performerDefaults.ts`; the hold default is `stand` since
+  ADR 0015 D-5, fork #775). An unknown value reads as unset
   instead of failing the whole settings object.
 - Show settings has a "Performer defaults" section for them.
 - The 3D View compiles with the step-off foot and the hold default as the

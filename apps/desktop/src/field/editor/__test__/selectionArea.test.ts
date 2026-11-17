@@ -178,6 +178,13 @@ describe("areaPicks", () => {
     it("takes nothing from nothing", () => {
         expect(areaPicks([], isItem)).toEqual([]);
     });
+
+    it("never takes a locked item, even alone", () => {
+        const isLocked = (id: number) => id === 101;
+        expect(areaPicks([100, 101], isItem, isLocked)).toEqual([100]);
+        expect(areaPicks([101], isItem, isLocked)).toEqual([]);
+        expect(areaPicks([1, 101], isItem, isLocked)).toEqual([1]);
+    });
 });
 
 describe("fingerLassoCloses (#933)", () => {

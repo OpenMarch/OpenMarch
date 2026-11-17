@@ -42,4 +42,30 @@ describe("Section", () => {
             expect(SECTIONS.Flute.family.toString()).toBe("Woodwind");
         });
     });
+
+    describe("pit sections", () => {
+        it("orders the mallets, then the drums, then Aux Percussion and Synthesizer", () => {
+            const pit = Object.values(SECTIONS)
+                .filter((s) => s.family.name === "Pit")
+                .map((s) => s.name);
+            expect(pit).toEqual([
+                "Marimba",
+                "Vibraphone",
+                "Xylophone",
+                "Glockenspiel",
+                "Drum Set",
+                "Rack",
+                "Timpani",
+                "Aux Percussion",
+                "Synthesizer",
+            ]);
+        });
+    });
+
+    it("gives every section its own drill prefix", () => {
+        const prefixes = Object.values(SECTIONS).map((s) =>
+            s.prefix.toUpperCase(),
+        );
+        expect(new Set(prefixes).size).toBe(prefixes.length);
+    });
 });

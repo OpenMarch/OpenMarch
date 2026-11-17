@@ -160,6 +160,20 @@ describe("performer matrices", () => {
         expect([...matrices.slice(32)]).toEqual(new Array(16).fill(0));
     });
 
+    it("stands a block on its platform", () => {
+        const { xz, placed } = positionsAt(1000);
+        const matrices = new Float32Array(48);
+        writePerformerMatrices(
+            3,
+            xz,
+            placed,
+            matrices,
+            Float32Array.from([0.6, 0, 0]),
+        );
+        expect(matrices[13]).toBeCloseTo(FIELD_SURFACE_Y + 0.6, 6);
+        expect(matrices[16 + 13]).toBeCloseTo(FIELD_SURFACE_Y, 6);
+    });
+
     it("follows the resolver between sets", () => {
         const { xz } = positionsAt(500);
         const a = pixelsToWorld(field, from);
@@ -209,6 +223,19 @@ describe("writeRingMatrices", () => {
             -2,
         ]);
         expect([second.x, second.z]).toEqual([5, -6]);
+    });
+
+    it("rings a lifted marcher at its feet on the platform", () => {
+        const matrices = new Float32Array(48);
+        writeRingMatrices(
+            slots,
+            new Set([10]),
+            xz,
+            new Uint8Array([1, 1, 1]),
+            matrices,
+            Float32Array.from([0.6, 0, 0]),
+        );
+        expect(matrices[13]).toBeCloseTo(RING_Y + 0.6, 6);
     });
 
     it("skips selected marchers that aren't placed, and empty selections", () => {

@@ -4,7 +4,7 @@
  * riding one bone of the v4 skeleton. Pure: no three.js.
  */
 import type { Piece, Vec3 } from "./mesh";
-import type { SilkCutId } from "./silkWave";
+import type { SilkShapeId } from "../sizes/silkShapes";
 
 export type BrassModelId =
     | "trumpet"
@@ -37,9 +37,13 @@ export type ModelId =
     | BatteryModelId
     | GuardModelId;
 
-/** Per-model options: a bass drum's head diameter in inches. */
+/**
+ * Per-model options: a bass drum's head diameter in inches; the shape of
+ * the 6 ft flag's silk (the show's choice, fork #973).
+ */
 export interface ModelOptions {
     bassInches?: number;
+    silkShape?: SilkShapeId;
 }
 
 /** The bones instrument pieces ride: the hands, or the chest for a carrier. */
@@ -82,8 +86,8 @@ export interface SilkSpec {
     mirror: 1 | -1;
     /** The bone the silk rides, when not the model's default. */
     bone?: InstrumentBone;
-    /** The silk's Cut (`silkWave.ts`); none is the header × fly rectangle. */
-    cut?: SilkCutId;
+    /** The silk's shape (`../sizes/silkShapes`); none is the header × fly rectangle. */
+    cut?: SilkShapeId;
 }
 
 export interface InstrumentModel {

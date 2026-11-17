@@ -35,6 +35,7 @@ const GROUPS: readonly (readonly [
     ["alignment", "shortcutsDialog.group.alignment", "Alignment"],
     ["shape", "shortcutsDialog.group.shape", "Shapes"],
     ["batchEdit", "shortcutsDialog.group.batchEdit", "Batch editing"],
+    ["field", "shortcutsDialog.group.field", "Field"],
     ["cursor", "shortcutsDialog.group.cursor", "Tools"],
     ["ui", "shortcutsDialog.group.ui", "View"],
     ["file", "shortcutsDialog.group.file", "File"],
@@ -52,6 +53,8 @@ interface Row {
 interface ExtraRow extends Row {
     /** i18n key for `label`, which is its English default */
     readonly labelKey: string;
+    /** Left out in Basic mode, which has no such gesture */
+    readonly expertOnly?: true;
 }
 
 /**
@@ -69,11 +72,15 @@ const EXTRA_ROWS: Readonly<Record<string, readonly ExtraRow[]>> = {
             label: "Leave an isolated move",
             labelKey: "shortcutsDialog.timeline.leaveIsolatedMove",
             keys: "Escape",
+            // Basic leaves any isolation at once (useBasicModeGuards)
+            expertOnly: true,
         },
         {
             label: "Draw a range (drag)",
             labelKey: "shortcutsDialog.timeline.drawRange",
             keys: "Mod + Drag",
+            // Basic draws no ranges: every drag scrubs (TimelineVariants)
+            expertOnly: true,
         },
         {
             label: "Zoom the timeline",
@@ -164,10 +171,12 @@ export function shortcutGroups(
     for (const [category, titleKey, englishTitle] of GROUPS) {
         const rows = [
             ...(byCategory.get(category) ?? []),
-            ...(EXTRA_ROWS[category] ?? []).map((row) => ({
-                label: tolgee.t(row.labelKey, row.label),
-                keys: row.keys,
-            })),
+            ...(EXTRA_ROWS[category] ?? [])
+                .filter((row) => !(basic && row.expertOnly))
+                .map((row) => ({
+                    label: tolgee.t(row.labelKey, row.label),
+                    keys: row.keys,
+                })),
         ];
         byCategory.delete(category);
         if (rows.length === 0) continue;

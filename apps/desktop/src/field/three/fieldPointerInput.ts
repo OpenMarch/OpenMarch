@@ -17,6 +17,19 @@ export type FieldPointerInputOptions = {
     penDrag?: (press: FieldPointer) => "pan" | "lasso" | null;
 };
 
+/** A lasso loop whose rope ends where it draws, dark on a white halo so it shows on any field. */
+const LASSO_SVG =
+    "<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke-linecap='round'>" +
+    "<g stroke='white' stroke-width='3.6'><ellipse cx='14' cy='8.5' rx='7.5' ry='5'/><path d='M8.5 12.2c-1.6 1.7-.9 3.6.9 3.9 1.9.3 1.6 2.6-.3 3.4L3 21'/></g>" +
+    "<g stroke='%23202024' stroke-width='1.6'><ellipse cx='14' cy='8.5' rx='7.5' ry='5'/><path d='M8.5 12.2c-1.6 1.7-.9 3.6.9 3.9 1.9.3 1.6 2.6-.3 3.4L3 21'/></g>" +
+    "</svg>";
+
+/** The CSS for an editor cursor: the lasso is drawn, the rest are CSS names already. */
+export const cssCursor = (cursor: ReturnType<FieldEditor["cursor"]>): string =>
+    cursor === "lasso"
+        ? `url("data:image/svg+xml,${LASSO_SVG.replace(/</g, "%3C").replace(/>/g, "%3E")}") 3 21, crosshair`
+        : cursor;
+
 /**
  * Reports the pointer on the new field's canvas to the editor: positions on
  * the field and on screen, the button and the modifiers, nothing else (ADR
@@ -61,6 +74,7 @@ export function attachFieldPointerInput(
         element.setPointerCapture(event.pointerId);
         penHold.down(event);
     };
+    const resting = hoverAgainOnKeys(element, editor);
     const move = (event: PointerEvent) => {
         if (fieldGesturesOwn(event)) return;
         penHold.move(event);
@@ -68,7 +82,9 @@ export function attachFieldPointerInput(
             if (penPan.panning(event.pointerId)) penHold.cancel(event);
             return;
         }
-        editor.pointerMove(pointer(event));
+        const at = pointer(event);
+        resting.set(event.buttons === 0 ? at : null);
+        editor.pointerMove(at);
     };
     const up = (event: PointerEvent) => {
         if (fieldGesturesOwn(event)) return;
@@ -91,9 +107,8 @@ export function attachFieldPointerInput(
         if (event.buttons === 0) editor.pointerLeave();
     };
     const showCursor = () => {
-        element.style.cursor = editor.cursor();
+        element.style.cursor = cssCursor(editor.cursor());
     };
-
     element.addEventListener("pointerdown", down);
     element.addEventListener("pointermove", move);
     element.addEventListener("pointerup", up);
@@ -111,11 +126,63 @@ export function attachFieldPointerInput(
         element.removeEventListener("pointercancel", cancel);
         element.removeEventListener("lostpointercapture", cancel);
         element.removeEventListener("pointerleave", leave);
+        resting.detach();
         detachRight();
         penHold.stop();
         unsubscribe();
         editor.pointerCancel();
         element.style.cursor = "";
+    };
+}
+
+/**
+ * The pointer resting over the field with no button down, asked about again when a modifier key
+ * goes down or up without a move: Ctrl/Cmd over the selection's pivot changes what a drag there
+ * does (it pulls the pivot out), so the field shows it before the press.
+ */
+function hoverAgainOnKeys(
+    element: HTMLElement,
+    editor: FieldEditor,
+): {
+    set(pointer: FieldPointer | null): void;
+    detach(): void;
+} {
+    let resting: FieldPointer | null = null;
+    const key = (event: KeyboardEvent) => {
+        if (!resting || event.repeat) return;
+        const keys = {
+            shift: event.shiftKey,
+            alt: event.altKey,
+            ctrl: event.ctrlKey,
+            meta: event.metaKey,
+        };
+        if (
+            keys.shift === resting.shift &&
+            keys.alt === resting.alt &&
+            keys.ctrl === resting.ctrl &&
+            keys.meta === resting.meta
+        )
+            return;
+        resting = { ...resting, ...keys };
+        editor.pointerMove(resting);
+    };
+    const away = () => {
+        resting = null;
+    };
+    window.addEventListener("keydown", key);
+    window.addEventListener("keyup", key);
+    element.addEventListener("pointerdown", away);
+    element.addEventListener("pointerleave", away);
+    return {
+        set: (pointer) => {
+            resting = pointer;
+        },
+        detach: () => {
+            window.removeEventListener("keydown", key);
+            window.removeEventListener("keyup", key);
+            element.removeEventListener("pointerdown", away);
+            element.removeEventListener("pointerleave", away);
+        },
     };
 }
 

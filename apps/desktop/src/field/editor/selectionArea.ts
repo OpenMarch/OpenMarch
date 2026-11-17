@@ -162,14 +162,18 @@ export function marchersInPolygon(
 /**
  * The marchers an area selects of those `inside` it: performers only when there are any, as
  * select-all does, so a marquee across a formation on a riser doesn't take the riser along; the
- * items (props and equipment, C2.2) when the area holds nothing else.
+ * items (props and equipment, C2.2) when the area holds nothing else. Never a locked item (the
+ * pit's equipment, instruments.md section 6), so selecting marchers never picks up the pit: a
+ * click selects one.
  */
 export function areaPicks(
     inside: readonly number[],
     isItem: (id: number) => boolean,
+    isLocked: (id: number) => boolean = () => false,
 ): readonly number[] {
-    const performers = inside.filter((id) => !isItem(id));
-    return performers.length > 0 ? performers : inside;
+    const takeable = inside.filter((id) => !isLocked(id));
+    const performers = takeable.filter((id) => !isItem(id));
+    return performers.length > 0 ? performers : takeable;
 }
 
 /**

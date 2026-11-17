@@ -6,12 +6,14 @@ import {
     type DropResult,
     type FieldEditorPorts,
     type FieldMode,
+    type FieldOnScreen,
     type FieldPoint,
     type FieldPointer,
 } from "../fieldEditor";
 import type { MarcherPosition, MoveTransform } from "../moveGesture";
 import { ruledMove, type MoveRules } from "../moveRules";
 import { watchKeyListeners } from "@/shapes/__test__/keyListeners";
+import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
 
 /**
  * Marchers 1 to 4 in a row 100 field units apart, at zoom 2 (2 CSS px per
@@ -21,6 +23,7 @@ function setup({
     selected = [] as number[],
     dimmed = [] as number[],
     hidden = [] as number[],
+    locked = [] as number[],
     isMac = false,
     takePress = undefined as (() => boolean) | undefined,
     moveTransform = undefined as MoveTransform | undefined,
@@ -29,7 +32,7 @@ function setup({
     reachesInside = undefined as FieldEditorPorts["reachesInside"],
     marcherHidden = undefined as FieldEditorPorts["marcherHidden"],
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
-    ratioLocked = undefined as (() => boolean) | undefined,
+    onScreen = undefined as FieldOnScreen | undefined,
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -58,6 +61,7 @@ function setup({
         }),
         zoom: () => 2,
         canSelect: (id) => !dimmed.includes(id),
+        isLocked: (id) => locked.includes(id),
         takePress,
         pressSelection,
         doubleClickMarcher,
@@ -79,7 +83,7 @@ function setup({
         isMac,
         moveTransform,
         now: () => clock.now,
-        ratioLocked,
+        onScreen,
     });
     return { editor, state, ports, clock };
 }
@@ -1625,6 +1629,12 @@ describe("FieldEditor marquee", () => {
             kind: "marquee",
             rect: { left: 150, top: 50, right: 250, bottom: 150 },
             subtract: false,
+            preview: {
+                ids: [2],
+                positions: [200, 100],
+                choice: null,
+                pointer: { x: 250, y: 150 },
+            },
         });
         // Selects only on release
         expect(state.selected).toEqual([]);
@@ -1634,6 +1644,54 @@ describe("FieldEditor marquee", () => {
         expect(editor.activeGesture()).toBeNull();
         expect(editor.areaShape()).toBeNull();
         expect(state.selected).toEqual([2]);
+    });
+
+    it("previews the marchers it would select, as it would on release", () => {
+        const { editor, state } = setup({ dimmed: [3] });
+        editor.pointerDown(at(150, 50));
+        editor.pointerMove(at(160, 60));
+        expect(editor.areaShape()?.preview.ids).toEqual([]);
+        // Over 2, 3 (dimmed: never taken) and 4
+        editor.pointerMove(at(450, 150));
+        expect(editor.areaShape()?.preview).toEqual({
+            ids: [2, 4],
+            positions: [200, 100, 400, 100],
+            choice: null,
+            pointer: { x: 450, y: 150 },
+        });
+        editor.pointerUp(at(450, 150));
+        expect(state.selected).toEqual([2, 4]);
+    });
+
+    it("leaves locked marchers out of the preview, as release does", () => {
+        const { editor, state } = setup({ locked: [3] });
+        editor.pointerDown(at(150, 50));
+        editor.pointerMove(at(450, 150));
+        expect(editor.areaShape()?.preview.ids).toEqual([2, 4]);
+        editor.pointerUp(at(450, 150));
+        expect(state.selected).toEqual([2, 4]);
+    });
+
+    it("previews only what adding or subtracting would change", () => {
+        const add = setup({ selected: [1, 2] });
+        add.editor.pointerDown(at(150, 50, { shift: true }));
+        add.editor.pointerMove(at(350, 150, { shift: true }));
+        // 2 is already selected: only 3 is added
+        expect(add.editor.areaShape()?.preview).toMatchObject({
+            ids: [3],
+            choice: "add",
+        });
+        add.editor.pointerCancel();
+
+        const subtract = setup({ selected: [1, 2] });
+        subtract.editor.pointerDown(at(150, 50, { alt: true }));
+        subtract.editor.pointerMove(at(350, 150, { alt: true }));
+        // 3 isn't selected: only 2 is taken out
+        expect(subtract.editor.areaShape()?.preview).toMatchObject({
+            ids: [2],
+            choice: "subtract",
+        });
+        subtract.editor.pointerCancel();
     });
 
     it("selects nothing when the pointer is lost", () => {
@@ -1738,6 +1796,27 @@ const lasso = (
 };
 
 describe("FieldEditor lasso", () => {
+    it("previews what it takes if closed now, while it's drawn", () => {
+        const { editor, state } = setup();
+        click(editor, 150, 50);
+        editor.pointerDown(at(150, 50));
+        // Around 2 and 3, not yet back near the start
+        editor.pointerMove(at(350, 50));
+        editor.pointerMove(at(350, 150));
+        editor.pointerMove(at(150, 150));
+        expect(editor.areaShape()).toMatchObject({
+            closes: false,
+            preview: { ids: [2, 3], positions: [200, 100, 300, 100] },
+        });
+        editor.pointerMove(at(150, 60));
+        expect(editor.areaShape()).toMatchObject({
+            closes: true,
+            preview: { ids: [2, 3], pointer: { x: 150, y: 60 } },
+        });
+        editor.pointerUp(at(150, 60));
+        expect(state.selected).toEqual([2, 3]);
+    });
+
     it("starts on a double-click-and-drag on empty field", () => {
         const { editor } = setup();
         click(editor, 150, 50);
@@ -1753,6 +1832,67 @@ describe("FieldEditor lasso", () => {
         editor.pointerDown(at(150, 50));
         editor.pointerMove(at(250, 50));
         expect(editor.activeGesture()).toBe("lasso");
+    });
+
+    describe("with the Lasso tool (the Select bar)", () => {
+        it("draws one from a plain drag on empty field, replacing the selection", () => {
+            const { editor, state } = setup({ selected: [4] });
+            editor.setAreaTool("lasso");
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(350, 50));
+            expect(editor.activeGesture()).toBe("lasso");
+            for (const [x, y] of AROUND_2_AND_3.slice(2))
+                editor.pointerMove(at(x, y));
+            editor.pointerUp(at(150, 60));
+            expect(state.selected).toEqual([2, 3]);
+        });
+
+        it("still moves a marcher dragged from it", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.pointerDown(at(100, 100));
+            editor.pointerMove(at(150, 120));
+            expect(editor.activeGesture()).toBe("move");
+        });
+
+        it("shows the lasso cursor over empty field only", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.pointerMove(at(150, 50));
+            expect(editor.cursor()).toBe("lasso");
+            editor.pointerMove(at(100, 100));
+            expect(editor.cursor()).toBe("pointer");
+        });
+
+        it("doesn't show it inside a multi-selection's box, where a drag moves the selection (#196)", () => {
+            const { editor } = setup({ selected: [1, 3] });
+            editor.setAreaTool("lasso");
+            // On empty field between 2 and 3, inside the box from 1 to 3
+            editor.pointerMove(at(250, 100));
+            expect(editor.cursor()).toBe("default");
+            // With Shift the press adds an area there, so the lasso shows
+            editor.pointerMove(at(250, 101, { shift: true }));
+            expect(editor.cursor()).toBe("lasso");
+            editor.pointerDown(at(250, 101, { shift: true }));
+            editor.pointerMove(at(350, 50, { shift: true }));
+            expect(editor.activeGesture()).toBe("lasso");
+        });
+
+        it("draws a box again once Box is picked, and a double-click still lassos", () => {
+            const { editor } = setup();
+            editor.setAreaTool("lasso");
+            editor.setAreaTool("marquee");
+            editor.pointerMove(at(150, 50));
+            expect(editor.cursor()).toBe("default");
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(250, 150));
+            expect(editor.activeGesture()).toBe("marquee");
+            editor.pointerUp(at(250, 150));
+            click(editor, 150, 50);
+            editor.pointerDown(at(150, 50));
+            editor.pointerMove(at(250, 50));
+            expect(editor.activeGesture()).toBe("lasso");
+        });
     });
 
     it("replaces the selection with the marchers inside it", () => {
@@ -1948,25 +2088,39 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         ];
         const dropped = (
             modifiers: Parameters<typeof at>[2],
-            ratioLocked?: () => boolean,
+            onScreen?: FieldOnScreen,
         ) => {
             const { editor, state } = setup({
                 selected: ALL,
                 positions: TALL,
-                ratioLocked,
+                onScreen,
             });
             drag(editor, EAST, { x: 560, y: 150 }, modifiers);
             return state.drops[0].positions;
         };
+        /** The touch pill with Equal (constrain) on */
+        const EQUAL: FieldOnScreen = {
+            roles: () => new Set(["constrain"]),
+            subscribe: () => () => {},
+            add: () => false,
+        };
+
+        afterEach(() => useShapeEditorStore.setState({ ratioLocked: false }));
 
         it("scales the other axis too with constrain on a middle handle, about the center line (#545)", () => {
             expect(dropped({})).toEqual(ONE_AXIS);
             expect(dropped({ ctrl: true })).toEqual(BOTH_WAYS);
         });
 
-        it("keeps the ratio with the box's ratio lock on, read at the press, and constrain frees it (#545)", () => {
-            expect(dropped({}, () => true)).toEqual(BOTH_WAYS);
-            expect(dropped({ ctrl: true }, () => true)).toEqual(ONE_AXIS);
+        it("ignores a box's ratio lock: a selection keeps its ratio only while constrain is held (#1037)", () => {
+            useShapeEditorStore.setState({ ratioLocked: true });
+            expect(dropped({})).toEqual(ONE_AXIS);
+            expect(dropped({ ctrl: true })).toEqual(BOTH_WAYS);
+        });
+
+        it("keeps the ratio with the touch pill's Equal on, whatever a box's ratio lock says (#1037)", () => {
+            useShapeEditorStore.setState({ ratioLocked: true });
+            expect(dropped({}, EQUAL)).toEqual(BOTH_WAYS);
         });
     });
 
@@ -2036,6 +2190,7 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         expect(editor.rotationFrame()).toEqual({
             box: { left: 100, top: 100, right: 400, bottom: 100 },
             angle: 90,
+            around: { x: 250, y: 100 },
         });
         editor.pointerUp(at(280, 100));
         expect(editor.rotationFrame()).toBeNull();
@@ -2104,6 +2259,292 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         await Promise.resolve();
         await Promise.resolve();
         expect(state.shown).toBeNull();
+    });
+});
+
+describe("FieldEditor a plain selection's pivot", () => {
+    // Marchers 1 to 4 selected: their box runs from (100, 100) to (400, 100), center (250, 100),
+    // on empty field between marchers 2 and 3
+    const ALL = [1, 2, 3, 4];
+    const CENTER = { x: 250, y: 100 };
+    const MOD = { ctrl: true };
+
+    /** $mod-drags the pivot out of the center to `to` */
+    const pullPivot = (editor: FieldEditor, to: { x: number; y: number }) =>
+        drag(editor, CENTER, to, MOD);
+
+    it("sits on the center of the selection's box until it's moved, and needs two marchers", () => {
+        expect(setup({ selected: ALL }).editor.selectionPivot()).toEqual({
+            at: CENTER,
+            own: false,
+            key: "c",
+        });
+        expect(setup({ selected: [1] }).editor.selectionPivot()).toBeNull();
+    });
+
+    it("takes no plain press on the center: a drag there moves the selection, from a marcher or the box", () => {
+        const empty = setup({ selected: ALL });
+        empty.editor.pointerDown(at(CENTER.x, CENTER.y));
+        empty.editor.pointerMove(at(CENTER.x + 20, CENTER.y + 20));
+        expect(empty.editor.activeGesture()).toBe("move");
+        // Marchers 1 and 3 selected: marcher 2 stands on the center
+        const onMarcher = setup({ selected: [1, 2, 3] });
+        onMarcher.editor.pointerDown(at(200, 100));
+        onMarcher.editor.pointerMove(at(220, 120));
+        expect(onMarcher.editor.activeGesture()).toBe("move");
+    });
+
+    it("is pulled out of the center with $mod, snapping onto a marcher, and saves nothing", () => {
+        const { editor, state } = setup({ selected: ALL });
+        editor.pointerDown(at(CENTER.x, CENTER.y, MOD));
+        editor.pointerMove(at(230, 104, MOD));
+        expect(editor.activeGesture()).toBe("pivot");
+        editor.pointerMove(at(203, 102, MOD));
+        expect(editor.selectionPivot()?.at).toEqual({ x: 200, y: 100 });
+        editor.pointerUp(at(203, 102, MOD));
+        expect(editor.activeGesture()).toBeNull();
+        expect(editor.selectionPivot()).toEqual({
+            at: { x: 200, y: 100 },
+            own: true,
+            key: null,
+        });
+        expect(state.drops).toEqual([]);
+        expect(state.selected).toEqual(ALL);
+    });
+
+    it("drags without $mod once it's out of the center", () => {
+        const { editor } = setup({ selected: ALL });
+        pullPivot(editor, { x: 100, y: 100 });
+        drag(editor, { x: 100, y: 100 }, { x: 398, y: 101 });
+        expect(editor.selectionPivot()?.at).toEqual({ x: 400, y: 100 });
+    });
+
+    it("turns the selection around the pivot with the rotate handle", () => {
+        const { editor, state } = setup({ selected: ALL });
+        pullPivot(editor, { x: 100, y: 100 });
+        // The knob at (250, 70) is (150, -30) from the pivot; a quarter turn takes it to (30, 150)
+        editor.pointerDown(at(250, 70));
+        editor.pointerMove(at(240, 160));
+        editor.pointerMove(at(130, 250));
+        expect(editor.rotationFrame()?.around).toEqual({ x: 100, y: 100 });
+        editor.pointerUp(at(130, 250));
+        expect(state.drops[0].positions).toEqual([
+            { id: 1, x: 100, y: 100 },
+            { id: 2, x: 100, y: 200 },
+            { id: 3, x: 100, y: 300 },
+            { id: 4, x: 100, y: 400 },
+        ]);
+    });
+
+    it("is drawn where a rotation turns around while it's dragged, not at the turned box's center", () => {
+        const turning = setup({
+            selected: [1, 2, 3],
+            positions: [0, 0, 100, 0, 0, 50, 900, 900],
+        });
+        // Its box is (0, 0) to (100, 50); the knob is 20 units over the top middle, (50, -30)
+        turning.editor.pointerDown(at(50, -30));
+        turning.editor.pointerMove(at(70, -28));
+        turning.editor.pointerMove(at(90, -10));
+        const around = turning.editor.rotationFrame()?.around;
+        expect(around).toEqual({ x: 50, y: 25 });
+        expect(turning.editor.selectionPivot()?.at).toEqual(around);
+    });
+
+    it("turns the selection around the pivot when a rotation is typed", () => {
+        const { editor, state } = setup({ selected: ALL });
+        pullPivot(editor, { x: 400, y: 100 });
+        editor.rotateSelection(90);
+        editor.endRotation();
+        expect(state.drops[0].positions).toEqual([
+            { id: 1, x: 400, y: -200 },
+            { id: 2, x: 400, y: -100 },
+            { id: 3, x: 400, y: 0 },
+            { id: 4, x: 400, y: 100 },
+        ]);
+    });
+
+    it("leaves the selection be on a click once it's out of the center, and goes back there on a double-click", () => {
+        const { editor, state, clock } = setup({ selected: ALL });
+        pullPivot(editor, { x: 150, y: 150 });
+        click(editor, 150, 150);
+        expect(state.selected).toEqual(ALL);
+        expect(editor.selectionPivot()?.own).toBe(true);
+        clock.now += 100;
+        click(editor, 150, 150);
+        expect(editor.selectionPivot()).toEqual({
+            at: CENTER,
+            own: false,
+            key: "c",
+        });
+    });
+
+    it("takes a $mod-click on the center as an ordinary click", () => {
+        const pressed = setup({ selected: [1, 2, 3] });
+        click(pressed.editor, 200, 100, MOD);
+        // The same click with no pivot to pull
+        const plain = setup({ selected: [1, 2, 3] });
+        plain.editor.setPlaying(true);
+        plain.editor.setPlaying(false);
+        vi.spyOn(plain.editor, "selectionPivot").mockReturnValue(null);
+        click(plain.editor, 200, 100, MOD);
+        expect(pressed.state.selected).toEqual(plain.state.selected);
+    });
+
+    it("stays on the marcher or the box point it's set on, wherever they go", () => {
+        const positions = [100, 100, 200, 100, 300, 100, 400, 100];
+        const { editor } = setup({ selected: ALL, positions });
+        pullPivot(editor, { x: 200, y: 100 });
+        positions[2] = 210;
+        positions[3] = 40;
+        expect(editor.selectionPivot()?.at).toEqual({ x: 210, y: 40 });
+        // On a corner marcher, the box's corner wins: it's the same point
+        const corner = setup({ selected: ALL });
+        pullPivot(corner.editor, { x: 100, y: 100 });
+        expect(corner.editor.selectionPivot()?.key).toBe("nw");
+        editor.setSelectionPivot("se");
+        expect(editor.selectionPivot()).toMatchObject({
+            at: { x: 400, y: 100 },
+            key: "se",
+        });
+        positions[7] = 300;
+        expect(editor.selectionPivot()?.at).toEqual({ x: 400, y: 300 });
+        editor.setSelectionPivot("c");
+        expect(editor.selectionPivot()?.own).toBe(false);
+    });
+
+    it("keeps a free spot on the field, carried along by a saved drag of the whole selection, and drops it on a page change", async () => {
+        const positions = [100, 100, 200, 100, 300, 100, 400, 100];
+        const { editor, state } = setup({ selected: ALL, positions });
+        // Grid snapping is off in this setup, and nothing is within reach of (250, 150)
+        pullPivot(editor, { x: 250, y: 150 });
+        expect(editor.selectionPivot()?.at).toEqual({ x: 250, y: 150 });
+        // Marchers moved some other way (playback, undo) don't carry it
+        positions[0] += 50;
+        expect(editor.selectionPivot()?.at).toEqual({ x: 250, y: 150 });
+        positions[0] -= 50;
+        // A drag of the selection does, once it's saved; refused, it stays put as the marchers
+        // snap back
+        drag(editor, { x: 200, y: 100 }, { x: 230, y: 120 });
+        expect(editor.selectionPivot()?.at).toEqual({ x: 250, y: 150 });
+        state.drops[0].answer("refused");
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(editor.selectionPivot()?.at).toEqual({ x: 250, y: 150 });
+        drag(editor, { x: 200, y: 100 }, { x: 230, y: 120 });
+        state.drops[1].answer("saved");
+        await Promise.resolve();
+        await Promise.resolve();
+        expect(editor.selectionPivot()?.at).toEqual({ x: 280, y: 170 });
+        editor.pageChanged();
+        expect(editor.selectionPivot()?.own).toBe(false);
+    });
+
+    it("previews a pivot grid cell on the field", () => {
+        const { editor } = setup({ selected: ALL });
+        editor.previewSelectionPivot("nw");
+        expect(editor.selectionPivot()?.preview).toEqual({ x: 100, y: 100 });
+        editor.previewSelectionPivot(null);
+        expect(editor.selectionPivot()?.preview).toBeUndefined();
+    });
+
+    it("goes back to the center when the selection changes, or when dragged onto the center", () => {
+        const { editor, state } = setup({ selected: ALL });
+        pullPivot(editor, { x: 100, y: 100 });
+        drag(editor, { x: 100, y: 100 }, { x: 251, y: 101 });
+        expect(editor.selectionPivot()?.own).toBe(false);
+        pullPivot(editor, { x: 100, y: 100 });
+        state.selected = [1, 2];
+        editor.selectionChanged();
+        state.selected = ALL;
+        expect(editor.selectionPivot()?.own).toBe(false);
+    });
+
+    it("isn't drawn while the show plays, nor while a mode with its own handles is on", () => {
+        const { editor } = setup({ selected: ALL });
+        editor.setPlaying(true);
+        expect(editor.selectionPivot()).toBeNull();
+        editor.setPlaying(false);
+        expect(editor.selectionPivot()).not.toBeNull();
+        editor.setMode(fakeMode({ claims: () => false }).mode);
+        expect(editor.selectionPivot()).toBeNull();
+    });
+
+    it("tells the field what the pointer rests on: the center dot, armed with $mod, or the moved crosshair", () => {
+        const { editor } = setup({ selected: ALL });
+        editor.pointerMove(at(CENTER.x + 2, CENTER.y));
+        expect(editor.selectionPivot()?.hover).toBe("center");
+        // A plain drag there still moves the group, so the cursor doesn't say "move"
+        expect(editor.cursor()).not.toBe("move");
+        editor.pointerMove(at(CENTER.x + 2, CENTER.y, MOD));
+        expect(editor.selectionPivot()?.hover).toBe("armed");
+        expect(editor.cursor()).toBe("move");
+        editor.pointerMove(at(CENTER.x + 60, CENTER.y + 60));
+        expect(editor.selectionPivot()?.hover).toBeUndefined();
+        pullPivot(editor, { x: 150, y: 150 });
+        editor.pointerMove(at(151, 150));
+        expect(editor.selectionPivot()?.hover).toBe("own");
+        editor.pointerLeave();
+        expect(editor.selectionPivot()?.hover).toBeUndefined();
+    });
+
+    it("is set by the next click on the field while picking, snapped, and the click does nothing else", () => {
+        const { editor, state } = setup({ selected: ALL });
+        editor.startPickingPivot();
+        expect(editor.pickingPivot()).toBe(true);
+        expect(editor.selectionPivot()?.picking).toBe(true);
+        // Near marcher 2: the preview snaps onto it
+        editor.pointerMove(at(203, 102));
+        expect(editor.cursor()).toBe("crosshair");
+        expect(editor.selectionPivot()?.preview).toEqual({ x: 200, y: 100 });
+        click(editor, 203, 102);
+        expect(editor.pickingPivot()).toBe(false);
+        expect(editor.selectionPivot()).toEqual({
+            at: { x: 200, y: 100 },
+            own: true,
+            key: null,
+        });
+        expect(state.selected).toEqual(ALL);
+        expect(state.drops).toEqual([]);
+    });
+
+    it("stops picking on cancel, a new selection or playback, and picks only with a pivot to set", () => {
+        const { editor, state } = setup({ selected: ALL });
+        editor.startPickingPivot();
+        editor.cancelPickingPivot();
+        expect(editor.pickingPivot()).toBe(false);
+        // The click after a cancel is an ordinary one: it selects the marcher
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1]);
+        state.selected = ALL;
+        editor.selectionChanged();
+        editor.startPickingPivot();
+        state.selected = [1, 2];
+        editor.selectionChanged();
+        expect(editor.pickingPivot()).toBe(false);
+        editor.startPickingPivot();
+        editor.setPlaying(true);
+        editor.setPlaying(false);
+        expect(editor.pickingPivot()).toBe(false);
+        const one = setup({ selected: [1] });
+        one.editor.startPickingPivot();
+        expect(one.editor.pickingPivot()).toBe(false);
+    });
+
+    it("picks with a finger's tap on empty field too, as a click", () => {
+        const { editor, state } = setup({ selected: ALL });
+        editor.startPickingPivot();
+        editor.fingerTap(at(250, 300));
+        expect(editor.pickingPivot()).toBe(false);
+        expect(editor.selectionPivot()?.at).toEqual({ x: 250, y: 300 });
+        expect(state.selected).toEqual(ALL);
+    });
+
+    it("can't be set from the pivot grid while a shape owns the selection", () => {
+        const { editor } = setup({ selected: ALL });
+        editor.setMode(fakeMode({ claims: () => false }).mode);
+        editor.setSelectionPivot("nw");
+        editor.setMode(null);
+        expect(editor.selectionPivot()?.own).toBe(false);
     });
 });
 

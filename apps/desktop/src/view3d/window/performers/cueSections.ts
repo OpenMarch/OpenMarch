@@ -1,7 +1,7 @@
 /**
  * The sections the cue compile gives a usual equipment: each section whose performers all carry
- * the same flag (ADR 0004). Every compile caller passes `cueSectionsOf` as `sections`, so the
- * Carry default is the same wherever the show is compiled.
+ * the same flag (ADR 0015 D-6). Every compile caller passes `cueSectionsOf` as `sections`, so the
+ * Equipment default is the same wherever the show is compiled.
  */
 import type { CueEquipment, CueSection } from "@openmarch/core";
 import type { HoldFamily } from "@/view3d/core/instruments/holds";
@@ -29,7 +29,7 @@ export function flagEquipmentOf(
 
 /**
  * Each section whose performers all carry the same flag, with that flag as
- * its usual equipment. Other sections are left out, so their Carry default
+ * its usual equipment. Other sections are left out, so their Equipment default
  * stays what each marcher carries.
  */
 export function cueSectionsOf(

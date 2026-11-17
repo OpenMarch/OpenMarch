@@ -1,0 +1,1 @@
+ALTER TABLE `timeline_held_marks` ADD `style` text;

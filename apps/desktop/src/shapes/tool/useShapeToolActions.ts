@@ -42,7 +42,7 @@ export async function placeShape(
     return writePlacement(
         placement,
         queryClient,
-        tolgee.t("shapes.tool.placeError", "Error placing the shape"),
+        tolgee.t("shapes.tool.placeError", "Couldn't place the shape"),
         plan,
     );
 }
@@ -98,6 +98,11 @@ export function useShapeToolActions(): void {
                 !shapeSelected &&
                 selectedPerformers.length >= GROUP_MIN,
             ignoreRepeat: true,
+            // Too few to group says so; a shape open or selected offers its own commands
+            disabledReason:
+                ready && !shown && !shapeSelected
+                    ? tolgee.t("shapes.placed.groupNeedsTwo")
+                    : undefined,
         },
     );
     useActionHandler(

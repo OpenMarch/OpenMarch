@@ -1,6 +1,6 @@
 ---
-title: Venue and uniforms
-description: Choose the stadium, lighting, crowd and uniforms the 3D View shows, and see how the marchers in it look and move.
+title: Change the venue and uniforms
+description: Choose the stadium or gym, lighting, crowd, uniforms, flag silks and horns the 3D View shows for your show.
 type: how-to
 covers:
   - apps/desktop/src/view3d/window/overlay/SettingsPanel.tsx
@@ -8,13 +8,15 @@ covers:
   - apps/desktop/src/view3d/core/venueSettings.ts
   - apps/desktop/src/view3d/core/field/regulation.ts
   - apps/desktop/src/view3d/window/useKitShowCredits.ts
-  - apps/desktop/src/view3d/core/marchers
-  - apps/desktop/src/view3d/core/instruments/catalog.ts
-  - packages/core/src/cues
+  - apps/desktop/src/view3d/core/sizes/silkShapes.ts
+  - apps/desktop/src/view3d/core/artworkTemplates
+  - apps/desktop/src/view3d/window/overlay/SilkArtworkControls.tsx
   - i18n:view3d.settings
   - i18n:view3d.kit
   - i18n:view3d.lighting
   - i18n:view3d.uniformPreset
+  - i18n:view3d.silkShape
+  - i18n:view3d.silkArtwork
 sidebar:
   order: 3
 ---
@@ -22,89 +24,100 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-The venue is where the 3D View puts your show: a high school stadium, a college stadium, a domed pro stadium, an indoor arena and so on, with its lighting and crowd. It and the uniforms are part of the show, so everyone who opens the show sees the same thing.
+<InShort>In the 3D View, select <Ui k="view3d.settings.panelTitle" /> (the gear): choose a <Ui k="view3d.overlay.venue" plain /> and <Ui k="view3d.overlay.lighting" plain /> on the <Ui k="view3d.settings.tabs.venue" plain /> tab, and uniforms on the <Ui k="view3d.settings.tabs.performers" plain /> tab.</InShort>
+
+The venue is where the 3D View puts your show: a high school stadium, a college stadium, a domed pro stadium, a gym or an indoor arena, with its lighting and crowd. The venue and the uniforms are saved in the show, so everyone who opens it sees the same thing.
 
 ## Change the venue
 
 <Steps>
 
-1. In the 3D View, select <Ui k="view3d.settings.title" /> (the gear). The <Ui k="view3d.settings.title" plain /> panel opens.
+1. In the 3D View, select <Ui k="view3d.settings.panelTitle" /> (the gear at the top right). The <Ui k="view3d.settings.panelTitle" plain /> panel opens on its <Ui k="view3d.settings.tabs.venue" plain /> tab.
 
-2. Under <Ui k="view3d.settings.venueSection" plain />, choose a <Ui k="view3d.overlay.venue" plain />: <Ui k="view3d.kit.hs" />, <Ui k="view3d.kit.bighs" />, <Ui k="view3d.kit.college" />, <Ui k="view3d.kit.pro" />, <Ui k="view3d.kit.gym" />, <Ui k="view3d.kit.arena" /> or <Ui k="view3d.kit.blank" />.
+2. On the <Ui k="view3d.settings.tabs.venue" plain /> tab, choose a <Ui k="view3d.overlay.venue" plain />: <Ui k="view3d.kit.hs" />, <Ui k="view3d.kit.bighs" />, <Ui k="view3d.kit.college" />, <Ui k="view3d.kit.pro" />, <Ui k="view3d.kit.gym" />, <Ui k="view3d.kit.arena" /> or <Ui k="view3d.kit.blank" />.
 
-3. Choose the <Ui k="view3d.overlay.lighting" plain />. Each venue has its own choices: <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.dusk" /> and <Ui k="view3d.lighting.night" /> in the outdoor stadiums, <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.night" /> and <Ui k="view3d.lighting.roofClosed" /> in the Pro dome, and <Ui k="view3d.lighting.house" /> or <Ui k="view3d.lighting.show" /> lights in the gym and the arena.
+3. Choose the <Ui k="view3d.overlay.lighting" plain />. The outdoor stadiums have <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.dusk" /> and <Ui k="view3d.lighting.night" />; the Pro dome has <Ui k="view3d.lighting.day" />, <Ui k="view3d.lighting.night" /> and <Ui k="view3d.lighting.roofClosed" />; the gym and the arena have <Ui k="view3d.lighting.house" /> and <Ui k="view3d.lighting.show" /> lights.
 
 </Steps>
 
-The field in every venue is your show's field, with its yard lines, hashes and field image (see [Edit the field](/guides/field/edit-the-field/)). In the stadiums, a football field always has both end zones, even when your show's field stops at the goal lines: the 3D View paints the end zones past them, and the marchers stay where you put them. Other fields, such as an indoor floor, never get end zones. Each venue has its own cameras; see [Move the camera](/guides/3d-view/cameras/).
-
 <Media
   id="3d-settings"
-  alt="The View settings panel: under This show, the seven venue choices with High school selected, lighting, band uniform and guard uniform presets, brass finish and tubas, the crowd switch with home and visitor colors, and the end-zone lettering; under it, the 3D View's keyboard and mouse controls."
+  alt="The 3D View settings panel on its Venue tab, beside the Performers and Preferences tabs: a note that these are saved with the show, the seven venue choices with High school selected, lighting, the crowd switch with home and visitor colors, and the end-zone lettering."
   maxWidth={420}
 />
 
-Everything under <Ui k="view3d.settings.venueSection" plain /> is saved in the show file. Each change is a step in the editor's undo history, so <Kbd action="performUndo" /> in the editor window takes it back.
+Until you choose one, the venue follows the show's field: a football field gets <Ui k="view3d.kit.hs" plain />, an indoor or grid floor gets <Ui k="view3d.kit.gym" plain />, and any other field gets <Ui k="view3d.kit.blank" plain />. Everything on the <Ui k="view3d.settings.tabs.venue" plain /> and <Ui k="view3d.settings.tabs.performers" plain /> tabs is saved in the show, and each change is a step in the editor's undo history, so <Kbd action="performUndo" /> in the editor takes it back. The <Ui k="view3d.settings.tabs.preferences" plain /> tab is kept on this computer instead.
 
-## Crowd and end zones
+<Media
+  id="3d-venue-arena"
+  alt="The same show in the Indoor arena under Show lights: the band on a purple floor, packed stands beyond it, and the scoreboard over the stands showing the show's name, Northern Lights, with its designer and client."
+/>
 
-In a venue with stands:
+The field in every venue is your show's field, with its yard lines, hashes and field image ([Edit the field](/guides/field/edit-the-field/)). In the stadiums a football field always has both end zones, even when your field stops at the goal lines; the marchers stay where you put them. Other fields, such as an indoor floor, get no end zones. Each venue has its own cameras ([Move the camera](/guides/3d-view/cameras/)).
 
-- <Ui k="view3d.overlay.crowd" /> fills the stands with spectators. Press <Kbd keys="C" /> in the 3D View to turn them on or off. With the crowd on, <Ui k="view3d.settings.crowdColors" plain /> sets the colors the <Ui k="view3d.settings.homeColor" plain /> and <Ui k="view3d.settings.awayColor" plain /> sides wear.
-- <Ui k="view3d.settings.endZones" /> paints lettering in both end zones, up to 24 characters, in the color you choose. Leave it empty for no lettering. The gym and the arena have no end zones.
+## Turn the crowd on or off
 
-## The video boards
+In a venue with stands, turn <Ui k="view3d.overlay.crowd" /> on or off on the <Ui k="view3d.settings.tabs.venue" plain /> tab, or press <Kbd keys="C" /> in the 3D View. With the crowd on, <Ui k="view3d.settings.crowdColors" plain /> sets the colors the <Ui k="view3d.settings.homeColor" plain /> and <Ui k="view3d.settings.awayColor" plain /> sides wear.
 
-The video boards in the <Ui k="view3d.kit.bighs" plain />, <Ui k="view3d.kit.college" plain /> and <Ui k="view3d.kit.pro" plain /> venues, and the scoreboard in the <Ui k="view3d.kit.arena" plain />, show your show's name, with its designer and client when you've entered them. Set these in [Show settings](/guides/field/show-settings/). Without a show name, the boards show the file's name.
+## Letter the end zones
 
-## Uniforms
+Type up to 24 characters in <Ui k="view3d.settings.endZones" /> and choose a color, and both end zones show the lettering. Leave it empty for none. The gym and the arena have no end zones.
 
-<Ui k="view3d.settings.uniforms" /> dresses the band and <Ui k="view3d.settings.guardUniforms" /> dresses the color guard. Choose one of the built-in uniforms for each, such as <Ui k="view3d.uniformPreset.westPoint" /> or <Ui k="view3d.uniformPreset.sash" />. Marchers in guard sections (Color Guard, Flag, Rifle and the other guard sections) wear the guard uniform; everyone else wears the band uniform.
+## Put the show's name on the video boards
 
-You can't design your own uniform in this version.
+The video boards in the <Ui k="view3d.kit.bighs" plain />, <Ui k="view3d.kit.college" plain /> and <Ui k="view3d.kit.pro" plain /> venues, and the scoreboard in the <Ui k="view3d.kit.arena" plain />, show the show's name, with its designer and client. Enter them in [Show settings](/guides/field/show-settings/). Without a show name, the boards show the file's name.
 
-## Horns
+## Choose the uniforms
 
-<Ui k="view3d.settings.brassFinish" /> chooses how the brass look: <Ui k="view3d.brassFinish.brass" /> (gold) or <Ui k="view3d.brassFinish.silver" />. Every brass horn in the show gets the same finish. Woodwinds keep their own: the flutes and piccolos stay silver and the saxophones gold.
+On the <Ui k="view3d.settings.tabs.performers" plain /> tab, <Ui k="view3d.settings.uniforms" /> dresses the band and <Ui k="view3d.settings.guardUniforms" /> dresses the color guard. Choose one of the built-in uniforms for each, such as <Ui k="view3d.uniformPreset.westPoint" /> or <Ui k="view3d.uniformPreset.sash" />. Marchers in guard sections (Color Guard, Flag, Rifle and the other guard sections) wear the guard uniform; everyone else wears the band uniform. You can't design your own uniform in this version.
+
+<Media
+  id="3d-uniforms"
+  alt="The band from the front row in the Night Watch uniform, with the color guard beside them in Ultraviolet Fade."
+/>
+
+## Choose the flag silks
+
+<Ui k="view3d.settings.silkShape" /> chooses the shape of the color guard's 6-foot flags: <Ui k="view3d.silkShape.standard" />, <Ui k="view3d.silkShape.curvedTail" />, <Ui k="view3d.silkShape.cSwing" />, <Ui k="view3d.silkShape.rainbow" />, <Ui k="view3d.silkShape.arc" />, <Ui k="view3d.silkShape.teardrop" />, <Ui k="view3d.silkShape.distressed" />, <Ui k="view3d.silkShape.rounded" />, <Ui k="view3d.silkShape.rectangle" />, <Ui k="view3d.silkShape.curvedAngle" />, <Ui k="view3d.silkShape.wings" />, <Ui k="view3d.silkShape.snake" /> or <Ui k="view3d.silkShape.swing" />. Each comes in one common size, such as 36 by 56 inches for the Standard. A show starts with the plain <Ui k="view3d.silkShape.rectangle" plain />.
+
+<Media
+  id="3d-silk-settings"
+  alt="The flag silk rows of 3D View settings, Performers tab, after a design was imported: thirteen silk shapes, each drawn as a small outline with its name, with Standard chosen; below them, the imported artwork with its picture and file name, Replace and Remove buttons, and PNG, SVG and PDF template buttons for the Standard shape."
+  maxWidth={360}
+/>
+
+Every guard member's flag gets the same shape for the whole show. <Ui k="view3d.silkShape.curvedTail" plain />, <Ui k="view3d.silkShape.rainbow" plain />, <Ui k="view3d.silkShape.distressed" plain />, <Ui k="view3d.silkShape.rounded" plain />, <Ui k="view3d.silkShape.curvedAngle" plain />, <Ui k="view3d.silkShape.wings" plain /> and <Ui k="view3d.silkShape.snake" plain /> are traced from a chart of common shapes and their sizes are estimates, so check the cut and size with your flag maker before you print. <Ui k="view3d.silkShape.wings" plain /> are worn, but in the 3D View they hang from the pole.
+
+### Paint the silks with your own design
+
+<Steps>
+
+1. Under <Ui k="view3d.settings.silkArtwork" plain />, download the template for the shape you chose with the **PNG**, **SVG** or **PDF** button. It's drawn at the silk's real size, with the pole side on the left. Keep anything important inside the dashed line, the safe area; the grey parts are outside the silk.
+
+2. Paint your design over the template in any image editor and export it as a PNG at the template's size and proportions. Painting past the silk's edge into the bleed is fine; it's cut off.
+
+3. Select <Ui k="view3d.silkArtwork.import" /> and choose the PNG. A picture larger than 4,096 pixels on its longest side is scaled down to that as it comes in, the most detail the 3D View shows. Once it's in, the row shows the picture and its name with <Ui k="view3d.silkArtwork.replace" plain /> and <Ui k="view3d.silkArtwork.remove" plain />, as in the picture above.
+
+</Steps>
+
+<Media
+  id="3d-silk-artwork"
+  alt="The band from the front row: the color guard's Standard-shaped flags show the imported design, a white star and a gold stripe on purple."
+/>
+
+The flags show your design, cut to the silk's shape, instead of the guard uniform's pattern or the section's color. The back of the silk shows it reversed, the way a one-sided print looks. If you change the shape afterwards, the same picture stretches to fit, so download that shape's template and paint it again. <Ui k="view3d.silkArtwork.replace" /> chooses another PNG and <Ui k="view3d.silkArtwork.remove" /> takes the artwork off; both are steps you can undo in the editor.
+
+## Choose the horns
+
+<Ui k="view3d.settings.brassFinish" /> chooses how every brass horn looks: <Ui k="view3d.brassFinish.brass" /> (gold) or <Ui k="view3d.brassFinish.silver" />. Woodwinds keep their own: flutes and piccolos stay silver and saxophones gold.
 
 <Ui k="view3d.settings.tuba" /> chooses what the tuba section carries: a <Ui k="view3d.tuba.contra" /> held on the shoulder, or a <Ui k="view3d.tuba.sousaphone" /> worn around the body. Sousaphone players wear a beret instead of the uniform's hat, so the bell has room.
 
-## How the marchers look
-
-<Media
-  id="3d-marchers"
-  alt="A closer view in the 3D View: brass players in uniform with their horns up, drummers with drums, and color guard with flags, standing in their drill positions."
-/>
-
-- Each marcher's body and skin tone are chosen from their marcher number, so the same marcher looks the same every time you open the show. At **High** quality, heights vary a little too.
-- What a marcher carries comes from their section's name: trumpets, mellophones, baritones, euphoniums, trombones and tubas carry their horns, woodwind sections their instruments, the battery its drums and cymbals, Color Guard and Flag sections a 6-foot flag, and Rifle sections a rifle. Sections the 3D View doesn't know, such as Pit or Other, carry nothing.
-- The section's color from [Appearance](/guides/marchers/appearance/) colors drum shells and flag silks. It doesn't change the uniform.
-- Marchers you've hidden in Appearance are hidden in the 3D View too.
-- Marchers you select in the editor get a ring at their feet, so you can find them in the 3D View.
-
-## How the marchers move
-
-The marchers march the drill as it's written: every move, at the counts it takes, at the tempo of the music.
-
-- While moving, they step on every count and keep facing the front. Moving sideways, they slide; moving toward the back sideline, they march backward.
-- When a wind player changes direction, the last step of the old move lands on the ball of the foot, pointing partway to the new direction, and the first step of the new move goes straight into the new path. A full turn around re-steps on the first count instead. You can switch this to a plain blend in Show settings (below).
-- Brass play with horns up, mouthpieces at their lips and heads slightly raised; woodwinds play their instruments; the battery plays; and the guard holds their equipment at set.
-- While a marcher holds still and other marchers are moving, they mark time (or what Show settings say, below). When the whole band is still, everyone stands.
-- When you pause, everyone stands in the closed position on their dot, unless you've turned on <Ui k="view3d.pausedPose.label" plain /> ([When the show is paused](/guides/3d-view/open-the-3d-view/#when-the-show-is-paused)).
-
-- Show settings has a <Ui k="workspaceSettings.performer.title" plain /> section for how the marchers move everywhere in the show:
-    - <Ui k="workspaceSettings.performer.stepOffFoot.label" plain />: the foot every move steps off with.
-    - <Ui k="workspaceSettings.performer.dotMode.label" plain />: with <Ui k="workspaceSettings.performer.dotMode.foot" plain />, the foot that lands on the last count is on the dot and the marcher centers on it as the feet close; with <Ui k="workspaceSettings.performer.dotMode.body" plain />, the middle of the body is over the dot.
-    - <Ui k="workspaceSettings.performer.directionChange.label" plain />: how the moving leg gets to a new direction, <Ui k="workspaceSettings.performer.directionChange.corner" plain /> or <Ui k="workspaceSettings.performer.directionChange.direct" plain />. Round the corner is the handbook's placement and cut for wind players at 8-to-5; other sizes still blend.
-    - <Ui k="workspaceSettings.performer.holdWhileBandMoves.label" plain />: what a marcher who holds does while others move.
-    - <Ui k="workspaceSettings.performer.percussionTravel.label" plain />: <Ui k="workspaceSettings.performer.percussionTravel.crab" plain /> keeps drummers' hips square to the front, or <Ui k="workspaceSettings.performer.percussionTravel.slide" plain /> moves them like the winds.
-
-Apart from those, the 3D View doesn't let you change these: there are no settings for horn moves, facings, equipment work or choreography in this version.
-
 ## Related
 
-- [Open the 3D View](/guides/3d-view/open-the-3d-view/): the window, playback, and graphics settings for slower computers.
+- [How marchers look and move in the 3D View](/guides/3d-view/marchers-in-3d/): what each marcher carries, and how they step.
 - [Move the camera](/guides/3d-view/cameras/): the venue's cameras, and your own.
-- [Props](/guides/3d-view/props/): props show in the venue as blocks.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): the window, playback, and settings for slower computers.

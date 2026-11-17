@@ -63,7 +63,7 @@ describe("writeReportCopy", () => {
             ).toBe(0);
     });
 
-    it("clears every notes, description and nickname column, in any table", () => {
+    it("clears every notes, description, nickname and label column, in any table", () => {
         writeReportCopy(showPath, copyPath, { includeAudio: true });
         const tables = read<{ name: string }>(
             "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
@@ -72,7 +72,11 @@ describe("writeReportCopy", () => {
             for (const { name: column } of read<{ name: string }>(
                 `SELECT name FROM pragma_table_info('${table}')`,
             ))
-                if (["notes", "description", "nickname"].includes(column))
+                if (
+                    ["notes", "description", "nickname", "label"].includes(
+                        column,
+                    )
+                )
                     expect(
                         read<{ n: number }>(
                             `SELECT count(*) AS n FROM "${table}" WHERE "${column}" IS NOT NULL`,
@@ -82,8 +86,23 @@ describe("writeReportCopy", () => {
         expect(read<{ name: string }>("SELECT name FROM tags")).toEqual([
             { name: "Tag 1" },
         ]);
-        expect(read<{ name: string }>("SELECT name FROM cues")).toEqual([
-            { name: "cues 1" },
+        // a table this version doesn't know is scrubbed by its columns too
+        expect(
+            read<{ name: string; notes: string | null }>(
+                "SELECT name, notes FROM phrase_assets",
+            ),
+        ).toEqual([{ name: "phrase_assets 1", notes: null }]);
+        // a cue stays, without the words someone typed on it
+        expect(read("SELECT type, value, label, notes FROM cues")).toEqual([
+            {
+                type: "look",
+                value: "builtin:look.guard",
+                label: null,
+                notes: null,
+            },
+        ]);
+        expect(read("SELECT cue_id, marcher_id FROM cue_marchers")).toEqual([
+            { cue_id: 1, marcher_id: 1 },
         ]);
     });
 

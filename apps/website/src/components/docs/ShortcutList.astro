@@ -3,8 +3,13 @@
  * Every keyboard shortcut, grouped the way the app's Shortcuts dialog groups them
  * (Help › Keyboard shortcuts). Generated from the app (src/data/generated/shortcuts.json), so
  * it can't drift; shortcuts that Basic mode hides are marked Expert.
+ *
+ * On a Mac the system's Hide and Minimize menu items take ⌘H and ⌘M before the app sees them
+ * (fork issue #1058), though the app's list still shows them. Where a row's Mac key is one of
+ * those, it shows the action's next default Mac key that works (⌃H, ⌃M) and says why.
  */
 import data from "../../data/generated/shortcuts.json";
+import actions from "../../data/generated/actions.json";
 import { shortcutText } from "./shortcutText";
 
 type Shortcut = { keys: string[]; gesture?: string };
@@ -17,6 +22,31 @@ const inBasic = new Set(
     basic.flatMap((g) => g.rows.map((r) => `${g.title}|${r.label}`)),
 );
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+/** Mac keys the system's menu takes first, and the menu item that takes each */
+const MAC_TAKEN: Record<string, string> = { "⌘H": "Hide", "⌘M": "Minimize" };
+type Binding = { mac: Shortcut; other: Shortcut };
+const bindingsByLabel = new Map(
+    Object.values(
+        actions as Record<string, { label: string; bindings: Binding[] }>,
+    ).map((a) => [a.label, a.bindings]),
+);
+/** The Mac key to show, and the system item that took the listed one, if it was taken */
+function macKey(
+    row: Row,
+    i: number,
+): { mac?: Shortcut; takenBy?: string; listed?: string } {
+    const listed = row.mac[i];
+    const takenBy = listed && MAC_TAKEN[listed.keys.join("")];
+    if (!takenBy) return { mac: listed };
+    const working = bindingsByLabel
+        .get(row.label)
+        ?.map((b) => b.mac)
+        .find((m) => !m.gesture && !MAC_TAKEN[m.keys.join("")]);
+    if (!working)
+        throw new Error(`ShortcutList: no working Mac key for "${row.label}"`);
+    return { mac: working, takenBy, listed: listed.keys.join("") };
+}
 ---
 
 {
@@ -45,36 +75,51 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                                 )}
                             </td>
                             <td>
-                                {row.other.map((s, i) => (
-                                    <>
-                                        {i > 0 && <span class="alt"> or </span>}
-                                        <kbd class="docs-kbd">
-                                            <span class="docs-kbd-other">
-                                                {s.keys.map((k, j) => (
-                                                    <>
-                                                        {j > 0 && (
-                                                            <span class="docs-kbd-plus">
-                                                                +
-                                                            </span>
-                                                        )}
-                                                        {k}
-                                                    </>
-                                                ))}
-                                            </span>
-                                            <span class="docs-kbd-mac">
-                                                {row.mac[i]?.keys.join("")}
-                                            </span>
-                                            {s.gesture && (
-                                                <span class="docs-kbd-gesture">
-                                                    {s.gesture}
+                                {row.other.map((s, i) => {
+                                    const { mac, takenBy, listed } = macKey(
+                                        row,
+                                        i,
+                                    );
+                                    return (
+                                        <>
+                                            {i > 0 && (
+                                                <span class="alt"> or </span>
+                                            )}
+                                            <kbd class="docs-kbd">
+                                                <span class="docs-kbd-other">
+                                                    {s.keys.map((k, j) => (
+                                                        <>
+                                                            {j > 0 && (
+                                                                <span class="docs-kbd-plus">
+                                                                    +
+                                                                </span>
+                                                            )}
+                                                            {k}
+                                                        </>
+                                                    ))}
+                                                </span>
+                                                <span class="docs-kbd-mac">
+                                                    {mac?.keys.join("")}
+                                                </span>
+                                                {s.gesture && (
+                                                    <span class="docs-kbd-gesture">
+                                                        {s.gesture}
+                                                    </span>
+                                                )}
+                                                <span class="docs-kbd-text">
+                                                    {shortcutText(s, mac)}
+                                                </span>
+                                            </kbd>
+                                            {takenBy && (
+                                                <span class="mac-note">
+                                                    {" "}
+                                                    (on a Mac, not {listed}: the
+                                                    system's {takenBy} takes it)
                                                 </span>
                                             )}
-                                            <span class="docs-kbd-text">
-                                                {shortcutText(s, row.mac[i])}
-                                            </span>
-                                        </kbd>
-                                    </>
-                                ))}
+                                        </>
+                                    );
+                                })}
                             </td>
                         </tr>
                     ))}
@@ -124,8 +169,13 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
         font-weight: 400;
         opacity: 0.8;
     }
+    .mac-note {
+        color: var(--sl-color-gray-3);
+        font-size: 0.85em;
+    }
     :global(html[data-os="mac"]) .docs-kbd-other,
-    :global(html:not([data-os="mac"])) .docs-kbd-mac {
+    :global(html:not([data-os="mac"])) .docs-kbd-mac,
+    :global(html:not([data-os="mac"])) .mac-note {
         display: none;
     }
 </style>

@@ -4,6 +4,7 @@ import {
     useMemo,
     useRef,
     useSyncExternalStore,
+    type CSSProperties,
 } from "react";
 import {
     belowLayers,
@@ -13,8 +14,13 @@ import {
 } from "@/components/canvas/fieldLayers";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { GlyphText } from "@/shapes/editor/GlyphText";
+import { useTranslate } from "@tolgee/react";
 import { rgbaToString, type FieldTheme } from "@openmarch/core";
-import type { FieldEditor, FieldModeDrawing } from "@/field/editor/fieldEditor";
+import type {
+    FieldEditor,
+    FieldModeDrawing,
+    SelectionPivot as SelectionPivotDrawing,
+} from "@/field/editor/fieldEditor";
 import type { AreaShape } from "@/field/editor/areaGestures";
 import { HANDLE_SIZE, type HandleId } from "@/field/editor/groupTransform";
 import type { FieldRect } from "@/field/editor/selectionArea";
@@ -27,7 +33,7 @@ import {
     selectionHandles,
     type DrawnSelectionBox,
 } from "./selectionFrame";
-import { dotSizes, SELECTION_COLOR } from "./selectionRing";
+import { dotSizes, ringReach, SELECTION_COLOR } from "./selectionRing";
 import MarkerSvg from "./MarkerSvg";
 import { markerShapeOf, spotShapeOf, type MarkerShape } from "../markerShape";
 import { marcherShapes } from "./useMarcherShapes";
@@ -42,6 +48,7 @@ import {
     groupLabelWidth,
     placeGroupLabels,
 } from "@/shapes/field/groupDrawing";
+import { PivotHint } from "./PivotHint";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "./HeldRolesChip";
 import ClearOfFinger from "./ClearOfFinger";
 
@@ -179,6 +186,20 @@ export default function FieldOverlay({
     const area = useSyncExternalStore(subscribeEditor, () =>
         editor.areaShape(),
     );
+    // As a string, as the box is: it moves with the marchers
+    const pivot = useSyncExternalStore(
+        useCallback(
+            (listener: () => void) => {
+                const off = [
+                    marchers.subscribe(listener),
+                    subscribeEditor(listener),
+                ];
+                return () => off.forEach((unsubscribe) => unsubscribe());
+            },
+            [marchers, subscribeEditor],
+        ),
+        () => JSON.stringify(editor.selectionPivot()),
+    );
     const drawn = useSyncExternalStore(subscribeEditor, () =>
         editor.modeDrawing(),
     );
@@ -200,9 +221,12 @@ export default function FieldOverlay({
     return (
         <>
             <HeldRolesChip
-                belowTip={modeDrawing?.tip !== undefined}
+                belowTip={
+                    modeDrawing?.tip !== undefined || areaHasPreview(area)
+                }
                 touch={touch}
             />
+            <PivotHint pivot={JSON.parse(pivot)} />
             <svg
                 className="pointer-events-none absolute inset-0 h-full w-full"
                 data-testid="fieldOverlay"
@@ -210,6 +234,7 @@ export default function FieldOverlay({
                 <SelectionBox
                     frame={JSON.parse(box) as DrawnSelectionBox | null}
                 />
+                <SelectionPivot pivot={JSON.parse(pivot)} />
                 {area?.kind === "marquee" && (
                     <Marquee
                         rect={area.rect}
@@ -218,6 +243,9 @@ export default function FieldOverlay({
                     />
                 )}
                 {area?.kind === "lasso" && <Lasso lasso={area} theme={theme} />}
+                {area && (
+                    <AreaPreviewMarks area={area} theme={theme} touch={touch} />
+                )}
                 {modeDrawing && (
                     <ModeDrawing
                         drawing={modeDrawing}
@@ -293,6 +321,125 @@ function SelectionBox({ frame }: { frame: DrawnSelectionBox | null }) {
                 ),
             )}
         </g>
+    );
+}
+
+/**
+ * A pivot's crosshair, at `at` in element px: yellow arms and ring on a dark edge, so it reads on
+ * grass and on white. A shape's once it's out of the center (#350), and a plain selection's.
+ */
+function PivotCrosshair({
+    at: p,
+    style,
+    opacity,
+    preview = false,
+    testId,
+}: {
+    at: { x: number; y: number };
+    style?: CSSProperties;
+    opacity?: number;
+    /**
+     * Where a pivot menu's cell pointed at would put it (#437): a little larger on a soft halo,
+     * at full strength
+     */
+    preview?: boolean;
+    testId: string;
+}) {
+    const grow = preview ? 1.3 : 1;
+    const r = PIVOT_MARK_ARM * grow;
+    const ring = PIVOT_MARK_RING * grow;
+    const edge = preview ? 4 : 3.5;
+    const ink = preview ? 2 : 1.5;
+    const cross = `M ${p.x - r} ${p.y} H ${p.x + r} M ${p.x} ${p.y - r} V ${p.y + r}`;
+    return (
+        <g
+            data-testid={testId}
+            style={style}
+            opacity={opacity}
+            pointerEvents="none"
+        >
+            {preview && (
+                <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={r + 4}
+                    fill={PIVOT_COLOR}
+                    fillOpacity={0.25}
+                />
+            )}
+            <path d={cross} stroke="black" strokeWidth={edge} />
+            <circle
+                cx={p.x}
+                cy={p.y}
+                r={ring}
+                fill="none"
+                stroke="black"
+                strokeWidth={edge}
+            />
+            <path d={cross} stroke={PIVOT_COLOR} strokeWidth={ink} />
+            <circle
+                cx={p.x}
+                cy={p.y}
+                r={ring}
+                fill="none"
+                stroke={PIVOT_COLOR}
+                strokeWidth={ink}
+            />
+        </g>
+    );
+}
+
+/** A plain selection's pivot on the center: a small faint dot, in CSS px */
+const CENTER_PIVOT_RADIUS = 2.5;
+const CENTER_PIVOT_OPACITY = 0.7;
+/** The dot with $mod held over it, so a drag pulls it out: larger, full strength, on a halo */
+const ARMED_PIVOT_RADIUS = 4;
+
+/**
+ * A plain selection's pivot (`selectionPivot.ts`), what the rotate knob and the inspector's
+ * rotation turn the selection around. On the center, its default, a small faint dot that takes no
+ * plain press (the marcher or the box under it does); out of it, the crosshair, which drags. A
+ * pivot grid cell pointed at shows where it would go.
+ */
+function SelectionPivot({ pivot }: { pivot: SelectionPivotDrawing | null }) {
+    const view = useFieldViewStore();
+    if (!pivot) return null;
+    const p = fieldToElement(view, pivot.at.x, pivot.at.y);
+    const armed = pivot.hover === "armed";
+    return (
+        <>
+            {pivot.own ? (
+                <PivotCrosshair at={p} testId="fieldSelectionPivot" />
+            ) : (
+                <g data-testid="fieldSelectionPivot" data-armed={armed}>
+                    {armed && (
+                        <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={ARMED_PIVOT_RADIUS + 4}
+                            fill={PIVOT_COLOR}
+                            fillOpacity={0.25}
+                        />
+                    )}
+                    <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={armed ? ARMED_PIVOT_RADIUS : CENTER_PIVOT_RADIUS}
+                        fill={PIVOT_COLOR}
+                        stroke="black"
+                        strokeWidth={1}
+                        opacity={armed ? 1 : CENTER_PIVOT_OPACITY}
+                    />
+                </g>
+            )}
+            {pivot.preview && (
+                <PivotCrosshair
+                    at={fieldToElement(view, pivot.preview.x, pivot.preview.y)}
+                    preview
+                    testId="fieldSelectionPivotPreview"
+                />
+            )}
+        </>
     );
 }
 
@@ -1205,84 +1352,20 @@ function ModeDrawing({
                     />
                 );
             })}
-            {drawing.pivotMark &&
-                (() => {
-                    const p = at(drawing.pivotMark);
-                    const r = PIVOT_MARK_ARM;
-                    const cross = `M ${p.x - r} ${p.y} H ${p.x + r} M ${p.x} ${p.y - r} V ${p.y + r}`;
-                    return (
-                        <g data-testid="fieldShapePivotMark" style={controls}>
-                            {/* A dark edge under the yellow, so it reads on grass and on white */}
-                            <path d={cross} stroke="black" strokeWidth={3.5} />
-                            <circle
-                                cx={p.x}
-                                cy={p.y}
-                                r={PIVOT_MARK_RING}
-                                fill="none"
-                                stroke="black"
-                                strokeWidth={3.5}
-                            />
-                            <path
-                                d={cross}
-                                stroke={PIVOT_COLOR}
-                                strokeWidth={1.5}
-                            />
-                            <circle
-                                cx={p.x}
-                                cy={p.y}
-                                r={PIVOT_MARK_RING}
-                                fill="none"
-                                stroke={PIVOT_COLOR}
-                                strokeWidth={1.5}
-                            />
-                        </g>
-                    );
-                })()}
-            {drawing.pivotPreview &&
-                (() => {
-                    // A cell of the editor's pivot menu pointed at (#437): the pivot mark a
-                    // little larger on a soft halo, at full strength even while the shape is calm
-                    const p = at(drawing.pivotPreview);
-                    const r = PIVOT_MARK_ARM * 1.3;
-                    const ring = PIVOT_MARK_RING * 1.3;
-                    const cross = `M ${p.x - r} ${p.y} H ${p.x + r} M ${p.x} ${p.y - r} V ${p.y + r}`;
-                    return (
-                        <g
-                            data-testid="fieldShapePivotPreview"
-                            pointerEvents="none"
-                        >
-                            <circle
-                                cx={p.x}
-                                cy={p.y}
-                                r={r + 4}
-                                fill={PIVOT_COLOR}
-                                fillOpacity={0.25}
-                            />
-                            <path d={cross} stroke="black" strokeWidth={4} />
-                            <circle
-                                cx={p.x}
-                                cy={p.y}
-                                r={ring}
-                                fill="none"
-                                stroke="black"
-                                strokeWidth={4}
-                            />
-                            <path
-                                d={cross}
-                                stroke={PIVOT_COLOR}
-                                strokeWidth={2}
-                            />
-                            <circle
-                                cx={p.x}
-                                cy={p.y}
-                                r={ring}
-                                fill="none"
-                                stroke={PIVOT_COLOR}
-                                strokeWidth={2}
-                            />
-                        </g>
-                    );
-                })()}
+            {drawing.pivotMark && (
+                <PivotCrosshair
+                    at={at(drawing.pivotMark)}
+                    style={controls}
+                    testId="fieldShapePivotMark"
+                />
+            )}
+            {drawing.pivotPreview && (
+                <PivotCrosshair
+                    at={at(drawing.pivotPreview)}
+                    preview
+                    testId="fieldShapePivotPreview"
+                />
+            )}
             {drawing.pivot &&
                 (() => {
                     const a = at(drawing.pivot.at);
@@ -1309,62 +1392,149 @@ function ModeDrawing({
                         </g>
                     );
                 })()}
-            {drawing.tip &&
-                (() => {
-                    const p = at(drawing.tip.at);
-                    // A solid pill, so the readout reads over any part of the field (owner)
-                    const stack = (
-                        <div className="flex flex-col items-start gap-4">
-                            <div
-                                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
-                                style={{ fontSize: TIP_PX }}
-                                data-testid="fieldShapeTip"
-                            >
-                                <GlyphText text={drawing.tip.text} size={12} />
-                            </div>
-                            {/* The held-roles chip stacks under the readout, never over it */}
-                            <HeldRolesChipBelowTip />
-                        </div>
-                    );
-                    if (touch) {
-                        // Over the whole field, so the stack can center above the finger and
-                        // stay inside the field's edges
-                        return (
-                            <foreignObject
-                                x={0}
-                                y={0}
-                                width={view.width}
-                                height={view.height}
-                            >
-                                <div className="relative h-full w-full">
-                                    <ClearOfFinger
-                                        finger={p}
-                                        bounds={{
-                                            width: view.width,
-                                            height: view.height,
-                                        }}
-                                    >
-                                        {stack}
-                                    </ClearOfFinger>
-                                </div>
-                            </foreignObject>
-                        );
-                    }
-                    return (
-                        <foreignObject
-                            x={p.x + TIP_OFFSET_PX}
-                            y={p.y + TIP_OFFSET_PX}
-                            width={TIP_BOX.width}
-                            height={TIP_BOX.height}
-                            overflow="visible"
-                        >
-                            {stack}
-                        </foreignObject>
-                    );
-                })()}
+            {drawing.tip && (
+                <PointerTip
+                    at={at(drawing.tip.at)}
+                    text={drawing.tip.text}
+                    touch={touch}
+                    testId="fieldShapeTip"
+                />
+            )}
             {/* The guides' names last, over every line, edge and spot, so nothing crosses
                 their text (owner on #427) */}
             <GuideLabels guides={drawing.guides} at={at} view={view} />
+        </g>
+    );
+}
+
+/**
+ * A readout by the pointer, at `p` in element px: a solid pill, so it reads over any part of the
+ * field (owner), with the held-roles chip stacked under it. Below and right of a mouse pointer;
+ * above a finger, clear of it.
+ */
+function PointerTip({
+    at: p,
+    text,
+    touch,
+    testId,
+    opacity,
+}: {
+    at: { x: number; y: number };
+    text: string;
+    touch: boolean;
+    testId: string;
+    opacity?: number;
+}) {
+    const view = useFieldViewStore();
+    const stack = (
+        <div className="flex flex-col items-start gap-4" style={{ opacity }}>
+            <div
+                className="rounded-6 border-stroke bg-bg-1 bg-modal text-text shadow-modal inline-flex items-center gap-2 border px-6 py-2 whitespace-nowrap tabular-nums"
+                style={{ fontSize: TIP_PX }}
+                data-testid={testId}
+            >
+                <GlyphText text={text} size={12} />
+            </div>
+            {/* The held-roles chip stacks under the readout, never over it */}
+            <HeldRolesChipBelowTip />
+        </div>
+    );
+    if (touch) {
+        // Over the whole field, so the stack can center above the finger and stay inside the
+        // field's edges
+        return (
+            <foreignObject x={0} y={0} width={view.width} height={view.height}>
+                <div className="relative h-full w-full">
+                    <ClearOfFinger
+                        finger={p}
+                        bounds={{ width: view.width, height: view.height }}
+                    >
+                        {stack}
+                    </ClearOfFinger>
+                </div>
+            </foreignObject>
+        );
+    }
+    return (
+        <foreignObject
+            x={p.x + TIP_OFFSET_PX}
+            y={p.y + TIP_OFFSET_PX}
+            width={TIP_BOX.width}
+            height={TIP_BOX.height}
+            overflow="visible"
+        >
+            {stack}
+        </foreignObject>
+    );
+}
+
+/** The squares around the marchers a marquee or lasso would change: 1.5 CSS px, clear of the ring */
+const AREA_MARK_WIDTH = 1.5;
+const AREA_MARK_GAP = 1.5;
+/** A lasso that wouldn't close if released now shows what it would take this faintly */
+const AREA_OPEN_OPACITY = 0.55;
+
+/** Whether an area shape has marchers to preview (and so a count by the pointer). */
+export function areaHasPreview(area: AreaShape | null): boolean {
+    return (area?.preview.ids.length ?? 0) > 0;
+}
+
+/**
+ * While a marquee or lasso is drawn: a small square around each marcher releasing it would change
+ * (select, add, or take out), in the area's color, and how many by the pointer, so it's clear when
+ * a marcher registers. Faint while a lasso wouldn't close.
+ */
+function AreaPreviewMarks({
+    area,
+    theme,
+    touch,
+}: {
+    area: AreaShape;
+    theme: FieldTheme;
+    touch: boolean;
+}) {
+    const { t } = useTranslate();
+    const view = useFieldViewStore();
+    const { preview } = area;
+    if (preview.ids.length === 0) return null;
+    const opacity =
+        area.kind === "lasso" && !area.closes ? AREA_OPEN_OPACITY : undefined;
+    // Just outside where a selected marcher's ring would be
+    const half =
+        ringReach(view.zoom) * view.zoom + AREA_MARK_GAP + AREA_MARK_WIDTH / 2;
+    const squares: string[] = [];
+    for (let i = 0; i < preview.ids.length; i++) {
+        const p = fieldToElement(
+            view,
+            preview.positions[i * 2],
+            preview.positions[i * 2 + 1],
+        );
+        squares.push(
+            `M${p.x - half} ${p.y - half}h${half * 2}v${half * 2}h${-half * 2}z`,
+        );
+    }
+    const count = preview.ids.length;
+    const text =
+        preview.choice === "add"
+            ? t("field.areaCount.add", { count })
+            : preview.choice === "subtract"
+              ? t("field.areaCount.subtract", { count })
+              : t("field.areaCount.select", { count });
+    return (
+        <g data-testid="fieldAreaPreview" opacity={opacity}>
+            <path
+                d={squares.join("")}
+                fill="none"
+                stroke={rgbaToString(theme.shape)}
+                strokeWidth={AREA_MARK_WIDTH}
+                strokeDasharray={area.subtract ? "3 2" : undefined}
+            />
+            <PointerTip
+                at={fieldToElement(view, preview.pointer.x, preview.pointer.y)}
+                text={text}
+                touch={touch}
+                testId="fieldAreaCount"
+            />
         </g>
     );
 }

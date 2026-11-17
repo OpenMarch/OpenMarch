@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileCues, type CueInput } from "@openmarch/core";
+import type { CueInput } from "@openmarch/core";
 import {
     hornEventAt,
     sectionCueCarry,
@@ -18,7 +18,7 @@ const hornAt = (events: ReturnType<typeof windowHornEvents>, c: number) =>
     events[hornEventAt(events, c)].state;
 
 describe("the window's horn channel", () => {
-    it("plays horns up for the whole show (no cues are stored)", () => {
+    it("plays horns up for the whole show when no cues are stored", () => {
         const compiled = compileWindowCues(
             [{ id: 1, section: "Trumpet" }],
             beats,
@@ -26,40 +26,42 @@ describe("the window's horn channel", () => {
             { carries: () => "winds" },
         );
         const events = windowHornEvents(
-            compiled.segments(1, "horn_equipment"),
+            compiled.compiled.segments(1, "position"),
             options,
         );
         expect(events.map((e) => e.state)).toEqual(["up"]);
     });
 
-    it("follows compiled Horn cues from horns up", () => {
-        const hornsDown: CueInput = {
-            id: 2,
-            channel: "horn_equipment",
-            kind: "state",
-            target: { kind: "band" },
-            beatId: 58,
-            value: "builtin:horn.down",
-        };
-        const compiled = compileCues({
-            beats: beats.map((b) => ({ id: b.id, duration: b.duration })),
-            marchers: [
-                {
-                    id: 1,
-                    section: "Trumpet",
-                    tagIds: [],
-                    drillOrder: 0,
-                    carries: "winds",
-                },
-            ],
-            cues: [hornsDown],
-        });
-        const events = windowHornEvents(
-            compiled.segments(1, "horn_equipment"),
+    const hornsDown = (extra: Partial<CueInput> = {}): CueInput => ({
+        id: 2,
+        type: "position",
+        beatId: 58,
+        value: "builtin:horn.down",
+        marcherIds: [1],
+        ...extra,
+    });
+    const eventsOf = (cues: CueInput[]) =>
+        windowHornEvents(
+            compileWindowCues([{ id: 1, section: "Trumpet" }], beats, "left", {
+                cues,
+                carries: () => "winds",
+            }).compiled.segments(1, "position"),
             options,
         );
+
+    it("follows the show's stored Position cues from horns up", () => {
+        const events = eventsOf([hornsDown()]);
         expect(hornAt(events, 0)).toBe("up");
         expect(hornAt(events, 12)).toBe("carry");
+    });
+
+    it("brings the horns back up when a momentary cue ends", () => {
+        // horns down for counts 8-11
+        const events = eventsOf([hornsDown({ length: 4 })]);
+        expect(hornAt(events, 7)).toBe("up");
+        expect(hornAt(events, 8)).toBe("carry");
+        expect(hornAt(events, 11)).toBe("carry");
+        expect(hornAt(events, 12)).toBe("up");
     });
 
     it("fits cues by each section's own equipment", () => {

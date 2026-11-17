@@ -23,7 +23,6 @@ import { XIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
 import { T, useTranslate } from "@tolgee/react";
-import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
 
 const inputClassname = clsx("col-span-6 self-center");
@@ -167,7 +166,6 @@ function WorkspaceSettingsModalContents() {
                 conToastError(t("workspaceSettings.updateFailed"), error);
             return;
         }
-        toast.success(t("workspaceSettings.saved"));
         toggleOpen();
     }, [
         localSettings,

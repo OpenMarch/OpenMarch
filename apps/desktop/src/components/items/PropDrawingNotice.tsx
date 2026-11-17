@@ -25,14 +25,15 @@ const TOUCH_INSTRUCTION_KEYS: Partial<Record<OutlineType, string>> = {
 const CLICKED: ReadonlySet<OutlineType> = new Set(["polygon", "arc"]);
 
 /**
- * How to draw the chosen Outline, with a way out, while the prop drawing tool
- * is on. In the touch layout, where there's no double-click to rely on, a
- * corner-by-corner Outline also gets Undo point, and a polygon Finish
- * (tablet 1.4).
+ * How to draw the chosen Outline, or place the chosen equipment, with a way
+ * out, while the prop drawing tool is on. In the touch layout, where there's
+ * no double-click to rely on, a corner-by-corner Outline also gets Undo point,
+ * and a polygon Finish (tablet 1.4).
  */
 export default function PropDrawingNotice() {
     const { t } = useTranslate();
     const drawingMode = useItemDrawingStore((s) => s.drawingMode);
+    const placing = useItemDrawingStore((s) => s.placing);
     const reset = useItemDrawingStore((s) => s.resetDrawingState);
     const touch = useIsTouchMode();
     const layerRef = useFieldLayerRef<HTMLDivElement>();
@@ -53,7 +54,11 @@ export default function PropDrawingNotice() {
             <div className="flex items-center gap-16">
                 <InfoIcon size={24} />
                 <span className="text-body text-text flex-1">
-                    {t(instructions)}
+                    {placing
+                        ? t("frontEnsemble.placeInstructions", {
+                              name: placing.baseName,
+                          })
+                        : t(instructions)}
                 </span>
             </div>
             {touch && CLICKED.has(drawingMode) && (

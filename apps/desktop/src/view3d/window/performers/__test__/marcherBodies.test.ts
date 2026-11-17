@@ -14,6 +14,7 @@ import {
 } from "@/view3d/core/marchers/looks";
 import type { LoadedBody } from "../marchers/marcherAssets";
 import { defaultPerformerBody } from "@/view3d/core/marchers/looks";
+import { STAND_Y } from "../performerData";
 import { mirrorRow } from "@/view3d/core/marchers/planner";
 import {
     MarcherBodies,
@@ -258,6 +259,36 @@ describe("horns as their own meshes", () => {
             row.counts,
             -3,
         ]);
+        set.dispose();
+    });
+
+    it("raises a lifted slot's body, horn and contact shadow onto its platform", async () => {
+        const { set } = await trumpetAndDrumMajor("high");
+        set.writeFrame(
+            Float32Array.from([5, 0, 8, 0]),
+            new Float32Array(2),
+            Uint8Array.from([1, 1]),
+            0,
+            [0, 2, 0],
+            null,
+            Float32Array.from([0.6, 0]),
+        );
+        const meshY = (m: THREE.InstancedMesh, i: number) =>
+            m.instanceMatrix.array[i * 16 + 13];
+        const body = set.group.children.find(
+            (o) => o.name === "view3d-marchers-neutral-average",
+        ) as THREE.InstancedMesh;
+        const horn = set.group.children.find(
+            (o) =>
+                o.name.startsWith("view3d-horn-") && o.name.endsWith("-high"),
+        ) as THREE.InstancedMesh;
+        const discs = set.group.children.find(
+            (o) => o.name === "view3d-marcher-contact",
+        ) as THREE.InstancedMesh;
+        expect(meshY(body, 0)).toBeCloseTo(STAND_Y + 0.6, 6);
+        expect(meshY(body, 1)).toBeCloseTo(STAND_Y, 6);
+        expect(meshY(horn, 0)).toBeCloseTo(STAND_Y + 0.6, 6);
+        expect(meshY(discs, 0) - meshY(discs, 1)).toBeCloseTo(0.6, 6);
         set.dispose();
     });
 

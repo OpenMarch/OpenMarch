@@ -71,6 +71,9 @@ phases [26.24].
   after reopening must find the item it used. While a cue uses a
   Library item, the show's copy can't be deleted; deleting it offers "Replace with…" and lists
   the uses [26.10].
+  Amended 2026-11-15 (ADR 0010, fork #996): replaced by one show asset
+  store for any kind, never pruned automatically, with a "Remove unused…"
+  note in Show checks.
 - The item table loads at open; blobs are read lazily by hash for the current
   or a nearby moment, with a small in-memory cache. Rendering never reads
   originals.
@@ -95,6 +98,18 @@ phases [26.24].
   renderer's CSP) and stores a plain normalized GLB plus an OpenMarch
   sidecar. The 3D View keeps loading with bare `GLTFLoader` (three 0.186.1,
   no decoders).
+  Amended 2026-11-15 (ADR 0010, fork #996) and built in fork #998: the model
+  import runs in a renderer Web Worker shared by desktop and web
+  (`src/showAssets/modelImport/`), with its own CSP. It refuses before
+  decoding what can't work (picked files over 200 MB, a URI outside the
+  picked files, a required extension outside the allow-list, an image over
+  8192 px on an edge, more than 4× the triangle cap), then the validator's
+  errors; normalizes to meters, +Y up, the front toward +Z and the pivot at
+  the bottom center; simplifies past the cap; shrinks textures; and stores a
+  model, a distant version and a thumbnail, with the sidecar (real size,
+  facing, the plan from above, stand point, triangles, import notes) and
+  credits prefilled from `KHR_xmp_json_ld`, `asset.copyright` or a
+  Sketchfab-style `asset.extras`.
 - Steps: `gltf-validator` (errors block); reject `extensionsRequired` outside
   the allow-list (r186 `GLTFLoader` only warns); decode Draco and meshopt;
   measure bounds, triangles, texture sizes and joints; read `OM_*` nodes and
@@ -225,8 +240,8 @@ phases [26.24].
   checks; "Export for OpenMarch" (GLB, Y-up, custom properties on, modifiers
   applied, no quantization on skinned meshes, no Draco).
 - The uniform section (seven v4u bodies, v4 rig, `_PART` palette, an example
-  garment with all seven fits) derives from upstream om-pose and waits for the
-  legal gate (section 10).
+  garment with all seven fits) derives from upstream om-pose and waits for
+  om-pose to adopt a license upstream (section 10).
 - Bundled in the app (Help ‣ Get the Blender starter kit saves a zip) and
   mirrored on the website; extensions.blender.org later. The importer notes an
   outdated `kitVersion`. The minimum Blender is the LTS om-pose exports with
@@ -326,6 +341,13 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   Equipment 2k, Garment 3k per body type, Prop 20k, Base floor 5k, Floor
   prop 5k. Garment textures cap at 1024; Uniform part artwork caps at 1024
   on the long edge [owner, 2026-10-11, Q34, Q37].
+- **Texture caps per kind** (fork #998), longest edge, kept in each
+  texture's own format (PNG keeps its alpha): imported prop models 1024, and
+  256 in their distant version (at most 2,000 triangles and a quarter of the
+  model's, drawn beyond about 30 m). Equipment, Garments and prop Artwork
+  slots 1024; Floor props and Base floors 2048 (D-19). KTX2 textures aren't
+  imported: a file that requires them is refused, and an optional one is
+  dropped. Draco and meshopt input is decoded, never stored.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A
   model is guessed Z-up when Z is its largest side and over 1.25× Y (floors
@@ -762,11 +784,10 @@ Research basis [14]; policy [16]. Not legal advice.
   Starter kit, om-pose assets) and the per-item `license` field. `SOURCE.json`
   and the om-pose vendor README stop saying "the app's license".
 - **om-pose assets** (correction to ADR 0010 D-7) [16, 26.6]: they don't ship
-  under the app's license. The clips, derived from 2019 Cadets footage, are in
-  the counsel gate: no release that ships them goes out before counsel
-  answers lawyer Q3. The reference bodies and v4 skeleton become CC0 once Q3
-  is answered and om-pose adopts a license upstream (meshes only); `body-v5`
-  (MPFB) sits under the same gate.
+  under the app's license. The om-pose clips, derived from 2019 Cadets
+  footage, stay in the counsel gate: no release that ships them goes out
+  before counsel answers Q3. The reference bodies and v4 skeleton become CC0
+  once om-pose adopts a license upstream (meshes only).
 - **Third-party built-ins:** CC0, or CC-BY 4.0 with a complete attribution
   record. Not BY-SA, NC, ND or store licenses. Each has a manifest entry (SPDX
   license, author, source URL, attribution text, retrieval date) checked in
@@ -794,11 +815,11 @@ Research basis [14]; policy [16]. Not legal advice.
     never "infringing".
   - "Add to my Library" from another show shows a read-only license line with
     the source link.
-- **Legal gate:** nothing built-in ships until counsel answers lawyer Q1 (CC0
-  art beside AGPL code; whether the CLA covers relicensing contributed
-  assets), Q3 (om-pose clips), Q4 (GPL vs AGPL `LICENSE` text) and Q5 (Terms
-  §9.1's reach). The `LICENSE` mismatch and a Terms §9.1 carve-out ship as
-  their own small change, outside this effort, once Q4 and Q5 are answered.
+- **No legal gate for built-ins** (owner, 2026-11-11): built-ins and the
+  Starter kit ship without waiting for counsel. Only the om-pose clips keep
+  their hold (Q3, above). The other lawyer questions (Q1, Q4, Q5 in [16])
+  are taken up later. The `LICENSE` mismatch and a
+  Terms §9.1 carve-out ship as their own small change, outside this effort.
 
 ## 11. Notes
 

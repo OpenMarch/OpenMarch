@@ -18,13 +18,36 @@
             "snapOn": "Naka-off ang Snap: i-on ulit",
             "snapToCustomFraction": "I-snap sa grid",
             "toggleSnap": "I-on/i-off ang Snap",
-            "toggleSnapKeywords": "snap magnet grid free dikit magneto malaya"
+            "toggleSnapKeywords": "snap magnet grid free dikit magneto malaya",
+            "propsOnly": "Mga prop lang ang napili: hindi ina-align o dini-distribute ang mga prop"
         },
         "batchEdit": {
-            "noNextPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa susunod na pahina. Walang susunod na pahina",
-            "noPreviousPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa nakaraang pahina. Walang nakaraang pahina",
+            "clearPage": "I-clear ang Pahina {page}",
+            "clearPageAndLater": "{count, plural, =1 {I-clear ang Pahina {page}, babalik din ang Pahina {first}} other {I-clear ang Pahina {page}, babalik din ang mga Pahina {first}–{last}}}",
+            "clearThisPageAll": "{clearThisPage} (lahat ng miyembro)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (lahat ng miyembro), babalik din ang mga kasunod na pahina",
+            "clearThisPageHoldsToo": "{count, plural, one {Na-clear din ang hold sa {pages} ({names})} other {Na-clear din ang mga hold sa {pages} ({names})}}.",
+            "clearThisPageSelected": "{clearThisPage} (napili)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (napili), babalik din ang mga kasunod na pahina",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (lahat ng miyembro)",
+            "forSelected": "{label} (napili)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous manatili nakatakda hindi nakatakda panatilihin itakda pahina estado nakaraan",
+            "holdStyleDefault": "Istilo ng hold: Setting ng palabas",
+            "holdStyleHighMarkTime": "Istilo ng hold: High mark time",
+            "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d istilo estilo tayo nakatayo hinto mataas paa",
+            "holdStyleMarkTime": "Istilo ng hold: Mark time",
+            "holdStyleStand": "Istilo ng hold: Nakatayo",
+            "noPageAfter": "Wala nang pahina pagkatapos nito",
+            "noPageBefore": "Walang pahina bago nito",
+            "moveAllToNextSpots": "Ilipat sa mga puwesto sa susunod na pahina (lahat ng miyembro)",
+            "movedAllToNextSpots": "{count, plural, one {Nailipat ang lahat ng # miyembro sa Pahina {currentPage} sa kani-kanilang puwesto sa Pahina {nextPage}} other {Nailipat ang lahat ng # miyembro sa Pahina {currentPage} sa kani-kanilang puwesto sa Pahina {nextPage}}}",
+            "moveSelectedToNextSpots": "Ilipat sa mga puwesto sa susunod na pahina (napili)",
+            "movedSelectedToNextSpots": "{count, plural, one {Nailipat ang # miyembro sa Pahina {currentPage} sa kani-kanilang puwesto sa Pahina {nextPage}} other {Nailipat ang # miyembro sa Pahina {currentPage} sa kani-kanilang puwesto sa Pahina {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}",
-            "setSelectedToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}"
+            "setSelectedToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "Walang aksyong ire-redo",
@@ -33,6 +56,49 @@
             "redoFailed": "Hindi nailapat ang redo, kaya walang nagbago.",
             "undo": "I-undo",
             "undoFailed": "Hindi nailapat ang undo, kaya walang nagbago."
+        },
+        "field": {
+            "addXCheckpoint": "Magdagdag ng linya ng sanggunian sa X sa magkabilang panig",
+            "addXCheckpointSeries": "Magdagdag ng mga linya ng sanggunian sa X kada ilang hakbang",
+            "addYCheckpoint": "Magdagdag ng linya ng sanggunian sa Y",
+            "addYCheckpointSeries": "Magdagdag ng mga linya ng sanggunian sa Y kada ilang hakbang",
+            "checkpointKeywords": "field line lines grid yard hash reference linya guhit sanggunian checkpoint",
+            "params": {
+                "every": "Ilang hakbang sa pagitan ng mga linya ng sanggunian",
+                "toBack": "Paatras hanggang ilang hakbang mula sa harap",
+                "toSide": "Palabas hanggang ilang hakbang mula sa gitna"
+            },
+            "editField": "I-edit ang field",
+            "editFieldKeywords": "field lines checkpoints yard hash grid customize size template settings linya ng sanggunian baguhin i-customize laki sukat mga setting",
+            "done": "Tapusin ang pag-edit ng field",
+            "discard": "Itapon ang mga pagbabago sa field",
+            "mirror": "I-mirror ang magkabilang panig",
+            "mirrorOn": "I-on ang pag-mirror ng magkabilang panig",
+            "mirrorOff": "I-off ang pag-mirror ng magkabilang panig",
+            "addXLine": "Magdagdag ng linya sa X",
+            "addYLine": "Magdagdag ng linya sa Y",
+            "editLine": "I-type ang posisyon ng napiling linya",
+            "deleteLines": "Burahin ang mga linya",
+            "toggleVisible": "Itago o ipakita ang mga linya",
+            "toggleReference": "Gamitin o huwag gamitin ang mga linya bilang sanggunian",
+            "nextLine": "Piliin ang susunod na linya",
+            "previousLine": "Piliin ang nakaraang linya",
+            "selectAllLines": "Piliin ang lahat ng linya",
+            "selectAllXLines": "Piliin ang lahat ng linya sa X",
+            "selectAllYLines": "Piliin ang lahat ng linya sa Y",
+            "everyOther": "Salit-salitang linya lang ang panatilihing napili",
+            "resetNames": "Pangalanan ang mga linya ayon sa posisyon",
+            "nudgeLeft": "Ilipat ang mga linya pakaliwa",
+            "nudgeRight": "Ilipat ang mga linya pakanan",
+            "nudgeUp": "Ilipat ang mga linya palikod",
+            "nudgeDown": "Ilipat ang mga linya paharap",
+            "nextPane": "Lumipat mula sa field papunta sa Field panel",
+            "previousPane": "Lumipat mula sa Field panel papunta sa field",
+            "importImage": "I-import ang background image ng field…",
+            "removeImage": "Alisin ang background image ng field",
+            "imageKeywords": "picture photo aerial background image field larawan litrato kuha mula sa itaas",
+            "halfStep": "kalahating hakbang",
+            "editLines": "I-edit ang mga linya ng field"
         },
         "file": {
             "closeFile": "Isara ang file",
@@ -88,8 +154,16 @@
             "toggleMetronome": "I-on/i-off ang metronome",
             "toggleLoop": "I-on / i-off ang loop"
         },
+        "prop": {
+            "finishDrawing": "Prop: Tapusin ang pagguhit",
+            "removeLastPoint": "Prop: Alisin ang huling sulok habang gumuguhit"
+        },
         "select": {
-            "selectAll": "Piliin lahat"
+            "selectAll": "Piliin lahat",
+            "toggleLasso": "Magpalit sa box select at lasso select",
+            "useLasso": "Gamitin ang lasso select",
+            "useBox": "Gamitin ang box select",
+            "toggleLassoKeywords": "lasso box marquee freehand select tool kahon parihaba malayang guhit pumili pagpili"
         },
         "shape": {
             "noMarchersSelected": "Walang napiling miyembro",
@@ -111,10 +185,15 @@
             "group": "I-group ang napili",
             "groupKeywords": "group shape freeze as is keep together combine grupo hugis pangkatin pagsamahin magkasama",
             "ungroup": "Hugis: I-ungroup",
-            "ungroupKeywords": "ungroup shape break apart release separate hugis paghiwalayin ihiwalay"
+            "ungroupKeywords": "ungroup shape break apart release separate hugis paghiwalayin ihiwalay",
+            "enterBox": "Piliin lang ang miyembrong ito",
+            "centerPivot": "Hugis: Ibalik ang pivot sa gitna",
+            "centerPivotKeywords": "pivot center centre reset turn flip around gitna ibalik ikot paikutin baligtarin",
+            "arc": "Hugis: Arko",
+            "discard": "Hugis: Itapon"
         },
         "swap": {
-            "mustSelectTwo": "Makakapagpalit lang kapag 2 miyembro ang napili.",
+            "selectTwo": "Pumili ng 2 miyembro para pagpalitin sila",
             "swap": "Pagpalitin ang dalawang miyembro"
         },
         "timeline": {
@@ -124,9 +203,20 @@
             "splitMoveAtPlayhead": "Hatiin ang galaw sa playhead",
             "unsetHere": "Alisin ang keyframe",
             "unsetHereAndFollowing": "Alisin ang keyframe, susunod ulit ang mga kasunod na pahina",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, babalik din ang Pahina {first}} other {{removeKeyframe}, babalik din ang mga Pahina {first}–{last}}}",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete alisin burahin posisyon diyamante",
+            "toggleEditorMode": "Magpalit sa Basic at Expert",
+            "toggleEditorModeKeywords": "basic expert editor mode simple full timeline pages simple buo pahina",
+            "toggleEditorModeToBasic": "Lumipat sa Basic (naka-on ang Expert)",
+            "toggleEditorModeToExpert": "Lumipat sa Expert (naka-on ang Basic)",
             "splitSelectedIntoNewMove": "Ihiwalay ang mga napiling miyembro sa bagong galaw",
-            "mergeMoveIntoPage": "Isama ang galaw na ito sa pahina nito"
+            "mergeMoveIntoPage": "Isama ang galaw na ito sa pahina nito",
+            "zoomIn": "I-zoom in ang timeline",
+            "zoomOut": "I-zoom out ang timeline",
+            "zoomKeywords": "zoom magnify timeline wider narrower closer farther scale plus minus palakihin paliitin lapitan layuan mas malapad mas makitid",
+            "fit": "Ipagkasya ang palabas sa timeline",
+            "toggleTempoMode": "I-edit ang musika: on / off",
+            "toggleTempoModeKeywords": "edit music tempo time signature rehearsal marks audio align counts i-edit musika tugtog itugma bilang"
         },
         "ui": {
             "openFieldMenu": "Buksan ang menu ng field",
@@ -134,6 +224,8 @@
             "openCommandPalette": "Command palette",
             "openCommandBar": "Command bar",
             "openSettings": "Mga setting…",
+            "checkForUpdates": "Tingnan kung may update",
+            "checkForUpdatesKeywords": "update upgrade version download install new release bersyon i-download i-install bago",
             "openView3d": "Buksan ang 3D View",
             "openView3dKeywords": "3d three dimensional stadium venue window tatlong dimensyon istadyum lugar bintana",
             "showShortcuts": "Mga keyboard shortcut",
@@ -144,7 +236,19 @@
             "showNextPaths": "Ipakita ang mga path sa susunod na pahina",
             "toggleNextPaths": "I-toggle ang mga path sa susunod na pahina",
             "togglePreview": "I-preview ang palabas",
-            "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play panoorin ipalabas presentasyon palabas"
+            "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play panoorin ipalabas presentasyon palabas",
+            "reportFeedback": "Mag-ulat ng bug o magpadala ng feedback",
+            "reportFeedbackKeywords": "bug issue problem feedback feature request support problema sira puna mungkahi hiling suporta tulong",
+            "viewMyReports": "Tingnan ang mga ulat ko",
+            "openFrontEnsemble": "Buksan ang front ensemble at mga podium",
+            "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset kagamitan instrumento",
+            "addFrontEnsembleEquipment": "Magdagdag ng kagamitan ng front ensemble o podium",
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument kagamitan instrumento tore hagdan"
+        },
+        "items": {
+            "edit": "I-edit ang napiling prop o kagamitan",
+            "editNamed": "I-edit ang {name}",
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock i-edit mga setting kagamitan instrumento pangalan laki i-lock"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +268,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error sa paggawa ng mga kumpas",
-                "success": "Matagumpay na nagawa ang mga kumpas"
+                "error": "Error sa paggawa ng mga kumpas"
             },
             "replace": {
-                "error": "Error sa pagpapalit ng mga kumpas",
-                "success": "Matagumpay na napalitan ang mga kumpas"
+                "error": "Error sa pagpapalit ng mga kumpas"
             },
             "update": {
                 "error": "Error sa pag-update ng mga kumpas"
@@ -179,9 +281,6 @@
             },
             "shift": {
                 "error": "Error sa paglilipat ng mga kumpas"
-            },
-            "flatten": {
-                "error": "Error sa pag-aayos ng pagkakasunod-sunod ng mga kumpas"
             }
         },
         "context": {
@@ -200,6 +299,7 @@
         "signIn": "Mag-sign in",
         "signInAriaLabel": "Mag-sign in",
         "signOut": "Mag-sign out",
+        "signOutFailed": "Hindi makapag-sign out. Tingnan ang internet connection mo at subukan ulit.",
         "userFallback": "User",
         "fullName": "{firstName} {lastName}",
         "api": {
@@ -224,6 +324,7 @@
         "title": "Command palette",
         "unavailable": "Hindi available sa ngayon",
         "offInPreview": "Hindi gumagana sa Preview — lumabas sa Preview para mag-edit",
+        "offInEditMusic": "Hindi puwede habang ine-edit ang musika — piliin ang I-edit ang musika para bumalik",
         "shape": "Hugis",
         "next": "Susunod",
         "done": "Tapos",
@@ -286,7 +387,9 @@
         "roundToHalf": "I-round ang {axis} sa pinakamalapit na kalahating hakbang",
         "roundToSteps": "{steps, plural, one {I-round ang {axis} sa pinakamalapit na # hakbang} other {I-round ang {axis} sa pinakamalapit na # hakbang}}",
         "xStepValue": "X: {value}",
-        "yStepValue": "Y: {value}"
+        "yStepValue": "Y: {value}",
+        "aboutSteps": "Tungkol sa mga hakbang ng pag-round",
+        "touchStepDescription": "I-tap ang X o Y para isa-isahin ang mga opsyon sa pag-round. Para direktang pumili, buksan ang Pag-round ng coordinate."
     },
     "coordinateSheet": {
         "countAbbreviation": "Ct",
@@ -346,7 +449,7 @@
         "exporting": "Nag-e-export... Pakihintay",
         "exportNotAvailable": "Hindi available ang pag-export",
         "exportNotAvailableDescription": "Para makapag-export, kailangan ng field properties, kahit isang pahinang hindi default, at kahit isang miyembro.",
-        "exportPDFSuccess": "Matagumpay na na-export bilang PDF!",
+        "drillChartsExported": "Na-export ang mga drill chart bilang PDF",
         "fieldPropertiesNotLoaded": "Hindi na-load ang field properties",
         "fieldPropertiesRequired": "Kailangan ang field properties para makapag-export",
         "frontToBackHeader": "Harap-Likod",
@@ -377,7 +480,7 @@
         "noMarcher": "Walang ibinigay na miyembro",
         "noMarcherPages": "Walang ibinigay na pahina ng miyembro",
         "noPages": "Walang ibinigay na pahina",
-        "openExportDirectory": "I-click para buksan ang export",
+        "showInFolder": "Ipakita sa folder",
         "openExportDirectoryError": "Hindi mabuksan ang folder ng export: {error}",
         "organizeBySection": "Ayusin ayon sa seksyon",
         "pdfExportFailed": "Nabigo ang pag-export ng PDF: {error}",
@@ -402,12 +505,17 @@
         "unsortedSection": "Walang seksyon",
         "useXYHeaders": "Gamitin ang X/Y na header",
         "video": "Video",
+        "webMobileUnavailable": {
+            "description": "Kailangan ng OpenMarch account mo para mag-upload sa On the Move app, at hindi makapag-sign in sa test build na ito. Gamitin ang OpenMarch editor sa editor.openmarch.com, o ang desktop app.",
+            "openEditor": "Buksan ang editor.openmarch.com",
+            "title": "Hindi available dito ang pag-upload sa mobile"
+        },
         "videoAudioTrack": "Audio track: {name}",
         "videoAudioNoData": "Walang laman ang audio file",
         "videoBackground": "Background ng video",
         "videoBranding": "Ginawa gamit ang {product}",
         "videoExportFailed": "Nabigo ang pag-export ng video: {error}",
-        "videoExportSuccess": "Matagumpay na na-export ang video!",
+        "videoExported": "Na-export ang video",
         "videoFieldFraming": "Framing ng field",
         "videoFieldOffsetX": "Pahalang na offset",
         "videoFieldOffsetY": "Patayong offset",
@@ -421,7 +529,7 @@
         "videoNoCanvas": "Hindi makagawa ng canvas para sa export",
         "videoNoEncoder": "Walang suportadong video encoder sa system na ito",
         "videoNoWebGL": "Kailangan ng WebGL para sa pag-export ng video, pero wala ito sa computer na ito ngayon. I-on ang hardware acceleration o i-update ang iyong graphics driver, pagkatapos ay buksan ulit ang window na ito.",
-        "videoOpenFile": "I-click para buksan ang video",
+        "openVideo": "Buksan ang video",
         "videoOverlay": "Impormasyon sa screen",
         "videoOverlayClock": "Lumipas na oras",
         "videoOverlayCount": "Bilang {count} / {total}",
@@ -455,7 +563,7 @@
             "savePdfTitle": "I-save ang PDF",
             "videoTitle": "I-export ang video"
         },
-        "exportedCount": "{count, plural, one {Matagumpay na na-export ang mga coordinate sheet para sa {count} na miyembro!} other {Matagumpay na na-export ang mga coordinate sheet para sa {count} na miyembro!}}",
+        "coordinateSheetsExported": "{count, plural, one {Na-export ang mga coordinate sheet para sa # miyembro} other {Na-export ang mga coordinate sheet para sa # miyembro}}",
         "checkFieldProperties": "Mga katangian ng field: {status, select, ok {✓} other {✗}}",
         "checkMarcher": "Miyembro: {status, select, ok {✓} other {✗}}",
         "checkPage": "Pahina: {status, select, ok {✓} other {✗}}",
@@ -477,6 +585,11 @@
             "wholeDegrees": "buong degree",
             "withKey": "<keys></keys> {word}"
         },
+        "pivotHint": {
+            "own": "I-drag para ilipat ang pivot · i-double-click para ibalik sa gitna",
+            "picking": "Mag-click ng miyembro o puwestong iikutan · <keys></keys> para kanselahin",
+            "pull": "<keys></keys> para ilipat ang pivot"
+        },
         "general": {
             "exportField": "I-export ang field",
             "exportField.tooltip": "I-export ang field na ito sa isang file para magamit sa ibang proyekto",
@@ -494,58 +607,41 @@
             "unavailable.title": "Hindi maiguhit ang field",
             "unavailable.web": "Naka-off o naka-block ang WebGL graphics sa browser na ito. I-on ang graphics acceleration (sa Chrome o Edge: Mga Setting, System, \"Gamitin ang graphics acceleration kapag available\"), i-restart ang browser, at i-reload ang pahinang ito. Ligtas ang iyong palabas."
         },
-        "title": "Field",
         "errors": {
             "noWebGL": "Hindi available ang WebGL",
             "contextLost": "Nawala ang WebGL context ng field, kaya hindi maiguhit ang video. Subukang i-export muli.",
             "offscreenTimeout": "Hindi nagsimula ang field na nasa labas ng screen"
+        },
+        "areaCount": {
+            "add": "{count, plural, one {+# miyembro} other {+# miyembro}}",
+            "select": "{count, plural, one {# miyembro} other {# miyembro}}",
+            "subtract": "{count, plural, one {−# miyembro} other {−# miyembro}}"
         }
     },
     "fieldDisplay": {
         "label": "Display ng field",
         "valueLabel": "{label}: {value}"
     },
+    "fieldSelectTool": {
+        "label": "Tool sa pagpili",
+        "box": "Box select",
+        "lasso": "Lasso select",
+        "boxHint": "Mag-drag sa bakanteng bahagi ng field para gumuhit ng box",
+        "lassoHint": "Gumuhit sa paligid ng mga miyembro. Sa Box, gumuguhit din ng lasso ang double-click at drag"
+    },
     "fieldProperties": {
         "applyFieldType": "Ilapat ang uri ng field",
         "applyFieldTypeWarning": "Hindi lilipat ang mga miyembro sa laki ng bagong uri ng field; mananatili sila kung nasaan sila sa canvas. Maaari mong ibalik ang dating uri ng field anumang oras.",
         "buttons": {
-            "newXCheckpoint": "Bagong linya ng sanggunian X",
-            "newYCheckpoint": "Bagong linya ng sanggunian Y",
-            "resetTheme": "Ibalik sa default ang tema",
-            "uploadFloor": "Mag-upload ng sahig…",
-            "removeFloor": "Alisin ang sahig"
+            "importImage": "I-import ang image",
+            "resetTheme": "Ibalik sa default ang tema"
         },
         "checkpoint": {
-            "created": "Nagawa ang linya ng sanggunian {axis} sa {steps} na hakbang",
-            "delete": "Burahin",
-            "deleted": "Nabura ang linya ng sanggunian {axis} sa {steps} na hakbang - \"{name}\"",
-            "deleteTooltip": "Burahin ang linya ng sanggunian na ito sa field",
-            "fieldLabel": "Label sa field",
-            "fieldLabelTooltip": "Ang label na lalabas sa field (hal., ang mga yard marker)",
-            "minimumRequired": "Kailangan ng hindi bababa sa 2 linya ng sanggunian {axis}",
-            "name": "Pangalan",
-            "nameTooltip": "Pangalanan ang linya ng sanggunian mo kahit ano ang gusto mo. Para lang ito malaman mo kung aling linya ng sanggunian ang pinipili mo.",
-            "newXCheckpointName": "Bagong linya ng sanggunian X",
-            "newYCheckpointName": "Bagong linya ng sanggunian Y",
-            "shortName": "Maikling pangalan",
-            "shortNameTooltip": "Ang pangunahing pangalan ng linya ng sanggunian. (Hal. \"45 Yard Line - Side 1\")",
-            "stepsFromCenter": "Hakbang mula sa gitna",
-            "stepsFromFront": "Hakbang mula sa harap",
-            "stepsFromFrontTooltip": "Ilang hakbang ang layo ng linya ng sanggunian na ito mula sa harap ng field. Ang negatibo ay papunta sa likod.",
-            "useAsReference": "Gamitin bilang sanggunian",
-            "useAsReferenceTooltip": "Kung gagamitin ang linya ng sanggunian na ito bilang sanggunian para sa mga coordinate.",
-            "visible": "Nakikita",
-            "visibleTooltip": "Kung makikita ang linya ng sanggunian na ito sa field",
-            "stepsFromCenterHint": "Ilang hakbang ang layo ng linya ng sanggunian na ito mula sa gitna ng field. Ang negatibo ay papunta sa kaliwa, ayon sa pagtingin ng audience sa field."
+            "minimumRequired": "Kailangan ng hindi bababa sa 2 linya ng sanggunian {axis}"
         },
-        "customField": "Custom na field",
         "customFieldDocs": "Tingnan ang docs",
         "customFieldName": "Custom",
-        "customization": "Pag-customize",
-        "customize": "I-customize",
         "errors": {
-            "invalidColor": "Hindi wastong kulay",
-            "noPropertiesToLoad": "Walang field properties na mai-load! Hindi ito dapat mangyari, pakikontak ang suporta",
             "notDefined": "Hindi naka-define ang FieldProperties. Hindi ito dapat mangyari, pakikontak ang suporta.",
             "invalidJson": "Hindi wastong JSON file.\n\nTiyaking wasto ang JSON syntax ng file.",
             "invalidFile": "Hindi wastong file ng field properties.\n\n{details}\n\nTiyaking nasa file ang lahat ng kailangang entry na may tamang value.",
@@ -561,24 +657,19 @@
         "fieldType": {
             "label": "Uri ng field"
         },
-        "general": "Pangkalahatan",
         "labels": {
             "background": "Background",
             "backgroundImageOpacity": "Opacity ng background image",
-            "backgroundImageRatio": "Ratio ng background image",
             "bottom": "Ibaba",
-            "conformingMethod": "Paraan ng pag-angkop",
             "conformMethod": "Paraan ng pag-angkop",
             "directorsLeft": "Kaliwa ng director",
             "directorsRight": "Kanan ng director",
             "externalLabels": "Mga panlabas na label",
             "fieldLabels": "Mga label sa field",
             "fieldName": "Pangalan ng field",
-            "fieldRatio": "Ratio ng field",
             "gridLines": "Mga grid line",
             "halfLineXInterval": "Pagitan ng half line sa X",
             "halfLineYInterval": "Pagitan ng half line sa Y",
-            "height": "Taas",
             "left": "Kaliwa",
             "leftAbbreviation": "Daglat ng kaliwa",
             "marcherFill": "Fill ng miyembro",
@@ -594,25 +685,10 @@
             "shapes": "Mga hugis",
             "shapeType": "Uri ng hugis",
             "showBackgroundImage": "Ipakita ang background image",
-            "stepsFromFrontToAwayLabelBottom": "Hakbang mula harap hanggang ibaba ng away label",
-            "stepsFromFrontToAwayLabelTop": "Hakbang mula harap hanggang itaas ng away label",
-            "stepsFromFrontToHomeLabel": "Hakbang mula harap hanggang ibaba ng home label",
-            "stepsFromFrontToHomeLabelTop": "Hakbang mula harap hanggang itaas ng home label",
             "stepSize": "Laki ng hakbang",
             "stepSizeWarningThreshold": "Hangganan ng babala sa laki ng hakbang",
             "temporaryPath": "Pansamantalang landas",
-            "top": "Itaas",
-            "useHashes": "Gumamit ng hash",
-            "width": "Lapad",
-            "widthHeight": "l/t",
-            "noBackgroundImage": "N/A",
-            "stepSizeWarningRatio": "Hangganan ng babala sa laki ng hakbang ({steps} sa 5)"
-        },
-        "messages": {
-            "fieldRatio": "{ratio} o {decimal}",
-            "measurementModificationNote": "Mababago ang mga value na ito sa pamamagitan ng pag-adjust ng mga X at Y coordinate, ng laki ng hakbang at ng background image",
-            "noFloor": "Walang sahig",
-            "floorUnnamed": "Sahig"
+            "top": "Itaas"
         },
         "options": {
             "fill": "Punuin",
@@ -621,39 +697,16 @@
             "metric": "Metric"
         },
         "sections": {
-            "externalLabels": "Mga panlabas na label",
-            "fieldLabels": "Mga label ng field",
-            "general": "Pangkalahatan",
-            "imageRendering": "Pag-render ng larawan",
-            "measurements": "Mga sukat",
-            "sideDescriptions": "Mga paglalarawan ng gilid",
-            "theme": "Tema",
-            "xCheckpoints": "Mga linya ng sanggunian sa X",
-            "yCheckpoints": "Mga linya ng sanggunian sa Y"
-        },
-        "tabs": {
-            "checkpoints": "Mga linya ng sanggunian",
-            "general": "Pangkalahatan",
-            "image": "Larawan",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Grid",
-            "labels": "Mga label",
-            "marchers": "Mga miyembro",
-            "pathways": "Mga landas"
+            "sideDescriptions": "Mga paglalarawan ng gilid"
         },
         "tooltips": {
             "conformMethod": "Kung ipagkakasya ang background image sa loob ng field o pupunuin nito ang field. Laging pinapanatili ang aspect ratio",
             "directorsLeft": "Hal. \"Gilid 1\", \"Kaliwa ng manonood\" o \"Kanan ng entablado\"",
             "directorsRight": "Hal. \"Gilid 2\", \"Kanan ng manonood\" o \"Kaliwa ng entablado\"",
-            "fieldName": "Ang pangalan o pamagat ng field template",
             "halfLineXInterval": "Ang pagitan ng paglitaw ng mga half line sa UI sa X axis, mula sa gitna ng field. Iwanang blangko para walang half line sa X axis. Para lang ito sa itsura at hindi nito binabago ang mga coordinate sa anumang paraan",
             "halfLineYInterval": "Ang pagitan ng paglitaw ng mga half line sa UI sa Y axis, mula sa harap ng field. Iwanang blangko para walang half line sa Y axis. Para lang ito sa itsura at hindi nito binabago ang mga coordinate sa anumang paraan",
             "leftAbbreviation": "Hal. \"G1\", \"KLM\" o \"KNE\" (daglat ng \"Gilid 1\", \"Kaliwa ng manonood\" o \"Kanan ng entablado\")",
-            "measurementSystem": "Ang sistema ng sukat na gagamitin para sa laki ng hakbang. Puwedeng magpalipat-lipat",
             "resetTheme": "Ibalik ang tema sa mga default na value",
-            "resetToDefault": "Ibalik sa default",
             "rightAbbreviation": "Hal. \"G2\", \"KNM\" o \"KLE\" (daglat ng \"Gilid 2\", \"Kanan ng manonood\" o \"Kaliwa ng entablado\")",
             "stepsFromFrontToAwayLabelBottom": "Ilang hakbang mula sa harapang sideline hanggang sa labas ng away na numero (mas malapit sa likurang sideline)",
             "stepsFromFrontToAwayLabelTop": "Ilang hakbang mula sa harapang sideline hanggang sa loob ng away na numero (mas malapit sa gitna ng field)",
@@ -661,22 +714,16 @@
             "stepsFromFrontToHomeLabelTop": "Ilang hakbang mula sa harapang sideline hanggang sa loob ng home na numero (mas malapit sa gitna ng field)",
             "stepSize": "Ang haba ng bawat hakbang sa field, sa pulgada o sentimetro",
             "stepSizeWarningThreshold": "Kapag lumampas sa layong ito ang laki ng hakbang ng isang miyembro, ipapakita sa kulay ng babala ang landas niya. Itakda sa 0 para i-disable.",
-            "useHashes": "Gumamit ng hash para sa mga linya ng sanggunian sa Y, gaya ng sa football field. Kung hindi naka-check, mga linya ang gagamitin.",
-            "uploadFloor": "Mag-import ng larawan bilang sahig ng palabas na ito: ang larawan ng field nito sa 2D, sa mga export at sa 3D"
+            "useHashes": "Gumamit ng hash para sa mga linya ng sanggunian sa Y, gaya ng sa football field. Kung hindi naka-check, mga linya ang gagamitin."
         },
         "units": {
             "inches": "in",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "BABALA - Hindi magkapareho ang layo mula sa gitna ng pinakakaliwa at pinakakanang linya ng sanggunian sa X. Maaari itong magdulot ng kakaibang graphical artifact at dapat itong ayusin.",
-            "yCheckpointsNegative": "BABALA - Lubos na inirerekomenda na mas mababa sa zero (ibig sabihin, negatibong numero) ang hakbang ng lahat ng linya ng sanggunian sa Y. Dapat nasa likod ng harap ng field ang lahat ng Y coordinate. Kung hindi, maaaring magkaroon ng graphical error at hindi inaasahang coordinate."
-        },
         "loading": "Naglo-load...",
         "measurements": {
             "feet": "{value} ft",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# hakbang} other {# hakbang}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -718,7 +765,6 @@
         "saveSpinnerText": "Sine-save ang kopya...",
         "toasts": {
             "audioUploadFailed": "Hindi na-upload ang audio file",
-            "audioUploaded": "Matagumpay na na-upload ang audio file",
             "error": "Hindi ma-save ang kopya",
             "errorWithDetails": "Hindi ma-save ang kopya. Error {error}",
             "noFileOpen": "Walang nakabukas na file. Gumawa o magbukas muna ng palabas.",
@@ -734,10 +780,18 @@
         "valueMissing": "Maglagay ng value."
     },
     "inspector": {
+        "arrange": {
+            "title": "Ayusin",
+            "pickPivot": "Piliin ang pivot sa field",
+            "pickPivotHint": "O pindutin nang matagal ang {key} at i-drag ang tuldok sa gitna ng selection",
+            "pivotTip": "Paikutin sa paligid ng {pivot}",
+            "pickPivotButton": "Pumili sa field"
+        },
         "marcher": {
             "drillNumber": "Numero sa drill",
             "errorLoadingCoords": "Hindi ma-load ang mga coordinate",
             "itemsSelected": "{count, plural, one {# prop ang napili. I-edit ito sa panel na Props.} other {# prop ang napili. I-edit ang mga ito sa panel na Props.}}",
+            "equipmentSelected": "{count, plural, =1 {# kagamitan ang napili. I-right-click ito para i-edit.} other {# kagamitan ang napili. I-right-click ang isa para i-edit ito.}}",
             "playing": "Nagpe-play. I-pause para makita at ma-edit ang mga napiling miyembro.",
             "maxStepSize": "Pinakamalaking laki ng hakbang",
             "minStepSize": "Pinakamaliit na laki ng hakbang",
@@ -748,11 +802,25 @@
             "stepSizeWarning": "Lumampas sa hangganan ang laki ng hakbang",
             "swapMarchers": "Pagpalitin ang mga miyembro",
             "timeline": {
+                "goToHeldPage": "Pumunta sa Pahina {page}, kung saan nagsisimula ang hold na ito",
                 "goToPage": "Pumunta sa Pahina {page}, kung saan huling gumalaw ang mga miyembrong ito",
                 "goToStart": "Pumunta sa simula",
+                "heldFromStart": "{held} · mula sa simula",
+                "heldSince": "{held} · mula Pahina {page}",
                 "holdFrom": "Nakatigil mula sa Pahina {page}",
                 "holdFromStart": "Nakatigil mula sa simula",
-                "movesOnThisPage": "Gumagalaw sa pahinang ito"
+                "holdStyle": {
+                    "default": "Setting ng palabas",
+                    "highMarkTime": "High mark time",
+                    "label": "Istilo ng hold",
+                    "markTime": "Mark time",
+                    "mixed": "Magkakaiba",
+                    "stand": "Nakatayo"
+                },
+                "movesOnThisPage": "Gumagalaw sa pahinang ito",
+                "notDefinedFromStart": "{notDefined} · ipinapakita ang simula",
+                "notDefinedShowing": "{notDefined} · ipinapakita ang Pahina {page}",
+                "heldOfSelected": "{count} sa {total} napili: {held}"
             },
             "title": "{count} miyembro",
             "titleSingle": "Miyembro {drillNumber}",
@@ -781,17 +849,11 @@
             "removeFromTagCaption": "Alisin",
             "alignHeading": "I-align",
             "distributeHeading": "Ipamahagi",
+            "rotateHeading": "Paikutin",
             "distributeStepsPlaceholder": "Hakbang",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "sa loob ng",
-                "outside": "sa labas ng",
-                "on": "Nasa",
-                "inFrontOf": "sa harap ng",
-                "behind": "sa likod ng",
-                "xCheckpoint": "Linya ng sanggunian X {id}",
-                "yCheckpoint": "Linya ng sanggunian Y {id}"
+                "y": "Y"
             },
             "rotation": "Pag-ikot"
         },
@@ -920,6 +982,11 @@
                     "sectionCount": "{section} ({count})",
                     "title": "Mga miyembro"
                 },
+                "frontEnsemble": {
+                    "title": "Front ensemble",
+                    "description": "May pit ba ang palabas? Puwede mo itong baguhin mamaya.",
+                    "hint": "Kapag pumili ka ng laki, ilalagay ang kagamitan at isang performer sa bawat instrumento sa harap ng field, at may podium sa 50."
+                },
                 "project": {
                     "description": "Pangalanan ang palabas mo at piliin kung saan ito ise-save.",
                     "fileType": "File ng OpenMarch",
@@ -949,7 +1016,6 @@
                     "waitingDb": "Inihahanda ang file ng palabas mo…"
                 }
             },
-            "success": "Matagumpay na nagawa ang palabas",
             "tempo": "Default na tempo (BPM)",
             "title": "Bagong palabas"
         },
@@ -1100,9 +1166,9 @@
         }
     },
     "measures": {
-        "createFailed": "Hindi nagawa ang mga sukat - {error}",
-        "deleteFailed": "Hindi nabura ang mga sukat - {error}",
-        "updateFailed": "Hindi na-update ang mga sukat - {error}"
+        "addFailed": "Hindi naidagdag ang mga sukat",
+        "removeFailed": "Hindi nabura ang mga sukat",
+        "changeFailed": "Hindi nabago ang mga sukat"
     },
     "mobileExport": {
         "accessError": {
@@ -1159,6 +1225,9 @@
             "validatingAccess": "Vina-validate ang access sa On the Move..."
         },
         "logoAlt": "Logo ng OTM",
+        "pageLines": {
+            "note": "Ipinapakita ng phone kung nasaan ang mga miyembro sa bawat pahina, kaya lalabas na tuwid na linya ang mga galaw sa pagitan ng mga pahina."
+        },
         "revision": {
             "audioSyncFailed": "Na-upload ang rebisyon, pero hindi na-sync ang audio: {msg}",
             "backgroundSyncFailed": "Na-upload ang rebisyon, pero hindi na-sync ang background image: {msg}",
@@ -1199,12 +1268,28 @@
             "noProduction": "Walang nakitang produksyon",
             "title": "Mga setting ng mobile app"
         },
+        "signInRejected": {
+            "description": "Hindi tinanggap ng online service ng OpenMarch ang sign-in mo. Mag-sign out, saka mag-sign in ulit.",
+            "signOut": "Mag-sign out",
+            "title": "Hindi tinanggap ang sign-in mo"
+        },
         "signedOut": {
             "createAccountPrompt": "Wala ka pang account? Gumawa na ngayon!",
+            "errors": {
+                "failed": "Hindi gumana ang pag-sign in. Subukan ulit.",
+                "sessionExpired": "Nag-expire ang sign-in mo. Mag-sign in ulit para maituloy ang pag-upload.",
+                "unavailable": "Hindi nag-load ang sign-in. Tingnan ang internet connection mo at subukan ulit."
+            },
             "setupAccount": "I-set up ang iyong account",
-            "signInPrompt": "May account ka na? Ikonekta ito sa desktop app para madala mo na ang palabas mo On The Move!"
+            "signInPrompt": "May account ka na? Ikonekta ito sa desktop app para madala mo na ang palabas mo On The Move!",
+            "signInPromptWeb": "May account ka na? Mag-sign in para madala mo na ang palabas mo On The Move!"
         },
-        "title": "I-export sa Mobile"
+        "title": "I-export sa Mobile",
+        "unreachable": {
+            "description": "Hindi maabot ng OpenMarch ang online service nito o hindi nito makumpirma ang sign-in mo. Tingnan ang internet connection mo at subukan ulit.",
+            "retry": "Subukang muli",
+            "title": "Hindi maabot ang OpenMarch"
+        }
     },
     "music": {
         "accent": "Diin sa unang kumpas",
@@ -1224,7 +1309,6 @@
         "deleteAllMeasures": "Burahin ang lahat ng sukat at ang mga kaugnay na pahina",
         "deleteAudioFile": "Burahin ang audio file",
         "deleteAudioFileDescription": "Sigurado ka bang gusto mong burahin ang audio file na ito? Hindi na ito mababawi.",
-        "deleteSuccess": "Matagumpay na nabura ang {fileName}",
         "deleteTempoGroupAlert": "Sigurado ka ba?",
         "deleteTempoGroupDescription": "Kapag binura ang tempo group, mabubura rin ang lahat ng pahinang kaugnay nito.",
         "endTempo": "Huling tempo",
@@ -1269,10 +1353,8 @@
         "tempo": "Tempo *",
         "tempoBelowMinimum": "Dapat hindi bababa sa {min} BPM ang tempo",
         "tempoDescription": "Kumpas bawat minuto",
-        "tempoGroupCreated": "Nagawa ang tempo group",
         "tempoGroupNamePlaceholder": "Opsyonal",
         "tempoGroups": "Mga tempo group",
-        "tempoGroupUpdated": "Na-update ang tempo group",
         "undoWithShortcut": "Maaaring i-undo ang aksyong ito gamit ang <keys></keys>",
         "timeSignature": "Time signature: {timeSignature}",
         "title": "Musika",
@@ -1296,16 +1378,13 @@
     "pages": {
         "undoDeleteUnavailable": "Hindi ma-undo ang pagbura: may nagbago na mula noon. Gamitin ang I-undo sa toolbar para bumalik.",
         "dotModeFailed": "Nagka-error sa pag-set ng dot mode",
-        "noNextPage": "Wala nang susunod na pahina",
-        "noPreviousPage": "Walang naunang pahina",
         "durationNoBeat": "Hindi na-update ang haba ng pahina. Walang nakitang angkop na kumpas.",
         "durationFailed": "Hindi na-update ang haba ng pahina",
         "yankNegativeCounts": "Hindi mahila pabalik ang mga pahina kung magiging negatibo ang bilang ng mga ito",
         "pushPastEnd": "Hindi maitutulak ang mga pahina lampas sa dulo ng palabas",
         "yankEmptyPages": "Hindi mahila pabalik ang mga pahinang walang kumpas",
         "yankOutOfBounds": "Mapupunta sa labas ng musika ang mga kumpas kapag hinila",
-        "splitTooShort": "Hindi mahahati ang pahinang may mas kaunti sa 2 kumpas",
-        "splitNoStartBeat": "Hindi makahanap ng bagong panimulang kumpas",
+        "splitNeedsTwoCounts": "Kailangan ng pahina ng kahit 2 bilang para mahati",
         "deleteWithMoves": {
             "changed": "{count, plural, =1 {Nagbago ang pahina {pages}} other {Nagbago ang mga pahina {pages}}}",
             "changedBoth": "Nagbago ang {keptCount, plural, =1 {pahina {kept}} other {mga pahina {kept}}} at ang {renamedCount, plural, =1 {dating pahina {renamed}} other {mga dating pahina {renamed}}}",
@@ -1315,12 +1394,15 @@
             "grownOld": "May {counts, plural, one {# bilang} other {# bilang}} na ngayon ang dating pahina {page}",
             "noOtherChanged": "Walang ibang pahinang nagbago"
         },
-        "createError": "Hindi nagawa ang pahina - {error}",
-        "updateError": "Hindi na-update ang pahina - {error}"
+        "createFailed": "Hindi nagawa ang pahina",
+        "updateFailed": "Hindi nabago ang pahina"
     },
     "props": {
         "back": "Bumalik",
         "close": "Isara",
+        "color": "Kulay",
+        "colorMixed": "Magkakaiba",
+        "colorNone": "Wala",
         "counts": "bilang",
         "delete": "Burahin ang prop",
         "depth": "Lalim",
@@ -1330,9 +1412,13 @@
                 "arc": "I-click ang magkabilang dulo ng arko, saka mag-click para itakda ang kurba nito.",
                 "circle": "Mag-drag mula sa gitna para itakda ang radius.",
                 "drag": "Mag-drag sa field para iguhit ang prop. Nasa field ito mula sa bilang ng playhead.",
-                "polygon": "I-click ang bawat sulok, saka mag-double-click para tapusin."
+                "polygon": "I-click ang bawat sulok, saka mag-double-click para tapusin.",
+                "polygonTouch": "I-tap ang bawat sulok, saka i-tap ang Tapusin.",
+                "arcTouch": "I-tap ang magkabilang dulo ng arko, saka mag-tap para itakda ang kurba nito."
             },
-            "title": "Gumuhit ng prop"
+            "title": "Gumuhit ng prop",
+            "finish": "Tapusin",
+            "undoPoint": "I-undo ang punto"
         },
         "edit": "I-edit ang prop",
         "editTitle": "I-edit ang prop",
@@ -1341,7 +1427,8 @@
             "create": "Hindi magawa ang prop",
             "delete": "Hindi mabura ang prop",
             "outline": "Hindi mabago ang outline ng prop",
-            "update": "Hindi mabago ang prop"
+            "update": "Hindi mabago ang prop",
+            "preset": "Hindi nailapat ang preset"
         },
         "height": "Taas",
         "hide": "Itago sa field",
@@ -1365,6 +1452,7 @@
             "right": "Lumaladlad mula sa kanan"
         },
         "rotation": "Pag-ikot",
+        "selectedCount": "{count, plural, one {# prop ang napili} other {# prop ang napili}}",
         "show": "Ipakita sa field",
         "showNames": "Ipakita ang lahat ng pangalan",
         "surface": {
@@ -1378,7 +1466,74 @@
         "width": "Lapad",
         "units": {
             "meters": "m"
-        }
+        },
+        "locked": "Naka-lock",
+        "lockLabel": "Naka-lock",
+        "lockHint": "Iisang posisyon sa buong palabas"
+    },
+    "frontEnsemble": {
+        "title": "Front ensemble at mga podium",
+        "add": {
+            "title": "Magdagdag ng kagamitan",
+            "button": "Magdagdag"
+        },
+        "empty": "Wala pang front ensemble. Magdagdag ng kagamitan at mga podium, o magsimula sa preset.",
+        "list": {
+            "equipment": "Kagamitan",
+            "podiums": "Mga podium"
+        },
+        "placeInstructions": "I-click ang field para ilagay ang {name}. Nasa field ito mula sa bilang ng playhead.",
+        "equipment": {
+            "block": "Kagamitan",
+            "delete": "Burahin ang kagamitan",
+            "edit": "I-edit ang kagamitan",
+            "editTitle": "I-edit ang kagamitan",
+            "model": "Modelo ng {family}"
+        },
+        "podium": {
+            "delete": "Burahin ang podium",
+            "edit": "I-edit ang podium",
+            "editTitle": "I-edit ang podium"
+        },
+        "default": "Default",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "Audio",
+            "keyboards": "Mga keyboard",
+            "percussion": "Percussion",
+            "podiums": "Mga podium"
+        },
+        "presets": {
+            "title": "Mga preset",
+            "size": "Laki ng preset",
+            "small": "Maliit",
+            "medium": "Katamtaman",
+            "large": "Malaki",
+            "summary": {
+                "small": "2 marimba, 2 vibes, isang rack, isang synth at 2 speaker",
+                "medium": "4 na marimba, 3 vibes, xylophone, glockenspiel, rack, drum set, synth at 4 na speaker",
+                "large": "6 na marimba, 4 na vibes, xylophone, glockenspiel, 2 rack, drum set, 2 synth at 6 na speaker",
+                "none": "Walang pit. Puwede kang mag-set up nito mamaya sa panel na Mga miyembro."
+            },
+            "always": "Nagdadagdag din ang bawat isa ng podium sa 50 at mixer sa likod ng pit.",
+            "addPerformers": "Magdagdag din ng mga performer",
+            "apply": "Ilapat",
+            "replaces": "Pinapalitan nito ang kagamitang idinagdag ng huling preset. Lilipat sa mga bagong puwesto ang mga tumutugtog nito; aalisin ang mga maiiwang walang instrumento, maliban kung may mga galaw pa sila sa bandang huli ng palabas. Maibabalik ang lahat gamit ang I-undo. Mananatili ang kagamitang ikaw mismo ang nagdagdag.",
+            "none": "Wala",
+            "start": "Magsimula sa preset",
+            "reset": "I-reset sa preset"
+        },
+        "summary": {
+            "title": "Front ensemble at mga podium",
+            "none": "Wala pang pit",
+            "setUp": "I-set up",
+            "edit": "I-edit",
+            "equipment": "{count, plural, one {# kagamitan} other {# kagamitan}}",
+            "podiums": "{count, plural, one {# podium} other {# podium}}"
+        },
+        "search": "Maghanap ng kagamitan",
+        "noMatch": "Walang tumugmang kagamitan.",
+        "results": "{count, plural, =0 {Walang tumugmang kagamitan.} one {# modelo} other {# modelo}}"
     },
     "section": {
         "drumMajor": "Drum Major",
@@ -1422,8 +1577,12 @@
         "other": "Iba pa",
         "pit": {
             "auxPercussion": "Aux Percussion",
+            "drumSet": "Drum Set",
+            "glockenspiel": "Glockenspiel",
             "marimba": "Marimba",
+            "rack": "Rack",
             "synthesizer": "Synthesizer",
+            "timpani": "Timpani",
             "vibraphone": "Vibraphone",
             "xylophone": "Xylophone"
         },
@@ -1463,6 +1622,17 @@
         "general.appearance": "Hitsura",
         "general.appearance.dark": "Madilim",
         "general.appearance.light": "Maliwanag",
+        "general.updates": "Mga update",
+        "general.updates.version": "OpenMarch {version} ang gamit mo.",
+        "general.updates.checking": "OpenMarch {version} ang gamit mo. Tinitingnan kung may update…",
+        "general.updates.upToDate": "OpenMarch {version} ang pinakabagong bersyon.",
+        "general.updates.available": "Available na ang OpenMarch {version}.",
+        "general.updates.downloading": "Dina-download ang OpenMarch {version}: {percent}%",
+        "general.updates.ready": "Handa na ang OpenMarch {version}. Mai-install ito sa susunod mong pag-quit, o ngayon na gamit ang update button sa title bar.",
+        "general.updates.failed": "Hindi gumana ang update. OpenMarch {version} ang gamit mo.",
+        "general.checkForUpdates": "Tingnan kung may update",
+        "general.automaticDownload": "Awtomatikong i-download ang mga update",
+        "general.automaticDownload.description": "Ini-install ang mga update kapag nag-quit ka sa OpenMarch, o agad-agad gamit ang I-update ngayon.",
         "general.description": "Editor mode, wika at iba pang setting para sa buong app.",
         "general.editorMode": "Editor mode",
         "general.editorMode.basic": "Basic",
@@ -1538,8 +1708,21 @@
         "title": "Mga Setting",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "In-context na pagsasalin sa Tolgee",
-        "view3d": "3D View",
-        "view3d.description": "Kung paano gumuguhit ang 3D View sa computer na ito. Hindi naka-save sa palabas.",
+        "view3d.controls": "Mga kontrol",
+        "view3d.controls.input.drag": "Left-click drag",
+        "view3d.controls.input.pinch": "Pinch",
+        "view3d.controls.input.rightDrag": "Right-click drag",
+        "view3d.controls.input.scroll": "Scroll",
+        "view3d.controls.input.swipe": "Scroll gamit ang dalawang daliri",
+        "view3d.controls.move.orbit": "Umikot",
+        "view3d.controls.move.pan": "Mag-pan",
+        "view3d.controls.move.zoom": "Zoom",
+        "view3d.controls.orbit": "Orbit",
+        "view3d.controls.orbit.description": "Umiikot ang camera kapag nag-drag at nagzu-zoom kapag nag-scroll. Mag-drag gamit ang kanang button ng mouse o pindutin nang matagal ang Shift para gumalaw sa field.",
+        "view3d.controls.map": "Mapa",
+        "view3d.controls.map.description": "Gumagalaw sa field kapag nag-drag at nagzu-zoom kapag nag-scroll. Pindutin nang matagal ang isang modifier key o gamitin ang kanang button ng mouse para umikot.",
+        "view3d.controls.trackpad": "Trackpad",
+        "view3d.controls.trackpad.description": "Umiikot kapag nag-scroll at nag-drag, at nagzu-zoom ang pinch. Nagpa-pan ang kanang button ng mouse.",
         "view3d.quality": "Kalidad",
         "view3d.quality.auto": "Awtomatiko",
         "view3d.quality.auto.description": "Nagsisimula sa Mataas at lumilipat sa Mababa kapag pumapalya ang view.",
@@ -1564,7 +1747,8 @@
         "repairDotsFile.reopenFailed": "Na-save ang inayos na file sa {path} pero hindi ito mabuksan (status {status}).",
         "utilityUpdateFailed": "Hindi na-update ang mga utility setting",
         "shortcuts.conflictWith": "Ginagamit na ng {actions} ang <keys></keys>.",
-        "shortcuts.recordingHint": "Pumindot ng mga key… (<keys></keys> para kanselahin)"
+        "shortcuts.recordingHint": "Pumindot ng mga key… (<keys></keys> para kanselahin)",
+        "shortcuts.category.field": "Field"
     },
     "shapes": {
         "box": {
@@ -1659,6 +1843,7 @@
             },
             "pivot": {
                 "aria": "Pivot: {pivot}",
+                "backToCenter": "Ibalik sa gitna",
                 "custom": "Pivot: kung saan ito na-drag sa field",
                 "label": "Pivot",
                 "names": {
@@ -1676,9 +1861,16 @@
             },
             "place": "Ilagay",
             "quarterTurn": "Paikutin nang 90° pakanan",
+            "guides": {
+                "label": "Mga gabay",
+                "circle": "Bilog",
+                "angles": "Mga linya ng anggulo"
+            },
             "ratioLock": {
                 "locked": "Magkakabit ang mga pagitan: i-click para i-unlock",
-                "unlocked": "Pagkabitin ang dalawang pagitan"
+                "unlocked": "Pagkabitin ang dalawang pagitan",
+                "sizesLocked": "Magkasamang naka-lock ang lapad at taas: i-click para i-unlock",
+                "sizesUnlocked": "I-lock nang magkasama ang lapad at taas"
             },
             "hideMarchers": {
                 "hide": "Itago ang mga miyembro",
@@ -1719,7 +1911,13 @@
                 "label": "Sino ang saan"
             },
             "drawHintFor": "Mag-drag sa field para gumuhit ng {shape, select, block {bloke} circle {bilog} line {linya} curve {kurba} arc {arko} other {hugis}} · <keys></keys> para kanselahin",
-            "drawPointsHintFor": "Mag-drag sa field para gumuhit ng {shape, select, line {linya} curve {kurba} arc {arko} other {hugis}}, o mag-click ng sunod-sunod na punto · <keys></keys> para kanselahin"
+            "drawPointsHintFor": "Mag-drag sa field para gumuhit ng {shape, select, line {linya} curve {kurba} arc {arko} other {hugis}}, o mag-click ng sunod-sunod na punto · <keys></keys> para kanselahin",
+            "finish": "Tapusin",
+            "undoPoint": "I-undo ang punto",
+            "discard": "Itapon",
+            "drawHintTouchFor": "Mag-drag sa field para gumuhit ng {shape, select, block {bloke} circle {bilog} line {linya} curve {kurba} arc {arko} other {hugis}}",
+            "drawPointsHintTouchFor": "Mag-drag sa field para gumuhit ng {shape, select, line {linya} curve {kurba} arc {arko} other {hugis}}, o mag-tap ng sunod-sunod na punto",
+            "pointsHintTouch": "I-tap para magdagdag ng punto · Mag-double-tap o Tapusin para matapos"
         },
         "placed": {
             "label": "{name} · {count, plural, one {{interval} hakbang} other {{interval} hakbang}}",
@@ -1732,6 +1930,7 @@
                 "steps": "{count, plural, one {{interval} hakbang} other {{interval} hakbang}}"
             },
             "groupError": "Error sa pag-group ng mga miyembro",
+            "groupNeedsTwo": "Pumili ng 2 o higit pang miyembro para i-group sila",
             "ungroupError": "Nagka-error sa pag-ungroup ng hugis",
             "ungroupIsolated": "I-ungroup ang hugis na ito sa labas ng isolation: galing ito sa naunang pahina",
             "leftShape": {
@@ -1786,6 +1985,25 @@
                 "validate": {
                     "flat": "Patag ang arko, kaya tuwid na linya ito",
                     "sameSpot": "Nasa iisang puwesto ang mga dulo ng arko"
+                },
+                "params": {
+                    "bend": "Gaano kalayo umiikot ang arko",
+                    "width": "Gaano kalayo ang abot ng arko mula gilid hanggang gilid, sa hakbang",
+                    "height": "Gaano kataas ang arko, mula sa mga dulo nito hanggang sa pinakamalayong gilid, sa hakbang",
+                    "stretch": "Gaano kabanat ang ellipse na kinalalagyan ng arko: ilang beses na mas mataas kaysa sa lapad, o mas malapad kaysa sa taas"
+                },
+                "ends": {
+                    "label": "Bukas o sarado",
+                    "open": "Bukas",
+                    "chord": "Isara gamit ang tuwid na linya",
+                    "circle": "Isara bilang bilog",
+                    "round": "Isara nang paikot"
+                },
+                "size": {
+                    "steps": "hakbang",
+                    "tall": "mataas",
+                    "wide": "malapad",
+                    "round": "bilog"
                 }
             },
             "block": {
@@ -2006,11 +2224,9 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Mga uri ng hugis",
-                "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis"
+                "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis",
+                "ringCaption": "Ring"
             }
-        },
-        "transform": {
-            "title": "Transform"
         },
         "validate": {
             "noPosition": "May puwesto ang hugis na walang posisyon",
@@ -2073,23 +2289,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "Error sa paggawa ng mga bagong kumpas",
-        "deletedSuccessfully": "Matagumpay na nabura ang tempo group",
         "deleteFailed": "Hindi nabura ang tempo group",
-        "differentBeatsError": "Iba ang dami ng kumpas ng tempo group. Hindi dapat ito nangyayari. Makipag-ugnayan sa amin!",
+        "temposFailed": "Hindi mabago ang mga tempo",
         "errorUpdatingTempoGroup": "Error sa pag-update ng tempo group"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} ay nasa hugis} other {{shapeNames} ay nasa hugis}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, at }}}}{leaderCount, plural, =0 {} one {{leaderNames} ay sumusunod sa leader} other {{leaderNames} ay sumusunod sa leader}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, at }}} other {, at }}}}{orderCount, plural, =0 {} one {{orderNames} ay may kurbadong galaw na kasama sa isang follow-the-leader na pagkakasunod} other {{orderNames} ay may kurbadong galaw na kasama sa isang follow-the-leader na pagkakasunod}}, kaya {count, plural, one {nananatili ang galaw nito} other {nananatili ang mga galaw nila}} dito.",
             "passThrough": {
                 "catchUp": "Hahabol na ngayon sa set sa dulo ng {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Panatilihin ang Pahina {first} bilang keyframe} other {Panatilihin ang mga Pahina {first}–{last} bilang mga keyframe}}",
-                    "unnamed": "Panatilihin ang mga ito bilang keyframe"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {Huminto sa dulo ng Pahina {first}} other {Huminto sa dulo ng mga Pahina {first}–{last}}}",
+                    "unnamed": "Huminto sa dulo ng mga pahinang iyon"
                 },
-                "keepStopsError": "Hindi napanatili ang mga pahinang iyon bilang keyframe",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {Hindi na keyframe ang Pahina {first}} other {Hindi na keyframe ang mga Pahina {first}–{last}}}",
-                    "unnamed": "Hindi na keyframe ang mga pahina sa loob ng galaw na ito"
+                "stopAtEndError": "Hindi mapahinto ang mga miyembro sa dulo ng mga pahinang iyon",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Tuloy-tuloy na ngayong dumadaan sa dulo ng Pahina {first}} other {Tuloy-tuloy na ngayong dumadaan sa dulo ng mga Pahina {first}–{last}}}",
+                    "unnamed": "Tuloy-tuloy na ngayong dumadaan sa dulo ng mga pahinang nasa loob ng galaw na ito"
                 },
                 "through": "Dumadaan na ngayon nang diretso sa {through}",
                 "throughAndCatchUp": "Dumadaan na ngayon nang diretso sa {through}, saka hahabol sa set sa dulo ng {caughtUp}"
@@ -2108,7 +2324,18 @@
             "destinationShapeUnsuitable": "Hindi tugma sa transition ang destinasyong iyon. Hindi puwedeng magtapos sa block ang follow-the-leader na transition, at dapat may puwesto ang block para sa bawat slot ng transition.",
             "followLeaderBlock": "Hindi puwedeng magtapos sa block ang follow-the-leader na transition. Pumili na lang ng linya, kurba, bilog o bloke.",
             "followLeaderNeedsShape": "Kailangan ng follow-the-leader na transition ng hugis na susundan.",
+            "heldConflict": "{count, plural, =1 {{held} ang {names} sa {pages}. {clearThisPage} para alisin ang hold, o mag-drag sa loob nito para ilipat ito.} other {{held} ang {names} sa {pages}. {clearThisPage} para alisin ang mga hold, o mag-drag sa loob ng mga ito para ilipat ang mga ito.}}",
+            "heldHoldsOverlap": "Hindi puwedeng magkaroon ang isang miyembro ng dalawang hold na {held} sa parehong mga bilang.",
+            "heldPages": "{count, plural, =1 {Pahina {pages}} other {mga Pahina {pages}}}",
             "legacyConvertedTimeline": "Na-convert ang file na ito sa timeline ng isang naunang development build, na naglagay ng ilang galaw ng pahina sa iisang timeline, kaya hindi ito ma-edit. I-convert ulit ito: buksan ang backup nito (ang file na na-save sa tabi nito bago ang conversion).",
+            "moveInHeldHold": "Mapupunta ang isang galaw sa loob ng hold na {held}. {clearThisPage} para alisin ang hold, o mag-drag sa loob nito para ilipat ito.",
+            "notJoined": {
+                "marcherCount": "{count, plural, one {# miyembro} other {# miyembro}}",
+                "message": "Hindi napagdugtong ang mga galaw ng {names}: {reason}.",
+                "overlap": "tatama ang pinagdugtong na galaw sa isa pa nilang galaw sa parehong layer",
+                "partway": "may miyembrong sumasali o umaalis sa susunod na galaw sa kalagitnaan nito",
+                "secondMove": "magkakaroon sila ng dalawang galaw sa parehong mga bilang"
+            },
             "notReady": "Naglo-load pa ang timeline. Subukan ulit maya-maya.",
             "numberOutOfRange": "May numerong lampas sa saklaw. Dapat buo o finite na numero sa loob ng pinapayagang limitasyon ang mga kumpas, layer, dami ng slot at posisyon.",
             "pathParamsInvalid": "Hindi valid ang setting ng path na iyon. Ang umbok ng arc ay hanggang kalahati lang ng layo ng mga dulo nito, at dapat mga punto sa field ang mga waypoint.",
@@ -2118,11 +2345,47 @@
             "transitionSpansTimeline": "Dapat saklawin ng transition ang buong timeline nito, nagsisimula at nagtatapos kasabay nito. Baguhin na lang ang saklaw ng timeline, at sasabay rito ang mga transition nito.",
             "unknown": "Hindi magawa ng timeline ang pagbabagong iyon."
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "Pahina {page}: {label}. {hint}"
+        "holdEdge": {
+            "endLabel": "Dulo ng {held}. I-drag para umalis nang mas maaga o mag-hold nang mas matagal",
+            "readoutEnd": "{held} hanggang Pahina {page}, bilang {count}",
+            "blocked": {
+                "minimum": "Hindi bababa sa isang bilang ang hold",
+                "nextMove": "Hanggang sa susunod na galaw lang",
+                "showEnd": "Hanggang sa dulo ng palabas lang"
             },
+            "changeError": "Hindi mabago ang hold",
+            "splitError": "Hindi mahati ang hold",
+            "styleError": "Hindi mabago ang istilo ng hold"
+        },
+        "heldBar": {
+            "detail": "{held} sa {total} na napili",
+            "shape": "Nagpapatuloy rito ang hugis nito",
+            "title": "{held} · Pahina {page}",
+            "titleRange": "{held} · Pahina {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}: sumusunod sa leader ang galaw bago ang {page}",
+            "arrivalShape": "{names}: nagtatapos sa hugis ang galaw bago ang {page}",
+            "count": "{count, plural, one {# miyembro} other {# miyembro}}",
+            "crossesFlag": "{names}: may galaw na tumatawid sa isa sa mga marka ng pahina",
+            "done": "{held} ang {names} sa {page}",
+            "endsWithoutArriving": "{names}: may galaw na nagtatapos sa {page} nang hindi dumarating doon",
+            "expertMoves": "{names}: may mga Expert na galaw sa pahinang ito",
+            "followLeader": "{names}: sumusunod sa leader sa pahinang ito",
+            "held": "{names}: {held} na rito",
+            "homeShape": "{names}: hugis ang nagtatakda ng panimulang puwesto. I-ungroup ito sa simula ng palabas para ma-hold sila nang isa-isa",
+            "none": "Walang {held} sa {page}",
+            "notHeldReasons": "Hindi {heldLower}: {reasons}",
+            "shape": "{names}: nasa hugis sa pahinang ito",
+            "holdError": "Hindi ma-hold ang mga miyembro",
+            "paused": "I-pause para baguhin ang mga hold",
+            "styleNoneHeld": "Walang napiling miyembro na Naka-hold sa playhead",
+            "styleInEffect": "Ito na ang istilo ng hold dito"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {Walang sariling posisyon ang Pahina {first} para sa mga miyembrong ito, kaya nagbago rin ito} other {Walang sariling posisyon ang mga Pahina {first}–{last} para sa mga miyembrong ito, kaya nagbago rin ang mga ito}}",
                 "keepAsBefore": "{count, plural, =1 {Panatilihin ang Pahina {first} gaya ng dati} other {Panatilihin ang mga Pahina {first}–{last} gaya ng dati}}",
                 "keepError": "Error sa pagpapanatili ng mga susunod na pahina"
             },
@@ -2140,6 +2403,9 @@
             "removeError": "Hindi naalis ang mga keyframe",
             "removeLocked": "{count, plural, =1 {Gumagamit ng Expert na galaw sa pahinang ito ang isang miyembro, kaya hindi naalis ang keyframe nito. Lumipat sa Expert para i-edit ito.} other {Gumagamit ng Expert na galaw sa pahinang ito ang # miyembro, kaya hindi naalis ang kanilang mga keyframe. Lumipat sa Expert para i-edit ang mga ito.}}",
             "removeLockedAll": "{count, plural, =1 {Gumagamit ng Expert na galaw sa pahinang ito ang isang miyembro. Lumipat sa Expert para i-edit ito.} other {Gumagamit ng Expert na galaw sa pahinang ito ang # miyembro. Lumipat sa Expert para i-edit ang mga ito.}}",
+            "paused": "I-pause para baguhin ang mga keyframe",
+            "removeNone": "Walang napiling miyembro na may keyframe dito",
+            "followNone": "Walang kasunod na pahinang sumusunod sa puwestong ito",
             "title": "Keyframe · Pahina {page}, count {count}",
             "spoken": "{title}. {detail}"
         },
@@ -2152,6 +2418,7 @@
             "message": "Hinati ang {label} sa {where}",
             "messageAtPlayhead": "Hinati ang {label} sa playhead",
             "changed": "{count, plural, one {Ginuhit muli ang path ng # miyembro: tuwid bago ito, nagsisimula muli pagkatapos} other {Ginuhit muli ang path ng # miyembro: tuwid bago ito, nagsisimula muli pagkatapos}}",
+            "restarted": "{count, plural, one {Magsisimula ulit pagkatapos nito ang kurbadong daanan ng # miyembro} other {Magsisimula ulit pagkatapos nito ang mga kurbadong daanan ng # miyembro}}",
             "paused": "I-pause muna para hatiin ang isang galaw.",
             "isolatedOutside": "Ilagay ang playhead sa loob ng galaw na ine-edit mo para hatiin ito.",
             "noneAt": "Walang galaw na dumadaan sa {where}. Ilagay ang playhead sa loob ng isang galaw para hatiin ito.",
@@ -2165,14 +2432,32 @@
                 "subsetToggle": "Subset"
             },
             "label": "Pahina {pageName}",
+            "optionsLabel": "Mga opsyon ng Pahina {pageName}",
             "homeTooltip": "Home: ang simula ng palabas (set ng pahina {page})"
         },
         "rangeMenu": {
             "deleteWithMoves": "Burahin ang pahina at mga galaw nito",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "I-set ayon sa nakikita",
+            "holdFromPreviousNone": "Bawat napiling miyembro ay {heldLower} na sa {page}, o nasa gitna ng isang galaw",
             "setAsShownNone": "Naka-set na sa {page} ang bawat napiling miyembro, o nasa gitna sila ng isang galaw",
             "setAsShownError": "Nagka-error sa pag-set ng mga miyembro ayon sa nakikita",
-            "deletePage": "Burahin ang pahina"
+            "deletePage": "Burahin ang pahina",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "I-clear ang pahinang ito",
+            "defineAsShown": "Itakda ayon sa nakikita",
+            "defined": "Nakatakda",
+            "definedLower": "nakatakda",
+            "held": "Naka-hold",
+            "heldLower": "naka-hold",
+            "holdFromPrevious": "I-hold mula sa huling keyframe",
+            "notDefined": "Hindi nakatakda",
+            "notDefinedLower": "hindi nakatakda",
+            "removeKeyframe": "Alisin ang keyframe",
+            "holdOverWindow": "I-hold mula panimulang marka hanggang playhead",
+            "splitHold": "Hatiin ang hold dito"
         },
         "startFlagPositions": {
             "always": "Palagi",
@@ -2198,16 +2483,15 @@
             "menu": "{count, plural, one {Ihiwalay ang # napili sa bagong galaw} other {Ihiwalay ang # napili sa bagong galaw}}",
             "menuNone": "Ihiwalay ang napili sa bagong galaw",
             "drag": "Ihiwalay ang {count, plural, one {# miyembro} other {# miyembro}}",
-            "done": "Inihiwalay ang {count, plural, one {# miyembro} other {# miyembro}} sa {label}",
             "paused": "I-pause muna para hatiin o pagsamahin ang mga galaw.",
-            "nothingOnPage": "Wala pang gumagalaw sa pahinang ito, kaya walang mahahati."
+            "nothingOnPage": "Wala pang gumagalaw sa pahinang ito, kaya walang mahahati.",
+            "pageSplitOff": "Walang sariling galaw ang pahinang ito. Para hatiin ang galaw na dumadaan dito, gamitin ang clip ng galaw."
         },
         "merge": {
             "menuPair": "Isama ang {source} sa {target}",
             "menuPairFit": "Isama ang {source} sa {target} · iakma sa mga bilang nito",
             "menuInto": "Isama sa {target}",
             "menuIntoFit": "Isama sa {target} · iakma sa mga bilang nito",
-            "done": "Isinama ang {source} sa {target}",
             "page": "Pahina {name}",
             "thisPage": "pahinang ito",
             "thisMove": "galaw na ito",
@@ -2330,6 +2614,8 @@
             "passedSets": "{count, plural, =1 {set {names}} other {mga set {names}}}",
             "through": "· dumadaan sa {sets}",
             "editingThrough": "{editing}, dumadaan sa {sets}",
+            "held": "· {count} sa {total} ang {held}",
+            "withHeld": "{rest}, {count} sa {total} ang {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. Nilo-loop ng {key} ang {loop}",
             "loops": "Nilo-loop ng <keys></keys> ang {loop}"
@@ -2387,6 +2673,11 @@
             "label": "Ipagkasya ang palabas",
             "hint": "Pindutin ulit para bumalik. Mag-pinch o <keys></keys> para mag-zoom"
         },
+        "zoom": {
+            "in": "Mag-zoom in",
+            "out": "Mag-zoom out",
+            "hint": "O mag-pinch, o <keys></keys>"
+        },
         "transport": {
             "label": "Transport",
             "more": "Iba pang kontrol",
@@ -2440,6 +2731,7 @@
         },
         "moveMenu": {
             "edit": "I-edit ang galaw",
+            "selectMarchers": "Piliin ang mga miyembro",
             "rename": "Palitan ang pangalan ng galaw…",
             "splitAtPlayhead": "Hatiin sa playhead",
             "delete": "Burahin ang galaw",
@@ -2533,6 +2825,15 @@
                 "alreadyInSlot": "nasa slot {slot} na ang miyembro"
             },
             "changesNothing": "walang mababago diyan",
+            "defineAsShown": {
+                "wholePage": "Gumagana lang ang {defineAsShown} sa buong pahina, hindi sa {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "Gumagana lang ang {holdFromPrevious} sa buong pahina, hindi sa {counts}"
+            },
+            "holdEdge": {
+                "outside": "Hindi maaabot ng hold ang bilang na iyon: humihinto ito sa susunod na galaw ng miyembro, sa dulo ng palabas, o isang bilang mula sa kabilang dulo nito."
+            },
             "moveTimeline": {
                 "tooEarly": "nagsisimula ang timeline sa kumpas {start}, kaya hindi ito mailalipat nang {count, plural, one {# kumpas} other {# kumpas}} na mas maaga",
                 "tooLate": "hindi mailalipat ang timeline nang lampas sa kumpas {max}"
@@ -2548,6 +2849,45 @@
                 "wholePage": "Gumagana lang ang Panatilihin sa buong pahina, hindi sa {counts}"
             },
             "tooFarPastEnd": "lampas na iyan nang {count, plural, one {# bilang} other {# bilang}} sa dulo; hanggang {max} lang ang kayang itabi ng isang edit"
+        },
+        "expertHolds": {
+            "held": "{names}: {heldLower} na mula sa panimulang marka hanggang sa playhead",
+            "shape": "{names}: nasa hugis sa pagitan ng panimulang marka at playhead",
+            "followLeader": "{names}: sumusunod sa leader sa pagitan ng panimulang marka at playhead",
+            "followLeaderOrder": "{names}: may kurbadong galaw na kasama sa isang follow-the-leader na pagkakasunod",
+            "arrivalShape": "{names}: magsisimula ang hold kung saan nagtatapos ang isang hugis",
+            "arrivalFollowLeader": "{names}: magsisimula ang hold kung saan nagtatapos ang isang follow-the-leader na galaw",
+            "homeShape": "{names}: hugis ang nagtatakda ng panimulang puwesto. I-ungroup ito sa simula ng palabas para ma-hold sila nang isa-isa",
+            "endsWithoutArriving": "{names}: nagtatapos ang huling galaw bago ang panimulang marka nang hindi dumarating doon",
+            "count": "{count, plural, one {# miyembro} other {# miyembro}}",
+            "notHeld": "Hindi {heldLower} ang {count, plural, one {# miyembro} other {# miyembro}}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · Pahina {page}",
+            "titleRange": "{notDefined} · Pahina {first}–{last}"
+        },
+        "departure": {
+            "title": "Gagalaw ulit · Pahina {page}, bilang {count}"
+        },
+        "touchTransport": {
+            "playMenu": "Mga paraan ng pag-play",
+            "goTo": "Pumunta sa",
+            "start": "Simula",
+            "countBack": "Bilang paatras",
+            "countOn": "Bilang pasulong",
+            "end": "Dulo",
+            "playback": "Playback",
+            "speed": "Bilis",
+            "sound": "Tunog",
+            "view": "View",
+            "fit": "Ipagkasya",
+            "atPlayhead": "Sa playhead",
+            "newPage": "Bagong pahina",
+            "newSubset": "Bagong subset",
+            "compact": "Compact"
+        },
+        "clearPage": {
+            "error": "Hindi ma-clear ang pahina"
         }
     },
     "titlebar": {
@@ -2566,6 +2906,8 @@
         }
     },
     "toolbar": {
+        "showControls": "Ipakita ang toolbar",
+        "hideControls": "Itago ang toolbar",
         "alignment": {
             "lockXCaption": "I-lock ang X",
             "lockYCaption": "I-lock ang Y",
@@ -2573,8 +2915,11 @@
             "lockMarchersAriaLabel": "Galaw ng cursor at pag-snap ng miyembro",
             "placeAllMarchers": "Ilagay ang lahat ng miyembro",
             "placeSelectedMarchers": "Ilagay ang mga napiling miyembro",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
-            "setMarcherPositionsAriaLabel": "Itakda ang mga posisyon ng miyembro"
+            "toNextPageSpots": "...sa mga puwesto sa susunod na pahina",
+            "setMarcherPositionsAriaLabel": "Itakda ang mga posisyon ng miyembro",
+            "toPreviousPagePositions": "...sa mga posisyon sa nakaraang pahina"
         },
         "collisions": {
             "collisionsToolbar": "Mga banggaan",
@@ -2622,14 +2967,62 @@
             "shapesAlways": "Palagi",
             "shapesOff": "Naka-off",
             "shapesSelected": "Kapag napili"
+        },
+        "alignmentTabShort": "Align"
+    },
+    "updates": {
+        "pill": {
+            "available": "May update",
+            "downloadingUpdate": "Dina-download ang update",
+            "downloadingProgress": "Dina-download ang update: {percent}%",
+            "ready": "Handa na ang update",
+            "failed": "Nabigo ang update"
+        },
+        "popover": {
+            "current": "{version} ang gamit mo.",
+            "availableBody": "I-download na ito. Mai-install ito kapag pinili mo ang I-update ngayon, o sa susunod mong pag-quit.",
+            "downloadingBody": "{transferred} sa {total} MB, {speed} MB/s",
+            "downloadingStarting": "Sinisimulan ang download…",
+            "readyBody": "Isasara ng I-update ngayon ang palabas mo, ii-install ang update, at bubuksan ulit ang OpenMarch at ang palabas mo. Naka-save na ang gawa mo.",
+            "moveBody": "Maa-update lang ng macOS ang OpenMarch kung nasa Applications folder mo ito. Ilipat ito roon, at magbubukas ulit ang OpenMarch mula sa Applications.",
+            "errorBody": "Hindi na-download ang update. Subukan ulit, o i-download ang installer at ikaw na ang magpatakbo nito.",
+            "installFailedBody": "Hindi na-install ang OpenMarch {version}. I-download ang installer at ikaw na ang magpatakbo nito."
+        },
+        "action": {
+            "download": "I-download",
+            "updateNow": "I-update ngayon",
+            "later": "Mamaya",
+            "retry": "Subukang muli",
+            "downloadInstaller": "I-download ang installer",
+            "moveToApplications": "Ilipat sa Applications",
+            "whatsNew": "Ano'ng bago"
+        },
+        "toast": {
+            "checking": "Naghahanap ng mga update…",
+            "upToDate": "OpenMarch {version} ang pinakabagong bersyon.",
+            "available": "Available na ang OpenMarch {version}.",
+            "downloading": "Dina-download na ito. Makikita ang progress sa button ng update sa kaliwang itaas.",
+            "ready": "Handa nang i-install ang OpenMarch {version}.",
+            "checkFailed": "Hindi makapaghanap ng mga update."
+        },
+        "unsupported": {
+            "development": "Naka-off ang mga update sa mga development build.",
+            "snap": "Ang Snap Store ang nag-a-update sa kopyang ito ng OpenMarch.",
+            "linuxPackage": "Hindi kayang i-update ng kopyang ito ng OpenMarch ang sarili nito. I-download ang mga bagong bersyon mula sa openmarch.com.",
+            "noFeed": "Hindi nag-a-update nang kusa ang build na ito ng OpenMarch. Ikaw mismo ang mag-download ng bawat bagong build."
         }
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Mababago mo ito mamaya sa Mga setting › Pangkalahatan.",
             "no": "Hindi",
             "title": "Awtomatikong buksan ang 3D View sa pagbukas ng palabas?",
             "yes": "Oo"
+        },
+        "board": {
+            "designedBy": "Disenyo ni {name}",
+            "forClient": "Para sa {name}",
+            "nowPerforming": "Nagtatanghal ngayon",
+            "untitled": "Palabas na walang pamagat"
         },
         "camera": {
             "blimp": "Blimp",
@@ -2674,7 +3067,8 @@
             "pickSeat": "Pumili ng upuan",
             "pickSeatTooltip": "Pumili ng upuan: i-click ang isang upuan sa stands para doon maupo",
             "venue": "Venue",
-            "freeCamera": "Malayang view"
+            "freeCamera": "Malayang view",
+            "director": "Director"
         },
         "readout": {
             "count": "Bilang {count} ng {total}",
@@ -2693,10 +3087,6 @@
                 "desktop": "Software ang nagpapatakbo ng graphics sa computer na ito, kaya mababa ang kalidad ng 3D View, at mabagal pa rin ito. Para sa buong view, i-update ang iyong mga graphics driver at i-restart ang OpenMarch.",
                 "web": "Software ang nagpapatakbo ng graphics sa browser na ito, kaya mababa ang kalidad ng 3D View, at mabagal pa rin ito. Para sa buong view, i-on ang graphics acceleration (sa Chrome o Edge: Mga Setting, System, \"Gamitin ang graphics acceleration kapag available\") at i-restart ang browser."
             },
-            "autoLowered": {
-                "settings": "Ginawang Mababa dahil nag-i-stutter ang view. Para manatili ang buong kalidad, piliin ang Mataas sa Mga setting, 3D View.",
-                "panel": "Ginawang Mababa dahil nag-i-stutter ang view. Para manatili ang buong kalidad, piliin ang Mataas sa ilalim ng Kalidad sa Mga setting ng view."
-            },
             "softwareHint": "Nananatili sa Mababa dahil software ang nagpapatakbo ng graphics dito.",
             "autoLoweredHint": "Ginawang Mababa dahil nag-i-stutter ang view. Piliin ang Mataas para manatili ang buong kalidad.",
             "dismiss": "Sige"
@@ -2705,10 +3095,7 @@
             "label": "Playback"
         },
         "settings": {
-            "title": "Mga setting ng view",
             "close": "Isara",
-            "venueSection": "Palabas na ito",
-            "venueHint": "Naka-save sa file ng palabas. Binabawi ng pag-undo sa editor ang pagbabago.",
             "crowdColors": "Kulay ng manonood",
             "homeColor": "Home",
             "awayColor": "Bisita",
@@ -2716,11 +3103,12 @@
             "endZoneText": "Letra sa end zone",
             "endZoneTextPlaceholder": "Walang letra",
             "endZoneColor": "Kulay",
-            "graphicsSection": "Computer na ito",
-            "graphicsHint": "Hindi naka-save sa palabas, kaya puwedeng magkaiba sa bawat computer.",
-            "keysSection": "Keyboard at mouse",
             "uniforms": "Uniporme ng banda",
-            "guardUniforms": "Uniporme ng guard"
+            "guardUniforms": "Uniporme ng guard",
+            "brassFinish": "Finish ng brass",
+            "tuba": "Mga tuba",
+            "silkShape": "Hugis ng flag silk",
+            "silkArtwork": "Artwork ng flag silk"
         },
         "keys": {
             "playPause": "I-play o i-pause",
@@ -2731,11 +3119,23 @@
             "crowd": "Ipakita o itago ang manonood",
             "escape": "Kanselahin ang pagpili ng upuan, isara ang setting, lumabas sa fullscreen",
             "orbit": "Umikot",
+            "orbitOrRight": "Umikot, o i-drag gamit ang kanang button ng mouse",
+            "panPlain": "I-pan",
+            "zoomOrPinch": "Mag-zoom, o mag-pinch sa trackpad",
             "pan": "I-pan, o i-drag gamit ang kanang button ng mouse",
-            "zoom": "Zoom"
+            "zoom": "Zoom",
+            "pausedPose": "Naka-pause: ipakita ang aktuwal na hakbang o ang closed na posisyon"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "Lacquer",
+            "silver": "Pilak"
+        },
+        "tuba": {
+            "contra": "Marching tuba",
+            "sousaphone": "Sousaphone"
         },
         "uniformPreset": {
             "fade": "Ultraviolet Fade",
@@ -2777,11 +3177,37 @@
         "venue": {
             "updateFailed": "Hindi na-update ang venue ng 3D View"
         },
-        "board": {
-            "designedBy": "Disenyo ni {name}",
-            "forClient": "Para sa {name}",
-            "nowPerforming": "Nagtatanghal ngayon",
-            "untitled": "Palabas na walang pamagat"
+        "pausedPose": {
+            "label": "Ipakita ang aktuwal na hakbang kapag naka-pause",
+            "tooltip": "Ipakita ang mga miyembro sa gitna ng hakbang kapag naka-pause, gaya ng ayos nila sa sandaling iyon. Naka-off: nakatayo silang closed sa kanilang mga tuldok"
+        },
+        "silkShape": {
+            "standard": "Standard",
+            "curvedTail": "Kurbadong buntot",
+            "cSwing": "C-swing",
+            "rainbow": "Rainbow",
+            "arc": "Arko",
+            "teardrop": "Teardrop",
+            "distressed": "Distressed",
+            "rounded": "Bilugan",
+            "rectangle": "Parihaba",
+            "curvedAngle": "Malaking curved angle",
+            "wings": "Wings",
+            "snake": "Snake",
+            "swing": "Swing"
+        },
+        "silkArtwork": {
+            "none": "Walang artwork: ang pattern ng uniporme ng guard o ang kulay ng seksyon ang makikita sa mga silk.",
+            "import": "Mag-import ng PNG…",
+            "replace": "Palitan…",
+            "remove": "Alisin",
+            "template": "Template para sa {shape}:",
+            "preparing": "Inihahanda…",
+            "notPng": "Hindi PNG ang file na iyan. I-export ang artwork mo bilang PNG at i-import ulit.",
+            "tooLarge": "Masyadong malaki ang PNG na iyan. I-export ito sa mas mababang resolution at i-import ulit.",
+            "unreadable": "Hindi mabasa ang PNG na iyan.",
+            "templateFailed": "Hindi nagawa ang template.",
+            "saveFailed": "Hindi na-save ang artwork ng flag silk"
         }
     },
     "web": {
@@ -2913,6 +3339,58 @@
         "welcome": {
             "description": "Maligayang pagdating sa kinabukasan ng disenyo. Tara, i-set up natin ang lahat.",
             "title": "Maligayang pagdating sa OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "Narito ang mga nagbago mula noong huli mo itong ginamit.",
+            "title": "Maligayang pagbabalik"
+        },
+        "whatsNew": {
+            "carousel": "Walkthrough",
+            "guides": "Alamin pa sa mga gabay ng OpenMarch",
+            "next": "Susunod",
+            "position": "{current} sa {total}",
+            "skip": "Laktawan",
+            "slide": "Slide",
+            "slides": {
+                "pathways": {
+                    "label": "Mga daanan",
+                    "media": "Pansamantalang larawan: hindi pa nare-record ang clip ng Path pen.",
+                    "text": "Gumuhit ng daanang may mga kanto para sa isang miyembro gamit ang Path pen, at iyon ang lalakaran niya sa halip na tuwid na linya.",
+                    "title": "Mga daanan"
+                },
+                "props": {
+                    "label": "Mga prop",
+                    "media": "Sa 3D View, dumudulas sa likod ng field ang isang amber na riser at umiikot, malayo sa marching band.",
+                    "text": "Gumuhit ng mga prop sa field at igalaw ang mga ito sa timeline. Sa ngayon, simpleng mga bloke muna ang itsura ng mga ito sa 3D View.",
+                    "title": "Mga prop"
+                },
+                "shapes": {
+                    "label": "Mga hugis",
+                    "media": "Inilalagay ang isang seksyon ng mga miyembro sa bloke, saka sa linya, saka sa arko, na bawat isa ay iginuguhit sa field at nagsa-snap sa mga linya ng field.",
+                    "text": "Gumuhit ng bloke, linya o arko at ilagay roon ang mga napiling miyembro; nagsa-snap ang mga punto nito sa kalahating hakbang, mga yard line at mga hash.",
+                    "title": "Mga hugis"
+                },
+                "tempo": {
+                    "label": "I-edit ang musika",
+                    "media": "Pag-edit ng musika sa timeline: tumutugtog ang palabas sa 118 kumpas kada minuto, unti-unting bumabagal sa 81 sa loob ng dalawang sukat, saka biglang bumabalik sa 118 sa bagong time signature. Bumabagal ang playhead habang unti-unting nagbabago ang tempo at bumibilis ulit pagkatapos nito.",
+                    "text": "Itugma ang mga bilang mo sa musika sa timeline: i-drag ang tempo hanggang tumapat ang mga bilang sa mga kumpas, at magtakda ng mga pagbabago ng tempo, hold at time signature.",
+                    "title": "I-edit ang musika"
+                },
+                "timeline": {
+                    "label": "Timeline",
+                    "media": "Isang linya ng 20 miyembro ang umuusad nang 16 na bilang sa iisang galaw. Tatlong mas maiikling galaw na naka-nest sa ilalim nito sa timeline ang nag-uurong sa mga dulo, nagbubuka sa linya, saka nagkukurba sa lahat ng 20 para maging arko.",
+                    "text": "Nasa iisang timeline sa ilalim ng field ang mga pahina, galaw at bilang, at sa Expert, puwedeng tumawid ng pahina at magpatong ang mga galaw.",
+                    "title": "Ang timeline"
+                },
+                "view3d": {
+                    "label": "3D View",
+                    "media": "Ang banda na nagma-march sa pagitan ng mga set sa 3D, sa isang stadium na may dome, tanaw mula sa itaas ng press box: mga miyembrong naka-uniporme at isang color guard na may mga flag.",
+                    "text": "Panoorin ang palabas mo mula sa stands, kasama ang mga miyembrong naka-uniporme.",
+                    "title": "Ang 3D View"
+                }
+            },
+            "steps": "Mga bagong feature",
+            "title": "Ano'ng bago sa 0.2"
         }
     },
     "workspaceSettings": {
@@ -2936,7 +3414,6 @@
         },
         "unsavedChanges": "May mga pagbabago kang hindi pa naka-save",
         "close": "Isara",
-        "saved": "Na-save ang mga setting ng palabas",
         "updateFailed": "Hindi na-update ang mga setting ng workspace",
         "showInfo": {
             "projectName": "Pangalan ng palabas",
@@ -2944,6 +3421,36 @@
             "designer": "Designer",
             "client": "Kliyente",
             "optional": "Opsyonal"
+        },
+        "performer": {
+            "title": "Mga default ng performer",
+            "description": "Kung paano gumagalaw ang mga miyembro sa 3D View kapag walang mas tiyak na setting.",
+            "stepOffFoot": {
+                "label": "Unang hakbang gamit ang",
+                "left": "Kaliwang paa",
+                "right": "Kanang paa"
+            },
+            "dotMode": {
+                "label": "Tinutukoy ng tuldok",
+                "foot": "Paa sa tuldok",
+                "body": "Gitna ng katawan"
+            },
+            "directionChange": {
+                "label": "Pagbabago ng direksyon",
+                "corner": "Paikot sa kanto",
+                "direct": "Diretso"
+            },
+            "holdWhileBandMoves": {
+                "label": "Naka-hold habang gumagalaw ang iba",
+                "markTime": "Mark time",
+                "highMarkTime": "High mark time",
+                "stand": "Nakatayo"
+            },
+            "percussionTravel": {
+                "label": "Patagilid na galaw ng drums",
+                "crab": "Crab step",
+                "slide": "Slide"
+            }
         }
     },
     "canvas": {
@@ -2975,6 +3482,7 @@
         "marchers": "Mga miyembro",
         "metronome": "Metronome",
         "mobile": "Mobile app",
+        "props": "Mga prop",
         "music": "Musika",
         "renderFail": "Hindi na-render ang nilalaman ng sidebar modal",
         "settings": "Settings ng palabas"
@@ -2999,6 +3507,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {Isang daliri ang gumagalaw sa view. Apple Pencil, o pindutin nang matagal saka i-drag, ang gumuguhit ng box.} other {Isang daliri ang gumagalaw sa view. Pen, o pindutin nang matagal saka i-drag, ang gumuguhit ng box.}}",
+            "box": "Box",
+            "boxDescribe": "{device, select, pencil {Isang daliri o Apple Pencil ang gumuguhit ng box para pumili. Dalawang daliri ang gumagalaw sa view.} other {Isang daliri o pen ang gumuguhit ng box para pumili. Dalawang daliri ang gumagalaw sa view.}}",
+            "button": "Drag sa bakanteng field: {label}. {describe} I-tap para palitan",
+            "lasso": "Lasso",
+            "lassoDescribe": "{device, select, pencil {Isang daliri o Apple Pencil ang gumuguhit paikot sa mga miyembro para piliin sila. Dalawang daliri ang gumagalaw sa view.} other {Isang daliri o pen ang gumuguhit paikot sa mga miyembro para piliin sila. Dalawang daliri ang gumagalaw sa view.}}",
+            "menu": "Drag sa bakanteng field",
+            "pan": "Pan",
+            "panDescribe": "{device, select, pencil {Isang daliri o Apple Pencil ang gumagalaw sa view.} other {Isang daliri o pen ang gumagalaw sa view.}}",
+            "prefix": "Drag:"
+        },
         "modifiers": {
             "add": "Idagdag",
             "addHint": "Idagdag: pindutin nang matagal, o i-tap para manatiling naka-on. Idinadagdag sa selection ang mga tina-tap na miyembro",
@@ -3007,11 +3528,13 @@
             "explain": {
                 "add": "I-tap ang mga miyembro para idagdag o alisin sila.",
                 "constrain": "Pantay na pagitan, iisang axis kapag gumagalaw, binabaligtad ang proportional scaling.",
+                "dragMode": "Ang ginagawa ng isang daliri o ng pen sa bakanteng bahagi ng field: igalaw ang view, o gumuhit ng box o lasso.",
                 "fine": "Mabagal gumalaw ang mga miyembro, wala sa grid. Umaalis ang mga hugis sa kalahating hakbang pero sumasalo pa rin sa mga linya. Buong degree ang bawat ikot.",
                 "fromCenter": "Mula sa gitna iginuguhit at nire-resize ang mga bloke.",
                 "grip": "I-drag para ilipat.",
                 "help": "Mga gesture.",
-                "snap": "Ino-on o ino-off ang Snap sa mga hakbang at linya."
+                "snap": "Ino-on o ino-off ang Snap sa mga hakbang at linya.",
+                "subtract": "Inaalis ng box o lasso ang mga miyembro mula sa selection."
             },
             "fine": "Pino",
             "fineHint": "Pino: pindutin nang matagal, o i-tap para manatiling naka-on. Mabagal gumalaw ang mga miyembro, wala sa grid; umaalis ang mga hugis sa kalahating hakbang; buong degree ang bawat ikot",
@@ -3022,12 +3545,17 @@
             "help": "Ano ang ginagawa ng mga button na ito",
             "helpList": {
                 "add": "<b>Idagdag</b> nagdadagdag sa selection ang mga tap · <b>Walang snap</b> malayang paggalaw",
+                "dragMode": "<b>Drag</b> ang pumipili kung ano ang ginagawa ng isang daliri sa bakanteng field: igalaw ang view, o gumuhit ng box o lasso",
                 "fine": "<b>Pino</b> eksaktong pag-drag at pag-ikot · <b>Pantay</b> pantay na pagitan",
                 "fromCenter": "<b>Mula gitna</b> lumalaki ang mga bloke mula sa gitna",
                 "toggles": "<b>I-tap</b> ang button para manatili itong naka-on, o <b>pindutin nang matagal</b> habang nagda-drag ka"
             },
-            "noSnap": "Walang snap"
-        }
+            "noSnap": "Walang snap",
+            "subtract": "Ibawas",
+            "subtractHint": "Ibawas: pindutin nang matagal, o i-tap para manatiling naka-on. Inaalis sa selection ng box o lasso ang mga miyembrong sakop nito"
+        },
+        "redone": "Na-redo",
+        "undone": "Na-undo"
     },
     "shortcutsDialog": {
         "movement": {
@@ -3061,7 +3589,8 @@
             "select": "Pagpili",
             "shape": "Mga hugis",
             "timeline": "Timeline",
-            "ui": "View"
+            "ui": "View",
+            "field": "Field"
         }
     },
     "shortcut": {
@@ -3134,8 +3663,11 @@
             "title": "Tulong",
             "showShortcuts": "Mga keyboard shortcut",
             "website": "Website",
-            "guides": "Docs/Mga gabay"
+            "guides": "Docs/Mga gabay",
+            "reportFeedback": "Mag-ulat ng bug o magpadala ng feedback…",
+            "viewMyReports": "Tingnan ang mga ulat ko"
         },
+        "checkForUpdates": "Tingnan kung may update…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {
@@ -3153,6 +3685,13 @@
         },
         "openFailed": {
             "title": "Error sa pag-load ng database"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "Hindi naidagdag ang cue",
+            "delete": "Hindi nabura ang cue",
+            "update": "Hindi nabago ang cue"
         }
     },
     "coordinates": {
@@ -3177,6 +3716,12 @@
             "onX": "Nasa {checkpoint}",
             "onY": "Nasa {checkpoint}",
             "outside": "{steps, plural, =0 {OUT {checkpoint}} other {# OUT {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "gitnang linya",
+            "centerLineShort": "GL",
+            "frontEdge": "harapang gilid",
+            "frontEdgeShort": "HG"
         }
     },
     "activities": {
@@ -3194,9 +3739,651 @@
         "toFive": "{steps, number} to 5",
         "undefined": "Hindi matukoy"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "Nagdagdag ng pagbabago ng tempo sa {where}",
+                "curve": "Kurba ng tempo",
+                "endsOn": "Nagtatapos sa {tempo}",
+                "endsOnThen": "Nagtatapos sa {tempo}, saka {next}",
+                "gradual": "Unti-unting pagbabago ng tempo",
+                "held": "Na-hold ang {where} nang {seconds} s",
+                "hold": "Hold",
+                "holdDrill": "I-hold ang drill",
+                "jump": "Biglang palit ng tempo",
+                "measureNumber": "Numero ng sukat",
+                "movedChange": "Inilipat ang pagbabago ng tempo sa {where}",
+                "rehearsalMark": "Rehearsal mark",
+                "removedChange": "Inalis ang pagbabago ng tempo sa {where}",
+                "tempo": "Tempo",
+                "timeSignature": "Time signature"
+            },
+            "ask": {
+                "add": {
+                    "intro": "Para kapag may dagdag na kumpas ang musika rito na wala sa mga bilang. Hindi nagbabago ang recording: ang mga bilang lang.",
+                    "keepMeasure": "Magkakaroon ang {measure} ng {count, plural, one {# bilang} other {# bilang}} sa parehong tagal ({tempo}).",
+                    "manyKeep": "{moves, plural, other {Mananatili ang bilang ng # galaw na nasa ibabaw nito}}; titigil sa puwesto ang mga miyembro nila nang {count, plural, one {# bilang} other {# bilang}} sa dulo ng bawat isa.",
+                    "manyShift": "{moves, plural, other {Hahaba ang bawat isa sa # galaw na nasa ibabaw nito nang}} {count, plural, one {# bilang} other {# bilang}}.",
+                    "noMove": "Walang galaw na dumadaan dito, kaya nakatigil lang sa puwesto ang mga miyembro sa kabuuan nito.",
+                    "oneKeep": "{move} ay mananatiling {moveCounts, plural, one {# bilang} other {# bilang}} at titigil sa puwesto ang mga miyembro nito nang {count, plural, one {# bilang} other {# bilang}} sa dulo nito.",
+                    "oneShift": "{move} ay hahaba mula {from} hanggang {to, plural, one {# bilang} other {# bilang}}.",
+                    "shift": "Dagdag na {count, plural, one {# bilang} other {# bilang}} ng oras dito ({seconds} s): mauurong nang ganoon katagal ang mga susunod na bilang at drill kumpara sa musika, para kapag nauuna ang mga ito."
+                },
+                "addCountAfter": "Magdagdag ng bilang pagkatapos ng {where}",
+                "addCountBefore": "Magdagdag ng bilang bago ang {where}",
+                "addMeasureBefore": "Magdagdag ng sukat ({count, plural, one {# bilang} other {# bilang}}) bago ang sukat {measure}",
+                "addedCountAfter": "Nagdagdag ng bilang pagkatapos ng {where}",
+                "addedCountBefore": "Nagdagdag ng bilang bago ang {where}",
+                "addedMeasureBefore": "Nagdagdag ng sukat ({count, plural, one {# bilang} other {# bilang}}) bago ang sukat {measure}",
+                "breath": {
+                    "many": "{moves, plural, other {Matatapos nang 1 bilang na mas maaga ang # galaw na nasa ibabaw nito}}; titigil sa puwesto ang mga miyembro nila sa bilang na iyon.",
+                    "noCountAdded": "Walang idinadagdag na bilang at hindi nagbabago ang musika.",
+                    "none": "Para sa saglit na pahinga sa drill nang hindi binabago ang musika: walang galaw na dumadaan sa puntong ito na puwedeng tapusin nang mas maaga.",
+                    "one": "{move}: galaw {from} → {to, plural, one {# bilang} other {# bilang}}; titigil sa puwesto ang mga miyembro sa {where}."
+                },
+                "countsFewer": "{count, plural, one {Bawas na # bilang} other {Bawas na # bilang}}",
+                "countsMore": "{count, plural, one {Dagdag na # bilang} other {Dagdag na # bilang}}",
+                "hidden": {
+                    "fewer": "Alisin na lang ang {where}",
+                    "fewerHint": "Nag-iiwan ng isang bilang sa pagitan ng keyframe at ng marka.",
+                    "fixHint": "Mararating nila ang set isang bilang bago matapos ang {move}, at aalisin ang mga bilang. Isang undo lang ang magbabalik sa pareho.",
+                    "fixTooShort": "Isang bilang na lang ang magiging haba ng keyframe nila, kaya hindi na ito puwedeng matapos nang mas maaga.",
+                    "marchersMore": "{names} at {count, plural, one {# pa} other {# pa}}",
+                    "text": "Matatapos ang keyframe nila sa parehong bilang ng {move}. Kapag sabay na natapos ang dalawang galaw, ang keyframe ang nasusunod, kaya hindi na sila tatayo sa set na iyon.",
+                    "theMove": "galaw sa ilalim nito",
+                    "title": "Hindi maaabot ng {marchers} ang set sa dulo ng {move}"
+                },
+                "laterCountsStay": "Mananatili sa musika ang mga susunod na bilang: para kapag tugma na ang mga ito.",
+                "noMoveHere": "walang galaw dito",
+                "pageCounts": "Pahina {page}: {from} → {to, plural, one {# bilang} other {# bilang}}",
+                "pagesSentence": "{pages}.",
+                "remove": {
+                    "intro": "Para kapag mas kaunti ang kumpas ng musika rito kaysa sa mga bilang. Hindi nagbabago ang recording: ang mga bilang lang.",
+                    "keep": "Pupunuin ng mga bilang sa paligid nito ang parehong tagal ({where}: {from} → {to, plural, one {# bilang} other {# bilang}}, {tempo}).",
+                    "manyKeep": "{moves, plural, other {Mananatili ang bilang ng # galaw na nasa ibabaw nito dahil mas huli silang matatapos}}, kung walang nakaharang doon.",
+                    "manyShift": "{moves, plural, other {Iikli ang # galaw na nasa ibabaw nito.}}",
+                    "marksGo": "{count, plural, one {Mawawala ang rehearsal mark na {marks}: mananatili ang sariling mark ng sukat na maiiwan doon.} other {Mawawala ang mga rehearsal mark na {marks}: mananatili ang sariling mark ng sukat na maiiwan doon.}}",
+                    "noMove": "Walang galaw na dumadaan dito.",
+                    "oneKeep": "{move} ay mananatiling {moveCounts, plural, one {# bilang} other {# bilang}} dahil matatapos ito nang {count, plural, one {# bilang} other {# bilang}} na mas huli, kung walang nakaharang doon.",
+                    "oneShift": "{move} ay iikli nang {count, plural, one {# bilang} other {# bilang}}.",
+                    "shift": "Mawawala rin ang oras nito: mapapaaga ang mga susunod na bilang at drill kumpara sa musika, para kapag nahuhuli ang mga ito.",
+                    "title": "Alisin ang {where}"
+                },
+                "removed": "Inalis ang {where}"
+            },
+            "editor": {
+                "holdHint": "Gaano katagal iho-hold ang {where}, sa segundo",
+                "markHint": "Rehearsal mark sa sukat {measure} (kapag blangko, aalisin ito)",
+                "notATempo": "Hindi tempo ang \"{value}\": mag-type ng numero gaya ng 120, o 120-90 para unti-unting magbago",
+                "renumberHint": "I-renumber mula m. {measure}: magpapatuloy ang numero ng mga kasunod na sukat mula sa numerong ibibigay mo. Kapag blangko, babalik sa tuloy-tuloy na pagnunumero.",
+                "tempoFromToHint": "Tempo mula {from} hanggang {to}: \"120\", o \"120-90\" para unti-unting magbago",
+                "tempoOfHint": "Tempo ng {where}: \"120\", o \"120-90\" para unti-unting magbago",
+                "tempoOutOfRange": "Lampas sa saklaw ang \"{value}\": mula 20 hanggang 400 kumpas bawat minuto ang tempo",
+                "wholeStretch": "Buong bahagi {range} (♩{tempo} ngayon) na lang"
+            },
+            "label": {
+                "beforeMark": "{where}, bago ang {mark}",
+                "count": "bilang {count}",
+                "measure": "m. {measure}",
+                "measureCount": "m. {measure} bilang {count}",
+                "measures": "m. {from}–{to}",
+                "range": "{from} hanggang {to}"
+            },
+            "lane": {
+                "clearSelection": "I-clear ang selection",
+                "clearSelectionTitle": "I-clear ang selection ({key})",
+                "holdLabel": "hold {seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → m. {measure}",
+                "markTitle": "Rehearsal mark {mark} sa m. {measure}: i-drag ito sa ibang sukat; i-double-click para palitan ang pangalan",
+                "renumberedTitle": "Sukat {measure}: mano-manong ni-renumber; magpapatuloy mula rito ang numero ng mga kasunod na sukat. I-right-click o i-double-click para baguhin ito.",
+                "shortMeasureTitle": "Sukat {measure}: maikling sukat, {count, plural, one {# bilang} other {# bilang}}",
+                "tempoLabelTitle": "{range}: i-click para mag-type ng tempo",
+                "timeSignatureTitle": "Time signature {meter}: i-click para baguhin ito mula rito hanggang sa susunod na time signature"
+            },
+            "menu": {
+                "addChange": "Magdagdag ng pagbabago ng tempo rito",
+                "addCountAfter": "Magdagdag ng bilang pagkatapos nito…",
+                "addCountBefore": "Magdagdag ng bilang bago ito…",
+                "addMark": "Magdagdag ng rehearsal mark…",
+                "addMeasureBefore": "Magdagdag ng sukat bago ito…",
+                "cancel": "Kanselahin",
+                "clearSelection": "I-clear ang selection",
+                "countTitle": "m. {measure}, bilang {count}",
+                "countTitleNoMeasure": "Bilang {count}",
+                "editMark": "Rehearsal mark…",
+                "gradual": "Unti-unting pagbabago",
+                "gradualHint": "Nagtatapos sa tempong kasunod nito ({tempo}); hindi nagbabago ang mga hold sa labas",
+                "gradualNothingHint": "Walang babaguhin: pareho ang tempong kasunod nito, o isang bilang lang ito",
+                "gradualTo": "Unti-unting pagbabago papuntang {tempo}",
+                "holdLength": "Haba ng hold…",
+                "holdSubtitle": "hold {seconds} s",
+                "makeHold": "Gawing hold (fermata)",
+                "markMoveHere": "Ilipat ang {mark} dito mula m. {measure}",
+                "markTaken": "Nasa m. {measure} na ang {mark}. Gamitin ulit?",
+                "markUseAgain": "Gamitin ulit ang {mark} sa m. {measure}",
+                "measureSubtitleMark": "{meter} · mark {mark}",
+                "measureTitle": "Sukat {measure}",
+                "notAHold": "Hindi hold",
+                "removeChange": "Alisin ang pagbabago ng tempong ito",
+                "removeCount": "Alisin ang bilang na ito…",
+                "removeCounts": "Alisin ang mga bilang na ito…",
+                "removeMeasure": "Alisin ang sukat na ito…",
+                "renumber": "I-renumber mula rito…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, one {# bilang} other {# bilang}}",
+                "setTempo": "Itakda ang tempo…",
+                "timeSignature": "Time signature…",
+                "toMeasure": "hanggang m. {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} na binibilang nang {grouping}",
+                "fromSubtitle": "hanggang sa susunod na time signature",
+                "fromTitle": "Mula m. {measure}",
+                "justThisMeasure": "Sa sukat na ito lang",
+                "justThisMeasureHint": "Naka-on: para lang sa sukat na ito ang time signature; pareho pa rin ang sa mga kasunod na sukat at uusog ang mga ito para sumunod. Naka-off: tatagal ito hanggang sa susunod na time signature, gaya ng sa score.",
+                "onlySubtitle": "pareho pa rin ang sa mga kasunod na sukat",
+                "onlyTitle": "m. {measure} lang",
+                "other": "Iba pa… (gaya ng 11/8 3+3+3+2)",
+                "otherHint": "Time signature, at kung paano ito binibilang sa eighth note: \"7/8 2+2+3\", \"5/8 3+2\", \"3/2\" (binibilang sa quarter note)"
+            },
+            "move": {
+                "from": "Ang galaw mula {where}",
+                "its": "Ang galaw nito",
+                "page": "Pahina {page}",
+                "pagesMove": "Ang galaw ng Pahina {page}"
+            },
+            "tip": {
+                "outlier": "Di-hamak na {direction, select, faster {mas mabilis} other {mas mabagal}} ang {where} ({tempo}) kaysa sa mga katabi nito ({before}, {after}): baka hindi ito tugma sa musika. I-right-click ito > Itakda ang tempo… para ayusin, o hayaan kung ganoon talaga ang musika."
+            },
+            "toast": {
+                "changedFirst": "{action}: hindi nailapat, dahil kababago lang ng palabas. Subukan ulit.",
+                "failed": "{action}: {error}",
+                "holdInvalid": "Ang hold ay haba sa segundo, gaya ng 2.5",
+                "holdMade": "Hold na ang {where}. I-right-click ito > Haba ng hold… para itakda kung gaano ito katagal.",
+                "markAlreadyThere": "May rehearsal mark {mark} na ang m. {measure}",
+                "markMoved": "Inilipat ang {mark} mula m. {from} papuntang m. {to}",
+                "meterSetFrom": "{meter} mula {where}, {count, plural, one {# bilang} other {# bilang}} bawat sukat; hindi nagbago ang tempo",
+                "meterSetOnly": "{meter} para sa m. {measure} lang; hindi nagbago ang tempo",
+                "meterShiftNote": "Magsisimula ang mga kasunod na sukat nang {count, plural, one {# bilang} other {# bilang}} na {direction, select, earlier {mas maaga} other {mas huli}}",
+                "meterShortNote": "Maikli ang huling sukat bago ang susunod na time signature: {count, plural, one {# bilang} other {# bilang}} (may tandang *)",
+                "movesCouldNotKeep": "{count, plural, one {# galaw ang hindi napanatili ang bilang nito at nagbago ang haba} other {# galaw ang hindi napanatili ang bilang ng mga ito at nagbago ang haba}}",
+                "movesKept": "{count, plural, one {# galaw ang nagpanatili ng bilang nito} other {# galaw ang nagpanatili ng bilang ng mga ito}}",
+                "movesKeptHold": "{kept, plural, one {Napanatili ng galaw na nasa ibabaw nito ang bilang nito: titigil sa puwesto ang mga miyembro nito} other {Napanatili ng # galaw ang bilang ng mga ito: titigil sa puwesto ang mga miyembro ng mga ito}} nang {count, plural, one {# bilang} other {# bilang}} sa dulo",
+                "notATimeSignature": "Hindi time signature ang \"{text}\": subukan ang 7/8, o 7/8 2+2+3 (ang grouping sa eighth note)",
+                "notMeasureNumber": "Hindi numero ng sukat ang \"{value}\"",
+                "tooFastOrSlow": "{action}: magiging sobrang bilis o sobrang bagal ng isang bilang dahil doon"
+            }
+        },
+        "button": {
+            "hint": "Ang music file, at ang pagtutugma ng mga bilang dito: tempo, mga time signature, mga rehearsal mark",
+            "hintOn": "Itugma ang mga bilang sa musika. <escape></escape> o <toggle></toggle> para lumabas.",
+            "label": "I-edit ang musika",
+            "labelOn": "Ine-edit ang musika",
+            "text": "I-edit ang musika"
+        },
+        "errors": {
+            "cantRemoveLastCount": "Hindi maaalis ang huling bilang",
+            "moveOneCountLong": "Isang bilang lang ang haba ng galaw na iyon",
+            "wouldHideSet": "Mag-iiwan iyon ng keyframe na nagtatapos sa parehong bilang ng galaw sa ilalim nito, kaya matatago ang set ng galaw na iyon. Mag-alis ng mas kaunting bilang, o tapusin ang keyframe nang isang bilang na mas maaga.",
+            "wouldRemovePage": "Maaalis ang isang pahina dahil doon. Mag-alis ng mas kaunting bilang, o burahin muna ang pahina."
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "Magdagdag ng pagbabago ng tempo",
+                "text": "I-double-click ang tempo lane kung saan dapat magbago. I-double-click ang tuldok ng isang pagbabago para alisin ito."
+            },
+            "dragChangeDot": {
+                "title": "Ilipat ang pagbabago ng tempo",
+                "text": "I-drag ang tuldok nito pataas o pababa para baguhin ang tempo, o pahalang para ilipat kung saan ito magbabago."
+            },
+            "dragEndDot": {
+                "title": "Itakda kung saan matatapos ang rit.",
+                "text": "I-drag ang parisukat na tuldok sa dulo ng isang bahagi, para makabalik agad ang susunod na tempo (a tempo)."
+            },
+            "dragLine": {
+                "title": "Magtakda ng tempo",
+                "text": "I-drag ang linya ng tempo pataas o pababa. Para mag-type ng tempo, mag-right-click at piliin ang Itakda ang tempo…"
+            },
+            "dragMeasures": {
+                "title": "Pumili ng mga bilang",
+                "text": "Mag-drag sa mga sukat o sa musika, saka i-edit ang lahat nang sabay-sabay."
+            },
+            "dragRoundHandle": {
+                "title": "Unti-unting baguhin ang tempo",
+                "text": "I-drag ang bilog na hawakan sa gitna ng isang bahagi. I-double-click ito para bumalik sa biglang palit."
+            },
+            "keys": {
+                "escape": "I-clear ang selection, o kanselahin ang drag; kapag walang iki-clear, itigil ang pag-edit ng musika",
+                "play": "I-play mula sa playhead, o huminto kung nasaan ito",
+                "tap": "Tap tempo: mag-tap sa bawat kumpas para makita kung gaano ito kabilis",
+                "toggle": "Simulan o itigil ang pag-edit ng musika",
+                "metronome": "I-on o i-off ang metronome"
+            },
+            "label": "Paano gumagana ang pag-edit ng musika",
+            "rightClick": {
+                "title": "Mga hold at bilang",
+                "text": "I-right-click ang isang bilang para gawin itong hold, unti-unting baguhin ang tempo, o magdagdag at mag-alis ng mga bilang."
+            },
+            "rightClickMeasure": {
+                "title": "Mga sukat at rehearsal mark",
+                "text": "I-right-click ang isang sukat para i-renumber ito, itakda ang time signature nito o magdagdag ng mark. I-drag ang mark para ilipat ito."
+            },
+            "title": "Itugma ang mga bilang sa musika",
+            "musicFile": {
+                "title": "Palitan ang musika",
+                "text": "I-click ang pangalan ng file sa header para magpalit, mag-import o magbura ng audio, o itakda ang music offset."
+            }
+        },
+        "importScore": {
+            "choose": "Pumili ng file…",
+            "keeps": "Mananatili sa mga bilang nila ang mga pahina, drill, cue at prop, kaya tutugtog ang mga ito sa mga tempo ng score. Maibabalik ng I-undo ang lahat.",
+            "replaces": "Papalitan ng mga tempo, time signature, sukat at rehearsal mark ng score ang sa palabas, kasama ang mga binago mo rito.",
+            "title": "Gamitin ang timing ng isang score?"
+        },
+        "lanes": {
+            "marks": {
+                "name": "Mark",
+                "title": "Mga rehearsal mark: i-double-click para pangalanan ang isa, o i-drag ang isa sa ibang sukat"
+            },
+            "measures": {
+                "name": "Sukat",
+                "title": "Mga sukat: mag-drag para pumili ng mga bilang, i-right-click o i-double-click ang isang numero para i-renumber mula roon, i-click ang time signature para baguhin ito"
+            },
+            "music": {
+                "name": "Musika",
+                "title": "Ang musika: mag-drag dito para pumili ng mga bilang, i-click para ilipat ang playhead, o i-right-click ang isang punto para doon simulan ang musika (sa bilang 1)"
+            },
+            "tempo": {
+                "name": "Tempo",
+                "title": "Tempo: i-drag ang linya pataas o pababa; i-drag ang tuldok para ilipat ang pagbabago ng tempo, o ang bilog na hawakan para sa unti-unting pagbabago. I-double-click para magdagdag ng pagbabago; i-right-click > Itakda ang tempo… para mag-type nito. Mag-drag palayo sa linya para pumili ng mga bilang"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "Kanselahin",
+                    "fix": "Tapusin ang keyframe nang isang bilang na mas maaga, saka alisin"
+                },
+                "footer": "I-click ang isa para gawin ito. Ginagawa ng <enter></enter> ang may tanda, ang huli mong pinili; nagkakansela ang <escape></escape>, at maibabalik ng I-undo ang alinman sa mga ito.",
+                "hold": "I-hold na lang ang drill dito",
+                "holdIntro": "Walang dagdag na kumpas ang musika, pero kailangan ng mga miyembro ng saglit na pahinga rito?",
+                "keep": "Panatilihin sa puwesto ang lahat ng iba pa",
+                "shift": "Iurong ang lahat ng kasunod"
+            },
+            "measureGlyph": "sk{number}"
+        },
+        "tap": {
+            "average": "Average {bpm} · magsisimula ulit pagkalipas ng 2 s",
+            "count": "{count, plural, one {# tap} other {# tap}}",
+            "hint": "Mag-tap nang kasabay para malaman ang tinatayang tempo ng musika",
+            "instructions": "I-tap ang <key></key> o ang button sa bawat kumpas",
+            "name": "Tap tempo",
+            "reset": "I-reset",
+            "selectFirst": "Pumili muna ng mga bilang",
+            "setTarget": "Itakda ang {target} sa ♩{bpm}",
+            "tap": "I-tap",
+            "use": "Gamitin",
+            "useBpm": "Gamitin ang ♩{bpm}",
+            "useBpmOn": "Gamitin ang ♩{bpm} <muted>sa {target}</muted>",
+            "useHint": "Pantay na tempo sa mga napiling bilang, o kung wala, sa bahagi ng tempo na nasa ilalim ng playhead",
+            "useOn": "Gamitin <muted>sa {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "I-play mula sa playhead",
+            "playLoop": "I-loop ang {measures}",
+            "stopHere": "Huminto rito"
+        },
+        "toolbar": {
+            "done": "Tapos",
+            "doneLabel": "Tapos: itigil ang pag-edit ng musika",
+            "metronome": "Metronome",
+            "metronomeHint": "Isang click sa bawat bilang, para marinig kung tugma ang mga bilang sa musika",
+            "metronomeOff": "Metronome: naka-off",
+            "metronomeOn": "Metronome: naka-on",
+            "title": "Ine-edit ang musika"
+        },
+        "import": {
+            "button": "Mag-import",
+            "hint": "Ipasok ang music file, o ang mga tempo, time signature, sukat at rehearsal mark ng isang score",
+            "audio": "Audio file…",
+            "score": "MusicXML score…"
+        },
+        "music": {
+            "add": "Magdagdag ng musika…",
+            "menuLabel": "Music file",
+            "pick": "Pumili ng musika",
+            "importAnother": "Mag-import ng isa pang audio file…",
+            "delete": "Burahin ang audio file na ito…",
+            "offset": "Music offset…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Music offset",
+            "offsetHelp": "Ilang segundo pagkatapos ng bilang 1 magsisimula ang musika. Kapag negatibo, lalaktaw papasok sa musika.",
+            "offsetSet": "Itakda",
+            "seconds": "segundo"
+        }
+    },
     "workspace": {
         "label": "Workspace",
         "editor": "Editor",
         "preview": "Preview"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "Aux rack",
+            "bongos": "Bongos",
+            "chimes": "Chimes",
+            "concertBassDrum": "Concert bass drum",
+            "congas": "Congas",
+            "drumSet": "Drum set",
+            "glockenspiel": "Glockenspiel",
+            "gong": "Gong",
+            "marimba": "Marimba",
+            "mixer": "Mixer",
+            "podium": "Podium",
+            "speaker": "Speaker",
+            "synth": "Synth",
+            "timpani": "Timpani",
+            "trapTable": "Trap table",
+            "vibraphone": "Vibraphone",
+            "xylophone": "Xylophone",
+            "podiumStand": "Podium stand",
+            "podiumTower": "Tore",
+            "rollingPodium": "Podium na may gulong",
+            "stepladder": "Hagdang tiklop",
+            "scaffold": "Scaffold tower"
+        },
+        "variant": {
+            "accessories": "Mga accessory",
+            "cage": "Cage rack",
+            "covered": "May takip",
+            "double": "Dalawang keyboard",
+            "gold": "Ginto",
+            "inches": "{size} in",
+            "keys": "{size} tipa",
+            "low": "Mababa",
+            "mixed": "Halo-halo",
+            "octaves": "{size} oktaba",
+            "open": "Walang takip",
+            "plain": "Karaniwan",
+            "rosewood": "Rosewood",
+            "silver": "Pilak",
+            "single": "Isang keyboard",
+            "square": "Parisukat",
+            "syntheticBlack": "Itim na synthetic",
+            "tall": "Mataas",
+            "toms": "Mga tom",
+            "wide": "Malapad",
+            "aluminum": "Aluminum",
+            "black": "Itim",
+            "feet": "{size} ft"
+        }
+    },
+    "feedback": {
+        "window.title": "Mag-ulat ng bug o magpadala ng feedback",
+        "signIn.heading": "Mag-sign in para magpadala ng ulat",
+        "signIn.why": "Para masubaybayan mo ang ulat mo at masabihan ka namin kung ano ang nangyari dito.",
+        "signIn.button": "Mag-sign in",
+        "signIn.alternatives": "Ayaw mag-sign in? <github>Iulat ito sa GitHub</github> o <discord>magtanong sa Discord</discord>.",
+        "sent.heading": "Salamat sa ulat mo",
+        "sent.body": "Nag-email kami sa iyo ng kopya. Kapag naging GitHub issue ito, ie-email namin sa iyo ang link para masubaybayan mo.",
+        "sent.another": "Magpadala ng isa pa",
+        "viewMyReports": "Tingnan ang mga ulat ko",
+        "type.label": "Tungkol saan ito?",
+        "type.broken": "May sira",
+        "type.broken.hint": "Bug, crash o anumang hindi gumagana nang tama",
+        "type.feature": "Hiling na feature",
+        "type.feature.hint": "Isang bagay na gusto mong magawa ng OpenMarch",
+        "type.feedback": "Pangkalahatang feedback",
+        "type.feedback.hint": "Anumang iba pang gusto mong sabihin sa amin",
+        "title.label": "Buod",
+        "title.placeholder": "Sa isang linya, tungkol saan ito?",
+        "question.whatWentWrong": "Ano ang nagkamali?",
+        "question.whatWentWrong.placeholder": "Ilarawan ang nangyari",
+        "question.expected": "Ano ang inaasahan mong mangyari?",
+        "question.expected.placeholder": "Ilarawan ang dapat sanang nangyari",
+        "question.steps": "Paano namin ito mapapangyari ulit?",
+        "question.steps.placeholder": "1. Magbukas ng palabas\n2. …",
+        "question.feature": "Ano ang gusto mong magawa ng OpenMarch?",
+        "question.feature.placeholder": "Ilarawan ang feature at kung saan mo ito gagamitin",
+        "question.ideas": "Mga ideya kung paano ito gagana",
+        "question.ideas.placeholder": "Mga sketch, halimbawa mula sa ibang app, anumang makakatulong",
+        "question.feedback": "Ano ang gusto mong sabihin sa amin?",
+        "question.feedback.placeholder": "Ang feedback mo",
+        "optional": "(opsyonal)",
+        "attach.label": "Mga attachment",
+        "attach.showFile": "Magpadala ng kopya ng palabas ko",
+        "attach.showFile.scrubbed": "Inaalis muna ang mga pangalan at tala ng mga performer.",
+        "attach.music": "Isama ang musika",
+        "attach.noShow": "Magbukas ng palabas para maipadala ang kopya nito kasama ng ulat mo.",
+        "attach.diagnostics": "Ipinapadala rin ang mga kamakailang aksyon at error ng app mo, para matulungan kaming mahanap ang problema.",
+        "record.start": "I-record ang screen",
+        "record.microphone": "May mikropono",
+        "record.hint": "Ang window lang ng OpenMarch ang nire-record, hanggang 5 minuto. Tatabi muna ang ulat habang nagre-record ka: ipakita sa amin ang problema habang ipinapaliwanag mo ito.",
+        "record.recording": "Nagre-record {time}",
+        "record.stop": "Ihinto",
+        "record.done": "Handa na ang recording ({time})",
+        "record.discard": "Itapon",
+        "record.failed.denied": "Hindi nagsimula ang pag-record. Tingnan sa system settings mo kung pinapayagan ang OpenMarch na gamitin ang screen at mikropono.",
+        "record.failed.unsupported": "Hindi available ang pag-record sa computer na ito.",
+        "public.label": "Ang maaari naming ibahagi",
+        "public.notice": "Maaaring ibuod ang mga ulat sa isang pampublikong GitHub issue. Hindi namin kailanman ipo-post ang pangalan, email o mga file mo maliban kung papayagan mo sa ibaba.",
+        "public.video": "Maaaring i-post nang pampubliko ang recording ko",
+        "public.showFile": "Maaaring i-post nang pampubliko ang file ng palabas ko",
+        "public.credit": "Banggitin ang pangalan ko kapag naging pampublikong issue ito",
+        "send": "Ipadala ang ulat",
+        "sending": "Ipinapadala…",
+        "retention": "Ang mga file na ipinapadala mo kasama ng ulat ay binubura sa mga server namin pagkalipas ng 2 buwan.",
+        "error.failed": "Hindi naipadala ang ulat mo. Tingnan ang koneksyon mo at subukan ulit.",
+        "attach.music.off": "Hindi ipinapadala ang musika.",
+        "attach.music.on": "Ipinapadala rin ang musika.",
+        "sending.recording": "Ina-upload ang recording…",
+        "sending.show_file": "Ina-upload ang palabas mo…",
+        "sending.diagnostics": "Ina-upload ang diagnostics…",
+        "sending.creating": "Ipinapadala…",
+        "sent.view": "Tingnan ang ulat na ito",
+        "error.signedOut": "Na-sign out ka. Mag-sign in ulit at ipadala ang ulat.",
+        "error.tooMany": "Marami ka nang naipadalang ulat ngayong araw. Subukan ulit bukas.",
+        "error.showChanged": "Ibang palabas na ang nakabukas ngayon. Tingnan ang attachment at ipadala ulit.",
+        "sent.showTooLarge": "Masyadong malaki ang palabas mo para i-attach (lampas 1 GB), kaya ipinadala ang ulat nang wala ito.",
+        "close": "Isara",
+        "record.stopAndReturn": "Ihinto at bumalik sa ulat",
+        "record.webHint": "Itatanong ng browser mo kung ano ang ise-share: piliin ang tab na ito. Tatabi muna ang ulat habang nagre-record ka, hanggang 5 minuto. Ipakita sa amin ang problema habang ipinapaliwanag mo ito.",
+        "record.failed.webDenied": "Hindi nagsimula ang pag-record. Piliin ang tab na ito kapag nagtanong ang browser mo, at payagan ang mikropono kung in-on mo ito.",
+        "record.failed.webUnsupported": "Hindi available ang pag-record sa browser na ito.",
+        "drawer.show": "Ipakita ang ulat",
+        "drawer.hide": "Itago ang ulat",
+        "drawer.resize": "Baguhin ang laki ng ulat",
+        "discard.question": "Itapon ang ulat na ito?",
+        "discard.body": "Mawawala ang isinulat at ni-record mo.",
+        "discard.confirm": "Itapon",
+        "discard.keep": "Ituloy ang pag-edit",
+        "record.preview": "Ang recording mo",
+        "error.details": "Mga detalye: {message}",
+        "error.refused": "Hindi naipadala ang ulat mo. Subukan ulit, at kung paulit-ulit itong nangyayari, sabihan kami sa Discord.",
+        "record.failed.microphone": "Hindi pinapayagan ang OpenMarch na gamitin ang mikropono. I-off ang May mikropono para mag-record nang walang tunog, o payagan ang mikropono sa system settings mo.",
+        "record.failed.webMicrophone": "Hindi pinayagan ng browser mo ang mikropono. I-off ang May mikropono para mag-record nang walang tunog, o payagan ang mikropono para sa site na ito."
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "Hindi na pareho ang layo mula sa gitna ng pinakakaliwa at pinakakanang linya ng sanggunian X",
+            "centerLocked": "Nananatili sa gitna ang linya sa gitna habang sabay na ine-edit ang dalawang gilid",
+            "duplicatePosition": "May linya ng sanggunian {axis} na roon",
+            "invalid": "Hindi valid ang pagbabagong iyon sa field",
+            "invalidStepSize": "Dapat higit sa 0 ang laki ng hakbang",
+            "mirrorIgnored": "Mga linya ng sanggunian X lang ang mini-mirror",
+            "noGap": "Walang puwang sa pagitan ng dalawang linya ng sanggunian {axis} na mapaglalagyan nito. Ibigay na lang ang posisyon nito.",
+            "notFound": "Wala na ang linya ng sanggunian na iyon",
+            "skippedExisting": "Nilaktawan ang mga puwestong may linya ng sanggunian na",
+            "tooMany": "Sobrang daming linya ng sanggunian ang madadagdag niyan. Gumamit ng mas malaking agwat.",
+            "yInFront": "Hindi puwedeng nasa harap ng harapan ng field ang mga linya ng sanggunian Y. Gumamit ng 0 o negatibong bilang ng hakbang.",
+            "mirrorTwinSkipped": "May linya ng sanggunian na roon sa kabilang gilid, kaya ito lang ang naidagdag",
+            "outsideField": "Hindi isinama ang mga puwestong lampas sa pinakadulong mga linya ng sanggunian ng field, kaya hindi nagbago ang laki ng field",
+            "fieldResized": "Nagbago ang laki o gitna ng field. Nananatili sa puwesto ang mga miyembro, kaya i-check sila laban sa mga linya.",
+            "fieldResizeRefused": "Mababago niyan ang laki o gitna ng field, kaya walang nagbago"
+        },
+        "nothingAdded": "May linya ng sanggunian na ang bawat puwesto",
+        "seriesAdded": "{count, plural, one {# linya ng sanggunian {axis} ang naidagdag} other {# linya ng sanggunian {axis} ang naidagdag}}",
+        "names": {
+            "yardLine": "{yards} yard line",
+            "endZone": "end zone",
+            "endZoneShort": "EZ",
+            "endZoneLine": "end zone {yards}",
+            "endZoneLineShort": "EZ{yards}",
+            "gridLine": "linya {line}",
+            "sideSteps": "{side} {steps} hakbang mula sa gitna",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "{steps} hakbang mula sa harap",
+            "stepsFromFrontShort": "F{steps}"
+        },
+        "failed": "Hindi na-save ang pagbabago sa field, kaya walang nagbago."
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "Field",
+            "done": "Tapos",
+            "discard": "Itapon ang mga pagbabago",
+            "discardTip": "Ibalik ang field sa dati nitong ayos noong binuksan mo ang panel na ito. Maibabalik ng I-undo ang mga pagbabago.",
+            "discarded": "Itinapon ang mga pagbabago sa field. Maibabalik ang mga ito ng I-undo.",
+            "custom": "Custom na field",
+            "changes": "{count, plural, =0 {Walang pagbabago mula sa template} one {# pagbabago mula sa template} other {# pagbabago mula sa template}}",
+            "selectMany": "Pumili ng marami",
+            "mirror": "I-mirror ang magkabilang panig",
+            "mirrorOnTip": "Naka-on ang I-mirror ang magkabilang panig: ang pag-edit sa isang gilid ng 50 ay nag-e-edit din sa kakambal nito",
+            "mirrorOffTip": "Naka-off ang I-mirror ang magkabilang panig: hiwalay na ine-edit ang bawat linya",
+            "sections": {
+                "size": "Laki at mga hakbang",
+                "template": "Template",
+                "names": "Mga pangalan at gilid",
+                "markings": "Mga marka at label",
+                "image": "Background image",
+                "colors": "Mga kulay"
+            },
+            "tabs": {
+                "setup": "Setup",
+                "lines": "Mga linya",
+                "appearance": "Hitsura"
+            }
+        },
+        "ruler": {
+            "x": "Mag-drag palabas ng ruler na ito para magdagdag ng linyang X",
+            "y": "Mag-drag palabas ng ruler na ito para magdagdag ng linyang Y"
+        },
+        "readout": {
+            "newLine": "Bagong linya:",
+            "fromCenter": "{side} · {steps} hakbang",
+            "center": "Nasa gitna",
+            "behindFront": "{steps} hakbang sa likod ng harapan",
+            "toLine": "{steps} papunta sa {line}",
+            "mirrored": "Pati ang kakambal nito sa kabilang gilid",
+            "releaseToDelete": "{count, plural, one {Bitawan para burahin ang linyang ito} other {Bitawan para burahin ang # linyang ito}}",
+            "dragOut": "I-drag papunta sa field para magdagdag ng linya"
+        },
+        "popover": {
+            "position": "Posisyon",
+            "side": "Gilid",
+            "stepsFromCenter": "hakbang mula sa gitna",
+            "stepsBehindFront": "hakbang sa likod ng harapan",
+            "yardLine": "= {yard} yard line",
+            "typeHint": "i-type ang 24, +4 o 85.33/2",
+            "typeHintYards": "i-type ang 24, +4, 47.5yd o 85.33/2",
+            "shortName": "Maikling pangalan",
+            "shortNameHint": "Ipinapakita sa mga gilid ng field at sa mga coordinate, gaya ng 45 o FH",
+            "name": "Pangalan",
+            "nameHint": "Ginagamit sa mga nakasulat na coordinate at sa pagpili ng venue ng 3D View",
+            "yardNumber": "Numero ng yard",
+            "yardNumberHint": "Ang numerong nakapinta sa field sa linyang ito, kung mayroon",
+            "none": "wala",
+            "visible": "Nakikita",
+            "mirrored": "Naka-mirror sa {twin}: nalalapat sa dalawa ang mga pag-edit",
+            "delete": "Burahin"
+        },
+        "numberPad": {
+            "label": "Number pad",
+            "back": "Burahin ang huling character",
+            "clear": "I-clear",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "Ang mga linyang iyon ay may pangalan nang ayon sa posisyon nila",
+        "list": {
+            "xHeading": "X · gilid-sa-gilid",
+            "yHeading": "Y · harap hanggang likod",
+            "center": "gitna",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "{steps} palikod",
+            "drawAsHashes": "Iguhit bilang hash",
+            "asymmetric": "Hindi pareho ang layo mula sa gitna ng pinakadulong mga linyang X, kaya wala sa gitna ang guhit ng field. Ilipat ang isa sa mga ito hanggang magtugma ang dalawang gilid.",
+            "hidden": "Nakatago",
+            "reference": "Sanggunian"
+        },
+        "size": {
+            "width": "Lapad",
+            "depth": "Lalim",
+            "steps": "hakbang",
+            "stepsTo5": "{steps} to 5",
+            "extent": "{steps} hakbang · {length}"
+        },
+        "names": {
+            "fieldNameHint": "Sa pangalang ito pinipili ng 3D View ang venue nito"
+        },
+        "markings": {
+            "edgeLabels": "Mga label sa gilid",
+            "yardNumbers": "Mga numero ng yard",
+            "yardNumbersHint": "Mga hakbang mula sa harap hanggang sa bawat gilid ng mga nakapintang numero. I-clear ang mga numero sa home para walang ipinta.",
+            "homeBottom": "Home, ibaba",
+            "homeTop": "Home, itaas",
+            "awayTop": "Away, itaas",
+            "awayBottom": "Away, ibaba"
+        },
+        "image": {
+            "remove": "Alisin ang larawan",
+            "ratios": "Ratio ng field {field} · ratio ng larawan {image}"
+        },
+        "colors": {
+            "field": "Field",
+            "marchers": "Mga miyembro at daanan",
+            "shapes": {
+                "circle": "Bilog",
+                "square": "Parisukat",
+                "triangle": "Tatsulok",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "Lumipat sa {template}?",
+            "lines": "Mga linya: {added} idinagdag, {removed} inalis, {renamed} pinalitan ng pangalan o binago",
+            "size": "Laki: {before} → {after} hakbang",
+            "keepLook": "Panatilihin ang hitsura ko (mga kulay, label, larawan, pangalan ng gilid)",
+            "undoNote": "Isang hakbang lang ito sa undo.",
+            "cancel": "Kanselahin",
+            "apply": "Lumipat",
+            "resetTitle": "I-reset sa {template}?",
+            "resetApply": "I-reset",
+            "basedOn": "Batay sa",
+            "resetShort": "I-reset sa template"
+        },
+        "fieldPane": "Mga linya ng field",
+        "help": {
+            "button": "Keyboard",
+            "title": "Keyboard",
+            "route": "Pinipili ng <tab></tab> ang susunod na linya habang nasa field ang keyboard. Lumilipat ang <pane></pane> sa pagitan ng field at ng Field panel."
+        },
+        "lines": {
+            "pickedMany": "{count} linya ang napili",
+            "axis": "Aling mga linya",
+            "xTab": "Gilid-sa-gilid · {count}",
+            "yTab": "Harap hanggang likod · {count}",
+            "canvasHint": "Mag-click ng linya para piliin ito · Mag-drag palabas ng ruler para magdagdag · <keys></keys> para tapusin",
+            "canvasHintPicked": "I-drag ang mga napiling linya para ilipat · <keys></keys> para alisin ang pagpili"
+        },
+        "line": {
+            "title": "Linya",
+            "noneHint": "Pumili ng linya sa field o sa listahan. Mag-Shift-click para pumili ng higit pa. Mag-drag palabas ng ruler para magdagdag.",
+            "reference": "Gamiting sanggunian",
+            "mixed": "Magkakaiba",
+            "add": "Magdagdag ng linya",
+            "everyOther": "Panatilihin ang bawat ikalawa"
+        }
     }
 }

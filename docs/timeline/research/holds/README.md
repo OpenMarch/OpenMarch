@@ -237,6 +237,16 @@ from stale copies (defined-coordinates finding 7).
 
 18. **Held holds can span page flags in Basic,** because they're marks, not moves.
 
+### F. Hold style (owner, 2026-11-15; ADR 0015 D-5, fork #775)
+
+19. **A Held hold can carry a style:** stand, mark time or high mark time, for the 3D View. With
+    none it uses the show setting (Show settings, "Holding while others move"), whose default is
+    now Stand: holds stand still unless asked. The style is the whole hold's, set for the selected
+    marchers Held at the playhead from the inspector's Hold style choice, the field menu or the
+    command palette. A hold that isn't a stored Held mark has no style and uses the show setting.
+    Joined holds take the style of the earliest part that has one. Not yet: two styles inside one
+    continuous hold ("mark time 8, then halt"), which needs touching holds to stay apart.
+
 ## Storage (proposal for the ADR amendment)
 
 A new side table, kept apart from the motion tables the way kept spots are. It is app data, not

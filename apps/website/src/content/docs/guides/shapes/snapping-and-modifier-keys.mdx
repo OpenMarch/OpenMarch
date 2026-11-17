@@ -1,6 +1,6 @@
 ---
 title: Snapping and modifier keys
-description: How shapes land on half steps, yard lines and hashes, how to turn snapping off, and what Shift, Ctrl or Command, and Alt or Option do while you drag.
+description: Make shapes land on yard lines and hashes, turn snapping off for shapes and marchers, and use Shift, Ctrl or Command, and Alt or Option while you drag (fine, constrain, from center).
 type: how-to
 covers:
   - apps/desktop/src/input/modifierRoles.ts
@@ -18,18 +18,16 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-While you draw or drag a shape, its spots land on half steps, and its corners, sides and center catch the field's yard lines and hashes. Three keys change what a drag does while you hold them: one for finer control, one to constrain, and one to work from the center.
+<InShort>Shapes snap to half steps, and boxes, lines and arcs also catch yard lines and hashes. Select <Ui k="toolbar.alignment.snapToggleCaption" /> in the <Ui k="inspector.shape.alignmentTab" /> tab or press <Kbd action="toggleSnap" /> to turn snapping off. While you drag, hold <Kbd keys="Shift" /> for fine, <Kbd keys="Mod" /> to constrain, <Kbd keys="Alt" /> to work from the center.</InShort>
 
-## Half steps
-
-Every spot, corner and spacing lands on the field's half-step grid. Dragging a handle or a number moves the spacing in half steps, so the far side of a shape lands near the pointer rather than exactly under it.
-
-## Yard lines, hashes and sidelines
+## Land on yard lines, hashes and sidelines
 
 When a moving corner, side or center comes near one of the field's lines, it lands on the line. The lines are the ones the coordinate sheets count from: yard lines, hashes and sidelines, and half lines if the field has them. This works on custom fields too.
 
-- Drawing or stretching a box, the corner that moves lands on the line and the fixed side stays put. The spacing becomes whatever that takes and is kept exactly: 7 files from the 40 to the 50 are 2⅔ steps apart.
+- Drawing or stretching a box, the corner that moves lands on the line and the fixed side stays put. The spacing becomes whatever that takes and is kept exactly: 7 marchers across from the 40 to the 50 stand 2⅔ steps apart.
 - Moving a shape, its nearest corner or its center lands on the line, side to side and front to back. Centering a block on the 50 or on a hash works this way.
 - Dragging a box's spacing number lands a corner or the center on a line in the same way. Typing a number never snaps.
 
@@ -44,54 +42,52 @@ The pull only reaches a few pixels on screen, so every half step near a line can
 
 ## Turn snapping off
 
-Select <Ui k="toolbar.alignment.snapToggleCaption" /> in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab, or press <Kbd action="toggleSnap" />. The same magnet button is in every shape's floating editor. While snapping is off:
+Select <Ui k="toolbar.alignment.snapToggleCaption" /> in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab, or press <Kbd action="toggleSnap" />. The same magnet button is in every shape's floating editor.
 
-- shapes and marchers you drag on the field go exactly where the pointer goes, off the half steps, and nothing pulls them onto lines or other marchers;
-- shapes turn freely, not in 15° steps;
-- the arrow keys move marchers without rounding them to the grid.
+<Media
+  id="shapes-snap-button"
+  alt="The toolbar's Alignment tab: Coordinate Rounding, the two lock buttons, the Snap button's magnet lit in the accent color because snapping is off, and Snap to grid, four arrows pointing inward."
+  maxWidth={520}
+/>
+
+While snapping is off:
+
+- shapes you drag on the field go exactly where the pointer goes, off the half steps, and nothing pulls them onto lines or other marchers;
+- shapes and groups of marchers turn freely, not in 15° steps;
+- marchers you drag or nudge ignore coordinate rounding ([Move marchers](/guides/marchers/move-marchers/#snap-to-a-grid-of-steps) has the rest).
 
 The button looks pressed while snapping is off, and a drag shows <Ui k="field.gestureChip.snapOff" /> by the pointer, so you can't forget it's off. Snapping comes back on when you restart OpenMarch or open a show. The timeline has its own snapping, which this doesn't change.
 
 <Ui k="toolbar.alignment.snapCaption" />, beside it, is a different thing: it moves the selected marchers onto the nearest grid points, once (<Kbd action="snapToNearestCustomFraction" />).
 
-## Modifier keys
+## Hold a key to change a drag
 
 Hold these keys during a drag on a shape. They take effect as soon as you press them, mid-drag, and stop when you let go. Holding two gives you both.
 
 | Hold                                    | Role         | What it does                                                                                                                                                                 |
 | --------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| <Kbd keys="Shift" gesture="drag" />     | Fine         | Off the half steps, in hundredths of a step, still catching yard lines and hashes. Turning goes by whole degrees.                                                            |
-| <Kbd keys="Mod" gesture="drag" />       | Constrain    | Drawing a box or dragging its corner makes the two spacings equal. Lines, curves and arcs draw at 45° steps. Moving keeps the shape on one axis. On a side handle, it switches the spacing lock for that drag. |
-| <Kbd keys="Alt" gesture="drag" />       | From center  | A box draws from its center: the press is its middle and the pointer a corner. Handles resize the shape about its center instead of holding the opposite side.               |
+| <Kbd keys="Shift" gesture="drag" />     | Fine         | Off the half steps, in hundredths of a step, still catching yard lines and hashes. Turning goes by whole degrees. A dragged number in the floating editor changes in hundredths. |
+| <Kbd keys="Mod" gesture="drag" />       | Constrain    | Drawing a box or dragging its corner makes the two spacings equal. Lines, curves and arcs draw at 45° steps. Moving keeps the shape on one axis. On a box's side handle or an arc's handles, it switches the proportion lock for that drag; on a line's end, it keeps the line's direction. |
+| <Kbd keys="Alt" gesture="drag" />       | From center  | A box draws from its center: the press is its middle and the pointer a corner. Handles resize the shape about its center instead of holding the opposite side; a line's end moves both ends about the middle. |
 
 <Kbd keys="Mod" /> is Command on a Mac and Ctrl elsewhere; <Kbd keys="Alt" /> is Option on a Mac. Ctrl on a Mac doesn't constrain: Control-click is a right-click there.
 
 <Media
   id="shapes-modifier-keys"
-  alt="With Alt held, a drag from a point above the trumpets draws a box that grows out both ways from where the press was. Ctrl is then held too, and the box's side-to-side and front-to-back spacings become equal. Both keys show at the bottom of the clip."
+  alt="With Alt held, a drag from a point on empty field draws a box that grows out both ways from where the press was. Ctrl is then held too, and the box's side-to-side and front-to-back spacings become equal, so it turns from a long box of two rows into a 4 × 3 block. An orange guide shows for a moment where an edge passes a hash. Both keys show at the bottom of the clip."
 />
 
 While you drag, a small label by the pointer names each key that does something there and what it does, such as "⌥ from center" or "⇧ fine". A key that does nothing for that drag isn't listed.
 
-A few more things the keys do:
+<Kbd keys="Mod" gesture="drag" /> from a shape's center dot moves its <Term id="pivot">pivot</Term>, as it does for a group of marchers ([Turn a group around another point](/guides/marchers/align-and-space/#turn-a-group-around-another-point)). Choose <Ui k="shapes.edit.pivot.backToCenter" /> in the floating editor's pivot menu to put it back.
 
-- Dragging a number in the floating editor, <Kbd keys="Shift" /> changes it in hundredths of a step.
-- Dragging the end of a line, <Kbd keys="Mod" /> keeps the line's direction so only its length changes, and <Kbd keys="Alt" /> moves both ends about the middle.
-- Dragging an arc's handles, <Kbd keys="Mod" /> switches the lock that keeps its width and depth in proportion, and <Kbd keys="Alt" /> stretches it about its circle's center.
-- Turning a shape with its knob goes in 15° steps; <Kbd keys="Shift" /> turns it by whole degrees, and with snapping off it turns freely.
-- <Kbd keys="Mod" gesture="drag" /> from a shape's center dot pulls its pivot out, so the shape turns and flips around that point instead. Double-click the pivot to send it back to the center, or open the pivot menu in the floating editor and choose <Ui k="shapes.edit.pivot.backToCenter" />.
+## On a tablet
 
-The Shortcuts dialog (<Kbd action="showShortcuts" />) lists these keys in its Shapes group.
-
-## On a touch screen
-
-On a tablet, buttons on the field stand in for the keys: <Ui k="touch.modifiers.fine" />, <Ui k="touch.modifiers.constrain" /> and <Ui k="touch.modifiers.fromCenter" />, plus <Ui k="touch.modifiers.noSnap" />. Hold one while you drag, or tap it to keep it on. <Ui k="touch.modifiers.add" /> and <Ui k="touch.modifiers.subtract" /> stand in for <Kbd keys="Shift" /> and <Kbd keys="Alt" /> when you select; see [Select marchers](/guides/marchers/select-marchers/#on-a-tablet).
-
-These buttons move aside for whatever holds the buttons of what you're doing, such as a line's <Ui k="shapes.edit.finish" />, a new shape's <Ui k="shapes.edit.place" /> or the isolation bar's Done. The zoom controls move up out of their way too, and the shape's floating editor slides clear of the zoom controls. They also keep off the frame around the selection, the shape you're editing and their handles, so a finger can always reach a handle, and the floating editor keeps off its shape's handles and spots. The floating editor always stays on the field, over the shape if nothing else fits, so <Ui k="shapes.edit.place" /> and <Ui k="shapes.edit.discard" /> are in reach whatever the zoom. The buttons stay where they are when you select, deselect or pick a drawing tool, and move only when something comes over them, so they're where your finger expects them and out of where you're about to draw.
+The buttons over the field stand in for these keys: <Ui k="touch.modifiers.fine" />, <Ui k="touch.modifiers.constrain" />, <Ui k="touch.modifiers.fromCenter" /> and <Ui k="touch.modifiers.noSnap" />. Hold one while you drag, or tap it to keep it on. See [The buttons over the field](/guides/workspace/on-a-tablet/#the-buttons-over-the-field).
 
 ## Related
 
 - [How shapes work](/guides/shapes/): spots, intervals and steps.
 - [Draw a box](/guides/shapes/draw-a-box/): the handles and floating editor these keys change.
 - [Draw a line or curve](/guides/shapes/draw-a-line/): points, ends and intervals along a path.
-- [Move marchers](/guides/marchers/move-marchers/): snapping when you drag marchers themselves.
+- [Move marchers](/guides/marchers/move-marchers/): what a marcher you drag snaps to, and coordinate rounding.

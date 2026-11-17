@@ -123,7 +123,13 @@ export async function holdOverWindowOn(
             toast.info(message.title, { description: message.description });
         return result;
     } catch (error) {
-        toastTimelineError(error, "Error holding marchers");
+        toastTimelineError(
+            error,
+            tolgee.t(
+                "timeline.holdFromPrevious.holdError",
+                "Couldn't hold the marchers",
+            ),
+        );
         return { held: [], skipped: [] };
     }
 }

@@ -14,8 +14,18 @@ import {
     FIELD_LAYER_ATTRIBUTE,
     subscribeFieldLayers,
 } from "@/components/canvas/fieldLayers";
+import { webChannel } from "@/utilities/webBuild";
 
 const GAP = 8;
+/** Toasts' distance from the window's edges */
+const EDGE = 12;
+/**
+ * FORK-ONLY, lab builds (lab.openmarch.com): the lab's feedback buttons (om-lab's widget) sit 20px
+ * from the window's bottom-right corner and are 48px tall, so toasts start 12px above them rather
+ * than under them, where testers couldn't read them
+ */
+export const LAB_FEEDBACK_CLEARANCE = 20 + 48 + 12;
+const isLabBuild = webChannel === "lab";
 /**
  * Room between a task's bar and a toast below it (#933): a whole touch target, so a finger aimed
  * at the bar's Done can't land on the toast's Undo
@@ -148,7 +158,8 @@ export function useTapToDismiss(enabled: boolean) {
  * Compact toasts in the window's bottom-right corner: tight padding, 16px icon, 320px wide (sonner's
  * is 356px), 12px from the edges. There they cover the inspector's bottom, clear of the timeline (it stops
  * at the inspector's edge) and its +; floating above the timeline put them over the field. Sonner swaps in its mobile offset and full
- * width at 600px or narrower (a small window, the web editor), so that offset is 12px too.
+ * width at 600px or narrower (a small window, the web editor), so that offset is 12px too. In a lab
+ * build they start above the lab's feedback buttons instead (`LAB_FEEDBACK_CLEARANCE`).
  */
 export default function Toaster() {
     const isTouch = useIsTouchMode();
@@ -158,18 +169,22 @@ export default function Toaster() {
     const dialogOpen = useDialogOpen(isTouch);
     const overlayOpen = sidebarPanelOpen || dialogOpen;
     useTapToDismiss(isTouch);
+    const bottom = isLabBuild ? LAB_FEEDBACK_CLEARANCE : EDGE;
+    const edges = { top: EDGE, right: EDGE, bottom, left: EDGE };
     return (
         <ToasterPrimitive
             visibleToasts={6}
-            offset={12}
-            mobileOffset={12}
+            offset={edges}
+            mobileOffset={edges}
             style={{ "--width": "320px" } as React.CSSProperties}
             {...(isTouch
                 ? {
                       position: overlayOpen
                           ? ("bottom-center" as const)
                           : ("top-center" as const),
-                      offset: overlayOpen ? { bottom: 16 } : { top: touchTop },
+                      offset: overlayOpen
+                          ? { bottom: isLabBuild ? LAB_FEEDBACK_CLEARANCE : 16 }
+                          : { top: touchTop },
                       className: "touch-toaster",
                       // Short notes go quickly. Toasts with a button pass their
                       // own longer duration (ACTION_TOAST_DURATION_MS or more),
@@ -182,26 +197,30 @@ export default function Toaster() {
                 classNames: {
                     title: "text-body text-text leading-tight",
                     description: "text-sub text-text-subtitle leading-tight",
-                    // The toast wraps: with two buttons (a `cancel` beside the action), or one too long
-                    // to sit beside the text, the text keeps the first line and the buttons go on their
+                    // The toast wraps: with two buttons (a `cancel` beside the action), or a text and button
+                    // too long to share one line, the text keeps the first line and the buttons go on their
                     // own line underneath (#805: "Stop at the end of Page 5" squeezed the text into a column)
-                    toast: "px-12 py-8 flex flex-wrap items-center gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
-                    // Centered on a one-line toast; with a description the icon stays by the title
-                    // (16 px in its 17.5 px line)
-                    icon: "[[data-sonner-toast]:has([data-description])_&]:self-start [[data-sonner-toast]:has([data-description])_&]:mt-[1px]",
-                    // Beside the icon (16 px and the 8 px gap, with room to spare so rounding never wraps
-                    // it; it grows into the rest), or the whole width without one. Sonner
-                    // renders the cancel as `[data-cancel]`
+                    toast: "px-12 py-8 flex flex-wrap items-start gap-8 bg-modal rounded-6 border border-stroke font-sans w-full backdrop-blur-md shadow-modal",
+                    // By the first line of text, however many lines it wraps to or a description adds
+                    // (16 px in its 17.5 px line, a pixel low to sit on the letters rather than the line box)
+                    icon: "mt-[2px]",
+                    // The text's own one-line width, at most the row beside the icon (16 px and the 8 px
+                    // gap, with room to spare so rounding never wraps it) or the whole row without one. So
+                    // a button stays beside the text only when text and button fit on one line; a longer
+                    // text fills its row and wraps there, and the button goes underneath (a long message
+                    // beside "Show in folder" made a narrow column of text). Sonner renders the cancel as
+                    // `[data-cancel]`; with one the text always fills its row
                     content:
-                        "min-w-0 flex-1 basis-[120px] [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
-                    // The action keeps to one line: beside the text while the text keeps 120 px (room for "Release notes" or "Switch to Expert"), so a
-                    // long message never squeezes its label into a column; otherwise under it, at the right
+                        "min-w-0 grow basis-auto max-w-[calc(100%-32px)] [[data-sonner-toast]:not(:has([data-icon]))_&]:max-w-full [[data-sonner-toast]:has([data-cancel])_&]:basis-[calc(100%-32px)] [[data-sonner-toast]:has([data-cancel]):not(:has([data-icon]))_&]:basis-full",
+                    // The action keeps to one line: at the right end of the text's line when both fit,
+                    // otherwise on its own line under the text, still at the right. Its padding is for the hover
+                    // and focus ring; -my-2 keeps it to a line of text's height, so it lines up with the text
                     actionButton:
-                        "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
+                        "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto shrink-0 -my-2 whitespace-nowrap rounded-6 px-6 py-2 text-body text-accent hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
                     // A second, quieter button before the action (sonner's `cancel`); it starts the
                     // buttons' line and pushes both to the right
                     cancelButton:
-                        "ml-auto shrink-0 self-center whitespace-nowrap rounded-6 px-6 py-2 text-body text-text hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
+                        "ml-auto shrink-0 -my-2 whitespace-nowrap rounded-6 px-6 py-2 text-body text-text hover:underline focus-visible:outline-none focus-visible:ring focus-visible:ring-accent",
                 },
             }}
             icons={{

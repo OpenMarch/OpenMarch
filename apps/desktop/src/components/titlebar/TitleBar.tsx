@@ -4,6 +4,7 @@ import {
     ListIcon,
     XIcon,
     MagnifyingGlassIcon,
+    QuestionIcon,
 } from "@phosphor-icons/react";
 import BugReport from "./BugReport";
 import { SealWarningIcon } from "@phosphor-icons/react";
@@ -268,6 +269,14 @@ function EditorTitleBar({
                             <MagnifyingGlassIcon size={18} />
                         </ActionButton>
                     )}
+                    <ActionButton
+                        action="openHelp"
+                        aria-label={t("actions.ui.openHelp")}
+                        className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
+                        data-testid="titlebar-help"
+                    >
+                        <QuestionIcon size={18} />
+                    </ActionButton>
                     <BugReport />
                     {showWindowControls && (
                         <div className="titlebar-button flex">

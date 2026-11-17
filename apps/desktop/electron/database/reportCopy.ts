@@ -3,7 +3,7 @@
  *
  * People send their show so we can reproduce a bug, not so we can read their
  * roster. The copy is scrubbed here, before it leaves the computer:
- * - every notes, description and nickname column is cleared, and names
+ * - every notes, description, nickname and label column is cleared, and names
  *   (performers, tags, timelines, shapes, …) become "<label> <id>";
  * - the undo/redo history and the timeline change log are emptied, because
  *   they keep old copies of rows, names included;
@@ -35,8 +35,11 @@ function columnsOf(db: ScrubbableDatabase, table: string): Set<string> {
     return new Set(rows.map((r) => r.name));
 }
 
-/** Free-text columns cleared in every table that has them. */
-const CLEARED_COLUMNS = new Set(["notes", "description", "nickname"]);
+/**
+ * Free-text columns cleared in every table that has them. `label` is a cue's (ADR 0015 D-9): it
+ * says how the cue's performers were picked, which is often a tag's or a group's name.
+ */
+const CLEARED_COLUMNS = new Set(["notes", "description", "nickname", "label"]);
 /** What a table's `name` becomes, "<label> <rowid>"; other tables use their own name. */
 const NAME_LABELS: Readonly<Record<string, string>> = {
     marchers: "Performer",
@@ -51,7 +54,7 @@ const quote = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 /**
  * Scrubs an already-made copy in place. Works from the file's own tables
  * rather than a fixed list, so older and fork-only tables are covered too:
- * every `notes`, `description` and `nickname` column is cleared, and every
+ * every `notes`, `description`, `nickname` and `label` column is cleared, and every
  * nullable `name` column becomes "<label> <rowid>" (kept non-empty, so bugs
  * that need names still show up). Runs the changes first and empties the
  * history last, so rows the undo and change-log triggers write while

@@ -1,20 +1,20 @@
 /**
- * Turns one marcher's compiled Horn/Equipment segments into what the
- * channel plays over the show (performer-behavior.md sections 2.2, 3 and
- * 8.3): a hold, or a transition from one hold to another.
+ * Turns one marcher's compiled Position segments into what the Horn/Equipment
+ * channel plays over the show (ADR 0015 D-3; performer-behavior.md sections
+ * 2.2 and 8.3): a hold, or a transition from one hold to another.
  *
  * Timing, in the show's count clock (the number `c` is count c's click):
  *
- * - a state holds from its click;
+ * - a lasting or momentary value holds from its click, and the value under a
+ *   momentary one comes back on the click after it ends;
  * - a transition of L counts runs from the click of `count - L + 1` to the
  *   click of its count, as the compile gives it;
  * - a snap (a zero-length transition) is keyed in fixed time: it runs for
  *   {@link SNAP_SECONDS} before its click, at the tempo of the count before
  *   the click, and never longer than that count.
  *
- * Values without an animation yet (battery and guard states, tosses, the
- * choreography phrase taking the channel over) keep the hold underneath:
- * their assets are build step 7. Pure: no three.js.
+ * Values without an animation yet (battery and guard positions, tosses) keep
+ * the hold underneath. Pure: no three.js.
  */
 import type { CueSegment, PerformerCarry } from "@openmarch/core";
 import type { HoldFamily, HoldState } from "../instruments/holds";
@@ -115,13 +115,13 @@ export function planHornChannel(
         push({ from: at, to: at, state, fromState: null });
     let current = defaultState;
     for (const seg of segments) {
-        // the default is the first event; phrases and take-overs keep the
-        // hold underneath until they have animations
-        if (seg.kind === "default" || seg.kind === "phrase") continue;
-        if (seg.takenOverFrom) continue;
-        const target = hornHoldOf(seg.value);
+        // The default is the look's hold: the first event, and what comes
+        // back after a momentary value. A value with no animation yet keeps
+        // the hold underneath.
+        const target =
+            seg.kind === "default" ? defaultState : hornHoldOf(seg.value);
         if (target === null || target === current) continue;
-        if (seg.kind === "state") {
+        if (seg.kind !== "transition") {
             hold(seg.from, target);
         } else {
             let from = seg.from;

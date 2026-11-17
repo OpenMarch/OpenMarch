@@ -20,13 +20,17 @@
  * hand grips, read from `holds.ts`, along each hand's fingers.
  */
 import {
-    arc,
+    band,
+    box,
     colorPieces,
     cylinder,
+    ribbon,
     smoothLathe,
     smoothTube,
     transformPiece,
+    PART_ALUMINUM,
     PART_BLACK,
+    PART_BRONZE,
     PART_CHROME,
     PART_HEAD,
     PART_METAL,
@@ -36,7 +40,7 @@ import {
     type Piece,
     type Vec3,
 } from "./mesh";
-import { hold, type HoldFamily } from "./holds";
+import { hold, stickOf, STICK_FULCRUM, type HoldFamily } from "./holds";
 import type {
     BatteryModelId,
     Detail,
@@ -46,33 +50,56 @@ import type {
 
 const IN = 0.0254;
 
-/** The marching bass sizes, inches across the head, smallest first. */
-export const BASS_SIZES_IN = [18, 20, 22, 24, 26, 28, 30, 32] as const;
+/**
+ * The marching bass sizes, inches across the head, smallest first: what
+ * Yamaha (MB-8300) and Pearl (Championship Maple) sell, 14 to 32 in 2 in
+ * steps, every one 14 in deep.
+ */
+export const BASS_SIZES_IN = [14, 16, 18, 20, 22, 24, 26, 28, 30, 32] as const;
 
 /**
- * Sizes for a bass line of `count` drums, spread evenly over
- * `BASS_SIZES_IN`, smallest first. One drum gets the middle size; past
- * eight, sizes repeat.
+ * The smallest size a line of `count` drums reaches down to. Real lines
+ * run 18 to 32 in (high schools mostly 18 to 28); only a line too long to
+ * give every drum its own size there reaches down to 16 in, then 14 in.
+ */
+function smallestFor(count: number): number {
+    if (count <= 5) return 18;
+    if (count === 6) return 16;
+    return 14;
+}
+
+/**
+ * Sizes for a bass line of `count` drums, smallest first: spread evenly
+ * from the smallest size the line reaches (`smallestFor`) to 32 in. One
+ * drum gets the middle of 18 to 32 in; past ten, sizes repeat. The show
+ * stores no size: the drill writer never picks one.
  */
 export function bassSizesFor(count: number): number[] {
     const n = Math.max(0, Math.floor(count));
     if (n === 0) return [];
-    const last = BASS_SIZES_IN.length - 1;
-    if (n === 1) return [BASS_SIZES_IN[Math.floor(BASS_SIZES_IN.length / 2)]];
+    const sizes = BASS_SIZES_IN.filter((s) => s >= smallestFor(n));
+    const last = sizes.length - 1;
+    if (n === 1) return [sizes[Math.floor(sizes.length / 2)]];
     return Array.from(
         { length: n },
-        (_, i) => BASS_SIZES_IN[Math.round((i * last) / (n - 1))],
+        (_, i) => sizes[Math.round((i * last) / (n - 1))],
     );
 }
 
-/** Default colors by part. The window recolors the shell (section) and the metal (finish). */
+/**
+ * Default colors by part. The window recolors the shell (section). Heads
+ * are smooth white; hoops, lugs and carriers satin aluminum; cymbals
+ * brilliant bronze whatever the brass line's finish.
+ */
 export const BATTERY_COLORS: Record<number, number> = {
     [PART_SHELL]: 0xffffff,
-    [PART_HEAD]: 0xe9e6dc,
+    [PART_HEAD]: 0xf2f1ed,
     [PART_CHROME]: 0xd9dde2,
+    [PART_ALUMINUM]: 0xc6cad0,
     [PART_BLACK]: 0x141416,
     [PART_WOOD]: 0xd8b98a,
     [PART_METAL]: 0xc9a24a,
+    [PART_BRONZE]: 0xdcaa5c,
 };
 
 interface SegmentCounts {
@@ -88,6 +115,8 @@ interface SegmentCounts {
     stick: number;
     /** Rings in a head's profile, center to rim. */
     headRings: number;
+    /** Small hardware (bolt heads, lug casings) is drawn up close only. */
+    fine: boolean;
 }
 
 const SEGMENTS: Record<Detail, SegmentCounts> = {
@@ -98,8 +127,17 @@ const SEGMENTS: Record<Detail, SegmentCounts> = {
         small: 10,
         stick: 12,
         headRings: 4,
+        fine: true,
     },
-    low: { round: 20, hoop: 20, hoopRing: 5, small: 5, stick: 5, headRings: 2 },
+    low: {
+        round: 20,
+        hoop: 20,
+        hoopRing: 5,
+        small: 5,
+        stick: 5,
+        headRings: 2,
+        fine: false,
+    },
 };
 /** Six drums on one carrier: coarser rings so the set keeps the budget. */
 const TENOR_SEGMENTS: Record<Detail, SegmentCounts> = {
@@ -110,8 +148,17 @@ const TENOR_SEGMENTS: Record<Detail, SegmentCounts> = {
         small: 7,
         stick: 10,
         headRings: 3,
+        fine: true,
     },
-    low: { round: 14, hoop: 12, hoopRing: 4, small: 4, stick: 4, headRings: 1 },
+    low: {
+        round: 14,
+        hoop: 12,
+        hoopRing: 4,
+        small: 4,
+        stick: 4,
+        headRings: 1,
+        fine: false,
+    },
 };
 
 // ---- small vector and matrix helpers ----
@@ -171,129 +218,392 @@ function bodyToFrame(family: HoldFamily): Mat4 {
     ];
 }
 
-/** The hold's hand grips and finger directions, in the instrument frame. */
+/**
+ * The hold's hand grips and finger directions, and each hand's stick (its
+ * fulcrum and the way to its tip), in the instrument frame.
+ */
 function hands(family: HoldFamily) {
     const { h, x, y, z } = axes(family);
     const toFrame = (v: Vec3): Vec3 => [dot(v, x), dot(v, y), dot(v, z)];
-    const grip = (wrist: Vec3, fingers: Vec3): Vec3 =>
-        toFrame(sub(add(wrist, scale(fingers, 0.07)), h.instrument.origin));
-    return {
-        right: {
-            grip: grip(h.right.wrist, h.right.fingers),
-            fingers: toFrame(h.right.fingers),
-        },
-        left: {
-            grip: grip(h.left.wrist, h.left.fingers),
-            fingers: toFrame(h.left.fingers),
-        },
+    const at = (p: Vec3): Vec3 => toFrame(sub(p, h.instrument.origin));
+    const hand = (arm: typeof h.right) => {
+        const s = stickOf(arm);
+        return {
+            grip: at(add(arm.wrist, scale(arm.fingers, STICK_FULCRUM))),
+            fingers: toFrame(arm.fingers),
+            stick: { fulcrum: at(s.fulcrum), along: toFrame(s.along) },
+        };
     };
+    return { right: hand(h.right), left: hand(h.left) };
 }
 
 // ---- builders ----
+//
+// The drums follow current high-tension marching drums (Yamaha's
+// MS-9400 snares, MQ-8300 multi-toms and MB-8300 basses, 2026-11-15):
+// tall flat hoops, the snare's shell floating inside its hardware on long
+// tube lugs, tenor shells cut away toward the player, and basses with
+// wood hoops, claw hooks and long tension rods. No maker's badge or logo.
 
-interface DrumSpec {
-    diameter: number;
-    depth: number;
-    lugs: number;
-    /** A second head and hoop at the bottom (snare, bass); tenors are open below. */
-    bottom: boolean;
+/** A flat hoop about +Z, `z0` to `z1` (see `band`). */
+const hoopZ = (
+    r0: number,
+    r1: number,
+    z0: number,
+    z1: number,
+    segments: number,
+    part: number,
+    inner = true,
+) =>
+    band(r0, r1, z0, z1, segments, part, { inner }).map((p) =>
+        upZ(p, [0, 0, 0]),
+    );
+
+/**
+ * A drum head at height `z` across radius `r`, facing +Z (`up`) or −Z: a
+ * disc a little proud of the shell, its collar turning down over the edge.
+ */
+function drumHead(r: number, z: number, up: boolean, s: SegmentCounts): Piece {
+    const h = up ? 0.001 : -0.001;
+    const rings: [number, number][] = [[0, h]];
+    for (let i = 1; i <= s.headRings; i++)
+        rings.push([(r * 0.97 * i) / s.headRings, h]);
+    rings.push([r + 0.003, h - (up ? 0.004 : -0.004)]);
+    // traversed rim to center the normals face +Y; center to rim, −Y
+    return upZ(smoothLathe(up ? rings.reverse() : rings, s.round, PART_HEAD), [
+        0,
+        0,
+        z,
+    ]);
+}
+
+/** Unit radial and tangent directions at `angle` round +Z. */
+const radial = (angle: number): [Vec3, Vec3] => [
+    [Math.cos(angle), Math.sin(angle), 0],
+    [-Math.sin(angle), Math.cos(angle), 0],
+];
+const onRing = (angle: number, radius: number, z: number): Vec3 => [
+    Math.cos(angle) * radius,
+    Math.sin(angle) * radius,
+    z,
+];
+/** A box at `angle`, half extents (radial, tangent, along Z). */
+const radialBox = (
+    angle: number,
+    radius: number,
+    z: number,
+    half: Vec3,
+    part: number,
+) => {
+    const [u, v] = radial(angle);
+    return box(onRing(angle, radius, z), half, part, u, v);
+};
+
+/** Evenly spaced lug angles, half a step off +X so a gap faces each axis. */
+const lugAngles = (n: number) =>
+    Array.from({ length: n }, (_, i) => ((i + 0.5) / n) * Math.PI * 2);
+
+/**
+ * A high-tension top hoop: a tall rim standing above the head and a flange
+ * out to the tension bolts, whose heads sit on it.
+ */
+function topHoop(
+    r: number,
+    lugs: number[],
+    boltDown: number,
+    part: number,
+    s: SegmentCounts,
+): Piece[] {
+    const out = [
+        ...hoopZ(r - 0.004, r + 0.006, -0.008, 0.014, s.round, part),
+        ...hoopZ(r + 0.006, r + 0.026, -0.008, -0.001, s.round, part, false),
+    ];
+    for (const a of lugs) {
+        out.push(
+            cylinder(
+                0.0028,
+                onRing(a, r + 0.017, boltDown),
+                onRing(a, r + 0.017, 0.006),
+                s.small,
+                PART_CHROME,
+            ),
+        );
+        if (s.fine)
+            out.push(
+                cylinder(
+                    0.0058,
+                    onRing(a, r + 0.017, -0.001),
+                    onRing(a, r + 0.017, 0.009),
+                    6,
+                    PART_CHROME,
+                ),
+            );
+    }
+    return out;
 }
 
 /**
- * A drum along +Z: the shell from z = −depth to 0 at the origin, chrome
- * hoops and heads at the ends, lugs and tension rods around the shell.
+ * The marching snare, 14 by 12 in, after Yamaha's MS-9400 series: the shell
+ * floats inside the hardware. A tall top hoop over a tension frame, ten
+ * long tube lugs from the frame to the bottom, a bottom hoop on four feet,
+ * the strainer at the player's right, the butt plate at the left and the
+ * carrier mount at the back (−Y).
  */
-function drum(spec: DrumSpec, s: SegmentCounts): Piece[] {
-    const r = spec.diameter / 2;
-    const d = spec.depth;
+function snareDrum(s: SegmentCounts): Piece[] {
+    const r = SNARE_R;
+    const d = SNARE_DEPTH;
+    const lugs = lugAngles(10);
     const out: Piece[] = [
         upZ(
             smoothLathe(
                 [
                     [r, 0],
                     [r, d * 0.5],
-                    [r, d],
+                    [r, d - 0.02],
                 ],
                 s.round,
                 PART_SHELL,
             ),
-            [0, 0, -d],
+            [0, 0, -d + 0.006],
+        ),
+        drumHead(r, 0, true, s),
+        drumHead(r, -d, false, s),
+        ...topHoop(r, lugs, -0.05, PART_ALUMINUM, s),
+        // the tension frame the tube lugs hang from
+        ...hoopZ(r + 0.002, r + 0.028, -0.056, -0.036, s.round, PART_ALUMINUM),
+        // the bottom hoop
+        ...hoopZ(
+            r - 0.004,
+            r + 0.006,
+            -d - 0.014,
+            -d + 0.006,
+            s.round,
+            PART_ALUMINUM,
+        ),
+        ...hoopZ(
+            r + 0.006,
+            r + 0.026,
+            -d - 0.014,
+            -d - 0.007,
+            s.round,
+            PART_ALUMINUM,
+            false,
         ),
     ];
-    // a head: a disc from the center to the rim, a little proud of the shell
-    const headProfile = (h: number, up: boolean): [number, number][] => {
-        const rings: [number, number][] = [[0, h]];
-        for (let i = 1; i <= s.headRings; i++)
-            rings.push([(r * 0.97 * i) / s.headRings, h]);
-        rings.push([r + 0.003, h - (up ? 0.004 : -0.004)]);
-        // traversed rim to center the normals face +Y; center to rim, −Y
-        return up ? rings.reverse() : rings;
-    };
-    const hoop = (z: number) =>
-        smoothTube(
-            arc([0, 0, z], r + 0.004, 0, 360, s.hoop, "z"),
-            0.006,
-            s.hoopRing,
-            PART_CHROME,
-            { capStart: false, capEnd: false },
-        );
-    out.push(
-        upZ(
-            smoothLathe(headProfile(0.001, true), s.round, PART_HEAD),
-            [0, 0, 0],
-        ),
-        hoop(0.004),
-    );
-    if (spec.bottom)
+    for (const a of lugs) {
+        const lr = r + 0.017;
         out.push(
-            upZ(smoothLathe(headProfile(-0.001, false), s.round, PART_HEAD), [
-                0,
-                0,
-                -d,
-            ]),
-            hoop(-d - 0.004),
-        );
-    // lugs: a casing on the shell and rods to the hoops
-    const lr = r + 0.012;
-    for (let i = 0; i < spec.lugs; i++) {
-        const a = ((i + 0.5) / spec.lugs) * Math.PI * 2;
-        const x = Math.cos(a) * lr;
-        const y = Math.sin(a) * lr;
-        const top = -Math.min(0.04, d * 0.15);
-        const low = spec.bottom ? -d - top : top - Math.min(0.07, d * 0.3);
-        out.push(
-            smoothTube(
-                [
-                    [x, y, low],
-                    [x, y, top],
-                ],
+            cylinder(
                 0.0065,
+                onRing(a, lr, -d + 0.07),
+                onRing(a, lr, -0.056),
                 s.small,
-                PART_CHROME,
+                PART_ALUMINUM,
             ),
-            smoothTube(
-                [
-                    [x, y, top],
-                    [x, y, 0.009],
-                ],
+            cylinder(
+                0.0095,
+                onRing(a, lr, -d + 0.045),
+                onRing(a, lr, -d + 0.07),
+                s.small,
+                PART_ALUMINUM,
+            ),
+            cylinder(
                 0.0028,
+                onRing(a, lr, -d - 0.008),
+                onRing(a, lr, -d + 0.045),
                 s.small,
                 PART_CHROME,
             ),
         );
-        if (spec.bottom)
+    }
+    out.push(...snareFittings(r, d, s));
+    return out;
+}
+/**
+ * The snare's fittings: four feet under the bottom hoop, the strainer and
+ * its lever at +X (the player's right), the butt plate at −X, and the
+ * carrier mount bar across the back on two posts.
+ */
+function snareFittings(r: number, d: number, s: SegmentCounts): Piece[] {
+    const out: Piece[] = [];
+    for (const a of lugAngles(4))
+        out.push(
+            cylinder(
+                0.008,
+                onRing(a, r + 0.014, -d - 0.042),
+                onRing(a, r + 0.014, -d - 0.014),
+                s.small,
+                PART_BLACK,
+            ),
+        );
+    // strainer and lever at +X (the player's right), butt plate at −X
+    out.push(
+        radialBox(0, r + 0.034, -d + 0.05, [0.012, 0.02, 0.038], PART_ALUMINUM),
+        radialBox(0, r + 0.05, -d + 0.1, [0.005, 0.011, 0.034], PART_BLACK),
+        radialBox(
+            Math.PI,
+            r + 0.034,
+            -d + 0.035,
+            [0.01, 0.018, 0.026],
+            PART_ALUMINUM,
+        ),
+        // the carrier mount: a bar across the back, on two posts
+        radialBox(
+            -Math.PI / 2,
+            r + 0.03,
+            SNARE_MOUNT_Z,
+            [0.012, 0.1, 0.024],
+            PART_ALUMINUM,
+        ),
+        box(
+            [0.06, -(r + 0.006), SNARE_MOUNT_Z],
+            [0.008, 0.014, 0.012],
+            PART_ALUMINUM,
+        ),
+        box(
+            [-0.06, -(r + 0.006), SNARE_MOUNT_Z],
+            [0.008, 0.014, 0.012],
+            PART_ALUMINUM,
+        ),
+    );
+    return out;
+}
+const SNARE_R = 0.356 / 2;
+const SNARE_DEPTH = 0.305;
+/** Where the snare's carrier mount bar sits, below the tension frame. */
+const SNARE_MOUNT_Z = -0.095;
+
+/**
+ * A tenor drum, open below, after Yamaha's MQ-8300: the shell is cut away
+ * toward `toward` (the player), so it runs `depth` deep on the far side
+ * and about half that on the near side, a tall chrome top hoop with its
+ * bolts, and short lug casings under the hoop.
+ */
+function tenorDrum(
+    diameter: number,
+    depth: number,
+    toward: [number, number],
+    s: SegmentCounts,
+): Piece[] {
+    const r = diameter / 2;
+    const n = s.round;
+    const shell: Piece = {
+        part: PART_SHELL,
+        positions: [],
+        normals: [],
+        indices: [],
+    };
+    for (let k = 0; k < n; k++) {
+        const a = (k / n) * Math.PI * 2;
+        const c = Math.cos(a);
+        const sn = Math.sin(a);
+        // the cut: a plane, level at the far half, rising toward the player
+        const t = c * toward[0] + sn * toward[1];
+        const cut = Math.min(Math.max((t + 0.25) / 1.25, 0), 1);
+        const bottom = -depth * (1 - 0.48 * cut);
+        shell.positions.push(c * r, sn * r, -0.006, c * r, sn * r, bottom);
+        shell.normals.push(c, sn, 0, c, sn, 0);
+        const top = 2 * k;
+        const next = 2 * ((k + 1) % n);
+        shell.indices.push(top, top + 1, next + 1, top, next + 1, next);
+    }
+    const lugs = lugAngles(diameter < 10 * IN ? 4 : 6);
+    const out: Piece[] = [
+        shell,
+        drumHead(r, 0, true, s),
+        ...topHoop(r, lugs, -0.03, PART_CHROME, s),
+    ];
+    if (s.fine)
+        for (const a of lugs)
             out.push(
-                smoothTube(
-                    [
-                        [x, y, -d - 0.009],
-                        [x, y, low],
-                    ],
+                radialBox(
+                    a,
+                    r + 0.011,
+                    -0.042,
+                    [0.007, 0.0075, 0.016],
+                    PART_CHROME,
+                ),
+            );
+    return out;
+}
+
+/**
+ * A marching bass drum along +Z, after Yamaha's MB-8300: the shell from
+ * z = −depth to 0, smooth white heads, wood hoops in the shell's color
+ * with claw hooks, and long tension rods from each pair of claws to a
+ * center lug. Small drums have 8 lugs, middle sizes 10, the biggest 12.
+ * The carrier mount sits at +X, between lugs.
+ */
+function bassDrum(diameter: number, d: number, s: SegmentCounts): Piece[] {
+    const r = diameter / 2;
+    const lugs = lugAngles(
+        diameter < 21 * IN ? 8 : diameter < 27 * IN ? 10 : 12,
+    );
+    const out: Piece[] = [
+        upZ(
+            smoothLathe(
+                [
+                    [r, 0],
+                    [r, (d - 0.06) / 2],
+                    [r, d - 0.06],
+                ],
+                s.round,
+                PART_SHELL,
+            ),
+            [0, 0, -d + 0.03],
+        ),
+        drumHead(r, 0, true, s),
+        drumHead(r, -d, false, s),
+    ];
+    for (const end of [0, -d]) {
+        const sign = end === 0 ? 1 : -1;
+        const z = (inward: number) => end - sign * inward;
+        out.push(
+            ...hoopZ(
+                r - 0.004,
+                r + 0.02,
+                Math.min(z(0.04), z(-0.006)),
+                Math.max(z(0.04), z(-0.006)),
+                s.round,
+                PART_SHELL,
+            ),
+            // the head's metal collar, just inside the hoop
+            ...hoopZ(
+                r,
+                r + 0.003,
+                Math.min(z(0.047), z(0.042)),
+                Math.max(z(0.047), z(0.042)),
+                s.round,
+                PART_ALUMINUM,
+                false,
+            ),
+        );
+        for (const a of lugs)
+            out.push(
+                radialBox(
+                    a,
+                    r + 0.026,
+                    z(0.018),
+                    [0.006, 0.011, 0.022],
+                    PART_CHROME,
+                ),
+                cylinder(
                     0.0028,
+                    onRing(a, r + 0.029, z(0.035)),
+                    onRing(a, r + 0.029, z(d / 2 - 0.07)),
                     s.small,
                     PART_CHROME,
                 ),
             );
     }
+    for (const a of lugs)
+        out.push(
+            radialBox(a, r + 0.013, -d / 2, [0.012, 0.012, 0.075], PART_CHROME),
+        );
+    out.push(
+        // thin: the mount sits between the drum and the chest
+        radialBox(0, r + 0.008, -d / 2, [0.008, 0.06, 0.09], PART_ALUMINUM),
+    );
     return out;
 }
 
@@ -349,13 +659,14 @@ function sphereProfile(r: number, steps: number): [number, number][] {
 const PLATE_MOUNT: Vec3 = [0.06, 1.07, 0.19];
 
 /**
- * A shoulder-hoop carrier, built in the body's rest frame and returned in
- * the hold's instrument frame: two chrome hoops from the belly plate up
- * over the shoulders (whose tops sit at 1.46 on every body) and down the
- * back, padded where they sit, a black plate on the belly, and chrome
- * J-bars from the plate to `drumMounts` (instrument frame, the first on the
- * performer's right). Clearances come from the seven body meshes: chests
- * reach z 0.17, upper backs z −0.19.
+ * A plate carrier, built in the body's rest frame and returned in the
+ * hold's instrument frame, after current aluminum vest carriers: flat
+ * satin bars from a yoke on the chest up over the shoulders (whose tops
+ * sit at 1.46 on every body) and down the back, padded where they sit, a
+ * plate down the sternum onto a belly plate, a bar across the upper back,
+ * and J-bars from the belly plate to `drumMounts` (instrument frame, the
+ * first on the performer's right). Clearances come from the seven body
+ * meshes: chests reach z 0.17, upper backs z −0.19.
  */
 function vestCarrier(
     family: HoldFamily,
@@ -363,51 +674,69 @@ function vestCarrier(
     s: SegmentCounts,
 ): Piece[] {
     const body: Piece[] = [];
+    // broad faces: out from a line over the shoulders, straight ahead or back below it
+    const faceAt = (p: Vec3): Vec3 =>
+        p[1] < 1.33 ? [0, 0, Math.sign(p[2])] : [0, p[1] - 1.33, p[2] + 0.01];
     for (const side of [-1, 1]) {
-        const at = (x: number, y: number, z: number): Vec3 => [side * x, y, z];
+        const pt = (x: number, y: number, z: number): Vec3 => [side * x, y, z];
+        const yoke = [
+            pt(0.045, 1.2, 0.197),
+            pt(0.095, 1.3, 0.19),
+            pt(0.11, 1.4, 0.158),
+            pt(0.12, 1.465, 0.09),
+            pt(0.125, 1.497, 0),
+            pt(0.125, 1.472, -0.1),
+            pt(0.125, 1.37, -0.205),
+            pt(0.125, 1.25, -0.197),
+        ];
         body.push(
-            smoothTube(
-                [
-                    at(0.085, 1.06, 0.19),
-                    at(0.095, 1.28, 0.19),
-                    at(0.11, 1.4, 0.158),
-                    at(0.12, 1.465, 0.09),
-                    at(0.125, 1.497, 0),
-                    at(0.125, 1.472, -0.1),
-                    at(0.125, 1.37, -0.205),
-                    at(0.125, 1.26, -0.195),
-                ],
-                0.009,
-                s.small,
-                PART_CHROME,
-            ),
-            smoothTube(
-                [
-                    at(0.12, 1.45, 0.11),
-                    at(0.125, 1.497, 0),
-                    at(0.125, 1.472, -0.1),
-                    at(0.125, 1.43, -0.16),
-                ],
-                0.02,
-                s.small,
+            ribbon(yoke, 0.055, 0.008, faceAt, PART_ALUMINUM),
+            // the pad under the bar where it sits on the shoulder
+            ribbon(
+                yoke.slice(2, 7).map((p) => {
+                    const f = faceAt(p);
+                    const l = Math.hypot(...f) || 1;
+                    return add(p, scale(f, -0.013 / l));
+                }),
+                0.07,
+                0.016,
+                faceAt,
                 PART_BLACK,
             ),
         );
     }
-    // the plate: a flattened tube, 0.18 wide and 0.025 thick, on the belly
-    const plate = smoothTube(
-        [
-            [0, 0, 0],
-            [0, 0.26, 0],
-        ],
-        0.09,
-        s.round / 2,
-        PART_BLACK,
-    );
+    // the front plate down the sternum, the belly plate across it, and a
+    // bar across the upper back
     body.push(
-        transformPiece(
-            plate,
-            [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0.14, 0, 0, 1.04, 0.18, 1],
+        ribbon(
+            [
+                [0, 1.25, 0.199],
+                [0, 1.03, 0.199],
+            ],
+            0.11,
+            0.01,
+            () => [0, 0, 1],
+            PART_ALUMINUM,
+        ),
+        ribbon(
+            [
+                [-0.11, 1.075, 0.201],
+                [0.11, 1.075, 0.201],
+            ],
+            0.1,
+            0.012,
+            () => [0, 0, 1],
+            PART_ALUMINUM,
+        ),
+        ribbon(
+            [
+                [-0.13, 1.3, -0.206],
+                [0.13, 1.3, -0.206],
+            ],
+            0.04,
+            0.008,
+            () => [0, 0, -1],
+            PART_ALUMINUM,
         ),
     );
     const toFrame = bodyToFrame(family);
@@ -428,9 +757,9 @@ function vestCarrier(
         ]);
         return smoothTube(
             [start, add(scale(start, 0.5), scale(end, 0.5)), end],
-            0.008,
+            0.009,
             s.small,
-            PART_CHROME,
+            PART_ALUMINUM,
         );
     });
     return [...body.map((p) => transformPiece(p, toFrame)), ...bars];
@@ -442,39 +771,45 @@ const finish = (
     extra: Partial<InstrumentModel> = {},
 ): InstrumentModel => ({
     id,
-    pieces: colorPieces(
-        pieces,
-        (part) => BATTERY_COLORS[part] ?? BATTERY_COLORS[PART_CHROME],
+    // pieces that bring their own colors (the cymbals' lathing) keep them
+    pieces: pieces.map((p) =>
+        p.colors
+            ? p
+            : colorPieces(
+                  [p],
+                  (part) => BATTERY_COLORS[part] ?? BATTERY_COLORS[PART_CHROME],
+              )[0],
     ),
     leftGrip: [0, 0, 0],
     mouthpiece: [0, 0, 0],
     ...extra,
 });
 
-/** Sticks for a drum family: along each hand's fingers, tipped down toward the heads. */
+/**
+ * Sticks for a drum family, each through its hand's fulcrum toward the
+ * head: along a matched-grip hand's fingers tipped down, across a
+ * traditional-grip hand (`stickOf` in holds.ts).
+ */
 function sticks(family: HoldFamily, s: SegmentCounts): Piece[] {
     const h = hands(family);
-    const down: Vec3 = [0, 0, -0.22];
     return [
-        ...stick(h.right.grip, add(h.right.fingers, down), "handR", s),
-        ...stick(h.left.grip, add(h.left.fingers, down), "handL", s),
+        ...stick(h.right.stick.fulcrum, h.right.stick.along, "handR", s),
+        ...stick(h.left.stick.fulcrum, h.left.stick.along, "handL", s),
     ];
 }
 
 /** The marching snare: 14 by 12 inches, ten lugs, on a carrier. */
 function snare(detail: Detail, options: ModelOptions): InstrumentModel {
     const s = SEGMENTS[detail];
-    const r = 0.356 / 2;
-    const d = 0.305;
-    // the J-bars meet the shell's back (instrument −Y) 0.08 either side
-    const back = -Math.sqrt(r * r - 0.08 * 0.08) - 0.006;
+    // the J-bars meet the mount bar at the back (instrument −Y)
+    const back = -(SNARE_R + 0.042);
     const pieces: Piece[] = [
-        ...drum({ diameter: 0.356, depth: d, lugs: 10, bottom: true }, s),
+        ...snareDrum(s),
         ...vestCarrier(
             "snare",
             [
-                [0.08, back, -0.07],
-                [-0.08, back, -0.07],
+                [0.08, back, SNARE_MOUNT_Z],
+                [-0.08, back, SNARE_MOUNT_Z],
             ],
             s,
         ),
@@ -503,21 +838,17 @@ const TENOR_DRUMS: { inches: number; x: number; y: number; depth: number }[] = [
 function tenors(detail: Detail, options: ModelOptions): InstrumentModel {
     const s = TENOR_SEGMENTS[detail];
     const pieces: Piece[] = [];
-    for (const t of TENOR_DRUMS)
+    for (const t of TENOR_DRUMS) {
+        // the cut faces the player's belly, 0.23 behind the origin
+        const to = [-t.x, -0.23 - t.y];
+        const l = Math.hypot(to[0], to[1]) || 1;
         pieces.push(
             ...moved(
-                drum(
-                    {
-                        diameter: t.inches * IN,
-                        depth: t.depth,
-                        lugs: t.inches < 10 ? 4 : 6,
-                        bottom: false,
-                    },
-                    s,
-                ),
+                tenorDrum(t.inches * IN, t.depth, [to[0] / l, to[1] / l], s),
                 [t.x, t.y, 0],
             ),
         );
+    }
     // the rack under the heads: a bracket post at the back center, a bar
     // across behind the shots to the outer drums, and a bar out to the
     // front pair
@@ -622,16 +953,12 @@ function bass(detail: Detail, options: ModelOptions): InstrumentModel {
         BASS_TOP - diameter / 2,
     );
     const pieces: Piece[] = [
-        ...moved(drum({ diameter, depth: d, lugs: 10, bottom: true }, s), [
-            ax,
-            ay,
-            d / 2,
-        ]),
+        ...moved(bassDrum(diameter, d, s), [ax, ay, d / 2]),
         ...vestCarrier(
             "bass",
             [
-                [BASS_BACK + 0.006, ay + 0.06, -0.08],
-                [BASS_BACK + 0.006, ay + 0.06, 0.08],
+                [BASS_BACK + 0.016, ay + 0.03, -0.07],
+                [BASS_BACK + 0.016, ay + 0.03, 0.07],
             ],
             s,
         ),
@@ -689,7 +1016,8 @@ function cymbalProfile(detail: Detail): [number, number][] {
     const bow = 0.022;
     const th = 0.0025;
     const bellSteps = detail === "high" ? 5 : 2;
-    const bowSteps = detail === "high" ? 9 : 5;
+    // enough rings for the lathing's tone grooves to show
+    const bowSteps = detail === "high" ? 16 : 5;
     const top: [number, number][] = [];
     for (let i = 0; i <= bellSteps; i++) {
         const r = (i / bellSteps) * bellR;
@@ -706,25 +1034,76 @@ function cymbalProfile(detail: Detail): [number, number][] {
     return [...under, ...top.reverse()];
 }
 
-/** Two 18 inch crash cymbals, one in each hand, inside faces toward each other. */
+/** The pad's crown over the cymbal's rim plane: the bell rises 0.052, the pad 0.0065 more. */
+const PAD_TOP = 0.0585;
+/**
+ * How far a palm's inner face sits inside its hold's grip point, toward
+ * the other cymbal, measured on the seven posed bodies (2026-11-15). The
+ * left arm is posed as the right's mirror image (#980), so one value
+ * serves both hands. `cymbalGrip.test.ts` checks every hand clears its
+ * cymbal and rests on its pad.
+ */
+const PALM_INSET = 0.014;
+/** The pad presses this far into the palm, so no light shows between them. */
+const PAD_PRESS = 0.003;
+
+/** How much darker a cymbal's lathe groove is than the bronze. */
+const LATHE_GROOVE = 0.82;
+
+/**
+ * Two 18 inch crash cymbals, one in each hand, inside faces toward each
+ * other: brilliant bronze with the lathing's tone grooves (alternate rings
+ * a little darker) and a leather pad on the outside of each bell, resting
+ * on the palm. The strap runs inside the fist, so it isn't drawn.
+ */
 function cymbals(detail: Detail, options: ModelOptions): InstrumentModel {
     const s = SEGMENTS[detail];
+    const round = detail === "high" ? 48 : s.round;
     const h = hands("cymbals");
     const profile = cymbalProfile(detail);
-    const plate = (grip: Vec3, bell: Vec3, bone: "handR" | "handL"): Piece => ({
-        // the strap holds the bell against the palm: the plate sits just inside the grip
-        ...transformPiece(
-            smoothLathe(profile, s.round, PART_METAL),
-            alongAxis(bell, sub(grip, scale(bell, 0.03))),
-        ),
-        bone,
+    const disc = colorPieces(
+        [smoothLathe(profile, round, PART_BRONZE)],
+        () => BATTERY_COLORS[PART_BRONZE],
+    )[0];
+    // the bell (the rings nearest the axis on either face) stays bright
+    const bellRings = detail === "high" ? 6 : 3;
+    const rings = profile.length;
+    disc.colors = disc.colors!.map((c, i) => {
+        const ring = Math.floor(i / 3 / round);
+        const fromAxis = Math.min(ring, rings - 1 - ring);
+        return fromAxis >= bellRings && ring % 2 === 1 ? c * LATHE_GROOVE : c;
     });
+    // the pad sits on the bell's crown (the bell rises 0.052 at the axis)
+    const pad = smoothLathe(
+        [
+            [0.045, 0.04],
+            [0.04, 0.046],
+            [0.025, 0.054],
+            [0, PAD_TOP],
+        ],
+        Math.max(8, round / 2),
+        PART_BLACK,
+    );
+    const parts = [disc, pad];
+    const plate = (grip: Vec3, bell: Vec3, bone: "handR" | "handL"): Piece[] =>
+        parts.map((p) => ({
+            // the pad rests on the palm: the plate sits that far inside the grip
+            ...transformPiece(
+                p,
+                alongAxis(
+                    bell,
+                    sub(grip, scale(bell, PALM_INSET + PAD_TOP - PAD_PRESS)),
+                ),
+            ),
+            colors: p.colors,
+            bone,
+        }));
     // the right hand is at −X, the left at +X (the cymbals' frame keeps +X the performer's left)
     return finish(
         "cymbals",
         [
-            plate(h.right.grip, [-1, 0, 0], "handR"),
-            plate(h.left.grip, [1, 0, 0], "handL"),
+            ...plate(h.right.grip, [-1, 0, 0], "handR"),
+            ...plate(h.left.grip, [1, 0, 0], "handL"),
         ],
         { options },
     );

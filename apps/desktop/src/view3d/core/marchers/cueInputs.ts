@@ -1,16 +1,21 @@
 /**
- * Turns one marcher's compiled Feet and Facing cues into the planner's
- * per-count inputs (docs/3d/performer-behavior.md sections 3, 6 and 8.2).
+ * Turns one marcher's compiled cues and hold style into the planner's
+ * per-count inputs (ADR 0015; docs/3d/performer-behavior.md section 8.2).
  *
- * Counting. A cue's instant is its count's click (section 2.2), where that
- * count's heel lands. The planner lands the step of drill count k at the
- * end of that count, and the window plays the plan `STEP_AHEAD` (one)
- * count ahead of the show (`marcherMotion.ts`), so:
+ * Counting. A cue's instant is its count's click, where that count's heel
+ * lands. The planner lands the step of drill count k at the end of that
+ * count, and the window plays the plan `STEP_AHEAD` (one) count ahead of the
+ * show (`marcherMotion.ts`), so:
  *
- * - the step of planner count k lands on show count k's click: its Feet
- *   settings are the Feet segment at show count k;
+ * - the step of planner count k lands on show count k's click: its hold
+ *   style is the one at show count k;
  * - the body at plan boundary b is what the show draws at count b - 1: its
  *   heading is the Facing at show count b - 1.
+ *
+ * The feet. Pace and step style belong to the move and aren't built, so every
+ * count has the defaults; the step-off foot is a show setting (`stepOffFoot`);
+ * what a hold does is the compile's hold style, which is not a cue. A kneel
+ * has no Feet animation yet, so the feet stand under it.
  *
  * Facing values, as headings in radians about +Y (0 faces the audience,
  * +pi/2 faces side 2; facing.ts):
@@ -30,20 +35,16 @@
  * its counts, the short way round. A snap is keyed in fixed time
  * ({@link SNAP_SECONDS} before its click, at the tempo of the count before
  * it): `turnSpan` says what part of that count, at its end, the turn takes.
- * A Feet segment taken over by another channel (kneel) keeps the Feet
- * settings but stands on holds.
+ * A momentary Facing cue turns back when it ends, over the count after it.
  *
  * Pure: no React, three.js or database.
  */
-import type { CompiledCues, CueSegment } from "@openmarch/core";
 import {
-    DEFAULT_FEET,
-    type FeetSettings,
-    type Foot,
-    type HoldTechnique,
-    type MovingTechnique,
-    type Pace,
-} from "./planner";
+    holdStyleAt,
+    type CompiledCues,
+    type CueSegment,
+} from "@openmarch/core";
+import { DEFAULT_FEET, type FeetSettings, type Foot } from "./planner";
 import { FRONT_HEADING } from "./facing";
 import { SNAP_SECONDS } from "./hornChannel";
 
@@ -71,32 +72,8 @@ export interface CueInputOptions {
     pointToWorld?: (x: number, y: number) => [x: number, z: number];
     /** Seconds per show count k (the tempo). Defaults to 120 bpm. */
     secondsPerCount?: (k: number) => number;
-}
-
-const PACES: readonly Pace[] = ["single", "half", "double"];
-const MOVING: readonly MovingTechnique[] = [
-    "straightLeg",
-    "bentLeg",
-    "highStep",
-];
-const HOLDS: readonly HoldTechnique[] = ["stand", "markTime", "highMarkTime"];
-const FEET: readonly Foot[] = ["left", "right"];
-
-const pick = <T extends string>(
-    options: readonly T[],
-    value: unknown,
-    fallback: T,
-): T => (options.includes(value as T) ? (value as T) : fallback);
-
-/** Feet settings from a segment's settings, each falling back to the default. */
-function feetOf(segment: CueSegment): FeetSettings {
-    const s = segment.settings;
-    return {
-        pace: pick(PACES, s.pace, DEFAULT_FEET.pace),
-        moving: pick(MOVING, s.moving, DEFAULT_FEET.moving),
-        onHolds: pick(HOLDS, s.onHolds, DEFAULT_FEET.onHolds),
-        stepOffFoot: pick(FEET, s.stepOffFoot, DEFAULT_FEET.stepOffFoot),
-    };
+    /** The show's step-off foot (Show settings). Defaults to the left. */
+    stepOffFoot?: Foot;
 }
 
 /**
@@ -115,27 +92,29 @@ function segmentAt(
     return found;
 }
 
-/** The Feet settings of each planner count. */
+const KNEEL = "builtin:posture.kneel";
+
+/**
+ * The Feet settings of each planner count: the defaults, the show's step-off
+ * foot, and the hold style at that count (standing under a kneel).
+ */
 function feetPerCount(
-    segments: readonly CueSegment[],
+    compiled: CompiledCues,
+    marcherId: number,
     K: number,
+    stepOffFoot: Foot = DEFAULT_FEET.stepOffFoot,
 ): FeetSettings[] {
+    const holds = compiled.holdStyle(marcherId);
+    const posture = compiled.segments(marcherId, "posture");
     const out: FeetSettings[] = [];
-    // a Feet transition keeps the settings before it: the state lands on its click
-    let settled: FeetSettings = { ...DEFAULT_FEET };
     for (let k = 0; k < K; k++) {
-        const seg = segmentAt(segments, k);
-        if (!seg) {
-            out.push(settled);
-            continue;
-        }
-        if (seg.takenOverFrom) {
-            // kneel and the like: no Feet animation yet, so stand still
-            out.push({ ...settled, onHolds: "stand" });
-            continue;
-        }
-        if (seg.kind !== "transition") settled = feetOf(seg);
-        out.push(settled);
+        // kneeling, or going down into it: no Feet animation yet, so stand still
+        const kneels = segmentAt(posture, k)?.value === KNEEL;
+        out.push({
+            ...DEFAULT_FEET,
+            stepOffFoot,
+            onHolds: kneels ? "stand" : holdStyleAt(holds, k),
+        });
     }
     return out;
 }
@@ -173,7 +152,7 @@ export function marcherCueInputs(
     options: CueInputOptions = {},
 ): MarcherCueInputs {
     const K = positions.length / 2 - 1;
-    const feet = feetPerCount(compiled.segments(marcherId, "feet"), K);
+    const feet = feetPerCount(compiled, marcherId, K, options.stepOffFoot);
     const facing = compiled.segments(marcherId, "facing");
     const pointToWorld =
         options.pointToWorld ??

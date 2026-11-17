@@ -19,9 +19,9 @@ const OFFSET_Y = 18;
  * Dimmer than the drag readout it sits under: a hint, not a measurement, so it never reads as a
  * second readout (owner). See-through, so it still reads over the field's lines.
  */
-const CHIP_CLASS =
+export const CHIP_CLASS =
     "rounded-6 bg-bg-1/60 text-text-subtitle px-6 py-2 whitespace-nowrap";
-const CHIP_PX = 11;
+export const CHIP_PX = 11;
 
 /**
  * A small readout near the cursor while a field drag runs: the held roles the drag reads, and Snap

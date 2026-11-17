@@ -8,6 +8,9 @@ import {
     hold,
     holdId,
     playingLips,
+    snareHolds,
+    stickOf,
+    STICK_REACH,
     type Hold,
     type HoldFamily,
 } from "../holds";
@@ -20,6 +23,20 @@ const FOREARM = 0.264;
 const dist = (a: readonly number[], b: readonly number[]) =>
     Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const LIPS: Vec3 = playingLips();
+const dot = (a: readonly number[], b: readonly number[]) =>
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const sub = (a: readonly number[], b: readonly number[]) =>
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]] as const;
+const cross = (a: readonly number[], b: readonly number[]) =>
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ] as const;
+const unit = (a: readonly number[]): Vec3 => {
+    const l = Math.hypot(a[0], a[1], a[2]);
+    return [a[0] / l, a[1] / l, a[2] / l];
+};
 const VALVED: [HoldFamily, BrassModelId][] = [
     ["trumpet", "trumpet"],
     ["mellophone", "mellophone"],
@@ -65,6 +82,7 @@ const FAMILIES: HoldFamily[] = [
     "clarinet",
     "bassClarinet",
     "sax",
+    "bariSax",
     "snare",
     "tenors",
     "bass",
@@ -402,11 +420,19 @@ describe("woodwind and battery holds", () => {
         },
     );
 
-    it.each(["flute", "piccolo", "clarinet", "bassClarinet", "sax"] as const)(
-        "%s up: each hand carries straight on from the forearm, bent 30 degrees at most",
+    it.each([
+        "flute",
+        "piccolo",
+        "clarinet",
+        "bassClarinet",
+        "sax",
+        "bariSax",
+    ] as const)(
+        "%s up: each hand bends at most 30 degrees from the forearm",
         (family) => {
             // a stiff mitt reads as a hand only with a nearly straight wrist
-            // (woodwind wrist study, 2026-11-10)
+            // (woodwind wrist study, 2026-11-10); the saxes curl it toward the
+            // palm onto the keys, up to that limit (2026-11-14)
             const h = hold(family, "up");
             for (const arm of [h.left, h.right]) {
                 const fore = arm.wrist.map((w, i) => w - arm.elbow[i]);
@@ -455,23 +481,34 @@ describe("woodwind and battery holds", () => {
         expect(h.right.wrist[1]).toBeLessThan(h.left.wrist[1]);
     });
 
-    it("sax: body straight down in front, neck at the lips", () => {
+    it("sax: straight up and down in front, the neck straight back to the lips", () => {
         const h = hold("sax", "up");
         expect(h.instrument.origin[1]).toBeGreaterThan(1.45);
-        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.95);
-        expect(Math.abs(h.instrument.bellAxis[0])).toBeLessThan(0.1);
+        // perpendicular to the ground, the neck pointing straight back
+        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.999);
+        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.999);
     });
 
-    it("drums ride the chest with the hands over the heads", () => {
+    it("bariSax: straight up and down like the alto, the neck straight back to the lips", () => {
+        // owner, 2026-11-14: upright, not slung across the body
+        const h = hold("bariSax", "up");
+        expect(h.instrument.bellAxis[1]).toBeLessThan(-0.999);
+        expect(h.instrument.capsAxis[2]).toBeGreaterThan(0.999);
+    });
+
+    it("drums ride the chest with the hands above the heads", () => {
         for (const family of ["snare", "tenors", "bass"] as const) {
             const h = hold(family, "up");
             expect(h.instrument.origin[1]).toBeLessThan(1.2);
             expect(h.instrument.origin[2]).toBeGreaterThan(0.2);
             expect(h.right.wrist[1]).toBeGreaterThan(h.instrument.origin[1]);
         }
-        expect(hold("tenors", "up").right.wrist[0]).toBeLessThan(
-            hold("snare", "up").right.wrist[0],
-        );
+        // the tenors' sticks land wider than the snare's, on the two front drums
+        const tipX = (family: "snare" | "tenors") => {
+            const stick = stickOf(hold(family, "up").right);
+            return stick.fulcrum[0] + stick.along[0] * STICK_REACH;
+        };
+        expect(tipX("tenors")).toBeLessThan(tipX("snare") - 0.05);
         expect(hold("bass", "up").instrument.bellAxis[0]).not.toBe(0); // the heads face sideways
     });
 
@@ -487,23 +524,188 @@ describe("woodwind and battery holds", () => {
     });
 
     it("snare and tenor hands keep a matched grip: palms down, forearms forward", () => {
+        // the snare's left hand is in traditional grip, below; its right
+        // hand's stick crosses the palm (next test)
+        for (const arm of [
+            hold("tenors", "up").right,
+            hold("tenors", "up").left,
+        ]) {
+            expect(Math.abs(arm.fingers[1])).toBeLessThan(0.2); // level, not pointing down
+            expect(arm.fingers[2]).toBeGreaterThan(0.7); // forward
+            expect(arm.wrist[1]).toBeGreaterThan(1.04);
+            expect(arm.wrist[1]).toBeLessThan(1.12);
+            expect(dot(arm.palm!, [0, -1, 0])).toBeCloseTo(1, 9);
+            // the stick runs on along the fingers, tipped down to the head
+            expect(arm.stick).toBeUndefined();
+            expect(dot(stickOf(arm).along, arm.fingers)).toBeGreaterThan(0.97);
+        }
         for (const family of ["snare", "tenors"] as const) {
             const h = hold(family, "up");
-            for (const arm of [h.right, h.left]) {
-                expect(Math.abs(arm.fingers[1])).toBeLessThan(0.2); // level, not pointing down
-                expect(arm.fingers[2]).toBeGreaterThan(0.75); // forward
-                expect(arm.wrist[1]).toBeGreaterThan(1.04);
-                expect(arm.wrist[1]).toBeLessThan(1.12);
-            }
             // the sticks angle in from each side
             expect(h.right.fingers[0]).toBeGreaterThan(0.1);
-            expect(h.left.fingers[0]).toBeLessThan(-0.1);
+            expect(stickOf(h.left).along[0]).toBeLessThan(-0.1);
             // the upper arms hang close to the ribs, not winged (drum corps photos)
             for (const [arm, sx] of [
                 [h.right, -0.185],
                 [h.left, 0.185],
             ] as const)
-                expect(Math.abs(arm.elbow[0] - sx)).toBeLessThan(0.06);
+                // the snare's right elbow is a little further out (owner, 2026-11-17)
+                expect(Math.abs(arm.elbow[0] - sx)).toBeLessThan(0.13);
+        }
+        // the tenors' elbows closer still; the snare's right one a little out
+        for (const arm of [
+            hold("tenors", "up").right,
+            hold("tenors", "up").left,
+        ])
+            expect(Math.abs(Math.abs(arm.elbow[0]) - 0.185)).toBeLessThan(0.06);
+        expect(-hold("snare", "up").right.elbow[0] - 0.185).toBeGreaterThan(
+            0.05,
+        );
+    });
+
+    it("the snare's right wrist is straight, its stick across the palm", () => {
+        const right = hold("snare", "up").right;
+        expect(dot(right.palm!, [0, -1, 0])).toBeCloseTo(1, 9);
+        expect(right.wrist[1]).toBeGreaterThan(1.04);
+        expect(right.wrist[1]).toBeLessThan(1.12);
+        // the hand carries on from the forearm: no bend at the wrist, its
+        // top sloped a little down (grip photos, owner 2026-11-17)
+        const forearm = unit(sub(right.wrist, right.elbow));
+        const deg = (a: readonly number[], b: readonly number[]) =>
+            (Math.acos(Math.min(1, dot(unit(a), unit(b)))) * 180) / Math.PI;
+        const flat = (v: readonly number[]): Vec3 => [v[0], 0, v[2]];
+        expect(deg(flat(right.fingers), flat(forearm))).toBeLessThan(5);
+        expect(deg(right.fingers, forearm)).toBeLessThan(15);
+        expect(right.fingers[1]).toBeLessThan(0);
+        // the stick leaves the hand turned in from the fingers, toward the
+        // middle of the head, and tipped down to it
+        const stick = right.stick!;
+        const across = deg(flat(stick.along), flat(right.fingers));
+        expect(across).toBeGreaterThan(18);
+        expect(across).toBeLessThan(32);
+        expect(stick.along[0]).toBeGreaterThan(right.fingers[0]);
+        expect(stick.along[1]).toBeLessThan(0);
+    });
+
+    it("the snare in matched grip: the left arm the right one's mirror image", () => {
+        const mirror = (v: readonly number[]) => [-v[0], v[1], v[2]];
+        const traditional = snareHolds("traditional").up;
+        const { right, left } = snareHolds("matched").up;
+        // the right arm is the traditional hold's
+        expect(right).toEqual(traditional.right);
+        expect(hold("snare", "up")).toEqual(traditional);
+        for (const k of ["wrist", "elbow", "fingers", "palm"] as const)
+            for (let i = 0; i < 3; i++)
+                expect(left[k]![i]).toBeCloseTo(mirror(right[k]!)[i], 9);
+        // the stick crosses the left palm as the right one does, so the tips
+        // meet over the middle of the head
+        for (let i = 0; i < 3; i++) {
+            expect(left.stick!.fulcrum[i]).toBeCloseTo(
+                mirror(right.stick!.fulcrum)[i],
+                9,
+            );
+            expect(left.stick!.along[i]).toBeCloseTo(
+                mirror(right.stick!.along)[i],
+                9,
+            );
+        }
+        for (const state of HOLD_STATES)
+            expect(snareHolds("matched")[state].left).toEqual(left);
+    });
+
+    it("the snare's left hand holds its stick in traditional grip", () => {
+        const h = hold("snare", "up");
+        const { right, left } = h;
+        const palm = left.palm!;
+        // the hand thumb up, its palm in toward the other hand and partly up
+        expect(palm[0]).toBeLessThan(-0.7);
+        expect(palm[1]).toBeGreaterThan(0.25);
+        expect(dot(palm, left.fingers)).toBeCloseTo(0, 9);
+        const thumb = cross(palm, left.fingers);
+        expect(thumb[1]).toBeGreaterThan(0.7);
+        // the stick rests in the web of the thumb, on top of the hand
+        const stick = left.stick!;
+        const web = sub(stick.fulcrum, left.wrist);
+        expect(dot(web, thumb)).toBeGreaterThan(0.02);
+        expect(dot(web, left.fingers)).toBeGreaterThan(0.03);
+        // and crosses the palm, from the thumb's side to the little finger's
+        const across =
+            (Math.acos(dot(stick.along, left.fingers)) * 180) / Math.PI;
+        expect(across).toBeGreaterThan(15);
+        expect(across).toBeLessThan(35);
+        expect(dot(stick.along, thumb)).toBeLessThan(-0.2);
+        expect(dot(stick.along, palm)).toBeGreaterThan(0);
+        // it comes in from the side, about 45 degrees in from straight
+        // ahead as the right one does, and lies flat: under 25 degrees down
+        const inward =
+            (Math.atan2(-stick.along[0], stick.along[2]) * 180) / Math.PI;
+        expect(inward).toBeGreaterThan(38);
+        expect(inward).toBeLessThan(50);
+        const rightStick = stickOf(right).along;
+        expect(
+            (Math.atan2(rightStick[0], rightStick[2]) * 180) / Math.PI,
+        ).toBeGreaterThan(38);
+        expect(-stick.along[1]).toBeLessThan(Math.sin((25 * Math.PI) / 180));
+        // to the mirrored spot on the head, near its middle
+        const tip = (arm: typeof left) => {
+            const s = stickOf(arm);
+            return [0, 1, 2].map(
+                (k) => s.fulcrum[k] + s.along[k] * STICK_REACH,
+            );
+        };
+        expect(tip(left)[0]).toBeCloseTo(-tip(right)[0], 6);
+        expect(tip(left)[1]).toBeCloseTo(tip(right)[1], 6);
+        expect(tip(left)[2]).toBeCloseTo(tip(right)[2], 6);
+        const [, headY, headZ] = h.instrument.origin;
+        expect(Math.abs(tip(left)[0])).toBeLessThan(0.02);
+        expect(Math.abs(tip(left)[2] - headZ)).toBeLessThan(0.03);
+        expect(tip(left)[1] - headY).toBeGreaterThan(0.005);
+        expect(tip(left)[1] - headY).toBeLessThan(0.03);
+        // the butt runs back up behind the thumb, higher than the right stick's
+        expect(-stick.along[1]).toBeGreaterThan(-stickOf(right).along[1]);
+        expect(stick.fulcrum[1]).toBeGreaterThan(stickOf(right).fulcrum[1]);
+        // the elbow is tucked in at the ribs, under the shoulder, closer in
+        // than the right one
+        const shoulder: [number, number, number] = [0.185, 1.397, -0.005];
+        expect(Math.abs(left.elbow[0] - shoulder[0])).toBeLessThan(0.03);
+        expect(Math.abs(left.elbow[0] - shoulder[0])).toBeLessThan(
+            Math.abs(right.elbow[0] + shoulder[0]),
+        );
+        expect(Math.abs(left.elbow[2] - shoulder[2])).toBeLessThan(0.08);
+        // and the upper arm turns the way the right one does
+        expect(left.upperArm).toBe("in");
+        // the forearm runs straight forward, low, to a hand behind the
+        // back rim and above it, just outside the head's side
+        const forearm = sub(left.wrist, left.elbow);
+        expect(forearm[2]).toBeGreaterThan(0.2);
+        expect(Math.abs(forearm[0])).toBeLessThan(0.03);
+        expect(forearm[1]).toBeLessThan(-0.08);
+        for (const arm of [right, left]) {
+            expect(arm.wrist[2]).toBeLessThan(headZ - 0.178);
+            expect(arm.wrist[1]).toBeGreaterThan(headY + 0.05);
+            expect(Math.abs(stickOf(arm).fulcrum[0])).toBeGreaterThan(0.178);
+            expect(Math.abs(stickOf(arm).fulcrum[0])).toBeLessThan(0.23);
+        }
+        expect(Math.abs(left.wrist[1] - right.wrist[1])).toBeLessThan(0.03);
+    });
+
+    it("bass and cymbal hands mirror each other", () => {
+        // bass mallets: the palms face in, toward the heads
+        const bass = hold("bass", "up");
+        expect(dot(bass.right.palm!, [1, 0, 0])).toBeCloseTo(1, 9);
+        expect(dot(bass.left.palm!, [-1, 0, 0])).toBeCloseTo(1, 9);
+        // cymbals: the right arm keeps the turn of its bend plane and the left is its mirror image
+        const cymbals = hold("cymbals", "up");
+        expect(cymbals.right.palm ?? cymbals.left.palm).toBeUndefined();
+        expect(cymbals.right.halfTurn).toBeUndefined();
+        expect(cymbals.left.halfTurn).toBe(true);
+        for (const h of [bass, cymbals, hold("tenors", "up")]) {
+            expect(h.left.wrist).toEqual([
+                -h.right.wrist[0],
+                h.right.wrist[1],
+                h.right.wrist[2],
+            ]);
+            expect(h.left.fingers[0]).toBeCloseTo(-h.right.fingers[0], 9);
         }
     });
 
@@ -538,7 +740,7 @@ describe("woodwind carry and trail", () => {
         ],
     } as const;
     const STRAIGHT = ["flute", "piccolo", "clarinet"] as const;
-    const BENT = ["sax", "bassClarinet"] as const;
+    const BENT = ["sax", "bariSax", "bassClarinet"] as const;
     const dot = (a: readonly number[], b: readonly number[]) =>
         a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     const cross = (a: readonly number[], b: readonly number[]) => [
@@ -702,7 +904,8 @@ describe("woodwind carry and trail", () => {
             expect(Math.abs(bellAxis[1])).toBeLessThan(0.01);
             expect(Math.abs(bellAxis[2])).toBeGreaterThan(0.99);
             expect(origin[0]).toBeLessThan(-0.1);
-            expect(origin[1]).toBeLessThan(1.05);
+            // the mouthpiece above the fist by the body's axis height (the bari's most)
+            expect(origin[1]).toBeLessThan(1.12);
         },
     );
 

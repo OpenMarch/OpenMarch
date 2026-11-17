@@ -77,7 +77,7 @@ for (const show of SHOWS)
                     .getByRole("button", { name: "Export", exact: true })
                     .click();
                 await expect(
-                    page.getByText("Successfully exported as PDF!"),
+                    page.getByText("Drill charts exported as PDF"),
                 ).toBeVisible({ timeout: 1_700_000 });
                 const from = testInfo.outputPath("exported-drill-charts");
                 const to = path.join(out!, label, show.name);

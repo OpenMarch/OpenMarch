@@ -3,8 +3,9 @@
 <!-- cspell:words retargeting Choreo recompiles rebakes rebaked rebake playhead lerp lerps texel texels -->
 
 - Status: draft for owner review. Convergence (2026-11-03): the compiler
-  shipped and the 3D View plays its show defaults (mark time while the band
-  moves, else stand; face the front; horns up). Cue storage, Visuals mode
+  shipped and the 3D View plays its show defaults (stand on holds, unless a
+  Held hold's style or Show settings ask for mark time, ADR 0015 D-5; face
+  the front; horns up). Cue storage, Visuals mode
   (section 7) and item placement are parked on branch
   `archive/pre-convergence`; the sections about them describe that branch.
 - Date: 2026-10-10

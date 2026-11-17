@@ -12,6 +12,7 @@
  *   `holdReachBack`), so it has no handle.
  * - Holds that **touch or overlap** after a drag become one (`mergeTouchingMarks`).
  */
+import type { HoldStyle } from "./holdStyle";
 
 /** A beat range `[start, end)`, in spec beats. */
 export interface BeatRange {
@@ -23,6 +24,8 @@ export interface BeatRange {
 export interface HoldMark extends BeatRange {
     readonly id: number;
     readonly marcherId: number;
+    /** Its hold style (`holdStyle.ts`); none uses the show setting */
+    readonly style?: HoldStyle | null;
 }
 
 /** What stops a dragged hold edge. */
@@ -207,7 +210,8 @@ export function landHoldEdge(
 
 /**
  * One marcher's marks with those that touch or overlap joined into one, keeping the earliest's
- * id, ascending (04-anchors: touching holds are one hold).
+ * id, ascending (04-anchors: touching holds are one hold). The joined hold has the style of its
+ * earliest part that has one (as `joinedHoldStyle`).
  */
 export function mergeTouchingMarks<M extends HoldMark>(
     marks: readonly M[],
@@ -222,6 +226,9 @@ export function mergeTouchingMarks<M extends HoldMark>(
             out[out.length - 1] = {
                 ...last,
                 end: Math.max(last.end, mark.end),
+                ...(last.style == null && mark.style != null
+                    ? { style: mark.style }
+                    : {}),
             };
         else out.push({ ...mark });
     }

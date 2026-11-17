@@ -15,7 +15,9 @@ import type {
 import type { Finish } from "@/view3d/core/instruments/catalog";
 import type { Hold } from "@/view3d/core/instruments/holds";
 import {
+    PART_ALUMINUM,
     PART_BLACK,
+    PART_BRONZE,
     PART_CHROME,
     PART_HEAD,
     PART_METAL,
@@ -55,6 +57,12 @@ const SURFACES = {
     silver: { metalness: 1, roughness: 0.17, coat: 0 },
     nickel: { metalness: 1, roughness: 0.1, coat: 0 },
     shell: { metalness: 1, roughness: 0.25, coat: 0 },
+    /** A drum shell's lacquer or wrap: colored paint under a glossy clear coat, not metal. */
+    paint: { metalness: 0, roughness: 0.35, coat: 1 },
+    /** Bead-blasted aluminum hoops and carriers: metal with a soft sheen. */
+    satin: { metalness: 1, roughness: 0.4, coat: 0 },
+    /** A brilliant-finish cymbal. */
+    bronze: { metalness: 1, roughness: 0.22, coat: 0 },
     matte: { metalness: 0, roughness: MATTE_ROUGHNESS, coat: 0 },
 } satisfies Record<string, Surface>;
 
@@ -238,6 +246,9 @@ export function surfaceOf(part: number, finish: Finish): Surface {
     if (part === PART_METAL)
         return finish === "silver" ? SURFACES.silver : SURFACES.lacquer;
     if (part === PART_CHROME) return SURFACES.nickel;
+    if (part === PART_SHELL) return SURFACES.paint;
+    if (part === PART_ALUMINUM) return SURFACES.satin;
+    if (part === PART_BRONZE) return SURFACES.bronze;
     return SURFACES.shell;
 }
 

@@ -4,6 +4,7 @@ import {
     baseZoom,
     centerAtBase,
     clampPan,
+    fieldEditFit,
     previewFit,
     isPanButton,
     MAX_ZOOM,
@@ -175,6 +176,41 @@ describe("viewBetween", () => {
     });
 });
 
+describe("a field area that starts above y = 0 (a back strip)", () => {
+    // The field with 180 units above it: from y = -180 to 960
+    const tall = { width: 1800, height: 1140, top: -180 };
+
+    it("centers the whole area, the strip included", () => {
+        const opened = centerAtBase(2000, 600, tall);
+        const top = opened.panY + tall.top * opened.zoom;
+        const bottom = opened.panY + (tall.top + tall.height) * opened.zoom;
+        expect(top).toBeCloseTo(600 - bottom);
+        expect(top).toBeGreaterThan(0);
+    });
+
+    it("keeps the strip in reach when panning, as for the field's own top", () => {
+        const plain = clampPan(
+            { ...view, zoom: 2, panX: 0, panY: 1e6 },
+            { width: 1800, height: 1140 },
+        );
+        const shifted = clampPan(
+            { ...view, zoom: 2, panX: 0, panY: 1e6 },
+            tall,
+        );
+        expect(shifted.panY).toBeCloseTo(plain.panY - tall.top * 2);
+    });
+
+    it("fits Preview to it too", () => {
+        const fit = previewFit(view, { width: 1600, height: 1000 }, tall)!;
+        const plain = previewFit(
+            view,
+            { width: 1600, height: 1000 },
+            { width: 1800, height: 1140 },
+        )!;
+        expect(fit.panY).toBeCloseTo(plain.panY - tall.top * fit.zoom);
+    });
+});
+
 describe("previewFit", () => {
     it("fits the whole field at 87%, centered across and a tenth of the spare height down", () => {
         const fit = previewFit(view, { width: 1600, height: 1000 }, field)!;
@@ -328,5 +364,43 @@ describe("isPanButton", () => {
         expect(isPanButton(press(0, true), false)).toBe(false);
         expect(isPanButton(press(0, true), true)).toBe(true);
         expect(isPanButton(press(0), true)).toBe(false);
+    });
+});
+
+describe("fieldEditFit (#824)", () => {
+    it("fits the whole field inside the rulers, centered in the room they leave", () => {
+        const fit = fieldEditFit(1000, 600, field, 22);
+        const left = fit.panX;
+        const top = fit.panY;
+        const right = fit.panX + field.width * fit.zoom;
+        const bottom = fit.panY + field.height * fit.zoom;
+        expect(left).toBeGreaterThanOrEqual(22);
+        expect(top).toBeGreaterThanOrEqual(22);
+        expect(right).toBeLessThanOrEqual(1000);
+        expect(bottom).toBeLessThanOrEqual(600);
+        // Centered in the room right of and below the rulers
+        expect(left - 22).toBeCloseTo(1000 - right);
+        expect(top - 22).toBeCloseTo(600 - bottom);
+    });
+
+    it("leaves room past the edges for the labels outside the field", () => {
+        const room = { x: 64, y: 32 };
+        const fit = fieldEditFit(1000, 600, field, 22, room);
+        expect(fit.zoom).toBeLessThan(fieldEditFit(1000, 600, field, 22).zoom);
+        // The labels' reach fits inside the rulers and the pane
+        expect(fit.panX - room.x * fit.zoom).toBeGreaterThanOrEqual(22);
+        expect(fit.panY - room.y * fit.zoom).toBeGreaterThanOrEqual(22);
+        expect(
+            fit.panX + (field.width + room.x) * fit.zoom,
+        ).toBeLessThanOrEqual(1000);
+        expect(
+            fit.panY + (field.height + room.y) * fit.zoom,
+        ).toBeLessThanOrEqual(600);
+    });
+
+    it("makes room for the touch layout's thicker rulers", () => {
+        expect(fieldEditFit(1000, 600, field, 44).zoom).toBeLessThan(
+            fieldEditFit(1000, 600, field, 22).zoom,
+        );
     });
 });

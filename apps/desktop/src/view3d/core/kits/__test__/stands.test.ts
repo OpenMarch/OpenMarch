@@ -377,3 +377,43 @@ describe("stand kit proportions (meters)", () => {
         expect(build(buildBlank).root.getObjectByName("track")).toBeUndefined();
     });
 });
+
+describe("the venue's podium", () => {
+    /** Boxes standing where `hs` and `bighs` put the podium, 26 ft past the front sideline. */
+    const podiumBoxes = (kit: KitResult) => {
+        const x = (FOOTBALL.minX + FOOTBALL.maxX) / 2;
+        const z = FOOTBALL.maxZ + 26 * 0.3048;
+        return solids(kit.root).filter((m) => {
+            const p = new Vector3().setFromMatrixPosition(m);
+            return Math.abs(p.x - x) < 2.5 && Math.abs(p.z - z) < 2.5;
+        }).length;
+    };
+
+    it.each([
+        ["hs", buildHs],
+        ["bighs", buildBighs],
+    ] as const)(
+        "%s draws it unless the show has its own (venuePodium: false)",
+        (_, builder) => {
+            for (const quality of ["high", "low"] as const) {
+                const kit = builder({
+                    footprint: FOOTBALL,
+                    params: PARAMS,
+                    quality,
+                });
+                expect(podiumBoxes(kit), quality).toBeGreaterThan(0);
+                kit.dispose();
+                const without = builder({
+                    footprint: FOOTBALL,
+                    params: PARAMS,
+                    quality,
+                    venuePodium: false,
+                });
+                expect(podiumBoxes(without), quality).toBe(0);
+                // The podium camera seat stays: saved camera lists don't change
+                expect(without.cameras.map((c) => c.id)).toContain("podium");
+                without.dispose();
+            }
+        },
+    );
+});

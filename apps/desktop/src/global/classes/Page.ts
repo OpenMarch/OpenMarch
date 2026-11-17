@@ -130,11 +130,6 @@ export {
  * @param allPages An array of all available pages to search through.
  * @returns The next page if found, or null if no next page exists.
  */
-// Cooldown timestamps for toast messages
-let lastNextPageToastTime = 0;
-let lastPrevPageToastTime = 0;
-const TOAST_COOLDOWN_MS = 2000; // 2 seconds cooldown
-
 export const getNextPage = (
     currentPage: Page,
     allPages: Page[],
@@ -142,15 +137,7 @@ export const getNextPage = (
     const nextPage = allPages.find(
         (page) => page.id === currentPage.nextPageId,
     );
-    if (!nextPage) {
-        const now = Date.now();
-        if (now - lastNextPageToastTime > TOAST_COOLDOWN_MS) {
-            toast.info(tolgee.t("pages.noNextPage"));
-            lastNextPageToastTime = now;
-        }
-        return null;
-    }
-    return nextPage;
+    return nextPage ?? null;
 };
 
 /**
@@ -167,15 +154,7 @@ export const getPreviousPage = (
     const prevPage = allPages.find(
         (page) => page.id === currentPage.previousPageId,
     );
-    if (!prevPage) {
-        const now = Date.now();
-        if (now - lastPrevPageToastTime > TOAST_COOLDOWN_MS) {
-            toast.info(tolgee.t("pages.noPreviousPage"));
-            lastPrevPageToastTime = now;
-        }
-        return null;
-    }
-    return prevPage;
+    return prevPage ?? null;
 };
 
 // Function to update page duration in the database
@@ -363,16 +342,14 @@ export const splitPage = (
 ):
     | { newPageArgs: NewPageArgs; modifyPageRequest?: ModifyPagesRequest }
     | undefined => {
-    if (page.beats.length <= 1) {
-        conToastError(tolgee.t("pages.splitTooShort"), page);
-        return;
-    }
+    // The inspector's Split page button is unavailable then, and says why
+    if (page.beats.length <= 1) return;
 
     const beatIndex = Math.ceil(page.beats.length / 2);
     const newStartBeat = page.beats[beatIndex];
 
     if (!newStartBeat) {
-        conToastError(tolgee.t("pages.splitNoStartBeat"), {
+        conToastError(tolgee.t("inspector.page.split.error"), {
             page,
             newBeatIndex: Math.floor(page.beats.length / 2),
         });

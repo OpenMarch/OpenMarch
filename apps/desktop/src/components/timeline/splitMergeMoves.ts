@@ -1,7 +1,5 @@
-import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import type { DbConnection } from "@/db-functions/types";
-import { subscribeHistoryChanges } from "@/db-functions/history";
 import {
     mergeFits,
     mergeMoves,
@@ -452,39 +450,6 @@ const whenStored = (
         });
     });
 
-/** How long a split or merge toast stays, unless the next edit, undo or redo closes it first */
-const TOAST_MS = 8000;
-
-/** A success toast with **Undo** that closes on the next history change (as UI-14's delete toast). */
-function toastWithUndo(message: string, undo: () => void): void {
-    let unsubscribe = () => {};
-    const id = toast.success(message, {
-        duration: TOAST_MS,
-        action: { label: tolgee.t("actions.edit.undo", "Undo"), onClick: undo },
-        onDismiss: () => unsubscribe(),
-        onAutoClose: () => unsubscribe(),
-    });
-    unsubscribe = subscribeHistoryChanges(() => {
-        unsubscribe();
-        toast.dismiss(id);
-    });
-}
-
-/** "Split 8 marchers into Move 6". */
-export const splitMessage = (count: number, label: string) =>
-    tolgee.t(
-        "timeline.split.done",
-        "Split {count, plural, one {# marcher} other {# marchers}} into {label}",
-        { count, label },
-    );
-
-/** "Merged Move 6 into Page 3". */
-export const mergeMessage = (source: string, target: string) =>
-    tolgee.t("timeline.merge.done", "Merged {source} into {target}", {
-        source,
-        target,
-    });
-
 /**
  * One split or merge at a time, app-wide: the timeline panel, the Move card and the command
  * palette each build their commands, but share this guard, so a second edit can't start while one
@@ -493,7 +458,8 @@ export const mergeMessage = (source: string, target: string) =>
 let busy = false;
 
 /**
- * The split and merge edits (UI-25), each one undoable edit with a toast and **Undo**:
+ * The split and merge edits (UI-25), each one undoable edit. They show no toast: the new move is
+ * isolated or the target selected, and undo is the usual shortcut:
  *
  * - **Split** makes the new move, then selects and isolates it (the window comes back to the old
  *   move on Esc, or when undo takes the new move away).
@@ -505,11 +471,9 @@ let busy = false;
  */
 export function createSplitMergeCommands({
     database,
-    undo,
     context,
 }: {
     database: DbConnection;
-    undo: () => void;
     /** Read when a command runs, for names */
     context: () => SplitMergeContext;
 }): SplitMergeCommands {
@@ -521,11 +485,6 @@ export function createSplitMergeCommands({
                 .then(async (result) => {
                     const id = result.timeline.id;
                     await whenStored((ts) => ts.some((t) => t.id === id));
-                    const label = timelineLabel(context(), id);
-                    toastWithUndo(
-                        splitMessage(result.marcherIds.length, label),
-                        undo,
-                    );
                     const store = useTimelineSelectionStore.getState();
                     // From inside an isolated move, the first restore point is kept
                     store.isolate(id);
@@ -539,8 +498,6 @@ export function createSplitMergeCommands({
             if (busy) return;
             busy = true;
             const before = context();
-            const source = timelineLabel(before, sourceId);
-            const target = timelineLabel(before, targetId);
             const targetRow = stored(before, targetId);
             const targetIsPage = targetRow ? isPage(before, targetRow) : false;
             mergeMoves({ db: database, sourceId, targetId })
@@ -548,7 +505,6 @@ export function createSplitMergeCommands({
                     await whenStored(
                         (ts) => !ts.some((t) => t.id === sourceId),
                     );
-                    toastWithUndo(mergeMessage(source, target), undo);
                     const store = useTimelineSelectionStore.getState();
                     if (store.isolation?.timelineId === targetId) return;
                     const t = store.storedTimelines?.find(
