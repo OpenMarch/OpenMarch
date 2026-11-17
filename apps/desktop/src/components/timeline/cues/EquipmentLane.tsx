@@ -38,6 +38,7 @@ import type {
 } from "@/components/timeline/TimelineBand";
 import {
     KEEP_MENU_EVENTS,
+    MenuItemWithReason,
     TIMELINE_MENU_CONTENT_CLASS,
 } from "@/components/timeline/TimelineRangeMenu";
 import {
@@ -55,7 +56,11 @@ import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { cueKeys } from "@/hooks/queries/useCues";
 import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
-import { runAction, isActionEnabled } from "@/shortcuts/registry";
+import {
+    actionDisabledReason,
+    runAction,
+    isActionEnabled,
+} from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
 import { conToastError } from "@/utilities/utils";
@@ -649,17 +654,24 @@ function CueMenuView({
     const cue = show.cues.find((c) => c.id === menu.cueId);
     const label = (id: ActionId) =>
         getActionLabel(id, (key, params) => t(key, params as never));
-    const item = (id: ActionId, args?: Record<string, number>) => (
-        <DropdownMenu.Item
-            key={`${id}${args ? JSON.stringify(args) : ""}`}
-            data-testid={`cue-menu-${id}`}
-            disabled={!isActionEnabled(id)}
-            onSelect={() => runAction(id, args)}
-            className={MENU_ITEM_CLASS}
-        >
-            {label(id)}
-        </DropdownMenu.Item>
-    );
+    /** A cue command: runnable, greyed out with its reason (#1039), or left out without one */
+    const item = (id: ActionId, args?: Record<string, number>) => {
+        const reason = isActionEnabled(id)
+            ? null
+            : (actionDisabledReason(id) ?? undefined);
+        if (reason === undefined) return null;
+        return (
+            <MenuItemWithReason
+                key={`${id}${args ? JSON.stringify(args) : ""}`}
+                testId={`cue-menu-${id}`}
+                reason={reason}
+                reasonTestId={`cue-menu-${id}-reason`}
+                onSelect={() => runAction(id, args)}
+            >
+                {label(id)}
+            </MenuItemWithReason>
+        );
+    };
     return (
         <DropdownMenu.Root
             open
@@ -706,20 +718,26 @@ function CueMenuView({
                         {label("cueMakeMomentary")}
                     </DropdownMenu.Label>
                     {MOMENTARY_LENGTHS.map((length) => (
-                        <DropdownMenu.Item
+                        // The length in effect shows chosen; greyed out, the reason says why
+                        <MenuItemWithReason
                             key={length}
-                            data-testid={`cue-menu-momentary-${length}`}
-                            disabled={
-                                !isActionEnabled("cueMakeMomentary") ||
-                                cue?.length === length
+                            testId={`cue-menu-momentary-${length}`}
+                            reason={
+                                isActionEnabled("cueMakeMomentary")
+                                    ? null
+                                    : (actionDisabledReason(
+                                          "cueMakeMomentary",
+                                      ) ?? null)
                             }
+                            reasonTestId={`cue-menu-momentary-${length}-reason`}
+                            checked={cue?.length === length}
                             onSelect={() =>
+                                cue?.length !== length &&
                                 runAction("cueMakeMomentary", { length })
                             }
-                            className={MENU_ITEM_CLASS}
                         >
                             {t("cues.lane.forCounts", { count: length })}
-                        </DropdownMenu.Item>
+                        </MenuItemWithReason>
                     ))}
                     <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
                     {item("cueDelete")}

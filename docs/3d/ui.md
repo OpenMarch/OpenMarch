@@ -48,8 +48,8 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - **Selecting a camera** flies to it over 1.1 s, ease-in-out, with a small
   upward arc on long moves. With reduced motion, it jumps.
 - **Moving freely:**
-  - the viewer picks a control scheme in the View settings panel or Settings >
-    3D View, because a
+  - the viewer picks a control scheme in 3D View settings › Preferences,
+    because a
     browser can't reliably tell a mouse wheel from a two-finger scroll
     (owner, 2026-11-09);
   - Orbit, the default (owner, 2026-11-10): drag to orbit; right-drag or
@@ -58,7 +58,10 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
   - Map: drag to pan; Ctrl, Alt (Option), Shift or right-drag to orbit;
     scroll to zoom;
   - Trackpad: scroll or drag to orbit; Shift or right-drag to pan;
-  - a pan keeps the ground point under the pointer under it;
+  - a pan keeps the point pressed under the pointer: the nearest of a
+    performer, the seats in the stands or the ground, held only while the
+    pointer's ray meets it at 15° or steeper and within 250 m (else it pans
+    at a steady speed);
   - in all three, a flung orbit coasts to a stop, Ctrl or Alt + drag orbits, Shift
     or Option plus scroll pans, and a pinch zooms toward the cursor; touch
     and pen orbit with one finger, and two fingers pan and pinch;

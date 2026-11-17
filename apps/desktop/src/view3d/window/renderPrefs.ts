@@ -2,7 +2,7 @@
  * How the 3D View draws on this computer, beside the quality
  * (`qualityPreference.ts`) and power choices (`drawPolicy.ts`). Like them it
  * describes the machine, not the show, so it lives in local storage (ADR 0010
- * D-5). The app's Settings window sets these; the 3D window reads them.
+ * D-5). The 3D View's settings panel sets these (Preferences tab).
  *
  * - Resolution: the most device pixels drawn per screen pixel. `sharp`
  *   draws a HiDPI screen at its full 2x, `balanced` at 1.5x and `fast` at
@@ -56,11 +56,3 @@ export function saveResolution(resolution: Resolution, storage?: Storage) {
         // Private or blocked storage: the choice lasts for this session only.
     }
 }
-
-/**
- * True where the app has a Settings window to choose these in. The 3D View
- * web preview has none (`view3d-web/vite.config.mts` sets the flag), so its
- * own settings panel offers quality and resolution instead.
- */
-export const HAS_SETTINGS_WINDOW =
-    import.meta.env.VITE_VIEW3D_NO_SETTINGS_WINDOW !== "true";

@@ -406,18 +406,31 @@ export default function TimelineModePanel() {
     );
     // UI-27: ⌘K's Split at playhead acts on the move the playhead is inside (Expert only: Basic
     // has no moves to split, its + splits the page's moves at a new flag). Greyed out while
-    // playing, as the menus' entry is
+    // playing, as the menus' entry is, and where no one move crosses the playhead; the palette
+    // says why beside it instead of a toast after the press
+    const splitTarget = () =>
+        moveAtPlayhead(useTimelineSelectionStore.getState());
     useActionHandler(
         "timelineSplitMoveAtPlayhead",
         () => {
-            const target = moveAtPlayhead(useTimelineSelectionStore.getState());
-            if (typeof target === "string") {
-                toast.error(target, { id: "timeline-split-move" });
-                return;
-            }
-            void moves.splitMoveAtPlayhead(target.id, isPlaying);
+            const target = splitTarget();
+            if (typeof target !== "string")
+                void moves.splitMoveAtPlayhead(target.id, isPlaying);
         },
-        { enabled: !basic && !isPlaying },
+        {
+            enabled: () =>
+                !basic && !isPlaying && typeof splitTarget() !== "string",
+            disabledReason: () => {
+                if (basic) return undefined;
+                if (isPlaying)
+                    return tolgee.t(
+                        "timeline.moveSplit.paused",
+                        "Pause to split a move.",
+                    );
+                const target = splitTarget();
+                return typeof target === "string" ? target : undefined;
+            },
+        },
     );
     const clipResize = useTimelineClipResize({ database: db, timelines });
     const queryClient = useQueryClient();

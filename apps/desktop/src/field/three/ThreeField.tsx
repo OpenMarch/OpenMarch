@@ -79,7 +79,6 @@ import {
 } from "@/shapes/placed/PlacedBoxesOverlay";
 import { ShapeEditor } from "@/shapes/editor/ShapeEditorBar";
 import HandleMenu from "@/shapes/editor/HandleMenu";
-import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
 import FavoritesRing from "@/shapes/tool/FavoritesRing";
 import DockedCommandBar from "@/shortcuts/palette/DockedCommandBar";
 import { useShapeFocus } from "@/shapes/field/useShapeFocus";
@@ -496,9 +495,6 @@ function ThreeFieldView() {
                     ...settingsMoveOptions(
                         () => latest.current.fieldProperties ?? null,
                     ),
-                    // #545: the box's ratio lock is the selection's too
-                    ratioLocked: () =>
-                        useShapeEditorStore.getState().ratioLocked,
                 },
             ),
         [marchers, items, dimming],

@@ -40,7 +40,7 @@ import {
     type Piece,
     type Vec3,
 } from "./mesh";
-import { hold, type HoldFamily } from "./holds";
+import { hold, stickOf, STICK_FULCRUM, type HoldFamily } from "./holds";
 import type {
     BatteryModelId,
     Detail,
@@ -218,22 +218,23 @@ function bodyToFrame(family: HoldFamily): Mat4 {
     ];
 }
 
-/** The hold's hand grips and finger directions, in the instrument frame. */
+/**
+ * The hold's hand grips and finger directions, and each hand's stick (its
+ * fulcrum and the way to its tip), in the instrument frame.
+ */
 function hands(family: HoldFamily) {
     const { h, x, y, z } = axes(family);
     const toFrame = (v: Vec3): Vec3 => [dot(v, x), dot(v, y), dot(v, z)];
-    const grip = (wrist: Vec3, fingers: Vec3): Vec3 =>
-        toFrame(sub(add(wrist, scale(fingers, 0.07)), h.instrument.origin));
-    return {
-        right: {
-            grip: grip(h.right.wrist, h.right.fingers),
-            fingers: toFrame(h.right.fingers),
-        },
-        left: {
-            grip: grip(h.left.wrist, h.left.fingers),
-            fingers: toFrame(h.left.fingers),
-        },
+    const at = (p: Vec3): Vec3 => toFrame(sub(p, h.instrument.origin));
+    const hand = (arm: typeof h.right) => {
+        const s = stickOf(arm);
+        return {
+            grip: at(add(arm.wrist, scale(arm.fingers, STICK_FULCRUM))),
+            fingers: toFrame(arm.fingers),
+            stick: { fulcrum: at(s.fulcrum), along: toFrame(s.along) },
+        };
     };
+    return { right: hand(h.right), left: hand(h.left) };
 }
 
 // ---- builders ----
@@ -784,13 +785,16 @@ const finish = (
     ...extra,
 });
 
-/** Sticks for a drum family: along each hand's fingers, tipped down toward the heads. */
+/**
+ * Sticks for a drum family, each through its hand's fulcrum toward the
+ * head: along a matched-grip hand's fingers tipped down, across a
+ * traditional-grip hand (`stickOf` in holds.ts).
+ */
 function sticks(family: HoldFamily, s: SegmentCounts): Piece[] {
     const h = hands(family);
-    const down: Vec3 = [0, 0, -0.22];
     return [
-        ...stick(h.right.grip, add(h.right.fingers, down), "handR", s),
-        ...stick(h.left.grip, add(h.left.fingers, down), "handL", s),
+        ...stick(h.right.stick.fulcrum, h.right.stick.along, "handR", s),
+        ...stick(h.left.stick.fulcrum, h.left.stick.along, "handL", s),
     ];
 }
 
@@ -1033,14 +1037,13 @@ function cymbalProfile(detail: Detail): [number, number][] {
 /** The pad's crown over the cymbal's rim plane: the bell rises 0.052, the pad 0.0065 more. */
 const PAD_TOP = 0.0585;
 /**
- * How far each palm's inner face sits inside its hold's grip point, toward
+ * How far a palm's inner face sits inside its hold's grip point, toward
  * the other cymbal, measured on the seven posed bodies (2026-11-15). The
- * hands aren't posed as mirror images (the left is rolled half a turn
- * about its fingers), so the left palm sits 3.4 cm further in.
- * `cymbalGrip.test.ts` checks every hand clears its cymbal and rests on
- * its pad.
+ * left arm is posed as the right's mirror image (#980), so one value
+ * serves both hands. `cymbalGrip.test.ts` checks every hand clears its
+ * cymbal and rests on its pad.
  */
-const PALM_INSET = { handR: 0.014, handL: 0.048 } as const;
+const PALM_INSET = 0.014;
 /** The pad presses this far into the palm, so no light shows between them. */
 const PAD_PRESS = 0.003;
 
@@ -1089,10 +1092,7 @@ function cymbals(detail: Detail, options: ModelOptions): InstrumentModel {
                 p,
                 alongAxis(
                     bell,
-                    sub(
-                        grip,
-                        scale(bell, PALM_INSET[bone] + PAD_TOP - PAD_PRESS),
-                    ),
+                    sub(grip, scale(bell, PALM_INSET + PAD_TOP - PAD_PRESS)),
                 ),
             ),
             colors: p.colors,

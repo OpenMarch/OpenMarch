@@ -32,6 +32,55 @@ export function groundHit(
     return hit;
 }
 
+/**
+ * Where a ray from `origin` along `dir` meets the level plane y = `planeY`,
+ * looking down at it or up at it, or null when the ray runs level, points
+ * away, or lands farther than `MAX_GROUND_HIT` along the ground. A grab pan
+ * holds a point on the stands at its own height this way.
+ */
+export function levelHit(
+    origin: Vector3Tuple,
+    dir: Vector3Tuple,
+    planeY: number,
+): Vector3Tuple | null {
+    if (Math.abs(dir[1]) < 1e-6) return null;
+    const t = (planeY - origin[1]) / dir[1];
+    if (!(t > 0)) return null;
+    const hit: Vector3Tuple = [
+        origin[0] + dir[0] * t,
+        planeY,
+        origin[2] + dir[2] * t,
+    ];
+    if (Math.hypot(hit[0] - origin[0], hit[2] - origin[2]) > MAX_GROUND_HIT)
+        return null;
+    return hit;
+}
+
+/**
+ * A grab pan holds a point only while the pointer's ray meets the point's
+ * level at least this steeply (sine of the angle, 15°). Shallower, one pixel
+ * covers meters of ground: a point near the horizon, or one on the stands
+ * at about eye height, would fling the view.
+ */
+export const MIN_HOLD_SLOPE = Math.sin((15 * Math.PI) / 180);
+
+/**
+ * True when a grab pan can hold `point` with the ray from `origin` along
+ * `dir` (a unit vector): steep enough to its level, and within
+ * `maxDistance` (m, along the ground) of `origin`.
+ */
+export function canHold(
+    origin: Vector3Tuple,
+    dir: Vector3Tuple,
+    point: Vector3Tuple,
+    maxDistance: number,
+): boolean {
+    return (
+        Math.abs(dir[1]) >= MIN_HOLD_SLOPE &&
+        Math.hypot(point[0] - origin[0], point[2] - origin[2]) <= maxDistance
+    );
+}
+
 /** `value` after `dtMs` of exponential decay with the given half-life. */
 export function damp(value: number, dtMs: number, halfLifeMs: number): number {
     return value * Math.pow(0.5, dtMs / halfLifeMs);
@@ -137,6 +186,32 @@ export function zoomRatioLimits(
         position[1] - target[1],
         position[2] - target[2],
     );
-    const hi = radius > 0 ? limits.maxRadius / radius : Infinity;
+    let hi = radius > 0 ? limits.maxRadius / radius : Infinity;
+    // Zooming out about a point above the eye lowers the eye: keep it at
+    // `minEyeY`. (The target can sink too; `targetOnGround` lifts it back.)
+    if (point[1] > position[1])
+        hi = Math.min(
+            hi,
+            (point[1] - limits.minEyeY) / (point[1] - position[1]),
+        );
     return [Math.min(lo, 1), Math.max(hi, 1)];
+}
+
+/**
+ * `target`, moved along the line of sight from `position` up to the ground
+ * when it's below it, so the view doesn't change. Zooming out about a point
+ * above the target (a marcher, a seat) lowers the target; this keeps the
+ * orbit center on the ground without stopping the zoom.
+ */
+export function targetOnGround(
+    position: Vector3Tuple,
+    target: Vector3Tuple,
+): Vector3Tuple {
+    if (target[1] >= 0 || position[1] <= 0) return target;
+    const s = position[1] / (position[1] - target[1]);
+    return [
+        position[0] + (target[0] - position[0]) * s,
+        0,
+        position[2] + (target[2] - position[2]) * s,
+    ];
 }

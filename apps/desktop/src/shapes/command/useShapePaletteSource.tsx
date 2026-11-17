@@ -6,7 +6,10 @@ import {
 import { getActionShortcutKeys, type Translate } from "@/shortcuts/labels";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import type { ActionId } from "@/shortcuts/definitions";
-import { isActionOffInWorkspace } from "@/shortcuts/workspaceActions";
+import {
+    isActionOffInWorkspace,
+    workspaceOffReason,
+} from "@/shortcuts/workspaceActions";
 import { kindPickGate } from "../tool/pickKind";
 import { shapeSelectionGate } from "../tool/selectionGate";
 import { toolId, type AnyToolKind } from "../tool/toolKind";
@@ -74,7 +77,7 @@ function kindItem(
             : undefined,
         disabled: !ready || offHere || !pick.ok,
         disabledReason: offHere
-            ? t("commandPalette.offInPreview")
+            ? workspaceOffReason("shapeBlock")
             : !pick.ok
               ? pick.reason
               : undefined,

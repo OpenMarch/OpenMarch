@@ -79,6 +79,39 @@ async function ready(page: Page) {
     await page.waitForTimeout(200);
 }
 
+/** The timeline's zoom, from the beat-53 page box's width and its counts */
+async function pixelsPerBeat(page: Page) {
+    const box = pageBox(page, PAGE_START);
+    const [start, end] = await Promise.all(
+        ["data-timeline-range-start", "data-timeline-range-end"].map(
+            async (name) => Number(await box.getAttribute(name)),
+        ),
+    );
+    return (await box.boundingBox())!.width / (end! - start!);
+}
+
+/**
+ * Zooms the timeline to about `target` px a count with one Ctrl+wheel step over the beat-53 page
+ * (the wheel zooms by `exp(-deltaY * 0.0025)`), and brings the page back into view
+ */
+async function zoomTo(page: Page, target: number) {
+    const at = await centerOf(pageBox(page, PAGE_START));
+    await page.mouse.move(at.x, at.y);
+    await page.keyboard.down("Control");
+    await page.mouse.wheel(
+        0,
+        -Math.log(target / (await pixelsPerBeat(page))) / 0.0025,
+    );
+    await page.keyboard.up("Control");
+    await expect
+        .poll(async () => Math.abs((await pixelsPerBeat(page)) - target))
+        .toBeLessThan(1);
+    await pageBox(page, PAGE_START).evaluate((el) =>
+        el.scrollIntoView({ block: "nearest", inline: "center" }),
+    );
+    await page.waitForTimeout(200);
+}
+
 /**
  * One finger through CDP, in phases, so the test can hold and wobble it:
  * `down`, `move` (any number), `hold` and `up`.
@@ -415,12 +448,13 @@ test.describe("touch layout", () => {
     test("a finger nearer the playhead than the … chip takes the playhead: a tap opens no menu and a drag scrubs", async ({
         show,
     }) => {
-        test.fixme(
-            true,
-            "#924: the playhead lands on counts, and at CI's zoom none is near enough the chip to build this scene. The rule is pinned by unit tests (the chip's area isn't selected; #916's ranking)",
-        );
         const { page } = show;
         await ready(page);
+        // The playhead lands on counts, and the line has to fall in a 16 px band left of the
+        // chip (see `pressBeside`). How far apart counts are depends on the fitted zoom, which
+        // follows the window's size, so set it: counts 12 px apart always put one in the band
+        // (#924)
+        await zoomTo(page, 12);
         const chipAt = await centerOf(chip(page));
         const chipLeft = (await chip(page).boundingBox())!.x;
         /**
@@ -439,12 +473,26 @@ test.describe("touch layout", () => {
             ).filter(fits);
             return xs.find((x) => Math.abs(x - line) >= 8) ?? xs[0] ?? null;
         };
-        // Put the playhead just left of the chip with a tap on the tracks; it lands on a count,
-        // so measure where it went, and try again a little further along if that's too far
+        // Put the playhead just left of the chip with a tap on the tracks, on the counts nearest
+        // the middle of the band first; measure where it went, and try the next if that's too
+        // far (a tap near a page line lands on the line)
+        const box = (await pageBox(page, PAGE_START).boundingBox())!;
+        const perBeat = await pixelsPerBeat(page);
+        const counts = Array.from(
+            { length: Math.ceil(box.width / perBeat) + 1 },
+            (_, i) => box.x + i * perBeat,
+        )
+            .filter((x) => x > chipAt.x - 30 && x < chipAt.x - 10)
+            .sort(
+                (a, b) =>
+                    Math.abs(a - (chipAt.x - 20)) -
+                    Math.abs(b - (chipAt.x - 20)),
+            );
+        expect(counts.length, "a count in the band").toBeGreaterThan(0);
         let press: Point | null = null;
-        for (const offset of [24, 30, 18, 36, 12]) {
+        for (const count of counts) {
             const before = await playheadAt(page);
-            await tap(page, { x: chipAt.x - offset, y: await bareY(page) });
+            await tap(page, { x: count, y: await bareY(page) });
             await expect
                 .poll(() => playheadAt(page))
                 .not.toBe(before)

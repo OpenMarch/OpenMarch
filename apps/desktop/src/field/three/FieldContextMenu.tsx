@@ -11,7 +11,9 @@ import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
+    MenuItemWithReason,
     TIMELINE_MENU_CONTENT_CLASS,
+    TimelineMenuClose,
 } from "@/components/timeline/TimelineRangeMenu";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import {
@@ -29,6 +31,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { getActionLabel } from "@/shortcuts/labels";
 import Shortcut from "@/components/ui/Shortcut";
 import {
+    actionDisabledReason,
     actionLabelNow,
     isActionChecked,
     isActionEnabled,
@@ -187,11 +190,11 @@ const CHECKABLE: ReadonlySet<ActionId> = new Set([
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
 
-/** Each action's enabled state and live label, as one string, so a change re-renders. */
+/** Each action's enabled state, live label and reason, as one string, so a change re-renders. */
 const handlerSnapshot = () =>
     FIELD_MENU_ACTIONS.map(
         (id) =>
-            `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionLabelNow(id) ?? ""}`,
+            `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionLabelNow(id) ?? ""}\t${actionDisabledReason(id) ?? ""}`,
     ).join("\n");
 
 /** Closed, the menu shows nothing, so it reads no handler (a label may run a check) */
@@ -252,11 +255,17 @@ export default function FieldContextMenu({
                 : HOLDS.has(id)
                   ? timelineMode
                   : true;
-    const enabled = (id: ActionId) =>
-        isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
+    // Swap's handler counts the marchers (props aren't swapped), so its own state is the answer
+    const enabled = (id: ActionId) => isActionEnabled(id);
+    // An entry that can't run and can't say why isn't shown: with nobody selected, that's every
+    // selection command (owner rule: no greyed-out entry without a reason)
+    const explained = (id: ActionId) =>
+        enabled(id) ||
+        isActionChecked(id) ||
+        (selectedCount > 0 && actionDisabledReason(id) !== undefined);
     const shownGroups = (list: readonly (readonly ActionId[])[]) =>
         list
-            .map((group) => group.filter(shown))
+            .map((group) => group.filter((id) => shown(id) && explained(id)))
             .filter((group) => group.length > 0);
     const before = shownGroups(GROUPS.slice(0, EQUIPMENT_AT));
     const after = shownGroups(GROUPS.slice(EQUIPMENT_AT));
@@ -268,7 +277,12 @@ export default function FieldContextMenu({
             (EQUIPMENT_ITEM_KEYS as readonly string[]).includes(key),
         )
         .map((key) => ({ id: equipmentActionOf(key), key }));
+    /**
+     * One entry: checked (in effect), runnable, greyed out with its reason behind a ?, or nothing
+     * when it can't run and can't say why (#1039)
+     */
     const entry = (id: ActionId, keyPrefix = "", shortLabel?: string) => {
+        if (!explained(id)) return null;
         const label =
             shortLabel ??
             actionLabelNow(id) ??
@@ -278,11 +292,12 @@ export default function FieldContextMenu({
                 <Shortcut action={id} />
             </span>
         );
+        const testId = `field-menu-${keyPrefix}${id}`;
         if (isActionChecked(id))
             return (
                 <DropdownMenu.CheckboxItem
                     key={keyPrefix + id}
-                    data-testid={`field-menu-${keyPrefix}${id}`}
+                    data-testid={testId}
                     checked
                     disabled
                     className={MENU_ITEM_CLASS}
@@ -296,19 +311,35 @@ export default function FieldContextMenu({
                     {shortcut}
                 </DropdownMenu.CheckboxItem>
             );
+        const run = () =>
+            runAction(
+                id,
+                ON_A_MARCHER.has(id) && marcher !== null
+                    ? { marcherId: marcher }
+                    : undefined,
+            );
+        // Greyed out with a reason: a ? says why, as the timeline's menus do
+        const reason = enabled(id) ? undefined : actionDisabledReason(id);
+        if (reason)
+            return (
+                <MenuItemWithReason
+                    key={keyPrefix + id}
+                    testId={testId}
+                    reason={reason}
+                    reasonTestId={`${testId}-reason`}
+                    onSelect={run}
+                    className={MENU_ITEM_CLASS}
+                >
+                    {CHECKABLE.has(id) && <span className={CHECK_SLOT_CLASS} />}
+                    {label}
+                </MenuItemWithReason>
+            );
         return (
             <DropdownMenu.Item
                 key={keyPrefix + id}
-                data-testid={`field-menu-${keyPrefix}${id}`}
+                data-testid={testId}
                 disabled={!enabled(id)}
-                onSelect={() =>
-                    runAction(
-                        id,
-                        ON_A_MARCHER.has(id) && marcher !== null
-                            ? { marcherId: marcher }
-                            : undefined,
-                    )
-                }
+                onSelect={run}
                 onFocus={() => previewAction(id, true)}
                 onBlur={() => previewAction(id, false)}
                 className={MENU_ITEM_CLASS}
@@ -367,83 +398,91 @@ export default function FieldContextMenu({
                             : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
-                    {separatedGroups(before)}
-                    {equipment && (
-                        <>
-                            {before.length > 0 && (
-                                <DropdownMenu.Separator
-                                    className={MENU_SEPARATOR_CLASS}
-                                />
-                            )}
-                            <SubMenu
-                                testId="field-menu-equipment"
-                                label={t("field.menu.equipment")}
-                            >
-                                {entry(USUAL, "", t("cues.value.usual"))}
-                                {recent.length > 0 && (
+                    {/* One Escape closes an open reason tip and the menu together */}
+                    <TimelineMenuClose.Provider value={onClose}>
+                        {separatedGroups(before)}
+                        {equipment && (
+                            <>
+                                {before.length > 0 && (
                                     <DropdownMenu.Separator
                                         className={MENU_SEPARATOR_CLASS}
                                     />
                                 )}
-                                {recent.map(({ id, key }) =>
-                                    entry(id, "recent-", t(`cues.item.${key}`)),
-                                )}
-                                <DropdownMenu.Separator
-                                    className={MENU_SEPARATOR_CLASS}
-                                />
-                                {FAMILY_MENUS.map((m) => (
-                                    <SubMenu
-                                        key={m.family}
-                                        testId={`field-menu-equipment-${m.family}`}
-                                        label={t(`cues.family.${m.family}`)}
-                                    >
-                                        {m.set.map((id, i) =>
-                                            entry(
-                                                id,
-                                                "",
-                                                t(`cues.item.${m.keys[i]}`),
-                                            ),
-                                        )}
-                                    </SubMenu>
-                                ))}
-                                <DropdownMenu.Separator
-                                    className={MENU_SEPARATOR_CLASS}
-                                />
-                                {entry(NOTHING, "", t("cues.value.none"))}
-                            </SubMenu>
-                            <SubMenu
-                                testId="field-menu-select-holding"
-                                label={t("field.menu.selectByEquipment")}
-                            >
-                                {FAMILY_MENUS.map((m) => (
-                                    <SubMenu
-                                        key={m.family}
-                                        testId={`field-menu-select-${m.family}`}
-                                        label={t(`cues.family.${m.family}`)}
-                                    >
-                                        {entry(m.select[0])}
+                                <SubMenu
+                                    testId="field-menu-equipment"
+                                    label={t("field.menu.equipment")}
+                                >
+                                    {entry(USUAL, "", t("cues.value.usual"))}
+                                    {recent.length > 0 && (
                                         <DropdownMenu.Separator
                                             className={MENU_SEPARATOR_CLASS}
                                         />
-                                        {m.select
-                                            .slice(1)
-                                            .map((id) => entry(id))}
-                                    </SubMenu>
-                                ))}
+                                    )}
+                                    {recent.map(({ id, key }) =>
+                                        entry(
+                                            id,
+                                            "recent-",
+                                            t(`cues.item.${key}`),
+                                        ),
+                                    )}
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
+                                    {FAMILY_MENUS.map((m) => (
+                                        <SubMenu
+                                            key={m.family}
+                                            testId={`field-menu-equipment-${m.family}`}
+                                            label={t(`cues.family.${m.family}`)}
+                                        >
+                                            {m.set.map((id, i) =>
+                                                entry(
+                                                    id,
+                                                    "",
+                                                    t(`cues.item.${m.keys[i]}`),
+                                                ),
+                                            )}
+                                        </SubMenu>
+                                    ))}
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
+                                    {entry(NOTHING, "", t("cues.value.none"))}
+                                </SubMenu>
+                                <SubMenu
+                                    testId="field-menu-select-holding"
+                                    label={t("field.menu.selectByEquipment")}
+                                >
+                                    {FAMILY_MENUS.map((m) => (
+                                        <SubMenu
+                                            key={m.family}
+                                            testId={`field-menu-select-${m.family}`}
+                                            label={t(`cues.family.${m.family}`)}
+                                        >
+                                            {entry(m.select[0])}
+                                            <DropdownMenu.Separator
+                                                className={MENU_SEPARATOR_CLASS}
+                                            />
+                                            {m.select
+                                                .slice(1)
+                                                .map((id) => entry(id))}
+                                        </SubMenu>
+                                    ))}
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
+                                    {entry(SELECT_NOTHING)}
+                                </SubMenu>
+                                {cueEdits.map((id) => entry(id))}
+                            </>
+                        )}
+                        {after.length > 0 &&
+                            (before.length > 0 || equipment) && (
                                 <DropdownMenu.Separator
                                     className={MENU_SEPARATOR_CLASS}
                                 />
-                                {entry(SELECT_NOTHING)}
-                            </SubMenu>
-                            {cueEdits.map((id) => entry(id))}
-                        </>
-                    )}
-                    {after.length > 0 && (before.length > 0 || equipment) && (
-                        <DropdownMenu.Separator
-                            className={MENU_SEPARATOR_CLASS}
-                        />
-                    )}
-                    {separatedGroups(after)}
+                            )}
+                        {separatedGroups(after)}
+                    </TimelineMenuClose.Provider>
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>

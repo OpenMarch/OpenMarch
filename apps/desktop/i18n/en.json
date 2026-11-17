@@ -18,7 +18,8 @@
             "snapOn": "Snap off: turn it back on",
             "snapToCustomFraction": "Snap to grid",
             "toggleSnap": "Toggle Snap",
-            "toggleSnapKeywords": "snap magnet grid free"
+            "toggleSnapKeywords": "snap magnet grid free",
+            "propsOnly": "Only props are selected: props aren't lined up or spaced"
         },
         "batchEdit": {
             "clearPage": "Clear Page {page}",
@@ -38,8 +39,8 @@
             "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d",
             "holdStyleMarkTime": "Hold style: Mark time",
             "holdStyleStand": "Hold style: Stand",
-            "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
-            "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
+            "noPageAfter": "There's no page after this one",
+            "noPageBefore": "There's no page before this one",
             "moveAllToNextSpots": "Move to next page's spots (all marchers)",
             "movedAllToNextSpots": "{count, plural, one {Moved # marcher on Page {currentPage} to their spot on Page {nextPage}} other {Moved all # marchers on Page {currentPage} to their spots on Page {nextPage}}}",
             "moveSelectedToNextSpots": "Move to next page's spots (selected)",
@@ -192,7 +193,7 @@
             "discard": "Shape: Discard"
         },
         "swap": {
-            "mustSelectTwo": "Can only swap when 2 marchers are selected.",
+            "selectTwo": "Select 2 marchers to swap them",
             "swap": "Swap two marchers"
         },
         "timeline": {
@@ -351,6 +352,7 @@
         "title": "Command palette",
         "unavailable": "Not available right now",
         "offInPreview": "Not in Preview — exit Preview to edit",
+        "offInEditMusic": "Not while editing music — select Edit music to go back",
         "shape": "Shape",
         "next": "Next",
         "done": "Done",
@@ -883,14 +885,7 @@
             "distributeStepsPlaceholder": "Steps",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "inside",
-                "outside": "outside",
-                "on": "On",
-                "inFrontOf": "in front of",
-                "behind": "behind",
-                "xCheckpoint": "X-Checkpoint {id}",
-                "yCheckpoint": "Y-Checkpoint {id}"
+                "y": "Y"
             },
             "rotation": "Rotation"
         },
@@ -1415,8 +1410,6 @@
     "pages": {
         "undoDeleteUnavailable": "Can't undo the delete: something changed since. Use Undo in the toolbar to step back.",
         "dotModeFailed": "Error setting the dot mode",
-        "noNextPage": "No next page",
-        "noPreviousPage": "No previous page",
         "durationNoBeat": "Failed to update page duration. No suitable beat found.",
         "durationFailed": "Failed to update page duration",
         "yankNegativeCounts": "Cannot yank pages that would result in negative counts",
@@ -1747,7 +1740,6 @@
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
-        "view3d": "3D View",
         "view3d.controls": "Controls",
         "view3d.controls.input.drag": "Left-click drag",
         "view3d.controls.input.pinch": "Pinch",
@@ -1777,7 +1769,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.summary": "How the 3D View draws and moves on this computer. Not saved in the show.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -1971,6 +1962,7 @@
                 "steps": "{count, plural, one {{interval} step} other {{interval} steps}}"
             },
             "groupError": "Couldn't group the marchers",
+            "groupNeedsTwo": "Select 2 or more marchers to group them",
             "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
             "leftShape": {
@@ -2418,7 +2410,10 @@
             "none": "Nobody {held} on {page}",
             "notHeldReasons": "Not {heldLower}: {reasons}",
             "shape": "{names}: in a shape on this page",
-            "holdError": "Couldn't hold the marchers"
+            "holdError": "Couldn't hold the marchers",
+            "paused": "Pause to change holds",
+            "styleNoneHeld": "No selected marcher is Held at the playhead",
+            "styleInEffect": "Already the hold style here"
         },
         "keep": {
             "followed": {
@@ -2440,6 +2435,9 @@
             "removeError": "Couldn't remove the keyframes",
             "removeLocked": "{count, plural, =1 {One marcher uses Expert moves on this page, so its keyframe wasn't removed. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so their keyframes weren't removed. Switch to Expert to edit them.}}",
             "removeLockedAll": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
+            "paused": "Pause to change keyframes",
+            "removeNone": "No selected marcher has a keyframe here",
+            "followNone": "No later page follows this spot",
             "title": "Keyframe · Page {page}, count {count}",
             "spoken": "{title}. {detail}"
         },
@@ -3053,7 +3051,7 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "You can change this later in Settings › General.",
+            "changeLater": "You can change this later in 3D View settings or in Settings › General.",
             "no": "No",
             "title": "Open the 3D View on launch?",
             "yes": "Yes"
@@ -3127,22 +3125,19 @@
                 "desktop": "Graphics run in software on this computer, so the 3D View draws at low quality, and it will still be slow. For the full view, update your graphics drivers and restart OpenMarch.",
                 "web": "Graphics run in software in this browser, so the 3D View draws at low quality, and it will still be slow. For the full view, turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\") and restart the browser."
             },
-            "autoLowered": {
-                "settings": "Switched to Low because the view was stuttering. To keep full quality, choose High in Settings, 3D View.",
-                "panel": "Switched to Low because the view was stuttering. To keep full quality, choose High under Quality in View settings."
-            },
             "softwareHint": "Stays on Low because graphics run in software here.",
             "autoLoweredHint": "Switched to Low because the view was stuttering. Choose High to keep full quality.",
-            "dismiss": "Got it"
+            "dismiss": "Got it",
+            "autoLowered": "Switched to Low because the view was stuttering.",
+            "useHigh": "Use High",
+            "keepLow": "Keep Low"
         },
         "playback": {
             "label": "Playback"
         },
         "settings": {
-            "title": "View settings",
+            "panelTitle": "3D View settings",
             "close": "Close",
-            "venueSection": "This show",
-            "venueHint": "Saved in the show file. Undo in the editor reverts a change.",
             "crowdColors": "Crowd colors",
             "homeColor": "Home",
             "awayColor": "Visitors",
@@ -3150,15 +3145,20 @@
             "endZoneText": "End-zone lettering",
             "endZoneTextPlaceholder": "No lettering",
             "endZoneColor": "Color",
-            "graphicsSection": "This computer",
-            "graphicsHint": "Not saved in the show, so it can differ on each computer.",
-            "keysSection": "Keyboard and mouse",
             "uniforms": "Band uniform",
             "guardUniforms": "Guard uniform",
             "brassFinish": "Brass finish",
             "tuba": "Tubas",
             "silkShape": "Flag silk shape",
-            "silkArtwork": "Flag silk artwork"
+            "silkArtwork": "Flag silk artwork",
+            "tabs": {
+                "venue": "Venue",
+                "performers": "Performers",
+                "preferences": "Preferences"
+            },
+            "showNote": "Saved with this show. Undo in the editor reverts a change.",
+            "computerNote": "Saved on this computer only. Not part of the show.",
+            "shortcuts": "Keyboard shortcuts"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3843,6 +3843,15 @@
         },
         "laneFamily": {
             "equipment": "Equipment"
+        },
+        "reason": {
+            "paused": "Pause to change equipment",
+            "noCount": "Move the playhead onto a count",
+            "noCue": "Pick a cue in the Equipment lane first",
+            "allIn": "The selected performers are already in this cue",
+            "noneIn": "None of the selected performers is in this cue",
+            "atPlayhead": "The cue is already on the playhead's count",
+            "movesBasic": "Moves have bars in Expert only"
         }
     },
     "coordinates": {
