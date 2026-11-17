@@ -355,6 +355,11 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   slots 1024; Floor props and Base floors 2048 (D-19). KTX2 textures aren't
   imported: a file that requires them is refused, and an optional one is
   dropped. Draco and meshopt input is decoded, never stored.
+- **As built in fork #1000:** an imported model draws at one factor of its
+  real size, the one that keeps its Outline's footprint area, so a prop
+  stretched one way grows evenly instead of distorting. Stretch zones and a
+  scale badge are still to come. The distant version switches in beyond about
+  38 m and back inside 30 m, as the built-in equipment does.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A
   model is guessed Z-up when Z is its largest side and over 1.25× Y (floors

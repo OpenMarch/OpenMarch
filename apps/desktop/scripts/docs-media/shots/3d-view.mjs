@@ -1033,6 +1033,48 @@ const shots = [
         },
     },
     {
+        id: "3d-props-imported",
+        kind: "still",
+        // Three imported chairs behind the band, where the riser stands in 3d-props-block, drawn
+        // in the 3D View as the model
+        async setup(ctx) {
+            const { page } = ctx;
+            await seekInPage(page, 2, 0.02);
+            const toScreen = await fieldToScreen(page);
+            const { pps, center } = await riserSpot(page);
+            await importChair(page, { add: true });
+            for (const feet of [-5, 0, 5]) {
+                await propsPanel(page);
+                await page.getByRole("button", { name: "Place Chair" }).click();
+                await page.waitForTimeout(300);
+                const at = toScreen({ x: center.x + feet * pps, y: center.y });
+                await page.mouse.click(at.x, at.y);
+                await page.waitForTimeout(800);
+            }
+            await page.keyboard.press("Escape");
+            await seekInPage(page, 2, 0.5);
+            const { view } = await open3d(ctx);
+            const chairs = { x: 633, y: 649 };
+            await view.mouse.move(chairs.x, chairs.y);
+            for (let i = 0; i < 7; i++) {
+                await view.mouse.wheel(0, -120);
+                await ctx.wait(150);
+            }
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            // The model loads from the show, then draws in place of the blocks
+            await ctx.wait(4000);
+            return {
+                box: {
+                    x: chairs.x - 450,
+                    y: chairs.y - 290,
+                    width: 900,
+                    height: 540,
+                },
+                target: view,
+            };
+        },
+    },
+    {
         id: "3d-front-ensemble-add",
         kind: "still",
         // The front ensemble's Add view: every model as a picture, by group, with search

@@ -9,7 +9,7 @@ import {
 } from "@/hooks/queries/useShowAssets";
 import type { ShowAsset } from "@/db-functions/showAssets";
 import { runAction } from "@/shortcuts/registry";
-import { MODEL_ASSET_KIND } from "@/showAssets/modelImport/rules";
+import { isModelAsset } from "@/showAssets/libraryModels";
 import { showAssetRefValue } from "@/showAssets/ref";
 import type { ModelSidecar } from "@/showAssets/modelImport/types";
 import { useBytesUrl } from "./ModelImportReview";
@@ -20,14 +20,7 @@ const meters = (value: number) => String(Number(value.toFixed(2)));
 export function importedModels(
     assets: readonly ShowAsset[] | undefined,
 ): (ShowAsset & { sidecar: ModelSidecar })[] {
-    return (assets ?? [])
-        .filter(
-            (asset): asset is ShowAsset & { sidecar: ModelSidecar } =>
-                asset.kind === MODEL_ASSET_KIND &&
-                typeof (asset.sidecar as Partial<ModelSidecar>).sizeM ===
-                    "object",
-        )
-        .reverse();
+    return (assets ?? []).filter(isModelAsset).reverse();
 }
 
 const TILE_CLASS =

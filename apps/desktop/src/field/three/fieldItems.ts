@@ -22,6 +22,7 @@ import {
     subscribePitPlans,
     type PlacedPitPlan,
 } from "@/view3d/core/pit/pitPlan";
+import { modelScale, type LibraryModel } from "@/showAssets/libraryModels";
 import type { FieldItemSource, FieldMarchers } from "./fieldMarchers";
 
 /** An item's Outline where the field draws it. */
@@ -42,8 +43,9 @@ export type DrawnItemOutline = {
     /** Where a player stands to play it, for a pit instrument (`playingSpotOf`), else null */
     readonly playingSpot: PlayingSpot | null;
     /**
-     * For an item with a built-in model, the model from above (its silhouette and the edges seen
-     * from above), placed where the item is; null draws the Outline
+     * For an item with a model, the model from above (its silhouette and the edges seen from
+     * above), placed where the item is: a built-in at real size, an imported model sized to the
+     * Outline as the 3D View draws it. Null draws the Outline.
      */
     readonly plan: PlacedPitPlan | null;
 };
@@ -68,6 +70,7 @@ export class FieldItems implements FieldItemSource {
     private colors: ReadonlyMap<number, RgbaColor> = new Map();
     private locked: ReadonlySet<number> = new Set();
     private models: ReadonlyMap<number, string> = new Map();
+    private library: ReadonlyMap<string, LibraryModel> = new Map();
     private previews = new Map<number, DrawnItemGeometry>();
     private drawn: {
         version: number;
@@ -97,8 +100,9 @@ export class FieldItems implements FieldItemSource {
 
     /**
      * The items by marcher id, their Outline changes, those the user hid, the
-     * colors of those that have one, those locked to one position, and the
-     * built-in models of those that name one.
+     * colors of those that have one, those locked to one position, the models
+     * of those that name one, and the show's imported models by `items.model`
+     * value.
      */
     set({
         itemIds,
@@ -107,6 +111,7 @@ export class FieldItems implements FieldItemSource {
         colors = new Map(),
         locked = new Set(),
         models = new Map(),
+        library = new Map(),
     }: {
         itemIds: ReadonlySet<number>;
         changes: ItemOutlineChanges;
@@ -114,6 +119,7 @@ export class FieldItems implements FieldItemSource {
         colors?: ReadonlyMap<number, RgbaColor>;
         locked?: ReadonlySet<number>;
         models?: ReadonlyMap<number, string>;
+        library?: ReadonlyMap<string, LibraryModel>;
     }) {
         this.ids = itemIds;
         this.changes = changes;
@@ -121,6 +127,7 @@ export class FieldItems implements FieldItemSource {
         this.colors = colors;
         this.locked = locked;
         this.models = models;
+        this.library = library;
         this.geometries = null;
         this.placedPlans.clear();
         // The marchers' marks first, so a listener reads the items as they now are
@@ -189,7 +196,7 @@ export class FieldItems implements FieldItemSource {
                     center,
                     color: this.colors.get(id) ?? null,
                     locked: this.locked.has(id),
-                    plan: this.planOf(id, center, geometry.rotation),
+                    plan: this.planOf(id, center, geometry),
                     playingSpot: playingSpotOf(
                         this.models.get(id),
                         {
@@ -255,20 +262,28 @@ export class FieldItems implements FieldItemSource {
         return geometry;
     }
 
-    /** Item `id`'s model from above, placed at `center` turned `rotation`, or null. */
+    /**
+     * Item `id`'s model from above, placed at `center` turned as `geometry` is, or null: an
+     * imported model scaled to the Outline as the 3D View scales it (`modelScale`).
+     */
     private planOf(
         id: number,
         center: Pt,
-        rotation: number,
+        geometry: Pick<ItemGeometry, "width" | "depth" | "rotation">,
     ): PlacedPitPlan | null {
         const model = this.models.get(id);
         if (!model) return null;
-        const key = `${model}|${center.x}|${center.y}|${rotation}`;
+        const imported = this.library.get(model);
+        const scale = imported
+            ? modelScale(geometry, imported.sidecar.sizeM)
+            : 1;
+        const { rotation } = geometry;
+        const key = `${model}|${center.x}|${center.y}|${rotation}|${scale}`;
         const cached = this.placedPlans.get(id);
         if (cached?.key === key) return cached.plan;
-        const plan = pitPlanOf(model);
+        const plan = imported ? imported.sidecar.plan : pitPlanOf(model);
         const placed = plan
-            ? placePitPlan(plan, center, rotation, PIXELS_PER_METER)
+            ? placePitPlan(plan, center, rotation, PIXELS_PER_METER * scale)
             : null;
         this.placedPlans.set(id, { key, plan: placed });
         return placed;

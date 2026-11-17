@@ -1,6 +1,6 @@
 ---
 title: Add props to the field
-description: Draw props such as risers, platforms, tarps, walls and backdrops on the field, or import your own 3D models, size and turn them, move them during the show, and see them as blocks in the 3D View.
+description: Draw props such as risers, platforms, tarps, walls and backdrops on the field, or import your own 3D models, size and turn them, move them during the show, and see them in the 3D View.
 type: how-to
 covers:
   - apps/desktop/src/components/items
@@ -26,7 +26,7 @@ import { Steps } from "@astrojs/starlight/components";
 
 <InShort>Put the playhead where the prop first appears, select <Ui k="props.title" /> (the cube) in the sidebar, choose an outline such as <Ui k="props.outline.rectangle" plain />, and draw it on the field.</InShort>
 
-A prop is a set piece on the field: a riser, a platform, a floor tarp, a wall or a backdrop. You draw its outline on the field and give it a height, or [import a 3D model](#import-a-3d-model) of it, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
+A prop is a set piece on the field: a riser, a platform, a floor tarp, a wall or a backdrop. You draw its outline on the field and give it a height, or [import a 3D model](#import-a-3d-model) of it, and move it during the show the way you move marchers. The 3D View draws a drawn prop as a plain block, and an imported one as its model.
 
 The pit's instruments, speakers and podiums aren't props: see [Set up the front ensemble](/guides/3d-view/front-ensemble/).
 
@@ -120,7 +120,12 @@ The prop takes the model's footprint and height, and from then on it's like any 
 
 You can also find both steps in the command palette: <Ui k="actions.items.importModel" plain /> and <Ui k="actions.items.placeImportedModel" plain />.
 
-In this version the field and the 3D View draw an imported prop as its footprint and a block its height, not as the model itself.
+The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. Resizing the prop resizes the model evenly, so it keeps its shape: stretching one side makes the whole model bigger. While the model loads, or if the show doesn't have it, the prop draws as its outline (a block in the 3D View).
+
+<Media
+  id="3d-props-imported"
+  alt="The 3D View from the press box, zoomed in behind two color guard performers: three red imported chairs stand in a row on the field near the visitors' sideline, facing the audience."
+/>
 
 ## Change a prop's name, color and size
 
@@ -141,7 +146,7 @@ In this version the field and the 3D View draw an imported prop as its footprint
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
 - <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
 - <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
-- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In this version the surface doesn't change how the prop is drawn, and marchers don't stand on platforms.
+- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on its top, over its middle, rather than at its full height.
 - <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
 - <Ui k="props.rollOut.label" /> (floor props only): which edge a tarp rolls out from. It's saved with the prop, but in this version it doesn't change how the prop is drawn.
 
@@ -191,7 +196,7 @@ The Props panel lists every prop:
 
 ## Props in the 3D View
 
-In the 3D View each prop is a solid block: its outline raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline. They have no pictures or textures. Props aren't in exports: not on coordinate sheets, drill charts or videos, and not sent to On the Move.
+In the 3D View each drawn prop is a solid block: its outline raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline, and have no pictures or textures. An imported prop is drawn as its model, with its own colors and textures, and moves, turns and resizes the same way. Props aren't in exports: not on coordinate sheets, drill charts or videos, and not sent to On the Move.
 
 <Media
   id="3d-props-block"

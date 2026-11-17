@@ -186,9 +186,9 @@ export function isNearPitItem(
 }
 
 /**
- * Writes a model instance's matrix (column-major, as three stores it): real size, turned by the
- * item's 2D turn (degrees, clockwise on screen, so +X turns toward +Z) and standing at `center`
- * on `baseY`.
+ * Writes a model instance's matrix (column-major, as three stores it): `scale` times real size
+ * (an imported model sized to its Outline; built-ins are 1), turned by the item's 2D turn
+ * (degrees, clockwise on screen, so +X turns toward +Z) and standing at `center` on `baseY`.
  */
 export function writePitModelMatrix(
     out: Float32Array,
@@ -196,17 +196,18 @@ export function writePitModelMatrix(
     rotationDeg: number,
     center: { x: number; z: number },
     baseY: number,
+    scale = 1,
 ): void {
     const radians = (rotationDeg * Math.PI) / 180;
-    const cos = Math.cos(radians);
-    const sin = Math.sin(radians);
+    const cos = Math.cos(radians) * scale;
+    const sin = Math.sin(radians) * scale;
     const o = index * 16;
     out[o] = cos;
     out[o + 1] = 0;
     out[o + 2] = sin;
     out[o + 3] = 0;
     out[o + 4] = 0;
-    out[o + 5] = 1;
+    out[o + 5] = scale;
     out[o + 6] = 0;
     out[o + 7] = 0;
     out[o + 8] = -sin;

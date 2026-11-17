@@ -186,3 +186,66 @@ describe("FieldItems for the front ensemble", () => {
         }
     });
 });
+
+describe("FieldItems for imported models", () => {
+    /** A 2 × 1 m model: a rectangle from above, its front at +z */
+    const library = new Map([
+        [
+            "library:a@b",
+            {
+                value: "library:a@b",
+                modelHash: "m",
+                distantHash: "d",
+                sidecar: {
+                    sizeM: { width: 2, height: 1, depth: 1 },
+                    plan: {
+                        outline: [
+                            [-1000, -500, 1000, -500, 1000, 500, -1000, 500],
+                        ],
+                        details: [],
+                    },
+                } as never,
+            },
+        ],
+    ]);
+    const drawn = (width: number, depth: number, model = "library:a@b") => {
+        const marchers = new FieldMarchers(positions);
+        const items = new FieldItems(marchers);
+        items.set({
+            itemIds: new Set([2]),
+            changes: new Map([[2, [change(0, { width, depth })]]]),
+            hidden: new Set(),
+            models: new Map([[2, model]]),
+            library,
+        });
+        marchers.fill(1);
+        return items.outlines()[0];
+    };
+
+    it("draws the model from above at its real size, its front toward the audience", () => {
+        const { plan } = drawn(2, 1);
+        const box = extent(plan!.outlines[0]);
+        expect(box.maxX - box.minX).toBeCloseTo(2 * PIXELS_PER_METER);
+        expect(box.maxY - box.minY).toBeCloseTo(1 * PIXELS_PER_METER);
+        expect(plan!.front.y).toBeCloseTo(50 + 0.5 * PIXELS_PER_METER);
+    });
+
+    it("scales the model with its Outline, one factor for both sides", () => {
+        const { plan } = drawn(4, 2);
+        const box = extent(plan!.outlines[0]);
+        expect(box.maxX - box.minX).toBeCloseTo(4 * PIXELS_PER_METER);
+        expect(box.maxY - box.minY).toBeCloseTo(2 * PIXELS_PER_METER);
+        // Stretched one way only: the model grows evenly, keeping the footprint's area
+        const stretched = extent(drawn(8, 1).plan!.outlines[0]);
+        expect(stretched.maxX - stretched.minX).toBeCloseTo(
+            4 * PIXELS_PER_METER,
+        );
+        expect(stretched.maxY - stretched.minY).toBeCloseTo(
+            2 * PIXELS_PER_METER,
+        );
+    });
+
+    it("draws the Outline for a model the show doesn't have", () => {
+        expect(drawn(2, 1, "library:gone@b").plan).toBeNull();
+    });
+});
