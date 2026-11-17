@@ -4,23 +4,27 @@
  * storage (ADR 0010 D-5), like `renderPrefs.ts`. Plain TypeScript: the
  * Settings window imports it, so nothing here may load three.js.
  *
- * - `map` (default): drag pans, right-drag orbits, and scroll zooms.
- * - `orbit`: drag orbits, right-drag pans, and scroll zooms.
+ * - `orbit` (default): drag orbits, right-drag pans, and scroll zooms.
+ * - `map`: drag pans, right-drag orbits, and scroll zooms.
  * - `trackpad`: scroll orbits, and a pinch zooms.
  *
  * The scheme is chosen rather than detected because a browser can't reliably
  * tell a mouse wheel from a two-finger scroll.
+ *
+ * Orbit is the default because a pan drag holds the ground point under the
+ * pointer: from the stands, much of the picture is stadium, and a press there
+ * grabbed ground far behind it, so the view lurched.
  */
 
 export type ControlScheme = "orbit" | "map" | "trackpad";
 
 export const CONTROL_SCHEMES: readonly ControlScheme[] = [
-    "map",
     "orbit",
+    "map",
     "trackpad",
 ];
 
-export const DEFAULT_CONTROL_SCHEME: ControlScheme = "map";
+export const DEFAULT_CONTROL_SCHEME: ControlScheme = "orbit";
 
 export const CONTROL_SCHEME_STORAGE_KEY = "view3d.controls";
 

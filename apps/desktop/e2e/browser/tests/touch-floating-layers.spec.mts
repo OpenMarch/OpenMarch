@@ -128,6 +128,19 @@ async function settledAt(page: Page, locator: Locator): Promise<Point> {
     return centerOf(locator);
 }
 
+/**
+ * Waits until the pill has no placing waiting on a timer (it marks itself `data-placing` while
+ * one is) and has stopped moving (#1023)
+ */
+async function pillSettled(page: Page) {
+    const pill = page.getByTestId("touch-modifier-buttons");
+    const placing = () =>
+        pill.evaluate((el) => el.hasAttribute("data-placing"));
+    await expect.poll(placing).toBe(false);
+    await settledAt(page, pill);
+    await expect.poll(placing).toBe(false);
+}
+
 /** Checks a finger at `locator`'s middle lands on it, then taps it there */
 async function reachAndTap(page: Page, locator: Locator) {
     await expect(locator).toBeVisible();
@@ -668,8 +681,8 @@ test("with the Box tool armed, the first drag on the field draws (#936)", async 
     const hint = page.getByTestId("shape-tool-hint");
     await expect(hint).toBeVisible();
     await pillClearOf(page, hint);
-    // Past every settle the pill waits for
-    await page.waitForTimeout(800);
+    // Once the pill has found its spot
+    await pillSettled(page);
     expect(await topmostAtPoint(page, start)).toBe("canvas");
 
     await touchDrag(
@@ -728,7 +741,7 @@ test.describe("a big shape (#936)", () => {
         // settles: start the drag only once it has, on the field itself, or the finger lands
         // on the pill and no box is drawn
         await pillClearOf(page, hint);
-        await page.waitForTimeout(800);
+        await pillSettled(page);
         const start = await emptyFieldPoint(page, [
             [0.12, 0.2],
             [0.12, 0.28],

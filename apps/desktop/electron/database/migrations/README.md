@@ -37,3 +37,15 @@ Files that fork builds saved still record the old migrations. They are repaired 
 (`../legacyFork/legacyForkMigrations.ts`). Never edit that copy. A new migration that changes a
 table `0017_timeline_model` makes needs no change to the repair: it runs after it, like on any
 other file.
+
+## Never re-date `0022_cues`
+
+`0022_cues` starts by dropping any `cues` and `cue_marchers` tables a file already has, because
+fork builds made tables of those names in another shape. The drop can't tell those tables from its
+own, so the migration must never run twice on one file. Don't renumber it, regenerate it under a
+new date or move its entry in the journal: a file that took it would run it again and lose its
+cues.
+
+The migrator applies every migration dated after the newest one a file records, so a file that
+took an earlier date of a migration can also skip migrations dated between the two. Files from
+dev or preview builds of an unmerged branch whose migration was later renumbered aren't supported.

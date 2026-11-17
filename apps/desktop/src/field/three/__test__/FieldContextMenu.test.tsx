@@ -31,7 +31,14 @@ function handle(
         enabled = true,
         label,
         checked = false,
-    }: { enabled?: boolean; label?: string; checked?: boolean } = {},
+        reason = "Not now, for a test",
+    }: {
+        enabled?: boolean;
+        label?: string;
+        checked?: boolean;
+        /** Why it's disabled; null for none (then the menu leaves it out) */
+        reason?: string | null;
+    } = {},
 ) {
     const run = vi.fn();
     handlers.push(
@@ -40,6 +47,7 @@ function handle(
             isEnabled: () => enabled,
             label: () => label,
             checked: () => checked,
+            disabledReason: () => reason ?? undefined,
         }),
     );
     return run;
@@ -143,14 +151,21 @@ describe("FieldContextMenu", () => {
         expect(preview).toHaveBeenLastCalledWith(false);
     });
 
-    it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
+    it("shows an action that can't run with its reason, and running it does nothing", () => {
         const run = handle("alignHorizontally", { enabled: false });
         open();
         const align = item("alignHorizontally")!;
-        expect(align).toHaveAttribute("data-disabled");
+        expect(align).toHaveAttribute("aria-disabled", "true");
+        expect(item("alignHorizontally-reason-icon")).toBeTruthy();
         fireEvent.click(align);
         expect(run).not.toHaveBeenCalled();
-        expect(item("alignVertically")).toHaveAttribute("data-disabled");
+    });
+
+    it("leaves out an action that can't run and can't say why, or has no handler", () => {
+        handle("alignHorizontally", { enabled: false, reason: null });
+        open();
+        expect(item("alignHorizontally")).toBeNull();
+        expect(item("alignVertically")).toBeNull();
     });
 
     it("offers editing the item right-clicked, first, only while one is selected", () => {
@@ -162,9 +177,10 @@ describe("FieldContextMenu", () => {
 
     it("lists the actions in groups, with the page state commands together", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        handle("shapeGroup", { enabled: false });
-        handle("shapeUngroup", { enabled: false });
-        open();
+        handle("shapeGroup", { enabled: false, reason: null });
+        handle("shapeUngroup", { enabled: false, reason: null });
+        // Two selected, so Swap can run
+        open({ selectedCount: 2 });
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
         for (const el of Array.from(content.children)) {
@@ -277,14 +293,15 @@ describe("FieldContextMenu", () => {
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(blocked).not.toHaveBeenCalled();
         expect(item("timelineHoldFromPrevious")).toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
+            "true",
         );
         cleanup();
         handlers.splice(0).forEach((off) => off());
         const hold = handle("timelineHoldFromPrevious");
         open();
         expect(item("timelineHoldFromPrevious")).not.toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
         );
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(hold).toHaveBeenCalledTimes(1);
@@ -353,11 +370,17 @@ describe("FieldContextMenu", () => {
     });
 
     it("offers Swap only with two marchers selected", () => {
-        const run = handle("swapMarchers");
+        // Three selected: its handler says it can't, and why
+        const off = handle("swapMarchers", {
+            enabled: false,
+            reason: "Select 2 marchers to swap them",
+        });
         open({ selectedCount: 3 });
-        fireEvent.click(item("swapMarchers")!);
-        expect(run).not.toHaveBeenCalled();
+        expect(item("swapMarchers")).toHaveAttribute("aria-disabled", "true");
         cleanup();
+        handlers.splice(0).forEach((h) => h());
+        void off;
+        const run = handle("swapMarchers");
         open({ selectedCount: 2 });
         fireEvent.click(item("swapMarchers")!);
         expect(run).toHaveBeenCalledTimes(1);
@@ -392,7 +415,7 @@ describe("FieldContextMenu", () => {
 
     it("lists every action it offers by its label", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        open();
+        open({ selectedCount: 2 });
         expect(
             screen.getAllByRole("menuitem").map((el) => el.textContent),
         ).toEqual(

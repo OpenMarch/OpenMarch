@@ -1,11 +1,9 @@
 import { mutationOptions, useMutation, useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { moveMarchersAndOfferFollowUp } from "@/timeline/timelineMoveThemToo";
 import { db } from "@/global/database/db";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useTranslate } from "@tolgee/react";
 import { FieldProperties } from "@openmarch/core";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 import tolgee from "@/global/singletons/Tolgee";
@@ -136,16 +134,13 @@ export const useUpdateSelectedMarchers = (
         useQuery(fieldPropertiesQueryOptions());
     const selectedMarchersContext = useSelectedMarchers();
     const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
-    const { t } = useTranslate();
 
     return useMutation({
         mutationFn: async (transformFunction: MarcherTransformFunction) => {
             if (!fieldPropertiesLoaded)
                 throw new Error("Field properties not loaded");
-            if (selectedMarchers.length === 0) {
-                toast.warning(t("actions.shape.noMarchersSelected"));
-                return;
-            }
+            // Nudges are greyed out with nothing selected, and the inspector's fields aren't shown
+            if (selectedMarchers.length === 0) return;
             const newCoordinates = await transformMarchersInSelection({
                 db,
                 marcherIds: selectedMarchers.map((marcher) => marcher.id),

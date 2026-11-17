@@ -39,6 +39,12 @@ interface HandlerOptions {
      */
     checked?: boolean;
     /**
+     * Why the action is disabled, said where it's greyed out (the palette shows it beside the
+     * entry), instead of a toast after a press. Translated by the caller. A function is read only
+     * when asked, and only while the action is disabled. Default: none.
+     */
+    disabledReason?: string | (() => string | undefined);
+    /**
      * Shows what the action would change while the palette highlights it (true), and stops
      * (false). It must not edit anything.
      */
@@ -62,6 +68,26 @@ export function useActionHandler(
     );
 }
 
+/** A value, or a function read only when asked */
+const read = <T>(value: T | (() => T)): T =>
+    typeof value === "function" ? (value as () => T)() : value;
+
+/**
+ * A ref to `value` that tells the action's subscribers when it changes. A function is read when
+ * asked, so a new one each render tells nobody.
+ */
+function useWatchedRef<T>(value: T) {
+    const ref = useRef(value);
+    useLayoutEffect(() => {
+        if (ref.current === value) return;
+        const quiet =
+            typeof ref.current === "function" && typeof value === "function";
+        ref.current = value;
+        if (!quiet) notifyActionHandlersChanged();
+    }, [value]);
+    return ref;
+}
+
 export function useActionHandlerGroup(
     ids: readonly ActionId[],
     run: (id: ActionId, args: ActionArgs | undefined) => void,
@@ -69,16 +95,18 @@ export function useActionHandlerGroup(
 ): void {
     const enabled = options.enabled ?? true;
     const runRef = useRef(run);
-    const enabledRef = useRef(enabled);
+    // Subscribers such as ActionButton re-read these when they change
+    const enabledRef = useWatchedRef(enabled);
     const ignoreRepeatRef = useRef<boolean | (() => boolean)>(
         options.ignoreRepeat ?? false,
     );
     const pressRef = useRef(options.onPress);
     const hasPress = options.onPress !== undefined;
     const releaseRef = useRef(options.onRelease);
-    const labelRef = useRef(options.label);
+    const labelRef = useWatchedRef(options.label);
     const checkedRef = useRef(options.checked ?? false);
     const previewRef = useRef(options.preview);
+    const reasonRef = useWatchedRef(options.disabledReason);
     const hasRelease = options.onRelease !== undefined;
     useLayoutEffect(() => {
         runRef.current = run;
@@ -87,30 +115,12 @@ export function useActionHandlerGroup(
         releaseRef.current = options.onRelease;
         previewRef.current = options.preview;
     });
-    // A function is read when asked, so a new one each render tells nobody
-    useLayoutEffect(() => {
-        if (labelRef.current === options.label) return;
-        const quiet =
-            typeof labelRef.current === "function" &&
-            typeof options.label === "function";
-        labelRef.current = options.label;
-        if (!quiet) notifyActionHandlersChanged();
-    }, [options.label]);
     useLayoutEffect(() => {
         const checked = options.checked ?? false;
         if (checkedRef.current === checked) return;
         checkedRef.current = checked;
         notifyActionHandlersChanged();
     }, [options.checked]);
-    useLayoutEffect(() => {
-        if (enabledRef.current === enabled) return;
-        const quiet =
-            typeof enabledRef.current === "function" &&
-            typeof enabled === "function";
-        enabledRef.current = enabled;
-        // Lets subscribers such as ActionButton re-read isActionEnabled().
-        if (!quiet) notifyActionHandlersChanged();
-    }, [enabled]);
 
     const idsKey = ids.join("|");
     useEffect(() => {
@@ -133,14 +143,13 @@ export function useActionHandlerGroup(
                 release: hasRelease
                     ? (reason) => releaseRef.current?.(reason)
                     : undefined,
-                label: () => {
-                    const label = labelRef.current;
-                    return typeof label === "function" ? label() : label;
-                },
+                label: () => read(labelRef.current),
                 checked: () => checkedRef.current,
+                disabledReason: () => read(reasonRef.current),
                 preview: (on) => previewRef.current?.(on),
             }),
         );
         return () => unregister.forEach((off) => off());
-    }, [idsKey, hasPress, hasRelease]);
+        // The refs are stable (useWatchedRef)
+    }, [idsKey, hasPress, hasRelease, enabledRef, labelRef, reasonRef]);
 }

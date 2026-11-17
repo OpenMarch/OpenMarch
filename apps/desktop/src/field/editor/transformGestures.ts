@@ -74,17 +74,16 @@ abstract class HandleGesture implements FieldGesture {
 
 /**
  * A corner scales each axis with the pointer and a middle handle scales one axis, and constrain
- * keeps the ratio; with the box shape's ratio lock on they keep it, and constrain frees it (a box's
- * corner gives equal spacings instead). Either scales from the center with from center. Nothing
- * snaps.
+ * keeps the ratio while it's held. A box shape's ratio lock is the box's own: a plain selection
+ * never reads it (#1037). Either scales from the center with from center. Nothing snaps.
  */
-const scaleHonors = (ratioLocked: boolean): HonoredRoles => ({
+const SCALE_HONORS: HonoredRoles = {
     context: "field",
     fine: "fine",
-    constrain: ratioLocked ? "freeRatio" : "keepRatio",
+    constrain: "keepRatio",
     fromCenter: "fromCenter",
     snaps: false,
-});
+};
 
 /** A rotate handle reads fine (whole degrees, at full speed) and snaps to 15°; constrain does nothing */
 export const ROTATE_HONORS: HonoredRoles = {
@@ -106,10 +105,8 @@ export class ScaleGesture extends HandleGesture {
         /** The marchers' bounds at the press. */
         private readonly box: FieldRect,
         keys: FieldKeys,
-        /** The ratio lock a box shape shares, at the press: on, keeping the ratio is the default. */
-        private readonly ratioLocked = false,
     ) {
-        super(origin, starts, host, keys, scaleHonors(ratioLocked));
+        super(origin, starts, host, keys, SCALE_HONORS);
     }
 
     protected positionsAt(at: FieldPoint, roles: Roles) {
@@ -121,14 +118,13 @@ export class ScaleGesture extends HandleGesture {
             roles.fine,
         );
         this.track = moved.track;
-        // Constrain flips the ratio lock for the drag, as on a box shape: one idea, not two
         return scalePositions(
             this.starts,
             scaleFor(
                 this.handle,
                 this.box,
                 moved.delta,
-                this.ratioLocked !== roles.constrain,
+                roles.constrain,
                 roles.fromCenter,
             ),
         );

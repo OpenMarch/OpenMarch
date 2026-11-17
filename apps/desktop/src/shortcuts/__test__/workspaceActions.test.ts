@@ -1,6 +1,11 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isActionEnabled, registerActionHandler, runAction } from "../registry";
+import {
+    actionDisabledReason,
+    isActionEnabled,
+    registerActionHandler,
+    runAction,
+} from "../registry";
 import { isActionOffInWorkspace } from "../workspaceActions";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
 import {
@@ -18,6 +23,23 @@ const handle = (id: ActionId) => {
 
 describe("Preview, which edits nothing", () => {
     afterEach(() => usePreviewModeStore.setState({ isPreview: false }));
+
+    it("says why an edit is greyed out there, over its handler's own reason", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        usePreviewModeStore.setState({ isPreview: true });
+        expect(actionDisabledReason("swapMarchers")).toBe(
+            "Not in Preview — exit Preview to edit",
+        );
+        usePreviewModeStore.setState({ isPreview: false });
+        expect(actionDisabledReason("swapMarchers")).toBe(
+            "Select 2 marchers to swap them",
+        );
+        off();
+    });
 
     it("turns off edits, undo and selecting, and keeps playback, navigation and files", () => {
         const ids: ActionId[] = [
