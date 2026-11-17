@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
 import ShortcutDispatcher from "../ShortcutDispatcher";
-import { registerActionHandler } from "../registry";
+import { onRefusedPress, registerActionHandler } from "../registry";
 import { readShortcutContext } from "../context";
 
 const offs: Array<() => void> = [];
@@ -160,5 +160,91 @@ describe("ShortcutDispatcher, the field's menu (#315)", () => {
         // Plain F10 doesn't
         fireEvent.keyDown(window, { key: "F10", code: "F10" });
         expect(run).toHaveBeenCalledTimes(2);
+    });
+
+    it("a key whose action can't run but says why reports a refused press, once per press", () => {
+        const run = vi.fn();
+        offs.push(
+            registerActionHandler("swapMarchers", {
+                run,
+                isEnabled: () => false,
+                disabledReason: () => "Select 2 marchers to swap them",
+            }),
+        );
+        // A button on screen showed it
+        const refused = vi.fn(() => true);
+        offs.push(onRefusedPress(refused));
+        render(
+            <ShortcutDispatcher overrides={{ swapMarchers: ["Control+S"] }} />,
+        );
+        const press = (repeat = false) => {
+            const event = new KeyboardEvent("keydown", {
+                key: "s",
+                code: "KeyS",
+                ctrlKey: true,
+                cancelable: true,
+                bubbles: true,
+                repeat,
+            });
+            window.dispatchEvent(event);
+            return event;
+        };
+        // Ctrl+S is Swap here (not macOS, not the web build)
+        const first = press();
+        expect(refused).toHaveBeenCalledExactlyOnceWith("swapMarchers");
+        expect(first.defaultPrevented).toBe(true);
+        expect(run).not.toHaveBeenCalled();
+        // A held key keeps it lit
+        press(true);
+        expect(refused).toHaveBeenCalledTimes(2);
+    });
+
+    it("a refused key with no button on screen to show why is left alone", () => {
+        offs.push(
+            registerActionHandler("swapMarchers", {
+                run: vi.fn(),
+                isEnabled: () => false,
+                disabledReason: () => "Select 2 marchers to swap them",
+            }),
+        );
+        const refused = vi.fn(() => false);
+        offs.push(onRefusedPress(refused));
+        render(
+            <ShortcutDispatcher overrides={{ swapMarchers: ["Control+S"] }} />,
+        );
+        const event = new KeyboardEvent("keydown", {
+            key: "s",
+            code: "KeyS",
+            ctrlKey: true,
+            cancelable: true,
+            bubbles: true,
+        });
+        window.dispatchEvent(event);
+        expect(refused).toHaveBeenCalledOnce();
+        expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("a key whose action can't run and gives no reason does nothing", () => {
+        offs.push(
+            registerActionHandler("swapMarchers", {
+                run: vi.fn(),
+                isEnabled: () => false,
+            }),
+        );
+        const refused = vi.fn(() => true);
+        offs.push(onRefusedPress(refused));
+        render(
+            <ShortcutDispatcher overrides={{ swapMarchers: ["Control+S"] }} />,
+        );
+        const event = new KeyboardEvent("keydown", {
+            key: "s",
+            code: "KeyS",
+            ctrlKey: true,
+            cancelable: true,
+            bubbles: true,
+        });
+        window.dispatchEvent(event);
+        expect(refused).not.toHaveBeenCalled();
+        expect(event.defaultPrevented).toBe(false);
     });
 });

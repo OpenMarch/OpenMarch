@@ -34,7 +34,8 @@ const clearPageNotify = {
  * "Set all or selected marchers to the previous or next page" (`setMarchersToNeighborPage`, P7.6).
  * Previous page is **Clear this page**: for the selection, it's off where every selected marcher
  * is already Not defined, when it shows checked, as the hold commands are (`useHoldCommands`). On
- * the first page it still runs and says there's no previous page.
+ * the first page Clear this page is greyed out, and on the last page Next page spots is, each
+ * saying why where it's shown (the palette, a menu's button) instead of a toast after a press.
  */
 export function useBatchEditActionHandlers() {
     const { t } = useTranslate();
@@ -48,6 +49,20 @@ export function useBatchEditActionHandlers() {
     );
     const enabled = ready && !!pages && pages.length > 0;
     const hasSelection = enabled && selectedMarchers.length > 0;
+    const hasPrevious = selectedPage?.previousPageId != null;
+    const hasNext = selectedPage?.nextPageId != null;
+    // Why one is greyed out: the missing page first, then the selection; none while loading.
+    // Worked out on render, as strings, so a button showing one gets the new one when it changes
+    const reason = (direction: "previous" | "next", needsSelection: boolean) =>
+        !enabled
+            ? undefined
+            : direction === "previous" && !hasPrevious
+              ? t("actions.batchEdit.noPageBefore")
+              : direction === "next" && !hasNext
+                ? t("actions.batchEdit.noPageAfter")
+                : needsSelection && !hasSelection
+                  ? t("actions.shape.noMarchersSelected")
+                  : undefined;
     const idsKey = selectedMarchers.map((m) => m.id).join(",");
     const marcherIds = useMemo(
         () => (idsKey === "" ? [] : idsKey.split(",").map(Number)),
@@ -77,20 +92,26 @@ export function useBatchEditActionHandlers() {
 
     useClearPageActionHandlers({
         run: (scope, followBack) => run("previous", scope, followBack),
-        enabled,
-        hasSelection,
+        enabled: enabled && hasPrevious,
+        hasSelection: hasSelection && hasPrevious,
+        reasonAll: reason("previous", false),
+        reasonSelected: reason("previous", true),
         selectedPage,
         selectedIds: marcherIds,
         performers,
         clearEntry,
     });
     useActionHandler("setAllMarchersToNextPage", () => run("next", "all"), {
-        enabled,
+        enabled: enabled && hasNext,
+        disabledReason: reason("next", false),
     });
     useActionHandler(
         "setSelectedMarchersToNextPage",
         () => run("next", "selected"),
-        { enabled: hasSelection },
+        {
+            enabled: hasSelection && hasNext,
+            disabledReason: reason("next", true),
+        },
     );
 }
 
@@ -108,10 +129,15 @@ function useClearPageActionHandlers({
     selectedIds,
     performers,
     clearEntry,
+    reasonAll,
+    reasonSelected,
 }: {
     run: (scope: NeighborPageScope, followBack: boolean) => void;
     enabled: boolean;
     hasSelection: boolean;
+    /** Why the plain actions are greyed out (no page before, nothing selected), if that's why */
+    reasonAll: string | undefined;
+    reasonSelected: string | undefined;
     selectedPage: Parameters<typeof useClearPagePage>[0];
     /** The selected marchers, stable while the selection is */
     selectedIds: readonly number[];
@@ -136,6 +162,7 @@ function useClearPageActionHandlers({
     useActionHandler("setAllMarchersToPreviousPage", () => run("all", false), {
         enabled,
         label: () => plain("all"),
+        disabledReason: reasonAll,
     });
     useActionHandler(
         "setSelectedMarchersToPreviousPage",
@@ -146,6 +173,7 @@ function useClearPageActionHandlers({
                 (clearEntry === undefined || clearEntry.changes > 0),
             ...holdActionOptions(clearEntry),
             label: () => plain("selected"),
+            disabledReason: reasonSelected,
         },
     );
     useActionHandler(

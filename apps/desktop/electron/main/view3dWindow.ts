@@ -30,8 +30,8 @@ export interface View3dWindowConfig {
     preload: string;
     /** Vite dev server URL in development, otherwise undefined. */
     devServerUrl?: string;
-    /** Absolute path of the built renderer `index.html`. */
-    indexHtml: string;
+    /** The built renderer's page, `app://openmarch/index.html` (appProtocol.ts). */
+    appIndexUrl: string;
     icon: string;
     /** Show a native frame (Playwright codegen), like the editor window. */
     frame: boolean;
@@ -270,15 +270,11 @@ export function openView3dWindow({
     });
     created.webContents.on("will-navigate", (event) => event.preventDefault());
 
-    if (config.devServerUrl) {
-        const url = new URL(config.devServerUrl);
-        for (const [key, value] of Object.entries(query)) {
-            url.searchParams.set(key, value);
-        }
-        void created.loadURL(url.toString());
-    } else {
-        void created.loadFile(config.indexHtml, { query });
+    const url = new URL(config.devServerUrl ?? config.appIndexUrl);
+    for (const [key, value] of Object.entries(query)) {
+        url.searchParams.set(key, value);
     }
+    void created.loadURL(url.toString());
 
     sendWindowState(true);
     console.log("3D View window opened");

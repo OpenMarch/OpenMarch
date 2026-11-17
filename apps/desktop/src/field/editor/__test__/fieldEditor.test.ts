@@ -6,12 +6,14 @@ import {
     type DropResult,
     type FieldEditorPorts,
     type FieldMode,
+    type FieldOnScreen,
     type FieldPoint,
     type FieldPointer,
 } from "../fieldEditor";
 import type { MarcherPosition, MoveTransform } from "../moveGesture";
 import { ruledMove, type MoveRules } from "../moveRules";
 import { watchKeyListeners } from "@/shapes/__test__/keyListeners";
+import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
 
 /**
  * Marchers 1 to 4 in a row 100 field units apart, at zoom 2 (2 CSS px per
@@ -30,8 +32,8 @@ function setup({
     reachesInside = undefined as FieldEditorPorts["reachesInside"],
     marcherHidden = undefined as FieldEditorPorts["marcherHidden"],
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
-    ratioLocked = undefined as (() => boolean) | undefined,
     selectionCovers = undefined as FieldEditorPorts["selectionCovers"],
+    onScreen = undefined as FieldOnScreen | undefined,
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -83,7 +85,7 @@ function setup({
         isMac,
         moveTransform,
         now: () => clock.now,
-        ratioLocked,
+        onScreen,
     });
     return { editor, state, ports, clock };
 }
@@ -2163,25 +2165,39 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         ];
         const dropped = (
             modifiers: Parameters<typeof at>[2],
-            ratioLocked?: () => boolean,
+            onScreen?: FieldOnScreen,
         ) => {
             const { editor, state } = setup({
                 selected: ALL,
                 positions: TALL,
-                ratioLocked,
+                onScreen,
             });
             drag(editor, EAST, { x: 560, y: 150 }, modifiers);
             return state.drops[0].positions;
         };
+        /** The touch pill with Equal (constrain) on */
+        const EQUAL: FieldOnScreen = {
+            roles: () => new Set(["constrain"]),
+            subscribe: () => () => {},
+            add: () => false,
+        };
+
+        afterEach(() => useShapeEditorStore.setState({ ratioLocked: false }));
 
         it("scales the other axis too with constrain on a middle handle, about the center line (#545)", () => {
             expect(dropped({})).toEqual(ONE_AXIS);
             expect(dropped({ ctrl: true })).toEqual(BOTH_WAYS);
         });
 
-        it("keeps the ratio with the box's ratio lock on, read at the press, and constrain frees it (#545)", () => {
-            expect(dropped({}, () => true)).toEqual(BOTH_WAYS);
-            expect(dropped({ ctrl: true }, () => true)).toEqual(ONE_AXIS);
+        it("ignores a box's ratio lock: a selection keeps its ratio only while constrain is held (#1037)", () => {
+            useShapeEditorStore.setState({ ratioLocked: true });
+            expect(dropped({})).toEqual(ONE_AXIS);
+            expect(dropped({ ctrl: true })).toEqual(BOTH_WAYS);
+        });
+
+        it("keeps the ratio with the touch pill's Equal on, whatever a box's ratio lock says (#1037)", () => {
+            useShapeEditorStore.setState({ ratioLocked: true });
+            expect(dropped({}, EQUAL)).toEqual(BOTH_WAYS);
         });
     });
 
@@ -3210,6 +3226,71 @@ describe("FieldEditor groups a press selects (#204)", () => {
         clock.now += 100;
         click(editor, 200, 100);
         expect(doubleClickMarcher).toHaveBeenCalledTimes(1);
+    });
+
+    it("counts a double-click when the app only echoes the first click's selection back", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        // React renders the click's selection, in its own order
+        state.selected = [...state.selected].reverse();
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("still counts a double-click when the app trims the first click's selection", () => {
+        // A box member outside an isolated move is dimmed and dropped from the selection
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        state.selected = [1];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("takes a click after Escape as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        // Escape clears the selection outside the editor
+        clock.now += 100;
+        state.selected = [];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
+    });
+
+    it("takes a click after a page change as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        clock.now += 100;
+        // The selection stays, but the field shows another page
+        editor.pageChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
     });
 });
 

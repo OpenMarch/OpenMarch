@@ -81,6 +81,18 @@ import {
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
+import { withAppCsp } from "./workerCsp";
+import { DESKTOP_PAGE_CSP } from "../../src/security/appCsp";
+import {
+    APP_INDEX_URL,
+    APP_ORIGIN,
+    handleAppScheme,
+    registerAppScheme,
+} from "./appProtocol";
+import {
+    electronStorageMoveDeps,
+    moveRendererStorage,
+} from "./rendererStorageMove";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -100,6 +112,8 @@ import {
 
 let isQuitting = false;
 const store = new Store();
+/** No settings yet: a new install, or a test's fresh profile, with no old storage to move */
+const isNewProfile = store.size === 0;
 // Native dialogs follow the saved app language from the start: on macOS a file can arrive
 // (`open-file`) before the app is ready, and its dialogs would otherwise be in English
 setMainLanguage(store.get("language"));
@@ -203,6 +217,8 @@ if (process.platform === "win32") app.setAppUserModelId(app.getName());
 
 // Initialize auth protocol handler before app is ready
 initAuthBeforeReady();
+// The packaged renderer's own scheme (appProtocol.ts)
+registerAppScheme();
 
 if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -215,11 +231,13 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
+/** Until the editor's first window exists; only hidden windows may be open before it */
+let startingUp = true;
+
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.js");
 const view3dPreload = join(__dirname, "../preload/view3d.js");
 const url = process.env.VITE_DEV_SERVER_URL;
-const indexHtml = join(process.env.DIST, "index.html");
 // eslint-disable-next-line max-lines-per-function
 async function createWindow(title?: string) {
     win = new BrowserWindow({
@@ -259,13 +277,15 @@ async function createWindow(title?: string) {
 
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
+            // The app's own scheme sends its headers itself (appProtocol.ts)
+            if (details.url.startsWith(`${APP_ORIGIN}/`)) return callback({});
             callback({
-                responseHeaders: {
-                    ...details.responseHeaders,
-                    "Content-Security-Policy": [
-                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
-                    ],
-                },
+                // Each listed worker's script gets its own policy (workerCsp.ts)
+                responseHeaders: withAppCsp(
+                    details.url,
+                    details.responseHeaders,
+                    DESKTOP_PAGE_CSP,
+                ),
             });
         },
     );
@@ -280,7 +300,7 @@ async function createWindow(title?: string) {
             }
         });
     } else {
-        void win.loadFile(indexHtml);
+        void win.loadURL(APP_INDEX_URL);
     }
 
     // Test actively push message to the Electron-Renderer
@@ -556,7 +576,7 @@ void app.whenReady().then(async () => {
     initView3dWindow({
         preload: view3dPreload,
         devServerUrl: url,
-        indexHtml,
+        appIndexUrl: APP_INDEX_URL,
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         frame: isCodegen,
         getTheme: () => store.get("theme", "light") as string,
@@ -576,8 +596,19 @@ void app.whenReady().then(async () => {
         },
     });
 
+    if (!url) {
+        handleAppScheme(process.env.DIST);
+        // Settings the renderer kept under `file://` (rendererStorageMove.ts); gives up after
+        // 10 s so startup goes on
+        await moveRendererStorage(electronStorageMoveDeps(store, isNewProfile));
+    }
+
     // i18n-ignore: the product name and a file path, the same in every language
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+    try {
+        await createWindow("OpenMarch - " + store.get("databasePath"));
+    } finally {
+        startingUp = false;
+    }
 
     updates = startUpdates();
 });
@@ -763,6 +794,8 @@ function initGetters() {
 stopConversionWorkersOnQuit(app);
 
 app.on("window-all-closed", async () => {
+    // The storage move's hidden windows close before the editor's opens
+    if (startingUp) return;
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -828,7 +861,7 @@ ipcMain.handle("settings:open", () => {
         load: (settings) =>
             url
                 ? void settings.loadURL(`${url}#settings`)
-                : void settings.loadFile(indexHtml, { hash: "settings" }),
+                : void settings.loadURL(`${APP_INDEX_URL}#settings`),
     });
 });
 
@@ -926,6 +959,8 @@ ipcMain.handle(
 // Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
+    // Startup opens the editor itself (the storage move's windows are hidden)
+    if (startingUp) return;
     const allWindows = BrowserWindow.getAllWindows();
     if (win && !win.isDestroyed()) {
         win.focus();

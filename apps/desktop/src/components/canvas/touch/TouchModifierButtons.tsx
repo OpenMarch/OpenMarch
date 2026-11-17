@@ -663,24 +663,46 @@ export default function TouchModifierButtons({
     useLayoutEffect(() => {
         if (!isTouchMode) return;
         placeAutomatically();
+        let later: ReturnType<typeof setTimeout> | null = null;
+        let settle: ReturnType<typeof setTimeout> | null = null;
+        let layersSettle: ReturnType<typeof setTimeout> | null = null;
+        let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
+        // Marks the pill while a placing waits on one of the timers below, so a test can wait for
+        // it to settle instead of sleeping (#1023)
+        const showWaiting = () =>
+            rootRef.current?.toggleAttribute(
+                "data-placing",
+                later !== null ||
+                    settle !== null ||
+                    layersSettle !== null ||
+                    obstaclesSettle !== null,
+            );
         // Again once the field has been fitted and the marchers drawn
-        const later = setTimeout(placeAutomatically, 800);
+        later = setTimeout(() => {
+            later = null;
+            showWaiting();
+            placeAutomatically();
+        }, 800);
         const parent = container();
         const observer =
             parent && typeof ResizeObserver !== "undefined"
                 ? new ResizeObserver(() => placeAutomatically())
                 : null;
         if (parent) observer?.observe(parent);
-        let settle: ReturnType<typeof setTimeout> | null = null;
         const offView = useFieldViewStore.subscribe(() => {
             if (settle !== null) clearTimeout(settle);
-            settle = setTimeout(placeAutomatically, PLACE_AFTER_VIEW_MS);
+            settle = setTimeout(() => {
+                settle = null;
+                showWaiting();
+                placeAutomatically();
+            }, PLACE_AFTER_VIEW_MS);
+            showWaiting();
         });
-        let layersSettle: ReturnType<typeof setTimeout> | null = null;
         const offLayers = subscribeFieldLayers(() => {
             if (layersSettle !== null) clearTimeout(layersSettle);
             layersSettle = setTimeout(() => {
                 layersSettle = null;
+                showWaiting();
                 // Only when a layer it keeps off came, went or moved: not for its own move, which
                 // it notes for a guide's name tag (#933 review)
                 const parent = container();
@@ -693,17 +715,18 @@ export default function TouchModifierButtons({
                     return;
                 keepOrMove();
             }, PLACE_AFTER_LAYERS_MS);
+            showWaiting();
         });
         // The selection box or the open shape changing (#933), once it has settled and no drag on
         // the field is under way (the drag's end tells again): a new spot only when the one shown
         // now covers a handle, so a tap that selects or deselects doesn't move the pill from under
         // a finger reaching for it (#933 review). A saved spot gives way to a handle, but doesn't
         // come back on a deselect (#936): only at the next full placing
-        let obstaclesSettle: ReturnType<typeof setTimeout> | null = null;
         const offObstacles = obstacles?.subscribe(() => {
             if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);
             obstaclesSettle = setTimeout(() => {
                 obstaclesSettle = null;
+                showWaiting();
                 if (obstacles.busy()) return;
                 const onField = obstacles.read();
                 const shown = shownRef.current && rectAt(shownRef.current);
@@ -712,9 +735,11 @@ export default function TouchModifierButtons({
                 if (obstacles.armed?.()) keepOrMove();
                 else placeAutomatically();
             }, PLACE_AFTER_LAYERS_MS);
+            showWaiting();
         });
+        showWaiting();
         return () => {
-            clearTimeout(later);
+            if (later !== null) clearTimeout(later);
             if (settle !== null) clearTimeout(settle);
             if (layersSettle !== null) clearTimeout(layersSettle);
             if (obstaclesSettle !== null) clearTimeout(obstaclesSettle);

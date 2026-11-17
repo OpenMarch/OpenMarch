@@ -969,6 +969,24 @@
             }
         ]
     },
+    "openHelp": {
+        "label": "Get help",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "F1"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F1"
+                    ]
+                }
+            }
+        ]
+    },
     "reportFeedback": {
         "label": "Report a bug or send feedback",
         "category": "ui",

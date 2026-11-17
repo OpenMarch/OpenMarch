@@ -1,33 +1,14 @@
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import {
     fieldPropertiesQueryOptions,
     useUpdateSelectedMarchersOnSelectedPage,
     type MarcherCoordinate,
 } from "@/hooks/queries";
-import {
-    ReadableCoords,
-    X_DESCRIPTION,
-    Y_DESCRIPTION,
-} from "@/global/classes/ReadableCoords";
+import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import ActionButton from "@/shortcuts/ActionButton";
-import {
-    Button,
-    getButtonClassName,
-    Input,
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTriggerCompact,
-} from "@openmarch/ui";
+import { Button, getButtonClassName, Input } from "@openmarch/ui";
 import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { performersOnly } from "@/global/classes/Marcher";
@@ -462,17 +443,30 @@ function PlaceMenu() {
     );
 }
 
-/** Keys for the words ReadableCoords uses to place a marcher relative to a checkpoint */
-const X_DESCRIPTION_KEYS: Record<X_DESCRIPTION, string> = {
-    [X_DESCRIPTION.INSIDE]: "inspector.marcher.coords.inside",
-    [X_DESCRIPTION.OUTSIDE]: "inspector.marcher.coords.outside",
-    [X_DESCRIPTION.ON]: "inspector.marcher.coords.on",
-};
-const Y_DESCRIPTION_KEYS: Record<Y_DESCRIPTION, string> = {
-    [Y_DESCRIPTION.ON]: "inspector.marcher.coords.on",
-    [Y_DESCRIPTION.IN_FRONT_OF]: "inspector.marcher.coords.inFrontOf",
-    [Y_DESCRIPTION.BEHIND]: "inspector.marcher.coords.behind",
-};
+/** A label and a value the inspector shows but doesn't edit here, as plain text */
+function ReadOnlyRow({
+    label,
+    testId,
+    children,
+}: {
+    label: ReactNode;
+    testId?: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex items-baseline justify-between gap-12 px-6">
+            <dt className="text-body shrink-0 leading-none opacity-80">
+                {label}
+            </dt>
+            <dd
+                className="text-body text-right leading-tight"
+                data-testid={testId}
+            >
+                {children}
+            </dd>
+        </div>
+    );
+}
 
 /** No marchers, stable across renders */
 const NO_MARCHERS: readonly number[] = [];
@@ -513,25 +507,6 @@ function MarcherEditor() {
         !playing && selectedMarchers.length === 1 ? selectedMarchers[0].id : -1,
         isolationEnd ?? (selectedPage ? pageEndBeat(selectedPage) : 0),
     );
-    const coordsFormRef = useRef<HTMLFormElement>(null);
-    const xInputRef = useRef<HTMLInputElement>(null);
-    const xDescriptionRef = useRef<HTMLSelectElement>(null);
-    const xCheckpointRef = useRef<HTMLSelectElement>(null);
-    const fieldSideRef = useRef<HTMLSelectElement>(null);
-    const yInputRef = useRef<HTMLInputElement>(null);
-    const yDescriptionRef = useRef<HTMLSelectElement>(null);
-    const yCheckpointRef = useRef<HTMLSelectElement>(null);
-    const detailsFormRef = useRef<HTMLFormElement>(null);
-
-    const handleCoordsSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        // const form = event.currentTarget;
-        // const xSteps = form[xInputId].value;
-        // const xDescription = form[xDescriptionId].value;
-        // const yardLine = form[yardLineId].value;
-        // const fieldSide = form[fieldSideId].value;
-    };
-
     // P7.2: show where the canvas draws the marcher
     const rCoords = useMemo(() => {
         if (selectedMarchers.length !== 1 || !timelinePosition)
@@ -577,37 +552,6 @@ function MarcherEditor() {
         );
     }, [minMaxStepSize, selectedMarchers, setSelectedMarchers]);
 
-    const resetForm = useCallback(() => {
-        coordsFormRef.current?.reset();
-
-        if (rCoords) {
-            if (xInputRef.current)
-                xInputRef.current.value = rCoords.xSteps.toString();
-            if (xDescriptionRef.current)
-                xDescriptionRef.current.value = rCoords.xDescription;
-            if (xCheckpointRef.current)
-                xCheckpointRef.current.value =
-                    rCoords.xCheckpoint.terseName || rCoords.xCheckpoint.name;
-            if (fieldSideRef.current)
-                fieldSideRef.current.value = rCoords.sideDescription;
-
-            if (yInputRef.current)
-                yInputRef.current.value = rCoords.ySteps.toString();
-            if (yDescriptionRef.current)
-                yDescriptionRef.current.value = rCoords.yDescription;
-            if (yCheckpointRef.current)
-                yCheckpointRef.current.value =
-                    rCoords.yCheckpoint.terseName || rCoords.yCheckpoint.name;
-        }
-
-        detailsFormRef.current?.reset();
-    }, [rCoords]);
-
-    // Reset the form when the selected page changes so the values are correct
-    useEffect(() => {
-        resetForm();
-    }, [selectedMarchers, rCoords, resetForm]);
-
     if (!selectedPage)
         return (
             <>
@@ -623,23 +567,6 @@ function MarcherEditor() {
             <T keyName="inspector.marcher.playing" />
         </p>
     );
-
-    const xCheckpoint = (rCoords: ReadableCoords) =>
-        rCoords.xCheckpoint.terseName ||
-        rCoords.xCheckpoint.name ||
-        t("inspector.marcher.coords.xCheckpoint", {
-            id: rCoords.xCheckpoint.id,
-        });
-    const yCheckpoint = (rCoords: ReadableCoords) =>
-        rCoords.yCheckpoint.terseName ||
-        rCoords.yCheckpoint.name ||
-        t("inspector.marcher.coords.yCheckpoint", {
-            id: rCoords.yCheckpoint.id,
-        });
-    const xDescription = (rCoords: ReadableCoords) =>
-        t(X_DESCRIPTION_KEYS[rCoords.xDescription]);
-    const yDescription = (rCoords: ReadableCoords) =>
-        t(Y_DESCRIPTION_KEYS[rCoords.yDescription]);
 
     return (
         <>
@@ -827,193 +754,29 @@ function MarcherEditor() {
                                             <T keyName="inspector.marcher.errorLoadingCoords" />
                                         </p>
                                     ) : (
-                                        <form
-                                            className="coords-editor edit-group flex flex-col gap-24"
-                                            ref={coordsFormRef}
-                                            onSubmit={handleCoordsSubmit}
-                                        >
-                                            <div className="flex flex-col gap-8">
-                                                <label
-                                                    htmlFor="xInput"
-                                                    className="text-body mx-6 w-full leading-none opacity-80"
+                                        <div className="flex flex-col gap-24">
+                                            <dl className="flex flex-col gap-12">
+                                                <ReadOnlyRow
+                                                    label={
+                                                        <T keyName="inspector.marcher.coords.x" />
+                                                    }
+                                                    testId="inspector-marcher-x"
                                                 >
-                                                    <T keyName="inspector.marcher.coords.x" />
-                                                </label>
-                                                <div className="flex w-full flex-wrap gap-4">
-                                                    {/* Maybe on change of all of the variables updating, but only when clicking off for the steps */}
-                                                    <span className="w-[4.2rem]">
-                                                        <Input
-                                                            compact
-                                                            disabled
-                                                            type="number"
-                                                            value={
-                                                                rCoords?.xSteps
-                                                            }
-                                                            className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                    </span>
-                                                    <Select
-                                                        disabled
-                                                        value={
-                                                            rCoords.xDescription
-                                                        }
-                                                    >
-                                                        <SelectTriggerCompact
-                                                            label={xDescription(
-                                                                rCoords,
-                                                            )}
-                                                            className="disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                        <SelectContent>
-                                                            <SelectItem
-                                                                value={
-                                                                    rCoords.xDescription
-                                                                }
-                                                            >
-                                                                {xDescription(
-                                                                    rCoords,
-                                                                )}
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <Select
-                                                        disabled
-                                                        value={xCheckpoint(
-                                                            rCoords,
-                                                        )}
-                                                    >
-                                                        <SelectTriggerCompact
-                                                            label={xCheckpoint(
-                                                                rCoords,
-                                                            )}
-                                                            className="disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                        <SelectContent>
-                                                            <SelectItem
-                                                                value={xCheckpoint(
-                                                                    rCoords,
-                                                                )}
-                                                            >
-                                                                {xCheckpoint(
-                                                                    rCoords,
-                                                                )}
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <Select
-                                                        disabled
-                                                        value={
-                                                            rCoords.sideDescription
-                                                        }
-                                                    >
-                                                        <SelectTriggerCompact
-                                                            className="disabled:cursor-auto disabled:opacity-100"
-                                                            label={
-                                                                rCoords.sideDescription
-                                                            }
-                                                        />
-                                                        <SelectContent>
-                                                            <SelectItem
-                                                                value={
-                                                                    fieldProperties
-                                                                        .sideDescriptions
-                                                                        .terseLeft
-                                                                }
-                                                                key={1}
-                                                            >
-                                                                {
-                                                                    fieldProperties
-                                                                        .sideDescriptions
-                                                                        .terseLeft
-                                                                }
-                                                            </SelectItem>
-                                                            <SelectItem
-                                                                value={
-                                                                    fieldProperties
-                                                                        .sideDescriptions
-                                                                        .terseRight
-                                                                }
-                                                                key={2}
-                                                            >
-                                                                {
-                                                                    fieldProperties
-                                                                        .sideDescriptions
-                                                                        .terseRight
-                                                                }
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
-                                            <div className="flex flex-col gap-8">
-                                                <label
-                                                    htmlFor="yInput"
-                                                    className="text-body mx-6 w-full leading-none opacity-80"
+                                                    {rCoords.toVerboseStringX({
+                                                        includeStepsString: true,
+                                                    })}
+                                                </ReadOnlyRow>
+                                                <ReadOnlyRow
+                                                    label={
+                                                        <T keyName="inspector.marcher.coords.y" />
+                                                    }
+                                                    testId="inspector-marcher-y"
                                                 >
-                                                    <T keyName="inspector.marcher.coords.y" />
-                                                </label>
-                                                <div className="flex w-full flex-wrap gap-4">
-                                                    <span className="w-[4.2rem]">
-                                                        <Input
-                                                            compact
-                                                            disabled
-                                                            type="number"
-                                                            value={
-                                                                rCoords?.ySteps
-                                                            }
-                                                            className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                    </span>
-                                                    <Select
-                                                        disabled
-                                                        value={
-                                                            rCoords.yDescription
-                                                        }
-                                                    >
-                                                        <SelectTriggerCompact
-                                                            label={yDescription(
-                                                                rCoords,
-                                                            )}
-                                                            className="disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                        <SelectContent>
-                                                            <SelectItem
-                                                                value={
-                                                                    rCoords.yDescription
-                                                                }
-                                                            >
-                                                                {yDescription(
-                                                                    rCoords,
-                                                                )}
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <Select
-                                                        disabled
-                                                        value={yCheckpoint(
-                                                            rCoords,
-                                                        )}
-                                                    >
-                                                        <SelectTriggerCompact
-                                                            label={yCheckpoint(
-                                                                rCoords,
-                                                            )}
-                                                            className="disabled:cursor-auto disabled:opacity-100"
-                                                        />
-                                                        <SelectContent>
-                                                            <SelectItem
-                                                                value={yCheckpoint(
-                                                                    rCoords,
-                                                                )}
-                                                            >
-                                                                {yCheckpoint(
-                                                                    rCoords,
-                                                                )}
-                                                            </SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                            </div>
+                                                    {rCoords.toVerboseStringY({
+                                                        includeStepsString: true,
+                                                    })}
+                                                </ReadOnlyRow>
+                                            </dl>
                                             <div className="flex flex-col gap-12">
                                                 {stepSize !== undefined && (
                                                     <div className="flex justify-between px-6">
@@ -1055,83 +818,40 @@ function MarcherEditor() {
                                                     />
                                                 )}
                                             </div>
-                                            {/* Hidden, so the form submits when Enter is pressed */}
-                                            <button
-                                                type="submit"
-                                                style={{ display: "none" }}
-                                            />
-                                        </form>
+                                        </div>
                                     )}
-                                    <form
-                                        className="marcher-details-editor flex flex-col gap-24"
-                                        ref={detailsFormRef}
-                                    >
-                                        <div className="flex items-center justify-between px-6">
-                                            <label
-                                                htmlFor="name-input"
-                                                className="text-body leading-none opacity-80"
+                                    <div className="flex flex-col gap-24">
+                                        <dl className="flex flex-col gap-12">
+                                            <ReadOnlyRow
+                                                label={
+                                                    <T keyName="inspector.marcher.name" />
+                                                }
                                             >
-                                                <T keyName="inspector.marcher.name" />
-                                            </label>
-
-                                            <span className="w-[7rem]">
-                                                <Input
-                                                    compact
-                                                    disabled
-                                                    value={
-                                                        selectedMarchers[0]
-                                                            .name === null ||
-                                                        selectedMarchers[0]
-                                                            .name === " " ||
-                                                        selectedMarchers[0].name
-                                                            .length < 1
-                                                            ? "-"
-                                                            : selectedMarchers[0]
-                                                                  .name
-                                                    }
-                                                    className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
-                                                />
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between px-6">
-                                            <label
-                                                htmlFor="section-input"
-                                                className="text-body leading-none opacity-80"
+                                                {selectedMarchers[0].name?.trim()
+                                                    ? selectedMarchers[0].name
+                                                    : "-"}
+                                            </ReadOnlyRow>
+                                            <ReadOnlyRow
+                                                label={
+                                                    <T keyName="inspector.marcher.section" />
+                                                }
                                             >
-                                                <T keyName="inspector.marcher.section" />
-                                            </label>
-                                            <span className="w-[7rem]">
-                                                <Input
-                                                    compact
-                                                    disabled
-                                                    value={sectionDisplayName(
-                                                        selectedMarchers[0]
-                                                            .section,
-                                                        t,
-                                                    )}
-                                                    className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
-                                                />
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center justify-between px-6">
-                                            <label
-                                                htmlFor="drill-number-input"
-                                                className="text-body leading-none opacity-80"
+                                                {sectionDisplayName(
+                                                    selectedMarchers[0].section,
+                                                    t,
+                                                )}
+                                            </ReadOnlyRow>
+                                            <ReadOnlyRow
+                                                label={
+                                                    <T keyName="inspector.marcher.drillNumber" />
+                                                }
                                             >
-                                                <T keyName="inspector.marcher.drillNumber" />
-                                            </label>
-                                            <span className="w-[7rem]">
-                                                <Input
-                                                    compact
-                                                    disabled
-                                                    value={
-                                                        selectedMarchers[0]
-                                                            .drill_number
-                                                    }
-                                                    className="disabled:placeholder-text w-full disabled:cursor-auto disabled:opacity-100"
-                                                />
-                                            </span>
-                                        </div>
+                                                {
+                                                    selectedMarchers[0]
+                                                        .drill_number
+                                                }
+                                            </ReadOnlyRow>
+                                        </dl>
                                         <TagButtons
                                             selectedMarcherIds={
                                                 new Set([
@@ -1139,12 +859,7 @@ function MarcherEditor() {
                                                 ])
                                             }
                                         />
-                                        {/* Hidden, so the form submits when Enter is pressed */}
-                                        <button
-                                            type="submit"
-                                            style={{ display: "none" }}
-                                        />
-                                    </form>
+                                    </div>
                                 </>
                             )}
                         </InspectorCollapsible>

@@ -27,6 +27,8 @@ const EDITOR_CLOCK_PATTERN = /^\d{2}:\d{2}\.\d{3}$/;
 
 /** Protocols that never leave the machine. */
 const LOCAL_PROTOCOLS = [
+    // The app's own files (electron/main/appProtocol.ts)
+    "app://openmarch/",
     "file:",
     "devtools:",
     "data:",
@@ -462,6 +464,12 @@ test("3D View follows the editor and saves the venue", async ({
     await selectPage(editor, "2");
     await expectWindowPage(view3d, "2");
 
+    // 3D View settings: the show's tabs, then this computer's Preferences.
+    await view3d.getByTestId("view3d-settings-tab-preferences").click();
+    await expect(view3d.getByTestId("view3d-quality-picker")).toBeVisible();
+    await expect(view3d.getByTestId("view3d-controls-picker")).toBeVisible();
+    await view3d.getByTestId("view3d-settings-tab-venue").click();
+
     // Venue and lighting from the window's settings panel.
     const initialKit = (await pickerValue(view3d, "view3d-venue-picker"))!;
     const initialLighting = (await pickerValue(
@@ -546,7 +554,9 @@ test("3D View follows the editor and saves the venue", async ({
     // No network requests from the window, by Playwright or by main.
     const mainSeen = await view3dRequests(app);
     // The window did load its files through main, so the recorder works.
-    expect(mainSeen.some((url) => url.startsWith("file:"))).toBe(true);
+    expect(mainSeen.some((url) => url.startsWith("app://openmarch/"))).toBe(
+        true,
+    );
     const mainNetwork = mainSeen.filter((url) => !isLocalUrl(url));
     expect(networkUrls, "window requests seen by Playwright").toEqual([]);
     expect(mainNetwork, "window requests seen by main").toEqual([]);

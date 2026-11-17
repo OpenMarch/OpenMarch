@@ -69,7 +69,7 @@ export function ModeMenu({
                         {...focus.trigger}
                         data-testid="shape-mode-menu"
                         data-mode={current.mode}
-                        className="rounded-4 hover:bg-fg-2 flex min-h-24 items-center gap-4 px-4 py-2"
+                        className="rounded-4 hover:bg-text/10 flex min-h-24 items-center gap-4 px-4 py-2"
                     >
                         <ModePicture
                             mode={current.mode}

@@ -5,6 +5,8 @@
  * which opens the Cameras panel; then "Pick a seat". Where the Director is
  * available it is the menu's first item: a camera track that follows the
  * show. Camera movement belongs to the rig (P3.2); this only calls its store.
+ * In the touch layout the number keys show only once a hardware keyboard has
+ * been used (#880).
  */
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { useTranslate } from "@tolgee/react";
@@ -18,6 +20,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import Shortcut from "@/components/ui/Shortcut";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { useCameraStore } from "../camera/cameraStore";
 import {
     directorAvailable,
@@ -47,6 +50,7 @@ export function CameraBar({
     const pickMode = useCameraStore((s) => s.pickMode);
     const setPickMode = useCameraStore((s) => s.setPickMode);
     const directing = useDirectorStore((s) => s.directing);
+    const showHints = useShowShortcutHints();
     if (!kit) return null;
 
     const label = t("view3d.overlay.cameras");
@@ -104,7 +108,7 @@ export function CameraBar({
                                     <span className="flex-1 truncate">
                                         {t("view3d.overlay.director")}
                                     </span>
-                                    <Shortcut keys={["D"]} />
+                                    {showHints && <Shortcut keys={["D"]} />}
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Separator
                                     className={MENU_SEPARATOR_CLASS}
@@ -141,7 +145,7 @@ export function CameraBar({
                                     <span className="flex-1 truncate">
                                         {list.label(camera)}
                                     </span>
-                                    {index < 9 && (
+                                    {showHints && index < 9 && (
                                         <Shortcut keys={[String(index + 1)]} />
                                     )}
                                 </DropdownMenu.Item>

@@ -638,6 +638,14 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Opens Help: the user guide, or a prompt to copy for an AI assistant
+    openHelp: {
+        labelKey: "actions.ui.openHelp",
+        keywordsKey: "actions.ui.openHelpKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: ["F1"],
+    },
     // Opens the bug and feedback report window (fork #801). Desktop only for now.
     reportFeedback: {
         labelKey: "actions.ui.reportFeedback",

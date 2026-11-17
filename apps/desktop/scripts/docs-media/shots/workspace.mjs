@@ -19,7 +19,56 @@ async function toPage1(page, wait) {
     await wait(1500);
 }
 
+/** Switches the window to the tablet layout, as Settings › Touch & Input › Layout › Tablet does. */
+async function toTablet(page, wait) {
+    await page.evaluate(() => {
+        localStorage.setItem("openmarch:inputMode", "touch");
+        window.dispatchEvent(
+            new StorageEvent("storage", {
+                key: "openmarch:inputMode",
+                newValue: "touch",
+            }),
+        );
+    });
+    await page
+        .getByTestId("touch-modifier-buttons")
+        .waitFor({ timeout: 10000 });
+    await wait(1500);
+    // Fit the field to the layout's larger field
+    await page
+        .getByTitle("Reset Zoom and Center")
+        .click()
+        .catch(() => {});
+    await page.mouse.move(5, 500);
+    await wait(1500);
+}
+
 const shots = [
+    {
+        id: "workspace-tablet-layout",
+        kind: "still",
+        // The whole window in the tablet layout, a page into the show
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            await toTablet(page, wait);
+            return {};
+        },
+    },
+    {
+        id: "workspace-touch-buttons",
+        kind: "still",
+        // The tablet layout's row of buttons over the field
+        async setup({ page, wait, around }) {
+            await toPage1(page, wait);
+            await toTablet(page, wait);
+            return {
+                box: await around(
+                    page.getByTestId("touch-modifier-buttons"),
+                    10,
+                ),
+            };
+        },
+    },
     {
         id: "window-overview",
         kind: "still",
@@ -30,6 +79,81 @@ const shots = [
             await page.keyboard.press("KeyE");
             await wait(1500);
             return {};
+        },
+    },
+    {
+        id: "window-toolbar",
+        kind: "still",
+        // The title bar and the toolbar, with the Alignment tab's controls showing
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            await page.mouse.move(800, 500);
+            await wait(500);
+            // The menu to the end of the Alignment tab's controls, so the tab names can be read
+            return { box: { x: 0, y: 0, width: 900, height: 120 } };
+        },
+    },
+    {
+        id: "window-toolbar-end",
+        kind: "still",
+        // The right end of the title bar and toolbar: search, Help, Submit bug or feedback, Open 3D
+        // View and the Editor and Preview switch
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            await page.mouse.move(800, 500);
+            await wait(500);
+            return { box: { x: 1010, y: 0, width: 430, height: 72 } };
+        },
+    },
+    {
+        id: "window-command-palette",
+        kind: "still",
+        // The command palette with "split" typed: the matching commands, one dimmed
+        async setup({ page, wait, around }) {
+            await toPage1(page, wait);
+            await page.keyboard.press("Control+KeyK");
+            await wait(800);
+            await page.keyboard.type("split", { delay: 60 });
+            await wait(1000);
+            const dialog = page.getByRole("dialog").last();
+            return { box: await around(dialog, 10) };
+        },
+    },
+    {
+        id: "window-sidebar",
+        kind: "still",
+        // The sidebar's icons, with the Marchers panel open beside them
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            // The first icon in the sidebar is Marchers
+            await page.mouse.click(29, 150);
+            await wait(1200);
+            await page.mouse.move(1000, 500);
+            await wait(500);
+            return { box: { x: 0, y: 118, width: 560, height: 700 } };
+        },
+    },
+    {
+        id: "window-inspector",
+        kind: "still",
+        // The inspector with three marchers selected, Arrange at the top
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            const picks = await page.evaluate(() =>
+                window.fieldTest
+                    .marchers()
+                    .filter((m) => m.onScreen && /^B\d$/.test(m.label))
+                    .sort((a, b) => a.label.localeCompare(b.label))
+                    .slice(0, 3)
+                    .map((m) => m.screen),
+            );
+            await page.mouse.click(picks[0].x, picks[0].y);
+            await page.keyboard.down("Shift");
+            for (const p of picks.slice(1)) await page.mouse.click(p.x, p.y);
+            await page.keyboard.up("Shift");
+            await page.mouse.move(800, 300);
+            await wait(1200);
+            return { box: { x: 1270, y: 36, width: 330, height: 640 } };
         },
     },
     {

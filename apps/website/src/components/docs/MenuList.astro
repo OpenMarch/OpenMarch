@@ -68,6 +68,10 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
                         id={`${os === "mac" ? "mac-" : ""}${slug(menu.label ?? "")}`}
                     >
                         {menu.label}
+                        {/* The system, for the plain-text copy, where both systems' menus follow each other */}
+                        <span class="sr-only">
+                            {os === "mac" ? " (macOS)" : " (Windows and Linux)"}
+                        </span>
                     </h2>
                     <table>
                         <thead>

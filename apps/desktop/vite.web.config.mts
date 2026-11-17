@@ -1,3 +1,4 @@
+// cspell:words ndarray
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
@@ -6,6 +7,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { parse as parseYaml } from "yaml";
 import { version } from "./package.json";
 import { thirdPartyNotices } from "./vite.notices.mjs";
+import { modelImportWorker, ndarrayAliases } from "./vite.modelImport.mjs";
+import { WORKER_POLICIES } from "./src/security/appCsp";
 import { DEMOS } from "./web/demos";
 
 /**
@@ -198,6 +201,12 @@ const writeHeaders = (): Plugin => ({
                 `${webBase}*`,
                 "  X-Content-Type-Options: nosniff",
                 "  Referrer-Policy: strict-origin-when-cross-origin",
+                // Each worker's own policy (fork #998, #1011): a URL worker takes its CSP
+                // from its own response, never from the page
+                ...WORKER_POLICIES.flatMap(({ file, csp }) => [
+                    `${webBase}assets/${file}-*`,
+                    `  Content-Security-Policy: ${csp}`,
+                ]),
                 "",
             ].join("\n"),
         );
@@ -351,6 +360,7 @@ export default defineConfig(({ mode, command }) => {
                     find: /^@om-electron\//,
                     replacement: path.join(__dirname, "electron") + "/",
                 },
+                ...ndarrayAliases,
                 // Only the worker's main-process code imports these.
                 { find: /^(node:)?fs$/, replacement: web("worker/fs.ts") },
                 { find: /^(node:)?path$/, replacement: web("worker/path.ts") },
@@ -377,6 +387,7 @@ export default defineConfig(({ mode, command }) => {
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         plugins: [
+            modelImportWorker(),
             resolveElectron(),
             tailwindcss(),
             react(),
@@ -387,7 +398,7 @@ export default defineConfig(({ mode, command }) => {
         ],
         worker: {
             format: "es",
-            plugins: () => [resolveElectron()],
+            plugins: () => [resolveElectron(), modelImportWorker()],
         },
         define: {
             // The preload reads these from Node's `process` under Electron.

@@ -1,6 +1,6 @@
 ---
 title: Settings
-description: Every section of the Settings window and what each setting does.
+description: Every app setting in the Settings window (preferences) and what each option does, from the editor mode to the 3D View's controls.
 type: reference
 covers:
   - apps/desktop/src/settings
@@ -12,18 +12,12 @@ sidebar:
   order: 2
 ---
 
-import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
 
 The Settings window holds how OpenMarch looks and behaves on this computer. These settings belong to the app, not to a show: they stay the same whichever show you open, and a show you send to someone else doesn't carry them. Settings that belong to a show, such as its field and the number its first page starts at, are in the show's own panels; see [Show settings](/guides/field/show-settings/).
 
 To open Settings, select <Ui k="toolbar.settings" /> on the toolbar's <Ui k="inspector.shape.fileTab" /> tab or <Ui k="launchpage.settings.title" /> on the start page, or press <Kbd action="openSettings" />. In the web editor, it's in the <Ui k="web.fileMenu" /> menu and opens over the editor instead of in its own window.
-
-<Media
-  id="reference-settings-window"
-  alt="The Settings window: a search box and the list of sections on the left (General, Appearance, Touch & Input, Mouse & Trackpad, Timeline, Field, 3D View, Keyboard shortcuts, Privacy, Developer Settings, Database), with General open on the right showing Language, automatic updates and Open 3D View when a show opens."
-/>
 
 Type in <Ui k="settings.search" /> to find a setting by name. Changes apply as soon as you make them; there's no Save button. Settings opens on the section you used last.
 
@@ -32,9 +26,9 @@ Type in <Ui k="settings.search" /> to find a setting by name. Changes apply as s
 | Setting | What it does |
 | --- | --- |
 | <Ui k="settings.general.language" plain /> | The language of the app. Some languages are translated with AI help; the note under the list says so and links to where you can help check it. |
-| <Ui k="settings.general.updates" plain /> | The installed version and what the updater is doing, with <Ui k="settings.general.checkForUpdates" plain /> to look for a new version now. See [Updates](/guides/start/install/#updates). Desktop app only; the Snap Store version is updated by the Snap Store. |
-| <Ui k="settings.general.automaticDownload" plain /> | On: a new version downloads by itself as soon as it's found. Off: the update button asks first. Either way it installs when you quit, or straight away with <Ui k="updates.action.updateNow" plain />. Desktop app only. On by default. |
-| <Ui k="settings.general.openView3dWithShow" plain /> | On: the 3D View opens in its own window whenever you open a show. The 3D View asks this the first time you open it. Desktop app only. |
+| <Ui k="settings.general.updates" plain /> | The installed version and what the updater is doing, with <Ui k="settings.general.checkForUpdates" plain /> to look for a new version now. Desktop app only; the Snap Store version is updated by the Snap Store. See [Update OpenMarch](/guides/start/install/#update-openmarch). |
+| <Ui k="settings.general.automaticDownload" plain /> | On (the default): a new version downloads by itself as soon as it's found. Off: the update button asks first. Either way it installs when you quit, or straight away with <Ui k="updates.action.updateNow" plain />. Desktop app only. |
+| <Ui k="settings.general.openView3dWithShow" plain /> | On: the 3D View opens in its own window whenever you open a show. The 3D View asks this the first time you open it, and has the same switch at the top of its own settings. Desktop app only. |
 
 ## Appearance
 
@@ -48,7 +42,7 @@ Type in <Ui k="settings.search" /> to find a setting by name. Changes apply as s
 
 | Setting | What it does |
 | --- | --- |
-| <Ui k="settings.input.interface" plain /> | <Ui k="settings.input.interface.auto" plain /> uses the tablet layout on a tablet and the desktop layout on a computer. <Ui k="settings.input.interface.touch" plain /> always uses the tablet layout, with larger controls for fingers and a pen; choose it on a laptop with a touch screen. <Ui k="settings.input.interface.mouse" plain /> always uses the desktop layout. |
+| <Ui k="settings.input.interface" plain /> | <Ui k="settings.input.interface.auto" plain /> uses the tablet layout on a tablet and the desktop layout on a computer. <Ui k="settings.input.interface.touch" plain /> always uses the tablet layout, with larger controls for fingers and a pen; choose it on a laptop with a touch screen. <Ui k="settings.input.interface.mouse" plain /> always uses the desktop layout. See [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/). |
 
 ## Mouse & Trackpad
 
@@ -81,11 +75,11 @@ These change how the field is drawn in the editor, not the field itself. To chan
 
 ## 3D View
 
-How the 3D View draws and moves on this computer. These aren't saved in the show.
+How the 3D View draws and moves on this computer, not saved in the show. These aren't in the Settings window: they're on the <Ui k="view3d.settings.tabs.preferences" plain /> tab of <Ui k="view3d.settings.panelTitle" plain /> (the gear) in the 3D View. Its other tabs, the venue and the performers' look, are saved with the show; see [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/).
 
 | Setting | What it does |
 | --- | --- |
-| <Ui k="settings.view3d.controls" plain /> | <Ui k="settings.view3d.controls.orbit" plain /> (the default): dragging orbits, dragging with the right mouse button pans, and scrolling zooms. <Ui k="settings.view3d.controls.map" plain />: dragging pans and scrolling zooms. <Ui k="settings.view3d.controls.trackpad" plain />: scrolling and dragging orbit, and a pinch zooms. Also in <Ui k="view3d.settings.title" plain /> in the 3D View. |
+| <Ui k="settings.view3d.controls" plain /> | How the mouse and trackpad move the camera. <Ui k="settings.view3d.controls.orbit" plain /> (the default): dragging orbits, dragging with the right mouse button pans, and scrolling zooms. <Ui k="settings.view3d.controls.map" plain />: dragging moves across the field, dragging with the right mouse button orbits, and scrolling zooms. <Ui k="settings.view3d.controls.trackpad" plain />: scrolling and dragging orbit, a pinch zooms, and the right mouse button pans. |
 | <Ui k="settings.view3d.quality" plain /> | <Ui k="settings.view3d.quality.auto" plain /> (the default) starts on High and switches to Low if the view stutters. <Ui k="settings.view3d.quality.high" plain />: shadows and a full crowd. <Ui k="settings.view3d.quality.low" plain />: no shadows and a lighter crowd, for older or battery-powered computers. |
 | <Ui k="settings.view3d.resolution" plain /> | <Ui k="settings.view3d.resolution.sharp" plain /> (the default): full detail on high-resolution screens. <Ui k="settings.view3d.resolution.balanced" plain />: three-quarters of that detail, a little softer and less work for the graphics card. <Ui k="settings.view3d.resolution.fast" plain />: half the detail, softest, for older computers. On a screen that isn't high-resolution, all three look the same. |
 
@@ -107,6 +101,6 @@ Change the keys for any action. See [Change a shortcut](/guides/reference/keyboa
 
 ## Related
 
-- [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/): every shortcut, and how to change one.
+- [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/): the shortcuts, and how to change one.
 - [Show settings](/guides/field/show-settings/): settings saved in the show.
 - [Basic and Expert](/guides/start/basic-and-expert/): the two editor modes.

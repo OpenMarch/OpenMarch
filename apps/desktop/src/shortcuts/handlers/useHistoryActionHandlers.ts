@@ -34,15 +34,11 @@ export function useHistoryActionHandlers() {
     // Whether there is anything to undo or redo is decided by the action itself, in its lock turn,
     // not by the canUndo/canRedo queries: those refetch only after a write commits, so a press
     // right after an edit or another undo would read them stale (#223).
+    // A key press with nothing to undo does nothing, as in other editors: the title bar's Undo
+    // is greyed out then. A finger tap, with no button to look at, still says so (`press`).
     const run = async (direction: HistoryDirection): Promise<boolean> => {
         const response = await performHistoryAction(direction);
-        if (response.nothingToDo) {
-            toast.warning(t(NOTHING_TO_DO_KEYS[direction]), {
-                duration: 1500,
-            });
-            return false;
-        }
-        return true;
+        return !response.nothingToDo;
     };
     const runRef = useRef(run);
     useLayoutEffect(() => {
@@ -72,8 +68,12 @@ export function useHistoryActionHandlers() {
         pending.count++;
         void queueHistoryAction(direction)
             .then((did) => {
-                if (did && announce)
-                    toast(t(DONE_KEYS[direction]), { duration: 1200 });
+                if (!announce) return;
+                if (did) toast(t(DONE_KEYS[direction]), { duration: 1200 });
+                else
+                    toast(t(NOTHING_TO_DO_KEYS[direction]), {
+                        duration: 1500,
+                    });
             })
             .finally(() => {
                 pending.count--;

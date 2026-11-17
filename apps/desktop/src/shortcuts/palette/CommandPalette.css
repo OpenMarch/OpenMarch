@@ -148,9 +148,18 @@
     color: var(--color-text-subtitle);
     font-size: 12px;
 }
-/* Why a greyed-out row can't run (Preview turns edits off) */
+/* Why a greyed-out row can't run. The command's name keeps its room; the reason takes what's
+   left and is cut short (the row's title has all of it) */
+.palette-item-label:has(+ .palette-item-reason) {
+    flex: 0 1 auto;
+}
 .palette-item-reason {
-    flex-shrink: 0;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--color-text-subtitle);
     font-size: 12px;
     font-style: italic;

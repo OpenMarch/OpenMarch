@@ -134,6 +134,15 @@ test("a finger held on a marcher selects it and opens the field's menu, and noth
     await expect(menu(page)).toBeVisible();
     expect((await readField(page)).viewport).toEqual(before);
     await expectNothingMoved(show);
+    // No hardware key has been pressed, so no entry shows a shortcut cap (#880)
+    const caps = menu(page).locator("kbd.shortcut");
+    await expect(caps).toHaveCount(0);
+    await expect(
+        page.getByTestId("field-menu-selectAllMarchers"),
+    ).toContainText("Select all");
+    // A hardware keyboard's key brings them back
+    await page.keyboard.press("Shift");
+    await expect(caps.first()).toBeVisible();
 
     // An entry runs from it: Select all
     await tapTestId(page, "field-menu-selectAllMarchers");

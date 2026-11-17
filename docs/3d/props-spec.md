@@ -98,6 +98,18 @@ phases [26.24].
   renderer's CSP) and stores a plain normalized GLB plus an OpenMarch
   sidecar. The 3D View keeps loading with bare `GLTFLoader` (three 0.186.1,
   no decoders).
+  Amended 2026-11-15 (ADR 0010, fork #996) and built in fork #998: the model
+  import runs in a renderer Web Worker shared by desktop and web
+  (`src/showAssets/modelImport/`), with its own CSP. It refuses before
+  decoding what can't work (picked files over 200 MB, a URI outside the
+  picked files, a required extension outside the allow-list, an image over
+  8192 px on an edge, more than 4× the triangle cap), then the validator's
+  errors; normalizes to meters, +Y up, the front toward +Z and the pivot at
+  the bottom center; simplifies past the cap; shrinks textures; and stores a
+  model, a distant version and a thumbnail, with the sidecar (real size,
+  facing, the plan from above, stand point, triangles, import notes) and
+  credits prefilled from `KHR_xmp_json_ld`, `asset.copyright` or a
+  Sketchfab-style `asset.extras`.
 - Steps: `gltf-validator` (errors block); reject `extensionsRequired` outside
   the allow-list (r186 `GLTFLoader` only warns); decode Draco and meshopt;
   measure bounds, triangles, texture sizes and joints; read `OM_*` nodes and
@@ -329,6 +341,13 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   Equipment 2k, Garment 3k per body type, Prop 20k, Base floor 5k, Floor
   prop 5k. Garment textures cap at 1024; Uniform part artwork caps at 1024
   on the long edge [owner, 2026-10-11, Q34, Q37].
+- **Texture caps per kind** (fork #998), longest edge, kept in each
+  texture's own format (PNG keeps its alpha): imported prop models 1024, and
+  256 in their distant version (at most 2,000 triangles and a quarter of the
+  model's, drawn beyond about 30 m). Equipment, Garments and prop Artwork
+  slots 1024; Floor props and Base floors 2048 (D-19). KTX2 textures aren't
+  imported: a file that requires them is refused, and an optional one is
+  dropped. Draco and meshopt input is decoded, never stored.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A
   model is guessed Z-up when Z is its largest side and over 1.25× Y (floors

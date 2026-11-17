@@ -51,16 +51,6 @@ const HOME: SeedPosition[] = [
 ];
 const ALL = HOME.map(([id]) => id);
 
-/**
- * A click that can't pair with the one before it into a double-click (which goes inside a
- * shape): the field takes two clicks on one spot within 500 ms as one (`DOUBLE_CLICK_MS`),
- * however much happened between them.
- */
-async function freshClick(page: Page, at: Point) {
-    await page.waitForTimeout(550);
-    await page.mouse.click(at.x, at.y);
-}
-
 test.use({
     seedSql: seedShowSql({
         beats: 48,
@@ -4790,7 +4780,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         // From the floating editor, on Page 2, where the box is only carried
         await selectPage(show, "Page 2");
         const member = await marcherScreen(page, 1);
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
         const steps = await undoSteps(show);
         await readoutShown.getByTestId("shape-editor-ungroup").click();
@@ -4807,14 +4797,14 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         expect((await readField(page)).selection).toEqual(ALL);
         // A click on a member picks just that marcher
         await page.keyboard.press("Escape");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         expect((await readField(page)).selection).toEqual([1]);
         await expect(readoutShown).toBeHidden();
 
         // Page 1 keeps its box
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 1");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
 
         // Undo shares Page 1's box with Page 2 again
@@ -4824,7 +4814,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         expect(await laterMoves()).toBe(0);
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 2");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
 
         // Page 2's own copy (a pivot change there) ungroups too, and Page 1's box doesn't come
@@ -4843,7 +4833,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         await expect.poll(kinds).toEqual(["block"]);
         await waitForIdle(page);
         await page.keyboard.press("Escape");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
 
         // The field's menu offers it for a selected box only, first
@@ -4857,7 +4847,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         // On Page 1, the shortcut ends the box there: nobody moves, and Page 2 follows
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 1");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
         await page.keyboard.press("ControlOrMeta+Shift+g");
         await expect.poll(kinds).toEqual(["ungrouped"]);
@@ -4927,7 +4917,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         // A click on a member selects the whole group, on Page 2 too, where it's carried
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 2");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
         expect((await readField(page)).selection).toEqual(ALL);
 
@@ -4944,7 +4934,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         // Page 1 keeps its group
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 1");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
 
         // Undo carries it to Page 2 again; a second undo takes the group away
@@ -4954,7 +4944,7 @@ test.describe("a box carried onto a page with no positions of its own (#485)", (
         expect(await laterMoves()).toBe(0);
         await page.keyboard.press("Escape");
         await selectPage(show, "Page 2");
-        await freshClick(page, member);
+        await page.mouse.click(member.x, member.y);
         await expect(readoutShown).toBeVisible();
         await page.keyboard.press("ControlOrMeta+z");
         await expect.poll(kinds).toEqual([]);

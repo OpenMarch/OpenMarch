@@ -21,11 +21,14 @@ export function Field({
 export const Help = ({
     children,
     testId,
+    id,
 }: {
     children: ReactNode;
     testId?: string;
+    /** For a control's `aria-describedby`, when the help says why it's unavailable */
+    id?: string;
 }) => (
-    <p className="text-sub text-text/60" data-testid={testId}>
+    <p className="text-sub text-text/60" data-testid={testId} id={id}>
         {children}
     </p>
 );
