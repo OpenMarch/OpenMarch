@@ -11,8 +11,8 @@
  *   with a second clip at its weight (om-pose's step-size blend).
  * - **Body**: the Body row re-anchored to the waist the Feet move:
  *   `waistFeet · waistBody⁻¹ · bone`. With no Body row, the Feet.
- * - **Horn/Equipment**: the Horn row re-anchored to the chest the Body (or
- *   Feet) moves: `chest · chestHorn⁻¹ · bone`. With no Horn row, the Body.
+ * - **Horn/Equipment** (the arms, neck and head): the Horn row re-anchored
+ *   to the chest the Body (or Feet) moves: `chest · chestHorn⁻¹ · bone`. With no Horn row, the Body.
  *   The prop bone is a Horn bone; in body space (a toss) it skips the
  *   re-anchoring and plays its row's own matrix.
  *
@@ -31,6 +31,12 @@ export interface AnimSource {
 export const CHANNEL_FEET = 0;
 export const CHANNEL_BODY = 1;
 export const CHANNEL_HORN = 2;
+
+/**
+ * The neck and head: a hold sets them (the head tilted up to play), so they
+ * ride the Horn/Equipment channel with the arms.
+ */
+export const HEAD_BONES: readonly string[] = ["DEF-spine004", "DEF-spine006"];
 
 export interface ComposeSetup {
     /** Bones per row and per composed performer, the prop bone included. */
@@ -440,7 +446,9 @@ export function composeSetupOf(
     const propBone = find("prop");
     const handR = find("DEF-handR");
     const channel = boneNames.map((n) =>
-        n === "prop" || /^DEF-(shoulder|upper_arm|forearm|hand)[LR]$/.test(n)
+        n === "prop" ||
+        /^DEF-(shoulder|upper_arm|forearm|hand)[LR]$/.test(n) ||
+        HEAD_BONES.includes(n)
             ? CHANNEL_HORN
             : /^DEF-spine00[3-9]$/.test(n)
               ? CHANNEL_BODY

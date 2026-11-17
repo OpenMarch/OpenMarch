@@ -43,15 +43,15 @@ To compare with the old field, use the pinned pre-switch build's harness
 (fork branch `field-renderer-pre-209`): its README there runs these specs once
 per field and composes the old field against the new one.
 
-`following-look.spec.mts` checks Set vs Following's look (#300, #301): two
-tests assert the dashed edge (at the opening zoom and 3×) and the fill for
+`not-defined-look.spec.mts` checks the Not defined look (#300, #301, #478):
+two tests assert the dashed edge (at the opening zoom and 3×) and the fill for
 every shape and style on white, and
-the rest capture a contact sheet (every shape and style, Set beside
-Following, on white, dark and, with `TURF_IMAGE` naming a field image, turf,
+the rest capture a contact sheet (every shape and style, Defined beside Not
+defined, on white, dark and, with `TURF_IMAGE` naming a field image, turf,
 at the opening zoom and 3×, plus an isolated move) to `RENDER_OUT/<label>/`:
 
 ```bash
-TURF_IMAGE=~/turf.png pnpm exec playwright test --project=render following-look
+TURF_IMAGE=~/turf.png pnpm exec playwright test --project=render not-defined-look
 ```
 
 ## Video export comparisons

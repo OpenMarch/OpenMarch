@@ -55,7 +55,7 @@ describeDbTests("view3dVenue", (it) => {
         it("reads invalid stored JSON as the default", async ({ db }) => {
             await db
                 .insert(schema.view3d_venue)
-                .values({ id: 1, json_data: '{"version":1,"kit":"arena"}' })
+                .values({ id: 1, json_data: '{"version":1,"kit":"stadium"}' })
                 .run();
             expect(await getStoredVenueSettings({ db })).toBeUndefined();
             expect(await getVenueSettings({ db, field: indoor })).toEqual(
@@ -120,7 +120,7 @@ describeDbTests("view3dVenue", (it) => {
             await expect(
                 updateVenueSettings({
                     db,
-                    settings: { ...proSettings, kit: "arena" },
+                    settings: { ...proSettings, kit: "stadium" },
                 }),
             ).rejects.toThrow();
             await expect(

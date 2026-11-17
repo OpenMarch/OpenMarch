@@ -6,8 +6,15 @@
 
 import Store from "electron-store";
 import { safeStorage } from "electron";
-import type { AuthTokens, AuthUser, AuthState, PendingAuthFlow } from "./types";
+import type {
+    AuthError,
+    AuthTokens,
+    AuthUser,
+    AuthState,
+    PendingAuthFlow,
+} from "./types";
 import { TOKEN_REFRESH_BUFFER_MS } from "../../../src/global/auth/constants";
+import { TokenRefreshRejectedError } from "./errors";
 
 /**
  * Store schema for auth data.
@@ -33,6 +40,33 @@ let refreshTimer: NodeJS.Timeout | null = null;
 /** Callback for token refresh - set by auth/index.ts */
 let onTokenRefresh: ((tokens: AuthTokens) => Promise<AuthTokens>) | null = null;
 
+/** Called when Clerk rejects the refresh token and the tokens are cleared */
+let onSignedOut: (() => void) | null = null;
+
+/** Called with tokens a refresh got for a session that has since ended */
+let onTokensDiscarded: ((tokens: AuthTokens) => void) | null = null;
+
+/** The refresh in progress, shared so only one runs at a time */
+let refreshInFlight: Promise<AuthTokens | null> | null = null;
+
+/**
+ * Bumped whenever the stored tokens are cleared, so a refresh that finishes
+ * after a sign-out doesn't store its tokens and sign the user back in.
+ */
+let tokenGeneration = 0;
+
+/**
+ * Why the last session ended, when it wasn't the user signing out; shown
+ * with the signed-out state until the next sign-in.
+ */
+let signedOutReason: AuthError | null = null;
+
+/** Clerk ended the session (rejected the refresh token). */
+export const SESSION_EXPIRED: AuthError = {
+    code: "TOKEN_EXPIRED",
+    message: "Your session has expired. Please sign in again.",
+};
+
 /**
  * Sets the token refresh callback function.
  * This is called by auth/index.ts to inject the refresh implementation.
@@ -41,6 +75,24 @@ export function setTokenRefreshCallback(
     callback: (tokens: AuthTokens) => Promise<AuthTokens>,
 ): void {
     onTokenRefresh = callback;
+}
+
+/**
+ * Sets the function called when the session ends because Clerk rejected the
+ * refresh token (not when the user signs out).
+ */
+export function setSignedOutCallback(callback: () => void): void {
+    onSignedOut = callback;
+}
+
+/**
+ * Sets the callback for tokens a refresh returned after their session ended
+ * (signed out, or signed in again, while it was running).
+ */
+export function setTokensDiscardedCallback(
+    callback: (tokens: AuthTokens) => void,
+): void {
+    onTokensDiscarded = callback;
 }
 
 /**
@@ -60,6 +112,16 @@ export function storeTokens(tokens: AuthTokens): void {
     const tokenString = JSON.stringify(tokens);
     const encrypted = safeStorage.encryptString(tokenString);
     authStore.set("encryptedTokens", encrypted.toString("base64"));
+}
+
+/**
+ * Starts a new session with the tokens from a sign-in. A refresh still
+ * running for an earlier session can't touch it.
+ */
+export function beginSession(tokens: AuthTokens): void {
+    tokenGeneration++;
+    signedOutReason = null;
+    storeTokens(tokens);
 }
 
 /**
@@ -107,6 +169,8 @@ export function clearTokens(): void {
     }
 
     cachedTokens = null;
+    tokenGeneration++;
+    signedOutReason = null;
     authStore.delete("encryptedTokens");
     authStore.delete("pendingAuthFlow");
 }
@@ -158,12 +222,58 @@ export function validateState(receivedState: string): PendingAuthFlow | null {
     }
 
     if (flow.state !== receivedState) {
+        // Keep the pending flow: any web page can open an openmarch:// link,
+        // and a stray one shouldn't cancel the sign-in the user started.
         console.error("[Auth] State mismatch - possible CSRF attack");
-        clearPendingFlow();
         return null;
     }
 
     return flow;
+}
+
+/**
+ * Refreshes the tokens, sharing one request between all callers.
+ *
+ * Returns the new tokens, or null when the refresh failed. Only a rejection
+ * from Clerk clears the stored tokens and ends the session; a temporary
+ * failure (offline, timeout, server error) keeps them for the next try.
+ */
+async function refreshTokens(tokens: AuthTokens): Promise<AuthTokens | null> {
+    if (refreshInFlight) return refreshInFlight;
+    if (!onTokenRefresh) {
+        console.error("[Auth] Token refresh callback not set");
+        return null;
+    }
+
+    const refresh = onTokenRefresh;
+    const generation = tokenGeneration;
+    refreshInFlight = (async () => {
+        try {
+            const newTokens = await refresh(tokens);
+            // Signed out while the refresh was running: drop the new tokens,
+            // and don't leave them live at Clerk.
+            if (generation !== tokenGeneration) {
+                onTokensDiscarded?.(newTokens);
+                return null;
+            }
+            storeTokens(newTokens);
+            return newTokens;
+        } catch (error) {
+            if (generation !== tokenGeneration) return null;
+            if (error instanceof TokenRefreshRejectedError) {
+                console.error("[Auth] Refresh token rejected; signing out");
+                clearTokens();
+                signedOutReason = SESSION_EXPIRED;
+                onSignedOut?.();
+            } else {
+                console.error("[Auth] Failed to refresh token:", error);
+            }
+            return null;
+        } finally {
+            refreshInFlight = null;
+        }
+    })();
+    return refreshInFlight;
 }
 
 /**
@@ -173,6 +283,9 @@ export function validateState(receivedState: string): PendingAuthFlow | null {
  * - Clerk's Ruby SDK verify_token() method expects a JWT with 'sub' claim
  * - The ID token is a JWT with user claims including 'sub' (subject/user ID)
  * - OAuth access tokens may be opaque and not directly verifiable by verify_token()
+ *
+ * Returns null when there is no valid token right now: signed out, or the
+ * token expired and couldn't be refreshed (for example while offline).
  */
 export async function getValidAccessToken(): Promise<string | null> {
     const tokens = getStoredTokens();
@@ -183,44 +296,21 @@ export async function getValidAccessToken(): Promise<string | null> {
 
     const effectiveExpiry = getEffectiveTokenExpiry(tokens);
 
-    // Check if token is expired or about to expire
-    const now = Date.now();
-    const isExpired = now >= effectiveExpiry;
-    const needsRefresh = now >= effectiveExpiry - TOKEN_REFRESH_BUFFER_MS;
-
-    if (isExpired || needsRefresh) {
-        if (!onTokenRefresh) {
-            console.error("[Auth] Token refresh callback not set");
-            if (isExpired) {
-                clearTokens();
-                return null;
-            }
-            // Return ID token for Rails SDK verification (JWT with sub claim)
-            return tokens.idToken;
-        }
-
-        try {
-            const newTokens = await onTokenRefresh(tokens);
-            storeTokens(newTokens);
-            // Return ID token for Rails SDK verification (JWT with sub claim)
-            return newTokens.idToken;
-        } catch (error) {
-            console.error("[Auth] Failed to refresh token:", error);
-
-            if (isExpired) {
-                // Token is expired and refresh failed - user needs to re-authenticate
-                clearTokens();
-                return null;
-            }
-
-            // Token not yet expired, return current ID token
-            return tokens.idToken;
-        }
+    if (Date.now() < effectiveExpiry - TOKEN_REFRESH_BUFFER_MS) {
+        return tokens.idToken;
     }
 
-    // Return ID token for Rails SDK verification (JWT with sub claim)
-    // The ID token is a JWT that Clerk's Ruby SDK verify_token() can verify
-    return tokens.idToken;
+    const newTokens = await refreshTokens(tokens);
+    if (newTokens) return newTokens.idToken;
+
+    // The refresh failed. The stored token (a new sign-in's, if one
+    // happened meanwhile) still works if it hasn't expired; none is left if
+    // the failed refresh ended the session.
+    const current = getStoredTokens();
+    if (current && Date.now() < getEffectiveTokenExpiry(current)) {
+        return current.idToken;
+    }
+    return null;
 }
 
 /**
@@ -239,17 +329,9 @@ function scheduleTokenRefresh(tokens: AuthTokens): void {
             `[Auth] Scheduling token refresh in ${Math.round(delay / 1000)} seconds`,
         );
 
-        refreshTimer = setTimeout(async () => {
-            try {
-                const currentTokens = getStoredTokens();
-                if (currentTokens && onTokenRefresh) {
-                    const newTokens = await onTokenRefresh(currentTokens);
-                    storeTokens(newTokens);
-                    console.log("[Auth] Token refreshed successfully");
-                }
-            } catch (error) {
-                console.error("[Auth] Scheduled token refresh failed:", error);
-            }
+        refreshTimer = setTimeout(() => {
+            const currentTokens = getStoredTokens();
+            if (currentTokens) void refreshTokens(currentTokens);
         }, delay);
     }
 }
@@ -314,23 +396,13 @@ export function getAuthState(): AuthState {
             isAuthenticated: false,
             isLoading: false,
             user: null,
-            error: null,
+            error: signedOutReason,
         };
     }
 
-    // Check if token is expired
-    if (Date.now() >= getEffectiveTokenExpiry(tokens)) {
-        return {
-            isAuthenticated: false,
-            isLoading: false,
-            user: null,
-            error: {
-                code: "TOKEN_EXPIRED",
-                message: "Your session has expired. Please sign in again.",
-            },
-        };
-    }
-
+    // An expired ID token isn't a sign-out: the stored refresh token gets a
+    // new one on the next API call. The session only ends when Clerk rejects
+    // the refresh token (see refreshTokens).
     return {
         isAuthenticated: true,
         isLoading: false,

@@ -5,8 +5,9 @@ import { editSurpriseToastId } from "@/utilities/moveThemToo";
 import Toaster from "../Toaster";
 
 /**
- * A toast's action stays on one line beside its text (defined-coordinates 08: "Start from Page 4"
- * wrapped into a column). With two buttons the text takes the first line and the buttons go
+ * A toast's action stays on one line, beside its text only when both fit on one line, else under it
+ * (defined-coordinates 08: "Start from Page 4" wrapped into a column; a long message beside "Show in
+ * folder" squeezed the text into one). With two buttons the text takes the first line and the buttons go
  * underneath, right-aligned (wp14: the combined Move them too toast squeezed its text into a
  * 70 px column). jsdom doesn't lay out, so these check the classes that do it.
  */
@@ -27,10 +28,12 @@ describe("Toaster", () => {
     it("sits 12px from the window's bottom-right corner, 320px wide, on any window width", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Page 3 is no longer a keyframe");
+            toast.info("Now walks straight through the end of Page 3");
         });
         const li = (
-            await screen.findByText("Page 3 is no longer a keyframe")
+            await screen.findByText(
+                "Now walks straight through the end of Page 3",
+            )
         ).closest("[data-sonner-toast]") as HTMLElement;
         const list = li.closest("[data-sonner-toaster]") as HTMLElement;
         expect(list.dataset.yPosition).toBe("bottom");
@@ -46,7 +49,7 @@ describe("Toaster", () => {
         }
     });
 
-    it("keeps the icon by the title when the toast has a description", async () => {
+    it("keeps the icon by the first line of text, with or without a description", async () => {
         render(<Toaster />);
         act(() => {
             toast.warning("The field is drawing slowly", {
@@ -57,50 +60,57 @@ describe("Toaster", () => {
             await screen.findByText("The field is drawing slowly")
         ).closest("[data-sonner-toast]") as HTMLElement;
         const icon = li.querySelector("[data-icon]") as HTMLElement;
-        expect(li.className).toMatch(/(^| )items-center( |$)/);
-        expect(icon.className).toContain(
-            "[[data-sonner-toast]:has([data-description])_&]:self-start",
-        );
+        expect(li.className).toMatch(/(^| )items-start( |$)/);
+        expect(icon.className).toMatch(/(^| )mt-\[2px\]( |$)/);
     });
 
     it("keeps an action's label on one line, with a focus ring", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Pages 3–4 are no longer keyframes", {
+            toast.info("Now walks straight through the ends of Pages 3–4", {
                 action: {
-                    label: "Keep Pages 3–4 as keyframes",
+                    label: "Stop at the ends of Pages 3–4",
                     onClick: () => {},
                 },
             });
         });
         const button = await screen.findByRole("button", {
-            name: "Keep Pages 3–4 as keyframes",
+            name: "Stop at the ends of Pages 3–4",
         });
         expect(button.className).toMatch(/\bwhitespace-nowrap\b/);
         expect(button.className).toMatch(/\bshrink-0\b/);
         expect(button.className).toMatch(/focus-visible:ring/);
     });
 
-    it("with one button, keeps it beside the text on one row", async () => {
+    it("with one button, keeps it beside the text only when both fit on one line, else under it at the right (#805)", async () => {
         render(<Toaster />);
         act(() => {
-            toast.info("Page 3 is no longer a keyframe", {
+            toast.info("Now walks straight through the end of Page 3", {
                 action: {
-                    label: "Keep Page 3 as a keyframe",
+                    label: "Stop at the end of Page 3",
                     onClick: () => {},
                 },
             });
         });
         const button = await screen.findByRole("button", {
-            name: "Keep Page 3 as a keyframe",
+            name: "Stop at the end of Page 3",
         });
         const { li, content } = toastOf(button);
         expect(li.querySelector("[data-cancel]")).toBeNull();
-        // The two-button layout only applies with a cancel
-        expect(li.className).toContain("[&:has([data-cancel])]:flex-wrap");
-        expect(li.className).not.toMatch(/(^| )flex-wrap( |$)/);
-        expect(content.className).toMatch(/(^| )flex-1( |$)/);
-        expect(button.className).not.toMatch(/\bml-auto\b/);
+        // The text starts at its one-line width, capped at the row beside the icon: when it and the
+        // button don't fit on one line, the text fills its row and the button wraps underneath
+        expect(li.className).toMatch(/(^| )flex-wrap( |$)/);
+        expect(content.className).toMatch(/(^| )grow( |$)/);
+        expect(content.className).toMatch(/(^| )basis-auto( |$)/);
+        expect(content.className).toMatch(
+            /(^| )max-w-\[calc\(100%-32px\)\]( |$)/,
+        );
+        // No narrow column: the button never shares its line with wrapped text, and lines up with it
+        expect(button.className).toMatch(/(^| )-my-2( |$)/);
+        // Only when it is the one button: with a cancel, the cancel pushes both right
+        expect(button.className).toContain(
+            "[[data-sonner-toast]:not(:has([data-cancel]))_&]:ml-auto",
+        );
     });
 
     it("with two buttons, wraps them onto their own row under the text, right-aligned", async () => {
@@ -120,7 +130,7 @@ describe("Toaster", () => {
         expect(cancel.parentElement).toBe(action.parentElement);
         const { li, content } = toastOf(action);
         expect(li.matches(":has([data-cancel])")).toBe(true);
-        expect(li.className).toContain("[&:has([data-cancel])]:flex-wrap");
+        expect(li.className).toMatch(/(^| )flex-wrap( |$)/);
         // The text fills the first row beside the icon, so the buttons wrap below it
         expect(li.querySelector("[data-icon]")).not.toBeNull();
         expect(content.className).toContain(

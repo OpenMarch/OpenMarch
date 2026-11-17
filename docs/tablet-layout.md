@@ -59,17 +59,23 @@ a finger selects by pressing and holding, then dragging. In the words the app us
 then drag, to select an area." The pill's "Drag: Auto ▾" menu offers **Box**, **Lasso**
 and **Pan** as overrides that apply to finger and pen alike; the choice is kept in
 `localStorage` (`openmarch:fieldDragMode`, an old stored "box" is read as Auto once).
-Drags that start on a marcher dot or the selection always move it, and two fingers
-always pan and zoom. The desktop layout has no pill, so there the drag mode is always
-Auto (`components/canvas/touch/fieldDragMode.ts`).
+Box and Lasso are the "finger selects" option of tablet decision 1: one finger draws a
+box or lasso, two fingers navigate. Drags that start on a marcher dot or the selection
+always move it, and two fingers always pan and zoom. The desktop layout has no pill, so
+there the drag mode is always Auto (`components/canvas/touch/fieldDragMode.ts`). On the
+three.js field the finger's choice is `field/three/fieldDragModes.ts`, fed to the
+gesture adapter's `singleFinger` and `holdDrag`; the pen's goes through
+`fieldPointerInput.ts` (Pan moves the view, Lasso draws a lasso, Auto and Box leave the
+pen to the editor as a mouse).
 
 Other field behavior:
 
 - **Floating pill** (`components/canvas/touch/TouchModifierButtons.tsx`):
   **Fine**, **Equal** and **From center** (role toggles, tap to latch or hold),
-  **Add** (add to selection, like Shift at the press), **Snap off** (the Snap
-  toggle) and **?** (explains the gestures). The "Drag: … ▾" mode menu isn't
-  ported to the three.js field yet (`docs/field/tablet-port.md`).
+  **Add** (add to selection, like Shift at the press), **Subtract** (a box or
+  lasso takes what it covers out of the selection, like Alt; latching Add or
+  Subtract lets go of the other), **Snap off** (the Snap toggle), **?** (explains
+  the gestures) and the "Drag: … ▾" mode menu (above).
   Long press on any pill control explains it. It places itself where it covers the
   fewest marchers (`pillPlacement.ts`) and can be dragged by its grip.
 - **Handles**: a press on a marcher dot always wins over a selection handle (all
@@ -199,6 +205,8 @@ These were judged improvements for everyone:
 - Undo/redo double-check the database before saying there's nothing to undo.
 
 ## Parity rule
+
+The full guide for new features is [tablet parity](conventions/tablet-parity.md).
 
 Every feature must be reachable in both layouts, even if differently (a toolbar
 button in one, a panel in the other). When adding a control, check:

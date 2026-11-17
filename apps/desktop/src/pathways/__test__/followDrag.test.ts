@@ -66,6 +66,7 @@ const at = (x: number, y: number): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 /** Keep end spots' move (AP-T9): [9, 17), everyone 20 steps right of where they start */

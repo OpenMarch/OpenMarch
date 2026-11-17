@@ -83,6 +83,7 @@ const at = (x: number, y: number, button = 0): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 beforeEach(() => {

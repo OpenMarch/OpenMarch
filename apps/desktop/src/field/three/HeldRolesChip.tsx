@@ -5,6 +5,8 @@ import { isMacPlatform } from "@/shortcuts/platform";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useGestureChipStore } from "@/input/gestureChipStore";
+import ClearOfFinger from "./ClearOfFinger";
+import { useFieldViewStore } from "./fieldView";
 import {
     gestureChipSegments,
     WITH_KEY_I18N,
@@ -17,24 +19,31 @@ const OFFSET_Y = 18;
  * Dimmer than the drag readout it sits under: a hint, not a measurement, so it never reads as a
  * second readout (owner). See-through, so it still reads over the field's lines.
  */
-const CHIP_CLASS =
+export const CHIP_CLASS =
     "rounded-6 bg-bg-1/60 text-text-subtitle px-6 py-2 whitespace-nowrap";
-const CHIP_PX = 11;
+export const CHIP_PX = 11;
 
 /**
  * A small readout near the cursor while a field drag runs: the held roles the drag reads, and Snap
  * off. It follows the drag's roles, not its pointer, so a drag it has nothing to say about never
- * renders it again as the pointer moves.
+ * renders it again as the pointer moves. A touch drag's chip sits above the finger, clear of it.
  */
 export default function HeldRolesChip({
     belowTip = false,
+    touch = false,
 }: {
     /** A drag readout (the tip) is showing; the chip sits under it there instead */
     belowTip?: boolean;
+    /** The drag is a finger's: the chip keeps clear of it */
+    touch?: boolean;
 }) {
     const segments = useHeldRolesChipSegments();
     if (belowTip || segments === null) return null;
-    return <ChipAtPointer segments={segments} />;
+    return touch ? (
+        <ChipAboveFinger segments={segments} />
+    ) : (
+        <ChipAtPointer segments={segments} />
+    );
 }
 
 /** The chip's segments for the running drag, or null when there's nothing to show */
@@ -111,5 +120,24 @@ function ChipAtPointer({ segments }: { segments: readonly ChipSegment[] }) {
         >
             <ChipText segments={segments} />
         </div>
+    );
+}
+
+/** The chip of a touch drag, above the finger so the finger doesn't cover it */
+function ChipAboveFinger({ segments }: { segments: readonly ChipSegment[] }) {
+    const screen = useGestureChipStore((state) => state.screen);
+    const width = useFieldViewStore((state) => state.width);
+    const height = useFieldViewStore((state) => state.height);
+    if (!screen) return null;
+    return (
+        <ClearOfFinger finger={screen} bounds={{ width, height }}>
+            <div
+                className={CHIP_CLASS}
+                style={{ fontSize: CHIP_PX }}
+                data-testid="heldRolesChip"
+            >
+                <ChipText segments={segments} />
+            </div>
+        </ClearOfFinger>
     );
 }

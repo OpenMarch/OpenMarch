@@ -21,6 +21,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { itemGeometryKeys } from "./useItems";
+import { cueKeys } from "./useCues";
 
 /**
  * Arguments for shifting beats
@@ -113,8 +114,9 @@ export const deleteBeatsMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            // Item Outline changes on the deleted beats were carried to other beats
+            // Item Outline changes and cues on the deleted beats were carried to other beats
             void qc.invalidateQueries({ queryKey: itemGeometryKeys.all() });
+            void qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("audio.beats.delete.error"), e, variables);
@@ -147,7 +149,7 @@ export const flattenOrderMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e) => {
-            conToastError(tolgee.t("audio.beats.flatten.error"), e);
+            conToastError(tolgee.t("audio.beats.update.error"), e);
         },
     });
 };

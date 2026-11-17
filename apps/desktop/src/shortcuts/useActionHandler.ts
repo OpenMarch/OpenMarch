@@ -43,6 +43,11 @@ interface HandlerOptions {
      * function is read only when asked. Translated by the caller. Default: none.
      */
     disabledReason?: string | (() => string | undefined);
+    /**
+     * Shows what the action would change while the palette highlights it (true), and stops
+     * (false). It must not edit anything.
+     */
+    preview?: (on: boolean) => void;
 }
 
 export function useActionHandler(
@@ -81,6 +86,7 @@ export function useActionHandlerGroup(
     const labelRef = useRef(options.label);
     const checkedRef = useRef(options.checked ?? false);
     const reasonRef = useRef(options.disabledReason);
+    const previewRef = useRef(options.preview);
     const hasRelease = options.onRelease !== undefined;
     useLayoutEffect(() => {
         runRef.current = run;
@@ -88,6 +94,7 @@ export function useActionHandlerGroup(
         pressRef.current = options.onPress;
         releaseRef.current = options.onRelease;
         reasonRef.current = options.disabledReason;
+        previewRef.current = options.preview;
     });
     // A function is read when asked, so a new one each render tells nobody
     useLayoutEffect(() => {
@@ -144,6 +151,7 @@ export function useActionHandlerGroup(
                     const reason = reasonRef.current;
                     return typeof reason === "function" ? reason() : reason;
                 },
+                preview: (on) => previewRef.current?.(on),
             }),
         );
         return () => unregister.forEach((off) => off());

@@ -11,6 +11,7 @@ import propsPoster from "@/assets/welcome/whats-new/props.webp";
 import tempoVideo from "@/assets/welcome/whats-new/tempo.mp4";
 import tempoPoster from "@/assets/welcome/whats-new/tempo.webp";
 import pathwaysPoster from "@/assets/welcome/whats-new/pathways.webp";
+import { siteUrl } from "@/global/siteUrl";
 
 /** Features with a slide written before they reached main. */
 export type UpcomingFeature = "tempoMode" | "pathways";
@@ -92,7 +93,7 @@ export const WHATS_NEW_SLIDES = visibleWhatsNewSlides(ALL_WHATS_NEW_SLIDES, {
 });
 
 /** The docs site, as Help › Docs/Guides opens it. */
-export const GUIDES_URL = "https://openmarch.com/guides";
+export const GUIDES_URL = siteUrl("/guides");
 
 /** What a key press does in the walkthrough, or null for keys it leaves alone. */
 export function whatsNewKeyAction(

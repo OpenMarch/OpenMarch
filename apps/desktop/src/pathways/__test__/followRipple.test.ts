@@ -80,6 +80,7 @@ const at = (x: number, y: number): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 function open(form: RippleForm | null = FORM) {

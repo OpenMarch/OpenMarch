@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "无法将队员坐标设为下一页的坐标：没有下一页",
             "noPreviousPage": "无法将队员坐标设为上一页的坐标：没有上一页",
-            "setAllToNext": "从下一页复制位置（全部队员）",
-            "setAllToNextSuccess": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为下一页（第{nextPage}页）的坐标}}",
-            "setSelectedToNext": "从下一页复制位置（所选队员）",
-            "setSelectedToNextSuccess": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为下一页（第{nextPage}页）的坐标}}",
             "setAllToPreviousDone": "{count, plural, other {已将第{currentPage}页全部队员（#名）的坐标设为上一页（第{previousPage}页）的坐标}}",
             "setSelectedToPreviousDone": "{count, plural, other {已将第{currentPage}页#名队员的坐标设为上一页（第{previousPage}页）的坐标}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "无法绘制场地",
             "unavailable.web": "此浏览器已关闭或阻止WebGL图形。请开启图形加速（在Chrome或Edge中：“设置”>“系统”>“使用图形加速功能（如果可用）”），重启浏览器，然后重新加载此页面。你的表演不会丢失。"
         },
-        "title": "场地",
         "errors": {
             "noWebGL": "WebGL不可用",
             "contextLost": "场地的WebGL上下文已丢失，无法绘制视频。请重新导出。",
@@ -513,43 +508,17 @@
         "applyFieldType": "应用场地类型",
         "applyFieldTypeWarning": "队员不会随新场地类型的尺寸移动，而是保持在画布上的原位置。你随时可以改回原来的场地类型。",
         "buttons": {
-            "newXCheckpoint": "新建X参考线",
-            "newYCheckpoint": "新建Y参考线",
             "resetTheme": "将主题恢复为默认",
             "uploadFloor": "上传地板…",
             "removeFloor": "移除地板"
         },
         "checkpoint": {
             "created": "已创建位于{steps}步处的{axis}参考线",
-            "delete": "删除",
-            "deleted": "已删除位于{steps}步处的{axis}参考线：“{name}”",
-            "deleteTooltip": "从场地中删除此参考线",
-            "fieldLabel": "场地标签",
-            "fieldLabelTooltip": "显示在场地上的标签（如码数标记）",
-            "minimumRequired": "至少需要2条{axis}参考线",
-            "name": "名称",
-            "nameTooltip": "可随意为参考线命名。名称仅用于帮助你识别所选的参考线。",
-            "newXCheckpointName": "新X参考线",
-            "newYCheckpointName": "新Y参考线",
-            "shortName": "简称",
-            "shortNameTooltip": "参考线的主要名称。（例如“45码线 - 1侧”）",
-            "stepsFromCenter": "距中心步数",
-            "stepsFromFront": "距前方步数",
-            "stepsFromFrontTooltip": "此参考线距场地前方的步数。负数表示朝向后方。",
-            "useAsReference": "用作参考",
-            "useAsReferenceTooltip": "是否将此参考线用作坐标的参考。",
-            "visible": "可见",
-            "visibleTooltip": "是否在场地上显示此参考线",
-            "stepsFromCenterHint": "此参考线距场地中心的步数。负数表示朝向观众视角的左侧。"
+            "minimumRequired": "至少需要2条{axis}参考线"
         },
-        "customField": "自定义场地",
         "customFieldDocs": "查看文档",
         "customFieldName": "自定义",
-        "customization": "自定义",
-        "customize": "自定义",
         "errors": {
-            "invalidColor": "颜色无效",
-            "noPropertiesToLoad": "没有可加载的场地属性！这种情况不应发生，请联系支持人员",
             "notDefined": "FieldProperties未定义。这种情况不应发生，请联系支持人员。",
             "invalidJson": "JSON文件无效。\n\n请确保文件包含有效的JSON语法。",
             "invalidFile": "场地属性文件无效。\n\n{details}\n\n请确保文件包含所有必需的字段且值正确。",
@@ -565,24 +534,19 @@
         "fieldType": {
             "label": "场地类型"
         },
-        "general": "常规",
         "labels": {
             "background": "背景",
             "backgroundImageOpacity": "背景图片不透明度",
-            "backgroundImageRatio": "背景图片比例",
             "bottom": "下",
-            "conformingMethod": "适配方式",
             "conformMethod": "适配方式",
             "directorsLeft": "指挥左侧",
             "directorsRight": "指挥右侧",
             "externalLabels": "外部标签",
             "fieldLabels": "场地标签",
             "fieldName": "场地名称",
-            "fieldRatio": "场地比例",
             "gridLines": "网格线",
             "halfLineXInterval": "X轴半线间距",
             "halfLineYInterval": "Y轴半线间距",
-            "height": "高度",
             "left": "左",
             "leftAbbreviation": "左侧缩写",
             "marcherFill": "队员填充",
@@ -598,23 +562,12 @@
             "shapes": "形状",
             "shapeType": "形状类型",
             "showBackgroundImage": "显示背景图片",
-            "stepsFromFrontToAwayLabelBottom": "前边线至客队侧标签底部的步数",
-            "stepsFromFrontToAwayLabelTop": "前边线至客队侧标签顶部的步数",
-            "stepsFromFrontToHomeLabel": "前边线至主队侧标签底部的步数",
-            "stepsFromFrontToHomeLabelTop": "前边线至主队侧标签顶部的步数",
             "stepSize": "步幅",
             "stepSizeWarningThreshold": "步幅警告阈值",
             "temporaryPath": "临时路径",
-            "top": "上",
-            "useHashes": "使用 Hash 标记",
-            "width": "宽度",
-            "widthHeight": "宽/高",
-            "noBackgroundImage": "无",
-            "stepSizeWarningRatio": "步幅警告阈值（每5码{steps}步）"
+            "top": "上"
         },
         "messages": {
-            "fieldRatio": "{ratio}或{decimal}",
-            "measurementModificationNote": "这些数值可通过调整X和Y坐标、步幅及背景图片来修改",
             "noFloor": "无地面",
             "floorUnnamed": "地面"
         },
@@ -625,39 +578,16 @@
             "metric": "公制"
         },
         "sections": {
-            "externalLabels": "场外标签",
-            "fieldLabels": "场地标签",
-            "general": "常规",
-            "imageRendering": "图片渲染",
-            "measurements": "尺寸",
-            "sideDescriptions": "侧边名称",
-            "theme": "主题",
-            "xCheckpoints": "X参考线",
-            "yCheckpoints": "Y参考线"
-        },
-        "tabs": {
-            "checkpoints": "参考线",
-            "general": "常规",
-            "image": "图片",
-            "theme": "主题"
-        },
-        "themeSubsections": {
-            "grid": "网格",
-            "labels": "标签",
-            "marchers": "队员",
-            "pathways": "路径"
+            "sideDescriptions": "侧边名称"
         },
         "tooltips": {
             "conformMethod": "选择让背景图片适应场地还是填充场地。始终保持图片的宽高比",
             "directorsLeft": "例如“1侧”、“观众左侧”或“舞台右侧”",
             "directorsRight": "例如“2侧”、“观众右侧”或“舞台左侧”",
-            "fieldName": "场地模板的名称或标题",
             "halfLineXInterval": "界面中X轴半线从场地中心起显示的间距。留空则不显示X轴半线。此设置仅影响显示，不会改变任何坐标",
             "halfLineYInterval": "界面中Y轴半线从场地前沿起显示的间距。留空则不显示Y轴半线。此设置仅影响显示，不会改变任何坐标",
             "leftAbbreviation": "例如“S1”、“观左”或“台右”（分别为“1侧”、“观众左侧”和“舞台右侧”的简称）",
-            "measurementSystem": "用于定义步幅的度量单位，可随时来回切换",
             "resetTheme": "将主题重置为默认值",
-            "resetToDefault": "重置为默认值",
             "rightAbbreviation": "例如“S2”、“观右”或“台左”（分别为“2侧”、“观众右侧”和“舞台左侧”的简称）",
             "stepsFromFrontToAwayLabelBottom": "从前边线到客队侧码数外缘的步数（靠近后边线）",
             "stepsFromFrontToAwayLabelTop": "从前边线到客队侧码数内缘的步数（靠近场地中心）",
@@ -672,15 +602,10 @@
             "inches": "英寸",
             "centimeters": "厘米"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "警告：最左侧和最右侧的X参考线与中心的距离不相等。这可能导致异常的图形瑕疵，应予以修正。",
-            "yCheckpointsNegative": "警告：强烈建议所有Y参考线的步数都小于零（即负数）。所有Y坐标都应位于场地前沿之后。否则可能导致图形错误和意外的坐标。"
-        },
         "loading": "正在加载…",
         "measurements": {
             "feet": "{value}英尺",
-            "meters": "{value}米",
-            "steps": "{count, plural, other {#步}}"
+            "meters": "{value}米"
         }
     },
     "fileAccessDialogError": {
@@ -1467,7 +1392,6 @@
         "general.appearance": "外观",
         "general.appearance.dark": "深色",
         "general.appearance.light": "浅色",
-        "general.automaticUpdates": "自动下载并安装更新",
         "general.description": "编辑器模式、语言及其他全局偏好设置。",
         "general.editorMode": "编辑器模式",
         "general.editorMode.basic": "基础",
@@ -2013,9 +1937,6 @@
                 "kinds": "形状类型",
                 "ringHintKeys": "在场地上按住<keys></keys>打开形状轮盘"
             }
-        },
-        "transform": {
-            "title": "变换"
         },
         "validate": {
             "noPosition": "形状中有点位缺少位置",
@@ -2579,7 +2500,6 @@
             "placeAllMarchers": "放置所有队员",
             "placeSelectedMarchers": "放置所选队员",
             "snapToggleCaption": "吸附",
-            "toNextPagePositions": "...到下一页的位置",
             "setMarcherPositionsAriaLabel": "设置队员位置"
         },
         "collisions": {
@@ -2630,20 +2550,6 @@
             "shapesSelected": "选中时"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "获取版本时出错。",
-            "message": "错误：{message}",
-            "noVersion": "无法获取最新版本。"
-        },
-        "installLinux": "安装Linux版",
-        "installMacArm": "安装Apple芯片版",
-        "installMacIntel": "安装Intel Mac版",
-        "installWindows": "安装Windows版",
-        "skipVersion": "跳过此版本",
-        "title": "新版本可用",
-        "trigger": "新版本可用！"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "之后可在设置 › 常规中更改。",
@@ -2658,14 +2564,17 @@
             "floor": "场地平视",
             "frontRow": "前排",
             "geJudge": "GE评委",
+            "judgesTable": "评委席",
             "lowerBowl": "下层看台",
             "podium": "指挥台",
             "pressBox": "记者席",
             "sideline": "边线",
             "topDown": "俯视",
+            "tunnel": "入场通道",
             "upperDeck": "上层看台"
         },
         "kit": {
+            "arena": "室内竞技场",
             "bighs": "大型高中",
             "blank": "仅场地",
             "college": "大学体育场",
@@ -2793,6 +2702,12 @@
         },
         "venue": {
             "updateFailed": "无法更新3D视图场馆"
+        },
+        "board": {
+            "designedBy": "设计：{name}",
+            "forClient": "演出单位：{name}",
+            "nowPerforming": "正在表演",
+            "untitled": "未命名表演"
         }
     },
     "web": {
@@ -2948,7 +2863,14 @@
         "unsavedChanges": "有未保存的更改",
         "close": "关闭",
         "saved": "表演设置已保存",
-        "updateFailed": "无法更新工作区设置"
+        "updateFailed": "无法更新工作区设置",
+        "showInfo": {
+            "projectName": "表演名称",
+            "projectNamePlaceholder": "使用文件名",
+            "designer": "设计者",
+            "client": "客户",
+            "optional": "可选"
+        }
     },
     "canvas": {
         "zoom": {

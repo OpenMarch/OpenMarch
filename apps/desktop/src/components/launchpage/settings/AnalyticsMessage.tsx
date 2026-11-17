@@ -1,5 +1,6 @@
 import { CheckCircleIcon, XCircleIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
+import { siteUrl } from "@/global/siteUrl";
 
 interface AnalyticsMessageProps {
     hasOptedOut: boolean;
@@ -26,7 +27,7 @@ export default function AnalyticsMessage({
                     params={{
                         a: (content) => (
                             <a
-                                href="https://openmarch.com/about/submitting-feedback"
+                                href={siteUrl("/about/submitting-feedback")}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-accent underline"

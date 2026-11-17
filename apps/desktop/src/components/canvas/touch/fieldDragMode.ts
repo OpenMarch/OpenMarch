@@ -1,13 +1,17 @@
 import { create } from "zustand";
+import { useInputModeStore } from "@/stores/InputModeStore";
 
 /**
- * What a one-finger or pen drag that starts on empty field does:
+ * What a one-finger or pen drag that starts on empty field does (tablet plan
+ * 1.3), chosen on the touch pill and kept on this device:
  * - "auto" (the default): a finger moves the view, a pen draws a selection
  *   box. A finger selects with press-and-hold, then drag.
- * - "box", "lasso", "pan": the same for finger and pen.
+ * - "box", "lasso": finger and pen select ("finger selects", decision 1):
+ *   one finger draws a box or a lasso, two fingers move the view.
+ * - "pan": finger and pen move the view.
  *
  * Two fingers always move the view; a drag that starts on a marcher or the
- * selection always moves it.
+ * selection always moves it. A mouse is never affected.
  */
 export type FieldDragMode = "auto" | "box" | "lasso" | "pan";
 
@@ -46,6 +50,23 @@ export function fieldDragAction(
     if (mode === "auto") return pointer === "touch" ? "pan" : "box";
     return mode;
 }
+
+/**
+ * The mode in force now: the stored one in the touch layout. The mouse layout
+ * shows no pill to say an override is on, so there it is always Auto (a pen
+ * draws a box, as a mouse does).
+ */
+export const activeFieldDragMode = (): FieldDragMode =>
+    useInputModeStore.getState().mode === "touch"
+        ? useFieldDragModeStore.getState().mode
+        : "auto";
+
+/**
+ * Whether a finger held still on empty field, then dragged, draws a box: yes
+ * wherever its plain drag would move the view (Auto, Pan).
+ */
+export const holdDragSelects = (mode: FieldDragMode): boolean =>
+    fieldDragAction(mode, "touch") === "pan";
 
 const load = (): FieldDragMode => {
     try {

@@ -3,7 +3,7 @@
  *
  * The route tests were written against step 15's storage: a transition with `style: "route"`, its
  * `route`, and `params.offset` for a group member. `withLanes` rewrites each such transition as
- * migration 0020 rewrites a file: the transition becomes `direct` with no params, and slot 0 gets
+ * migration 0025 rewrites a file: the transition becomes `direct` with no params, and slot 0 gets
  * a lane on its route with the offset (null for an own path). The tests' expected values are step
  * 15's, so every one of them that still passes is the bit-identity QA-RT-L1 asks for.
  */

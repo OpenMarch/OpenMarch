@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { T, useTranslate } from "@tolgee/react";
 import { clsx } from "clsx";
 import * as Popover from "@radix-ui/react-popover";
@@ -11,6 +11,7 @@ import {
 } from "@/stores/PlaybackSpeedStore";
 import { ShortcutTooltip } from "./ShortcutTooltip";
 import Shortcut from "@/components/ui/Shortcut";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 // The popover's chips: the click cycle's speeds and the ones between
 const SPEED_CHIPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 4] as const;
@@ -53,9 +54,17 @@ function SpeedHint() {
 }
 
 /**
+ * A tap opens the speed popover rather than stepping (tablet 3.5, #888): a finger or pen has no
+ * right-click, and the popover sets any speed in one go. A mouse click still steps.
+ */
+export const speedTapOpensPopover = (
+    pointerType: string | undefined,
+): boolean => pointerType === "touch" || pointerType === "pen";
+
+/**
  * Playback speed, as a video player has it. A click steps through 0.25×, 0.5×, 1×, 1.5×, 2× and
- * 4× (Shift+click steps back); a right-click opens a slider from 0.1× to 8× with the common
- * speeds as chips. Held, `]` plays at double the speed and `[` at half. Lit off 1×; while a key
+ * 4× (Shift+click steps back); a right-click, or a tap with a finger or pen, opens a slider from
+ * 0.1× to 8× with the common speeds as chips. Held, `]` plays at double the speed and `[` at half. Lit off 1×; while a key
  * is held it shows the held speed. The music keeps its pitch (`timeStretch.ts`).
  *
  * The editor's transport and the 3D View window's both show it, each on its own speed source;
@@ -85,6 +94,14 @@ export function PlaybackSpeedButton({
 }) {
     const { t } = useTranslate();
     const [open, setOpen] = useState(false);
+    const showHints = useShowShortcutHints();
+    // The kind of pointer that pressed last, read by the click it makes, and whether the popover
+    // was open then (the press itself closes it, as a press outside it)
+    const pressedWith = useRef<string | undefined>(undefined);
+    const openAtPress = useRef(false);
+    const forgetPress = () => {
+        pressedWith.current = undefined;
+    };
     const shown = formatPlaybackSpeed(playing, t);
     const label = t("timeline.playbackSpeed.current", { speed: shown });
     return (
@@ -102,13 +119,32 @@ export function PlaybackSpeedButton({
                         aria-keyshortcuts="BracketRight BracketLeft"
                         // Keeps keyboard focus off, so Space after a click is still Play
                         onMouseDown={(event) => event.preventDefault()}
-                        onClick={(event) => onStep(event.shiftKey)}
+                        onPointerDown={(event) => {
+                            pressedWith.current = event.pointerType;
+                            openAtPress.current = open;
+                        }}
+                        onPointerCancel={forgetPress}
+                        // Slid off while still down; a finger also "leaves" once it lifts,
+                        // before its click, and that must keep the press
+                        onPointerLeave={(event) => {
+                            if (event.buttons !== 0) forgetPress();
+                        }}
+                        onClick={(event) => {
+                            const tapped = speedTapOpensPopover(
+                                pressedWith.current,
+                            );
+                            forgetPress();
+                            // A tap on the open popover's button closes it, rather than
+                            // closing and opening it again
+                            if (tapped) setOpen(!openAtPress.current);
+                            else onStep(event.shiftKey);
+                        }}
                         onContextMenu={(event) => {
                             event.preventDefault();
                             setOpen(true);
                         }}
                         className={clsx(
-                            "rounded-4 hover:bg-fg-2 focus-visible:ring-accent text-sub flex min-w-36 items-center justify-center px-4 font-mono tabular-nums outline-hidden duration-150 focus-visible:ring-2",
+                            "rounded-4 hover:bg-fg-2 focus-visible:ring-accent text-sub touch:min-h-44 touch:min-w-44 flex min-w-36 items-center justify-center px-4 font-mono tabular-nums outline-hidden duration-150 focus-visible:ring-2",
                             playing !== 1 || held
                                 ? "text-accent bg-accent/10"
                                 : "text-text hover:text-accent",
@@ -125,7 +161,7 @@ export function PlaybackSpeedButton({
                     sideOffset={6}
                     // The button keeps focus off itself; so does the popover, so Space still plays
                     onOpenAutoFocus={(event) => event.preventDefault()}
-                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 z-50 flex w-256 flex-col gap-10 border px-16 py-12"
+                    className="border-stroke bg-modal text-text shadow-modal rounded-6 backdrop-blur-32 touch:z-[100] z-50 flex w-256 flex-col gap-10 border px-16 py-12"
                 >
                     <div className="flex items-baseline justify-between">
                         <p className="text-body">
@@ -167,19 +203,22 @@ export function PlaybackSpeedButton({
                             </button>
                         ))}
                     </div>
-                    <p className="text-sub text-text-subtitle border-stroke flex items-center gap-4 border-t pt-8">
-                        <T
-                            keyName="timeline.playbackSpeed.holdKeys"
-                            params={{
-                                faster: () => (
-                                    <Shortcut action="holdFasterPlayback" />
-                                ),
-                                slower: () => (
-                                    <Shortcut action="holdSlowerPlayback" />
-                                ),
-                            }}
-                        />
-                    </p>
+                    {/* Keyboard hints only where there's a keyboard (a tablet may have none) */}
+                    {showHints && (
+                        <p className="text-sub text-text-subtitle border-stroke flex items-center gap-4 border-t pt-8">
+                            <T
+                                keyName="timeline.playbackSpeed.holdKeys"
+                                params={{
+                                    faster: () => (
+                                        <Shortcut action="holdFasterPlayback" />
+                                    ),
+                                    slower: () => (
+                                        <Shortcut action="holdSlowerPlayback" />
+                                    ),
+                                }}
+                            />
+                        </p>
+                    )}
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>

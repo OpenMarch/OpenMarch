@@ -59,6 +59,8 @@ function prepPeak(landing: number): (u: number) => number {
 
 /** How much of the platform a clip uses at fraction `u` of its length, or null for none. */
 export function platformWeight(name: string): ((u: number) => number) | null {
+    // a crab is on the platforms already, in its own clips
+    if (/crab[LR]\d/.test(name)) return null;
     const prep = PREP.exec(name);
     if (prep) {
         const base = platformWeight(prepBase(name));
@@ -66,6 +68,19 @@ export function platformWeight(name: string): ((u: number) => number) | null {
         return base ? (u) => Math.max(base(u), peak(u)) : peak;
     }
     if (/^back/.test(name)) return () => 1;
+    // a wind direction change (docs/3d/technique.md, "Direction changes"):
+    // the placement lands on the platform, rising over its last 0.6 count
+    // (or up throughout from a backward march); the cut and the re-step
+    // start there and come down flat over their first half into a forward
+    // move, or stay up into a backward one
+    const turn = /^(place|cut|restep)2?_(.+?)__([^~]+)/.exec(name);
+    if (turn) {
+        const back = /^back/.test(turn[1] === "place" ? turn[2] : turn[3]);
+        if (back) return () => 1;
+        return turn[1] === "place"
+            ? (u) => smooth((u - 0.4) / 0.6)
+            : (u) => 1 - smooth(u / 0.5);
+    }
     if (/^stepoff_back/.test(name)) return (u) => smooth(u / 0.5);
     const halt = /^halt2?_(.*)$/.exec(name);
     if (!halt) return null;

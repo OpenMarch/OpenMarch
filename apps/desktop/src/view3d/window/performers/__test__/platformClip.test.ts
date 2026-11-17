@@ -12,6 +12,7 @@ import {
     prepBase,
 } from "../marchers/platformClip";
 import { prepName } from "@/view3d/core/marchers/planner";
+import { restoreStillPose } from "@/view3d/window/performers/marchers/stillPose";
 
 async function parse(file: string) {
     const b = fs.readFileSync(
@@ -39,7 +40,7 @@ function load() {
         });
         return {
             scene: body.scene,
-            clips: clips.animations,
+            clips: restoreStillPose(clips.animations),
             skeleton: mesh!.skeleton,
         };
     })();
@@ -178,5 +179,37 @@ describe("prep landings on the platform", () => {
             "slideL8to5-h095",
         );
         expect(prepBase("8to5")).toBe("8to5");
+    });
+});
+
+describe("the crab step", () => {
+    it.each([
+        "crabL090_8to5",
+        "halt_crabR045_6to5-h095",
+        "halt2_crabL090_8to5",
+        "stepoff_crabR090_4to5",
+        "crabL090_8to5~prep1",
+    ])("doesn't go up on the platform again: %s", (name) => {
+        expect(platformWeight(name)).toBeNull();
+    });
+});
+
+describe("wind direction changes on the platform", () => {
+    it("rises into the placement and comes down through the cut", () => {
+        const place = platformWeight("place_8to5__slideL8to5")!;
+        expect(place(0)).toBe(0);
+        expect(place(1)).toBeCloseTo(1, 9);
+        const cut = platformWeight("cut2_8to5__slideL8to5~mirror")!;
+        expect(cut(0)).toBeCloseTo(1, 9);
+        expect(cut(0.5)).toBeCloseTo(0, 9);
+        const restep = platformWeight("restep_back8to5__8to5")!;
+        expect(restep(0)).toBeCloseTo(1, 9);
+        expect(restep(1)).toBeCloseTo(0, 9);
+    });
+
+    it("stays up out of or into a backward march", () => {
+        expect(platformWeight("place_back8to5__slideL8to5")!(0)).toBe(1);
+        expect(platformWeight("cut_8to5__back8to5_L90")!(0.9)).toBe(1);
+        expect(platformWeight("restep2_8to5__back8to5")!(0.9)).toBe(1);
     });
 });

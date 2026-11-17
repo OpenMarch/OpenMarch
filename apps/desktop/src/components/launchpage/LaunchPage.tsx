@@ -2,6 +2,7 @@ import { Button, ListItem } from "@openmarch/ui";
 import TitleBar from "../titlebar/TitleBar";
 import clsx from "clsx";
 import {
+    BugIcon,
     DiscordLogoIcon,
     FolderIcon,
     GearSixIcon,
@@ -18,6 +19,7 @@ import { runAction } from "@/shortcuts/registry";
 import FilesContent from "./files/FilesContent";
 import WebShowLibrary from "../web/WebShowLibrary";
 import { isWebBuild } from "@/utilities/webBuild";
+import { canSendReports } from "@/feedback/openReport";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
 import NewShowDialog from "./NewShowDialog";
@@ -235,6 +237,18 @@ function Sidebar({
             </section>
             <section className="flex flex-col gap-8">
                 <div className="flex flex-col">
+                    {canSendReports && (
+                        <button
+                            type="button"
+                            onClick={() => runAction("reportFeedback")}
+                            className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex min-h-[2.5rem] w-full min-w-0 items-center justify-start gap-8 overflow-hidden border px-12 duration-150 ease-out`}
+                        >
+                            <BugIcon size={24} className="flex-shrink-0" />
+                            <span className="min-w-0 break-words">
+                                <T keyName="actions.ui.reportFeedback" />
+                            </span>
+                        </button>
+                    )}
                     <div className="flex gap-8">
                         <a
                             href="https://discord.gg/eTsQ98uZzq"

@@ -238,3 +238,43 @@ describe("choosePillPosition", () => {
         expect(top).toBeGreaterThanOrEqual(600);
     });
 });
+
+describe("choosePillPosition and the zoom controls (tablet 1.7)", () => {
+    const container = { width: 600, height: 400 };
+    const pill = { width: 450, height: 48 };
+    // The touch zoom controls: 6 px in from the bottom right, 170 × 99
+    const zoom = {
+        left: 600 - 6 - 170,
+        top: 400 - 6 - 99,
+        width: 170,
+        height: 99,
+    };
+
+    it("never takes a spot over the zoom controls while one is clear of them", () => {
+        const chosen = choosePillPosition(container, pill, null, [], [zoom]);
+        const rect = {
+            left: chosen.left,
+            top: container.height - chosen.bottom - pill.height,
+        };
+        const clear =
+            rect.left + pill.width <= zoom.left ||
+            rect.top + pill.height <= zoom.top;
+        expect(clear).toBe(true);
+    });
+
+    it("keeps off the controls even when every spot covers a marcher", () => {
+        // Every spot clear of the controls covers a marcher; the pill still keeps off the controls
+        const marchers = pillCandidates(container, pill).map((c) => ({
+            x: c.left + 20,
+            y: container.height - c.bottom - 20,
+        }));
+        const chosen = choosePillPosition(container, pill, null, marchers, [
+            zoom,
+        ]);
+        const top = container.height - chosen.bottom - pill.height;
+        expect(
+            chosen.left + pill.width <= zoom.left ||
+                top + pill.height <= zoom.top,
+        ).toBe(true);
+    });
+});

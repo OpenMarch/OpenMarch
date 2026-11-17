@@ -48,12 +48,12 @@ export const FIRST_TIMELINE_MIGRATION_TAG = "0018_drop_page_era";
  * table rebuild that copies every row (a converting file has no rows that use what it adds).
  */
 export const CONVERTER_SCHEMA_MIGRATION_TAGS = [
-    "0019_timeline_routes",
-    "0020_timeline_lanes",
-    "0021_timeline_lane_adjust",
+    "0024_timeline_routes",
+    "0025_timeline_lanes",
+    "0026_timeline_lane_adjust",
     // Route sources (K6, pathways step 3c): not read by the converter or the resolver, but a new
     // table, so it is made here with the others and the conversion's own stage only drops tables
-    "0023_timeline_route_sources",
+    "0028_timeline_route_sources",
 ];
 
 /** The migrations folder, also found from a built `dist-electron/main`. */
@@ -321,7 +321,7 @@ export class DrizzleMigrationService {
             // makes sure the change-log bodies are current without relying on that. It runs after
             // the file-version guard above, so it never writes to a file this build refuses.
             recreateChangeLogTriggers(this.rawDb);
-            // A step-15 file whose paths 0020 moved to lanes is written as 11 (ADR 0015 §9)
+            // A step-15 file whose paths 0025 moved to lanes is written as 11 (ADR 0015 §9)
             markLaneModelIfLaned(this.rawDb);
 
             console.log("Drizzle migrations applied successfully.");

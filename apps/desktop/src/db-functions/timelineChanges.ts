@@ -166,8 +166,8 @@ export async function assertNoTimelineCommitViolationsInTransaction(
 }
 
 /**
- * Whether the file has the lanes table (spec v0.10; migration 0020, which comes after the routes
- * table, 0019). A page-era file being converted has neither until its timeline migrations run.
+ * Whether the file has the lanes table (spec v0.10; migration 0025, which comes after the routes
+ * table, 0024). A page-era file being converted has neither until its timeline migrations run.
  */
 async function hasLanesTable(tx: DbTransaction): Promise<boolean> {
     const rows = (await tx.all(

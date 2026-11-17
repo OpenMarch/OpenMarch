@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { FieldSize, FieldView } from "@/field/editor/view";
+import type { FieldPointer } from "@/field/editor/fieldEditor";
+import { pointerKindOf } from "@/field/editor/pointerThresholds";
 
 export type { FieldView } from "@/field/editor/view";
 
@@ -37,6 +39,45 @@ export function elementToField(
     y: number,
 ): { x: number; y: number } {
     return { x: (x - view.panX) / view.zoom, y: (y - view.panY) / view.zoom };
+}
+
+/** The parts of a pointer event the editor hears about. */
+export type FieldPointerEvent = Pick<
+    PointerEvent,
+    | "clientX"
+    | "clientY"
+    | "button"
+    | "pointerType"
+    | "shiftKey"
+    | "altKey"
+    | "ctrlKey"
+    | "metaKey"
+>;
+
+/**
+ * A pointer event as the field editor hears it (ADR 0005 D-2): where it is on
+ * `element` (the element the field draws into) and on the field, in the
+ * current view, with its button, kind and modifiers.
+ */
+export function fieldPointerAt(
+    element: Element,
+    event: FieldPointerEvent,
+): FieldPointer {
+    const rect = element.getBoundingClientRect();
+    const screen = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+    };
+    return {
+        field: elementToField(useFieldViewStore.getState(), screen.x, screen.y),
+        screen,
+        button: event.button,
+        kind: pointerKindOf(event.pointerType),
+        shift: event.shiftKey,
+        alt: event.altKey,
+        ctrl: event.ctrlKey,
+        meta: event.metaKey,
+    };
 }
 
 /**

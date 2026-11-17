@@ -17,11 +17,22 @@ import {
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
-import { editorPlacement } from "./editorPlacement";
 import { setShapeEditorRect } from "./shapeEditorRect";
+import { clearPlacement, oneRowRoom } from "./editorPlacement";
+import {
+    coverInset,
+    fieldLayersIn,
+    MOVER_AVOIDS,
+    type FieldLayerKind,
+    noteFieldLayersChanged,
+    subscribeFieldLayers,
+    useFieldLayerRef,
+    type Rect,
+} from "@/components/canvas/fieldLayers";
 import { usePlacedBoxPreviewStore } from "../placed/boxSelectionStore";
 import { keepInView } from "./keepInView";
 import { glideTo, isGliding } from "@/field/three/fieldNavigation";
+import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import {
     engageStep,
     setShapeScrubbing,
@@ -31,7 +42,10 @@ import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { runAction } from "@/shortcuts/registry";
 import type { OrderChoice } from "../assign";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { keepFocus } from "./keepFocus";
 import { RichTips } from "@/components/ui/Tip";
+import ActionButton from "@/shortcuts/ActionButton";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import {
     ActionFace,
     RecalculateFace,
@@ -58,7 +72,12 @@ import {
     useFieldViewStore,
     type FieldView,
 } from "@/field/three/fieldView";
-import { DEGREE, rotationDegrees, type Pivot } from "../frame/frame";
+import {
+    DEFAULT_PIVOT,
+    DEGREE,
+    rotationDegrees,
+    type Pivot,
+} from "../frame/frame";
 import { pivotOf, withPivot } from "../frame/pivot";
 import {
     flipShape,
@@ -147,6 +166,8 @@ const PRESS_HOLD_MS = 450;
 const EDITOR_SPRING = { tension: 210, friction: 26, clamp: true };
 /** How long after an edit in the editor its change still counts as that edit (a placed shape saves first) */
 const EDIT_WINDOW_MS = 1000;
+/** How long the editor stays put before the other layers hear where it settled (#927) */
+const NOTE_SETTLED_MS = 150;
 
 /**
  * The floating editor (08-shape-system-ux.md, "The floating editor"), the main place for editing
@@ -186,14 +207,26 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
     const hidden = useShapeHidden();
     const tool = useToolEditTarget();
     const placed = usePlacedEditTarget();
+    const touch = useIsTouchMode();
+    const hintLayerRef = useFieldLayerRef<HTMLDivElement>();
     if (hidden) return <ShapeAwayChip />;
     if (armed || clicking)
         return (
             <div
-                className="rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal pointer-events-none absolute top-12 left-1/2 z-10 -translate-x-1/2 border px-12 py-6"
+                ref={hintLayerRef}
+                // #927: Finish, Undo point and Discard stay reachable: the pill keeps off the
+                // card, and it sits below the touch toolbar's panel when that's open
+                data-field-layer="task"
+                className={clsx(
+                    "rounded-6 border-stroke bg-bg-1 bg-modal text-body text-text shadow-modal touch:z-30 pointer-events-none absolute top-[calc(var(--field-top-inset,0px)+12px)] left-1/2 z-10 -translate-x-1/2 border px-12 py-6",
+                    // The touch layout's buttons for what Enter, Backspace and Escape do
+                    touch && "flex items-center gap-12 py-4 pr-4",
+                )}
                 data-testid="shape-tool-hint"
             >
-                {clicking ? (
+                {touch ? (
+                    <TouchDrawHint armed={armed} clicking={clicking} />
+                ) : clicking ? (
                     <RemovePointHint />
                 ) : armed!.clickPoints ? (
                     <T
@@ -212,6 +245,7 @@ export function ShapeEditor({ stepPx }: { stepPx: number }) {
                         }}
                     />
                 )}
+                {touch && <DrawButtons clicking={clicking} />}
             </div>
         );
     const target = toolOpen ? tool : placed;
@@ -253,6 +287,82 @@ function RemovePointHint() {
                 esc,
             }}
         />
+    );
+}
+
+/**
+ * The touch layout's hint while a shape tool is armed or a line's points are tapped: what a
+ * finger does, without the keys and right-click the desktop hint names
+ */
+function TouchDrawHint({
+    armed,
+    clicking,
+}: {
+    armed: AnyToolKind | null;
+    clicking: boolean;
+}) {
+    if (clicking)
+        return (
+            <span>
+                {tolgee.t(
+                    "shapes.edit.pointsHintTouch",
+                    "Tap to add points · Double-tap or Finish to end",
+                )}
+            </span>
+        );
+    return armed?.clickPoints ? (
+        <T
+            keyName="shapes.edit.drawPointsHintTouchFor"
+            params={{ shape: toolId(armed) }}
+        />
+    ) : (
+        <T
+            keyName="shapes.edit.drawHintTouchFor"
+            params={{ shape: armed ? toolId(armed) : "other" }}
+        />
+    );
+}
+
+/**
+ * Finish, Undo point and Discard in the touch layout (tablet 1.4), where there's no Enter,
+ * Backspace or Escape: the same actions the keys run. Finish and Undo point only while a line's
+ * points are tapped.
+ */
+function DrawButtons({ clicking }: { clicking: boolean }) {
+    const button = (variant: "primary" | "secondary") =>
+        // text-body after twMerge, which drops it (docs/conventions/ui-styling.md)
+        `${getButtonClassName({ variant, size: "compact" })} text-body`;
+    return (
+        <span className="pointer-events-auto flex items-center gap-6">
+            {clicking && (
+                <ActionButton
+                    action="shapeRemoveLastPoint"
+                    className={button("secondary")}
+                    onPointerDown={keepFocus}
+                    data-testid="shape-tool-undo-point"
+                >
+                    {tolgee.t("shapes.edit.undoPoint", "Undo point")}
+                </ActionButton>
+            )}
+            <ActionButton
+                action="shapeDiscard"
+                className={button("secondary")}
+                onPointerDown={keepFocus}
+                data-testid="shape-tool-discard"
+            >
+                {tolgee.t("shapes.edit.discard", "Discard")}
+            </ActionButton>
+            {clicking && (
+                <ActionButton
+                    action="applyShape"
+                    className={button("primary")}
+                    onPointerDown={keepFocus}
+                    data-testid="shape-tool-finish"
+                >
+                    {tolgee.t("shapes.edit.finish", "Finish")}
+                </ActionButton>
+            )}
+        </span>
     );
 }
 
@@ -331,6 +441,15 @@ function ShapeEditorBar({
     useActionHandler("shapeQuarterTurn", () => turnQuarter(live), {
         ignoreRepeat: true,
     });
+    // A double-click on the pivot, as the pivot menu's entry (tablet 1.5): back to the center
+    useActionHandler(
+        "shapeCenterPivot",
+        () => pickPivotOf(live, DEFAULT_PIVOT),
+        {
+            enabled: pivotOf(params) !== DEFAULT_PIVOT,
+            ignoreRepeat: true,
+        },
+    );
     // Expand and Shrink keeping the proportions (#489), one step a press
     const canShrink =
         env !== null && scaledOnce(target, params, -1, env) !== null;
@@ -373,17 +492,20 @@ function ShapeEditorBar({
 
     const whatRow = useRef<HTMLSpanElement>(null);
     const doRow = useRef<HTMLSpanElement>(null);
-    const twoRows = useTwoRows(whatRow, doRow, place.fieldWidth, place.held);
+    const twoRows = useTwoRows(whatRow, doRow, place.rowRoom, place.held);
 
     return (
         <animated.div
             ref={place.ref}
-            className="shape-editor-surface text-sub text-text pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
+            className="shape-editor-surface text-sub text-text touch:z-30 pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
             style={place.style}
             data-over={overShape}
             {...place.hold}
             data-testid={testId}
             data-shape-editor
+            // #927: holds Place; it keeps off the zoom box, the Inspector's tab and the toolbar
+            // panel itself, and the pill keeps off it
+            data-field-layer="mover"
             data-placement={place.above ? "above" : "below"}
             data-held={place.held}
             onPointerDown={(e) => e.stopPropagation()}
@@ -662,6 +784,12 @@ const updateWith = (
     const env = envFor();
     if (env) target.update((now) => change(now, env));
 };
+
+/** The pivot picked, as the pivot menu picks it */
+const pickPivotOf = (target: ShapeEditTarget, pivot: Pivot) =>
+    target.pickPivot
+        ? target.pickPivot(pivot)
+        : updateWith(target, (now) => withPivot(now, pivot));
 
 const turnQuarter = (target: ShapeEditTarget) =>
     updateWith(target, (now, env) =>
@@ -1055,11 +1183,7 @@ const TurnControls = memo(function TurnControls({
             <PivotMenu
                 pivot={pivot}
                 rotation={rotation}
-                onPick={(key) =>
-                    target.pickPivot
-                        ? target.pickPivot(key)
-                        : updateWith(target, (now) => withPivot(now, key))
-                }
+                onPick={(key) => pickPivotOf(target, key)}
                 testId="shape-editor-pivot"
             />
             <IconButton
@@ -1173,6 +1297,8 @@ const EndControls = memo(function EndControls({
     live: ShapeEditTarget;
     canPlace: boolean;
 }) {
+    // No Escape on a tablet: the open shape's way out, beside Place (tablet 1.4)
+    const touch = useIsTouchMode();
     return (
         <>
             <span className="flex items-center gap-2">
@@ -1186,6 +1312,19 @@ const EndControls = memo(function EndControls({
             {canPlace && (
                 <>
                     <Divider />
+                    {touch && (
+                        <ActionButton
+                            action="shapeDiscard"
+                            className={`${getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            })} text-body`}
+                            onPointerDown={keepFocus}
+                            data-testid="shape-editor-discard"
+                        >
+                            {tolgee.t("shapes.edit.discard", "Discard")}
+                        </ActionButton>
+                    )}
                     <EditorButton
                         onClick={() => target.place?.()}
                         testId="shape-editor-place"
@@ -1301,6 +1440,16 @@ const FillPill = memo(function FillPill({
     );
 });
 
+/** The field less the covers over its top (the touch toolbar's panel), in the field's px */
+function visibleField(
+    width: number,
+    height: number,
+    covers: readonly Rect[],
+): Rect {
+    const top = coverInset({ left: 0, top: 0, width, height }, covers);
+    return { left: 0, top, width, height: Math.max(0, height - top) };
+}
+
 /**
  * Where the editor sits (`editorPlacement`), sprung there whenever the shape or the editor's own
  * size moves it, gently and without overshoot (#437, owner: predictable motion, no jump when the
@@ -1314,6 +1463,47 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
     const placedDrag = useShapePointerStore((s) => s.dragging);
     const fieldDrag = toolGesture || placedDrag;
     const ref = useRef<HTMLDivElement>(null);
+    // #927, touch layout: the controls and covers over the field it keeps clear of, in the field
+    // element's px. None on the desktop
+    const touch = useIsTouchMode();
+    const obstacles = useRef<{
+        all: Rect[];
+        covers: Rect[];
+        /** The controls' edge tabs leave this much of the field's width for one row (#936) */
+        rowRoom: number;
+    }>({
+        all: [],
+        covers: [],
+        rowRoom: Infinity,
+    });
+    const [rowRoom, setRowRoom] = useState(Infinity);
+    /** Where it last settled, as told to the other layers */
+    const noted = useRef<string | null>(null);
+    /** Where it was last sent, in the field's px */
+    const lastTarget = useRef<{ left: number; top: number } | null>(null);
+    const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const measureObstacles = useCallback(() => {
+        const el = ref.current;
+        const field = el?.offsetParent;
+        const of = (kinds: readonly FieldLayerKind[]) =>
+            touch && el && field ? fieldLayersIn(field, kinds, el) : [];
+        // The covers on their own too: `clearPlacement` can go over a control, never a cover
+        const covers = of(MOVER_AVOIDS.filter((kind) => kind === "cover"));
+        const controls = of(MOVER_AVOIDS.filter((kind) => kind !== "cover"));
+        const next = {
+            all: [...controls, ...covers],
+            covers,
+            rowRoom:
+                touch && field
+                    ? oneRowRoom(field.clientWidth, controls)
+                    : Infinity,
+        };
+        setRowRoom(next.rowRoom);
+        if (JSON.stringify(next) === JSON.stringify(obstacles.current))
+            return false;
+        obstacles.current = next;
+        return true;
+    }, [touch]);
     const [room, setRoom] = useState({
         width: 0,
         height: 0,
@@ -1348,18 +1538,41 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         // The knob stands a fixed distance off the shape on screen, so it's found at this zoom
         const { knob } = frameControls(kind, params, spots, {
             hitRadius: HANDLE_REACH_PX / (view.zoom || 1),
+            stemUnit: HANDLE_REACH_PX / (view.zoom || 1),
         });
-        return editorPlacement({
-            outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
-            knob: fieldToElement(view, knob.x, knob.y),
-            handles: kind
-                .handles(params, spots, null)
-                .map(({ at }) => fieldToElement(view, at.x, at.y)),
-            width: room.width,
-            height: room.height,
-            fieldWidth: room.fieldWidth,
-            fieldHeight: room.fieldHeight,
-        });
+        return clearPlacement(
+            {
+                outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
+                knob: fieldToElement(view, knob.x, knob.y),
+                handles: kind
+                    .handles(params, spots, null)
+                    .map(({ at }) => fieldToElement(view, at.x, at.y)),
+                // #933, touch layout: its slots as the field draws them, which it keeps off when it
+                // can only sit on the shape
+                spots: touch
+                    ? (activeFieldEditor()?.modeDrawing()?.spots ?? []).map(
+                          (p) => fieldToElement(view, p.x, p.y),
+                      )
+                    : [],
+                width: room.width,
+                height: room.height,
+                fieldWidth: room.fieldWidth,
+                fieldHeight: room.fieldHeight,
+            },
+            obstacles.current.all,
+            obstacles.current.covers,
+            // #936, touch layout: never off the field or under the toolbar panel, so Place and
+            // Discard can always be tapped
+            touch && Number.isFinite(room.fieldWidth)
+                ? visibleField(
+                      room.fieldWidth,
+                      room.fieldHeight,
+                      obstacles.current.covers,
+                  )
+                : undefined,
+            // Where it is now: kept while it's still as good, so a pan doesn't hop it (#936)
+            lastTarget.current,
+        );
     };
     const [above, setAbove] = useState(
         () => targetIn(useFieldViewStore.getState()).above,
@@ -1487,6 +1700,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             return;
         }
         const target = targetIn(view);
+        lastTarget.current = { left: target.left, top: target.top };
         // A pan or zoom, the first placing and reduced motion jump; the shape's changes spring,
         // and so do the editor's own glide, to its end, and the end of a hold, which a view glide
         // after a click on the editor outlasts (review)
@@ -1506,18 +1720,49 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             width: room.width,
             height: room.height,
         });
-        void api.start({
+        const started = api.start({
             left: target.left,
             top: target.top,
             immediate: jump,
             config: EDITOR_SPRING,
         });
+        // Touch layout: once it has settled somewhere new, the pill keeps clear of it. Not on the
+        // desktop, which has no pill; and once the moves stop, not on every pan or zoom frame
+        if (!touch) return;
+        const settledAt = `${Math.round(target.left)},${Math.round(target.top)}`;
+        void Promise.all(started).then(() => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteTimer.current = setTimeout(() => {
+                noteTimer.current = null;
+                if (noted.current === settledAt) return;
+                noted.current = settledAt;
+                noteFieldLayersChanged();
+            }, NOTE_SETTLED_MS);
+        });
     };
     useLayoutEffect(() => {
+        measureObstacles();
         follow(useFieldViewStore.getState());
         // `follow` reads only these
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [api, held, room, outline]);
+    }, [api, held, room, outline, measureObstacles]);
+    // A control or cover appearing, going or moving (the toolbar panel opening): placed again
+    useLayoutEffect(
+        () =>
+            subscribeFieldLayers(() => {
+                if (measureObstacles())
+                    latestFollow.current(useFieldViewStore.getState());
+            }),
+        [measureObstacles],
+    );
+    // Gone: the pill can have its spot back
+    useEffect(
+        () => () => {
+            if (noteTimer.current !== null) clearTimeout(noteTimer.current);
+            noteFieldLayersChanged();
+        },
+        [],
+    );
     useLayoutEffect(
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],
@@ -1528,6 +1773,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         above,
         held,
         fieldWidth: room.fieldWidth,
+        rowRoom: Math.min(room.fieldWidth, rowRoom),
         noteEdit,
         // Moved by a transform, not left and top: a pan then only moves its layer, nothing is laid
         // out or painted again (#455)
@@ -1637,13 +1883,14 @@ const FIELD_MARGIN_PX = 4;
 /**
  * Whether the editor's two rows, what the shape is and what's done to it, go one above the other:
  * only when side by side they'd be wider than the field (owner: one row whenever it fits, and
- * every control visible in a narrow window). Measured from the rows themselves, which keep their
- * width either way, so it doesn't flip back and forth.
+ * every control visible in a narrow window). `room` is the field's width, less its edge tabs in the
+ * touch layout (`oneRowRoom`, #936). Measured from the rows themselves, which keep their width
+ * either way, so it doesn't flip back and forth.
  */
 function useTwoRows(
     what: RefObject<HTMLElement | null>,
     act: RefObject<HTMLElement | null>,
-    fieldWidth: number,
+    room: number,
     held: boolean,
 ) {
     const [wanted, setWanted] = useState(false);
@@ -1654,7 +1901,7 @@ function useTwoRows(
         const measure = () =>
             setWanted(
                 a.offsetWidth + b.offsetWidth + ONE_ROW_EXTRA_PX >
-                    fieldWidth - 2 * FIELD_MARGIN_PX,
+                    room - 2 * FIELD_MARGIN_PX,
             );
         measure();
         // Its numbers redraw on their own, so it's the rows' size that's watched
@@ -1662,7 +1909,7 @@ function useTwoRows(
         observer.observe(a);
         observer.observe(b);
         return () => observer.disconnect();
-    }, [what, act, fieldWidth]);
+    }, [what, act, room]);
     // Held after a press, it keeps its rows: a − or + that crosses the line would otherwise
     // rearrange it under the pointer and send it a long way once let go (review of #493)
     const [twoRows, setTwoRows] = useState(wanted);

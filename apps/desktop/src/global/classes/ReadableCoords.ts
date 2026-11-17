@@ -15,6 +15,55 @@ export enum Y_DESCRIPTION {
 }
 
 /**
+ * The checkpoint a position is described from: the closest reference checkpoint
+ * (`useAsReference`), or of two equally close, the one nearer the center or front.
+ *
+ * An axis with no reference checkpoint (a custom field can turn them all off) falls back to the
+ * closest of all its checkpoints, so the position still gets a description. An axis with no
+ * checkpoints at all is described from 0 steps, named "center line" or "front edge".
+ */
+export function findClosestCheckpoint(
+    stepsFromCenterFront: number,
+    checkpoints: readonly Checkpoint[],
+    axis: Checkpoint["axis"],
+): Checkpoint {
+    const references = checkpoints.filter((c) => c.useAsReference);
+    const candidates = references.length > 0 ? references : checkpoints;
+    const distance = (c: Checkpoint) =>
+        Math.abs(c.stepsFromCenterFront - stepsFromCenterFront);
+    let closest: Checkpoint | undefined;
+    for (const current of candidates) {
+        if (
+            !closest ||
+            distance(current) < distance(closest) ||
+            // Equidistant from two: the one closer to the center/front
+            (distance(current) === distance(closest) &&
+                Math.abs(current.stepsFromCenterFront) <
+                    Math.abs(closest.stepsFromCenterFront))
+        )
+            closest = current;
+    }
+    return (
+        closest ?? {
+            id: -1,
+            // Named for where it is, so the readout doesn't end in a blank
+            name:
+                axis === "x"
+                    ? tolgee.t("coordinates.noCheckpoint.centerLine")
+                    : tolgee.t("coordinates.noCheckpoint.frontEdge"),
+            terseName:
+                axis === "x"
+                    ? tolgee.t("coordinates.noCheckpoint.centerLineShort")
+                    : tolgee.t("coordinates.noCheckpoint.frontEdgeShort"),
+            axis,
+            stepsFromCenterFront: 0,
+            useAsReference: true,
+            visible: false,
+        }
+    );
+}
+
+/**
  * A ReadableCoords object represents the coordinates of a marcher on the field in a human-readable format.
  * I.e. "5 steps outside the 40 yard line, 3 steps in front of the front hash."
  */
@@ -177,9 +226,10 @@ export class ReadableCoords {
 
         // Determine which yard line the marcher is on
         const xCheckpoints = props.xCheckpoints;
-        output.xCheckpoint = ReadableCoords.findClosestCheckpoint(
+        output.xCheckpoint = findClosestCheckpoint(
             xStepsFromCenter,
             xCheckpoints,
+            "x",
         );
 
         // Determine how many steps inside or outside the xCheckpoint (yard line) the marcher is
@@ -202,9 +252,10 @@ export class ReadableCoords {
 
         // Determine which yCheckpoint (hash/sideline) the marcher is guiding to
         const yCheckpoints = props.yCheckpoints;
-        output.yCheckpoint = ReadableCoords.findClosestCheckpoint(
+        output.yCheckpoint = findClosestCheckpoint(
             yStepsFromCenter,
             yCheckpoints,
+            "y",
         );
 
         // Determine how many steps in front or behind of the yCheckpoint that the marcher is
@@ -221,40 +272,6 @@ export class ReadableCoords {
         output.ySteps = Math.round(Math.abs(stepsFromYCheckpoint) * 100) / 100;
 
         return output as ReadableCoords;
-    }
-
-    private static findClosestCheckpoint(
-        stepsFromCenterFront: number,
-        checkpoints: Checkpoint[],
-    ) {
-        // Find the closest checkpoint
-        const output = checkpoints.reduce((closest, current) => {
-            return (
-                // Make sure it is a reference checkpoint
-                current.useAsReference &&
-                    // If the current checkpoint is closer to the marcher than the closest checkpoint
-                    (Math.abs(
-                        current.stepsFromCenterFront - stepsFromCenterFront,
-                    ) <
-                        Math.abs(
-                            closest.stepsFromCenterFront - stepsFromCenterFront,
-                        ) ||
-                        // Handle the case where the marcher is equidistant from two checkpoints (default to the one closer to the center/front)
-                        (Math.abs(
-                            current.stepsFromCenterFront - stepsFromCenterFront,
-                        ) ===
-                            Math.abs(
-                                closest.stepsFromCenterFront -
-                                    stepsFromCenterFront,
-                            ) &&
-                            Math.abs(current.stepsFromCenterFront) <
-                                Math.abs(closest.stepsFromCenterFront)))
-                    ? current
-                    : closest
-            );
-        });
-        if (!output) throw new Error("No checkpoint found");
-        return output;
     }
 
     /**

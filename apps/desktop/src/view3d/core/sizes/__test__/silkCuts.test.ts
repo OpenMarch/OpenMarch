@@ -105,13 +105,34 @@ describe("outlines", () => {
             expect(last[1]).toBeCloseTo(dims.header.m, 12);
             expect(cutPathHeader(path)).toBeCloseTo(dims.header.m, 12);
             // Only the start and the end lie on the pole line, so the closing
-            // segment (0, header) -> (0, 0) is the whole straight pole edge.
-            const poly = sampleCutPath(path);
+            // segment (0, header) -> (0, 0) is the whole pole edge, or the
+            // notched pole edge's segments lead back up to it.
+            const poly = sampleCutPath(path, 48);
+            const body = sampleCutPath({ segments: path.segments }, 48);
             expect(poly[0]).toEqual([0, 0]);
-            expect(poly[poly.length - 1]).toEqual(last);
-            for (const [x] of poly.slice(1, -1)) expect(x).toBeGreaterThan(0);
+            expect(body[body.length - 1]).toEqual(last);
+            for (const [x] of body.slice(1, -1)) expect(x).toBeGreaterThan(0);
+            // A notched pole edge climbs from the header back to (0, 0)
+            // without leaving the silk's side of the pole.
+            const pole = poly.slice(body.length);
+            let y = last[1];
+            for (const [px, py] of pole) {
+                expect(px).toBeGreaterThanOrEqual(0);
+                expect(py).toBeLessThanOrEqual(y + EPS);
+                if (px === 0) y = py;
+            }
+            if (pole.length > 0) expect(pole[pole.length - 1][0]).toBe(0);
         },
     );
+
+    it("notches the pole edges of Wings and Snake", () => {
+        for (const id of ["silk-wings-72x36", "silk-snake-36x117"]) {
+            const entry = silks.find((e) => e.id === id)!;
+            const p = catalogSilkCutPath(entry);
+            expect(p.pole?.length, id).toBeGreaterThan(0);
+            expect(cutPathData(p)).toMatch(/^M 0 0 .* Z$/);
+        }
+    });
 
     it.each(SHAPES.map((s) => [s.label, s] as const))(
         "%s fits its header x fly x depth box",

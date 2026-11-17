@@ -23,6 +23,20 @@ export const closeHandleMenu = (): void =>
     useHandleMenuStore.setState({ menu: null });
 
 /**
+ * Handle `key`'s menu on this shape, or null when its kind gives it none (`ToolKind.menu`). Only
+ * `menu` is read, so a path's corners and legs (pathways) ask here too.
+ */
+export function handleMenuSections(
+    kind: Pick<AnyToolKind, "menu">,
+    params: unknown,
+    n: number,
+    key: string,
+): readonly ToolMenuSection[] | null {
+    const sections = kind.menu?.sections(params, n, key);
+    return sections?.some((s) => s.items.length > 0) ? sections : null;
+}
+
+/**
  * Opens the menu of the handle a right-click at `at` landed on, when it's a handle whose kind has
  * one (`ToolKind.menu`); says whether it did. `pick` applies an entry picked to handle `key` and
  * returns the shape after it, so a menu that stays open (a segmented either/or, #568) shows the
@@ -42,10 +56,8 @@ export function openHandleMenu(
 ): boolean {
     if (target?.type !== "handle" || params === null) return false;
     const { key } = target;
-    const sectionsOf = (p: unknown, count: number) => {
-        const sections = p === null ? null : kind.menu?.sections(p, count, key);
-        return sections?.some((s) => s.items.length > 0) ? sections : null;
-    };
+    const sectionsOf = (p: unknown, count: number) =>
+        p === null ? null : handleMenuSections(kind, p, count, key);
     const sections = sectionsOf(params, n);
     if (!sections) return false;
     const menu: OpenHandleMenu = {

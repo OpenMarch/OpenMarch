@@ -107,13 +107,17 @@ export function TimelineAppendAtPlayhead({
                     onPointerLeave={() => setPreviewing(false)}
                     onFocus={() => setPreviewing(true)}
                     onBlur={() => setPreviewing(false)}
+                    // In the touch layout the button is a 44px-tall finger target centered on
+                    // the pill, which stays drawn at 16px (tablet parity, section 3)
                     className={clsx(
-                        "border-accent text-accent bg-bg-1 hover:bg-accent hover:text-text-invert focus-visible:ring-accent text-micro pointer-events-auto absolute top-0 flex h-16 items-center gap-2 rounded-full border px-6 leading-none font-medium whitespace-nowrap outline-hidden focus-visible:ring-2",
+                        "group touch:-top-14 touch:h-44 pointer-events-auto absolute top-0 flex h-16 items-center border-0 bg-transparent p-0 outline-hidden",
                         flipped ? "right-8" : "left-8",
                     )}
                 >
-                    <PlusIcon size={9} weight="bold" />
-                    {shown.label}
+                    <span className="border-accent text-accent bg-bg-1 group-hover:bg-accent group-hover:text-text-invert group-focus-visible:ring-accent text-micro flex h-16 items-center gap-2 rounded-full border px-6 leading-none font-medium whitespace-nowrap group-focus-visible:ring-2">
+                        <PlusIcon size={9} weight="bold" />
+                        {shown.label}
+                    </span>
                 </button>
             </div>
         </>

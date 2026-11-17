@@ -5,7 +5,7 @@ import { cueSectionsOf, flagEquipmentOf } from "../cueSections";
 describe("cueSectionsOf", () => {
     it("gives a section whose performers all carry one flag that flag", () => {
         const sections = cueSectionsOf([
-            { section: "Trumpet", family: "brass" },
+            { section: "Trumpet", family: "trumpet" },
             { section: "Color Guard", family: "flag" },
             { section: "Color Guard", family: "flag" },
             { section: "Swing", family: "swingFlag" },

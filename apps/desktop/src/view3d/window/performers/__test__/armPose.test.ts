@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { HOLD_STATES, hold } from "@/view3d/core/instruments/holds";
 import { ARM_BONES, holdClip, poseArms } from "../marchers/armPose";
+import { restoreStillPose } from "@/view3d/window/performers/marchers/stillPose";
 
 async function skeleton(): Promise<THREE.Skeleton> {
     const b = fs.readFileSync(
@@ -34,7 +35,7 @@ async function clip8to5(): Promise<THREE.AnimationClip> {
         b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength),
         "",
     );
-    return gltf.animations.find((c) => c.name === "8to5")!;
+    return restoreStillPose(gltf.animations).find((c) => c.name === "8to5")!;
 }
 
 /** World position of a posed bone's head, by applying the pose to a cloned rig. */
@@ -77,9 +78,10 @@ describe("poseArms", () => {
         "brass %s: puts the elbows and wrists on their targets",
         async (state) => {
             const sk = await skeleton();
-            const h = hold("brass", state);
+            const h = hold("trumpet", state);
             const pose = poseArms(sk, h);
-            expect(pose.local.size).toBe(8);
+            // the eight arm bones, the neck and the head
+            expect(pose.local.size).toBe(10);
             const elbowR = posedHead(sk, pose, "DEF-forearmR");
             const wristR = posedHead(sk, pose, "DEF-handR");
             expect(
@@ -97,7 +99,7 @@ describe("poseArms", () => {
 
     it("points the hand's +Y along the fingers", async () => {
         const sk = await skeleton();
-        const h = hold("brass", "up");
+        const h = hold("trumpet", "up");
         const pose = poseArms(sk, h);
         const y = new THREE.Vector3(0, 1, 0).transformDirection(pose.handR);
         expect(y.dot(new THREE.Vector3(...h.right.fingers))).toBeGreaterThan(
@@ -108,7 +110,7 @@ describe("poseArms", () => {
     it("keeps the wrists clear of the torso in every hold", async () => {
         const sk = await skeleton();
         for (const state of HOLD_STATES) {
-            const pose = poseArms(sk, hold("brass", state));
+            const pose = poseArms(sk, hold("trumpet", state));
             const w = posedHead(sk, pose, "DEF-handR");
             // in front of the chest plane, or (trail) beside the body
             expect(w.z > 0.12 || Math.abs(w.x) > 0.22).toBe(true);
@@ -122,7 +124,7 @@ describe("holdClip", () => {
         const clip = await clip8to5();
         const out = holdClip(
             clip,
-            poseArms(sk, hold("brass", "up")),
+            poseArms(sk, hold("trumpet", "up")),
             "8to5@brass:up",
         );
         expect(out.name).toBe("8to5@brass:up");

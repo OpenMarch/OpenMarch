@@ -8,9 +8,8 @@ import type { ActionId } from "@/shortcuts/definitions";
 /**
  * The transport's tooltips (UI-17): the control's name with its shortcut as muted keycaps, as
  * Figma and Linear show them. Shown after a short hover, and straight away on keyboard focus.
- * The page boxes' keep chains, the keyframe diamonds (#303) and the inspector's hold line use
- * them too (UI-18), with `disableHoverableContent` so a tooltip above a page box never holds the
- * pointer.
+ * The keyframe diamonds (#303) and the inspector's hold line use them too (UI-18), with
+ * `disableHoverableContent` so a tooltip above a page box never holds the pointer.
  */
 export function TransportTooltipProvider({
     children,
@@ -37,7 +36,7 @@ export function TransportTooltipProvider({
  * `label` it never opens; with `hideLabel` it opens but doesn't write the label (the control's
  * accessible name stays), for a `hint` that says everything.
  *
- * With `closeOnPress` (the page boxes and the inspector's hold line, UI-18) it never shows while a
+ * With `closeOnPress` (the keyframe diamonds and the inspector's hold line, UI-18) it never shows while a
  * pointer is down on the control, so a click, drag, scrub or right-click goes on undisturbed: a
  * press closes it (and cancels a pending open), and it stays closed until the pointer leaves.
  */

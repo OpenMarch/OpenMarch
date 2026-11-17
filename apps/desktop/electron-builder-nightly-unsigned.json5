@@ -1,0 +1,26 @@
+/**
+ * Nightly builds without the signing secrets (a fork's own nightlies): the nightly app,
+ * unsigned, and with no update feed, since an unsigned Mac app can't replace itself and the
+ * feed belongs to OpenMarch/OpenMarch's signed nightlies. Testers download each one by hand.
+ * @see electron-builder-nightly.json5
+ */
+{
+    extends: "./electron-builder-nightly.json5",
+    mac: {
+        notarize: false,
+        // Ad-hoc sign the whole bundle. Left unsigned, the renamed main binary and
+        // Electron's prebuilt frameworks keep mismatched signatures and macOS refuses
+        // to load "Electron Framework" ("different Team IDs").
+        identity: "-",
+        // Hardened runtime only matters for notarization, which these skip.
+        hardenedRuntime: false,
+    },
+    dmg: {
+        sign: false,
+    },
+    win: {
+        azureSignOptions: null,
+    },
+    // No app-update.yml: nothing to update from
+    publish: null,
+}

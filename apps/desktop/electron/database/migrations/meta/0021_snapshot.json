@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "694b038d-d55e-4d30-884d-7a7d7af425aa",
-    "prevId": "21e75906-3f27-4b30-b010-65f8efe0b7d3",
+    "id": "25eae9dc-b7a8-43e0-9bb4-6cee6e0f6408",
+    "prevId": "34890fed-2476-4271-ab19-01fd74dcf1ee",
     "tables": {
         "audio_files": {
             "name": "audio_files",
@@ -500,6 +500,29 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
+                },
+                "model": {
+                    "name": "model",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "locked": {
+                    "name": "locked",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "from_preset": {
+                    "name": "from_preset",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1435,6 +1458,13 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
+                },
+                "style": {
+                    "name": "style",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
                 }
             },
             "indexes": {
@@ -1465,157 +1495,6 @@
                 "timeline_held_marks_end_beat_check": {
                     "name": "timeline_held_marks_end_beat_check",
                     "value": "typeof(end_beat) = 'integer' AND end_beat > start_beat"
-                }
-            }
-        },
-        "timeline_lanes": {
-            "name": "timeline_lanes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "transition_id": {
-                    "name": "transition_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "slot_index": {
-                    "name": "slot_index",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "offset_x": {
-                    "name": "offset_x",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "offset_y": {
-                    "name": "offset_y",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "adjust": {
-                    "name": "adjust",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "timeline_idx_lane_route": {
-                    "name": "timeline_idx_lane_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
-                "timeline_lanes_transition_slot_unique": {
-                    "name": "timeline_lanes_transition_slot_unique",
-                    "columns": ["transition_id", "slot_index"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "timeline_lanes_transition_id_timeline_transitions_id_fk": {
-                    "name": "timeline_lanes_transition_id_timeline_transitions_id_fk",
-                    "tableFrom": "timeline_lanes",
-                    "tableTo": "timeline_transitions",
-                    "columnsFrom": ["transition_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
-                },
-                "timeline_lanes_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_lanes_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_lanes",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_lanes_transition_id_type_check": {
-                    "name": "timeline_lanes_transition_id_type_check",
-                    "value": "typeof(transition_id) = 'integer'"
-                },
-                "timeline_lanes_slot_index_type_check": {
-                    "name": "timeline_lanes_slot_index_type_check",
-                    "value": "typeof(slot_index) = 'integer'"
-                },
-                "timeline_lanes_route_id_type_check": {
-                    "name": "timeline_lanes_route_id_type_check",
-                    "value": "typeof(route_id) = 'integer'"
-                },
-                "timeline_lanes_slot_index_check": {
-                    "name": "timeline_lanes_slot_index_check",
-                    "value": "slot_index >= 0"
-                },
-                "timeline_lanes_offset_x_check": {
-                    "name": "timeline_lanes_offset_x_check",
-                    "value": "offset_x IS NULL OR (typeof(offset_x) IN ('integer', 'real') AND offset_x BETWEEN -2000000 AND 2000000)"
-                },
-                "timeline_lanes_offset_y_check": {
-                    "name": "timeline_lanes_offset_y_check",
-                    "value": "offset_y IS NULL OR (typeof(offset_y) IN ('integer', 'real') AND offset_y BETWEEN -2000000 AND 2000000)"
-                },
-                "timeline_lanes_offset_check": {
-                    "name": "timeline_lanes_offset_check",
-                    "value": "(offset_x IS NULL) = (offset_y IS NULL)"
-                },
-                "timeline_lanes_adjust_check": {
-                    "name": "timeline_lanes_adjust_check",
-                    "value": "adjust IS NULL OR json_valid(adjust)"
-                }
-            }
-        },
-        "timeline_routes": {
-            "name": "timeline_routes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "geometry": {
-                    "name": "geometry",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_routes_geometry_check": {
-                    "name": "timeline_routes_geometry_check",
-                    "value": "json_valid(geometry)"
                 }
             }
         },
@@ -1964,13 +1843,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "order_mode": {
                     "name": "order_mode",
                     "type": "text",
@@ -2007,11 +1879,6 @@
                     "columns": ["dest_shape_id"],
                     "isUnique": false
                 },
-                "timeline_idx_tr_route": {
-                    "name": "timeline_idx_tr_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
                 "timeline_idx_tr_timeline": {
                     "name": "timeline_idx_tr_timeline",
                     "columns": ["timeline_id"],
@@ -2036,15 +1903,6 @@
                     "columnsTo": ["id"],
                     "onDelete": "restrict",
                     "onUpdate": "no action"
-                },
-                "timeline_transitions_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_transitions_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_transitions",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
                 }
             },
             "compositePrimaryKeys": {},
@@ -2060,7 +1918,7 @@
                 },
                 "timeline_transitions_path_style_check": {
                     "name": "timeline_transitions_path_style_check",
-                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader', 'route')"
+                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader')"
                 },
                 "timeline_transitions_path_params_check": {
                     "name": "timeline_transitions_path_params_check",
@@ -2105,14 +1963,6 @@
                 "timeline_transitions_arc_bulge_check": {
                     "name": "timeline_transitions_arc_bulge_check",
                     "value": "path_style <> 'arc' OR (coalesce(json_type(path_params, '$.bulge'), '') IN ('integer', 'real') AND abs(json_extract(path_params, '$.bulge')) <= 0.5)"
-                },
-                "timeline_transitions_route_id_type_check": {
-                    "name": "timeline_transitions_route_id_type_check",
-                    "value": "route_id IS NULL OR typeof(route_id) = 'integer'"
-                },
-                "timeline_transitions_route_check": {
-                    "name": "timeline_transitions_route_check",
-                    "value": "path_style <> 'route' OR (route_id IS NOT NULL AND dest_shape_id IS NULL AND slot_count = 1)"
                 }
             }
         },
@@ -2257,6 +2107,67 @@
                     "value": "id = 1"
                 }
             }
+        },
+        "view3d_silk_artwork": {
+            "name": "view3d_silk_artwork",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "width": {
+                    "name": "width",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "height": {
+                    "name": "height",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
         },
         "view3d_venue": {
             "name": "view3d_venue",

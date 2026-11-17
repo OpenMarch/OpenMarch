@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
-import type { FieldProperties } from "@openmarch/core";
+import type { FieldProperties, Resolver } from "@openmarch/core";
 import type Page from "@/global/classes/Page";
 import { db } from "@/global/database/db";
 import type { MarkerShape } from "@/field/markerShape";
@@ -16,6 +16,18 @@ import {
     useTimelineResolverStore,
 } from "@/timeline/timelineStore";
 import { followingAt, marcherSetBeats } from "@/timeline/timelineSetFollowing";
+import {
+    marcherDecided,
+    marksByMarcher,
+    notDefinedAt,
+    type DecidedStretch,
+} from "@/timeline/timelineDecided";
+import { useHeldMarksStore } from "@/timeline/useHeldMarks";
+import { carriedMembers } from "@/timeline/timelineCarried";
+import {
+    placedBoxesAt,
+    usePlacedBoxStore,
+} from "@/shapes/placed/placedBoxStore";
 import { useTimelineFocusScene } from "@/timeline/useTimelineFocusScene";
 import { ghostColorFor } from "@/timeline/useTimelineFocusScene";
 import { useTimelinePathSamples } from "@/timeline/useTimelinePathSamples";
@@ -26,7 +38,7 @@ import {
     type OverlayPlan,
 } from "@/field/timelineOverlays";
 import { FieldDimming } from "./fieldDimming";
-import { FieldFollowing } from "./fieldFollowing";
+import { FieldNotDefined } from "./fieldNotDefined";
 
 /**
  * Everything the timeline draws on the field (fork #201): the selected page's
@@ -34,11 +46,11 @@ import { FieldFollowing } from "./fieldFollowing";
  * (`useTimelinePathSamples`), an isolated move's focus scene
  * (`useTimelineFocusScene`, which also publishes the isolation plan the
  * playhead driver draws members at), collision markers (`useCollisionStore`),
- * who's dimmed, and who's Following (#300). `hiddenIds`, the edited shape's
+ * who's dimmed, and who's Not defined and off a keyframe (#478). `hiddenIds`, the edited shape's
  * marchers while it's seen on its own (#558), drop out of all of it: no dot,
  * label, path or collision mark. Plans change on page changes,
- * edits and setting changes, never per frame; dimming and the Following look
- * go to the layers through {@link FieldDimming} and {@link FieldFollowing},
+ * edits and setting changes, never per frame; dimming and the decided look
+ * go to the layers through {@link FieldDimming} and {@link FieldNotDefined},
  * outside React.
  */
 // eslint-disable-next-line max-lines-per-function
@@ -64,7 +76,7 @@ export function useTimelineVisuals({
     focus: OverlayPlan | null;
     collisions: OverlayPlan | null;
     dimming: FieldDimming;
-    following: FieldFollowing;
+    look: FieldNotDefined;
     /** Whether the resolver is ready: the timeline draws nothing before. */
     ready: boolean;
 } {
@@ -153,8 +165,8 @@ export function useTimelineVisuals({
 
     const dimming = useFieldDimming(ready);
     useEffect(() => dimming.setHidden(hiddenIds), [dimming, hiddenIds]);
-    const following = useFieldFollowing(ready, isPlaying);
-    return { paths, focus, collisions, dimming, following, ready };
+    const look = useFieldDecidedLook(ready, isPlaying);
+    return { paths, focus, collisions, dimming, look, ready };
 }
 
 /**
@@ -187,59 +199,65 @@ function useFieldDimming(enabled: boolean): FieldDimming {
 }
 
 /**
- * #300: while paused or scrubbing, the marchers with no coordinate of their
- * own on the count shown are Following, drawn with a dashed edge; playing, nobody is. Each
- * marcher's Set beats are worked out once per resolver version, so a playhead move only looks them up, and `FieldFollowing`
- * redraws only when who's Following changes. Stopping eases the dashes in
- * (#302), unless the system asks for reduced motion. The count is the one the
- * field draws (`fieldBeat`), so a dragged start flag (UI-26) shows its own.
+ * #478 (holds decisions 8 and 9): while paused or scrubbing, the marchers whose position nothing
+ * decides on the count shown are Not defined, drawn with a dashed edge; walking, Held, arriving
+ * and carried shape members are solid (`timelineDecided.ts`). Labels are bold only on a keyframe,
+ * the count a marcher's own coordinate is set (`marcherSetBeats`). Playing, everyone is solid and
+ * bold.
+ *
+ * Each marcher's Set beats and decided stretches are worked out once per resolver version and set
+ * of Held marks, so a playhead move only looks them up; the carried shapes are read per count,
+ * only when someone would otherwise be Not defined. `FieldNotDefined` redraws only when the look
+ * changes. Stopping eases the look in (#302), unless the system asks for reduced motion. The
+ * count is the one the field draws (`fieldBeat`), so a dragged start flag (UI-26) shows its own.
  */
-function useFieldFollowing(ready: boolean, isPlaying: boolean): FieldFollowing {
-    const following = useMemo(() => new FieldFollowing(), []);
+function useFieldDecidedLook(
+    ready: boolean,
+    isPlaying: boolean,
+): FieldNotDefined {
+    const look = useMemo(() => new FieldNotDefined(), []);
     const played = useRef(false);
     const enabled = ready && !isPlaying;
     useEffect(() => {
         if (!enabled) {
             if (isPlaying) played.current = true;
-            following.set(null);
+            look.set(null);
             return;
         }
         // Only the first look after playback eases in; later ones are instant
         let ease = played.current && !prefersReducedMotion();
         played.current = false;
-        let setBeats: Map<number, readonly number[]> | null = null;
+        let read: DecidedRead | null = null;
         const update = () => {
-            const { resolver } = useTimelineResolverStore.getState();
+            const { resolver, version } = useTimelineResolverStore.getState();
             if (!resolver) {
-                following.set(null);
+                look.set(null);
                 return;
             }
-            if (!setBeats) {
-                setBeats = new Map(
-                    resolver
-                        .marcherIds()
-                        .map((id) => [
-                            id,
-                            marcherSetBeats(resolverSpans(resolver, id)),
-                        ]),
-                );
-            }
-            following.set(
-                followingAt(
-                    setBeats,
-                    fieldBeat(useTimelineSelectionStore.getState()),
-                ),
+            // The Held marks are read after each resolver version (`useHeldMarksHost`): until
+            // they arrive, keep the look as it is, so a Held marcher doesn't flash Not defined
+            // (after Hold from last keyframe, undo, redo or opening a file)
+            if (useHeldMarksStore.getState().version !== version) return;
+            read ??= readDecided(resolver);
+            const beat = fieldBeat(useTimelineSelectionStore.getState());
+            look.set(
+                {
+                    notDefined: notDefinedAt(read.decided, beat, () =>
+                        carriedAt(beat),
+                    ),
+                    offKeyframe: followingAt(read.setBeats, beat),
+                },
                 { ease },
             );
             ease = false;
         };
         // Called inside the stores' writes: a failed update mustn't stop their other listeners
         const safely = (fresh: boolean) => {
-            if (fresh) setBeats = null;
+            if (fresh) read = null;
             try {
                 update();
             } catch (error) {
-                console.error("Error finding the Following marchers", error);
+                console.error("Error finding the Not defined marchers", error);
             }
         };
         safely(true);
@@ -251,6 +269,20 @@ function useFieldFollowing(ready: boolean, isPlaying: boolean): FieldFollowing {
                 )
                     safely(true);
             }),
+            useHeldMarksStore.subscribe((state, previous) => {
+                if (
+                    state.marks !== previous.marks ||
+                    state.version !== previous.version
+                )
+                    safely(true);
+            }),
+            usePlacedBoxStore.subscribe((state, previous) => {
+                if (
+                    state.recipes !== previous.recipes ||
+                    state.ends !== previous.ends
+                )
+                    safely(false);
+            }),
             useTimelineSelectionStore.subscribe((state, previous) => {
                 if (fieldBeat(state) !== fieldBeat(previous)) safely(false);
             }),
@@ -258,8 +290,34 @@ function useFieldFollowing(ready: boolean, isPlaying: boolean): FieldFollowing {
         return () => {
             for (const unsubscribe of unsubscribes) unsubscribe();
         };
-    }, [following, enabled, isPlaying]);
-    return following;
+    }, [look, enabled, isPlaying]);
+    return look;
+}
+
+/** Each marcher's Set beats and decided stretches, worked out once per resolver version and marks. */
+type DecidedRead = {
+    readonly setBeats: ReadonlyMap<number, readonly number[]>;
+    readonly decided: ReadonlyMap<number, readonly DecidedStretch[]>;
+};
+
+function readDecided(resolver: Resolver): DecidedRead {
+    const marks = marksByMarcher(useHeldMarksStore.getState().marks);
+    const setBeats = new Map<number, readonly number[]>();
+    const decided = new Map<number, readonly DecidedStretch[]>();
+    for (const id of resolver.marcherIds()) {
+        const spans = resolverSpans(resolver, id);
+        setBeats.set(id, marcherSetBeats(spans));
+        decided.set(id, marcherDecided(spans, marks.get(id) ?? []));
+    }
+    return { setBeats, decided };
+}
+
+/**
+ * The members of the shapes carried onto `beat` (`placedBoxesAt`): a shape carried onto later pages
+ * is the shape's hold (owner, 2026-11-01 on #477), so they draw decided.
+ */
+function carriedAt(beat: number): Set<number> {
+    return carriedMembers(placedBoxesAt(beat));
 }
 
 const prefersReducedMotion = () =>

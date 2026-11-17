@@ -19,16 +19,21 @@ import {
     initiateOAuthFlow,
     exchangeCodeForTokens,
     refreshAccessToken,
+    revokeRefreshToken,
 } from "./oauth-flow";
 import {
-    storeTokens,
+    beginSession,
+    SESSION_EXPIRED,
     storePendingFlow,
     clearPendingFlow,
     validateState,
     clearTokens,
+    getStoredTokens,
     getAuthState,
     getValidAccessToken,
     setTokenRefreshCallback,
+    setSignedOutCallback,
+    setTokensDiscardedCallback,
 } from "./token-manager";
 import type { AuthState, AuthError, AuthTokens } from "./types";
 
@@ -81,6 +86,9 @@ async function handleAuthCallback(url: string): Promise<void> {
         return;
     }
 
+    // One use only: a repeated callback link can't start a second exchange.
+    clearPendingFlow();
+
     // Notify loading state
     notifyAuthStateChanged({
         isAuthenticated: false,
@@ -97,10 +105,7 @@ async function handleAuthCallback(url: string): Promise<void> {
         );
 
         // Store tokens securely
-        storeTokens(tokens);
-
-        // Clear pending flow
-        clearPendingFlow();
+        beginSession(tokens);
 
         // Notify success
         notifyAuthStateChanged(getAuthState());
@@ -114,27 +119,32 @@ async function handleAuthCallback(url: string): Promise<void> {
             message: "Failed to complete authentication. Please try again.",
             details: error instanceof Error ? error.message : error,
         });
-
-        clearPendingFlow();
     }
 }
 
 /**
  * Token refresh callback for automatic token refresh.
+ * A refresh keeps the same user, so the renderer isn't told: a state change
+ * makes it reload every signed-in query.
  */
 async function handleTokenRefresh(tokens: AuthTokens): Promise<AuthTokens> {
-    const newTokens = await refreshAccessToken(tokens.refreshToken);
-
-    // Notify renderer of updated auth state
-    notifyAuthStateChanged({
-        isAuthenticated: true,
-        isLoading: false,
-        user: getAuthState().user,
-        error: null,
-    });
-
-    return newTokens;
+    return refreshAccessToken(tokens.refreshToken);
 }
+
+/**
+ * Clerk rejected the refresh token, so the session is over.
+ */
+function handleSignedOut(): void {
+    notifyAuthStateChanged({
+        isAuthenticated: false,
+        isLoading: false,
+        user: null,
+        error: SESSION_EXPIRED,
+    });
+}
+
+/** How long the state check waits on a token refresh before answering. */
+const STATE_REFRESH_WAIT_MS = 5000;
 
 /**
  * Initializes the auth module before app is ready.
@@ -156,6 +166,10 @@ export function initAuthAfterReady(
 
     // Set up token refresh callback
     setTokenRefreshCallback(handleTokenRefresh);
+    setSignedOutCallback(handleSignedOut);
+    setTokensDiscardedCallback(
+        (tokens) => void revokeRefreshToken(tokens.refreshToken),
+    );
 
     // Set up protocol listeners for OAuth callbacks
     setupProtocolListeners(getWindow, handleAuthCallback);
@@ -198,12 +212,17 @@ export function initAuthAfterReady(
     });
 
     /**
-     * Logout handler - clears tokens and session.
+     * Logout handler - clears tokens and session, and revokes the refresh
+     * token at Clerk.
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.LOGOUT, async () => {
         console.log("[Auth] Logout requested");
 
+        const refreshToken = getStoredTokens()?.refreshToken;
         clearTokens();
+        // Signed out here at once; Clerk hears about it in the background
+        // (offline, the token just runs out at Clerk instead).
+        if (refreshToken) void revokeRefreshToken(refreshToken);
 
         notifyAuthStateChanged({
             isAuthenticated: false,
@@ -219,6 +238,18 @@ export function initAuthAfterReady(
      * Get current auth state handler.
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.GET_STATE, async () => {
+        // Refresh first if the token is due, so a session Clerk has ended
+        // shows as signed out rather than failing on the first upload. A
+        // slow network doesn't hold the answer up: a later rejection still
+        // reaches the renderer as a state change.
+        let timer: NodeJS.Timeout | undefined;
+        await Promise.race([
+            getValidAccessToken(),
+            new Promise((resolve) => {
+                timer = setTimeout(resolve, STATE_REFRESH_WAIT_MS);
+            }),
+        ]);
+        clearTimeout(timer);
         return getAuthState();
     });
 

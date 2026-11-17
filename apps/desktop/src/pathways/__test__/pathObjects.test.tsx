@@ -7,6 +7,7 @@ import {
     type FieldPointer,
 } from "@/field/editor/fieldEditor";
 import { setShapeField } from "@/shapes/field/shapeField";
+import { closeHandleMenu, useHandleMenuStore } from "@/shapes/field/handleMenu";
 import {
     actionLabelNow,
     isActionEnabled,
@@ -19,6 +20,7 @@ import {
     pathPenMode,
 } from "../pathPenMode";
 import {
+    addPoint,
     clearPath,
     openPath,
     pathMarcherIds,
@@ -27,6 +29,7 @@ import {
     setPathSelectionPort,
     setPathObjects,
     showPath,
+    startDrawing,
     usePathPenStore,
     type PathObject,
 } from "../pathPenStore";
@@ -123,6 +126,7 @@ const at = (x: number, y: number, button = 0): FieldPointer => ({
     alt: false,
     ctrl: false,
     meta: false,
+    kind: "mouse",
 });
 
 /** On the own path's first leg */
@@ -158,6 +162,7 @@ afterEach(() => {
         clearPath();
         setPathObjects([]);
         setPathHidden(false);
+        closeHandleMenu();
     });
     setPathSelectionPort(null);
     cleanup();
@@ -468,29 +473,33 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
         expect(session()).toMatchObject({ object: false, phase: "closed" });
         expect(state.selected).toEqual([3]);
         expect(ports.openMenu).toHaveBeenCalledTimes(1);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBeUndefined();
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
     });
 
-    it("a long press on that dot picks no path either", () => {
+    it("a long press on that dot picks no path either: the marcher's menu opens (tablet 1.5)", () => {
         showPath(own(5), "T4");
         const { editor, ports, state } = fieldWithPen([3]);
         editor.longPress(ON_OWN);
         expect(session()).toMatchObject({ object: false });
         expect(state.selected).toEqual([3]);
-        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(ports.openMenu).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBe(3);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
     });
 
     it("with Paths All, a right-click or long press on a dot a group lane runs through is the marcher's", () => {
         setPathObjects([groupObject(9)]);
         const { editor, ports, state, right } = fieldWithPen([]);
+        // The field's own menu, for the marcher pressed, either way
         editor.longPress(ON_LANE);
         expect(session()).toBeNull();
-        expect(ports.openMenu).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([10]);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBe(10);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
         right(ON_LANE);
         expect(session()).toBeNull();
-        // The field's own menu, for the marcher pressed
         expect(state.selected).toEqual([10]);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toBeUndefined();
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
     });
 
     it("off the dots, a right-click on the line selects its walkers and offers the Path group", () => {
@@ -499,7 +508,7 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
         right(ON_GROUP);
         expect(session()).toMatchObject({ phase: "closed", object: false });
         expect(state.selected).toEqual([10, 11]);
-        expect(vi.mocked(ports.openMenu!).mock.calls[0]![1]).toEqual(
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toEqual(
             PATH_FIELD_MENU,
         );
     });
@@ -510,6 +519,115 @@ describe("a marcher's dot on a path's line is the dot's (AP-O3, review of #737 B
             "pointer",
         );
         expect(pathPenMode.cursorAt(ON_OWN, { onDot: () => true })).toBeNull();
+    });
+});
+
+describe("a long press on the path being drawn or edited (tablet 1.5, review of #1047)", () => {
+    const touch = (p: FieldPointer, dx = 0): FieldPointer => ({
+        ...p,
+        screen: { x: p.screen.x + dx, y: p.screen.y },
+        kind: "touch",
+    });
+    const points = () => session()!.points.map((c) => c.at);
+    const handleMenu = () => useHandleMenuStore.getState().menu;
+    /** The own path's second leg, from its corner (4, 4) to (8, 0) steps: its midpoint, and a spot on it off any handle */
+    const LEG = at(6 * STEP, 2 * STEP);
+    const ON_LEG = at(7 * STEP, 1 * STEP);
+    const CORNER = at(4 * STEP, 4 * STEP);
+
+    const drawing = () => {
+        startDrawing({ ...own(5), routeId: null, points: [] }, "T4");
+        addPoint({ x: 2 * STEP, y: 6 * STEP });
+        addPoint({ x: 6 * STEP, y: 6 * STEP });
+    };
+
+    it("while drawing, takes the last point back and places none where it was held; drawing goes on", () => {
+        drawing();
+        const { editor, ports } = fieldWithPen([3]);
+        const held = touch(at(12 * STEP, 12 * STEP));
+        expect(editor.pointerDown(held)).toBe(true);
+        expect(editor.longPress(held)).toBe(true);
+        expect(session()!.phase).toBe("drawing");
+        expect(points()).toEqual([{ x: 2 * STEP, y: 6 * STEP }]);
+        expect(ports.openMenu).not.toHaveBeenCalled();
+        // The next tap places a point as usual
+        const tap = touch(at(10 * STEP, 2 * STEP));
+        editor.pointerDown(tap);
+        editor.pointerUp(tap);
+        expect(points()).toHaveLength(2);
+        expect(session()!.phase).toBe("drawing");
+    });
+
+    it("while drawing, a finger that shook a little (a smooth point begun) takes back only that and the last point", () => {
+        drawing();
+        const { editor } = fieldWithPen([3]);
+        const held = touch(at(12 * STEP, 12 * STEP));
+        editor.pointerDown(held);
+        // Past a mouse's click slop, short of a finger's drag
+        editor.pointerMove(touch(held, 8));
+        expect(points()).toHaveLength(3);
+        expect(editor.longPress(touch(held, 8))).toBe(true);
+        expect(points()).toEqual([{ x: 2 * STEP, y: 6 * STEP }]);
+        expect(session()).toMatchObject({ phase: "drawing", dragging: null });
+    });
+
+    it("on the open path's corner, opens the corner's menu and leaves no drag behind", () => {
+        showPath(own(5), "T4");
+        openPath();
+        const before = session()!.points;
+        const { editor, ports } = fieldWithPen([3]);
+        expect(editor.pointerDown(touch(CORNER))).toBe(true);
+        editor.pointerMove(touch(CORNER, 8));
+        expect(editor.longPress(touch(CORNER, 8))).toBe(true);
+        expect(handleMenu()?.key).toBe("p0");
+        expect(session()).toMatchObject({ phase: "open", dragging: null });
+        expect(session()!.points).toEqual(before);
+        expect(editor.activeGesture()).toBeNull();
+        expect(ports.openMenu).not.toHaveBeenCalled();
+    });
+
+    it("on the open path's line, opens that leg's menu at its midpoint, and the field's with Remove path elsewhere on it", () => {
+        showPath(own(5), "T4");
+        openPath();
+        const { editor, ports } = fieldWithPen([3]);
+        expect(editor.pointerDown(touch(LEG))).toBe(true);
+        expect(editor.longPress(touch(LEG))).toBe(true);
+        expect(handleMenu()?.key).toBe("m1");
+        expect(session()!.points).toHaveLength(1);
+        expect(editor.activeGesture()).toBeNull();
+        closeHandleMenu();
+        // Off the handles the line takes no press (a finger there pans), and a long press opens
+        // the field's menu with the open path's actions
+        const press = {
+            reachesInside: () => false,
+            isMac: false,
+            onDot: () => false,
+        };
+        expect(pathPenMode.claims(touch(ON_LEG), press)).toBe(false);
+        expect(editor.longPress(touch(ON_LEG))).toBe(true);
+        expect(handleMenu()).toBeNull();
+        expect(session()!.phase).toBe("open");
+        const actions = vi.mocked(ports.openMenu!).mock.calls[0]![2];
+        expect(actions).toEqual(expect.arrayContaining(["removePath"]));
+    });
+
+    it("on a marcher's dot or empty field, opens the field's own menu, as without a path", () => {
+        showPath(own(5), "T4");
+        openPath();
+        const { editor, ports, state } = fieldWithPen([]);
+        const menuCall = () => vi.mocked(ports.openMenu!).mock.calls.at(-1)!;
+        // Marcher 2's dot: it's selected and its menu opens
+        expect(editor.longPress(touch(EMPTY))).toBe(true);
+        expect(state.selected).toEqual([2]);
+        expect(menuCall()[1]).toBe(2);
+        expect(menuCall()[2]).toBeUndefined();
+        // Empty field: the field's menu, the selection kept
+        expect(editor.longPress(touch(at(20 * STEP, 30 * STEP)))).toBe(true);
+        expect(state.selected).toEqual([2]);
+        expect(menuCall()[1]).toBeNull();
+        expect(menuCall()[2]).toBeUndefined();
+        expect(handleMenu()).toBeNull();
+        expect(session()!.phase).toBe("open");
     });
 });
 

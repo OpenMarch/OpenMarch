@@ -14,7 +14,7 @@ import {
 } from "@openmarch/schema";
 import { FieldProperties } from "@openmarch/core";
 import { DB, schema } from "@/global/database/db";
-import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
+import { parseStoredFieldProperties } from "@/components/field/fieldPropertiesSchema";
 import { performersOnly } from "@/global/classes/Marcher";
 import { generatePageNames } from "@/global/classes/Page";
 import { getPagesInOrder } from "@/db-functions";
@@ -344,7 +344,7 @@ function buildOpenMarchFromRows(data: DotsData): OpenMarchShowData {
     }
 
     const fieldProps: FieldProperties = new FieldProperties(
-        FieldPropertiesSchema.parse(JSON.parse(fieldPropsRow.json_data)),
+        parseStoredFieldProperties(JSON.parse(fieldPropsRow.json_data)),
     );
     const pixelsPerStep = fieldProps.pixelsPerStep;
     const performanceArea = fieldPropsToPerformanceArea(fieldProps);

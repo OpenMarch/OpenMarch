@@ -123,12 +123,65 @@ describe("section uniforms", () => {
 
     it("puts the section's carry, gold lacquer and the hold in the look", () => {
         const u = sectionUniform("Trumpet");
-        expect(u.options.carry).toEqual({ model: "trumpet", family: "brass" });
+        expect(u.options.carry).toEqual({
+            model: "trumpet",
+            family: "trumpet",
+        });
         expect(u.options.finish).toBe("brass");
         expect(u.options.hold).toBe("up");
         expect(u.options.instrument).toBe("none");
         expect(sectionUniform("Trumpet", "carry").options.hold).toBe("carry");
         expect(sectionUniform("Drum Major").options.carry).toBeNull();
+    });
+
+    it("takes the show's brass finish and tuba, for the sections they concern", () => {
+        const pick = (
+            section: string,
+            winds: Parameters<typeof sectionUniform>[7],
+        ) =>
+            sectionUniform(
+                section,
+                "up",
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                winds,
+            ).options;
+        expect(pick("Trumpet", { finish: "silver" }).finish).toBe("silver");
+        expect(pick("Tuba", { finish: "silver" }).finish).toBe("silver");
+        // woodwinds keep their own finish
+        expect(pick("Flute", { finish: "brass" }).finish).toBe("silver");
+        expect(pick("Alto Sax", { finish: "silver" }).finish).toBe("brass");
+        expect(pick("Tuba", {}).carry).toEqual({
+            model: "contra",
+            family: "contra",
+        });
+        expect(pick("Tuba", { tuba: "sousaphone" }).carry).toEqual({
+            model: "sousaphone",
+            family: "sousaphone",
+        });
+        expect(pick("Euphonium", { tuba: "sousaphone" }).carry).toEqual({
+            model: "euphonium",
+            family: "euphonium",
+        });
+        // a look's key tells the two finishes and the two horns apart
+        const key = (winds: Parameters<typeof sectionUniform>[7]) =>
+            uniformKey(
+                sectionUniform(
+                    "Tuba",
+                    "up",
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    winds,
+                ),
+            );
+        expect(key({ finish: "silver" })).not.toBe(key({ finish: "brass" }));
+        expect(key({ tuba: "sousaphone" })).not.toBe(key({ tuba: "contra" }));
     });
 
     it("gives every guard section the chosen equipment, and no one else", () => {
@@ -155,7 +208,7 @@ describe("section uniforms", () => {
         });
         expect(pick("Trumpet", "sabre")).toEqual({
             model: "trumpet",
-            family: "brass",
+            family: "trumpet",
         });
     });
 

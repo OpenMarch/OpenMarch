@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Não é possível copiar as coordenadas dos integrantes da próxima página. Não há próxima página",
             "noPreviousPage": "Não é possível copiar as coordenadas dos integrantes da página anterior. Não há página anterior",
-            "setAllToNext": "Copiar posições da próxima página (todos os integrantes)",
-            "setAllToNextSuccess": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}} other {As coordenadas de todos os # integrantes na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}}}",
-            "setSelectedToNext": "Copiar posições da próxima página (seleção)",
-            "setSelectedToNextSuccess": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}} other {As coordenadas de # integrantes na página {currentPage} foram igualadas com sucesso às da próxima página, {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}} other {As coordenadas de todos os # integrantes na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}}}",
             "setSelectedToPreviousDone": "{count, plural, one {As coordenadas de # integrante na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}} other {As coordenadas de # integrantes na página {currentPage} foram igualadas com sucesso às da página anterior, {previousPage}}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "Não é possível exibir o campo",
             "unavailable.web": "Este navegador está com os gráficos WebGL desativados ou bloqueados. Ative a aceleração gráfica (no Chrome ou no Edge: Configurações, Sistema, \"Usar aceleração gráfica quando disponível\"), reinicie o navegador e recarregue esta página. Seu show está seguro."
         },
-        "title": "Campo",
         "errors": {
             "noWebGL": "O WebGL não está disponível",
             "contextLost": "O contexto WebGL do campo foi perdido, então não é possível desenhar o vídeo. Tente exportar novamente.",
@@ -514,43 +509,17 @@
         "applyFieldTypeWarning": "Os integrantes não serão movidos para o tamanho do novo tipo de campo; eles permanecerão onde estão na tela. Você pode voltar ao tipo de campo anterior a qualquer momento.",
         "buttons": {
             "importImage": "Importar Imagem",
-            "newXCheckpoint": "Nova linha de referência X",
-            "newYCheckpoint": "Nova linha de referência Y",
             "resetTheme": "Restaurar tema padrão",
             "uploadFloor": "Carregar piso…",
             "removeFloor": "Remover piso"
         },
         "checkpoint": {
             "created": "Linha de referência {axis} em {steps} passos criada",
-            "delete": "Excluir",
-            "deleted": "Linha de referência {axis} em {steps} passos excluída - \"{name}\"",
-            "deleteTooltip": "Excluir esta linha de referência do campo",
-            "fieldLabel": "Rótulo no campo",
-            "fieldLabelTooltip": "O rótulo que aparece no campo (ou seja, os marcadores de jarda)",
-            "minimumRequired": "São necessárias pelo menos 2 linhas de referência {axis}",
-            "name": "Nome",
-            "nameTooltip": "Dê à sua linha de referência o nome que quiser. Ele serve apenas para você saber qual linha de referência está selecionando.",
-            "newXCheckpointName": "Nova linha de referência X",
-            "newYCheckpointName": "Nova linha de referência Y",
-            "shortName": "Nome curto",
-            "shortNameTooltip": "O nome principal da linha de referência. (Ex.: \"Linha de 45 jardas - Lado 1\")",
-            "stepsFromCenter": "Passos a partir do centro",
-            "stepsFromFront": "Passos a partir da frente",
-            "stepsFromFrontTooltip": "A quantos passos da frente do campo fica esta linha de referência. Valores negativos vão em direção ao fundo.",
-            "useAsReference": "Usar como referência",
-            "useAsReferenceTooltip": "Se esta linha deve ser usada como referência para as coordenadas.",
-            "visible": "Visível",
-            "visibleTooltip": "Se esta linha de referência deve ficar visível no campo",
-            "stepsFromCenterHint": "A quantos passos do centro do campo fica esta linha de referência. Valores negativos vão para a esquerda, do ponto de vista do público."
+            "minimumRequired": "São necessárias pelo menos 2 linhas de referência {axis}"
         },
-        "customField": "Campo personalizado",
         "customFieldDocs": "Ver documentação",
         "customFieldName": "Personalizado",
-        "customization": "Personalização",
-        "customize": "Personalizar",
         "errors": {
-            "invalidColor": "Cor inválida",
-            "noPropertiesToLoad": "Não há propriedades do campo para carregar! Isso nunca deveria acontecer; entre em contato com o suporte",
             "notDefined": "FieldProperties não está definido. Isso nunca deveria acontecer; entre em contato com o suporte.",
             "invalidJson": "Arquivo JSON inválido.\n\nVerifique se o arquivo contém sintaxe JSON válida.",
             "invalidFile": "Arquivo de propriedades do campo inválido.\n\n{details}\n\nVerifique se o arquivo contém todas as entradas obrigatórias com valores corretos.",
@@ -566,24 +535,19 @@
         "fieldType": {
             "label": "Tipo de campo"
         },
-        "general": "Geral",
         "labels": {
             "background": "Fundo",
             "backgroundImageOpacity": "Opacidade da imagem de fundo",
-            "backgroundImageRatio": "Proporção da imagem de fundo",
             "bottom": "Inferior",
-            "conformingMethod": "Método de ajuste",
             "conformMethod": "Método de ajuste",
             "directorsLeft": "Esquerda do diretor",
             "directorsRight": "Direita do diretor",
             "externalLabels": "Rótulos externos",
             "fieldLabels": "Rótulos do campo",
             "fieldName": "Nome do campo",
-            "fieldRatio": "Proporção do campo",
             "gridLines": "Linhas da grade",
             "halfLineXInterval": "Intervalo X das meias linhas",
             "halfLineYInterval": "Intervalo Y das meias linhas",
-            "height": "Altura",
             "left": "Esquerda",
             "leftAbbreviation": "Abreviação da esquerda",
             "marcherFill": "Preenchimento do integrante",
@@ -599,26 +563,14 @@
             "shapes": "Formas",
             "shapeType": "Tipo de forma",
             "showBackgroundImage": "Mostrar imagem de fundo",
-            "stepsFromFrontToAwayLabelBottom": "Passos da frente até a borda inferior do número visitante",
-            "stepsFromFrontToAwayLabelTop": "Passos da frente até a borda superior do número visitante",
-            "stepsFromFrontToHomeLabel": "Passos da frente até a borda inferior do número da casa",
-            "stepsFromFrontToHomeLabelTop": "Passos da frente até a borda superior do número da casa",
             "stepSize": "Tamanho do passo",
             "stepSizeWarningThreshold": "Limite de aviso do tamanho do passo",
             "temporaryPath": "Caminho temporário",
-            "top": "Superior",
-            "useHashes": "Usar hashes",
-            "width": "Largura",
-            "widthHeight": "l/a",
-            "noBackgroundImage": "N/D",
-            "stepSizeWarningRatio": "Limite de aviso do tamanho do passo ({steps} para 5)"
+            "top": "Superior"
         },
         "messages": {
-            "fieldRatio": "{ratio} ou {decimal}",
-            "measurementModificationNote": "Esses valores podem ser alterados ajustando as coordenadas X e Y, o tamanho do passo e a imagem de fundo",
             "noFloor": "Sem piso",
-            "floorUnnamed": "Piso",
-            "refreshAfterImporting": "Atualizar após importar [Ctrl + R]"
+            "floorUnnamed": "Piso"
         },
         "options": {
             "fill": "Preencher",
@@ -627,40 +579,16 @@
             "metric": "Métrico"
         },
         "sections": {
-            "externalLabels": "Rótulos externos",
-            "fieldLabels": "Rótulos do campo",
-            "general": "Geral",
-            "imageRendering": "Renderização da imagem",
-            "measurements": "Medidas",
-            "sideDescriptions": "Descrições dos lados",
-            "theme": "Tema",
-            "xCheckpoints": "Linhas de referência X",
-            "yCheckpoints": "Linhas de referência Y"
-        },
-        "tabs": {
-            "checkpoints": "Linhas de referência",
-            "general": "Geral",
-            "image": "Imagem",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Grade",
-            "labels": "Rótulos",
-            "marchers": "Integrantes",
-            "pathways": "Caminhos"
+            "sideDescriptions": "Descrições dos lados"
         },
         "tooltips": {
-            "importImage": "Importe uma imagem para mostrar no campo",
             "conformMethod": "Define se a imagem de fundo se ajusta dentro do campo ou o preenche. A proporção é sempre mantida",
             "directorsLeft": "Ex.: \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\"",
             "directorsRight": "Ex.: \"Lado 2\", \"Direita da plateia\" ou \"Esquerda do palco\"",
-            "fieldName": "Nome ou título do modelo de campo",
             "halfLineXInterval": "O intervalo em que as linhas intermediárias aparecem na interface no eixo X, a partir do centro do campo. Deixe em branco para omitir as linhas intermediárias no eixo X. Isso é puramente visual e não afeta as coordenadas de forma alguma",
             "halfLineYInterval": "O intervalo em que as linhas intermediárias aparecem na interface no eixo Y, a partir da frente do campo. Deixe em branco para omitir as linhas intermediárias no eixo Y. Isso é puramente visual e não afeta as coordenadas de forma alguma",
             "leftAbbreviation": "Ex.: \"L1\", \"EP\" ou \"DP\" (abreviação de \"Lado 1\", \"Esquerda da plateia\" ou \"Direita do palco\")",
-            "measurementSystem": "A unidade de medida usada para definir o tamanho do passo. Pode ser alterada a qualquer momento",
             "resetTheme": "Redefinir o tema para os valores padrão",
-            "resetToDefault": "Redefinir para o padrão",
             "rightAbbreviation": "Ex.: \"L2\", \"DP\" ou \"EP\" (abreviação de \"Lado 2\", \"Direita da plateia\" ou \"Esquerda do palco\")",
             "stepsFromFrontToAwayLabelBottom": "Número de passos da linha lateral da frente até a borda externa do número visitante (mais perto da linha lateral do fundo)",
             "stepsFromFrontToAwayLabelTop": "Número de passos da linha lateral da frente até a borda interna do número visitante (mais perto do centro do campo)",
@@ -675,15 +603,10 @@
             "inches": "pol",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "AVISO - As linhas de referência X mais à esquerda e mais à direita não estão à mesma distância do centro. Isso pode causar falhas gráficas estranhas e deve ser corrigido.",
-            "yCheckpointsNegative": "AVISO - É altamente recomendado que os passos de todas as linhas de referência Y sejam menores que zero (ou seja, números negativos). Todas as coordenadas Y devem ficar atrás da frente do campo. Caso contrário, podem ocorrer erros gráficos e coordenadas inesperadas."
-        },
         "loading": "Carregando...",
         "measurements": {
             "feet": "{value} pés",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# passo} other {# passos}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -1470,7 +1393,6 @@
         "general.appearance": "Aparência",
         "general.appearance.dark": "Escuro",
         "general.appearance.light": "Claro",
-        "general.automaticUpdates": "Baixar e instalar atualizações automaticamente",
         "general.description": "Modo do editor, idioma e outras preferências de todo o aplicativo.",
         "general.editorMode": "Modo do editor",
         "general.editorMode.basic": "Básico",
@@ -2016,9 +1938,6 @@
                 "kinds": "Tipos de forma",
                 "ringHintKeys": "Segure <keys></keys> no campo para abrir o anel de formas"
             }
-        },
-        "transform": {
-            "title": "Transformação"
         },
         "validate": {
             "noPosition": "A forma tem um ponto sem posição",
@@ -2582,7 +2501,6 @@
             "placeAllMarchers": "Posicionar todos os integrantes",
             "placeSelectedMarchers": "Posicionar integrantes selecionados",
             "snapToggleCaption": "Ajuste",
-            "toNextPagePositions": "...nas posições da próxima página",
             "setMarcherPositionsAriaLabel": "Definir posições dos integrantes",
             "toPreviousPagePositions": "...para posições anteriores de página"
         },
@@ -2634,20 +2552,6 @@
             "shapesSelected": "Quando selecionada"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Ocorreu um erro ao buscar a versão.",
-            "message": "Erro: {message}",
-            "noVersion": "Não foi possível buscar a versão mais recente."
-        },
-        "installLinux": "Instalar para Linux",
-        "installMacArm": "Instalar para Apple Silicon",
-        "installMacIntel": "Instalar para Mac Intel",
-        "installWindows": "Instalar para Windows",
-        "skipVersion": "Pular esta versão",
-        "title": "Nova versão disponível",
-        "trigger": "Nova versão disponível!"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "Você pode alterar isso depois em Configurações › Geral.",
@@ -2662,14 +2566,17 @@
             "floor": "No chão",
             "frontRow": "Primeira fila",
             "geJudge": "Jurado de GE",
+            "judgesTable": "Mesa dos jurados",
             "lowerBowl": "Anel inferior",
             "podium": "Pódio",
             "pressBox": "Cabine de imprensa",
             "sideline": "Linha lateral",
             "topDown": "Vista superior",
+            "tunnel": "Túnel",
             "upperDeck": "Anel superior"
         },
         "kit": {
+            "arena": "Arena coberta",
             "bighs": "Estádio escolar grande",
             "blank": "Somente o campo",
             "college": "Estádio universitário",
@@ -2797,6 +2704,12 @@
         },
         "venue": {
             "updateFailed": "Falha ao atualizar o local da Visualização 3D"
+        },
+        "board": {
+            "designedBy": "Criado por {name}",
+            "forClient": "Para {name}",
+            "nowPerforming": "Agora no campo",
+            "untitled": "Show sem título"
         }
     },
     "web": {
@@ -2952,7 +2865,14 @@
         "unsavedChanges": "Você tem alterações não salvas",
         "close": "Fechar",
         "saved": "Configurações do show salvas",
-        "updateFailed": "Falha ao atualizar as configurações do show"
+        "updateFailed": "Falha ao atualizar as configurações do show",
+        "showInfo": {
+            "projectName": "Nome do show",
+            "projectNamePlaceholder": "Usa o nome do arquivo",
+            "designer": "Criador",
+            "client": "Cliente",
+            "optional": "Opcional"
+        }
     },
     "canvas": {
         "zoom": {

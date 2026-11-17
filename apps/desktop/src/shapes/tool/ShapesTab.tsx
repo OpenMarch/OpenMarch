@@ -15,6 +15,9 @@ import { toolId } from "./toolKind";
 import { useShapeShown, useShapeToolStore } from "./shapeToolStore";
 import ShapePreviewIcon from "../preview/ShapePreviewIcon";
 import { Tip } from "@/components/ui/Tip";
+import { CircleDashedIcon } from "@phosphor-icons/react";
+import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 /** Shapes show as pictures only, so many fit (#378): the name is the tooltip and the label */
 const PREVIEW_SIZE = 26;
@@ -24,6 +27,10 @@ const PREVIEW_SIZE = 26;
  * (#378), named by its tooltip. A kind's button runs its action, which goes through the host's `pickShapeKind`: it arms
  * the kind, or turns the open shape into it. With nobody selected the kinds are greyed out and
  * say why.
+ *
+ * In the touch layout each kind is captioned with its name (no tooltips there), and a Ring button
+ * opens the favorites ring, the `openShapeRing` action that holding R runs. The "Hold R" hint
+ * shows only once a keyboard has been used (tablet plan 2.2).
  */
 export default function ShapesTab() {
     const selected = useSelectedMarchers()?.selectedMarchers;
@@ -39,6 +46,8 @@ export default function ShapesTab() {
     const overrides = useShortcutOverridesStore((s) => s.overrides);
     const hasRingKey =
         getEffectiveBindings("openShapeRing", overrides).length > 0;
+    const isTouch = useIsTouchMode();
+    const showHints = useShowShortcutHints();
     /** A greyed-out shape's tooltip: its name, then why it can't be picked */
     const greyedTitle = (label: string) =>
         gate.ok
@@ -79,9 +88,10 @@ export default function ShapesTab() {
                                     }}
                                     aria-pressed={on}
                                     aria-label={kind.shape.label}
+                                    caption={kind.shape.label}
                                     data-testid={`shapes-tab-${toolId(kind)}`}
                                     className={clsx(
-                                        "flex items-center",
+                                        "touch:flex-col touch:gap-2 flex items-center",
                                         on ? "text-accent" : "text-text",
                                     )}
                                 >
@@ -96,8 +106,26 @@ export default function ShapesTab() {
                     );
                 })}
             </ToolbarSection>
-            {/* The ring has no button, so the tab says how to open it (sims, ring round 1) */}
-            {hasRingKey && (
+            {/* A finger has no R to hold: the ring gets a button, opening it at the field's middle */}
+            {isTouch && (
+                <ToolbarSection>
+                    <ActionButton
+                        action="openShapeRing"
+                        args={{ latched: true, atField: true }}
+                        caption={tolgee.t(
+                            "shapes.tool.tab.ringCaption",
+                            "Ring",
+                        )}
+                        data-testid="shapes-tab-ring"
+                        className="touch:min-h-44 flex flex-col items-center justify-center gap-2"
+                    >
+                        <CircleDashedIcon size={24} />
+                    </ActionButton>
+                </ToolbarSection>
+            )}
+            {/* With a mouse the ring has no button, so the tab says how to open it (sims, ring
+                round 1); on a tablet only once a keyboard has been used */}
+            {hasRingKey && showHints && (
                 <span
                     className="text-sub text-text-subtitle flex items-center gap-4"
                     data-testid="shapes-tab-ring-hint"

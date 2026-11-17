@@ -4,6 +4,8 @@
 
 <!-- cspell:words mellophone lathed quats sanitize sanitized ligature subwoofer leadpipe hypot crossfade -->
 
+> **Note (2026-10-11):** the vendored om-pose files this plan names under `src/view3d/vendor/om-pose/` moved to `src/view3d/render/` and are no longer read-only; see that folder's README.
+
 **Goal:** Brass marchers carry procedurally modeled horns in gold or silver lacquer, held in a real arm pose (up, carry, down or trail) while the recorded legs march, replacing om-pose's three placeholders.
 
 **Architecture:** Pure geometry and hold data live in `src/view3d/core/instruments/` (no three.js). The window side poses the eight arm bones of the v4 skeleton to a hold by aiming them at target points, writes those rotations into every clip before the bake, and attaches the horn to the right hand as rigid one-bone geometry merged into the body mesh, exactly like om-pose's block bodies. A local shader patch paints the new part ids; the vendored om-pose files are not edited.

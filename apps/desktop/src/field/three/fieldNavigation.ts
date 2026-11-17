@@ -1,12 +1,16 @@
 import { isPreviewMode } from "@/stores/PreviewModeStore";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { fieldEditMode } from "@/field/editMode/fieldEditModeStore";
+import { rulerPx } from "@/field/editMode/lines";
+import { OUTSIDE_LABEL_ROOM } from "@/field/fieldPlan";
 import {
     centerAtBase,
     clampPan,
     clampZoom,
+    fieldEditFit,
     previewFit,
     isPanButton,
     panBy,
-    pinchStep,
     viewBetween,
     wheel,
     zoomAt,
@@ -21,8 +25,8 @@ import { useFieldViewStore } from "./fieldView";
 import { currentQualitySettings } from "./useFieldQuality";
 
 /**
- * The new field's navigation input: turns wheel, pointer and touch events on
- * the field into view changes, by the rules in `src/field/editor/view.ts`,
+ * The new field's navigation input: turns wheel and pointer events on the
+ * field into view changes, by the rules in `src/field/editor/view.ts`,
  * and writes them to the view store. The thin DOM side of #194.
  */
 
@@ -31,8 +35,15 @@ const view = () => useFieldViewStore.getState();
 /** The user has moved the view since it was last centered. */
 let navigated = false;
 
+/**
+ * The Edit field mode (#824) holds the field still, fitted inside its rulers: wheel, pan drags,
+ * pinches and app actions that move the view do nothing while it's on.
+ */
+const viewLocked = () => fieldEditMode.isActive();
+
 /** Moves the view to `next` for the user. */
 function navigate(next: FieldView) {
+    if (viewLocked()) return;
     // The user's own navigation stops a glide where it is
     stopGlide();
     navigated = true;
@@ -61,6 +72,17 @@ export function setView(next: FieldView) {
 function fittedView(): FieldView | null {
     const { width, height, field } = view();
     if (width <= 0 || height <= 0) return null;
+    if (viewLocked()) {
+        const touch = useInputModeStore.getState().mode === "touch";
+        // The labels outside the field show too (owner: "zoom out so I can see all of the labels")
+        return fieldEditFit(
+            width,
+            height,
+            field,
+            rulerPx(touch),
+            OUTSIDE_LABEL_ROOM,
+        );
+    }
     if (isPreviewMode())
         return previewFit(
             { width, height, zoom: 1, panX: 0, panY: 0 },
@@ -224,6 +246,50 @@ export function glideTo(next: FieldView): number | null {
     return id;
 }
 
+/** The view before the Edit field mode began, to go back to when it ends */
+let beforeFieldEdit: {
+    view: FieldView;
+    field: { width: number; height: number };
+    baseZoom: number;
+} | null = null;
+
+/**
+ * The Edit field mode (#824) began: remember the view and glide to the mode's fit, which then
+ * holds until the mode ends.
+ */
+export function enterFieldEditView() {
+    const { width, height, zoom, panX, panY, field, baseZoom } = view();
+    beforeFieldEdit = {
+        view: { width, height, zoom, panX, panY },
+        field,
+        baseZoom,
+    };
+    glideToFit();
+}
+
+/**
+ * The Edit field mode ended: glide back to the view from before it, or to the usual fit when
+ * the field's size changed meanwhile.
+ */
+export function leaveFieldEditView() {
+    const before = beforeFieldEdit;
+    beforeFieldEdit = null;
+    // Switching to Preview ends the mode: Preview's own glide takes the view
+    if (isPreviewMode()) return;
+    const { field } = view();
+    // The pane's size changes as the Field panel closes beside it: the glide keeps the zoom and the
+    // top-left as a resize does. Only a field of another size goes back to the fit
+    const unchanged =
+        before !== null &&
+        before.field.width === field.width &&
+        before.field.height === field.height;
+    if (!unchanged) return glideToFit();
+    // 100% in the zoom controls is the usual fit again. It's the one from before: the pane is
+    // still narrowed by the panel here, so a fit measured now would read the view as zoomed in
+    useFieldViewStore.setState({ baseZoom: before.baseZoom });
+    glideTo(before.view);
+}
+
 /** Whether the glide `glideTo` returned is still under way */
 export const isGliding = (id: number | null) => id !== null && gliding === id;
 
@@ -268,7 +334,7 @@ export function fitAfterResize(settled: boolean) {
         clearTimeout(pendingGlide);
         pendingGlide = null;
         glideToFit();
-    } else if (isPreviewMode()) {
+    } else if (isPreviewMode() || viewLocked()) {
         if (gliding === null) resetView();
     } else if (!settled) {
         settleView();
@@ -312,12 +378,13 @@ export const isPanPress = (event: PointerEvent) =>
 
 /**
  * Presses on the field's own controls (the isolation bar, badges, buttons in
- * the overlay) are theirs, not navigation.
+ * the overlay, the Edit field mode's rulers) are theirs, not navigation's or the
+ * gesture adapter's.
  */
-const onControl = (event: Event) =>
+export const onControl = (event: Event) =>
     event.target instanceof Element &&
     event.target.closest(
-        "button, a, input, select, textarea, [role='button'], [role='menu'], [role='dialog']",
+        "button, a, input, select, textarea, [role='button'], [role='menu'], [role='dialog'], [data-field-control]",
     ) !== null;
 
 type Local = (clientX: number, clientY: number) => ElementPoint;
@@ -347,7 +414,8 @@ function listen(
  * - Right-drag (Ctrl-drag on a Mac) and middle-drag pan, one to one. The
  *   field's other pointer handling skips these presses (`isPanPress`). In
  *   Preview, which edits nothing, a left-drag pans too.
- * - Touch: one finger pans, two pinch.
+ * - Fingers (and the pen's palm rule) are the gesture adapter's,
+ *   `fieldGestures.ts`, attached beside this.
  *
  * Presses on the field's own controls are left to them.
  */
@@ -369,7 +437,6 @@ export function attachFieldNavigation(
         listen(surface, { pointerdown: onPress }, { capture: true }),
         listenForWheel(surface, local, settings),
         listenForPanDrags(surface),
-        listenForTouch(surface, local, settings),
     ];
     return () => {
         detach.forEach((cleanup) => cleanup());
@@ -387,6 +454,7 @@ function listenForWheel(
     const onWheel = (event: WheelEvent) => {
         if (onControl(event)) return;
         event.preventDefault();
+        if (viewLocked()) return;
         const current = view();
         if (current.width <= 0) return;
         const next = wheel(
@@ -413,6 +481,7 @@ function listenForPanDrags(surface: HTMLElement) {
             event.pointerType !== "touch" &&
             event.button === 0 &&
             isPreviewMode();
+        if (viewLocked()) return;
         if (!(isPanPress(event) || previewDrag) || onControl(event)) return;
         event.preventDefault();
         if (pan) return;
@@ -461,74 +530,4 @@ function listenForPanDrags(surface: HTMLElement) {
         detach();
         if (pan) useFieldViewStore.setState({ panning: false });
     };
-}
-
-function listenForTouch(
-    surface: HTMLElement,
-    local: Local,
-    settings: () => NavigationSettings,
-) {
-    const touches = new Map<number, ElementPoint>();
-    let pinchDistance = 0;
-    const distance = (list: TouchList) =>
-        Math.hypot(
-            list[1].clientX - list[0].clientX,
-            list[1].clientY - list[0].clientY,
-        );
-    const remember = (touch: Touch) =>
-        touches.set(touch.identifier, { x: touch.clientX, y: touch.clientY });
-
-    const onTouchStart = (event: TouchEvent) => {
-        // A tap on a control must still click it
-        if (onControl(event)) return;
-        event.preventDefault();
-        Array.from(event.touches).forEach(remember);
-        if (event.touches.length === 2) pinchDistance = distance(event.touches);
-    };
-    const onTouchMove = (event: TouchEvent) => {
-        if (touches.size === 0) return;
-        event.preventDefault();
-        const previous = new Map(touches);
-        Array.from(event.touches).forEach(remember);
-        if (event.touches.length === 1) {
-            const touch = event.touches[0];
-            const last = previous.get(touch.identifier);
-            if (!last) return;
-            const speed = settings().trackpadPanSensitivity;
-            setView(
-                panBy(
-                    view(),
-                    (touch.clientX - last.x) * speed,
-                    (touch.clientY - last.y) * speed,
-                ),
-            );
-        } else if (event.touches.length === 2 && pinchDistance > 0) {
-            const [a, b] = [event.touches[0], event.touches[1]];
-            const now = distance(event.touches);
-            const center = local(
-                (a.clientX + b.clientX) / 2,
-                (a.clientY + b.clientY) / 2,
-            );
-            const current = view();
-            navigate(
-                pinchStep(current, center, now - pinchDistance, current.field),
-            );
-            pinchDistance = now;
-        }
-    };
-    const onTouchEnd = (event: TouchEvent) => {
-        for (const touch of Array.from(event.changedTouches))
-            touches.delete(touch.identifier);
-        if (event.touches.length < 2) pinchDistance = 0;
-    };
-    return listen(
-        surface,
-        {
-            touchstart: onTouchStart,
-            touchmove: onTouchMove,
-            touchend: onTouchEnd,
-            touchcancel: onTouchEnd,
-        },
-        { passive: false },
-    );
 }

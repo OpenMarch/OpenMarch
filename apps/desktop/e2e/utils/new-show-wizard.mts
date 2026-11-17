@@ -89,6 +89,16 @@ export async function completeNewShowWizard(
     ).toBeVisible();
     await dialog.getByRole("button", { name: "Skip" }).click();
 
+    // No front ensemble (the default)
+    await expect(
+        dialog.getByRole("heading", {
+            name: "Front ensemble",
+            exact: true,
+            level: 2,
+        }),
+    ).toBeVisible();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
+
     await expect(
         dialog.getByRole("heading", { name: "Audio", exact: true, level: 2 }),
     ).toBeVisible();

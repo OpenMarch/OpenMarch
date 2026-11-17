@@ -1,3 +1,6 @@
+import { fingerDragSlop } from "./timelineGestures";
+import { touchGrabOffset } from "./touchTargets";
+import { TouchHitArea } from "./TouchHitArea";
 import { snapEdgeBeat, stepOffForbidden } from "./timelineEdgeSnap";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
@@ -42,6 +45,11 @@ import type {
  * - **Cancel** (cases 19, 20): Esc, a cancelled pointer or a lost capture put it back and write
  *   nothing; so does a drag released where it started.
  * - **Keys** (case 18): ← and → move a focused grip one beat, as one edit each.
+ * - **Touch** (tablet plan 3.3): in the touch layout each grip has a 44px hit area straddling its
+ *   page line, from the page row's top down (the headroom stays the flags' tops'), and the
+ *   selected page's two grips are drawn (a finger can't hover) and win where hit areas overlap.
+ *   A grip under the start flag or the playhead has none: the line wins, as for a mouse. A
+ *   finger's drag keeps the offset it grabbed the line at.
  */
 
 /**
@@ -240,7 +248,13 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
     preview,
     onPreviewChange,
     onSelectPage,
+    selectedBoxIds = "",
+    lineBeats = [],
 }: {
+    /** Where the start flag and the playhead are: a grip under one has no finger hit area */
+    lineBeats?: readonly number[];
+    /** The selected page boxes' ids, one per line: their grips show and win on a tablet */
+    selectedBoxIds?: string;
     /** The page boxes as they are, without the preview */
     boxes: readonly TimelineFlagBox[];
     /** Home's page label, for "Page 0's flag" */
@@ -264,10 +278,14 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
         pageId: string | number;
         index: number;
         startClientX: number;
+        /** How far it moves before it drags: further for a finger (`fingerDragSlop`) */
+        slop: number;
         surface: Element;
         /** The playhead when the drag started, which the flag lands on when near */
         playhead: number | null;
         moved: boolean;
+        /** A finger's offset from the line it grabbed (`touchGrabOffset`); 0 for a mouse */
+        grab: number;
         limits: TimelinePageFlagLimits;
         /** Set once `pageFlagMove.limits` answers */
         checked: boolean;
@@ -289,7 +307,11 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
         const current = drag.current;
         if (!current) return null;
         const left = current.surface.getBoundingClientRect().left;
-        const raw = clamp((clientX - left) / pixelsPerBeat, 0, beatCount);
+        const raw = clamp(
+            (clientX + current.grab - left) / pixelsPerBeat,
+            0,
+            beatCount,
+        );
         // The edge rule (UI-15): page lines and the playhead within 12px, downbeats within 6px
         const snapped = flagSnapBeat({
             beat: raw,
@@ -337,9 +359,16 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
             pageId: box.page.id,
             index,
             startClientX: event.clientX,
+            slop: fingerDragSlop(event.pointerType, FLAG_DRAG_PX),
             surface,
             playhead: snapPlayhead ? Math.round(snapPlayhead()) : null,
             moved: false,
+            grab: touchGrabOffset(
+                event.pointerType,
+                event.clientX,
+                surface.getBoundingClientRect().left +
+                    beatToX(limits.flag, pixelsPerBeat),
+            ),
             limits,
             checked: false,
             last: {
@@ -387,7 +416,7 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
         if (!current || current.pointerId !== event.pointerId) return;
         if (
             !current.moved &&
-            Math.abs(event.clientX - current.startClientX) < FLAG_DRAG_PX
+            Math.abs(event.clientX - current.startClientX) < current.slop
         )
             return;
         current.moved = true;
@@ -472,18 +501,30 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
     const shownPreview =
         preview && preview.beat !== preview.from ? preview : null;
     const readout = preview ? describeFlagPreview(boxes, preview) : null;
+    const selectedIds = new Set(selectedBoxIds.split("\n"));
     return (
         <>
             {boxes.map(({ page, range }, index) => {
                 if (!range) return null;
                 const dragging = preview?.pageId === page.id;
                 const beat = dragging ? preview.beat : range.endBeatIndex;
+                // The selected page's own flag, or the flag it starts at
+                const next = boxes[index + 1]?.page.id;
+                const ofSelected =
+                    selectedIds.has(String(page.id)) ||
+                    (next !== undefined && selectedIds.has(String(next)));
+                // Where a line is on a flag the line wins (UI-21), for a finger too: move the
+                // line off to drag the flag
+                const underLine = lineBeats.some(
+                    (line) => Math.round(line) === beat,
+                );
                 return (
                     <button
                         key={page.id}
                         type="button"
                         data-testid="timeline-page-flag-grip"
                         data-page-id={page.id}
+                        data-selected-page={ofSelected || undefined}
                         data-timeline-interactive="true"
                         // Its arrow keys move the flag, not the selected marchers (UI-14's marker)
                         data-timeline-own-keys="true"
@@ -524,13 +565,25 @@ export const TimelinePageFlagGrips = memo(function TimelinePageFlagGrips({
                     >
                         <span
                             aria-hidden="true"
+                            data-touch-drawn=""
                             className={clsx(
                                 "bg-text absolute inset-y-[3px] left-1/2 w-[3px] -translate-x-1/2 rounded-full transition-opacity",
                                 dragging
                                     ? "opacity-90"
-                                    : "opacity-0 group-hover:opacity-70 group-focus-visible:opacity-70",
+                                    : clsx(
+                                          "opacity-0 group-hover:opacity-70 group-focus-visible:opacity-70",
+                                          ofSelected && "touch:opacity-70",
+                                      ),
                             )}
                         />
+                        {!underLine && (
+                            // Straddles the line, from the page row's top down: the headroom
+                            // above is the flags' tops' and the loop ends' (UI-20)
+                            <TouchHitArea
+                                selected={ofSelected}
+                                className="touch:block pointer-events-auto absolute top-0 left-1/2 hidden h-44 w-44 -translate-x-1/2"
+                            />
+                        )}
                     </button>
                 );
             })}

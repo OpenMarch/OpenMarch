@@ -22,6 +22,8 @@ export interface PaletteItem {
     suggestedRank?: number;
     /** A plain action: runs once the palette has closed */
     run?: () => void;
+    /** Shows what it would change while it's the highlighted row (true), and stops (false) */
+    preview?: (on: boolean) => void;
     /**
      * A branch of the command tree (Shape › Box): choosing it lists these instead. Searching
      * finds them from the top as "Shape › Box".

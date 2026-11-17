@@ -7,6 +7,12 @@ import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
 import { T, useTranslate } from "@tolgee/react";
 import { AppearanceModalContents } from "./appearance/AppearanceModal";
+import {
+    FRONT_ENSEMBLE_PANEL_ID,
+    FrontEnsembleAddContents,
+    FrontEnsembleContents,
+    FrontEnsembleSummary,
+} from "@/components/frontEnsemble/FrontEnsembleModal";
 
 export default function MarchersModal() {
     const { t } = useTranslate();
@@ -62,6 +68,7 @@ export function MarcherListContents() {
             </header>
 
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
+                <FrontEnsembleSummary />
                 <MarcherList />
             </div>
         </div>
@@ -110,4 +117,35 @@ export function MarcherFormContents(props: MarcherFormProps) {
             </div>
         </div>
     );
+}
+
+/**
+ * Opens the sidebar on the front ensemble and podiums view, its back button returning to the
+ * Marchers panel: the `openFrontEnsemble` action, which the panel's Front ensemble row runs.
+ */
+export function openFrontEnsemble() {
+    const { setContent, setOpen } = useSidebarModalStore.getState();
+    setContent(
+        <FrontEnsembleContents
+            onBack={() => setContent(<MarcherListContents />, "marchers")}
+        />,
+        FRONT_ENSEMBLE_PANEL_ID,
+    );
+    setOpen(true);
+}
+
+/**
+ * Opens the sidebar on the front ensemble's Add view (the pictures of every model): the
+ * `addFrontEnsembleEquipment` action, which the front ensemble view's Add button runs. Back goes
+ * to the front ensemble list, then to the Marchers panel.
+ */
+export function openFrontEnsembleAdd() {
+    const { setContent, setOpen } = useSidebarModalStore.getState();
+    setContent(
+        <FrontEnsembleAddContents
+            onBack={() => setContent(<MarcherListContents />, "marchers")}
+        />,
+        FRONT_ENSEMBLE_PANEL_ID,
+    );
+    setOpen(true);
 }

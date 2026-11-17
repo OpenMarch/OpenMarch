@@ -1,0 +1,72 @@
+---
+title: What's new in 0.2
+description: The changes since OpenMarch 0.1.7, and where each one is explained.
+type: reference
+covers:
+  - apps/desktop/src/components/welcome/whatsNewSlides.ts
+  - i18n:welcomeFlow.whatsNew
+sidebar:
+  order: 5
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+
+OpenMarch 0.2 changes how drill is written: pages now sit on a timeline, marchers can move on their own schedule within and across pages, and the field has proper shape tools. Shows from 0.1.7 open in 0.2 after a one-time conversion; [Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/) explains what changes.
+
+## The timeline
+
+Pages, moves, counts, measures and the music sit on one timeline under the field. You set where marchers are at a count, and OpenMarch walks them there. Each marcher on each page is Defined, Held or Not defined, so a later page follows your changes to an earlier one unless you've decided otherwise.
+
+In Expert, a move can start and end on any count, run across pages, cover only some marchers and overlap other moves. Basic keeps the page-by-page way of working, with positions in the middle of a page when you need them.
+
+See [How the timeline works](/guides/timeline/how-the-timeline-works/), [Moves](/guides/timeline/moves/) and [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+<Media
+  id="timeline-scrub"
+  alt="The playhead is dragged from the end of Page 2 to the end of Page 3, and the marchers on the field walk from Page 2's set to Page 3's set as it moves."
+/>
+
+## Basic and Expert
+
+Two editor modes: Basic works in pages, like a drill chart, and Expert shows the full timeline. You choose when you first open 0.2 and can switch at any time. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+## Shapes
+
+Draw a box, circle, line, curve or arc on the field and place the selected marchers in it. Spots snap to half steps, yard lines and hashes, and a placed shape can be edited afterward. See [How shapes work](/guides/shapes/).
+
+<Media
+  id="shapes-draw-box"
+  alt="B is pressed, and a drag above a row of trumpets draws a 4 × 3 box of spots with a faint line from each trumpet to its spot. The pointer moves to Place and clicks it, and the trumpets move onto the spots."
+/>
+
+## Edit music
+
+Line the counts up with the music in the timeline: drag the tempo until the counts sit on the beats, tap a tempo, and set tempo changes, holds and time signatures. MusicXML import plays out repeats and shows what it found. See [Line the counts up with the music](/guides/music/tempo/) and [Import a MusicXML score](/guides/music/musicxml/).
+
+## The 3D View
+
+Watch the show from the stands in a window of its own, with marchers in uniform, in a stadium you choose, kept in step with the editor. See [Open the 3D View](/guides/3d-view/open-the-3d-view/).
+
+## Props
+
+Draw props on the field, size and turn them, and move them on the timeline like marchers. In the 3D View they show as plain blocks. See [Props](/guides/3d-view/props/).
+
+## Seeing and playing the show
+
+- Preview, a watch-only view of the show: [Watch the show in Preview](/guides/workspace/editor-and-preview/).
+- Start flag positions and paths, which show where marchers come from and go to: [See where marchers go](/guides/timeline/see-where-marchers-go/).
+- Playback speed, loop and follow playhead: [Play the show](/guides/timeline/play-the-show/).
+
+## Working faster
+
+- The command palette finds any command by name (<Kbd action="openCommandPalette" />).
+- Shortcuts can be changed in Settings, and every one is listed in [Keyboard shortcuts](/guides/reference/keyboard-shortcuts/).
+
+## Beyond the desktop
+
+- The web editor runs OpenMarch in a browser, and keeps your shows in the browser's own storage.
+- On a tablet, the window switches to a layout made for touch and a pen.
+- Video export makes a video of the show from the field.
+
+See [Install OpenMarch](/guides/start/install/) and [Export a video](/guides/files/export-video/).

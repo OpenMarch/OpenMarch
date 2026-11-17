@@ -1,0 +1,69 @@
+---
+title: The metronome
+description: Turn the click on and off, set its volume, accent and sound.
+type: how-to
+covers:
+  - apps/desktop/src/components/music/MetronomeModal.tsx
+  - apps/desktop/src/stores/MetronomeStore.ts
+  - apps/desktop/src/components/timeline/TimelineControls.tsx
+  - action:toggleMetronome
+  - i18n:music.metronome
+  - i18n:timeline.sound
+sidebar:
+  order: 5
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+The metronome clicks on every count while the show plays. Use it to hear whether the counts sit on the music, and to rehearse a page at its tempo with the music muted.
+
+## Turn the metronome on or off
+
+Press <Kbd action="toggleMetronome" />, or:
+
+- select the speaker button in the timeline's controls, then <Ui k="timeline.sound.metronomeOff" /> (it reads <Ui k="timeline.sound.metronomeOn" /> while it's on);
+- in Edit music, select <Ui k="tempoMode.toolbar.metronome" /> in the header;
+- in the <Ui k="sidebar.metronome" /> panel in the sidebar, turn on <Ui k="music.onOff" />.
+
+A dot on the speaker button shows the metronome is on.
+
+<Media
+  id="music-sound"
+  alt="The timeline's speaker button with its menu open: a speaker icon that mutes the music, a volume slider at 100%, and Metronome off with its shortcut."
+  maxWidth={420}
+/>
+
+## Hear only the metronome
+
+Select the speaker button, then the speaker icon in its menu (<Ui k="timeline.sound.mute" />). The music goes silent and the metronome keeps counting. Select it again to bring the music back.
+
+## Change how the metronome sounds
+
+<Steps>
+
+1. Select <Ui k="sidebar.metronome" /> in the sidebar.
+2. Change any of these:
+   - <Ui k="music.accent" />: the first count of each measure clicks louder.
+   - <Ui k="music.onlyClickOnMeasure" />: the metronome clicks only on the first count of each measure.
+   - <Ui k="music.volume" />: how loud the click is against the music.
+   - <Ui k="music.beatStyle" />: <Ui k="music.standard" />, <Ui k="music.sharp" /> or <Ui k="music.smooth" />.
+
+</Steps>
+
+<Media
+  id="music-metronome"
+  alt="The Metronome panel: switches for On/Off, Accent first beat and clicks on each measure's first count only, a Volume slider at 50%, and Beat style set to Standard."
+  maxWidth={480}
+/>
+
+Stop playback to change the accent, measure-only clicks and beat style; they can't change while the show plays. The volume slider on the timeline's speaker button turns the music and the metronome up and down together.
+
+The metronome's settings last until you close OpenMarch. Each time you open it, the metronome starts off, at 50% volume, with the first count accented.
+
+## Related
+
+- [Line the counts up with the music](/guides/music/tempo/): use the click to find where the counts drift.
+- [Play the show](/guides/timeline/play-the-show/): playback, speed and looping.

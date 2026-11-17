@@ -1,0 +1,71 @@
+---
+title: Draw an arc
+description: Stand the selected marchers along part of a circle or an ellipse, open or closed.
+type: how-to
+covers:
+  - apps/desktop/src/shapes/arc
+  - action:shapeArc
+  - action:applyShape
+  - i18n:shapes.kinds.arc
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+An arc stands the selected marchers along part of a circle. You draw it from one end to the other, then set how far it bends, how wide and deep it is, and whether it's open or closed.
+
+**Before you start:** select the marchers who go on the arc, and put the playhead on the count where they should stand on it.
+
+<Steps>
+
+1. In the toolbar's <Ui k="inspector.shape.shapesTab" /> tab, select <Ui k="shapes.kinds.arc.label" />. It has no key of its own; you can also open the command palette, choose <Ui k="commandPalette.shape" />, and then <Ui k="shapes.kinds.arc.label" />.
+
+2. Drag on the field from one end of the arc to the other. The arc bows out to the left of the way you dragged, a quarter of a circle: dragged left to right, it bows toward the back of the field.
+
+3. Drag the handle in the middle of the arc to make it deeper or shallower, or the handle on either end to make it wider or narrower.
+
+4. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />.
+
+</Steps>
+
+Both ends of the arc always hold a marcher, and the rest are spaced evenly between them.
+
+<Media
+  id="shapes-draw-arc"
+  alt="A drag from left to right above a row of trumpets draws an arc of spots that bows toward the back of the field. The pointer then drags the arc's middle handle further back, making it deeper, and clicks Place; the trumpets move onto the arc."
+/>
+
+## Change the arc
+
+The floating editor holds the arc's numbers. Click one to type it, or drag it.
+
+- The interval: how far apart neighbors stand along the arc, in steps.
+- The degrees: how far the arc turns, from 1° to 359°. Up to 180° the ends stay where they are and the arc bends more; past that it grows round its circle.
+- The width and depth: how much room the arc takes side to side and front to back, in steps. The lock beside them keeps the two in proportion.
+- The stretch: whether the arc runs on a circle, or how many times taller than wide, or wider than tall, its ellipse is. Drag it or type a number to stretch the arc.
+
+Dragging the ends or the middle so the arc is no longer round puts it on an ellipse, and the guides show the whole ellipse.
+
+## Open or closed
+
+The <Ui k="shapes.kinds.arc.ends.label" /> menu on the editor's second row, which also opens when you right-click one of the arc's handles, has three choices:
+
+- <Ui k="shapes.kinds.arc.ends.open" />: the arc on its own.
+- <Ui k="shapes.kinds.arc.ends.chord" />: a straight line joins the two ends, and marchers stand along both.
+- <Ui k="shapes.kinds.arc.ends.circle" />, or <Ui k="shapes.kinds.arc.ends.round" /> when the arc is on an ellipse: the arc goes all the way round, a whole circle or ellipse.
+
+A closed arc can be filled from its <Ui k="shapes.edit.mode.label" /> menu, the way a closed line is. The arc also shares the line's <Ui k="shapes.kinds.line.spacing.label" />, <Ui k="shapes.kinds.line.measured.label" /> and <Ui k="shapes.edit.order.label" /> menus; see [Draw a line or curve](/guides/shapes/draw-a-line/).
+
+## Guides
+
+While the arc is open, the field draws the whole circle it's part of, and lines from the circle's center out through its ends, so you can see where its center falls on the field. Turn either off from the <Ui k="shapes.edit.guides.label" /> menu in the editor.
+
+## Related
+
+- [Draw a circle](/guides/shapes/draw-a-circle/): a whole ring, sized by its interval.
+- [Draw a line or curve](/guides/shapes/draw-a-line/): spacing, intervals and who goes where along a path.
+- [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): stretch the arc from its center, or keep its proportions.

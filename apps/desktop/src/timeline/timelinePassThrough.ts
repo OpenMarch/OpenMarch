@@ -86,8 +86,9 @@ export function passedPages(
 }
 
 /**
- * The toast's text for `pass`: "Page 3 is no longer a keyframe" or "Pages 3–4 are no longer keyframes"
- * when it passes page flags; otherwise (it crossed only other moves) what it moves through and
+ * The toast's text for `pass`: "Now walks straight through the end of Page 3" or "… the ends of
+ * Pages 3–4" when it passes page flags (#805: what happens, since a passed flag is often no keyframe
+ * of these marchers, but a Held or Not defined spot); otherwise (it crossed only other moves) what it moves through and
  * what catches up after it, named by `moveName` from `moves` (the stored timelines).
  */
 export function passThroughMessage(
@@ -99,14 +100,14 @@ export function passThroughMessage(
     const pages = passedPages(pass, boxes);
     if (pages)
         return translate(
-            "timeline.edit.passThrough.noLongerStop.pages",
-            "{count, plural, =1 {Page {first} is no longer a keyframe} other {Pages {first}–{last} are no longer keyframes}}",
+            "timeline.edit.passThrough.walksThrough.pages",
+            "{count, plural, =1 {Now walks straight through the end of Page {first}} other {Now walks straight through the ends of Pages {first}–{last}}}",
             pages,
         );
     if (pass.flags.length > 0)
         return translate(
-            "timeline.edit.passThrough.noLongerStop.unnamed",
-            "The pages inside this move are no longer keyframes",
+            "timeline.edit.passThrough.walksThrough.unnamed",
+            "Now walks straight through the ends of the pages inside this move",
         );
     // The moves' names in the app's language, joined as its lists are
     const through = translateTimelineText(
@@ -136,8 +137,8 @@ export function passThroughMessage(
 }
 
 /**
- * The action's label, by what it does to the user's sets: every flag inside the drag becomes a
- * stop again, so "Keep Page 3 as a keyframe" or "Keep Pages 3–4 as keyframes".
+ * The action's label, by what it does: the marchers stop at every flag inside the drag again, so
+ * "Stop at the end of Page 3" or "Stop at the ends of Pages 3–4".
  */
 export function keepStopsLabel(
     pass: Pick<TimelinePassThrough, "flags">,
@@ -147,12 +148,12 @@ export function keepStopsLabel(
     const pages = passedPages(pass, boxes);
     if (!pages)
         return translate(
-            "timeline.edit.passThrough.keepStops.unnamed",
-            "Keep them as keyframes",
+            "timeline.edit.passThrough.stopAtEnd.unnamed",
+            "Stop at the ends of those pages",
         );
     return translate(
-        "timeline.edit.passThrough.keepStops.pages",
-        "{count, plural, =1 {Keep Page {first} as a keyframe} other {Keep Pages {first}–{last} as keyframes}}",
+        "timeline.edit.passThrough.stopAtEnd.pages",
+        "{count, plural, =1 {Stop at the end of Page {first}} other {Stop at the ends of Pages {first}–{last}}}",
         pages,
     );
 }
@@ -212,8 +213,8 @@ export function toastPassThrough(
                                       toastTimelineError(
                                           e,
                                           tolgee.t(
-                                              "timeline.edit.passThrough.keepStopsError",
-                                              "Couldn't keep those pages as keyframes",
+                                              "timeline.edit.passThrough.stopAtEndError",
+                                              "Couldn't stop the marchers at the ends of those pages",
                                           ),
                                       ),
                                   );

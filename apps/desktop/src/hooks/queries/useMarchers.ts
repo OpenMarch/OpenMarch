@@ -21,6 +21,7 @@ import {
 } from "@/db-functions";
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { cueKeys } from "./useCues";
 
 const { marchers } = schema;
 
@@ -156,6 +157,8 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // The deleted marchers left their cues, and a cue left with nobody went too
+            void qc.invalidateQueries({ queryKey: cueKeys.all() });
         },
         onError: (e, variables) => {
             toastTimelineError(

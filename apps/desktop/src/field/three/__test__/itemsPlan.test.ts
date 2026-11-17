@@ -5,12 +5,18 @@ import type { DrawnItemOutline } from "../fieldItems";
 import {
     DIMMED_ITEM_ALPHA,
     COLORED_ITEM_FILL_ALPHA,
+    EQUIPMENT_DETAIL_PX_PER_M,
+    EQUIPMENT_FILL_ALPHA,
     ITEM_FILL_ALPHA,
     ITEM_STROKE_WIDTH,
+    LOCK_BADGE_RADIUS,
     planItems,
     SELECTED_ITEM_STROKE_WIDTH,
 } from "../itemsPlan";
+import { playingSpotOf } from "@/view3d/core/pit/playingSpot";
 import { SELECTION_RGBA01 } from "../selectionRing";
+import { PIXELS_PER_METER } from "@/items/itemOutlines";
+import { placePitPlan } from "@/view3d/core/pit/pitPlan";
 
 const square = (
     id: number,
@@ -26,6 +32,9 @@ const square = (
         { x: 0, y: 10 },
     ],
     closed,
+    locked: false,
+    playingSpot: null,
+    plan: null,
     center: { x: 5, y: 5 },
     geometry: {
         outlineType: "rectangle",
@@ -108,5 +117,132 @@ describe("planItems", () => {
         expect(dimmed.strokes[0].color[3]).toBeCloseTo(
             plain.strokes[0].color[3] * DIMMED_ITEM_ALPHA,
         );
+    });
+});
+
+describe("planItems for the front ensemble", () => {
+    const zoom = 2;
+    const withZoom = { ...options, zoom };
+
+    it("marks a locked item with a lock at its top left corner, the same size at every zoom", () => {
+        const plain = planItems([square(1)], withZoom);
+        expect(plain.locks).toEqual([]);
+        const locked = planItems([{ ...square(1), locked: true }], withZoom);
+        expect(locked.locks).toEqual([{ x: 0, y: 0 }]);
+        expect(locked.fills.length).toBeGreaterThan(plain.fills.length);
+        // Everything the lock draws is within its badge, in CSS px
+        const reach = LOCK_BADGE_RADIUS / zoom + 1e-9;
+        for (const fill of locked.fills.slice(plain.fills.length))
+            for (const p of fill.points) {
+                expect(Math.abs(p.x - 0)).toBeLessThanOrEqual(reach);
+                expect(Math.abs(p.y - 0)).toBeLessThanOrEqual(reach);
+            }
+        const zoomedIn = planItems([{ ...square(1), locked: true }], {
+            ...withZoom,
+            zoom: 4,
+        });
+        const span = (plan: typeof locked) => {
+            const xs = plan.fills
+                .slice(plain.fills.length)
+                .flatMap((f) => f.points.map((p) => p.x));
+            return Math.max(...xs) - Math.min(...xs);
+        };
+        expect(span(zoomedIn)).toBeCloseTo(span(locked) / 2);
+    });
+
+    it("shrinks the lock on an item small on screen, and leaves it out when tiny", () => {
+        const plain = planItems([square(1)], { ...withZoom, zoom: 1 });
+        const badge = (zoom: number) =>
+            planItems([{ ...square(1), locked: true }], { ...withZoom, zoom })
+                .fills.slice(plain.fills.length)
+                .flatMap((f) => f.points.map((p) => p.x));
+        // At zoom 1 the 10-unit square is 10 px: a badge of radius 5 px
+        const small = badge(1);
+        expect(Math.max(...small) - Math.min(...small)).toBeCloseTo(10);
+        // At 0.5 it is 5 px: no badge, though it is still locked
+        expect(badge(0.5)).toEqual([]);
+        expect(
+            planItems([{ ...square(1), locked: true }], {
+                ...withZoom,
+                zoom: 0.5,
+            }).locks,
+        ).toHaveLength(1);
+    });
+
+    it("draws nothing for a pit instrument's playing spot", () => {
+        const spot = playingSpotOf("pit/marimba-5.0", {
+            center: { x: 5, y: 5 },
+            depth: 1,
+            rotation: 0,
+        });
+        const plain = planItems([square(1)], withZoom);
+        const plan = planItems([{ ...square(1), playingSpot: spot }], withZoom);
+        expect(plan.strokes).toEqual(plain.strokes);
+        expect(plan.fills).toEqual(plain.fills);
+    });
+
+    describe("equipment drawn from its model", () => {
+        // Two outlines (a drum set's pieces) and two edges inside them
+        const plan = placePitPlan(
+            {
+                outline: [
+                    [-500, -300, 500, -300, 500, 300, -500, 300],
+                    [600, 0, 800, 0, 700, 200],
+                ],
+                details: [
+                    [-500, 0, 500, 0],
+                    [0, -300, 0, 300],
+                ],
+            },
+            { x: 5, y: 5 },
+            0,
+            PIXELS_PER_METER,
+        );
+        const equipment = { ...square(1), plan };
+        const detailZoom = EQUIPMENT_DETAIL_PX_PER_M / PIXELS_PER_METER;
+
+        it("fills and outlines its silhouette instead of its Outline", () => {
+            const drawn = planItems([equipment], { ...options, zoom: 0.5 });
+            expect(drawn.fills.map((f) => f.points)).toEqual(plan.outlines);
+            expect(drawn.fills[0].color[3]).toBeCloseTo(EQUIPMENT_FILL_ALPHA);
+            expect(drawn.strokes).toHaveLength(2);
+            expect(drawn.strokes[0].points.at(-1)).toEqual(
+                drawn.strokes[0].points[0],
+            );
+        });
+
+        it("shows its edges and facing mark only once zoomed in enough", () => {
+            const far = planItems([equipment], {
+                ...options,
+                zoom: detailZoom * 0.9,
+            });
+            const near = planItems([equipment], {
+                ...options,
+                zoom: detailZoom * 1.1,
+            });
+            expect(far.strokes).toHaveLength(2);
+            expect(near.strokes).toHaveLength(4);
+            // The edges go under the silhouette's line
+            expect(near.strokes[0].points).toEqual(plan.details[0]);
+            // The facing mark: a triangle past the front edge (y = 5 + 0.3 m), toward the audience
+            expect(near.fills).toHaveLength(far.fills.length + 1);
+            const mark = near.fills.at(-1)!.points;
+            expect(mark).toHaveLength(3);
+            const front = 5 + 0.3 * PIXELS_PER_METER;
+            for (const p of mark) expect(p.y).toBeGreaterThan(front);
+        });
+
+        it("outlines a selected one in the selection color", () => {
+            const drawn = planItems([equipment], {
+                ...options,
+                selected: new Set([1]),
+            });
+            expect(drawn.strokes[0].width).toBe(SELECTED_ITEM_STROKE_WIDTH);
+        });
+
+        it("draws no lock badge on locked equipment", () => {
+            const drawn = planItems([{ ...equipment, locked: true }], options);
+            expect(drawn.fills).toHaveLength(plan.outlines.length);
+        });
     });
 });

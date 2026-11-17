@@ -6,6 +6,7 @@ import {
     ArrowUUpLeftIcon,
     CursorIcon,
     FileIcon,
+    GridFourIcon,
     PenNibIcon,
     PlayIcon,
     SelectionAllIcon,
@@ -27,6 +28,7 @@ import {
     hasActionHandler,
     actionDisabledReason,
     isActionEnabled,
+    previewAction,
     runAction,
 } from "../registry";
 import { isActionOffInWorkspace } from "../workspaceActions";
@@ -48,6 +50,7 @@ const CATEGORY_ICONS: Record<ActionCategory, Icon> = {
     path: PenNibIcon,
     ui: SidebarSimpleIcon,
     timeline: WaveformIcon,
+    field: GridFourIcon,
 };
 
 /** Drill-writing tools first; file, playback and app settings after. */
@@ -63,6 +66,7 @@ const PALETTE_CATEGORY_ORDER: readonly ActionCategory[] = [
     "file",
     "edit",
     "timeline",
+    "field",
     "movement",
     "ui",
 ];
@@ -116,6 +120,7 @@ export function getActionPaletteItems(
                 disabledReason: isActionOffInWorkspace(id)
                     ? t("commandPalette.offInPreview")
                     : actionDisabledReason(id),
+                preview: (on: boolean) => previewAction(id, on),
                 suggestedRank: SUGGESTED_ACTIONS.includes(id)
                     ? SUGGESTED_ACTIONS.indexOf(id)
                     : undefined,

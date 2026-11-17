@@ -1,0 +1,110 @@
+---
+title: Set up the front ensemble
+description: Place the pit's instruments, speakers and podiums in front of the field, from a preset or one piece at a time, and see the players at their instruments in the 3D View.
+type: how-to
+covers:
+  - apps/desktop/src/components/frontEnsemble
+  - apps/desktop/src/components/launchpage/newShow/steps/FrontEnsembleStep.tsx
+  - apps/desktop/src/components/items/openItemEditor.tsx
+  - apps/desktop/src/db-functions/pitPreset.ts
+  - apps/desktop/src/view3d/core/pit
+  - apps/desktop/src/field/pitStrip.ts
+  - action:openFrontEnsemble
+  - action:addFrontEnsembleEquipment
+  - action:editSelectedItem
+  - i18n:frontEnsemble
+sidebar:
+  order: 5
+---
+
+import Media from "@/components/docs/Media.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+The front ensemble, or pit, is the equipment that stands in front of the field all show: marimbas, vibraphones, synths, racks, a drum set, speakers, and the drum major's podium. You set it up once, and it stays put on every page. On the field each piece is drawn as it looks from above; in the 3D View it's the real instrument, with its player standing at it.
+
+You can start a new show with a pit: the new show's <Ui k="launchpage.newShow.steps.frontEnsemble.title" plain /> step offers <Ui k="frontEnsemble.presets.none" plain />, <Ui k="frontEnsemble.presets.small" plain />, <Ui k="frontEnsemble.presets.medium" plain /> and <Ui k="frontEnsemble.presets.large" plain />, each with a picture of that pit ([Write your first show](/guides/start/first-show/)).
+
+## Open the front ensemble
+
+<Steps>
+
+1. Select <Ui k="sidebar.marchers" /> in the sidebar.
+
+2. At the top of the panel, the <Ui k="frontEnsemble.summary.title" plain /> row says what the show has. Select <Ui k="frontEnsemble.summary.setUp" /> (or <Ui k="frontEnsemble.summary.edit" /> once there's a pit).
+
+</Steps>
+
+The view lists the show's equipment and its podiums apart. The command palette's <Ui k="actions.ui.openFrontEnsemble" /> opens it too.
+
+## Start from a preset
+
+<Steps>
+
+1. In the front ensemble view, select <Ui k="frontEnsemble.presets.start" />.
+
+2. Choose <Ui k="frontEnsemble.presets.small" plain />, <Ui k="frontEnsemble.presets.medium" plain /> or <Ui k="frontEnsemble.presets.large" plain />. The line under the sizes says what each one holds.
+
+3. Leave <Ui k="frontEnsemble.presets.addPerformers" plain /> on to get a player for each instrument and a drum major on the podium, then select <Ui k="frontEnsemble.presets.apply" />.
+
+</Steps>
+
+The pit is laid out in two rows in front of the front sideline, centered on the 50, with the speakers on the yard lines either side, a podium on the 50 and a mixer behind the pit. Small and Medium use 4.3-octave marimbas, Large uses 4.6, and the vibraphones are 3.0 octaves. Applying is one undo step.
+
+Once the show has a pit, the button reads <Ui k="frontEnsemble.presets.reset" />. Applying another size replaces the equipment the last preset placed; equipment you added yourself stays. The last preset's players move onto the new instruments of their section, and those whose instrument the new size doesn't have are removed, unless they have moves later in the show. Undo brings everything back.
+
+## Add one piece
+
+<Steps>
+
+1. In the front ensemble view, select <Ui k="frontEnsemble.add.button" />.
+
+2. Find the piece: the pictures are grouped under <Ui k="frontEnsemble.groups.keyboards" plain />, <Ui k="frontEnsemble.groups.percussion" plain />, <Ui k="frontEnsemble.groups.audio" plain /> and <Ui k="frontEnsemble.groups.podiums" plain />, or type in <Ui k="frontEnsemble.search" plain /> ("marimba black", "tower"). Each shows its size and its footprint in meters; a dot marks the usual choice.
+
+3. Select the picture. The panel closes, and the piece follows the pointer.
+
+4. Click the field where it goes. A podium placed behind the field turns to face the band.
+
+</Steps>
+
+<Media
+  id="3d-front-ensemble-add"
+  alt="The Add equipment view: a search box, then under Keyboards a grid of pictures of marimbas, vibraphones, xylophones, a glockenspiel and synths, each named with its size, finish and footprint."
+  maxWidth={480}
+/>
+
+The command palette's <Ui k="actions.ui.addFrontEnsembleEquipment" /> opens the same pictures.
+
+## Change, move or remove a piece
+
+Right-click a piece on the field (on a tablet, press and hold it) and choose <Ui k="actions.items.editNamed" values={{ name: "Marimba 1" }} />, or select its row's <Ui k="frontEnsemble.equipment.edit" plain /> button in the front ensemble view. There you can rename it, choose another size or finish of the same instrument, and turn <Ui k="props.locked" plain /> off.
+
+Equipment is locked to one position for the whole show. Dragging it on any page moves it on every page, and dragging a box around marchers doesn't pick it up. Turn <Ui k="props.locked" plain /> off to move a piece during the show, the way you move a prop ([Props](/guides/3d-view/props/)).
+
+To remove a piece, select its row's <Ui k="frontEnsemble.equipment.delete" plain /> button. Undo brings it back.
+
+## On the field
+
+Each piece is drawn as its outline from above. Zoomed in, the bars, drum heads, steps and a small mark on the side it faces fill in. Under the pit, a plain tone marks the area it stands on, only as wide and deep as the equipment; a podium behind the field gets one too.
+
+<Media
+  id="3d-front-ensemble-field"
+  alt="A Medium pit on the field below the front sideline: a rack, xylophone, drum set, glockenspiel and synth in the back row, vibraphones and marimbas in the front row with a red player dot behind each, speakers at the ends, and the drum major on the podium, on a light gray area."
+/>
+
+A player plays an instrument when their dot stands on the field side of it, about a foot behind its edge, where a preset puts them.
+
+## In the 3D View
+
+The 3D View draws each piece as the real instrument, at its real size. A player whose dot is at an instrument faces the audience and stands at it; the drum major stands on the podium, facing the band. The players stand still for now: there's no playing animation yet.
+
+<Media
+  id="3d-front-ensemble-3d"
+  alt="The 3D View from the front row: speakers and a row of marimbas on the track in front of the field, each with a player behind it, and the band on the field beyond."
+/>
+
+## Related
+
+- [Props](/guides/3d-view/props/): set pieces that move during the show.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, pit included, in 3D.
+- [Write your first show](/guides/start/first-show/): start a new show with a pit.

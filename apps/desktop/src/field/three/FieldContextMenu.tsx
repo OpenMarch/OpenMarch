@@ -2,6 +2,7 @@ import {
     Fragment,
     useCallback,
     useEffect,
+    useRef,
     useState,
     useSyncExternalStore,
 } from "react";
@@ -35,10 +36,12 @@ import {
     hasActionHandler,
     isActionChecked,
     isActionEnabled,
+    previewAction,
     runAction,
     subscribeToActionHandlers,
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
+import { useIsTouchMode } from "@/stores/InputModeStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
@@ -53,8 +56,12 @@ import {
  * palette do, and is unavailable when they are. It acts on the selection: the
  * editor selects an unselected marcher right-clicked before it opens.
  *
- * - **Group** or **Ungroup**, first, each shown only while it's available: Group with two or
+ * - **Edit <name>**, first, while one item (a prop, front ensemble equipment, a podium) is
+ *   selected, as right-clicking one does: it opens the item's edit view.
+ * - **Group** or **Ungroup**, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
+ *   With one selected whole and the menu opened on one of its marchers, **Select only this
+ *   marcher** goes inside it there, as a double-click on that marcher does (tablet 1.5).
  * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
  *   group path** (Edit path), **Edit <name>'s line**, **Rejoin group path**, **Match group**,
  *   **Re-fit path** (Re-center group path), then after a line, as under the bar's ···, **Detach
@@ -63,17 +70,23 @@ import {
  *   its name, and **Remove path**. Edit <name>'s line and Match group stay in their places, greyed
  *   out with the reason, for any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
- *   **Hold from previous page** (timeline mode only), then **Clear this page**, with **set to next page** after it. Each says what it would do
- *   for the selection on the current page (`holdEntryStates`, through its handler): checked and
- *   unavailable when every selected marcher is already in the state it sets, and with a count,
- *   "Hold from previous page (3 of 5)", when it would change only some of them.
+ *   **Hold from last keyframe** (timeline mode only), **Hold from start flag to playhead** while
+ *   it's available (Expert with a window, #476), then **Clear this page**. Each says what it
+ *   would do for the selection on the current page (`holdEntryStates`, through its handler):
+ *   checked and unavailable when every selected marcher is already in the state it sets, and with
+ *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
+ * - **Hold style** (ADR 0015 D-5, #775), while a selected marcher is Held at the playhead: the
+ *   show setting, stand, mark time or high mark time for that hold, the one in effect checked.
  * - A line's order (pathways step 4g), with two or more selected: **Set order**, **Reverse order**
  *   and **Clear order**.
  * - Splitting moves (timeline mode, not Basic): **Split selected marchers into a new move** and
  *   **Split the move at the playhead**. An entry that can't run says why beside it (a split at
  *   a count refused while a line follows a trail), before anyone tries it.
- * - Arranging the selection: align and distribute, and Swap (two marchers).
+ * - Arranging the selection: align and distribute, Swap (two marchers), and **Move to next
+ *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
+ *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
+ * - **Edit field**, which puts the canvas into the Edit field mode (#824).
  *
  * A right-click on what a field mode draws can offer its own actions instead (`actions`): on a
  * path's line, the same Path group (pathways), each entry shown only while it applies. That menu
@@ -114,15 +127,29 @@ const pathShown = (id: ActionId) =>
     isActionEnabled(id) ||
     (PATH_SLOTS.has(id) && actionDisabledReason(id) !== undefined);
 
+/** The page state commands: the group whose entries can show checked */
+const STATE_GROUP: readonly ActionId[] = [
+    "timelineHoldFromPrevious",
+    "timelineHoldOverWindow",
+    "setSelectedMarchersToPreviousPage",
+];
+
+/** What the feet do over the Held hold at the playhead: one of them is in effect */
+const HOLD_STYLE_GROUP: readonly ActionId[] = [
+    "timelineHoldStyleDefault",
+    "timelineHoldStyleStand",
+    "timelineHoldStyleMarkTime",
+    "timelineHoldStyleHighMarkTime",
+];
+
 const GROUPS: readonly (readonly ActionId[])[] = [
-    ["shapeGroup", "shapeUngroup"],
+    // An item right-clicked: its edit view
+    ["editSelectedItem"],
+    ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
     PATH,
     PATH_END,
-    [
-        "timelineHoldFromPrevious",
-        "setSelectedMarchersToPreviousPage",
-        "setSelectedMarchersToNextPage",
-    ],
+    STATE_GROUP,
+    HOLD_STYLE_GROUP,
     ["splitSelectedIntoNewMove", "timelineSplitMoveAtPlayhead"],
     // A line's order (pathways step 4g), shown with two or more selected
     ["setMarcherOrder", "reverseMarcherOrder", "clearMarcherOrder"],
@@ -132,8 +159,11 @@ const GROUPS: readonly (readonly ActionId[])[] = [
         "evenlyDistributeHorizontally",
         "evenlyDistributeVertically",
         "swapMarchers",
+        "setSelectedMarchersToNextPage",
     ],
     ["selectAllMarchers"],
+    // #824: the field's own lines and settings, from where you're looking at it
+    ["fieldEditMode"],
 ];
 
 /** The actions the menu offers, in order. */
@@ -159,8 +189,26 @@ const ORDER: ReadonlySet<ActionId> = new Set([
     "clearMarcherOrder",
 ]);
 
-/** The group whose entries can show checked: each keeps room for the check, so the words line up */
-const CHECKABLE: ReadonlySet<ActionId> = new Set(GROUPS[3]);
+/** Shown only while available, as Group is: Hold over the window in Expert with a window (#476) */
+const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
+    "editSelectedItem",
+    "shapeGroup",
+    "shapeUngroup",
+    "shapeEnterBox",
+    "timelineHoldOverWindow",
+]);
+
+/** Entries about the marcher the menu was opened on: shown only when it was opened on one */
+const ON_A_MARCHER: ReadonlySet<ActionId> = new Set(["shapeEnterBox"]);
+
+/** Hold style, shown as a group only while a selected marcher is Held at the playhead */
+const HOLD_STYLES: ReadonlySet<ActionId> = new Set(HOLD_STYLE_GROUP);
+
+/** The entries that can show checked: each keeps room for the check, so the words line up */
+const CHECKABLE: ReadonlySet<ActionId> = new Set([
+    ...STATE_GROUP,
+    ...HOLD_STYLE_GROUP,
+]);
 
 /** A mode's menu: no wider than its words */
 const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
@@ -202,6 +250,7 @@ const closedSnapshot = () => "";
 export default function FieldContextMenu({
     at,
     actions = null,
+    marcher = null,
     onClose,
     selectedCount,
     timelineMode,
@@ -210,12 +259,15 @@ export default function FieldContextMenu({
     at: { x: number; y: number } | null;
     /** The actions it offers instead of the field's own (a mode's, such as a path's), or null */
     actions?: readonly ActionId[] | null;
+    /** The marcher it was opened on (a right-click or long press on one), or null. */
+    marcher?: number | null;
     onClose: () => void;
     selectedCount: number;
     /** Whether the show's timeline is loaded (the holds need it). */
     timelineMode: boolean;
 }) {
     const { t } = useTranslate();
+    const touch = useIsTouchMode();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -228,20 +280,34 @@ export default function FieldContextMenu({
         document.addEventListener("contextmenu", block, true);
         return () => document.removeEventListener("contextmenu", block, true);
     }, [open]);
+    // The menu closing takes the entry away without a blur
+    useEffect(() => {
+        if (!open) return;
+        return () =>
+            FIELD_MENU_ACTIONS.forEach((id) => previewAction(id, false));
+    }, [open]);
     if (!at) return null;
 
+    // The style in effect is checked, so off: the group shows while any of it can run or is
+    const holdStyles = HOLD_STYLE_GROUP.some(
+        (id) => isActionEnabled(id) || isActionChecked(id),
+    );
     const shown = (id: ActionId) =>
         PATH_SET.has(id)
             ? pathShown(id)
-            : id === "shapeGroup" || id === "shapeUngroup"
-              ? isActionEnabled(id)
-              : HOLDS.has(id)
-                ? timelineMode
-                : MOVES.has(id)
-                  ? timelineMode && hasActionHandler(id)
-                  : ORDER.has(id)
-                    ? timelineMode && selectedCount >= 2
-                    : true;
+            : ON_A_MARCHER.has(id) && marcher === null
+              ? false
+              : HOLD_STYLES.has(id)
+                ? holdStyles
+                : WHILE_AVAILABLE.has(id)
+                  ? isActionEnabled(id)
+                  : HOLDS.has(id)
+                    ? timelineMode
+                    : MOVES.has(id)
+                      ? timelineMode && hasActionHandler(id)
+                      : ORDER.has(id)
+                        ? timelineMode && selectedCount >= 2
+                        : true;
     const enabled = (id: ActionId) =>
         isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
     const groups = (
@@ -276,7 +342,13 @@ export default function FieldContextMenu({
                 <DropdownMenu.Content
                     data-testid="field-menu"
                     align="start"
-                    side="bottom"
+                    // In the touch layout its entries are taller, so it often fits neither
+                    // below nor above the finger, and Radix only flips across that way: beside
+                    // the finger it slides up or down to stay on screen (#928). Never taller than
+                    // the screen either: it scrolls instead
+                    side={touch ? "right" : "bottom"}
+                    sideOffset={touch ? 12 : 0}
+                    sticky={touch ? "always" : "partial"}
                     collisionPadding={8}
                     // Focus isn't returned to the anchor, a hidden div: it falls to the page
                     // body. The shortcuts listen on the window, so the field's
@@ -286,7 +358,9 @@ export default function FieldContextMenu({
                     className={
                         actions
                             ? MODE_CONTENT_CLASS
-                            : TIMELINE_MENU_CONTENT_CLASS
+                            : touch
+                              ? `${TIMELINE_MENU_CONTENT_CLASS} max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto`
+                              : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
                     {groups.map((group, i) => (
@@ -357,7 +431,17 @@ export default function FieldContextMenu({
                                         key={id}
                                         data-testid={`field-menu-${id}`}
                                         disabled={!enabled(id)}
-                                        onSelect={() => runAction(id)}
+                                        onSelect={() =>
+                                            runAction(
+                                                id,
+                                                ON_A_MARCHER.has(id) &&
+                                                    marcher !== null
+                                                    ? { marcherId: marcher }
+                                                    : undefined,
+                                            )
+                                        }
+                                        onFocus={() => previewAction(id, true)}
+                                        onBlur={() => previewAction(id, false)}
                                         className={clsx(
                                             MENU_ITEM_CLASS,
                                             actions &&
@@ -407,15 +491,23 @@ export default function FieldContextMenu({
 }
 
 type MenuPoint = { x: number; y: number };
-/** Where the menu is open, and the mode's actions it offers there instead of its own, if any */
-type OpenFieldMenu = { at: MenuPoint; actions: readonly ActionId[] | null };
+/**
+ * Where the menu is open, the marcher it was opened on (null for none, or from the keyboard), and
+ * the mode's actions it offers there instead of its own, if any
+ */
+type OpenFieldMenu = {
+    at: MenuPoint;
+    marcher: number | null;
+    actions: readonly ActionId[] | null;
+};
 
 /**
  * Where the field's menu is open, in CSS pixels in the field's element, and
- * how it opens: at a right-click (the editor's `openMenu` port, with
- * `openAt`), or from the keyboard (the `openFieldMenu` action: the
+ * how it opens: at a right-click or a long press (the editor's `openMenu`
+ * port, with `openAt`, and the marcher under it), or from the keyboard (the `openFieldMenu` action: the
  * context-menu key or Shift+F10, while the field has focus and a selection) at
- * the middle of the selected marchers drawn.
+ * the middle of the selected marchers drawn. `takePress` is the field's: a press on the field
+ * while the menu is open closes it and does nothing more.
  */
 export function useFieldMenu({
     marchers,
@@ -427,16 +519,31 @@ export function useFieldMenu({
     hasSelection: boolean;
 }) {
     const [open, setOpen] = useState<OpenFieldMenu | null>(null);
+    // Whether it's open as last drawn, read by the field's presses
+    const shown = useRef(false);
+    shown.current = open !== null;
     const openAt = useCallback(
-        (point: MenuPoint, actions?: readonly string[]) =>
+        (
+            point: MenuPoint,
+            marcher: number | null = null,
+            actions?: readonly string[],
+        ) =>
             setOpen({
                 at: point,
+                marcher,
                 actions: (actions as readonly ActionId[] | undefined) ?? null,
             }),
         [],
     );
     const close = useCallback(() => setOpen(null), []);
-    const setAt = (at: MenuPoint) => setOpen({ at, actions: null });
+    // A press on the field while the menu is open only closes it, as a click outside a menu
+    // does (#315). The menu closes itself on a mouse's press outside it, but after a finger's
+    // it waits for a click, which the field's touch handling stops (#876)
+    const takePress = useCallback(() => {
+        if (!shown.current) return false;
+        setOpen(null);
+        return true;
+    }, []);
     useActionHandler(
         "openFieldMenu",
         () => {
@@ -444,19 +551,23 @@ export function useFieldMenu({
             if (editor.blocksFieldMenu()) return;
             const center = selectedCenter(marchers);
             const view = useFieldViewStore.getState();
-            setAt(
-                center
+            setOpen({
+                at: center
                     ? fieldToElement(view, center.x, center.y)
                     : { x: view.width / 2, y: view.height / 2 },
-            );
+                marcher: null,
+                actions: null,
+            });
         },
         { enabled: hasSelection },
     );
     return {
         at: open?.at ?? null,
+        marcher: open?.marcher ?? null,
         actions: open?.actions ?? null,
         openAt,
         close,
+        takePress,
     };
 }
 

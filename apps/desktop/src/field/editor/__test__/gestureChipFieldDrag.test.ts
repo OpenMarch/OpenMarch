@@ -32,6 +32,7 @@ const pointer = (x: number, held: Partial<HeldKeys> = {}): FieldPointer => ({
     field: { x, y: 0 },
     screen: { x: 50 + x, y: 60 },
     button: 0,
+    kind: "mouse",
     ...NO_KEYS,
     ...held,
 });

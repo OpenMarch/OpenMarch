@@ -1,0 +1,327 @@
+# cspell:words noreply shellcheck
+name: User guide media refresh
+
+# Records the user guide's pictures and clips again from the app, so they keep up with it.
+# See apps/website/AGENTS.md (Scheduled refresh) and apps/desktop/scripts/docs-media/refresh.mjs.
+# - plan: picks the shots whose code, show, covered app files, labels or shared styles changed
+#   since each was last recorded (or since the last refresh), and the ones the last refresh
+#   couldn't finish, and splits them into shards. The first scheduled run of each month, and a
+#   manual run with "all", records every shot.
+# - record: each shard builds the app and records its shots in the media Docker image (the same
+#   one agents use), then compares each recording with the committed one, records the ones that
+#   visibly changed a second time, and keeps a change only when both new recordings agree.
+# - publish (main, and not a run of chosen shots): one pull request with the changed pictures
+#   (docs/media-refresh/main), and issues for the shots whose setup no longer works.
+# - report (everything else: pushes to prerelease/**, other branches, runs of chosen shots): the
+#   same results in the run summary and artifacts, with no pull request and no issues.
+#   prerelease/* only ever holds commits from main (docs/releases/beta.md).
+#
+# Pull requests opened with the workflow's own token don't start other workflows, so the PR's
+# checks only run once someone pushes to it. Add a DOCS_MEDIA_TOKEN secret (a fine-grained token
+# with contents, pull requests and issues write) to have them run straight away. The repository
+# setting "Allow GitHub Actions to create and approve pull requests" must be on either way.
+
+on:
+  schedule:
+    - cron: "0 7 * * 1" # Mondays, 07:00 UTC
+  push:
+    branches: ["prerelease/**"]
+    paths:
+      - "apps/desktop/src/**"
+      - "apps/desktop/electron/**"
+      - "apps/desktop/i18n/en.json"
+      - "apps/desktop/scripts/docs-media/**"
+      - "apps/desktop/scripts/media-kit/**"
+      - "apps/desktop/web/public/demos/**"
+      - "apps/desktop/package.json"
+      - "apps/desktop/vite.config.*"
+      - "apps/desktop/tailwind.config.*"
+      - "packages/ui/src/**"
+      - "packages/ui/package.json"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Record every shot, not just the ones whose files changed
+        type: boolean
+        default: false
+      shots:
+        description: Only these shots or chapters (space-separated ids); overrides "all", and only reports
+        type: string
+        default: ""
+
+# A new push replaces the last one's report. Nothing else cancels a run: a manual run of chosen
+# shots has its own group, and a full run waits for the one in progress.
+concurrency:
+  group: docs-media-${{ github.ref }}-${{ inputs.shots != '' && 'chosen' || 'full' }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    # This workflow's code also reaches OpenMarch/OpenMarch: it only runs on the fork. `record`
+    # needs this job, so it's skipped with it.
+    if: github.repository == 'AlexDumo/OpenMarch-timeline'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+      count: ${{ steps.plan.outputs.count }}
+      publish: ${{ steps.plan.outputs.publish }}
+      counts: ${{ steps.plan.outputs.counts }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # What the last refresh of this branch left behind: its commit, so shots unchanged since
+      # then aren't recorded again, and the shots it couldn't finish. Only scheduled, push and
+      # full manual runs leave one (see the docs-media-state artifact below), red or green.
+      - name: Find the last refresh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref_name }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/state"
+          run=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=docs-media-state&per_page=100" \
+            --jq '[.artifacts[] | select(.expired == false and .workflow_run.head_branch == env.REF and .workflow_run.head_repository_id == .workflow_run.repository_id)]
+                  | sort_by(.created_at) | last | .workflow_run.id // empty' || true)
+          if [ -n "$run" ]; then
+            gh run download "$run" -R "$GITHUB_REPOSITORY" -n docs-media-state -D "$RUNNER_TEMP/state" || true
+          fi
+
+      - name: Pick the shots to record
+        id: plan
+        working-directory: apps/desktop
+        env:
+          ALL: ${{ inputs.all }}
+          SHOTS: ${{ inputs.shots }}
+          REF: ${{ github.ref_name }}
+          KEEP: origin/docs/media-refresh/${{ github.ref_name }}
+        run: |
+          git fetch origin "docs/media-refresh/$REF:refs/remotes/$KEEP" 2>/dev/null || true
+          read -r -a words <<< "${SHOTS:-}"
+          only="${words[*]:-}"
+          args=(--state "$RUNNER_TEMP/state/refresh-state.json" --keep "$KEEP")
+          # Every shot on the first Monday of the month, so changes no `covers` names still show up
+          if [ "$ALL" = "true" ] || { [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$(date -u +%d)" -le 7 ]; }; then
+            args=(--all)
+          fi
+          # A run of chosen shots only reports, and doesn't count as a refresh: it says nothing
+          # about the other shots
+          if [ -n "$only" ]; then args=(--only "$only"); fi
+          node scripts/docs-media/refresh.mjs plan "${args[@]}" --github-output > plan.json
+          counts=true
+          if [ -n "$only" ]; then counts=false; fi
+          publish=false
+          if [ "$GITHUB_REF" = "refs/heads/main" ] && [ -z "$only" ]; then publish=true; fi
+          echo "counts=$counts" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-media-plan
+          path: apps/desktop/plan.json
+
+  record:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    # A shard is at most about 20 still-equivalents, up to 2 minutes each, and recorded twice
+    # if everything changed: about 15 to set up, 65 and 55 for the two recordings. The step
+    # limits leave time to compare and upload what's done; shots they cut off are "not recorded".
+    timeout-minutes: 170
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    name: record (${{ matrix.shard.name }})
+    steps:
+      # in-docker.sh mounts this folder: every file the recorder or compare reads or writes
+      # outside the repo lives under it. Not next to the checkout: upload-artifact refuses a
+      # path with ".." in it.
+      - name: Set the work folders
+        run: |
+          {
+            echo "DOCS_MEDIA_WORK=$RUNNER_TEMP/docs-media-work"
+            echo "OUT=$RUNNER_TEMP/docs-media-work/out"
+            echo "SECOND=$RUNNER_TEMP/docs-media-work/second"
+          } >> "$GITHUB_ENV"
+
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install project dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build the app
+        run: |
+          pnpm turbo run build --filter="@openmarch/desktop^..."
+          pnpm --dir apps/desktop build
+
+      - name: Ensure Electron binary is installed
+        run: node node_modules/electron/install.js
+
+      - name: Build the media image
+        run: docker build -q -t openmarch-media apps/desktop/scripts/media-kit
+
+      - name: Record
+        timeout-minutes: 65
+        working-directory: apps/desktop
+        env:
+          MEDIA_SLOTS: "1"
+          SHOTS: ${{ matrix.shard.shots }}
+        # A shot that fails is reported by publish; the shard still compares the rest
+        continue-on-error: true
+        run: |
+          # shellcheck disable=SC2086
+          scripts/media-kit/in-docker.sh scripts/docs-media/capture.mjs $SHOTS
+
+      - name: Stop a recording that ran out of time
+        if: ${{ !cancelled() }}
+        run: docker ps -q | xargs -r docker kill
+
+      # In the media image too, for the same ffmpeg; OUT is inside the folder it mounts
+      - name: Compare with the committed recordings
+        working-directory: apps/desktop
+        run: |
+          mkdir -p "$OUT"
+          cp "$DOCS_MEDIA_WORK/capture.log" "$OUT/" || true
+          scripts/media-kit/in-docker.sh scripts/docs-media/refresh.mjs compare --work "$DOCS_MEDIA_WORK" --out "$OUT"
+
+      # Software drawing and animations don't give the same pixels every run: a change counts
+      # only if a second recording agrees with the first
+      - name: Record the changed shots again
+        timeout-minutes: 55
+        working-directory: apps/desktop
+        # Whether this worked is confirm's call: it checks every change has a second result
+        continue-on-error: true
+        run: |
+          changed=$(node scripts/docs-media/refresh.mjs changed --out "$OUT")
+          if [ -z "$changed" ]; then echo "Nothing changed."; exit 0; fi
+          # shellcheck disable=SC2086
+          DOCS_MEDIA_WORK="$SECOND" scripts/media-kit/in-docker.sh scripts/docs-media/capture.mjs $changed
+
+      - name: Stop a second recording that ran out of time
+        if: ${{ !cancelled() }}
+        run: docker ps -q | xargs -r docker kill
+
+      - name: Confirm the changes
+        working-directory: apps/desktop
+        run: |
+          cp "$SECOND/capture.log" "$OUT/capture-second.log" || true
+          scripts/media-kit/in-docker.sh scripts/docs-media/refresh.mjs confirm --work "$SECOND" --out "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: docs-media-${{ matrix.shard.name }}
+          path: ${{ runner.temp }}/docs-media-work/out/
+          retention-days: 30
+
+  # Runs that can't publish: no write access at all
+  report:
+    needs: [plan, record]
+    if: ${{ !cancelled() && github.repository == 'AlexDumo/OpenMarch-timeline' && needs.plan.result == 'success' && needs.plan.outputs.count != '0' && needs.plan.outputs.publish != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/artifacts
+          pattern: docs-media-*
+
+      - name: Write the report
+        working-directory: apps/desktop
+        env:
+          COUNTS: ${{ needs.plan.outputs.counts }}
+          REF: ${{ github.ref_name }}
+        run: |
+          args=()
+          if [ "$COUNTS" = "true" ]; then args=(--state refresh-state.json); fi
+          node scripts/docs-media/refresh.mjs publish --report-only \
+            --artifacts "$RUNNER_TEMP/artifacts" \
+            --plan "$RUNNER_TEMP/artifacts/docs-media-plan/plan.json" \
+            --base "$REF" \
+            "${args[@]}"
+
+      # Red or green, this run counts as the last refresh; what it couldn't finish is in the file
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: docs-media-state
+          path: apps/desktop/refresh-state.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  publish:
+    needs: [plan, record]
+    if: ${{ !cancelled() && github.repository == 'AlexDumo/OpenMarch-timeline' && needs.plan.result == 'success' && needs.plan.outputs.count != '0' && needs.plan.outputs.publish == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.DOCS_MEDIA_TOKEN || github.token }}
+          # To see the refresh branch's commits before replacing it
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/artifacts
+          pattern: docs-media-*
+
+      - name: Open the pull request and issues
+        working-directory: apps/desktop
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_MEDIA_TOKEN || github.token }}
+          REF: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node scripts/docs-media/refresh.mjs publish \
+            --artifacts "$RUNNER_TEMP/artifacts" \
+            --plan "$RUNNER_TEMP/artifacts/docs-media-plan/plan.json" \
+            --base "$REF" \
+            --repo "$GITHUB_REPOSITORY" \
+            --run-url "$RUN_URL" \
+            --state refresh-state.json
+
+      # Red or green, this run counts as the last refresh; what it couldn't finish is in the file
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: docs-media-state
+          path: apps/desktop/refresh-state.json
+          if-no-files-found: ignore
+          retention-days: 90

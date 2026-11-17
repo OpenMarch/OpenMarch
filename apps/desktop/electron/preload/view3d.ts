@@ -101,6 +101,16 @@ const VIEW3D_API = {
         } satisfies View3dVenueChangeRequest),
 
     /**
+     * Asks the editor to make an imported PNG the show's silk Artwork, or
+     * to remove it with null (fork #973). The editor validates it, stores it
+     * with history, then invalidates the Artwork and venue queries.
+     */
+    requestSilkArtwork: (artwork: unknown) =>
+        ipcRenderer.send("view3d:venue-change-request", {
+            silkArtwork: artwork,
+        } satisfies View3dVenueChangeRequest),
+
+    /**
      * The "open the 3D View with the show" setting, for the window's question only: `get` is
      * undefined while never answered, null where the window shouldn't ask.
      */

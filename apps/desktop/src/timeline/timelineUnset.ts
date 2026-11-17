@@ -21,6 +21,7 @@ import { toastBasicLock } from "./basicLockToast";
 import { notJoinedMessage, toastTimelineError } from "./timelineErrorMessages";
 import {
     followingPages,
+    followingRuns,
     pageKeepStates,
     type KeepTranslate,
 } from "./timelineKeepLater";
@@ -28,6 +29,8 @@ import { keepPagesOfBoxes } from "./timelineOnlyThisPage";
 import { isSetAt, marcherSetBeats } from "./timelineSetFollowing";
 import { resolverSpans, useTimelineResolverStore } from "./timelineStore";
 import { holdTerms } from "./holdTerms";
+import type { BeatRange, HoldLight } from "./timelineHoldBars";
+import { clearHoldLight, setHoldLight } from "./holdLight";
 
 /**
  * **Unset here** as the UI runs it (Set vs Following, #300 and #304): the selected marchers that
@@ -55,6 +58,7 @@ interface UnsetReads {
 export function unsetReader({ resolver, marcherIds, boxes = [] }: UnsetReads): {
     targets: (beat: number) => number[];
     followingPages: (beat: number) => string[] | null;
+    followingLight: (beat: number) => HoldLight | null;
 } {
     let setBeats: Map<number, readonly number[]> | null = null;
     const setBeatsOf = (id: number) => {
@@ -81,14 +85,14 @@ export function unsetReader({ resolver, marcherIds, boxes = [] }: UnsetReads): {
         return out;
     };
     let pages: ReturnType<typeof keepPagesOfBoxes> | null = null;
-    const followingAt = new Map<number, string[] | null>();
-    const pagesFollowing = (beat: number): string[] | null => {
+    const followingAt = new Map<number, FollowingRun | null>();
+    const runAt = (beat: number): FollowingRun | null => {
         if (followingAt.has(beat)) return followingAt.get(beat)!;
-        const out = pagesFollowingAt(beat);
+        const out = followingRunAt(beat);
         followingAt.set(beat, out);
         return out;
     };
-    const pagesFollowingAt = (beat: number): string[] | null => {
+    const followingRunAt = (beat: number): FollowingRun | null => {
         const set = targets(beat);
         if (!resolver || set.length === 0) return null;
         pages ??= keepPagesOfBoxes(boxes);
@@ -110,9 +114,29 @@ export function unsetReader({ resolver, marcherIds, boxes = [] }: UnsetReads): {
             marcherIds: lastInPage,
             spansOf: (id) => resolverSpans(resolver, id),
         });
-        return followingPages(states, holding.id)?.names ?? null;
+        const names = followingPages(states, holding.id)?.names;
+        if (!names) return null;
+        // Each marcher lights only its own run: one with a move of its own partway through the
+        // pages named keeps the pages after that move where they are
+        const byMarcher = new Map<number, BeatRange[]>();
+        for (const [id, run] of followingRuns(states, holding.id))
+            byMarcher.set(
+                id,
+                run.map((s) => ({ start: s.box.start, end: s.box.end })),
+            );
+        return { names, light: { byMarcher } };
     };
-    return { targets, followingPages: pagesFollowing };
+    return {
+        targets,
+        followingPages: (beat) => runAt(beat)?.names ?? null,
+        followingLight: (beat) => runAt(beat)?.light ?? null,
+    };
+}
+
+/** The pages that would follow back, by name, and the hold bars they light (fork #477). */
+interface FollowingRun {
+    readonly names: string[];
+    readonly light: HoldLight;
 }
 
 /**
@@ -147,8 +171,8 @@ export function useUnsetTargets(marcherIds: readonly number[]): number[] {
 /**
  * The pages that follow the spot `marcherIds` have at `beat`, in page order: for the ones Set
  * there (`unsetTargets`), the page boxes after the one holding `beat`, in a row, that some of them
- * follow into without a move of their own (`followingPages`, as the keep chains and **Only Page
- * N** read it). What **Unset here and on Pages N–M** lets follow back; null when none follow.
+ * follow into without a move of their own (`followingPages`, as **Only Page N** reads
+ * it). What **Unset here and on Pages N–M** lets follow back; null when none follow.
  */
 export function unsetFollowingPages({
     beat,
@@ -180,13 +204,23 @@ export function unsetFollowingLabel(
     );
 }
 
-/** `unsetFollowingPages` for `marcherIds` at the count shown, kept current. */
-export function useUnsetFollowingPages(
-    marcherIds: readonly number[],
-): string[] | null {
+/**
+ * `unsetFollowingPages` for `marcherIds` at the count shown, kept current, with the hold bars they
+ * light while the entry is hovered or focused (`followingLight`).
+ */
+export function useUnsetFollowingPages(marcherIds: readonly number[]): {
+    pages: string[] | null;
+    light: () => HoldLight | null;
+} {
     const reader = useUnsetReader(marcherIds);
     const beat = useTimelineSelectionStore(displayedBeat);
-    return useMemo(() => reader.followingPages(beat), [reader, beat]);
+    return useMemo(
+        () => ({
+            pages: reader.followingPages(beat),
+            light: () => reader.followingLight(beat),
+        }),
+        [reader, beat],
+    );
 }
 
 /**
@@ -200,13 +234,16 @@ export function unsetMenuStateAt({
 }: Parameters<typeof unsetFollowingPages>[0] & { isPlaying: boolean }): {
     canUnset: boolean;
     followingLabel: string | null;
+    followingLight: HoldLight | null;
 } {
-    if (isPlaying) return { canUnset: false, followingLabel: null };
+    if (isPlaying)
+        return { canUnset: false, followingLabel: null, followingLight: null };
     const reader = unsetReader(at);
     const following = reader.followingPages(at.beat);
     return {
         canUnset: reader.targets(at.beat).length > 0,
         followingLabel: following ? unsetFollowingLabel(following) : null,
+        followingLight: following ? reader.followingLight(at.beat) : null,
     };
 }
 
@@ -231,10 +268,18 @@ export function useKeyframeUnsetMenu(
             onUnset: (beat: number) => void unsetHere(marcherIds, { beat }),
             onUnsetAndFollowing: (beat: number) =>
                 void unsetHereAndFollowing(marcherIds, { beat }),
+            // #477: hovering or focusing the follow-back entry lights what would follow back
+            onFollowingPreview: (light: HoldLight | null) =>
+                light
+                    ? setHoldLight(KEYFRAME_MENU_LIGHT, light)
+                    : clearHoldLight(KEYFRAME_MENU_LIGHT),
         }),
         [marcherIds, isPlaying],
     );
 }
+
+/** Who lights the hold bars while a diamond menu's follow-back entry is hovered (`setHoldLight`) */
+const KEYFRAME_MENU_LIGHT = "keyframeMenu:followBack";
 
 /** The page box holding `beat` (`start < beat ≤ end`), from the Basic locks' boxes. */
 const boxHolding = (beat: number) =>

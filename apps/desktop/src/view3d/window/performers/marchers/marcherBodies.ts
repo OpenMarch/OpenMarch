@@ -6,6 +6,9 @@
  *
  * - `high` quality draws the seven v4u bodies; `low` draws om-pose's block
  *   bodies (264 triangles against 1,796), which play the same clips.
+ * - The shakos' plumes are one more `InstancedMesh` (`plumeSet.ts`), feather
+ *   cards at `high` and one lumpy solid at `low`; the bodies leave their own
+ *   plume out.
  * - A look that carries an instrument gets a second `InstancedMesh` over
  *   the same instances: the horn, posed by the look's hold, in a smooth
  *   metallic material (docs/3d/instruments.md §4).
@@ -36,17 +39,27 @@ import type { ChannelPlay, FeetPlay } from "@/view3d/render/channelState";
 import { createUniformMaterial } from "@/view3d/render/uniform-shader.js";
 import {
     bodyKey,
+    PART,
     partVisible,
     type BodyType,
     type PerformerBody,
     type UniformLook,
 } from "@/view3d/core/marchers/looks";
+import { GROUND_LAYER, setGroundLayer } from "@/view3d/core/environment";
 import { FIELD_SURFACE_Y } from "@/view3d/core/field";
+import { STAND_Y } from "../performerData";
 import { holdId } from "@/view3d/core/instruments/holds";
 import type { LoadedBody } from "./marcherAssets";
 import { instrumentMaterial } from "./instrumentGeometry";
 import { HornSet } from "./hornSet";
 import { SilkSet, silkMaterial, type SilkMotionFrame } from "./silkSet";
+import {
+    PlumeSet,
+    plumeMaterial,
+    plumeSocket,
+    type PlumeSocket,
+    type PlumeWearer,
+} from "./plumeSet";
 import { mirrorClip, mirrorName } from "./mirrorClip";
 import { plainRow } from "@/view3d/core/marchers/planner";
 import {
@@ -115,10 +128,12 @@ export function bareHands(material: THREE.Material): THREE.Material {
  * (other instruments, the aussie hat, the cape, the shako on guard) are
  * left out of the draw instead of skinned and then discarded. Every v4u
  * triangle belongs to one part, so this draws exactly what the shader would.
+ * Parts in `drop` are left out too: ones another mesh draws instead.
  */
 export function visibleIndex(
     source: THREE.BufferGeometry,
     look: UniformLook,
+    drop: readonly number[] = [],
 ): THREE.BufferAttribute | null {
     const index = source.index;
     const part = source.getAttribute("_part");
@@ -126,7 +141,8 @@ export function visibleIndex(
     const keep: number[] = [];
     for (let t = 0; t < index.count; t += 3) {
         const a = index.getX(t);
-        if (partVisible(look, Math.round(part.getX(a))))
+        const p = Math.round(part.getX(a));
+        if (partVisible(look, p) && !drop.includes(p))
             keep.push(a, index.getX(t + 1), index.getX(t + 2));
     }
     if (keep.length === index.count) return null;
@@ -165,16 +181,17 @@ function createContactMesh(n: number): THREE.InstancedMesh {
     disc.rotateX(-Math.PI / 2);
     const mesh = new THREE.InstancedMesh(
         disc,
-        new THREE.MeshBasicMaterial({
-            color: 0x000000,
-            alphaMap: contactAlpha(),
-            transparent: true,
-            opacity: CONTACT_OPACITY,
-            depthWrite: false,
-            polygonOffset: true,
-            polygonOffsetFactor: -1,
-            polygonOffsetUnits: -1,
-        }),
+        // Over the field at any distance (the field has a ground layer too).
+        setGroundLayer(
+            new THREE.MeshBasicMaterial({
+                color: 0x000000,
+                alphaMap: contactAlpha(),
+                transparent: true,
+                opacity: CONTACT_OPACITY,
+                depthWrite: false,
+            }),
+            GROUND_LAYER.contact,
+        ),
         n,
     );
     mesh.name = "view3d-marcher-contact";
@@ -304,6 +321,8 @@ export class MarcherBodies {
     private readonly horns: HornSet | null = null;
     /** The flags' silks, one cloth mesh per tier (`silkSet.ts`). */
     private readonly silks: SilkSet | null = null;
+    /** The shakos' plumes, one mesh for the band (`plumeSet.ts`). */
+    private readonly plumes: PlumeSet | null = null;
     private readonly blockSource: THREE.BufferGeometry | null = null;
     private readonly contact: THREE.InstancedMesh;
     /** Mesh entry and instance index per slot. */
@@ -383,6 +402,7 @@ export class MarcherBodies {
             this.entries.push({ mesh, slots: g.slots, own });
             this.group.add(mesh);
         }
+        this.plumes = this.buildPlumes(bodies, looks, quality);
         if (looks.some((l) => l.uniform.options.carry)) {
             // in `materials` so dispose frees it
             const material = instrumentMaterial(this.composer);
@@ -400,6 +420,43 @@ export class MarcherBodies {
         }
     }
 
+    /**
+     * The plumes of every slot whose look wears a shako, each standing where
+     * its body's own plume did, added to the group. Null when nobody wears one.
+     */
+    private buildPlumes(
+        bodies: ReadonlyMap<BodyType, LoadedBody>,
+        looks: readonly MarcherSlotLook[],
+        quality: MarcherQuality,
+    ): PlumeSet | null {
+        const sockets = new Map<BodyType | "block", PlumeSocket | null>();
+        const socketOf = (type: BodyType) => {
+            const key = this.blockSource ? "block" : type;
+            if (!sockets.has(key))
+                sockets.set(
+                    key,
+                    plumeSocket(
+                        this.blockSource ?? bodies.get(type)!.mesh.geometry,
+                    ),
+                );
+            return sockets.get(key)!;
+        };
+        const wearers: PlumeWearer[] = [];
+        looks.forEach((l, slot) => {
+            if (!partVisible(l.uniform, PART.plume)) return;
+            const socket = socketOf(l.body.bodyType);
+            if (socket)
+                wearers.push({ slot, socket, color: l.uniform.colors.plume });
+        });
+        if (wearers.length === 0) return null;
+        const material = plumeMaterial(this.composer, quality);
+        // in `materials` so dispose frees it
+        this.materials.push(material);
+        const plumes = new PlumeSet(wearers, quality, material);
+        this.group.add(plumes.mesh);
+        return plumes;
+    }
+
     /** One InstancedMesh for a group of slots sharing a body and a look. */
     private buildMesh(
         bodies: ReadonlyMap<BodyType, LoadedBody>,
@@ -407,7 +464,8 @@ export class MarcherBodies {
         g: { type: BodyType; look: UniformLook; slots: number[] },
     ) {
         const source = this.blockSource ?? bodies.get(g.type)!.mesh.geometry;
-        const filtered = this.blockSource ? null : visibleIndex(source, g.look);
+        // the plume is drawn by `plumeSet.ts`, so the body leaves its own out
+        const filtered = visibleIndex(source, g.look, [PART.plume]);
         const own: MeshEntry["own"] = filtered ? "index" : "shared";
         const geometry = composedGeometry(source, g.slots.length);
         if (filtered) geometry.setIndex(filtered);
@@ -427,7 +485,7 @@ export class MarcherBodies {
         return { mesh, own };
     }
 
-    /** The hold id slot `slot` plays, for `rowKey`. */
+    /** The hold id slot `slot` plays, or `NO_HOLD` when it has none. */
     holdOf(slot: number): string {
         return this.holdIds[slot] ?? NO_HOLD;
     }
@@ -440,10 +498,11 @@ export class MarcherBodies {
         return row;
     }
 
-    /** Draw calls this set issues per frame: a body mesh per group, plus the instruments and silks. */
+    /** Draw calls this set issues per frame: a body mesh per group, plus the plumes, instruments and silks. */
     get drawCalls(): number {
         return (
             this.entries.length +
+            (this.plumes?.drawCalls ?? 0) +
             (this.horns?.drawCalls ?? 0) +
             (this.silks?.drawCalls ?? 0)
         );
@@ -474,7 +533,9 @@ export class MarcherBodies {
      * (not drawn) otherwise. `count` is the show's count clock. `camera`
      * picks each instrument's detail; null draws them all at full detail.
      * `silk` is each slot's motion for the silks' wave; without it they
-     * keep the last motion written, as when only the camera moved.
+     * keep the last motion written, as when only the camera moved. `lift`
+     * raises each slot (m) onto the platform under it; null stands them all
+     * on the ground.
      */
     writeFrame(
         xz: Float32Array,
@@ -483,6 +544,7 @@ export class MarcherBodies {
         count: number,
         camera: [number, number, number] | null = null,
         silk: SilkMotionFrame | null = null,
+        lift: Float32Array | null = null,
     ): void {
         for (const { mesh, slots } of this.entries) {
             const array = mesh.instanceMatrix.array as Float32Array;
@@ -495,13 +557,15 @@ export class MarcherBodies {
                     xz[i * 2 + 1],
                     heading[i],
                     placed[i] ? this.scaleOf[i] : 0,
+                    STAND_Y + (lift?.[i] ?? 0),
                 );
             }
             mesh.instanceMatrix.needsUpdate = true;
         }
-        this.horns?.writeFrame(xz, heading, placed, this.scaleOf, camera);
+        this.plumes?.writeFrame(xz, heading, placed, this.scaleOf, lift);
+        this.horns?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
         if (silk) this.silks?.writeMotion(silk);
-        this.silks?.writeFrame(xz, heading, placed, this.scaleOf, camera);
+        this.silks?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
         const discs = this.contact.instanceMatrix.array as Float32Array;
         for (let i = 0; i < placed.length; i++) {
             const o = i * 16;
@@ -512,7 +576,7 @@ export class MarcherBodies {
             discs[o + 5] = 1;
             discs[o + 10] = s;
             discs[o + 12] = xz[i * 2];
-            discs[o + 13] = CONTACT_Y;
+            discs[o + 13] = CONTACT_Y + (lift?.[i] ?? 0);
             discs[o + 14] = xz[i * 2 + 1];
             discs[o + 15] = 1;
         }
@@ -525,6 +589,7 @@ export class MarcherBodies {
             disposeMarcherGeometry(mesh.geometry, own);
             mesh.dispose();
         }
+        this.plumes?.dispose();
         this.horns?.dispose();
         this.silks?.dispose();
         for (const m of this.materials) m.dispose();

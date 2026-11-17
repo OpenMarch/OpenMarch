@@ -1,0 +1,171 @@
+---
+title: Line the counts up with the music
+description: Set tempos, tempo changes, holds, time signatures, measure numbers and rehearsal marks in Edit music so the counts fall on the music.
+type: how-to
+covers:
+  - apps/desktop/src/tempo
+  - docs/adr/0007-tempo-mode-storage.md
+  - action:toggleMetronome
+  - i18n:tempoMode
+sidebar:
+  order: 3
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Edit music is where you make the show's counts follow the recording: you set how fast the counts go, where the tempo changes, which counts are held, and how the counts are grouped into measures. The recording never changes; every edit changes the length of counts, and the counts after it move with them. Pages and moves stay on their counts, so the drill follows.
+
+If the ideas of counts, tempo and offset are new, read [How counts and the music fit together](/guides/music/counts-and-music/) first.
+
+**Before you start:** add the music file ([Add the show's music](/guides/music/audio/)). You can set tempos without one, but you line up by ear and eye against the waveform.
+
+## Open Edit music
+
+Select <Ui k="tempoMode.button.text" /> in the timeline's controls, or press <Kbd keys="Shift+T" />. To leave, select <Ui k="tempoMode.toolbar.done" />, press <Kbd keys="Escape" /> with nothing selected, or press <Kbd keys="Shift+T" /> again.
+
+<Media
+  id="music-edit-music"
+  alt="The timeline in Edit music: a header with the music file, Tap tempo, Metronome, Import and Done, then four lanes: Marks, Meas. with measure numbers and time signatures, Tempo with a line at 118 that ramps down to 81 and jumps back to 118, and Music with the waveform."
+/>
+
+The timeline shows four lanes in place of the moves:
+
+- <Ui k="tempoMode.lanes.marks.name" />: rehearsal marks.
+- <Ui k="tempoMode.lanes.measures.name" />: measure numbers and time signatures.
+- <Ui k="tempoMode.lanes.tempo.name" />: the tempo of each count, drawn as a line. Higher is faster.
+- <Ui k="tempoMode.lanes.music.name" />: the waveform. Click it to move the playhead.
+
+While Edit music is on, the rest of the window is dimmed and only moving around the show, go to (<Kbd action="timelineGoTo" />), playback (with its speed and the metronome), undo, redo, saving, importing music and the shortcut list work. Every edit you make to the lanes is one undo step; importing an audio file can't be undone. The <Ui k="tempoMode.help.label" /> button (the question mark in the header) lists the gestures.
+
+## Listen against the music
+
+Turn on <Ui k="tempoMode.toolbar.metronome" /> in the header (<Kbd action="toggleMetronome" />) so each count clicks. Press <Kbd keys="Space" /> to play from the playhead; press it again to stop where you are. When counts are selected, Play loops their measures, so you can adjust a passage while it repeats.
+
+Where the clicks drift ahead of the music, the tempo is too fast there; where they fall behind, it's too slow.
+
+## Find the tempo by tapping
+
+<Steps>
+
+1. Select <Ui k="tempoMode.tap.name" /> in the header, or press <Kbd keys="T" />.
+2. Play the music and tap <Kbd keys="T" /> on each beat. The panel shows the average of your taps. A pause of two seconds starts the count over.
+3. To use the tempo, select <Ui k="tempoMode.tap.use" />. It sets a steady tempo on the selected counts, or, with nothing selected, on the tempo stretch under the playhead.
+
+</Steps>
+
+## Set a tempo
+
+Drag the tempo line up or down. The counts under that stretch get shorter or longer, and the waveform slides under the counts after it.
+
+<Media
+  id="music-tempo-drag"
+  alt="The pointer drags the tempo line of the first stretch up from 118 to 140; the counts get shorter, so the measures after it move left over the waveform."
+/>
+
+To type a tempo, right-click the stretch and choose <Ui k="tempoMode.band.menu.setTempo" />. Enter a number such as 120, or two numbers such as 120-90 to change gradually from one to the other, and press <Kbd keys="Enter" />. Tempos go from 20 to 400.
+
+A tempo is the speed of the count, whatever the time signature: in 6/8, the tempo is how many dotted quarters a minute.
+
+## Add, move and remove tempo changes
+
+A tempo change is a dot on the tempo line where the tempo starts something new.
+
+- To add one, double-click the <Ui k="tempoMode.lanes.tempo.name" /> lane where it should change, or right-click and choose <Ui k="tempoMode.band.menu.addChange" />.
+- To move one, drag its dot sideways. Drag it up or down to change the tempo after it.
+- To remove one, double-click its dot, or right-click it and choose <Ui k="tempoMode.band.menu.removeChange" />.
+
+## Make a gradual change
+
+For a rit. or an accel., point at a steady stretch that jumps to a new tempo: a round handle shows at the corner, where the line jumps. Drag it to turn the jump into a ramp from that stretch's tempo to the next one. On a ramp, the handle sits in the middle; drag it to bend the ramp into a curve. Double-click the handle to make the change sudden again.
+
+You can also right-click a count and choose <Ui k="tempoMode.band.menu.gradual" />: the stretch from that count ramps to the tempo after it.
+
+To make a rit. end on a slower tempo and then jump back (a tempo), drag the square dot at the end of the stretch up or down.
+
+## Select counts
+
+Drag along the <Ui k="tempoMode.lanes.measures.name" /> lane or the <Ui k="tempoMode.lanes.music.name" /> lane to select counts. Right-click inside the selection to set one tempo for all of it (<Ui k="tempoMode.band.menu.setTempo" />) or to remove the counts. Press <Kbd keys="Escape" /> to clear the selection.
+
+## Hold a count (fermata)
+
+A hold is one count that lasts as long as you say, without changing the tempo around it.
+
+<Steps>
+
+1. Right-click the count and choose <Ui k="tempoMode.band.menu.makeHold" />.
+2. Right-click it again and choose <Ui k="tempoMode.band.menu.holdLength" />.
+3. Enter the length in seconds, such as 2.5, and press <Kbd keys="Enter" />.
+
+</Steps>
+
+The tempo line leaves a gap with a fermata sign over the held count. To make it an ordinary count again, right-click it and choose <Ui k="tempoMode.band.menu.notAHold" />.
+
+<Media
+  id="music-count-menu"
+  alt="The menu for measure 6, count 1 at 118: Add a tempo change here, Set tempo to measure 7, Gradual change (dimmed), Make a hold (fermata), Add a count before, Add a count after and Remove this count."
+/>
+
+## Add or remove counts
+
+When the music has a beat the counts miss, or the counts have one the music doesn't, add or remove counts.
+
+<Steps>
+
+1. Right-click a count and choose <Ui k="tempoMode.band.menu.addCountBefore" />, <Ui k="tempoMode.band.menu.addCountAfter" /> or <Ui k="tempoMode.band.menu.removeCount" />.
+2. Choose what happens to everything after it. The box says which pages and moves change, and how.
+
+</Steps>
+
+When you add a count:
+
+- <Ui k="tempoMode.popovers.countAsk.shift" />: the new count takes time of its own, so later counts and the drill on them move later against the music. Use this when the counts after it were early.
+- <Ui k="tempoMode.popovers.countAsk.keep" />: the measure gets one more count in the same time, so later counts stay on the music. Use this when they already are.
+- <Ui k="tempoMode.popovers.countAsk.hold" />: no count is added and the music stays; a move over that spot ends one count early so the marchers hold for a count. Use this for a breath in the drill.
+
+Removing works the same way: shift everything after it earlier, or keep the counts around it in the same time. Moves over the counts get shorter, or keep their counts by ending later if nothing is in the way. Press <Kbd keys="Enter" /> for the marked choice (your last one) or <Kbd keys="Escape" /> to cancel.
+
+You can't remove counts that would remove a page; delete the page first.
+
+## Set a time signature
+
+<Steps>
+
+1. Select the time signature on the <Ui k="tempoMode.lanes.measures.name" /> lane where it should change, or right-click the measure and choose <Ui k="tempoMode.band.menu.timeSignature" />.
+2. Choose a time signature. For one that isn't listed, choose <Ui k="tempoMode.band.meterMenu.other" /> and type it with its grouping in eighths, such as 7/8 2+2+3 or 11/8 3+3+3+2.
+
+</Steps>
+
+The time signature lasts until the next one, as in a score. To change one measure and leave the measures after it as they were, turn on <Ui k="tempoMode.band.meterMenu.justThisMeasure" /> first. The tempo stays the same; the counts are regrouped, so the measures after it may start earlier or later. A short measure before the next time signature is marked with an asterisk.
+
+Each group is one count: 6/8 has two counts, 7/8 counted 2+2+3 has three, and 5/8 has two.
+
+<Media
+  id="music-time-signature"
+  alt="The time signature menu opened from the 2/4 chip at measure 9, titled From m. 9 until the next time signature, with a choice for this measure only, then 2/4, 3/4, 4/4, 5/4, 6/8, 9/8, 12/8, 5/8 and 7/8 with their groupings, 3/2, and Other."
+/>
+
+## Add or remove a measure
+
+Right-click a measure number and choose <Ui k="tempoMode.band.menu.addMeasureBefore" /> or <Ui k="tempoMode.band.menu.removeMeasure" />, then choose what happens to everything after it, as for counts.
+
+## Renumber measures
+
+Measures are numbered from 1, or from the <Ui k="workspaceSettings.measurementOffset" /> in [Show settings](/guides/field/show-settings/). To make a measure match the score, for example after a cut, right-click or double-click its number, choose <Ui k="tempoMode.band.menu.renumber" />, and enter the number. The measures after it count on from there. Leave the number empty to go back to counting on.
+
+## Add rehearsal marks
+
+- To add a mark, double-click the <Ui k="tempoMode.lanes.marks.name" /> lane over the measure, or right-click the measure and choose <Ui k="tempoMode.band.menu.addMark" />. Type the mark, such as B or Closer.
+- To rename one, double-click it. Leave the name empty to remove it.
+- To move one, drag it to another measure.
+
+Rehearsal marks show on the timeline, and you can jump to one with go to (<Kbd action="timelineGoTo" />).
+
+## Related
+
+- [How counts and the music fit together](/guides/music/counts-and-music/): what a count, a tempo and the offset are.
+- [Import a MusicXML score](/guides/music/musicxml/): take the tempos, time signatures and rehearsal marks from the score instead.
+- [The metronome](/guides/music/metronome/): change how the click sounds.
+- [Pages](/guides/timeline/pages/): pages sit on the counts you set here.

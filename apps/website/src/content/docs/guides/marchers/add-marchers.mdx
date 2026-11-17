@@ -1,0 +1,93 @@
+---
+title: Add, edit and remove marchers
+description: Add marchers by section in the Marchers panel, change their drill numbers and names, and remove them.
+type: how-to
+covers:
+  - apps/desktop/src/components/marcher/MarchersModal.tsx
+  - apps/desktop/src/components/marcher/MarcherList.tsx
+  - apps/desktop/src/components/marcher/MarcherForm.tsx
+  - apps/desktop/src/components/marcher/csv
+  - apps/desktop/src/db-functions/timelineMarchers.ts
+  - i18n:marchers
+sidebar:
+  order: 1
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+Every marcher in a show belongs to a section, such as Trumpet or Color Guard, and has a drill number made of the section's prefix and a number: T1 and T2 in the trumpets, G4 in the color guard. You add, rename and remove marchers in the <Ui k="sidebar.marchers" /> panel.
+
+## The Marchers panel
+
+Select <Ui k="sidebar.marchers" /> in the sidebar (the icon of three people) to open the panel. It lists every marcher with their drill number, section and name.
+
+<Media
+  id="marchers-panel"
+  alt="The Marchers panel, with Marcher Appearance and Add buttons at the top and a list of marchers under them, each with a drill number, a section and a name."
+  maxWidth={520}
+/>
+
+## Add marchers
+
+<Steps>
+
+1. In the <Ui k="sidebar.marchers" /> panel, select <Ui k="marchers.addMarcher" />.
+
+2. Under <Ui k="marchers.addMethod.manual" />, enter how many marchers to add in <Ui k="marchers.quantity" />, up to 100 at a time.
+
+3. Choose their <Ui k="marchers.section" />. The <Ui k="marchers.drillPrefix" /> and the first free <Ui k="marchers.drillOrder" /> fill in for you.
+
+4. If you want different drill numbers, change the <Ui k="marchers.drillPrefix" /> (up to three characters) or the <Ui k="marchers.drillOrder" /> the new marchers start from.
+
+5. Select the button at the bottom of the form, for example **Create 4 Trumpet Marchers**.
+
+</Steps>
+
+<Media
+  id="marchers-add-form"
+  alt="The Add Marchers form with the Add manually tab open: Quantity, Section, Drill Prefix and Drill Number fields, and a Create button."
+  maxWidth={520}
+/>
+
+The new marchers are numbered in order from the number you entered, skipping any number the section already uses. They appear on the field in rows near the back corner of the field, one row for each section and two steps apart, and stand there on every page until you move them. To place them, see [Move marchers](/guides/marchers/move-marchers/) and [Shapes](/guides/shapes/).
+
+To add a whole band at once from a spreadsheet, select <Ui k="marchers.csv.title" /> instead of <Ui k="marchers.addMethod.manual" />. Choose <Ui k="marchers.csv.mode.section.title" /> to give each row a section and let OpenMarch number the marchers, or <Ui k="marchers.csv.mode.drillNumber.title" /> to give each row its drill number. <Ui k="marchers.csv.downloadExample" /> downloads a file to start from, and the form lists any rows it can't import before you import the rest.
+
+## Edit a marcher
+
+Change a marcher's section, name, year, drill number or notes:
+
+<Steps>
+
+1. In the <Ui k="sidebar.marchers" /> panel, select the menu button at the end of the marcher's row.
+
+2. Select <Ui k="marchers.list.editButton" />.
+
+3. Change the fields you want, then select <Ui k="marchers.updateButton" />.
+
+</Steps>
+
+A drill number has to be unique: the form says so if another marcher already has it. The inspector shows a selected marcher's name, section and drill number, but you change them here.
+
+## Remove marchers
+
+<Steps>
+
+1. In the <Ui k="sidebar.marchers" /> panel, select the menu button at the end of the marcher's row, then <Ui k="marchers.list.deleteButton" />. Repeat for every marcher you want to remove. They leave the list, but nothing is deleted yet.
+
+2. Select <Ui k="formButtons.saveChanges" />, or <Ui k="formButtons.discardChanges" /> to keep them.
+
+3. Check the drill numbers in the warning, then select <Ui k="marchers.deleteButton" />.
+
+</Steps>
+
+The marchers are removed from every page of the show. If you removed the wrong one, undo it with <Kbd action="performUndo" />.
+
+## Related
+
+- [Select marchers](/guides/marchers/select-marchers/): pick marchers on the field or by section.
+- [Change how marchers look](/guides/marchers/appearance/): colors and shapes for each section.
+- [Write your first show](/guides/start/first-show/): adding marchers is one step of setting up a show.

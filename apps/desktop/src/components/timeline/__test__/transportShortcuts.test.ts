@@ -84,6 +84,8 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
                 labelKey: "menu.help.showShortcuts",
                 accelerator: "Shift+/",
             },
+            { action: "reportFeedback", labelKey: "menu.help.reportFeedback" },
+            { action: "viewMyReports", labelKey: "menu.help.viewMyReports" },
         ]);
     });
 
@@ -93,6 +95,11 @@ describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
             const [binding] = getActionDefinition(
                 item.action as ActionId,
             ).defaultBindings;
+            // Actions without a default shortcut show none in the menu
+            if (binding === undefined) {
+                expect(item.accelerator, item.action).toBeUndefined();
+                continue;
+            }
             // Electron's accelerators name the slash "/"; the bindings name it by key code
             expect(item.accelerator, item.action).toBe(
                 binding!.replace("Slash", "/"),

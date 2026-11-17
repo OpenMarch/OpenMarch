@@ -31,7 +31,25 @@ export const FAMILIES = {
     slideR: [-1, 0],
 };
 
+// A crab family is its side and its angle off straight forward, as om-pose names it: "crabL090".
+export const isCrabFamily = (family) =>
+    typeof family === "string" && family.startsWith("crab");
+
 const _cache = new WeakMap();
+const _byBase = new WeakMap();
+// Every clip by base and height: a crab pack puts thousands of clips in the manifest.
+function clipByBase(manifest, base, height) {
+    let index = _byBase.get(manifest);
+    if (!index) {
+        index = new Map();
+        for (const c of clipsOf(manifest)) {
+            const key = `${c.base}|${c.height ?? 1}`;
+            if (!index.has(key)) index.set(key, c);
+        }
+        _byBase.set(manifest, index);
+    }
+    return index.get(`${base}|${height}`);
+}
 const clipsOf = (manifest) =>
     Array.isArray(manifest) ? manifest : manifest.clips;
 const sameHeight = (c, h) => Math.abs((c.height ?? 1) - h) < 1e-6;
@@ -39,9 +57,14 @@ const sameHeight = (c, h) => Math.abs((c.height ?? 1) - h) < 1e-6;
 // The family's loops at one height class, sorted by step_m, with one clip per size: a clip with `min_bpm`
 // (6to5_fast) replaces its sibling of the same step and direction when bpm >= min_bpm, and is left out below.
 export function familySizes(manifest, family, { height = 1, bpm = 120 } = {}) {
-    const dir = typeof family === "string" ? FAMILIES[family] : family;
-    if (!dir) throw new Error(`familySizes: unknown family ${family}`);
-    const key = `${dir}|${height}|${bpm}`;
+    const crab = isCrabFamily(family);
+    const dir = crab
+        ? null
+        : typeof family === "string"
+          ? FAMILIES[family]
+          : family;
+    if (!crab && !dir) throw new Error(`familySizes: unknown family ${family}`);
+    const key = `${crab ? family : dir}|${height}|${bpm}`;
     let byKey = _cache.get(manifest);
     if (!byKey) _cache.set(manifest, (byKey = new Map()));
     if (byKey.has(key)) return byKey.get(key);
@@ -49,9 +72,14 @@ export function familySizes(manifest, family, { height = 1, bpm = 120 } = {}) {
     for (const c of clipsOf(manifest)) {
         if (c.loop === false || !(c.step_m > 0) || !sameHeight(c, height))
             continue;
-        const [dx, dz] = c.dir ?? [0, 1];
-        if (Math.abs(dx - dir[0]) > 1e-3 || Math.abs(dz - dir[1]) > 1e-3)
-            continue;
+        if (crab) {
+            if (c.family !== family) continue;
+        } else {
+            if (c.family) continue; // a crab's sideways clips aren't the slides
+            const [dx, dz] = c.dir ?? [0, 1];
+            if (Math.abs(dx - dir[0]) > 1e-3 || Math.abs(dz - dir[1]) > 1e-3)
+                continue;
+        }
         if (c.min_bpm && bpm < c.min_bpm) continue;
         const k = c.step_m.toFixed(5),
             have = bySize.get(k);
@@ -98,11 +126,7 @@ export function pickBlend(manifest, family, d, opts = {}) {
 // names and the same weight; b is null when that kind is missing for b's move (then play a alone).
 export function blendClips(manifest, pick, kind = "") {
     const find = (base) =>
-        clipsOf(manifest).find(
-            (c) =>
-                c.base === (kind ? `${kind}_${base}` : base) &&
-                sameHeight(c, pick.height),
-        );
+        clipByBase(manifest, kind ? `${kind}_${base}` : base, pick.height);
     const a = find(pick.baseA),
         b = pick.baseB === pick.baseA ? a : find(pick.baseB);
     if (!a)

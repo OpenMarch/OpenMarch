@@ -1,3 +1,6 @@
+import { fingerDragSlop } from "./timelineGestures";
+import { clipEdgeHitInside, TOUCH_HIT_SIZE } from "./touchTargets";
+import { TouchHitArea } from "./TouchHitArea";
 import clsx from "clsx";
 import tolgee from "@/global/singletons/Tolgee";
 import {
@@ -355,7 +358,16 @@ export function useClipEdgeResize({
     resize,
     held = null,
     onDragStart,
+    selected = false,
+    touchGroup,
 }: {
+    /**
+     * The clip is selected: in the touch layout its edges are drawn and get 44px hit areas
+     * (tablet plan 3.3, decision 5), reaching out past each end and a little way in
+     */
+    selected?: boolean;
+    /** The clip's touch group (`data-touch-keep`), so its edges take presses on its body */
+    touchGroup?: string;
     trackId: TimelineTrackId;
     /** The move's name, which the tag starts with */
     label?: string;
@@ -394,6 +406,8 @@ export function useClipEdgeResize({
         pointerId: number;
         edge: Edge;
         startClientX: number;
+        /** How far it moves before it drags: further for a finger (`fingerDragSlop`) */
+        slop: number;
         /**
          * The range the drag started from, as drawn, and its edge's beat; set once it moves. A drag
          * started during a drop's wait starts from the drop, not from the range it replaces
@@ -506,6 +520,7 @@ export function useClipEdgeResize({
                 pointerId: event.pointerId,
                 edge,
                 startClientX: event.clientX,
+                slop: fingerDragSlop(event.pointerType, RESIZE_DRAG_PX),
                 base: null as TimelineBeatRange | null,
                 startBeat: 0,
                 moved: false,
@@ -544,7 +559,7 @@ export function useClipEdgeResize({
             if (!drag || drag.pointerId !== event.pointerId) return;
             if (
                 !drag.moved &&
-                Math.abs(event.clientX - drag.startClientX) < RESIZE_DRAG_PX
+                Math.abs(event.clientX - drag.startClientX) < drag.slop
             )
                 return;
             if (!drag.moved) {
@@ -657,13 +672,39 @@ export function useClipEdgeResize({
         },
     });
 
+    // A finger's edge (tablet plan 3.3): 44px wide, reaching `inside` into the clip, the rest out
+    // past its end; 44px tall, centered on the row
+    const inside = clipEdgeHitInside(width, handleWidth);
+    const touchHit = (edge: Edge) =>
+        selected ? (
+            <TouchHitArea
+                selected
+                group={touchGroup}
+                className="touch:block pointer-events-auto absolute top-1/2 hidden h-full min-h-44 -translate-y-1/2"
+                style={{
+                    width: TOUCH_HIT_SIZE,
+                    left:
+                        edge === "start"
+                            ? inside - TOUCH_HIT_SIZE
+                            : handleWidth - inside,
+                }}
+            />
+        ) : null;
+    const bar = (edge: Edge) =>
+        clsx(
+            "bg-text/60 pointer-events-none absolute inset-y-[2px] hidden w-[2px] rounded-full group-hover/resize:block",
+            edge === "start" ? "left-0" : "right-0",
+            selected && "touch:block",
+        );
     const handles = canResize ? (
         <>
             <span {...handleProps("start")}>
-                <span className="bg-text/60 pointer-events-none absolute inset-y-[2px] left-0 hidden w-[2px] rounded-full group-hover/resize:block" />
+                <span data-touch-drawn="" className={bar("start")} />
+                {touchHit("start")}
             </span>
             <span {...handleProps("end")}>
-                <span className="bg-text/60 pointer-events-none absolute inset-y-[2px] right-0 hidden w-[2px] rounded-full group-hover/resize:block" />
+                <span data-touch-drawn="" className={bar("end")} />
+                {touchHit("end")}
             </span>
         </>
     ) : null;

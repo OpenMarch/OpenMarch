@@ -106,6 +106,7 @@ const rightClick = (at: XY): FieldPointer => ({
     field: at,
     screen: at,
     button: 2,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,

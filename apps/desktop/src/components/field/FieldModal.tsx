@@ -1,45 +1,77 @@
+import { useEffect } from "react";
+import { useTranslate } from "@tolgee/react";
+import clsx from "clsx";
+import ActionButton from "@/shortcuts/ActionButton";
+import {
+    fieldEditMode,
+    useFieldEditModeStore,
+    useIsFieldEditMode,
+} from "@/field/editMode/fieldEditModeStore";
+import {
+    FIELD_EDIT_PANEL_ID,
+    FieldEditPanel,
+} from "@/field/editMode/FieldEditPanel";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
-import { XIcon } from "@phosphor-icons/react";
-import FieldProperties from "./FieldPropertiesSettings";
-import { T, useTranslate } from "@tolgee/react";
 
+/**
+ * The sidebar's Field button: opens the Field panel (#824) on Setup, with the field shown whole
+ * beside it. Pressed again, it's Done.
+ */
 export default function FieldModal() {
     const { t } = useTranslate();
+    const editing = useIsFieldEditMode();
+    useFieldEditPanel();
     return (
-        <SidebarModalLauncher
-            name={t("sidebar.field")}
-            contents={<FieldPropertiesContents />}
-            newContentId="field"
-            buttonLabel={<FieldIcon />}
-        />
+        <ActionButton
+            action="fieldEditMode"
+            caption={t("sidebar.field")}
+            aria-pressed={editing}
+            id="sidebar-launcher-field"
+            data-testid="sidebar-field"
+            className={clsx(
+                "touch:flex touch:min-h-44 touch:w-full touch:flex-col touch:items-center touch:justify-center touch:gap-2",
+                editing && "text-accent",
+            )}
+        >
+            <FieldIcon />
+        </ActionButton>
     );
 }
 
-export function FieldPropertiesContents() {
-    const { t } = useTranslate();
-    const { toggleOpen } = useSidebarModalStore();
-
-    return (
-        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">
-                    <T keyName="field.title" />
-                </h4>
-                <div className="flex items-center gap-8">
-                    <button
-                        aria-label={t("sidebar.close")}
-                        onClick={toggleOpen}
-                        className="hover:text-red duration-150 ease-out"
-                    >
-                        <XIcon size={24} />
-                    </button>
-                </div>
-            </header>
-
-            <FieldProperties />
-        </div>
-    );
+/**
+ * Keeps the Field panel's sidebar slot and its state together: opening it (this button, the
+ * palette, the field's menu) shows the panel; Done or X closes it; and the panel closing or
+ * giving its place to another panel (Marchers, Show settings) ends it, keeping the changes, as
+ * Done does.
+ */
+export function useFieldEditPanel() {
+    useEffect(() => {
+        const sidebar = useSidebarModalStore;
+        // In one update: the content alone, with the panel still shut, would read as closing it
+        const showPanel = () =>
+            sidebar.setState({
+                content: <FieldEditPanel />,
+                contentId: FIELD_EDIT_PANEL_ID,
+                isOpen: true,
+            });
+        if (fieldEditMode.isActive()) showPanel();
+        const offMode = useFieldEditModeStore.subscribe((state, before) => {
+            if (state.active === before.active) return;
+            if (state.active) return showPanel();
+            const { isOpen, contentId } = sidebar.getState();
+            if (isOpen && contentId === FIELD_EDIT_PANEL_ID)
+                sidebar.getState().setOpen(false);
+        });
+        const offSidebar = sidebar.subscribe(({ isOpen, contentId }) => {
+            if (!fieldEditMode.isActive()) return;
+            if (!isOpen || contentId !== FIELD_EDIT_PANEL_ID)
+                fieldEditMode.exit();
+        });
+        return () => {
+            offMode();
+            offSidebar();
+        };
+    }, []);
 }
 
 // from tabler icons, phosphor doesn't have a good field icon

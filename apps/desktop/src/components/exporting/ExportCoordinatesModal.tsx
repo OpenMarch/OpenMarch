@@ -34,6 +34,7 @@ import {
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
+import { ACTION_TOAST_DURATION_MS } from "@/components/ui/toastDurations";
 import { useTimingObjects } from "@/hooks";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
@@ -90,7 +91,9 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+import WebMobileUnavailable from "@/components/mobile/WebMobileUnavailable";
 import { isWebBuild } from "@/utilities/webBuild";
+import { isSignInEnabled } from "@/global/auth/constants";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import { hasOpfs, isAppleTouchDevice } from "@/utilities/device";
 import {
@@ -300,15 +303,15 @@ function CoordinateSheetExport() {
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
-            // Add success toast message
             toast.success(
-                <span>
-                    {t("exportCoordinates.exportedCount", {
-                        count: processedMarchers.length,
-                    })}
-                    <button
-                        type="button"
-                        onClick={async () => {
+                t("exportCoordinates.coordinateSheetsExported", {
+                    count: processedMarchers.length,
+                }),
+                {
+                    duration: ACTION_TOAST_DURATION_MS,
+                    action: {
+                        label: t("exportCoordinates.showInFolder"),
+                        onClick: async () => {
                             const error =
                                 await window.electron.openExportDirectory(
                                     result.path,
@@ -321,21 +324,9 @@ function CoordinateSheetExport() {
                                     ),
                                 );
                             }
-                        }}
-                        style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            font: "inherit",
-                            cursor: "pointer",
-                            marginLeft: "0.5em",
-                        }}
-                    >
-                        <T keyName="exportCoordinates.openExportDirectory" />
-                    </button>
-                </span>,
+                        },
+                    },
+                },
             );
         } catch (error) {
             console.error("Export error:", error);
@@ -880,29 +871,14 @@ function DrillChartExport() {
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
-            // Prompt user to open the export directory
-            toast.success(
-                <span>
-                    {t("exportCoordinates.exportPDFSuccess")}{" "}
-                    <button
-                        type="button"
-                        onClick={() =>
-                            window.electron.openExportDirectory(exportDir)
-                        }
-                        style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            font: "inherit",
-                            cursor: "pointer",
-                        }}
-                    >
-                        <T keyName="exportCoordinates.openExportDirectory" />
-                    </button>
-                </span>,
-            );
+            toast.success(t("exportCoordinates.drillChartsExported"), {
+                duration: ACTION_TOAST_DURATION_MS,
+                action: {
+                    label: t("exportCoordinates.showInFolder"),
+                    onClick: () =>
+                        void window.electron.openExportDirectory(exportDir),
+                },
+            });
         } catch (error) {
             toast.error(
                 t("exportCoordinates.pdfExportFailed", {
@@ -1451,20 +1427,14 @@ function VideoExport() {
                 });
                 return;
             }
-            toast.success(
-                <span>
-                    {t("exportCoordinates.videoExportSuccess")}{" "}
-                    <button
-                        type="button"
-                        onClick={() =>
-                            window.electron.openExportDirectory(result.path)
-                        }
-                        className="text-accent cursor-pointer p-0 underline"
-                    >
-                        <T keyName="exportCoordinates.videoOpenFile" />
-                    </button>
-                </span>,
-            );
+            toast.success(t("exportCoordinates.videoExported"), {
+                duration: ACTION_TOAST_DURATION_MS,
+                action: {
+                    label: t("exportCoordinates.openVideo"),
+                    onClick: () =>
+                        void window.electron.openExportDirectory(result.path),
+                },
+            });
         } catch (error) {
             console.error("Video export failed:", error);
             setCurrentStep(t("exportCoordinates.exportFailed"));
@@ -2030,8 +2000,36 @@ function ExportModalContents({
     onMobileExportClick: () => void;
 }) {
     const { exportTab, setExportTab } = useAppDialogStore();
-    // The web build can only export video (the rest needs Electron)
-    if (isWebBuild) return <VideoExport />;
+    // The web build exports video and uploads to the mobile app; the rest
+    // needs Electron (printToPDF, file streams). Where the build can't sign
+    // in (examples, a branch's preview URL), the Mobile tab says so.
+    if (isWebBuild)
+        return (
+            <Tabs
+                value={exportTab === "mobile" ? "mobile" : "video"}
+                onValueChange={(tab) => setExportTab(tab as ExportTab)}
+                className="gap-12"
+            >
+                <TabsList>
+                    <TabItem value="mobile">
+                        <T keyName="exportCoordinates.mobile" />
+                    </TabItem>
+                    <TabItem value="video">
+                        <T keyName="exportCoordinates.video" />
+                    </TabItem>
+                </TabsList>
+                <TabContent value="mobile">
+                    {isSignInEnabled ? (
+                        <MobileExportOption onClick={onMobileExportClick} />
+                    ) : (
+                        <WebMobileUnavailable />
+                    )}
+                </TabContent>
+                <TabContent value="video">
+                    <VideoExport />
+                </TabContent>
+            </Tabs>
+        );
     return (
         <Tabs
             value={exportTab}
@@ -2095,11 +2093,7 @@ export default function ExportCoordinatesModal() {
                 {/* Dialog Setup */}
                 <DialogContent className="export-coordinates-dialog touch:max-h-[calc(100dvh-2rem)]! max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
-                        {isWebBuild ? (
-                            <T keyName="exportCoordinates.exportVideoButton" />
-                        ) : (
-                            <T keyName="exportCoordinates.title" />
-                        )}
+                        <T keyName="exportCoordinates.title" />
                     </DialogTitle>
                     <ExportModalContents
                         onMobileExportClick={handleMobileExportClick}

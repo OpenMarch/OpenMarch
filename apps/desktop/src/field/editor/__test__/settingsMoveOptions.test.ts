@@ -55,6 +55,7 @@ const at = (x: number, y: number): FieldPointer => ({
     field: { x, y },
     screen: { x: x * ZOOM, y: y * ZOOM },
     button: 0,
+    kind: "mouse",
     shift: false,
     alt: false,
     ctrl: false,

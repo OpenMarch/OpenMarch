@@ -8,8 +8,11 @@
  * - `hidden-props` (the props hidden on the field, a local UI setting) on
  *   change;
  * - `invalidate` for every query the editor invalidates (writes, undo, redo
- *   and rolled-back transactions all end in `invalidateQueries`), and of
- *   `VIEW3D_TIMELINE_QUERY_KEY` after every committed timeline change.
+ *   and rolled-back transactions all end in `invalidateQueries`), of
+ *   `VIEW3D_TIMELINE_QUERY_KEY` after every committed timeline change, and of
+ *   `VIEW3D_HOLD_STYLES_QUERY_KEY` whenever the timeline's display version
+ *   changes (Held marks, which carry the hold styles, aren't in the change
+ *   log).
  *
  * A reloaded editor asks main whether a window is already open, since main
  * pushes the window state only when the window opens or closes. If one is,
@@ -52,8 +55,11 @@ import { updateVenueSettingsMutationOptions } from "@/hooks/queries/useVenueSett
 import { venueSettingsSchema } from "@/view3d/core/venueSettings";
 import { updateShowCamerasMutationOptions } from "@/hooks/queries/useShowCameras";
 import { showCamerasSchema } from "@/view3d/core/cameraList";
+import { setSilkArtworkMutationOptions } from "@/hooks/queries/useSilkArtwork";
+import { silkArtworkImportSchema } from "@/view3d/core/silkArtwork";
 import { pressAction, type ReleaseReason } from "@/shortcuts/registry";
 import { subscribeTimelineChanges } from "@/db-functions/timelineChanges";
+import { useTimelineDisplayStore } from "@/db-functions/timelineDisplay";
 import { useView3dWindowStore } from "@/stores/View3dWindowStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { isWebBuild } from "@/utilities/webBuild";
@@ -62,6 +68,7 @@ import {
     VIEW3D_AUTO_OPEN_SETTING,
     VIEW3D_CLOCK_CHANNEL,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
+    VIEW3D_HOLD_STYLES_QUERY_KEY,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
     VIEW3D_TIMELINE_QUERY_KEY,
@@ -165,6 +172,10 @@ export function useView3dPublisher() {
     const { mutate: updateCameras } = useMutation(
         updateShowCamerasMutationOptions(queryClient),
     );
+    // With history: an Artwork import or removal is one undo step.
+    const { mutate: setSilkArtwork } = useMutation(
+        setSilkArtworkMutationOptions(queryClient),
+    );
     const windowOpen = useView3dWindowStore((s) => s.open);
     const setWindowOpen = useView3dWindowStore((s) => s.setOpen);
     // The window goes with the show
@@ -266,6 +277,22 @@ export function useView3dPublisher() {
                 sendHiddenProps();
             }),
             electron.onView3dVenueChangeRequest((request) => {
+                if (request?.silkArtwork !== undefined) {
+                    if (request.silkArtwork === null) {
+                        setSilkArtwork(null);
+                        return;
+                    }
+                    const artwork = silkArtworkImportSchema.safeParse(
+                        request.silkArtwork,
+                    );
+                    if (artwork.success) setSilkArtwork(artwork.data);
+                    else
+                        console.warn(
+                            "3D View: ignored an invalid silk Artwork",
+                            artwork.error,
+                        );
+                    return;
+                }
                 if (request?.cameras !== undefined) {
                     const cameras = showCamerasSchema.safeParse(
                         request.cameras,
@@ -301,6 +328,7 @@ export function useView3dPublisher() {
         sendHiddenProps,
         updateVenue,
         updateCameras,
+        setSilkArtwork,
         setWindowOpen,
     ]);
 
@@ -383,6 +411,18 @@ export function useView3dPublisher() {
             }),
         );
     }, [windowOpen]);
+
+    // Held marks (the hold styles) follow the display version, not the change log
+    const displayVersion = useTimelineDisplayStore((s) => s.version);
+    const sentDisplayVersion = useRef(displayVersion);
+    useEffect(() => {
+        if (!windowOpen || sentDisplayVersion.current === displayVersion)
+            return;
+        sentDisplayVersion.current = displayVersion;
+        window.electron.publishToView3d(VIEW3D_INVALIDATE_CHANNEL, {
+            queryKeys: [[...VIEW3D_HOLD_STYLES_QUERY_KEY]],
+        });
+    }, [windowOpen, displayVersion]);
 }
 
 /**

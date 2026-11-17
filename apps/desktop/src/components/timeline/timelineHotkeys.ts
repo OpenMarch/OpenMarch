@@ -85,8 +85,8 @@ const onMoveControl = (focused: Element | null) =>
     focused?.closest("[data-timeline-own-keys]") != null;
 
 /**
- * The `data-timeline-own-keys` value for a plain button whose Space presses it too (the keep
- * chain, the inspector's hold line buttons; pre-merge review): Space doesn't play there.
+ * The `data-timeline-own-keys` value for a plain button whose Space presses it too (the
+ * inspector's hold line buttons; pre-merge review): Space doesn't play there.
  */
 export const OWN_KEYS_WITH_SPACE = "with-space";
 

@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# cspell:words esac
+# om-claim: mark who is working on an OpenMarch fork issue, on the fork's project board (project 5).
+#
+#   om-claim <issue> [--branch <name>] [--user <login>] [--status <Todo|Ready|In progress|In review|Done>]
+#       Assign --user (default: you) if they can be assigned, add the issue to the project if
+#       it's missing, set Status (default "In progress"), set Started to today if it's empty,
+#       and set Branch if given.
+#   om-claim --release <issue> [--user <login>]
+#       Unassign (everyone, or only --user), set Status to Ready, clear Started and Branch.
+#
+# Works only on AlexDumo/OpenMarch-timeline. Needs gh with the `project` scope
+# (gh auth refresh -s project). See docs/agents/work-tracking.md. The project and its fields are looked up by name on each run
+# (one GraphQL call), so nothing here needs updating if the project is recreated.
+set -euo pipefail
+
+REPO="AlexDumo/OpenMarch-timeline"
+OWNER="AlexDumo"
+REPO_NAME="OpenMarch-timeline"
+PROJECT_NUMBER_WANTED=5   # looked up by number so renaming the project is fine
+STATUSES=("Todo" "Ready" "In progress" "In review" "Done")
+
+die() { echo "om-claim: $*" >&2; exit 1; }
+usage() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+
+issue="" branch="" user="" status="" release=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --release) release=1 ;;
+    --branch) [ $# -ge 2 ] || die "--branch needs a value"; branch="$2"; shift ;;
+    --user) [ $# -ge 2 ] || die "--user needs a value"; user="${2#@}"; shift ;;
+    --status) [ $# -ge 2 ] || die "--status needs a value"; status="$2"; shift ;;
+    -R|--repo)
+      [ $# -ge 2 ] || die "$1 needs a value"
+      [ "${2,,}" = "${REPO,,}" ] || die "refusing: this tool only works on $REPO (got $2)"
+      shift ;;
+    -h|--help) usage 0 ;;
+    -*) die "unknown option $1 (see --help)" ;;
+    *) [ -z "$issue" ] || die "more than one issue given"; issue="$1" ;;
+  esac
+  shift
+done
+[ -n "$issue" ] || usage 1
+
+# Refuse any other repo: an issue URL, owner/repo#n, or GH_REPO pointing elsewhere.
+if [ -n "${GH_REPO:-}" ] && [ "${GH_REPO,,}" != "${REPO,,}" ]; then
+  die "refusing: GH_REPO is $GH_REPO; this tool only works on $REPO"
+fi
+case "$issue" in
+  http://*|https://*)
+    [[ "${issue,,}" =~ ^https?://github\.com/([^/]+/[^/]+)/(issues|pull)/([0-9]+) ]] || die "can't read issue URL $issue"
+    [ "${BASH_REMATCH[1]}" = "${REPO,,}" ] || die "refusing: this tool only works on $REPO (got ${BASH_REMATCH[1]})"
+    issue="${BASH_REMATCH[3]}" ;;
+  */*\#*)
+    r="${issue%%#*}"; [ "${r,,}" = "${REPO,,}" ] \
+      || die "refusing: this tool only works on $REPO (got ${issue%%#*})"
+    issue="${issue##*#}" ;;
+esac
+issue="${issue#\#}"
+[[ "$issue" =~ ^[0-9]+$ ]] || die "issue must be a number, got '$issue'"
+
+if [ "$release" = 1 ]; then
+  [ -z "$branch" ] || die "--branch can't be used with --release"
+  status="${status:-Ready}"
+else
+  status="${status:-In progress}"
+fi
+ok=0; for s in "${STATUSES[@]}"; do [ "$s" = "$status" ] && ok=1; done
+[ "$ok" = 1 ] || die "--status must be one of: ${STATUSES[*]}"
+
+gql() { gh api graphql "$@"; }
+
+# --- Project and field IDs, by name -------------------------------------------------------
+proj_json=$(gql -f login="$OWNER" -F num="$PROJECT_NUMBER_WANTED" -f query='
+  query($login:String!,$num:Int!){ user(login:$login){ projectV2(number:$num){
+    id number title url closed
+    fields(first:50){ nodes{
+      ... on ProjectV2FieldCommon { id name dataType }
+      ... on ProjectV2SingleSelectField { options { id name } } } } } } }') \
+  || die "couldn't read projects (does the token have the 'project' scope? gh auth refresh -s project)"
+
+read_ids=$(STATUS="$status" python3 -c '
+import json,os,sys
+p=json.load(sys.stdin)["data"]["user"]["projectV2"]
+if not p or p["closed"]: sys.exit("project not found or closed")
+f={x["name"]:x for x in p["fields"]["nodes"] if x}
+for need in ("Status","Started","Branch"):
+    if need not in f: sys.exit("project has no %r field" % need)
+opt=[o["id"] for o in f["Status"].get("options",[]) if o["name"]==os.environ["STATUS"]]
+if not opt: sys.exit("Status has no option %r" % os.environ["STATUS"])
+print(p["id"],p["number"],f["Status"]["id"],opt[0],f["Started"]["id"],f["Branch"]["id"],p["url"])
+' <<<"$proj_json") || die "project lookup failed"
+read -r PROJECT_ID PROJECT_NUMBER F_STATUS OPT_STATUS F_STARTED F_BRANCH PROJECT_URL <<<"$read_ids"
+
+# --- The issue (or PR) and its project item -------------------------------------------------
+ITEM_Q='
+  query($owner:String!,$name:String!,$n:Int!){ repository(owner:$owner,name:$name){ issueOrPullRequest(number:$n){
+    __typename
+    ... on Issue { id number title state url assignees(first:20){nodes{login}}
+      projectItems(first:20){nodes{ id project{id}
+        fieldValues(first:40){nodes{ __typename
+          ... on ProjectV2ItemFieldSingleSelectValue { name field{... on ProjectV2FieldCommon{name}} }
+          ... on ProjectV2ItemFieldDateValue { date field{... on ProjectV2FieldCommon{name}} }
+          ... on ProjectV2ItemFieldTextValue { text field{... on ProjectV2FieldCommon{name}} } }} }} }
+    ... on PullRequest { id number title state url assignees(first:20){nodes{login}}
+      projectItems(first:20){nodes{ id project{id}
+        fieldValues(first:40){nodes{ __typename
+          ... on ProjectV2ItemFieldSingleSelectValue { name field{... on ProjectV2FieldCommon{name}} }
+          ... on ProjectV2ItemFieldDateValue { date field{... on ProjectV2FieldCommon{name}} }
+          ... on ProjectV2ItemFieldTextValue { text field{... on ProjectV2FieldCommon{name}} } }} }} } } } }'
+
+# Prints: content id, item id (or -), started (or -), then a human-readable state block on fd 3.
+fetch() {
+  gql -f owner="$OWNER" -f name="$REPO_NAME" -F n="$issue" -f query="$ITEM_Q" | PROJECT_ID="$PROJECT_ID" python3 -c '
+import json,os,sys
+c=json.load(sys.stdin)["data"]["repository"]["issueOrPullRequest"]
+if not c: sys.exit("not found")
+item=next((i for i in c["projectItems"]["nodes"] if i["project"]["id"]==os.environ["PROJECT_ID"]),None)
+v={}
+if item:
+    for fv in item["fieldValues"]["nodes"]:
+        name=(fv.get("field") or {}).get("name")
+        if name: v[name]=fv.get("name") or fv.get("date") or fv.get("text")
+who=",".join(a["login"] for a in c["assignees"]["nodes"])
+print(c["id"], item["id"] if item else "-", v.get("Started") or "-", who or "-")
+kind="PR" if c["__typename"]=="PullRequest" else "Issue"
+sys.stderr.write("%s #%s  %s\n  %s\n  state:     %s\n  assignees: %s\n  on board:  %s\n  Status:    %s\n  Started:   %s\n  Branch:    %s\n" % (
+  kind,c["number"],c["title"],c["url"],c["state"],who or "(none)","yes" if item else "no",
+  v.get("Status") or "(empty)",v.get("Started") or "(empty)",v.get("Branch") or "(empty)"))
+'
+}
+
+row=$(fetch 2>/dev/null) || die "#$issue not found in $REPO"
+read -r CONTENT_ID ITEM_ID STARTED ASSIGNEES <<<"$row"
+
+set_status() { gql -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$F_STATUS" -f v="$OPT_STATUS" -f query='
+  mutation($p:ID!,$i:ID!,$f:ID!,$v:String!){ updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$v}}){ projectV2Item{id} } }' >/dev/null; }
+set_date() { gql -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$F_STARTED" -f v="$1" -f query='
+  mutation($p:ID!,$i:ID!,$f:ID!,$v:Date!){ updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{date:$v}}){ projectV2Item{id} } }' >/dev/null; }
+set_text() { gql -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$F_BRANCH" -f v="$1" -f query='
+  mutation($p:ID!,$i:ID!,$f:ID!,$v:String!){ updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{text:$v}}){ projectV2Item{id} } }' >/dev/null; }
+clear_field() { gql -f p="$PROJECT_ID" -f i="$ITEM_ID" -f f="$1" -f query='
+  mutation($p:ID!,$i:ID!,$f:ID!){ clearProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f}){ projectV2Item{id} } }' >/dev/null; }
+
+# --- Add to the project if missing ------------------------------------------------------------
+if [ "$ITEM_ID" = "-" ]; then
+  ITEM_ID=$(gql -f p="$PROJECT_ID" -f c="$CONTENT_ID" --jq '.data.addProjectV2ItemById.item.id' -f query='
+    mutation($p:ID!,$c:ID!){ addProjectV2ItemById(input:{projectId:$p,contentId:$c}){ item{id} } }')
+  echo "added #$issue to project #$PROJECT_NUMBER"
+fi
+
+if [ "$release" = 1 ]; then
+  # --- Release ---------------------------------------------------------------------------------
+  if [ -n "$user" ]; then
+    [ "$user" = "me" ] && user=$(gh api user --jq .login)
+    targets="$user"
+  else
+    targets=$([ "$ASSIGNEES" = "-" ] && echo "" || echo "${ASSIGNEES//,/ }")
+  fi
+  for u in $targets; do
+    gh api -X DELETE "repos/$REPO/issues/$issue/assignees" -f "assignees[]=$u" >/dev/null && echo "unassigned $u"
+  done
+  set_status
+  clear_field "$F_STARTED"
+  clear_field "$F_BRANCH"
+else
+  # --- Claim -----------------------------------------------------------------------------------
+  if [ -z "$user" ] || [ "$user" = "me" ]; then user=$(gh api user --jq .login); fi
+  if gh api "repos/$REPO/assignees/$user" >/dev/null 2>&1; then
+    gh api -X POST "repos/$REPO/issues/$issue/assignees" -f "assignees[]=$user" >/dev/null
+  else
+    echo "note: $user can't be assigned on $REPO (not a collaborator); leaving assignees as they are" >&2
+  fi
+  set_status
+  if [ "$STARTED" = "-" ]; then set_date "$(date +%F)"; fi
+  if [ -n "$branch" ]; then set_text "$branch"; fi
+fi
+
+fetch 2>&1 >/dev/null
+echo "  project:   $PROJECT_URL"

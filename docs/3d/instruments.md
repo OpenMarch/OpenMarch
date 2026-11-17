@@ -1,14 +1,15 @@
-# Instruments, holds and front ensemble props: design
+# Instruments, holds and the front ensemble: design
 
 <!-- cspell:words Zaber mellophone mellophones sousaphone sousaphones contras leadpipe Mylar lathed swept subwoofer spocks ligature -->
 
-Status: reviewed by the owner 2026-10-08; §9 item 3 (props persistence) is
-still open. Nothing here is built.
+Status: reviewed by the owner 2026-10-08; the front ensemble design (§6)
+settled 2026-11-11. The brass, woodwind and battery work is built; the front
+ensemble models are built but the app doesn't load them yet.
 
 How 3D View marchers come to carry instruments that read as the real thing,
 hold them the way a corps does, and how the front ensemble and its speakers
-appear on the field. Adds to [ADR 0010](../adr/0010-3d-view.md) D-7; the
-schema addition in §6 needs an ADR amendment before it is built.
+appear on the field. Adds to [ADR 0010](../adr/0010-3d-view.md) D-7; §6's
+`items.model` column is that ADR's amendment of 2026-11-11.
 
 ## 1. Where we are
 
@@ -55,19 +56,20 @@ reference pages during the build.
 
 ### Brass (`FAMILIES.Brass`)
 
-| Section       | Model                                                                    | Working dimensions          | Hold     |
-| ------------- | ------------------------------------------------------------------------ | --------------------------- | -------- |
-| Trumpet       | Bb trumpet, 3 piston valves; a modeled mesh (Kagelok, CC BY 4.0)         | length 0.48, bell 0.125     | brass    |
-| Mellophone    | marching mellophone, front bell                                          | length 0.55, bell 0.26      | brass    |
-| Baritone      | marching baritone, front bell                                            | length 0.62, bell 0.25      | brass    |
-| Euphonium     | marching euphonium, front bell                                           | length 0.66, bell 0.28      | brass    |
-| Trombone      | tenor trombone, slide                                                    | length 1.18, bell 0.21      | trombone |
-| Bass Trombone | same with larger bell and a second rotor                                 | bell 0.24                   | trombone |
-| Tuba          | marching contra: a long horizontal loop on the left shoulder, front bell | body 0.95 × 0.40, bell 0.50 | contra   |
+| Section       | Model                                                     | As built (rim to bell, bell) | Open length | Hold       |
+| ------------- | --------------------------------------------------------- | ---------------------------- | ----------- | ---------- |
+| Trumpet       | B♭ trumpet, 3 piston valves                               | 0.56, bell 0.125             | 1.48        | brass      |
+| Mellophone    | marching mellophone in F, front bell                      | 0.48, bell 0.264             | 1.97        | brass      |
+| Baritone      | marching baritone, front bell                             | 0.585, bell 0.254            | 2.9         | brass      |
+| Euphonium     | marching euphonium, front bell                            | 0.61, bell 0.28              | 2.9         | brass      |
+| Trombone      | tenor trombone, slide                                     | 1.18, bell 0.21              | 2.75        | trombone   |
+| Bass Trombone | larger bell and bore, one rotor with an F attachment      | 1.17, bell 0.24              | 2.75        | trombone   |
+| Tuba          | marching tuba (contra): the loop on the left shoulder, or | 1.07, bell 0.50              | 5.6         | contra     |
+|               | a sousaphone: the hoop round the body, the bell overhead  | hoop 0.9, bell 0.66          | 5.6         | sousaphone |
 
-The Tuba section renders the marching contra. A sousaphone (circular wrap,
-bell overhead) becomes a per-section choice on Tuba later (owner,
-2026-10-08); the catalog's `Carry.model` is where that choice lands.
+The Tuba section carries the marching tuba unless the show's venue settings
+say `tuba: "sousaphone"` (ADR 0010, amendment 2026-11-09; `tubaCarry` in
+`catalog.ts`).
 
 The app has no French horn section; mellophone covers it. If one is added
 later it gets its own hold (bell under the right arm, left hand on the
@@ -84,7 +86,7 @@ rotors).
 | Soprano Sax   | straight soprano          | length 0.65            | clarinet |
 | Alto Sax      | alto sax on a strap       | height 0.65, bell 0.12 | sax      |
 | Tenor Sax     | tenor sax on a strap      | height 0.80, bell 0.14 | sax      |
-| Bari Sax      | baritone sax on a harness | height 1.0, bell 0.19  | sax      |
+| Bari Sax      | baritone sax on a harness | height 1.0, bell 0.17  | bariSax  |
 
 ### Battery (`FAMILIES.Battery`)
 
@@ -92,15 +94,18 @@ rotors).
 | --------- | ----------------------------------------- | ---------------------------------------------- | ------- |
 | Snare     | marching snare on a carrier               | 14 in × 12 in shell                            | snare   |
 | Tenors    | sixes on a carrier                        | 10, 12, 13, 14 in drums, 6 and 8 in shots      | tenors  |
-| Bass Drum | marching bass on a carrier, sized per dot | 18 to 32 in diameter in 2 in steps, 14 in deep | bass    |
+| Bass Drum | marching bass on a carrier, sized per dot | 14 to 32 in diameter in 2 in steps, 14 in deep | bass    |
 | Cymbals   | pair of 18 in crash cymbals               | 18 in                                          | cymbals |
 | Flub Drum | the bass model, sized with the bass line  |                                                | bass    |
 
-Bass drum size: the show stores no size, so each marcher gets one. The
-marchers whose section carries the bass model (Bass Drum and Flub Drum), in
-id order, spread evenly over 18, 20, … 32 in, smallest first; a lone drum
-gets 26 in (`bassSizesFor`, `bassOptions` in `looks.ts`). A stored
-per-marcher size is a later schema change. The drums ride high, as in the
+Bass drum size: automatic, never picked (owner, 2026-11-15: the drill
+writer won't touch it), so the show stores no size. The sizes are what
+Yamaha (MB-8300) and Pearl (Championship Maple) sell: 14 to 32 in, in 2 in
+steps. The marchers whose section carries the bass model (Bass Drum and Flub
+Drum), in id order, spread evenly from the line's smallest size up to 32 in,
+smallest first. Lines of up to five start at 18 in, a line of six at 16 in
+and longer lines at 14 in, so every drum gets its own size up to ten; a
+lone drum gets 26 in (`bassSizesFor`, `bassOptions` in `looks.ts`). The drums ride high, as in the
 owner's reference photo: every size keeps its back at the carrier, just in
 front of the belly plate, so bigger drums reach further forward, and each
 hangs where its head's center is one mallet length up and forward from the
@@ -110,11 +115,31 @@ the mallet runs back through the hand with its butt behind the fist. The
 arms are one pose for every size; a hold per size would refine the small
 drums.
 
-**Carriers.** Snare, tenors and bass hang from one shoulder-hoop carrier:
-chrome hoops from a black belly plate up over the shoulders (padded where
-they sit) and down the back, with chrome J-bars from the plate to the drum.
-Its clearances come from the seven body meshes: shoulder tops at 1.46 m,
-chests reaching z 0.17, upper backs z −0.19.
+**Drum hardware (owner, 2026-11-15: match Yamaha's marching drums).** The
+drums follow current high-tension marching drums, after Yamaha's MS-9400
+snares, MQ-8300 multi-toms and MB-8300 basses, with no maker's badge or
+logo. Shells are paint under a glossy clear coat in the section's color, not
+metal; heads are smooth white. The snare's shell floats inside satin
+aluminum hardware: a tall top hoop over a tension frame, ten long tube lugs
+down to the bottom hoop, four feet, the strainer at the player's right and a
+mount bar at the back for the J-bars. Tenor shells are open below and cut
+away toward the player (about half depth on the near side), under tall
+chrome hoops with short lug casings. Bass drums have wood hoops in the
+shell's color, claw hooks and long tension rods to a center lug at each
+position (8 lugs up to 20 in, 10 to 26 in, 12 above), with a thin mount at
+the back. Cymbals are brilliant bronze in either brass finish, with the
+lathing's tone grooves and a leather pad on each bell. Each pad rests on its
+palm, and no hand passes through its cymbal on any body
+(`cymbalGrip.test.ts`); the strap runs inside the fist, so it isn't drawn.
+Bolt heads and lug casings are drawn at high detail only.
+
+**Carriers.** Snare, tenors and bass hang from one plate carrier, after
+current aluminum vest carriers: flat satin bars from a yoke on the chest up
+over the shoulders (padded where they sit) and down the back, a plate down
+the sternum onto a belly plate, a bar across the upper back, and J-bars
+from the belly plate to the drum. Its clearances come from the seven body
+meshes: shoulder tops at 1.46 m, chests reaching z 0.17, upper backs
+z −0.19.
 
 **Tenor layout.** Sixes, after the owner's reference photo of a Dynasty
 six-drum set. The two shots (6 and 8 in) sit in the middle nearest the
@@ -139,7 +164,7 @@ section the rifle. The swing flag, the double swing flag and the sabre are
 built and held but no section maps to them: they wait for a per-section
 choice (owner, 2026-10-09), which lands in the catalog's `Carry.model` like
 the sousaphone. Drum Major and Soloist carry nothing. Pit marchers carry
-nothing on their dots: their instruments are props (§6).
+nothing: their instruments are equipment items (§6).
 
 ## 4. Geometry: procedural, one bone each
 
@@ -161,40 +186,72 @@ geometry instances with the body for free, and a dimension change is a
 number. Hand-modeled GLB assets are the alternative if the result reads as
 too simple; the attachment and paint path below is the same either way.
 
-**Modeled meshes (2026-10-09).** The trumpet is the first instrument from a
-modeled mesh rather than code: "Trumpet" by Kagelok on Sketchfab, CC BY 4.0
-(credit and changes in `src/view3d/assets/instruments/CREDITS.md`). The
-owner picked it as the look every horn should match. Blender bakes it into
-the instrument frame with `apps/desktop/scripts/view3d-assets/export-horn.py`
-and a per-horn config (scale, grip origin, material-to-part map, a decimate
-ratio per detail), writing quantized JSON that `core/instruments/meshAsset.ts`
-turns back into pieces. The trumpet keeps the procedural trumpet's mouthpiece
-rim, (0, 0.018, −0.168), so the brass holds are unchanged. The mellophone,
-baritone, euphonium and contra followed the same day: no licensed models
-were found, so `build-horns.py` builds them in Blender from the trumpet's
-valve block and mouthpiece, with tubing and bells to the reference photos'
-proportions (oval wrap behind the valves, leadpipe across the top into an
-inner loop, slides below, bell forward on the wrap's top line; the contra
-the same layout, its valves low by the bell). Each keeps its procedural
-predecessor's mouthpiece and left grip, so the holds are unchanged too. The
-trombones stay procedural. Only meshes whose
-license allows redistribution under AGPL, such as CC0 or CC BY with credit,
-can ship here.
+**Brass rebuilt in code (2026-11-09).** The owner asked for the winds to be
+greatly improved against the reference pages. Every brass horn is now built
+in code from `core/instruments/hornKit.ts`: tubing bent through true arcs
+(`bentPath`, `pipe`), bells lathed from a horn flare (`bellFlare`), piston
+valves with caps, stems and pearl buttons, slides with their sleeves,
+braces, water keys and a mouthpiece. The third-party trumpet mesh and the
+Blender scripts that derived four horns from it are gone, with their
+credits; nothing third-party ships. One file per layout:
+`marchingBrass.ts` (the oval-wrap builder and the mellophone),
+`lowBrass.ts` (baritone, euphonium), `trumpet.ts`, `trombones.ts`,
+`contra.ts`, `sousaphone.ts`. Three rules hold for all of them, and
+`__test__/brass.test.ts` enforces the second and third:
 
-**Material (revised 2026-10-08).** The first pass painted horns through the
-uniform shader: flat-shaded, no metalness, one color. It cannot read as
-brass. Instruments are instead their own instanced mesh per look group,
-driven by the same bake texture through `instancedSkinning`, with a smooth
-metallic `MeshStandardMaterial` (metalness about 1, roughness about 0.25) in
-the look's finish color, with chrome and black hardware by part. Metal needs
-something to reflect, so the scene gains an environment map generated from
-the sky gradient over a bright ground, applied scene-wide (the fidelity
-brief's "sky-baked environment lighting"). One extra draw call per brass
-group. The part ids below remain the mesh's own attribute for the material
-to color by. Parts that aren't metal (the rifle's painted stock, silks,
-rubber and plastic, drum heads: `MATTE_PARTS` in `instrumentGeometry.ts`)
-draw non-metallic at roughness 0.65, because a fully metallic white stock
-shows only reflections and reads as chrome (owner, 2026-10-09).
+1. **Laid out over the photo.** Each horn is drawn orthographically at the
+   reference photo's scale and compared with it, tube by tube, then checked
+   from several other angles for parts that float or end in air.
+2. **One air path, held to pitch.** Mouthpiece, leadpipe, valve block,
+   wrap, bell: one centerline, within a few percent of the open length for
+   the horn's key (`BRASS_OPEN_LENGTH`).
+3. **Valve loops by interval, not by eye.** Each valve has exactly one loop,
+   leaving and returning to its own casing, and its length is solved from
+   `VALVE_SLIDE_RATIO`: the second valve adds a half step (5.9 % of the open
+   length), the first a whole step (12.2 %), the third a step and a half
+   (18.9 %). The bass trombone's F attachment adds a fourth (33.5 %).
+
+A bell is not a cone: it stays slim through its throat and opens fast in its
+last few centimeters, the rim turned almost flat (owner, 2026-11-09).
+`bellFlare` is that curve, fixed by the bell's two ends; read the rim's
+position at its plane, which in a product photo taken a little from the
+front is the center of the rim's ellipse, not its far edge.
+
+Known gaps: tubing hidden behind a valve block in the photos is a
+consistent reading, not a trace; the contra's mouthpiece sits where its
+hold needs it rather than where the photo has it; the sousaphone's valve
+loops are narrower than the real horn's and its neck is probably long; the
+bell-front horns' bells are level where the photos tilt them a few degrees.
+
+**Woodwinds rebuilt (2026-11-09).** The woodwinds are rebuilt the same way,
+against the reference pages' angled views and front-on photos of marching
+players: `woodwindKit.ts` holds the shared parts (cups on chimneys, hinge
+rods with posts, key guards, mouthpieces with reed and ligature, flared
+tubes), `woodwinds.ts` the flute, piccolo and clarinets, `saxophones.ts`
+the saxophones. The curved saxes have a true U bow, a bell in front of the
+body tube that leans forward as it
+flares to a rolled rim with its low cups under guards, a bell-to-body brace
+and a neck with its octave key; the bari has its top loop. The flute's lip
+plate lines up with its keys; the bass clarinet has a swan-neck crook and a
+forward-leaning bell. Key work is simplified: it reads at the 30-yard line,
+less so close up.
+
+**Material (revised 2026-11-09).** Instruments are their own instanced mesh
+per look group, driven by the same bake texture, in one
+`MeshPhysicalMaterial` whose surface is set per vertex (`surfaceOf` in
+`instrumentGeometry.ts`, the `_surface` attribute): lacquered brass is
+polished metal (roughness 0.2) under a glossy clear coat, which gives it a
+second, sharper highlight; silver plate is bare and sharper (0.11); nickel
+trim is a mirror (0.1); the parts that aren't metal (`MATTE_PARTS`: the
+rifle's painted stock, silks, rubber and plastic, drum heads) draw
+non-metallic at roughness 0.65, because a fully metallic white stock shows
+only reflections and reads as chrome (owner, 2026-10-09). A metal's color is
+its reflectance, paler than the color the eye names, and most of what a lit
+horn shows is what it reflects. So the environment map (`envMap.ts`) holds
+more than a sky gradient: a dark band of stands round the horizon, a sun
+many times brighter than white, clouds, the light towers at night and a
+hall's ceiling panels, and instruments take it `ENVIRONMENT_BOOST` times as
+brightly as the turf and uniforms do. One extra draw call per brass group.
 
 **Silks** are not instrument pieces (C4.4, props-spec.md section 7). A flag
 model lists its silks as `SilkSpec`s (size, frame in the instrument frame,
@@ -216,10 +273,13 @@ the catalog's flat-bottomed swing Cut and the 6 ft flag stays a rectangle.
 
 **Parts and finish.** The uniform shader paints parts by id; it knows ids 0
 to 15 today. Instruments take new ids from 16 upward: 16 brass finish (gold
-lacquer by default, silver lacquer as the alternative), 17 reserved, 18 chrome, 19 drum shell (section color), 20 drum head, 21 bar
-(rosewood), 22 black hardware, 23 wood (clarinet), 24 speaker grille. The
-finish choice per section (lacquer or silver) is a look option like the hat
-today. Painting new ids needs a change in the vendored
+lacquer by default, silver plate as the alternative), 17 reserved, 18 chrome, 19 drum shell (section color, paint under clear coat), 20 drum
+head, 21 bar (rosewood), 22 black hardware, 23 wood (clarinet), 24 speaker
+grille or flag silk, 25 satin aluminum (drum hoops, lugs, carriers), 26
+cymbal bronze. The
+finish (lacquer or silver) is the show's choice for its whole brass line
+(venue settings `brassFinish`, ADR 0010 amendment 2026-11-09); woodwinds
+keep the finish they are made in (`finishFor`). Painting new ids needs a change in the vendored
 `uniform-shader.js`: that change goes to om-pose first, then is copied back,
 as the vendor README requires. Until then the app patches the shader's
 `onBeforeCompile` chain locally, which is allowed and already how the window
@@ -242,48 +302,92 @@ Bake rows scale with holds, so §8 measures the budget first.
 
 The holds, from the owner's reference photos (kept outside the repo) and
 notes. Two rules hold across every state: **the hands never leave their
-playing grip** (right hand on the valve caps, left hand behind the valves;
+playing grip** (right hand over the valve buttons, left hand on the valve
+casings;
 woodwind hands on their stacks), and at carry **the mouthpiece sits at eye
 level** (for the flutes, clarinets and soprano sax, the first key; see the
 woodwind bullets). The states differ by where the bell
 points and where the elbows go.
 
-- **brass, horns up.** The bell is front: forward at face height, horizontal. Upper arms
-  out to the sides near horizontal, forearms up and in: a triangle slightly
-  wider than equilateral from shoulder to shoulder to the hands. Baritone
-  and euphonium: the same with the bell above eye line.
+- **Every hold, the head (owner, 2026-11-10).** The head is up 15 degrees
+  (`HEAD_UP`), and a hold may lean or turn it as well. The neck and head ride
+  the Horn/Equipment channel with the arms, so the hold sets them. Lips
+  are at (0, 1.588, 0.088) with the head at bind (`LIPS`), and the hold's
+  head turn carries them. Brass rims sit at the turned lips. The reed
+  woodwinds' mouthpiece tips sit 1 cm inside them, and the flutes' lip
+  plates sit just under them.
+- **brass, horns up (owner, 2026-11-10).** Trumpet, mellophone, baritone
+  and euphonium: the horn 15 degrees above level, bell forward, the
+  mouthpiece's rim at the lips. The right hand comes over the valves from the
+  performer's right, its knuckles beside the buttons and the fingers across
+  them; the left hand holds the valve casings from the horn's left side.
+  Each horn's hold is built from its own geometry (`valvedUp` in
+  `holds.ts`: the rim and each valve's casing and button), so a rebuilt
+  horn keeps its hands on its valves. Elbows out, each solved from the
+  arm's bone lengths.
 - **brass, carry (set and down are the same hold; owner, 2026-10-08).**
   Instrument vertical in front of the torso, mouthpiece at eye level, bell
   toward the ground, elbows in.
 - **brass, trail.** Instrument in the right hand only, bell backward, valve
   block perpendicular to the ground, arm straight down the side. Left arm
   straight down, closed fist, thumb on top, along the leg.
-- **trombone, horns up.** As brass with the left hand at the bell brace and
-  the right hand on the slide at first position.
-- **contra, horns up and carry.** The loop lies along the left shoulder,
-  its plane outside the head and its bottom tube resting on the shoulder,
-  bell forward and a little above the head. The valves sit at chin height
-  in front, left of center; the right hand reaches across to them and the
-  left supports the bottom tube at the front. (Placed by reasoning from the
-  instrument's layout, 2026-10-08; the owner checks it against a photo of a
-  player.)
-- **flute.** Horizontal to the player's right, lips at the head joint,
-  angled a little forward and down. Both hands sit under the tube, wrists
+- **trombone, horns up (owner, 2026-11-10).** 15 degrees above level with
+  the rim at the lips; the right hand on the slide at first position, the
+  left on the bell section by the mouthpiece.
+- **contra, horns up and carry (owner, 2026-11-10; photos).** 15 degrees
+  above level with the rim at the lips. The rim sits 0.12 m behind the
+  valves, so they stand in front of the face at forehead height. The loop
+  lies back over the left shoulder, its plane outside the head. The right
+  hand comes across from the right, fingers across and down onto the
+  pistons, the elbow up toward shoulder height. The left hand holds the
+  front bow, the tube coming down the front of the loops on the horn's left
+  side. The head is up 15 degrees, leaned 12 toward the right shoulder and
+  turned 18 toward the mouthpiece (`CONTRA_HEAD`).
+- **sousaphone (owner, 2026-11-10).** Its players wear a beret, not the
+  shako and plume: a black beret pulled down toward the right, built with
+  the horn and riding the head bone (`beret.ts`). The bell rides low over
+  the beret, its axis at 1.96 m: its center about 0.34 m above the eyes,
+  its lower rim across the brow from the front, and its rim plane about
+  0.18 m in front of the nose (side-on photos, 2026-11-10). The left hand
+  holds the mouthpiece in place at the lips.
+- **Woodwind hands (wrist study, 2026-11-10).** A stiff mitt reads as a hand
+  only when it carries straight on from the forearm. So every woodwind hand
+  bends at most 30 degrees at the wrist, toward where the fingers would
+  curl, and the tube lies across the knuckles, 0.1 m up the fingers. The
+  targets are in `WOODWIND_HANDS`. The flutes' right forearm rises nearly
+  straight from an elbow at the side, and the left crosses the chest from
+  an elbow low in front. The clarinets' and saxes' elbows hang at the sides,
+  and their forearms come forward and in. These supersede the hand
+  positions in the bullets below.
+- **Percussion arms (drum corps photos, 2026-11-10).** The upper arms hang
+  10 to 20 degrees off vertical against the ribs and the forearms reach
+  forward. The snare rides 0.45 m out on its carrier, the tenor hands sit
+  about shoulder width apart, and the cymbal plates are held at the chest
+  0.26 m apart.
+- **flute.** Level and parallel to the shoulders, running straight out to
+  the player's right from the lips (owner, 2026-11-10). Up (photos,
+  2026-11-10): each wrist just under and behind the tube, the fingers
+  draped over it pointing forward. The left elbow is low and out to the
+  left, the forearm rising to the hand. Before that change, both hands sit under the tube, wrists
   0.12 m below it so the stiff hands' fingertips just reach over the top
   onto the keys: the left hand 0.2 m
   along by the face, its forearm across the chest and the elbow in front;
-  the right hand 0.42 m along with the elbow down and out. The lip plate
-  faces back at the lips and the keys face forward. Carry (owner,
+  the right hand 0.42 m along with the elbow down and out. As on a real
+  flute the embouchure hole lines up with the keys, and both face up,
+  tipped 14 degrees back toward the lips; the tube sits just under the
+  lower lip, its lip plate at the lips (owner, 2026-11-09). Carry (owner,
   2026-10-09): vertical in front of the face, head joint up, keys forward,
   the first key (0.2 m along) at eye level; the hands make a triangle, the
   left wrist 0.25 m along and the right 0.43 m, each a hand's length out and
   below, elbows out. Trail: vertical in the right fist at the side, head
   joint to the ground, held 0.5 m along; the arms are the brass trail's.
-- **piccolo.** The flute's line with both hands brought in to the short
-  body: the left 0.12 m along, the right 0.24 m. Carry: as the flute, the
+- **piccolo.** The flute's line, level and parallel to the shoulders, with
+  both hands brought in to the short body: the left 0.12 m along, the right 0.24 m. Carry: as the flute, the
   first key 0.101 m along at eye level, the hands at 0.14 and 0.24 m.
   Trail: as the flute, held 0.18 m along.
-- **clarinet.** Down the center line, angled 28 degrees out. The hands wrap
+- **clarinet.** Down the center line, angled 37 degrees out (photos and The
+  Instrumentalist, 2026-11-10; it was 28), with the elbows down and in near
+  the body. The hands wrap
   the joints from the sides, fingers across the front onto the holes: left
   hand on the upper joint, right hand on the lower, elbows a little out.
   The soprano sax shares this hold. Carry (owner, 2026-10-09): as the
@@ -299,37 +403,60 @@ points and where the elbows go.
   carry the crook and bell sit low at the right side, at trail the keys
   face the ground so the crook and bell hang below the tube behind the
   leg.
-- **sax.** On the strap in front of the body, as front-on photos of marching
-  saxes show: the neck brings the body out in front of the mouth and the
-  body runs straight down to the bow at the stomach (lower for the tenor and
-  bari). The keys face forward and the bell sits on the player's left of the
-  body tube, its flare leaning toward the keys so it opens forward and up.
-  The hands wrap the body from the sides, fingers across the front: left
-  hand on the upper stack, right hand on the lower, elbows out. Carry
-  (owner, 2026-10-09): vertical just in front of the body, turned a quarter
-  so the keys face the performer's right and the bell stands out in front
-  of the body tube (the model's bell is on its +X = +Y × +Z; the other
-  quarter turn would put it in the chest). The mouthpiece sits at eye
-  level, 0.11 m left of center so the body tube hangs on the center line,
-  0.21 m out. The hands stay where they play: left wrist on the upper
-  stack from the left, right wrist on the lower stack from the right.
-  Trail: level along front to back through the right fist, the mouthpiece
-  forward, the keys facing out so the bow and bell hang below the tube with
-  the flare leaning away from the leg; the arms are the brass trail's.
-- **snare, tenors.** Drum at waist height on the carrier, its shell clear
+- **sax (alto and tenor).** Up (owner, 2026-11-14, replacing the
+  2026-11-09 turn and the 2026-11-10 kick): the sax stands straight up and
+  down on the strap in front of the body, the mouthpiece straight back into
+  the mouth and the bell straight away from the player, directly in front
+  of the body tube, so neck, body and bell lie in one front-to-back plane.
+  The model turns its body 90 degrees about its own axis under the neck
+  (`SAX_BODY_TURN` in `saxophones.ts`) to line them up, which leaves the
+  pearls facing the performer's right. The hands come from the model's own
+  stacks (`saxHands` in `holds.ts`; the alto and tenor share a hold, so
+  their hands go between the two saxes' stacks), in the real grip: the
+  thumbs on the player's side of the tube, the palms on its flanks and the
+  fingers curled round onto the pearls, so each stiff mitt points along the
+  curled fingers' chord, bent toward the palm at the wrist by up to 30
+  degrees (`SAX_WRIST_BEND`). The elbows hang under the shoulders. Carry: the
+  playing orientation raised so the mouthpiece is at eye level, on the
+  center line 0.13 m out; the hands stay on the stacks. Trail: level along
+  front to back through the right fist, the mouthpiece forward, the bow and
+  bell hanging straight down below the body tube, clear of the leg; the
+  arms are the brass trail's.
+- **bari sax.** A hold of its own, so its hands land on its own, longer
+  stacks. The model follows the same rule as the alto and tenor: the
+  mouthpiece comes straight back to the player and the bell faces straight
+  away, with the top loop, crook and neck receiver on the near side of the
+  body in the same plane. Up (owner, 2026-11-14, after trying a carry slung
+  sideways down the body): straight up and down like the alto and tenor,
+  the long body hanging in front of the performer, the hands in the same
+  real grip on its stacks. Carry: as the
+  alto's, the hands on the bari's upper stacks so they reach at eye level.
+  Trail: as the alto's, the tube a little further out for the wide bell.
+- **snare, tenors.** Elbows at the sides, a little forward, not winged
+  (photos, 2026-11-10). Drum at waist height on the carrier, its shell clear
   of the belly plate. Matched grip: the hands just behind the back rim
   (wider on the tenors), palms down, forearms forward and level, elbows
   relaxed at the sides. Each stick runs through the hand a third of the way
   up (the butt behind the fist) and angles in from each side: on the snare
   the tips meet near the center a little above the head without crossing;
   on the tenors each hand reaches over the shots to drum 1 or drum 2.
-- **bass.** Drum sideways on the carrier, carried high. Upper arms down,
+- **bass.** Drum sideways on the carrier, carried high: its center about the
+  shoulders, the biggest drums' tops at the top of the head (no higher than
+  1.85 m). The hands are at the lower ribs (1.12 m) with steep mallets
+  (photos, 2026-11-10). Upper arms down,
   forearms forward at the hips, the hands beside the heads below the
   center, the mallets angled up and forward to each head's center for
   every size from 18 to 32 in.
-- **cymbals.** Pair held at chest height, plates vertical.
-- **flag.** Up (present): the pole vertical in front of the body, right
-  hand at the chest, left hand low on the pole, the silk overhead toward
+- **cymbals.** Pair held at chest height, plates vertical, elbows closer to
+  the body (photos, 2026-11-10). Photos show two other positions, low at the
+  sides while marching and a diagonal "gumption" to play. Which one to use
+  is the owner's call.
+- **flag.** Up (present; instruction pages and parade photos, 2026-11-10):
+  the left hand covers the butt at the belly button, and the right hand
+  grips the pole 0.6 m up it at about nose height. The pole leans 25
+  degrees forward and out to the right (`FLAG_PRESENT`). Before that
+  change: the pole vertical in front of the body, right hand at the chest,
+  left hand low on the pole, the silk overhead toward
   the performer's right (instrument +X under this hold; seen from the
   audience it flies to the camera's left). Carry and trail: the pole
   vertical at the right side, left arm down. Which side a guard presents
@@ -361,39 +488,144 @@ the photos, with the instrument attached, in the web preview in a real
 browser. The hold table is data, so a second pass by a person who marches
 is a number change.
 
-## 6. Front ensemble and speakers: props
+## 6. Front ensemble and speakers: equipment items
 
-The owner's call (2026-10-08): the front ensemble and speakers are geometry
-in the 3D View that function as props, not dots.
+The owner's design (2026-11-11). It replaces the earlier `view3d_props`
+proposal, which is retired. The front ensemble is mainly for the 3D View;
+2D draws each piece as its model seen from above, so writers see how much space the pit takes. Timeline-mode
+shows only, like every item (ADR 0010 D-9).
 
-**Models** (ground-standing, not skinned):
+**Models.** Built and CC0: 44 models, each with a `-low` version, in
+`src/view3d/assets/pit/`, generated by
+`apps/desktop/scripts/view3d-assets/pit/build.py`. Mallet keyboards (marimba,
+vibraphone, xylophone, glockenspiel), synths, drum sets, aux racks, timpani,
+chimes, gongs, congas, bongos, concert bass drums, a trap table, speakers,
+mixer carts and podiums. Amps are built but not offered yet.
 
-- 4.3 octave marimba, 5 octave marimba, 3 octave vibraphone, 3.5 octave
-  xylophone, each on its field frame with wheels, bars in rosewood or
-  synthetic amber, resonators in black or gold.
-- Synthesizer on a keyboard stand with a rack; aux percussion rack with a
-  concert bass drum, suspended cymbals, a chime rack.
-- Speaker stacks: a mid-high cabinet over a subwoofer, in black, on each
-  side of the pit, with a mixer position behind.
+**Equipment is items.** Pit instruments, speakers, the mixer and podiums are
+items (`marchers.type = 'item'`, `items.kind = 'equipment'`), stored per show.
+Each names its built-in model in a new nullable `items.model` column (a model
+id such as `pit/marimba-5.0`; NULL draws a block, as props do today). This is
+the ADR 0010 amendment of 2026-11-11; it is separate from the future Library
+reference. The model is picked as family, then variant. Default variants:
+marimba 4.3 rosewood, vibraphone 3.0 silver, synth 88-key single, drum set
+plain, speaker tall, mixer cart, podium low.
 
-**Placement.** Props need positions the show file doesn't have. Proposal:
-a `view3d_props` table (`id`, `kind`, `x`, `y` in field pixels like
-`marcher_pages`, `rotation_degrees`, `label`), edited in the 3D window's
-panel with "Add prop", drag on the field and a rotation handle, and undo
-through the existing history tables. The window already saves the venue
-choice in the show the same way (`view3dVenue.ts`), so the pattern exists.
-This is a schema and file-format change: it goes into ADR 0010 as an
-amendment before any code, per the project rules.
+**Locked items.** Any item can be locked. A locked item has one position for
+the whole show and no moves: dragging it on any page moves it on every page.
+Lasso and select-all skip it, so selecting marchers never picks up the pit;
+clicking it still selects it, and 2D shows a lock icon on a locked prop (not on
+equipment, which is locked as a rule). Unlocking gives it
+moves again. Equipment (pit instruments, podiums, speakers, the mixer,
+including everything a preset creates) is created locked; props are created
+unlocked. The flag is a boolean `items.locked` column, added in the same
+migration as `items.model`. Props that are on the field for only some pages
+are the placement work in `props-spec.md` §4, not part of this.
 
-**Default layout** so a show looks right before anyone places props: on
-first open of a show with pit marchers, seed one prop per pit marcher at the
-marcher's first-page dot (Marimba, Vibraphone, Xylophone, Synthesizer, Aux
-Percussion each map to a model), facing the audience, and a speaker stack
-on each end of that row, 2 m beyond the outer prop. The seed is a one-time
-write the user can edit or delete; it never follows the dots afterward.
+Equipment is edited with the normal prop editing, but not in the Props panel
+(owner, 2026-11-15): designers don't think of the pit or the podiums as props,
+since they don't move and aren't staging. A pit is set up about once per show,
+so it lives in the Marchers panel: a Front ensemble row at the top says what the
+show has and opens the front ensemble view in place. That view lists the
+equipment and podiums in the show apart, each with its edit view; its header
+has Add, which opens the catalog as its own view (every model as a picture, by
+group: keyboards, percussion, audio and podiums, with a search box), and the
+Small, Medium and Large presets behind one button, "Start from a preset" or,
+once there is a pit, "Reset to preset". Opening the view and opening Add are
+registered actions. The Props panel lists only props. Storage is unchanged:
+equipment stays `items` rows with `kind = 'equipment'`. A new show can start
+with a pit: the new-show dialog has a Front ensemble step after Performers
+(None, Small, Medium, Large). Equipment never takes part in
+cues: items are never cue targets (ADR 0004, amendment of 2026-10-11).
 
-Pit marchers themselves keep marching bodies with no instrument, standing
-behind their prop when their dot is there, which is the usual case.
+**Players are marchers.** Pit players are ordinary marchers in pit sections
+and can move anywhere; battery and wind players can visit an instrument.
+Nothing stores who plays what: whoever's dot is on an instrument's playing
+spot (within about 1 ft) plays it, snapping to face it in a playing pose.
+Players stand on the field side of the instrument, facing the audience. Pit-section players carry nothing;
+a visiting player keeps their own carried instrument in v1 (instrument swaps
+are their own future design).
+
+**Sections.** The Pit family gains Glockenspiel, Drum Set, Rack and Timpani
+beside Marimba, Vibraphone, Xylophone, Aux Percussion and Synthesizer. Aux
+Percussion has no instrument of its own: chimes, gong, congas, bongos,
+concert bass drum and trap table stay equipment that aux players walk to.
+
+**Presets.**
+
+|                          | Small     | Medium    | Large     |
+| ------------------------ | --------- | --------- | --------- |
+| Marimba                  | 2         | 4         | 6         |
+| Vibraphone               | 2         | 3         | 4         |
+| Xylophone / Glockenspiel | 0         | 1 + 1     | 1 + 1     |
+| Rack                     | 1         | 1         | 2         |
+| Drum set                 | 0         | 1         | 1         |
+| Synth                    | 1         | 1         | 2         |
+| Speakers                 | 2         | 4         | 6         |
+| Podium                   | on the 50 | on the 50 | on the 50 |
+
+Every size adds one mixer, behind the pit (audience side), slightly off
+center. Marimbas are 4.3 octaves in Small and Medium and 4.6 in Large, never
+the 5.0; vibes are always the 3.0 (owner, 2026-11-15).
+
+- Two rows. The field-side row (the back line) has the xylophone and
+  glockenspiel on either side of the drum set at center, and the rack and
+  synth at the outer edges. The audience-side row has the marimbas in the center
+  with vibes on each side.
+- The field-side row starts 3 ft in front of the front sideline. The
+  audience-side row starts 3 ft past the deepest item in the field-side row,
+  which is the drum set whenever there is one (about 7 ft deep), so the
+  keyboards sit about 11.6 ft out at Medium and Large.
+- The speakers stand on the audience-side row's line, one per side on
+  consecutive 5-yard lines, starting at the first yard line past the end of
+  the pit (for Medium, the 40s and 35s). They never overlap the pit.
+- The podium sits on the 50, 3 ft past the audience-side row: the drum
+  major is always the closest performer to the audience, facing the field.
+  At Medium and Large this puts the podium on the edge of the track in the
+  `hs` venue; that is accepted.
+- Presets ignore the venue; in a tight venue such as the gym, fix it by
+  hand.
+- "Also add performers" is checked by default: one performer per instrument
+  in its section, plus a Drum Major standing on the podium, skipping
+  performers that already exist.
+- Re-applying a preset replaces only the items the previous preset created.
+  The previous preset's players (standing on its instruments' playing spots or
+  its podium) move onto the new spots for their section, and those whose
+  instruments the new preset doesn't have are removed with them (owner,
+  2026-11-15). Anyone else stays put. Applying is one undo step.
+
+**Podium.** The drum major stands on the podium at a standing height from
+the model's metadata, not through `surface_type`: the items check
+constraint keeps equipment without one. The `hs` and `bighs` venues draw
+their own podium box; it hides when the show has a podium item.
+
+A performer on a podium always faces the band, across the field: on a podium
+in front of the field (audience side) they face the back sideline, and on a
+podium behind the back sideline they face the audience. The drill's facing
+doesn't change this while they stand on it. Podiums can stand at the back of
+the field too; a podium placed on the back half is turned to face the field.
+
+**2D.** Each piece is drawn as its model seen from straight above (owner
+pick 2026-11-15, "outline + details"): its silhouette, faintly filled, at
+every zoom, and once zoomed in past about 24 px per meter the edges seen from
+above (bars, drum heads, steps) and a small facing mark. The drawings are
+generated from the GLBs into `assets/pit/plan.json`
+(`scripts/view3d-assets/pit-plan.mjs`); a model without one draws its
+footprint rectangle. The playing spot isn't drawn (owner, 2026-11-15): where
+the player stands is plain from the drawing. Right-clicking a piece offers
+Edit, which opens its edit view.
+
+Under the equipment, the field draws a pit area (owner pick 2026-11-15,
+"flat tone"): a flat tone, the field's background with a little of its line
+color, against the front sideline, only as wide and deep as the equipment
+plus 4 ft, with no lines. A matching one sits behind the back sideline when
+equipment stands there (a back podium). The yard-line labels stay at the sidelines, over it (owner, 2026-11-15), and
+the zoom fit includes it. They are drawing aids only;
+`FieldProperties` doesn't change.
+
+**Later.** Instrument swaps (their own design), more podium models
+(scaffold, traditional and others), artwork slots, amps, and a
+percussionist's review of the models.
 
 ## 7. Scope and order
 
@@ -405,8 +637,9 @@ real browser:
    Replaces the three placeholders.
 2. **Woodwinds.** Eight models, three holds.
 3. **Battery.** Carriers, five drums, cymbals, the bass size spread.
-4. **Front ensemble props.** ADR amendment and migration first, then the
-   models, the props panel and the seed layout.
+4. **Front ensemble.** The `items.model` migration first, then the models
+   in the 3D View, the Front ensemble group and presets, playing spots and
+   the 2D pit area (§6).
 
 ## 8. Risks and what to measure first
 
@@ -430,7 +663,8 @@ real browser:
 
 1. Answered: gold lacquer by default, silver lacquer per section.
 2. Answered: always up; the panel exposes the others for testing.
-3. Props: the table in §6 is the real fix. Is the ADR amendment acceptable
-   now, or should PR 4 start with the seed layout only and no persistence?
+3. Answered: the front ensemble is equipment items with a built-in
+   `items.model`, not a `view3d_props` table (§6, ADR 0010 amendment of
+   2026-11-11).
 4. Answered: carry, set and down are one hold with the bell to the ground.
    Horns up is the bell front.

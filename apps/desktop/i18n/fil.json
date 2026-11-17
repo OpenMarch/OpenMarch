@@ -23,10 +23,6 @@
         "batchEdit": {
             "noNextPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa susunod na pahina. Walang susunod na pahina",
             "noPreviousPage": "Hindi maitakda ang mga coordinate ng mga miyembro ayon sa nakaraang pahina. Walang nakaraang pahina",
-            "setAllToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (lahat ng miyembro)",
-            "setAllToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
-            "setSelectedToNext": "Kopyahin ang mga posisyon mula sa susunod na pahina (mga napili)",
-            "setSelectedToNextSuccess": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng susunod na pahina ({nextPage})}}",
             "setAllToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng lahat ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}",
             "setSelectedToPreviousDone": "{count, plural, one {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})} other {Matagumpay na naitakda ang mga coordinate ng # miyembro sa pahina {currentPage} ayon sa mga coordinate ng nakaraang pahina ({previousPage})}}"
         },
@@ -498,7 +494,6 @@
             "unavailable.title": "Hindi maiguhit ang field",
             "unavailable.web": "Naka-off o naka-block ang WebGL graphics sa browser na ito. I-on ang graphics acceleration (sa Chrome o Edge: Mga Setting, System, \"Gamitin ang graphics acceleration kapag available\"), i-restart ang browser, at i-reload ang pahinang ito. Ligtas ang iyong palabas."
         },
-        "title": "Field",
         "errors": {
             "noWebGL": "Hindi available ang WebGL",
             "contextLost": "Nawala ang WebGL context ng field, kaya hindi maiguhit ang video. Subukang i-export muli.",
@@ -513,43 +508,17 @@
         "applyFieldType": "Ilapat ang uri ng field",
         "applyFieldTypeWarning": "Hindi lilipat ang mga miyembro sa laki ng bagong uri ng field; mananatili sila kung nasaan sila sa canvas. Maaari mong ibalik ang dating uri ng field anumang oras.",
         "buttons": {
-            "newXCheckpoint": "Bagong linya ng sanggunian X",
-            "newYCheckpoint": "Bagong linya ng sanggunian Y",
             "resetTheme": "Ibalik sa default ang tema",
             "uploadFloor": "Mag-upload ng sahig…",
             "removeFloor": "Alisin ang sahig"
         },
         "checkpoint": {
             "created": "Nagawa ang linya ng sanggunian {axis} sa {steps} na hakbang",
-            "delete": "Burahin",
-            "deleted": "Nabura ang linya ng sanggunian {axis} sa {steps} na hakbang - \"{name}\"",
-            "deleteTooltip": "Burahin ang linya ng sanggunian na ito sa field",
-            "fieldLabel": "Label sa field",
-            "fieldLabelTooltip": "Ang label na lalabas sa field (hal., ang mga yard marker)",
-            "minimumRequired": "Kailangan ng hindi bababa sa 2 linya ng sanggunian {axis}",
-            "name": "Pangalan",
-            "nameTooltip": "Pangalanan ang linya ng sanggunian mo kahit ano ang gusto mo. Para lang ito malaman mo kung aling linya ng sanggunian ang pinipili mo.",
-            "newXCheckpointName": "Bagong linya ng sanggunian X",
-            "newYCheckpointName": "Bagong linya ng sanggunian Y",
-            "shortName": "Maikling pangalan",
-            "shortNameTooltip": "Ang pangunahing pangalan ng linya ng sanggunian. (Hal. \"45 Yard Line - Side 1\")",
-            "stepsFromCenter": "Hakbang mula sa gitna",
-            "stepsFromFront": "Hakbang mula sa harap",
-            "stepsFromFrontTooltip": "Ilang hakbang ang layo ng linya ng sanggunian na ito mula sa harap ng field. Ang negatibo ay papunta sa likod.",
-            "useAsReference": "Gamitin bilang sanggunian",
-            "useAsReferenceTooltip": "Kung gagamitin ang linya ng sanggunian na ito bilang sanggunian para sa mga coordinate.",
-            "visible": "Nakikita",
-            "visibleTooltip": "Kung makikita ang linya ng sanggunian na ito sa field",
-            "stepsFromCenterHint": "Ilang hakbang ang layo ng linya ng sanggunian na ito mula sa gitna ng field. Ang negatibo ay papunta sa kaliwa, ayon sa pagtingin ng audience sa field."
+            "minimumRequired": "Kailangan ng hindi bababa sa 2 linya ng sanggunian {axis}"
         },
-        "customField": "Custom na field",
         "customFieldDocs": "Tingnan ang docs",
         "customFieldName": "Custom",
-        "customization": "Pag-customize",
-        "customize": "I-customize",
         "errors": {
-            "invalidColor": "Hindi wastong kulay",
-            "noPropertiesToLoad": "Walang field properties na mai-load! Hindi ito dapat mangyari, pakikontak ang suporta",
             "notDefined": "Hindi naka-define ang FieldProperties. Hindi ito dapat mangyari, pakikontak ang suporta.",
             "invalidJson": "Hindi wastong JSON file.\n\nTiyaking wasto ang JSON syntax ng file.",
             "invalidFile": "Hindi wastong file ng field properties.\n\n{details}\n\nTiyaking nasa file ang lahat ng kailangang entry na may tamang value.",
@@ -565,24 +534,19 @@
         "fieldType": {
             "label": "Uri ng field"
         },
-        "general": "Pangkalahatan",
         "labels": {
             "background": "Background",
             "backgroundImageOpacity": "Opacity ng background image",
-            "backgroundImageRatio": "Ratio ng background image",
             "bottom": "Ibaba",
-            "conformingMethod": "Paraan ng pag-angkop",
             "conformMethod": "Paraan ng pag-angkop",
             "directorsLeft": "Kaliwa ng director",
             "directorsRight": "Kanan ng director",
             "externalLabels": "Mga panlabas na label",
             "fieldLabels": "Mga label sa field",
             "fieldName": "Pangalan ng field",
-            "fieldRatio": "Ratio ng field",
             "gridLines": "Mga grid line",
             "halfLineXInterval": "Pagitan ng half line sa X",
             "halfLineYInterval": "Pagitan ng half line sa Y",
-            "height": "Taas",
             "left": "Kaliwa",
             "leftAbbreviation": "Daglat ng kaliwa",
             "marcherFill": "Fill ng miyembro",
@@ -598,23 +562,12 @@
             "shapes": "Mga hugis",
             "shapeType": "Uri ng hugis",
             "showBackgroundImage": "Ipakita ang background image",
-            "stepsFromFrontToAwayLabelBottom": "Hakbang mula harap hanggang ibaba ng away label",
-            "stepsFromFrontToAwayLabelTop": "Hakbang mula harap hanggang itaas ng away label",
-            "stepsFromFrontToHomeLabel": "Hakbang mula harap hanggang ibaba ng home label",
-            "stepsFromFrontToHomeLabelTop": "Hakbang mula harap hanggang itaas ng home label",
             "stepSize": "Laki ng hakbang",
             "stepSizeWarningThreshold": "Hangganan ng babala sa laki ng hakbang",
             "temporaryPath": "Pansamantalang landas",
-            "top": "Itaas",
-            "useHashes": "Gumamit ng hash",
-            "width": "Lapad",
-            "widthHeight": "l/t",
-            "noBackgroundImage": "N/A",
-            "stepSizeWarningRatio": "Hangganan ng babala sa laki ng hakbang ({steps} sa 5)"
+            "top": "Itaas"
         },
         "messages": {
-            "fieldRatio": "{ratio} o {decimal}",
-            "measurementModificationNote": "Mababago ang mga value na ito sa pamamagitan ng pag-adjust ng mga X at Y coordinate, ng laki ng hakbang at ng background image",
             "noFloor": "Walang sahig",
             "floorUnnamed": "Sahig"
         },
@@ -625,39 +578,16 @@
             "metric": "Metric"
         },
         "sections": {
-            "externalLabels": "Mga panlabas na label",
-            "fieldLabels": "Mga label ng field",
-            "general": "Pangkalahatan",
-            "imageRendering": "Pag-render ng larawan",
-            "measurements": "Mga sukat",
-            "sideDescriptions": "Mga paglalarawan ng gilid",
-            "theme": "Tema",
-            "xCheckpoints": "Mga linya ng sanggunian sa X",
-            "yCheckpoints": "Mga linya ng sanggunian sa Y"
-        },
-        "tabs": {
-            "checkpoints": "Mga linya ng sanggunian",
-            "general": "Pangkalahatan",
-            "image": "Larawan",
-            "theme": "Tema"
-        },
-        "themeSubsections": {
-            "grid": "Grid",
-            "labels": "Mga label",
-            "marchers": "Mga miyembro",
-            "pathways": "Mga landas"
+            "sideDescriptions": "Mga paglalarawan ng gilid"
         },
         "tooltips": {
             "conformMethod": "Kung ipagkakasya ang background image sa loob ng field o pupunuin nito ang field. Laging pinapanatili ang aspect ratio",
             "directorsLeft": "Hal. \"Gilid 1\", \"Kaliwa ng manonood\" o \"Kanan ng entablado\"",
             "directorsRight": "Hal. \"Gilid 2\", \"Kanan ng manonood\" o \"Kaliwa ng entablado\"",
-            "fieldName": "Ang pangalan o pamagat ng field template",
             "halfLineXInterval": "Ang pagitan ng paglitaw ng mga half line sa UI sa X axis, mula sa gitna ng field. Iwanang blangko para walang half line sa X axis. Para lang ito sa itsura at hindi nito binabago ang mga coordinate sa anumang paraan",
             "halfLineYInterval": "Ang pagitan ng paglitaw ng mga half line sa UI sa Y axis, mula sa harap ng field. Iwanang blangko para walang half line sa Y axis. Para lang ito sa itsura at hindi nito binabago ang mga coordinate sa anumang paraan",
             "leftAbbreviation": "Hal. \"G1\", \"KLM\" o \"KNE\" (daglat ng \"Gilid 1\", \"Kaliwa ng manonood\" o \"Kanan ng entablado\")",
-            "measurementSystem": "Ang sistema ng sukat na gagamitin para sa laki ng hakbang. Puwedeng magpalipat-lipat",
             "resetTheme": "Ibalik ang tema sa mga default na value",
-            "resetToDefault": "Ibalik sa default",
             "rightAbbreviation": "Hal. \"G2\", \"KNM\" o \"KLE\" (daglat ng \"Gilid 2\", \"Kanan ng manonood\" o \"Kaliwa ng entablado\")",
             "stepsFromFrontToAwayLabelBottom": "Ilang hakbang mula sa harapang sideline hanggang sa labas ng away na numero (mas malapit sa likurang sideline)",
             "stepsFromFrontToAwayLabelTop": "Ilang hakbang mula sa harapang sideline hanggang sa loob ng away na numero (mas malapit sa gitna ng field)",
@@ -672,15 +602,10 @@
             "inches": "in",
             "centimeters": "cm"
         },
-        "warnings": {
-            "xCheckpointsNotEquidistant": "BABALA - Hindi magkapareho ang layo mula sa gitna ng pinakakaliwa at pinakakanang linya ng sanggunian sa X. Maaari itong magdulot ng kakaibang graphical artifact at dapat itong ayusin.",
-            "yCheckpointsNegative": "BABALA - Lubos na inirerekomenda na mas mababa sa zero (ibig sabihin, negatibong numero) ang hakbang ng lahat ng linya ng sanggunian sa Y. Dapat nasa likod ng harap ng field ang lahat ng Y coordinate. Kung hindi, maaaring magkaroon ng graphical error at hindi inaasahang coordinate."
-        },
         "loading": "Naglo-load...",
         "measurements": {
             "feet": "{value} ft",
-            "meters": "{value} m",
-            "steps": "{count, plural, one {# hakbang} other {# hakbang}}"
+            "meters": "{value} m"
         }
     },
     "fileAccessDialogError": {
@@ -1467,7 +1392,6 @@
         "general.appearance": "Hitsura",
         "general.appearance.dark": "Madilim",
         "general.appearance.light": "Maliwanag",
-        "general.automaticUpdates": "Awtomatikong i-download at i-install ang mga update",
         "general.description": "Editor mode, wika at iba pang setting para sa buong app.",
         "general.editorMode": "Editor mode",
         "general.editorMode.basic": "Basic",
@@ -2013,9 +1937,6 @@
                 "kinds": "Mga uri ng hugis",
                 "ringHintKeys": "I-hold ang <keys></keys> sa field para sa ring ng mga hugis"
             }
-        },
-        "transform": {
-            "title": "Transform"
         },
         "validate": {
             "noPosition": "May puwesto ang hugis na walang posisyon",
@@ -2579,7 +2500,6 @@
             "placeAllMarchers": "Ilagay ang lahat ng miyembro",
             "placeSelectedMarchers": "Ilagay ang mga napiling miyembro",
             "snapToggleCaption": "Snap",
-            "toNextPagePositions": "...sa mga posisyon sa susunod na pahina",
             "setMarcherPositionsAriaLabel": "Itakda ang mga posisyon ng miyembro"
         },
         "collisions": {
@@ -2630,20 +2550,6 @@
             "shapesSelected": "Kapag napili"
         }
     },
-    "versionCheck": {
-        "error": {
-            "fetchFailed": "Nagkaroon ng error habang kinukuha ang bersyon.",
-            "message": "Error: {message}",
-            "noVersion": "Hindi makuha ang pinakabagong bersyon."
-        },
-        "installLinux": "I-install para sa Linux",
-        "installMacArm": "I-install para sa Apple Silicon",
-        "installMacIntel": "I-install para sa Intel Mac",
-        "installWindows": "I-install para sa Windows",
-        "skipVersion": "Laktawan ang bersyong ito",
-        "title": "May bagong bersyon",
-        "trigger": "May bagong bersyon!"
-    },
     "view3d": {
         "autoOpenPrompt": {
             "description": "Mababago mo ito mamaya sa Mga setting › Pangkalahatan.",
@@ -2658,14 +2564,17 @@
             "floor": "Sa sahig",
             "frontRow": "Unang hanay",
             "geJudge": "Hurado ng GE",
+            "judgesTable": "Mesa ng mga hurado",
             "lowerBowl": "Ibabang palapag",
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
             "topDown": "Mula sa itaas",
+            "tunnel": "Tunnel",
             "upperDeck": "Itaas na palapag"
         },
         "kit": {
+            "arena": "Indoor arena",
             "bighs": "Malaking high school",
             "blank": "Field lang",
             "college": "Stadium ng kolehiyo",
@@ -2793,6 +2702,12 @@
         },
         "venue": {
             "updateFailed": "Hindi na-update ang venue ng 3D View"
+        },
+        "board": {
+            "designedBy": "Disenyo ni {name}",
+            "forClient": "Para sa {name}",
+            "nowPerforming": "Nagtatanghal ngayon",
+            "untitled": "Palabas na walang pamagat"
         }
     },
     "web": {
@@ -2948,7 +2863,14 @@
         "unsavedChanges": "May mga pagbabago kang hindi pa naka-save",
         "close": "Isara",
         "saved": "Na-save ang mga setting ng palabas",
-        "updateFailed": "Hindi na-update ang mga setting ng workspace"
+        "updateFailed": "Hindi na-update ang mga setting ng workspace",
+        "showInfo": {
+            "projectName": "Pangalan ng palabas",
+            "projectNamePlaceholder": "Gagamitin ang pangalan ng file",
+            "designer": "Designer",
+            "client": "Kliyente",
+            "optional": "Opsyonal"
+        }
     },
     "canvas": {
         "zoom": {

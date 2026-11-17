@@ -113,7 +113,7 @@ describe("ACTIONS", () => {
             "Define as shown",
         );
         expect(getActionLabel("timelineHoldFromPrevious", t)).toBe(
-            "Hold from previous page",
+            "Hold from last keyframe",
         );
         const clear = ACTIONS.setSelectedMarchersToPreviousPage;
         for (const id of [

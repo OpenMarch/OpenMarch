@@ -141,8 +141,30 @@ export type ShowPositionsReturn = {
 /**
  * Loads the show's resolver and beats in the 3D View window and returns the
  * {@link ShowPositions} over them. A new object comes back whenever either
- * changes, so callers can key on it.
+ * changes, so callers can key on it. Every caller in the window gets the same
+ * object for the same resolver and counts, so they share its samples and one
+ * layout a frame (`performerLift.ts`).
  */
+let shared: {
+    resolver: PositionResolver;
+    clock: CountClock;
+    positions: ShowPositions;
+} | null = null;
+
+/** The one {@link ShowPositions} for this resolver and these counts. */
+function sharedPositions(
+    resolver: PositionResolver,
+    clock: CountClock,
+): ShowPositions {
+    if (shared?.resolver !== resolver || shared.clock !== clock)
+        shared = {
+            resolver,
+            clock,
+            positions: new ShowPositions(resolver, clock),
+        };
+    return shared.positions;
+}
+
 export function useShowPositions(): ShowPositionsReturn {
     const {
         countGrid,
@@ -161,7 +183,7 @@ export function useShowPositions(): ShowPositionsReturn {
         if (isLoading || hasError || !resolver)
             return { positions: null, isLoading, hasError };
         return {
-            positions: new ShowPositions(resolver, countGrid),
+            positions: sharedPositions(resolver, countGrid),
             isLoading: false,
             hasError: false,
         };

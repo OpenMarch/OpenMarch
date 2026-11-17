@@ -4,7 +4,6 @@ import type { SpanInfo } from "@openmarch/core";
 import {
     followingPages,
     marcherNamesText,
-    pageChainWords,
     pageKeepStates,
     pagesText,
     type KeepPage,
@@ -12,8 +11,8 @@ import {
 
 /**
  * UI-18 keep later pages: the selection's keep state on each page box (follows after an earlier
- * move or from the start), the pages that follow the current one, and the chains' words (by name
- * up to three).
+ * move or from the start), the pages that follow the current one, and the marchers' names in the
+ * keep words (up to three).
  *
  * Pages: home (1), page 2 [1, 9), page 3 [9, 17), page 4 [17, 25), page 5 [25, 33).
  */
@@ -169,58 +168,6 @@ describe("followingPages", () => {
     it("from home, starts at the first box", () => {
         // Nobody follows into page 2 (they move there)
         expect(followingPages(states([1]), 1, 1)).toBeNull();
-    });
-});
-
-describe("pageChainWords", () => {
-    it("a linked chain says who holds where a page left them, then that a click sets them as shown", () => {
-        const [, , p4] = states([1, 2, 3]);
-        expect(pageChainWords(p4!)).toMatchObject({
-            label: "2 marchers have no position of their own here, shown where earlier pages left them",
-            hint: "Changes to earlier pages carry onto Page 4. Click to make them defined here, where they're shown",
-            menuHint:
-                "Changes to earlier pages carry onto Page 4. Right-click the page and choose Define as shown to keep them here",
-            marcherIds: [1, 2],
-        });
-        const [, one] = states([1]);
-        expect(pageChainWords(one!)).toMatchObject({
-            label: "1 marcher has no position of its own here, shown where Page 2 left it",
-            hint: "Changes to Page 2 carry onto Page 3. Click to make it defined here, where it's shown",
-            menuHint:
-                "Changes to Page 2 carry onto Page 3. Right-click the page and choose Define as shown to keep it here",
-        });
-        const [, two] = states([1, 3]);
-        expect(pageChainWords(two!)).toMatchObject({
-            label: "2 marchers have no position of their own here, shown where Page 2 left them",
-            hint: "Changes to Page 2 carry onto Page 3. Click to make them defined here, where they're shown",
-        });
-    });
-
-    it("no chain where nobody follows, such as a page every selected marcher is Set on", () => {
-        const [p2] = states([1, 2, 3]);
-        expect(pageChainWords(p2!)).toBeNull();
-        const [, p3] = states([2]);
-        expect(pageChainWords(p3!)).toBeNull();
-    });
-
-    it("names up to three marchers, then two and a count", () => {
-        const name = (id: number) => `OT${id}`;
-        const [, , p4] = states([1, 2, 3]);
-        expect(pageChainWords(p4!, undefined, name)?.label).toBe(
-            "OT1 and OT2 have no position of their own here, shown where earlier pages left them",
-        );
-    });
-
-    it("no chain for marchers that haven't moved yet", () => {
-        for (const box of states([4])) expect(pageChainWords(box)).toBeNull();
-        // With one that follows a move, the chain counts only that one
-        const [, , p4] = states([1, 4]);
-        expect(pageChainWords(p4!, undefined, (id) => `OT${id}`)).toMatchObject(
-            {
-                label: "OT1 has no position of its own here, shown where Page 2 left it",
-                marcherIds: [1],
-            },
-        );
     });
 });
 

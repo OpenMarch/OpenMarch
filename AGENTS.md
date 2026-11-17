@@ -25,14 +25,27 @@
 - `apps/cms` is a Next/Payload/Cloudflare app with its own `apps/cms/AGENTS.md`; read that before CMS changes.
 - `packages/core`, `packages/musicxml-parser`, and `packages/ui` are publishable/shared packages built with `tsup`; `packages/ui/src/tailwind.css` is the shared style source.
 - Prefer existing UI primitives in `packages/ui/src/components/base`; icons should come from `@phosphor-icons/react`.
-- Match the app's visual scale instead of inventing one: theme radii (`rounded-6` surfaces, `rounded-full` buttons), theme font sizes (`text-body`, `text-sub`), and the shared popover and menu classes. Read [UI styling](docs/conventions/ui-styling.md) before building or restyling any UI.
+- Match the app's visual scale instead of inventing one: theme radii (`rounded-6` surfaces, `rounded-full` buttons), theme font sizes (`text-body`, `text-sub`), and the shared popover and menu classes. Read [UI styling](docs/conventions/ui-styling.md) before building or restyling any UI, and [tablet parity](docs/conventions/tablet-parity.md) before adding a control, gesture or field interaction (desktop first; touch reaches the same action).
 - Read [change routing](docs/conventions/change-routing.md) when ownership is unclear or a change crosses packages.
-- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [localization](docs/conventions/localization.md), [testing](docs/conventions/testing.md), [UI styling](docs/conventions/ui-styling.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
+- `docs/conventions/` holds the long-form patterns: [database interactions](docs/conventions/database-interactions.md), [transactions across tables](docs/conventions/database-transactions.md), [multi-query hooks](docs/conventions/multi-query-hooks.md), [localization](docs/conventions/localization.md), [testing](docs/conventions/testing.md), [UI styling](docs/conventions/ui-styling.md), [tablet parity](docs/conventions/tablet-parity.md), and [troubleshooting](docs/conventions/troubleshooting.md). Read the relevant one before non-trivial work in that area.
 
 ## Verification
 
 - Read [verification](docs/conventions/verification.md) and run its scoped checks for the changed area.
 - Lint commands ending in `:check` are non-mutating; `lint` and `fix` may rewrite files.
+
+## User guide
+
+- The user guide (openmarch.com/guides, `apps/website/src/content/docs/guides`) describes how
+  the app behaves. Read it to learn how a feature is meant to work for users.
+- To read it as plain text, with labels and shortcuts filled in, build the site
+  (`pnpm turbo run build --filter=@openmarch/website`) and read `apps/website/dist/llms.txt`: it lists
+  one file per chapter in `dist/_llms-txt/`, and `dist/llms-full.txt` holds the whole guide.
+- A change to what users see or do isn't finished until the guide says so. Before pushing it,
+  update the guide's pages and recorded pictures and read the result as it renders, following
+  "When the app changes" in [apps/website/AGENTS.md](apps/website/AGENTS.md); agents use the
+  `user-docs` skill (`.claude/skills/user-docs`). Fill in the pull request's User guide section.
+- Start with `pnpm --dir apps/website docs:impact`, which lists the pages a change may affect.
 
 ## Durable decisions and generated files
 
@@ -53,6 +66,10 @@
 ### Issue tracker
 
 Issues live in GitHub Issues on the fork `AlexDumo/OpenMarch-timeline`, so pass `-R AlexDumo/OpenMarch-timeline` to `gh`. See `docs/agents/issue-tracker.md`.
+
+### Work tracking (fork only)
+
+On the fork, claim an issue on the project board before working on it (`scripts/om-claim <n> --branch <branch>`), link PRs with `Closes #n`, and file issues with one `area:` label under their epic. Never on upstream. See `docs/agents/work-tracking.md`.
 
 ### Triage labels
 

@@ -10,8 +10,8 @@ import {
 import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
 import { HeartIcon } from "@phosphor-icons/react";
 
-const LATEST_RELEASE_DOWNLOAD_URL =
-    "https://github.com/OpenMarch/OpenMarch/releases/latest/download";
+/** The latest release, or on the preview site the matching pre-release. */
+const LATEST_RELEASE_DOWNLOAD_URL = import.meta.env.PUBLIC_DOWNLOAD_URL;
 
 export default function DownloadCards() {
     const [donationDialogOpen, setDonationDialogOpen] = useState(false);

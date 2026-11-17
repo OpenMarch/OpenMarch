@@ -229,3 +229,29 @@ jobs:
           path: apps/desktop/release/*
           retention-days: 30
           if-no-files-found: warn
+
+  # Prereleases only. Updaters on a prerelease version ignore the per-arch channel the builds
+  # publish and ask for <prerelease id>-mac.yml, <id>.yml, <id>-linux.yml and
+  # <id>-linux-arm64.yml (see scripts/prerelease-update-feed.sh). Without them, beta testers
+  # can't update (v0.2.0-beta.4).
+  prerelease-update-feed:
+    needs: [build-and-release, windows-build-and-release]
+    if: ${{ !cancelled() && contains(github.event.inputs.tag || github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Publish the prerelease update feed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          # v0.2.0-beta.4 -> beta, like semver.prerelease(tag)[0] in electron-updater
+          CHANNEL=$(echo "$TAG" | sed -nE 's/^v?[0-9]+\.[0-9]+\.[0-9]+-([0-9A-Za-z-]+).*/\1/p')
+          [ -n "$CHANNEL" ] || { echo "::error::can't read a prerelease id from $TAG"; exit 1; }
+          gh release download "$TAG" --pattern 'latest-*.yml' --dir feeds
+          scripts/prerelease-update-feed.sh feeds out "$CHANNEL"
+          gh release upload "$TAG" out/*.yml --clobber

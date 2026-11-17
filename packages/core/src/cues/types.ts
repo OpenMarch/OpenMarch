@@ -1,6 +1,6 @@
 /**
- * Show-authored performer behavior: cues on channels, compiled per marcher.
- * The spec is docs/3d/performer-behavior.md; the storage is ADR 0004.
+ * Performer cues: one parameter of a performer set at a count, compiled per
+ * performer (ADR 0015; the write rules are ADR 0004's).
  *
  * Counts: count `c` is the c-th beat in `CompileInput.beats` (from 0), and
  * the number `c` means that count's click, the start of its beat row. A
@@ -8,30 +8,33 @@
  */
 
 /**
- * One part of a performer's behavior or look that cues set independently.
- * Carry (what is held), Silk (a carried flag's Artwork) and Uniform take
- * states only, as hard cuts (ADR 0004 amendment of 2026-10-11).
+ * A cue type controls exactly one parameter of a performer (ADR 0015 D-3):
+ * what they hold (Equipment), how they hold it (Position), a held flag's
+ * design (Silk), their uniform look (Look), where they face (Facing) and
+ * their body's posture (Posture).
  */
-export type CueChannel =
-    | "feet"
-    | "horn_equipment"
-    | "facing"
-    | "body"
-    | "carry"
+export type CueType =
+    | "equipment"
+    | "position"
     | "silk"
-    | "uniform";
+    | "look"
+    | "facing"
+    | "posture";
 
-export const CUE_CHANNELS: readonly CueChannel[] = [
-    "feet",
-    "horn_equipment",
-    "facing",
-    "body",
-    "carry",
+export const CUE_TYPES: readonly CueType[] = [
+    "equipment",
+    "position",
     "silk",
-    "uniform",
+    "look",
+    "facing",
+    "posture",
 ];
 
-/** What a performer carries, which decides the cues that fit them. */
+/** Whether this build knows a stored cue's type. Cues of other types are kept and ignored. */
+export const isCueType = (type: string): type is CueType =>
+    (CUE_TYPES as readonly string[]).includes(type);
+
+/** What a performer holds, which decides the Position and Silk cues that fit them. */
 export type PerformerCarry =
     | "winds"
     | "battery"
@@ -40,45 +43,36 @@ export type PerformerCarry =
     | "sabre"
     | "none";
 
-/** Who a cue applies to, broadest first. */
-export type CueTarget =
-    | { kind: "band" }
-    /** Matched to the marcher's section ignoring case and outer spaces. */
-    | { kind: "section"; section: string }
-    | { kind: "tag"; tagId: number }
-    | { kind: "set"; marcherIds: readonly number[] };
-
-export type RippleOrder = "drill" | "left_right" | "right_left" | "down_form";
-
-export interface CueRipple {
-    /** Counts the starts are spread over, inclusive. */
-    span: number;
-    order: RippleOrder;
-}
-
 /** A stored cue, as the compile step reads it. */
 export interface CueInput {
     id: number;
-    channel: CueChannel;
-    kind: "state" | "phrase";
-    target: CueTarget;
-    /** The beat the cue sits on. */
-    beatId: number;
     /**
-     * A built-in id (`builtin:...`), a show phrase (`show:<id>`), a Library
-     * item at an exact Version (`library:<uuid>@<version hash>`, on Carry,
-     * Silk and Uniform) or `none` (Carry).
+     * A {@link CueType}. A cue of a type this build doesn't know is ignored
+     * (ADR 0015 D-9), so a newer build's cues do no harm here.
      */
+    type: string;
+    /** The beat the cue sits on: its moment is that count's click. */
+    beatId: number;
+    /** A built-in id (`builtin:...`) or a value the show adds (`CompileInput.values`). */
     value: string;
     settings?: Readonly<Record<string, unknown>>;
-    /** Phrases: the length in counts, inclusive, at least 2. */
+    /**
+     * Null or omitted, the cue is **lasting**: it sets the parameter until
+     * each performer's next lasting cue of the type. A number, it is
+     * **momentary**: it applies for that many counts (at least 1), then the
+     * lasting value shows again.
+     */
     length?: number | null;
     /**
-     * States: the transition length in counts; null is the library default.
-     * Ignored on Carry, Silk and Uniform, which cut at the cue's count.
+     * How many counts the change takes, landing on the cue's count (1 is a
+     * snap); null is the value's default. Ignored by a value that cuts.
      */
-    transitionLength?: number | null;
-    ripple?: CueRipple | null;
+    transition?: number | null;
+    /**
+     * The performers the cue applies to: the ones selected when it was made
+     * (ADR 0015 D-4). The list is fixed; it follows no section or tag.
+     */
+    marcherIds: readonly number[];
 }
 
 /** A `marchers` row's type: a performer, or an item (ADR 0010 D-10). */
@@ -87,60 +81,39 @@ export type CueMarcherType = "marcher" | "prop" | "equipment";
 export interface CueMarcher {
     id: number;
     section: string;
-    tagIds: readonly number[];
-    drillOrder: number;
     /**
-     * What the marcher usually carries. Carry's default is the section's
+     * What the marcher usually holds. Equipment's default is the section's
      * usual equipment (`CompileInput.sections`, then `equipmentFallback`);
      * this is the last fallback, and what that equipment counts as when it
      * doesn't say.
      */
     carries: PerformerCarry;
     /**
-     * Whether the marcher wears the Guard default uniform. Omitted, a
-     * marcher carrying a flag, rifle or sabre counts as guard.
+     * Whether the marcher wears the guard's default look. Omitted, a marcher
+     * carrying a flag, rifle or sabre counts as guard.
      */
     isGuard?: boolean;
-    /** Omitted is a performer. Band and section targets never reach items. */
+    /** Omitted is a performer. A cue never reaches an item, even one it names. */
     type?: CueMarcherType;
 }
 
-/** A piece of equipment a Carry value or default names. */
+/** A piece of equipment an Equipment value or default names. */
 export interface CueEquipment {
-    /** `library:<uuid>@<version hash>`, or a built-in id the app names. */
+    /** A built-in id, or one the app names. */
     id: string;
     name: string;
     /** The timeline's short label; the name when omitted. */
     label?: string;
-    /** What holding it counts as, which decides the Horn/Equipment cues that fit. */
+    /** What holding it counts as, which decides the Position cues that fit. */
     holds: PerformerCarry;
-    /** A flag: its Cut's width ÷ height as the silk template lays it out. */
-    aspect?: number;
 }
 
-/** A Library item a Carry, Silk or Uniform cue names, with what compile needs of it. */
-export interface CueLibraryItem {
-    /** `library:<uuid>@<version hash>`. */
-    id: string;
-    channel: "carry" | "silk" | "uniform";
-    name: string;
-    /** The timeline's short label; the name when omitted. */
-    label?: string;
-    /** Carry items: what holding it counts as. Unknown, the section's usual equipment counts. */
-    holds?: PerformerCarry;
-    /**
-     * Width ÷ height as the silk template lays it out: a Silk item's Artwork,
-     * or a flag Carry item's Cut. Unknown, no aspect note.
-     */
-    aspect?: number;
-}
-
-/** What compile needs of a section for the Carry and Silk defaults. */
+/** What compile needs of a section for the Equipment and Silk defaults. */
 export interface CueSection {
     /** The section's name, matched to `CueMarcher.section` ignoring case and outer spaces. */
     name: string;
     /**
-     * The section's usual equipment, Carry's default; null carries nothing.
+     * The section's usual equipment, Equipment's default; null holds nothing.
      * Omitted, `CompileInput.equipmentFallback` decides.
      */
     equipment?: CueEquipment | null;
@@ -148,31 +121,37 @@ export interface CueSection {
     color?: string | null;
 }
 
-/** A show-stored phrase asset's metadata (ADR 0004 D-3). */
-export interface ShowPhraseAsset {
-    id: number;
-    name: string;
-    label: string;
-    /** The channel it plays on and any it takes over. */
-    channels: readonly CueChannel[];
-}
-
-/** What the feet do on a hold (a count where the marcher's dot doesn't travel). */
+/** What a performer's feet do on a hold (a count where their dot doesn't travel). */
 export type HoldTechnique = "stand" | "markTime" | "highMarkTime";
 
-/** Show-wide defaults the cues fall back to (ADR 0004 D-4). */
+/** Show-wide defaults a parameter has before its first cue (ADR 0015 D-2). */
 export interface CueShowDefaults {
-    stepOffFoot?: "left" | "right";
     /**
-     * Feet, with no Feet cue: what a holding performer does on a count where
-     * any performer travels. `markTime` when omitted (marchers mark time while
-     * the band moves). On counts where the whole band holds, they stand.
+     * The hold style, which is not a cue (ADR 0015 D-1), where the hold itself
+     * carries none (`CompileInput.holdStyles`): what a holding performer does
+     * on a count where any performer travels. `stand` when omitted (holds
+     * stand still unless asked, ADR 0015 D-5). On counts where the whole band
+     * holds, they stand.
      */
     holdWhileBandMoves?: HoldTechnique;
-    /** The band's default uniform; `builtin:uniform.band` when omitted. */
-    bandUniform?: string;
-    /** The guard's default uniform; `builtin:uniform.guard` when omitted. */
-    guardUniform?: string;
+    /** The band's default look; `builtin:look.band` when omitted. */
+    bandLook?: string;
+    /** The guard's default look; `builtin:look.guard` when omitted. */
+    guardLook?: string;
+}
+
+/**
+ * One performer's hold style over the counts `[from, to)` (ADR 0015 D-5): what
+ * its feet do while its dot holds there. It comes from the hold itself, so it
+ * wins over the show default whether or not the band moves.
+ */
+export interface CueHoldStyle {
+    marcherId: number;
+    /** The first count it covers. */
+    from: number;
+    /** The count after the last one it covers. */
+    to: number;
+    style: HoldTechnique;
 }
 
 export interface CompileInput {
@@ -180,34 +159,86 @@ export interface CompileInput {
     beats: readonly { id: number; duration: number }[];
     marchers: readonly CueMarcher[];
     cues: readonly CueInput[];
-    phraseAssets?: readonly ShowPhraseAsset[];
     showDefaults?: CueShowDefaults;
-    /** Whether the marcher's dot travels during count `count`. */
+    /**
+     * Whether the marcher's dot travels during count `count`. A value that
+     * shows only on holds (a kneel) reads it, and so does the hold style.
+     */
     travels?: (marcherId: number, count: number) => boolean;
     /**
-     * Whether any performer's dot travels during count `count`, for the Feet
-     * default (`CueShowDefaults.holdWhileBandMoves`). Omitted, it's derived
+     * Whether any performer's dot travels during count `count`, for the hold
+     * style (`CueShowDefaults.holdWhileBandMoves`). Omitted, it's derived
      * from `travels` over the performers; with neither, every count is a band
      * hold.
      */
     bandTravels?: (count: number) => boolean;
-    /** The marcher's field position at a count's click (x toward side 2, y toward the front). */
-    positionAt?: (marcherId: number, count: number) => { x: number; y: number };
-    /** Each section's usual equipment and 2D color, for the Carry and Silk defaults. */
+    /**
+     * The styles the performers' holds carry (ADR 0015 D-5). Each wins over
+     * the show setting for the counts it covers; where two of one performer's
+     * overlap, the later in the list wins. They are not cues, so a recompile
+     * that changes them needs no cue type named: the hold style is worked out
+     * afresh on every compile.
+     */
+    holdStyles?: readonly CueHoldStyle[];
+    /** Each section's usual equipment and 2D color, for the Equipment and Silk defaults. */
     sections?: readonly CueSection[];
     /**
-     * Carry's fallback when a section doesn't give its usual equipment:
+     * Equipment's fallback when a section doesn't give its usual equipment:
      * equipment by section name, matched ignoring case and outer spaces (the
      * app's `carryForSection` data).
      */
     equipmentFallback?: Readonly<Record<string, CueEquipment>>;
-    /** The Library items the show's Carry, Silk and Uniform cues name. */
-    libraryItems?: readonly CueLibraryItem[];
+    /**
+     * Values the show adds to the built-in library, such as a look or a
+     * piece of equipment. A built-in wins over one with the same id.
+     */
+    values?: readonly CueValue[];
 }
 
-export type SegmentKind = "default" | "state" | "transition" | "phrase";
+/** One setting a value takes, with its default. */
+export type CueSettingField =
+    | {
+          key: string;
+          kind: "choice";
+          options: readonly string[];
+          default: string;
+      }
+    | { key: string; kind: "number"; default: number };
 
-/** What one marcher does on one channel over `[from, to)` counts. */
+/** A value a cue of one type can set, with the rules for where it applies. */
+export interface CueValue {
+    id: string;
+    type: CueType;
+    name: string;
+    /** The timeline's short label. */
+    label: string;
+    /** What a performer must hold for the value to fit; a cue skips everyone else. */
+    fits: readonly PerformerCarry[];
+    /**
+     * Whether a new cue of this value starts lasting or momentary (ADR 0015
+     * D-2); the cue's own `length` decides what it is. `lasting` when omitted.
+     */
+    natural?: "lasting" | "momentary";
+    /** Set when the value works only as its `natural` kind: a toss is momentary only. */
+    locked?: boolean;
+    /** The length in counts a new momentary cue of the value starts with. 1 when omitted. */
+    defaultLength?: number;
+    /**
+     * The default transition length in counts (1 is a snap). Omitted, the
+     * value cuts on its count and a cue's own transition is ignored.
+     */
+    defaultTransition?: number;
+    /** Shows only while the dot holds (a kneel); the default shows while it travels. */
+    standingOnly?: boolean;
+    /** The settings it takes; a cue's missing settings get these defaults. */
+    settings?: readonly CueSettingField[];
+    /** Equipment values: what holding it counts as. */
+    holds?: PerformerCarry;
+}
+
+export type SegmentKind = "default" | "lasting" | "transition" | "momentary";
+
+/** What one performer's parameter is over `[from, to)` counts. */
 export interface CueSegment {
     from: number;
     to: number;
@@ -219,16 +250,27 @@ export interface CueSegment {
     cueId: number | null;
     /** A zero-length transition keyed in fixed time, ending on `to`. */
     snap?: boolean;
-    /** Set when another channel's cue owns this channel here. */
-    takenOverFrom?: CueChannel;
+    /**
+     * Set on a default segment that stands in for a cue whose value doesn't
+     * show here: a kneel while the dot travels.
+     */
+    hiddenCueId?: number;
 }
 
 export type CueFlagKind =
+    /** Two cues of one type and kind on one count for the same performer; the newer wins. */
     | "clash"
-    | "phrase_overlap"
-    | "takeover_while_moving"
+    /** A momentary cue starting inside an earlier one, which it ends. */
+    | "momentary_overlap"
+    /** A value that shows only on holds, on a count where the dot travels. */
+    | "standing_only_while_moving"
+    /** The cue's value fits none of its performers on its count. */
     | "fits_nobody"
+    /** A lasting cue on a momentary-only value, or the reverse; the cue is ignored. */
     | "kind_not_allowed"
+    /** A value this build doesn't know for the cue's type; the cue is ignored. */
+    | "unknown_value"
+    /** A transition that would start before the cue before it; it starts there instead. */
     | "transition_cut";
 
 export interface CueFlag {
@@ -237,33 +279,33 @@ export interface CueFlag {
     marcherIds: readonly number[];
 }
 
-/** Where a channel's default comes from. */
+/** Where a parameter's default comes from. */
 export type CueTraceDefaultSource =
-    /** The library's fixed default (step, facing front, body neutral). */
+    /** The library's fixed default (facing front, posture neutral). */
     | "library"
-    /** Horn/Equipment: horns up, or the set position of what Carry gives. */
-    | "carry"
-    /** Carry: the section's usual equipment. */
+    /** Position: horns up, or the set position of what Equipment gives. */
+    | "equipment"
+    /** Equipment: the section's usual equipment. */
     | "section_equipment"
-    /** Carry: the equipment fallback for the section's name. */
+    /** Equipment: the equipment fallback for the section's name. */
     | "equipment_fallback"
-    /** Carry: what the marcher usually carries, with nothing else given. */
+    /** Equipment: what the marcher usually carries, with nothing else given. */
     | "marcher_carries"
     /** Silk: a plain silk in the section's 2D color. */
     | "section_color"
-    /** Uniform: the band default. */
-    | "band_uniform"
-    /** Uniform: the guard default, for a marcher in the guard. */
-    | "guard_uniform";
+    /** Look: the band default. */
+    | "band_look"
+    /** Look: the guard default, for a marcher in the guard. */
+    | "guard_look";
 
-/** Why a channel shows its default. */
+/** Why a parameter shows its default. */
 export interface CueTraceDefault {
     source: CueTraceDefaultSource;
     value: string | null;
-    /** The section it comes from (Carry, Silk). */
+    /** The section it comes from (Equipment, Silk). */
     section?: string;
-    /** Horn/Equipment: what Carry gives at the count. */
-    carries?: PerformerCarry;
+    /** Position: what Equipment gives at the count. */
+    holds?: PerformerCarry;
     /** Silk: the section's 2D color. */
     color?: string | null;
 }
@@ -273,17 +315,15 @@ export interface CueTrace {
     winner: number | null;
     /** Set when there's no winner: where the default comes from. */
     default?: CueTraceDefault;
-    /** Set when the winner is another channel's cue taking this one over. */
-    takenOverFrom?: CueChannel;
-    /** Applicable cues it beat, latest and most specific first. */
+    /** Set when a cue is in effect but its value doesn't show (a kneel while the dot travels). */
+    hidden?: number;
+    /** The performer's other cues of the type at or before the count, latest first. */
     beaten: readonly number[];
 }
 
 export type CueNoteKind =
-    /** A Horn/Equipment cue that doesn't match what Carry gives, ignored for those performers. */
-    | "carry_mismatch"
-    /** A Silk cue whose Artwork is fitted to a flag Cut of another aspect. */
-    | "silk_aspect";
+    /** A Position cue that doesn't match what Equipment gives, ignored for those performers. */
+    "equipment_mismatch";
 
 /** Something compile did quietly that the editor may show, not a problem to fix. */
 export interface CueNote {
@@ -292,8 +332,21 @@ export interface CueNote {
     marcherIds: readonly number[];
 }
 
+/** One performer's hold style over `[from, to)` counts. */
+export interface HoldStyleSpan {
+    from: number;
+    to: number;
+    style: HoldTechnique;
+}
+
 export interface CompiledCues {
-    segments(marcherId: number, channel: CueChannel): readonly CueSegment[];
+    segments(marcherId: number, type: CueType): readonly CueSegment[];
+    /**
+     * The performer's hold style over the show: what their feet do on counts
+     * where their dot doesn't travel. Not a cue (ADR 0015 D-1); it comes from
+     * the styles their holds carry and, elsewhere, the show setting (D-5).
+     */
+    holdStyle(marcherId: number): readonly HoldStyleSpan[];
     flags: readonly CueFlag[];
     notes: readonly CueNote[];
 }

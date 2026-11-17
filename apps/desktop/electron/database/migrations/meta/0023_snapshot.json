@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "6f592ef5-2ce9-4a0a-bec2-b29e2d9c6514",
-    "prevId": "9e0fc3ff-20df-4a6b-a158-a0d2ab670064",
+    "id": "8f3f975f-1193-4de8-a85d-bf19e05c9a94",
+    "prevId": "3561d0d0-9068-4dd3-8cc8-92addb490e73",
     "tables": {
         "audio_files": {
             "name": "audio_files",
@@ -154,6 +154,191 @@
                 "beats_include_in_measure": {
                     "name": "beats_include_in_measure",
                     "value": "include_in_measure IN (0, 1)"
+                }
+            }
+        },
+        "cue_marchers": {
+            "name": "cue_marchers",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "cue_id": {
+                    "name": "cue_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "marcher_id": {
+                    "name": "marcher_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "cue_marchers_marcher_id_idx": {
+                    "name": "cue_marchers_marcher_id_idx",
+                    "columns": ["marcher_id"],
+                    "isUnique": false
+                },
+                "cue_marchers_cue_marcher_unique": {
+                    "name": "cue_marchers_cue_marcher_unique",
+                    "columns": ["cue_id", "marcher_id"],
+                    "isUnique": true
+                }
+            },
+            "foreignKeys": {
+                "cue_marchers_cue_id_cues_id_fk": {
+                    "name": "cue_marchers_cue_id_cues_id_fk",
+                    "tableFrom": "cue_marchers",
+                    "tableTo": "cues",
+                    "columnsFrom": ["cue_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                },
+                "cue_marchers_marcher_id_marchers_id_fk": {
+                    "name": "cue_marchers_marcher_id_marchers_id_fk",
+                    "tableFrom": "cue_marchers",
+                    "tableTo": "marchers",
+                    "columnsFrom": ["marcher_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "cues": {
+            "name": "cues",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "type": {
+                    "name": "type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "beat_id": {
+                    "name": "beat_id",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "value": {
+                    "name": "value",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "settings_json": {
+                    "name": "settings_json",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'{}'"
+                },
+                "length": {
+                    "name": "length",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "transition": {
+                    "name": "transition",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "label": {
+                    "name": "label",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "notes": {
+                    "name": "notes",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {
+                "cues_beat_id_idx": {
+                    "name": "cues_beat_id_idx",
+                    "columns": ["beat_id"],
+                    "isUnique": false
+                },
+                "cues_type_beat_id_idx": {
+                    "name": "cues_type_beat_id_idx",
+                    "columns": ["type", "beat_id"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {
+                "cues_beat_id_beats_id_fk": {
+                    "name": "cues_beat_id_beats_id_fk",
+                    "tableFrom": "cues",
+                    "tableTo": "beats",
+                    "columnsFrom": ["beat_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "cues_settings_json_check": {
+                    "name": "cues_settings_json_check",
+                    "value": "json_valid(settings_json)"
+                },
+                "cues_length_check": {
+                    "name": "cues_length_check",
+                    "value": "length IS NULL OR (typeof(length) = 'integer' AND length >= 1)"
+                },
+                "cues_transition_check": {
+                    "name": "cues_transition_check",
+                    "value": "transition IS NULL OR (typeof(transition) = 'integer' AND transition >= 1)"
                 }
             }
         },
@@ -500,6 +685,29 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
+                },
+                "model": {
+                    "name": "model",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "locked": {
+                    "name": "locked",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "from_preset": {
+                    "name": "from_preset",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
                 },
                 "created_at": {
                     "name": "created_at",
@@ -999,6 +1207,140 @@
             "uniqueConstraints": {},
             "checkConstraints": {}
         },
+        "show_asset_blobs": {
+            "name": "show_asset_blobs",
+            "columns": {
+                "hash": {
+                    "name": "hash",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "show_asset_blobs_hash_check": {
+                    "name": "show_asset_blobs_hash_check",
+                    "value": "length(hash) = 64 AND hash NOT GLOB '*[^0-9a-f]*'"
+                },
+                "show_asset_blobs_data_check": {
+                    "name": "show_asset_blobs_data_check",
+                    "value": "typeof(data) = 'blob'"
+                }
+            }
+        },
+        "show_assets": {
+            "name": "show_assets",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "version_hash": {
+                    "name": "version_hash",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "kind": {
+                    "name": "kind",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "parts": {
+                    "name": "parts",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "sidecar": {
+                    "name": "sidecar",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'{}'"
+                },
+                "credits": {
+                    "name": "credits",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'{}'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {
+                "show_assets_version_hash_idx": {
+                    "name": "show_assets_version_hash_idx",
+                    "columns": ["version_hash"],
+                    "isUnique": false
+                }
+            },
+            "foreignKeys": {},
+            "compositePrimaryKeys": {
+                "show_assets_id_version_hash_pk": {
+                    "columns": ["id", "version_hash"],
+                    "name": "show_assets_id_version_hash_pk"
+                }
+            },
+            "uniqueConstraints": {},
+            "checkConstraints": {
+                "show_assets_id_check": {
+                    "name": "show_assets_id_check",
+                    "value": "length(id) > 0"
+                },
+                "show_assets_version_hash_check": {
+                    "name": "show_assets_version_hash_check",
+                    "value": "length(version_hash) = 64 AND version_hash NOT GLOB '*[^0-9a-f]*'"
+                },
+                "show_assets_parts_check": {
+                    "name": "show_assets_parts_check",
+                    "value": "json_valid(parts) AND json_type(parts) = 'object'"
+                },
+                "show_assets_sidecar_check": {
+                    "name": "show_assets_sidecar_check",
+                    "value": "json_valid(sidecar) AND json_type(sidecar) = 'object'"
+                },
+                "show_assets_credits_check": {
+                    "name": "show_assets_credits_check",
+                    "value": "json_valid(credits) AND json_type(credits) = 'object'"
+                }
+            }
+        },
         "tag_appearances": {
             "name": "tag_appearances",
             "columns": {
@@ -1435,6 +1777,13 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
+                },
+                "style": {
+                    "name": "style",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
                 }
             },
             "indexes": {
@@ -1465,249 +1814,6 @@
                 "timeline_held_marks_end_beat_check": {
                     "name": "timeline_held_marks_end_beat_check",
                     "value": "typeof(end_beat) = 'integer' AND end_beat > start_beat"
-                }
-            }
-        },
-        "timeline_lanes": {
-            "name": "timeline_lanes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "transition_id": {
-                    "name": "transition_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "slot_index": {
-                    "name": "slot_index",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "offset_x": {
-                    "name": "offset_x",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "offset_y": {
-                    "name": "offset_y",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "adjust": {
-                    "name": "adjust",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "timeline_idx_lane_route": {
-                    "name": "timeline_idx_lane_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
-                "timeline_lanes_transition_slot_unique": {
-                    "name": "timeline_lanes_transition_slot_unique",
-                    "columns": ["transition_id", "slot_index"],
-                    "isUnique": true
-                }
-            },
-            "foreignKeys": {
-                "timeline_lanes_transition_id_timeline_transitions_id_fk": {
-                    "name": "timeline_lanes_transition_id_timeline_transitions_id_fk",
-                    "tableFrom": "timeline_lanes",
-                    "tableTo": "timeline_transitions",
-                    "columnsFrom": ["transition_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
-                },
-                "timeline_lanes_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_lanes_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_lanes",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_lanes_transition_id_type_check": {
-                    "name": "timeline_lanes_transition_id_type_check",
-                    "value": "typeof(transition_id) = 'integer'"
-                },
-                "timeline_lanes_slot_index_type_check": {
-                    "name": "timeline_lanes_slot_index_type_check",
-                    "value": "typeof(slot_index) = 'integer'"
-                },
-                "timeline_lanes_route_id_type_check": {
-                    "name": "timeline_lanes_route_id_type_check",
-                    "value": "typeof(route_id) = 'integer'"
-                },
-                "timeline_lanes_slot_index_check": {
-                    "name": "timeline_lanes_slot_index_check",
-                    "value": "slot_index >= 0"
-                },
-                "timeline_lanes_offset_x_check": {
-                    "name": "timeline_lanes_offset_x_check",
-                    "value": "offset_x IS NULL OR (typeof(offset_x) IN ('integer', 'real') AND offset_x BETWEEN -2000000 AND 2000000)"
-                },
-                "timeline_lanes_offset_y_check": {
-                    "name": "timeline_lanes_offset_y_check",
-                    "value": "offset_y IS NULL OR (typeof(offset_y) IN ('integer', 'real') AND offset_y BETWEEN -2000000 AND 2000000)"
-                },
-                "timeline_lanes_offset_check": {
-                    "name": "timeline_lanes_offset_check",
-                    "value": "(offset_x IS NULL) = (offset_y IS NULL)"
-                },
-                "timeline_lanes_adjust_check": {
-                    "name": "timeline_lanes_adjust_check",
-                    "value": "adjust IS NULL OR json_valid(adjust)"
-                }
-            }
-        },
-        "timeline_route_sources": {
-            "name": "timeline_route_sources",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "kind": {
-                    "name": "kind",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "source_route_id": {
-                    "name": "source_route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "data": {
-                    "name": "data",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {
-                "timeline_idx_route_sources_route": {
-                    "name": "timeline_idx_route_sources_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
-                "timeline_idx_route_sources_source": {
-                    "name": "timeline_idx_route_sources_source",
-                    "columns": ["source_route_id"],
-                    "isUnique": false
-                }
-            },
-            "foreignKeys": {
-                "timeline_route_sources_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_route_sources_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_route_sources",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                },
-                "timeline_route_sources_source_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_route_sources_source_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_route_sources",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["source_route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_route_sources_route_id_type_check": {
-                    "name": "timeline_route_sources_route_id_type_check",
-                    "value": "typeof(route_id) = 'integer'"
-                },
-                "timeline_route_sources_source_route_id_type_check": {
-                    "name": "timeline_route_sources_source_route_id_type_check",
-                    "value": "source_route_id IS NULL OR typeof(source_route_id) = 'integer'"
-                },
-                "timeline_route_sources_kind_check": {
-                    "name": "timeline_route_sources_kind_check",
-                    "value": "kind IN ('detached_from', 'recipe', 'mirror_of', 'pasted_from', 'split_from', 'continues')"
-                },
-                "timeline_route_sources_data_check": {
-                    "name": "timeline_route_sources_data_check",
-                    "value": "data IS NULL OR json_valid(data)"
-                }
-            }
-        },
-        "timeline_routes": {
-            "name": "timeline_routes",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "integer",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "geometry": {
-                    "name": "geometry",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {
-                "timeline_routes_geometry_check": {
-                    "name": "timeline_routes_geometry_check",
-                    "value": "json_valid(geometry)"
                 }
             }
         },
@@ -2056,13 +2162,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "route_id": {
-                    "name": "route_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "order_mode": {
                     "name": "order_mode",
                     "type": "text",
@@ -2099,11 +2198,6 @@
                     "columns": ["dest_shape_id"],
                     "isUnique": false
                 },
-                "timeline_idx_tr_route": {
-                    "name": "timeline_idx_tr_route",
-                    "columns": ["route_id"],
-                    "isUnique": false
-                },
                 "timeline_idx_tr_timeline": {
                     "name": "timeline_idx_tr_timeline",
                     "columns": ["timeline_id"],
@@ -2128,15 +2222,6 @@
                     "columnsTo": ["id"],
                     "onDelete": "restrict",
                     "onUpdate": "no action"
-                },
-                "timeline_transitions_route_id_timeline_routes_id_fk": {
-                    "name": "timeline_transitions_route_id_timeline_routes_id_fk",
-                    "tableFrom": "timeline_transitions",
-                    "tableTo": "timeline_routes",
-                    "columnsFrom": ["route_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
                 }
             },
             "compositePrimaryKeys": {},
@@ -2152,7 +2237,7 @@
                 },
                 "timeline_transitions_path_style_check": {
                     "name": "timeline_transitions_path_style_check",
-                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader', 'route')"
+                    "value": "path_style IN ('direct', 'arc', 'follow_the_leader')"
                 },
                 "timeline_transitions_path_params_check": {
                     "name": "timeline_transitions_path_params_check",
@@ -2192,19 +2277,11 @@
                 },
                 "timeline_transitions_ftl_shape_check": {
                     "name": "timeline_transitions_ftl_shape_check",
-                    "value": "dest_shape_id IS NOT NULL OR route_id IS NOT NULL OR path_style <> 'follow_the_leader'"
+                    "value": "dest_shape_id IS NOT NULL OR path_style <> 'follow_the_leader'"
                 },
                 "timeline_transitions_arc_bulge_check": {
                     "name": "timeline_transitions_arc_bulge_check",
                     "value": "path_style <> 'arc' OR (coalesce(json_type(path_params, '$.bulge'), '') IN ('integer', 'real') AND abs(json_extract(path_params, '$.bulge')) <= 0.5)"
-                },
-                "timeline_transitions_route_id_type_check": {
-                    "name": "timeline_transitions_route_id_type_check",
-                    "value": "route_id IS NULL OR typeof(route_id) = 'integer'"
-                },
-                "timeline_transitions_route_check": {
-                    "name": "timeline_transitions_route_check",
-                    "value": "path_style <> 'route' OR (route_id IS NOT NULL AND dest_shape_id IS NULL AND slot_count = 1)"
                 }
             }
         },
@@ -2349,6 +2426,67 @@
                     "value": "id = 1"
                 }
             }
+        },
+        "view3d_silk_artwork": {
+            "name": "view3d_silk_artwork",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "integer",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "data": {
+                    "name": "data",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "width": {
+                    "name": "width",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "height": {
+                    "name": "height",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "(CURRENT_TIMESTAMP)"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
         },
         "view3d_venue": {
             "name": "view3d_venue",
