@@ -1,4 +1,38 @@
 words:
+  - baselined
+  - CIEDE
+  - CIELAB
+  - deutan
+  - deutans
+  - Desmos
+  - dichromacy
+  - Guidepup
+  - hideable
+  - Hyperlegible
+  - keymaps
+  - Knowbility's
+  - Machado
+  - noninteractive
+  - numpad
+  - Okabe
+  - OSARA
+  - pickable
+  - pinnable
+  - proptypes
+  - protan
+  - Remappable
+  - rescan
+  - Sonification
+  - trichromats
+  - tritan
+  - unfocusable
+  - unpausable
+  - unrepresentable
+  - unwaived
+  - VPAT
+  - VPAT's
+  - WCAG
+  - xrrggbb
   - bpms
   - APPIMAGE
   - pipefail
@@ -323,6 +357,8 @@ words:
   - texel
   - texels
 ignorePaths:
+  # Color-vision simulation script and its output: hex codes and paper names
+  - docs/accessibility/assessment-2026-11/scripts/**
   # Third-party MusicXML test files, their credits and their file names
   - packages/musicxml-parser/src/__test__/corpus/ATTRIBUTION.md
   - packages/musicxml-parser/src/__test__/corpus/expected.json
