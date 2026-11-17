@@ -6,6 +6,7 @@ import { getTestWithHistory } from "@/test/history";
 import {
     carryCuesPastDeletedBeatsInTransaction,
     createCues,
+    editCues,
     deleteCues,
     getCueById,
     getCues,
@@ -495,17 +496,13 @@ describeDbTests("cues", (it) => {
                     marcherIds: [m3!.id, m4!.id],
                     beatId: beat!,
                     labelFor: () => "unused",
+                    relabelFor: () => "all four",
                 });
-                if (plan.kind !== "join") throw new Error("expected a join");
-                await updateCues({
+                await editCues({
                     db,
-                    modifiedCues: [
-                        {
-                            id: plan.cue.id,
-                            marcherIds: plan.marcherIds,
-                            label: "all four",
-                        },
-                    ],
+                    cueIds: new Set(plan.deletedCueIds),
+                    modifiedCues: plan.modifiedCues,
+                    newCues: plan.newCues,
                 });
                 const after = await getCues({ db });
                 expect(after).toHaveLength(1);
@@ -523,6 +520,51 @@ describeDbTests("cues", (it) => {
                     label: "first two",
                     marcherIds: [m1!.id, m2!.id].sort((a, b) => a - b),
                 });
+            },
+        );
+    });
+
+    describe("setting an item replaces what they hold on that count (#992)", () => {
+        testWithHistory(
+            "takes them out of the other cue there, deleting it when empty, in one undo step",
+            async ({ db, marchersAndPages }) => {
+                const [a, b] = marchersAndPages.expectedMarchers;
+                const [beat] = await beatIds(db);
+                const set = async (choice: string, ids: number[]) => {
+                    const plan = planEquipmentSet({
+                        cues: await getCues({ db }),
+                        choice,
+                        marcherIds: ids,
+                        beatId: beat!,
+                        labelFor: (who) => who.join("+"),
+                    });
+                    await editCues({
+                        db,
+                        cueIds: new Set(plan.deletedCueIds),
+                        modifiedCues: plan.modifiedCues,
+                        newCues: plan.newCues,
+                    });
+                };
+                const values = async () =>
+                    (await getCues({ db }))
+                        .map((c) => `${c.value}:${c.marcherIds.join("+")}`)
+                        .sort();
+                const rifle = "builtin:equipment.rifle";
+                const flag = "builtin:equipment.flag";
+                const ab = [a!.id, b!.id].sort((x, y) => x - y).join("+");
+
+                await set("rifle", [a!.id, b!.id]);
+                await set("flag", [a!.id]);
+                expect(await values()).toEqual(
+                    [`${rifle}:${b!.id}`, `${flag}:${a!.id}`].sort(),
+                );
+                await set("rifle", [a!.id]);
+                expect(await values()).toEqual([`${rifle}:${ab}`]);
+
+                await performUndo(db);
+                expect(await values()).toEqual(
+                    [`${rifle}:${b!.id}`, `${flag}:${a!.id}`].sort(),
+                );
             },
         );
     });

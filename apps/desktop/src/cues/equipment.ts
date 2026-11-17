@@ -9,7 +9,11 @@ import {
     EQUIPMENT_USUAL,
     type CompiledCues,
 } from "@openmarch/core";
-import type { DatabaseCue, NewCueArgs } from "@/db-functions/cues";
+import type {
+    DatabaseCue,
+    ModifiedCueArgs,
+    NewCueArgs,
+} from "@/db-functions/cues";
 import { itemValueId, tagOfValue } from "./equipmentItems";
 
 /**
@@ -122,21 +126,29 @@ export function withRecent(
     );
 }
 
-/** What setting an Equipment value does: join a matching cue, or make a new one. */
-export type EquipmentSet =
-    | {
-          readonly kind: "join";
-          readonly cue: DatabaseCue;
-          readonly marcherIds: number[];
-      }
-    | { readonly kind: "create"; readonly newCues: NewCueArgs[] }
-    | { readonly kind: "none" };
+/**
+ * What setting an Equipment value writes, as one undo step: performers taken out of the other cues
+ * on that beat (a cue left with nobody is deleted), then the matching cue joined or a new one made.
+ * Every list is empty when nothing changes.
+ */
+export interface EquipmentSet {
+    readonly modifiedCues: ModifiedCueArgs[];
+    readonly deletedCueIds: number[];
+    readonly newCues: NewCueArgs[];
+}
+
+export const equipmentSetIsEmpty = (plan: EquipmentSet): boolean =>
+    plan.modifiedCues.length === 0 &&
+    plan.deletedCueIds.length === 0 &&
+    plan.newCues.length === 0;
 
 /**
- * Setting `choice` for `marcherIds` on `beatId` (owner, fork #992): when a cue of the same type,
- * value, beat and kind is already there (both lasting, or both momentary with the same length),
- * the performers join it; performers already in it stay. Otherwise a new lasting cue is made.
- * `label` names the performers either way: the new cue's, or the joined cue's after joining.
+ * Setting `choice` for `marcherIds` on `beatId` replaces what they hold there (fork #992): a
+ * performer is in at most one Equipment cue of a kind (lasting, or momentary of one length) on a
+ * beat. So the selection leaves every other cue of that kind on the beat, and a cue left with no
+ * performers is deleted. Then they join the cue with that value (the newest, which is the one that
+ * wins), or a new cue is made; performers already in it stay. `labelFor` names a new cue's
+ * performers; `relabelFor` renames a cue whose performers changed (defaults to `labelFor`).
  */
 export function planEquipmentSet({
     cues,
@@ -144,39 +156,71 @@ export function planEquipmentSet({
     marcherIds,
     beatId,
     labelFor,
+    relabelFor = labelFor,
     length = null,
 }: {
     cues: readonly DatabaseCue[];
     choice: EquipmentChoice;
     marcherIds: readonly number[];
     beatId: number;
-    /** The label for a cue with these performers */
+    /** The label for a new cue with these performers */
     labelFor: (marcherIds: readonly number[]) => string | null;
+    /** The label for a cue now holding these performers */
+    relabelFor?: (marcherIds: readonly number[]) => string | null;
     /** Null for a lasting cue (what the Equipment commands make) */
     length?: number | null;
 }): EquipmentSet {
-    if (marcherIds.length === 0) return { kind: "none" };
+    const plan: EquipmentSet = {
+        modifiedCues: [],
+        deletedCueIds: [],
+        newCues: [],
+    };
+    if (marcherIds.length === 0) return plan;
     const value = equipmentValueOfChoice(choice);
-    const match = cues.find(
+    const sameKind = cues.filter(
         (c) =>
             c.type === "equipment" &&
-            c.value === value &&
             c.beatId === beatId &&
             c.length === length,
     );
-    if (match) {
-        const joined = editedPerformers(match, marcherIds, "add");
-        return joined
-            ? { kind: "join", cue: match, marcherIds: joined }
-            : { kind: "none" };
+    // The newest wins when two cues on a count cover one performer (compile), so join that one
+    const target = sameKind
+        .filter((c) => c.value === value)
+        .reduce<DatabaseCue | null>(
+            (newest, c) => (newest === null || c.id > newest.id ? c : newest),
+            null,
+        );
+
+    for (const cue of sameKind) {
+        if (cue === target) continue;
+        const rest = editedPerformers(cue, marcherIds, "remove");
+        if (rest === null) continue;
+        if (rest.length === 0) plan.deletedCueIds.push(cue.id);
+        else
+            plan.modifiedCues.push({
+                id: cue.id,
+                marcherIds: rest,
+                label: relabelFor(rest),
+            });
     }
-    return {
-        kind: "create",
-        newCues: planEquipmentCues({
-            choice,
-            marcherIds,
-            beatId,
-            label: labelFor(marcherIds),
-        }).map((c) => (length === null ? c : { ...c, length })),
-    };
+
+    if (target) {
+        const joined = editedPerformers(target, marcherIds, "add");
+        if (joined)
+            plan.modifiedCues.push({
+                id: target.id,
+                marcherIds: joined,
+                label: relabelFor(joined),
+            });
+    } else {
+        plan.newCues.push(
+            ...planEquipmentCues({
+                choice,
+                marcherIds,
+                beatId,
+                label: labelFor(marcherIds),
+            }).map((c) => (length === null ? c : { ...c, length })),
+        );
+    }
+    return plan;
 }

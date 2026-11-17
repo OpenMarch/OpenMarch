@@ -4,7 +4,7 @@ import { useTranslate } from "@tolgee/react";
 import { equipmentCatalog, whoHasValue } from "@openmarch/core";
 import { db } from "@/global/database/db";
 import {
-    createCues,
+    editCues,
     deleteCues,
     updateCues,
     type DatabaseCue,
@@ -31,6 +31,7 @@ import {
     equipmentValueOfChoice,
     heldValueAt,
     planEquipmentSet,
+    equipmentSetIsEmpty,
     withRecent,
     type EquipmentChoice,
 } from "./equipment";
@@ -188,7 +189,8 @@ export function useCueCommands(): CueCommands {
                 beat !== null && count !== null && selectedIds.length > 0,
             setEquipment: (choice) => {
                 if (!beat || !show) return;
-                // A cue of the same value, beat and kind is joined, not doubled (owner, #992)
+                // Setting replaces: the selection leaves the beat's other cues and joins the
+                // cue of that value, or a new one is made, in one undo step (#992)
                 const plan = planEquipmentSet({
                     cues: show.cues,
                     choice,
@@ -201,30 +203,26 @@ export function useCueCommands(): CueCommands {
                             words,
                             holders: labelHolders(),
                         }),
+                    relabelFor: (ids) =>
+                        describePerformers({
+                            ids,
+                            marchers: show.marchers,
+                            words,
+                        }),
                 });
-                if (plan.kind === "none") return;
+                if (equipmentSetIsEmpty(plan)) return;
                 rememberChoice(choice);
                 // A first Equipment cue makes its lane appear, even one hidden before (#992)
                 if (!show.cues.some((c) => c.type === "equipment"))
                     revealLane("equipment");
-                const write =
-                    plan.kind === "join"
-                        ? updateCues({
-                              db,
-                              modifiedCues: [
-                                  {
-                                      id: plan.cue.id,
-                                      marcherIds: plan.marcherIds,
-                                      label: describePerformers({
-                                          ids: plan.marcherIds,
-                                          marchers: show.marchers,
-                                          words,
-                                      }),
-                                  },
-                              ],
-                          })
-                        : createCues({ db, newCues: plan.newCues });
-                void write.then(refresh).catch(fail("cues.errors.create"));
+                void editCues({
+                    db,
+                    cueIds: new Set(plan.deletedCueIds),
+                    modifiedCues: plan.modifiedCues,
+                    newCues: plan.newCues,
+                })
+                    .then(refresh)
+                    .catch(fail("cues.errors.create"));
             },
             holders,
             selectHolding: (values) => {

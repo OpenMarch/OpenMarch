@@ -65,6 +65,7 @@ import {
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
 import { conToastError } from "@/utilities/utils";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useShowCues, type EditorCues } from "@/cues/useShowCues";
 import { useCueSelectionStore } from "@/cues/cueSelectionStore";
 import { describePerformers } from "@/cues/cueLabel";
@@ -188,6 +189,8 @@ function EquipmentLaneView({
 }) {
     const { t } = useTranslate();
     const queryClient = useQueryClient();
+    // Like move clips, cues don't drag or resize while the show plays
+    const isPlaying = useIsPlaying()?.isPlaying ?? false;
     const picked = useCueSelectionStore((s) => s.cueId);
     const pick = useCueSelectionStore((s) => s.pick);
     const [menu, setMenu] = useState<CueMenu | null>(null);
@@ -239,6 +242,7 @@ function EquipmentLaneView({
         cueId: number,
         mode: LaneDrag["mode"],
     ) => {
+        if (isPlaying) return;
         const cue = show?.cues.find((c) => c.id === cueId);
         const at = cue ? specOf.get(cue.beatId) : undefined;
         if (!cue || at === undefined || e.button !== 0) return;
@@ -406,6 +410,11 @@ function EquipmentLaneView({
                                     dragging={dragged}
                                     name={valueName(piece.value)}
                                     resizeLabel={t("cues.lane.resize")}
+                                    lockedReason={
+                                        isPlaying
+                                            ? t("cues.reason.paused")
+                                            : undefined
+                                    }
                                     picked={
                                         piece.cueId !== null &&
                                         piece.cueId === picked
@@ -467,6 +476,7 @@ function Piece({
     dragging,
     name,
     resizeLabel,
+    lockedReason,
     picked,
     onPress,
     onMenu,
@@ -481,6 +491,8 @@ function Piece({
     dragging: boolean;
     name: string;
     resizeLabel: string;
+    /** Why it can't be dragged now (while playing), or undefined when it can */
+    lockedReason?: string;
     picked: boolean;
     onPress: (
         e: ReactPointerEvent<HTMLElement>,
@@ -508,13 +520,15 @@ function Piece({
             data-holds={piece.holds}
             data-value={piece.value ?? undefined}
             data-timeline-interactive={isCue ? "" : undefined}
+            title={isCue ? lockedReason : undefined}
             className={clsx(
                 "text-micro absolute top-2 flex items-center overflow-hidden px-4 leading-none whitespace-nowrap",
                 momentary ? "rounded-full" : "rounded-4",
                 isCue
                     ? clsx(
                           FILL[piece.holds],
-                          "text-text cursor-grab touch-none font-medium",
+                          "text-text touch-none font-medium",
+                          !lockedReason && "cursor-grab",
                       )
                     : "border-stroke text-text-subtitle border border-dashed",
                 picked && "ring-accent ring-2",
@@ -567,9 +581,12 @@ function Piece({
                 <span
                     data-testid="equipment-lane-cue-end"
                     data-timeline-interactive=""
-                    title={resizeLabel}
+                    title={lockedReason ?? resizeLabel}
                     aria-label={resizeLabel}
-                    className="touch:w-44 absolute top-0 right-0 h-full w-6 cursor-ew-resize touch-none"
+                    className={clsx(
+                        "touch:w-44 absolute top-0 right-0 h-full w-6 touch-none",
+                        !lockedReason && "cursor-ew-resize",
+                    )}
                     onPointerDown={(e) => {
                         e.stopPropagation();
                         onPress(e, "resize");

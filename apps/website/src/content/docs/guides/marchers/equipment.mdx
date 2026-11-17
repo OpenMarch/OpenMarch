@@ -65,7 +65,7 @@ The <Ui k="field.menu.equipment" plain /> submenu has, in this order:
   - <Ui k="cues.family.drums" />: <Ui k="cues.item.snare" plain />, <Ui k="cues.item.tenors" plain />, <Ui k="cues.item.bassDrum" plain /> and <Ui k="cues.item.cymbals" plain />.
 - <Ui k="cues.value.none" />: empty hands.
 
-The selected performers hold it from that count until their next change. If some performers already have a change to the same item on that count, made the same way (both lasting, or both for the same number of counts), the ones you selected join that change instead of making a second one. What every selected performer already holds is checked. Every item is also in the command palette (<Kbd action="openCommandPalette" />), such as <Ui k="actions.cues.equipmentNone" />, or search for an item's name.
+The selected performers hold it from that count until their next change. It replaces any other change you made for them on that count, so setting a flag and then a rifle on the same count leaves them with the rifle. If some performers already have a change to the same item on that count, made the same way (both lasting, or both for the same number of counts), the ones you selected join that change instead of making a second one. What every selected performer already holds is checked. Every item is also in the command palette (<Kbd action="openCommandPalette" />), such as <Ui k="actions.cues.equipmentNone" />, or search for an item's name.
 
 The change is a **cue**: it remembers the performers who were selected when you made it. Moving a performer to another section later doesn't change their cues, and a performer added to a section later doesn't get that section's earlier cues.
 

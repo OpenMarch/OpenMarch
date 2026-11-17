@@ -731,3 +731,28 @@ export async function deleteCues({
         async (tx) => await deleteCuesInTransaction({ tx, cueIds }),
     );
 }
+
+/**
+ * Deletes, updates and creates cues as one undoable edit (setting equipment moves performers
+ * between cues on a beat, fork #992). Deletes run first, then updates, then creates.
+ */
+export async function editCues({
+    db,
+    cueIds = new Set(),
+    modifiedCues = [],
+    newCues = [],
+}: {
+    db: DbConnection;
+    cueIds?: ReadonlySet<number>;
+    modifiedCues?: readonly ModifiedCueArgs[];
+    newCues?: readonly NewCueArgs[];
+}): Promise<void> {
+    if (cueIds.size === 0 && modifiedCues.length === 0 && newCues.length === 0)
+        return;
+    await transactionWithHistory(db, "editCues", async (tx) => {
+        await deleteCuesInTransaction({ tx, cueIds });
+        if (modifiedCues.length > 0)
+            await updateCuesInTransaction({ tx, modifiedCues });
+        if (newCues.length > 0) await createCuesInTransaction({ tx, newCues });
+    });
+}
