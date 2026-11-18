@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import type { ReactElement, ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { TooltipClassName } from "@openmarch/ui";
+import { twMerge } from "tailwind-merge";
 import Shortcut from "@/components/ui/Shortcut";
 import type { ActionId } from "@/shortcuts/definitions";
 
@@ -49,6 +50,7 @@ export function ShortcutTooltip({
     side = "top",
     closeOnPress = false,
     disabled = false,
+    className,
     children,
 }: {
     label: string | undefined;
@@ -63,6 +65,8 @@ export function ShortcutTooltip({
     closeOnPress?: boolean;
     /** Never opens (the touch layout explains controls with a long press instead) */
     disabled?: boolean;
+    /** Classes added to the tooltip's box, over the app's (a width cap, say) */
+    className?: string;
     children: ReactElement;
 }) {
     const [open, setOpen] = useState(false);
@@ -105,7 +109,11 @@ export function ShortcutTooltip({
                         sideOffset={4}
                         // kept clear of the window's edges, not just inside them
                         collisionPadding={8}
-                        className={TooltipClassName}
+                        className={
+                            className
+                                ? twMerge(TooltipClassName, className)
+                                : TooltipClassName
+                        }
                     >
                         {!hideLabel && (
                             <span className="text-body flex items-center gap-8">
