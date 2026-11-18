@@ -3068,7 +3068,14 @@
             "pickSeatTooltip": "選擇座位：按一下看台上的座位即可坐到該處",
             "venue": "場館",
             "freeCamera": "自由視角",
-            "director": "導播"
+            "director": "導播",
+            "followPerformer": "跟隨隊員",
+            "followPerformerTooltip": "跟隨隊員：按一下隊員即可跟隨",
+            "following": "正在跟隨 {name}",
+            "povOf": "{name} 的視角",
+            "pointOfView": "第一人稱視角",
+            "pointOfViewTooltip": "第一人稱視角：透過隊員的眼睛觀看",
+            "stopFollowing": "停止跟隨"
         },
         "readout": {
             "count": "第 {count} 拍，共 {total} 拍",
@@ -3108,7 +3115,9 @@
             "brassFinish": "銅管表面處理",
             "tuba": "低音號",
             "silkShape": "旗面形狀",
-            "silkArtwork": "旗面圖案"
+            "silkArtwork": "旗面圖案",
+            "followTurns": "跟隨時：隨隊員轉向",
+            "povShowsBody": "第一人稱視角：顯示其手臂和樂器"
         },
         "keys": {
             "playPause": "播放或暫停",
@@ -3117,14 +3126,16 @@
             "cameras": "攝影機（依選單順序）",
             "fullscreen": "全螢幕",
             "crowd": "顯示或隱藏觀眾",
-            "escape": "取消選擇座位、關閉設定、結束全螢幕",
+            "escape": "取消選擇、關閉設定、停止跟隨、結束全螢幕",
             "orbit": "環繞",
             "orbitOrRight": "環繞，或以滑鼠右鍵拖曳",
             "panPlain": "平移",
             "zoomOrPinch": "縮放，或在觸控板上雙指開合",
             "pan": "平移，或以滑鼠右鍵拖曳",
             "zoom": "縮放",
-            "pausedPose": "暫停時：顯示實際步伐或併腳姿勢"
+            "pausedPose": "暫停時：顯示實際步伐或併腳姿勢",
+            "followPerformer": "選擇要跟隨的隊員",
+            "pointOfView": "跟隨時：切換到其第一人稱視角或切回"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

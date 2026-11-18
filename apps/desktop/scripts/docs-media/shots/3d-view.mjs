@@ -1,3 +1,4 @@
+// cspell:words filechooser Khronos
 // The 3D View and props chapter (guides/3d-view/*).
 //
 // The 3D View is a window of its own: `open3d` opens it, sizes it to the capture window and
@@ -186,6 +187,46 @@ async function propsPanel(page) {
 }
 
 const items = (page) => page.evaluate(() => window.fieldTest.items?.() ?? []);
+
+/** A chair model from the import tests (Khronos glTF sample, CC0) */
+const CHAIR_GLB = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../src/showAssets/modelImport/__test__/fixtures/SheenChair.glb",
+);
+/** A flat test-pattern model from the import tests (Khronos glTF sample, CC0) */
+const PATTERN_GLB = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../src/showAssets/modelImport/__test__/fixtures/TextureCoordinateTest.glb",
+);
+
+/**
+ * Imports the chair through the Props panel's Import… and waits for its review; with `add`, adds
+ * it to the show as "Chair" and waits for its tile under Imported.
+ */
+async function importChair(
+    page,
+    { add = false, file = CHAIR_GLB, name = "Chair" } = {},
+) {
+    await propsPanel(page);
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByTestId("import-model-tile").click();
+    await (await chooser).setFiles(file);
+    const review = page.getByTestId("model-import-review");
+    await review
+        .getByTestId("model-import-picture")
+        .waitFor({ timeout: 60_000 });
+    await page.waitForFunction(
+        () => !document.querySelector('[aria-label="Preparing the model…"]'),
+        null,
+        { timeout: 60_000 },
+    );
+    if (!add) return;
+    await review.getByTestId("model-import-name").fill(name);
+    await review.getByTestId("model-import-add").click();
+    await page
+        .getByRole("button", { name: `Place ${name}` })
+        .waitFor({ timeout: 30_000 });
+}
 
 /** Sets a number field in the Edit Prop panel. */
 async function setPropField(page, label, value) {
@@ -699,10 +740,11 @@ const shots = [
     {
         id: "3d-props-panel",
         kind: "still",
-        // The Props panel with two props
+        // The Props panel with a riser drawn and a chair imported
         async setup(ctx) {
             const { page } = ctx;
             await drawRiser(page, { height: 1.2, color: AMBER, name: "Riser" });
+            await importChair(page, { add: true });
             await propsPanel(page);
             // The pointer off the panel, so no row shows its hover color
             await page.mouse.move(1596, 996);
@@ -716,6 +758,80 @@ const shots = [
             return {
                 box: { ...panel, height: row.y + row.height - panel.y },
             };
+        },
+    },
+    {
+        id: "3d-props-import-review",
+        kind: "still",
+        // The import review for a chair: its picture with the axis drawing, Rotate X, Y and Z
+        // (the pointer on Rotate Z, so its axis lights up with the arrow), its size, Simplify
+        async setup(ctx) {
+            const { page } = ctx;
+            await importChair(page);
+            await page.getByTestId("model-import-rotate-z").hover();
+            await ctx.wait(600);
+            return { box: await sidebarPanelBox(page) };
+        },
+    },
+    {
+        id: "3d-props-import-compare",
+        kind: "still",
+        // The import review's Compare in 3D for the chair: the Original (39,936 triangles), with
+        // Light beside it in the switch, turned a little so the cushions' detail shows
+        async setup(ctx) {
+            const { page } = ctx;
+            await importChair(page);
+            await page.getByTestId("model-import-compare").click();
+            const dialog = page.getByTestId("model-compare");
+            await dialog.waitFor({ timeout: 30_000 });
+            await page.getByTestId("model-compare-other").click();
+            // The Original is imported again, then drawn
+            await ctx.wait(6000);
+            const canvas = await page
+                .getByTestId("model-compare")
+                .locator("canvas")
+                .boundingBox();
+            if (canvas) {
+                const x = canvas.x + canvas.width / 2;
+                const y = canvas.y + canvas.height / 2;
+                await page.mouse.move(x, y);
+                await page.mouse.down();
+                await page.mouse.move(x - 60, y + 10, { steps: 8 });
+                await page.mouse.up();
+            }
+            await page.mouse.move(4, 4);
+            await ctx.wait(1500);
+            return {
+                box: await ctx.around(page.getByRole("dialog"), 8),
+            };
+        },
+    },
+    {
+        id: "3d-props-assets",
+        kind: "still",
+        // The Assets view: a chair on the field and a test pattern nothing uses, with the note
+        async setup(ctx) {
+            const { page } = ctx;
+            await seekInPage(page, 2, 0.02);
+            const toScreen = await fieldToScreen(page);
+            const { center } = await riserSpot(page);
+            await importChair(page, { add: true });
+            await page.getByRole("button", { name: "Place Chair" }).click();
+            await page.waitForTimeout(300);
+            const at = toScreen(center);
+            await page.mouse.click(at.x, at.y);
+            await page.waitForTimeout(800);
+            await importChair(page, {
+                add: true,
+                file: PATTERN_GLB,
+                name: "Test pattern",
+            });
+            await page.getByTestId("imported-models-manage").click();
+            await page.getByTestId("assets-view").waitFor();
+            await page.mouse.move(1596, 996);
+            // Let the pictures load
+            await ctx.wait(1500);
+            return { box: await sidebarPanelBox(page) };
         },
     },
     {
@@ -980,6 +1096,48 @@ const shots = [
                 box: {
                     x: block.x - 450,
                     y: block.y - 290,
+                    width: 900,
+                    height: 540,
+                },
+                target: view,
+            };
+        },
+    },
+    {
+        id: "3d-props-imported",
+        kind: "still",
+        // Three imported chairs behind the band, where the riser stands in 3d-props-block, drawn
+        // in the 3D View as the model
+        async setup(ctx) {
+            const { page } = ctx;
+            await seekInPage(page, 2, 0.02);
+            const toScreen = await fieldToScreen(page);
+            const { pps, center } = await riserSpot(page);
+            await importChair(page, { add: true });
+            for (const feet of [-5, 0, 5]) {
+                await propsPanel(page);
+                await page.getByRole("button", { name: "Place Chair" }).click();
+                await page.waitForTimeout(300);
+                const at = toScreen({ x: center.x + feet * pps, y: center.y });
+                await page.mouse.click(at.x, at.y);
+                await page.waitForTimeout(800);
+            }
+            await page.keyboard.press("Escape");
+            await seekInPage(page, 2, 0.5);
+            const { view } = await open3d(ctx);
+            const chairs = { x: 633, y: 649 };
+            await view.mouse.move(chairs.x, chairs.y);
+            for (let i = 0; i < 7; i++) {
+                await view.mouse.wheel(0, -120);
+                await ctx.wait(150);
+            }
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            // The model loads from the show, then draws in place of the blocks
+            await ctx.wait(4000);
+            return {
+                box: {
+                    x: chairs.x - 450,
+                    y: chairs.y - 290,
                     width: 900,
                     height: 540,
                 },

@@ -68,6 +68,12 @@
         "height": 768,
         "seconds": 7.7
     },
+    "3d-props-assets": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
     "3d-props-block": {
         "chapter": "3d-view",
         "kind": "still",
@@ -94,11 +100,29 @@
         "height": 760,
         "seconds": 6.2
     },
+    "3d-props-import-compare": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1440,
+        "height": 1184
+    },
+    "3d-props-import-review": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
+    "3d-props-imported": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 960
+    },
     "3d-props-panel": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 652
+        "height": 1064
     },
     "3d-props-polygon": {
         "chapter": "3d-view",

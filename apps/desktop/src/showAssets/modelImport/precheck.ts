@@ -13,7 +13,7 @@ import {
     MAX_IMAGE_PIXELS,
     MAX_MESHOPT_DECODED_BYTES,
     TRIANGLE_CAP,
-    TRIANGLE_REFUSE_FACTOR,
+    TRIANGLE_HARD_LIMIT,
 } from "./rules";
 import type { Refusal } from "./types";
 
@@ -42,7 +42,7 @@ export function precheck(model: OpenedModel): Precheck {
         refusals.push({ code: "requiredExtension", extensions: disallowed });
 
     const declaredTriangles = declaredTrianglesOf(model.json);
-    const limit = TRIANGLE_CAP * TRIANGLE_REFUSE_FACTOR;
+    const limit = TRIANGLE_HARD_LIMIT;
     if (declaredTriangles > limit)
         refusals.push({
             code: "tooManyTriangles",

@@ -1,20 +1,25 @@
 /**
- * Items with a built-in model in the 3D View (docs/3d/instruments.md §6): pit instruments,
- * speakers, the mixer and podiums drawn as their GLB, at real size, where the item's Outline is
- * and turned as it turns. Items without a model, with one this app doesn't ship, or with one that
- * failed to load draw as blocks (`PropBlocks.tsx`).
+ * Items with a model in the 3D View: the built-ins (docs/3d/instruments.md §6: pit instruments,
+ * speakers, the mixer and podiums) at real size, and imported models (fork #1000) sized to their
+ * Outline, one factor for all three sides. Each draws where the item's Outline is, turned as it
+ * turns. Items without a model, with one this app doesn't ship or the show doesn't have, or with
+ * one that failed to load draw as blocks (`PropBlocks.tsx`); an imported one also draws as a block
+ * until it has loaded.
  *
  * - Each model loads when the show first uses it, and every item drawn as it shares its geometry
- *   and materials: one `InstancedMesh` per part (at most six), so a Large pit's six marimbas are
- *   a handful of draws.
- * - At high quality each model has two tiers, detailed near the camera and its `-low` version
- *   beyond, switched with hysteresis as the instruments are (`hornSet.ts`); at low quality only
- *   the `-low` version draws.
+ *   and materials: one `InstancedMesh` per part (at most six for a built-in), so a Large pit's six
+ *   marimbas are a handful of draws. A built-in stays loaded; an imported model leaves the GPU
+ *   when no item uses it any more (`libraryModelAssets.ts`).
+ * - At high quality each model has two tiers, detailed near the camera and its distant version
+ *   beyond (a built-in's `-low`, an imported model's `distant` part), switched with hysteresis as
+ *   the instruments are (`hornSet.ts`); at low quality only the distant version draws. While one
+ *   version is still loading the other draws at every distance, so a model already drawn stays
+ *   drawn when the quality changes.
  * - Matrices update in `useFrame` from the sync store's `showMs()`, like the blocks, and also
  *   when the camera moves while there are two tiers. A model stands on the platform under it,
  *   from the same layout the blocks and performers use.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
 import { itemGeometryAt, type FieldProperties } from "@openmarch/core";
@@ -27,6 +32,12 @@ import {
     allItemsQueryOptions,
     itemGeometryQueryOptions,
 } from "@/hooks/queries/useItems";
+import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import {
+    libraryModels,
+    modelScale,
+    type LibraryModel,
+} from "@/showAssets/libraryModels";
 import {
     beatIndexesById,
     itemOutlineChanges,
@@ -55,6 +66,13 @@ import {
     type PitPart,
 } from "./pitModelAssets";
 import { propSolidsAt } from "./performerLift";
+import {
+    acquireLibraryModel,
+    holdChanges,
+    LibraryModelReleased,
+    releaseLibraryModel,
+    setDrawnLibraryModels,
+} from "./libraryModelAssets";
 
 interface PitModelsProps {
     fieldProperties: FieldProperties;
@@ -69,7 +87,10 @@ interface Tier {
 
 /** Every item drawn as one model. */
 interface ModelGroup {
+    /** A built-in's name, or an imported model's `items.model` value */
     name: string;
+    /** An imported model's real footprint, which its Outline scales; null for a built-in */
+    sizeM: { width: number; depth: number } | null;
     tracks: PropTrack[];
     /** Detailed first when there are two */
     tiers: Tier[];
@@ -79,9 +100,11 @@ interface ModelGroup {
 
 const key = (name: string, detail: Detail) => `${name}|${detail}`;
 
-/** Draws every item that names a built-in model, following the editor's playback. */
+/** Draws every item that names a model, following the editor's playback. */
 export default function PitModels({ fieldProperties }: PitModelsProps) {
     const quality = useView3dSceneStore((s) => s.quality);
+    // Heavy imported models draw their Light copy near the camera once the view stuttered (#1091)
+    const lightenHeavy = useView3dSceneStore((s) => s.heavyModelsLightened);
     const { data: items } = useQuery(allItemsQueryOptions());
     const { data: geometry } = useQuery(itemGeometryQueryOptions());
     const { beats } = useTimingObjects();
@@ -93,6 +116,14 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
         [showProps],
     );
     const failures = usePitModelFailures();
+    const { data: assets } = useQuery(showAssetsQueryOptions());
+    // Kept while its models are the same, so adding artwork doesn't rebuild every model's meshes
+    const libraryRef = useRef<ReadonlyMap<string, LibraryModel>>(new Map());
+    const library = useMemo(() => {
+        const next = libraryModels(assets);
+        if (!sameLibrary(libraryRef.current, next)) libraryRef.current = next;
+        return libraryRef.current;
+    }, [assets]);
 
     const details: Detail[] = useMemo(
         () => (quality === "high" ? ["high", "low"] : ["low"]),
@@ -102,10 +133,15 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
     // Each item drawn as a model, by marchers row, with its Outline changes
     const byName = useMemo(() => {
         const rows = items ?? [];
-        for (const item of rows)
-            if (item.model && pitModelName(item.model) === null)
-                logUnknownPitModel(item.model);
         const models = modelsByMarcher(rows, failures);
+        for (const item of rows) {
+            if (!item.model || pitModelName(item.model) !== null) continue;
+            // Until the show's assets have been read, an imported model isn't unknown
+            if (!library.has(item.model)) {
+                if (assets) logUnknownPitModel(item.model);
+            } else if (!failures.has(item.model))
+                models.set(item.marcher_id, item.model);
+        }
         const hidden = new Set(
             rows
                 .filter(
@@ -131,18 +167,36 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
             else out.set(name, [track]);
         }
         return out;
-    }, [items, geometry, beats, hiddenItemIds, failures]);
+    }, [items, geometry, beats, hiddenItemIds, failures, library, assets]);
 
     // The loaded versions of the models in use, by name and detail
     const [loaded, setLoaded] = useState<ReadonlyMap<string, PitPart[]>>(
         () => new Map(),
     );
     const namesKey = [...byName.keys()].sort().join("\n");
+    // The imported models' parts this view holds, by `key`: each is let go when no item needs it
+    const held = useRef(new Map<string, string>());
     useEffect(() => {
         const run = { live: true };
+        const needed = new Map<string, string>();
+        let heavy = false;
         for (const name of namesKey ? namesKey.split("\n") : [])
             for (const detail of details) {
-                if (loaded.has(key(name, detail))) continue;
+                const k = key(name, detail);
+                const imported = library.get(name);
+                if (imported) {
+                    if (imported.lightHash) heavy = true;
+                    needed.set(
+                        k,
+                        detail === "high"
+                            ? lightenHeavy && imported.lightHash
+                                ? imported.lightHash
+                                : imported.modelHash
+                            : imported.distantHash,
+                    );
+                    continue;
+                }
+                if (loaded.has(k)) continue;
                 loadPitModel(name, detail).then(
                     (parts) => {
                         if (!run.live) return;
@@ -154,19 +208,60 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                     (error: unknown) => markPitModelFailed(name, error),
                 );
             }
+        useView3dSceneStore.getState()._setHasHeavyModels(heavy);
+        // Hold the imported parts the items need, and let go of the rest: they leave the GPU
+        const { acquire, release } = holdChanges(held.current, needed);
+        const dropped: string[] = [];
+        for (const [k, hash] of release) {
+            held.current.delete(k);
+            releaseLibraryModel(hash);
+            dropped.push(k);
+        }
+        for (const [k, hash] of acquire) {
+            const name = k.slice(0, k.lastIndexOf("|"));
+            held.current.set(k, hash);
+            acquireLibraryModel(hash).then(
+                (parts) => {
+                    // Still wanted, and this view still mounted
+                    if (held.current.get(k) !== hash) return;
+                    setLoaded((before) => new Map(before).set(k, parts));
+                    requestDraw(1000);
+                },
+                (error: unknown) => {
+                    if (error instanceof LibraryModelReleased) return;
+                    markPitModelFailed(name, error);
+                },
+            );
+        }
+        if (dropped.length > 0)
+            setLoaded((before) => {
+                const next = new Map(before);
+                for (const k of dropped) next.delete(k);
+                return next;
+            });
         return () => {
             run.live = false;
         };
         // `loaded` only skips loads already done; every load is cached anyway
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [namesKey, details]);
+    }, [namesKey, details, library, lightenHeavy]);
+    useEffect(() => {
+        const holds = held.current;
+        return () => {
+            for (const hash of holds.values()) releaseLibraryModel(hash);
+            holds.clear();
+        };
+    }, []);
 
     // Meshes for every model whose versions have loaded
     const groups = useMemo(() => {
         const out: ModelGroup[] = [];
         for (const [name, tracks] of byName) {
-            const versions = details.map((d) => loaded.get(key(name, d)));
-            if (versions.some((v) => !v)) continue;
+            // The versions loaded so far: with one of two, it draws at every distance
+            const drawn = details.filter((d) => loaded.has(key(name, d)));
+            if (drawn.length === 0) continue;
+            const versions = drawn.map((d) => loaded.get(key(name, d))!);
+            const sizeM = library.get(name)?.sidecar.sizeM ?? null;
             const count = tracks.length;
             const tiers = versions.map((parts, k): Tier => {
                 const matrices = new Float32Array(count * 16);
@@ -178,7 +273,9 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                         part.material,
                         count,
                     );
-                    mesh.name = `view3d-pit-${name}-${details[k]}`;
+                    mesh.name = sizeM
+                        ? `view3d-imported-${name}-${drawn[k]}`
+                        : `view3d-pit-${name}-${drawn[k]}`;
                     // Every part of a version reads the same instances
                     mesh.instanceMatrix = attribute;
                     // Items stand anywhere on the field; skip the stale bounds test.
@@ -188,10 +285,10 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                 });
                 return { meshes, matrices, attribute };
             });
-            out.push({ name, tracks, tiers, near: new Map() });
+            out.push({ name, sizeM, tracks, tiers, near: new Map() });
         }
         return out;
-    }, [byName, details, loaded]);
+    }, [byName, details, loaded, library]);
     // The geometry and materials are the cache's; only the instances are ours
     useEffect(
         () => () =>
@@ -200,6 +297,14 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
             ),
         [groups],
     );
+
+    // Imported models drawn now stop drawing as blocks, before the next frame draws either
+    useLayoutEffect(() => {
+        setDrawnLibraryModels(
+            new Set(groups.filter((g) => g.sizeM).map((g) => g.name)),
+        );
+    }, [groups]);
+    useEffect(() => () => setDrawnLibraryModels(new Set()), []);
 
     useEffect(() => {
         for (const g of groups)
@@ -277,6 +382,7 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                         at.rotation,
                         scratch,
                         FIELD_SURFACE_Y + (liftOf?.(track.marcherId) ?? 0),
+                        g.sizeM ? modelScale(at, g.sizeM) : 1,
                     );
                 }
             g.tiers.forEach((t, k) => {
@@ -303,3 +409,22 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
 }
 
 const scratch: WorldPoint = { x: 0, z: 0 };
+
+/** Whether two sets of imported models name the same parts. */
+function sameLibrary(
+    a: ReadonlyMap<string, LibraryModel>,
+    b: ReadonlyMap<string, LibraryModel>,
+): boolean {
+    if (a.size !== b.size) return false;
+    for (const [value, model] of b) {
+        const other = a.get(value);
+        if (
+            !other ||
+            other.modelHash !== model.modelHash ||
+            other.distantHash !== model.distantHash ||
+            other.lightHash !== model.lightHash
+        )
+            return false;
+    }
+    return true;
+}

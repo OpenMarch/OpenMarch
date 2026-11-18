@@ -8,7 +8,8 @@
  *   change goes to the editor, which saves it with undo.
  * - Preferences, saved on this computer only (ADR 0010 D-5): opening the 3D
  *   View with a show (also in Settings › General), quality, resolution, the
- *   control scheme, and the keys, so they can be found.
+ *   control scheme, following a performer, and the keys, so they can be
+ *   found.
  *
  * Each tab says where its choices are saved in its first line. The panel
  * floats at the right and doesn't block the scene, so the viewer can orbit
@@ -27,6 +28,7 @@ import {
 } from "@openmarch/ui";
 import clsx from "clsx";
 import Shortcut from "@/components/ui/Shortcut";
+import { FOLLOW_KEY, POV_KEY, useFollowStore } from "../camera/followStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { setAutoOpen, useAutoOpenSetting } from "./autoOpenSetting";
 import { QUALITY_MODES } from "../qualityPreference";
@@ -200,6 +202,7 @@ export function SettingsPanel({
                     <QualityRow />
                     <ResolutionRow />
                     <ControlsRow />
+                    <FollowRows />
                     <Row label={t("view3d.settings.shortcuts")} stacked>
                         <ShortcutList />
                     </Row>
@@ -493,6 +496,35 @@ function ResolutionRow() {
     );
 }
 
+/** How the camera follows a performer: turning with them, and their arms and instrument in their view. */
+function FollowRows() {
+    const { t } = useTranslate();
+    const turn = useFollowStore((s) => s.turnWithPerformer);
+    const setTurn = useFollowStore((s) => s.setTurnWithPerformer);
+    const body = useFollowStore((s) => s.showOwnBody);
+    const setBody = useFollowStore((s) => s.setShowOwnBody);
+    return (
+        <>
+            <Row label={t("view3d.settings.followTurns")}>
+                <Switch
+                    checked={turn}
+                    onCheckedChange={setTurn}
+                    aria-label={t("view3d.settings.followTurns")}
+                    data-testid="view3d-follow-turns"
+                />
+            </Row>
+            <Row label={t("view3d.settings.povShowsBody")}>
+                <Switch
+                    checked={body}
+                    onCheckedChange={setBody}
+                    aria-label={t("view3d.settings.povShowsBody")}
+                    data-testid="view3d-pov-body"
+                />
+            </Row>
+        </>
+    );
+}
+
 /** What dragging and scrolling do. Above the key list, which follows it. */
 function ControlsRow() {
     const { t } = useTranslate();
@@ -549,6 +581,8 @@ const SHORTCUTS: ShortcutRows = [
     ["previousNext", { pair: ["Q", "E"] }],
     ["firstLast", { pair: ["Alt+Q", "Alt+E"] }],
     ["cameras", { keys: ["1–9"] }],
+    ["followPerformer", { binding: FOLLOW_KEY }],
+    ["pointOfView", { binding: POV_KEY }],
     ["fullscreen", { binding: "F" }],
     ["crowd", { binding: "C" }],
     ["pausedPose", { binding: "S" }],

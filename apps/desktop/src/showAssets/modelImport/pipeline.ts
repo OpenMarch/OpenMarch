@@ -9,7 +9,7 @@
  *    an unsupported required extension, an image too large to decode, more than 4× the
  *    triangle cap; then the Khronos validator's errors.
  * 2. Normalize: meters, +Y up, the front toward the audience (+Z), the pivot at the bottom
- *    center. Unit fixes, "rotate to Y-up" and the turn are choices, pre-selected and never
+ *    center. Unit fixes, the tilt and the turn are choices, pre-selected and never
  *    silent.
  * 3. Fit the budget: simplify past the triangle cap (a pre-selected choice), shrink textures to
  *    the cap, and make a distant version.
@@ -45,9 +45,11 @@ import { MeshoptDecoder, MeshoptSimplifier } from "meshoptimizer";
 import { planFromAbove } from "@/view3d/core/pit/planFromAbove";
 import { creditsOf, titleOf } from "./credits";
 import { openPickedFiles, RefusedError, type OpenedModel } from "./files";
+import { isTilt, tiltQuaternion, UPRIGHT, Z_UP_TILT } from "./orientation";
 import type { ImageCodec } from "./imageCodec";
 import { precheck } from "./precheck";
 import {
+    DETAILED_TRIANGLE_CAP,
     DISTANT_SIMPLIFY_FROM,
     DISTANT_TEXTURE_CAP,
     DISTANT_TRIANGLE_CAP,
@@ -60,7 +62,7 @@ import {
     PLAUSIBLE_SIZE_M,
     TEXTURE_CAP,
     TRIANGLE_CAP,
-    TRIANGLE_REFUSE_FACTOR,
+    TRIANGLE_HARD_LIMIT,
     UNIT_FIXES,
     Z_UP_FACTOR,
 } from "./rules";
@@ -75,6 +77,7 @@ import {
 import { renderThumbnail } from "./thumbnail";
 import type {
     Choice,
+    DetailLevel,
     Fix,
     ModelImportChoices,
     ModelImportReport,
@@ -119,7 +122,7 @@ export async function importModel(
 
         const { turn, root } = normalize(doc, scene, choices, report);
         await doc.transform(weld());
-        await fitTriangles(doc, scene, choices, report);
+        const detail = await fitTriangles(doc, scene, choices, report);
         // After simplifying, which can move the lowest point
         placeOnGround(scene, root, report);
         stripExtras(doc);
@@ -134,8 +137,17 @@ export async function importModel(
         );
 
         const model = await io.writeBinary(doc);
-        const distant = await makeDistant(io, doc, env.images);
-        const derived = await derive(doc, env.images);
+        // A level heavier than Light keeps a Light copy beside it, for devices that can't draw it
+        const light =
+            detail.row && detail.level !== "light"
+                ? await makeLight(io, doc)
+                : null;
+        if (detail.row) detail.row.lightTriangles = light?.triangles ?? null;
+        // From the Light copy when there is one: the same shapes, without building a record per
+        // triangle of a model of millions (#1091, measured: 4M triangles took 6 GB)
+        const lighter = light?.doc ?? doc;
+        const distant = await makeDistant(io, lighter, env.images);
+        const derived = await derive(lighter, env.images, doc);
         const sidecar: ModelSidecar = {
             format: "openmarch-model/1",
             importVersion: MODEL_IMPORT_VERSION,
@@ -145,6 +157,8 @@ export async function importModel(
             stand: derived.stand,
             triangles: sceneTriangles(sceneOf(doc)),
             distantTriangles: distant.triangles,
+            ...(detail.row ? { detail: detail.level } : {}),
+            ...(light ? { lightTriangles: light.triangles } : {}),
             importNotes: {
                 needsChoice: report.needsChoice,
                 fixedForYou: report.fixedForYou,
@@ -162,6 +176,7 @@ export async function importModel(
                     model,
                     distant: distant.bytes,
                     thumbnail: derived.thumbnail,
+                    ...(light ? { light: light.bytes } : {}),
                 },
                 sidecar,
                 credits: creditsOf(opened.json),
@@ -229,7 +244,7 @@ async function readClean(
                     .reduce((m, prim) => m + primitiveTriangles(prim), 0),
             0,
         );
-    const limit = TRIANGLE_CAP * TRIANGLE_REFUSE_FACTOR;
+    const limit = TRIANGLE_HARD_LIMIT;
     if (decoded > limit) {
         report.cantImport.push({
             code: "tooManyTriangles",
@@ -387,6 +402,9 @@ async function dropExtensions(
 const isPlausible = (largestM: number) =>
     largestM >= PLAUSIBLE_SIZE_M.min && largestM <= PLAUSIBLE_SIZE_M.max;
 
+/** The node `normalize` turns and scales the scene with, and `placeOnGround` moves */
+const ROOT_NODE = "OM_import_root";
+
 /**
  * Meters, +Y up, the front toward +Z: one new root node scales and turns the scene
  * (`placeOnGround` moves it later). Returns the turn applied and the node.
@@ -426,27 +444,28 @@ function normalize(
             maxM: PLAUSIBLE_SIZE_M.max,
         });
 
-    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess
+    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess. Tipping
+    // is always offered: a file can lie on any side, and a long one (a car) is never suspected
     const [x, y, z] = size;
     const flat = Math.min(...size) < FLAT_RATIO * largest;
-    const suspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
-    let rotate = choices.rotateToYUp ?? false;
-    if (suspected || choices.rotateToYUp !== undefined) {
-        rotate = choices.rotateToYUp ?? suspected;
-        report.needsChoice.push({
-            code: "rotateToYUp",
-            preselected: suspected,
-            applied: rotate,
-        });
-    }
+    const zUpSuspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
+    const preselectedTilt = zUpSuspected ? Z_UP_TILT : UPRIGHT;
+    const tilt =
+        choices.tilt && isTilt(choices.tilt) ? choices.tilt : preselectedTilt;
+    report.needsChoice.push({
+        code: "tilt",
+        preselected: preselectedTilt,
+        applied: tilt,
+        zUpSuspected,
+    });
 
     // The front: glTF's +Z unless the user turns it; always offered, since no file says
     const turn = choices.turn ?? 0;
     report.needsChoice.push({ code: "turn", preselected: 0, applied: turn });
 
-    const root = doc.createNode("OM_import_root");
+    const root = doc.createNode(ROOT_NODE);
     root.setScale([factor, factor, factor]);
-    // Turn about +Y (counter-clockwise from above), after rotating Z-up to Y-up (-90° about X)
+    // Turn about +Y (counter-clockwise from above), after standing it up
     const half = (turn * Math.PI) / 360;
     const yaw: [number, number, number, number] = [
         0,
@@ -454,10 +473,7 @@ function normalize(
         0,
         Math.cos(half),
     ];
-    const zUp: [number, number, number, number] = rotate
-        ? [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]
-        : [0, 0, 0, 1];
-    root.setRotation(multiplyQuat(yaw, zUp));
+    root.setRotation(multiplyQuat(yaw, tiltQuaternion(tilt)));
     for (const child of scene.listChildren()) {
         scene.removeChild(child);
         root.addChild(child);
@@ -498,36 +514,85 @@ function multiplyQuat(
 
 // ------------------------------------------------------------------ the budget
 
-/** Simplifies past the cap when chosen (pre-selected); notes what remains over it. */
+/**
+ * Brings the model to the chosen level (#1091): Light (pre-selected) simplifies to
+ * `TRIANGLE_CAP`, Detailed to `DETAILED_TRIANGLE_CAP`, Original keeps every triangle. A model
+ * within the Light cap has nothing to choose. Notes what a simplification couldn't reach.
+ */
 async function fitTriangles(
     doc: Document,
     scene: Scene,
     choices: ModelImportChoices,
     report: ModelImportReport,
-): Promise<void> {
+): Promise<{
+    level: DetailLevel;
+    row: Extract<Choice, { code: "detail" }> | null;
+}> {
     const triangles = sceneTriangles(scene);
-    if (triangles <= TRIANGLE_CAP) return;
-    const applied = choices.simplify ?? true;
-    const row: Extract<Choice, { code: "simplify" }> = {
-        code: "simplify",
+    if (triangles <= TRIANGLE_CAP) return { level: "original", row: null };
+    const levels: DetailLevel[] =
+        triangles > DETAILED_TRIANGLE_CAP
+            ? ["light", "detailed", "original"]
+            : ["light", "original"];
+    const asked = choices.detail ?? "light";
+    const applied = levels.includes(asked) ? asked : "light";
+    const row: Extract<Choice, { code: "detail" }> = {
+        code: "detail",
         triangles,
-        cap: TRIANGLE_CAP,
-        preselected: true,
+        levels,
+        preselected: "light",
         applied,
-        simplifiedTriangles: null,
+        appliedTriangles: triangles,
+        lightTriangles: null,
     };
     report.needsChoice.push(row);
-    let after = triangles;
-    if (applied) {
-        after = await simplifyTo(doc, scene, TRIANGLE_CAP);
-        row.simplifiedTriangles = after;
+    const target =
+        applied === "light"
+            ? TRIANGLE_CAP
+            : applied === "detailed"
+              ? DETAILED_TRIANGLE_CAP
+              : null;
+    if (target !== null) {
+        row.appliedTriangles = await simplifyTo(doc, scene, target);
+        if (row.appliedTriangles > target)
+            report.notes.push({
+                code: "overTriangleCap",
+                triangles: row.appliedTriangles,
+                cap: target,
+            });
     }
-    if (after > TRIANGLE_CAP)
-        report.notes.push({
-            code: "overTriangleCap",
-            triangles: after,
-            cap: TRIANGLE_CAP,
-        });
+    return { level: applied, row };
+}
+
+/**
+ * The Light copy kept beside a heavier level: the finished model, simplified to the cap and set
+ * back on the ground, since simplifying can take away its lowest points (thin legs, a pole's
+ * foot), so the fallback's swap doesn't make it float.
+ */
+async function makeLight(
+    io: WebIO,
+    doc: Document,
+): Promise<{ bytes: Uint8Array; triangles: number; doc: Document }> {
+    const light = cloneDocument(doc);
+    const scene = sceneOf(light);
+    await simplifyTo(light, scene, TRIANGLE_CAP);
+    const lowest = getBounds(scene).min[1];
+    const root = light
+        .getRoot()
+        .listNodes()
+        .find((n) => n.getName() === ROOT_NODE);
+    if (root && Math.abs(lowest) > 1e-6) {
+        const [x, y, z] = root.getTranslation();
+        root.setTranslation([x, y - lowest, z]);
+    }
+    await light.transform(
+        prune({ keepAttributes: true, keepSolidTextures: true }),
+    );
+    return {
+        bytes: await io.writeBinary(light),
+        triangles: sceneTriangles(scene),
+        doc: light,
+    };
 }
 
 /**
@@ -641,9 +706,13 @@ async function makeDistant(
 
 // ------------------------------------------------------------------ 2D and thumbnail
 
-async function derive(doc: Document, images: ImageCodec) {
+/**
+ * What 2D needs, from `doc` (the Light copy above Light); the size from `sizeOf`, the stored
+ * model, which simplifying may have trimmed a hair.
+ */
+async function derive(doc: Document, images: ImageCodec, sizeOf: Document) {
     const scene = sceneOf(doc);
-    const { min, max } = getBounds(scene);
+    const { min, max } = getBounds(sceneOf(sizeOf));
     const triangles = worldTriangles(scene);
     const top = topAt(triangles, 0, 0);
     const colors = new Map<Material | null, [number, number, number]>();

@@ -315,9 +315,10 @@ describeDbTests("Front ensemble panel", (it) => {
         fireEvent.click(
             within(ensemble).getByRole("button", { name: "Chimes" }),
         );
-        expect(useItemDrawingStore.getState().placing?.variant.modelId).toBe(
-            "pit/chimes",
-        );
+        expect(useItemDrawingStore.getState().placing).toMatchObject({
+            kind: "equipment",
+            variant: { modelId: "pit/chimes" },
+        });
         act(() =>
             port.drawn!({
                 outlineType: "rectangle",

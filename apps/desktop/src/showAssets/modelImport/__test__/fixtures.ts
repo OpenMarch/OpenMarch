@@ -202,3 +202,26 @@ export function ktx2Header(width: number, height: number): Uint8Array {
     view.setUint32(24, height, true);
     return out;
 }
+
+/** Three SheenChairs sharing one mesh, side by side: 119,808 triangles drawn */
+export const threeChairs = () =>
+    chairWith((doc) => {
+        const scene = doc.getRoot().listScenes()[0];
+        const parts = doc
+            .getRoot()
+            .listNodes()
+            .filter((n) => n.getMesh());
+        for (const dx of [1, 2]) {
+            const copy = doc
+                .createNode(`copy ${dx}`)
+                .setTranslation([dx, 0, 0]);
+            for (const node of parts)
+                copy.addChild(
+                    doc
+                        .createNode()
+                        .setMesh(node.getMesh())
+                        .setMatrix(node.getWorldMatrix()),
+                );
+            scene.addChild(copy);
+        }
+    });

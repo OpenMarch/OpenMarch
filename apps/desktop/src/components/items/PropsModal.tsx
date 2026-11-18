@@ -18,6 +18,7 @@ import type { OutlineType } from "@/db-functions/items";
 import ItemPanelHeader from "./ItemPanelHeader";
 import { ItemEditor, PropColorControl } from "./ItemEditor";
 import { ItemRow, ShowNamesSwitch, type ItemWithMarcher } from "./ItemRows";
+import ImportedModels from "./modelImport/ImportedModels";
 
 const OUTLINE_TOOLS: { id: OutlineType; icon: React.ReactNode }[] = [
     { id: "rectangle", icon: <SquareIcon size={24} /> },
@@ -50,13 +51,21 @@ export default function PropsModal() {
     );
 }
 
-export function PropListContents() {
+export function PropListContents({
+    justImported,
+}: {
+    /** A model just imported (`items.model` value), marked in the Imported group */
+    justImported?: string | null;
+} = {}) {
     const { setContent } = useSidebarModalStore();
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <ItemPanelHeader title={<T keyName="props.title" />} />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 <PropToolSelector />
+                <div className="border-stroke border-t pt-12">
+                    <ImportedModels justImported={justImported} />
+                </div>
                 <div className="border-stroke border-t pt-12">
                     <PropList
                         onEdit={(item) =>

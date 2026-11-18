@@ -1017,6 +1017,26 @@
         "category": "edit",
         "bindings": []
     },
+    "importModel": {
+        "label": "Import a 3D model…",
+        "category": "file",
+        "bindings": []
+    },
+    "placeImportedModel": {
+        "label": "Place an imported model",
+        "category": "edit",
+        "bindings": []
+    },
+    "openAssets": {
+        "label": "Open the show's assets",
+        "category": "ui",
+        "bindings": []
+    },
+    "removeUnusedAssets": {
+        "label": "Remove unused assets…",
+        "category": "file",
+        "bindings": []
+    },
     "addFrontEnsembleEquipment": {
         "label": "Add front ensemble equipment or podium",
         "category": "ui",

@@ -22,6 +22,13 @@
  *   nearest seat row and flies to a seated eye looking at the focus; Esc
  *   cancels;
  * - clears the crowd within `CROWD_CLEAR_RADIUS` of the camera on arrival;
+ * - in pick-a-performer mode (`followStore.ts`, key P), follows the clicked
+ *   performer: from behind (third person), or out of their eyes (point of
+ *   view, key V) where drag looks around and scroll zooms
+ *   (`followController.ts`); the third-person camera swings round as they
+ *   turn, and the point of view shows their arms and instrument, unless the
+ *   viewer turned those off. Panning, a double-click, a seat, a camera, the
+ *   Director or a new venue ends it;
  * - while the Director is on (`cinema/directorStore.ts`, key D), puts the
  *   camera where its shot track says for the show time, on every drawn frame.
  *   It asks for no frames of its own: playback and scrubs already draw. Any
@@ -68,6 +75,14 @@ import {
     useDirectorStore,
 } from "../cinema/directorStore";
 import { useCinemaContext } from "../cinema/subjectPoints";
+import { FOLLOW_KEY, POV_KEY, useFollowStore } from "./followStore";
+import { FollowController } from "./followController";
+import { installFollowTestApi } from "./followTestApi";
+import {
+    onPerformersMoved,
+    performerPoseInto,
+    pickPerformer,
+} from "./performerTrack";
 
 /** Pointer travel (px) under which a press counts as a click, for picking. */
 const CLICK_SLOP_PX = 6;
@@ -157,8 +172,28 @@ export default function CameraRig() {
     const kit = useView3dSceneStore((s) => s.kit);
     const kitId = useView3dSceneStore((s) => s.kitId);
     const pickMode = useCameraStore((s) => s.pickMode);
+    const pickingPerformer = useFollowStore((s) => s.picking);
 
     const rig = useMemo(() => new RigController(camera), [camera]);
+    const follow = useMemo(
+        () =>
+            new FollowController(rig, camera, {
+                poseInto: performerPoseInto,
+                setHidden: (id) => useFollowStore.getState()._setHidden(id),
+                setHeadless: (id) => useFollowStore.getState()._setHeadless(id),
+                instant: prefersReducedMotion,
+                turnWithPerformer: () =>
+                    useFollowStore.getState().turnWithPerformer,
+                showOwnBody: () => useFollowStore.getState().showOwnBody,
+            }),
+        [rig, camera],
+    );
+    /** Stops following without moving the camera: something else takes it over. */
+    const endFollowRef = useRef(() => {});
+    endFollowRef.current = () => {
+        follow.release();
+        useFollowStore.getState().stop();
+    };
     const shownKitIdRef = useRef<string | null>(null);
 
     // The Director's view of the show: who is where, and the picture's shape.
@@ -213,6 +248,8 @@ export default function CameraRig() {
         }
         shownKitIdRef.current = kitId;
         store.setPickMode(false);
+        useFollowStore.getState().setPicking(false);
+        endFollowRef.current();
         const opening = openingCamera(cameras, camerasCustomized, kit.cameras);
         if (!opening) {
             store._setActive(null);
@@ -264,6 +301,38 @@ export default function CameraRig() {
         return () => store._setPoseSource(null);
     }, [camera, rig]);
 
+    // Following a performer: fly to them as the store says; one pick mode at
+    // a time; a camera or the Director takes the view over.
+    useEffect(() => {
+        const unsubscribe = [
+            useFollowStore.subscribe((state, prev) => {
+                if (state.picking && !prev.picking)
+                    useCameraStore.getState().setPickMode(false);
+                if (state.follow === prev.follow) return;
+                requestDraw(INPUT_WAKE_MS);
+                if (state.follow) {
+                    useDirectorStore.getState().setDirecting(false);
+                    useCameraStore.getState()._setActive(null);
+                }
+                if (!follow.change(state.follow, performance.now()))
+                    state.stop();
+            }),
+            useCameraStore.subscribe((state, prev) => {
+                if (state.pickMode && !prev.pickMode)
+                    useFollowStore.getState().setPicking(false);
+                if (state._request && state._request !== prev._request)
+                    endFollowRef.current();
+            }),
+            useDirectorStore.subscribe((state, prev) => {
+                if (state.directing && !prev.directing) endFollowRef.current();
+            }),
+            // Keep up with the performer in the frame they moved.
+            onPerformersMoved(() => follow.apply(performance.now())),
+            installFollowTestApi(),
+        ];
+        return () => unsubscribe.forEach((u) => u());
+    }, [follow]);
+
     // selectCamera() from the overlay.
     useEffect(
         () =>
@@ -280,11 +349,11 @@ export default function CameraRig() {
     // Crosshair while picking.
     useEffect(() => {
         const el = gl.domElement;
-        el.style.cursor = pickMode ? "crosshair" : "";
+        el.style.cursor = pickMode || pickingPerformer ? "crosshair" : "";
         return () => {
             el.style.cursor = "";
         };
-    }, [gl, pickMode]);
+    }, [gl, pickMode, pickingPerformer]);
 
     // Pointer, wheel and keyboard input.
     useEffect(() => {
@@ -459,7 +528,9 @@ export default function CameraRig() {
             rig.stopMotion();
             orbiting = false;
             grab =
-                dragAction(scheme(), e) === "pan" && !rig.flying
+                dragAction(scheme(), e) === "pan" &&
+                !rig.flying &&
+                !follow.active
                     ? grabAt(e.clientX, e.clientY)
                     : null;
             if (pointers.size === 2) {
@@ -478,13 +549,32 @@ export default function CameraRig() {
             moved += Math.abs(dx) + Math.abs(dy);
             if (dx === 0 && dy === 0) return;
             let changed: boolean;
+            if (follow.pov) {
+                // Out of a performer's eyes: drag looks around, pinch zooms.
+                if (pointers.size >= 2) {
+                    const [a, b] = [...pointers.values()];
+                    const d = Math.hypot(a.x - b.x, a.y - b.y);
+                    changed = pinch > 0 && d > 0 && follow.zoomRatio(pinch / d);
+                    pinch = d;
+                } else changed = follow.lookDrag(dx, dy);
+                if (changed) requestDraw(INPUT_WAKE_MS);
+                return;
+            }
             if (pointers.size >= 2) {
                 const [a, b] = [...pointers.values()];
                 const d = Math.hypot(a.x - b.x, a.y - b.y);
                 changed = pinch > 0 && d > 0 && rig.zoomRatio(pinch / d);
                 pinch = d;
-                changed = rig.pan(dx * 0.5, dy * 0.5, focus()) || changed;
+                // Following, the view stays on the performer: no pan.
+                if (!follow.active)
+                    changed = rig.pan(dx * 0.5, dy * 0.5, focus()) || changed;
             } else if (dragAction(scheme(), e) === "pan") {
+                // Panning away from the performer stops following them,
+                // once it is a drag and not a click with a little jitter.
+                if (follow.active) {
+                    if (moved < CLICK_SLOP_PX) return;
+                    endFollowRef.current();
+                }
                 const now = grab ? heldAt(e.clientX, e.clientY, grab) : null;
                 // Once the held point can't follow the pointer, finish the
                 // press without it, or coming back would snap to it.
@@ -510,6 +600,13 @@ export default function CameraRig() {
             grab = null;
             if (!had || e.button !== 0) return;
             const store = useCameraStore.getState();
+            const followStore = useFollowStore.getState();
+            if (followStore.picking && moved < CLICK_SLOP_PX) {
+                const { o, d } = rayAt(e.clientX, e.clientY);
+                const id = pickPerformer(o, d);
+                if (id !== null) followStore.followMarcher(id);
+                return;
+            }
             const current = useView3dSceneStore.getState().kit;
             if (!store.pickMode || moved >= CLICK_SLOP_PX || !current) return;
             const rect = el.getBoundingClientRect();
@@ -519,6 +616,7 @@ export default function CameraRig() {
             );
             const eye = pickSeatEye(current, camera, ndc, raycaster);
             if (!eye) return;
+            endFollowRef.current();
             store.setPickMode(false);
             store._setActive(null);
             useDirectorStore.getState().setDirecting(false);
@@ -538,6 +636,34 @@ export default function CameraRig() {
             e.preventDefault();
             const action = wheelAction(scheme(), e);
             let changed: boolean;
+            if (follow.pov) {
+                // Out of a performer's eyes: scroll zooms or looks around.
+                if (action === "pinch") {
+                    const step =
+                        wheelPixels(e.deltaY, e.deltaMode) * PINCH_ZOOM;
+                    changed = follow.zoomRatio(
+                        Math.exp(
+                            Math.max(
+                                -PINCH_MAX_STEP,
+                                Math.min(PINCH_MAX_STEP, step),
+                            ),
+                        ),
+                    );
+                } else if (action === "zoom")
+                    changed = follow.zoomWheel(
+                        wheelPixels(e.deltaY, e.deltaMode),
+                    );
+                else
+                    changed = follow.lookDrag(
+                        -wheelPixels(e.deltaX, e.deltaMode),
+                        -wheelPixels(e.deltaY, e.deltaMode),
+                    );
+                if (changed) requestDraw(INPUT_WAKE_MS);
+                return;
+            }
+            // Following, zoom closes in on the performer, not the cursor.
+            const zoomPoint = (x: number, y: number) =>
+                follow.active ? null : zoomPointAt(x, y);
             if (action === "pinch") {
                 const step = wheelPixels(e.deltaY, e.deltaMode) * PINCH_ZOOM;
                 changed = rig.zoomRatioAt(
@@ -547,7 +673,7 @@ export default function CameraRig() {
                             Math.min(PINCH_MAX_STEP, step),
                         ),
                     ),
-                    zoomPointAt(e.clientX, e.clientY),
+                    zoomPoint(e.clientX, e.clientY),
                 );
             } else if (action !== "zoom") {
                 // The view moves under a still pointer: aim the next zoom afresh.
@@ -556,6 +682,7 @@ export default function CameraRig() {
                 // deltaX; orbit and pan as if the fingers dragged the scene
                 const dx = -wheelPixels(e.deltaX, e.deltaMode);
                 const dy = -wheelPixels(e.deltaY, e.deltaMode);
+                if (action === "pan" && follow.active) endFollowRef.current();
                 changed =
                     action === "pan"
                         ? rig.pan(dx, dy, focus())
@@ -565,15 +692,19 @@ export default function CameraRig() {
                 if (e.deltaY === 0) return;
                 changed = rig.zoomWheelAt(
                     wheelPixels(e.deltaY, e.deltaMode),
-                    zoomPointAt(e.clientX, e.clientY),
+                    zoomPoint(e.clientX, e.clientY),
                     performance.now(),
                 );
             }
             if (changed) manualMove();
         };
         const onDoubleClick = (e: MouseEvent) => {
+            // Inside a performer's eyes there is no spot to center on.
+            if (follow.pov) return;
             const hit = surfaceAt(e.clientX, e.clientY);
             if (!hit || rig.flying) return;
+            // A new center ends following.
+            endFollowRef.current();
             // The spot itself becomes the center, at its own height (a seat
             // up in the stands too), and the camera shifts with it, keeping
             // its angle and distance, above the ground.
@@ -600,11 +731,28 @@ export default function CameraRig() {
             if (e.defaultPrevented || isTypingTarget(e.target)) return;
             if (e.ctrlKey || e.metaKey || e.altKey) return;
             const store = useCameraStore.getState();
+            const followStore = useFollowStore.getState();
             if (e.key === "Escape") {
                 if (store.pickMode) {
                     store.setPickMode(false);
                     e.preventDefault();
+                } else if (followStore.picking) {
+                    followStore.setPicking(false);
+                    e.preventDefault();
                 }
+                // Backing out of following is the overlay's, after its panels.
+                return;
+            }
+            if (e.key.toUpperCase() === FOLLOW_KEY) {
+                if (e.repeat || e.shiftKey) return;
+                e.preventDefault();
+                followStore.setPicking(!followStore.picking);
+                return;
+            }
+            if (e.key.toUpperCase() === POV_KEY) {
+                if (e.repeat || e.shiftKey || !followStore.follow) return;
+                e.preventDefault();
+                followStore.toggleMode();
                 return;
             }
             if (e.key === "d" || e.key === "D") {
@@ -639,7 +787,7 @@ export default function CameraRig() {
             el.removeEventListener("dblclick", onDoubleClick);
             window.removeEventListener("keydown", onKeyDown);
         };
-    }, [gl, camera, rig]);
+    }, [gl, camera, rig, follow]);
 
     // Runs before the scene's own frame work, so `kit.onFrame` (roof
     // hiding) sees this frame's camera.
@@ -654,8 +802,9 @@ export default function CameraRig() {
             rig.jumpTo(pose.position, pose.target, pose.fovDeg);
             return;
         }
+        follow.apply(now);
         rig.update(now);
-        if (rig.moving) requestDraw(100);
+        if (rig.moving || follow.easing) requestDraw(100);
     }, -1);
 
     // Leave the store clean when the window's scene goes away.
@@ -665,6 +814,11 @@ export default function CameraRig() {
             store._setActive(null);
             store.setPickMode(false);
             useDirectorStore.getState().setDirecting(false);
+            const followStore = useFollowStore.getState();
+            followStore.setPicking(false);
+            followStore.stop();
+            followStore._setHidden(null);
+            followStore._setHeadless(null);
         },
         [],
     );

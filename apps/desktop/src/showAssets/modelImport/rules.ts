@@ -9,13 +9,28 @@
 export const MODEL_ASSET_KIND = "model";
 
 /** Bump when the stored output changes for the same input and choices. */
-export const MODEL_IMPORT_VERSION = 1;
+export const MODEL_IMPORT_VERSION = 2;
 
-/** Triangles a prop model may have before it is simplified (props-spec section 3) */
+/**
+ * The Light level: what a prop model is simplified to by default (props-spec section 3), and
+ * the copy kept beside a heavier level for devices that can't draw it (fork #1091)
+ */
 export const TRIANGLE_CAP = 20_000;
 
-/** Past this multiple of the cap a model is refused: the one hard limit (D-19) */
-export const TRIANGLE_REFUSE_FACTOR = 4;
+/** The Detailed level, offered when the file has more than this */
+export const DETAILED_TRIANGLE_CAP = 100_000;
+
+/**
+ * Past this a model is refused, whatever level is chosen: a sanity ceiling on what the import
+ * decodes and simplifies, not a drawing budget. Below it, triangles are the user's call (#1091).
+ */
+export const TRIANGLE_HARD_LIMIT = 5_000_000;
+
+/**
+ * About how many triangles one performer draws at high quality (docs/3d/findings.md: the
+ * marchers are 1.19M triangles for 300), to say how heavy a model is in the show's own terms
+ */
+export const PERFORMER_TRIANGLES = 4_000;
 
 /** Longest texture edge of a prop model, in pixels (D-19: prop textures 1024) */
 export const TEXTURE_CAP = 1024;

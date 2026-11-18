@@ -7,7 +7,10 @@ import {
     addShowAssetInTransaction,
     getShowAsset,
     getShowAssets,
+    getShowAssetBlobSizes,
+    getShowAssetReferences,
     readShowAssetBlob,
+    removeShowAssetsInTransaction,
     setShowAssetCreditsInTransaction,
     type NewShowAsset,
 } from "../showAssets";
@@ -386,6 +389,101 @@ describeDbTests("showAssets", (it) => {
             expect(await modelOf()).toBeNull();
             expect(await assetCount(db)).toBe(1);
             expect(await blobCount(db)).toBe(3);
+        });
+    });
+
+    describe("removing (fork #1001)", () => {
+        it("removes the Versions asked for, and only the bytes nothing else uses", async ({
+            db,
+        }) => {
+            const a = await add(db, marimba());
+            // Shares the thumbnail's bytes with the marimba
+            const b = await add(
+                db,
+                marimba({
+                    name: "Bells",
+                    parts: { model: bytes(1, 2, 3), thumbnail: THUMB },
+                }),
+            );
+            const removed = await db.transaction((tx) =>
+                removeShowAssetsInTransaction({ tx, refs: [a.ref] }),
+            );
+            expect(removed).toBe(1);
+            expect((await getShowAssets({ db })).map((x) => x.name)).toEqual([
+                "Bells",
+            ]);
+            // The marimba's own GLBs are gone; the shared thumbnail and the bells' GLB stay
+            expect(await blobCount(db)).toBe(2);
+            expect(
+                await readShowAssetBlob({ db, hash: await sha256Hex(THUMB) }),
+            ).toEqual(THUMB);
+            expect(
+                await readShowAssetBlob({ db, hash: await sha256Hex(GLB) }),
+            ).toBeUndefined();
+            void b;
+        });
+
+        it("removes nothing for a Version the show doesn't have", async ({
+            db,
+        }) => {
+            const a = await add(db, marimba());
+            const removed = await db.transaction((tx) =>
+                removeShowAssetsInTransaction({
+                    tx,
+                    refs: [{ id: a.ref.id, versionHash: "0".repeat(64) }],
+                }),
+            );
+            expect(removed).toBe(0);
+            expect(await blobCount(db)).toBe(3);
+        });
+
+        it("reads each blob's size", async ({ db }) => {
+            await add(db, marimba());
+            const sizes = await getShowAssetBlobSizes({ db });
+            expect(sizes.get(await sha256Hex(GLB))).toBe(GLB.length);
+            expect(sizes.size).toBe(3);
+        });
+
+        it("reads what props and cues name now, and nothing else", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const beats = await db
+                .select({ id: schema.beats.id })
+                .from(schema.beats)
+                .orderBy(schema.beats.position)
+                .all();
+            const { ref } = await add(db, marimba());
+            const value = showAssetRefValue(ref);
+            await createItems({
+                db,
+                newItems: [
+                    {
+                        kind: "prop",
+                        surfaceType: "obstacle",
+                        home: [100, 100],
+                        beatId: beats[0]!.id,
+                        model: value,
+                        geometry: {
+                            outlineType: "rectangle",
+                            width: 2,
+                            depth: 1,
+                        },
+                    },
+                    {
+                        kind: "prop",
+                        surfaceType: "floor",
+                        home: [200, 100],
+                        beatId: beats[0]!.id,
+                        geometry: {
+                            outlineType: "rectangle",
+                            width: 2,
+                            depth: 1,
+                        },
+                    },
+                ],
+            });
+            expect(await getShowAssetReferences({ db })).toEqual([value]);
         });
     });
 });
