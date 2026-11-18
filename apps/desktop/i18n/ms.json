@@ -3239,7 +3239,14 @@
             "pickSeatTooltip": "Pilih tempat duduk: klik tempat duduk di bahagian penonton untuk duduk di situ",
             "venue": "Lokasi",
             "freeCamera": "Pandangan bebas",
-            "director": "Pengarah"
+            "director": "Pengarah",
+            "followPerformer": "Ikut pemain",
+            "followPerformerTooltip": "Ikut pemain: klik pemain untuk mengikutinya",
+            "following": "Mengikut {name}",
+            "povOf": "Pandangan {name}",
+            "pointOfView": "Sudut pandangan",
+            "pointOfViewTooltip": "Sudut pandangan: lihat melalui mata pemain",
+            "stopFollowing": "Berhenti mengikut"
         },
         "readout": {
             "count": "Kiraan {count} daripada {total}",
@@ -3279,7 +3286,9 @@
             "brassFinish": "Kemasan brass",
             "tuba": "Tuba",
             "silkShape": "Bentuk kain bendera",
-            "silkArtwork": "Gambar kain bendera"
+            "silkArtwork": "Gambar kain bendera",
+            "followTurns": "Semasa mengikut: berpusing bersama pemain",
+            "povShowsBody": "Sudut pandangan: tunjuk lengan dan alat muziknya"
         },
         "keys": {
             "playPause": "Main atau jeda",
@@ -3288,14 +3297,16 @@
             "cameras": "Kamera, mengikut susunan menu",
             "fullscreen": "Skrin penuh",
             "crowd": "Tunjuk atau sembunyi penonton",
-            "escape": "Batal pilihan tempat duduk, tutup tetapan, keluar skrin penuh",
+            "escape": "Batal pilihan, tutup tetapan, berhenti mengikut, keluar skrin penuh",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, atau seret dengan butang kanan tetikus",
             "panPlain": "Anjak",
             "zoomOrPinch": "Zum, atau cubit pada pad sentuh",
             "pan": "Anjak, atau seret dengan butang kanan tetikus",
             "zoom": "Zum",
-            "pausedPose": "Dijeda: tunjukkan langkah sebenar atau kedudukan rapat"
+            "pausedPose": "Dijeda: tunjukkan langkah sebenar atau kedudukan rapat",
+            "followPerformer": "Pilih pemain untuk diikut",
+            "pointOfView": "Semasa mengikut: tukar ke sudut pandangannya dan kembali"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

@@ -268,7 +268,13 @@ describe("an opaque canvas", () => {
 
 describe("plume material", () => {
     it("patches the standard shader: skinned on the head bone, feathers cut out", () => {
-        const composer = { uniform: { value: null } } as unknown as Composer;
+        const uniform = { value: null };
+        const composer = {
+            uniform,
+            bindUniforms: (u: Record<string, unknown>) => {
+                u.uComposed = uniform;
+            },
+        } as unknown as Composer;
         for (const tier of ["high", "low"] as const) {
             const m = plumeMaterial(composer, tier);
             const shader = {

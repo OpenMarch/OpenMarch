@@ -172,6 +172,15 @@ export class Composer {
     readonly stateTexture: THREE.DataTexture;
     /** The composed texture, for the skinning shaders; null until the first update. */
     readonly uniform: { value: THREE.Texture | null } = { value: null };
+    /**
+     * The slot drawn without a head (-1 for none), the head bone, and the
+     * head's base at bind: see {@link Composer.setHeadless}.
+     */
+    private readonly headless = {
+        uHeadlessSlot: { value: -1 },
+        uHeadlessBone: { value: -1 },
+        uHeadlessAt: { value: new THREE.Vector3() },
+    };
     readonly setup: ComposeSetup;
     mode: ComposeMode | null = null;
     private target: THREE.WebGLRenderTarget | null = null;
@@ -316,17 +325,57 @@ export class Composer {
         }
     }
 
-    /** Every slot composed on the CPU into `out`, laid out as the texture is. */
-    composeCpu(count: number, out: Float32Array): void {
+    /** The bake's matrices, for composing on the CPU. */
+    private anim() {
         const img = this.bake.texture.image as {
             data: Float32Array;
             width: number;
         };
-        const anim = {
+        return {
             data: img.data,
             width: img.width,
             rowsPerColumn: this.bake.rowsPerColumn,
         };
+    }
+
+    /**
+     * Gives every material that skins from this composer its uniforms: the
+     * composed texture and the headless slot. Call it from `onBeforeCompile`.
+     */
+    bindUniforms(uniforms: Record<string, THREE.IUniform>): void {
+        uniforms.uComposed = this.uniform;
+        Object.assign(uniforms, this.headless);
+    }
+
+    /**
+     * Draws slot `slot` without its head (null for every head drawn): the
+     * head bone `bone` folds to `at`, the head's base at bind, in every
+     * shader that skins from this composer. Only the draw changes;
+     * `composeSlotCpu` still gives the head where it is.
+     */
+    setHeadless(
+        slot: number | null,
+        bone: number,
+        at: readonly [number, number, number],
+    ): void {
+        const h = this.headless;
+        h.uHeadlessSlot.value = slot ?? -1;
+        h.uHeadlessBone.value = bone;
+        h.uHeadlessAt.value.set(at[0], at[1], at[2]);
+    }
+
+    /**
+     * One slot's bones composed on the CPU into `out` (`setup.bones`
+     * column-major matrices from 0), whatever the mode: for reading where a
+     * performer's body is, such as their eyes for the camera.
+     */
+    composeSlotCpu(slot: number, count: number, out: Float32Array): void {
+        composeSlot(this.anim(), this.setup, this.state, slot, count, out, 0);
+    }
+
+    /** Every slot composed on the CPU into `out`, laid out as the texture is. */
+    composeCpu(count: number, out: Float32Array): void {
+        const anim = this.anim();
         for (let slot = 0; slot < this.n; slot++)
             composeSlot(
                 anim,
@@ -381,10 +430,18 @@ export class Composer {
 /** The composed texture and its lookup, for any shader that skins from it. */
 export const COMPOSED_BONE_SHADER = /* glsl */ `
 uniform highp sampler2D uComposed;
+uniform int uHeadlessSlot, uHeadlessBone;
+uniform vec3 uHeadlessAt;
 mat4 composedBone(int slot, int bone) {
   int x = (slot % ${COMPOSED_PER_ROW}) * ${COMPOSED_STRIDE} + bone * 4, y = slot / ${COMPOSED_PER_ROW};
-  return mat4(texelFetch(uComposed, ivec2(x, y), 0), texelFetch(uComposed, ivec2(x + 1, y), 0),
-              texelFetch(uComposed, ivec2(x + 2, y), 0), texelFetch(uComposed, ivec2(x + 3, y), 0));
+  mat4 m = mat4(texelFetch(uComposed, ivec2(x, y), 0), texelFetch(uComposed, ivec2(x + 1, y), 0),
+                texelFetch(uComposed, ivec2(x + 2, y), 0), texelFetch(uComposed, ivec2(x + 3, y), 0));
+  // the headless slot's head folds to (almost) a point at its base, taking
+  // whatever rides it (hat, plume, beret) along and tapering the neck into
+  // it; not quite zero, so its normals still normalize instead of going NaN
+  if (slot == uHeadlessSlot && bone == uHeadlessBone)
+    return mat4(m[0] * 1e-4, m[1] * 1e-4, m[2] * 1e-4, m * vec4(uHeadlessAt, 1.0));
+  return m;
 }
 `;
 
@@ -422,7 +479,7 @@ export function composedSkinning<M extends THREE.Material>(
     const key = material.customProgramCacheKey?.() ?? "";
     material.onBeforeCompile = (shader, renderer) => {
         base?.call(material, shader, renderer);
-        shader.uniforms.uComposed = composer.uniform;
+        composer.bindUniforms(shader.uniforms);
         shader.vertexShader =
             COMPOSED_HEAD +
             shader.vertexShader

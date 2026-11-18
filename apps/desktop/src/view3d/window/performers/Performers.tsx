@@ -24,11 +24,19 @@
  *   position: feet apart) instead of their step, at attention until that
  *   clip is baked; off the podium they march their drill again.
  *
+ * - The camera can follow a performer (`camera/followStore.ts`): this
+ *   tells it where each one is drawn (`camera/performerTrack.ts`) after
+ *   every frame that moves them, and leaves out the body of the one whose
+ *   eyes the camera looks through.
+ *
  * Meshes and buffers are rebuilt only when the marcher set changes.
  */
 // cspell:ignore metalness
 import { registerPicker } from "../scenePick";
 import { pickMarchers } from "../camera/inputMath";
+import { pickPerformerIndex } from "../camera/followMath";
+import { useFollowStore } from "../camera/followStore";
+import { performersMoved, setPerformerSource } from "../camera/performerTrack";
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -76,6 +84,7 @@ import {
 } from "@/view3d/core/marchers/countClock";
 import { plannedClips, eventRows } from "@/view3d/core/marchers/planner";
 import {
+    CLASS_HEIGHT_M,
     defaultPerformerBody,
     bassOptions,
     fillToNumber,
@@ -589,6 +598,66 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         );
     }, [meshes, count]);
 
+    // The camera can follow a performer (`camera/performerTrack.ts`): where
+    // each is drawn, as the last frame left them.
+    const indexById = useMemo(
+        () => new Map(slots.ids.map((id, i) => [id, i])),
+        [slots.ids],
+    );
+    const heightsRef = useRef<Float32Array | null>(null);
+    const bodiesRef = useRef(marcherBodies);
+    bodiesRef.current = marcherBodies;
+    heightsRef.current = useMemo(() => {
+        if (!marcherBodies || !marcherLooks) return null;
+        return Float32Array.from(
+            marcherLooks,
+            (look) => look.body.heightClass * CLASS_HEIGHT_M,
+        );
+    }, [marcherBodies, marcherLooks]);
+    useEffect(() => {
+        if (!meshes) return;
+        return setPerformerSource({
+            pick: (origin, dir) => {
+                // never the one whose eyes the camera looks through
+                const hidden = indexById.get(
+                    useFollowStore.getState().hiddenMarcherId ?? Number.NaN,
+                );
+                const wasPlaced =
+                    hidden === undefined ? 0 : meshes.placed[hidden];
+                if (hidden !== undefined) meshes.placed[hidden] = 0;
+                const i = pickPerformerIndex(
+                    origin,
+                    dir,
+                    meshes.xz,
+                    meshes.placed,
+                    meshes.lift,
+                    count,
+                );
+                if (hidden !== undefined) meshes.placed[hidden] = wasPlaced;
+                return i === null ? null : slots.ids[i];
+            },
+            poseInto: (marcherId, out) => {
+                const i = indexById.get(marcherId);
+                if (i === undefined || !meshes.placed[i]) return false;
+                out.x = meshes.xz[i * 2];
+                out.z = meshes.xz[i * 2 + 1];
+                out.y = meshes.lift[i];
+                out.heading = headings[i];
+                out.height = heightsRef.current?.[i] ?? PERFORMER_HEIGHT;
+                out.hasEye =
+                    bodiesRef.current?.eyeInto(
+                        i,
+                        out.x,
+                        out.z,
+                        out.heading,
+                        out.y,
+                        out.eye,
+                    ) ?? false;
+                return true;
+            },
+        });
+    }, [meshes, count, slots.ids, indexById, headings]);
+
     // Shadows follow the scene's quality.
     useEffect(() => {
         if (!meshes) return;
@@ -647,6 +716,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         closed: false,
         selection: null as View3dSelection | null,
         selected: new Set<number>(),
+        /** The slot left out for the camera's point of view, or -1. */
+        hidden: -1,
     });
     // The camera for instrument detail, and where it was when last applied.
     const cameraRef = useRef<[number, number, number]>([0, 0, 0]);
@@ -666,12 +737,34 @@ export default function Performers({ fieldProperties }: PerformersProps) {
             frame.selection = sync.selection;
             frame.selected = new Set(sync.selection.selectedMarcherIds);
         }
+        // the performer whose eyes the camera looks through isn't drawn
+        const hidden =
+            indexById.get(
+                useFollowStore.getState().hiddenMarcherId ?? Number.NaN,
+            ) ?? -1;
+        const hiddenChanged = hidden !== frame.hidden;
+        frame.hidden = hidden;
+        // and with their body shown, their head isn't, near their eyes
+        const headless = indexById.get(
+            useFollowStore.getState().headlessMarcherId ?? Number.NaN,
+        );
+        marcherBodies?.setHeadless(headless ?? null);
+        /** Runs `draw` with the hidden performer unplaced, then puts them back. */
+        const withoutHidden = (draw: () => void) => {
+            const wasPlaced = hidden >= 0 ? meshes.placed[hidden] : 0;
+            if (hidden >= 0) meshes.placed[hidden] = 0;
+            draw();
+            if (hidden >= 0) meshes.placed[hidden] = wasPlaced;
+        };
         // paused, the marchers close unless the viewer asked for the step
         const closed =
             !sync.clock?.playing &&
             useView3dSceneStore.getState().pausedPose === "closed";
         const moved =
-            dirtyRef.current || ms !== frame.lastMs || closed !== frame.closed;
+            dirtyRef.current ||
+            hiddenChanged ||
+            ms !== frame.lastMs ||
+            closed !== frame.closed;
         const lod = lodCameraRef.current;
         const cameraMoved = !(
             Math.hypot(cam[0] - lod[0], cam[1] - lod[1], cam[2] - lod[2]) < 0.5
@@ -679,14 +772,16 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         if (!moved && !selectionChanged) {
             // a still show: only the instruments' detail follows the camera
             if (cameraMoved && marcherBodies) {
-                marcherBodies.writeFrame(
-                    meshes.xz,
-                    headings,
-                    meshes.placed,
-                    countRef.current,
-                    cam,
-                    null,
-                    meshes.lift,
+                withoutHidden(() =>
+                    marcherBodies.writeFrame(
+                        meshes.xz,
+                        headings,
+                        meshes.placed,
+                        countRef.current,
+                        cam,
+                        null,
+                        meshes.lift,
+                    ),
                 );
                 marcherBodies.compose(state.gl);
                 lod[0] = cam[0];
@@ -764,14 +859,17 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                     lift,
                     headings,
                 );
-                marcherBodies.writeFrame(
-                    xz,
-                    headings,
-                    placed,
-                    c,
-                    cam,
-                    silkMotion?.update(c, closed) ?? null,
-                    lift,
+                const silks = silkMotion?.update(c, closed) ?? null;
+                withoutHidden(() =>
+                    marcherBodies.writeFrame(
+                        xz,
+                        headings,
+                        placed,
+                        c,
+                        cam,
+                        silks,
+                        lift,
+                    ),
                 );
                 marcherBodies.compose(state.gl);
                 lod[0] = cam[0];
@@ -787,24 +885,29 @@ export default function Performers({ fieldProperties }: PerformersProps) {
                     lift,
                     headings,
                 );
-                writePerformerMatrices(
-                    count,
-                    xz,
-                    placed,
-                    bodies.instanceMatrix.array as Float32Array,
-                    lift,
+                withoutHidden(() =>
+                    writePerformerMatrices(
+                        count,
+                        xz,
+                        placed,
+                        bodies.instanceMatrix.array as Float32Array,
+                        lift,
+                    ),
                 );
                 bodies.instanceMatrix.needsUpdate = true;
             }
         }
-        const ringCount = writeRingMatrices(
-            slots,
-            frame.selected,
-            xz,
-            placed,
-            rings.instanceMatrix.array as Float32Array,
-            lift,
-        );
+        let ringCount = 0;
+        withoutHidden(() => {
+            ringCount = writeRingMatrices(
+                slots,
+                frame.selected,
+                xz,
+                placed,
+                rings.instanceMatrix.array as Float32Array,
+                lift,
+            );
+        });
         // With no selection there is nothing to upload (P5.1).
         if (ringCount > 0 || rings.count > 0)
             rings.instanceMatrix.needsUpdate = true;
@@ -812,6 +915,8 @@ export default function Performers({ fieldProperties }: PerformersProps) {
         frame.lastMs = ms;
         frame.closed = closed;
         dirtyRef.current = false;
+        // a followed performer's camera keeps up in this same frame
+        if (moved) performersMoved();
     });
 
     if (!meshes) return null;

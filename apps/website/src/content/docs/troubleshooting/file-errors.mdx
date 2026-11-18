@@ -5,9 +5,12 @@ type: how-to
 covers:
   - apps/desktop/src/hooks/useLoadFileErrorHandler.tsx
   - apps/desktop/electron/database/fileVersion.ts
+  - apps/desktop/electron/database/leftoverJournal.ts
   - i18n:fileAccessDialogError
   - i18n:convertShow.openFailed
   - i18n:convertShow.backupError
+  - i18n:fileDialog.leftoverJournal
+  - apps/desktop/electron/main/leftoverJournalRecovery.ts
 sidebar:
   order: 1
 ---
@@ -71,6 +74,19 @@ If you didn't open it from the recent files, [report it](/guides/start/get-help/
 ## Update OpenMarch to open this file
 
 <Ui k="fileAccessDialogError.tooNew.title" /> means the show was saved by a newer version of OpenMarch than the one you're using. The file hasn't been changed. Update OpenMarch, or [download the latest version](/download/), and open it again.
+
+## A leftover file is stopping this show from opening
+
+<Ui k="fileAccessDialogError.leftoverJournal.title" /> means there's a file next to the show with the same name plus `-journal` (for example `My show.dots-journal`). OpenMarch makes one while it saves and removes it when the save is done. One that's still there is from a save that didn't finish, or it was copied or downloaded along with the show. OpenMarch can't use this one where it is.
+
+Select <Ui k="fileAccessDialogError.leftoverJournal.recover" />. OpenMarch finishes recovering the show on a copy, checks the result, and opens the show. The `-journal` file is moved to OpenMarch's backups folder, not deleted.
+
+- <Ui k="fileDialog.leftoverJournal.damagedTitle" />: the show didn't come out undamaged, with or without the `-journal` file. Nothing was changed. [Report it](/guides/start/get-help/) and include the show and its `-journal` file if you can.
+- <Ui k="fileDialog.leftoverJournal.failedTitle" />: OpenMarch couldn't finish. The message says why. Most often the folder isn't writable or the disk is full (see [Invalid file permissions error](#invalid-file-permissions-error)), or another program, such as antivirus or a sync app, has the show open: close it and open the show again.
+
+Older versions of OpenMarch show "Error Loading Database" with "unable to open database file" instead. Don't delete the `-journal` file: if the save it belongs to had started writing, the show needs it. Copy the show and the `-journal` file together into a folder of your own, such as Documents, and open the show from there.
+
+When there's a `-journal` file OpenMarch *can* use, it finishes or undoes the interrupted save by itself, as it always has. Before it does, it puts a copy of the show and the `-journal` file in its backups folder ([Open a show in an older version](/troubleshooting/open-in-an-older-version/) says where that is).
 
 ## Couldn't back up or convert your file
 

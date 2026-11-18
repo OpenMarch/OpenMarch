@@ -3239,7 +3239,14 @@
             "pickSeatTooltip": "Pumili ng upuan: i-click ang isang upuan sa stands para doon maupo",
             "venue": "Venue",
             "freeCamera": "Malayang view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Sundan ang isang miyembro",
+            "followPerformerTooltip": "Sundan ang isang miyembro: i-click ang isang miyembro para sundan siya",
+            "following": "Sinusundan si {name}",
+            "povOf": "View ni {name}",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: tumingin sa mga mata ng miyembro",
+            "stopFollowing": "Itigil ang pagsunod"
         },
         "readout": {
             "count": "Bilang {count} ng {total}",
@@ -3279,7 +3286,9 @@
             "brassFinish": "Finish ng brass",
             "tuba": "Mga tuba",
             "silkShape": "Hugis ng flag silk",
-            "silkArtwork": "Artwork ng flag silk"
+            "silkArtwork": "Artwork ng flag silk",
+            "followTurns": "Habang sumusunod: umikot kasama ng miyembro",
+            "povShowsBody": "Point of view: ipakita ang kanyang mga braso at instrumento"
         },
         "keys": {
             "playPause": "I-play o i-pause",
@@ -3288,14 +3297,16 @@
             "cameras": "Mga camera, ayon sa menu",
             "fullscreen": "Fullscreen",
             "crowd": "Ipakita o itago ang manonood",
-            "escape": "Kanselahin ang pagpili ng upuan, isara ang setting, lumabas sa fullscreen",
+            "escape": "Kanselahin ang pagpili, isara ang setting, itigil ang pagsunod, lumabas sa fullscreen",
             "orbit": "Umikot",
             "orbitOrRight": "Umikot, o i-drag gamit ang kanang button ng mouse",
             "panPlain": "I-pan",
             "zoomOrPinch": "Mag-zoom, o mag-pinch sa trackpad",
             "pan": "I-pan, o i-drag gamit ang kanang button ng mouse",
             "zoom": "Zoom",
-            "pausedPose": "Naka-pause: ipakita ang aktuwal na hakbang o ang closed na posisyon"
+            "pausedPose": "Naka-pause: ipakita ang aktuwal na hakbang o ang closed na posisyon",
+            "followPerformer": "Pumili ng miyembrong susundan",
+            "pointOfView": "Habang sumusunod: lumipat sa kanyang point of view at pabalik"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

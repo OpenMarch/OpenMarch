@@ -56,6 +56,16 @@ import {
 } from "../../src/global/updates";
 import { repairDatabase } from "../database/repair";
 import {
+    backupBeforeJournalRecovery,
+    journalPathFor,
+    LEFTOVER_JOURNAL_STATUS,
+} from "../database/leftoverJournal";
+import {
+    JournalRecoveryError,
+    recoverFromLeftoverJournal,
+    SET_ASIDE_MARK,
+} from "./leftoverJournalRecovery";
+import {
     NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
 } from "../database/convertOnOpenGate";
@@ -408,6 +418,70 @@ async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
  */
 let refusalAfterReload: number | null = null;
 
+/**
+ * The file whose last open was refused for a leftover journal SQLite can't use
+ * (`LEFTOVER_JOURNAL_STATUS`). The renderer offers to recover it
+ * (`load-file:recoverFromJournal`); any other open forgets it.
+ */
+let leftoverJournalFile: string | null = null;
+
+/** The renderer's questions about a leftover journal that stopped an open. */
+function initLeftoverJournalIpcHandlers() {
+    ipcMain.handle("load-file:leftoverJournal", () =>
+        leftoverJournalFile
+            ? basename(journalPathFor(leftoverJournalFile))
+            : null,
+    );
+    ipcMain.handle("load-file:recoverFromJournal", async () =>
+        recoverAndOpenLeftoverJournalFile(),
+    );
+}
+
+/**
+ * Recovers the refused file from its leftover journal on copies (`leftoverJournalRecovery.ts`),
+ * then opens it. Explains in a dialog when it can't.
+ */
+async function recoverAndOpenLeftoverJournalFile(): Promise<number> {
+    const filePath = leftoverJournalFile;
+    leftoverJournalFile = null;
+    if (!filePath) return -1;
+    const name = basename(journalPathFor(filePath));
+    try {
+        // Nothing may open the file while its journal moves and the recovered show replaces it.
+        const result = await withOpenLock(async () =>
+            recoverFromLeftoverJournal(filePath, backupDir()),
+        );
+        if (result.outcome === "damaged") {
+            dialog.showErrorBox(
+                t("fileDialog.leftoverJournal.damagedTitle"),
+                t("fileDialog.leftoverJournal.damagedMessage", { name }),
+            );
+            return -1;
+        }
+        if (result.outcome === "recovered")
+            console.log(
+                `Recovered ${filePath} (${result.from}); its journal is now ${result.journalKeptAt}`,
+            );
+    } catch (error) {
+        console.error("Couldn't recover from the leftover journal:", error);
+        captureException(error);
+        const step =
+            error instanceof JournalRecoveryError ? error.step : "stage";
+        dialog.showErrorBox(
+            t("fileDialog.leftoverJournal.failedTitle"),
+            step === "move-journal"
+                ? t("fileDialog.leftoverJournal.journalMoveFailedMessage", {
+                      name,
+                  })
+                : step === "replace"
+                  ? t("fileDialog.leftoverJournal.replaceFailedMessage")
+                  : t("fileDialog.leftoverJournal.stageFailedMessage"),
+        );
+        return -1;
+    }
+    return openRecentFile(filePath);
+}
+
 function sendLoadFileResponse(resCode: number) {
     if (resCode === OPEN_STOPPED_STATUS || resCode === NEEDS_CONVERSION_STATUS)
         return;
@@ -547,6 +621,7 @@ function initRecentFilesIpcHandlers() {
 
 function initIpcHandlers() {
     initDatabaseIpcHandlers();
+    initLeftoverJournalIpcHandlers();
     initRecentFilesIpcHandlers();
 }
 
@@ -1615,6 +1690,30 @@ export async function insertAudioFile(): Promise<DatabaseServices.AudioInsertRes
 const migrationsFolderPath = () =>
     join(app.getAppPath(), "electron", "database", "migrations");
 
+/** The folder the app keeps backups of show files in. */
+const backupDir = () => join(app.getPath("userData"), "backups");
+
+/**
+ * Copies a file and its leftover journal into the backups before SQLite plays the journal back
+ * (`leftoverJournal.ts`). A failed copy doesn't stop the open: it goes ahead as it always did.
+ */
+function backupLeftoverJournal(path: string) {
+    try {
+        const backup = backupBeforeJournalRecovery(path, backupDir());
+        if (backup)
+            console.log(
+                `Leftover journal next to ${path}: copied the file to ${backup.showCopy}` +
+                    (backup.journalCopy ? " with its journal" : ""),
+            );
+    } catch (error) {
+        console.error(
+            "Couldn't back up a file with a leftover journal:",
+            error,
+        );
+        captureException(error);
+    }
+}
+
 /** Backs a file up to userData/backups before migrations, and prunes backups older than 30 days. */
 function backupBeforeMigrations(path: string) {
     const backupDir = join(app.getPath("userData"), "backups");
@@ -1633,6 +1732,13 @@ function backupBeforeMigrations(path: string) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     files.forEach((file) => {
+        // A journal set aside keeps its original date when moved, so age says nothing; the
+        // recovery dialog promised it isn't deleted.
+        if (
+            file.endsWith(SET_ASIDE_MARK) ||
+            file.endsWith(`${SET_ASIDE_MARK}-journal`)
+        )
+            return;
         const filePath = join(backupDir, file);
         const stats = fs.statSync(filePath);
         if (stats.birthtime < thirtyDaysAgo) {
@@ -1645,6 +1751,7 @@ function backupBeforeMigrations(path: string) {
 const openShowDeps = (): OpenShowDeps => ({
     migrationsFolder: migrationsFolderPath(),
     beforeMigrations: backupBeforeMigrations,
+    beforeJournalRecovery: backupLeftoverJournal,
     dialogs: () => electronConvertOnOpenDialogs(win),
     // The backup and conversion run in a worker thread, off this event loop (P9.8).
     convertWorker: { workerPath: defaultConvertWorkerPath(__dirname) },
@@ -1687,6 +1794,7 @@ async function setActiveDbNow(
     // its file); a page-era file asks again below.
     conversionQuestion.forget();
     refusalAfterReload = null;
+    leftoverJournalFile = null;
     const hadShowOpen = DatabaseServices.getDbPath() !== "";
     try {
         // The 3D View shows one show; a confirmed conversion is about to replace it.
@@ -1700,6 +1808,9 @@ async function setActiveDbNow(
         );
         result.db?.close();
         const token = result.sqlSuspension;
+        // The renderer offers to open it without the journal (`load-file:recoverFromJournal`).
+        if (result.status === LEFTOVER_JOURNAL_STATUS)
+            leftoverJournalFile = path;
 
         if (result.status === NEEDS_CONVERSION_STATUS && result.backupPath) {
             if (token !== undefined) DatabaseServices.resumeSqlProxy(token);

@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { T } from "@tolgee/react";
+import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { FILE_TOO_NEW_STATUS } from "@om-electron/database/fileVersion";
 import {
     NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
 } from "@om-electron/database/convertOnOpenGate";
+import { LEFTOVER_JOURNAL_STATUS } from "@om-electron/database/leftoverJournalStatus";
 import { siteUrl } from "@/global/siteUrl";
 
 const FILE_ERROR_GUIDE_URLS = {
@@ -41,12 +43,57 @@ function ReferToGuide({ guideUrl }: { guideUrl: string }) {
     );
 }
 
+/** Names the leftover journal that stopped the open, once the main process says which. */
+function LeftoverJournalDescription() {
+    const [name, setName] = useState<string | null>(null);
+    useEffect(() => {
+        let unmounted = false;
+        void window.electron.getLeftoverJournal?.().then((journal) => {
+            if (!unmounted) setName(journal);
+        });
+        return () => {
+            unmounted = true;
+        };
+    }, []);
+    return (
+        <T
+            keyName="fileAccessDialogError.leftoverJournal.description"
+            params={{ name: name ?? "-journal" }}
+        />
+    );
+}
+
+/** Cancel, or recover the show from the leftover journal (it goes to the backups). */
+function LeftoverJournalActions({ close }: { close: () => void }) {
+    return (
+        <div className="flex justify-end gap-8">
+            <AlertDialogCancel>
+                <Button variant="secondary" onClick={close}>
+                    <T keyName="fileAccessDialogError.leftoverJournal.cancel" />
+                </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction>
+                <Button
+                    variant="primary"
+                    onClick={() => {
+                        close();
+                        void window.electron.recoverLeftoverJournal?.();
+                    }}
+                >
+                    <T keyName="fileAccessDialogError.leftoverJournal.recover" />
+                </Button>
+            </AlertDialogAction>
+        </div>
+    );
+}
+
 /**
  * Registers a listener for load file responses and shows an alert dialog
- * when file loading fails (403, 404, 500, or other errors).
+ * when file loading fails (403, 404, 500, or other errors). A leftover journal
+ * (`LEFTOVER_JOURNAL_STATUS`) also offers to recover the show from it.
  */
 export function useLoadFileErrorHandler() {
-    const { setTitle, setContent, setOpen } = useAlertModalStore();
+    const { setTitle, setContent, setActions, setOpen } = useAlertModalStore();
 
     useEffect(() => {
         const explain = (resCode: number) => {
@@ -57,6 +104,8 @@ export function useLoadFileErrorHandler() {
                 resCode !== OPEN_STOPPED_STATUS &&
                 resCode !== NEEDS_CONVERSION_STATUS
             ) {
+                // Only the leftover-journal refusal has its own buttons; the rest just close.
+                setActions(undefined);
                 switch (resCode) {
                     case 403:
                         setTitle("fileAccessDialogError.forbidden.title");
@@ -84,6 +133,15 @@ export function useLoadFileErrorHandler() {
                         setTitle("fileAccessDialogError.tooNew.title");
                         setContent(
                             <T keyName="fileAccessDialogError.tooNew.description" />,
+                        );
+                        break;
+                    case LEFTOVER_JOURNAL_STATUS:
+                        setTitle("fileAccessDialogError.leftoverJournal.title");
+                        setContent(<LeftoverJournalDescription />);
+                        setActions(
+                            <LeftoverJournalActions
+                                close={() => setOpen(false)}
+                            />,
                         );
                         break;
                     case 500:
@@ -123,5 +181,5 @@ export function useLoadFileErrorHandler() {
             unmounted = true;
             unsubscribe();
         };
-    }, [setContent, setOpen, setTitle]);
+    }, [setActions, setContent, setOpen, setTitle]);
 }
