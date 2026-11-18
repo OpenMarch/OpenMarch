@@ -24,7 +24,7 @@ const UNIT: Record<Axis, V3> = { x: [1, 0, 0], y: [0, 1, 0], z: [0, 0, 1] };
  * X brings the top toward the audience, Y turns the front toward the right, Z lays the top to
  * the right (`orientation.ts`, `ModelImportChoices.turn`).
  */
-const SWING: Record<Axis, [V3, V3]> = {
+export const SWING: Record<Axis, [V3, V3]> = {
     x: [UNIT.y, UNIT.z],
     y: [UNIT.z, UNIT.x],
     z: [UNIT.y, UNIT.x],
@@ -33,7 +33,8 @@ const SWING: Record<Axis, [V3, V3]> = {
 const SIZE = 96;
 const CENTER = SIZE / 2;
 const LENGTH = 30;
-const RING = 21;
+const RING = 18;
+const LABEL_GAP = 9;
 
 /** A point in the preview's pixels, y down */
 function toPx(v: V3, length: number): [number, number] {
@@ -98,7 +99,11 @@ export default function AxisPreview({ active }: { active: Axis | null }) {
         >
             {order.map((axis) => {
                 const [x, y] = toPx(UNIT[axis], LENGTH);
-                const [lx, ly] = toPx(UNIT[axis], LENGTH + 9);
+                // The letter a fixed distance past the end, so a foreshortened axis's letter
+                // still clears the ring
+                const along = Math.hypot(x - CENTER, y - CENTER) || 1;
+                const lx = x + ((x - CENTER) / along) * LABEL_GAP;
+                const ly = y + ((y - CENTER) / along) * LABEL_GAP;
                 const faded = active !== null && active !== axis;
                 return (
                     <g

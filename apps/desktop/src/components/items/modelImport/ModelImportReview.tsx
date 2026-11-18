@@ -92,6 +92,14 @@ const choiceOf = <C extends Choice["code"]>(
  * fields, and Add. Each choice runs the import again, so what shows is what Add stores. A refusal
  * shows here, never in an alert; Cancel leaves the show as it was.
  */
+const focusVisible = (element: Element): boolean => {
+    try {
+        return element.matches(":focus-visible");
+    } catch {
+        return true;
+    }
+};
+
 export default function ModelImportReview({
     onDone,
 }: {
@@ -117,12 +125,17 @@ export default function ModelImportReview({
         );
     // The axis the preview shows: pointed at or focused, or just tapped (touch has no hover)
     const [pointed, setPointed] = useState<Axis | null>(null);
-    const [tapped, setTapped] = useState<Axis | null>(null);
+    // Each tap is its own object, so tapping the same button again restarts the time
+    const [tapped, setTapped] = useState<{ axis: Axis } | null>(null);
     useEffect(() => {
         if (!tapped) return;
         const timer = setTimeout(() => setTapped(null), 1200);
         return () => clearTimeout(timer);
     }, [tapped]);
+    // A button disabled or removed under the pointer or focus gets no leave or blur
+    useEffect(() => {
+        if (running) setPointed(null);
+    }, [running]);
     // Stood up from Z-up on its own: said in Needs your choice, with a way back
     const zUp = tilt?.zUpSuspected ? tilt : undefined;
     const simplify = choiceOf(needs, "simplify");
@@ -223,7 +236,9 @@ export default function ModelImportReview({
                                 </span>
                             )}
                             {picture && turn && !showBefore && (
-                                <AxisPreview active={pointed ?? tapped} />
+                                <AxisPreview
+                                    active={pointed ?? tapped?.axis ?? null}
+                                />
                             )}
                         </div>
                     )}
@@ -242,10 +257,19 @@ export default function ModelImportReview({
                                         data-testid={`model-import-rotate-${axis}`}
                                         onPointerEnter={() => setPointed(axis)}
                                         onPointerLeave={() => setPointed(null)}
-                                        onFocus={() => setPointed(axis)}
+                                        onFocus={(event) => {
+                                            // Keyboard focus only: a tap's focus comes after its
+                                            // pointer left, and the tap shows on its own
+                                            if (
+                                                focusVisible(
+                                                    event.currentTarget,
+                                                )
+                                            )
+                                                setPointed(axis);
+                                        }}
                                         onBlur={() => setPointed(null)}
                                         onClick={() => {
-                                            setTapped(axis);
+                                            setTapped({ axis });
                                             rotate(axis);
                                         }}
                                     >
