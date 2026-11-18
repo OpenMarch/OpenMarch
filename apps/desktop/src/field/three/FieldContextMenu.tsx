@@ -48,6 +48,7 @@ import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
     MENU_CONTENT_CLASS,
+    POINT_MENU_PLACEMENT,
     MENU_ITEM_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
@@ -356,15 +357,12 @@ export default function FieldContextMenu({
             <DropdownMenu.Portal>
                 <DropdownMenu.Content
                     data-testid="field-menu"
-                    align="start"
-                    // In the touch layout its entries are taller, so it often fits neither
-                    // below nor above the finger, and Radix only flips across that way: beside
-                    // the finger it slides up or down to stay on screen (#928). Never taller than
-                    // the screen either: it scrolls instead
-                    side={touch ? "right" : "bottom"}
-                    sideOffset={touch ? 12 : 0}
-                    sticky={touch ? "always" : "partial"}
-                    collisionPadding={8}
+                    // Like a system's context menu, its top corner at the point, slid up or
+                    // across to stay on screen, and scrolled when it's taller than the window
+                    // (owner, 2026-11-18: below the point a long menu ran off the bottom). In
+                    // the touch layout it stands a little clear of the finger (#928)
+                    {...POINT_MENU_PLACEMENT}
+                    sideOffset={touch ? 12 : POINT_MENU_PLACEMENT.sideOffset}
                     // Focus isn't returned to the anchor, a hidden div: it falls to the page
                     // body. The shortcuts listen on the window, so the field's
                     // keys still work
@@ -373,9 +371,7 @@ export default function FieldContextMenu({
                     className={
                         actions
                             ? MODE_CONTENT_CLASS
-                            : touch
-                              ? `${TIMELINE_MENU_CONTENT_CLASS} max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto`
-                              : TIMELINE_MENU_CONTENT_CLASS
+                            : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
                     {/* One Escape closes an open reason tip and the menu together */}
