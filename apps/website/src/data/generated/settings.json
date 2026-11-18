@@ -166,25 +166,6 @@
         ]
     },
     {
-        "id": "view3d",
-        "label": "3D View",
-        "description": "How the 3D View draws and moves on this computer. Not saved in the show.",
-        "settings": [
-            {
-                "key": "settings.view3d.controls",
-                "label": "Controls"
-            },
-            {
-                "key": "settings.view3d.quality",
-                "label": "Quality"
-            },
-            {
-                "key": "settings.view3d.resolution",
-                "label": "Resolution"
-            }
-        ]
-    },
-    {
         "id": "shortcuts",
         "label": "Keyboard shortcuts",
         "description": "Change the keys for any action. Changes apply right away.",

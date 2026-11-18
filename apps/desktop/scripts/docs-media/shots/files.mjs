@@ -56,7 +56,7 @@ const shots = [
         id: "files-launch",
         kind: "still",
         // The start page with the show in Recent Files, after closing it
-        async setup({ page, wait, whole }) {
+        async setup({ page, wait, around }) {
             await tidy(page);
             await fileTab(page);
             await page.getByRole("button", { name: "Exit File" }).click();
@@ -67,32 +67,52 @@ const shots = [
             await wait(2500);
             await page.mouse.move(1596, 996);
             await wait(400);
-            return { box: whole };
+            // The sidebar's New File and Open File, and the Recent Files card beside them
+            const card = await around(
+                page
+                    .getByText("show.dots", { exact: true })
+                    .first()
+                    .locator("xpath=../.."),
+                24,
+            );
+            const clear = await around(
+                page.getByRole("button", { name: "Clear missing" }),
+                16,
+            );
+            return {
+                box: {
+                    x: 0,
+                    y: 40,
+                    width: Math.max(card.x + card.width, clear.x + clear.width),
+                    height: card.y + card.height - 40,
+                },
+            };
         },
     },
     {
         id: "files-file-tab",
         kind: "still",
-        async setup({ page, around }) {
+        // The toolbar's File tab: Open File, New File, Save Copy, Exit File, Export and Settings
+        async setup({ page, wait, around, union }) {
             await tidy(page);
             await fileTab(page);
-            await page.mouse.move(1000, 600);
-            const tabs = page.getByRole("tablist").first();
-            const panel = page.getByRole("tabpanel").first();
-            const a = await around(tabs, 8);
-            const b = await around(panel, 8);
-            const x = Math.min(a.x, b.x);
-            const y = Math.min(a.y, b.y);
+            await page.mouse.move(1596, 996);
+            await wait(400);
             return {
-                box: {
-                    x,
-                    y,
-                    width: Math.min(
-                        1000,
-                        Math.max(a.x + a.width, b.x + b.width) - x,
+                box: union(
+                    await around(
+                        page.getByRole("tab", { name: "File", exact: true }),
+                        10,
                     ),
-                    height: Math.max(a.y + a.height, b.y + b.height) - y,
-                },
+                    await around(
+                        page.getByRole("button", { name: "Settings" }).first(),
+                        10,
+                    ),
+                    await around(
+                        page.getByRole("button", { name: "Open File" }),
+                        10,
+                    ),
+                ),
             };
         },
     },
@@ -109,7 +129,34 @@ const shots = [
         kind: "still",
         async setup({ page, around }) {
             const dialog = await exportDialog(page, "Drill Charts");
+            // Individual Drill Charts on, so the preview shows one marcher's chart with its paths
+            await dialog.getByRole("checkbox").first().click();
+            await page.waitForTimeout(1500);
+            await page.mouse.move(4, 996);
             return { box: await settledBox(page, around, dialog, 4) };
+        },
+    },
+    {
+        id: "files-video-settings",
+        kind: "still",
+        // The top of the Video tab: the dialog's tabs and the Resolution, Frame rate and Video
+        // background settings, down to the top of the preview
+        async setup({ page, around, wait }) {
+            const dialog = await exportDialog(page, "Video");
+            await wait(2500);
+            await page
+                .locator(".export-coordinates-dialog")
+                .evaluate((el) => (el.scrollTop = 0));
+            await wait(800);
+            const d = await settledBox(page, around, dialog, 4);
+            const canvas = await page
+                .locator(".export-coordinates-dialog canvas")
+                .first()
+                .boundingBox();
+            const bottom = Math.min(d.y + d.height, canvas.y + 24);
+            return {
+                box: { x: d.x, y: d.y, width: d.width, height: bottom - d.y },
+            };
         },
     },
     {
@@ -118,22 +165,94 @@ const shots = [
         async setup({ page, around, wait }) {
             const dialog = await exportDialog(page, "Video");
             await wait(2500);
-            return { box: await settledBox(page, around, dialog, 4) };
+            // Scrolled so the preview starts near the top
+            const canvas = page
+                .locator(".export-coordinates-dialog canvas")
+                .first();
+            await page.locator(".export-coordinates-dialog").evaluate(
+                (el, c) => {
+                    const r = c.getBoundingClientRect();
+                    el.scrollTop += r.top - el.getBoundingClientRect().top - 60;
+                },
+                await canvas.elementHandle(),
+            );
+            await wait(800);
+            const d = await settledBox(page, around, dialog, 4);
+            const c = await canvas.boundingBox();
+            // The On-screen info heading and the whole preview; the checkboxes under it don't
+            // fit in the window with it, and the page lists them
+            const top = Math.max(d.y, c.y - 52);
+            const bottom = Math.min(d.y + d.height, c.y + c.height + 20);
+            return {
+                box: { x: d.x, y: top, width: d.width, height: bottom - top },
+            };
         },
     },
     {
-        id: "files-mobile-panel",
-        kind: "still",
-        // The Mobile app panel before signing in
-        async setup({ page, wait, around }) {
-            await tidy(page);
-            await page.locator("#sidebar-launcher-mobile-export").click();
-            await wait(3000);
-            await page.mouse.move(1596, 996);
-            const panel = page
-                .locator("div.backdrop-blur-32.absolute.z-40")
+        id: "files-video-overlay",
+        kind: "clip",
+        // In the video preview: drag the info box to the top, then drag its corner to make it larger
+        async setup({ page, around, wait }) {
+            await exportDialog(page, "Video");
+            await wait(2500);
+            const canvas = page
+                .locator(".export-coordinates-dialog canvas")
                 .first();
-            return { box: await around(panel, 12) };
+            await canvas.evaluate((el) =>
+                el.scrollIntoView({ block: "center" }),
+            );
+            await wait(800);
+            const b = await canvas.boundingBox();
+            // Find the box's corner and side handles from the cursor the preview shows over them
+            const found = {};
+            for (
+                let y = b.y + b.height - 4;
+                y > b.y + 4 && !found.scale;
+                y -= 3
+            )
+                for (let x = b.x + 4; x < b.x + b.width - 4; x += 6) {
+                    await page.mouse.move(x, y);
+                    const cursor = await canvas.evaluate(
+                        (el) => el.style.cursor,
+                    );
+                    if (cursor === "nwse-resize") {
+                        found.scale = { x, y };
+                        break;
+                    }
+                }
+            if (!found.scale)
+                throw new Error("no info box corner in the preview");
+            this.corner = found.scale;
+            this.canvas = b;
+            await page.mouse.move(b.x + b.width + 40, b.y - 30);
+            await wait(400);
+            return { box: await around(canvas, 12) };
+        },
+        async perform({ page, film, overlay }) {
+            await overlay.enable();
+            const b = this.canvas;
+            const c = this.corner;
+            // Inside the box, a little in from its corner
+            const grab = { x: c.x - 60, y: c.y - 14 };
+            const start = { x: b.x + b.width - 40, y: b.y + 40 };
+            await page.mouse.move(start.x, start.y);
+            await film.hold(0.3);
+            await film.moveTo(page, start, grab, 0.6);
+            const up = { x: grab.x + b.width * 0.15, y: b.y + b.height * 0.25 };
+            await film.drag(page, grab, up, 1.2);
+            await film.hold(0.5);
+            const corner = {
+                x: c.x + (up.x - grab.x),
+                y: c.y + (up.y - grab.y),
+            };
+            await film.moveTo(page, up, corner, 0.5);
+            await film.drag(
+                page,
+                corner,
+                { x: corner.x + 40, y: corner.y + 50 },
+                1.0,
+            );
+            await film.hold(1.4);
         },
     },
 ];

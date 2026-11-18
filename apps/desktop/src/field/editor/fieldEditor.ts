@@ -241,11 +241,6 @@ export type FieldEditorOptions = {
     /** The Snap toggle, read on every pointer event; off, a rotation turns freely. On when omitted. */
     snap?: () => boolean;
     /**
-     * The ratio lock a box shape shares (`useShapeEditorStore`), read at a scale handle's press:
-     * on, a selection's handles keep the ratio, and constrain frees it. Off when omitted.
-     */
-    ratioLocked?: () => boolean;
-    /**
      * The touch pill's toggles (`onScreenToggles` in `TouchModifierStore`): its held roles count
      * as held keys for every drag, a toggle changed mid-drag re-runs it as a key does, and the
      * press rule never blocks them. `add` is the add press choice at every press, as Shift is: a
@@ -327,6 +322,12 @@ type LastClick = {
     taken?: boolean;
     /** It was on the selection's pivot crosshair: a second click there sends it back to the center */
     pivot?: boolean;
+    /**
+     * The selection just after it. Anything else that changes the selection before the next
+     * press (Escape, Select all, an undo) means that press is a click of its own, not the
+     * second of a double-click (#628).
+     */
+    selection?: readonly number[];
 };
 
 export type FieldCursor =
@@ -1030,6 +1031,7 @@ export class FieldEditor {
             return;
         }
         this.click(press, pointer.shift || press.add === true);
+        this.noteClickSelection();
         if (press.double && press.hit !== null)
             this.ports.doubleClickMarcher?.(press.hit);
     }
@@ -1199,7 +1201,17 @@ export class FieldEditor {
             hit: null,
             pivot: true,
         };
+        this.noteClickSelection();
         return true;
+    }
+
+    /** Remembers the selection the last click left, to tell when something else changes it. */
+    private noteClickSelection() {
+        if (this.lastClick)
+            this.lastClick = {
+                ...this.lastClick,
+                selection: this.ports.selection.get(),
+            };
     }
 
     /** The pointer left the field with no button down. */
@@ -1564,8 +1576,12 @@ export class FieldEditor {
         this.emit();
     }
 
-    /** The field shows another page: a pivot on a free spot of the field is dropped. */
+    /**
+     * The field shows another page: a pivot on a free spot of the field is dropped, and the
+     * next press is no second half of a double-click begun on the page before (#628).
+     */
     pageChanged(): void {
+        this.lastClick = null;
         if (this.ownPivot?.anchor.kind !== "point") return;
         this.ownPivot = null;
         this.emit();
@@ -1765,10 +1781,24 @@ export class FieldEditor {
         this.emit();
     }
 
-    /** Drops a typed rotation whose marchers aren't the selection any more. */
+    /**
+     * The selection changed: a typed rotation whose marchers aren't the selection any more is
+     * dropped, and so is a last click that didn't leave this selection.
+     */
     selectionChanged(): void {
         // A handle pointed at belonged to the old selection's box
         this.setHoverHandle(null);
+        // Something other than the last click changed the selection: the next press starts
+        // afresh (#628). The app trimming the click's own selection (members dimmed by an
+        // isolated move, or hidden at this beat) is still that click's; Escape empties it.
+        // A mode's clicks keep their own double-clicks
+        const last = this.lastClick;
+        if (
+            last?.selection &&
+            !sameIds(last.selection, this.ports.selection.get()) &&
+            !trimmedFrom(this.ports.selection.get(), last.selection)
+        )
+            this.lastClick = null;
         // A pivot is the selection's: a new one starts on its center
         this.cancelPickingPivot();
         if (
@@ -1864,7 +1894,6 @@ export class FieldEditor {
                   press.handle,
                   box,
                   keys,
-                  this.options.ratioLocked?.() ?? false,
               );
     }
 
@@ -2423,6 +2452,13 @@ export const isPastSlop = (start: FieldPointer, pointer: FieldPointer) =>
     ) >= thresholdsFor(start.kind).moveThreshold;
 
 /** The same ids, in any order. */
+/** Whether `ids` is some, but not none, of `from`: what's left after the app drops a few. */
+const trimmedFrom = (ids: readonly number[], from: readonly number[]) => {
+    if (ids.length === 0) return false;
+    const set = new Set(from);
+    return ids.every((id) => set.has(id));
+};
+
 const sameIds = (a: readonly number[], b: readonly number[]) => {
     if (a.length !== b.length) return false;
     const set = new Set(b);

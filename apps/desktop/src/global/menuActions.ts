@@ -61,6 +61,7 @@ export const CHECK_FOR_UPDATES_MENU_ACTION = {
 } as const;
 
 export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
+    { action: "openHelp", labelKey: "menu.help.openHelp", accelerator: "F1" },
     {
         action: "showShortcuts",
         labelKey: "menu.help.showShortcuts",

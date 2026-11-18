@@ -7,6 +7,7 @@ import {
     screen,
 } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useAlignmentActionHandlers } from "@/shortcuts/handlers/useAlignmentActionHandlers";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { boxTool } from "../../box/boxTool";
@@ -71,6 +72,7 @@ describe("an open shape's floating editor", () => {
     it("has the Snap button, which turns snapping off and on", () => {
         render(
             <QueryClientProvider client={new QueryClient()}>
+                <Handlers />
                 <ShapeEditor stepPx={STEP} />
             </QueryClientProvider>,
         );
@@ -87,3 +89,9 @@ describe("an open shape's floating editor", () => {
         expect(useUiSettingsStore.getState().uiSettings.snap).toBe(true);
     });
 });
+
+/** The Snap button runs the Toggle Snap action, so its handler has to be mounted. */
+function Handlers() {
+    useAlignmentActionHandlers();
+    return null;
+}

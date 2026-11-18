@@ -1,6 +1,6 @@
 // Renders every section's hold to PNGs in headless Chromium (SwiftShader). See README.md.
 // usage (from apps/desktop):
-//   node scripts/view3d-holds/shoot.mjs --out /mnt/data/om-capture/holds/run1 [--states up,carry,trail] [--only Trumpet,Flute]
+//   node scripts/view3d-holds/shoot.mjs --out /mnt/data/om-capture/holds/run1 [--states up,carry,trail] [--only Trumpet,Flute] [--close views.json]
 // Writes <out>/<state>/<nn>-<section>.png (five views side by side) and <out>/<state>-sheet.png.
 import fs from "node:fs";
 import path from "node:path";
@@ -24,6 +24,8 @@ const states = opt("states", "up").split(",");
 // --hand R|L: the close-up frames that hand's grip
 const look = args.includes("--look");
 const shell = opt("shell");
+// --close <views.json>: close-ups instead of the six-view strips (README.md)
+const close = opt("close") && JSON.parse(fs.readFileSync(opt("close"), "utf8"));
 const only = opt("only")
     ?.split(",")
     .map((s) => s.trim().toLowerCase());
@@ -96,18 +98,34 @@ try {
             const name = entries[i];
             if (only && !only.some((o) => name.toLowerCase().includes(o)))
                 continue;
+            const slug = name.replace(/[^A-Za-z]+/g, "-").toLowerCase();
+            if (close) {
+                const views = { ...close.all, ...close[slug] };
+                for (const [view, v] of Object.entries(views)) {
+                    await page.evaluate(
+                        ([i, s, v]) => window.holds.closeUp(i, s, v),
+                        [i, state, { width: 1100, height: 825, ...v }],
+                    );
+                    await page.locator("canvas").screenshot({
+                        path: path.join(dir, `${slug}-${view}.png`),
+                    });
+                }
+                console.log(`${state} ${name}`);
+                continue;
+            }
             await page.evaluate(
                 ([i, s]) => window.holds.show(i, s),
                 [i, state],
             );
             const file = path.join(
                 dir,
-                `${String(i).padStart(2, "0")}-${name.replace(/[^A-Za-z]+/g, "-").toLowerCase()}.png`,
+                `${String(i).padStart(2, "0")}-${slug}.png`,
             );
             await page.locator("canvas").screenshot({ path: file });
             shots.push({ name, file });
             console.log(`${state} ${name}`);
         }
+        if (close) continue;
         const sheet = await browser.newPage({
             viewport: { width: 3080, height: 400 },
         });

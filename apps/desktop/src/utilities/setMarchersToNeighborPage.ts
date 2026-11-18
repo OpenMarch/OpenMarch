@@ -83,13 +83,11 @@ export interface SetMarchersToNeighborPageArgs {
 
 const MESSAGES = {
     previous: {
-        none: "actions.batchEdit.noPreviousPage",
         all: null,
         selected: null,
         param: "previousPage",
     },
     next: {
-        none: "actions.batchEdit.noNextPage",
         all: "actions.batchEdit.movedAllToNextSpots",
         selected: "actions.batchEdit.movedSelectedToNextSpots",
         param: "nextPage",
@@ -154,10 +152,8 @@ export async function setMarchersToNeighborPage({
         if (parts.length > 0) notify.note?.(parts.join(" "));
     };
 
-    if (!neighbor) {
-        notify.error(t(messages.none));
-        return null;
-    }
+    // The actions are greyed out then, and say why (`useBatchEditActionHandlers`)
+    if (!neighbor) return null;
     const marcherIds = scope === "all" ? performerIds : selectedMarcherIds;
     if (marcherIds?.length === 0) return null;
     // A write still in flight (a nudge pressed just before) must reach the resolver first, or the

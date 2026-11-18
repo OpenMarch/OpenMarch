@@ -1,9 +1,12 @@
 ---
 title: Get help and send feedback
-description: Report a bug or send feedback from inside OpenMarch, or ask for help on Discord, GitHub or by email.
+description: Get help in the app, from the user guide or an AI assistant such as ChatGPT or Claude; report a bug or send feedback; or ask on Discord, GitHub or by email.
 type: how-to
 covers:
+  - apps/desktop/src/components/help
   - apps/desktop/src/components/titlebar/BugReport.tsx
+  - action:openHelp
+  - i18n:help
   - apps/desktop/src/feedback
   - apps/desktop/src/ErrorBoundary.tsx
   - action:reportFeedback
@@ -17,25 +20,41 @@ sidebar:
 
 import Media from "@/components/docs/Media.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
+<InShort>Select the question mark in the title bar (on a tablet, the menu at the start of the title bar), or press <Kbd action="openHelp" />, to open the guide or ask an AI assistant. To report a problem, select <Ui k="titlebar.bugReport" />.</InShort>
+
 OpenMarch is free and built by volunteers, so hearing what goes wrong and what you need is how it gets better. The quickest way to tell us is from inside the app: a report goes straight to the team, with the details we need to find the problem.
+
+## Ask the guide or an AI assistant
+
+Select the question mark in the title bar, press <Kbd action="openHelp" />, or choose Help › <Ui k="menu.help.openHelp" plain /> in the menu bar. In the tablet layout the toolbar tabs take that room, so the question mark isn't in the title bar: in the web editor, open the menu at the start of the title bar (<Ui k="web.fileMenu" plain />) and choose <Ui k="actions.ui.openHelp" />; in the desktop app, choose <Ui k="titlebar.menu" /> › Help › <Ui k="menu.help.openHelp" plain />. Searching for "help" with the magnifying glass works too. The <Ui k="help.title" plain /> window has three parts:
+
+<Media id="start-help-window" alt="The Get help window: Read the user guide, with Open the guide; Ask an AI assistant, with a box asking what you're trying to do and a Copy message button; and Something not working?, with Submit bug or feedback." maxWidth={440} />
+
+- <Ui k="help.guide.open" /> opens this guide in your web browser.
+- <Ui k="help.ai.copy" /> copies a message to paste into ChatGPT, Claude or any other AI assistant. Type what you're trying to do first, or leave the box empty and the assistant asks. The message tells the assistant your version of OpenMarch, your computer or tablet, and whether you're in Basic or Expert, and has it read this guide before answering. It answers in short steps with a link to the guide page and its picture or clip, and asks whether it worked. If it sounds like a bug, it says so and writes a report for you to paste into <Ui k="titlebar.bugReport" />. Nothing about your show is in the message; select <Ui k="help.ai.whatIsCopied" /> to read it first.
+- <Ui k="titlebar.bugReport" /> opens the report form, below.
+
+If the assistant says it can't open the guide, it asks you to open a page of it and paste what you see: open the address it gives, select all, copy, and paste it into the chat. An assistant can still get things wrong; if its answer doesn't match what you see, check the guide page it links, or ask us.
 
 ## Send a report from the app
 
 Select <Ui k="titlebar.bugReport" /> in the title bar. The report opens in a drawer over the editor, so you can keep using your show while you write. It's also in the Help menu and the command palette, as <Ui k="actions.ui.reportFeedback" />.
 
-<Media id="start-report-drawer" alt="The report drawer over the editor, asking you to sign in to send a report, with links to GitHub and Discord instead." maxWidth={440} />
+You need to be signed in to your OpenMarch account, so you can follow your report and we can tell you what happens to it. Until you are, the drawer asks you to sign in. If you'd rather not, it links to GitHub and Discord instead.
 
-You need to be signed in to your OpenMarch account, so you can follow your report and we can tell you what happens to it. If you'd rather not sign in, the drawer links to GitHub and Discord instead.
+<Media id="start-report-drawer-form" alt="The report drawer, signed in: What's this about? with Something is broken chosen over Feature request and General feedback, then Summary, What went wrong?, What did you expect to happen? and How can we make it happen again?, and under Attachments, Send a copy of my show, ticked." maxWidth={440} />
 
 <Steps>
 
 1. Under <Ui k="feedback.type.label" />, choose <Ui k="feedback.type.broken" />, <Ui k="feedback.type.feature" /> or <Ui k="feedback.type.feedback" />.
 2. Write a short summary, then answer the questions. For a bug, the steps that make it happen again are the most useful part.
-3. With a show open, <Ui k="feedback.attach.showFile" /> sends a copy of it. Marcher names and notes are removed from the copy, and its music isn't sent unless you turn on <Ui k="feedback.attach.music" />.
+3. The open show goes with your report: <Ui k="feedback.attach.showFile" /> starts on, so turn it off to leave the show out. Marcher names and notes are removed from the copy, and its music isn't sent unless you turn on <Ui k="feedback.attach.music" />.
 4. To show us the problem, select <Ui k="feedback.record.start" />. The drawer steps aside while you record, so you can use the editor. <Ui k="feedback.record.microphone" /> is on, so you can talk us through it; turn it off to record without sound. Select <Ui k="feedback.record.stopAndReturn" /> when you're done.
-5. Play the recording in the drawer to check it. <Ui k="feedback.record.discard" /> throws it away so you can record again.
+5. Play the recording in the drawer to check it. To record again, select <Ui k="feedback.record.discard" />.
 6. Under <Ui k="feedback.public.label" />, choose whether your recording and show may be posted publicly, and whether to be credited by name. Leave them off and they stay private.
 7. Select <Ui k="feedback.send" />.
 

@@ -1,3 +1,4 @@
+// cspell:words ndarray
 import fs from "node:fs";
 import path from "node:path";
 import { defineConfig, loadEnv, type Plugin } from "vite";
@@ -6,6 +7,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { parse as parseYaml } from "yaml";
 import { version } from "./package.json";
 import { thirdPartyNotices } from "./vite.notices.mjs";
+import { modelImportWorker, ndarrayAliases } from "./vite.modelImport.mjs";
+import { WORKER_POLICIES } from "./src/security/appCsp";
 import { DEMOS } from "./web/demos";
 
 /**
@@ -185,24 +188,41 @@ const outDir = path.join(__dirname, "dist-web");
  * keep them; everything else (index.html) is checked on each visit, so a
  * deploy reaches people on their next load.
  */
+/**
+ * Writes `_headers`: Cloudflare applies it on editor.openmarch.com and nightly, and the lab
+ * Worker (OpenMarch/om-lab) applies its rules to the build it serves under /x/<id>/ (fork
+ * #1042). Lab rules are relative to the build folder and hold only each worker's policy, so the
+ * lab keeps its own cache headers.
+ */
 const writeHeaders = (): Plugin => ({
     name: "openmarch-web-headers",
-    // The lab serves its builds itself and ignores the file.
-    apply: (_config, { command }) => command === "build" && !isLab,
+    apply: (_config, { command }) => command === "build",
     closeBundle() {
+        // Each worker's own policy (fork #998, #1011): a URL worker takes its CSP from its own
+        // response, never from the page
+        const workerRules = (base: string) =>
+            WORKER_POLICIES.flatMap(({ file, csp }) => [
+                `${base}assets/${file}-*`,
+                `  Content-Security-Policy: ${csp}`,
+            ]);
         fs.writeFileSync(
             path.join(outDir, "_headers"),
             [
-                `${webBase}assets/*`,
-                "  Cache-Control: public, max-age=31536000, immutable",
-                `${webBase}*`,
-                "  X-Content-Type-Options: nosniff",
-                "  Referrer-Policy: strict-origin-when-cross-origin",
+                ...(isLab
+                    ? workerRules("/")
+                    : [
+                          `${webBase}assets/*`,
+                          "  Cache-Control: public, max-age=31536000, immutable",
+                          `${webBase}*`,
+                          "  X-Content-Type-Options: nosniff",
+                          "  Referrer-Policy: strict-origin-when-cross-origin",
+                          ...workerRules(webBase),
+                      ]),
                 "",
             ].join("\n"),
         );
         // The home-screen manifest's paths are written for "/".
-        if (webBase !== "/") {
+        if (!isLab && webBase !== "/") {
             const file = path.join(outDir, "manifest.webmanifest");
             const manifest = JSON.parse(fs.readFileSync(file, "utf8"));
             manifest.start_url = webBase;
@@ -351,6 +371,7 @@ export default defineConfig(({ mode, command }) => {
                     find: /^@om-electron\//,
                     replacement: path.join(__dirname, "electron") + "/",
                 },
+                ...ndarrayAliases,
                 // Only the worker's main-process code imports these.
                 { find: /^(node:)?fs$/, replacement: web("worker/fs.ts") },
                 { find: /^(node:)?path$/, replacement: web("worker/path.ts") },
@@ -377,6 +398,7 @@ export default defineConfig(({ mode, command }) => {
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         plugins: [
+            modelImportWorker(),
             resolveElectron(),
             tailwindcss(),
             react(),
@@ -387,7 +409,7 @@ export default defineConfig(({ mode, command }) => {
         ],
         worker: {
             format: "es",
-            plugins: () => [resolveElectron()],
+            plugins: () => [resolveElectron(), modelImportWorker()],
         },
         define: {
             // The preload reads these from Node's `process` under Electron.

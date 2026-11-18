@@ -331,7 +331,7 @@ describeDbTests("registered coordinate actions", (it) => {
         });
     });
 
-    it("undo with nothing to undo shows one warning and changes nothing (#223)", async ({
+    it("undo with nothing to undo does nothing, quietly (#223)", async ({
         db,
         marchersAndPages,
     }) => {
@@ -345,13 +345,10 @@ describeDbTests("registered coordinate actions", (it) => {
 
         await trigger("performUndo");
 
-        await waitFor(() =>
-            expect(warning).toHaveBeenCalledWith(
-                "No action to undo",
-                expect.anything(),
-            ),
-        );
-        expect(warning).toHaveBeenCalledOnce();
+        // The press ran and found nothing: no toast, as in other editors (the title bar's Undo
+        // is greyed out then)
+        await new Promise((r) => setTimeout(r, 300));
+        expect(warning).not.toHaveBeenCalled();
         expect(await positionsOn(db, page, ids)).toEqual(before);
     });
 });

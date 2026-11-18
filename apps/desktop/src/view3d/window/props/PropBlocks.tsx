@@ -65,6 +65,7 @@ import { requestDraw } from "../drawWake";
 import { propSolidsAt } from "./performerLift";
 import { modelsByMarcher } from "@/view3d/core/pit/pitModels";
 import { usePitModelFailures } from "./pitModelAssets";
+import { useDrawnLibraryModels } from "./libraryModelAssets";
 
 /**
  * A unit footprint extruded 1 m up, base on y = 0. The shape is drawn in
@@ -113,12 +114,17 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
     );
 
     const failures = usePitModelFailures();
+    const drawnImported = useDrawnLibraryModels();
 
     const tracks = useMemo(() => {
         const rows = items ?? [];
         const colors = propColorsByMarcher(rows);
-        // Items with a built-in model draw as it instead (`PitModels.tsx`)
+        // Items with a built-in model draw as it instead (`PitModels.tsx`), and so do those with
+        // an imported model once it has loaded
         const models = modelsByMarcher(rows, failures);
+        for (const item of rows)
+            if (item.model && drawnImported.has(item.model))
+                models.set(item.marcher_id, item.model);
         return propTracks(
             itemOutlineChanges({
                 items: rows,
@@ -141,7 +147,7 @@ export default function PropBlocks({ fieldProperties }: PropBlocksProps) {
                 },
             },
         );
-    }, [items, geometry, beats, hiddenItemIds, failures]);
+    }, [items, geometry, beats, hiddenItemIds, failures, drawnImported]);
     const shapes = useMemo(() => propShapes(tracks), [tracks]);
     // Keyed by the parsed outline objects, which every refetch replaces, so a
     // fresh cache per tracks keeps the old ones from piling up.

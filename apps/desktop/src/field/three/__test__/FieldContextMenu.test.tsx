@@ -19,6 +19,7 @@ import FieldContextMenu, {
 import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { PATH_FIELD_MENU } from "@/pathways/pathPenMode";
+import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -32,12 +33,13 @@ function handle(
         enabled = true,
         label,
         checked = false,
-        reason,
+        reason = "Not now, for a test",
     }: {
         enabled?: boolean;
         label?: string;
         checked?: boolean;
-        reason?: string;
+        /** Why it's disabled; null for none (then the menu leaves it out) */
+        reason?: string | null;
     } = {},
 ) {
     const run = vi.fn();
@@ -47,7 +49,7 @@ function handle(
             isEnabled: () => enabled,
             label: () => label,
             checked: () => checked,
-            disabledReason: () => reason,
+            disabledReason: () => reason ?? undefined,
         }),
     );
     return run;
@@ -285,14 +287,21 @@ describe("FieldContextMenu", () => {
         expect(preview).toHaveBeenLastCalledWith(false);
     });
 
-    it("shows an action without an enabled handler as unavailable, and running it does nothing", () => {
+    it("shows an action that can't run with its reason, and running it does nothing", () => {
         const run = handle("alignHorizontally", { enabled: false });
         open();
         const align = item("alignHorizontally")!;
-        expect(align).toHaveAttribute("data-disabled");
+        expect(align).toHaveAttribute("aria-disabled", "true");
+        expect(item("alignHorizontally-reason-icon")).toBeTruthy();
         fireEvent.click(align);
         expect(run).not.toHaveBeenCalled();
-        expect(item("alignVertically")).toHaveAttribute("data-disabled");
+    });
+
+    it("leaves out an action that can't run and can't say why, or has no handler", () => {
+        handle("alignHorizontally", { enabled: false, reason: null });
+        open();
+        expect(item("alignHorizontally")).toBeNull();
+        expect(item("alignVertically")).toBeNull();
     });
 
     it("offers editing the item right-clicked, first, only while one is selected", () => {
@@ -304,8 +313,8 @@ describe("FieldContextMenu", () => {
 
     it("lists the actions in groups, with the page state commands together", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        handle("shapeGroup", { enabled: false });
-        handle("shapeUngroup", { enabled: false });
+        handle("shapeGroup", { enabled: false, reason: null });
+        handle("shapeUngroup", { enabled: false, reason: null });
         // The Path group shows only what applies: here Edit path, Edit <name>'s line, then after a
         // line Detach, Detach all and Remove path
         for (const id of [
@@ -314,8 +323,9 @@ describe("FieldContextMenu", () => {
             "reverseTrail",
             "refitPath",
         ] as const)
-            handle(id, { enabled: false });
-        open();
+            handle(id, { enabled: false, reason: null });
+        // Two selected, so Swap can run and a line's order shows
+        open({ selectedCount: 2 });
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
         for (const el of Array.from(content.children)) {
@@ -341,6 +351,8 @@ describe("FieldContextMenu", () => {
                 "timelineHoldStyleHighMarkTime",
             ],
             ["splitSelectedIntoNewMove", "timelineSplitMoveAtPlayhead"],
+            // Two selected: a line's order
+            ["setMarcherOrder", "reverseMarcherOrder", "clearMarcherOrder"],
             [
                 "alignHorizontally",
                 "alignVertically",
@@ -454,14 +466,15 @@ describe("FieldContextMenu", () => {
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(blocked).not.toHaveBeenCalled();
         expect(item("timelineHoldFromPrevious")).toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
+            "true",
         );
         cleanup();
         handlers.splice(0).forEach((off) => off());
         const hold = handle("timelineHoldFromPrevious");
         open();
         expect(item("timelineHoldFromPrevious")).not.toHaveAttribute(
-            "data-disabled",
+            "aria-disabled",
         );
         fireEvent.click(item("timelineHoldFromPrevious")!);
         expect(hold).toHaveBeenCalledTimes(1);
@@ -530,11 +543,17 @@ describe("FieldContextMenu", () => {
     });
 
     it("offers Swap only with two marchers selected", () => {
-        const run = handle("swapMarchers");
+        // Three selected: its handler says it can't, and why
+        const off = handle("swapMarchers", {
+            enabled: false,
+            reason: "Select 2 marchers to swap them",
+        });
         open({ selectedCount: 3 });
-        fireEvent.click(item("swapMarchers")!);
-        expect(run).not.toHaveBeenCalled();
+        expect(item("swapMarchers")).toHaveAttribute("aria-disabled", "true");
         cleanup();
+        handlers.splice(0).forEach((h) => h());
+        void off;
+        const run = handle("swapMarchers");
         open({ selectedCount: 2 });
         fireEvent.click(item("swapMarchers")!);
         expect(run).toHaveBeenCalledTimes(1);
@@ -567,9 +586,60 @@ describe("FieldContextMenu", () => {
         }
     });
 
+    describe("shortcut caps (#880)", () => {
+        const caps = () =>
+            screen.getByTestId("field-menu").querySelectorAll("kbd.shortcut");
+
+        afterEach(() => {
+            act(() => {
+                useInputModeStore.getState().setPreference("auto");
+            });
+            localStorage.clear();
+            resetKeyboardSeen();
+        });
+
+        it("shows each entry's cap with a mouse layout", () => {
+            handle("selectAllMarchers");
+            open();
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
+
+        it("hides them in the touch layout until a hardware key is pressed, keeping the entries", () => {
+            act(() => {
+                useInputModeStore.getState().setPreference("touch");
+            });
+            handle("selectAllMarchers");
+            handle("setSelectedMarchersToPreviousPage", {
+                label: "Clear Page 3",
+            });
+            open();
+            expect(caps()).toHaveLength(0);
+            // The entries, their words and their enabled states are as they were
+            expect(item("selectAllMarchers")).toHaveTextContent("Select all");
+            expect(item("selectAllMarchers")).not.toHaveAttribute(
+                "data-disabled",
+            );
+            expect(item("setSelectedMarchersToPreviousPage")).toHaveTextContent(
+                "Clear Page 3",
+            );
+
+            // A hardware keyboard's key, outside a text field
+            act(() => {
+                fireEvent.keyDown(window, { key: "Shift" });
+            });
+            expect(caps().length).toBeGreaterThan(0);
+            expect(
+                item("selectAllMarchers")!.querySelector("kbd"),
+            ).not.toBeNull();
+        });
+    });
+
     it("lists every action it offers by its label", () => {
         for (const id of FIELD_MENU_ACTIONS) handle(id);
-        open();
+        open({ selectedCount: 2 });
         expect(
             screen.getAllByRole("menuitem").map((el) => el.textContent),
         ).toEqual(

@@ -25,6 +25,7 @@ import {
     KEEP_MENU_EVENTS,
     MenuItemWithReason,
     TIMELINE_MENU_CONTENT_CLASS,
+    TimelineMenuClose,
 } from "@/components/timeline/TimelineRangeMenu";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import type { ActionId } from "@/shortcuts/definitions";
@@ -42,6 +43,7 @@ import {
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
@@ -87,6 +89,9 @@ import {
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
  * - **Edit field**, which puts the canvas into the Edit field mode (#824).
+ *
+ * Each entry shows its shortcut, except in the touch layout before a hardware keyboard has been
+ * used (`useShowShortcutHints`, #880).
  *
  * A right-click on what a field mode draws can offer its own actions instead (`actions`): on a
  * path's line, the same Path group (pathways), each entry shown only while it applies. That menu
@@ -241,7 +246,7 @@ const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
 const handlerSnapshot = () =>
     FIELD_MENU_ACTIONS.map(
         (id) =>
-            `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionLabelNow(id) ?? ""}|${actionDisabledReason(id) ?? ""}`,
+            `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionLabelNow(id) ?? ""}\t${actionDisabledReason(id) ?? ""}`,
     ).join("\n");
 
 /** Closed, the menu shows nothing, so it reads no handler (a label may run a check) */
@@ -268,6 +273,8 @@ export default function FieldContextMenu({
 }) {
     const { t } = useTranslate();
     const touch = useIsTouchMode();
+    // A finger-only tablet has no keys to press: the caps wait for a hardware keyboard (#880)
+    const showHints = useShowShortcutHints();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -311,8 +318,14 @@ export default function FieldContextMenu({
                           selectedCount >= 2 &&
                           hasActionHandler(id)
                         : true;
-    const enabled = (id: ActionId) =>
-        isActionEnabled(id) && (id !== "swapMarchers" || selectedCount === 2);
+    // Swap's handler counts the marchers (props aren't swapped), so its own state is the answer
+    const enabled = (id: ActionId) => isActionEnabled(id);
+    // An entry that can't run and can't say why isn't shown: with nobody selected, that's every
+    // selection command (owner rule: no greyed-out entry without a reason)
+    const explained = (id: ActionId) =>
+        enabled(id) ||
+        isActionChecked(id) ||
+        (selectedCount > 0 && actionDisabledReason(id) !== undefined);
     const groups = (
         actions
             ? // A path's entries show only where they apply, as on a marcher; Detach all and
@@ -323,7 +336,9 @@ export default function FieldContextMenu({
               ].map((group) =>
                   group.filter((id) => !PATH_SET.has(id) || pathShown(id)),
               )
-            : GROUPS.map((group) => group.filter(shown))
+            : GROUPS.map((group) =>
+                  group.filter((id) => shown(id) && explained(id)),
+              )
     ).filter((group) => group.length > 0);
 
     return (
@@ -366,127 +381,139 @@ export default function FieldContextMenu({
                               : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
-                    {groups.map((group, i) => (
-                        <Fragment key={group[0]}>
-                            {i > 0 && (
-                                <DropdownMenu.Separator
-                                    className={MENU_SEPARATOR_CLASS}
-                                />
-                            )}
-                            {group.map((id) => {
-                                const label =
-                                    actionLabelNow(id) ??
-                                    getActionLabel(id, (key, params) =>
-                                        t(key, params as never),
+                    {/* One Escape closes an open reason tip and the menu together */}
+                    <TimelineMenuClose.Provider value={onClose}>
+                        {groups.map((group, i) => (
+                            <Fragment key={group[0]}>
+                                {i > 0 && (
+                                    <DropdownMenu.Separator
+                                        className={MENU_SEPARATOR_CLASS}
+                                    />
+                                )}
+                                {group.map((id) => {
+                                    const label =
+                                        actionLabelNow(id) ??
+                                        getActionLabel(id, (key, params) =>
+                                            t(key, params as never),
+                                        );
+                                    // Hidden when the action has no key, so it takes no room
+                                    const shortcut = showHints && (
+                                        <span className="ml-auto pl-16 empty:hidden">
+                                            <Shortcut action={id} />
+                                        </span>
                                     );
-                                // Hidden when the action has no key, so it takes no room
-                                const shortcut = (
-                                    <span className="ml-auto pl-16 empty:hidden">
-                                        <Shortcut action={id} />
-                                    </span>
-                                );
-                                const ModeIcon = actions
-                                    ? MODE_ICONS[id]
-                                    : null;
-                                const note = NOTES[id];
-                                if (isActionChecked(id))
+                                    const ModeIcon = actions
+                                        ? MODE_ICONS[id]
+                                        : null;
+                                    const note = NOTES[id];
+                                    if (isActionChecked(id))
+                                        return (
+                                            <DropdownMenu.CheckboxItem
+                                                key={id}
+                                                data-testid={`field-menu-${id}`}
+                                                checked
+                                                disabled
+                                                className={MENU_ITEM_CLASS}
+                                            >
+                                                <span
+                                                    className={CHECK_SLOT_CLASS}
+                                                >
+                                                    <DropdownMenu.ItemIndicator className="flex">
+                                                        <CheckIcon size={14} />
+                                                    </DropdownMenu.ItemIndicator>
+                                                </span>
+                                                {label}
+                                                {shortcut}
+                                            </DropdownMenu.CheckboxItem>
+                                        );
+                                    const run = () =>
+                                        runAction(
+                                            id,
+                                            ON_A_MARCHER.has(id) &&
+                                                marcher !== null
+                                                ? { marcherId: marcher }
+                                                : undefined,
+                                        );
+                                    // Greyed out with a reason: a ? says why, as the timeline's
+                                    // menus do (entries with none aren't shown, above)
+                                    const reason = enabled(id)
+                                        ? undefined
+                                        : actionDisabledReason(id);
+                                    if (reason)
+                                        return (
+                                            <MenuItemWithReason
+                                                key={id}
+                                                testId={`field-menu-${id}`}
+                                                reason={reason}
+                                                reasonTestId={`field-menu-${id}-reason`}
+                                                onSelect={run}
+                                                className={MENU_ITEM_CLASS}
+                                            >
+                                                {CHECKABLE.has(id) && (
+                                                    <span
+                                                        className={
+                                                            CHECK_SLOT_CLASS
+                                                        }
+                                                    />
+                                                )}
+                                                {label}
+                                            </MenuItemWithReason>
+                                        );
                                     return (
-                                        <DropdownMenu.CheckboxItem
+                                        <DropdownMenu.Item
                                             key={id}
                                             data-testid={`field-menu-${id}`}
-                                            checked
-                                            disabled
-                                            className={MENU_ITEM_CLASS}
+                                            disabled={!enabled(id)}
+                                            onSelect={run}
+                                            onFocus={() =>
+                                                previewAction(id, true)
+                                            }
+                                            onBlur={() =>
+                                                previewAction(id, false)
+                                            }
+                                            className={clsx(
+                                                MENU_ITEM_CLASS,
+                                                actions &&
+                                                    DESTRUCTIVE.has(id) &&
+                                                    "data-[highlighted]:text-red",
+                                                note && "items-start",
+                                            )}
                                         >
-                                            <span className={CHECK_SLOT_CLASS}>
-                                                <DropdownMenu.ItemIndicator className="flex">
-                                                    <CheckIcon size={14} />
-                                                </DropdownMenu.ItemIndicator>
-                                            </span>
-                                            {label}
-                                            {shortcut}
-                                        </DropdownMenu.CheckboxItem>
-                                    );
-                                const reason = enabled(id)
-                                    ? null
-                                    : (actionDisabledReason(id) ?? null);
-                                if (reason !== null)
-                                    // Unavailable with a reason: dimmed, the reason behind a
-                                    // ?, shown on hover, focus or a press (the timeline's menus)
-                                    return (
-                                        <MenuItemWithReason
-                                            key={id}
-                                            testId={`field-menu-${id}`}
-                                            reason={reason}
-                                            reasonTestId={`field-menu-${id}-reason`}
-                                            onSelect={() => runAction(id)}
-                                        >
+                                            {ModeIcon && (
+                                                <ModeIcon
+                                                    size={14}
+                                                    aria-hidden
+                                                    className={clsx(
+                                                        "shrink-0",
+                                                        note && "mt-2",
+                                                    )}
+                                                />
+                                            )}
                                             {CHECKABLE.has(id) && (
                                                 <span
                                                     className={CHECK_SLOT_CLASS}
                                                 />
                                             )}
-                                            {label}
-                                        </MenuItemWithReason>
-                                    );
-                                return (
-                                    <DropdownMenu.Item
-                                        key={id}
-                                        data-testid={`field-menu-${id}`}
-                                        disabled={!enabled(id)}
-                                        onSelect={() =>
-                                            runAction(
-                                                id,
-                                                ON_A_MARCHER.has(id) &&
-                                                    marcher !== null
-                                                    ? { marcherId: marcher }
-                                                    : undefined,
-                                            )
-                                        }
-                                        onFocus={() => previewAction(id, true)}
-                                        onBlur={() => previewAction(id, false)}
-                                        className={clsx(
-                                            MENU_ITEM_CLASS,
-                                            actions &&
-                                                DESTRUCTIVE.has(id) &&
-                                                "data-[highlighted]:text-red",
-                                            note && "items-start",
-                                        )}
-                                    >
-                                        {ModeIcon && (
-                                            <ModeIcon
-                                                size={14}
-                                                aria-hidden
-                                                className={clsx(
-                                                    "shrink-0",
-                                                    note && "mt-2",
-                                                )}
-                                            />
-                                        )}
-                                        {CHECKABLE.has(id) && (
-                                            <span
-                                                className={CHECK_SLOT_CLASS}
-                                            />
-                                        )}
-                                        {note ? (
-                                            <span className="flex flex-col">
-                                                {label}
-                                                <span
-                                                    className="text-sub text-text-subtitle"
-                                                    data-testid={`field-menu-${id}-note`}
-                                                >
-                                                    {t(note)}
+                                            {note ? (
+                                                <span className="flex flex-col">
+                                                    {label}
+                                                    <span
+                                                        className="text-sub text-text-subtitle"
+                                                        data-testid={`field-menu-${id}-note`}
+                                                    >
+                                                        {t(note)}
+                                                    </span>
                                                 </span>
-                                            </span>
-                                        ) : (
-                                            label
-                                        )}
-                                        {shortcut}
-                                    </DropdownMenu.Item>
-                                );
-                            })}
-                        </Fragment>
-                    ))}
+                                            ) : (
+                                                label
+                                            )}
+                                            {shortcut}
+                                        </DropdownMenu.Item>
+                                    );
+                                })}
+                            </Fragment>
+                        ))}
+                    </TimelineMenuClose.Provider>
                 </DropdownMenu.Content>
             </DropdownMenu.Portal>
         </DropdownMenu.Root>

@@ -14,6 +14,9 @@ import CommandPalette from "@/shortcuts/palette/CommandPalette";
 import LongPressGuard from "@/components/ui/LongPressGuard";
 import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModal";
 import ShortcutDispatcher from "@/shortcuts/ShortcutDispatcher";
+import ModelFileDrop from "@/components/items/modelImport/ModelFileDrop";
+import { configureModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
+import { appModelImportDeps } from "@/showAssets/modelImport/review/modelImportSessionApp";
 import {
     EditorActionHandlers,
     FileActionHandlers,
@@ -54,6 +57,7 @@ import { InContextTools } from "@tolgee/web/tools";
 import AlertModal from "./components/AlertModal";
 import ConvertShowDialog from "./components/ConvertShowDialog";
 import ShortcutsDialog from "./components/ShortcutsDialog";
+import HelpDialog from "./components/help/HelpDialog";
 import MusicXmlChecksDialog from "./components/music/MusicXmlChecksDialog";
 import WebWelcomeModal from "./components/WebWelcomeModal";
 import WebSettingsSheet from "./components/WebSettingsSheet";
@@ -100,6 +104,8 @@ export const queryClient = new QueryClient({
         },
     }),
 });
+// The Props panel's model import (fork #999) runs in a worker and saves through this client
+configureModelImportSession(appModelImportDeps(queryClient));
 
 function App() {
     useLoadFileErrorHandler();
@@ -282,6 +288,7 @@ function App() {
                     {!isWebBuild && <CheckForUpdatesHandler />}
                     <CommandPalette />
                     <ShortcutsDialog />
+                    <HelpDialog />
                     <MusicXmlChecksDialog />
                     <LongPressGuard />
                     <WindowTooSmallNotice size={windowSize} />
@@ -307,6 +314,7 @@ function App() {
                                             <StateInitializer />
                                             <FileActionHandlers />
                                             <EditorActionHandlers />
+                                            <ModelFileDrop />
                                             <ExportCoordinatesModal />
                                             <TimelineResolverHost />
                                             <View3dPublisher />

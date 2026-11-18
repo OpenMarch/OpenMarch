@@ -1,8 +1,7 @@
 /**
  * How the mouse and trackpad move the 3D View camera: the viewer's choice in
- * Settings. It belongs to the computer, not the show, so it lives in local
- * storage (ADR 0010 D-5), like `renderPrefs.ts`. Plain TypeScript: the
- * Settings window imports it, so nothing here may load three.js.
+ * 3D View settings › Preferences. It belongs to the computer, not the show,
+ * so it lives in local storage (ADR 0010 D-5), like `renderPrefs.ts`.
  *
  * - `orbit` (default): drag orbits, right-drag pans, and scroll zooms.
  * - `map`: drag pans, right-drag orbits, and scroll zooms.

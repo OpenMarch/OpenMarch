@@ -2,10 +2,10 @@
  * The 3D View window's overlay (ui.md UI-2, UI-4, UI-5, UI-6), floating over
  * the scene:
  *
- * - top left: the camera menu and Pick a seat, with the Cameras panel
+ * - top left: the camera menu, Pick a seat and Follow a performer, with the Cameras panel
  *   under them when open;
- * - top right: fullscreen and the settings button, with the settings panel
- *   under them when open;
+ * - top right: fullscreen and 3D View settings, with the settings panel
+ *   (Venue, Performers and Preferences tabs) under them when open;
  * - bottom left: playback controls, then the readout;
  * - bottom right: whether to keep opening the 3D View with every show, until
  *   answered (`AutoOpenQuestion.tsx`), and why the view went to low quality,
@@ -17,8 +17,10 @@
  * Keys: Space (Shift+Space from the playhead), Q and E (Shift for a beat,
  * Alt or Home/End for the ends), and
  * ] and [ held for double or half speed, run the editor's playback actions, F toggles fullscreen, C the crowd and S the
- * paused pose. Esc closes the settings panel, then the Cameras panel, then leaves fullscreen. The camera rig (P3.2)
- * owns 1–9, and Esc for pick-a-seat.
+ * paused pose. Esc closes the settings panel, then the Cameras panel, then
+ * backs out of following a performer (their point of view, then following
+ * them), then leaves fullscreen. The camera rig (P3.2) owns 1–9, D, P and V,
+ * and Esc for pick-a-seat and pick-a-performer.
  */
 import { useEffect, useRef, useState } from "react";
 import { useTranslate } from "@tolgee/react";
@@ -29,6 +31,7 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { useCameraStore } from "../camera/cameraStore";
+import { useFollowStore } from "../camera/followStore";
 import { useView3dSceneStore } from "../sceneStore";
 import { CameraBar } from "./CameraBar";
 import { CamerasPanel } from "./CamerasPanel";
@@ -166,8 +169,10 @@ function useOverlayShortcuts(
             } else if (
                 key === "escape" &&
                 !event.defaultPrevented &&
-                // The rig cancels pick-a-seat on this Esc instead.
-                !useCameraStore.getState().pickMode
+                // The rig cancels pick-a-seat and pick-a-performer on this
+                // Esc instead.
+                !useCameraStore.getState().pickMode &&
+                !useFollowStore.getState().picking
             ) {
                 if (current.settingsOpen) {
                     event.preventDefault();
@@ -175,6 +180,8 @@ function useOverlayShortcuts(
                 } else if (current.camerasOpen) {
                     event.preventDefault();
                     current.closeCameras();
+                } else if (useFollowStore.getState().backOut()) {
+                    event.preventDefault();
                 } else if (document.fullscreenElement) {
                     void document.exitFullscreen();
                 }
@@ -213,7 +220,7 @@ export default function View3dOverlay() {
             ? "view3d.overlay.exitFullscreen"
             : "view3d.overlay.enterFullscreen",
     );
-    const settingsLabel = t("view3d.settings.title");
+    const settingsLabel = t("view3d.settings.panelTitle");
 
     return (
         <div
@@ -263,9 +270,6 @@ export default function View3dOverlay() {
                             onClick={() => setSettingsOpen((open) => !open)}
                             icon={<GearSixIcon size={16} />}
                             label={settingsLabel}
-                            tooltip={settingsLabel}
-                            tooltipSide="left"
-                            iconOnly
                             testId="view3d-settings-button"
                         />
                     </Panel>

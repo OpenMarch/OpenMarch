@@ -8,7 +8,7 @@
  */
 // cspell:ignore gltf
 import { useSyncExternalStore } from "react";
-import type { BufferGeometry, Material, Mesh } from "three";
+import type { BufferGeometry, Material, Mesh, Object3D } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { Detail } from "@/view3d/core/instruments/model";
 import { pitAssetFile } from "@/view3d/core/pit/pitModels";
@@ -32,22 +32,29 @@ export interface PitPart {
 
 const loads = new Map<string, Promise<PitPart[]>>();
 
-async function loadFile(file: string): Promise<PitPart[]> {
-    const url = urlOf(file);
-    if (!url) throw new Error(`no bundled asset ${file}`);
-    const gltf = await new GLTFLoader().loadAsync(url);
-    gltf.scene.updateMatrixWorld(true);
+/**
+ * A loaded model's meshes as parts, each node's place in the model baked into its geometry, so an
+ * instance's matrix is the item's alone. Shared with imported models (`libraryModelAssets.ts`).
+ */
+export function partsOf(scene: Object3D, name: string): PitPart[] {
+    scene.updateMatrixWorld(true);
     const parts: PitPart[] = [];
-    gltf.scene.traverse((o) => {
+    scene.traverse((o) => {
         const mesh = o as Mesh;
         if (!mesh.isMesh) return;
-        // Bake the node's place in the model, so an instance's matrix is the item's alone
         const geometry = mesh.geometry.clone().applyMatrix4(mesh.matrixWorld);
         mesh.geometry.dispose();
         parts.push({ geometry, material: mesh.material });
     });
-    if (parts.length === 0) throw new Error(`${file} has no meshes`);
+    if (parts.length === 0) throw new Error(`${name} has no meshes`);
     return parts;
+}
+
+async function loadFile(file: string): Promise<PitPart[]> {
+    const url = urlOf(file);
+    if (!url) throw new Error(`no bundled asset ${file}`);
+    const gltf = await new GLTFLoader().loadAsync(url);
+    return partsOf(gltf.scene, file);
 }
 
 /** A model's detailed or distant version, loaded once. */
@@ -64,12 +71,15 @@ export function loadPitModel(name: string, detail: Detail): Promise<PitPart[]> {
 let failures: ReadonlySet<string> = new Set();
 const listeners = new Set<() => void>();
 
-/** Remembers that a model can't be drawn, logging it the first time. */
+/**
+ * Remembers that a model can't be drawn, logging it the first time: a built-in by name, an
+ * imported one by its `items.model` value.
+ */
 export function markPitModelFailed(name: string, error: unknown): void {
     if (failures.has(name)) return;
-    // eslint-disable-next-line no-console -- a broken built-in asset is worth one line
+    // eslint-disable-next-line no-console -- a broken asset is worth one line
     console.warn(
-        `3D View: pit model ${name} failed to load; drawing a block`,
+        `3D View: model ${name} failed to load; drawing a block`,
         error,
     );
     failures = new Set([...failures, name]);
@@ -81,16 +91,19 @@ const subscribe = (listener: () => void) => {
     return () => listeners.delete(listener);
 };
 
-/** The models that failed to load, by name: their items draw as blocks. */
+/** The models that failed to load, by name or `items.model` value: their items draw as blocks. */
 export const usePitModelFailures = (): ReadonlySet<string> =>
     useSyncExternalStore(subscribe, () => failures);
 
 const unknownLogged = new Set<string>();
 
-/** Logs, once per id, an item model id this app has no model for: it draws as a block. */
+/**
+ * Logs, once per id, an item model id this app has no model for (a built-in it doesn't ship, or
+ * an imported model the show doesn't have): it draws as a block.
+ */
 export function logUnknownPitModel(modelId: string): void {
     if (unknownLogged.has(modelId)) return;
     unknownLogged.add(modelId);
     // eslint-disable-next-line no-console -- an unknown model id is worth one line
-    console.warn(`3D View: no built-in model ${modelId}; drawing a block`);
+    console.warn(`3D View: no model ${modelId}; drawing a block`);
 }
