@@ -30,8 +30,8 @@ describe("libraryModels", () => {
         });
     });
 
-    it("names the Light copy kept beside a heavier level (#1091)", () => {
-        const [model] = libraryModels([
+    it("names the Light copy kept beside a model clearly heavier than it (#1091)", () => {
+        const withLight = (triangles: number) =>
             asset({
                 parts: {
                     model: "m".repeat(64),
@@ -39,9 +39,13 @@ describe("libraryModels", () => {
                     thumbnail: "t",
                     light: "l".repeat(64),
                 },
-            }),
-        ]).values();
-        expect(model?.lightHash).toBe("l".repeat(64));
+                sidecar: { ...asset().sidecar, triangles },
+            });
+        const [heavy] = libraryModels([withLight(900_000)]).values();
+        expect(heavy?.lightHash).toBe("l".repeat(64));
+        // An Original of 21,000 triangles: its Light copy wouldn't help a stuttering view
+        const [light] = libraryModels([withLight(21_000)]).values();
+        expect(light?.lightHash).toBeNull();
     });
 
     it("leaves out other kinds, and models missing a GLB or what the field reads", () => {

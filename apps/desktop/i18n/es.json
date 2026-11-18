@@ -1513,7 +1513,7 @@
                 "hint": "Arrastra para girar, desplaza para acercar",
                 "stands": "Desde las gradas",
                 "closeUp": "De cerca",
-                "originalFailed": "No se pudo cargar el original."
+                "drawFailed": "No se pudo dibujar esta versión."
             },
             "size": {
                 "title": "Tamaño",

@@ -1513,7 +1513,7 @@
                 "hint": "Seret untuk memutar, tatal untuk mengezum",
                 "stands": "Dari tempat duduk penonton",
                 "closeUp": "Dekat",
-                "originalFailed": "Tidak dapat memuatkan yang asal."
+                "drawFailed": "Versi ini tidak dapat dilukis."
             },
             "size": {
                 "title": "Saiz",

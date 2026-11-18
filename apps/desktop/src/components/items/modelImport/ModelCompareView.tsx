@@ -29,6 +29,8 @@ export interface CompareVersion {
     key: string;
     label: string;
     bytes: Uint8Array | null;
+    /** True when this version couldn't be made: the view says so instead of waiting */
+    failed?: boolean;
     testId: string;
 }
 
@@ -52,9 +54,14 @@ function disposeScene(scene: Object3D): void {
 }
 
 /** Parses GLB bytes into a scene, freed when the bytes change or the view closes */
-function useParsed(bytes: Uint8Array | null): Object3D | null {
+function useParsed(bytes: Uint8Array | null): {
+    scene: Object3D | null;
+    failed: boolean;
+} {
     const [scene, setScene] = useState<Object3D | null>(null);
+    const [failed, setFailed] = useState(false);
     useEffect(() => {
+        setFailed(false);
         if (!bytes) return;
         let live = true;
         let parsed: Object3D | null = null;
@@ -67,15 +74,19 @@ function useParsed(bytes: Uint8Array | null): Object3D | null {
                 else disposeScene(parsed);
             })
             .catch(() => {
-                if (live) setScene(null);
+                if (!live) return;
+                setScene(null);
+                setFailed(true);
             });
         return () => {
             live = false;
             setScene(null);
-            if (parsed) disposeScene(parsed);
+            // After the frame that stops drawing it, so it isn't uploaded again to be drawn once
+            const old = parsed;
+            if (old) requestAnimationFrame(() => disposeScene(old));
         };
     }, [bytes]);
-    return scene;
+    return { scene, failed };
 }
 
 /**
@@ -135,7 +146,9 @@ export default function ModelCompareView({
     const [shown, setShown] = useState(versions[0]?.key ?? "");
     const [stands, setStands] = useState(false);
     const version = versions.find((v) => v.key === shown) ?? versions[0];
-    const scene = useParsed(version?.bytes ?? null);
+    const parsed = useParsed(version?.bytes ?? null);
+    const scene = parsed.scene;
+    const failed = parsed.failed || !!version?.failed;
 
     return (
         <div className="flex flex-col gap-12" data-testid="model-compare">
@@ -171,7 +184,15 @@ export default function ModelCompareView({
                     </Suspense>
                     <OrbitControls makeDefault enableDamping />
                 </Canvas>
-                {!scene && (
+                {failed && (
+                    <p
+                        className="text-sub text-text-subtitle absolute inset-x-16 top-1/2 -translate-y-1/2 text-center"
+                        data-testid="model-compare-failed"
+                    >
+                        {t("props.import.compare.drawFailed")}
+                    </p>
+                )}
+                {!scene && !failed && (
                     <SpinnerGapIcon
                         size={32}
                         className="text-text-subtitle absolute top-1/2 left-1/2 -translate-1/2 animate-spin"

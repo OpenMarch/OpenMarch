@@ -174,7 +174,10 @@ export interface ModelSidecar {
     stand: { atM: [number, number]; topM: number } | null;
     triangles: number;
     distantTriangles: number;
-    /** The level chosen on the review (#1091); missing on models imported before it: Light */
+    /**
+     * The level chosen on the review (#1091). Missing when there was nothing to choose (a model
+     * within the Light cap) and on models imported before it, which are within the cap too.
+     */
     detail?: DetailLevel;
     /** Triangles in the `light` part, beside a heavier level */
     lightTriangles?: number;

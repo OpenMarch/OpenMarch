@@ -9,7 +9,7 @@
 export const MODEL_ASSET_KIND = "model";
 
 /** Bump when the stored output changes for the same input and choices. */
-export const MODEL_IMPORT_VERSION = 1;
+export const MODEL_IMPORT_VERSION = 2;
 
 /**
  * The Light level: what a prop model is simplified to by default (props-spec section 3), and

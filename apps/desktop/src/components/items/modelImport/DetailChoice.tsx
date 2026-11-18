@@ -84,6 +84,7 @@ export default function DetailChoice({
                       key: "other",
                       label: label("original"),
                       bytes: before?.status === "ready" ? before.model : null,
+                      failed: before?.status === "failed",
                       testId: "model-compare-other",
                   },
               ];
@@ -155,13 +156,6 @@ export default function DetailChoice({
                             <ModelCompareView versions={versions} />
                         </Suspense>
                     )}
-                    {comparing &&
-                        row.applied !== "original" &&
-                        before?.status === "failed" && (
-                            <p className="text-sub text-text-subtitle">
-                                <T keyName="props.import.compare.originalFailed" />
-                            </p>
-                        )}
                 </DialogContent>
             </Dialog>
         </section>

@@ -1513,7 +1513,7 @@
                 "hint": "Glisser pour tourner, défiler pour zoomer",
                 "stands": "Depuis les gradins",
                 "closeUp": "De près",
-                "originalFailed": "Impossible de charger l’original."
+                "drawFailed": "Impossible de dessiner cette version."
             },
             "size": {
                 "title": "Taille",

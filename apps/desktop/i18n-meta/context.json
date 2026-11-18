@@ -3392,7 +3392,7 @@
     "props.import.compare.hint": "Small hint under the 3D comparison: drag with the mouse or finger to turn the model, scroll to zoom.",
     "props.import.compare.stands": "Button in the 3D comparison that moves the camera 30 m away, as an audience member in the stands would see the prop.",
     "props.import.compare.closeUp": "Button in the 3D comparison that moves the camera back close to the model.",
-    "props.import.compare.originalFailed": "Shown in the 3D comparison when the original version of the model couldn't be prepared.",
+    "props.import.compare.drawFailed": "Shown in the middle of the 3D comparison when the selected version of the model couldn't be prepared or drawn.",
     "props.import.size.title": "Screen-reader name of the section confirming the model's real size.",
     "props.import.size.value": "The imported model's real size in meters: width × depth, then height. Numbers are already formatted. Keep the × sign and the m unit symbol.",
     "props.import.size.question": "Under the model's size on the import review: asks the user to confirm the size, and to choose the file's unit if the size is wrong.",

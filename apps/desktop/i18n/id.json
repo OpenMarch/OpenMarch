@@ -1513,7 +1513,7 @@
                 "hint": "Seret untuk memutar, gulir untuk memperbesar",
                 "stands": "Dari tribun",
                 "closeUp": "Dekat",
-                "originalFailed": "Tidak dapat memuat yang asli."
+                "drawFailed": "Versi ini tidak dapat digambar."
             },
             "size": {
                 "title": "Ukuran",

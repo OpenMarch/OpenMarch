@@ -143,8 +143,11 @@ export async function importModel(
                 ? await makeLight(io, doc)
                 : null;
         if (detail.row) detail.row.lightTriangles = light?.triangles ?? null;
-        const distant = await makeDistant(io, doc, env.images);
-        const derived = await derive(doc, env.images);
+        // From the Light copy when there is one: the same shapes, without building a record per
+        // triangle of a model of millions (#1091, measured: 4M triangles took 6 GB)
+        const lighter = light?.doc ?? doc;
+        const distant = await makeDistant(io, lighter, env.images);
+        const derived = await derive(lighter, env.images, doc);
         const sidecar: ModelSidecar = {
             format: "openmarch-model/1",
             importVersion: MODEL_IMPORT_VERSION,
@@ -154,7 +157,7 @@ export async function importModel(
             stand: derived.stand,
             triangles: sceneTriangles(sceneOf(doc)),
             distantTriangles: distant.triangles,
-            detail: detail.level,
+            ...(detail.row ? { detail: detail.level } : {}),
             ...(light ? { lightTriangles: light.triangles } : {}),
             importNotes: {
                 needsChoice: report.needsChoice,
@@ -399,6 +402,9 @@ async function dropExtensions(
 const isPlausible = (largestM: number) =>
     largestM >= PLAUSIBLE_SIZE_M.min && largestM <= PLAUSIBLE_SIZE_M.max;
 
+/** The node `normalize` turns and scales the scene with, and `placeOnGround` moves */
+const ROOT_NODE = "OM_import_root";
+
 /**
  * Meters, +Y up, the front toward +Z: one new root node scales and turns the scene
  * (`placeOnGround` moves it later). Returns the turn applied and the node.
@@ -457,7 +463,7 @@ function normalize(
     const turn = choices.turn ?? 0;
     report.needsChoice.push({ code: "turn", preselected: 0, applied: turn });
 
-    const root = doc.createNode("OM_import_root");
+    const root = doc.createNode(ROOT_NODE);
     root.setScale([factor, factor, factor]);
     // Turn about +Y (counter-clockwise from above), after standing it up
     const half = (turn * Math.PI) / 360;
@@ -558,20 +564,34 @@ async function fitTriangles(
     return { level: applied, row };
 }
 
-/** The Light copy kept beside a heavier level: the finished model, simplified to the cap. */
+/**
+ * The Light copy kept beside a heavier level: the finished model, simplified to the cap and set
+ * back on the ground, since simplifying can take away its lowest points (thin legs, a pole's
+ * foot), so the fallback's swap doesn't make it float.
+ */
 async function makeLight(
     io: WebIO,
     doc: Document,
-): Promise<{ bytes: Uint8Array; triangles: number }> {
+): Promise<{ bytes: Uint8Array; triangles: number; doc: Document }> {
     const light = cloneDocument(doc);
     const scene = sceneOf(light);
     await simplifyTo(light, scene, TRIANGLE_CAP);
+    const lowest = getBounds(scene).min[1];
+    const root = light
+        .getRoot()
+        .listNodes()
+        .find((n) => n.getName() === ROOT_NODE);
+    if (root && Math.abs(lowest) > 1e-6) {
+        const [x, y, z] = root.getTranslation();
+        root.setTranslation([x, y - lowest, z]);
+    }
     await light.transform(
         prune({ keepAttributes: true, keepSolidTextures: true }),
     );
     return {
         bytes: await io.writeBinary(light),
         triangles: sceneTriangles(scene),
+        doc: light,
     };
 }
 
@@ -686,9 +706,13 @@ async function makeDistant(
 
 // ------------------------------------------------------------------ 2D and thumbnail
 
-async function derive(doc: Document, images: ImageCodec) {
+/**
+ * What 2D needs, from `doc` (the Light copy above Light); the size from `sizeOf`, the stored
+ * model, which simplifying may have trimmed a hair.
+ */
+async function derive(doc: Document, images: ImageCodec, sizeOf: Document) {
     const scene = sceneOf(doc);
-    const { min, max } = getBounds(scene);
+    const { min, max } = getBounds(sceneOf(sizeOf));
     const triangles = worldTriangles(scene);
     const top = topAt(triangles, 0, 0);
     const colors = new Map<Material | null, [number, number, number]>();

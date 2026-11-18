@@ -1513,7 +1513,7 @@
                 "hint": "Arraste para girar, role para aproximar",
                 "stands": "Da arquibancada",
                 "closeUp": "De perto",
-                "originalFailed": "Não foi possível carregar o original."
+                "drawFailed": "Não foi possível desenhar esta versão."
             },
             "size": {
                 "title": "Tamanho",

@@ -78,7 +78,6 @@ export function stepQualityFallback(
     return true;
 }
 
-/** The message logged (once) when the window switches to `low`. */
 /**
  * What the fallback does when it fires (#1091): first, when the view draws heavy imported models
  * (a level above Light, which keep a Light copy), draw those copies and measure again; only then
@@ -96,4 +95,5 @@ export function fallbackStep(state: {
 /** Logged when the fallback's first step draws heavy imported models' Light copies (#1091) */
 export const LIGHTEN_LOG_MESSAGE = `3D View: below ${FALLBACK_MIN_FPS} fps for ${FALLBACK_AFTER_S} s; drawing heavy imported models' Light copies.`;
 
+/** The message logged (once) when the window switches to `low`. */
 export const FALLBACK_LOG_MESSAGE = `3D View: below ${FALLBACK_MIN_FPS} fps for ${FALLBACK_AFTER_S} s; switched to low quality (no shadows, half crowd).`;

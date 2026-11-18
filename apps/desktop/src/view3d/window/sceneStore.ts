@@ -231,6 +231,7 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
                     qualityMode: mode,
                     quality: startQuality(mode, get().softwareGl),
                     autoLowered: false,
+                    heavyModelsLightened: false,
                 });
         }
         if (key === null || key === RESOLUTION_STORAGE_KEY)

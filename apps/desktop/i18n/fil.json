@@ -1513,7 +1513,7 @@
                 "hint": "I-drag para iikot, i-scroll para mag-zoom",
                 "stands": "Mula sa stands",
                 "closeUp": "Malapitan",
-                "originalFailed": "Hindi ma-load ang orihinal."
+                "drawFailed": "Hindi maiguhit ang bersyong ito."
             },
             "size": {
                 "title": "Laki",

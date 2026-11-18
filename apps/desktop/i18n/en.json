@@ -1515,7 +1515,7 @@
                 "hint": "Drag to turn, scroll to zoom",
                 "stands": "From the stands",
                 "closeUp": "Close up",
-                "originalFailed": "Couldn't load the original."
+                "drawFailed": "Couldn't draw this version."
             },
             "size": {
                 "title": "Size",
