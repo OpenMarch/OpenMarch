@@ -413,10 +413,10 @@ test.describe("Basic mode, a marcher with a move across a page flag", () => {
 
         await dragMarcher(page, "T3", { x: 40, y: -30 });
         await expect(lockToast(page)).toBeVisible();
-        // A drag reaches the writer, whose refusal (`notSimple`) words it for
-        // a group even when one marcher was dragged
+        // One dragged marcher is worded as one, as the lock toast is
+        // (`basicLockedRefusal`), not as a group
         await expect(lockToast(page)).toContainText(
-            "Some of these marchers use Expert moves on this page",
+            "One marcher uses Expert moves on this page. Switch to Expert to edit it.",
         );
         // It snaps back and nothing is saved
         await expect.poll(() => drawnSpot(page, "T3")).toBe(t3);

@@ -43,7 +43,7 @@ import {
     useTimelineResolverStore,
 } from "./timelineStore";
 import { toastLockedMarchers, withoutLockedMarchers } from "./basicLocks";
-import { TimelineEditRefusedError } from "./timelineEditRefusals";
+import { basicLockedRefusal } from "./timelineEditRefusals";
 
 /**
  * **Move them too** in timeline mode (`utilities/moveThemToo.ts`): after a coordinate edit that
@@ -344,9 +344,7 @@ export async function moveMarchersAndOfferFollowUp({
     // the edit is refused, and the refusal's toast offers Switch to Expert
     const editable = withoutLockedMarchers(target, requested);
     if (editable.moves.length === 0 && editable.locked.length > 0)
-        throw new TimelineEditRefusedError("notSimple", {
-            marcherIds: editable.locked,
-        });
+        throw basicLockedRefusal(editable.locked);
     const moves = editable.moves;
     const keepUnchanged =
         setUnmovedFrom !== undefined &&

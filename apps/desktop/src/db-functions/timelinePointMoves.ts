@@ -3,7 +3,7 @@ import { createResolver, validateDestination, type XY } from "@openmarch/core";
 import { schema } from "@/global/database/db";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { marcherSimpleOnBox, type BasicRow } from "@/timeline/basicSimple";
-import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
+import { basicLockedRefusal } from "@/timeline/timelineEditRefusals";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { assertValid, refuse } from "./timelineErrors";
@@ -81,7 +81,7 @@ import {
  *
  * Refused before any write: a beat outside `(a, b]` or not whole, a box that isn't a page's box,
  * a marcher named twice, an invalid position (`E-ARGS` or the validator's code), and any listed
- * marcher that isn't simple on the box (`TimelineEditRefusedError("notSimple")`).
+ * marcher that isn't simple on the box (`notSimple`, worded by count: `basicLockedRefusal`).
  */
 
 type Box = BeatRange;
@@ -179,10 +179,7 @@ const readBoxState = async (
             labels.length === 1
                 ? `Marcher ${labels[0]} uses Expert moves on this page. Switch to Expert to edit it.`
                 : `Marchers ${labels.join(", ")} use Expert moves on this page. Switch to Expert to edit them.`;
-        throw new TimelineEditRefusedError("notSimple", {
-            marcherIds: locked,
-            message,
-        });
+        throw basicLockedRefusal(locked, message);
     }
     const timelineIds = [
         ...new Set([...inBox.values()].flat().map((r) => r.timelineId)),
