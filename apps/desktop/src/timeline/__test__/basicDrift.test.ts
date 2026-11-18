@@ -318,6 +318,48 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         ]);
     });
 
+    // #485 in Basic, the part Expert's range writer keeps too (`ownPageMoves`): a member whose
+    // only move over the page is its own page move still goes back onto the page's start by
+    // losing it, so the page follows the one before, where the shape is already placed.
+    it("a shape placed again where the page starts takes members' own page moves, and the earlier page's shape carries", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(async () => {
+            const made = await show(db);
+            const all = [made.a, made.b, made.c];
+            await placeLine(db, all, {
+                kind: "point",
+                beat: PAGE2.end,
+                box: PAGE2,
+            });
+            await edit(
+                db,
+                { kind: "point", beat: PAGE3.end, box: PAGE3 },
+                all.map((marcherId) => ({ marcherId, xy: FAR })),
+            );
+            expect(await spansOf(db, made.a)).toEqual([
+                [9, 17],
+                [17, 25],
+            ]);
+            return made;
+        });
+        if (!ids) return;
+        const all = [ids.a, ids.b, ids.c];
+        await placeLine(db, all, {
+            kind: "point",
+            beat: PAGE3.end,
+            box: PAGE3,
+        });
+        expect(await spansOf(db, ids.a)).toEqual([[9, 17]]);
+        expect(all.map((id) => resolver().positionAt(id, 25))).toEqual([
+            [100, 50],
+            [120, 50],
+            [140, 50],
+        ]);
+        expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+    });
+
     // BUG 2: a recipe lists only marchers whose rows are in its move (`saveShapeRecipeInTransaction`).
     // Basic's mid-page positions put each marcher's rows in moves of their own ([13, 17) for a,
     // [9, 17) for the others), so a shape placed at the flag keeps only the members of one of

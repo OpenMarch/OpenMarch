@@ -25,6 +25,7 @@ import { hasHeldMarksTable, readHeldMarks } from "./timelineHeldArrival";
 import {
     isPageBox,
     marcherLabel,
+    ownPageMoves,
     refuseDuplicateMarchers,
     samePosition,
     type TimelineMarcherMove,
@@ -55,7 +56,11 @@ import {
  * **Drag back:** on a move's end, a position equal to where that move starts removes the point:
  * the move merges with the next move starting at P (`[r.start, next.end)` → next's destination),
  * or, with none (a hold or the flag follows), the move is deleted, as UI-18's "back onto the start
- * clears the move". A merged move arrives where the next move did.
+ * clears the move". A merged move arrives where the next move did. A shape's write
+ * (`keepUnchanged`) only removes the point this way when the move is the marcher's own page move
+ * (`ownPageMoves`), as Expert's range writer does: in a shared move (a converted page's) or a
+ * mid-page one its ending is set there instead, so a shape placed where its members start keeps
+ * them in the move its recipe is saved in (#485).
  *
  * **A merge that goes nowhere** (drag back or **Remove this count's position**, arriving where the
  * first move starts) is deleted instead of written: a point set in a hold and then removed leaves
@@ -339,6 +344,11 @@ const planPoint = async (
     move: TimelineMarcherMove,
     clearPage: boolean,
     keepUnchanged: boolean,
+    /**
+     * A shape's write (`keepUnchanged`): the marchers a drag back takes out, those whose move
+     * here is their own page move. Null for any other edit, where a drag back always does
+     */
+    dragBackOnly: ReadonlySet<number> | null,
 ): Promise<void> => {
     const { marcherId } = move;
     const rows = state.rowsOf(marcherId);
@@ -382,8 +392,13 @@ const planPoint = async (
     // would take for a move back onto its start
     if (ending && still) return;
     if (ending) {
-        // Back onto where the move starts: the point goes
-        if (samePosition(point, await at(ending.start))) {
+        // Back onto where the move starts: the point goes. A shape's members are set there
+        // instead, in a move others share or a mid-page one, so its recipe has a move holding
+        // them (#485, as the range writer)
+        if (
+            (!dragBackOnly || dragBackOnly.has(marcherId)) &&
+            samePosition(point, await at(ending.start))
+        ) {
             const next = rows.find((r) => r.start === beat);
             if (next) {
                 await planMerge(plan, state, ending, next);
@@ -562,9 +577,32 @@ export async function setPositionsAtBeatInTransaction({
         box,
         moves.map((m) => m.marcherId),
     );
+    // A shape's write sets every member where the shape is: back where the page starts, only a
+    // marcher's own page move is deleted, never its part of a shared move (#485)
+    const dragBackOnly = keepUnchanged
+        ? new Set(
+              (
+                  await ownPageMoves(
+                      tx,
+                      await readPageGrid(tx),
+                      box,
+                      moves.map((m) => m.marcherId),
+                  )
+              ).keys(),
+          )
+        : null;
     const plan = emptyPlan();
     for (const move of moves)
-        await planPoint(plan, state, box, beat, move, clearPage, keepUnchanged);
+        await planPoint(
+            plan,
+            state,
+            box,
+            beat,
+            move,
+            clearPage,
+            keepUnchanged,
+            dragBackOnly,
+        );
     return await writePlan(tx, plan);
 }
 
