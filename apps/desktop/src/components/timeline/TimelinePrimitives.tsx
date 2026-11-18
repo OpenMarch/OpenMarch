@@ -3115,6 +3115,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
     onAddPage,
     onAddSubsetPage,
     addPageNames,
+    basicPoint,
 }: {
     model: TimelineViewModel;
     positionBeat: BeatPosition;
@@ -3147,6 +3148,11 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
     onAddSubsetPage?: () => void;
     /** The new page's names, after the menu's entries */
     addPageNames?: { page: string; subset: string };
+    /**
+     * Basic: the mid-page tick the playhead covers, whose **Remove this count's position** its
+     * menu offers too (`AddPageFlagMenu`'s `point`)
+     */
+    basicPoint?: { onRemove: () => void; reason: string | null };
 }) {
     const { t } = useTranslate();
     const keySteps = useArrowKeySteps(onSeek);
@@ -3204,6 +3210,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
             onAddPage={onAddPage}
             onAddSubsetPage={onAddSubsetPage}
             names={addPageNames}
+            point={basicPoint}
         >
             <button
                 ref={anchorRef}
@@ -3211,7 +3218,7 @@ export const TimelinePlayhead = memo(function TimelinePlayhead({
                 data-testid="timeline-playhead"
                 data-timeline-scrub="true"
                 // A finger's long press opens its menu (tablet 3.4), not the button's hint
-                data-own-long-press={onAddPage ? "" : undefined}
+                data-own-long-press={onAddPage || basicPoint ? "" : undefined}
                 aria-label={t("timeline.playhead.label", {
                     position: getPlayheadReadout(model, positionBeat).spoken,
                 })}

@@ -8,7 +8,11 @@ import {
     KEEP_MENU_EVENTS,
     TIMELINE_MENU_CONTENT_CLASS,
 } from "./TimelineRangeMenu";
-import { MENU_ITEM_CLASS } from "@/components/ui/popupClasses";
+import {
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
+import { BasicPointRemoveItem } from "./TimelineBasicLayers";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 /**
@@ -21,53 +25,74 @@ import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
  * there's no menu and a right-click passes through. The trigger stays mounted either way, so the
  * playhead button isn't remounted (and doesn't lose focus mid arrow-key step) as `onAddPage` comes
  * and goes.
+ *
+ * In Basic, when the playhead covers a mid-page tick (`basicPointUnderPlayhead`), `point` adds the
+ * tick's **Remove this count's position** (with its reason when it can't run), since the playhead
+ * takes the right-click and long press there. With only `point`, that's the whole menu.
  */
 export function AddPageFlagMenu({
     onAddPage,
     onAddSubsetPage,
     names,
+    point,
     children,
 }: {
     onAddPage?: () => void;
     onAddSubsetPage?: () => void;
     names?: { page: string; subset: string };
+    /** The covered tick's Remove, and why it can't run (`null` when it can) */
+    point?: { onRemove: () => void; reason: string | null };
     children: ReactNode;
 }) {
+    const hasMenu = onAddPage !== undefined || point !== undefined;
     // Radix's context menu keeps its own open state, so this copy drops a menu left open when
-    // adding stops (Play), rather than letting it come back open with `onAddPage`
+    // its entries go (Play), rather than letting it come back open with them
     const [open, setOpen] = useState(false);
-    if (open && !onAddPage) setOpen(false);
+    if (open && !hasMenu) setOpen(false);
     return (
         <ContextMenu.Root onOpenChange={setOpen}>
             {/* A right-click on the playhead is its own, not the surface's range menu */}
             <ContextMenu.Trigger
                 asChild
-                disabled={!onAddPage}
+                disabled={!hasMenu}
                 onContextMenu={
-                    onAddPage ? (event) => event.stopPropagation() : undefined
+                    hasMenu ? (event) => event.stopPropagation() : undefined
                 }
             >
                 {children}
             </ContextMenu.Trigger>
-            {open && onAddPage && (
+            {open && hasMenu && (
                 <ContextMenu.Portal>
                     <ContextMenu.Content
                         data-testid="timeline-add-page-flag-menu"
                         {...KEEP_MENU_EVENTS}
                         className={TIMELINE_MENU_CONTENT_CLASS}
                     >
-                        <MenuEntry
-                            testId="timeline-add-page"
-                            action="timelineCreatePageAtPlayhead"
-                            onSelect={onAddPage}
-                            name={names?.page}
-                        />
-                        {onAddSubsetPage && (
+                        {onAddPage && (
+                            <MenuEntry
+                                testId="timeline-add-page"
+                                action="timelineCreatePageAtPlayhead"
+                                onSelect={onAddPage}
+                                name={names?.page}
+                            />
+                        )}
+                        {onAddPage && onAddSubsetPage && (
                             <MenuEntry
                                 testId="timeline-add-subset-page"
                                 action="timelineCreateSubsetAtPlayhead"
                                 onSelect={onAddSubsetPage}
                                 name={names?.subset}
+                            />
+                        )}
+                        {onAddPage && point && (
+                            <ContextMenu.Separator
+                                className={MENU_SEPARATOR_CLASS}
+                            />
+                        )}
+                        {point && (
+                            <BasicPointRemoveItem
+                                reason={point.reason}
+                                onRemove={point.onRemove}
                             />
                         )}
                     </ContextMenu.Content>

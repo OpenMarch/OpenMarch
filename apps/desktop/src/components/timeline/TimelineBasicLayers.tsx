@@ -101,6 +101,33 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
  * The selected marchers' mid-page positions (UI-19): a tick through the box body at each one.
  * Clicking it seeks there; its right-click menu removes it.
  */
+/** Half the playhead's grab width (its button is `w-12`), in pixels */
+const PLAYHEAD_HALF_WIDTH = 6;
+
+/**
+ * The tick the paused playhead covers, if any: the nearest one whose middle is under the
+ * playhead's button (z-50, above the ticks' z-20). A right-click or long press there reaches the
+ * playhead, so its menu offers the tick's **Remove this count's position** too, and the playhead
+ * keeps its drag and scrub.
+ */
+export function basicPointUnderPlayhead<P extends { readonly beat: number }>(
+    points: readonly P[] | undefined,
+    positionBeat: number,
+    pixelsPerBeat: number,
+): P | undefined {
+    const at = beatToX(positionBeat, pixelsPerBeat);
+    let best: P | undefined;
+    let bestDistance = Infinity;
+    for (const point of points ?? []) {
+        const distance = Math.abs(beatToX(point.beat, pixelsPerBeat) - at);
+        if (distance <= PLAYHEAD_HALF_WIDTH && distance < bestDistance) {
+            best = point;
+            bestDistance = distance;
+        }
+    }
+    return best;
+}
+
 /**
  * **Remove this count's position**, in a tick's menu (and the playhead's, when it covers a tick).
  * With a `reason` it can't run: it stays in the menu, dimmed, with the reason under it, and a
