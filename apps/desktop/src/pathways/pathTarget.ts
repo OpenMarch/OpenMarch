@@ -316,7 +316,12 @@ export function sourceOfCopies<
 
 const xy = (p: readonly [number, number]): XY => ({ x: p[0], y: p[1] });
 
-/** One marcher's move at `beat`, as `findPathTarget` picks it, or null */
+/**
+ * One marcher's move at `beat`, or null: the row holding the beat or arriving on it (`moveIsAt`),
+ * the top layer when rows overlap. A row leaving from the beat never is: the playhead on a page
+ * flag is that page's, so the next page's move isn't at it even when nothing arrives there
+ * (owner, 2026-11-18: a trail showed with the page before it selected).
+ */
 async function moveAt(db: DbConnection, marcherId: number, beat: number) {
     const A = schema.timeline_assignments;
     const T = schema.timeline_transitions;
@@ -334,9 +339,9 @@ async function moveAt(db: DbConnection, marcherId: number, beat: number) {
         .orderBy(desc(A.layer), desc(A.start_beat))
         .all();
     return (
-        row.find((r) => r.row.start_beat < beat && beat <= r.row.end_beat) ??
-        row.find((r) => r.row.start_beat <= beat && beat < r.row.end_beat) ??
-        null
+        row.find((r) =>
+            moveIsAt({ start: r.row.start_beat, end: r.row.end_beat }, beat),
+        ) ?? null
     );
 }
 
@@ -874,9 +879,10 @@ export async function findTrailDrawTarget(
 }
 
 /**
- * The move of `marcherId` at `beat` that a path is drawn on: the row that holds the beat, the one
- * arriving there when the beat is on its end (a page flag shows where the page arrives), the top
- * layer when rows overlap. Null when the marcher has no move there.
+ * The move of `marcherId` at `beat` that a path is drawn on (`moveAt`): the row that holds the
+ * beat, or arrives there when the beat is on its end (a page flag shows where the page arrives),
+ * the top layer when rows overlap. Null when the marcher has no move there, a move leaving from
+ * the beat included.
  */
 export async function findPathTarget(
     db: DbConnection,
@@ -884,25 +890,7 @@ export async function findPathTarget(
     marcherId: number,
     beat: number,
 ): Promise<PathTarget | null> {
-    const A = schema.timeline_assignments;
-    const T = schema.timeline_transitions;
-    const row = await db
-        .select({ row: A, transition: T })
-        .from(A)
-        .innerJoin(T, eq(A.transition_id, T.id))
-        .where(
-            and(
-                eq(A.marcher_id, marcherId),
-                lte(A.start_beat, beat),
-                gt(A.end_beat, beat - 1e-9),
-            ),
-        )
-        .orderBy(desc(A.layer), desc(A.start_beat))
-        .all();
-    // On a row's end the arriving one wins; inside one, the one holding the beat
-    const pick =
-        row.find((r) => r.row.start_beat < beat && beat <= r.row.end_beat) ??
-        row.find((r) => r.row.start_beat <= beat && beat < r.row.end_beat);
+    const pick = await moveAt(db, marcherId, beat);
     if (!pick) return null;
     const { transition } = pick;
     // A member of a group path has no path of its own (step 15): drawing gives it one (AP-R1)
@@ -1051,22 +1039,20 @@ export function refitNeeded(target: PathTarget): boolean {
 }
 
 /**
- * Whether a lane's transition `[start, end]` is the walker's move at `beat`, by the rule a
- * selected marcher's path is found by (`findPathTarget`): the move holding the beat, or arriving
- * on it when the beat is its end. `arrives` says whether the walker has another row arriving on
- * `beat` (its end is `beat`), which wins over one leaving from it.
+ * Whether a move `[start, end]` is at `beat`: it holds the beat, or arrives on it when the beat is
+ * its end. One leaving from the beat isn't, even with nothing arriving there: the playhead on a
+ * page flag is that page's, so only that page's move shows (owner, 2026-11-18). Every path
+ * (own, group, trail, Paths All) and every visual of one is found by this rule.
  */
 export function moveIsAt(
     span: { start: number; end: number },
     beat: number,
-    arrives: boolean,
 ): boolean {
-    if (span.start < beat && beat <= span.end) return true;
-    return span.start === beat && beat < span.end && !arrives;
+    return span.start < beat && beat <= span.end;
 }
 
 /**
- * Every route's lanes and walkers, and each walker's rows, read once per timeline version so a
+ * Every route's lanes and walkers, read once per timeline version so a
  * playhead step only filters them (`pathObjectsAt`). Targets are built the first time a route is
  * at the playhead and kept, so the same route gives the same target (and drawing) until the next
  * version.
@@ -1074,20 +1060,12 @@ export function moveIsAt(
 export interface PathObjectIndex {
     /** Each route's entries (`readRoutes`), by route id in id order */
     readonly routes: ReadonlyMap<number, readonly MoveRoute[]>;
-    /** Every row of each marcher that walks a route, for "a row arriving on the beat" */
-    readonly rows: ReadonlyMap<
-        number,
-        readonly { start: number; end: number }[]
-    >;
     /** Targets built so far, for `drills` */
     targets: Map<number, PathTarget | null>;
     drills: ReadonlyMap<number, string> | null;
 }
 
-/** How many marcher ids go in one `IN (...)`, under SQLite's bound-parameter limit */
-const IDS_PER_QUERY = 500;
-
-/** Reads the routes and their walkers' rows for `pathObjectsAt` (spec I.10, AP-O2). */
+/** Reads the routes for `pathObjectsAt` (spec I.10, AP-O2). */
 export async function readPathObjectIndex(
     db: DbConnection,
 ): Promise<PathObjectIndex> {
@@ -1098,32 +1076,13 @@ export async function readPathObjectIndex(
         list.push(r);
         routes.set(r.routeId, list);
     }
-    const A = schema.timeline_assignments;
-    const walkers = [...new Set(all.map((r) => r.marcherId))];
-    const rows = new Map<number, { start: number; end: number }[]>();
-    for (let i = 0; i < walkers.length; i += IDS_PER_QUERY) {
-        const found = await db
-            .select({
-                marcherId: A.marcher_id,
-                start: A.start_beat,
-                end: A.end_beat,
-            })
-            .from(A)
-            .where(inArray(A.marcher_id, walkers.slice(i, i + IDS_PER_QUERY)))
-            .all();
-        for (const r of found) {
-            const list = rows.get(r.marcherId) ?? [];
-            list.push({ start: r.start, end: r.end });
-            rows.set(r.marcherId, list);
-        }
-    }
-    return { routes, rows, targets: new Map(), drills: null };
+    return { routes, targets: new Map(), drills: null };
 }
 
 /**
  * Every path in a move at `beat` (spec I.10, AP-O2), from `index`: the paths Paths **All** draws
  * and lets a click select with nothing selected. A route is at the beat when one of its walkers'
- * rows on its lanes is that walker's move there (`moveIsAt`). By route id. No database read: the
+ * rows on its lanes holds the beat or arrives on it (`moveIsAt`). By route id. No database read: the
  * same route gives the same target while `index` and `drills` are the same.
  */
 export function pathObjectsAt(
@@ -1136,17 +1095,10 @@ export function pathObjectsAt(
         index.targets = new Map();
         index.drills = drills;
     }
-    // A row arriving on the beat wins over one leaving from it
-    const arrives = (marcherId: number) =>
-        (index.rows.get(marcherId) ?? []).some(
-            (r) => r.start <= beat - 1e-9 && r.end > beat - 1e-9,
-        );
     const out: PathTarget[] = [];
     let all: MoveRoute[] | undefined;
     for (const [routeId, entries] of index.routes) {
-        const at = entries.some((r) =>
-            moveIsAt(r, beat, r.start === beat && arrives(r.marcherId)),
-        );
+        const at = entries.some((r) => moveIsAt(r, beat));
         if (!at) continue;
         let target = index.targets.get(routeId);
         if (target === undefined) {

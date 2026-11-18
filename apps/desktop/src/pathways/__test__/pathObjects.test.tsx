@@ -415,12 +415,12 @@ describe("Paths All draws a group path as its one line (QA-AP-O4)", () => {
         ]);
     });
 
-    it("a move is at the playhead when it holds it, or arrives on it; leaving from it only with nothing arriving", () => {
-        expect(moveIsAt({ start: 0, end: 8 }, 4, false)).toBe(true);
-        expect(moveIsAt({ start: 0, end: 8 }, 8, false)).toBe(true);
-        expect(moveIsAt({ start: 8, end: 16 }, 8, true)).toBe(false);
-        expect(moveIsAt({ start: 0, end: 8 }, 0, false)).toBe(true);
-        expect(moveIsAt({ start: 0, end: 8 }, 9, false)).toBe(false);
+    it("a move is at the playhead when it holds it, or arrives on it; never leaving from it, even with nothing arriving (owner, 2026-11-18)", () => {
+        expect(moveIsAt({ start: 0, end: 8 }, 4)).toBe(true);
+        expect(moveIsAt({ start: 0, end: 8 }, 8)).toBe(true);
+        expect(moveIsAt({ start: 8, end: 16 }, 8)).toBe(false);
+        expect(moveIsAt({ start: 0, end: 8 }, 0)).toBe(false);
+        expect(moveIsAt({ start: 0, end: 8 }, 9)).toBe(false);
     });
 });
 
@@ -702,16 +702,6 @@ describe("Paths All per playhead step (review of #737, S1, S2)", () => {
                 [5, [entry(3, 0, 8, null)]],
                 [6, [entry(4, 8, 16, null, 6)]],
             ]),
-            rows: new Map([
-                [3, [{ start: 0, end: 8 }]],
-                [
-                    4,
-                    [
-                        { start: 0, end: 8 },
-                        { start: 8, end: 16 },
-                    ],
-                ],
-            ]),
             targets: new Map(),
             drills: null,
         };
@@ -720,7 +710,7 @@ describe("Paths All per playhead step (review of #737, S1, S2)", () => {
         const at5 = pathObjectsAt(index, stillResolver, 5, drills);
         expect(at4.map((t) => t.routeId)).toEqual([5]);
         expect(at5[0]).toBe(at4[0]);
-        // On beat 8 marcher 4 arrives (its row [0, 8]), so its route leaving from 8 isn't at it
+        // On beat 8 route 6 leaves from it, so it isn't at it (route 5 arrives there)
         expect(
             pathObjectsAt(index, stillResolver, 8, drills).map(
                 (t) => t.routeId,
