@@ -14,8 +14,18 @@ import {
     FIELD_LAYER_ATTRIBUTE,
     subscribeFieldLayers,
 } from "@/components/canvas/fieldLayers";
+import { webChannel } from "@/utilities/webBuild";
 
 const GAP = 8;
+/** Toasts' distance from the window's edges */
+const EDGE = 12;
+/**
+ * FORK-ONLY, lab builds (lab.openmarch.com): the lab's feedback buttons (om-lab's widget) sit 20px
+ * from the window's bottom-right corner and are 48px tall, so toasts start 12px above them rather
+ * than under them, where testers couldn't read them
+ */
+export const LAB_FEEDBACK_CLEARANCE = 20 + 48 + 12;
+const isLabBuild = webChannel === "lab";
 /**
  * Room between a task's bar and a toast below it (#933): a whole touch target, so a finger aimed
  * at the bar's Done can't land on the toast's Undo
@@ -148,7 +158,8 @@ export function useTapToDismiss(enabled: boolean) {
  * Compact toasts in the window's bottom-right corner: tight padding, 16px icon, 320px wide (sonner's
  * is 356px), 12px from the edges. There they cover the inspector's bottom, clear of the timeline (it stops
  * at the inspector's edge) and its +; floating above the timeline put them over the field. Sonner swaps in its mobile offset and full
- * width at 600px or narrower (a small window, the web editor), so that offset is 12px too.
+ * width at 600px or narrower (a small window, the web editor), so that offset is 12px too. In a lab
+ * build they start above the lab's feedback buttons instead (`LAB_FEEDBACK_CLEARANCE`).
  */
 export default function Toaster() {
     const isTouch = useIsTouchMode();
@@ -158,18 +169,22 @@ export default function Toaster() {
     const dialogOpen = useDialogOpen(isTouch);
     const overlayOpen = sidebarPanelOpen || dialogOpen;
     useTapToDismiss(isTouch);
+    const bottom = isLabBuild ? LAB_FEEDBACK_CLEARANCE : EDGE;
+    const edges = { top: EDGE, right: EDGE, bottom, left: EDGE };
     return (
         <ToasterPrimitive
             visibleToasts={6}
-            offset={12}
-            mobileOffset={12}
+            offset={edges}
+            mobileOffset={edges}
             style={{ "--width": "320px" } as React.CSSProperties}
             {...(isTouch
                 ? {
                       position: overlayOpen
                           ? ("bottom-center" as const)
                           : ("top-center" as const),
-                      offset: overlayOpen ? { bottom: 16 } : { top: touchTop },
+                      offset: overlayOpen
+                          ? { bottom: isLabBuild ? LAB_FEEDBACK_CLEARANCE : 16 }
+                          : { top: touchTop },
                       className: "touch-toaster",
                       // Short notes go quickly. Toasts with a button pass their
                       // own longer duration (ACTION_TOAST_DURATION_MS or more),

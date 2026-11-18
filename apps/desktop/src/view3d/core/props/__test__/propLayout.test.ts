@@ -234,6 +234,19 @@ describe("propsAt", () => {
         expect(plain!.standPoint).toBeUndefined();
     });
 
+    it("stands an imported Platform prop at its model's top, scaled with the model", () => {
+        // A 2 × 1 m model whose top over its middle is 0.5 m, drawn at twice its size
+        const stage: PropInput = {
+            ...prop(1, "platform", [box(0, 4, 2, 1.6)]),
+            standTop: 0.5,
+            modelSizeM: { width: 2, depth: 1 },
+        };
+        const [solid] = propsAt([stage], 0, at({ 1: { x: 0, z: 0 } }));
+        expect(solid!.height).toBeCloseTo(1);
+        expect(platformTopAt([solid!], { x: 0.2, z: 0.2 })).toBeCloseTo(1);
+        expect(solid!.facesAcross).toBeUndefined();
+    });
+
     it("never stands a prop on an obstacle or a Floor prop", () => {
         const solids = byId(
             propsAt(

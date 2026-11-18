@@ -74,6 +74,12 @@ function mountEditor() {
         posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
     }
 
+    // The model import worker, for end-to-end tests until the import screen uses it (fork #998)
+    if (isPlaywrightSession)
+        void import("./showAssets/modelImport/modelImportTestApi").then((m) =>
+            m.installModelImportTestApi(),
+        );
+
     // Load saved language from electron store on app start
     window.electron
         ?.getLanguage()

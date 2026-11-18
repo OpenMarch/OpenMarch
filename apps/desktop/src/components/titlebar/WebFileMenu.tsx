@@ -18,9 +18,18 @@ import {
 } from "@/shortcuts/registry";
 import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import { useWebLibraryStore } from "@/stores/WebLibraryStore";
+import {
+    MENU_CONTENT_CLASS,
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
+import { twMerge } from "tailwind-merge";
 
-const itemClass =
-    "rounded-4 text-body data-[highlighted]:bg-fg-2 flex cursor-pointer items-center justify-between gap-24 px-8 py-4 outline-hidden data-[disabled]:pointer-events-none data-[disabled]:opacity-50";
+// The shared entry, with its shortcut pushed to the right edge
+const itemClass = twMerge(
+    MENU_ITEM_CLASS,
+    "justify-between gap-24 data-[disabled]:pointer-events-none",
+);
 
 const FILE_ACTIONS: ActionId[] = [
     "launchNewFileDialogue",
@@ -28,12 +37,14 @@ const FILE_ACTIONS: ActionId[] = [
     "launchSaveFileDialogue",
     "closeFile",
     "openSettings",
+    "openHelp",
 ];
 
 /**
  * The web build's stand-in for the native app menu: the file actions, with
  * "Save a copy" as Back up (share or download the file: the show is already
- * saved in the browser) and the show's Versions.
+ * saved in the browser) and the show's Versions. Help is here too: on a tablet the
+ * title bar's ? gives its room to the toolbar tabs (fork #1075).
  */
 export default function WebFileMenu() {
     const { t } = useTranslate();
@@ -73,7 +84,7 @@ export default function WebFileMenu() {
             <DropdownMenuContent
                 align="start"
                 sideOffset={8}
-                className="rounded-6 border-stroke bg-bg-1 text-text z-50 flex min-w-[220px] flex-col border p-4 shadow-lg"
+                className={`${MENU_CONTENT_CLASS} min-w-220`}
             >
                 {item("launchNewFileDialogue")}
                 {item("launchLoadFileDialogue")}
@@ -89,8 +100,9 @@ export default function WebFileMenu() {
                 {item("exportVideo")}
                 {item("exportToMobile")}
                 {item("closeFile")}
-                <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
+                <DropdownMenuSeparator className={MENU_SEPARATOR_CLASS} />
                 {item("openSettings")}
+                {item("openHelp")}
             </DropdownMenuContent>
         </DropdownMenu>
     );

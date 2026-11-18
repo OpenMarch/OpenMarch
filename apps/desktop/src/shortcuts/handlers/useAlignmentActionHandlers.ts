@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { useTranslate } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -23,6 +22,19 @@ export function useAlignmentActionHandlers() {
     const hasSelection = ready && selectedMarchers.length > 0;
     // Align, distribute and swap line performers up: a selected prop isn't one more dot (C2.2)
     const hasPerformers = ready && selectedPerformers.length > 0;
+    // Why they're greyed out: nothing selected, or only props (which don't line up)
+    const noSelection = ready
+        ? t("actions.shape.noMarchersSelected")
+        : undefined;
+    const noPerformers =
+        ready && selectedMarchers.length > 0
+            ? t("actions.alignment.propsOnly")
+            : noSelection;
+    const forPerformers = {
+        enabled: hasPerformers,
+        disabledReason: noPerformers,
+    };
+    const forSelection = { enabled: hasSelection, disabledReason: noSelection };
     const updateCoordinates = useUpdateCoordinates();
 
     useActionHandler(
@@ -50,7 +62,8 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(roundedCoords);
         },
-        { enabled: ready },
+        // Nothing selected, nothing to round: greyed out, saying so, not a click that does nothing
+        forSelection,
     );
 
     useActionHandler("lockX", () => {
@@ -75,7 +88,7 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(alignedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -86,7 +99,7 @@ export function useAlignmentActionHandlers() {
             });
             updateCoordinates(alignedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -100,7 +113,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateCoordinates(distributedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -114,7 +127,7 @@ export function useAlignmentActionHandlers() {
                 });
             updateCoordinates(distributedCoords);
         },
-        { enabled: hasPerformers },
+        forPerformers,
     );
 
     useActionHandler(
@@ -125,7 +138,7 @@ export function useAlignmentActionHandlers() {
             );
             updateCoordinates(flippedCoords);
         },
-        { enabled: hasSelection },
+        forSelection,
     );
 
     useActionHandler(
@@ -136,20 +149,14 @@ export function useAlignmentActionHandlers() {
             );
             updateCoordinates(flippedCoords);
         },
-        { enabled: hasSelection },
+        forSelection,
     );
 
     useActionHandler(
         "swapMarchers",
         () => {
-            if (selectedPerformers.length !== 2) {
-                console.error(
-                    "Can only swap 2 marchers. Selected marchers:",
-                    selectedPerformers,
-                );
-                toast.error(t("actions.swap.mustSelectTwo"));
-                return;
-            }
+            // Greyed out otherwise, saying why
+            if (selectedPerformers.length !== 2) return;
             // Each marcher takes the other's position where the selection edits
             const pair = getSelectedPerformerPages();
             if (pair.length !== 2) {
@@ -162,6 +169,9 @@ export function useAlignmentActionHandlers() {
                 { ...pair[1], x: pair[0].x, y: pair[0].y },
             ]);
         },
-        { enabled: ready && selectedPerformers.length === 2 },
+        {
+            enabled: ready && selectedPerformers.length === 2,
+            disabledReason: ready ? t("actions.swap.selectTwo") : undefined,
+        },
     );
 }

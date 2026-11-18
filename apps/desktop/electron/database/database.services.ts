@@ -14,6 +14,11 @@ import {
     fileTooNewMessage,
     readUserVersion,
 } from "./fileVersion";
+import {
+    hasLeftoverJournal,
+    isFolderAccessError,
+    LEFTOVER_JOURNAL_STATUS,
+} from "./leftoverJournal";
 
 export { handleSqlProxyWithDb };
 
@@ -59,7 +64,8 @@ export function closePersistentConnection() {
  *
  * @param path the path to the database file
  * @returns 200 if successful, HTTP status codes if appropriate (426 when the
- * file is from a newer release; nothing is written to it), or -1 otherwise
+ * file is from a newer release; nothing is written to it; 423 when a leftover
+ * journal next to it can't be used), or -1 otherwise
  */
 export function setDbPath(path: string, isNewFile = false) {
     const failedDb = (message: string, statusCode: number = -1) => {
@@ -132,6 +138,20 @@ export function setDbPath(path: string, isNewFile = false) {
         }
 
         return 200;
+    } catch (err: unknown) {
+        // SQLite couldn't open a file next to the show: a leftover journal it must play back
+        // first, or a new journal in a folder the app may not write to (macOS folder access).
+        if (!isFolderAccessError(err)) throw err;
+        if (hasLeftoverJournal(path)) {
+            return failedDb(
+                `setDbPath: Leftover journal next to the file can't be used: ${path}-journal`,
+                LEFTOVER_JOURNAL_STATUS,
+            );
+        }
+        return failedDb(
+            `setDbPath: Cannot create the journal next to the file (missing folder access): ${path}`,
+            403,
+        );
     } finally {
         // setDbPath only validates connectivity; close this temporary handle.
         db.close();

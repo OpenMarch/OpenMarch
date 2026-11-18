@@ -98,6 +98,18 @@ phases [26.24].
   renderer's CSP) and stores a plain normalized GLB plus an OpenMarch
   sidecar. The 3D View keeps loading with bare `GLTFLoader` (three 0.186.1,
   no decoders).
+  Amended 2026-11-15 (ADR 0010, fork #996) and built in fork #998: the model
+  import runs in a renderer Web Worker shared by desktop and web
+  (`src/showAssets/modelImport/`), with its own CSP. It refuses before
+  decoding what can't work (picked files over 200 MB, a URI outside the
+  picked files, a required extension outside the allow-list, an image over
+  8192 px on an edge, more than 4× the triangle cap), then the validator's
+  errors; normalizes to meters, +Y up, the front toward +Z and the pivot at
+  the bottom center; simplifies past the cap; shrinks textures; and stores a
+  model, a distant version and a thumbnail, with the sidecar (real size,
+  facing, the plan from above, stand point, triangles, import notes) and
+  credits prefilled from `KHR_xmp_json_ld`, `asset.copyright` or a
+  Sketchfab-style `asset.extras`.
 - Steps: `gltf-validator` (errors block); reject `extensionsRequired` outside
   the allow-list (r186 `GLTFLoader` only warns); decode Draco and meshopt;
   measure bounds, triangles, texture sizes and joints; read `OM_*` nodes and
@@ -128,6 +140,22 @@ phases [26.24].
   "Models and artwork" (selected), "3D model (glb, gltf)", "Artwork (png,
   jpg, svg, pdf)" and "All Files".
   Drag-and-drop comes later [11].
+  As built in fork #999: the Props panel's Imported group has an **Import…**
+  tile (the `importModel` action), and dropping a `.glb` or `.gltf` with its
+  files on the editor starts an import too. Files are read in the page and
+  passed to the import worker as bytes. The review is a view of the Props panel
+  with the model's picture and a one-click turn, its size with the file's unit,
+  the three groups and the license fields; Add stores the model and lists it
+  under Imported, and its tile places it as a prop (`placeImportedModel`).
+  Since #1084 the turn is one of three buttons, **Rotate X**, **Rotate Y**
+  and **Rotate Z** (owner, 2026-11-17: an imported car lay on its side, and a
+  long model is never guessed Z-up). Y is the turn; X and Z tip the model a
+  quarter turn as the picture shows it, whatever the turn, so the three reach
+  all 24 ways a box can sit (`orientation.ts`; the choice is the `tilt`,
+  applied before the turn). A small X/Y/Z drawing in the picture's corner,
+  drawn from the picture's own viewpoint, lights the button's axis and shows
+  which way it swings while the button is pointed at, focused or just tapped.
+  The Z-up guess pre-selects the tilt and keeps its "Stand it up" check.
 - **Kind** (Prop, Equipment, Garment, Floor prop, Base floor): a picker sets
   it; a plain Library import asks for it as a required choice, pre-selected
   only from the Starter kit stamp, never from a guess. Size range, caps and
@@ -325,10 +353,31 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
 - Resizing only along declared stretch zones, or by an explicit uniform scale
   with a badge. A pole with a stretch zone along it fits every catalog length.
 - Triangles over the per-kind cap: flagged with one-click simplify and a
-  before/after preview. Over 4× the cap: rejected. Provisional caps:
+  before/after preview. Over 4× the cap: rejected. Since fork #1091
+  (owner, 2026-11-18) imported prop models aren't rejected for triangles
+  below a 5M sanity ceiling: the review offers **Light** (the 20k cap,
+  pre-selected), **Detailed** (100k, past 100k) and **Original**, says what
+  each adds to the show and how many performers one copy draws like, and
+  compares them in a 3D view you can turn. Above Light the show also stores a
+  Light copy (`parts.light`); the 3D View's automatic fallback draws those
+  copies first, then lowers the scene's quality. Provisional caps:
   Equipment 2k, Garment 3k per body type, Prop 20k, Base floor 5k, Floor
   prop 5k. Garment textures cap at 1024; Uniform part artwork caps at 1024
   on the long edge [owner, 2026-10-11, Q34, Q37].
+- **Texture caps per kind** (fork #998), longest edge, kept in each
+  texture's own format (PNG keeps its alpha): imported prop models 1024, and
+  256 in their distant version (at most 2,000 triangles and a quarter of the
+  model's, drawn beyond about 30 m). Equipment, Garments and prop Artwork
+  slots 1024; Floor props and Base floors 2048 (D-19). KTX2 textures aren't
+  imported: a file that requires them is refused, and an optional one is
+  dropped. Draco and meshopt input is decoded, never stored.
+- **As built in fork #1000:** an imported model draws at one factor of its
+  real size, the one that keeps its Outline's footprint area, so a prop
+  stretched one way grows evenly instead of distorting. Since fork #1078 the
+  handles and the Edit Prop fields resize it evenly too, so the stored size
+  stays the model's proportions. Stretch zones and a scale badge are still to
+  come. The distant version switches in beyond about
+  38 m and back inside 30 m, as the built-in equipment does.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A
   model is guessed Z-up when Z is its largest side and over 1.25× Y (floors

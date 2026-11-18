@@ -13,7 +13,10 @@ sidebar:
 
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Aside } from "@astrojs/starlight/components";
+
+<InShort>With the show open, select <Ui k="settings.title" /> › <Ui k="settings.database" /> › <Ui k="settings.repairDotsFile" />, then <Ui k="settings.repairDotsFile.confirm" />.</InShort>
 
 If a show opens but your changes fail with errors such as <Ui k="pages.updateFailed" /> or <Ui k="audio.beats.update.error" />, or a change is gone after you undo, redo or reopen the show, the file may be damaged. OpenMarch can copy everything in it into a new, clean file.
 

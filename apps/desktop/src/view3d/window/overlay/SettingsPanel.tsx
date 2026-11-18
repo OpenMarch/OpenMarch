@@ -1,27 +1,38 @@
 /**
- * The view settings panel (ui.md UI-2): the choices a designer makes once
- * per show or per computer, kept out of the way of the scene.
+ * The 3D View settings panel (ui.md UI-2): every choice about the 3D View, in
+ * the 3D View, kept out of the way of the scene. Three tabs, the first two
+ * split from the third by a rule:
  *
- * - Venue, saved with the show: the venue, its lighting, the crowd and its
- *   colors, and the end-zone lettering. Every change goes to the editor,
- *   which saves it with undo.
- * - Graphics: quality and resolution live in the app's Settings window (3D View section). Where
- *   there is no Settings window (the web preview), they are here too.
- * - The keyboard and mouse: the control scheme (also in the app's Settings
- *   window) and the controls it gives, so they can be found.
+ * - Venue and Performers, saved with the show: the venue, its lighting, the
+ *   crowd and the end zones; the uniforms, brass, tubas and flag silks. Every
+ *   change goes to the editor, which saves it with undo.
+ * - Preferences, saved on this computer only (ADR 0010 D-5): opening the 3D
+ *   View with a show (also in Settings › General), quality, resolution, the
+ *   control scheme, following a performer, and the keys, so they can be
+ *   found.
  *
- * It floats at the right and doesn't block the scene, so the viewer can
- * orbit while trying a look.
+ * Each tab says where its choices are saved in its first line. The panel
+ * floats at the right and doesn't block the scene, so the viewer can orbit
+ * while trying a look. The last tab used is remembered on this computer.
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { T, useTranslate } from "@tolgee/react";
-import { XIcon } from "@phosphor-icons/react";
-import { Input, Switch } from "@openmarch/ui";
+import { FileIcon, MonitorIcon, XIcon, type Icon } from "@phosphor-icons/react";
+import {
+    Input,
+    Switch,
+    TabContent,
+    TabItem,
+    Tabs,
+    TabsList,
+} from "@openmarch/ui";
 import clsx from "clsx";
 import Shortcut from "@/components/ui/Shortcut";
+import { FOLLOW_KEY, POV_KEY, useFollowStore } from "../camera/followStore";
 import { useView3dSceneStore } from "../sceneStore";
+import { setAutoOpen, useAutoOpenSetting } from "./autoOpenSetting";
 import { QUALITY_MODES } from "../qualityPreference";
-import { HAS_SETTINGS_WINDOW, RESOLUTIONS } from "../renderPrefs";
+import { RESOLUTIONS } from "../renderPrefs";
 import { type ControlScheme } from "../camera/controlScheme";
 import ControlSchemePicker from "../camera/ControlSchemePicker";
 import { Segmented } from "./Panel";
@@ -40,6 +51,33 @@ import {
 /** End-zone lettering longer than this doesn't fit at a readable size. */
 export const END_ZONE_TEXT_MAX = 24;
 
+export const SETTINGS_TABS = ["venue", "performers", "preferences"] as const;
+export type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+/** The last tab the viewer opened, a per-computer convenience. */
+export const SETTINGS_TAB_STORAGE_KEY = "view3d.settingsTab";
+
+export function loadSettingsTab(storage?: Storage): SettingsTab {
+    try {
+        const saved = (storage ?? window.localStorage).getItem(
+            SETTINGS_TAB_STORAGE_KEY,
+        );
+        return SETTINGS_TABS.includes(saved as SettingsTab)
+            ? (saved as SettingsTab)
+            : "venue";
+    } catch {
+        return "venue";
+    }
+}
+
+function saveSettingsTab(tab: SettingsTab) {
+    try {
+        window.localStorage.setItem(SETTINGS_TAB_STORAGE_KEY, tab);
+    } catch {
+        // Blocked storage: the panel opens on Venue next time
+    }
+}
+
 export function SettingsPanel({
     onClose,
     className,
@@ -51,11 +89,12 @@ export function SettingsPanel({
     const kit = useView3dSceneStore((s) => s.kit);
     const kitId = useView3dSceneStore((s) => s.kitId);
     const hasStands = !!kit && kit.seatRows.length > 0;
+    const [tab, setTab] = useState<SettingsTab>(() => loadSettingsTab());
 
     return (
         <section
             role="dialog"
-            aria-label={t("view3d.settings.title")}
+            aria-label={t("view3d.settings.panelTitle")}
             data-testid="view3d-settings"
             className={clsx(
                 "border-stroke bg-modal backdrop-blur-32 rounded-6 shadow-modal text-text pointer-events-auto flex w-[22rem] max-w-full flex-col overflow-hidden border",
@@ -64,7 +103,7 @@ export function SettingsPanel({
         >
             <header className="border-stroke flex items-center justify-between border-b py-6 pr-6 pl-12">
                 <h2 className="text-body font-medium">
-                    {t("view3d.settings.title")}
+                    {t("view3d.settings.panelTitle")}
                 </h2>
                 <button
                     type="button"
@@ -75,19 +114,71 @@ export function SettingsPanel({
                     <XIcon size={16} />
                 </button>
             </header>
-            <div className="flex min-h-0 flex-col gap-16 overflow-y-auto p-12">
-                <Section
-                    title={t("view3d.settings.venueSection")}
-                    hint={t("view3d.settings.venueHint")}
+            <Tabs
+                value={tab}
+                onValueChange={(next) => {
+                    setTab(next as SettingsTab);
+                    saveSettingsTab(next as SettingsTab);
+                }}
+                className="min-h-0 gap-0"
+            >
+                <TabsList className="gap-4 px-6">
+                    <TabItem
+                        value="venue"
+                        data-testid="view3d-settings-tab-venue"
+                    >
+                        {t("view3d.settings.tabs.venue")}
+                    </TabItem>
+                    <TabItem
+                        value="performers"
+                        data-testid="view3d-settings-tab-performers"
+                    >
+                        {t("view3d.settings.tabs.performers")}
+                    </TabItem>
+                    {/* A rule splits the show's tabs from this computer's. Hidden
+                        from screen readers, and arrow keys skip it. */}
+                    <span className="bg-stroke mx-4 my-8 w-px" aria-hidden />
+                    <TabItem
+                        value="preferences"
+                        data-testid="view3d-settings-tab-preferences"
+                    >
+                        {t("view3d.settings.tabs.preferences")}
+                    </TabItem>
+                </TabsList>
+                <TabContent
+                    value="venue"
+                    className="flex min-h-0 flex-col gap-16 overflow-y-auto p-12"
                 >
+                    <SavedNote
+                        icon={FileIcon}
+                        text={t("view3d.settings.showNote")}
+                    />
                     <Row label={t("view3d.overlay.venue")} stacked>
                         <VenuePicker />
                     </Row>
                     <Row label={t("view3d.overlay.lighting")} stacked>
                         <LightingControl />
                     </Row>
+                    {hasStands && <CrowdRows />}
+                    {/* Indoor floors have no end zones */}
+                    {kitId !== "gym" && kitId !== "arena" && <EndZoneRow />}
+                </TabContent>
+                <TabContent
+                    value="performers"
+                    className="flex min-h-0 flex-col gap-16 overflow-y-auto p-12"
+                >
+                    <SavedNote
+                        icon={FileIcon}
+                        text={t("view3d.settings.showNote")}
+                    />
                     <Row label={t("view3d.settings.uniforms")} stacked>
                         <UniformPicker />
+                    </Row>
+                    <Row label={t("view3d.settings.brassFinish")}>
+                        <BrassFinishPicker />
+                    </Row>
+                    <Row label={t("view3d.settings.tuba")}>
+                        <TubaPicker />
                     </Row>
                     <Row label={t("view3d.settings.guardUniforms")} stacked>
                         <GuardUniformPicker />
@@ -98,56 +189,61 @@ export function SettingsPanel({
                     <Row label={t("view3d.settings.silkArtwork")} stacked>
                         <SilkArtworkControls />
                     </Row>
-                    <Row label={t("view3d.settings.brassFinish")}>
-                        <BrassFinishPicker />
-                    </Row>
-                    <Row label={t("view3d.settings.tuba")}>
-                        <TubaPicker />
-                    </Row>
-                    {hasStands && <CrowdRows />}
-                    {/* Indoor floors have no end zones */}
-                    {kitId !== "gym" && kitId !== "arena" && <EndZoneRow />}
-                </Section>
-                {/* Graphics live in the Settings window; the web preview has none */}
-                {!HAS_SETTINGS_WINDOW && (
-                    <Section
-                        title={t("view3d.settings.graphicsSection")}
-                        hint={t("view3d.settings.graphicsHint")}
-                    >
-                        <QualityRow />
-                        <ResolutionRow />
-                    </Section>
-                )}
-                <Section title={t("view3d.settings.keysSection")}>
+                </TabContent>
+                <TabContent
+                    value="preferences"
+                    className="flex min-h-0 flex-col gap-16 overflow-y-auto p-12"
+                >
+                    <SavedNote
+                        icon={MonitorIcon}
+                        text={t("view3d.settings.computerNote")}
+                    />
+                    <AutoOpenRow />
+                    <QualityRow />
+                    <ResolutionRow />
                     <ControlsRow />
-                    <ShortcutList />
-                </Section>
-            </div>
+                    <FollowRows />
+                    <Row label={t("view3d.settings.shortcuts")} stacked>
+                        <ShortcutList />
+                    </Row>
+                </TabContent>
+            </Tabs>
         </section>
     );
 }
 
-function Section({
-    title,
-    hint,
-    testId,
-    children,
-}: {
-    title: string;
-    hint?: string;
-    testId?: string;
-    children: ReactNode;
-}) {
+/** A tab's first line: where its choices are saved. */
+function SavedNote({ icon: NoteIcon, text }: { icon: Icon; text: string }) {
     return (
-        <div className="flex flex-col gap-8" data-testid={testId}>
-            <div className="flex flex-col gap-2">
-                <h3 className="text-sub text-text/60 font-mono tracking-wide uppercase">
-                    {title}
-                </h3>
-                {hint && <p className="text-sub text-text/60">{hint}</p>}
-            </div>
-            {children}
-        </div>
+        <p
+            className="text-sub text-text/60 flex items-start gap-6"
+            data-testid="view3d-settings-saved-note"
+        >
+            <NoteIcon size={14} className="mt-2 shrink-0" aria-hidden />
+            {text}
+        </p>
+    );
+}
+
+/**
+ * "Open 3D View when a show opens", the same setting as in Settings ›
+ * General. Hidden where the 3D View never opens by itself (the web builds,
+ * Playwright sessions), where the window gets null for it.
+ */
+function AutoOpenRow() {
+    const { t } = useTranslate();
+    const setting = useAutoOpenSetting();
+    if (setting === null || setting === "loading") return null;
+    return (
+        <Row label={t("settings.general.openView3dWithShow")}>
+            <Switch
+                // Never answered reads as on, since the 3D View opens with a show then
+                checked={setting ?? true}
+                onCheckedChange={setAutoOpen}
+                aria-label={t("settings.general.openView3dWithShow")}
+                data-testid="view3d-auto-open-toggle"
+            />
+        </Row>
     );
 }
 
@@ -340,8 +436,8 @@ function ColorField({
 }
 
 /**
- * Quality, for the web preview, which has no Settings window. Says why when
- * the view went to Low on its own or WebGL draws in software.
+ * Quality. Says why when the view went to Low on its own or WebGL draws in
+ * software.
  */
 function QualityRow() {
     const { t } = useTranslate();
@@ -376,7 +472,7 @@ function QualityRow() {
     );
 }
 
-/** Resolution, for the web preview, which has no Settings window. */
+/** Resolution: the most device pixels drawn per screen pixel. */
 function ResolutionRow() {
     const { t } = useTranslate();
     const resolution = useView3dSceneStore((s) => s.resolution);
@@ -397,6 +493,35 @@ function ResolutionRow() {
                 {t(`settings.view3d.resolution.${resolution}.description`)}
             </p>
         </Row>
+    );
+}
+
+/** How the camera follows a performer: turning with them, and their arms and instrument in their view. */
+function FollowRows() {
+    const { t } = useTranslate();
+    const turn = useFollowStore((s) => s.turnWithPerformer);
+    const setTurn = useFollowStore((s) => s.setTurnWithPerformer);
+    const body = useFollowStore((s) => s.showOwnBody);
+    const setBody = useFollowStore((s) => s.setShowOwnBody);
+    return (
+        <>
+            <Row label={t("view3d.settings.followTurns")}>
+                <Switch
+                    checked={turn}
+                    onCheckedChange={setTurn}
+                    aria-label={t("view3d.settings.followTurns")}
+                    data-testid="view3d-follow-turns"
+                />
+            </Row>
+            <Row label={t("view3d.settings.povShowsBody")}>
+                <Switch
+                    checked={body}
+                    onCheckedChange={setBody}
+                    aria-label={t("view3d.settings.povShowsBody")}
+                    data-testid="view3d-pov-body"
+                />
+            </Row>
+        </>
     );
 }
 
@@ -456,6 +581,8 @@ const SHORTCUTS: ShortcutRows = [
     ["previousNext", { pair: ["Q", "E"] }],
     ["firstLast", { pair: ["Alt+Q", "Alt+E"] }],
     ["cameras", { keys: ["1–9"] }],
+    ["followPerformer", { binding: FOLLOW_KEY }],
+    ["pointOfView", { binding: POV_KEY }],
     ["fullscreen", { binding: "F" }],
     ["crowd", { binding: "C" }],
     ["pausedPose", { binding: "S" }],

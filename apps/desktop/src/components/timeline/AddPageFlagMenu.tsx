@@ -9,6 +9,7 @@ import {
     TIMELINE_MENU_CONTENT_CLASS,
 } from "./TimelineRangeMenu";
 import { MENU_ITEM_CLASS } from "@/components/ui/popupClasses";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 
 /**
  * The paused playhead's right-click menu (UI-9; replaced the **+** beside the playhead, owner
@@ -79,7 +80,10 @@ export function AddPageFlagMenu({
 const translate = (key: string, params?: Record<string, string | number>) =>
     tolgee.t(key, params);
 
-/** An entry: the action's label, the new page's name, muted, and the action's shortcut */
+/**
+ * An entry: the action's label, the new page's name, muted, and the action's shortcut (in the
+ * touch layout only once a hardware keyboard has been used, #880)
+ */
 function MenuEntry({
     testId,
     action,
@@ -91,6 +95,7 @@ function MenuEntry({
     onSelect: () => void;
     name?: string;
 }) {
+    const showHints = useShowShortcutHints();
     return (
         <ContextMenu.Item
             data-testid={testId}
@@ -106,12 +111,14 @@ function MenuEntry({
                     {name}
                 </span>
             )}
-            <span
-                data-testid="timeline-add-page-shortcut"
-                className="ml-auto pl-16"
-            >
-                <Shortcut action={action} />
-            </span>
+            {showHints && (
+                <span
+                    data-testid="timeline-add-page-shortcut"
+                    className="ml-auto pl-16"
+                >
+                    <Shortcut action={action} />
+                </span>
+            )}
         </ContextMenu.Item>
     );
 }

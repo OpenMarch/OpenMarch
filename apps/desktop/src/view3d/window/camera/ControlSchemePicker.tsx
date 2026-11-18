@@ -29,8 +29,7 @@ const INPUT_ICONS: Record<GestureInput, Icon> = {
  * The Controls choice as three cards, each listing its gestures (an icon and
  * a muted name for the input, then the camera move), so the schemes can be
  * compared before picking one. Side by side where there's room, stacked in
- * the narrow View settings panel. Used in Settings > 3D View and in the 3D View's View settings.
- * Plain React: the Settings window imports it, so nothing here may load three.js.
+ * the narrow panel of 3D View settings › Preferences, where it is used.
  */
 export default function ControlSchemePicker({
     id,

@@ -1,0 +1,114 @@
+---
+title: Use OpenMarch on a tablet
+description: Write drill with your fingers or a pen (Apple Pencil) on an iPad or other tablet or touch screen. How to right-click, move the view, undo, and what the tablet layout changes.
+type: concept
+covers:
+  - apps/desktop/src/components/canvas/touch
+  - apps/desktop/src/field/three/fieldGestures.ts
+  - apps/desktop/src/stores/InputModeStore.ts
+  - apps/desktop/src/components/launchpage/settings/InputSettings.tsx
+  - apps/desktop/src/components/mobile
+  - i18n:touch
+  - i18n:settings.input
+  - i18n:timeline.touchTransport
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+
+Everything in OpenMarch works with a finger or a pen, such as Apple Pencil. On a tablet the window switches to the tablet layout, with controls big enough for a finger. This page has the rules that are the same everywhere in the app. A task page that works differently on a tablet says so in its own "On a tablet" section.
+
+## Which app to use
+
+- iPad: the [web editor](https://editor.openmarch.com) in Safari. Add it to your Home Screen the first time and open it from there, so Safari doesn't delete your shows; [Save and open shows](/guides/files/save-and-open/) explains why.
+- Android tablet: the web editor in Chrome.
+- Windows tablet: the desktop app ([Install OpenMarch](/guides/start/install/)).
+
+Phones are too small. If the window is too small for OpenMarch, it says so; turn the tablet sideways or make the window bigger.
+
+## The tablet layout
+
+<Media
+  id="workspace-tablet-layout"
+  alt="The OpenMarch window in the tablet layout: the toolbar's tabs in the title bar, the sidebar's icons with their names under them, a row of buttons at the bottom of the field (Drag: Auto, Fine, Equal, From center, Add, Subtract, Snap off and a question mark), and a short playback row above the timeline with Previous page, Play, Next page, the clock and readout, minus, plus and a … button."
+/>
+
+The tablet layout has the same parts as the desktop one ([The window](/guides/workspace/the-window/)), with these differences:
+
+- The toolbar's tabs are in the title bar, so the field gets more of the screen, and the sidebar's icons have their names under them. Tap a tab to open its controls in a panel over the field, and tap it again to close it. The panel stays as you left it the next time. On a narrow screen, such as an iPad held upright, the tabs are shorter: <Ui k="inspector.shape.alignmentTab" /> becomes <Ui k="toolbar.alignmentTabShort" />. To leave room for the tabs, the question mark for help moves from the title bar into the menu at the start of the title bar; see [Get help](/guides/start/get-help/#ask-the-guide-or-an-ai-assistant).
+- A row of buttons floats over the field. They stand in for the keyboard (see [The buttons over the field](#the-buttons-over-the-field)).
+- The playback row above the timeline is shorter: Previous page, Play, Next page, the readout, zoom out and in, and a **…** button with everything else. [Play the show](/guides/timeline/play-the-show/#on-a-tablet) lists what's in it.
+- The inspector has a <Ui k="inspector.marcher.move.title" /> pad, to nudge marchers by steps without a keyboard ([Move marchers](/guides/marchers/move-marchers/)).
+
+To find out what a button does, touch and hold it: a bubble shows its tooltip and, for a greyed-out button or menu item, why it's off. Menus and tips leave out keyboard shortcuts until you use a keyboard connected to the tablet.
+
+### Choose the layout yourself
+
+OpenMarch uses the tablet layout on a tablet and the desktop layout on a computer. On a laptop with a touch screen, choose it yourself: open <Ui k="settings.title" /> › <Ui k="settings.input" /> and set <Ui k="settings.input.interface" /> to <Ui k="settings.input.interface.touch" />. The touch rules on this page work in either layout; only the controls change.
+
+## Touch and hold to right-click
+
+A finger can't right-click, so touch and hold instead: hold a finger or the pen still for half a second, then lift it without moving. The menu a right-click opens there appears where you lifted. On a marcher that isn't selected, it selects that marcher first, as a right-click does.
+
+This works on the field, on a shape's points, on props, and on the timeline's playhead, page boxes, move bars and keyframe diamonds. If your finger moves before you lift, the touch becomes a drag instead.
+
+On the timeline, the selected page's box and the selected move's bar also have a **⋯** button that opens the same menu.
+
+## Move the view with two fingers
+
+Two fingers always move the view, wherever they start:
+
+- On the field, drag with two fingers to pan and pinch to zoom. The field stays under your fingers as they move.
+- On the timeline, drag with two fingers to scroll and pinch to zoom. One finger on the empty space under the measure numbers scrolls too. [Play the show](/guides/timeline/play-the-show/#zoom-scroll-and-resize-the-timeline) has the timeline's other view controls.
+
+What one finger does on empty field is up to you: it moves the view, or draws a box or lasso to select. The first button over the field, <Ui k="touch.dragMode.prefix" plain /> and the mode's name, chooses; [Select marchers](/guides/marchers/select-marchers/#on-a-tablet) explains the four modes. To select several marchers with a finger, tap <Ui k="touch.modifiers.add" plain /> in the row of buttons and then each marcher. One finger that starts on a marcher, or inside the frame around the selection, always moves the marchers. While you're drawing a shape or a prop, one finger draws.
+
+## A second finger cancels a drag
+
+If a second finger touches the screen while one finger is dragging marchers, a handle or a move's bar, the drag is cancelled: what you were dragging goes back where it was, and nothing changes. The two fingers then move the view. A shape you're drawing keeps the points you've already tapped.
+
+## A finger near a handle takes it
+
+You don't have to touch a handle exactly: a finger that lands about a fingertip away from a handle, or from a marcher, takes it. Where two handles are close together, the one on what's selected wins.
+
+## Undo and redo with fingers
+
+Tap the field with two fingers at once to undo, and with three to redo. A short note says <Ui k="touch.undone" plain /> or <Ui k="touch.redone" plain />. They work like <Kbd action="performUndo" /> and <Kbd action="performRedo" />.
+
+## A pen works like a mouse
+
+A pen, such as Apple Pencil, clicks, drags and draws as a mouse does. The one difference is on empty field, where the drag mode decides what it does: in <Ui k="touch.dragMode.auto" plain />, the starting mode, a pen draws a selection box and a finger moves the view.
+
+While the pen touches the screen, a hand resting on it doesn't move the view or press anything. For a moment after the pen lifts, one finger alone doesn't move the view either; use two.
+
+## The buttons over the field
+
+The row over the field stands in for the keys you'd hold with a keyboard. Hold a button while you drag, or tap it to keep it on until you tap it again.
+
+<Media
+  id="workspace-touch-buttons"
+  alt="The row of buttons over the field: a grip, then Drag: Auto, Fine, Equal, From center, Add, Subtract, Snap off and a question mark."
+  maxWidth={720}
+/>
+
+| Button | Does what this does with a keyboard |
+| --- | --- |
+| <Ui k="touch.dragMode.prefix" plain /> | Chooses what one finger or the pen does on empty field. See [Select marchers](/guides/marchers/select-marchers/#on-a-tablet). |
+| <Ui k="touch.modifiers.fine" plain /> | <Kbd keys="Shift" gesture="drag" />: marchers move slowly and off the grid; turns go by whole degrees. |
+| <Ui k="touch.modifiers.constrain" plain /> | <Kbd keys="Mod" gesture="drag" />: equal spacings, and one direction when moving. |
+| <Ui k="touch.modifiers.fromCenter" plain /> | <Kbd keys="Alt" gesture="drag" />: boxes draw and resize from their center. |
+| <Ui k="touch.modifiers.add" plain /> | <Kbd keys="Shift" gesture="click" />: tapped marchers are added to the selection. |
+| <Ui k="touch.modifiers.subtract" plain /> | <Kbd keys="Alt" gesture="drag" />: a box or lasso takes marchers out of the selection. |
+| <Ui k="touch.modifiers.noSnap" plain /> (the magnet) | Turns snapping off and on. |
+
+<Ui k="touch.modifiers.add" plain /> and <Ui k="touch.modifiers.subtract" plain /> don't stay on together. The **?** button explains each one, and so does touching and holding it. Drag the grip at the start of the row to move it somewhere else; until you do, it sits where it covers the fewest marchers and moves out of the way of handles and of a shape you're editing. [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/) explains what the keys do.
+
+## Related
+
+- [Install OpenMarch](/guides/start/install/): the web editor and the desktop app.
+- [Save and open shows](/guides/files/save-and-open/): where the web editor keeps your shows, and backing them up.
+- [Select marchers](/guides/marchers/select-marchers/#on-a-tablet): the drag modes, and selecting with a finger.
+- [Play the show](/guides/timeline/play-the-show/#on-a-tablet): the tablet playback row.

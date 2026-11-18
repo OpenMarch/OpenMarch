@@ -298,3 +298,21 @@ describe("modelsByMarcher", () => {
         ).toBe(0);
     });
 });
+
+describe("writePitModelMatrix's scale", () => {
+    it("scales all three sides by one factor, and turns as at real size", () => {
+        const out = new Float32Array(16);
+        writePitModelMatrix(out, 0, 90, { x: 3, z: -2 }, 0.1, 2);
+        // Column-major: model +X toward world +Z, twice as long
+        expect(out[0]).toBeCloseTo(0);
+        expect(out[2]).toBeCloseTo(2);
+        expect(out[5]).toBe(2);
+        expect(out[8]).toBeCloseTo(-2);
+        expect(out[10]).toBeCloseTo(0);
+        expect([out[12], out[13], out[14]]).toEqual([
+            3,
+            expect.closeTo(0.1),
+            -2,
+        ]);
+    });
+});

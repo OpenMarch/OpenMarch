@@ -14,9 +14,10 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-A circle stands the selected marchers in a ring, each the same interval from the next, or spreads them over the whole circle. Its size follows from the interval and how many marchers there are.
+<InShort>Select the marchers, press <Kbd action="shapeCircle" />, drag on the field from the center out to the edge, then select <Ui k="shapes.edit.place" /> (<Kbd action="applyShape" />).</InShort>
 
 **Before you start:** select the marchers who go in the circle, and put the playhead on the count where they should stand in it.
 
@@ -34,14 +35,14 @@ A circle stands the selected marchers in a ring, each the same interval from the
 
 <Media
   id="shapes-draw-circle"
-  alt="O is pressed, and a drag outward from a point above a row of trumpets draws a ring of spots that grows with the pointer. The pointer moves to Place and clicks it, and the trumpets move onto the ring."
+  alt="O is pressed, and a drag outward from a point on empty field draws a ring of spots that grows with the pointer. The pointer moves to Place and clicks it, and the trumpets move onto the ring."
 />
 
 ## Change the circle
 
 - The interval is the one number in the floating editor: the distance from each marcher to the next round the ring, in steps. A larger interval makes a larger circle. Dragging the handle on the ring sets the interval that puts the edge at the pointer, and keeps the center where it is.
 - Drag inside the circle, or the dot in its middle, to move it. Turning it, with the knob or the degrees in the editor, turns the spots round the ring.
-- The <Ui k="shapes.edit.mode.label" /> menu on the editor's second row has <Ui k="shapes.edit.mode.outline" />, the ring, and <Ui k="shapes.edit.mode.spread" />, the marchers spread evenly over the whole circle. In Spread, <Ui k="shapes.edit.reshuffle.label" /> gives another even layout, and <Ui k="shapes.edit.edge.label" /> stands some of the marchers round the edge.
+- The <Ui k="shapes.edit.mode.label" /> menu on the editor's second row has <Ui k="shapes.edit.mode.outline" />, the ring, and <Ui k="shapes.edit.mode.spread" />, the marchers spread over the whole circle. They work as they do for a box; see [Choose how the box is filled](/guides/shapes/draw-a-box/#choose-how-the-box-is-filled).
 
 A circle's edge doesn't catch yard lines and hashes the way a box's does: it moves and grows in half steps only.
 
@@ -49,4 +50,4 @@ A circle's edge doesn't catch yard lines and hashes the way a box's does: it mov
 
 - [How shapes work](/guides/shapes/): spots, intervals and who goes where.
 - [Draw an arc](/guides/shapes/draw-an-arc/): part of a circle, or a circle you size by its width.
-- [Place marchers in a shape](/guides/shapes/place-marchers/): change a circle after it's placed.
+- [Change a placed shape](/guides/shapes/place-marchers/): change a circle after it's placed.

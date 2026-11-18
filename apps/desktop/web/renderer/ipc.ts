@@ -67,10 +67,13 @@ export function invokeWorker<T = unknown>(
 /** Starts the worker and resolves once it has reopened the last show, if any. */
 export function startWorker(): Promise<WorkerStatus> {
     return new Promise((resolve, reject) => {
-        worker = new Worker(new URL("../worker/index.ts", import.meta.url), {
-            type: "module",
-            name: "openmarch-main",
-        });
+        worker = new Worker(
+            new URL("../worker/backend.worker.ts", import.meta.url),
+            {
+                type: "module",
+                name: "openmarch-main",
+            },
+        );
         let ready = false;
         // After `ready`, an uncaught error leaves the worker running (calls
         // still get answers), so only a failure to start ends it.

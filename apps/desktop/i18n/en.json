@@ -18,7 +18,8 @@
             "snapOn": "Snap off: turn it back on",
             "snapToCustomFraction": "Snap to grid",
             "toggleSnap": "Toggle Snap",
-            "toggleSnapKeywords": "snap magnet grid free"
+            "toggleSnapKeywords": "snap magnet grid free",
+            "propsOnly": "Only props are selected: props aren't lined up or spaced"
         },
         "batchEdit": {
             "clearPage": "Clear Page {page}",
@@ -38,8 +39,8 @@
             "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d",
             "holdStyleMarkTime": "Hold style: Mark time",
             "holdStyleStand": "Hold style: Stand",
-            "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
-            "noPreviousPage": "Cannot set marcher coordinates to previous page. There is no previous page",
+            "noPageAfter": "There's no page after this one",
+            "noPageBefore": "There's no page before this one",
             "moveAllToNextSpots": "Move to next page's spots (all marchers)",
             "movedAllToNextSpots": "{count, plural, one {Moved # marcher on Page {currentPage} to their spot on Page {nextPage}} other {Moved all # marchers on Page {currentPage} to their spots on Page {nextPage}}}",
             "moveSelectedToNextSpots": "Move to next page's spots (selected)",
@@ -114,7 +115,9 @@
             "loadDialogue": "Open file…",
             "newDialogue": "New file…",
             "openExport": "Export…",
-            "saveDialogue": "Save a copy…"
+            "saveDialogue": "Save a copy…",
+            "removeUnusedAssets": "Remove unused assets…",
+            "removeUnusedAssetsKeywords": "remove delete clean unused assets models imported size smaller"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -192,7 +195,7 @@
             "discard": "Shape: Discard"
         },
         "swap": {
-            "mustSelectTwo": "Can only swap when 2 marchers are selected.",
+            "selectTwo": "Select 2 marchers to swap them",
             "swap": "Swap two marchers"
         },
         "timeline": {
@@ -236,18 +239,26 @@
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play",
+            "openHelp": "Get help",
+            "openHelpKeywords": "help guide docs manual how question assistant ai chatgpt claude prompt",
             "reportFeedback": "Report a bug or send feedback",
             "reportFeedbackKeywords": "bug issue problem feedback feature request support",
             "viewMyReports": "View my reports",
             "openFrontEnsemble": "Open front ensemble and podiums",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Add front ensemble equipment or podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Open the show's assets",
+            "openAssetsKeywords": "assets imported models files credits license size storage library"
         },
         "items": {
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "Import a 3D model…",
+            "importModelKeywords": "import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "Place an imported model",
+            "placeImportedModelKeywords": "place imported model prop 3d custom glb"
         },
         "path": {
             "pen": "Path pen",
@@ -367,6 +378,7 @@
         "title": "Command palette",
         "unavailable": "Not available right now",
         "offInPreview": "Not in Preview — exit Preview to edit",
+        "offInEditMusic": "Not while editing music — select Edit music to go back",
         "shape": "Shape",
         "next": "Next",
         "done": "Done",
@@ -779,6 +791,12 @@
             "title": "Invalid file permissions"
         },
         "guideLinkText": "OpenMarch File Error Guide",
+        "leftoverJournal": {
+            "cancel": "Cancel",
+            "description": "There's a leftover file, “{name}”, next to this show, from a save that didn't finish. OpenMarch can't use it where it is, but it can finish recovering the show from a copy. The leftover file is moved to OpenMarch's backups, not deleted.",
+            "recover": "Recover and open",
+            "title": "A leftover file is stopping this show from opening"
+        },
         "notFound": {
             "description": "This file does not exist at this location. Was it moved or renamed?",
             "title": "File not found"
@@ -895,14 +913,7 @@
             "distributeStepsPlaceholder": "Steps",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "inside",
-                "outside": "outside",
-                "on": "On",
-                "inFrontOf": "in front of",
-                "behind": "behind",
-                "xCheckpoint": "X-Checkpoint {id}",
-                "yCheckpoint": "Y-Checkpoint {id}"
+                "y": "Y"
             },
             "rotation": "Rotation"
         },
@@ -1427,8 +1438,6 @@
     "pages": {
         "undoDeleteUnavailable": "Can't undo the delete: something changed since. Use Undo in the toolbar to step back.",
         "dotModeFailed": "Error setting the dot mode",
-        "noNextPage": "No next page",
-        "noPreviousPage": "No previous page",
         "durationNoBeat": "Failed to update page duration. No suitable beat found.",
         "durationFailed": "Failed to update page duration",
         "yankNegativeCounts": "Cannot yank pages that would result in negative counts",
@@ -1485,6 +1494,7 @@
         "hide": "Hide on the field",
         "name": "Name",
         "offField": "Off field at the playhead. Move the playhead to a count where the prop is on the field to change its outline.",
+        "keepsProportions": "Width, depth and height change together, so the model keeps its shape.",
         "outline": {
             "arc": "Arc",
             "circle": "Circle",
@@ -1520,7 +1530,169 @@
         },
         "locked": "Locked",
         "lockLabel": "Locked",
-        "lockHint": "One position for the whole show"
+        "lockHint": "One position for the whole show",
+        "imported": {
+            "title": "Imported",
+            "import": "Import…",
+            "empty": "Import a .glb or .gltf model, or drop one on the window, to place it like any prop.",
+            "place": "Place {name}",
+            "manage": "Manage assets"
+        },
+        "import": {
+            "title": "Import a model",
+            "pictureAlt": "The model seen from the audience",
+            "working": "Preparing the model…",
+            "orient": {
+                "detail": "The front should face the audience, right side up."
+            },
+            "rotateAxis": "Rotate {axis}",
+            "detail": {
+                "title": "Detail",
+                "levels": {
+                    "light": "Light",
+                    "detailed": "Detailed",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triangles · adds {size} to the show · each copy draws like {performers, plural, one {# performer} other {# performers}}",
+                "heavy": "Fine on most recent computers. If the 3D View stutters, it draws a Light copy instead, which is kept in the show too."
+            },
+            "compare": {
+                "open": "Compare in 3D…",
+                "title": "Compare in 3D",
+                "description": "Drag to look around, then switch versions to see what simplifying changed.",
+                "which": "Version to show",
+                "lightCopy": "Light copy",
+                "hint": "Drag to turn, scroll to zoom",
+                "stands": "From the stands",
+                "closeUp": "Close up",
+                "drawFailed": "Couldn't draw this version."
+            },
+            "size": {
+                "title": "Size",
+                "value": "{width} × {depth} m, {height} m tall",
+                "question": "Is that its real size? If not, pick the unit the file was made in.",
+                "suggested": "It looked like it was made in {unit}, so it was converted. Check the size."
+            },
+            "units": {
+                "label": "Made in",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Can't import",
+                "needsChoice": "Needs your choice",
+                "fixed": "Fixed for you",
+                "notes": "Notes"
+            },
+            "tryAgain": "Try again",
+            "rotate": {
+                "title": "Stand it up (Z-up file)",
+                "detail": "Some programs export with Z as up, so the model lies on its back."
+            },
+            "name": "Name",
+            "saveFailed": "Couldn't add the model to the show.",
+            "cancel": "Cancel",
+            "add": "Add to show",
+            "credits": {
+                "title": "License and credits",
+                "unknown": "Unknown",
+                "proprietary": "All rights reserved",
+                "license": "License",
+                "author": "Author",
+                "sourceUrl": "Source",
+                "attribution": "Attribution",
+                "rights": "Only import models you have the rights to use."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "No model in the files",
+                    "detail": "Pick a .glb file, or a .gltf with the files it names."
+                },
+                "severalModelFiles": {
+                    "title": "More than one model",
+                    "detail": "Import one at a time: {names}"
+                },
+                "tooLarge": {
+                    "title": "The files are too large",
+                    "detail": "{size} MB, over the {limit} MB limit"
+                },
+                "unreadable": {
+                    "title": "The file can't be read"
+                },
+                "externalUri": {
+                    "title": "The model loads files from the internet",
+                    "detail": "It names {uri}. Download the file and pick it with the model."
+                },
+                "outsidePickedFiles": {
+                    "title": "The model names a file outside its folder",
+                    "detail": "It names {uri}."
+                },
+                "missingFile": {
+                    "title": "Missing file: {uri}",
+                    "detail": "Pick it together with the model file."
+                },
+                "requiredExtension": {
+                    "title": "The model needs features OpenMarch can't read",
+                    "detail": "Required: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {The file has # error} other {The file has # errors}}"
+                },
+                "imageTooLarge": {
+                    "title": "A texture is too large: {image}",
+                    "detail": "{width} × {height} pixels; the limit is {limit} on a side."
+                },
+                "imageUnreadable": {
+                    "title": "A texture can't be read: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Far too detailed",
+                    "detail": "{triangles} triangles; the most it can import is {limit}."
+                },
+                "rigged": {
+                    "title": "Rigged models aren't supported",
+                    "detail": "Import a still version of it."
+                },
+                "noGeometry": {
+                    "title": "The file has nothing to draw"
+                },
+                "timedOut": {
+                    "title": "It took too long",
+                    "detail": "Stopped after {seconds} seconds."
+                },
+                "failed": {
+                    "title": "Something went wrong preparing it"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Shrank # texture to {cap} px} other {Shrank # textures to {cap} px}}"
+                },
+                "dracoDecoded": "Unpacked Draco compression",
+                "meshoptDecoded": "Unpacked meshopt compression",
+                "instancesExpanded": "Turned repeated copies into plain shapes",
+                "extensionsDropped": "Left out features it doesn't need",
+                "contentDropped": {
+                    "title": "Left out what a prop doesn't use",
+                    "animations": "{count, plural, one {# animation} other {# animations}}",
+                    "cameras": "{count, plural, one {# camera} other {# cameras}}",
+                    "morphTargets": "{count, plural, one {# shape key} other {# shape keys}}",
+                    "scenes": "{count, plural, one {# other scene} other {# other scenes}}"
+                },
+                "pivotMoved": "Set it on the ground at its center"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {The file has # warning} other {The file has # warnings}}",
+                "sizeOutOfRange": {
+                    "title": "Unusual size for a prop",
+                    "detail": "Its longest side is {largest} m; props are usually {min} to {max} m."
+                },
+                "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
+            }
+        },
+        "modelMissing": "This prop's model isn't in the show any more, so it draws as a block."
     },
     "frontEnsemble": {
         "title": "Front ensemble and podiums",
@@ -1759,7 +1931,6 @@
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
         "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
-        "view3d": "3D View",
         "view3d.controls": "Controls",
         "view3d.controls.input.drag": "Left-click drag",
         "view3d.controls.input.pinch": "Pinch",
@@ -1789,7 +1960,6 @@
         "view3d.resolution.fast.description": "Softest, with about half the work. For older computers.",
         "view3d.resolution.sharp": "Sharp",
         "view3d.resolution.sharp.description": "Full detail on high-resolution screens.",
-        "view3d.summary": "How the 3D View draws and moves on this computer. Not saved in the show.",
         "input": "Touch & Input",
         "input.description": "Choose the tablet layout (for fingers and pen) or the desktop layout (for mouse and trackpad).",
         "input.interface": "Layout",
@@ -1984,6 +2154,7 @@
                 "steps": "{count, plural, one {{interval} step} other {{interval} steps}}"
             },
             "groupError": "Couldn't group the marchers",
+            "groupNeedsTwo": "Select 2 or more marchers to group them",
             "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
             "leftShape": {
@@ -2431,7 +2602,10 @@
             "none": "Nobody {held} on {page}",
             "notHeldReasons": "Not {heldLower}: {reasons}",
             "shape": "{names}: in a shape on this page",
-            "holdError": "Couldn't hold the marchers"
+            "holdError": "Couldn't hold the marchers",
+            "paused": "Pause to change holds",
+            "styleNoneHeld": "No selected marcher is Held at the playhead",
+            "styleInEffect": "Already the hold style here"
         },
         "keep": {
             "followed": {
@@ -2453,6 +2627,9 @@
             "removeError": "Couldn't remove the keyframes",
             "removeLocked": "{count, plural, =1 {One marcher uses Expert moves on this page, so its keyframe wasn't removed. Switch to Expert to edit it.} other {# marchers use Expert moves on this page, so their keyframes weren't removed. Switch to Expert to edit them.}}",
             "removeLockedAll": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
+            "paused": "Pause to change keyframes",
+            "removeNone": "No selected marcher has a keyframe here",
+            "followNone": "No later page follows this spot",
             "title": "Keyframe · Page {page}, count {count}",
             "spoken": "{title}. {detail}"
         },
@@ -3115,7 +3292,7 @@
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "You can change this later in Settings › General.",
+            "changeLater": "You can change this later in 3D View settings or in Settings › General.",
             "no": "No",
             "title": "Open the 3D View on launch?",
             "yes": "Yes"
@@ -3170,7 +3347,14 @@
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
             "freeCamera": "Free view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Follow a performer",
+            "followPerformerTooltip": "Follow a performer: click a performer to follow them",
+            "following": "Following {name}",
+            "povOf": "{name}'s view",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: see through the performer's eyes",
+            "stopFollowing": "Stop following"
         },
         "readout": {
             "count": "Count {count} of {total}",
@@ -3189,22 +3373,19 @@
                 "desktop": "Graphics run in software on this computer, so the 3D View draws at low quality, and it will still be slow. For the full view, update your graphics drivers and restart OpenMarch.",
                 "web": "Graphics run in software in this browser, so the 3D View draws at low quality, and it will still be slow. For the full view, turn on graphics acceleration (in Chrome or Edge: Settings, System, \"Use graphics acceleration when available\") and restart the browser."
             },
-            "autoLowered": {
-                "settings": "Switched to Low because the view was stuttering. To keep full quality, choose High in Settings, 3D View.",
-                "panel": "Switched to Low because the view was stuttering. To keep full quality, choose High under Quality in View settings."
-            },
             "softwareHint": "Stays on Low because graphics run in software here.",
             "autoLoweredHint": "Switched to Low because the view was stuttering. Choose High to keep full quality.",
-            "dismiss": "Got it"
+            "dismiss": "Got it",
+            "autoLowered": "Switched to Low because the view was stuttering.",
+            "useHigh": "Use High",
+            "keepLow": "Keep Low"
         },
         "playback": {
             "label": "Playback"
         },
         "settings": {
-            "title": "View settings",
+            "panelTitle": "3D View settings",
             "close": "Close",
-            "venueSection": "This show",
-            "venueHint": "Saved in the show file. Undo in the editor reverts a change.",
             "crowdColors": "Crowd colors",
             "homeColor": "Home",
             "awayColor": "Visitors",
@@ -3212,15 +3393,22 @@
             "endZoneText": "End-zone lettering",
             "endZoneTextPlaceholder": "No lettering",
             "endZoneColor": "Color",
-            "graphicsSection": "This computer",
-            "graphicsHint": "Not saved in the show, so it can differ on each computer.",
-            "keysSection": "Keyboard and mouse",
             "uniforms": "Band uniform",
             "guardUniforms": "Guard uniform",
             "brassFinish": "Brass finish",
             "tuba": "Tubas",
             "silkShape": "Flag silk shape",
-            "silkArtwork": "Flag silk artwork"
+            "silkArtwork": "Flag silk artwork",
+            "tabs": {
+                "venue": "Venue",
+                "performers": "Performers",
+                "preferences": "Preferences"
+            },
+            "showNote": "Saved with this show. Undo in the editor reverts a change.",
+            "computerNote": "Saved on this computer only. Not part of the show.",
+            "shortcuts": "Keyboard shortcuts",
+            "followTurns": "Following: turn with the performer",
+            "povShowsBody": "Point of view: show their arms and instrument"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3229,14 +3417,16 @@
             "cameras": "Cameras, in menu order",
             "fullscreen": "Fullscreen",
             "crowd": "Show or hide the crowd",
-            "escape": "Cancel a seat pick, close settings, leave fullscreen",
+            "escape": "Cancel a pick, close settings, stop following, leave fullscreen",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, or drag with the right mouse button",
             "panPlain": "Pan",
             "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom",
-            "pausedPose": "Paused: show the actual step or the closed position"
+            "pausedPose": "Paused: show the actual step or the closed position",
+            "followPerformer": "Pick a performer to follow",
+            "pointOfView": "Following: switch to their point of view and back"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -3774,6 +3964,7 @@
         },
         "help": {
             "title": "Help",
+            "openHelp": "Get Help…",
             "showShortcuts": "Keyboard Shortcuts",
             "website": "Website",
             "guides": "Docs/Guides",
@@ -3789,6 +3980,14 @@
             "allFiles": "All Files",
             "audioFile": "Audio File",
             "video": "Video"
+        },
+        "leftoverJournal": {
+            "damagedMessage": "OpenMarch couldn't recover this show, with or without “{name}”. Nothing was changed. Report the problem and include the show and “{name}” if you can.",
+            "damagedTitle": "Couldn't recover the show",
+            "failedTitle": "Couldn't open the show",
+            "journalMoveFailedMessage": "OpenMarch couldn't move “{name}” out of the show's folder, so the show didn't open. The show itself is sound. Report the problem and include the show and “{name}” if you can.",
+            "replaceFailedMessage": "OpenMarch couldn't replace the show with the recovered copy. Another program may be using the file. Nothing was changed: close other programs that might have the show open, then open it again.",
+            "stageFailedMessage": "OpenMarch couldn't make the copies it needs to recover the show. The disk may be full, or OpenMarch may not be allowed to write in the show's folder or its own folder. Nothing was changed."
         },
         "newShow": {
             "button": "Create New"
@@ -4693,6 +4892,63 @@
             "alone": "This marcher is alone on its path: Edit path changes it",
             "severalSelected": "Click one of them again to pick just that marcher, then edit their line",
             "noneSelected": "Select a marcher on the group path to edit their line"
+        }
+    },
+    "help": {
+        "title": "Get help",
+        "description": "Look it up in the user guide, or have an AI assistant such as ChatGPT or Claude find the answer for you.",
+        "guide": {
+            "title": "Read the user guide",
+            "body": "Step-by-step help, with pictures and clips.",
+            "open": "Open the guide"
+        },
+        "ai": {
+            "title": "Ask an AI assistant",
+            "body": "Paste this message into ChatGPT, Claude or any AI assistant. It has the assistant read the OpenMarch guide before it answers.",
+            "questionLabel": "What are you trying to do? (optional)",
+            "questionPlaceholder": "For example: I want the trumpets to stand still for 8 counts, but they keep moving.",
+            "copy": "Copy message",
+            "copied": "Copied. Now paste it into your assistant.",
+            "copyFailed": "Couldn't copy it. Select the text below and copy it yourself:",
+            "whatIsCopied": "See the message",
+            "privacy": "Nothing about your show is included."
+        },
+        "report": {
+            "title": "Something not working?",
+            "body": "Tell us what happened. You can record your screen and send a copy of your show."
+        }
+    },
+    "assets": {
+        "title": "Assets",
+        "empty": "This show has no imported assets yet. Import a 3D model from the Props panel.",
+        "notes": {
+            "unused": "{count, plural, one {# asset isn't used} other {# assets aren't used}} anywhere in the show · {size}",
+            "missing": "{count, plural, one {# prop names a model this show doesn't have, so it draws as a block.} other {# props name models this show doesn't have, so they draw as blocks.}}",
+            "large": "Assets make this show large: {size}. Large shows are slower to open, save and share."
+        },
+        "removeUnused": {
+            "button": "Remove unused…",
+            "title": "{count, plural, one {Remove # unused asset?} other {Remove # unused assets?}}",
+            "description": "Nothing in the show uses these. Removing them makes the show {size} smaller. Undo doesn't bring them back.",
+            "none": "Every asset is in use, so there's nothing to remove.",
+            "cancel": "Cancel",
+            "confirm": "{count, plural, one {Remove # asset} other {Remove # assets}}"
+        },
+        "kind": {
+            "model": "3D model"
+        },
+        "uses": "{count, plural, one {Used once} other {Used # times}}",
+        "unused": "Not used",
+        "shareNote": "Unknown license: you may not have the right to share it",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Couldn't remove the unused assets",
+            "credits": "Couldn't save the credits"
         }
     }
 }

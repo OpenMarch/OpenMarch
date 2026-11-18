@@ -25,8 +25,8 @@ interface ImportMetaEnv {
     readonly VITE_PUBLIC_LAB_SHOW?: string;
     /** A lab build's editor mode, "basic" or "expert" (fork-only, web/LAB.md). */
     readonly VITE_PUBLIC_LAB_MODE?: string;
-    /** "true" in the 3D View web preview, which has no Settings window. */
-    readonly VITE_VIEW3D_NO_SETTINGS_WINDOW?: string;
+    /** "true" in the 3D View web preview (`view3d-web/`), which runs in a browser. */
+    readonly VITE_VIEW3D_WEB_PREVIEW?: string;
     /** The app's version, in the web build's worker. */
     readonly VITE_PUBLIC_APP_VERSION?: string;
     /** "true" shows the welcome flow's What's new slides for features not on main yet, for review. */

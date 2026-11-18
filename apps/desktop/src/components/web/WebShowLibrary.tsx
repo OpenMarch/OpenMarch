@@ -33,6 +33,11 @@ import { toast } from "sonner";
 import clsx from "clsx";
 import ExampleShows from "@/components/launchpage/files/ExampleShows";
 import { useWebLibraryStore } from "@/stores/WebLibraryStore";
+import {
+    MENU_CONTENT_CLASS,
+    MENU_ITEM_CLASS,
+    MENU_SEPARATOR_CLASS,
+} from "@/components/ui/popupClasses";
 import { formatAgo, type ShowSummary } from "@/utilities/webLibrary";
 import {
     backUp,
@@ -44,8 +49,7 @@ import {
     reportFailure,
 } from "./webLibraryActions";
 
-const menuItemClass =
-    "rounded-4 text-body data-[highlighted]:bg-fg-2 touch:min-h-44 flex cursor-pointer items-center gap-8 px-8 py-6 outline-hidden";
+const menuItemClass = `${MENU_ITEM_CLASS} touch:min-h-44`;
 
 /** Re-renders every minute, so "5 minutes ago" stays true. */
 function useNow(): number {
@@ -186,7 +190,7 @@ export default function WebShowLibrary() {
                             <DropdownMenuContent
                                 align="end"
                                 sideOffset={4}
-                                className="rounded-6 border-stroke bg-bg-1 text-text z-50 flex min-w-[200px] flex-col border p-4 shadow-lg"
+                                className={`${MENU_CONTENT_CLASS} min-w-200`}
                             >
                                 <DropdownMenuItem
                                     className={menuItemClass}
@@ -218,7 +222,9 @@ export default function WebShowLibrary() {
                                     <ClockCounterClockwiseIcon size={16} />
                                     {t("web.versionsMenu")}
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-stroke my-4 h-px" />
+                                <DropdownMenuSeparator
+                                    className={MENU_SEPARATOR_CLASS}
+                                />
                                 <DropdownMenuItem
                                     className={clsx(menuItemClass, "text-red")}
                                     onSelect={() => setDeleting(show)}

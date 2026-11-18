@@ -102,10 +102,7 @@ describeDbTests("the marcher section while timeline playback runs", (it) => {
         const id = marchersAndPages.expectedMarchers[0]!.id;
         const { result } = await mount(db, [id]);
         await waitFor(() =>
-            expect(
-                result.container.querySelectorAll('input[type="number"]')
-                    .length,
-            ).toBeGreaterThan(0),
+            expect(result.queryByTestId("inspector-marcher-x")).not.toBeNull(),
         );
         const button = trigger(result);
         expect(button.getAttribute("aria-expanded")).toBe("true");

@@ -199,3 +199,52 @@ describe("_combineShowPropsQueries", () => {
         });
     });
 });
+
+describe("propInputs with imported models", () => {
+    const library = new Map([
+        [
+            "library:a@b",
+            {
+                value: "library:a@b",
+                modelHash: "m",
+                distantHash: "d",
+                sidecar: {
+                    sizeM: { width: 2, height: 1.5, depth: 1 },
+                    stand: { atM: [0, 0], topM: 0.5 },
+                } as never,
+            },
+        ],
+    ]);
+    const item = (surface: "platform" | "obstacle", model: string | null) => ({
+        id: 1,
+        marcher_id: 11,
+        kind: "prop" as const,
+        surface_type: surface,
+        model,
+    });
+
+    it("stands a Platform drawn as a model at the model's top, scaled with it", () => {
+        const [input] = propInputs(
+            [item("platform", "library:a@b")],
+            new Map(),
+            undefined,
+            library,
+        );
+        expect(input).toMatchObject({
+            surface: "platform",
+            standTop: 0.5,
+            modelSizeM: { width: 2, depth: 1 },
+        });
+    });
+
+    it("leaves an obstacle, or a model the show doesn't have, at its Outline's height", () => {
+        for (const props of [
+            [item("obstacle", "library:a@b")],
+            [item("platform", "library:gone@b")],
+        ]) {
+            const [input] = propInputs(props, new Map(), undefined, library);
+            expect(input.standTop).toBeUndefined();
+            expect(input.modelSizeM).toBeUndefined();
+        }
+    });
+});

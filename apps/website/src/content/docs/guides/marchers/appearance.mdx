@@ -1,6 +1,6 @@
 ---
 title: Change how marchers look
-description: Give each section its own colors and dot shape, hide marchers or their drill numbers, and change the look of tagged marchers from a page on.
+description: Give each section its own dot color and shape, hide marchers or their drill numbers, and change how tagged marchers look from a page on, such as after an equipment change.
 type: how-to
 covers:
   - apps/desktop/src/components/marcher/appearance
@@ -17,9 +17,13 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-Each marcher is drawn as a dot with its drill number. Until you change it, every dot looks the same, in the field's own colors. The <Ui k="sidebar.appearance" /> panel lets you give each section its own fill color, outline color and dot shape, and change the look of a tagged group of marchers from a chosen page on, for example to show who changes equipment. Appearances show on the field and in printed drill charts.
+<InShort>Open the <Ui k="sidebar.appearance" /> panel and, on the <Ui k="marchers.sectionText" /> tab, select <Ui k="marchers.list.addSectionStyle" />, choose the section and set its colors and shape.</InShort>
+
+Every marcher is a dot with its drill number, in the field's colors until you change it. Looks show on the field and in printed drill charts.
 
 ## Style a section
 
@@ -37,7 +41,7 @@ Each marcher is drawn as a dot with its drill number. Until you change it, every
 
 <Media
   id="marchers-appearance"
-  alt="The Marcher Appearance panel on its Section tab, with a style for one section: buttons to delete it, hide the marchers and hide their labels, then fill color, outline color and shape."
+  alt="The Marcher Appearance panel on its Section tab, with a style for the Snare section: the eye and T buttons, Fill Color set to red, Outline Color not set and drawn as a dashed box, a square chosen as the shape, and a trash can."
   maxWidth={520}
 />
 
@@ -51,11 +55,11 @@ Each style also has three buttons:
 
 A new style starts with no colors set, shown as dashed boxes. A color that isn't set keeps the default for that part of the look, so you can change only the fill, for example.
 
-## Change a tagged group's look from a page on
+## Change a group's look from a page on
 
-A tag is a named group of marchers you choose yourself, such as "Flags on page 12" or "Soloists". Tag appearances change how the tagged marchers look starting at a page.
+To change how some marchers look partway through the show, for example the flags after an equipment change, give them a tag, a named group you choose, then give the tag a look from a page on.
 
-First make the tag:
+### Make a tag
 
 <Steps>
 
@@ -67,9 +71,15 @@ First make the tag:
 
 </Steps>
 
+<Media
+  id="marchers-tags"
+  alt="The inspector's tag row for four selected marchers: three buttons, a tag with a sparkle to create a tag from the selection, a tag with a plus to add them to one, and a tag with a trash can to remove them from one; under them their tags, Brass and Soloists."
+  maxWidth={340}
+/>
+
 The tag appears in the inspector whenever any of its marchers are selected. To add more marchers to it later, select them and use <Ui k="tags.addSelectedTo" /> (the tag icon with a plus); <Ui k="tags.removeSelectedFrom" /> takes them out. Select a tag's name to rename or delete it.
 
-Then give it a look:
+### Give the tag a look
 
 <Steps>
 
@@ -83,7 +93,7 @@ Then give it a look:
 
 You can also start from the tag itself: select its name in the inspector, then <Ui k="tags.editAppearance" />. That adds an appearance for the tag on the page you're on, if there isn't one, and shows it in the panel.
 
-The look starts at the end of that page, where the marchers arrive at the set, and lasts until the tag has another appearance on a later page. As the show plays, marchers change look as they reach each page.
+The look starts at that <Term id="pages-flag">page's flag</Term>, where the marchers arrive at the set, and lasts until the tag has another appearance on a later page. To change the look for the whole of Page 12, add it under Page 11.
 
 ## Which look wins
 
@@ -99,4 +109,4 @@ So a tag appearance that only sets a fill color changes the fill and keeps the s
 
 - [Add, edit and remove marchers](/guides/marchers/add-marchers/): sections come from here.
 - [Select marchers](/guides/marchers/select-marchers/): select a tag's marchers from the Select tab.
-- [Print drill charts](/guides/files/print-charts/): charts use the same looks.
+- [Print coordinate sheets and drill charts](/guides/files/print-charts/): charts use the same looks.

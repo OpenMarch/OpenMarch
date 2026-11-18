@@ -147,3 +147,6 @@ apps/website/src/data/docs-media.json
 # which MDX then reads as a block and splits the sentence. Pages keep one paragraph per line.
 apps/website/src/content/docs/guides/**/*.mdx
 apps/website/src/content/docs/troubleshooting/**/*.mdx
+
+# Third-party glTF kept byte for byte (model import fixtures, fork #998)
+apps/desktop/src/showAssets/modelImport/__test__/fixtures/*.gltf

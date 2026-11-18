@@ -5,6 +5,9 @@
  *
  * Each arm is aimed, not solved: the upper arm's +Y points at the elbow
  * target, the forearm's at the wrist target, the hand's along the fingers.
+ * About their own length the bones turn their thumb side toward the bend
+ * plane's normal, unless the hold says where the palm faces
+ * (`ArmTargets.palm`, `upperArm`, `halfTurn`).
  * Bone lengths are the skeleton's, so a target just out of reach lands
  * short along the same line. The clavicles stay at bind. The head turns
  * about its own joint by the hold's `head` (pitched up, rolled); the neck
@@ -91,6 +94,28 @@ function aimBone(
     bone.updateMatrixWorld(true);
 }
 
+/** `v` with its part along unit `axis` taken out, or null when nothing is left. */
+function across(v: THREE.Vector3, axis: THREE.Vector3): THREE.Vector3 | null {
+    const out = v.clone().addScaledVector(axis, -v.dot(axis));
+    return out.lengthSq() < 1e-8 ? null : out.normalize();
+}
+
+/**
+ * The hand bone's +Z is its thumb side and its ±X its faces: the palm is
+ * −X on the right hand and +X on the left (the bind pose mirrors the arms
+ * by flipping X). So the thumb lies along fingers × palm on the right hand
+ * and palm × fingers on the left.
+ */
+function thumbFor(
+    side: "L" | "R",
+    fingers: THREE.Vector3,
+    palm: THREE.Vector3,
+): THREE.Vector3 {
+    return side === "R"
+        ? new THREE.Vector3().crossVectors(fingers, palm)
+        : new THREE.Vector3().crossVectors(palm, fingers);
+}
+
 function poseArm(bones: THREE.Bone[], side: "L" | "R", t: ArmTargets): void {
     const find = (n: string) => bones.find((b) => b.name === n + side)!;
     const upper = find("DEF-upper_arm");
@@ -98,18 +123,43 @@ function poseArm(bones: THREE.Bone[], side: "L" | "R", t: ArmTargets): void {
     const hand = find("DEF-hand");
     const elbow = new THREE.Vector3(...t.elbow);
     const wrist = new THREE.Vector3(...t.wrist);
+    const fingers = new THREE.Vector3(...t.fingers).normalize();
     const head = (b: THREE.Bone) =>
         new THREE.Vector3().setFromMatrixPosition(b.matrixWorld);
-    // the bend plane's normal is the hint for the roll of both bones
+    // the bend plane's normal is the hint for the roll of the bones: each
+    // bone's thumb side (+Z) turns toward it
     const shoulder = head(upper);
     const normal = new THREE.Vector3().crossVectors(
         elbow.clone().sub(shoulder),
         wrist.clone().sub(elbow),
     );
     if (normal.lengthSq() < 1e-8) normal.set(0, 0, 1);
+    // a hold that says where the palm faces turns the hand to it, and the
+    // arm the way round that leaves the wrist the smaller twist, unless
+    // the hold says which way round the upper arm turns
+    const thumb = t.palm
+        ? thumbFor(side, fingers, new THREE.Vector3(...t.palm))
+        : null;
+    // the body's middle is toward −X from the left arm, +X from the right
+    const turnedIn = (side === "L" ? -normal.x : normal.x) > 0;
+    const flip = !thumb
+        ? t.halfTurn
+        : t.upperArm
+          ? turnedIn !== (t.upperArm === "in")
+          : thumb.dot(normal) < 0;
+    if (flip) normal.negate();
     aimBone(upper, elbow.clone().sub(shoulder), normal);
-    aimBone(fore, wrist.clone().sub(head(fore)), normal);
-    aimBone(hand, new THREE.Vector3(...t.fingers), normal);
+    const along = wrist.clone().sub(head(fore));
+    let foreHint = normal;
+    if (thumb) {
+        // the forearm takes half the hand's turn, as a real one twists along its length
+        const axis = along.clone().normalize();
+        const a = across(normal, axis);
+        const b = across(thumb, axis);
+        if (a && b && a.dot(b) > -0.99) foreHint = a.add(b);
+    }
+    aimBone(fore, along, foreHint);
+    aimBone(hand, fingers, thumb ?? normal);
 }
 
 /** Turns the head bone in world space by the hold's head pitch and roll. */
