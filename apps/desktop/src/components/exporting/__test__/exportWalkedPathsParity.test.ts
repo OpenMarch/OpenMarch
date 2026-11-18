@@ -156,7 +156,9 @@ it("a show with no drawn paths exports the same bytes as before (QA-WP-13)", asy
     const after = await charts(db, true);
     expect(after.SVGs.flat().length).toBeGreaterThan(CHARTED);
     expect(after.SVGs).toEqual(before.SVGs);
-    expect(after.SVGs.flat().join("")).not.toContain("<path");
+    // No walked path is drawn. The field's yard numbers are filled `<path>` outlines (#938); a
+    // walked path is the only `<path>` stroked with `fill="none"`.
+    expect(after.SVGs.flat().join("")).not.toMatch(/<path [^>]*fill="none"/);
     dump("plain", after.SVGs);
 }, 120_000);
 

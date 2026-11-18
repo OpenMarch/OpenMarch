@@ -15,7 +15,9 @@
  * - the file version (11) written with a file's first lane (ADR 0017 §9).
  *
  * Standalone on purpose (schema and drizzle only), so the transition and membership procedures
- * can use it without importing the route procedures.
+ * can use it without importing the route procedures. The schema comes from the migrations module,
+ * not `@/global/database/db`: the in-transaction transition writes import this module, and the
+ * main process and the convert-on-open worker (P9.8) must load no renderer module.
  */
 import { and, asc, eq, gte, inArray, or, sql } from "drizzle-orm";
 import type { XY } from "@openmarch/core";
@@ -25,7 +27,7 @@ import {
     TRAIL_MODEL_USER_VERSION,
     ARC_MODEL_USER_VERSION,
 } from "@om-electron/database/fileVersion";
-import { schema } from "@/global/database/db";
+import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "./types";
 
 /** A row of `timeline_lanes`. */
