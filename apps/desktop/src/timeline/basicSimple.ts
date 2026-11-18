@@ -7,6 +7,10 @@
  * A marcher is simple on a page box `[start, end)` when every one of its rows overlapping the box
  * lies inside it, no two of them overlap in time (whatever their layers), and each is a one-slot
  * transition with no shape and a `direct` path. A marcher with no row over the box is simple.
+ *
+ * A marcher Held over a box (a stored Held mark, holds decision 4) is locked there too when its
+ * hold grows out of a move Basic can't edit (`heldArrivalLock`): an edit inside a hold edits its
+ * arrival, which the writer refuses then (`refuseLockedArrivals`, `timelineMoves.ts`).
  */
 
 /** One assignment row with what the predicate needs from its transition. */
@@ -33,6 +37,9 @@ export type SimpleVerdict =
       };
 
 type Box = { start: number; end: number };
+
+/** A Held hold (`HeldMark`, `timeline_held_marks`) as the locks read it */
+export type BasicHold = { marcherId: number; start: number; end: number };
 type Reason = Extract<SimpleVerdict, { simple: false }>["reason"];
 
 const SIMPLE: SimpleVerdict = { simple: true };
@@ -87,16 +94,55 @@ export function marcherSimpleOnBox(
 }
 
 /**
+ * The page box a hold's arrival ends on: the one with `start < hold.start <= end`, so an arrival
+ * ending mid-page or on a page's flag finds that page.
+ */
+export const arrivalBoxOf = <B extends Box>(
+    hold: Pick<BasicHold, "start">,
+    boxes: readonly B[],
+): B | undefined =>
+    boxes.find((b) => b.start < hold.start && hold.start <= b.end);
+
+/**
+ * Why Basic can't edit inside `hold`, or `null` when it can. An edit inside a hold edits the move
+ * arriving at its start (holds decision 4), so Basic can edit it only when that arrival is simple
+ * on the page box it ends on (`arrivalBoxOf`). A hold with no move ending at its start (one from
+ * the starting spot, #619) or before every box is editable. The one rule for the locks
+ * (`lockedMarchersByPage`) and the writer (`refuseLockedArrivals`, `timelineMoves.ts`).
+ *
+ * @param rows the hold's marcher's rows (any; others are ignored)
+ * @param boxes the page boxes, without the home page
+ */
+export function heldArrivalLock(
+    rows: readonly BasicRow[],
+    hold: BasicHold,
+    boxes: readonly Box[],
+): Reason | null {
+    const own = rows.filter((r) => r.marcherId === hold.marcherId);
+    if (!own.some((r) => r.end === hold.start)) return null;
+    const box = arrivalBoxOf(hold, boxes);
+    if (!box) return null;
+    const verdict = marcherSimpleOnBox(own, box);
+    return verdict.simple ? null : verdict.reason;
+}
+
+/**
  * The marchers that aren't simple on each box (locked in Basic), with why: by box index, then by
  * marcher id. Every box index has an entry, empty when nobody is locked there. Rows are sorted
  * once and each row visits only the boxes it overlaps (found by binary search when the boxes don't
  * overlap each other, as page boxes don't).
  *
+ * A marcher is also locked on every box a hold of its covers when that hold grows out of a move
+ * Basic can't edit (`heldArrivalLock`), with that move's reason: it has no row there, but an edit
+ * there edits the move.
+ *
  * @param rows every row of the show (`readBasicRows`)
+ * @param holds every Held hold of the show (`readHeldMarks`)
  */
 export function lockedMarchersByPage(
     rows: readonly BasicRow[],
     boxes: readonly Box[],
+    holds: readonly BasicHold[] = [],
 ): Map<number, Map<number, Reason>> {
     const out = new Map<number, Map<number, Reason>>();
     boxes.forEach((_, i) => out.set(i, new Map()));
@@ -110,7 +156,7 @@ export function lockedMarchersByPage(
         (index, k) =>
             k === 0 || boxes[order[k - 1]!]!.end <= boxes[index]!.start,
     );
-    const boxesOver = (row: BasicRow): number[] => {
+    const boxesOver = (row: Box): number[] => {
         if (!disjoint) return order.filter((i) => overlapsBox(row, boxes[i]!));
         // The first box (by start) whose end is after the row's start
         let lo = 0;
@@ -132,8 +178,15 @@ export function lockedMarchersByPage(
     const sorted = [...rows].sort(
         (a, b) => a.marcherId - b.marcherId || byStart(a, b),
     );
+    const holdsOf = new Map<number, BasicHold[]>();
+    for (const hold of holds)
+        holdsOf.set(hold.marcherId, [
+            ...(holdsOf.get(hold.marcherId) ?? []),
+            hold,
+        ]);
     let i = 0;
     while (i < sorted.length) {
+        const first = i;
         const marcherId = sorted[i]!.marcherId;
         // This marcher's rows over each box, in start order
         const perBox = new Map<number, BasicRow[]>();
@@ -148,6 +201,15 @@ export function lockedMarchersByPage(
         for (const [b, list] of perBox) {
             const verdict = verdictOfSorted(list, boxes[b]!);
             if (!verdict.simple) out.get(b)!.set(marcherId, verdict.reason);
+        }
+        const own = sorted.slice(first, i);
+        for (const hold of holdsOf.get(marcherId) ?? []) {
+            const reason = heldArrivalLock(own, hold, boxes);
+            if (reason === null) continue;
+            for (const b of boxesOver(hold)) {
+                const locked = out.get(b)!;
+                if (!locked.has(marcherId)) locked.set(marcherId, reason);
+            }
         }
     }
     return out;

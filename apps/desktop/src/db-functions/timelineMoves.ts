@@ -21,7 +21,7 @@ import {
 import { deleteTimelinesInTransaction, timelinesWithRange } from "./timelines";
 import { readPageGrid, type PageGrid } from "./timelineRipple";
 import { readBasicRows } from "./basicRows";
-import { marcherSimpleOnBox } from "@/timeline/basicSimple";
+import { heldArrivalLock } from "@/timeline/basicSimple";
 import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
 import {
     beatWhere,
@@ -1075,7 +1075,7 @@ class NothingWritten extends Error {
  * move together (holds decision 4). Adds what it wrote to `result`.
  *
  * With `basic`, the arrival must be one Basic edits: simple on the page box it ends (Basic's lock,
- * `marcherSimpleOnBox`), else the edit is refused (`notSimple`), naming the marchers. With
+ * `heldArrivalLock`), else the edit is refused (`notSimple`), naming the marchers. With
  * `keepUnchanged`, a marcher left where it is is still written (a shape's members).
  */
 async function moveHeldArrivalsInTransaction(
@@ -1139,19 +1139,12 @@ async function refuseLockedArrivals(
     const rows = await readBasicRows(tx, {
         marcherIds: held.map((h) => h.move.marcherId),
     });
+    const boxes = grid.pages.filter((p) => p.id !== FIRST_PAGE_ID);
     const locked: number[] = [];
-    for (const { move, mark } of held) {
-        // The page its arrival ends on, a mid-page end included
-        const box = grid.pages.find(
-            (p) =>
-                p.id !== FIRST_PAGE_ID &&
-                p.start < mark.start &&
-                mark.start <= p.end,
-        );
-        const own = rows.filter((r) => r.marcherId === move.marcherId);
-        if (box && !marcherSimpleOnBox(own, box).simple)
+    // Basic's lock rule for holds, which the locks draw too (`lockedMarchersByPage`)
+    for (const { move, mark } of held)
+        if (heldArrivalLock(rows, mark, boxes) !== null)
             locked.push(move.marcherId);
-    }
     if (locked.length === 0) return;
     locked.sort((x, y) => x - y);
     const labels: string[] = [];

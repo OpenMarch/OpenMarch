@@ -431,40 +431,76 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
         );
     });
 
-    // BUG 3: the locks read only rows over the page (`lockedMarchersByPage`), and a Held marcher
-    // has none there, so the page doesn't show it locked and `withoutLockedMarchers` doesn't
-    // drop it. The writer then refuses the whole edit (`refuseLockedArrivals`), so the other
-    // selected marchers don't move either, where a locked marcher is left alone and the rest
-    // are written (V-203).
-    it.fails(
-        "BUG 3: a marcher Held from an Expert move is locked on the held page, so the others still move",
-        async ({ db, marchersAndPages: _ }) => {
-            const ids = await arranged(async () => {
-                const made = await heldFromExpertMove(db);
-                useBasicLocksStore
-                    .getState()
-                    .set(
-                        await readBasicRows(db),
-                        (await boxesOf(db)) as PageBox[],
-                    );
-                return made;
-            });
-            if (!ids) return;
-            const target: TimelineEditTarget = {
-                kind: "point",
-                beat: 29,
-                box: PAGE4,
-            };
-            const { moves, locked } = withoutLockedMarchers(target, [
-                { marcherId: ids.a, x: UP2[0], y: UP2[1] },
-                { marcherId: ids.b, x: UP2[0], y: UP2[1] },
-            ]);
-            expect(locked).toEqual([ids.a]);
-            await moveMarchersInTarget({ db, target, moves });
-            await timelineResolverSettled();
-            expect(resolver().positionAt(ids.b, 29)).toEqual(UP2);
-        },
-    );
+    // BUG 3 (fixed): the locks read only rows over the page (`lockedMarchersByPage`), and a Held
+    // marcher has none there, so the page didn't show it locked and `withoutLockedMarchers`
+    // didn't drop it. The writer then refused the whole edit (`refuseLockedArrivals`), so the
+    // other selected marchers didn't move either, where a locked marcher is left alone and the
+    // rest are written (V-203). The locks now share the writer's rule (`heldArrivalLock`).
+    it("BUG 3: a marcher Held from an Expert move is locked on the held page, so the others still move", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(async () => {
+            const made = await heldFromExpertMove(db);
+            useBasicLocksStore
+                .getState()
+                .set(
+                    await readBasicRows(db),
+                    (await boxesOf(db)) as PageBox[],
+                    await readHeldMarks(db),
+                );
+            return made;
+        });
+        if (!ids) return;
+        const target: TimelineEditTarget = {
+            kind: "point",
+            beat: 29,
+            box: PAGE4,
+        };
+        const { moves, locked } = withoutLockedMarchers(target, [
+            { marcherId: ids.a, x: UP2[0], y: UP2[1] },
+            { marcherId: ids.b, x: UP2[0], y: UP2[1] },
+        ]);
+        expect(locked).toEqual([ids.a]);
+        await moveMarchersInTarget({ db, target, moves });
+        await timelineResolverSettled();
+        expect(resolver().positionAt(ids.b, 29)).toEqual(UP2);
+    });
+
+    it("a marcher Held from a simple move isn't locked on the held page, and moves with the others", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await show(db);
+        // `a` moves on page 3 in Basic and is Held from there through page 4
+        await point(db, PAGE3.end, PAGE3, ids.a, UP);
+        await holdFromPreviousPage({ db, pageBox: PAGE4, marcherIds: [ids.a] });
+        expect(await marksOf(db, ids.a)).toEqual([{ start: 25, end: 33 }]);
+        const boxes = await boxesOf(db);
+        const rows = await readBasicRows(db);
+        const holds = await readHeldMarks(db);
+        expect(
+            [...lockedMarchersByPage(rows, boxes, holds).values()].every(
+                (locked) => locked.size === 0,
+            ),
+        ).toBe(true);
+        useBasicLocksStore.getState().set(rows, boxes as PageBox[], holds);
+        const target: TimelineEditTarget = {
+            kind: "point",
+            beat: 29,
+            box: PAGE4,
+        };
+        const { moves, locked } = withoutLockedMarchers(target, [
+            { marcherId: ids.a, x: UP2[0], y: UP2[1] },
+            { marcherId: ids.b, x: UP2[0], y: UP2[1] },
+        ]);
+        expect(locked).toEqual([]);
+        await moveMarchersInTarget({ db, target, moves });
+        await timelineResolverSettled();
+        // The whole hold moved with `a`'s arrival (holds decision 4)
+        expect(resolver().positionAt(ids.a, 29)).toEqual(UP2);
+        expect(resolver().positionAt(ids.b, 29)).toEqual(UP2);
+    });
 });
 
 describeDbTests("Basic's ticks (mid-page positions)", (it) => {
