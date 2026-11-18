@@ -11,6 +11,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import type { ActionId } from "@/shortcuts/definitions";
 import { registerActionHandler } from "@/shortcuts/registry";
+import { setFollowTheLeader } from "@/pathways/followTheLeader";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import FieldContextMenu, {
     FIELD_MENU_ACTIONS,
@@ -20,7 +21,6 @@ import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { PATH_FIELD_MENU } from "@/pathways/pathPenMode";
 import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
-import { setFollowTheLeader } from "@/pathways/followTheLeader";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
