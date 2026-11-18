@@ -1492,9 +1492,15 @@
             "title": "Import a model",
             "pictureAlt": "The model seen from the audience",
             "working": "Preparing the model…",
+            "orient": {
+                "detail": "The front should face the audience, right side up."
+            },
             "turn": {
-                "detail": "The front should face the audience.",
                 "button": "Turn 90°"
+            },
+            "tip": {
+                "forward": "Tip forward",
+                "sideways": "Tip sideways"
             },
             "simplify": {
                 "compare": "Before or after simplifying",

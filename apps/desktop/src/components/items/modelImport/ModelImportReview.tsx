@@ -1,5 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import {
+    ArrowArcRightIcon,
+    ArrowBendRightDownIcon,
     ArrowClockwiseIcon,
     CaretRightIcon,
     InfoIcon,
@@ -21,6 +23,12 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
+import {
+    sameTilt,
+    tipped,
+    UPRIGHT,
+    type TipDirection,
+} from "@/showAssets/modelImport/orientation";
 import { useModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
 import {
     canRetry,
@@ -81,7 +89,7 @@ const choiceOf = <C extends Choice["code"]>(
 
 /**
  * The model import's one screen (fork #999, props-spec "The review"), in the Props panel: the
- * model's picture with a one-click turn, its size to confirm with one-click unit fixes, then the
+ * model's picture with one-click turn and tips, its size to confirm with one-click unit fixes, then the
  * report grouped as Can't import, Needs your choice and Fixed for you, the name and the license
  * fields, and Add. Each choice runs the import again, so what shows is what Add stores. A refusal
  * shows here, never in an alert; Cancel leaves the show as it was.
@@ -99,13 +107,19 @@ export default function ModelImportReview({
     const model = result?.ok ? result.model : undefined;
     const needs = report?.needsChoice ?? [];
     const unitFix = choiceOf(needs, "unitFix");
-    const rotate = choiceOf(needs, "rotateToYUp");
+    const tilt = choiceOf(needs, "tilt");
     const turn = choiceOf(needs, "turn");
+    const appliedTurn = choices.turn ?? turn?.applied ?? 0;
+    const appliedTilt = choices.tilt ?? tilt?.applied ?? UPRIGHT;
+    const tip = (direction: TipDirection) =>
+        session.choose({ tilt: tipped(appliedTilt, appliedTurn, direction) });
+    // Stood up from Z-up on its own: said in Needs your choice, with a way back
+    const zUp = tilt?.zUpSuspected ? tilt : undefined;
     const simplify = choiceOf(needs, "simplify");
     const simplified = simplify?.applied ? simplify : undefined;
     const [showBefore, setShowBefore] = useState(false);
     const before = session.before;
-    // A turn or a unit change drops the before picture: back to the one Add stores
+    // A turn, a tip or a unit change drops the before picture: back to the one Add stores
     useEffect(() => {
         if (!before) setShowBefore(false);
     }, [before]);
@@ -136,7 +150,7 @@ export default function ModelImportReview({
                 onBack={session.saving ? undefined : cancel}
             />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto pr-4">
-                {/* The picture, from the audience side, with the turn beside it */}
+                {/* The picture, from the audience side, with the turn and tips under it */}
                 <section className="flex flex-col gap-8">
                     {simplified && (
                         <SegmentedTextSwitch
@@ -201,26 +215,47 @@ export default function ModelImportReview({
                         </div>
                     )}
                     {turn && model && (
-                        <div className="flex items-center justify-between gap-8">
+                        <div className="flex flex-col gap-8">
                             <span className="text-sub text-text-subtitle">
-                                <T keyName="props.import.turn.detail" />
+                                <T keyName="props.import.orient.detail" />
                             </span>
-                            <Button
-                                size="compact"
-                                variant="secondary"
-                                disabled={running}
-                                data-testid="model-import-turn"
-                                onClick={() =>
-                                    session.choose({
-                                        turn: (((choices.turn ?? turn.applied) +
-                                            90) %
-                                            360) as Turn,
-                                    })
-                                }
-                            >
-                                <ArrowClockwiseIcon size={16} />
-                                <T keyName="props.import.turn.button" />
-                            </Button>
+                            <div className="flex flex-wrap gap-8">
+                                <Button
+                                    size="compact"
+                                    variant="secondary"
+                                    disabled={running}
+                                    data-testid="model-import-turn"
+                                    onClick={() =>
+                                        session.choose({
+                                            turn: ((appliedTurn + 90) %
+                                                360) as Turn,
+                                        })
+                                    }
+                                >
+                                    <ArrowClockwiseIcon size={16} />
+                                    <T keyName="props.import.turn.button" />
+                                </Button>
+                                <Button
+                                    size="compact"
+                                    variant="secondary"
+                                    disabled={running}
+                                    data-testid="model-import-tip-forward"
+                                    onClick={() => tip("forward")}
+                                >
+                                    <ArrowBendRightDownIcon size={16} />
+                                    <T keyName="props.import.tip.forward" />
+                                </Button>
+                                <Button
+                                    size="compact"
+                                    variant="secondary"
+                                    disabled={running}
+                                    data-testid="model-import-tip-sideways"
+                                    onClick={() => tip("sideways")}
+                                >
+                                    <ArrowArcRightIcon size={16} />
+                                    <T keyName="props.import.tip.sideways" />
+                                </Button>
+                            </div>
                         </div>
                     )}
                 </section>
@@ -259,20 +294,22 @@ export default function ModelImportReview({
                     </ReportGroup>
                 )}
 
-                {model && (rotate || simplify) && (
+                {model && (zUp || simplify) && (
                     <ReportGroup
                         tone="accent"
                         icon={<WarningIcon size={16} />}
                         title={t("props.import.groups.needsChoice")}
                         testId="model-import-choices"
                     >
-                        {rotate && (
+                        {zUp && (
                             <ChoiceCheck
                                 id="model-import-rotate"
-                                checked={choices.rotateToYUp ?? rotate.applied}
+                                checked={sameTilt(appliedTilt, zUp.preselected)}
                                 disabled={running}
                                 onChange={(on) =>
-                                    session.choose({ rotateToYUp: on })
+                                    session.choose({
+                                        tilt: on ? zUp.preselected : UPRIGHT,
+                                    })
                                 }
                                 title={t("props.import.rotate.title")}
                                 detail={t("props.import.rotate.detail")}

@@ -1490,9 +1490,15 @@
             "title": "Mag-import ng model",
             "pictureAlt": "Ang model kung titingnan mula sa audience",
             "working": "Inihahanda ang model…",
+            "orient": {
+                "detail": "Dapat nakaharap sa audience ang harap nito, at nakatayo nang tama."
+            },
             "turn": {
-                "detail": "Dapat nakaharap sa audience ang harap nito.",
                 "button": "Iikot nang 90°"
+            },
+            "tip": {
+                "forward": "Itumba paharap",
+                "sideways": "Itumba patagilid"
             },
             "simplify": {
                 "compare": "Bago o pagkatapos i-simplify",

@@ -1490,9 +1490,15 @@
             "title": "Importar un modelo",
             "pictureAlt": "El modelo visto desde el público",
             "working": "Preparando el modelo…",
+            "orient": {
+                "detail": "El frente debe mirar hacia el público, con el lado correcto hacia arriba."
+            },
             "turn": {
-                "detail": "El frente debe mirar hacia el público.",
                 "button": "Girar 90°"
+            },
+            "tip": {
+                "forward": "Volcar hacia delante",
+                "sideways": "Volcar de lado"
             },
             "simplify": {
                 "compare": "Antes o después de simplificar",

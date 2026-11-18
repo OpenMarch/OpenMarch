@@ -92,15 +92,15 @@ The model appears under <Ui k="props.imported.title" plain /> with its picture a
 
 <Media
   id="3d-props-import-review"
-  alt="The Import a model panel: a picture of a red chair, a Before and After switch with the triangle counts, Turn 90°, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and Simplify to 20,000 triangles checked."
+  alt="The Import a model panel: a picture of a red chair, a Before and After switch with the triangle counts, Turn 90°, Tip forward and Tip sideways, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and the start of Needs your choice."
   maxWidth={480}
 />
 
 ### The review
 
-- The picture shows the model from the audience, a little to one side. Its front should face you. If it doesn't, select <Ui k="props.import.turn.button" /> until it does.
+- The picture shows the model from the audience, a little to one side. Its front should face you, right side up. If it faces another way, select <Ui k="props.import.turn.button" /> until it faces you. If it lies on its back, its front or its side, select <Ui k="props.import.tip.forward" /> or <Ui k="props.import.tip.sideways" /> until it stands up: <Ui k="props.import.tip.forward" plain /> brings its top toward you, and <Ui k="props.import.tip.sideways" plain /> lays its top to your right.
 - The size is the model's real size, in meters. If it's wrong, the file was made in another unit: under <Ui k="props.import.units.label" plain />, choose the one it was made in. When the size is far off, the import has already picked the likely unit, and says so.
-- <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.simplify.title" values={{ cap: "20,000" }} plain /> lowers a detailed model's detail so the 3D View stays smooth; the switch above the picture shows the model before and after, with how many triangles each has. <Ui k="props.import.rotate.title" plain /> stands up a model that would lie on its back.
+- <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.simplify.title" values={{ cap: "20,000" }} plain /> lowers a detailed model's detail so the 3D View stays smooth; the switch above the picture shows the model before and after, with how many triangles each has. <Ui k="props.import.rotate.title" plain /> appears when a model looks like it would lie on its back, and stands it up.
 - <Ui k="props.import.groups.fixed" plain /> lists what the import changed on its own, such as pictures made smaller. Select it to see the list.
 - <Ui k="props.import.name" plain /> is what the model is called. Props you place from it are numbered after it: Chair 1, Chair 2.
 - <Ui k="props.import.credits.title" plain /> holds the license, author, source and attribution, filled in from the file when it says. Leave them empty if you don't know; empty means unknown. Only import models you have the rights to use.

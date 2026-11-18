@@ -147,6 +147,12 @@ phases [26.24].
   with the model's picture and a one-click turn, its size with the file's unit,
   the three groups and the license fields; Add stores the model and lists it
   under Imported, and its tile places it as a prop (`placeImportedModel`).
+  Since the #1001 follow-up the picture also has **Tip forward** and **Tip
+  sideways** (owner, 2026-11-17: an imported car lay on its side, and a long
+  model is never guessed Z-up). Each tips a quarter turn as the picture shows
+  it, whatever the turn, so the three buttons reach all 24 ways a box can sit
+  (`orientation.ts`); the choice is the `tilt`, applied before the turn. The
+  Z-up guess pre-selects the tilt and keeps its "Stand it up" check.
 - **Kind** (Prop, Equipment, Garment, Floor prop, Base floor): a picker sets
   it; a plain Library import asks for it as a required choice, pre-selected
   only from the Starter kit stamp, never from a guess. Size range, caps and

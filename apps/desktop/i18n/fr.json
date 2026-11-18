@@ -1490,9 +1490,15 @@
             "title": "Importer un modèle",
             "pictureAlt": "Le modèle vu depuis le public",
             "working": "Préparation du modèle…",
+            "orient": {
+                "detail": "L’avant doit faire face au public, à l’endroit."
+            },
             "turn": {
-                "detail": "L’avant doit faire face au public.",
                 "button": "Tourner de 90°"
+            },
+            "tip": {
+                "forward": "Basculer vers l’avant",
+                "sideways": "Basculer sur le côté"
             },
             "simplify": {
                 "compare": "Avant ou après simplification",

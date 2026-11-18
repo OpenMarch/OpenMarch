@@ -4,6 +4,7 @@
  */
 import type { JsonObject } from "@/showAssets/hash";
 import type { PlanFromAbove } from "@/view3d/core/pit/planFromAbove";
+import type { Tilt } from "./orientation";
 import type { UNIT_FIXES } from "./rules";
 
 /** One file the user picked: a `.glb`, or a `.gltf` and the files it names. */
@@ -23,7 +24,8 @@ export type Turn = 0 | 90 | 180 | 270;
  */
 export interface ModelImportChoices {
     unitFix?: UnitFix;
-    rotateToYUp?: boolean;
+    /** How the model is stood up, before the turn (`orientation.ts`) */
+    tilt?: Tilt;
     turn?: Turn;
     simplify?: boolean;
 }
@@ -79,7 +81,16 @@ export type Choice =
           preselected: UnitFix;
           applied: UnitFix;
       }
-    | { code: "rotateToYUp"; preselected: boolean; applied: boolean }
+    /**
+     * How the model is stood up: always offered, since a file can lie on any side. Pre-selected
+     * upright, or stood up from Z-up when the model stands tallest along Z (`zUpSuspected`).
+     */
+    | {
+          code: "tilt";
+          preselected: Tilt;
+          applied: Tilt;
+          zUpSuspected: boolean;
+      }
     | { code: "turn"; preselected: Turn; applied: Turn }
     | {
           code: "simplify";

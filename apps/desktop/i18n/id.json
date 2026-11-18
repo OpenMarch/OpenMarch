@@ -1490,9 +1490,15 @@
             "title": "Impor model",
             "pictureAlt": "Model dilihat dari arah penonton",
             "working": "Menyiapkan model…",
+            "orient": {
+                "detail": "Bagian depan harus menghadap penonton, dengan sisi atas di atas."
+            },
             "turn": {
-                "detail": "Bagian depan harus menghadap penonton.",
                 "button": "Putar 90°"
+            },
+            "tip": {
+                "forward": "Rebahkan ke depan",
+                "sideways": "Rebahkan ke samping"
             },
             "simplify": {
                 "compare": "Sebelum atau sesudah disederhanakan",
