@@ -20,6 +20,7 @@ import type { FieldMarchers } from "../fieldMarchers";
 import { useInputModeStore } from "@/stores/InputModeStore";
 import { PATH_FIELD_MENU } from "@/pathways/pathPenMode";
 import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
+import { setFollowTheLeader } from "@/pathways/followTheLeader";
 
 /**
  * The field's right-click menu (#315): registered actions, with their enabled
@@ -86,6 +87,7 @@ describe("FieldContextMenu", () => {
     afterEach(() => {
         cleanup();
         handlers.splice(0).forEach((off) => off());
+        setFollowTheLeader(false);
     });
 
     it("shows nothing until it's opened at a point", () => {
@@ -324,7 +326,9 @@ describe("FieldContextMenu", () => {
             "refitPath",
         ] as const)
             handle(id, { enabled: false, reason: null });
-        // Two selected, so Swap can run and a line's order shows
+        // Two selected, so Swap can run, and with Follow-the-leader on a line's order shows
+        // (with it off the order group is gone: followTheLeaderSwitch.test.tsx)
+        setFollowTheLeader(true);
         open({ selectedCount: 2 });
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];
