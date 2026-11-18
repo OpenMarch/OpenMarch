@@ -1,5 +1,5 @@
 /**
- * Routes, pathways steps 1, 2 and 24 (ADR 0014 and 0015; spec v0.10 R-14′, Appendix J.8): a
+ * Routes, pathways steps 1, 2 and 24 (ADR 0016 and 0017; spec v0.10 R-14′, Appendix J.8): a
  * move's marcher walks a drawn path of corners and smooth points from where it starts to its end
  * spot. Since step 24 a slot walks a route through a **lane** (`timeline_lanes`), so drawing a path
  * never moves a marcher out of its move: a shaped or shared move stays as it is. This module holds
@@ -381,7 +381,7 @@ export function freshPointId(taken: ReadonlySet<string>): string {
     }
 }
 
-/** Writes the lane-model file version (11) with a file's first path (ADR 0015 §9). */
+/** Writes the lane-model file version (11) with a file's first path (ADR 0017 §9). */
 export const markRouteModelInTransaction = markLaneModelInTransaction;
 
 export interface DrawRouteResult {

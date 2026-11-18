@@ -1,7 +1,7 @@
--- Adjust, pathways step 3b (ADR 0015 §2, spec v0.10 J.1 and J.2): a lane's own displacement profile
+-- Adjust, pathways step 3b (ADR 0017 §2, spec v0.10 J.1 and J.2): a lane's own displacement profile
 -- as JSON. Hand-written over drizzle-kit's output, which rebuilt the table and copied a column that
 -- isn't there yet (`SELECT "adjust" FROM timeline_lanes`): SQLite adds a nullable column with a CHECK
--- in place, so no lane is rewritten and no other table is touched (ADR 0015, Consequences). The
+-- in place, so no lane is rewritten and no other table is touched (ADR 0017, Consequences). The
 -- change-log and history triggers name their columns and are rebuilt on open from this build's
 -- definitions (`createAllTriggers`, `createTriggers`). The app writes file version 12 with a file's
 -- first Adjust (`fileVersion.ts`). Like 0024 and 0025 it also runs, unrecorded, on a page-era file

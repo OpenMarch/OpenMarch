@@ -613,7 +613,7 @@ Assumes K. The last column explains C's result and the first failure in the othe
 - **v0.1.7 files** are page-model, user_version 7. They are converted on open into direct
   transitions (`electron/database/fileVersion.ts:8–12`, `convertOnOpen.ts`). They have no routes,
   so they get no lanes or nodes; the new tables are created empty. **Nothing to migrate, at every
-  step** (ADR 0014 line 74). The file version stays at 10 = "has paths"
+  step** (ADR 0016 line 74). The file version stays at 10 = "has paths"
   (`fileVersion.ts:19–22`), written with the first route as today.
 - **Fork files** (owner: fork-internal data doesn't matter). M0 is exact anyway:
   1. For each T with `path_style='route'`, `INSERT lane(T, 0, route_id, offset from path_params or

@@ -1,13 +1,14 @@
-# 0015: A group path is one route; lanes bind slots to it
+# 0017: A group path is one route; lanes bind slots to it
 
 - Status: accepted (owner, 2026-11-05 and 2026-11-06)
 - Date: 2026-11-06
-- Amends: [0014](0014-moves-follow-drawn-paths.md) §1 ("a transition opts in with a new path
+- Number: was 0015 until 2026-11-18, when fork main's own 0015 (cue model) came in
+- Amends: [0016](0016-moves-follow-drawn-paths.md) §1 ("a transition opts in with a new path
   style, `route`") and §3 ("One file version bump … Later steps don't bump it again")
 
 ## Context
 
-ADR 0014 lets a transition walk a drawn path (a **route**). Step 15 (fork PR #683) lets several
+ADR 0016 lets a transition walk a drawn path (a **route**). Step 15 (fork PR #683) lets several
 marchers share one route as a **group path**. To do that, every member is broken out of its
 transition (`giveOwnTransition`, `db/timelineRoutes.ts:483–528`). The result is N one-slot
 `route` transitions that share a `route_id`, each with `path_params = {"offset": [dx, dy]}`. The
@@ -222,6 +223,9 @@ route's `to`. It reads only the lane's own destination, so the lane never reads 
 - **The one-slot transitions and the I-R2 CHECK are retired.** The folded migration on main never
   adds `'route'` to `path_style` and never adds the CHECK, so `timeline_transitions` is not
   rebuilt there.
+- **Until that fold, the leftover `'route'` path style and its CHECK stay in migrations 0024 and 0027
+  on purpose.** They are harmless, because no row uses them after 0025. Folding the migrations is
+  deferred ([#1107](https://github.com/AlexDumo/OpenMarch-timeline/issues/1107)).
 - **New migrations, none of which rebuild a table:**
   - `timeline_lanes` and `timeline_route_adjusts`;
   - `routes.timing`;
@@ -263,7 +267,7 @@ route's `to`. It reads only the lane's own destination, so the lane never reads 
 
 ## What this amends
 
-- **ADR 0014:**
+- **ADR 0016:**
   - §1: "A transition opts in with a new path style, `route`, and a reference to its route"
     becomes "a slot opts in through a lane". The `route` style is retired.
   - §3: "One file version bump … Later steps don't bump it again" is replaced by §9 above.

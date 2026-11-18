@@ -505,9 +505,9 @@ export const timeline_shapes = sqliteTable(
 );
 
 /**
- * A drawn path (spec v0.9 §5.1 `routes`, ADR 0014, D-19): corner and smooth points in absolute
+ * A drawn path (spec v0.9 §5.1 `routes`, ADR 0016, D-19): corner and smooth points in absolute
  * field coordinates, between the `from` and `to` it was drawn against. No owner column, like
- * shapes. Since v0.10 (ADR 0015, plan step 24) a slot walks it through a lane
+ * shapes. Since v0.10 (ADR 0017, plan step 24) a slot walks it through a lane
  * (`timeline_lanes`); every route has a lane whose slot holds a marcher (I-R3′, at commit).
  */
 export const timeline_routes = sqliteTable(
@@ -607,7 +607,7 @@ export const timeline_transitions = sqliteTable(
 );
 
 /**
- * A lane (spec v0.10 J.1, D-20, ADR 0015; plan step 24): slot `slot_index` of transition
+ * A lane (spec v0.10 J.1, D-20, ADR 0017; plan step 24): slot `slot_index` of transition
  * `transition_id` walks route `route_id`. Whoever occupies the slot walks it, so drawing a path
  * never moves a marcher out of its move. `offset_x`/`offset_y` are the start offset `o_s` from the
  * route's `from`: a group path's lane; both NULL for an own lane (one marcher's own path, walked

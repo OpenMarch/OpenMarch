@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Migration 0024 adds routes, pathways step 1 (ADR 0014, spec v0.9 §5.1): the `timeline_routes`
+ * Migration 0024 adds routes, pathways step 1 (ADR 0016, spec v0.9 §5.1): the `timeline_routes`
  * table, and `timeline_transitions` rebuilt with `route_id`, the `route` path style and the I-R2
  * CHECK. QA-MIG-R1: a v0.1.7 release file and a current fork file both open unchanged, and the
  * rebuild keeps every row and rowid, every trigger and every history trigger, so stored undo steps
@@ -263,7 +263,7 @@ describe(`Migration ${ROUTES_MIGRATION.tag} (QA-MIG-R1)`, () => {
                 integrity_check: "ok",
             });
 
-            // A route and its delete reach the change log and the history (ADR 0014 Verification)
+            // A route and its delete reach the change log and the history (ADR 0016 Verification)
             db.exec("DELETE FROM timeline_change_log");
             db.exec("UPDATE history_stats SET cur_undo_group = 8");
             db.exec(

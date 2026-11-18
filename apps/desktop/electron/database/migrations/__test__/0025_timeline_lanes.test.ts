@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Migration 0025 adds lanes, pathways step 24 (ADR 0015, spec v0.10 J.1). QA-MIG-L2: a file a
+ * Migration 0025 adds lanes, pathways step 24 (ADR 0017, spec v0.10 J.1). QA-MIG-L2: a file a
  * step-15 lab build wrote (file version 10, `route` transitions, one per member) opens with each
  * route transition moved to a lane on its slot 0 and made `direct`, plays exactly as before, is
  * written as version 11 (QA-FV-L1: a step-15 build refuses it then) and its old undo steps,

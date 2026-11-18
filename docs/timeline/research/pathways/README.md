@@ -2,7 +2,7 @@
 
 # Pathways: what the feature must do, and every open question
 
-**Reference, not rules.** Since 2026-11-03 the feature is built one step at a time ([ADR 0014](../../../adr/0014-moves-follow-drawn-paths.md)); each step writes its own normative rules into [spec.md](../../spec.md) Appendix I, using these docs as a starting point and changing them after owner feedback. Turns are parked until drawing and follow the leader have been tried.
+**Reference, not rules.** Since 2026-11-03 the feature is built one step at a time ([ADR 0016](../../../adr/0016-moves-follow-drawn-paths.md)); each step writes its own normative rules into [spec.md](../../spec.md) Appendix I, using these docs as a starting point and changing them after owner feedback. Turns are parked until drawing and follow the leader have been tried.
 
 Status: research draft, started 2026-11-01. The concrete model is [draft-model.md](draft-model.md) (draft 5, 2026-11-03: review 2's questions and prototype round 2's two calls decided; T-3, T-4, P-1, P-2); the controls are in the [UX sheet](ux-sheet.md) (draft 3). The build order, one testable step at a time, and the to-do list are in the [implementation plan](implementation-plan.md). Six owner answers were given on 2026-11-02 (decision
 log below). Nothing is built. The register of open questions below is the working list: every

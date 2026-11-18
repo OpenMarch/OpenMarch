@@ -9,7 +9,7 @@ survive the edits that follow it.
 
 Sources read: `/mnt/data/pathways-grill/BRIEF.md`; in `/mnt/data/worktrees/t3/OpenMarch/t3-fc7b6ac6`:
 `docs/timeline/spec.md` (§2–4, D-4, D-5, D-7, D-16, D-19, R-14 incl. "Group schedule", Appendix I
-AP-R1…AP-R10, I-R1…I-R5), `docs/adr/0014-moves-follow-drawn-paths.md`,
+AP-R1…AP-R10, I-R1…I-R5), `docs/adr/0016-moves-follow-drawn-paths.md`,
 `docs/timeline/research/pathways/README.md` (register Q1–Q6, E-1…E-4, S-1…S-11, O-1…O-29, P-1,
 P-2, G-1, F-1…F-6, U-1), `draft-model.md` (§3.2 timing, §3.3 entry, §3.4 formations, §3.5 re-fit,
 §4 FTL on a trail, §5 edits), `implementation-plan.md`.
@@ -926,7 +926,7 @@ inputs).
 (model A rows: one-slot transitions sharing a route with offsets).
 
 **Expected.** (a) Opens, plays straight lines, no route rows written. (b) Opens under the new
-model; positions identical at every probe (or, per ADR 0014, fork lab files may break — but the
+model; positions identical at every probe (or, per ADR 0016, fork lab files may break — but the
 model must say what it migrates).
 
 **Facts.** F-30; migration path from model A's rows to the candidate's facts.

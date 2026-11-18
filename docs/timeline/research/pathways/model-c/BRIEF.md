@@ -12,7 +12,7 @@ Before more pathways code is written, find where the data structure cracks. "We 
 ## Key docs
 
 - docs/timeline/spec.md (concept model §2–4, decisions D-\*, R-14, Appendix I, AP-R1..R10)
-- docs/adr/0014-moves-follow-drawn-paths.md, docs/adr/0006\* (shape recipes)
+- docs/adr/0016-moves-follow-drawn-paths.md, docs/adr/0006\* (shape recipes)
 - docs/timeline/research/pathways/ (draft-model.md, implementation-plan.md, README.md register)
 - packages/core/src/timeline (resolver), apps/desktop/src/db-functions/timeline\*.ts
 

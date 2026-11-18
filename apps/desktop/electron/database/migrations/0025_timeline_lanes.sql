@@ -1,4 +1,4 @@
--- Lanes, pathways step 24 (ADR 0015, spec v0.10 J.1): a slot walks a route through a lane, so a
+-- Lanes, pathways step 24 (ADR 0017, spec v0.10 J.1): a slot walks a route through a lane, so a
 -- path no longer moves marchers out of their move. A new table only; nothing is rebuilt.
 -- Hand-edited after drizzle-kit's CREATE: a file that step 15 (fork lab builds) wrote has
 -- `route` transitions, each a one-slot breakout (I-R2). Each becomes a lane on its slot 0, with

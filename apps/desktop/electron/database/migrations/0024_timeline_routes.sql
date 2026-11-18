@@ -1,4 +1,4 @@
--- Routes, pathways step 1 (ADR 0014, spec v0.9 §5.1): a routes table, and timeline_transitions
+-- Routes, pathways step 1 (ADR 0016, spec v0.9 §5.1): a routes table, and timeline_transitions
 -- rebuilt to add `route_id`, the `route` path style and the I-R2 CHECK. Hand-edited from
 -- drizzle-kit's rebuild, whose INSERT ... SELECT copied `route_id` from a table that doesn't have
 -- it yet: existing rows get NULL. Ids are copied, so every rowid (and so every stored undo and

@@ -920,7 +920,7 @@ const STATIC_ACTIONS = {
         ignoreRepeat: true,
     },
 
-    // Pathways step 1 (ADR 0014): the Path pen draws a cornered path for one selected marcher's
+    // Pathways step 1 (ADR 0016): the Path pen draws a cornered path for one selected marcher's
     // move at the playhead. P as in design tools' pen. While it draws, Enter (applyShape) finishes,
     // Backspace (shapeRemoveLastPoint) takes the last corner back and Escape
     // (cancelAlignmentUpdates) cancels, handled only then (pathways/PathPenKeys)
