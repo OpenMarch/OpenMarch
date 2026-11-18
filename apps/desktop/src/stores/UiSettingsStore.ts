@@ -97,6 +97,12 @@ export interface UiSettings {
      * Pathways toggle. Off by default.
      */
     shapeWalks?: boolean;
+    /**
+     * Follow-the-leader (preview, pathways M2, #1095): Follow, Set order, the order lane, Ripple in
+     * and corner counts. Off by default: with it off nobody makes or edits a trail, and a file
+     * that has one still plays it as before (`pathways/followTheLeader.ts`)
+     */
+    followTheLeader?: boolean;
     /** Whether props show their names on the canvas, unless `propNameOverrides` says otherwise */
     showPropNames: boolean;
     /** Per prop: whether its name shows. Key is the item id. */
@@ -157,6 +163,7 @@ export const defaultSettings: UiSettings = {
     shapes: "selected",
     marcherOrder: "selected",
     shapeWalks: false,
+    followTheLeader: false,
     showPropNames: false,
     propNameOverrides: {},
     hiddenPropIds: {},

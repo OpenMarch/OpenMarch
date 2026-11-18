@@ -27,6 +27,7 @@ import {
     setFollowPreview,
 } from "./followDrag";
 import { isTrailLineAt, openFollowTool } from "./followTool";
+import { trailOffReason, useFollowTheLeader } from "./followTheLeader";
 import {
     closeShapeTool,
     useShapeToolStore,
@@ -135,6 +136,14 @@ export function usePathPenActions(): void {
     );
     const selectedIds = performers.map((m) => m.id).sort((a, b) => a - b);
     const selectionKey = selectedIds.join(",");
+    // Follow-the-leader off (#1095): a trail shown stays quiet, and nothing draws or opens it
+    const followTheLeader = useFollowTheLeader();
+    const trailLocked = trailShown && !followTheLeader;
+    // Switched off with a trail open or being drawn: it closes, as Escape does
+    useEffect(() => {
+        if (followTheLeader) return;
+        if (usePathPenStore.getState().session?.target.trail) closePath();
+    }, [followTheLeader]);
 
     // The marchers selected when P drew the open path again (AP-O8): the drawing goes when they
     // change, as a personal drawing does
@@ -144,6 +153,11 @@ export function usePathPenActions(): void {
         // path again: a path edit by its route, keeping its id, never refused for who holds its
         // spots (AP-O8, J.8 AP-R1, 07 N3)
         const now = usePathPenStore.getState().session;
+        // A trail can't be drawn again with Follow-the-leader off (#1095): said, not ignored
+        if (now?.target.trail && now.target.routeId !== null && trailLocked) {
+            toast.error(trailOffReason(), { id: "path-pen" });
+            return;
+        }
         if (
             now &&
             now.target.routeId !== null &&
@@ -432,8 +446,9 @@ export function usePathPenActions(): void {
     // On a group path it's named for what it edits: the line every member follows (round 3)
     const editLabel = slots.group ? editGroupPathLabel() : undefined;
     useActionHandler("editPath", () => void openPath(), {
-        enabled: phase === "closed" || lineEdited,
+        enabled: (phase === "closed" || lineEdited) && !trailLocked,
         label: editLabel,
+        disabledReason: trailLocked ? trailOffReason() : undefined,
     });
     // Edit <name>'s line (interaction round 3, was Adjust): the one selected member's line alone,
     // its handles shown at once
@@ -458,7 +473,7 @@ export function usePathPenActions(): void {
         "applyShape",
         () => void openPath(),
         { label: editLabel ?? tolgee.t("actions.path.edit", "Edit path") },
-        quietShown && !shapeToolOpen && !isPlaying,
+        quietShown && !shapeToolOpen && !isPlaying && !trailLocked,
     );
     // Remove path (AP-R2), open or closed, not while a new one is drawn
     useActionHandler("removePath", () => void removePath(), {

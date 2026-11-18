@@ -1,4 +1,4 @@
-import { afterEach, expect, vi } from "vitest";
+import { afterEach, beforeEach, expect, vi } from "vitest";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { eq } from "drizzle-orm";
 import { toast } from "sonner";
@@ -38,6 +38,7 @@ import {
 } from "../pathPenStore";
 import { findRouteTarget } from "../pathTarget";
 import { PathPenKeys, usePathPenActions } from "../usePathPen";
+import { setFollowTheLeader } from "../followTheLeader";
 
 keepFixturesInPageMode("its tests convert the show themselves");
 
@@ -129,10 +130,16 @@ const setUp = async (
     return { timeline, m1: m1!, m2: m2!, A, routeId, hook, select, activate };
 };
 
+// These test Follow and trails, which are behind the Follow-the-leader switch (#1095): on,
+// except where a test turns it off
+beforeEach(() => setFollowTheLeader(true));
+
 afterEach(() => {
     cleanup();
     act(() => clearPath());
     stopTimelineResolver();
+    setFollowTheLeader(false);
+    vi.restoreAllMocks();
 });
 
 describeDbTests(
@@ -486,6 +493,98 @@ describeDbTests("usePathPenActions: Follow (Shift+L)", (it) => {
         ).toEqual([...line].sort());
     });
 });
+
+describeDbTests(
+    "usePathPenActions: a stored trail with Follow-the-leader off (#1095)",
+    (it) => {
+        /** A trail for marchers 2–4 on page 2's move, its line selected, the switch off */
+        const trailShown = async (
+            db: DbConnection,
+            wrapper: (p: { children: React.ReactNode }) => React.JSX.Element,
+        ) => {
+            const set = await setUp(db, wrapper);
+            const [, m2, m3, m4] = resolver().marcherIds();
+            const line = [m2!, m3!, m4!];
+            const { routeId } = await followTrail({
+                db,
+                timelineId: set.timeline.id,
+                marcherIds: line,
+                points: [{ at: [set.A[0] + 20, set.A[1] + 40] }],
+            });
+            await timelineResolverSettled();
+            act(() => setFollowTheLeader(false));
+            act(() => clearPath());
+            set.select(line);
+            await waitFor(() =>
+                expect(session()?.target.routeId).toBe(routeId),
+            );
+            return { ...set, line, routeId };
+        };
+
+        it("shows the trail quiet; Follow, Reverse leader, Edit path, Enter and P can't edit it", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { routeId } = await trailShown(db, wrapper);
+            expect(session()!.phase).toBe("closed");
+            expect(session()!.target.trail).toBeTruthy();
+            // Follow and Reverse leader have no handler at all: no key or palette entry runs them
+            expect(runAction("followTrail")).toBe(false);
+            expect(runAction("reverseTrail")).toBe(false);
+            // Edit path stays, greyed, saying why
+            expect(isActionEnabled("editPath")).toBe(false);
+            expect(actionDisabledReason("editPath")).toMatch(
+                /Follow-the-leader \(preview\)/,
+            );
+            expect(runAction("applyShape")).toBe(false);
+            let opened = true;
+            act(() => {
+                opened = openPath();
+            });
+            expect(opened).toBe(false);
+            expect(session()!.phase).toBe("closed");
+            // P on the trail's line says why, and draws nothing
+            const error = vi.spyOn(toast, "error");
+            act(() => void runAction("pathPen"));
+            expect(error).toHaveBeenCalledWith(
+                expect.stringMatching(/Follow-the-leader \(preview\)/),
+                expect.anything(),
+            );
+            expect(session()!.phase).toBe("closed");
+            // A click on its line selects the line and shows the trail, still quiet
+            const target = session()!.target;
+            act(() => activatePath(target, "3", null, false));
+            expect(session()!.phase).toBe("closed");
+            expect(session()!.target.routeId).toBe(routeId);
+            // Remove trail stays: the way out of a trail made in a preview build
+            expect(isActionEnabled("removePath")).toBe(true);
+        });
+
+        it("turned on, everything is back at once, no reload; turned off again, an open trail closes", async ({
+            db,
+            wrapper,
+            marchersAndPages: _,
+        }) => {
+            const { routeId } = await trailShown(db, wrapper);
+            act(() => setFollowTheLeader(true));
+            await waitFor(() => expect(isActionEnabled("editPath")).toBe(true));
+            expect(isActionEnabled("reverseTrail")).toBe(true);
+            act(() => void runAction("editPath"));
+            expect(session()!.phase).toBe("open");
+            act(() => setFollowTheLeader(false));
+            await waitFor(() => expect(session()!.phase).toBe("closed"));
+            act(() => setFollowTheLeader(true));
+            act(() => void runAction("followTrail"));
+            await waitFor(() => expect(session()?.phase).toBe("drawing"));
+            expect(session()!.target.routeId).toBe(routeId);
+            // Switched off mid-drawing: the drawing goes, the stored trail is shown quiet again
+            act(() => setFollowTheLeader(false));
+            await waitFor(() => expect(session()!.phase).toBe("closed"));
+            expect(session()!.target.routeId).toBe(routeId);
+        });
+    },
+);
 
 describeDbTests(
     "usePathPenActions: the Follow tool's Ends (step 9, RP-1)",

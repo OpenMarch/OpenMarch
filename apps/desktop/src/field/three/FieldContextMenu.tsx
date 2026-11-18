@@ -80,8 +80,8 @@ import {
  *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
  * - **Hold style** (ADR 0015 D-5, #775), while a selected marcher is Held at the playhead: the
  *   show setting, stand, mark time or high mark time for that hold, the one in effect checked.
- * - A line's order (pathways step 4g), with two or more selected: **Set order**, **Reverse order**
- *   and **Clear order**.
+ * - A line's order (pathways step 4g), with two or more selected and Follow-the-leader on
+ *   (#1095): **Set order**, **Reverse order** and **Clear order**.
  * - Splitting moves (timeline mode, not Basic): **Split selected marchers into a new move** and
  *   **Split the move at the playhead**. An entry that can't run says why beside it (a split at
  *   a count refused while a line follows a trail), before anyone tries it.
@@ -314,7 +314,10 @@ export default function FieldContextMenu({
                     : MOVES.has(id)
                       ? timelineMode && hasActionHandler(id)
                       : ORDER.has(id)
-                        ? timelineMode && selectedCount >= 2
+                        ? // Gone with Follow-the-leader off (#1095): no handler then
+                          timelineMode &&
+                          selectedCount >= 2 &&
+                          hasActionHandler(id)
                         : true;
     // Swap's handler counts the marchers (props aren't swapped), so its own state is the answer
     const enabled = (id: ActionId) => isActionEnabled(id);

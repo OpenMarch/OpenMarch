@@ -11,6 +11,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import type { ActionId } from "@/shortcuts/definitions";
 import { registerActionHandler } from "@/shortcuts/registry";
+import { setFollowTheLeader } from "@/pathways/followTheLeader";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import FieldContextMenu, {
     FIELD_MENU_ACTIONS,
@@ -90,6 +91,7 @@ describe("FieldContextMenu", () => {
     afterEach(() => {
         cleanup();
         handlers.splice(0).forEach((off) => off());
+        setFollowTheLeader(false);
     });
 
     it("shows nothing until it's opened at a point", () => {
@@ -328,7 +330,9 @@ describe("FieldContextMenu", () => {
             "refitPath",
         ] as const)
             handle(id, { enabled: false, reason: null });
-        // Two selected, so Swap can run and a line's order shows
+        // Two selected, so Swap can run, and with Follow-the-leader on a line's order shows
+        // (with it off the order group is gone: followTheLeaderSwitch.test.tsx)
+        setFollowTheLeader(true);
         open({ selectedCount: 2 });
         const content = screen.getByTestId("field-menu");
         const groups: string[][] = [[]];

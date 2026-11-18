@@ -1841,6 +1841,8 @@
         "field.labelSize.small": "Small",
         "field.stepSizeWarnings": "Step size warnings",
         "field.stepSizeWarnings.description": "Mark moves with steps too large to march, and always show their paths.",
+        "field.followTheLeader": "Follow-the-leader (preview)",
+        "field.followTheLeader.description": "Adds Follow, Set order and Ripple in, for lines that follow a leader along a trail. Still being tested. Turned off, a show that has trails still plays them.",
         "general": "General",
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
@@ -4792,7 +4794,8 @@
             "selectOne": "Select a marcher to draw a path for",
             "twoMoves": "These marchers are in different moves at the playhead: select marchers of one move to draw a group path",
             "followTwo": "Select the marchers of a line (two or more) to follow a trail",
-            "followTwoMoves": "These marchers are in different moves at the playhead: select marchers of one move to follow a trail"
+            "followTwoMoves": "These marchers are in different moves at the playhead: select marchers of one move to follow a trail",
+            "followTheLeaderOff": "This line follows a trail. Turn on Follow-the-leader (preview) in Settings › Field to edit it"
         },
         "banner": {
             "drawingPoints": "{marcher}'s path: click for a corner, drag for a smooth point · Right-click or <keys></keys> removes the last · Double-click to finish · <esc></esc> to cancel",

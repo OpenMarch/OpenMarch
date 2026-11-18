@@ -158,6 +158,10 @@
             {
                 "key": "settings.field.stepSizeWarnings",
                 "label": "Step size warnings"
+            },
+            {
+                "key": "settings.field.followTheLeader",
+                "label": "Follow-the-leader (preview)"
             }
         ]
     },

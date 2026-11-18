@@ -25,6 +25,7 @@ import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import SelectToolBar from "./SelectToolBar";
 import { MENU_BUTTON_CLASS } from "@/components/ui/popupClasses";
 import { useShowsSelectTool } from "@/field/fieldSelectTool";
+import { useFollowTheLeader } from "@/pathways/followTheLeader";
 
 const BAR_CLASS =
     "border-stroke bg-bg-1 text-text rounded-8 pointer-events-auto flex flex-col items-center gap-4 border p-4 shadow-lg";
@@ -61,6 +62,7 @@ export default function FieldDisplayBar() {
     const { t } = useTranslate();
     const layerRef = useFieldLayerRef<HTMLDivElement>();
     const showsSelectTool = useShowsSelectTool();
+    const followTheLeader = useFollowTheLeader();
     return (
         <TransportTooltipProvider>
             <div
@@ -94,16 +96,19 @@ export default function FieldDisplayBar() {
                         labelKey="toolbar.view.shapes"
                         testId="field-display-shapes"
                     />
-                    {/* A line's order (pathways step 4g): Show order, Alt+O */}
-                    <ChoiceButton
-                        setting="marcherOrder"
-                        fallback="selected"
-                        choices={ORDER_CHOICES}
-                        icon={ListNumbersIcon}
-                        labelKey="toolbar.view.order"
-                        testId="field-display-order"
-                        action="toggleMarcherOrder"
-                    />
+                    {/* A line's order (pathways step 4g): Show order, Alt+O. Only with
+                        Follow-the-leader on (#1095) */}
+                    {followTheLeader && (
+                        <ChoiceButton
+                            setting="marcherOrder"
+                            fallback="selected"
+                            choices={ORDER_CHOICES}
+                            icon={ListNumbersIcon}
+                            labelKey="toolbar.view.order"
+                            testId="field-display-order"
+                            action="toggleMarcherOrder"
+                        />
+                    )}
                 </div>
             </div>
         </TransportTooltipProvider>
