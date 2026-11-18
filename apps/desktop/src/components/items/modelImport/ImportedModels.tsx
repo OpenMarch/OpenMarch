@@ -72,20 +72,19 @@ export default function ImportedModels({
                     />
                 ))}
             </div>
-            {models.length === 0 ? (
+            {models.length === 0 && (
                 <p className="text-sub text-text-subtitle">
                     <T keyName="props.imported.empty" />
                 </p>
-            ) : (
-                <button
-                    type="button"
-                    onClick={() => runAction("openAssets")}
-                    className="text-sub text-accent self-start hover:underline"
-                    data-testid="imported-models-manage"
-                >
-                    <T keyName="props.imported.manage" />
-                </button>
             )}
+            <button
+                type="button"
+                onClick={() => runAction("openAssets")}
+                className="text-sub text-accent touch:min-h-44 flex items-center self-start hover:underline"
+                data-testid="imported-models-manage"
+            >
+                <T keyName="props.imported.manage" />
+            </button>
         </section>
     );
 }

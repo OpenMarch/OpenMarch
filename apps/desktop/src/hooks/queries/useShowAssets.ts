@@ -16,6 +16,9 @@ import type { JsonObject } from "@/showAssets/hash";
 import type { ShowAssetRef } from "@/showAssets/ref";
 import { showAssetRefValue } from "@/showAssets/ref";
 import { conToastError } from "@/utilities/utils";
+import { REMOVABLE_ASSET_KINDS } from "@/showAssets/assetUse";
+import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
+
 import tolgee from "@/global/singletons/Tolgee";
 import { createShowBlobCache } from "@/showAssets/blobCache";
 import { DEFAULT_STALE_TIME } from "./constants";
@@ -25,6 +28,12 @@ import { DEFAULT_STALE_TIME } from "./constants";
  * history, so whatever adds one invalidates `showAssetKeys.all()` itself.
  */
 const KEY_BASE = "show_assets";
+
+/** A model armed to place with the next click on the field counts as used */
+export const armedModelValues = (): string[] => {
+    const placing = useItemDrawingStore.getState().placing;
+    return placing?.kind === "model" ? [placing.modelValue] : [];
+};
 
 export const showAssetKeys = {
     all: () => [KEY_BASE] as const,
@@ -63,12 +72,23 @@ export const removeUnusedShowAssetsMutationOptions = (qc: QueryClient) =>
     mutationOptions({
         mutationFn: async (refs: readonly ShowAssetRef[]) =>
             await db.transaction(async (tx) => {
-                const named = new Set(await getShowAssetReferences({ db: tx }));
+                const named = new Set([
+                    ...(await getShowAssetReferences({ db: tx })),
+                    ...armedModelValues(),
+                ]);
+                const removable = new Set(
+                    (await getShowAssets({ db: tx }))
+                        .filter((asset) =>
+                            REMOVABLE_ASSET_KINDS.has(asset.kind),
+                        )
+                        .map(showAssetRefValue),
+                );
                 return await removeShowAssetsInTransaction({
                     tx,
-                    refs: refs.filter(
-                        (ref) => !named.has(showAssetRefValue(ref)),
-                    ),
+                    refs: refs.filter((ref) => {
+                        const value = showAssetRefValue(ref);
+                        return removable.has(value) && !named.has(value);
+                    }),
                 });
             }),
         onSettled: async () => {

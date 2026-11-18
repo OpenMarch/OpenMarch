@@ -4549,7 +4549,7 @@
         "empty": "Wala pang na-import na asset ang palabas na ito. Mag-import ng 3D model mula sa panel na Props.",
         "notes": {
             "unused": "{count, plural, one {# asset ang hindi ginagamit} other {# asset ang hindi ginagamit}} saanman sa palabas · {size}",
-            "missing": "{count, plural, one {# prop ang gumagamit ng model na wala sa palabas na ito, kaya iginuguhit ito bilang block.} other {# prop ang gumagamit ng mga model na wala sa palabas na ito, kaya iginuguhit sila bilang mga block.}}",
+            "missing": "{count, plural, =1 {# prop ang gumagamit ng model na wala sa palabas na ito, kaya iginuguhit ito bilang block.} other {# prop ang gumagamit ng mga model na wala sa palabas na ito, kaya iginuguhit sila bilang mga block.}}",
             "large": "Pinalalaki ng mga asset ang palabas na ito: {size}. Mas mabagal buksan, i-save at ibahagi ang malalaking palabas."
         },
         "removeUnused": {
@@ -4563,7 +4563,7 @@
         "kind": {
             "model": "3D model"
         },
-        "uses": "{count, plural, one {Ginamit nang isang beses} other {Ginamit nang # beses}}",
+        "uses": "{count, plural, =1 {Ginamit nang isang beses} other {Ginamit nang # beses}}",
         "unused": "Hindi ginagamit",
         "shareNote": "Hindi alam ang lisensya: maaaring wala kang karapatang ibahagi ito",
         "size": {

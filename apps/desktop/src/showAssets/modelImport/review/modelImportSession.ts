@@ -260,7 +260,7 @@ export function withoutEmpty(credits: ModelCredits): ModelCredits {
         keyof ModelCredits,
         string | undefined,
     ][]) {
-        const trimmed = value?.trim();
+        const trimmed = typeof value === "string" ? value.trim() : undefined;
         if (trimmed) out[key] = trimmed;
     }
     return out;

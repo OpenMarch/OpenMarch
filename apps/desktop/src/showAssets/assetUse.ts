@@ -7,7 +7,16 @@
  * Pure: no React, no database.
  */
 import type { ShowAsset } from "@/db-functions/showAssets";
+import { MODEL_ASSET_KIND } from "./modelImport/rules";
 import { showAssetRefValue } from "./ref";
+
+/**
+ * The kinds whose every use this build can find (props' models, cue values). Another kind, such
+ * as one a later build names from elsewhere, is never called unused, so never removed.
+ */
+export const REMOVABLE_ASSET_KINDS: ReadonlySet<string> = new Set([
+    MODEL_ASSET_KIND,
+]);
 
 /** Past this many bytes of assets, the show says it's large (ADR 0010 D-19) */
 export const LARGE_SHOW_ASSET_BYTES = 500 * 1024 * 1024;
@@ -25,7 +34,7 @@ export interface AssetUse {
 export interface ShowAssetUse {
     /** Every asset, in the store's order */
     assets: AssetUse[];
-    /** The assets nothing names */
+    /** The assets nothing names, of a kind whose uses this build can find */
     unused: AssetUse[];
     /** The bytes removing the unused assets frees: blobs no used asset shares */
     unusedBytes: number;
@@ -60,7 +69,9 @@ export function showAssetUse(
         for (const hash of blobsOf(asset)) bytes += sizes.get(hash) ?? 0;
         return { asset, value, bytes, uses: counts.get(value) ?? 0 };
     });
-    const unused = rows.filter((row) => row.uses === 0);
+    const unused = rows.filter(
+        (row) => row.uses === 0 && REMOVABLE_ASSET_KINDS.has(row.asset.kind),
+    );
 
     const kept = new Set<string>();
     for (const row of rows)

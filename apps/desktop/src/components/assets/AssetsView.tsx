@@ -19,6 +19,7 @@ import {
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
 import { PropListContents } from "@/components/items/PropsModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
 import { ModelThumbnail } from "@/components/items/modelImport/ImportedModels";
 import { CreditFields } from "@/components/items/modelImport/ModelImportReview";
 import { allItemsQueryOptions } from "@/hooks/queries/useItems";
@@ -61,11 +62,15 @@ function useAssetUse() {
     const { data: sizes } = useQuery(showAssetSizesQueryOptions());
     const { data: items } = useQuery(allItemsQueryOptions());
     const { data: cues } = useQuery(allCuesQueryOptions());
+    const armed = useItemDrawingStore((state) =>
+        state.placing?.kind === "model" ? state.placing.modelValue : null,
+    );
     return useMemo(() => {
         if (!assets || !sizes || !items || !cues) return null;
         const use = showAssetUse(assets, sizes, [
             ...items.map((item) => item.model),
             ...cues.map((cue) => cue.value),
+            armed,
         ]);
         const known = new Set(use.assets.map((row) => row.value));
         // Props naming a model the show doesn't have: an undo brought one back, say
@@ -74,7 +79,7 @@ function useAssetUse() {
                 item.model?.startsWith("library:") && !known.has(item.model),
         ).length;
         return { ...use, missingProps };
-    }, [assets, sizes, items, cues]);
+    }, [assets, sizes, items, cues, armed]);
 }
 
 export function AssetsContents({
@@ -196,9 +201,14 @@ function AssetNotes({
     );
 }
 
-/** Empty, or a license nobody has given: whoever shares the show may not have the right to */
-const hasLicense = (credits: JsonObject) =>
-    typeof credits.license === "string" && credits.license.trim() !== "";
+/** No license, or one marked unknown: whoever shares the show may not have the right to */
+const licenseOf = (credits: JsonObject): string | null => {
+    const license =
+        typeof credits.license === "string" ? credits.license.trim() : "";
+    return license === "" || /^(LicenseRef-)?unknown$/i.test(license)
+        ? null
+        : license;
+};
 
 /** One asset: its picture, name, kind, size and use, and its credits to read or edit */
 function AssetRow({ row }: { row: AssetUse }) {
@@ -207,7 +217,7 @@ function AssetRow({ row }: { row: AssetUse }) {
     const [open, setOpen] = useState(false);
     const panelId = useId();
     const { asset } = row;
-    const licensed = hasLicense(asset.credits);
+    const license = licenseOf(asset.credits);
     return (
         <li
             className="border-stroke rounded-6 flex flex-col gap-12 border p-8"
@@ -240,8 +250,12 @@ function AssetRow({ row }: { row: AssetUse }) {
                         ].join(" · ")}
                     </span>
                     <span className="text-sub text-text-subtitle flex items-center gap-4">
-                        {licensed ? (
-                            String(asset.credits.license)
+                        {license ? (
+                            license === "LicenseRef-Proprietary" ? (
+                                t("props.import.credits.proprietary")
+                            ) : (
+                                license
+                            )
                         ) : (
                             <>
                                 <WarningIcon
@@ -271,6 +285,19 @@ function AssetRow({ row }: { row: AssetUse }) {
     );
 }
 
+/** The credit fields a person edits, text only (a file may have put anything there) */
+const textCredits = (credits: JsonObject): ModelCredits => {
+    const out: ModelCredits = {};
+    for (const key of [
+        "license",
+        "author",
+        "sourceUrl",
+        "attribution",
+    ] as const)
+        if (typeof credits[key] === "string") out[key] = credits[key];
+    return out;
+};
+
 /** Saves after typing pauses, so each keystroke isn't a write */
 const SAVE_AFTER_MS = 600;
 
@@ -280,8 +307,8 @@ function AssetCredits({ row }: { row: AssetUse }) {
     const { mutate } = useMutation(
         setShowAssetCreditsMutationOptions(queryClient),
     );
-    const [draft, setDraft] = useState<ModelCredits>(
-        () => row.asset.credits as ModelCredits,
+    const [draft, setDraft] = useState<ModelCredits>(() =>
+        textCredits(row.asset.credits),
     );
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pending = useRef<ModelCredits | null>(null);
@@ -303,6 +330,7 @@ function AssetCredits({ row }: { row: AssetUse }) {
         <CreditFields
             credits={draft}
             testIdPrefix="asset"
+            startOpen
             onChange={(credits) => {
                 setDraft(credits);
                 pending.current = credits;

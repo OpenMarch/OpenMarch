@@ -35,6 +35,7 @@ import {
 import { parsePropColor, propColorToString } from "@/items/propColor";
 import EquipmentModelControl from "@/components/frontEnsemble/EquipmentModelControl";
 import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import { showAssetRefValue } from "@/showAssets/ref";
 import {
     hasModelHeight,
     libraryModels,
@@ -154,7 +155,9 @@ export function ItemEditor({ itemId }: { itemId: number }) {
     const standsUp = model ? hasModelHeight(model.sidecar.sizeM) : false;
     // Names an imported model the show no longer has (removed, then an undo brought it back)
     const modelMissing =
-        !!assets && !!item?.model?.startsWith("library:") && !model;
+        !!assets &&
+        !!item?.model?.startsWith("library:") &&
+        !assets.some((asset) => showAssetRefValue(asset) === item.model);
     const changes = useMemo(
         () =>
             item && rows

@@ -60,6 +60,12 @@ describe("showAssetUse", () => {
         expect(use.missingUses).toBe(2);
     });
 
+    it("never calls an asset of another kind unused: this build can't see its uses", () => {
+        const flag = { ...asset("04", { silk: "c" }), kind: "flag" };
+        const use = showAssetUse([chair, flag], sizes, []);
+        expect(use.unused.map((row) => row.asset.kind)).toEqual(["model"]);
+    });
+
     it("says a show is large past 500 MB", () => {
         expect(LARGE_SHOW_ASSET_BYTES).toBe(500 * 1024 * 1024);
     });

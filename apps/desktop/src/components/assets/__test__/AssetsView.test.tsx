@@ -14,7 +14,11 @@ import { harnessQueryClient, setUpFeature } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { createItems, getItems, updateItems } from "@/db-functions/items";
-import { getShowAssets } from "@/db-functions/showAssets";
+import {
+    addShowAssetInTransaction,
+    getShowAssets,
+} from "@/db-functions/showAssets";
+import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
 import { performUndo } from "@/db-functions/history";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { importModel as runImport } from "@/showAssets/modelImport/pipeline";
@@ -157,11 +161,14 @@ describeDbTests("Assets view", (it) => {
         await setUpFeature(<SidebarModal />, 1, []);
         await act(async () => showAssetsView());
         const row = await screen.findByTestId("asset-row");
-        fireEvent.click(within(row).getByRole("button", { expanded: false }));
-        fireEvent.click(await screen.findByTestId("asset-credits-toggle"));
-        fireEvent.change(screen.getByTestId("asset-author"), {
+        // One tap opens the row onto its credits
+        const toggle = within(row).getByRole("button", { expanded: false });
+        fireEvent.click(toggle);
+        fireEvent.change(await screen.findByTestId("asset-author"), {
             target: { value: "Khronos" },
         });
+        // Closing the row at once still saves the edit
+        fireEvent.click(toggle);
         await waitFor(
             async () => {
                 const [after] = await getShowAssets({ db });
@@ -169,6 +176,71 @@ describeDbTests("Assets view", (it) => {
                 expect(after!.versionHash).toBe(before!.versionHash);
             },
             { timeout: 3000 },
+        );
+    });
+
+    it("keeps what's named while it asks, an armed model, and kinds it can't see the uses of", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        expect(marchersAndPages).toBeDefined();
+        const pattern = await store(
+            db,
+            "TextureCoordinateTest.glb",
+            "Test pattern",
+        );
+        const chair = await store(db, "SheenChair.glb", "Chair");
+        await db.transaction((tx) =>
+            addShowAssetInTransaction({
+                tx,
+                asset: {
+                    kind: "flag",
+                    name: "Flag",
+                    parts: { silk: new Uint8Array([1, 2]) },
+                },
+            }),
+        );
+        await setUpFeature(<SidebarModal />, 1, []);
+        // The chair is armed to place with the next click on the field
+        await act(async () =>
+            useItemDrawingStore.getState().placeModel({
+                modelValue: chair,
+                footprint: { width: 1, depth: 1, height: 1 },
+                baseName: "Chair",
+            }),
+        );
+        await act(async () => showAssetsView({ openRemove: true }));
+        const list = await screen.findByTestId("assets-remove-list");
+        expect(list).toHaveTextContent("Test pattern");
+        expect(list).not.toHaveTextContent("Chair");
+        expect(list).not.toHaveTextContent("Flag");
+        // A prop starts using the pattern while the list is up: it's kept
+        const beats = await db
+            .select({ id: schema.beats.id })
+            .from(schema.beats)
+            .all();
+        await createItems({
+            db,
+            newItems: [
+                {
+                    kind: "prop",
+                    surfaceType: "floor",
+                    home: [100, 100],
+                    beatId: beats[0]!.id,
+                    model: pattern,
+                    geometry: { outlineType: "rectangle", width: 1, depth: 1 },
+                },
+            ],
+        });
+        fireEvent.click(screen.getByTestId("assets-remove-confirm"));
+        await waitFor(() =>
+            expect(screen.queryByTestId("assets-remove-dialog")).toBeNull(),
+        );
+        expect((await getShowAssets({ db })).map((a) => a.name).sort()).toEqual(
+            ["Chair", "Flag", "Test pattern"],
+        );
+        await act(async () =>
+            useItemDrawingStore.getState().resetDrawingState(),
         );
     });
 
@@ -183,6 +255,13 @@ describeDbTests("Assets view", (it) => {
             await screen.findByTestId("assets-remove-dialog"),
         ).toHaveTextContent("nothing to remove");
         expect(screen.queryByTestId("assets-remove-confirm")).toBeNull();
+        // Cancel, then ask again: it asks again
+        fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+        await waitFor(() =>
+            expect(screen.queryByTestId("assets-remove-dialog")).toBeNull(),
+        );
+        await act(async () => showAssetsView({ openRemove: true }));
+        expect(await screen.findByTestId("assets-remove-dialog")).toBeTruthy();
         void db;
     });
 });

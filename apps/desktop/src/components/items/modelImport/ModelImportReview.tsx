@@ -460,14 +460,17 @@ export function CreditFields({
     credits,
     onChange,
     testIdPrefix = "model-import",
+    startOpen = false,
 }: {
     credits: ModelCredits;
     onChange: (credits: ModelCredits) => void;
     /** Starts each field's test id (the Assets view uses its own) */
     testIdPrefix?: string;
+    /** Shows the fields at once (the Assets view opens a row onto them) */
+    startOpen?: boolean;
 }) {
     const { t } = useTranslate();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(startOpen);
     const panelId = useId();
     const license = credits.license || UNKNOWN_LICENSE;
     const licenses: string[] = [...LICENSE_OPTIONS];
