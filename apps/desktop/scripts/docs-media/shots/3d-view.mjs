@@ -774,6 +774,39 @@ const shots = [
         },
     },
     {
+        id: "3d-props-import-compare",
+        kind: "still",
+        // The import review's Compare in 3D for the chair: the Original (39,936 triangles), with
+        // Light beside it in the switch, turned a little so the cushions' detail shows
+        async setup(ctx) {
+            const { page } = ctx;
+            await importChair(page);
+            await page.getByTestId("model-import-compare").click();
+            const dialog = page.getByTestId("model-compare");
+            await dialog.waitFor({ timeout: 30_000 });
+            await page.getByTestId("model-compare-other").click();
+            // The Original is imported again, then drawn
+            await ctx.wait(6000);
+            const canvas = await page
+                .getByTestId("model-compare")
+                .locator("canvas")
+                .boundingBox();
+            if (canvas) {
+                const x = canvas.x + canvas.width / 2;
+                const y = canvas.y + canvas.height / 2;
+                await page.mouse.move(x, y);
+                await page.mouse.down();
+                await page.mouse.move(x - 60, y + 10, { steps: 8 });
+                await page.mouse.up();
+            }
+            await page.mouse.move(4, 4);
+            await ctx.wait(1500);
+            return {
+                box: await ctx.around(page.getByRole("dialog"), 8),
+            };
+        },
+    },
+    {
         id: "3d-props-assets",
         kind: "still",
         // The Assets view: a chair on the field and a test pattern nothing uses, with the note

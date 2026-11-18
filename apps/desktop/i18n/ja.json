@@ -1494,13 +1494,26 @@
                 "detail": "正面が観客側を向き、上下が正しくなるようにしてください。"
             },
             "rotateAxis": "{axis}軸で回転",
-            "simplify": {
-                "compare": "簡略化の前と後",
-                "before": "変更前 · {triangles}",
-                "after": "変更後 · {triangles}",
-                "beforeFailed": "元のモデルを描画できませんでした。",
-                "title": "三角形{cap}個に簡略化",
-                "detail": "このファイルには三角形が{triangles}個あります。簡略化すると3Dビューが滑らかに動きます。フィールドには設置面の形だけが描かれます。"
+            "detail": {
+                "title": "詳細度",
+                "levels": {
+                    "light": "軽量",
+                    "detailed": "詳細",
+                    "original": "オリジナル"
+                },
+                "cost": "{triangles} 三角形 · ショーに {size} 追加 · 1 つあたり演奏者 {performers, plural, other {# 人}}分の描画負荷",
+                "heavy": "最近のほとんどのコンピューターで問題なく動きます。3D ビューがカクつくときは軽量版を描画します。軽量版もショーに保存されます。"
+            },
+            "compare": {
+                "open": "3D で比較…",
+                "title": "3D で比較",
+                "description": "ドラッグして見回し、バージョンを切り替えて簡略化で変わったところを確認します。",
+                "which": "表示するバージョン",
+                "lightCopy": "軽量版",
+                "hint": "ドラッグで回転、スクロールでズーム",
+                "stands": "スタンドから",
+                "closeUp": "近くで",
+                "drawFailed": "このバージョンを描画できませんでした。"
             },
             "size": {
                 "title": "サイズ",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "細かすぎます",
-                    "detail": "三角形が{triangles}個あります。簡略化できるのは{limit}個までです。"
+                    "detail": "{triangles} 三角形。読み込める上限は {limit} です。"
                 },
                 "rigged": {
                     "title": "リグ付きモデルには対応していません",

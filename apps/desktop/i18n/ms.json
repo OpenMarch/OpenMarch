@@ -1494,13 +1494,26 @@
                 "detail": "Bahagian depan patut menghadap penonton, dengan bahagian atas di atas."
             },
             "rotateAxis": "Putar paksi {axis}",
-            "simplify": {
-                "compare": "Sebelum atau selepas dipermudahkan",
-                "before": "Sebelum · {triangles}",
-                "after": "Selepas · {triangles}",
-                "beforeFailed": "Tidak dapat melukis model asal.",
-                "title": "Permudahkan kepada {cap} segi tiga",
-                "detail": "Fail ini mempunyai {triangles} segi tiga. Pemudahan memastikan Paparan 3D lancar; padang hanya melukis tapaknya."
+            "detail": {
+                "title": "Perincian",
+                "levels": {
+                    "light": "Ringan",
+                    "detailed": "Terperinci",
+                    "original": "Asal"
+                },
+                "cost": "{triangles} segi tiga · menambah {size} pada persembahan · setiap salinan dilukis seperti {performers, plural, other {# pemain}}",
+                "heavy": "Lancar pada kebanyakan komputer baharu. Jika Paparan 3D tersekat-sekat, ia melukis salinan ringan, yang turut disimpan dalam persembahan."
+            },
+            "compare": {
+                "open": "Bandingkan dalam 3D…",
+                "title": "Bandingkan dalam 3D",
+                "description": "Seret untuk melihat sekeliling, kemudian tukar versi untuk melihat apa yang berubah apabila dipermudahkan.",
+                "which": "Versi yang dipaparkan",
+                "lightCopy": "Salinan ringan",
+                "hint": "Seret untuk memutar, tatal untuk mengezum",
+                "stands": "Dari tempat duduk penonton",
+                "closeUp": "Dekat",
+                "drawFailed": "Versi ini tidak dapat dilukis."
             },
             "size": {
                 "title": "Saiz",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Terlalu terperinci",
-                    "detail": "{triangles} segi tiga; paling banyak yang boleh dipermudahkan ialah {limit}."
+                    "detail": "{triangles} segi tiga; paling banyak yang boleh diimport ialah {limit}."
                 },
                 "rigged": {
                     "title": "Model berig tidak disokong",

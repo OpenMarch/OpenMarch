@@ -6,9 +6,12 @@
  * Pure: no React, no three.js.
  */
 import type { ShowAsset } from "@/db-functions/showAssets";
-import { MODEL_ASSET_KIND } from "./modelImport/rules";
+import { MODEL_ASSET_KIND, TRIANGLE_CAP } from "./modelImport/rules";
 import type { ModelSidecar } from "./modelImport/types";
 import { showAssetRefValue } from "./ref";
+
+/** At least this many triangles, a model with a Light copy draws it once the view stutters */
+export const HEAVY_MODEL_TRIANGLES = TRIANGLE_CAP * 2;
 
 /** An imported model an item can name, with what drawing it needs */
 export interface LibraryModel {
@@ -18,6 +21,11 @@ export interface LibraryModel {
     modelHash: string;
     /** The distant GLB's blob hash */
     distantHash: string;
+    /**
+     * Beside a level heavier than Light (#1091): the Light copy's blob hash, drawn near the camera
+     * instead of the model once the 3D View lightens heavy models
+     */
+    lightHash: string | null;
     sidecar: ModelSidecar;
 }
 
@@ -39,13 +47,18 @@ export function libraryModels(
     const out = new Map<string, LibraryModel>();
     for (const asset of assets ?? []) {
         if (!isModelAsset(asset)) continue;
-        const { model, distant } = asset.parts;
+        const { model, distant, light } = asset.parts;
+        // A Light copy helps only beside a model clearly heavier than it (#1091): an Original of
+        // 21k triangles isn't worth the fallback's first step
+        const heavy =
+            !!light && (asset.sidecar.triangles ?? 0) >= HEAVY_MODEL_TRIANGLES;
         if (!model || !distant) continue;
         const value = showAssetRefValue(asset);
         out.set(value, {
             value,
             modelHash: model,
             distantHash: distant,
+            lightHash: heavy ? light : null,
             sidecar: asset.sidecar,
         });
     }

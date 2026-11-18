@@ -8,12 +8,11 @@
  */
 import { describe, expect, it } from "vitest";
 import { getBounds } from "@gltf-transform/functions";
-import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import { validateBytes } from "gltf-validator";
 import { importModel } from "../pipeline";
 import { readImageHeader } from "../imageSize";
 import { tipped, UPRIGHT, Z_UP_TILT } from "../orientation";
-import { TRIANGLE_CAP } from "../rules";
+import { DETAILED_TRIANGLE_CAP, TRIANGLE_CAP } from "../rules";
 import type {
     ModelImportChoices,
     ModelImportResult,
@@ -22,7 +21,6 @@ import type {
 } from "../types";
 import {
     chairWith,
-    dracoIo,
     editGlbJson,
     env,
     ktx2Header,
@@ -32,6 +30,7 @@ import {
     read,
     readGlb,
     separateGltf,
+    threeChairs,
     solidPng,
     wrapRoots,
 } from "./fixtures";
@@ -127,20 +126,22 @@ describe("importModel", () => {
     });
 
     describe("a real chair over the triangle cap (SheenChair)", () => {
-        it("simplifies under the cap by default, with a distant version", async () => {
+        it("simplifies to Light by default, with a distant version and no Light copy", async () => {
             const result = await run([picked("SheenChair.glb")]);
             const model = imported(result);
-            const simplify = choiceOf(result, "simplify")!;
-            expect(simplify).toMatchObject({
+            const detail = choiceOf(result, "detail")!;
+            expect(detail).toMatchObject({
                 triangles: 39_936,
-                cap: TRIANGLE_CAP,
-                preselected: true,
-                applied: true,
+                // Under 100,000 there's no Detailed level
+                levels: ["light", "original"],
+                preselected: "light",
+                applied: "light",
+                lightTriangles: null,
             });
-            expect(simplify.simplifiedTriangles).toBeLessThanOrEqual(
-                TRIANGLE_CAP,
-            );
-            expect(model.sidecar.triangles).toBe(simplify.simplifiedTriangles);
+            expect(detail.appliedTriangles).toBeLessThanOrEqual(TRIANGLE_CAP);
+            expect(model.sidecar.triangles).toBe(detail.appliedTriangles);
+            expect(model.sidecar.detail).toBe("light");
+            expect(model.parts.light).toBeUndefined();
             expect(model.sidecar.distantTriangles).toBeLessThanOrEqual(2_000);
             const { max } = await checkStored(model.parts.model);
             expect(max[1]).toBeCloseTo(0.686, 2);
@@ -149,17 +150,40 @@ describe("importModel", () => {
             expect(model.sidecar.sizeM.depth).toBeCloseTo(0.57, 2);
         });
 
-        it("keeps every triangle when the user says no, with a note", async () => {
+        it("keeps every triangle at Original, with a Light copy beside it", async () => {
             const result = await run([picked("SheenChair.glb")], {
-                simplify: false,
+                detail: "original",
             });
             const model = imported(result);
             expect(model.sidecar.triangles).toBe(39_936);
-            expect(result.report.notes).toContainEqual({
-                code: "overTriangleCap",
-                triangles: 39_936,
-                cap: TRIANGLE_CAP,
+            expect(model.sidecar.detail).toBe("original");
+            expect(result.report.notes).not.toContainEqual(
+                expect.objectContaining({ code: "overTriangleCap" }),
+            );
+            // The Light copy: simplified to the cap, the same size and place
+            expect(model.parts.light).toBeInstanceOf(Uint8Array);
+            expect(model.sidecar.lightTriangles).toBeLessThanOrEqual(
+                TRIANGLE_CAP,
+            );
+            expect(choiceOf(result, "detail")!.lightTriangles).toBe(
+                model.sidecar.lightTriangles,
+            );
+            // Simplifying may move its lowest point a fraction of a millimeter: same place to 1 cm
+            const light = getBounds(
+                (await readGlb(model.parts.light!)).getRoot().listScenes()[0],
+            );
+            const full = await checkStored(model.parts.model);
+            for (const i of [0, 1, 2]) {
+                expect(light.max[i]).toBeCloseTo(full.max[i], 2);
+                expect(light.min[i]).toBeCloseTo(full.min[i], 2);
+            }
+        });
+
+        it("ignores a level it doesn't offer", async () => {
+            const result = await run([picked("SheenChair.glb")], {
+                detail: "detailed",
             });
+            expect(choiceOf(result, "detail")!.applied).toBe("light");
         });
 
         it("drops the extensions GLTFLoader can't use and says so", async () => {
@@ -295,75 +319,25 @@ describe("importModel", () => {
         await checkStored(imported(result).parts.model);
     });
 
-    it("refuses more than 4× the triangle cap before decoding", async () => {
-        // Three chairs sharing one mesh: 119,808 triangles drawn
-        const glb = await chairWith((doc) => {
-            const scene = doc.getRoot().listScenes()[0];
-            const parts = doc
-                .getRoot()
-                .listNodes()
-                .filter((n) => n.getMesh());
-            for (const dx of [1, 2]) {
-                const copy = doc
-                    .createNode(`copy ${dx}`)
-                    .setTranslation([dx, 0, 0]);
-                for (const node of parts)
-                    copy.addChild(
-                        doc
-                            .createNode()
-                            .setMesh(node.getMesh())
-                            .setMatrix(node.getWorldMatrix()),
-                    );
-                scene.addChild(copy);
-            }
-        });
-        expect(refusal(await run([picked("three-chairs.glb", glb)]))).toEqual({
-            code: "tooManyTriangles",
+    it("imports a model far over Light, offering Detailed past 100,000 triangles (#1091)", async () => {
+        // Three chairs sharing one mesh: 119,808 triangles drawn, once refused
+        const glb = await threeChairs();
+        const light = await run([picked("three-chairs.glb", glb)]);
+        expect(choiceOf(light, "detail")).toMatchObject({
             triangles: 119_808,
-            cap: TRIANGLE_CAP,
-            limit: 80_000,
+            levels: ["light", "detailed", "original"],
+            applied: "light",
         });
-    });
-
-    it("refuses more than 4× the cap once decoded, whatever the JSON declares", async () => {
-        // Three chairs, Draco-compressed, with each accessor claiming 3 elements: the
-        // precheck counts 1 triangle per primitive, the decoder makes them all
-        const doc = await readGlb(
-            await chairWith((d) => {
-                const scene = d.getRoot().listScenes()[0];
-                const parts = d
-                    .getRoot()
-                    .listNodes()
-                    .filter((n) => n.getMesh());
-                for (const dx of [1, 2]) {
-                    const copy = d.createNode().setTranslation([dx, 0, 0]);
-                    for (const node of parts)
-                        copy.addChild(
-                            d
-                                .createNode()
-                                .setMesh(node.getMesh()!.clone())
-                                .setMatrix(node.getWorldMatrix()),
-                        );
-                    scene.addChild(copy);
-                }
+        const detailed = imported(
+            await run([picked("three-chairs.glb", glb)], {
+                detail: "detailed",
             }),
         );
-        doc.createExtension(KHRDracoMeshCompression)
-            .setRequired(true)
-            .setEncoderOptions({});
-        const encoded = await (await dracoIo()).writeBinary(doc);
-        const understated = editGlbJson(encoded, (json) => {
-            for (const accessor of json.accessors as { count: number }[])
-                accessor.count = 3;
-        });
-        expect(
-            refusal(await run([picked("draco-chairs.glb", understated)])),
-        ).toEqual({
-            code: "tooManyTriangles",
-            triangles: 119_808,
-            cap: TRIANGLE_CAP,
-            limit: 80_000,
-        });
+        expect(detailed.sidecar.triangles).toBeLessThanOrEqual(
+            DETAILED_TRIANGLE_CAP,
+        );
+        expect(detailed.sidecar.triangles).toBeGreaterThan(TRIANGLE_CAP);
+        expect(detailed.parts.light).toBeInstanceOf(Uint8Array);
     });
 
     it("refuses meshopt data that would decode past its budget", async () => {

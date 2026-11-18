@@ -1496,13 +1496,26 @@
                 "detail": "The front should face the audience, right side up."
             },
             "rotateAxis": "Rotate {axis}",
-            "simplify": {
-                "compare": "Before or after simplifying",
-                "before": "Before · {triangles}",
-                "after": "After · {triangles}",
-                "beforeFailed": "Couldn't draw the original.",
-                "title": "Simplify to {cap} triangles",
-                "detail": "The file has {triangles}. Simplifying keeps the 3D View smooth; the field only draws its footprint."
+            "detail": {
+                "title": "Detail",
+                "levels": {
+                    "light": "Light",
+                    "detailed": "Detailed",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triangles · adds {size} to the show · each copy draws like {performers, plural, one {# performer} other {# performers}}",
+                "heavy": "Fine on most recent computers. If the 3D View stutters, it draws a Light copy instead, which is kept in the show too."
+            },
+            "compare": {
+                "open": "Compare in 3D…",
+                "title": "Compare in 3D",
+                "description": "Drag to look around, then switch versions to see what simplifying changed.",
+                "which": "Version to show",
+                "lightCopy": "Light copy",
+                "hint": "Drag to turn, scroll to zoom",
+                "stands": "From the stands",
+                "closeUp": "Close up",
+                "drawFailed": "Couldn't draw this version."
             },
             "size": {
                 "title": "Size",
@@ -1586,7 +1599,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Far too detailed",
-                    "detail": "{triangles} triangles; the most it can simplify is {limit}."
+                    "detail": "{triangles} triangles; the most it can import is {limit}."
                 },
                 "rigged": {
                     "title": "Rigged models aren't supported",

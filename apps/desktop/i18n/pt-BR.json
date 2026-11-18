@@ -1494,13 +1494,26 @@
                 "detail": "A frente deve ficar voltada para a plateia, com o lado certo para cima."
             },
             "rotateAxis": "Girar em {axis}",
-            "simplify": {
-                "compare": "Antes ou depois de simplificar",
-                "before": "Antes · {triangles}",
-                "after": "Depois · {triangles}",
-                "beforeFailed": "Não foi possível desenhar o original.",
-                "title": "Simplificar para {cap} triângulos",
-                "detail": "O arquivo tem {triangles} triângulos. Simplificar mantém a Visualização 3D fluida; o campo desenha só a área que ele ocupa."
+            "detail": {
+                "title": "Detalhe",
+                "levels": {
+                    "light": "Leve",
+                    "detailed": "Detalhado",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triângulos · adiciona {size} ao show · cada cópia é desenhada como {performers, plural, one {# integrante} other {# integrantes}}",
+                "heavy": "Funciona bem na maioria dos computadores recentes. Se a Visão 3D travar, ela desenha uma cópia leve, que também fica salva no show."
+            },
+            "compare": {
+                "open": "Comparar em 3D…",
+                "title": "Comparar em 3D",
+                "description": "Arraste para olhar ao redor e troque de versão para ver o que a simplificação mudou.",
+                "which": "Versão exibida",
+                "lightCopy": "Cópia leve",
+                "hint": "Arraste para girar, role para aproximar",
+                "stands": "Da arquibancada",
+                "closeUp": "De perto",
+                "drawFailed": "Não foi possível desenhar esta versão."
             },
             "size": {
                 "title": "Tamanho",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Detalhado demais",
-                    "detail": "{triangles} triângulos; o máximo que dá para simplificar é {limit}."
+                    "detail": "{triangles} triângulos; o máximo que dá para importar é {limit}."
                 },
                 "rigged": {
                     "title": "Modelos com rig não são compatíveis",

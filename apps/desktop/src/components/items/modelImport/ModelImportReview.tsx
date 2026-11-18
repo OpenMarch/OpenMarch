@@ -22,6 +22,7 @@ import {
 } from "@openmarch/ui";
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
 import AxisPreview, { AXIS_COLORS, type Axis } from "./AxisPreview";
+import DetailChoice from "./DetailChoice";
 import {
     sameTilt,
     tipped,
@@ -138,19 +139,8 @@ export default function ModelImportReview({
     }, [running]);
     // Stood up from Z-up on its own: said in Needs your choice, with a way back
     const zUp = tilt?.zUpSuspected ? tilt : undefined;
-    const simplify = choiceOf(needs, "simplify");
-    const simplified = simplify?.applied ? simplify : undefined;
-    const [showBefore, setShowBefore] = useState(false);
-    const before = session.before;
-    // A turn, a tip or a unit change drops the before picture: back to the one Add stores
-    useEffect(() => {
-        if (!before) setShowBefore(false);
-    }, [before]);
-    const pictureBytes =
-        showBefore && before?.status === "ready"
-            ? before.thumbnail
-            : model?.parts.thumbnail;
-    const picture = useBytesUrl(pictureBytes, "image/png");
+    const detail = choiceOf(needs, "detail");
+    const picture = useBytesUrl(model?.parts.thumbnail, "image/png");
 
     const cancel = () => {
         // A save under way can't be taken back
@@ -175,37 +165,6 @@ export default function ModelImportReview({
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto pr-4">
                 {/* The picture, from the audience side, with Rotate X, Y and Z under it */}
                 <section className="flex flex-col gap-8">
-                    {simplified && (
-                        <SegmentedTextSwitch
-                            ariaLabel={t("props.import.simplify.compare")}
-                            selected={showBefore ? "before" : "after"}
-                            setSelected={(value) => {
-                                const wantsBefore = value === "before";
-                                if (wantsBefore) session.loadBefore();
-                                setShowBefore(wantsBefore);
-                            }}
-                            options={[
-                                {
-                                    value: "before",
-                                    label: t("props.import.simplify.before", {
-                                        triangles:
-                                            simplified.triangles.toLocaleString(),
-                                    }),
-                                    testId: "model-import-before",
-                                },
-                                {
-                                    value: "after",
-                                    label: t("props.import.simplify.after", {
-                                        triangles: (
-                                            simplified.simplifiedTriangles ??
-                                            simplified.triangles
-                                        ).toLocaleString(),
-                                    }),
-                                    testId: "model-import-after",
-                                },
-                            ]}
-                        />
-                    )}
                     {(picture || running) && (
                         <div className="rounded-6 border-stroke relative flex aspect-[4/3] items-center justify-center overflow-hidden border bg-white">
                             {picture && (
@@ -220,9 +179,7 @@ export default function ModelImportReview({
                                     data-testid="model-import-picture"
                                 />
                             )}
-                            {(running ||
-                                (showBefore &&
-                                    before?.status === "loading")) && (
+                            {running && (
                                 <SpinnerGapIcon
                                     size={32}
                                     className="text-text-subtitle absolute animate-spin"
@@ -230,12 +187,7 @@ export default function ModelImportReview({
                                     aria-label={t("props.import.working")}
                                 />
                             )}
-                            {showBefore && before?.status === "failed" && (
-                                <span className="text-sub text-text-subtitle absolute bottom-8 px-16 text-center">
-                                    <T keyName="props.import.simplify.beforeFailed" />
-                                </span>
-                            )}
-                            {picture && turn && !showBefore && (
+                            {picture && turn && (
                                 <AxisPreview
                                     active={pointed ?? tapped?.axis ?? null}
                                 />
@@ -325,7 +277,15 @@ export default function ModelImportReview({
                     </ReportGroup>
                 )}
 
-                {model && (zUp || simplify) && (
+                {model && detail && (
+                    <DetailChoice
+                        row={detail}
+                        model={model}
+                        running={running}
+                    />
+                )}
+
+                {model && zUp && (
                     <ReportGroup
                         tone="accent"
                         icon={<WarningIcon size={16} />}
@@ -344,24 +304,6 @@ export default function ModelImportReview({
                                 }
                                 title={t("props.import.rotate.title")}
                                 detail={t("props.import.rotate.detail")}
-                            />
-                        )}
-                        {simplify && (
-                            <ChoiceCheck
-                                id="model-import-simplify"
-                                checked={choices.simplify ?? simplify.applied}
-                                disabled={running}
-                                onChange={(on) => {
-                                    if (!on) setShowBefore(false);
-                                    session.choose({ simplify: on });
-                                }}
-                                title={t("props.import.simplify.title", {
-                                    cap: simplify.cap.toLocaleString(),
-                                })}
-                                detail={t("props.import.simplify.detail", {
-                                    triangles:
-                                        simplify.triangles.toLocaleString(),
-                                })}
                             />
                         )}
                     </ReportGroup>

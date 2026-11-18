@@ -25,8 +25,27 @@ describe("libraryModels", () => {
             value,
             modelHash: "m".repeat(64),
             distantHash: "d".repeat(64),
+            lightHash: null,
             sidecar: { sizeM: { width: 0.8 } },
         });
+    });
+
+    it("names the Light copy kept beside a model clearly heavier than it (#1091)", () => {
+        const withLight = (triangles: number) =>
+            asset({
+                parts: {
+                    model: "m".repeat(64),
+                    distant: "d".repeat(64),
+                    thumbnail: "t",
+                    light: "l".repeat(64),
+                },
+                sidecar: { ...asset().sidecar, triangles },
+            });
+        const [heavy] = libraryModels([withLight(900_000)]).values();
+        expect(heavy?.lightHash).toBe("l".repeat(64));
+        // An Original of 21,000 triangles: its Light copy wouldn't help a stuttering view
+        const [light] = libraryModels([withLight(21_000)]).values();
+        expect(light?.lightHash).toBeNull();
     });
 
     it("leaves out other kinds, and models missing a GLB or what the field reads", () => {
