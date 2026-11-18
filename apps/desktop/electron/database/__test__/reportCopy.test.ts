@@ -9,7 +9,14 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import { writeReportCopy } from "../reportCopy";
-import { AUDIO, SECRETS, makeShowWithSecrets } from "./reportCopyFixture";
+import {
+    AUDIO,
+    MODEL_PART,
+    MODEL_PART_HASH,
+    SECRETS,
+    THUMBNAIL_HASH,
+    makeShowWithSecrets,
+} from "./reportCopyFixture";
 
 let dir: string;
 let showPath: string;
@@ -110,6 +117,75 @@ describe("writeReportCopy", () => {
         writeReportCopy(showPath, copyPath, { includeAudio: false });
         const bytes = fs.readFileSync(copyPath).toString("latin1");
         for (const secret of SECRETS) expect(bytes).not.toContain(secret);
+    });
+
+    it("leaves imported models' files out, keeping their sizes and details (#1027)", () => {
+        writeReportCopy(showPath, copyPath, { includeAudio: false });
+        expect(
+            read<{ n: number }>("SELECT count(*) AS n FROM show_asset_blobs")[0]
+                .n,
+        ).toBe(0);
+        const [asset] = read<{
+            name: string;
+            sidecar: string;
+            credits: string;
+        }>("SELECT rowid, name, sidecar, credits FROM show_assets");
+        expect(asset!.name).toMatch(/^Model \d+$/);
+        expect(JSON.parse(asset!.credits)).toEqual({ license: "CC-BY-4.0" });
+        expect(JSON.parse(asset!.sidecar)).toMatchObject({
+            triangles: 19_996,
+            // Names from the file are replaced; the sizes stay
+            importNotes: {
+                fixedForYou: [
+                    {
+                        code: "texturesShrunk",
+                        textures: [
+                            {
+                                name: "Texture 1",
+                                from: [4096, 4096],
+                                to: [1024, 1024],
+                            },
+                        ],
+                    },
+                ],
+            },
+            reportCopy: {
+                partBytes: { model: 5000, thumbnail: 300 },
+                filesIncluded: false,
+            },
+        });
+        // None of the model's bytes are in the file
+        const bytes = fs.readFileSync(copyPath);
+        expect(bytes.includes(Buffer.from(MODEL_PART.slice(0, 64)))).toBe(
+            false,
+        );
+    });
+
+    it("keeps imported models' files when asked", () => {
+        writeReportCopy(showPath, copyPath, {
+            includeAudio: false,
+            includeAssets: true,
+        });
+        const blobs = read<{ hash: string; data: Uint8Array }>(
+            "SELECT hash, data FROM show_asset_blobs ORDER BY hash",
+        );
+        expect(blobs.map((b) => b.hash)).toEqual([
+            MODEL_PART_HASH,
+            THUMBNAIL_HASH,
+        ]);
+        expect(new Uint8Array(blobs[0]!.data)).toEqual(MODEL_PART);
+        const [asset] = read<{
+            name: string;
+            sidecar: string;
+            credits: string;
+        }>("SELECT name, sidecar, credits FROM show_assets");
+        // Names and credits are scrubbed either way
+        expect(asset!.name).toMatch(/^Model \d+$/);
+        expect(JSON.parse(asset!.credits)).toEqual({ license: "CC-BY-4.0" });
+        expect(JSON.parse(asset!.sidecar).reportCopy).toEqual({
+            partBytes: { model: 5000, thumbnail: 300 },
+            filesIncluded: true,
+        });
     });
 
     it("drops the music unless asked, and keeps only the audio file's name", () => {

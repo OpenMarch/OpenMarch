@@ -171,6 +171,8 @@ const APP_API = {
             sendShowFile: boolean;
             expectedShowFileName?: string;
             includeAudio: boolean;
+            /** Imported models' files (fork #1027); off by default */
+            includeAssets?: boolean;
             recording?: {
                 bytes: ArrayBuffer;
                 mimeType: string;

@@ -49,6 +49,8 @@ export interface ReportDraft {
     readonly answers: Readonly<Partial<Record<AnswerKey, string>>>;
     readonly sendShowFile: boolean;
     readonly includeMusic: boolean;
+    /** Send imported models' files with the show copy (fork #1027) */
+    readonly includeModels: boolean;
     readonly consent: {
         readonly videoPublic: boolean;
         readonly showFilePublic: boolean;
@@ -62,6 +64,7 @@ export const EMPTY_DRAFT: ReportDraft = {
     answers: {},
     sendShowFile: true,
     includeMusic: false,
+    includeModels: false,
     consent: { videoPublic: false, showFilePublic: false, creditByName: false },
 };
 
