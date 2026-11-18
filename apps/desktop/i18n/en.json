@@ -2714,6 +2714,7 @@
             "point": {
                 "label": "Position at count {count} of page {page}",
                 "remove": "Remove this count's position",
+                "removeHeld": "{count, plural, =1 {This marcher is {heldLower} from this count, so its position here stays. Remove the hold first.} other {These marchers are {heldLower} from this count, so their positions here stay. Remove the holds first.}}",
                 "tooltip": "Position at count {count} of page {page}. Right-click to remove it."
             },
             "locked": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",

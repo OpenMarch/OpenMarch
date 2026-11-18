@@ -83,6 +83,7 @@ import type {
     TimelineTrackId,
 } from "./TimelineViewModel";
 import {
+    basicPointUnderPlayhead,
     TimelineBasicBodies,
     TimelineBasicExpertMarks,
     TimelineBasicPoints,
@@ -771,6 +772,27 @@ const TimelineSurface = memo(function TimelineSurface({
     const expanded = density !== "collapsed";
     const viewportRef = useRef<HTMLDivElement>(null);
     const playheadRef = useRef<HTMLButtonElement>(null);
+    // UI-19 Basic: the paused playhead covers the tick on its count (it's drawn above the ticks),
+    // so its menu offers that tick's Remove too, and the playhead keeps its drag
+    const onRemoveBasicPoint = props.onRemoveBasicPoint;
+    const playheadTick =
+        props.isPlaying || !onRemoveBasicPoint
+            ? undefined
+            : basicPointUnderPlayhead(
+                  props.basicPoints,
+                  positionBeat,
+                  pixelsPerBeat,
+              );
+    const playheadPoint = useMemo(
+        () =>
+            playheadTick && onRemoveBasicPoint
+                ? {
+                      onRemove: () => onRemoveBasicPoint(playheadTick.beat),
+                      reason: playheadTick.removeReason ?? null,
+                  }
+                : undefined,
+        [playheadTick, onRemoveBasicPoint],
+    );
     const rows = useMemo(
         () => (basic ? [] : packTimelineTracks(model.tracks)),
         [basic, model.tracks],
@@ -1478,6 +1500,7 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             onAddSubsetPage={props.onAddSubsetPage}
                             addPageNames={props.addPageNames}
+                            basicPoint={playheadPoint}
                         />
                         {appendAtPlayhead && (
                             <TimelineAppendAtPlayhead

@@ -10,7 +10,10 @@ import { TimelineCommitViolationError } from "@/db-functions/timelineChanges";
 import { TimelineWriteError } from "@/db-functions/timelineErrors";
 import { text } from "@/timeline/timelineText";
 import { conToastError } from "@/utilities/utils";
-import { TimelineEditRefusedError } from "../timelineEditRefusals";
+import {
+    basicLockedRefusal,
+    TimelineEditRefusedError,
+} from "../timelineEditRefusals";
 import {
     TIMELINE_DB_ERROR_MESSAGE,
     TIMELINE_ERROR_MESSAGES,
@@ -25,6 +28,7 @@ import {
     timelineErrorCode,
     timelineErrorMessage,
     toastTimelineError,
+    type TimelineTranslate,
 } from "../timelineErrorMessages";
 
 /**
@@ -439,6 +443,34 @@ describe("en.json", () => {
                 "{set} of {total} selected: {names}",
         }))
             expect(lookup(key), key).toBe(text);
+    });
+
+    it("words Basic's lock refusal by how many marchers it names, as the lock toast does", async () => {
+        const key = "timeline.basic.locked";
+        const tolgee = Tolgee()
+            .use(FormatSimple())
+            .use(FormatIcu())
+            .init({
+                language: "en",
+                staticData: { en: { [key]: lookup(key) as string } },
+            });
+        await tolgee.run();
+        const translate: TimelineTranslate = (k, text, params) =>
+            tolgee.t(k, text ?? "", { ...params });
+        expect(
+            timelineErrorMessage(basicLockedRefusal([7], "Marcher T3 …"), {
+                translate,
+            }),
+        ).toBe(
+            "One marcher uses Expert moves on this page. Switch to Expert to edit it.",
+        );
+        expect(
+            timelineErrorMessage(basicLockedRefusal([7, 9]), { translate }),
+        ).toBe(
+            "2 marchers use Expert moves on this page. Switch to Expert to edit them.",
+        );
+        // Still the lock refusal, whose toast offers Switch to Expert
+        expect(basicLockedRefusal([7]).refusal).toBe("notSimple");
     });
 
     it("words the holds skip notice as the write does, with the marcher names as parameters", async () => {

@@ -274,8 +274,8 @@ test("a mid-page tick's Remove this count's position merges the two moves back; 
         .toEqual(["1-9", "9-13", "13-17", "17-25"]);
     await waitForIdle(page);
 
-    // Off the tick's count first: there the playhead covers the tick (see
-    // the test.fail below)
+    // Off the tick's count first, so the right-click reaches the tick itself
+    // (on its count the playhead covers it: see the next test)
     await goTo(page, "m5");
     await page.getByTestId("basic-point-tick").click({ button: "right" });
     await page
@@ -292,32 +292,38 @@ test("a mid-page tick's Remove this count's position merges the two moves back; 
     await expect(page.getByTestId("basic-point-tick")).toHaveCount(1);
 });
 
-// App bug: right after a mid-page edit the playhead sits on the new tick's
-// count, and the playhead's button (z-50, `timeline-playhead` in
-// TimelinePrimitives.tsx) covers the tick (z-20, TimelineBasicPoints in
-// TimelineBasicLayers.tsx). A right-click there opens the playhead's menu
-// (Create page / subset at playhead), with no Remove this count's
-// position, so the point can't be removed without moving the playhead.
-test.fail(
-    "right after a mid-page edit, a right-click on the tick under the playhead offers Remove this count's position",
-    async ({ show }) => {
-        const { page } = show;
-        await openAt(show, "m4", { onFlag: false });
-        await clickMarcher(page, "T1");
-        await dragMarcher(page, "T1", { x: 40, y: -30 });
-        await expect(page.getByTestId("basic-point-tick")).toHaveCount(1);
-        await waitForIdle(page);
+// Right after a mid-page edit the playhead sits on the new tick's count, and
+// its button (z-50) covers the tick (z-20), so a right-click there reaches
+// the playhead. Its menu offers the tick's Remove this count's position
+// beside Create page at playhead, and the playhead keeps its drag.
+test("right after a mid-page edit, a right-click on the tick under the playhead offers Remove this count's position", async ({
+    show,
+}) => {
+    const { page } = show;
+    await openAt(show, "m4", { onFlag: false });
+    await clickMarcher(page, "T1");
+    await dragMarcher(page, "T1", { x: 40, y: -30 });
+    await expect(page.getByTestId("basic-point-tick")).toHaveCount(1);
+    await expect
+        .poll(() => moves(show, 1))
+        .toEqual(["1-9", "9-13", "13-17", "17-25"]);
+    await waitForIdle(page);
 
-        await page
-            .getByTestId("basic-point-tick")
-            .click({ button: "right", timeout: 3000 });
-        await expect(
-            page.getByRole("menuitem", {
-                name: "Remove this count's position",
-            }),
-        ).toBeVisible({ timeout: 3000 });
-    },
-);
+    // Where the tick is drawn, as a user aims at it (the playhead is on top)
+    const tick = await page.getByTestId("basic-point-tick").boundingBox();
+    expect(tick).not.toBeNull();
+    await page.mouse.click(
+        tick!.x + tick!.width / 2,
+        tick!.y + tick!.height / 2,
+        { button: "right" },
+    );
+    await expect(page.getByTestId("timeline-add-page")).toBeVisible();
+    await page
+        .getByRole("menuitem", { name: "Remove this count's position" })
+        .click({ timeout: 3000 });
+    await expect.poll(() => moves(show, 1)).toEqual(["1-9", "9-17", "17-25"]);
+    await expect(page.getByTestId("basic-point-tick")).toHaveCount(0);
+});
 
 test("+ past the last flag adds a page ending at the playhead; one Undo removes it", async ({
     show,
@@ -413,10 +419,10 @@ test.describe("Basic mode, a marcher with a move across a page flag", () => {
 
         await dragMarcher(page, "T3", { x: 40, y: -30 });
         await expect(lockToast(page)).toBeVisible();
-        // A drag reaches the writer, whose refusal (`notSimple`) words it for
-        // a group even when one marcher was dragged
+        // One dragged marcher is worded as one, as the lock toast is
+        // (`basicLockedRefusal`), not as a group
         await expect(lockToast(page)).toContainText(
-            "Some of these marchers use Expert moves on this page",
+            "One marcher uses Expert moves on this page. Switch to Expert to edit it.",
         );
         // It snaps back and nothing is saved
         await expect.poll(() => drawnSpot(page, "T3")).toBe(t3);

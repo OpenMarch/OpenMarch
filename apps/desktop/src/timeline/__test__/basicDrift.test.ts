@@ -24,7 +24,10 @@ import {
     type TimelineEditTarget,
 } from "@/db-functions/timelineMoves";
 import { performRedo, performUndo } from "@/db-functions/history";
-import { removePositionAtBeat } from "@/db-functions/timelinePointMoves";
+import {
+    rejoinedHoldEnd,
+    removePositionAtBeat,
+} from "@/db-functions/timelinePointMoves";
 import { readPageGrid } from "@/db-functions/timelineRipple";
 import { unsetMarchersAt } from "@/db-functions/timelineUnset";
 import type { PageBox } from "@/stores/TimelineSelectionStore";
@@ -504,43 +507,101 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
 });
 
 describeDbTests("Basic's ticks (mid-page positions)", (it) => {
-    // BUG 4: a tick is drawn at every move end inside a page (`pointsInBox`), but Remove this
-    // count's position only merges a move ending on the count with one starting there
-    // (`removePositionAtBeatInTransaction`). A tick with a hold after it (Remove keyframe at the
-    // flag, a drag back at the flag, an Expert move ending mid-page, a Held hold starting
-    // mid-page) keeps its menu entry, which writes nothing and says nothing.
-    it.fails(
-        "BUG 4: Remove this count's position takes away a tick that has no move after it",
-        async ({ db, marchersAndPages: _ }) => {
-            const ids = await arranged(async () => {
-                const made = await show(db);
-                await point(db, 13, PAGE2, made.a, FAR);
-                // Basic's Remove keyframe on the page's flag (`unsetHere`)
-                await unsetMarchersAt({
-                    db,
-                    beat: 17,
-                    marcherIds: [made.a],
-                    tidyShared: true,
-                });
-                await timelineResolverSettled();
-                expect(await spansOf(db, made.a)).toContainEqual([9, 13]);
-                expect(
-                    pointsInBox(await readBasicRows(db), made.a, PAGE2),
-                ).toEqual([13]);
-                return made;
-            });
-            if (!ids) return;
-            await removePositionAtBeat({
-                db,
-                beat: 13,
-                box: PAGE2,
-                marcherIds: [ids.a],
-            });
-            expect(pointsInBox(await readBasicRows(db), ids.a, PAGE2)).toEqual(
-                [],
-            );
-        },
-    );
+    /** `a` at FAR on count 13 of page 2, then Remove keyframe on page 2's flag: a hold after 13. */
+    const holdAfterPoint = async (db: DbConnection) => {
+        const made = await show(db);
+        await point(db, 13, PAGE2, made.a, FAR);
+        // Basic's Remove keyframe on the page's flag (`unsetHere`)
+        await unsetMarchersAt({
+            db,
+            beat: 17,
+            marcherIds: [made.a],
+            tidyShared: true,
+        });
+        await timelineResolverSettled();
+        // Page 3 keeps the spot it had (Unset here's stay)
+        expect(await spansOf(db, made.a)).toEqual([
+            [9, 13],
+            [17, 25],
+        ]);
+        expect(pointsInBox(await readBasicRows(db), made.a, PAGE2)).toEqual([
+            13,
+        ]);
+        return made;
+    };
+
+    // Was BUG 4: a tick is drawn at every move end inside a page (`pointsInBox`), but Remove this
+    // count's position only merged a move ending on the count with one starting there. A tick
+    // with a hold after it (Remove keyframe at the flag, a drag back at the flag) kept its menu
+    // entry, which wrote nothing and said nothing. Now the move runs on to where the hold ends,
+    // arriving where it did, as a merge folds in the move after it.
+    it("Remove this count's position takes away a tick that has no move after it", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await holdAfterPoint(db);
+        await removePositionAtBeat({
+            db,
+            beat: 13,
+            box: PAGE2,
+            marcherIds: [ids.a],
+        });
+        await timelineResolverSettled();
+        expect(pointsInBox(await readBasicRows(db), ids.a, PAGE2)).toEqual([]);
+        // One move over the page, arriving at the flag where the hold kept it
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 17],
+            [17, 25],
+        ]);
+        expect(resolver().positionAt(ids.a, 17)).toEqual(FAR);
+    });
+
+    it("one Undo of that Remove brings the tick and its hold back; Redo takes them away again", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await holdAfterPoint(db);
+        await removePositionAtBeat({
+            db,
+            beat: 13,
+            box: PAGE2,
+            marcherIds: [ids.a],
+        });
+        await timelineResolverSettled();
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 17],
+            [17, 25],
+        ]);
+        await performUndo(db);
+        await timelineResolverSettled();
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 13],
+            [17, 25],
+        ]);
+        expect(pointsInBox(await readBasicRows(db), ids.a, PAGE2)).toEqual([
+            13,
+        ]);
+        expect(resolver().positionAt(ids.a, 13)).toEqual(FAR);
+        await performRedo(db);
+        await timelineResolverSettled();
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 17],
+            [17, 25],
+        ]);
+    });
+
+    it("the hold after a tick ends at the next move, a later Held hold or the flag; a Held hold from the tick keeps it", () => {
+        const box = PAGE2;
+        expect(rejoinedHoldEnd([], [], box, 13)).toBe(17);
+        expect(
+            rejoinedHoldEnd([{ start: 9 }, { start: 15 }], [], box, 13),
+        ).toBe(15);
+        expect(rejoinedHoldEnd([], [{ start: 14 }], box, 13)).toBe(14);
+        expect(rejoinedHoldEnd([], [{ start: 11 }], box, 13)).toBe(17);
+        expect(rejoinedHoldEnd([{ start: 15 }], [{ start: 13 }], box, 13)).toBe(
+            null,
+        );
+    });
 });
 
 describeDbTests(

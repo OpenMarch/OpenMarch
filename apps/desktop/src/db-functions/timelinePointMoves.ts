@@ -3,7 +3,7 @@ import { createResolver, validateDestination, type XY } from "@openmarch/core";
 import { schema } from "@/global/database/db";
 import { readTimelineTables } from "@/timeline/timelineRows";
 import { marcherSimpleOnBox, type BasicRow } from "@/timeline/basicSimple";
-import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
+import { basicLockedRefusal } from "@/timeline/timelineEditRefusals";
 import type { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { assertValid, refuse } from "./timelineErrors";
@@ -86,7 +86,7 @@ import {
  *
  * Refused before any write: a beat outside `(a, b]` or not whole, a box that isn't a page's box,
  * a marcher named twice, an invalid position (`E-ARGS` or the validator's code), and any listed
- * marcher that isn't simple on the box (`TimelineEditRefusedError("notSimple")`).
+ * marcher that isn't simple on the box (`notSimple`, worded by count: `basicLockedRefusal`).
  */
 
 type Box = BeatRange;
@@ -184,10 +184,7 @@ const readBoxState = async (
             labels.length === 1
                 ? `Marcher ${labels[0]} uses Expert moves on this page. Switch to Expert to edit it.`
                 : `Marchers ${labels.join(", ")} use Expert moves on this page. Switch to Expert to edit them.`;
-        throw new TimelineEditRefusedError("notSimple", {
-            marcherIds: locked,
-            message,
-        });
+        throw basicLockedRefusal(locked, message);
     }
     const timelineIds = [
         ...new Set([...inBox.values()].flat().map((r) => r.timelineId)),
@@ -607,11 +604,14 @@ export async function setPositionsAtBeatInTransaction({
 }
 
 /**
- * **Remove this count's position**: for each of `marcherIds` with a move ending at `beat` and
- * another starting there (a split), the two merge into one move from the first's start to the
- * second's end, arriving where the second did; a merge that goes nowhere is deleted instead and
- * the marcher listed in `cleared` (see the module comment). Marchers without a split at `beat`
- * are untouched.
+ * **Remove this count's position**: for each of `marcherIds` with a move ending at `beat` (a tick,
+ * `pointsInBox`), the marcher's position there goes. With another move starting there (a split),
+ * the two merge into one move from the first's start to the second's end, arriving where the
+ * second did. With a hold after it instead, the move runs on to where the hold ends (the next
+ * move's start, a Held hold's start or the flag), arriving where it did (`planRejoinHold`). A move
+ * either leaves going nowhere is deleted instead and the marcher listed in `cleared` (see the
+ * module comment). Marchers without a move ending at `beat` are untouched, as is one whose Held
+ * hold starts at `beat` (`rejoinedHoldEnd`).
  * `beat` must be strictly inside `box`; non-simple marchers are refused as by
  * `setPositionsAtBeatInTransaction`.
  */
@@ -635,11 +635,69 @@ export async function removePositionAtBeatInTransaction({
     for (const marcherId of ids) {
         const rows = state.rowsOf(marcherId);
         const first = rows.find((r) => r.end === beat);
+        if (!first) continue;
         const second = rows.find((r) => r.start === beat);
-        if (!first || !second) continue;
-        await planMerge(plan, state, first, second);
+        if (second) await planMerge(plan, state, first, second);
+        else await planRejoinHold(plan, state, box, first);
     }
     return await writePlan(tx, plan);
+}
+
+/**
+ * Remove for a point with a hold after it (no move starts on its count: Remove keyframe or a drag
+ * back on the flag after it, or a Held hold starting later): `first`, which ends on the count, now
+ * ends where that hold does, at the next move's start, a Held hold's start or the flag, arriving
+ * where it did. The hold is folded into the move, as a merge folds in the move after it, so the
+ * marcher gets there at even speed and the next point keeps its position. A move that goes
+ * nowhere is deleted instead, as a merge's is.
+ */
+const planRejoinHold = async (
+    plan: PointPlan,
+    state: BoxState,
+    box: Box,
+    first: BasicRow,
+): Promise<void> => {
+    const { marcherId } = first;
+    const end = rejoinedHoldEnd(
+        state.rowsOf(marcherId),
+        state.marksOf(marcherId),
+        box,
+        first.end,
+    );
+    // A Held hold starts on the count: it grows out of this point, which stays (the menu says why)
+    if (end === null) return;
+    plan.removed.push(first);
+    const point = await state.positionAt(marcherId, first.end);
+    if (samePosition(point, await state.positionAt(marcherId, first.start))) {
+        plan.cleared.push(marcherId);
+        return;
+    }
+    plan.added.push({
+        marcherId,
+        start: first.start,
+        end,
+        point,
+        layer: first.layer,
+    });
+};
+
+/**
+ * Where the hold after a point at `beat` ends, for **Remove this count's position**: the next
+ * move's start, a Held hold's start, or the flag. `null` when a Held hold starts on `beat` itself:
+ * that point is the hold's arrival, so Basic can't remove it.
+ */
+export function rejoinedHoldEnd(
+    rows: readonly Pick<BasicRow, "start">[],
+    marks: readonly { start: number }[],
+    box: { start: number; end: number },
+    beat: number,
+): number | null {
+    if (marks.some((m) => m.start === beat)) return null;
+    return Math.min(
+        box.end,
+        ...rows.filter((r) => r.start >= beat).map((r) => r.start),
+        ...marks.filter((m) => m.start > beat).map((m) => m.start),
+    );
 }
 
 /** Thrown inside an edit that turned out to write nothing, so it rolls back instead of failing. */
@@ -650,8 +708,8 @@ class NothingRemoved extends Error {
 }
 
 /**
- * `removePositionAtBeatInTransaction` as one undoable edit. When no marcher has a split at
- * `beat`, nothing is written and no undo step is made.
+ * `removePositionAtBeatInTransaction` as one undoable edit. When no marcher has a position to
+ * remove at `beat`, nothing is written and no undo step is made.
  */
 export async function removePositionAtBeat({
     db,
