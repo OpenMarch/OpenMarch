@@ -13,6 +13,7 @@
  * Plain TypeScript only: this module lives under `view3d/core/`. Outlines are in world meters on
  * the ground plane (+X toward side 2, +Z toward the audience), turned as the 2D field turns them.
  */
+import { modelScale } from "@/showAssets/libraryModels";
 import {
     itemGeometryAt,
     type GeometryChange,
@@ -39,9 +40,16 @@ export interface PropInput {
     changes: readonly GeometryChange[];
     /**
      * How high performers stand on it (m), in place of its Outline's height: a podium item's
-     * standing height from its model (docs/3d/instruments.md §6). Unset for a prop.
+     * standing height from its model (docs/3d/instruments.md §6), or the top of an imported model
+     * a Platform prop draws as (fork #1000). Unset for a plain prop.
      */
     standTop?: number;
+    /**
+     * An imported model's real footprint (m): the model draws sized to the Outline
+     * (`modelScale`), and {@link standTop} and {@link standAt}, given at real size, scale with it.
+     * Unset: real size (built-ins).
+     */
+    modelSizeM?: { width: number; depth: number };
     /**
      * A podium: whoever stands on it stands at its stand point, faces the band across the field
      * (`writePodiumStands`), and doesn't ramp up as a platform does
@@ -91,6 +99,7 @@ function footprintOf(
     const radians = (geometry.rotation * Math.PI) / 180;
     const cos = Math.cos(radians);
     const sin = Math.sin(radians);
+    const scale = input.modelSizeM ? modelScale(geometry, input.modelSizeM) : 1;
     // The field's +y is the world's +z, so its turn reads the same seen from above
     const outline = shape.points.map((p) => ({
         x: center.x + (p.x * cos - p.y * sin) / PIXELS_PER_METER,
@@ -101,7 +110,11 @@ function footprintOf(
         surface: input.surface,
         center,
         height:
-            input.surface === "floor" ? 0 : (input.standTop ?? geometry.height),
+            input.surface === "floor"
+                ? 0
+                : input.standTop === undefined
+                  ? geometry.height
+                  : input.standTop * scale,
         outline,
         closed: shape.closed,
         geometry,
@@ -112,12 +125,12 @@ function footprintOf(
                   standPoint: {
                       x:
                           center.x +
-                          input.standAt.x * cos -
-                          input.standAt.z * sin,
+                          (input.standAt.x * cos - input.standAt.z * sin) *
+                              scale,
                       z:
                           center.z +
-                          input.standAt.x * sin +
-                          input.standAt.z * cos,
+                          (input.standAt.x * sin + input.standAt.z * cos) *
+                              scale,
                   },
               }
             : {}),

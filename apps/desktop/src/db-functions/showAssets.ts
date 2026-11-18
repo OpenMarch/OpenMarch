@@ -6,8 +6,9 @@
  * - Adding the same content again (same kind, parts and sidecar) reuses its Version.
  * - Neither table has history triggers, so an asset added inside an undoable edit stays when the
  *   edit is undone. A prop's reference to an asset (`items.model`) is what undo changes.
- * - Nothing here removes an asset: the show keeps every asset until someone removes it (fork
- *   #1001), never on save, close or Save Copy.
+ * - Nothing removes an asset on its own: the show keeps every asset until someone chooses
+ *   Remove unused… (`removeShowAssetsInTransaction`, fork #1001), never on save, close or Save
+ *   Copy.
  * - Any `kind` is kept and read back; the code that uses a kind picks out its own rows.
  *
  * The editor is the show's only writer (ADR 0010 D-4). The 3D View window reads these tables
@@ -27,7 +28,7 @@ import {
 } from "@/showAssets/hash";
 import { isShowAssetId, type ShowAssetRef } from "@/showAssets/ref";
 
-const { show_assets, show_asset_blobs } = schema;
+const { show_assets, show_asset_blobs, items, cues } = schema;
 
 /** An asset to add, with its parts' bytes. */
 export interface NewShowAsset {
@@ -296,4 +297,75 @@ export async function readShowAssetBlob({
         .where(eq(show_asset_blobs.hash, hash))
         .get();
     return row?.data;
+}
+
+/** Every blob's size in bytes, by hash (fork #1001: what each asset adds to the show). */
+export async function getShowAssetBlobSizes({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<Map<string, number>> {
+    const rows = await db
+        .select({
+            hash: show_asset_blobs.hash,
+            bytes: sql<number>`length(${show_asset_blobs.data})`,
+        })
+        .from(show_asset_blobs)
+        .all();
+    return new Map(rows.map((row) => [row.hash, row.bytes]));
+}
+
+/**
+ * Every value in the show that may name an asset (`library:<id>@<hash>`): props' models and cue
+ * values, as they are now. Undo history isn't read, so "unused" means nothing names it now
+ * (ADR 0010 amendment 2026-11-15).
+ */
+export async function getShowAssetReferences({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<string[]> {
+    const models = await db
+        .select({ value: items.model })
+        .from(items)
+        .where(sql`${items.model} LIKE 'library:%'`)
+        .all();
+    const values = await db
+        .select({ value: cues.value })
+        .from(cues)
+        .where(sql`${cues.value} LIKE 'library:%'`)
+        .all();
+    return [...models, ...values].flatMap((row) =>
+        row.value ? [row.value] : [],
+    );
+}
+
+/**
+ * Removes these asset Versions, then the blobs no Version left in the show uses: bytes another
+ * asset shares stay. Outside undo, like adding (the tables have no history triggers); a prop an
+ * undo points back at a removed asset draws as a block. Returns how many Versions it removed.
+ */
+export async function removeShowAssetsInTransaction({
+    tx,
+    refs,
+}: {
+    tx: DbTransaction;
+    refs: readonly ShowAssetRef[];
+}): Promise<number> {
+    let removed = 0;
+    for (const ref of refs) {
+        const rows = await tx
+            .delete(show_assets)
+            .where(isVersion(ref))
+            .returning({ id: show_assets.id })
+            .all();
+        removed += rows.length;
+    }
+    if (removed > 0)
+        await tx.run(sql`
+            DELETE FROM show_asset_blobs
+            WHERE hash NOT IN (
+                SELECT parts.value FROM show_assets, json_each(show_assets.parts) AS parts
+            )`);
+    return removed;
 }
