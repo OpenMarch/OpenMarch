@@ -30,9 +30,15 @@ import {
     configureModelImportSession,
     useModelImportSession,
 } from "@/showAssets/modelImport/review/modelImportSession";
-import type { PickedFile } from "@/showAssets/modelImport/types";
+import { tipped, UPRIGHT } from "@/showAssets/modelImport/orientation";
+import type {
+    ModelImportChoices,
+    ModelSidecar,
+    PickedFile,
+} from "@/showAssets/modelImport/types";
 import { env, picked } from "@/showAssets/modelImport/__test__/fixtures";
 import { showModelImportReview } from "../openModelImport";
+import { openItemEditor } from "@/components/items/openItemEditor";
 
 /**
  * The model import in the Props panel (fork #999): the review on one screen, Add, the Imported
@@ -89,7 +95,7 @@ function Editor() {
 
 /** The pipeline in Node for runs; the show's store for Add */
 function configure(db: DbConnection) {
-    const runs: { simplify?: boolean; turn?: number }[] = [];
+    const runs: ModelImportChoices[] = [];
     configureModelImportSession({
         run: async (files, choices) => {
             runs.push(choices);
@@ -135,17 +141,69 @@ describeDbTests("Model import", (it) => {
         );
         const review = await openReview([picked("SheenChair.glb")]);
 
-        // The size to confirm, the turn, and before and after simplifying
+        // The size to confirm, the turn, and the detail level: Light, with what it costs
         expect(
             within(review).getByTestId("model-import-size").textContent,
         ).toMatch(/^[\d.]+ × [\d.]+ m, [\d.]+ m tall$/);
         expect(
-            within(review).getByTestId("model-import-choices"),
-        ).toHaveTextContent("Simplify to 20,000 triangles");
-        expect(within(review).getByTestId("model-import-after")).toBeTruthy();
+            within(review).getByTestId("model-import-detail-cost").textContent,
+        ).toMatch(
+            /^[\d,]+ triangles · adds [\d.]+ (KB|MB) to the show · each copy draws like \d+ performers?$/,
+        );
+        expect(
+            within(review).queryByTestId("model-import-detail-warning"),
+        ).toBeNull();
 
-        fireEvent.click(within(review).getByTestId("model-import-turn"));
+        // Original keeps every triangle (#1091), with the honest warning; then back to Light
+        fireEvent.click(
+            within(review).getByTestId("model-import-detail-original"),
+        );
+        await waitFor(() =>
+            expect(runs.at(-1)).toMatchObject({ detail: "original" }),
+        );
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+        expect(
+            within(review).getByTestId("model-import-detail-cost"),
+        ).toHaveTextContent("39,936 triangles");
+        expect(
+            within(review).getByTestId("model-import-detail-warning"),
+        ).toBeTruthy();
+        fireEvent.click(
+            within(review).getByTestId("model-import-detail-light"),
+        );
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+        await waitFor(() =>
+            expect(
+                within(review).queryByTestId("model-import-detail-warning"),
+            ).toBeNull(),
+        );
+
+        // Pointing at a Rotate button shows its axis and which way it swings
+        const axes = within(review).getByTestId("model-import-axes");
+        expect(axes.getAttribute("data-active")).toBeNull();
+        const rotateZ = within(review).getByTestId("model-import-rotate-z");
+        fireEvent.pointerEnter(rotateZ);
+        expect(axes.getAttribute("data-active")).toBe("z");
+        expect(within(axes).getByTestId("model-import-axes-ring")).toBeTruthy();
+        fireEvent.pointerLeave(rotateZ);
+        expect(axes.getAttribute("data-active")).toBeNull();
+
+        fireEvent.click(within(review).getByTestId("model-import-rotate-y"));
         await waitFor(() => expect(runs.at(-1)).toMatchObject({ turn: 90 }));
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+
+        // Tipping keeps the turn, and tips the model as the picture shows it
+        const tipped90 = tipped(UPRIGHT, 90, "x");
+        fireEvent.click(within(review).getByTestId("model-import-rotate-x"));
+        await waitFor(() =>
+            expect(runs.at(-1)).toMatchObject({ turn: 90, tilt: tipped90 }),
+        );
         await waitFor(() =>
             expect(useModelImportSession.getState().running).toBe(false),
         );
@@ -181,6 +239,11 @@ describeDbTests("Model import", (it) => {
         });
         expect(asset.credits).not.toHaveProperty("sourceUrl");
         expect(asset.sidecar).toMatchObject({ facing: { turnDeg: 90 } });
+        expect(
+            (asset.sidecar as unknown as ModelSidecar).importNotes.needsChoice,
+        ).toContainEqual(
+            expect.objectContaining({ code: "tilt", applied: tipped90 }),
+        );
 
         // Picking it and clicking the field places a prop at the playhead
         fireEvent.click(tile);
@@ -221,6 +284,23 @@ describeDbTests("Model import", (it) => {
             depth: sizeM.depth,
             height: sizeM.height,
         });
+
+        // Its sides change together: a wider chair is deeper and taller too (#1078)
+        await act(async () => openItemEditor(item));
+        expect(
+            await screen.findByTestId("item-keeps-proportions"),
+        ).toBeTruthy();
+        const width = screen.getByLabelText("Width");
+        fireEvent.change(width, { target: { value: String(sizeM.width * 2) } });
+        fireEvent.keyDown(width, { key: "Enter" });
+        await waitFor(async () => {
+            const rows = await getItemGeometry({ db });
+            expect(rows.at(-1)!.width).toBeCloseTo(sizeM.width * 2);
+        });
+        const resized = (await getItemGeometry({ db })).at(-1)!;
+        expect(resized.depth).toBeCloseTo(sizeM.depth * 2);
+        expect(resized.height).toBeCloseTo(sizeM.height * 2);
+        await performUndo(db);
 
         // One undo removes the prop and keeps the model
         await performUndo(db);

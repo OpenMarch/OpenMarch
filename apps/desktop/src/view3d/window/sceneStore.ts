@@ -112,6 +112,17 @@ export interface View3dSceneState {
     autoLowered: boolean;
     /** Scene only: the automatic fallback fired. */
     _autoLower: () => void;
+    /**
+     * Heavy imported models (a level above Light, #1091) draw their Light copy near the camera:
+     * the automatic fallback's first step, before the whole scene drops to `low`.
+     */
+    heavyModelsLightened: boolean;
+    /** Scene only: the fallback's first step fired. */
+    _lightenHeavyModels: () => void;
+    /** Whether the view draws any heavy imported model, so lightening them could help */
+    hasHeavyModels: boolean;
+    /** Props only: whether any drawn imported model has a Light copy */
+    _setHasHeavyModels: (has: boolean) => void;
     resolution: Resolution;
     /** Saves the choice and applies it. */
     setResolution: (resolution: Resolution) => void;
@@ -179,10 +190,17 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
             qualityMode: mode,
             quality: startQuality(mode, get().softwareGl),
             autoLowered: false,
+            heavyModelsLightened: false,
         });
     },
     autoLowered: false,
     _autoLower: () => set({ quality: "low", autoLowered: true }),
+    heavyModelsLightened: false,
+    _lightenHeavyModels: () => set({ heavyModelsLightened: true }),
+    hasHeavyModels: false,
+    _setHasHeavyModels: (hasHeavyModels) => {
+        if (get().hasHeavyModels !== hasHeavyModels) set({ hasHeavyModels });
+    },
     resolution: loadResolution(),
     setResolution: (resolution) => {
         saveResolution(resolution);
@@ -213,6 +231,7 @@ export const useView3dSceneStore = create<View3dSceneState>()((set, get) => ({
                     qualityMode: mode,
                     quality: startQuality(mode, get().softwareGl),
                     autoLowered: false,
+                    heavyModelsLightened: false,
                 });
         }
         if (key === null || key === RESOLUTION_STORAGE_KEY)

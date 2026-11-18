@@ -24,10 +24,18 @@ export interface ModelImportDeps {
     save(model: ImportedModel): Promise<{ modelValue: string }>;
 }
 
-/** The model as it was before simplifying, for the review's before and after */
+/**
+ * The model at its Original level, for the review's comparison with the chosen level: its
+ * picture, and its bytes for the 3D preview (#1091)
+ */
 export type BeforeSimplify =
     | { status: "loading" }
-    | { status: "ready"; thumbnail: Uint8Array; triangles: number }
+    | {
+          status: "ready";
+          thumbnail: Uint8Array;
+          model: Uint8Array;
+          triangles: number;
+      }
     | { status: "failed" };
 
 export interface ModelImportSessionState {
@@ -66,7 +74,7 @@ export interface ModelImportSession extends ModelImportSessionState {
     choose(choices: ModelImportChoices): void;
     /** Runs the import again with the same choices (after a timeout or a failure) */
     retry(): void;
-    /** Runs the import without simplifying, once, for the before picture */
+    /** Runs the import at the Original level, once, for the comparison */
     loadBefore(): void;
     setName(name: string): void;
     setCredits(credits: ModelCredits): void;
@@ -175,9 +183,9 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
         choose(choices) {
             if (!get().files) return;
             const next = { ...get().choices, ...choices };
-            // The before picture depends on everything but simplifying
+            // The Original depends on everything but the level
             const keepsBefore = Object.keys(choices).every(
-                (key) => key === "simplify",
+                (key) => key === "detail",
             );
             if (!keepsBefore) {
                 beforeRun?.abort();
@@ -198,7 +206,11 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
             beforeRun = controller;
             set({ before: { status: "loading" } });
             requireDeps()
-                .run(files, { ...choices, simplify: false }, controller.signal)
+                .run(
+                    files,
+                    { ...choices, detail: "original" },
+                    controller.signal,
+                )
                 .then((result) => {
                     if (beforeRun !== controller) return;
                     beforeRun = null;
@@ -207,6 +219,7 @@ export const useModelImportSession = create<ModelImportSession>((set, get) => {
                             ? {
                                   status: "ready",
                                   thumbnail: result.model.parts.thumbnail,
+                                  model: result.model.parts.model,
                                   triangles: result.model.sidecar.triangles,
                               }
                             : { status: "failed" },
@@ -260,7 +273,7 @@ export function withoutEmpty(credits: ModelCredits): ModelCredits {
         keyof ModelCredits,
         string | undefined,
     ][]) {
-        const trimmed = value?.trim();
+        const trimmed = typeof value === "string" ? value.trim() : undefined;
         if (trimmed) out[key] = trimmed;
     }
     return out;

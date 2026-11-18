@@ -714,6 +714,22 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: [],
     },
+    // The Assets view (fork #1001): the show's imported assets, their credits and size
+    openAssets: {
+        labelKey: "actions.ui.openAssets",
+        keywordsKey: "actions.ui.openAssetsKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Lists the assets nothing in the show uses and, once confirmed, removes them
+    removeUnusedAssets: {
+        labelKey: "actions.file.removeUnusedAssets",
+        keywordsKey: "actions.file.removeUnusedAssetsKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+    },
     // Opens the front ensemble's Add view (the pictures of every model), as its Add button does
     addFrontEnsembleEquipment: {
         labelKey: "actions.ui.addFrontEnsembleEquipment",

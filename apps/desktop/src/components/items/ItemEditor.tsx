@@ -34,6 +34,14 @@ import {
 } from "@/items/itemOutlineTimeline";
 import { parsePropColor, propColorToString } from "@/items/propColor";
 import EquipmentModelControl from "@/components/frontEnsemble/EquipmentModelControl";
+import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import { showAssetRefValue } from "@/showAssets/ref";
+import {
+    hasModelHeight,
+    libraryModels,
+    proportionalSize,
+    type ModelSide,
+} from "@/showAssets/libraryModels";
 import { drillNumber, type ItemWithMarcher } from "./ItemRows";
 
 /**
@@ -138,8 +146,18 @@ export function ItemEditor({ itemId }: { itemId: number }) {
         setItemGeometryMutationOptions(queryClient),
     );
     const [name, setName] = useState<string | null>(null);
+    const { data: assets } = useQuery(showAssetsQueryOptions());
+    const library = useMemo(() => libraryModels(assets), [assets]);
 
     const item = items?.find((i) => i.id === itemId);
+    // An imported model's prop keeps its proportions: its sides change together (#1078)
+    const model = item?.model ? library.get(item.model) : undefined;
+    const standsUp = model ? hasModelHeight(model.sidecar.sizeM) : false;
+    // Names an imported model the show no longer has (removed, then an undo brought it back)
+    const modelMissing =
+        !!assets &&
+        !!item?.model?.startsWith("library:") &&
+        !assets.some((asset) => showAssetRefValue(asset) === item.model);
     const changes = useMemo(
         () =>
             item && rows
@@ -189,6 +207,14 @@ export function ItemEditor({ itemId }: { itemId: number }) {
             },
         });
     };
+
+    /** Sets one side: with a model, the other two follow in its proportions. */
+    const writeSide = (side: ModelSide, value: number) =>
+        writeOutline(
+            (model && proportionalSize(model.sidecar.sizeM, side, value)) ?? {
+                [side]: value,
+            },
+        );
 
     const commitName = () => {
         if (name === null) return;
@@ -293,6 +319,14 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                         <T keyName="props.outlineTitle" />
                     )}
                 </h5>
+                {modelMissing && (
+                    <p
+                        className="text-sub text-text-subtitle"
+                        data-testid="item-model-missing"
+                    >
+                        <T keyName="props.modelMissing" />
+                    </p>
+                )}
                 {shown ? (
                     <div className="grid grid-cols-2 gap-12">
                         <CommitNumber
@@ -301,7 +335,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                             min={0.01}
                             step={0.1}
                             value={shown.width}
-                            onCommit={(width) => writeOutline({ width })}
+                            onCommit={(width) => writeSide("width", width)}
                         />
                         <CommitNumber
                             label={t("props.depth")}
@@ -309,15 +343,15 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                             min={0.01}
                             step={0.1}
                             value={shown.depth}
-                            onCommit={(depth) => writeOutline({ depth })}
+                            onCommit={(depth) => writeSide("depth", depth)}
                         />
                         <CommitNumber
                             label={t("props.height")}
                             unit={t("props.units.meters")}
-                            min={0}
+                            min={standsUp ? 0.01 : 0}
                             step={0.1}
                             value={shown.height}
-                            onCommit={(height) => writeOutline({ height })}
+                            onCommit={(height) => writeSide("height", height)}
                         />
                         <CommitNumber
                             label={t("props.rotation")}
@@ -340,6 +374,14 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                                 })
                             }
                         />
+                        {standsUp && (
+                            <p
+                                className="text-sub text-text-subtitle col-span-2"
+                                data-testid="item-keeps-proportions"
+                            >
+                                <T keyName="props.keepsProportions" />
+                            </p>
+                        )}
                     </div>
                 ) : (
                     <p className="text-text/50 text-sm">

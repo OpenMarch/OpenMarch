@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ShowAsset } from "@/db-functions/showAssets";
-import { libraryModels, modelScale } from "../libraryModels";
+import { libraryModels, modelScale, proportionalSize } from "../libraryModels";
 
 const asset = (more: Partial<ShowAsset> = {}): ShowAsset => ({
     id: "0b6f4a52-4f1e-4f8e-9a51-8e9c1c2b3d4e",
@@ -25,8 +25,27 @@ describe("libraryModels", () => {
             value,
             modelHash: "m".repeat(64),
             distantHash: "d".repeat(64),
+            lightHash: null,
             sidecar: { sizeM: { width: 0.8 } },
         });
+    });
+
+    it("names the Light copy kept beside a model clearly heavier than it (#1091)", () => {
+        const withLight = (triangles: number) =>
+            asset({
+                parts: {
+                    model: "m".repeat(64),
+                    distant: "d".repeat(64),
+                    thumbnail: "t",
+                    light: "l".repeat(64),
+                },
+                sidecar: { ...asset().sidecar, triangles },
+            });
+        const [heavy] = libraryModels([withLight(900_000)]).values();
+        expect(heavy?.lightHash).toBe("l".repeat(64));
+        // An Original of 21,000 triangles: its Light copy wouldn't help a stuttering view
+        const [light] = libraryModels([withLight(21_000)]).values();
+        expect(light?.lightHash).toBeNull();
     });
 
     it("leaves out other kinds, and models missing a GLB or what the field reads", () => {
@@ -58,5 +77,32 @@ describe("modelScale", () => {
         expect(modelScale({ width: 2, depth: 1 }, { width: 2, depth: 0 })).toBe(
             1,
         );
+    });
+});
+
+describe("proportionalSize", () => {
+    const sizeM = { width: 2, depth: 1, height: 0.5 };
+
+    it("sets one side and keeps the model's proportions in the others", () => {
+        expect(proportionalSize(sizeM, "width", 4)).toEqual({
+            width: 4,
+            depth: 2,
+            height: 1,
+        });
+        expect(proportionalSize(sizeM, "height", 0.25)).toEqual({
+            width: 1,
+            depth: 0.5,
+            height: 0.25,
+        });
+    });
+
+    it("links a flat model's width and depth, and leaves its height alone", () => {
+        const flat = { width: 2, depth: 1, height: 0 };
+        expect(proportionalSize(flat, "width", 4)).toEqual({
+            width: 4,
+            depth: 2,
+        });
+        expect(proportionalSize(flat, "height", 1)).toBeNull();
+        expect(proportionalSize(sizeM, "width", 0)).toBeNull();
     });
 });

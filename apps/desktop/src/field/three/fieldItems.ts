@@ -22,7 +22,11 @@ import {
     subscribePitPlans,
     type PlacedPitPlan,
 } from "@/view3d/core/pit/pitPlan";
-import { modelScale, type LibraryModel } from "@/showAssets/libraryModels";
+import {
+    hasModelHeight,
+    modelScale,
+    type LibraryModel,
+} from "@/showAssets/libraryModels";
 import type { FieldItemSource, FieldMarchers } from "./fieldMarchers";
 
 /** An item's Outline where the field draws it. */
@@ -241,7 +245,35 @@ export class FieldItems implements FieldItemSource {
             width: geometry.width * PIXELS_PER_METER,
             depth: geometry.depth * PIXELS_PER_METER,
             rotation: geometry.rotation,
+            ...(this.keepsProportions(id) ? { keepsProportions: true } : {}),
         };
+    }
+
+    /** Whether item `id` is drawn as an imported model, which resizes evenly (fork #1078). */
+    keepsProportions(id: number): boolean {
+        return this.modelSizeOf(id) !== undefined;
+    }
+
+    /** The real size of the imported model item `id` is drawn as, if it's drawn as one. */
+    modelSizeOf(
+        id: number,
+    ): { width: number; depth: number; height: number } | undefined {
+        const model = this.models.get(id);
+        return model === undefined
+            ? undefined
+            : this.library.get(model)?.sidecar.sizeM;
+    }
+
+    /**
+     * For an imported model that stands up, its stored width at the beat drawn, which a resize
+     * scales its height from (`fieldOutlineWrite`); undefined for anything else. Stored, not
+     * drawn: a handle's preview is drawn until its save settles.
+     */
+    heightScalesFrom(id: number): number | undefined {
+        const sizeM = this.modelSizeOf(id);
+        const beat = this.marchers.drawnBeat;
+        if (!sizeM || !hasModelHeight(sizeM) || beat === null) return undefined;
+        return this.geometryAt(id, beat)?.width;
     }
 
     /** Calls `listener` whenever the items, their Outlines or a preview change. */

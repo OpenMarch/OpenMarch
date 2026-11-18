@@ -74,3 +74,13 @@ describe("software WebGL", () => {
         expect(useView3dSceneStore.getState().quality).toBe("high");
     });
 });
+
+describe("heavy imported models (#1091)", () => {
+    it("draws heavy models in full again when the viewer picks a quality", () => {
+        const store = useView3dSceneStore.getState();
+        store._lightenHeavyModels();
+        expect(useView3dSceneStore.getState().heavyModelsLightened).toBe(true);
+        store.setQualityMode("high");
+        expect(useView3dSceneStore.getState().heavyModelsLightened).toBe(false);
+    });
+});

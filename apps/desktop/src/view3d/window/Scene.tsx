@@ -78,6 +78,8 @@ import { useFieldImage } from "./useFieldImage";
 import {
     FALLBACK_LOG_MESSAGE,
     createQualityFallbackState,
+    fallbackStep,
+    LIGHTEN_LOG_MESSAGE,
     stepQualityFallback,
 } from "./qualityFallback";
 import Performers from "./performers/Performers";
@@ -434,6 +436,14 @@ function SceneContents({
         if (store.qualityMode !== "auto" || store.quality !== "high") return;
         if (frameCapped(store.onBattery)) return;
         if (stepQualityFallback(fallbackRef.current, dt)) {
+            // Heavy imported models first (#1091): their Light copies, then measure again
+            if (fallbackStep(store) === "lightenHeavyModels") {
+                // eslint-disable-next-line no-console -- like the fallback's own line
+                console.info(LIGHTEN_LOG_MESSAGE);
+                store._lightenHeavyModels();
+                fallbackRef.current = createQualityFallbackState();
+                return;
+            }
             // eslint-disable-next-line no-console -- design.md §9 asks for a log line
             console.info(FALLBACK_LOG_MESSAGE);
             store._autoLower();

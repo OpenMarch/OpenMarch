@@ -115,7 +115,9 @@
             "loadDialogue": "Ouvrir un fichier…",
             "newDialogue": "Nouveau fichier…",
             "openExport": "Exporter…",
-            "saveDialogue": "Enregistrer une copie…"
+            "saveDialogue": "Enregistrer une copie…",
+            "removeUnusedAssets": "Retirer les ressources inutilisées…",
+            "removeUnusedAssetsKeywords": "retirer supprimer nettoyer inutilisées ressources modèles importés taille"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "Ouvrir le pit et les podiums",
             "openFrontEnsembleKeywords": "pit front ensemble podium tambour-major marimba vibraphone percussions enceinte haut-parleur équipement préréglage drum major percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Ajouter un équipement de pit ou un podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium tambour-major marimba vibraphone percussions enceinte haut-parleur table de mixage tour escabeau instrument drum major percussion speaker mixer tower stepladder"
+            "addFrontEnsembleEquipmentKeywords": "pit podium tambour-major marimba vibraphone percussions enceinte haut-parleur table de mixage tour escabeau instrument drum major percussion speaker mixer tower stepladder",
+            "openAssets": "Ouvrir les ressources du spectacle",
+            "openAssetsKeywords": "ressources modèles importés fichiers crédits licence taille stockage bibliothèque"
         },
         "items": {
             "edit": "Modifier l’accessoire ou l’équipement sélectionné",
@@ -1438,6 +1442,7 @@
         "hide": "Masquer sur le terrain",
         "name": "Nom",
         "offField": "Hors du terrain à la tête de lecture. Placez la tête de lecture sur un temps où l'accessoire est sur le terrain pour modifier son contour.",
+        "keepsProportions": "La largeur, la profondeur et la hauteur changent ensemble : le modèle garde sa forme.",
         "outline": {
             "arc": "Arc",
             "circle": "Cercle",
@@ -1478,23 +1483,37 @@
             "title": "Importés",
             "import": "Importer…",
             "empty": "Importez un modèle .glb ou .gltf, ou déposez-en un sur la fenêtre, pour le placer comme n’importe quel accessoire.",
-            "place": "Placer {name}"
+            "place": "Placer {name}",
+            "manage": "Gérer les ressources"
         },
         "import": {
             "title": "Importer un modèle",
             "pictureAlt": "Le modèle vu depuis le public",
             "working": "Préparation du modèle…",
-            "turn": {
-                "detail": "L’avant doit faire face au public.",
-                "button": "Tourner de 90°"
+            "orient": {
+                "detail": "L’avant doit faire face au public, à l’endroit."
             },
-            "simplify": {
-                "compare": "Avant ou après simplification",
-                "before": "Avant · {triangles}",
-                "after": "Après · {triangles}",
-                "beforeFailed": "Impossible de dessiner l’original.",
-                "title": "Simplifier à {cap} triangles",
-                "detail": "Le fichier compte {triangles} triangles. La simplification garde la vue 3D fluide ; le terrain ne dessine que son emprise au sol."
+            "rotateAxis": "Pivoter sur {axis}",
+            "detail": {
+                "title": "Détail",
+                "levels": {
+                    "light": "Léger",
+                    "detailed": "Détaillé",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triangles · ajoute {size} au spectacle · chaque copie se dessine comme {performers, plural, one {# interprète} other {# interprètes}}",
+                "heavy": "Fluide sur la plupart des ordinateurs récents. Si la Vue 3D saccade, elle dessine une copie légère, gardée elle aussi dans le spectacle."
+            },
+            "compare": {
+                "open": "Comparer en 3D…",
+                "title": "Comparer en 3D",
+                "description": "Faites glisser pour regarder autour, puis changez de version pour voir ce que la simplification a changé.",
+                "which": "Version affichée",
+                "lightCopy": "Copie légère",
+                "hint": "Glisser pour tourner, défiler pour zoomer",
+                "stands": "Depuis les gradins",
+                "closeUp": "De près",
+                "drawFailed": "Impossible de dessiner cette version."
             },
             "size": {
                 "title": "Taille",
@@ -1578,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Bien trop détaillé",
-                    "detail": "{triangles} triangles ; on peut en simplifier au plus {limit}."
+                    "detail": "{triangles} triangles ; on peut en importer au plus {limit}."
                 },
                 "rigged": {
                     "title": "Les modèles riggés ne sont pas pris en charge",
@@ -1620,7 +1639,8 @@
                 },
                 "overTriangleCap": "Encore détaillé : {triangles} triangles (l’objectif est {cap})"
             }
-        }
+        },
+        "modelMissing": "Le modèle de cet accessoire n’est plus dans le spectacle : il est dessiné comme un bloc."
     },
     "frontEnsemble": {
         "title": "Pit et podiums",
@@ -4535,6 +4555,39 @@
             "mixed": "Mixte",
             "add": "Ajouter une ligne",
             "everyOther": "Garder une sur deux"
+        }
+    },
+    "assets": {
+        "title": "Ressources",
+        "empty": "Ce spectacle n’a pas encore de ressources importées. Importez un modèle 3D depuis le panneau Accessoires.",
+        "notes": {
+            "unused": "{count, plural, one {# ressource n’est utilisée} other {# ressources ne sont utilisées}} nulle part dans le spectacle · {size}",
+            "missing": "{count, plural, one {# accessoire utilise un modèle que ce spectacle n’a pas : il est dessiné comme un bloc.} other {# accessoires utilisent des modèles que ce spectacle n’a pas : ils sont dessinés comme des blocs.}}",
+            "large": "Les ressources alourdissent ce spectacle : {size}. Un gros spectacle est plus lent à ouvrir, enregistrer et partager."
+        },
+        "removeUnused": {
+            "button": "Retirer les inutilisées…",
+            "title": "{count, plural, one {Retirer # ressource inutilisée ?} other {Retirer # ressources inutilisées ?}}",
+            "description": "Rien dans le spectacle ne les utilise. Les retirer allège le spectacle de {size}. Annuler ne les ramène pas.",
+            "none": "Toutes les ressources sont utilisées : il n’y a rien à retirer.",
+            "cancel": "Annuler",
+            "confirm": "{count, plural, one {Retirer # ressource} other {Retirer # ressources}}"
+        },
+        "kind": {
+            "model": "Modèle 3D"
+        },
+        "uses": "{count, plural, one {Utilisée une fois} other {Utilisée # fois}}",
+        "unused": "Inutilisée",
+        "shareNote": "Licence inconnue : vous n’avez peut-être pas le droit de la partager",
+        "size": {
+            "bytes": "{value} octets",
+            "kb": "{value} Ko",
+            "mb": "{value} Mo",
+            "gb": "{value} Go"
+        },
+        "errors": {
+            "remove": "Impossible de retirer les ressources inutilisées",
+            "credits": "Impossible d’enregistrer les crédits"
         }
     }
 }

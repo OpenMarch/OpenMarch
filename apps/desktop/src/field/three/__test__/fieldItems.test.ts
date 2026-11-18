@@ -245,6 +245,31 @@ describe("FieldItems for imported models", () => {
         );
     });
 
+    it("tells the handles to resize an imported model's prop evenly, and no other", () => {
+        const marchers = new FieldMarchers(positions);
+        const items = new FieldItems(marchers);
+        items.set({
+            itemIds: new Set([2]),
+            changes: new Map([[2, [change(0)]]]),
+            hidden: new Set(),
+            models: new Map([[2, "library:a@b"]]),
+            library,
+        });
+        marchers.fill(1);
+        expect(items.frameOf(2)!.keepsProportions).toBe(true);
+        // A resize scales the height from the stored width, not one being dragged
+        items.setPreview(2, { width: 9, depth: 4.5, rotation: 0 } as never);
+        expect(items.heightScalesFrom(2)).toBe(2);
+        items.set({
+            itemIds: new Set([2]),
+            changes: new Map([[2, [change(0)]]]),
+            hidden: new Set(),
+            models: new Map([[2, "pit/marimba-5.0"]]),
+            library,
+        });
+        expect(items.frameOf(2)!.keepsProportions).toBeUndefined();
+    });
+
     it("draws the Outline for a model the show doesn't have", () => {
         expect(drawn(2, 1, "library:gone@b").plan).toBeNull();
     });

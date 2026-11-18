@@ -10,8 +10,13 @@ covers:
   - apps/desktop/src/view3d/window/props
   - apps/desktop/src/view3d/core/props
   - apps/desktop/src/showAssets/modelImport
+  - apps/desktop/src/components/assets
+  - apps/desktop/src/showAssets/assetUse.ts
   - action:importModel
   - action:placeImportedModel
+  - action:openAssets
+  - action:removeUnusedAssets
+  - i18n:assets
   - i18n:props
 sidebar:
   order: 5
@@ -87,15 +92,24 @@ The model appears under <Ui k="props.imported.title" plain /> with its picture a
 
 <Media
   id="3d-props-import-review"
-  alt="The Import a model panel: a picture of a red chair, a Before and After switch with the triangle counts, Turn 90°, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and Simplify to 20,000 triangles checked."
+  alt="The Import a model panel: a picture of a red chair, Rotate X, Rotate Y and Rotate Z, a small X, Y and Z axis drawing in the corner of the picture with Z lit and an arrow around it while the pointer is on Rotate Z, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and the start of Detail."
   maxWidth={480}
 />
 
 ### The review
 
-- The picture shows the model from the audience, a little to one side. Its front should face you. If it doesn't, select <Ui k="props.import.turn.button" /> until it does.
+- The picture shows the model from the audience, a little to one side. Its front should face you, right side up. If it doesn't, rotate it a quarter turn at a time: <Ui k="props.import.rotateAxis" values={{ axis: "Y" }} /> turns it like a turntable, <Ui k="props.import.rotateAxis" values={{ axis: "X" }} /> brings its top toward you, and <Ui k="props.import.rotateAxis" values={{ axis: "Z" }} /> lays its top to your right. The small drawing in the corner shows the three axes; point at a button, or tap it, and its axis lights up with an arrow showing which way the model will swing.
 - The size is the model's real size, in meters. If it's wrong, the file was made in another unit: under <Ui k="props.import.units.label" plain />, choose the one it was made in. When the size is far off, the import has already picked the likely unit, and says so.
-- <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.simplify.title" values={{ cap: "20,000" }} plain /> lowers a detailed model's detail so the 3D View stays smooth; the switch above the picture shows the model before and after, with how many triangles each has. <Ui k="props.import.rotate.title" plain /> stands up a model that would lie on its back.
+- <Ui k="props.import.detail.title" plain />, for a model with more than 20,000 triangles: <Ui k="props.import.detail.levels.light" /> simplifies it to about 20,000 so the 3D View stays smooth, and is chosen for you. <Ui k="props.import.detail.levels.detailed" /> (for a model over 100,000) keeps about 100,000, and <Ui k="props.import.detail.levels.original" /> keeps every triangle. Under the choice, the review says how many triangles the model keeps, how much it adds to the show file, and how many performers one copy of it is as heavy to draw as. Above Light, the show also keeps a Light copy: if the 3D View stutters, it draws the Light copies first, before it lowers the quality of everything else.
+- <Ui k="props.import.compare.open" /> shows the model in 3D, to compare the level you chose with the original (or, at Original, with the Light copy). Drag to turn it, scroll to zoom, and switch versions to see what simplifying changed. <Ui k="props.import.compare.stands" plain /> moves the camera 30 m away, about where the audience sees props from.
+
+<Media
+  id="3d-props-import-compare"
+  alt="The Compare in 3D window: a switch between Light and Original, the red chair at its Original level turned a little, the hint Drag to turn, scroll to zoom, and From the stands."
+  maxWidth={600}
+/>
+
+- <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.rotate.title" plain /> appears when a model looks like it would lie on its back, and stands it up.
 - <Ui k="props.import.groups.fixed" plain /> lists what the import changed on its own, such as pictures made smaller. Select it to see the list.
 - <Ui k="props.import.name" plain /> is what the model is called. Props you place from it are numbered after it: Chair 1, Chair 2.
 - <Ui k="props.import.credits.title" plain /> holds the license, author, source and attribution, filled in from the file when it says. Leave them empty if you don't know; empty means unknown. Only import models you have the rights to use.
@@ -120,12 +134,28 @@ The prop takes the model's footprint and height, and from then on it's like any 
 
 You can also find both steps in the command palette: <Ui k="actions.items.importModel" plain /> and <Ui k="actions.items.placeImportedModel" plain />.
 
-The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. The model's size follows the prop's width and depth, evenly, so it keeps its shape: stretching one side makes the whole model bigger. In this version the prop's Height doesn't change the model. While the model loads in the 3D View, or if the show doesn't have it, the prop draws there as a block.
+The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. An imported prop keeps the model's shape. Dragging a side or corner handle resizes it evenly, and in its settings Width, Depth and Height change together. A flat model, such as a rug, keeps its width and depth in step and lets its height change on its own. While the model loads in the 3D View, or if the show doesn't have it, the prop draws there as a block.
 
 <Media
   id="3d-props-imported"
   alt="The 3D View from the press box, zoomed in behind two color guard performers: three red imported chairs stand in a row on the field near the visitors' sideline, facing the audience."
 />
+
+## The show's imported models
+
+Every model you import is stored in the show file, whether or not a prop uses it. To see them, select <Ui k="props.imported.manage" /> under <Ui k="props.imported.title" plain /> in the Props panel, or find <Ui k="actions.ui.openAssets" plain /> in the command palette. The <Ui k="assets.title" plain /> view lists each model with its picture, its size in the show file, how many times the show uses it, and its license.
+
+<Media
+  id="3d-props-assets"
+  alt="The Assets view: a note that 1 asset isn't used anywhere in the show, 29 KB, with a Remove unused… button, then two 3D models: a chair, 3.9 MB, used once, whose license is unknown so you may not have the right to share it, and a test pattern, 29 KB, not used, licensed CC-BY-4.0."
+  maxWidth={480}
+/>
+
+- Select a model to see and change its credits: license, author, source and attribution. Changing them doesn't change the model or the props that use it.
+- A model whose license is unknown says you may not have the right to share it. Add its license if you know it.
+- When some models aren't used by any prop, a note at the top says how many and how much space they take. <Ui k="assets.removeUnused.button" /> lists them and removes them only when you confirm. Nothing is ever removed on its own, not when you save or close the show. Undo doesn't bring a removed model back.
+- If an undo brings back a prop whose model you removed, the prop draws as a block, and both the note at the top and the prop's settings say its model is missing. To replace it, import the model again, place it as a new prop and delete the old one.
+- When imported models make the show file large (over 500 MB), the note says so: large shows are slower to open, save and share.
 
 ## Change a prop's name, color and size
 
@@ -190,7 +220,7 @@ The Props panel lists every prop:
 
 <Media
   id="3d-props-panel"
-  alt="The Props panel: buttons to draw a Rectangle, Circle, Arc, Polygon or Freehand prop, the Imported group with Import… and a chair model, a Show all names switch, and a prop named Riser with its eye, edit and delete buttons."
+  alt="The Props panel: buttons to draw a Rectangle, Circle, Arc, Polygon or Freehand prop, the Imported group with Import…, a chair model and a Manage assets link, a Show all names switch, and a prop named Riser with its eye, edit and delete buttons."
   maxWidth={420}
 />
 

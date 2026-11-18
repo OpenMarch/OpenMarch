@@ -115,7 +115,9 @@
             "loadDialogue": "ファイルを開く…",
             "newDialogue": "新規ファイル…",
             "openExport": "エクスポート…",
-            "saveDialogue": "コピーを保存…"
+            "saveDialogue": "コピーを保存…",
+            "removeUnusedAssets": "使われていないアセットを削除…",
+            "removeUnusedAssetsKeywords": "削除 消去 整理 未使用 アセット モデル 読み込み サイズ"
         },
         "labelWithVariant": "{label}（{variant}）",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "フロントアンサンブルと指揮台を開く",
             "openFrontEnsembleKeywords": "ピット フロントアンサンブル 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー 機材 プリセット pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "フロントアンサンブルの機材または指揮台を追加",
-            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "ショーのアセットを開く",
+            "openAssetsKeywords": "アセット 読み込んだモデル ファイル クレジット ライセンス サイズ 容量 ライブラリ"
         },
         "items": {
             "edit": "選択したプロップまたは機材を編集",
@@ -1438,6 +1442,7 @@
         "hide": "フィールドで非表示",
         "name": "名前",
         "offField": "再生ヘッドの位置ではフィールド外です。アウトラインを変更するには、プロップがフィールド上にあるカウントへ再生ヘッドを移動してください。",
+        "keepsProportions": "幅・奥行き・高さは一緒に変わるので、モデルの形はそのまま保たれます。",
         "outline": {
             "arc": "円弧",
             "circle": "円",
@@ -1478,23 +1483,37 @@
             "title": "インポート済み",
             "import": "インポート…",
             "empty": ".glbまたは.gltfのモデルをインポートするか、ウィンドウにドロップすると、ほかのプロップと同じように配置できます。",
-            "place": "{name}を配置"
+            "place": "{name}を配置",
+            "manage": "アセットを管理"
         },
         "import": {
             "title": "モデルをインポート",
             "pictureAlt": "観客側から見たモデル",
             "working": "モデルを準備しています…",
-            "turn": {
-                "detail": "正面が観客側を向くようにしてください。",
-                "button": "90°回転"
+            "orient": {
+                "detail": "正面が観客側を向き、上下が正しくなるようにしてください。"
             },
-            "simplify": {
-                "compare": "簡略化の前と後",
-                "before": "変更前 · {triangles}",
-                "after": "変更後 · {triangles}",
-                "beforeFailed": "元のモデルを描画できませんでした。",
-                "title": "三角形{cap}個に簡略化",
-                "detail": "このファイルには三角形が{triangles}個あります。簡略化すると3Dビューが滑らかに動きます。フィールドには設置面の形だけが描かれます。"
+            "rotateAxis": "{axis}軸で回転",
+            "detail": {
+                "title": "詳細度",
+                "levels": {
+                    "light": "軽量",
+                    "detailed": "詳細",
+                    "original": "オリジナル"
+                },
+                "cost": "{triangles} 三角形 · ショーに {size} 追加 · 1 つあたり演奏者 {performers, plural, other {# 人}}分の描画負荷",
+                "heavy": "最近のほとんどのコンピューターで問題なく動きます。3D ビューがカクつくときは軽量版を描画します。軽量版もショーに保存されます。"
+            },
+            "compare": {
+                "open": "3D で比較…",
+                "title": "3D で比較",
+                "description": "ドラッグして見回し、バージョンを切り替えて簡略化で変わったところを確認します。",
+                "which": "表示するバージョン",
+                "lightCopy": "軽量版",
+                "hint": "ドラッグで回転、スクロールでズーム",
+                "stands": "スタンドから",
+                "closeUp": "近くで",
+                "drawFailed": "このバージョンを描画できませんでした。"
             },
             "size": {
                 "title": "サイズ",
@@ -1578,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "細かすぎます",
-                    "detail": "三角形が{triangles}個あります。簡略化できるのは{limit}個までです。"
+                    "detail": "{triangles} 三角形。読み込める上限は {limit} です。"
                 },
                 "rigged": {
                     "title": "リグ付きモデルには対応していません",
@@ -1620,7 +1639,8 @@
                 },
                 "overTriangleCap": "まだ細かい状態です：三角形{triangles}個（目標は{cap}個）"
             }
-        }
+        },
+        "modelMissing": "このプロップのモデルはもうショーにないため、ブロックとして描かれています。"
     },
     "frontEnsemble": {
         "title": "フロントアンサンブルと指揮台",
@@ -4535,6 +4555,39 @@
             "mixed": "混在",
             "add": "ラインを追加",
             "everyOther": "1本おきに残す"
+        }
+    },
+    "assets": {
+        "title": "アセット",
+        "empty": "このショーにはまだ読み込んだアセットがありません。プロップパネルから 3D モデルを読み込めます。",
+        "notes": {
+            "unused": "{count, plural, other {# 個のアセットがショーのどこでも使われていません}} · {size}",
+            "missing": "{count, plural, other {# 個のプロップが、このショーにないモデルを使っているため、ブロックとして描かれています。}}",
+            "large": "アセットのためにこのショーは大きくなっています：{size}。大きなショーは開く・保存する・共有するのに時間がかかります。"
+        },
+        "removeUnused": {
+            "button": "未使用を削除…",
+            "title": "{count, plural, other {使われていないアセット # 個を削除しますか？}}",
+            "description": "ショーの中でこれらを使っているものはありません。削除するとショーが {size} 小さくなります。取り消しでは元に戻りません。",
+            "none": "すべてのアセットが使われているので、削除するものはありません。",
+            "cancel": "キャンセル",
+            "confirm": "{count, plural, other {# 個を削除}}"
+        },
+        "kind": {
+            "model": "3D モデル"
+        },
+        "uses": "{count, plural, other {# 回使用}}",
+        "unused": "未使用",
+        "shareNote": "ライセンス不明：共有する権利がない可能性があります",
+        "size": {
+            "bytes": "{value} バイト",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "使われていないアセットを削除できませんでした",
+            "credits": "クレジットを保存できませんでした"
         }
     }
 }

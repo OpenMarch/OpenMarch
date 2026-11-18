@@ -19,6 +19,25 @@ const PITCH = (25 * Math.PI) / 180;
 const AMBIENT = 0.45;
 const LIGHT = [-0.45, 0.75, 0.48];
 
+const cy = Math.cos(YAW),
+    sy = Math.sin(YAW),
+    cp = Math.cos(PITCH),
+    sp = Math.sin(PITCH);
+
+/**
+ * A point as the thumbnail sees it: x to the right, y up, z toward the viewer (yaw about Y, then
+ * pitch about X; the viewer looks along -Z). The review's axis preview draws with it too.
+ */
+export function thumbnailView(
+    x: number,
+    y: number,
+    z: number,
+): [number, number, number] {
+    const x1 = cy * x + sy * z;
+    const z1 = -sy * x + cy * z;
+    return [x1, cp * y - sp * z1, sp * y + cp * z1];
+}
+
 export interface ColoredTriangle {
     /** `[ax, ay, az, bx, by, bz, cx, cy, cz]` in meters */
     positions: ArrayLike<number>;
@@ -35,20 +54,7 @@ export async function renderThumbnail(
     const covered = new Uint8Array(size * size);
     const depth = new Float32Array(size * size).fill(-Infinity);
 
-    const cy = Math.cos(YAW),
-        sy = Math.sin(YAW),
-        cp = Math.cos(PITCH),
-        sp = Math.sin(PITCH);
-    // Yaw about Y, then pitch about X; the viewer looks along -Z
-    const view = (
-        x: number,
-        y: number,
-        z: number,
-    ): [number, number, number] => {
-        const x1 = cy * x + sy * z;
-        const z1 = -sy * x + cy * z;
-        return [x1, cp * y - sp * z1, sp * y + cp * z1];
-    };
+    const view = thumbnailView;
     const projected = triangles.map(({ positions: p }) => [
         view(p[0], p[1], p[2]),
         view(p[3], p[4], p[5]),
