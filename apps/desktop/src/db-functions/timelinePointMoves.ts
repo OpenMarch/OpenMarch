@@ -17,6 +17,10 @@ import { createTimelinesInTransaction, findTimelineByRange } from "./timelines";
 import { readPageGrid } from "./timelineRipple";
 import { updateTimelineSlotDestinationInTransaction } from "./timelineTransitions";
 import { clearOwnPageMoves } from "./timelineMoveHelpers";
+import {
+    recipesFollowMembersInTransaction,
+    snapshotRecipesInTransaction,
+} from "./shapeRecipes";
 import { hasHeldMarksTable, readHeldMarks } from "./timelineHeldArrival";
 import {
     isPageBox,
@@ -438,6 +442,11 @@ const writePlan = async (
             slotIndex: row.slotIndex,
         });
     }
+    // Shapes placed in the moves this re-cuts, to follow their members afterwards
+    const recipes = await snapshotRecipesInTransaction(
+        tx,
+        plan.removed.map((r) => r.timelineId),
+    );
     if (plan.removed.length > 0) {
         const a = schema.timeline_assignments;
         const removed = await tx
@@ -488,6 +497,7 @@ const writePlan = async (
                 slotIndex: 0,
             });
     }
+    await recipesFollowMembersInTransaction(tx, recipes);
     if (plan.cleared.length > 0)
         result.cleared = [...new Set(plan.cleared)].sort((x, y) => x - y);
     return result;

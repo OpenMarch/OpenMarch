@@ -23,6 +23,7 @@ import {
     moveMarchersInTarget,
     type TimelineEditTarget,
 } from "@/db-functions/timelineMoves";
+import { performRedo, performUndo } from "@/db-functions/history";
 import { removePositionAtBeat } from "@/db-functions/timelinePointMoves";
 import { readPageGrid } from "@/db-functions/timelineRipple";
 import { unsetMarchersAt } from "@/db-functions/timelineUnset";
@@ -217,86 +218,105 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
     // (`splitMovesAtBeatInTransaction`), the emptied page move is deleted, and its shape recipe
     // goes with it (`timeline_shape_recipes.timeline_id` cascades). Expert's Split at playhead
     // keeps the recipe with the half that still arrives (`timelineSplitAtBeat.ts`).
-    it.fails(
-        "BUG 1: + inside a page keeps the shape placed at the page's flag",
-        async ({ db, marchersAndPages: _ }) => {
-            const ids = await arranged(() => lineOnPage2(db));
-            if (!ids) return;
-            const at17 = [ids.a, ids.b, ids.c].map((id) =>
-                resolver().positionAt(id, 17),
-            );
-            await addPageFlag({ db, beat: 13, splitMoves: true });
-            await timelineResolverSettled();
-            // Nobody moved: every member still stands on its spot at the flag
-            expect(
-                [ids.a, ids.b, ids.c].map((id) =>
-                    resolver().positionAt(id, 17),
-                ),
-            ).toEqual(at17);
-            expect(await shapes(db)).toEqual([
-                { at: 17, members: [ids.a, ids.b, ids.c] },
-            ]);
-        },
-    );
+    it("+ inside a page keeps the shape placed at the page's flag", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(() => lineOnPage2(db));
+        if (!ids) return;
+        const at17 = [ids.a, ids.b, ids.c].map((id) =>
+            resolver().positionAt(id, 17),
+        );
+        await addPageFlag({ db, beat: 13, splitMoves: true });
+        await timelineResolverSettled();
+        // Nobody moved: every member still stands on its spot at the flag
+        expect(
+            [ids.a, ids.b, ids.c].map((id) => resolver().positionAt(id, 17)),
+        ).toEqual(at17);
+        expect(await shapes(db)).toEqual([
+            { at: 17, members: [ids.a, ids.b, ids.c] },
+        ]);
+    });
+
+    it("Undo and Redo of + inside a page keep the shape at the page's flag", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(() => lineOnPage2(db));
+        if (!ids) return;
+        const all = [ids.a, ids.b, ids.c];
+        await addPageFlag({ db, beat: 13, splitMoves: true });
+        await performUndo(db);
+        await timelineResolverSettled();
+        expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+        expect(await spansOf(db, ids.a)).toEqual([[9, 17]]);
+        await performRedo(db);
+        await timelineResolverSettled();
+        expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 13],
+            [13, 17],
+        ]);
+    });
 
     // BUG 1 (same cause, the point writer): a mid-page position for every member re-cuts their
     // rows into [9, 13) and [13, 17), the page's move is left empty and deleted with its recipe.
-    it.fails(
-        "BUG 1: a mid-page position for every member keeps the shape at the page's flag",
-        async ({ db, marchersAndPages: _ }) => {
-            const ids = await arranged(() => lineOnPage2(db));
-            if (!ids) return;
-            await edit(
-                db,
-                { kind: "point", beat: 13, box: PAGE2 },
-                [ids.a, ids.b, ids.c].map((marcherId, i) => ({
-                    marcherId,
-                    xy: [300 + 20 * i, 200] as XY,
-                })),
-            );
-            // The flag's positions are the second halves' destinations, unchanged
-            expect(resolver().positionAt(ids.a, 17)).toEqual([100, 50]);
-            expect(await shapes(db)).toEqual([
-                { at: 17, members: [ids.a, ids.b, ids.c] },
-            ]);
-        },
-    );
+    it("a mid-page position for every member keeps the shape at the page's flag", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(() => lineOnPage2(db));
+        if (!ids) return;
+        await edit(
+            db,
+            { kind: "point", beat: 13, box: PAGE2 },
+            [ids.a, ids.b, ids.c].map((marcherId, i) => ({
+                marcherId,
+                xy: [300 + 20 * i, 200] as XY,
+            })),
+        );
+        // The flag's positions are the second halves' destinations, unchanged
+        expect(resolver().positionAt(ids.a, 17)).toEqual([100, 50]);
+        expect(await shapes(db)).toEqual([
+            { at: 17, members: [ids.a, ids.b, ids.c] },
+        ]);
+    });
 
     // BUG 1 (same cause, Remove this count's position): the merge deletes [13, 17), the move the
     // flag's shape was saved in, and writes [9, 17) in a new move with no recipe.
-    it.fails(
-        "BUG 1: removing a mid-page position keeps the shape placed at the page's flag",
-        async ({ db, marchersAndPages: _ }) => {
-            const ids = await arranged(async () => {
-                const made = await show(db);
-                const all = [made.a, made.b, made.c];
-                await edit(
-                    db,
-                    { kind: "point", beat: 13, box: PAGE2 },
-                    all.map((marcherId) => ({ marcherId, xy: FAR })),
-                );
-                await placeLine(db, all, {
-                    kind: "point",
-                    beat: PAGE2.end,
-                    box: PAGE2,
-                });
-                expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
-                return made;
-            });
-            if (!ids) return;
-            await removePositionAtBeat({
+    it("removing a mid-page position keeps the shape placed at the page's flag", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await arranged(async () => {
+            const made = await show(db);
+            const all = [made.a, made.b, made.c];
+            await edit(
                 db,
-                beat: 13,
+                { kind: "point", beat: 13, box: PAGE2 },
+                all.map((marcherId) => ({ marcherId, xy: FAR })),
+            );
+            await placeLine(db, all, {
+                kind: "point",
+                beat: PAGE2.end,
                 box: PAGE2,
-                marcherIds: [ids.a, ids.b, ids.c],
             });
-            await timelineResolverSettled();
-            expect(resolver().positionAt(ids.a, 17)).toEqual([100, 50]);
-            expect(await shapes(db)).toEqual([
-                { at: 17, members: [ids.a, ids.b, ids.c] },
-            ]);
-        },
-    );
+            expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+            return made;
+        });
+        if (!ids) return;
+        await removePositionAtBeat({
+            db,
+            beat: 13,
+            box: PAGE2,
+            marcherIds: [ids.a, ids.b, ids.c],
+        });
+        await timelineResolverSettled();
+        expect(resolver().positionAt(ids.a, 17)).toEqual([100, 50]);
+        expect(await shapes(db)).toEqual([
+            { at: 17, members: [ids.a, ids.b, ids.c] },
+        ]);
+    });
 
     // BUG 2: a recipe lists only marchers whose rows are in its move (`saveShapeRecipeInTransaction`).
     // Basic's mid-page positions put each marcher's rows in moves of their own ([13, 17) for a,
