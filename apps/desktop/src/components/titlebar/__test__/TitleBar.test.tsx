@@ -156,4 +156,22 @@ describe("TitleBar", () => {
         expect(window.electron.databaseGetPath).not.toHaveBeenCalled();
         expect(screen.queryByText("Halftime.dots")).not.toBeInTheDocument();
     });
+
+    it("shows Help in the title bar with a mouse", async () => {
+        renderBar({ showControls: true });
+        expect(await screen.findByTestId("titlebar-help")).toBeInTheDocument();
+    });
+
+    it("touch mode leaves Help out of the title bar so the toolbar tabs fit (#1075)", async () => {
+        useInputModeStore.setState({ mode: "touch" });
+        renderBar({ showControls: true });
+        await screen.findByTestId("titlebar-toolbar-tabs");
+        expect(screen.queryByTestId("titlebar-help")).not.toBeInTheDocument();
+    });
+
+    it("touch mode keeps Help in the title bar where there are no toolbar tabs", async () => {
+        useInputModeStore.setState({ mode: "touch" });
+        renderBar();
+        expect(await screen.findByTestId("titlebar-help")).toBeInTheDocument();
+    });
 });

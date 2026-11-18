@@ -15,6 +15,7 @@ import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
 import { useView3dSceneStore } from "./sceneStore";
 import { useCameraStore } from "./camera/cameraStore";
 import { useDirectorStore } from "./cinema/directorStore";
+import { useFollowStore } from "./camera/followStore";
 import {
     createDrawState,
     createShadowState,
@@ -71,6 +72,8 @@ export default function DrawWhenNeeded() {
             useCameraStore.subscribe(() => kick(WAKE.camera)),
             // The Director turning on or off, or getting its track.
             useDirectorStore.subscribe(() => kick(WAKE.camera)),
+            // Following a performer, its settings, or a body left out.
+            useFollowStore.subscribe(() => kick(WAKE.camera)),
             useView3dSyncStore.subscribe(() => kickLit(WAKE.sync)),
             queryClient.getQueryCache().subscribe(() => kickLit(WAKE.data)),
         ];

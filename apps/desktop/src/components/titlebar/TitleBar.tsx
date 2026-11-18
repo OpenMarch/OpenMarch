@@ -269,14 +269,17 @@ function EditorTitleBar({
                             <MagnifyingGlassIcon size={18} />
                         </ActionButton>
                     )}
-                    <ActionButton
-                        action="openHelp"
-                        aria-label={t("actions.ui.openHelp")}
-                        className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
-                        data-testid="titlebar-help"
-                    >
-                        <QuestionIcon size={18} />
-                    </ActionButton>
+                    {/* Touch editor: the toolbar tabs need the room; Help is in the ☰ menu (fork #1075) */}
+                    {!tabsInTitleBar && (
+                        <ActionButton
+                            action="openHelp"
+                            aria-label={t("actions.ui.openHelp")}
+                            className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
+                            data-testid="titlebar-help"
+                        >
+                            <QuestionIcon size={18} />
+                        </ActionButton>
+                    )}
                     <BugReport />
                     {showWindowControls && (
                         <div className="titlebar-button flex">

@@ -743,6 +743,12 @@
             "title": "Invalid file permissions"
         },
         "guideLinkText": "OpenMarch File Error Guide",
+        "leftoverJournal": {
+            "cancel": "Cancel",
+            "description": "There's a leftover file, “{name}”, next to this show, from a save that didn't finish. OpenMarch can't use it where it is, but it can finish recovering the show from a copy. The leftover file is moved to OpenMarch's backups, not deleted.",
+            "recover": "Recover and open",
+            "title": "A leftover file is stopping this show from opening"
+        },
         "notFound": {
             "description": "This file does not exist at this location. Was it moved or renamed?",
             "title": "File not found"
@@ -3222,7 +3228,14 @@
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
             "freeCamera": "Free view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Follow a performer",
+            "followPerformerTooltip": "Follow a performer: click a performer to follow them",
+            "following": "Following {name}",
+            "povOf": "{name}'s view",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: see through the performer's eyes",
+            "stopFollowing": "Stop following"
         },
         "readout": {
             "count": "Count {count} of {total}",
@@ -3274,7 +3287,9 @@
             },
             "showNote": "Saved with this show. Undo in the editor reverts a change.",
             "computerNote": "Saved on this computer only. Not part of the show.",
-            "shortcuts": "Keyboard shortcuts"
+            "shortcuts": "Keyboard shortcuts",
+            "followTurns": "Following: turn with the performer",
+            "povShowsBody": "Point of view: show their arms and instrument"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3283,14 +3298,16 @@
             "cameras": "Cameras, in menu order",
             "fullscreen": "Fullscreen",
             "crowd": "Show or hide the crowd",
-            "escape": "Cancel a seat pick, close settings, leave fullscreen",
+            "escape": "Cancel a pick, close settings, stop following, leave fullscreen",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, or drag with the right mouse button",
             "panPlain": "Pan",
             "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom",
-            "pausedPose": "Paused: show the actual step or the closed position"
+            "pausedPose": "Paused: show the actual step or the closed position",
+            "followPerformer": "Pick a performer to follow",
+            "pointOfView": "Following: switch to their point of view and back"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -3843,6 +3860,14 @@
             "allFiles": "All Files",
             "audioFile": "Audio File",
             "video": "Video"
+        },
+        "leftoverJournal": {
+            "damagedMessage": "OpenMarch couldn't recover this show, with or without “{name}”. Nothing was changed. Report the problem and include the show and “{name}” if you can.",
+            "damagedTitle": "Couldn't recover the show",
+            "failedTitle": "Couldn't open the show",
+            "journalMoveFailedMessage": "OpenMarch couldn't move “{name}” out of the show's folder, so the show didn't open. The show itself is sound. Report the problem and include the show and “{name}” if you can.",
+            "replaceFailedMessage": "OpenMarch couldn't replace the show with the recovered copy. Another program may be using the file. Nothing was changed: close other programs that might have the show open, then open it again.",
+            "stageFailedMessage": "OpenMarch couldn't make the copies it needs to recover the show. The disk may be full, or OpenMarch may not be allowed to write in the show's folder or its own folder. Nothing was changed."
         },
         "newShow": {
             "button": "Create New"

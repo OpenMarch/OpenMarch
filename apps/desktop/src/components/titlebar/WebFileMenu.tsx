@@ -37,12 +37,14 @@ const FILE_ACTIONS: ActionId[] = [
     "launchSaveFileDialogue",
     "closeFile",
     "openSettings",
+    "openHelp",
 ];
 
 /**
  * The web build's stand-in for the native app menu: the file actions, with
  * "Save a copy" as Back up (share or download the file: the show is already
- * saved in the browser) and the show's Versions.
+ * saved in the browser) and the show's Versions. Help is here too: on a tablet the
+ * title bar's ? gives its room to the toolbar tabs (fork #1075).
  */
 export default function WebFileMenu() {
     const { t } = useTranslate();
@@ -100,6 +102,7 @@ export default function WebFileMenu() {
                 {item("closeFile")}
                 <DropdownMenuSeparator className={MENU_SEPARATOR_CLASS} />
                 {item("openSettings")}
+                {item("openHelp")}
             </DropdownMenuContent>
         </DropdownMenu>
     );

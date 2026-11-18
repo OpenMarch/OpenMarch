@@ -3219,7 +3219,14 @@
             "pickSeatTooltip": "Pilih kursi: klik kursi di tribun untuk duduk di sana",
             "venue": "Tempat",
             "freeCamera": "Tampilan bebas",
-            "director": "Sutradara"
+            "director": "Sutradara",
+            "followPerformer": "Ikuti pemain",
+            "followPerformerTooltip": "Ikuti pemain: klik pemain untuk mengikutinya",
+            "following": "Mengikuti {name}",
+            "povOf": "Pandangan {name}",
+            "pointOfView": "Sudut pandang",
+            "pointOfViewTooltip": "Sudut pandang: lihat dari mata pemain",
+            "stopFollowing": "Berhenti mengikuti"
         },
         "readout": {
             "count": "Hitungan {count} dari {total}",
@@ -3259,7 +3266,9 @@
             "brassFinish": "Lapisan brass",
             "tuba": "Tuba",
             "silkShape": "Bentuk kain bendera",
-            "silkArtwork": "Gambar kain bendera"
+            "silkArtwork": "Gambar kain bendera",
+            "followTurns": "Saat mengikuti: berputar bersama pemain",
+            "povShowsBody": "Sudut pandang: tampilkan lengan dan alat musiknya"
         },
         "keys": {
             "playPause": "Putar atau jeda",
@@ -3268,14 +3277,16 @@
             "cameras": "Kamera, sesuai urutan menu",
             "fullscreen": "Layar penuh",
             "crowd": "Tampilkan atau sembunyikan penonton",
-            "escape": "Batalkan pilih kursi, tutup pengaturan, keluar dari layar penuh",
+            "escape": "Batalkan pilihan, tutup pengaturan, berhenti mengikuti, keluar dari layar penuh",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, atau seret dengan tombol kanan mouse",
             "panPlain": "Geser",
             "zoomOrPinch": "Zoom, atau cubit di trackpad",
             "pan": "Geser, atau seret dengan tombol kanan mouse",
             "zoom": "Zoom",
-            "pausedPose": "Saat dijeda: tampilkan langkah sebenarnya atau posisi tertutup"
+            "pausedPose": "Saat dijeda: tampilkan langkah sebenarnya atau posisi tertutup",
+            "followPerformer": "Pilih pemain untuk diikuti",
+            "pointOfView": "Saat mengikuti: beralih ke sudut pandangnya dan kembali"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
