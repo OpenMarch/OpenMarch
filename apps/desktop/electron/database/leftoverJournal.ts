@@ -29,8 +29,11 @@ export { LEFTOVER_JOURNAL_STATUS } from "./leftoverJournalStatus";
 const SQLITE_READONLY = 8;
 const SQLITE_CANTOPEN = 14;
 
-/** The first 8 bytes of a rollback journal's header. A zeroed or empty journal isn't hot. */
-const JOURNAL_MAGIC = Buffer.from([
+/**
+ * The first 8 bytes of a rollback journal's header. A zeroed or empty journal isn't hot.
+ * Uint8Array, not Buffer: the web build's worker loads this module and has no Buffer.
+ */
+const JOURNAL_MAGIC = Uint8Array.from([
     0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd7,
 ]);
 
@@ -57,9 +60,9 @@ export function hasLeftoverJournal(dbPath: string): boolean {
     let fd: number | undefined;
     try {
         fd = fs.openSync(journal, "r");
-        const header = Buffer.alloc(JOURNAL_MAGIC.length);
+        const header = new Uint8Array(JOURNAL_MAGIC.length);
         fs.readSync(fd, header, 0, header.length, 0);
-        return header.equals(JOURNAL_MAGIC);
+        return header.every((byte, i) => byte === JOURNAL_MAGIC[i]);
     } catch {
         return true;
     } finally {
