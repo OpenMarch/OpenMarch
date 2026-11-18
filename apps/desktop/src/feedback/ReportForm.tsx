@@ -15,10 +15,17 @@ import {
 } from "@openmarch/ui";
 import clsx from "clsx";
 import {
+    CubeIcon,
     FileIcon,
     MusicNotesIcon,
     ShieldCheckIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
+import {
+    showAssetSizesQueryOptions,
+    showAssetsQueryOptions,
+} from "@/hooks/queries/useShowAssets";
+import { useSizeText } from "@/components/assets/AssetsView";
 import {
     buildPayload,
     draftProblems,
@@ -141,6 +148,7 @@ export default function ReportForm({
                 sendShowFile: sendsShowFile,
                 expectedShowFileName: showFileName ?? undefined,
                 includeAudio: draft.includeMusic,
+                includeAssets: draft.includeModels,
                 recording:
                     recording.state.status === "done"
                         ? {
@@ -258,6 +266,10 @@ export default function ReportForm({
                                     includeMusic={draft.includeMusic}
                                     onIncludeMusic={(v) =>
                                         update({ includeMusic: v })
+                                    }
+                                    includeModels={draft.includeModels}
+                                    onIncludeModels={(v) =>
+                                        update({ includeModels: v })
                                     }
                                 />
                             ) : (
@@ -413,20 +425,40 @@ function CheckRow({
     );
 }
 
-/** The show copy: whether to send it, which file, and whether its music goes too. */
+/**
+ * The show copy: whether to send it, which file, and whether its music and imported models'
+ * files go too. Models (fork #1027) are offered only when the show has some; without them the
+ * copy still says how big each was and how detailed.
+ */
 function ShowFileCard({
     fileName,
     send,
     onSend,
     includeMusic,
     onIncludeMusic,
+    includeModels,
+    onIncludeModels,
 }: {
     fileName: string;
     send: boolean;
     onSend: (send: boolean) => void;
     includeMusic: boolean;
     onIncludeMusic: (include: boolean) => void;
+    includeModels: boolean;
+    onIncludeModels: (include: boolean) => void;
 }) {
+    const { data: assets } = useQuery({
+        ...showAssetsQueryOptions(),
+        enabled: send,
+    });
+    const { data: sizes } = useQuery({
+        ...showAssetSizesQueryOptions(),
+        enabled: send && (assets?.length ?? 0) > 0,
+    });
+    const sizeText = useSizeText();
+    const modelBytes = sizes
+        ? [...sizes.values()].reduce((n, bytes) => n + bytes, 0)
+        : null;
     return (
         <div
             className={clsx(
@@ -492,6 +524,43 @@ function ShowFileCard({
                             onCheckedChange={onIncludeMusic}
                         />
                     </div>
+                    {(assets?.length ?? 0) > 0 && (
+                        <div
+                            className="flex items-center gap-6"
+                            data-testid="report-models"
+                        >
+                            <CubeIcon
+                                size={16}
+                                className="text-text-subtitle shrink-0"
+                            />
+                            <span className="flex-1">
+                                {includeModels ? (
+                                    <T
+                                        keyName="feedback.attach.models.on"
+                                        params={{
+                                            size:
+                                                modelBytes === null
+                                                    ? "…"
+                                                    : sizeText(modelBytes),
+                                        }}
+                                    />
+                                ) : (
+                                    <T keyName="feedback.attach.models.off" />
+                                )}
+                            </span>
+                            <label
+                                htmlFor="report-models"
+                                className="text-text-subtitle cursor-pointer"
+                            >
+                                <T keyName="feedback.attach.models" />
+                            </label>
+                            <Switch
+                                id="report-models"
+                                checked={includeModels}
+                                onCheckedChange={onIncludeModels}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
         </div>

@@ -32,6 +32,8 @@ export interface ReportSubmitRequest {
     /** The show file name the drawer showed; sending is refused if another show is open now */
     readonly expectedShowFileName?: string;
     readonly includeAudio: boolean;
+    /** Keep imported models' files in the show copy (fork #1027) */
+    readonly includeAssets?: boolean;
     readonly recording?: {
         readonly bytes: ArrayBuffer;
         readonly mimeType: string;
@@ -76,11 +78,19 @@ function writeReportCopyInWorker(
     source: string,
     destination: string,
     includeAudio: boolean,
+    includeAssets: boolean,
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(
             path.join(__dirname, "../worker", "reportCopyWorker.js"),
-            { workerData: { source, destination, includeAudio } },
+            {
+                workerData: {
+                    source,
+                    destination,
+                    includeAudio,
+                    includeAssets,
+                },
+            },
         );
         worker.once("message", (result: { ok: boolean; message?: string }) =>
             result.ok ? resolve() : reject(new Error(result.message)),
@@ -123,7 +133,12 @@ async function gatherReportFiles(
                 SHOW_CHANGED_STATUS,
             );
         const copy = path.join(dir, "show.dots");
-        await writeReportCopyInWorker(source, copy, !!request.includeAudio);
+        await writeReportCopyInWorker(
+            source,
+            copy,
+            !!request.includeAudio,
+            !!request.includeAssets,
+        );
         if (fs.statSync(copy).size > MAX_SHOW_FILE_BYTES)
             showFileTooLarge = true;
         else

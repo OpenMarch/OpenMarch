@@ -9,6 +9,12 @@
  *   they keep old copies of rows, names included;
  * - the music is dropped unless the person asks to include it, and an audio
  *   file's path keeps only its file name (a path can hold a user name);
+ * - imported models and other show assets (fork #1027) leave their files out
+ *   unless the person asks to include them, but keep what debugging needs: each
+ *   asset's sidecar (size, triangles, detail level) and, under
+ *   `sidecar.reportCopy`, how many bytes each stored part had and whether the
+ *   files came along. Names become "Model <n>", and credits keep only the
+ *   license (author, source and attribution can name people);
  * - the file is rebuilt with VACUUM, so nothing scrubbed survives in free pages.
  *
  * Tables or columns an older file lacks are skipped.
@@ -20,6 +26,11 @@ import * as fs from "fs";
 export interface ReportCopyOptions {
     /** Keep the music (`audio_files.data`). Off unless the person ticks "Include music". */
     readonly includeAudio: boolean;
+    /**
+     * Keep imported models' files (`show_asset_blobs`). Off unless the person ticks "Include
+     * imported models"; missing means off.
+     */
+    readonly includeAssets?: boolean;
 }
 
 /** The parts of a SQLite connection the scrub needs (node:sqlite's `DatabaseSync`). */
@@ -62,7 +73,7 @@ const quote = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
  */
 export function scrubReportCopy(
     db: ScrubbableDatabase,
-    { includeAudio }: ReportCopyOptions,
+    { includeAudio, includeAssets = false }: ReportCopyOptions,
 ) {
     const tables = (
         db
@@ -123,6 +134,8 @@ export function scrubReportCopy(
     if (!includeAudio && audio.has("data"))
         db.exec("UPDATE audio_files SET data = NULL");
 
+    scrubShowAssets(db, includeAssets);
+
     for (const { sql } of triggers) db.exec(sql);
 
     for (const table of [
@@ -131,6 +144,68 @@ export function scrubReportCopy(
         "timeline_change_log",
     ]) {
         if (columnsOf(db, table).size > 0) db.exec(`DELETE FROM ${table}`);
+    }
+}
+
+/** What an asset's name becomes in the copy, by kind: "Model <rowid>" */
+const ASSET_LABELS: Readonly<Record<string, string>> = { model: "Model" };
+
+/**
+ * The show asset store in a report copy (fork #1027): names and credits scrubbed, each asset's
+ * stored part sizes noted in its sidecar, and the files themselves dropped unless asked for.
+ */
+function scrubShowAssets(db: ScrubbableDatabase, includeFiles: boolean) {
+    if (columnsOf(db, "show_assets").size === 0) return;
+    const hasBlobs = columnsOf(db, "show_asset_blobs").has("data");
+    const assets = db
+        .prepare(
+            "SELECT rowid AS row, kind, parts, sidecar, credits FROM show_assets",
+        )
+        .all() as {
+        row: number;
+        kind: string;
+        parts: string;
+        sidecar: string;
+        credits: string;
+    }[];
+    const sizeOf = db.prepare(
+        "SELECT length(data) AS bytes FROM show_asset_blobs WHERE hash = ?",
+    );
+    const update = db.prepare(
+        "UPDATE show_assets SET name = ?, sidecar = ?, credits = ? WHERE rowid = ?",
+    );
+    for (const asset of assets) {
+        const parts = parseObject(asset.parts);
+        const partBytes: Record<string, number | null> = {};
+        for (const [role, hash] of Object.entries(parts)) {
+            const [row] = hasBlobs
+                ? (sizeOf.all(hash) as { bytes: number | null }[])
+                : [];
+            partBytes[role] = row?.bytes ?? null;
+        }
+        const sidecar = {
+            ...parseObject(asset.sidecar),
+            reportCopy: { partBytes, filesIncluded: includeFiles && hasBlobs },
+        };
+        const license = parseObject(asset.credits).license;
+        update.all(
+            `${ASSET_LABELS[asset.kind] ?? "Asset"} ${asset.row}`,
+            JSON.stringify(sidecar),
+            JSON.stringify(typeof license === "string" ? { license } : {}),
+            asset.row,
+        );
+    }
+    if (!includeFiles && hasBlobs) db.exec("DELETE FROM show_asset_blobs");
+}
+
+function parseObject(json: string): Record<string, unknown> {
+    try {
+        const value: unknown = JSON.parse(json);
+        return value && typeof value === "object" && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : {};
+    } catch {
+        return {};
     }
 }
 
