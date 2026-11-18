@@ -134,6 +134,21 @@ describe("writeReportCopy", () => {
         expect(JSON.parse(asset!.credits)).toEqual({ license: "CC-BY-4.0" });
         expect(JSON.parse(asset!.sidecar)).toMatchObject({
             triangles: 19_996,
+            // Names from the file are replaced; the sizes stay
+            importNotes: {
+                fixedForYou: [
+                    {
+                        code: "texturesShrunk",
+                        textures: [
+                            {
+                                name: "Texture 1",
+                                from: [4096, 4096],
+                                to: [1024, 1024],
+                            },
+                        ],
+                    },
+                ],
+            },
             reportCopy: {
                 partBytes: { model: 5000, thumbnail: 300 },
                 filesIncluded: false,

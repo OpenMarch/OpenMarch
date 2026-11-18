@@ -456,6 +456,11 @@ function ShowFileCard({
         enabled: send && (assets?.length ?? 0) > 0,
     });
     const sizeText = useSizeText();
+    // A show without models never sends any: the switch, hidden, can't stay on from another show
+    const hasModels = (assets?.length ?? 0) > 0;
+    useEffect(() => {
+        if (assets && !hasModels && includeModels) onIncludeModels(false);
+    }, [assets, hasModels, includeModels, onIncludeModels]);
     const modelBytes = sizes
         ? [...sizes.values()].reduce((n, bytes) => n + bytes, 0)
         : null;

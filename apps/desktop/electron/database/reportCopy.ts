@@ -184,7 +184,7 @@ function scrubShowAssets(db: ScrubbableDatabase, includeFiles: boolean) {
             partBytes[role] = row?.bytes ?? null;
         }
         const sidecar = {
-            ...parseObject(asset.sidecar),
+            ...withoutFileNames(parseObject(asset.sidecar)),
             reportCopy: { partBytes, filesIncluded: includeFiles && hasBlobs },
         };
         const license = parseObject(asset.credits).license;
@@ -196,6 +196,36 @@ function scrubShowAssets(db: ScrubbableDatabase, includeFiles: boolean) {
         );
     }
     if (!includeFiles && hasBlobs) db.exec("DELETE FROM show_asset_blobs");
+}
+
+/**
+ * The sidecar with the names it took from the user's file replaced: the import notes list shrunk
+ * textures by their name in the file (`riley_face.png`), which becomes "Texture <n>".
+ */
+function withoutFileNames(
+    sidecar: Record<string, unknown>,
+): Record<string, unknown> {
+    const notes = sidecar.importNotes;
+    if (!notes || typeof notes !== "object") return sidecar;
+    const { fixedForYou } = notes as { fixedForYou?: unknown };
+    if (!Array.isArray(fixedForYou)) return sidecar;
+    return {
+        ...sidecar,
+        importNotes: {
+            ...(notes as Record<string, unknown>),
+            fixedForYou: fixedForYou.map((fix: unknown) => {
+                const textures = (fix as { textures?: unknown })?.textures;
+                if (!Array.isArray(textures)) return fix;
+                return {
+                    ...(fix as Record<string, unknown>),
+                    textures: textures.map((texture: unknown, i) => ({
+                        ...(texture as Record<string, unknown>),
+                        name: `Texture ${i + 1}`,
+                    })),
+                };
+            }),
+        },
+    };
 }
 
 function parseObject(json: string): Record<string, unknown> {

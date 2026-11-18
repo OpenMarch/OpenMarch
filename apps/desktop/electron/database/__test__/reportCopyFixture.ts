@@ -23,6 +23,7 @@ export const SECRETS = [
     "Dana Morales",
     "dana-models.example",
     "Made by Dana for Riley",
+    "riley_face.png",
 ];
 export const AUDIO = Uint8Array.from(
     { length: 4096 },
@@ -82,6 +83,23 @@ export async function makeShowWithSecrets(showPath: string) {
             JSON.stringify({
                 triangles: 19_996,
                 sizeM: { width: 2, height: 1, depth: 1 },
+                importNotes: {
+                    needsChoice: [],
+                    notes: [],
+                    fixedForYou: [
+                        {
+                            code: "texturesShrunk",
+                            cap: 1024,
+                            textures: [
+                                {
+                                    name: "riley_face.png",
+                                    from: [4096, 4096],
+                                    to: [1024, 1024],
+                                },
+                            ],
+                        },
+                    ],
+                },
             }),
             JSON.stringify({
                 license: "CC-BY-4.0",
