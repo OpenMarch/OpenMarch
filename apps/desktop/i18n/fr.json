@@ -1490,10 +1490,10 @@
             "title": "Importer un modèle",
             "pictureAlt": "Le modèle vu depuis le public",
             "working": "Préparation du modèle…",
-            "turn": {
-                "detail": "L’avant doit faire face au public.",
-                "button": "Tourner de 90°"
+            "orient": {
+                "detail": "L’avant doit faire face au public, à l’endroit."
             },
+            "rotateAxis": "Pivoter sur {axis}",
             "simplify": {
                 "compare": "Avant ou après simplification",
                 "before": "Avant · {triangles}",

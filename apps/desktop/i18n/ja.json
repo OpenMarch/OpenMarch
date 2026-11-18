@@ -1490,10 +1490,10 @@
             "title": "モデルをインポート",
             "pictureAlt": "観客側から見たモデル",
             "working": "モデルを準備しています…",
-            "turn": {
-                "detail": "正面が観客側を向くようにしてください。",
-                "button": "90°回転"
+            "orient": {
+                "detail": "正面が観客側を向き、上下が正しくなるようにしてください。"
             },
+            "rotateAxis": "{axis}軸で回転",
             "simplify": {
                 "compare": "簡略化の前と後",
                 "before": "変更前 · {triangles}",

@@ -763,10 +763,12 @@ const shots = [
     {
         id: "3d-props-import-review",
         kind: "still",
-        // The import review for a chair: its picture, Turn 90°, its size, Simplify and the rest
+        // The import review for a chair: its picture with the axis drawing, Rotate X, Y and Z
+        // (the pointer on Rotate Z, so its axis lights up with the arrow), its size, Simplify
         async setup(ctx) {
             const { page } = ctx;
             await importChair(page);
+            await page.getByTestId("model-import-rotate-z").hover();
             await ctx.wait(600);
             return { box: await sidebarPanelBox(page) };
         },

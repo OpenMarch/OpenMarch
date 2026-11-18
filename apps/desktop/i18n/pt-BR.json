@@ -1490,10 +1490,10 @@
             "title": "Importar um modelo",
             "pictureAlt": "O modelo visto da plateia",
             "working": "Preparando o modelo…",
-            "turn": {
-                "detail": "A frente deve ficar voltada para a plateia.",
-                "button": "Girar 90°"
+            "orient": {
+                "detail": "A frente deve ficar voltada para a plateia, com o lado certo para cima."
             },
+            "rotateAxis": "Girar em {axis}",
             "simplify": {
                 "compare": "Antes ou depois de simplificar",
                 "before": "Antes · {triangles}",

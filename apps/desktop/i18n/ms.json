@@ -1490,10 +1490,10 @@
             "title": "Import model",
             "pictureAlt": "Model dilihat dari arah penonton",
             "working": "Menyediakan model…",
-            "turn": {
-                "detail": "Bahagian depan patut menghadap penonton.",
-                "button": "Putar 90°"
+            "orient": {
+                "detail": "Bahagian depan patut menghadap penonton, dengan bahagian atas di atas."
             },
+            "rotateAxis": "Putar paksi {axis}",
             "simplify": {
                 "compare": "Sebelum atau selepas dipermudahkan",
                 "before": "Sebelum · {triangles}",

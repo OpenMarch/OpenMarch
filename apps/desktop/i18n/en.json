@@ -1492,10 +1492,10 @@
             "title": "Import a model",
             "pictureAlt": "The model seen from the audience",
             "working": "Preparing the model…",
-            "turn": {
-                "detail": "The front should face the audience.",
-                "button": "Turn 90°"
+            "orient": {
+                "detail": "The front should face the audience, right side up."
             },
+            "rotateAxis": "Rotate {axis}",
             "simplify": {
                 "compare": "Before or after simplifying",
                 "before": "Before · {triangles}",
