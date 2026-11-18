@@ -3068,7 +3068,14 @@
             "pickSeatTooltip": "座席を選択：スタンドの座席をクリックすると、その席からの視点になります。",
             "venue": "会場",
             "freeCamera": "自由視点",
-            "director": "ディレクター"
+            "director": "ディレクター",
+            "followPerformer": "メンバーを追う",
+            "followPerformerTooltip": "メンバーを追う：メンバーをクリックすると、カメラがそのメンバーを追います。",
+            "following": "{name}を追跡中",
+            "povOf": "{name}の視点",
+            "pointOfView": "一人称視点",
+            "pointOfViewTooltip": "一人称視点：メンバーの目線で見る",
+            "stopFollowing": "追跡を終了"
         },
         "readout": {
             "count": "カウント{count}/{total}",
@@ -3108,7 +3115,9 @@
             "brassFinish": "金管の仕上げ",
             "tuba": "チューバ",
             "silkShape": "フラッグのシルクの形",
-            "silkArtwork": "フラッグのシルクの絵柄"
+            "silkArtwork": "フラッグのシルクの絵柄",
+            "followTurns": "追跡中：メンバーと一緒に向きを変える",
+            "povShowsBody": "一人称視点：腕と楽器を表示"
         },
         "keys": {
             "playPause": "再生/一時停止",
@@ -3117,14 +3126,16 @@
             "cameras": "カメラ（メニュー順）",
             "fullscreen": "フルスクリーン",
             "crowd": "観客の表示/非表示",
-            "escape": "座席選択の取消・設定を閉じる・フルスクリーン終了",
+            "escape": "選択の取消・設定を閉じる・追跡終了・フルスクリーン終了",
             "orbit": "回転",
             "orbitOrRight": "回り込み、またはマウスの右ボタンでドラッグ",
             "panPlain": "パン",
             "zoomOrPinch": "ズーム、またはトラックパッドでピンチ",
             "pan": "パン（右ボタンのドラッグでも可）",
             "zoom": "ズーム",
-            "pausedPose": "一時停止中：実際の歩みか、足を閉じた姿勢を表示"
+            "pausedPose": "一時停止中：実際の歩みか、足を閉じた姿勢を表示",
+            "followPerformer": "追うメンバーを選択",
+            "pointOfView": "追跡中：一人称視点との切替"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

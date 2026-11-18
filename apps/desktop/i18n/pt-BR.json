@@ -3068,7 +3068,14 @@
             "pickSeatTooltip": "Escolher um assento: clique em um assento da arquibancada para sentar lá",
             "venue": "Local",
             "freeCamera": "Vista livre",
-            "director": "Diretor"
+            "director": "Diretor",
+            "followPerformer": "Seguir um integrante",
+            "followPerformerTooltip": "Seguir um integrante: clique em um integrante para segui-lo",
+            "following": "Seguindo {name}",
+            "povOf": "Visão de {name}",
+            "pointOfView": "Ponto de vista",
+            "pointOfViewTooltip": "Ponto de vista: ver pelos olhos do integrante",
+            "stopFollowing": "Parar de seguir"
         },
         "readout": {
             "count": "Tempo {count} de {total}",
@@ -3108,7 +3115,9 @@
             "brassFinish": "Acabamento dos metais",
             "tuba": "Tubas",
             "silkShape": "Formato da bandeira",
-            "silkArtwork": "Arte da bandeira"
+            "silkArtwork": "Arte da bandeira",
+            "followTurns": "Seguindo: girar junto com o integrante",
+            "povShowsBody": "Ponto de vista: mostrar os braços e o instrumento"
         },
         "keys": {
             "playPause": "Reproduzir ou pausar",
@@ -3117,14 +3126,16 @@
             "cameras": "Câmeras, na ordem do menu",
             "fullscreen": "Tela cheia",
             "crowd": "Mostrar ou ocultar o público",
-            "escape": "Cancelar escolha de assento, fechar configurações, sair da tela cheia",
+            "escape": "Cancelar uma escolha, fechar configurações, parar de seguir, sair da tela cheia",
             "orbit": "Orbitar",
             "orbitOrRight": "Orbitar ou arrastar com o botão direito do mouse",
             "panPlain": "Deslocar",
             "zoomOrPinch": "Zoom ou gesto de pinça no trackpad",
             "pan": "Deslocar, ou arrastar com o botão direito do mouse",
             "zoom": "Zoom",
-            "pausedPose": "Pausado: mostrar o passo real ou a posição fechada"
+            "pausedPose": "Pausado: mostrar o passo real ou a posição fechada",
+            "followPerformer": "Escolher um integrante para seguir",
+            "pointOfView": "Seguindo: alternar para o ponto de vista dele e voltar"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

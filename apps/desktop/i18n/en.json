@@ -3077,7 +3077,14 @@
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
             "freeCamera": "Free view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Follow a performer",
+            "followPerformerTooltip": "Follow a performer: click a performer to follow them",
+            "following": "Following {name}",
+            "povOf": "{name}'s view",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: see through the performer's eyes",
+            "stopFollowing": "Stop following"
         },
         "readout": {
             "count": "Count {count} of {total}",
@@ -3129,7 +3136,9 @@
             },
             "showNote": "Saved with this show. Undo in the editor reverts a change.",
             "computerNote": "Saved on this computer only. Not part of the show.",
-            "shortcuts": "Keyboard shortcuts"
+            "shortcuts": "Keyboard shortcuts",
+            "followTurns": "Following: turn with the performer",
+            "povShowsBody": "Point of view: show their arms and instrument"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3138,14 +3147,16 @@
             "cameras": "Cameras, in menu order",
             "fullscreen": "Fullscreen",
             "crowd": "Show or hide the crowd",
-            "escape": "Cancel a seat pick, close settings, leave fullscreen",
+            "escape": "Cancel a pick, close settings, stop following, leave fullscreen",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, or drag with the right mouse button",
             "panPlain": "Pan",
             "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom",
-            "pausedPose": "Paused: show the actual step or the closed position"
+            "pausedPose": "Paused: show the actual step or the closed position",
+            "followPerformer": "Pick a performer to follow",
+            "pointOfView": "Following: switch to their point of view and back"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

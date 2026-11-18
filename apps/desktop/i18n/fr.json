@@ -3068,7 +3068,14 @@
             "pickSeatTooltip": "Choisir une place : cliquez sur une place dans les tribunes pour vous y asseoir",
             "venue": "Lieu",
             "freeCamera": "Vue libre",
-            "director": "Réalisateur"
+            "director": "Réalisateur",
+            "followPerformer": "Suivre un marcheur",
+            "followPerformerTooltip": "Suivre un marcheur : cliquez sur un marcheur pour le suivre",
+            "following": "Suivi de {name}",
+            "povOf": "Vue de {name}",
+            "pointOfView": "Point de vue",
+            "pointOfViewTooltip": "Point de vue : voir par les yeux du marcheur",
+            "stopFollowing": "Arrêter de suivre"
         },
         "readout": {
             "count": "Temps {count} sur {total}",
@@ -3108,7 +3115,9 @@
             "brassFinish": "Finition des cuivres",
             "tuba": "Tubas",
             "silkShape": "Forme de la voile du drapeau",
-            "silkArtwork": "Motif de la voile du drapeau"
+            "silkArtwork": "Motif de la voile du drapeau",
+            "followTurns": "En suivi : tourner avec le marcheur",
+            "povShowsBody": "Point de vue : afficher ses bras et son instrument"
         },
         "keys": {
             "playPause": "Lecture ou pause",
@@ -3117,14 +3126,16 @@
             "cameras": "Caméras, dans l'ordre du menu",
             "fullscreen": "Plein écran",
             "crowd": "Afficher ou masquer le public",
-            "escape": "Annuler le choix de place, fermer les paramètres, quitter le plein écran",
+            "escape": "Annuler un choix, fermer les paramètres, arrêter de suivre, quitter le plein écran",
             "orbit": "Orbite",
             "orbitOrRight": "Orbiter, ou faire glisser avec le bouton droit",
             "panPlain": "Déplacer la vue",
             "zoomOrPinch": "Zoomer, ou pincer sur un pavé tactile",
             "pan": "Panoramique, ou glisser avec le bouton droit",
             "zoom": "Zoom",
-            "pausedPose": "En pause : montrer le pas réel ou la position fermée"
+            "pausedPose": "En pause : montrer le pas réel ou la position fermée",
+            "followPerformer": "Choisir un marcheur à suivre",
+            "pointOfView": "En suivi : passer à son point de vue et revenir"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"

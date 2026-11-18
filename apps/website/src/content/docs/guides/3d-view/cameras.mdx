@@ -1,6 +1,6 @@
 ---
 title: Move the camera
-description: Pan, orbit and zoom the 3D View, jump to a camera, sit in a seat in the stands, and save your own camera positions.
+description: Pan, orbit and zoom the 3D View, jump to a camera, sit in a seat in the stands, follow a performer or see through their eyes, and save your own camera positions.
 type: how-to
 covers:
   - apps/desktop/src/view3d/window/camera
@@ -10,6 +10,8 @@ covers:
   - i18n:view3d.cameras
   - i18n:view3d.camera
   - i18n:view3d.overlay
+  - i18n:view3d.settings.followTurns
+  - i18n:view3d.settings.povShowsBody
   - i18n:settings.view3d.controls
 sidebar:
   order: 2
@@ -95,6 +97,29 @@ In a venue with stands, you can watch from any seat.
 />
 
 Press <Kbd keys="Escape" /> to stop picking without moving. Spectators around your seat step aside so they don't block the view.
+
+## Follow a performer
+
+Watch one performer through the show, from behind them or through their own eyes.
+
+<Steps>
+
+1. Select <Ui k="view3d.overlay.followPerformer" /> (the walking figure next to the camera menu), or press <Kbd keys="P" />.
+
+2. Click a performer on the field. The view flies behind them and the camera menu shows who you follow, such as <Ui k="view3d.overlay.following" values={{ name: "T1" }} plain />. As they march, the camera moves with them, and when they turn it swings round to stay behind them.
+
+3. To see what they see, select <Ui k="view3d.overlay.pointOfView" /> (the eye), or press <Kbd keys="V" />. The view moves into their eyes and turns as they turn. Their arms and instrument are in front of you, as they'd see them. Their own head and hat are left out, so nothing blocks the view when you look up.
+
+</Steps>
+
+While you follow someone from behind, drag to orbit around them and scroll to zoom in or out; they stay in the middle of the view, and the camera keeps the angle you chose as they turn. Through their eyes, drag to look around and scroll to zoom.
+
+Two switches in <Ui k="view3d.settings.panelTitle" /> (the gear), on the <Ui k="view3d.settings.tabs.preferences" plain /> tab, change this, on this computer only:
+
+- <Ui k="view3d.settings.followTurns" plain />: off, the camera behind them keeps facing the same way on the field when they turn.
+- <Ui k="view3d.settings.povShowsBody" plain />: off, their own body and instrument are hidden, for a clear view.
+
+To stop, select <Ui k="view3d.overlay.stopFollowing" /> (the cross) or press <Kbd keys="Escape" />: from their eyes, the first <Kbd keys="Escape" /> goes back behind them and the second stops following. Panning, double-clicking, sitting in a seat or choosing a camera also stops following.
 
 ## Save your own cameras
 
