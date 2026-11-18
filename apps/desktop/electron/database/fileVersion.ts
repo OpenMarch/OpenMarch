@@ -12,15 +12,15 @@
  * - 9: a fork-only floor model (the field image as an embedded Base floor), since parked. No
  *   release wrote it. Such a file opens as the timeline file it is and is written back as 8,
  *   with its floor's image put back as the field image (`parkedFloor.ts`).
- * - 10: route model (ADR 0014, pathways steps 1 to 15, fork lab builds only). A move could follow
+ * - 10: route model (ADR 0016, pathways steps 1 to 15, fork lab builds only). A move could follow
  *   a drawn path, stored in `timeline_routes` and walked by one-slot `route` transitions. Such a
  *   file opens here: migration 0025 moves its paths to lanes, and it is then written as 11.
- * - 11: lane model (ADR 0015 §9, pathways step 24). A slot walks a route through a lane
+ * - 11: lane model (ADR 0017 §9, pathways step 24). A slot walks a route through a lane
  *   (`timeline_lanes`), so a path no longer moves a marcher out of its move. A build that doesn't
  *   know lanes would play such a file wrong and edit it wrong (compact, split or recast a laned
  *   show and leave lanes on the wrong spot), so a file is written as 11 with its first lane (drawing
  *   a path), or when it opens with lanes (a migrated version-10 file). A file without a lane stays
- *   at the version it had. ADR 0015 §9: each later step that stores a fact an older build would
+ *   at the version it had. ADR 0017 §9: each later step that stores a fact an older build would
  *   play or edit wrong takes the next number; a number a lab build wrote is never reused.
  * - 12: Adjust (pathways step 3b, spec J.1 and J.2): a lane has its own displacement profile. A
  *   build that doesn't know it would walk that spot on the plain lane, so a file is written as 12
@@ -47,12 +47,12 @@ export const TIMELINE_MODEL_USER_VERSION = 8;
 
 /** Version of a fork-internal file from the parked floor model. Opened, then written as 8. */
 export const PARKED_FLOOR_USER_VERSION = 9;
-/** Version a fork lab build (pathways steps 1 to 15) wrote with a file's first route (ADR 0014). */
+/** Version a fork lab build (pathways steps 1 to 15) wrote with a file's first route (ADR 0016). */
 export const ROUTE_MODEL_USER_VERSION = 10;
-/** Version of a file that has a lane, a drawn path (ADR 0015 §9, pathways step 24). */
+/** Version of a file that has a lane, a drawn path (ADR 0017 §9, pathways step 24). */
 export const LANE_MODEL_USER_VERSION = 11;
 
-/** Version of a file with an Adjust on a lane (ADR 0015 §9, pathways step 3b). */
+/** Version of a file with an Adjust on a lane (ADR 0017 §9, pathways step 3b). */
 export const ADJUST_MODEL_USER_VERSION = 12;
 
 /** Version of a file with a follow-the-leader trail (pathways step 4, spec Appendix K). */
@@ -175,7 +175,7 @@ export function fileTooNewMessage(userVersion: number): string {
 /**
  * Writes the lane-model version (11) when the file has a lane and an older version: a version-10
  * file whose paths migration 0025 moved to lanes. Run after the migrations, on every open; a file
- * without lanes, or already at 11, is left as it is (ADR 0015 §9, QA-FV-L1).
+ * without lanes, or already at 11, is left as it is (ADR 0017 §9, QA-FV-L1).
  */
 export function markLaneModelIfLaned(db: DatabaseSync): void {
     const hasTable = db

@@ -1,9 +1,10 @@
-# 0014: A move can follow a drawn path
+# 0016: A move can follow a drawn path
 
 - Status: proposed
 - Date: 2026-11-03
+- Number: was 0014 until 2026-11-18, when fork main's own 0014 (desktop updates) came in
 - Amends: [0012](0012-timeline-motion-model.md) §7, C-8 ("No new path style is added")
-- Amended by: [0015](0015-lanes-on-slots.md) (§1: a slot walks a route through a lane; §3: file
+- Amended by: [0017](0017-lanes-on-slots.md) (§1: a slot walks a route through a lane; §3: file
   version bumps)
 
 ## Context

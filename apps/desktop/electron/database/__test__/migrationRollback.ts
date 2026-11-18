@@ -236,12 +236,12 @@ const ROLLBACKS: Record<number, (db: DatabaseSync) => void> = {
     23: (db) => {
         dropTables(db, ["show_assets", "show_asset_blobs"]);
     },
-    // Routes, pathways step 1 (ADR 0014). The schema is left as it is: older migrations' tests
+    // Routes, pathways step 1 (ADR 0016). The schema is left as it is: older migrations' tests
     // write timeline rows through this build's schema, which has `route_id`. Re-running 0024 on
     // it is safe (it runs twice in a conversion too); rolling back 0017 drops its table.
     // `rollBackRoutesSchema` restores the real older schema for 0024's own test.
     24: () => {},
-    // Lanes, pathways step 24 (ADR 0015): a new table, dropped (its indexes and triggers go with
+    // Lanes, pathways step 24 (ADR 0017): a new table, dropped (its indexes and triggers go with
     // it). Re-running 0025 is safe (IF NOT EXISTS; it runs twice in a conversion too).
     25: (db) => db.exec("DROP TABLE IF EXISTS timeline_lanes"),
     // Adjust, pathways step 3b: the column goes, once what reads it is off the table

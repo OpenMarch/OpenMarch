@@ -1,5 +1,5 @@
 /**
- * Group paths, pathways steps 15 and 24 (spec v0.10 R-14′, Appendix J.8; ADR 0015): several
+ * Group paths, pathways steps 15 and 24 (spec v0.10 R-14′, Appendix J.8; ADR 0017): several
  * marchers of one move walk one route, each slot on its own **lane** (the route's reference line
  * moved by the lane's offset), and every member passes its copy of each point at the same
  * moment. Since step 24 a group path writes lanes on the members' slots and never moves a marcher

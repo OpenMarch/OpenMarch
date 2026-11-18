@@ -153,7 +153,7 @@ export type ShapeKind = "line" | "freehand" | "box" | "circle" | "block";
 /** Shape kinds that have a parameterized path (everything except `block`). */
 export type PathShapeKind = Exclude<ShapeKind, "block">;
 /**
- * A transition's path style. v0.10 (ADR 0015) retires `route`: a slot walks a route through a
+ * A transition's path style. v0.10 (ADR 0017) retires `route`: a slot walks a route through a
  * lane (`LaneRow`), whatever its transition's style.
  */
 export type PathStyle = "direct" | "arc" | "follow_the_leader";

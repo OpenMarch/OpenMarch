@@ -1,7 +1,7 @@
 // @vitest-environment node
 // cspell:ignore Millis
 /**
- * Migration 0026 adds `timeline_lanes.adjust`, pathways step 3b (ADR 0015 §9, spec J.1, QA-MIG-L1,
+ * Migration 0026 adds `timeline_lanes.adjust`, pathways step 3b (ADR 0017 §9, spec J.1, QA-MIG-L1,
  * QA-FV-L1): a nullable column in place, no table rebuilt; a file with lanes keeps them and stays
  * at 11 until its first Adjust; a build that doesn't know Adjust refuses a version-12 file.
  */

@@ -107,7 +107,7 @@ const views = {
      * write wrapper reads this view only once the table exists.
      */
     /**
-     * The routes' and lanes' commit-time invariants (spec v0.10 §6 and J.3, ADR 0015; plan step
+     * The routes' and lanes' commit-time invariants (spec v0.10 §6 and J.3, ADR 0017; plan step
      * 24): every route is walked through a lane whose slot holds a marcher at some beat (E-R3,
      * I-R3′); only a follow-the-leader transition carries a route, as its trail (E-R2, I-R2′),
      * which also keeps step 15's retired `route` style out; an own lane is its route's only lane
