@@ -115,7 +115,9 @@
             "loadDialogue": "Abrir archivo…",
             "newDialogue": "Nuevo archivo…",
             "openExport": "Exportar…",
-            "saveDialogue": "Guardar una copia…"
+            "saveDialogue": "Guardar una copia…",
+            "removeUnusedAssets": "Quitar recursos sin usar…",
+            "removeUnusedAssetsKeywords": "quitar borrar eliminar limpiar sin usar recursos modelos importados tamaño"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "Abrir front ensemble y podios",
             "openFrontEnsembleKeywords": "pit front ensemble podio tambor mayor drum major marimba vibráfono percusión altavoz bocina equipo preajuste podium vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Agregar equipo del front ensemble o podio",
-            "addFrontEnsembleEquipmentKeywords": "pit podio tambor mayor drum major marimba vibráfono percusión altavoz bocina consola mezcladora torre escalera instrumento podium vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podio tambor mayor drum major marimba vibráfono percusión altavoz bocina consola mezcladora torre escalera instrumento podium vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Abrir los recursos del espectáculo",
+            "openAssetsKeywords": "recursos modelos importados archivos créditos licencia tamaño almacenamiento biblioteca"
         },
         "items": {
             "edit": "Editar utilería o equipo seleccionado",
@@ -1479,16 +1483,17 @@
             "title": "Importados",
             "import": "Importar…",
             "empty": "Importa un modelo .glb o .gltf, o suéltalo en la ventana, para colocarlo como cualquier otra utilería.",
-            "place": "Colocar {name}"
+            "place": "Colocar {name}",
+            "manage": "Gestionar recursos"
         },
         "import": {
             "title": "Importar un modelo",
             "pictureAlt": "El modelo visto desde el público",
             "working": "Preparando el modelo…",
-            "turn": {
-                "detail": "El frente debe mirar hacia el público.",
-                "button": "Girar 90°"
+            "orient": {
+                "detail": "El frente debe mirar hacia el público, con el lado correcto hacia arriba."
             },
+            "rotateAxis": "Girar en {axis}",
             "simplify": {
                 "compare": "Antes o después de simplificar",
                 "before": "Antes · {triangles}",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "Aún muy detallado: {triangles} triángulos (el objetivo es {cap})"
             }
-        }
+        },
+        "modelMissing": "El modelo de esta utilería ya no está en el espectáculo, así que se dibuja como un bloque."
     },
     "frontEnsemble": {
         "title": "Front ensemble y podios",
@@ -4536,6 +4542,39 @@
             "mixed": "Mixto",
             "add": "Agregar línea",
             "everyOther": "Conservar una de cada dos"
+        }
+    },
+    "assets": {
+        "title": "Recursos",
+        "empty": "Este espectáculo aún no tiene recursos importados. Importa un modelo 3D desde el panel Utilería.",
+        "notes": {
+            "unused": "{count, plural, one {# recurso no se usa} other {# recursos no se usan}} en ninguna parte del espectáculo · {size}",
+            "missing": "{count, plural, one {# elemento de utilería usa un modelo que este espectáculo no tiene, así que se dibuja como un bloque.} other {# elementos de utilería usan modelos que este espectáculo no tiene, así que se dibujan como bloques.}}",
+            "large": "Los recursos hacen que este espectáculo sea grande: {size}. Los espectáculos grandes tardan más en abrirse, guardarse y compartirse."
+        },
+        "removeUnused": {
+            "button": "Quitar sin usar…",
+            "title": "{count, plural, one {¿Quitar # recurso sin usar?} other {¿Quitar # recursos sin usar?}}",
+            "description": "Nada en el espectáculo los usa. Quitarlos reduce el espectáculo en {size}. Deshacer no los recupera.",
+            "none": "Todos los recursos están en uso, así que no hay nada que quitar.",
+            "cancel": "Cancelar",
+            "confirm": "{count, plural, one {Quitar # recurso} other {Quitar # recursos}}"
+        },
+        "kind": {
+            "model": "Modelo 3D"
+        },
+        "uses": "{count, plural, one {Usado una vez} other {Usado # veces}}",
+        "unused": "Sin usar",
+        "shareNote": "Licencia desconocida: puede que no tengas derecho a compartirlo",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "No se pudieron quitar los recursos sin usar",
+            "credits": "No se pudieron guardar los créditos"
         }
     }
 }

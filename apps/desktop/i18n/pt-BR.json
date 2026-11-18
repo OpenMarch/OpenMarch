@@ -115,7 +115,9 @@
             "loadDialogue": "Abrir arquivo…",
             "newDialogue": "Novo arquivo…",
             "openExport": "Exportar…",
-            "saveDialogue": "Salvar uma cópia…"
+            "saveDialogue": "Salvar uma cópia…",
+            "removeUnusedAssets": "Remover recursos não usados…",
+            "removeUnusedAssetsKeywords": "remover apagar excluir limpar não usados recursos modelos importados tamanho"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "Abrir pit e pódios",
             "openFrontEnsembleKeywords": "pit percussão frontal pódio regente drum major marimba vibrafone percussão caixa de som alto-falante equipamento predefinição pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Adicionar equipamento do pit ou pódio",
-            "addFrontEnsembleEquipmentKeywords": "pit pódio regente drum major marimba vibrafone percussão caixa de som mesa de som torre escada instrumento pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit pódio regente drum major marimba vibrafone percussão caixa de som mesa de som torre escada instrumento pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Abrir os recursos do show",
+            "openAssetsKeywords": "recursos modelos importados arquivos créditos licença tamanho armazenamento biblioteca"
         },
         "items": {
             "edit": "Editar adereço ou equipamento selecionado",
@@ -1479,16 +1483,17 @@
             "title": "Importados",
             "import": "Importar…",
             "empty": "Importe um modelo .glb ou .gltf, ou solte um na janela, para posicioná-lo como qualquer adereço.",
-            "place": "Posicionar {name}"
+            "place": "Posicionar {name}",
+            "manage": "Gerenciar recursos"
         },
         "import": {
             "title": "Importar um modelo",
             "pictureAlt": "O modelo visto da plateia",
             "working": "Preparando o modelo…",
-            "turn": {
-                "detail": "A frente deve ficar voltada para a plateia.",
-                "button": "Girar 90°"
+            "orient": {
+                "detail": "A frente deve ficar voltada para a plateia, com o lado certo para cima."
             },
+            "rotateAxis": "Girar em {axis}",
             "simplify": {
                 "compare": "Antes ou depois de simplificar",
                 "before": "Antes · {triangles}",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "Ainda detalhado: {triangles} triângulos (a meta é {cap})"
             }
-        }
+        },
+        "modelMissing": "O modelo deste adereço não está mais no show, então ele é desenhado como um bloco."
     },
     "frontEnsemble": {
         "title": "Pit e pódios",
@@ -4536,6 +4542,39 @@
             "mixed": "Misto",
             "add": "Adicionar linha",
             "everyOther": "Manter alternadas"
+        }
+    },
+    "assets": {
+        "title": "Recursos",
+        "empty": "Este show ainda não tem recursos importados. Importe um modelo 3D no painel Adereços.",
+        "notes": {
+            "unused": "{count, plural, one {# recurso não é usado} other {# recursos não são usados}} em nenhum lugar do show · {size}",
+            "missing": "{count, plural, one {# adereço usa um modelo que este show não tem, então é desenhado como um bloco.} other {# adereços usam modelos que este show não tem, então são desenhados como blocos.}}",
+            "large": "Os recursos deixam este show grande: {size}. Shows grandes demoram mais para abrir, salvar e compartilhar."
+        },
+        "removeUnused": {
+            "button": "Remover não usados…",
+            "title": "{count, plural, one {Remover # recurso não usado?} other {Remover # recursos não usados?}}",
+            "description": "Nada no show usa estes recursos. Removê-los deixa o show {size} menor. Desfazer não os traz de volta.",
+            "none": "Todos os recursos estão em uso, então não há nada para remover.",
+            "cancel": "Cancelar",
+            "confirm": "{count, plural, one {Remover # recurso} other {Remover # recursos}}"
+        },
+        "kind": {
+            "model": "Modelo 3D"
+        },
+        "uses": "{count, plural, one {Usado uma vez} other {Usado # vezes}}",
+        "unused": "Não usado",
+        "shareNote": "Licença desconhecida: talvez você não tenha o direito de compartilhá-lo",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Não foi possível remover os recursos não usados",
+            "credits": "Não foi possível salvar os créditos"
         }
     }
 }

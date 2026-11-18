@@ -115,7 +115,9 @@
             "loadDialogue": "Open file…",
             "newDialogue": "New file…",
             "openExport": "Export…",
-            "saveDialogue": "Save a copy…"
+            "saveDialogue": "Save a copy…",
+            "removeUnusedAssets": "Remove unused assets…",
+            "removeUnusedAssetsKeywords": "remove delete clean unused assets models imported size smaller"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -245,7 +247,9 @@
             "openFrontEnsemble": "Open front ensemble and podiums",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Add front ensemble equipment or podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Open the show's assets",
+            "openAssetsKeywords": "assets imported models files credits license size storage library"
         },
         "items": {
             "edit": "Edit selected prop or equipment",
@@ -1481,16 +1485,17 @@
             "title": "Imported",
             "import": "Import…",
             "empty": "Import a .glb or .gltf model, or drop one on the window, to place it like any prop.",
-            "place": "Place {name}"
+            "place": "Place {name}",
+            "manage": "Manage assets"
         },
         "import": {
             "title": "Import a model",
             "pictureAlt": "The model seen from the audience",
             "working": "Preparing the model…",
-            "turn": {
-                "detail": "The front should face the audience.",
-                "button": "Turn 90°"
+            "orient": {
+                "detail": "The front should face the audience, right side up."
             },
+            "rotateAxis": "Rotate {axis}",
             "simplify": {
                 "compare": "Before or after simplifying",
                 "before": "Before · {triangles}",
@@ -1623,7 +1628,8 @@
                 },
                 "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
             }
-        }
+        },
+        "modelMissing": "This prop's model isn't in the show any more, so it draws as a block."
     },
     "frontEnsemble": {
         "title": "Front ensemble and podiums",
@@ -4576,6 +4582,39 @@
         "report": {
             "title": "Something not working?",
             "body": "Tell us what happened. You can record your screen and send a copy of your show."
+        }
+    },
+    "assets": {
+        "title": "Assets",
+        "empty": "This show has no imported assets yet. Import a 3D model from the Props panel.",
+        "notes": {
+            "unused": "{count, plural, one {# asset isn't used} other {# assets aren't used}} anywhere in the show · {size}",
+            "missing": "{count, plural, one {# prop names a model this show doesn't have, so it draws as a block.} other {# props name models this show doesn't have, so they draw as blocks.}}",
+            "large": "Assets make this show large: {size}. Large shows are slower to open, save and share."
+        },
+        "removeUnused": {
+            "button": "Remove unused…",
+            "title": "{count, plural, one {Remove # unused asset?} other {Remove # unused assets?}}",
+            "description": "Nothing in the show uses these. Removing them makes the show {size} smaller. Undo doesn't bring them back.",
+            "none": "Every asset is in use, so there's nothing to remove.",
+            "cancel": "Cancel",
+            "confirm": "{count, plural, one {Remove # asset} other {Remove # assets}}"
+        },
+        "kind": {
+            "model": "3D model"
+        },
+        "uses": "{count, plural, one {Used once} other {Used # times}}",
+        "unused": "Not used",
+        "shareNote": "Unknown license: you may not have the right to share it",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Couldn't remove the unused assets",
+            "credits": "Couldn't save the credits"
         }
     }
 }

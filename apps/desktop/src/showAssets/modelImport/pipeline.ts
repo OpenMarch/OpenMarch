@@ -9,7 +9,7 @@
  *    an unsupported required extension, an image too large to decode, more than 4× the
  *    triangle cap; then the Khronos validator's errors.
  * 2. Normalize: meters, +Y up, the front toward the audience (+Z), the pivot at the bottom
- *    center. Unit fixes, "rotate to Y-up" and the turn are choices, pre-selected and never
+ *    center. Unit fixes, the tilt and the turn are choices, pre-selected and never
  *    silent.
  * 3. Fit the budget: simplify past the triangle cap (a pre-selected choice), shrink textures to
  *    the cap, and make a distant version.
@@ -45,6 +45,7 @@ import { MeshoptDecoder, MeshoptSimplifier } from "meshoptimizer";
 import { planFromAbove } from "@/view3d/core/pit/planFromAbove";
 import { creditsOf, titleOf } from "./credits";
 import { openPickedFiles, RefusedError, type OpenedModel } from "./files";
+import { isTilt, tiltQuaternion, UPRIGHT, Z_UP_TILT } from "./orientation";
 import type { ImageCodec } from "./imageCodec";
 import { precheck } from "./precheck";
 import {
@@ -426,19 +427,20 @@ function normalize(
             maxM: PLAUSIBLE_SIZE_M.max,
         });
 
-    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess
+    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess. Tipping
+    // is always offered: a file can lie on any side, and a long one (a car) is never suspected
     const [x, y, z] = size;
     const flat = Math.min(...size) < FLAT_RATIO * largest;
-    const suspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
-    let rotate = choices.rotateToYUp ?? false;
-    if (suspected || choices.rotateToYUp !== undefined) {
-        rotate = choices.rotateToYUp ?? suspected;
-        report.needsChoice.push({
-            code: "rotateToYUp",
-            preselected: suspected,
-            applied: rotate,
-        });
-    }
+    const zUpSuspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
+    const preselectedTilt = zUpSuspected ? Z_UP_TILT : UPRIGHT;
+    const tilt =
+        choices.tilt && isTilt(choices.tilt) ? choices.tilt : preselectedTilt;
+    report.needsChoice.push({
+        code: "tilt",
+        preselected: preselectedTilt,
+        applied: tilt,
+        zUpSuspected,
+    });
 
     // The front: glTF's +Z unless the user turns it; always offered, since no file says
     const turn = choices.turn ?? 0;
@@ -446,7 +448,7 @@ function normalize(
 
     const root = doc.createNode("OM_import_root");
     root.setScale([factor, factor, factor]);
-    // Turn about +Y (counter-clockwise from above), after rotating Z-up to Y-up (-90° about X)
+    // Turn about +Y (counter-clockwise from above), after standing it up
     const half = (turn * Math.PI) / 360;
     const yaw: [number, number, number, number] = [
         0,
@@ -454,10 +456,7 @@ function normalize(
         0,
         Math.cos(half),
     ];
-    const zUp: [number, number, number, number] = rotate
-        ? [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]
-        : [0, 0, 0, 1];
-    root.setRotation(multiplyQuat(yaw, zUp));
+    root.setRotation(multiplyQuat(yaw, tiltQuaternion(tilt)));
     for (const child of scene.listChildren()) {
         scene.removeChild(child);
         root.addChild(child);

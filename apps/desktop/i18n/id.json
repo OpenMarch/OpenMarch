@@ -115,7 +115,9 @@
             "loadDialogue": "Buka file…",
             "newDialogue": "File baru…",
             "openExport": "Ekspor…",
-            "saveDialogue": "Simpan salinan…"
+            "saveDialogue": "Simpan salinan…",
+            "removeUnusedAssets": "Hapus aset yang tidak dipakai…",
+            "removeUnusedAssetsKeywords": "hapus bersihkan tidak dipakai aset model diimpor ukuran"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "Buka front ensemble dan podium",
             "openFrontEnsembleKeywords": "pit front ensemble podium mayoret drum major marimba vibrafon perkusi speaker pengeras suara peralatan preset vibraphone percussion equipment",
             "addFrontEnsembleEquipment": "Tambahkan peralatan front ensemble atau podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium mayoret drum major marimba vibrafon perkusi speaker pengeras suara mixer menara tangga alat musik instrumen vibraphone percussion tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podium mayoret drum major marimba vibrafon perkusi speaker pengeras suara mixer menara tangga alat musik instrumen vibraphone percussion tower stepladder instrument",
+            "openAssets": "Buka aset pertunjukan",
+            "openAssetsKeywords": "aset model diimpor file kredit lisensi ukuran penyimpanan pustaka"
         },
         "items": {
             "edit": "Edit properti atau peralatan yang dipilih",
@@ -1479,16 +1483,17 @@
             "title": "Diimpor",
             "import": "Impor…",
             "empty": "Impor model .glb atau .gltf, atau lepas di jendela, untuk menempatkannya seperti properti lain.",
-            "place": "Tempatkan {name}"
+            "place": "Tempatkan {name}",
+            "manage": "Kelola aset"
         },
         "import": {
             "title": "Impor model",
             "pictureAlt": "Model dilihat dari arah penonton",
             "working": "Menyiapkan model…",
-            "turn": {
-                "detail": "Bagian depan harus menghadap penonton.",
-                "button": "Putar 90°"
+            "orient": {
+                "detail": "Bagian depan harus menghadap penonton, dengan sisi atas di atas."
             },
+            "rotateAxis": "Putar sumbu {axis}",
             "simplify": {
                 "compare": "Sebelum atau sesudah disederhanakan",
                 "before": "Sebelum · {triangles}",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "Masih detail: {triangles} segitiga (targetnya {cap})"
             }
-        }
+        },
+        "modelMissing": "Model properti ini sudah tidak ada di pertunjukan, jadi digambar sebagai balok."
     },
     "frontEnsemble": {
         "title": "Front ensemble dan podium",
@@ -4536,6 +4542,39 @@
             "mixed": "Campuran",
             "add": "Tambahkan garis",
             "everyOther": "Pertahankan selang-seling"
+        }
+    },
+    "assets": {
+        "title": "Aset",
+        "empty": "Pertunjukan ini belum punya aset yang diimpor. Impor model 3D dari panel Properti.",
+        "notes": {
+            "unused": "{count, plural, other {# aset tidak dipakai}} di mana pun dalam pertunjukan · {size}",
+            "missing": "{count, plural, other {# properti memakai model yang tidak ada di pertunjukan ini, jadi digambar sebagai balok.}}",
+            "large": "Aset membuat pertunjukan ini besar: {size}. Pertunjukan besar lebih lambat dibuka, disimpan, dan dibagikan."
+        },
+        "removeUnused": {
+            "button": "Hapus yang tidak dipakai…",
+            "title": "{count, plural, other {Hapus # aset yang tidak dipakai?}}",
+            "description": "Tidak ada yang memakai aset ini dalam pertunjukan. Menghapusnya membuat pertunjukan {size} lebih kecil. Urungkan tidak mengembalikannya.",
+            "none": "Semua aset dipakai, jadi tidak ada yang perlu dihapus.",
+            "cancel": "Batal",
+            "confirm": "{count, plural, other {Hapus # aset}}"
+        },
+        "kind": {
+            "model": "Model 3D"
+        },
+        "uses": "{count, plural, other {Dipakai # kali}}",
+        "unused": "Tidak dipakai",
+        "shareNote": "Lisensi tidak diketahui: Anda mungkin tidak berhak membagikannya",
+        "size": {
+            "bytes": "{value} byte",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Tidak dapat menghapus aset yang tidak dipakai",
+            "credits": "Tidak dapat menyimpan kredit"
         }
     }
 }

@@ -10,6 +10,7 @@ import { useItemDrawingStore } from "@/stores/ItemDrawingStore";
 import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
 import { PropListContents } from "@/components/items/PropsModal";
 import { importModel } from "@/components/items/modelImport/openModelImport";
+import { showAssetsView } from "@/components/assets/openAssets";
 import { importedModels } from "@/components/items/modelImport/ImportedModels";
 import { showAssetRefValue } from "@/showAssets/ref";
 
@@ -40,6 +41,10 @@ export function useItemActionHandlers() {
     );
     const queryClient = useQueryClient();
     useActionHandler("importModel", () => void importModel());
+    useActionHandler("openAssets", () => showAssetsView());
+    useActionHandler("removeUnusedAssets", () =>
+        showAssetsView({ openRemove: true }),
+    );
     useActionHandler("placeImportedModel", (args) => {
         const { setContent, setOpen } = useSidebarModalStore.getState();
         const model = importedModels(

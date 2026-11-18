@@ -77,7 +77,52 @@ export default function ImportedModels({
                     <T keyName="props.imported.empty" />
                 </p>
             )}
+            <button
+                type="button"
+                onClick={() => runAction("openAssets")}
+                className="text-sub text-accent touch:min-h-44 flex items-center self-start hover:underline"
+                data-testid="imported-models-manage"
+            >
+                <T keyName="props.imported.manage" />
+            </button>
         </section>
+    );
+}
+
+/** An imported model's picture (its `thumbnail` part), or a cube until it has one. */
+export function ModelThumbnail({
+    hash,
+    className,
+}: {
+    hash: string | undefined;
+    className?: string;
+}) {
+    const { data: thumbnail } = useQuery({
+        queryKey: ["show_asset_blob", hash],
+        queryFn: async () =>
+            (hash ? await showAssetBlobCache.get(hash) : undefined) ?? null,
+        enabled: !!hash,
+        staleTime: Infinity,
+    });
+    const url = useBytesUrl(thumbnail ?? undefined, "image/png");
+    return (
+        <span
+            className={clsx(
+                "rounded-4 relative flex items-center justify-center overflow-hidden bg-white",
+                className,
+            )}
+        >
+            {url ? (
+                <img
+                    src={url}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full object-contain"
+                />
+            ) : (
+                <CubeIcon size={24} className="text-text-subtitle" />
+            )}
+        </span>
     );
 }
 
@@ -90,17 +135,6 @@ function ModelTile({
 }) {
     const { t } = useTranslate();
     const footprintId = useId();
-    const thumbnailHash = asset.parts.thumbnail;
-    const { data: thumbnail } = useQuery({
-        queryKey: ["show_asset_blob", thumbnailHash],
-        queryFn: async () =>
-            (thumbnailHash
-                ? await showAssetBlobCache.get(thumbnailHash)
-                : undefined) ?? null,
-        enabled: !!thumbnailHash,
-        staleTime: Infinity,
-    });
-    const url = useBytesUrl(thumbnail ?? undefined, "image/png");
     const { width, depth } = asset.sidecar.sizeM;
     return (
         <button
@@ -117,18 +151,10 @@ function ModelTile({
             className={clsx(TILE_CLASS, marked && "border-accent")}
             data-testid="imported-model-tile"
         >
-            <span className="rounded-4 relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-white">
-                {url ? (
-                    <img
-                        src={url}
-                        alt=""
-                        draggable={false}
-                        className="h-full w-full object-contain"
-                    />
-                ) : (
-                    <CubeIcon size={24} className="text-text-subtitle" />
-                )}
-            </span>
+            <ModelThumbnail
+                hash={asset.parts.thumbnail}
+                className="aspect-[4/3]"
+            />
             <span className="text-sub text-text min-w-0 truncate px-2 leading-tight font-medium">
                 {asset.name}
             </span>

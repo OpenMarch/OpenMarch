@@ -193,16 +193,24 @@ const CHAIR_GLB = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     "../../../src/showAssets/modelImport/__test__/fixtures/SheenChair.glb",
 );
+/** A flat test-pattern model from the import tests (Khronos glTF sample, CC0) */
+const PATTERN_GLB = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../../src/showAssets/modelImport/__test__/fixtures/TextureCoordinateTest.glb",
+);
 
 /**
  * Imports the chair through the Props panel's Import… and waits for its review; with `add`, adds
  * it to the show as "Chair" and waits for its tile under Imported.
  */
-async function importChair(page, { add = false } = {}) {
+async function importChair(
+    page,
+    { add = false, file = CHAIR_GLB, name = "Chair" } = {},
+) {
     await propsPanel(page);
     const chooser = page.waitForEvent("filechooser");
     await page.getByTestId("import-model-tile").click();
-    await (await chooser).setFiles(CHAIR_GLB);
+    await (await chooser).setFiles(file);
     const review = page.getByTestId("model-import-review");
     await review
         .getByTestId("model-import-picture")
@@ -213,10 +221,10 @@ async function importChair(page, { add = false } = {}) {
         { timeout: 60_000 },
     );
     if (!add) return;
-    await review.getByTestId("model-import-name").fill("Chair");
+    await review.getByTestId("model-import-name").fill(name);
     await review.getByTestId("model-import-add").click();
     await page
-        .getByRole("button", { name: "Place Chair" })
+        .getByRole("button", { name: `Place ${name}` })
         .waitFor({ timeout: 30_000 });
 }
 
@@ -755,11 +763,41 @@ const shots = [
     {
         id: "3d-props-import-review",
         kind: "still",
-        // The import review for a chair: its picture, Turn 90°, its size, Simplify and the rest
+        // The import review for a chair: its picture with the axis drawing, Rotate X, Y and Z
+        // (the pointer on Rotate Z, so its axis lights up with the arrow), its size, Simplify
         async setup(ctx) {
             const { page } = ctx;
             await importChair(page);
+            await page.getByTestId("model-import-rotate-z").hover();
             await ctx.wait(600);
+            return { box: await sidebarPanelBox(page) };
+        },
+    },
+    {
+        id: "3d-props-assets",
+        kind: "still",
+        // The Assets view: a chair on the field and a test pattern nothing uses, with the note
+        async setup(ctx) {
+            const { page } = ctx;
+            await seekInPage(page, 2, 0.02);
+            const toScreen = await fieldToScreen(page);
+            const { center } = await riserSpot(page);
+            await importChair(page, { add: true });
+            await page.getByRole("button", { name: "Place Chair" }).click();
+            await page.waitForTimeout(300);
+            const at = toScreen(center);
+            await page.mouse.click(at.x, at.y);
+            await page.waitForTimeout(800);
+            await importChair(page, {
+                add: true,
+                file: PATTERN_GLB,
+                name: "Test pattern",
+            });
+            await page.getByTestId("imported-models-manage").click();
+            await page.getByTestId("assets-view").waitFor();
+            await page.mouse.move(1596, 996);
+            // Let the pictures load
+            await ctx.wait(1500);
             return { box: await sidebarPanelBox(page) };
         },
     },

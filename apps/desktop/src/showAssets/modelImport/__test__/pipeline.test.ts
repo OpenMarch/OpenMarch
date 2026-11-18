@@ -12,6 +12,7 @@ import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import { validateBytes } from "gltf-validator";
 import { importModel } from "../pipeline";
 import { readImageHeader } from "../imageSize";
+import { tipped, UPRIGHT, Z_UP_TILT } from "../orientation";
 import { TRIANGLE_CAP } from "../rules";
 import type {
     ModelImportChoices,
@@ -78,10 +79,11 @@ const choiceOf = <C extends string>(result: ModelImportResult, code: C) =>
 
 describe("importModel", () => {
     describe("a good file (TextureCoordinateTest)", () => {
-        it("imports with nothing to choose but the turn", async () => {
+        it("imports with nothing to choose but the tilt and the turn", async () => {
             const result = await run([picked("TextureCoordinateTest.glb")]);
             const model = imported(result);
             expect(result.report.needsChoice.map((c) => c.code)).toEqual([
+                "tilt",
                 "turn",
             ]);
             expect(result.report.cantImport).toEqual([]);
@@ -207,10 +209,11 @@ describe("importModel", () => {
             [Math.SQRT1_2, 0, 0, Math.SQRT1_2],
         );
         const result = await run([picked("post-z-up.glb", glb)]);
-        expect(choiceOf(result, "rotateToYUp")).toEqual({
-            code: "rotateToYUp",
-            preselected: true,
-            applied: true,
+        expect(choiceOf(result, "tilt")).toEqual({
+            code: "tilt",
+            preselected: Z_UP_TILT,
+            applied: Z_UP_TILT,
+            zUpSuspected: true,
         });
         const model = imported(result);
         expect(model.sidecar.sizeM.height).toBeCloseTo(1.8, 3);
@@ -221,8 +224,53 @@ describe("importModel", () => {
         const result = await run([
             picked("post.glb", await postGlb([0.3, 1.8, 0.3])),
         ]);
-        expect(choiceOf(result, "rotateToYUp")).toBeUndefined();
+        expect(choiceOf(result, "tilt")).toEqual({
+            code: "tilt",
+            preselected: UPRIGHT,
+            applied: UPRIGHT,
+            zUpSuspected: false,
+        });
         expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
+    });
+
+    it("stands up a long model lying on its side when tipped", async () => {
+        // A car 4 m long, 1.4 m tall and 1.8 m wide, lying on its side facing right: nothing
+        // to suspect, so it stays as it is until tipped
+        const glb = await postGlb([4, 1.8, 1.4]);
+        const result = await run([picked("car-on-side.glb", glb)]);
+        expect(choiceOf(result, "tilt")).toMatchObject({ zUpSuspected: false });
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
+
+        const tilt = tipped(UPRIGHT, 0, "x");
+        const model = imported(
+            await run([picked("car-on-side.glb", glb)], { tilt }),
+        );
+        expect(model.sidecar.sizeM.width).toBeCloseTo(4, 3);
+        expect(model.sidecar.sizeM.height).toBeCloseTo(1.4, 3);
+        expect(model.sidecar.sizeM.depth).toBeCloseTo(1.8, 3);
+        await checkStored(model.parts.model);
+    });
+
+    it("tips after turning the way the picture shows", async () => {
+        // Turned a quarter, the 4 m side runs toward the audience; tipping forward then stands
+        // it up (tipping about the file's own axis would stand the 1.8 m side up instead)
+        const glb = await postGlb([4, 1.4, 1.8]);
+        const turn = 90;
+        const tilt = tipped(UPRIGHT, turn, "x");
+        const model = imported(
+            await run([picked("car.glb", glb)], { turn, tilt }),
+        );
+        expect(model.sidecar.sizeM.width).toBeCloseTo(1.8, 3);
+        expect(model.sidecar.sizeM.height).toBeCloseTo(4, 3);
+        expect(model.sidecar.sizeM.depth).toBeCloseTo(1.4, 3);
+    });
+
+    it("ignores a tilt that isn't a quarter-turn rotation", async () => {
+        const glb = await postGlb([0.3, 1.8, 0.3]);
+        const result = await run([picked("post.glb", glb)], {
+            tilt: [1, 0, 0, 0, 1, 0, 0, 0, -1],
+        });
+        expect(choiceOf(result, "tilt")?.applied).toEqual(UPRIGHT);
     });
 
     it("turns the front toward the audience when asked", async () => {

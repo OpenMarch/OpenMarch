@@ -30,7 +30,12 @@ import {
     configureModelImportSession,
     useModelImportSession,
 } from "@/showAssets/modelImport/review/modelImportSession";
-import type { PickedFile } from "@/showAssets/modelImport/types";
+import { tipped, UPRIGHT } from "@/showAssets/modelImport/orientation";
+import type {
+    ModelImportChoices,
+    ModelSidecar,
+    PickedFile,
+} from "@/showAssets/modelImport/types";
 import { env, picked } from "@/showAssets/modelImport/__test__/fixtures";
 import { showModelImportReview } from "../openModelImport";
 import { openItemEditor } from "@/components/items/openItemEditor";
@@ -90,7 +95,7 @@ function Editor() {
 
 /** The pipeline in Node for runs; the show's store for Add */
 function configure(db: DbConnection) {
-    const runs: { simplify?: boolean; turn?: number }[] = [];
+    const runs: ModelImportChoices[] = [];
     configureModelImportSession({
         run: async (files, choices) => {
             runs.push(choices);
@@ -145,8 +150,28 @@ describeDbTests("Model import", (it) => {
         ).toHaveTextContent("Simplify to 20,000 triangles");
         expect(within(review).getByTestId("model-import-after")).toBeTruthy();
 
-        fireEvent.click(within(review).getByTestId("model-import-turn"));
+        // Pointing at a Rotate button shows its axis and which way it swings
+        const axes = within(review).getByTestId("model-import-axes");
+        expect(axes.getAttribute("data-active")).toBeNull();
+        const rotateZ = within(review).getByTestId("model-import-rotate-z");
+        fireEvent.pointerEnter(rotateZ);
+        expect(axes.getAttribute("data-active")).toBe("z");
+        expect(within(axes).getByTestId("model-import-axes-ring")).toBeTruthy();
+        fireEvent.pointerLeave(rotateZ);
+        expect(axes.getAttribute("data-active")).toBeNull();
+
+        fireEvent.click(within(review).getByTestId("model-import-rotate-y"));
         await waitFor(() => expect(runs.at(-1)).toMatchObject({ turn: 90 }));
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+
+        // Tipping keeps the turn, and tips the model as the picture shows it
+        const tipped90 = tipped(UPRIGHT, 90, "x");
+        fireEvent.click(within(review).getByTestId("model-import-rotate-x"));
+        await waitFor(() =>
+            expect(runs.at(-1)).toMatchObject({ turn: 90, tilt: tipped90 }),
+        );
         await waitFor(() =>
             expect(useModelImportSession.getState().running).toBe(false),
         );
@@ -182,6 +207,11 @@ describeDbTests("Model import", (it) => {
         });
         expect(asset.credits).not.toHaveProperty("sourceUrl");
         expect(asset.sidecar).toMatchObject({ facing: { turnDeg: 90 } });
+        expect(
+            (asset.sidecar as unknown as ModelSidecar).importNotes.needsChoice,
+        ).toContainEqual(
+            expect.objectContaining({ code: "tilt", applied: tipped90 }),
+        );
 
         // Picking it and clicking the field places a prop at the playhead
         fireEvent.click(tile);

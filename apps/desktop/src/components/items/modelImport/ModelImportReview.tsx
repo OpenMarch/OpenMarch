@@ -21,6 +21,12 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
+import AxisPreview, { AXIS_COLORS, type Axis } from "./AxisPreview";
+import {
+    sameTilt,
+    tipped,
+    UPRIGHT,
+} from "@/showAssets/modelImport/orientation";
 import { useModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
 import {
     canRetry,
@@ -81,11 +87,19 @@ const choiceOf = <C extends Choice["code"]>(
 
 /**
  * The model import's one screen (fork #999, props-spec "The review"), in the Props panel: the
- * model's picture with a one-click turn, its size to confirm with one-click unit fixes, then the
+ * model's picture with Rotate X, Y and Z and an axis preview, its size to confirm with one-click unit fixes, then the
  * report grouped as Can't import, Needs your choice and Fixed for you, the name and the license
  * fields, and Add. Each choice runs the import again, so what shows is what Add stores. A refusal
  * shows here, never in an alert; Cancel leaves the show as it was.
  */
+const focusVisible = (element: Element): boolean => {
+    try {
+        return element.matches(":focus-visible");
+    } catch {
+        return true;
+    }
+};
+
 export default function ModelImportReview({
     onDone,
 }: {
@@ -99,13 +113,36 @@ export default function ModelImportReview({
     const model = result?.ok ? result.model : undefined;
     const needs = report?.needsChoice ?? [];
     const unitFix = choiceOf(needs, "unitFix");
-    const rotate = choiceOf(needs, "rotateToYUp");
+    const tilt = choiceOf(needs, "tilt");
     const turn = choiceOf(needs, "turn");
+    const appliedTurn = choices.turn ?? turn?.applied ?? 0;
+    const appliedTilt = choices.tilt ?? tilt?.applied ?? UPRIGHT;
+    const rotate = (axis: Axis) =>
+        session.choose(
+            axis === "y"
+                ? { turn: ((appliedTurn + 90) % 360) as Turn }
+                : { tilt: tipped(appliedTilt, appliedTurn, axis) },
+        );
+    // The axis the preview shows: pointed at or focused, or just tapped (touch has no hover)
+    const [pointed, setPointed] = useState<Axis | null>(null);
+    // Each tap is its own object, so tapping the same button again restarts the time
+    const [tapped, setTapped] = useState<{ axis: Axis } | null>(null);
+    useEffect(() => {
+        if (!tapped) return;
+        const timer = setTimeout(() => setTapped(null), 1200);
+        return () => clearTimeout(timer);
+    }, [tapped]);
+    // A button disabled or removed under the pointer or focus gets no leave or blur
+    useEffect(() => {
+        if (running) setPointed(null);
+    }, [running]);
+    // Stood up from Z-up on its own: said in Needs your choice, with a way back
+    const zUp = tilt?.zUpSuspected ? tilt : undefined;
     const simplify = choiceOf(needs, "simplify");
     const simplified = simplify?.applied ? simplify : undefined;
     const [showBefore, setShowBefore] = useState(false);
     const before = session.before;
-    // A turn or a unit change drops the before picture: back to the one Add stores
+    // A turn, a tip or a unit change drops the before picture: back to the one Add stores
     useEffect(() => {
         if (!before) setShowBefore(false);
     }, [before]);
@@ -136,7 +173,7 @@ export default function ModelImportReview({
                 onBack={session.saving ? undefined : cancel}
             />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto pr-4">
-                {/* The picture, from the audience side, with the turn beside it */}
+                {/* The picture, from the audience side, with Rotate X, Y and Z under it */}
                 <section className="flex flex-col gap-8">
                     {simplified && (
                         <SegmentedTextSwitch
@@ -198,29 +235,58 @@ export default function ModelImportReview({
                                     <T keyName="props.import.simplify.beforeFailed" />
                                 </span>
                             )}
+                            {picture && turn && !showBefore && (
+                                <AxisPreview
+                                    active={pointed ?? tapped?.axis ?? null}
+                                />
+                            )}
                         </div>
                     )}
                     {turn && model && (
-                        <div className="flex items-center justify-between gap-8">
+                        <div className="flex flex-col gap-8">
                             <span className="text-sub text-text-subtitle">
-                                <T keyName="props.import.turn.detail" />
+                                <T keyName="props.import.orient.detail" />
                             </span>
-                            <Button
-                                size="compact"
-                                variant="secondary"
-                                disabled={running}
-                                data-testid="model-import-turn"
-                                onClick={() =>
-                                    session.choose({
-                                        turn: (((choices.turn ?? turn.applied) +
-                                            90) %
-                                            360) as Turn,
-                                    })
-                                }
-                            >
-                                <ArrowClockwiseIcon size={16} />
-                                <T keyName="props.import.turn.button" />
-                            </Button>
+                            <div className="flex flex-wrap gap-8">
+                                {(["x", "y", "z"] as Axis[]).map((axis) => (
+                                    <Button
+                                        key={axis}
+                                        size="compact"
+                                        variant="secondary"
+                                        disabled={running}
+                                        data-testid={`model-import-rotate-${axis}`}
+                                        onPointerEnter={() => setPointed(axis)}
+                                        onPointerLeave={() => setPointed(null)}
+                                        onFocus={(event) => {
+                                            // Keyboard focus only: a tap's focus comes after its
+                                            // pointer left, and the tap shows on its own
+                                            if (
+                                                focusVisible(
+                                                    event.currentTarget,
+                                                )
+                                            )
+                                                setPointed(axis);
+                                        }}
+                                        onBlur={() => setPointed(null)}
+                                        onClick={() => {
+                                            setTapped({ axis });
+                                            rotate(axis);
+                                        }}
+                                    >
+                                        <ArrowClockwiseIcon
+                                            size={16}
+                                            color={AXIS_COLORS[axis]}
+                                            weight="bold"
+                                        />
+                                        <T
+                                            keyName="props.import.rotateAxis"
+                                            params={{
+                                                axis: axis.toUpperCase(),
+                                            }}
+                                        />
+                                    </Button>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </section>
@@ -259,20 +325,22 @@ export default function ModelImportReview({
                     </ReportGroup>
                 )}
 
-                {model && (rotate || simplify) && (
+                {model && (zUp || simplify) && (
                     <ReportGroup
                         tone="accent"
                         icon={<WarningIcon size={16} />}
                         title={t("props.import.groups.needsChoice")}
                         testId="model-import-choices"
                     >
-                        {rotate && (
+                        {zUp && (
                             <ChoiceCheck
                                 id="model-import-rotate"
-                                checked={choices.rotateToYUp ?? rotate.applied}
+                                checked={sameTilt(appliedTilt, zUp.preselected)}
                                 disabled={running}
                                 onChange={(on) =>
-                                    session.choose({ rotateToYUp: on })
+                                    session.choose({
+                                        tilt: on ? zUp.preselected : UPRIGHT,
+                                    })
                                 }
                                 title={t("props.import.rotate.title")}
                                 detail={t("props.import.rotate.detail")}
@@ -456,15 +524,21 @@ function SizeConfirm({
  * The optional license fields, collapsed, prefilled from the file (props-spec §10): license,
  * author, source and attribution. Empty means Unknown.
  */
-function CreditFields({
+export function CreditFields({
     credits,
     onChange,
+    testIdPrefix = "model-import",
+    startOpen = false,
 }: {
     credits: ModelCredits;
     onChange: (credits: ModelCredits) => void;
+    /** Starts each field's test id (the Assets view uses its own) */
+    testIdPrefix?: string;
+    /** Shows the fields at once (the Assets view opens a row onto them) */
+    startOpen?: boolean;
 }) {
     const { t } = useTranslate();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(startOpen);
     const panelId = useId();
     const license = credits.license || UNKNOWN_LICENSE;
     const licenses: string[] = [...LICENSE_OPTIONS];
@@ -487,7 +561,7 @@ function CreditFields({
                 onChange={(e) =>
                     onChange({ ...credits, [key]: e.target.value })
                 }
-                data-testid={`model-import-${key}`}
+                data-testid={`${testIdPrefix}-${key}`}
             />
         </label>
     );
@@ -499,7 +573,7 @@ function CreditFields({
                 aria-controls={panelId}
                 onClick={() => setOpen(!open)}
                 className="text-body flex items-center gap-8 text-left font-medium"
-                data-testid="model-import-credits-toggle"
+                data-testid={`${testIdPrefix}-credits-toggle`}
             >
                 <CaretRightIcon
                     size={14}
