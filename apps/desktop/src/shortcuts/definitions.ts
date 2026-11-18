@@ -638,6 +638,14 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: ["$mod+Comma"],
     },
+    // Opens Help: the user guide, or a prompt to copy for an AI assistant
+    openHelp: {
+        labelKey: "actions.ui.openHelp",
+        keywordsKey: "actions.ui.openHelpKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: ["F1"],
+    },
     // Opens the bug and feedback report window (fork #801). Desktop only for now.
     reportFeedback: {
         labelKey: "actions.ui.reportFeedback",
@@ -686,6 +694,40 @@ const STATIC_ACTIONS = {
         labelKey: "actions.items.edit",
         keywordsKey: "actions.items.editKeywords",
         category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // The Props panel's model import (fork #999): Import… asks for a model's files and shows its
+    // review; an Imported tile places that model with a click on the field (args: the show
+    // asset's `id` and `versionHash`). From the palette, with no model named, the Props panel
+    // opens on its Imported group
+    importModel: {
+        labelKey: "actions.items.importModel",
+        keywordsKey: "actions.items.importModelKeywords",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+    },
+    placeImportedModel: {
+        labelKey: "actions.items.placeImportedModel",
+        keywordsKey: "actions.items.placeImportedModelKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // The Assets view (fork #1001): the show's imported assets, their credits and size
+    openAssets: {
+        labelKey: "actions.ui.openAssets",
+        keywordsKey: "actions.ui.openAssetsKeywords",
+        category: "ui",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Lists the assets nothing in the show uses and, once confirmed, removes them
+    removeUnusedAssets: {
+        labelKey: "actions.file.removeUnusedAssets",
+        keywordsKey: "actions.file.removeUnusedAssetsKeywords",
+        category: "file",
         scope: "global",
         defaultBindings: [],
     },

@@ -2,45 +2,22 @@
  * Asks, in the 3D View itself, whether it should keep opening with every show. The editor opens
  * it with the show while the "open with the show" setting was never answered
  * (`view3dAutoOpenOnShow`), so this card shows each time the window opens until it is: either
- * answer saves the setting (Settings › General changes it later). It has no close button, since
+ * answer saves the setting (3D View settings › Preferences and Settings › General change it
+ * later). It has no close button, since
  * closing it without answering would only bring it back next time.
  *
- * `window.view3d.autoOpen.get` is undefined while unanswered, and null where the window shouldn't
- * ask (the web editor, Playwright sessions).
+ * The setting is shared with the Preferences switch (`autoOpenSetting.ts`): undefined while
+ * unanswered, null where the window shouldn't ask (the web editor, Playwright sessions).
  */
-import { useEffect, useState } from "react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
+import { setAutoOpen, useAutoOpenSetting } from "./autoOpenSetting";
 
 export function AutoOpenQuestion() {
     const { t } = useTranslate();
-    const [asking, setAsking] = useState(false);
-    useEffect(() => {
-        let cancelled = false;
-        const autoOpen = window.view3d.autoOpen;
-        if (!autoOpen) return;
-        autoOpen
-            .get()
-            .then((setting) => {
-                if (!cancelled && setting === undefined) setAsking(true);
-            })
-            .catch((error: unknown) =>
-                console.warn("3D View: couldn't read auto-open", error),
-            );
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-    if (!asking) return null;
-    const answer = (keepOpening: boolean) => {
-        setAsking(false);
-        // A failed save leaves the setting unanswered, so the question comes back next time
-        window.view3d.autoOpen
-            .set(keepOpening)
-            .catch((error: unknown) =>
-                console.warn("3D View: couldn't save auto-open", error),
-            );
-    };
+    // Asks only while unanswered; an answer here or in Preferences hides it
+    if (useAutoOpenSetting() !== undefined) return null;
+    const answer = (keepOpening: boolean) => setAutoOpen(keepOpening);
     return (
         <div
             role="dialog"
@@ -52,7 +29,7 @@ export function AutoOpenQuestion() {
                 {t("view3d.autoOpenPrompt.title")}
             </p>
             <p className="text-sub text-text/60">
-                {t("view3d.autoOpenPrompt.description")}
+                {t("view3d.autoOpenPrompt.changeLater")}
             </p>
             <div className="flex justify-end gap-8">
                 <Button

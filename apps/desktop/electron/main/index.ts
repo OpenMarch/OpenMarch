@@ -56,6 +56,16 @@ import {
 } from "../../src/global/updates";
 import { repairDatabase } from "../database/repair";
 import {
+    backupBeforeJournalRecovery,
+    journalPathFor,
+    LEFTOVER_JOURNAL_STATUS,
+} from "../database/leftoverJournal";
+import {
+    JournalRecoveryError,
+    recoverFromLeftoverJournal,
+    SET_ASIDE_MARK,
+} from "./leftoverJournalRecovery";
+import {
     NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
 } from "../database/convertOnOpenGate";
@@ -81,6 +91,18 @@ import {
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import { closeView3dWindow, initView3dWindow } from "./view3dWindow";
+import { withAppCsp } from "./workerCsp";
+import { DESKTOP_PAGE_CSP } from "../../src/security/appCsp";
+import {
+    APP_INDEX_URL,
+    APP_ORIGIN,
+    handleAppScheme,
+    registerAppScheme,
+} from "./appProtocol";
+import {
+    electronStorageMoveDeps,
+    moveRendererStorage,
+} from "./rendererStorageMove";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -100,6 +122,8 @@ import {
 
 let isQuitting = false;
 const store = new Store();
+/** No settings yet: a new install, or a test's fresh profile, with no old storage to move */
+const isNewProfile = store.size === 0;
 // Native dialogs follow the saved app language from the start: on macOS a file can arrive
 // (`open-file`) before the app is ready, and its dialogs would otherwise be in English
 setMainLanguage(store.get("language"));
@@ -203,6 +227,8 @@ if (process.platform === "win32") app.setAppUserModelId(app.getName());
 
 // Initialize auth protocol handler before app is ready
 initAuthBeforeReady();
+// The packaged renderer's own scheme (appProtocol.ts)
+registerAppScheme();
 
 if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -215,11 +241,13 @@ if (!app.requestSingleInstanceLock()) {
 // process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true'
 
 let win: BrowserWindow | null = null;
+/** Until the editor's first window exists; only hidden windows may be open before it */
+let startingUp = true;
+
 // Here, you can also use other preload
 const preload = join(__dirname, "../preload/index.js");
 const view3dPreload = join(__dirname, "../preload/view3d.js");
 const url = process.env.VITE_DEV_SERVER_URL;
-const indexHtml = join(process.env.DIST, "index.html");
 // eslint-disable-next-line max-lines-per-function
 async function createWindow(title?: string) {
     win = new BrowserWindow({
@@ -259,13 +287,15 @@ async function createWindow(title?: string) {
 
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
+            // The app's own scheme sends its headers itself (appProtocol.ts)
+            if (details.url.startsWith(`${APP_ORIGIN}/`)) return callback({});
             callback({
-                responseHeaders: {
-                    ...details.responseHeaders,
-                    "Content-Security-Policy": [
-                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
-                    ],
-                },
+                // Each listed worker's script gets its own policy (workerCsp.ts)
+                responseHeaders: withAppCsp(
+                    details.url,
+                    details.responseHeaders,
+                    DESKTOP_PAGE_CSP,
+                ),
             });
         },
     );
@@ -280,7 +310,7 @@ async function createWindow(title?: string) {
             }
         });
     } else {
-        void win.loadFile(indexHtml);
+        void win.loadURL(APP_INDEX_URL);
     }
 
     // Test actively push message to the Electron-Renderer
@@ -387,6 +417,70 @@ async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
  * which takes this with `load-file:takeRefusal` and explains it there.
  */
 let refusalAfterReload: number | null = null;
+
+/**
+ * The file whose last open was refused for a leftover journal SQLite can't use
+ * (`LEFTOVER_JOURNAL_STATUS`). The renderer offers to recover it
+ * (`load-file:recoverFromJournal`); any other open forgets it.
+ */
+let leftoverJournalFile: string | null = null;
+
+/** The renderer's questions about a leftover journal that stopped an open. */
+function initLeftoverJournalIpcHandlers() {
+    ipcMain.handle("load-file:leftoverJournal", () =>
+        leftoverJournalFile
+            ? basename(journalPathFor(leftoverJournalFile))
+            : null,
+    );
+    ipcMain.handle("load-file:recoverFromJournal", async () =>
+        recoverAndOpenLeftoverJournalFile(),
+    );
+}
+
+/**
+ * Recovers the refused file from its leftover journal on copies (`leftoverJournalRecovery.ts`),
+ * then opens it. Explains in a dialog when it can't.
+ */
+async function recoverAndOpenLeftoverJournalFile(): Promise<number> {
+    const filePath = leftoverJournalFile;
+    leftoverJournalFile = null;
+    if (!filePath) return -1;
+    const name = basename(journalPathFor(filePath));
+    try {
+        // Nothing may open the file while its journal moves and the recovered show replaces it.
+        const result = await withOpenLock(async () =>
+            recoverFromLeftoverJournal(filePath, backupDir()),
+        );
+        if (result.outcome === "damaged") {
+            dialog.showErrorBox(
+                t("fileDialog.leftoverJournal.damagedTitle"),
+                t("fileDialog.leftoverJournal.damagedMessage", { name }),
+            );
+            return -1;
+        }
+        if (result.outcome === "recovered")
+            console.log(
+                `Recovered ${filePath} (${result.from}); its journal is now ${result.journalKeptAt}`,
+            );
+    } catch (error) {
+        console.error("Couldn't recover from the leftover journal:", error);
+        captureException(error);
+        const step =
+            error instanceof JournalRecoveryError ? error.step : "stage";
+        dialog.showErrorBox(
+            t("fileDialog.leftoverJournal.failedTitle"),
+            step === "move-journal"
+                ? t("fileDialog.leftoverJournal.journalMoveFailedMessage", {
+                      name,
+                  })
+                : step === "replace"
+                  ? t("fileDialog.leftoverJournal.replaceFailedMessage")
+                  : t("fileDialog.leftoverJournal.stageFailedMessage"),
+        );
+        return -1;
+    }
+    return openRecentFile(filePath);
+}
 
 function sendLoadFileResponse(resCode: number) {
     if (resCode === OPEN_STOPPED_STATUS || resCode === NEEDS_CONVERSION_STATUS)
@@ -527,6 +621,7 @@ function initRecentFilesIpcHandlers() {
 
 function initIpcHandlers() {
     initDatabaseIpcHandlers();
+    initLeftoverJournalIpcHandlers();
     initRecentFilesIpcHandlers();
 }
 
@@ -556,7 +651,7 @@ void app.whenReady().then(async () => {
     initView3dWindow({
         preload: view3dPreload,
         devServerUrl: url,
-        indexHtml,
+        appIndexUrl: APP_INDEX_URL,
         icon: join(process.env.VITE_PUBLIC, "favicon.ico"),
         frame: isCodegen,
         getTheme: () => store.get("theme", "light") as string,
@@ -576,8 +671,19 @@ void app.whenReady().then(async () => {
         },
     });
 
+    if (!url) {
+        handleAppScheme(process.env.DIST);
+        // Settings the renderer kept under `file://` (rendererStorageMove.ts); gives up after
+        // 10 s so startup goes on
+        await moveRendererStorage(electronStorageMoveDeps(store, isNewProfile));
+    }
+
     // i18n-ignore: the product name and a file path, the same in every language
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+    try {
+        await createWindow("OpenMarch - " + store.get("databasePath"));
+    } finally {
+        startingUp = false;
+    }
 
     updates = startUpdates();
 });
@@ -763,6 +869,8 @@ function initGetters() {
 stopConversionWorkersOnQuit(app);
 
 app.on("window-all-closed", async () => {
+    // The storage move's hidden windows close before the editor's opens
+    if (startingUp) return;
     win = null;
     if (process.platform !== "darwin") app.quit();
 });
@@ -828,7 +936,7 @@ ipcMain.handle("settings:open", () => {
         load: (settings) =>
             url
                 ? void settings.loadURL(`${url}#settings`)
-                : void settings.loadFile(indexHtml, { hash: "settings" }),
+                : void settings.loadURL(`${APP_INDEX_URL}#settings`),
     });
 });
 
@@ -926,6 +1034,8 @@ ipcMain.handle(
 // Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
+    // Startup opens the editor itself (the storage move's windows are hidden)
+    if (startingUp) return;
     const allWindows = BrowserWindow.getAllWindows();
     if (win && !win.isDestroyed()) {
         win.focus();
@@ -1580,6 +1690,30 @@ export async function insertAudioFile(): Promise<DatabaseServices.AudioInsertRes
 const migrationsFolderPath = () =>
     join(app.getAppPath(), "electron", "database", "migrations");
 
+/** The folder the app keeps backups of show files in. */
+const backupDir = () => join(app.getPath("userData"), "backups");
+
+/**
+ * Copies a file and its leftover journal into the backups before SQLite plays the journal back
+ * (`leftoverJournal.ts`). A failed copy doesn't stop the open: it goes ahead as it always did.
+ */
+function backupLeftoverJournal(path: string) {
+    try {
+        const backup = backupBeforeJournalRecovery(path, backupDir());
+        if (backup)
+            console.log(
+                `Leftover journal next to ${path}: copied the file to ${backup.showCopy}` +
+                    (backup.journalCopy ? " with its journal" : ""),
+            );
+    } catch (error) {
+        console.error(
+            "Couldn't back up a file with a leftover journal:",
+            error,
+        );
+        captureException(error);
+    }
+}
+
 /** Backs a file up to userData/backups before migrations, and prunes backups older than 30 days. */
 function backupBeforeMigrations(path: string) {
     const backupDir = join(app.getPath("userData"), "backups");
@@ -1598,6 +1732,13 @@ function backupBeforeMigrations(path: string) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     files.forEach((file) => {
+        // A journal set aside keeps its original date when moved, so age says nothing; the
+        // recovery dialog promised it isn't deleted.
+        if (
+            file.endsWith(SET_ASIDE_MARK) ||
+            file.endsWith(`${SET_ASIDE_MARK}-journal`)
+        )
+            return;
         const filePath = join(backupDir, file);
         const stats = fs.statSync(filePath);
         if (stats.birthtime < thirtyDaysAgo) {
@@ -1610,6 +1751,7 @@ function backupBeforeMigrations(path: string) {
 const openShowDeps = (): OpenShowDeps => ({
     migrationsFolder: migrationsFolderPath(),
     beforeMigrations: backupBeforeMigrations,
+    beforeJournalRecovery: backupLeftoverJournal,
     dialogs: () => electronConvertOnOpenDialogs(win),
     // The backup and conversion run in a worker thread, off this event loop (P9.8).
     convertWorker: { workerPath: defaultConvertWorkerPath(__dirname) },
@@ -1652,6 +1794,7 @@ async function setActiveDbNow(
     // its file); a page-era file asks again below.
     conversionQuestion.forget();
     refusalAfterReload = null;
+    leftoverJournalFile = null;
     const hadShowOpen = DatabaseServices.getDbPath() !== "";
     try {
         // The 3D View shows one show; a confirmed conversion is about to replace it.
@@ -1665,6 +1808,9 @@ async function setActiveDbNow(
         );
         result.db?.close();
         const token = result.sqlSuspension;
+        // The renderer offers to open it without the journal (`load-file:recoverFromJournal`).
+        if (result.status === LEFTOVER_JOURNAL_STATUS)
+            leftoverJournalFile = path;
 
         if (result.status === NEEDS_CONVERSION_STATUS && result.backupPath) {
             if (token !== undefined) DatabaseServices.resumeSqlProxy(token);

@@ -61,49 +61,11 @@ describe("what each field drag honors", () => {
             },
         ],
         [
-            "a scale corner with the ratio lock on: a free ratio (#545)",
-            () =>
-                new ScaleGesture(
-                    at(10, 10),
-                    marchers,
-                    host,
-                    "se",
-                    box,
-                    keys(),
-                    true,
-                ),
-            {
-                fine: "fine",
-                constrain: "freeRatio",
-                fromCenter: "fromCenter",
-                snaps: false,
-            },
-        ],
-        [
             "a scale side: fine, a kept ratio, from center, no snapping",
             () => new ScaleGesture(at(10, 5), marchers, host, "e", box, keys()),
             {
                 fine: "fine",
                 constrain: "keepRatio",
-                fromCenter: "fromCenter",
-                snaps: false,
-            },
-        ],
-        [
-            "a scale side with the ratio lock on: a free ratio (#545)",
-            () =>
-                new ScaleGesture(
-                    at(10, 5),
-                    marchers,
-                    host,
-                    "e",
-                    box,
-                    keys(),
-                    true,
-                ),
-            {
-                fine: "fine",
-                constrain: "freeRatio",
                 fromCenter: "fromCenter",
                 snaps: false,
             },

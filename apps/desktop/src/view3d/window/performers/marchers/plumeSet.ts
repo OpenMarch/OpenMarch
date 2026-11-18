@@ -168,7 +168,7 @@ export function plumeMaterial(
         material.alphaToCoverage = true;
     }
     material.onBeforeCompile = (shader) => {
-        shader.uniforms.uComposed = composer.uniform;
+        composer.bindUniforms(shader.uniforms);
         shader.vertexShader = shader.vertexShader
             .replace("#include <common>", `#include <common>\n${PLUME_HEAD}`)
             .replace(

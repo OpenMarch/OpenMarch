@@ -1,3 +1,4 @@
+// cspell:words ndarray
 import { rmSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
@@ -8,6 +9,7 @@ import pkg from "./package.json";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { thirdPartyNotices } from "./vite.notices.mjs";
+import { modelImportWorker, ndarrayAliases } from "./vite.modelImport.mjs";
 
 // https://vitejs.dev/config/
 // eslint-disable-next-line max-lines-per-function
@@ -24,10 +26,19 @@ export default defineConfig(({ command }) => {
 
     return {
         resolve: {
-            alias: electronAlias,
+            alias: [
+                ...Object.entries(electronAlias).map(([find, replacement]) => ({
+                    find,
+                    replacement,
+                })),
+                ...ndarrayAliases,
+            ],
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
+        // The model import worker's Draco decoder (fork #998)
+        worker: { plugins: () => [modelImportWorker()] },
         plugins: [
+            modelImportWorker(),
             // Keep tailwindcss here for the main renderer process
             tailwindcss(),
             react(),

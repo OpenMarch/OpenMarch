@@ -1,6 +1,6 @@
 ---
 title: Coming from OpenMarch 0.1
-description: What happens when you open a show from OpenMarch 0.1.7 in 0.2, what the conversion keeps and loses, and how its pages become pages and moves.
+description: Open a show from OpenMarch 0.1.7 in 0.2 (upgrade or convert an old show), what the conversion keeps and loses, and how its pages become pages and moves.
 type: concept
 covers:
   - apps/desktop/electron/database/convertOnOpen.ts
@@ -16,6 +16,7 @@ sidebar:
 
 import Media from "@/components/docs/Media.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
 import { Aside } from "@astrojs/starlight/components";
 
 OpenMarch 0.2 stores a show as a timeline instead of a list of pages. A show saved by 0.1.7 has to be converted once before 0.2 can open it. The conversion keeps your marchers' positions on every page exactly, and the desktop app saves an untouched copy first, so you can always go back.
@@ -37,7 +38,7 @@ When you open a 0.1.7 show in the desktop app, OpenMarch asks before it changes 
 The copy goes in the same folder as the show, named after it: `Fall Show.dots` gets `Fall Show.pre-conversion.dots`. If that name is taken, the copy is `Fall Show.pre-conversion-2.dots`, and so on. OpenMarch 0.1.7 can open the copy; it can't open the converted show.
 
 <Aside type="caution">
-Don't open a converted show in OpenMarch 0.1.7. It can't read the show, and saving it there can leave a file that 0.2 can't open either. Keep the `.pre-conversion.dots` copy until you're sure you don't need 0.1.7 any more. See [Open a show in an older version](/troubleshooting/open-in-an-older-version/).
+Don't open a converted show in OpenMarch 0.1.7. 0.1.7 can't read it, and saving it there can leave a file that 0.2 can't open either. Open the `.pre-conversion.dots` copy instead, and keep it until you're sure you don't need 0.1.7 any more.
 </Aside>
 
 If OpenMarch can't save the copy, it doesn't convert anything and says why. The usual causes are a folder you can't write to (such as a shared or read-only folder) and a full disk: move the show to a folder of your own, or free some space, and open it again. If the conversion itself fails, the show is left exactly as it was, and the message names the copy.
@@ -68,13 +69,13 @@ If you need any of these, they're still in the `.pre-conversion.dots` copy, whic
 
 ## Pages become pages and moves
 
-In 0.1.7, each page was a set and the marchers walked straight to it. In 0.2, the pages are still there, and the walking is a move: a stretch of time in which marchers go from one place to another.
+In 0.1.7, each page was a set and the marchers walked straight to it. In 0.2, the pages are still there, and the walking is a <Term id="move">move</Term>.
 
-- The first page, where the show starts, becomes the home positions: where every marcher stands before the first move.
+- 0.1.7's first page, where the show starts, becomes home: where every marcher stands before the first move.
 - Every later page becomes a page of the same length with one move across it, for the marchers who change position on that page.
 - A marcher who stays in place on a page gets no move there, and nothing is decided for it on that page: it's Not defined, and shows where it last stood. If you later change where it stands on an earlier page, it stands there on this page too, instead of walking back to the old spot as it would have in 0.1.7.
 
-A converted show is all pages and page-length moves, so everything in it can be edited in Basic. [Defined, Held and Not defined](/guides/timeline/defined-held-not-defined/) explains the three states a marcher can have on a page.
+A converted show is all pages and page-length moves, so everything in it can be edited in Basic. [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) explains the three states a marcher can have on a page.
 
 ## Related
 

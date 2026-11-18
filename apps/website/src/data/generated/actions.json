@@ -969,6 +969,24 @@
             }
         ]
     },
+    "openHelp": {
+        "label": "Get help",
+        "category": "ui",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "F1"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "F1"
+                    ]
+                }
+            }
+        ]
+    },
     "reportFeedback": {
         "label": "Report a bug or send feedback",
         "category": "ui",
@@ -997,6 +1015,26 @@
     "editSelectedItem": {
         "label": "Edit selected prop or equipment",
         "category": "edit",
+        "bindings": []
+    },
+    "importModel": {
+        "label": "Import a 3D model…",
+        "category": "file",
+        "bindings": []
+    },
+    "placeImportedModel": {
+        "label": "Place an imported model",
+        "category": "edit",
+        "bindings": []
+    },
+    "openAssets": {
+        "label": "Open the show's assets",
+        "category": "ui",
+        "bindings": []
+    },
+    "removeUnusedAssets": {
+        "label": "Remove unused assets…",
+        "category": "file",
         "bindings": []
     },
     "addFrontEnsembleEquipment": {

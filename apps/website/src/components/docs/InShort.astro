@@ -1,0 +1,27 @@
+---
+/**
+ * The answer to a how-to page in one line, at the top: where to go and what to press, with the
+ * shortcut. The steps below it say the same thing slowly. In the plain-text copies it reads as
+ * "In short: …".
+ *
+ *   <InShort>Right-click the move and select <Ui k="timeline.clipMenu.split" /> (<Kbd action="timelineSplitAtPlayhead" />).</InShort>
+ */
+---
+
+<p class="docs-in-short">
+    <span class="docs-in-short-label">In short:</span>
+    <slot />
+</p>
+
+<style>
+    .docs-in-short {
+        padding: 0.6rem 0.9rem;
+        border-inline-start: 3px solid var(--sl-color-accent);
+        border-radius: 0 0.375rem 0.375rem 0;
+        background: var(--sl-color-gray-6);
+    }
+    .docs-in-short-label {
+        font-weight: 600;
+        color: var(--sl-color-accent-high);
+    }
+</style>

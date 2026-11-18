@@ -60,13 +60,13 @@ describeDbTests("the marcher inspector", (it) => {
 
         const expected = ReadableCoords.fromMarcherPage({ x, y });
         await waitFor(() => {
-            const [xSteps, ySteps] = [
-                ...result.container.querySelectorAll<HTMLInputElement>(
-                    'input[type="number"]',
-                ),
-            ].map((input) => Number(input.value));
-            expect(xSteps).toBeCloseTo(expected.xSteps, 6);
-            expect(ySteps).toBeCloseTo(expected.ySteps, 6);
+            // Shown as plain text, the way coordinate sheets word it
+            expect(result.getByTestId("inspector-marcher-x").textContent).toBe(
+                expected.toVerboseStringX({ includeStepsString: true }),
+            );
+            expect(result.getByTestId("inspector-marcher-y").textContent).toBe(
+                expected.toVerboseStringY({ includeStepsString: true }),
+            );
         });
     });
 
@@ -92,13 +92,13 @@ describeDbTests("the marcher inspector", (it) => {
         const [x, y] = await positionOn(db, page, created!.id);
         const want = ReadableCoords.fromMarcherPage({ x, y });
         await waitFor(() => {
-            const [xSteps, ySteps] = [
-                ...result.container.querySelectorAll<HTMLInputElement>(
-                    'input[type="number"]',
-                ),
-            ].map((input) => Number(input.value));
-            expect(xSteps).toBeCloseTo(want.xSteps, 6);
-            expect(ySteps).toBeCloseTo(want.ySteps, 6);
+            // Shown as plain text, the way coordinate sheets word it
+            expect(result.getByTestId("inspector-marcher-x").textContent).toBe(
+                want.toVerboseStringX({ includeStepsString: true }),
+            );
+            expect(result.getByTestId("inspector-marcher-y").textContent).toBe(
+                want.toVerboseStringY({ includeStepsString: true }),
+            );
         });
         expect(
             result.container.querySelector("p.text-red"),

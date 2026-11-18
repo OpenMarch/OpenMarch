@@ -18,13 +18,36 @@
             "snapOn": "Lekap dimatikan: hidupkan semula",
             "snapToCustomFraction": "Lekap ke grid",
             "toggleSnap": "Togol lekap",
-            "toggleSnapKeywords": "snap magnet grid free lekap bebas"
+            "toggleSnapKeywords": "snap magnet grid free lekap bebas",
+            "propsOnly": "Hanya prop dipilih: prop tidak dijajarkan atau dijarakkan"
         },
         "batchEdit": {
-            "noNextPage": "Tidak dapat menetapkan koordinat pemain mengikut halaman seterusnya. Tiada halaman seterusnya",
-            "noPreviousPage": "Tidak dapat menetapkan koordinat pemain mengikut halaman sebelumnya. Tiada halaman sebelumnya",
+            "clearPage": "Kosongkan halaman {page}",
+            "clearPageAndLater": "{count, plural, =1 {Kosongkan halaman {page}, halaman {first} turut kembali} other {Kosongkan halaman {page}, halaman {first}–{last} turut kembali}}",
+            "clearThisPageAll": "{clearThisPage} (semua pemain)",
+            "clearThisPageAllAndFollowing": "{clearThisPage} (semua pemain), halaman berikutnya turut kembali",
+            "clearThisPageHoldsToo": "{count, plural, one {Tempoh kekal {names} pada {pages} turut dikosongkan} other {Tempoh kekal {names} pada {pages} turut dikosongkan}}.",
+            "clearThisPageSelected": "{clearThisPage} (terpilih)",
+            "clearThisPageSelectedAndFollowing": "{clearThisPage} (terpilih), halaman berikutnya turut kembali",
+            "defineAsShown": "{defineAsShown}",
+            "forAllMarchers": "{label} (semua pemain)",
+            "forSelected": "{label} (terpilih)",
+            "holdFromPrevious": "{holdFromPrevious}",
+            "holdKeywords": "hold held defined not defined keep stay set keyframe page state previous tahan ditahan ditetapkan tidak ditetapkan belum ditetapkan kekal kerangka kunci halaman keadaan sebelumnya",
+            "holdStyleDefault": "Gaya kekal: Tetapan persembahan",
+            "holdStyleHighMarkTime": "Gaya kekal: Langkah di tempat tinggi",
+            "holdStyleKeywords": "hold style stand still halt mark time marktime high feet 3d gaya kekal tahan berdiri diam henti langkah di tempat tinggi kaki",
+            "holdStyleMarkTime": "Gaya kekal: Langkah di tempat",
+            "holdStyleStand": "Gaya kekal: Berdiri",
+            "noPageAfter": "Tiada halaman selepas halaman ini",
+            "noPageBefore": "Tiada halaman sebelum halaman ini",
+            "moveAllToNextSpots": "Alih ke kedudukan halaman seterusnya (semua pemain)",
+            "movedAllToNextSpots": "{count, plural, one {# pemain pada halaman {currentPage} dialihkan ke kedudukannya pada halaman {nextPage}} other {Kesemua # pemain pada halaman {currentPage} dialihkan ke kedudukan mereka pada halaman {nextPage}}}",
+            "moveSelectedToNextSpots": "Alih ke kedudukan halaman seterusnya (terpilih)",
+            "movedSelectedToNextSpots": "{count, plural, one {# pemain pada halaman {currentPage} dialihkan ke kedudukannya pada halaman {nextPage}} other {# pemain pada halaman {currentPage} dialihkan ke kedudukan mereka pada halaman {nextPage}}}",
             "setAllToPreviousDone": "{count, plural, =1 {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})} other {Berjaya menetapkan koordinat kesemua # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}",
-            "setSelectedToPreviousDone": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}"
+            "setSelectedToPreviousDone": "{count, plural, other {Berjaya menetapkan koordinat # pemain pada halaman {currentPage} kepada koordinat halaman sebelumnya ({previousPage})}}",
+            "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
             "noRedoAvailable": "Tiada tindakan untuk dibuat semula",
@@ -33,6 +56,49 @@
             "redoFailed": "Buat semula tidak dapat dilaksanakan, jadi tiada apa-apa yang berubah.",
             "undo": "Buat asal",
             "undoFailed": "Buat asal tidak dapat dilaksanakan, jadi tiada apa-apa yang berubah."
+        },
+        "field": {
+            "addXCheckpoint": "Tambah garisan rujukan X pada kedua-dua belah",
+            "addXCheckpointSeries": "Tambah garisan rujukan X setiap beberapa langkah",
+            "addYCheckpoint": "Tambah garisan rujukan Y",
+            "addYCheckpointSeries": "Tambah garisan rujukan Y setiap beberapa langkah",
+            "checkpointKeywords": "field line lines grid yard hash reference padang garisan garis grid ela hash rujukan",
+            "params": {
+                "every": "Langkah antara garisan rujukan",
+                "toBack": "Hingga berapa langkah di belakang bahagian depan",
+                "toSide": "Hingga berapa langkah dari tengah"
+            },
+            "editField": "Edit padang",
+            "editFieldKeywords": "field lines checkpoints yard hash grid customize size template settings padang garisan rujukan ela hash grid sesuaikan saiz templat tetapan",
+            "done": "Selesai mengedit padang",
+            "discard": "Buang perubahan padang",
+            "mirror": "Cerminkan sisi",
+            "mirrorOn": "Hidupkan Cerminkan sisi",
+            "mirrorOff": "Matikan Cerminkan sisi",
+            "addXLine": "Tambah garisan X",
+            "addYLine": "Tambah garisan Y",
+            "editLine": "Taip kedudukan garisan yang dipilih",
+            "deleteLines": "Padam garisan",
+            "toggleVisible": "Sembunyikan atau tunjukkan garisan",
+            "toggleReference": "Gunakan garisan sebagai rujukan atau tidak",
+            "nextLine": "Pilih garisan seterusnya",
+            "previousLine": "Pilih garisan sebelumnya",
+            "selectAllLines": "Pilih semua garisan",
+            "selectAllXLines": "Pilih semua garisan X",
+            "selectAllYLines": "Pilih semua garisan Y",
+            "everyOther": "Kekalkan pilihan pada garisan berselang",
+            "resetNames": "Namakan garisan mengikut kedudukan",
+            "nudgeLeft": "Alih garisan ke kiri",
+            "nudgeRight": "Alih garisan ke kanan",
+            "nudgeUp": "Alih garisan ke belakang",
+            "nudgeDown": "Alih garisan ke hadapan",
+            "nextPane": "Beralih antara padang dan panel Padang",
+            "previousPane": "Beralih antara panel Padang dan padang",
+            "importImage": "Import imej latar belakang padang…",
+            "removeImage": "Alih keluar imej latar belakang padang",
+            "imageKeywords": "picture photo aerial background image field gambar foto udara latar belakang imej padang",
+            "halfStep": "separuh langkah",
+            "editLines": "Edit garisan padang"
         },
         "file": {
             "closeFile": "Tutup fail",
@@ -49,7 +115,9 @@
             "loadDialogue": "Buka fail…",
             "newDialogue": "Fail baharu…",
             "openExport": "Eksport…",
-            "saveDialogue": "Simpan salinan…"
+            "saveDialogue": "Simpan salinan…",
+            "removeUnusedAssets": "Buang aset yang tidak digunakan…",
+            "removeUnusedAssetsKeywords": "buang padam bersihkan tidak digunakan aset model diimport saiz"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -88,8 +156,16 @@
             "toggleMetronome": "Togol metronom",
             "toggleLoop": "Gelung hidup / mati"
         },
+        "prop": {
+            "finishDrawing": "Prop: Selesai melukis",
+            "removeLastPoint": "Prop: Alih keluar bucu terakhir semasa melukis"
+        },
         "select": {
-            "selectAll": "Pilih semua"
+            "selectAll": "Pilih semua",
+            "toggleLasso": "Tukar antara pilihan kotak dan laso",
+            "useLasso": "Guna pilihan laso",
+            "useBox": "Guna pilihan kotak",
+            "toggleLassoKeywords": "lasso box marquee freehand select tool laso kotak segi empat bebas pilih alat"
         },
         "shape": {
             "noMarchersSelected": "Tiada pemain dipilih",
@@ -111,10 +187,15 @@
             "group": "Kumpulkan pilihan",
             "groupKeywords": "group shape freeze as is keep together combine kumpul bentuk beku kekal bersama gabung",
             "ungroup": "Bentuk: Nyahkumpulkan",
-            "ungroupKeywords": "ungroup shape break apart release separate nyahkumpul bentuk pecah lepas asing pisah"
+            "ungroupKeywords": "ungroup shape break apart release separate nyahkumpul bentuk pecah lepas asing pisah",
+            "enterBox": "Pilih pemain ini sahaja",
+            "centerPivot": "Bentuk: Alih pangsi kembali ke tengah",
+            "centerPivotKeywords": "pivot center centre reset turn flip around pangsi tengah set semula putar balikkan",
+            "arc": "Bentuk: Lengkok",
+            "discard": "Bentuk: Buang"
         },
         "swap": {
-            "mustSelectTwo": "Hanya boleh menukar kedudukan apabila 2 pemain dipilih.",
+            "selectTwo": "Pilih 2 pemain untuk menukar kedudukan mereka",
             "swap": "Tukar kedudukan dua pemain"
         },
         "timeline": {
@@ -124,9 +205,20 @@
             "splitMoveAtPlayhead": "Pisahkan gerakan di kepala main",
             "unsetHere": "Buang kerangka kunci",
             "unsetHereAndFollowing": "Buang kerangka kunci, halaman kemudian mengikut semula",
+            "unsetHereAndPagesMoveBack": "{count, plural, =1 {{removeKeyframe}, halaman {first} turut kembali} other {{removeKeyframe}, halaman {first}–{last} turut kembali}}",
             "unsetHereKeywords": "keyframe diamond unset set following remove clear take back coordinate position delete kerangka kunci berlian buang padam kosongkan tarik balik koordinat kedudukan",
+            "toggleEditorMode": "Tukar antara Asas dan Pakar",
+            "toggleEditorModeKeywords": "basic expert editor mode simple full timeline pages asas pakar penyunting mod mudah penuh garis masa halaman",
+            "toggleEditorModeToBasic": "Tukar ke Asas (Pakar sedang aktif)",
+            "toggleEditorModeToExpert": "Tukar ke Pakar (Asas sedang aktif)",
             "splitSelectedIntoNewMove": "Pisahkan pemain yang dipilih ke gerakan baharu",
-            "mergeMoveIntoPage": "Gabungkan gerakan ini ke dalam halamannya"
+            "mergeMoveIntoPage": "Gabungkan gerakan ini ke dalam halamannya",
+            "zoomIn": "Zum masuk garis masa",
+            "zoomOut": "Zum keluar garis masa",
+            "zoomKeywords": "zoom magnify timeline wider narrower closer farther scale plus minus zum besarkan garis masa lebar sempit dekat jauh skala tambah tolak",
+            "fit": "Muatkan persembahan dalam garis masa",
+            "toggleTempoMode": "Edit muzik hidup / mati",
+            "toggleTempoModeKeywords": "edit music tempo time signature rehearsal marks audio align counts muzik tempo tanda masa tanda latihan audio jajar kiraan"
         },
         "ui": {
             "openFieldMenu": "Buka menu padang",
@@ -134,6 +226,8 @@
             "openCommandPalette": "Palet arahan",
             "openCommandBar": "Bar arahan",
             "openSettings": "Tetapan…",
+            "checkForUpdates": "Semak kemas kini",
+            "checkForUpdatesKeywords": "update upgrade version download install new release kemas kini naik taraf versi muat turun pasang baharu keluaran",
             "openView3d": "Buka Paparan 3D",
             "openView3dKeywords": "3d three dimensional stadium venue window tiga dimensi stadium tempat tetingkap",
             "showShortcuts": "Pintasan papan kekunci",
@@ -144,7 +238,25 @@
             "showNextPaths": "Tunjukkan laluan halaman seterusnya",
             "toggleNextPaths": "Togol laluan halaman seterusnya",
             "togglePreview": "Pratonton persembahan",
-            "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play pratonton sinematik tonton bentang pembentangan skrin penuh main"
+            "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play pratonton sinematik tonton bentang pembentangan skrin penuh main",
+            "reportFeedback": "Laporkan pepijat atau hantar maklum balas",
+            "reportFeedbackKeywords": "bug issue problem feedback feature request support pepijat isu masalah maklum balas ciri permintaan sokongan",
+            "viewMyReports": "Lihat laporan saya",
+            "openFrontEnsemble": "Buka kumpulan hadapan dan podium",
+            "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset kumpulan hadapan mejar dram vibrafon perkusi pembesar suara peralatan pratetap",
+            "addFrontEnsembleEquipment": "Tambah peralatan kumpulan hadapan atau podium",
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument mejar dram vibrafon perkusi pembesar suara pengadun menara tangga alat muzik",
+            "openAssets": "Buka aset persembahan",
+            "openAssetsKeywords": "aset model diimport fail kredit lesen saiz storan pustaka"
+        },
+        "items": {
+            "edit": "Edit prop atau peralatan yang dipilih",
+            "editNamed": "Edit {name}",
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock tetapan sifat peralatan alat muzik nama saiz kunci",
+            "importModel": "Import model 3D…",
+            "importModelKeywords": "import model 3d glb gltf prop objek muat naik fail upload file object",
+            "placeImportedModel": "Letakkan model yang diimport",
+            "placeImportedModelKeywords": "letak letakkan model diimport prop 3d tersuai place imported model custom glb"
         }
     },
     "analyticsOptIn": {
@@ -164,12 +276,10 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Ralat semasa mencipta rentak",
-                "success": "Rentak berjaya dicipta"
+                "error": "Ralat semasa mencipta rentak"
             },
             "replace": {
-                "error": "Ralat semasa menggantikan rentak",
-                "success": "Rentak berjaya diganti"
+                "error": "Ralat semasa menggantikan rentak"
             },
             "update": {
                 "error": "Ralat semasa mengemas kini rentak"
@@ -179,9 +289,6 @@
             },
             "shift": {
                 "error": "Ralat semasa mengalihkan rentak"
-            },
-            "flatten": {
-                "error": "Ralat semasa meratakan susunan rentak"
             }
         },
         "context": {
@@ -200,6 +307,7 @@
         "signIn": "Log masuk",
         "signInAriaLabel": "Log masuk",
         "signOut": "Log keluar",
+        "signOutFailed": "Tidak dapat log keluar. Semak sambungan internet anda dan cuba lagi.",
         "userFallback": "Pengguna",
         "fullName": "{firstName} {lastName}",
         "api": {
@@ -224,6 +332,7 @@
         "title": "Palet arahan",
         "unavailable": "Tidak tersedia buat masa ini",
         "offInPreview": "Tidak boleh dalam Pratonton — keluar dari Pratonton untuk mengedit",
+        "offInEditMusic": "Tidak semasa mengedit muzik — pilih Edit muzik untuk kembali",
         "shape": "Bentuk",
         "next": "Seterusnya",
         "done": "Selesai",
@@ -286,7 +395,9 @@
         "roundToHalf": "Bundarkan {axis} kepada separuh langkah terdekat",
         "roundToSteps": "{steps, plural, other {Bundarkan {axis} kepada # langkah terdekat}}",
         "xStepValue": "X: {value}",
-        "yStepValue": "Y: {value}"
+        "yStepValue": "Y: {value}",
+        "aboutSteps": "Tentang langkah pembundaran",
+        "touchStepDescription": "Ketik X atau Y untuk beralih antara pilihan pembundaran. Untuk memilih terus, buka Pembundaran koordinat."
     },
     "coordinateSheet": {
         "countAbbreviation": "Kir",
@@ -346,7 +457,7 @@
         "exporting": "Mengeksport... Sila tunggu",
         "exportNotAvailable": "Eksport tidak tersedia",
         "exportNotAvailableDescription": "Eksport memerlukan sifat padang, sekurang-kurangnya satu halaman selain halaman lalai dan sekurang-kurangnya seorang pemain.",
-        "exportPDFSuccess": "Berjaya dieksport sebagai PDF!",
+        "drillChartsExported": "Carta drill dieksport sebagai PDF",
         "fieldPropertiesNotLoaded": "Sifat padang belum dimuatkan",
         "fieldPropertiesRequired": "Sifat padang diperlukan untuk eksport",
         "frontToBackHeader": "Depan ke belakang",
@@ -377,7 +488,7 @@
         "noMarcher": "Tiada pemain diberikan",
         "noMarcherPages": "Tiada halaman pemain diberikan",
         "noPages": "Tiada halaman diberikan",
-        "openExportDirectory": "Klik untuk membuka eksport",
+        "showInFolder": "Tunjukkan dalam folder",
         "openExportDirectoryError": "Tidak dapat membuka direktori eksport: {error}",
         "organizeBySection": "Susun mengikut seksyen",
         "pdfExportFailed": "Eksport PDF gagal: {error}",
@@ -402,12 +513,17 @@
         "unsortedSection": "Tidak diisih",
         "useXYHeaders": "Guna pengepala X/Y",
         "video": "Video",
+        "webMobileUnavailable": {
+            "description": "Memuat naik ke apl On the Move memerlukan akaun OpenMarch anda, dan binaan ujian ini tidak boleh log masuk. Gunakan editor OpenMarch di editor.openmarch.com, atau aplikasi desktop.",
+            "openEditor": "Buka editor.openmarch.com",
+            "title": "Muat naik mudah alih tidak tersedia di sini"
+        },
         "videoAudioTrack": "Trek audio: {name}",
         "videoAudioNoData": "Fail audio tiada data",
         "videoBackground": "Latar belakang video",
         "videoBranding": "Dibuat dengan {product}",
         "videoExportFailed": "Eksport video gagal: {error}",
-        "videoExportSuccess": "Video berjaya dieksport!",
+        "videoExported": "Video dieksport",
         "videoFieldFraming": "Bingkai padang",
         "videoFieldOffsetX": "Ofset mendatar",
         "videoFieldOffsetY": "Ofset menegak",
@@ -421,7 +537,7 @@
         "videoNoCanvas": "Tidak dapat mencipta kanvas eksport",
         "videoNoEncoder": "Tiada pengekod video yang disokong tersedia pada sistem ini",
         "videoNoWebGL": "Eksport video memerlukan WebGL, yang tidak tersedia pada komputer ini sekarang. Hidupkan pecutan perkakasan atau kemas kini pemacu grafik anda, kemudian buka semula tetingkap ini.",
-        "videoOpenFile": "Klik untuk membuka video",
+        "openVideo": "Buka video",
         "videoOverlay": "Maklumat pada skrin",
         "videoOverlayClock": "Masa berlalu",
         "videoOverlayCount": "Kiraan {count} / {total}",
@@ -455,7 +571,7 @@
             "savePdfTitle": "Simpan PDF",
             "videoTitle": "Eksport video"
         },
-        "exportedCount": "{count, plural, other {Berjaya mengeksport helaian koordinat untuk {count} pemain!}}",
+        "coordinateSheetsExported": "{count, plural, one {Helaian koordinat dieksport untuk # pemain} other {Helaian koordinat dieksport untuk # pemain}}",
         "checkFieldProperties": "Sifat padang: {status, select, ok {✓} other {✗}}",
         "checkMarcher": "Pemain: {status, select, ok {✓} other {✗}}",
         "checkPage": "Halaman: {status, select, ok {✓} other {✗}}",
@@ -476,6 +592,11 @@
             "snapOff": "Lekapan mati",
             "wholeDegrees": "darjah bulat",
             "withKey": "<keys></keys> {word}"
+        },
+        "pivotHint": {
+            "own": "Seret untuk mengalih pangsi · klik dua kali untuk mengembalikannya ke tengah",
+            "picking": "Klik pemain atau satu titik untuk dijadikan paksi putaran · <keys></keys> batal",
+            "pull": "<keys></keys> alih pangsi"
         },
         "general": {
             "exportField": "Eksport padang",
@@ -498,22 +619,32 @@
             "noWebGL": "WebGL tidak tersedia",
             "contextLost": "Konteks WebGL padang telah hilang, jadi video tidak dapat dilukis. Cuba eksport sekali lagi.",
             "offscreenTimeout": "Padang luar skrin gagal dimulakan tepat pada masanya"
+        },
+        "areaCount": {
+            "add": "{count, plural, one {+# pemain} other {+# pemain}}",
+            "select": "{count, plural, one {# pemain} other {# pemain}}",
+            "subtract": "{count, plural, one {−# pemain} other {−# pemain}}"
         }
     },
     "fieldDisplay": {
         "label": "Paparan padang",
         "valueLabel": "{label}: {value}"
     },
+    "fieldSelectTool": {
+        "label": "Alat pilih",
+        "box": "Pilihan kotak",
+        "lasso": "Pilihan laso",
+        "boxHint": "Seret pada ruang kosong padang untuk melukis kotak",
+        "lassoHint": "Lukis di sekeliling pemain. Dengan Kotak, klik dua kali dan seret juga melukis laso"
+    },
     "fieldProperties": {
         "applyFieldType": "Guna jenis padang",
         "applyFieldTypeWarning": "Pemain tidak akan dialihkan mengikut saiz jenis padang baharu; mereka kekal di tempat asal pada kanvas. Anda boleh menukar semula jenis padang pada bila-bila masa.",
         "buttons": {
-            "resetTheme": "Tetapkan semula tema kepada lalai",
-            "uploadFloor": "Muat naik lantai…",
-            "removeFloor": "Buang lantai"
+            "importImage": "Import imej",
+            "resetTheme": "Tetapkan semula tema kepada lalai"
         },
         "checkpoint": {
-            "created": "Garisan rujukan {axis} pada {steps} langkah dicipta",
             "minimumRequired": "Sekurang-kurangnya 2 garisan rujukan {axis} diperlukan"
         },
         "customFieldDocs": "Lihat dokumentasi",
@@ -567,10 +698,6 @@
             "temporaryPath": "Laluan sementara",
             "top": "Atas"
         },
-        "messages": {
-            "noFloor": "Tiada lantai",
-            "floorUnnamed": "Lantai"
-        },
         "options": {
             "fill": "Isi",
             "fit": "Muat",
@@ -595,8 +722,7 @@
             "stepsFromFrontToHomeLabelTop": "Bilangan langkah dari garisan tepi hadapan ke bahagian dalam nombor tuan rumah (lebih dekat ke tengah padang)",
             "stepSize": "Saiz setiap langkah di padang dalam inci atau sentimeter",
             "stepSizeWarningThreshold": "Pemain yang saiz langkahnya melebihi jarak ini ditandakan dengan laluan berwarna amaran. Tetapkan kepada 0 untuk melumpuhkan.",
-            "useHashes": "Gunakan hash untuk garisan rujukan Y, seperti padang bola sepak Amerika. Jika tidak ditanda, garisan akan digunakan.",
-            "uploadFloor": "Import imej sebagai lantai persembahan ini: imej padangnya dalam 2D, eksport dan 3D"
+            "useHashes": "Gunakan hash untuk garisan rujukan Y, seperti padang bola sepak Amerika. Jika tidak ditanda, garisan akan digunakan."
         },
         "units": {
             "inches": "in",
@@ -647,7 +773,6 @@
         "saveSpinnerText": "Menyimpan salinan...",
         "toasts": {
             "audioUploadFailed": "Gagal memuat naik fail audio",
-            "audioUploaded": "Fail audio berjaya dimuat naik",
             "error": "Tidak dapat menyimpan salinan",
             "errorWithDetails": "Tidak dapat menyimpan salinan. Ralat {error}",
             "noFileOpen": "Tiada fail dibuka. Cipta atau buka persembahan dahulu.",
@@ -663,10 +788,18 @@
         "valueMissing": "Sila masukkan nilai."
     },
     "inspector": {
+        "arrange": {
+            "title": "Susun",
+            "pickPivot": "Pilih pangsi pada padang",
+            "pickPivotHint": "Atau tahan {key} dan seret titik di tengah pilihan",
+            "pivotTip": "Putar pada bahagian {pivot}",
+            "pickPivotButton": "Pilih pada padang"
+        },
         "marcher": {
             "drillNumber": "Nombor drill",
             "errorLoadingCoords": "Ralat memuatkan koordinat",
             "itemsSelected": "{count, plural, other {# prop dipilih. Editnya dalam panel Prop.}}",
+            "equipmentSelected": "{count, plural, =1 {# peralatan dipilih. Klik kanan padanya untuk mengeditnya.} other {# peralatan dipilih. Klik kanan pada salah satu untuk mengeditnya.}}",
             "playing": "Sedang dimainkan. Jeda untuk melihat dan mengedit pemain yang dipilih.",
             "maxStepSize": "Saiz langkah terbesar",
             "minStepSize": "Saiz langkah terkecil",
@@ -677,11 +810,25 @@
             "stepSizeWarning": "Saiz langkah melebihi ambang",
             "swapMarchers": "Tukar kedudukan pemain",
             "timeline": {
+                "goToHeldPage": "Pergi ke halaman {page}, tempat tempoh kekal ini bermula",
                 "goToPage": "Pergi ke Halaman {page}, tempat pemain ini kali terakhir bergerak",
                 "goToStart": "Pergi ke permulaan",
+                "heldFromStart": "{held} · sejak permulaan",
+                "heldSince": "{held} · sejak halaman {page}",
                 "holdFrom": "Kekal sejak Halaman {page}",
                 "holdFromStart": "Kekal sejak permulaan",
-                "movesOnThisPage": "Bergerak pada halaman ini"
+                "holdStyle": {
+                    "default": "Tetapan persembahan",
+                    "highMarkTime": "Langkah di tempat tinggi",
+                    "label": "Gaya kekal",
+                    "markTime": "Langkah di tempat",
+                    "mixed": "Bercampur",
+                    "stand": "Berdiri"
+                },
+                "movesOnThisPage": "Bergerak pada halaman ini",
+                "notDefinedFromStart": "{notDefined} · menunjukkan permulaan",
+                "notDefinedShowing": "{notDefined} · menunjukkan halaman {page}",
+                "heldOfSelected": "{count} daripada {total} terpilih {held}"
             },
             "title": "{count} pemain",
             "titleSingle": "Pemain {drillNumber}",
@@ -710,17 +857,11 @@
             "removeFromTagCaption": "Alih keluar",
             "alignHeading": "Jajarkan",
             "distributeHeading": "Agihkan",
+            "rotateHeading": "Putar",
             "distributeStepsPlaceholder": "Langkah",
             "coords": {
                 "x": "X",
-                "y": "Y",
-                "inside": "di dalam",
-                "outside": "di luar",
-                "on": "Pada",
-                "inFrontOf": "di hadapan",
-                "behind": "di belakang",
-                "xCheckpoint": "Garisan rujukan X {id}",
-                "yCheckpoint": "Garisan rujukan Y {id}"
+                "y": "Y"
             },
             "rotation": "Putaran"
         },
@@ -849,6 +990,11 @@
                     "sectionCount": "{section} ({count})",
                     "title": "Pemain"
                 },
+                "frontEnsemble": {
+                    "title": "Kumpulan hadapan",
+                    "description": "Adakah persembahan ini mempunyai pit? Anda boleh mengubahnya kemudian.",
+                    "hint": "Saiz yang dipilih meletakkan peralatan dan seorang pemain pada setiap alat muzik di hadapan padang, dengan podium di garisan 50."
+                },
                 "project": {
                     "description": "Namakan persembahan anda dan pilih tempat untuk menyimpannya.",
                     "fileType": "Fail OpenMarch",
@@ -878,7 +1024,6 @@
                     "waitingDb": "Menyediakan fail persembahan anda…"
                 }
             },
-            "success": "Persembahan berjaya dicipta",
             "tempo": "Tempo lalai (BPM)",
             "title": "Persembahan baharu"
         },
@@ -1029,9 +1174,9 @@
         }
     },
     "measures": {
-        "createFailed": "Gagal mencipta bar - {error}",
-        "deleteFailed": "Gagal memadam bar - {error}",
-        "updateFailed": "Gagal mengemas kini bar - {error}"
+        "addFailed": "Tidak dapat menambah bar",
+        "removeFailed": "Tidak dapat memadam bar",
+        "changeFailed": "Tidak dapat mengubah bar"
     },
     "mobileExport": {
         "accessError": {
@@ -1088,6 +1233,9 @@
             "validatingAccess": "Mengesahkan akses On the Move..."
         },
         "logoAlt": "Logo OTM",
+        "pageLines": {
+            "note": "Telefon menunjukkan kedudukan pemain pada setiap halaman, jadi gerakan antara halaman dipaparkan sebagai garis lurus."
+        },
         "revision": {
             "audioSyncFailed": "Semakan dimuat naik, tetapi penyegerakan audio gagal: {msg}",
             "backgroundSyncFailed": "Semakan dimuat naik, tetapi penyegerakan imej latar belakang gagal: {msg}",
@@ -1128,12 +1276,28 @@
             "noProduction": "Tiada produksi ditemui",
             "title": "Tetapan aplikasi mudah alih"
         },
+        "signInRejected": {
+            "description": "Perkhidmatan dalam talian OpenMarch tidak menerima log masuk anda. Log keluar, kemudian log masuk semula.",
+            "signOut": "Log keluar",
+            "title": "Log masuk anda tidak diterima"
+        },
         "signedOut": {
             "createAccountPrompt": "Belum ada akaun? Cipta sekarang!",
+            "errors": {
+                "failed": "Log masuk tidak berjaya. Cuba lagi.",
+                "sessionExpired": "Log masuk anda telah tamat tempoh. Log masuk semula untuk terus memuat naik.",
+                "unavailable": "Log masuk tidak dapat dimuatkan. Semak sambungan internet anda dan cuba lagi."
+            },
             "setupAccount": "Sediakan akaun anda",
-            "signInPrompt": "Sudah ada akaun? Sambungkan ke aplikasi desktop dan mula bawa persembahan anda On The Move!"
+            "signInPrompt": "Sudah ada akaun? Sambungkan ke aplikasi desktop dan mula bawa persembahan anda On The Move!",
+            "signInPromptWeb": "Sudah ada akaun? Log masuk untuk mula bawa persembahan anda On The Move!"
         },
-        "title": "Eksport ke mudah alih"
+        "title": "Eksport ke mudah alih",
+        "unreachable": {
+            "description": "OpenMarch tidak dapat menghubungi perkhidmatan dalam taliannya atau mengesahkan log masuk anda. Semak sambungan internet anda dan cuba lagi.",
+            "retry": "Cuba lagi",
+            "title": "Tidak dapat menghubungi OpenMarch"
+        }
     },
     "music": {
         "accent": "Tekankan rentak pertama",
@@ -1153,7 +1317,6 @@
         "deleteAllMeasures": "Padam semua bar dan halaman yang berkaitan",
         "deleteAudioFile": "Padam fail audio",
         "deleteAudioFileDescription": "Adakah anda pasti mahu memadam fail audio ini? Tindakan ini tidak boleh dibuat asal.",
-        "deleteSuccess": "{fileName} berjaya dipadam",
         "deleteTempoGroupAlert": "Adakah anda pasti?",
         "deleteTempoGroupDescription": "Memadam kumpulan tempo ini juga akan memadam semua halaman yang berkaitan dengannya.",
         "endTempo": "Tempo akhir",
@@ -1198,10 +1361,8 @@
         "tempo": "Tempo *",
         "tempoBelowMinimum": "Tempo mestilah sekurang-kurangnya {min} BPM",
         "tempoDescription": "Rentak seminit",
-        "tempoGroupCreated": "Kumpulan tempo dicipta",
         "tempoGroupNamePlaceholder": "Pilihan",
         "tempoGroups": "Kumpulan tempo",
-        "tempoGroupUpdated": "Kumpulan tempo dikemas kini",
         "undoWithShortcut": "Tindakan ini boleh dibuat asal dengan <keys></keys>",
         "timeSignature": "Tanda masa: {timeSignature}",
         "title": "Muzik",
@@ -1225,16 +1386,13 @@
     "pages": {
         "undoDeleteUnavailable": "Pemadaman tidak dapat dibuat asal: ada perubahan sejak itu. Gunakan Buat asal dalam bar alat untuk berundur.",
         "dotModeFailed": "Ralat semasa menetapkan mod titik",
-        "noNextPage": "Tiada halaman seterusnya",
-        "noPreviousPage": "Tiada halaman sebelumnya",
         "durationNoBeat": "Gagal mengemas kini tempoh halaman. Tiada rentak yang sesuai ditemui.",
         "durationFailed": "Gagal mengemas kini tempoh halaman",
         "yankNegativeCounts": "Tidak dapat menarik halaman jika ia menghasilkan kiraan negatif",
         "pushPastEnd": "Tidak dapat menolak halaman melepasi penghujung persembahan",
         "yankEmptyPages": "Tidak dapat menarik halaman yang tiada rentak",
         "yankOutOfBounds": "Penarikan rentak akan menyebabkan rentak berada di luar julat",
-        "splitTooShort": "Tidak dapat memisahkan halaman yang kurang daripada 2 rentak",
-        "splitNoStartBeat": "Gagal mencari rentak mula yang baharu",
+        "splitNeedsTwoCounts": "Halaman memerlukan sekurang-kurangnya 2 kiraan untuk dipecahkan",
         "deleteWithMoves": {
             "changed": "{count, plural, =1 {Halaman {pages} berubah} other {Halaman {pages} berubah}}",
             "changedBoth": "{keptCount, plural, =1 {Halaman {kept}} other {Halaman {kept}}} dan {renamedCount, plural, =1 {halaman lama {renamed}} other {halaman lama {renamed}}} berubah",
@@ -1244,12 +1402,15 @@
             "grownOld": "Halaman lama {page} kini {counts, plural, other {# kiraan}}",
             "noOtherChanged": "Tiada halaman lain berubah"
         },
-        "createError": "Gagal mencipta halaman - {error}",
-        "updateError": "Gagal mengemas kini halaman - {error}"
+        "createFailed": "Tidak dapat mencipta halaman",
+        "updateFailed": "Tidak dapat mengubah halaman"
     },
     "props": {
         "back": "Kembali",
         "close": "Tutup",
+        "color": "Warna",
+        "colorMixed": "Bercampur",
+        "colorNone": "Tiada",
         "counts": "kiraan",
         "delete": "Padam prop",
         "depth": "Kedalaman",
@@ -1259,9 +1420,13 @@
                 "arc": "Klik kedua-dua hujung lengkok, kemudian klik untuk menetapkan lengkungannya.",
                 "circle": "Seret dari pusat untuk menetapkan jejari.",
                 "drag": "Seret pada padang untuk melukis prop. Prop berada di padang mulai kiraan kepala main.",
-                "polygon": "Klik setiap bucu, kemudian klik dua kali untuk selesai."
+                "polygon": "Klik setiap bucu, kemudian klik dua kali untuk selesai.",
+                "polygonTouch": "Ketik setiap bucu, kemudian ketik Selesai.",
+                "arcTouch": "Ketik kedua-dua hujung lengkok, kemudian ketik untuk menetapkan lengkungannya."
             },
-            "title": "Lukis prop"
+            "title": "Lukis prop",
+            "finish": "Selesai",
+            "undoPoint": "Buat asal titik"
         },
         "edit": "Edit prop",
         "editTitle": "Edit prop",
@@ -1270,12 +1435,14 @@
             "create": "Tidak dapat mencipta prop",
             "delete": "Tidak dapat memadam prop",
             "outline": "Tidak dapat menukar garis luar prop",
-            "update": "Tidak dapat menukar prop"
+            "update": "Tidak dapat menukar prop",
+            "preset": "Tidak dapat menggunakan pratetap"
         },
         "height": "Ketinggian",
         "hide": "Sembunyikan di padang",
         "name": "Nama",
         "offField": "Tiada di padang pada kepala main. Alihkan kepala main ke kiraan ketika prop berada di padang untuk menukar garis luarnya.",
+        "keepsProportions": "Lebar, kedalaman dan tinggi berubah bersama, jadi model kekal pada bentuknya.",
         "outline": {
             "arc": "Lengkok",
             "circle": "Bulatan",
@@ -1294,6 +1461,7 @@
             "right": "Terbentang dari kanan"
         },
         "rotation": "Putaran",
+        "selectedCount": "{count, plural, one {# prop dipilih} other {# prop dipilih}}",
         "show": "Tunjukkan di padang",
         "showNames": "Tunjukkan semua nama",
         "surface": {
@@ -1307,7 +1475,236 @@
         "width": "Lebar",
         "units": {
             "meters": "m"
-        }
+        },
+        "locked": "Dikunci",
+        "lockLabel": "Dikunci",
+        "lockHint": "Satu kedudukan untuk seluruh persembahan",
+        "imported": {
+            "title": "Diimport",
+            "import": "Import…",
+            "empty": "Import model .glb atau .gltf, atau lepaskan satu pada tetingkap, untuk meletakkannya seperti prop lain.",
+            "place": "Letakkan {name}",
+            "manage": "Urus aset"
+        },
+        "import": {
+            "title": "Import model",
+            "pictureAlt": "Model dilihat dari arah penonton",
+            "working": "Menyediakan model…",
+            "orient": {
+                "detail": "Bahagian depan patut menghadap penonton, dengan bahagian atas di atas."
+            },
+            "rotateAxis": "Putar paksi {axis}",
+            "detail": {
+                "title": "Perincian",
+                "levels": {
+                    "light": "Ringan",
+                    "detailed": "Terperinci",
+                    "original": "Asal"
+                },
+                "cost": "{triangles} segi tiga · menambah {size} pada persembahan · setiap salinan dilukis seperti {performers, plural, other {# pemain}}",
+                "heavy": "Lancar pada kebanyakan komputer baharu. Jika Paparan 3D tersekat-sekat, ia melukis salinan ringan, yang turut disimpan dalam persembahan."
+            },
+            "compare": {
+                "open": "Bandingkan dalam 3D…",
+                "title": "Bandingkan dalam 3D",
+                "description": "Seret untuk melihat sekeliling, kemudian tukar versi untuk melihat apa yang berubah apabila dipermudahkan.",
+                "which": "Versi yang dipaparkan",
+                "lightCopy": "Salinan ringan",
+                "hint": "Seret untuk memutar, tatal untuk mengezum",
+                "stands": "Dari tempat duduk penonton",
+                "closeUp": "Dekat",
+                "drawFailed": "Versi ini tidak dapat dilukis."
+            },
+            "size": {
+                "title": "Saiz",
+                "value": "{width} × {depth} m, tinggi {height} m",
+                "question": "Adakah itu saiz sebenarnya? Jika tidak, pilih unit yang digunakan semasa fail dibuat.",
+                "suggested": "Model ini kelihatan dibuat dalam {unit}, jadi ia telah ditukar. Semak saiznya."
+            },
+            "units": {
+                "label": "Dibuat dalam",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Tidak dapat diimport",
+                "needsChoice": "Perlu pilihan anda",
+                "fixed": "Dibaiki secara automatik",
+                "notes": "Catatan"
+            },
+            "tryAgain": "Cuba lagi",
+            "rotate": {
+                "title": "Tegakkan (fail Z-up)",
+                "detail": "Sesetengah program mengeksport dengan Z sebagai arah atas, jadi model terbaring telentang."
+            },
+            "name": "Nama",
+            "saveFailed": "Tidak dapat menambah model pada persembahan.",
+            "cancel": "Batal",
+            "add": "Tambah pada persembahan",
+            "credits": {
+                "title": "Lesen dan kredit",
+                "unknown": "Tidak diketahui",
+                "proprietary": "Hak cipta terpelihara",
+                "license": "Lesen",
+                "author": "Pencipta",
+                "sourceUrl": "Sumber",
+                "attribution": "Atribusi",
+                "rights": "Import hanya model yang anda berhak gunakan."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Tiada model dalam fail",
+                    "detail": "Pilih fail .glb, atau fail .gltf bersama fail yang dirujuknya."
+                },
+                "severalModelFiles": {
+                    "title": "Lebih daripada satu model",
+                    "detail": "Import satu demi satu: {names}"
+                },
+                "tooLarge": {
+                    "title": "Fail terlalu besar",
+                    "detail": "{size} MB, melebihi had {limit} MB"
+                },
+                "unreadable": {
+                    "title": "Fail tidak dapat dibaca"
+                },
+                "externalUri": {
+                    "title": "Model memuatkan fail dari internet",
+                    "detail": "Model merujuk {uri}. Muat turun fail itu dan pilih bersama model."
+                },
+                "outsidePickedFiles": {
+                    "title": "Model merujuk fail di luar foldernya",
+                    "detail": "Model merujuk {uri}."
+                },
+                "missingFile": {
+                    "title": "Fail tiada: {uri}",
+                    "detail": "Pilih fail itu bersama fail model."
+                },
+                "requiredExtension": {
+                    "title": "Model memerlukan ciri yang tidak dapat dibaca oleh OpenMarch",
+                    "detail": "Diperlukan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {Fail ini mempunyai # ralat}}"
+                },
+                "imageTooLarge": {
+                    "title": "Tekstur terlalu besar: {image}",
+                    "detail": "{width} × {height} piksel; hadnya {limit} bagi setiap sisi."
+                },
+                "imageUnreadable": {
+                    "title": "Tekstur tidak dapat dibaca: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Terlalu terperinci",
+                    "detail": "{triangles} segi tiga; paling banyak yang boleh diimport ialah {limit}."
+                },
+                "rigged": {
+                    "title": "Model berig tidak disokong",
+                    "detail": "Import versi pegunnya."
+                },
+                "noGeometry": {
+                    "title": "Fail tidak mengandungi apa-apa untuk dilukis"
+                },
+                "timedOut": {
+                    "title": "Terlalu lama",
+                    "detail": "Dihentikan selepas {seconds} saat."
+                },
+                "failed": {
+                    "title": "Berlaku masalah semasa menyediakannya"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {# tekstur dikecilkan kepada {cap} px}}"
+                },
+                "dracoDecoded": "Mampatan Draco dinyahmampat",
+                "meshoptDecoded": "Mampatan meshopt dinyahmampat",
+                "instancesExpanded": "Salinan berulang ditukar menjadi bentuk biasa",
+                "extensionsDropped": "Ciri yang tidak diperlukan ditinggalkan",
+                "contentDropped": {
+                    "title": "Perkara yang tidak digunakan oleh prop ditinggalkan",
+                    "animations": "{count, plural, other {# animasi}}",
+                    "cameras": "{count, plural, other {# kamera}}",
+                    "morphTargets": "{count, plural, other {# shape key}}",
+                    "scenes": "{count, plural, other {# adegan lain}}"
+                },
+                "pivotMoved": "Diletakkan di atas tanah pada pusatnya"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {Fail ini mempunyai # amaran}}",
+                "sizeOutOfRange": {
+                    "title": "Saiz luar biasa bagi prop",
+                    "detail": "Sisi terpanjangnya {largest} m; prop biasanya {min} hingga {max} m."
+                },
+                "overTriangleCap": "Masih terperinci: {triangles} segi tiga (sasarannya {cap})"
+            }
+        },
+        "modelMissing": "Model prop ini sudah tiada dalam persembahan, jadi ia dilukis sebagai blok."
+    },
+    "frontEnsemble": {
+        "title": "Kumpulan hadapan dan podium",
+        "add": {
+            "title": "Tambah peralatan",
+            "button": "Tambah"
+        },
+        "empty": "Belum ada kumpulan hadapan. Tambah peralatan dan podium, atau mula daripada pratetap.",
+        "list": {
+            "equipment": "Peralatan",
+            "podiums": "Podium"
+        },
+        "placeInstructions": "Klik padang untuk meletakkan {name}. Ia berada di padang mulai kiraan kepala main.",
+        "equipment": {
+            "block": "Peralatan",
+            "delete": "Padam peralatan",
+            "edit": "Edit peralatan",
+            "editTitle": "Edit peralatan",
+            "model": "Model {family}"
+        },
+        "podium": {
+            "delete": "Padam podium",
+            "edit": "Edit podium",
+            "editTitle": "Edit podium"
+        },
+        "default": "Lalai",
+        "footprint": "{width} × {depth} m",
+        "groups": {
+            "audio": "Audio",
+            "keyboards": "Papan kekunci",
+            "percussion": "Perkusi",
+            "podiums": "Podium"
+        },
+        "presets": {
+            "title": "Pratetap",
+            "size": "Saiz pratetap",
+            "small": "Kecil",
+            "medium": "Sederhana",
+            "large": "Besar",
+            "summary": {
+                "small": "2 marimba, 2 vibrafon, satu rak, satu sintesizer dan 2 pembesar suara",
+                "medium": "4 marimba, 3 vibrafon, zilofon, glockenspiel, rak, set dram, sintesizer dan 4 pembesar suara",
+                "large": "6 marimba, 4 vibrafon, zilofon, glockenspiel, 2 rak, set dram, 2 sintesizer dan 6 pembesar suara",
+                "none": "Tiada pit. Anda boleh menyediakannya kemudian dalam panel Pemain."
+            },
+            "always": "Setiap satu juga menambah podium di garisan 50 dan pengadun di belakang pit.",
+            "addPerformers": "Tambah juga pemain",
+            "apply": "Guna",
+            "replaces": "Menggantikan peralatan yang ditambah oleh pratetap terakhir. Pemainnya beralih ke kedudukan baharu; yang tiada alat muzik akan dialih keluar, kecuali mereka mempunyai gerakan kemudian dalam persembahan. Buat asal mengembalikan semuanya. Peralatan yang anda tambah sendiri kekal.",
+            "none": "Tiada",
+            "start": "Mula daripada pratetap",
+            "reset": "Set semula ke pratetap"
+        },
+        "summary": {
+            "title": "Kumpulan hadapan dan podium",
+            "none": "Belum ada pit",
+            "setUp": "Sediakan",
+            "edit": "Edit",
+            "equipment": "{count, plural, one {# peralatan} other {# peralatan}}",
+            "podiums": "{count, plural, one {# podium} other {# podium}}"
+        },
+        "search": "Cari peralatan",
+        "noMatch": "Tiada peralatan yang sepadan.",
+        "results": "{count, plural, =0 {Tiada peralatan yang sepadan.} one {# model} other {# model}}"
     },
     "section": {
         "drumMajor": "Drum Major",
@@ -1351,8 +1748,12 @@
         "other": "Lain-lain",
         "pit": {
             "auxPercussion": "Perkusi tambahan",
+            "drumSet": "Set dram",
+            "glockenspiel": "Glockenspiel",
             "marimba": "Marimba",
+            "rack": "Rak",
             "synthesizer": "Sintesizer",
+            "timpani": "Timpani",
             "vibraphone": "Vibrafon",
             "xylophone": "Zilofon"
         },
@@ -1392,6 +1793,17 @@
         "general.appearance": "Penampilan",
         "general.appearance.dark": "Gelap",
         "general.appearance.light": "Cerah",
+        "general.updates": "Kemas kini",
+        "general.updates.version": "Anda menggunakan OpenMarch {version}.",
+        "general.updates.checking": "Anda menggunakan OpenMarch {version}. Menyemak kemas kini…",
+        "general.updates.upToDate": "OpenMarch {version} ialah versi terkini.",
+        "general.updates.available": "OpenMarch {version} tersedia.",
+        "general.updates.downloading": "Memuat turun OpenMarch {version}: {percent}%",
+        "general.updates.ready": "OpenMarch {version} sedia. Ia dipasang apabila anda keluar nanti, atau sekarang melalui butang kemas kini di bar tajuk.",
+        "general.updates.failed": "Kemas kini tidak berjaya. Anda menggunakan OpenMarch {version}.",
+        "general.checkForUpdates": "Semak kemas kini",
+        "general.automaticDownload": "Muat turun kemas kini secara automatik",
+        "general.automaticDownload.description": "Kemas kini dipasang apabila anda keluar dari OpenMarch, atau serta-merta dengan Kemas kini sekarang.",
         "general.description": "Mod editor, bahasa dan keutamaan lain untuk seluruh aplikasi.",
         "general.editorMode": "Mod editor",
         "general.editorMode.basic": "Asas",
@@ -1467,8 +1879,21 @@
         "title": "Tetapan",
         "tolgeeApiKeyPlaceholder": "Kunci API Tolgee",
         "tolgeeDevToolsToggle": "Terjemahan dalam konteks Tolgee",
-        "view3d": "Paparan 3D",
-        "view3d.description": "Cara Paparan 3D dilukis pada komputer ini. Tidak disimpan dalam persembahan.",
+        "view3d.controls": "Kawalan",
+        "view3d.controls.input.drag": "Seret klik kiri",
+        "view3d.controls.input.pinch": "Cubit",
+        "view3d.controls.input.rightDrag": "Seret klik kanan",
+        "view3d.controls.input.scroll": "Tatal",
+        "view3d.controls.input.swipe": "Tatal dua jari",
+        "view3d.controls.move.orbit": "Orbit",
+        "view3d.controls.move.pan": "Anjak",
+        "view3d.controls.move.zoom": "Zum",
+        "view3d.controls.orbit": "Orbit",
+        "view3d.controls.orbit.description": "Menyeret akan mengorbit dan menatal akan mengezum. Seret dengan butang tetikus kanan atau tahan Shift untuk bergerak merentasi padang.",
+        "view3d.controls.map": "Peta",
+        "view3d.controls.map.description": "Menyeret akan bergerak merentasi padang dan menatal akan mengezum. Tahan kekunci pengubah suai atau gunakan butang tetikus kanan untuk mengorbit.",
+        "view3d.controls.trackpad": "Pad jejak",
+        "view3d.controls.trackpad.description": "Menatal dan menyeret akan mengorbit, dan cubitan mengezum. Butang tetikus kanan menganjak paparan.",
         "view3d.quality": "Kualiti",
         "view3d.quality.auto": "Automatik",
         "view3d.quality.auto.description": "Bermula pada Tinggi dan bertukar kepada Rendah jika paparan tersekat-sekat.",
@@ -1493,7 +1918,8 @@
         "repairDotsFile.reopenFailed": "Fail yang dibaiki telah disimpan di {path} tetapi tidak dapat dibuka (status {status}).",
         "utilityUpdateFailed": "Gagal mengemas kini tetapan utiliti",
         "shortcuts.conflictWith": "<keys></keys> sudah digunakan oleh {actions}.",
-        "shortcuts.recordingHint": "Tekan kekunci… (<keys></keys> untuk batal)"
+        "shortcuts.recordingHint": "Tekan kekunci… (<keys></keys> untuk batal)",
+        "shortcuts.category.field": "Padang"
     },
     "shapes": {
         "box": {
@@ -1588,6 +2014,7 @@
             },
             "pivot": {
                 "aria": "Pangsi: {pivot}",
+                "backToCenter": "Kembali ke tengah",
                 "custom": "Pangsi: tempat ia diseret di padang",
                 "label": "Pangsi",
                 "names": {
@@ -1605,9 +2032,16 @@
             },
             "place": "Letak",
             "quarterTurn": "Putar 90° ikut arah jam",
+            "guides": {
+                "label": "Panduan",
+                "circle": "Bulatan",
+                "angles": "Garis sudut"
+            },
             "ratioLock": {
                 "locked": "Jarak dikunci bersama: klik untuk buka kunci",
-                "unlocked": "Kunci kedua-dua jarak bersama"
+                "unlocked": "Kunci kedua-dua jarak bersama",
+                "sizesLocked": "Lebar dan tinggi dikunci bersama: klik untuk membuka kunci",
+                "sizesUnlocked": "Kunci lebar dan tinggi bersama"
             },
             "hideMarchers": {
                 "hide": "Sembunyikan pemain",
@@ -1648,7 +2082,13 @@
                 "label": "Siapa ke mana"
             },
             "drawHintFor": "Seret di padang untuk melukis {shape, select, block {blok} circle {bulatan} line {garisan} curve {lengkung} arc {lengkok} other {bentuk}} · <keys></keys> untuk batal",
-            "drawPointsHintFor": "Seret di padang untuk melukis {shape, select, line {garisan} curve {lengkung} arc {lengkok} other {bentuk}}, atau klik titik demi titik · <keys></keys> untuk batal"
+            "drawPointsHintFor": "Seret di padang untuk melukis {shape, select, line {garisan} curve {lengkung} arc {lengkok} other {bentuk}}, atau klik titik demi titik · <keys></keys> untuk batal",
+            "finish": "Selesai",
+            "undoPoint": "Buat asal titik",
+            "discard": "Buang",
+            "drawHintTouchFor": "Seret pada padang untuk melukis {shape, select, block {blok} circle {bulatan} line {garisan} curve {lengkung} arc {lengkok} other {bentuk}}",
+            "drawPointsHintTouchFor": "Seret pada padang untuk melukis {shape, select, line {garisan} curve {lengkung} arc {lengkok} other {bentuk}}, atau ketik titik demi titik",
+            "pointsHintTouch": "Ketik untuk menambah titik · Ketik dua kali atau Selesai untuk tamat"
         },
         "placed": {
             "label": "{name} · {count, plural, other {{interval} langkah}}",
@@ -1661,6 +2101,7 @@
                 "steps": "{count, plural, other {{interval} langkah}}"
             },
             "groupError": "Ralat semasa mengumpulkan pemain",
+            "groupNeedsTwo": "Pilih 2 atau lebih pemain untuk mengumpulkan mereka",
             "ungroupError": "Ralat semasa menyahkumpulkan bentuk",
             "ungroupIsolated": "Nyahkumpulkan bentuk ini di luar pengasingan: ia berasal dari halaman sebelumnya",
             "leftShape": {
@@ -1715,6 +2156,25 @@
                 "validate": {
                     "flat": "Lengkok ini rata, jadi ia garisan lurus",
                     "sameSpot": "Kedua-dua hujung lengkok berada di titik yang sama"
+                },
+                "params": {
+                    "bend": "Sejauh mana lengkok membelok",
+                    "width": "Sejauh mana lengkok merentang dari sisi ke sisi, dalam langkah",
+                    "height": "Ketinggian lengkok, dari hujungnya ke tepi terjauh, dalam langkah",
+                    "stretch": "Sejauh mana elips lengkok diregangkan: berapa kali lebih tinggi daripada lebar, atau lebih lebar daripada tinggi"
+                },
+                "ends": {
+                    "label": "Terbuka atau tertutup",
+                    "open": "Terbuka",
+                    "chord": "Tutup dengan garis lurus",
+                    "circle": "Tutup menjadi bulatan",
+                    "round": "Tutup sepenuhnya"
+                },
+                "size": {
+                    "steps": "langkah",
+                    "tall": "tinggi",
+                    "wide": "lebar",
+                    "round": "bulatan"
                 }
             },
             "block": {
@@ -1935,7 +2395,8 @@
             "tab": {
                 "greyed": "{name}: {reason}",
                 "kinds": "Jenis bentuk",
-                "ringHintKeys": "Tahan <keys></keys> pada padang untuk lingkaran bentuk"
+                "ringHintKeys": "Tahan <keys></keys> pada padang untuk lingkaran bentuk",
+                "ringCaption": "Cincin"
             }
         },
         "validate": {
@@ -1999,23 +2460,23 @@
     },
     "tempoGroup": {
         "createNewBeatsError": "Ralat semasa mencipta rentak baharu",
-        "deletedSuccessfully": "Kumpulan tempo berjaya dipadam",
         "deleteFailed": "Gagal memadam kumpulan tempo",
-        "differentBeatsError": "Kumpulan tempo mempunyai bilangan rentak yang berbeza. Ini tidak sepatutnya berlaku. Sila hubungi kami!",
+        "temposFailed": "Tidak dapat menukar tempo",
         "errorUpdatingTempoGroup": "Ralat semasa mengemas kini kumpulan tempo"
     },
     "timeline": {
         "edit": {
+            "inShapeOrFollowTheLeader": "{shapeCount, plural, =0 {} one {{shapeNames} berada dalam bentuk} other {{shapeNames} berada dalam bentuk}}{leaderCount, plural, =0 {} other {{shapeCount, plural, =0 {} other {, dan }}}}{leaderCount, plural, =0 {} one {{leaderNames} mengikut ketua} other {{leaderNames} mengikut ketua}}{orderCount, plural, =0 {} other {{shapeCount, plural, =0 {{leaderCount, plural, =0 {} other {, dan }}} other {, dan }}}}{orderCount, plural, =0 {} one {{orderNames} berkongsi gerakan melengkung dengan susunan ikut ketua} other {{orderNames} berkongsi gerakan melengkung dengan susunan ikut ketua}}, jadi {count, plural, one {gerakannya} other {gerakan mereka}} di sini dikekalkan.",
             "passThrough": {
                 "catchUp": "Kini mengejar formasi di hujung {caughtUp}",
-                "keepStops": {
-                    "pages": "{count, plural, =1 {Kekalkan Halaman {first} sebagai kerangka kunci} other {Kekalkan Halaman {first}–{last} sebagai kerangka kunci}}",
-                    "unnamed": "Kekalkan sebagai kerangka kunci"
+                "stopAtEnd": {
+                    "pages": "{count, plural, =1 {Berhenti di hujung Halaman {first}} other {Berhenti di hujung Halaman {first}–{last}}}",
+                    "unnamed": "Berhenti di hujung halaman tersebut"
                 },
-                "keepStopsError": "Tidak dapat mengekalkan halaman tersebut sebagai kerangka kunci",
-                "noLongerStop": {
-                    "pages": "{count, plural, =1 {Halaman {first} bukan lagi kerangka kunci} other {Halaman {first}–{last} bukan lagi kerangka kunci}}",
-                    "unnamed": "Halaman dalam gerakan ini bukan lagi kerangka kunci"
+                "stopAtEndError": "Tidak dapat menghentikan pemain di hujung halaman tersebut",
+                "walksThrough": {
+                    "pages": "{count, plural, =1 {Kini berjalan terus melepasi hujung Halaman {first}} other {Kini berjalan terus melepasi hujung Halaman {first}–{last}}}",
+                    "unnamed": "Kini berjalan terus melepasi hujung halaman dalam gerakan ini"
                 },
                 "through": "Kini bergerak terus melalui {through}",
                 "throughAndCatchUp": "Kini bergerak terus melalui {through}, kemudian mengejar formasi di hujung {caughtUp}"
@@ -2034,7 +2495,18 @@
             "destinationShapeUnsuitable": "Destinasi itu tidak sesuai dengan peralihan. Peralihan ikut ketua tidak boleh berakhir pada grid, dan grid memerlukan sekurang-kurangnya tempat sebanyak bilangan slot peralihan.",
             "followLeaderBlock": "Peralihan ikut ketua tidak boleh berakhir pada grid. Pilih garisan, lengkung, bulatan atau blok.",
             "followLeaderNeedsShape": "Peralihan ikut ketua memerlukan bentuk untuk diikuti.",
+            "heldConflict": "{count, plural, =1 {{names} {held} pada {pages}. {clearThisPage} untuk membuang tempoh kekal itu, atau seret di dalamnya untuk mengalihkannya.} other {{names} {held} pada {pages}. {clearThisPage} untuk membuang tempoh kekal itu, atau seret di dalamnya untuk mengalihkannya.}}",
+            "heldHoldsOverlap": "Seorang pemain tidak boleh mempunyai dua tempoh {held} pada kiraan yang sama.",
+            "heldPages": "{count, plural, =1 {Halaman {pages}} other {Halaman {pages}}}",
             "legacyConvertedTimeline": "Fail ini telah ditukar kepada garis masa oleh binaan pembangunan terdahulu, yang meletakkan beberapa gerakan halaman dalam satu garis masa, jadi ia tidak boleh diedit. Tukar semula: buka sandarannya (fail yang disimpan di sebelahnya sebelum penukaran).",
+            "moveInHeldHold": "Tindakan itu akan meletakkan gerakan di dalam tempoh {held}. {clearThisPage} untuk membuang tempoh itu, atau seret di dalamnya untuk mengalihkannya.",
+            "notJoined": {
+                "marcherCount": "{count, plural, one {# pemain} other {# pemain}}",
+                "message": "{names} tidak dapat menggabungkan gerakan mereka: {reason}.",
+                "overlap": "gerakan gabungan akan bertindih dengan gerakan lain mereka pada lapisan yang sama",
+                "partway": "seorang pemain masuk atau keluar dari gerakan seterusnya di pertengahan jalan",
+                "secondMove": "mereka akan mempunyai dua gerakan pada kiraan yang sama"
+            },
             "notReady": "Garis masa masih dimuatkan. Cuba lagi sebentar lagi.",
             "numberOutOfRange": "Nombor di luar julat. Rentak, lapisan, bilangan slot dan kedudukan mesti nombor bulat atau terhingga dalam had yang dibenarkan.",
             "pathParamsInvalid": "Tetapan laluan itu tidak sah. Bonjolan lengkok paling banyak separuh jarak antara kedua-dua hujungnya, dan titik laluan mesti titik di padang.",
@@ -2044,11 +2516,47 @@
             "transitionSpansTimeline": "Peralihan mesti merangkumi seluruh garis masanya, bermula dan berakhir bersamanya. Sebaliknya, ubah julat garis masa, dan peralihannya akan bergerak bersamanya.",
             "unknown": "Garis masa tidak dapat membuat perubahan itu."
         },
-        "keep": {
-            "chain": {
-                "ariaLabel": "Halaman {page}: {label}. {hint}"
+        "holdEdge": {
+            "endLabel": "Hujung tempoh {held}. Seret untuk bergerak lebih awal atau kekal lebih lama",
+            "readoutEnd": "{held} hingga Halaman {page}, kiraan {count}",
+            "blocked": {
+                "minimum": "Tempoh kekal sekurang-kurangnya satu kiraan",
+                "nextMove": "Berhenti di gerakan seterusnya",
+                "showEnd": "Berhenti di penghujung persembahan"
             },
+            "changeError": "Tidak dapat menukar tempoh kekal",
+            "splitError": "Tidak dapat memisahkan tempoh kekal",
+            "styleError": "Tidak dapat menukar gaya kekal"
+        },
+        "heldBar": {
+            "detail": "{held} daripada {total} dipilih",
+            "shape": "Bentuknya berterusan di sini",
+            "title": "{held} · Halaman {page}",
+            "titleRange": "{held} · Halaman {first}–{last}",
+            "titleWithDetail": "{title}. {detail}"
+        },
+        "holdFromPrevious": {
+            "arrivalFollowLeader": "{names}: gerakan sebelum {page} mengikut ketua",
+            "arrivalShape": "{names}: gerakan sebelum {page} berakhir dalam bentuk",
+            "count": "{count, plural, one {# pemain} other {# pemain}}",
+            "crossesFlag": "{names}: gerakan melintasi salah satu penanda halaman ini",
+            "done": "{names} {held} pada {page}",
+            "endsWithoutArriving": "{names}: gerakan berakhir di {page} tanpa tiba di situ",
+            "expertMoves": "{names}: gerakan Pakar pada halaman ini",
+            "followLeader": "{names}: mengikut ketua pada halaman ini",
+            "held": "{names}: sudah {held} di sini",
+            "homeShape": "{names}: bentuk menetapkan tempat permulaan. Nyahkumpulkannya pada permulaan persembahan untuk mengekalkan mereka satu demi satu",
+            "none": "Tiada sesiapa {held} pada {page}",
+            "notHeldReasons": "Tidak {heldLower}: {reasons}",
+            "shape": "{names}: dalam bentuk pada halaman ini",
+            "holdError": "Tidak dapat mengekalkan pemain",
+            "paused": "Jeda untuk menukar tempoh kekal",
+            "styleNoneHeld": "Tiada pemain dipilih yang Kekal di kepala main",
+            "styleInEffect": "Sudah menjadi gaya kekal di sini"
+        },
+        "keep": {
             "followed": {
+                "hadNoPositions": "{count, plural, =1 {Halaman {first} tiada kedudukan sendiri untuk pemain ini, jadi halaman itu turut berubah} other {Halaman {first}–{last} tiada kedudukan sendiri untuk pemain ini, jadi halaman itu turut berubah}}",
                 "keepAsBefore": "{count, plural, =1 {Kekalkan Halaman {first} seperti sebelum ini} other {Kekalkan Halaman {first}–{last} seperti sebelum ini}}",
                 "keepError": "Ralat semasa mengekalkan halaman berikutnya"
             },
@@ -2066,6 +2574,9 @@
             "removeError": "Tidak dapat mengalih keluar kerangka kunci",
             "removeLocked": "{count, plural, =1 {Seorang pemain menggunakan gerakan Pakar pada halaman ini, jadi kerangka kuncinya tidak dialih keluar. Tukar ke Pakar untuk mengeditnya.} other {# pemain menggunakan gerakan Pakar pada halaman ini, jadi kerangka kunci mereka tidak dialih keluar. Tukar ke Pakar untuk mengedit mereka.}}",
             "removeLockedAll": "{count, plural, =1 {Seorang pemain menggunakan gerakan Pakar pada halaman ini. Tukar ke Pakar untuk mengeditnya.} other {# pemain menggunakan gerakan Pakar pada halaman ini. Tukar ke Pakar untuk mengedit mereka.}}",
+            "paused": "Jeda untuk menukar kerangka kunci",
+            "removeNone": "Tiada pemain dipilih yang mempunyai kerangka kunci di sini",
+            "followNone": "Tiada halaman kemudian yang mengikut tempat ini",
             "title": "Kerangka kunci · Halaman {page}, kiraan {count}",
             "spoken": "{title}. {detail}"
         },
@@ -2078,6 +2589,7 @@
             "message": "{label} dipisahkan di {where}",
             "messageAtPlayhead": "{label} dipisahkan di kepala main",
             "changed": "{count, plural, other {Laluan # pemain dilukis semula: lurus sebelumnya, bermula semula selepasnya}}",
+            "restarted": "{count, plural, one {Laluan melengkung # pemain bermula semula selepasnya} other {Laluan melengkung # pemain bermula semula selepasnya}}",
             "paused": "Jeda untuk memisahkan gerakan.",
             "isolatedOutside": "Letakkan kepala main di dalam gerakan yang sedang anda sunting untuk memisahkannya.",
             "noneAt": "Tiada gerakan yang melintasi {where}. Letakkan kepala main di dalam gerakan untuk memisahkannya.",
@@ -2091,14 +2603,32 @@
                 "subsetToggle": "Subset"
             },
             "label": "Halaman {pageName}",
+            "optionsLabel": "Pilihan Halaman {pageName}",
             "homeTooltip": "Permulaan: awal persembahan (formasi halaman {page})"
         },
         "rangeMenu": {
             "deleteWithMoves": "Padam halaman dan gerakannya",
+            "holdFromPrevious": "{holdFromPrevious}",
             "setAsShown": "Tetapkan seperti dipaparkan",
+            "holdFromPreviousNone": "Setiap pemain yang dipilih sudah {heldLower} pada {page}, atau berada di pertengahan gerakan",
             "setAsShownNone": "Setiap pemain terpilih sudah ditetapkan pada {page}, atau berada di tengah-tengah gerakan",
             "setAsShownError": "Ralat semasa menetapkan pemain seperti dipaparkan",
-            "deletePage": "Padam halaman"
+            "deletePage": "Padam halaman",
+            "splitHold": "{splitHold}"
+        },
+        "terms": {
+            "clearThisPage": "Kosongkan halaman ini",
+            "defineAsShown": "Tetapkan seperti dipaparkan",
+            "defined": "Ditetapkan",
+            "definedLower": "ditetapkan",
+            "held": "Kekal",
+            "heldLower": "kekal",
+            "holdFromPrevious": "Kekalkan dari kerangka kunci terakhir",
+            "notDefined": "Belum ditetapkan",
+            "notDefinedLower": "belum ditetapkan",
+            "removeKeyframe": "Buang kerangka kunci",
+            "holdOverWindow": "Kekalkan dari penanda mula ke kepala main",
+            "splitHold": "Pisahkan tempoh kekal di sini"
         },
         "startFlagPositions": {
             "always": "Sentiasa",
@@ -2124,16 +2654,15 @@
             "menu": "{count, plural, other {Pisahkan # terpilih ke gerakan baharu}}",
             "menuNone": "Pisahkan yang terpilih ke gerakan baharu",
             "drag": "Pisahkan {count, plural, other {# pemain}}",
-            "done": "{count, plural, other {# pemain}} dipisahkan ke {label}",
             "paused": "Jeda untuk memisahkan atau menggabungkan gerakan.",
-            "nothingOnPage": "Belum ada apa-apa yang bergerak pada halaman ini, jadi tiada apa-apa untuk dipisahkan."
+            "nothingOnPage": "Belum ada apa-apa yang bergerak pada halaman ini, jadi tiada apa-apa untuk dipisahkan.",
+            "pageSplitOff": "Halaman ini tiada gerakan sendiri. Untuk memisahkan gerakan yang melintasinya, gunakan klip gerakan itu."
         },
         "merge": {
             "menuPair": "Gabungkan {source} ke dalam {target}",
             "menuPairFit": "Gabungkan {source} ke dalam {target} · muatkan pada kiraannya",
             "menuInto": "Gabungkan ke dalam {target}",
             "menuIntoFit": "Gabungkan ke dalam {target} · muatkan pada kiraannya",
-            "done": "{source} digabungkan ke dalam {target}",
             "page": "Halaman {name}",
             "thisPage": "halaman ini",
             "thisMove": "gerakan ini",
@@ -2256,6 +2785,8 @@
             "passedSets": "{count, plural, =1 {set {names}} other {set {names}}}",
             "through": "· melalui {sets}",
             "editingThrough": "{editing}, melalui {sets}",
+            "held": "· {count} daripada {total} {held}",
+            "withHeld": "{rest}, {count} daripada {total} {held}",
             "afterPaused": "{paused}. {rest}",
             "withLoop": "{rest}. {key} mengulang {loop}",
             "loops": "<keys></keys> mengulang {loop}"
@@ -2313,6 +2844,11 @@
             "label": "Muatkan persembahan",
             "hint": "Tekan sekali lagi untuk kembali. Cubit atau <keys></keys> untuk mengezum"
         },
+        "zoom": {
+            "in": "Zum masuk",
+            "out": "Zum keluar",
+            "hint": "Atau cubit, atau <keys></keys>"
+        },
         "transport": {
             "label": "Kawalan main balik",
             "more": "Kawalan lain",
@@ -2366,6 +2902,7 @@
         },
         "moveMenu": {
             "edit": "Edit gerakan",
+            "selectMarchers": "Pilih pemain",
             "rename": "Namakan semula gerakan…",
             "splitAtPlayhead": "Pisahkan di kepala main",
             "delete": "Padam gerakan",
@@ -2459,6 +2996,15 @@
                 "alreadyInSlot": "pemain itu sudah berada di slot {slot}"
             },
             "changesNothing": "itu tidak mengubah apa-apa",
+            "defineAsShown": {
+                "wholePage": "{defineAsShown} berfungsi pada satu halaman penuh, bukan {counts}"
+            },
+            "holdFromPrevious": {
+                "wholePage": "{holdFromPrevious} berfungsi pada satu halaman penuh, bukan {counts}"
+            },
+            "holdEdge": {
+                "outside": "Tempoh kekal tidak boleh sampai ke kiraan itu: ia berhenti di gerakan seterusnya pemain, di penghujung persembahan, atau satu kiraan dari hujungnya yang satu lagi."
+            },
             "moveTimeline": {
                 "tooEarly": "gerakan ini bermula pada rentak {start}, jadi ia tidak boleh dialih {count, plural, other {# rentak}} lebih awal",
                 "tooLate": "gerakan ini tidak boleh dialih melepasi rentak {max}"
@@ -2474,6 +3020,45 @@
                 "wholePage": "Kekalkan berfungsi pada satu halaman penuh, bukan {counts}"
             },
             "tooFarPastEnd": "itu {count, plural, other {# kiraan}} melepasi penghujung; satu suntingan menyimpan paling banyak {max}"
+        },
+        "expertHolds": {
+            "held": "{names}: sudah {heldLower} dari penanda mula ke kepala main",
+            "shape": "{names}: dalam bentuk antara penanda mula dan kepala main",
+            "followLeader": "{names}: mengikut ketua antara penanda mula dan kepala main",
+            "followLeaderOrder": "{names}: berkongsi gerakan melengkung dengan susunan ikut ketua",
+            "arrivalShape": "{names}: tempoh kekal akan bermula di tempat bentuk berakhir",
+            "arrivalFollowLeader": "{names}: tempoh kekal akan bermula di tempat gerakan ikut ketua berakhir",
+            "homeShape": "{names}: bentuk menetapkan tempat permulaan. Nyahkumpulkannya pada permulaan persembahan untuk mengekalkan mereka satu demi satu",
+            "endsWithoutArriving": "{names}: gerakan terakhir sebelum penanda mula berakhir tanpa tiba di situ",
+            "count": "{count, plural, one {# pemain} other {# pemain}}",
+            "notHeld": "{count, plural, one {# pemain} other {# pemain}} tidak {heldLower}"
+        },
+        "notDefinedBar": {
+            "title": "{notDefined} · Halaman {page}",
+            "titleRange": "{notDefined} · Halaman {first}–{last}"
+        },
+        "departure": {
+            "title": "Bergerak semula · Halaman {page}, kiraan {count}"
+        },
+        "touchTransport": {
+            "playMenu": "Cara memainkan",
+            "goTo": "Pergi ke",
+            "start": "Mula",
+            "countBack": "Kiraan sebelum",
+            "countOn": "Kiraan seterusnya",
+            "end": "Tamat",
+            "playback": "Main balik",
+            "speed": "Kelajuan",
+            "sound": "Bunyi",
+            "view": "Paparan",
+            "fit": "Muat",
+            "atPlayhead": "Di kepala main",
+            "newPage": "Halaman baharu",
+            "newSubset": "Subset baharu",
+            "compact": "Padat"
+        },
+        "clearPage": {
+            "error": "Tidak dapat mengosongkan halaman"
         }
     },
     "titlebar": {
@@ -2492,6 +3077,8 @@
         }
     },
     "toolbar": {
+        "showControls": "Tunjukkan bar alat",
+        "hideControls": "Sembunyikan bar alat",
         "alignment": {
             "lockXCaption": "Kunci X",
             "lockYCaption": "Kunci Y",
@@ -2499,8 +3086,11 @@
             "lockMarchersAriaLabel": "Pergerakan kursor dan lekapan pemain",
             "placeAllMarchers": "Letakkan semua pemain",
             "placeSelectedMarchers": "Letakkan pemain dipilih",
+            "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Lekap",
-            "setMarcherPositionsAriaLabel": "Tetapkan kedudukan pemain"
+            "toNextPageSpots": "...ke tempat halaman seterusnya",
+            "setMarcherPositionsAriaLabel": "Tetapkan kedudukan pemain",
+            "toPreviousPagePositions": "...ke kedudukan halaman sebelumnya"
         },
         "collisions": {
             "collisionsToolbar": "Pertembungan",
@@ -2548,14 +3138,62 @@
             "shapesAlways": "Sentiasa",
             "shapesOff": "Mati",
             "shapesSelected": "Apabila dipilih"
+        },
+        "alignmentTabShort": "Jajar"
+    },
+    "updates": {
+        "pill": {
+            "available": "Kemas kini tersedia",
+            "downloadingUpdate": "Memuat turun kemas kini",
+            "downloadingProgress": "Memuat turun kemas kini: {percent}%",
+            "ready": "Kemas kini sedia",
+            "failed": "Kemas kini gagal"
+        },
+        "popover": {
+            "current": "Anda menggunakan {version}.",
+            "availableBody": "Muat turun sekarang. Ia dipasang apabila anda memilih Kemas kini sekarang, atau apabila anda keluar nanti.",
+            "downloadingBody": "{transferred} daripada {total} MB, {speed} MB/s",
+            "downloadingStarting": "Memulakan muat turun…",
+            "readyBody": "Kemas kini sekarang menutup persembahan anda, memasang kemas kini, kemudian membuka semula OpenMarch dan persembahan anda. Kerja anda sudah disimpan.",
+            "moveBody": "macOS hanya boleh mengemas kini OpenMarch dalam folder Aplikasi anda. Alihkannya ke sana, dan OpenMarch akan dibuka semula dari Aplikasi.",
+            "errorBody": "Kemas kini tidak dapat dimuat turun. Cuba lagi, atau muat turun pemasang dan jalankannya sendiri.",
+            "installFailedBody": "OpenMarch {version} tidak dipasang. Muat turun pemasang dan jalankannya sendiri."
+        },
+        "action": {
+            "download": "Muat turun",
+            "updateNow": "Kemas kini sekarang",
+            "later": "Kemudian",
+            "retry": "Cuba lagi",
+            "downloadInstaller": "Muat turun pemasang",
+            "moveToApplications": "Alih ke Aplikasi",
+            "whatsNew": "Apa yang baharu"
+        },
+        "toast": {
+            "checking": "Menyemak kemas kini…",
+            "upToDate": "OpenMarch {version} ialah versi terkini.",
+            "available": "OpenMarch {version} kini tersedia.",
+            "downloading": "Ia sedang dimuat turun. Butang kemas kini di bahagian atas kiri menunjukkan kemajuannya.",
+            "ready": "OpenMarch {version} sedia untuk dipasang.",
+            "checkFailed": "Tidak dapat menyemak kemas kini."
+        },
+        "unsupported": {
+            "development": "Kemas kini dimatikan dalam binaan pembangunan.",
+            "snap": "Snap Store memastikan salinan OpenMarch ini sentiasa terkini.",
+            "linuxPackage": "Salinan OpenMarch ini tidak dapat mengemas kini dirinya sendiri. Muat turun versi baharu dari openmarch.com.",
+            "noFeed": "Binaan OpenMarch ini tidak mengemas kini dirinya sendiri. Muat turun setiap binaan baharu secara manual."
         }
     },
     "view3d": {
         "autoOpenPrompt": {
-            "description": "Anda boleh mengubah ini kemudian dalam Tetapan › Umum.",
             "no": "Tidak",
             "title": "Buka Paparan 3D setiap kali persembahan dibuka?",
             "yes": "Ya"
+        },
+        "board": {
+            "designedBy": "Direka oleh {name}",
+            "forClient": "Untuk {name}",
+            "nowPerforming": "Sedang membuat persembahan",
+            "untitled": "Persembahan tanpa tajuk"
         },
         "camera": {
             "blimp": "Kapal udara",
@@ -2600,7 +3238,15 @@
             "pickSeat": "Pilih tempat duduk",
             "pickSeatTooltip": "Pilih tempat duduk: klik tempat duduk di bahagian penonton untuk duduk di situ",
             "venue": "Lokasi",
-            "freeCamera": "Pandangan bebas"
+            "freeCamera": "Pandangan bebas",
+            "director": "Pengarah",
+            "followPerformer": "Ikut pemain",
+            "followPerformerTooltip": "Ikut pemain: klik pemain untuk mengikutinya",
+            "following": "Mengikut {name}",
+            "povOf": "Pandangan {name}",
+            "pointOfView": "Sudut pandangan",
+            "pointOfViewTooltip": "Sudut pandangan: lihat melalui mata pemain",
+            "stopFollowing": "Berhenti mengikut"
         },
         "readout": {
             "count": "Kiraan {count} daripada {total}",
@@ -2619,10 +3265,6 @@
                 "desktop": "Grafik dijalankan secara perisian pada komputer ini, jadi Paparan 3D dilukis pada kualiti rendah dan masih akan perlahan. Untuk paparan penuh, kemas kini pemacu grafik anda dan mulakan semula OpenMarch.",
                 "web": "Grafik dijalankan secara perisian dalam pelayar ini, jadi Paparan 3D dilukis pada kualiti rendah dan masih akan perlahan. Untuk paparan penuh, hidupkan pecutan grafik (dalam Chrome atau Edge: Tetapan, Sistem, \"Gunakan pecutan grafik apabila tersedia\") dan mulakan semula pelayar."
             },
-            "autoLowered": {
-                "settings": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Untuk mengekalkan kualiti penuh, pilih Tinggi dalam Tetapan, Paparan 3D.",
-                "panel": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Untuk mengekalkan kualiti penuh, pilih Tinggi di bawah Kualiti dalam Tetapan paparan."
-            },
             "softwareHint": "Kekal pada Rendah kerana grafik dijalankan secara perisian di sini.",
             "autoLoweredHint": "Ditukar kepada Rendah kerana paparan tersekat-sekat. Pilih Tinggi untuk mengekalkan kualiti penuh.",
             "dismiss": "Faham"
@@ -2631,10 +3273,7 @@
             "label": "Main balik"
         },
         "settings": {
-            "title": "Tetapan paparan",
             "close": "Tutup",
-            "venueSection": "Persembahan ini",
-            "venueHint": "Disimpan dalam fail persembahan. Buat asal dalam penyunting akan membatalkan perubahan.",
             "crowdColors": "Warna penonton",
             "homeColor": "Tuan rumah",
             "awayColor": "Pelawat",
@@ -2642,11 +3281,14 @@
             "endZoneText": "Tulisan zon hujung",
             "endZoneTextPlaceholder": "Tiada tulisan",
             "endZoneColor": "Warna",
-            "graphicsSection": "Komputer ini",
-            "graphicsHint": "Tidak disimpan dalam persembahan, jadi boleh berbeza pada setiap komputer.",
-            "keysSection": "Papan kekunci dan tetikus",
             "uniforms": "Seragam pancaragam",
-            "guardUniforms": "Seragam color guard"
+            "guardUniforms": "Seragam color guard",
+            "brassFinish": "Kemasan brass",
+            "tuba": "Tuba",
+            "silkShape": "Bentuk kain bendera",
+            "silkArtwork": "Gambar kain bendera",
+            "followTurns": "Semasa mengikut: berpusing bersama pemain",
+            "povShowsBody": "Sudut pandangan: tunjuk lengan dan alat muziknya"
         },
         "keys": {
             "playPause": "Main atau jeda",
@@ -2655,13 +3297,27 @@
             "cameras": "Kamera, mengikut susunan menu",
             "fullscreen": "Skrin penuh",
             "crowd": "Tunjuk atau sembunyi penonton",
-            "escape": "Batal pilihan tempat duduk, tutup tetapan, keluar skrin penuh",
+            "escape": "Batal pilihan, tutup tetapan, berhenti mengikut, keluar skrin penuh",
             "orbit": "Orbit",
+            "orbitOrRight": "Orbit, atau seret dengan butang kanan tetikus",
+            "panPlain": "Anjak",
+            "zoomOrPinch": "Zum, atau cubit pada pad sentuh",
             "pan": "Anjak, atau seret dengan butang kanan tetikus",
-            "zoom": "Zum"
+            "zoom": "Zum",
+            "pausedPose": "Dijeda: tunjukkan langkah sebenar atau kedudukan rapat",
+            "followPerformer": "Pilih pemain untuk diikut",
+            "pointOfView": "Semasa mengikut: tukar ke sudut pandangannya dan kembali"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
+        },
+        "brassFinish": {
+            "brass": "Lakuer",
+            "silver": "Perak"
+        },
+        "tuba": {
+            "contra": "Tuba kawad",
+            "sousaphone": "Sousafon"
         },
         "uniformPreset": {
             "fade": "Ultraungu Pudar",
@@ -2703,11 +3359,37 @@
         "venue": {
             "updateFailed": "Gagal mengemas kini lokasi Paparan 3D"
         },
-        "board": {
-            "designedBy": "Direka oleh {name}",
-            "forClient": "Untuk {name}",
-            "nowPerforming": "Sedang membuat persembahan",
-            "untitled": "Persembahan tanpa tajuk"
+        "pausedPose": {
+            "label": "Tunjukkan langkah sebenar semasa dijeda",
+            "tooltip": "Tunjukkan pemain di tengah langkah semasa dijeda, seperti keadaan mereka pada saat itu. Mati: mereka berdiri rapat di atas titik mereka"
+        },
+        "silkShape": {
+            "standard": "Standard",
+            "curvedTail": "Ekor melengkung",
+            "cSwing": "C-swing",
+            "rainbow": "Pelangi",
+            "arc": "Lengkok",
+            "teardrop": "Titisan air mata",
+            "distressed": "Koyak",
+            "rounded": "Bulat",
+            "rectangle": "Segi empat tepat",
+            "curvedAngle": "Sudut melengkung besar",
+            "wings": "Sayap",
+            "snake": "Ular",
+            "swing": "Swing"
+        },
+        "silkArtwork": {
+            "none": "Tiada gambar: kain bendera menunjukkan corak pakaian seragam guard atau warna seksyen.",
+            "import": "Import PNG…",
+            "replace": "Ganti…",
+            "remove": "Buang",
+            "template": "Templat untuk {shape}:",
+            "preparing": "Menyediakan…",
+            "notPng": "Fail itu bukan PNG. Eksport gambar anda sebagai PNG dan import semula.",
+            "tooLarge": "PNG itu terlalu besar. Eksport pada resolusi yang lebih rendah dan import semula.",
+            "unreadable": "PNG itu tidak dapat dibaca.",
+            "templateFailed": "Templat tidak dapat dibuat.",
+            "saveFailed": "Tidak dapat menyimpan gambar kain bendera"
         }
     },
     "web": {
@@ -2839,6 +3521,58 @@
         "welcome": {
             "description": "Selamat datang ke masa depan reka bentuk. Mari kita mulakan persediaan anda.",
             "title": "Selamat datang ke OpenMarch"
+        },
+        "welcomeBack": {
+            "description": "Ini perubahan sejak kali terakhir anda menggunakannya.",
+            "title": "Selamat kembali"
+        },
+        "whatsNew": {
+            "carousel": "Panduan langkah demi langkah",
+            "guides": "Ketahui lebih lanjut dalam panduan OpenMarch",
+            "next": "Seterusnya",
+            "position": "{current} daripada {total}",
+            "skip": "Langkau",
+            "slide": "Slaid",
+            "slides": {
+                "pathways": {
+                    "label": "Laluan",
+                    "media": "Gambar sementara: klip Pen laluan belum dirakam.",
+                    "text": "Lukis laluan bersudut untuk pemain dengan Pen laluan, dan pemain itu berjalan mengikutnya, bukan dalam garis lurus.",
+                    "title": "Laluan"
+                },
+                "props": {
+                    "label": "Prop",
+                    "media": "Dalam Paparan 3D, sebuah pentas kecil berwarna ambar meluncur di sepanjang bahagian belakang padang dan berpusing, jauh dari kumpulan kawad.",
+                    "text": "Lukis prop pada padang dan gerakkannya pada garis masa. Buat masa ini, prop dipaparkan sebagai blok ringkas dalam Paparan 3D.",
+                    "title": "Prop"
+                },
+                "shapes": {
+                    "label": "Bentuk",
+                    "media": "Satu seksyen pemain diletakkan dalam blok, kemudian pada garisan, kemudian pada lengkok, setiap satu dilukis pada padang dan melekap pada garisan padang.",
+                    "text": "Lukis blok, garisan atau lengkok dan letakkan pemain yang dipilih di dalamnya; titiknya melekap pada separuh langkah, garisan ela dan hash.",
+                    "title": "Bentuk"
+                },
+                "tempo": {
+                    "label": "Edit muzik",
+                    "media": "Mengedit muzik dalam garis masa: persembahan dimainkan pada 118 rentak seminit, perlahan secara beransur-ansur ke 81 dalam dua bar, kemudian melompat semula ke 118 dengan tanda masa baharu. Kepala main menjadi perlahan sepanjang perubahan beransur itu dan laju semula selepasnya.",
+                    "text": "Selaraskan kiraan anda dengan muzik dalam garis masa: seret tempo sehingga kiraan jatuh pada rentak, dan tetapkan perubahan tempo, fermata dan tanda masa.",
+                    "title": "Edit muzik"
+                },
+                "timeline": {
+                    "label": "Garis masa",
+                    "media": "Satu barisan 20 pemain bergerak ke hadapan 16 kiraan dalam satu gerakan. Tiga gerakan lebih pendek yang bersarang di bawahnya pada garis masa menghayun hujung barisan ke belakang, membuka barisan, kemudian melengkungkan kesemua 20 pemain menjadi lengkok.",
+                    "text": "Halaman, gerakan dan kiraan berada pada satu garis masa di bawah padang, dan dalam Pakar, gerakan boleh merentasi halaman dan bertindih.",
+                    "title": "Garis masa"
+                },
+                "view3d": {
+                    "label": "Paparan 3D",
+                    "media": "Kumpulan kawad bergerak antara formasi dalam 3D, di stadium berkubah yang dilihat dari tinggi di atas bilik akhbar: pemain berpakaian seragam dan color guard dengan bendera.",
+                    "text": "Tonton persembahan anda dari tempat duduk penonton, dengan pemain berpakaian seragam.",
+                    "title": "Paparan 3D"
+                }
+            },
+            "steps": "Ciri baharu",
+            "title": "Apa yang baharu dalam 0.2"
         }
     },
     "workspaceSettings": {
@@ -2862,7 +3596,6 @@
         },
         "unsavedChanges": "Anda mempunyai perubahan yang belum disimpan",
         "close": "Tutup",
-        "saved": "Tetapan persembahan disimpan",
         "updateFailed": "Gagal mengemas kini tetapan ruang kerja",
         "showInfo": {
             "projectName": "Nama persembahan",
@@ -2870,6 +3603,36 @@
             "designer": "Pereka",
             "client": "Klien",
             "optional": "Pilihan"
+        },
+        "performer": {
+            "title": "Lalai pemain",
+            "description": "Cara pemain bergerak dalam Paparan 3D apabila tiada tetapan yang lebih khusus.",
+            "stepOffFoot": {
+                "label": "Mula melangkah dengan",
+                "left": "Kaki kiri",
+                "right": "Kaki kanan"
+            },
+            "dotMode": {
+                "label": "Titik menandakan",
+                "foot": "Kaki di atas titik",
+                "body": "Tengah badan"
+            },
+            "directionChange": {
+                "label": "Perubahan arah",
+                "corner": "Pusing di sudut",
+                "direct": "Terus merentas"
+            },
+            "holdWhileBandMoves": {
+                "label": "Kekal semasa orang lain bergerak",
+                "markTime": "Langkah di tempat",
+                "highMarkTime": "Langkah di tempat tinggi",
+                "stand": "Berdiri"
+            },
+            "percussionTravel": {
+                "label": "Dram bergerak ke sisi",
+                "crab": "Langkah ketam",
+                "slide": "Gelongsor"
+            }
         }
     },
     "canvas": {
@@ -2901,6 +3664,7 @@
         "marchers": "Pemain",
         "metronome": "Metronom",
         "mobile": "Aplikasi mudah alih",
+        "props": "Prop",
         "music": "Muzik",
         "renderFail": "Kandungan modal bar sisi gagal dipaparkan",
         "settings": "Tetapan persembahan"
@@ -2925,6 +3689,19 @@
         }
     },
     "touch": {
+        "dragMode": {
+            "auto": "Auto",
+            "autoDescribe": "{device, select, pencil {Satu jari menggerakkan paparan. Apple Pencil, atau tekan dan tahan kemudian seret, melukis kotak.} other {Satu jari menggerakkan paparan. Pen, atau tekan dan tahan kemudian seret, melukis kotak.}}",
+            "box": "Kotak",
+            "boxDescribe": "{device, select, pencil {Satu jari atau Apple Pencil melukis kotak untuk memilih. Dua jari menggerakkan paparan.} other {Satu jari atau pen melukis kotak untuk memilih. Dua jari menggerakkan paparan.}}",
+            "button": "Seret pada padang kosong: {label}. {describe} Ketik untuk menukar",
+            "lasso": "Laso",
+            "lassoDescribe": "{device, select, pencil {Satu jari atau Apple Pencil melukis di sekeliling pemain untuk memilih mereka. Dua jari menggerakkan paparan.} other {Satu jari atau pen melukis di sekeliling pemain untuk memilih mereka. Dua jari menggerakkan paparan.}}",
+            "menu": "Seret pada padang kosong",
+            "pan": "Anjak",
+            "panDescribe": "{device, select, pencil {Satu jari atau Apple Pencil menggerakkan paparan.} other {Satu jari atau pen menggerakkan paparan.}}",
+            "prefix": "Seret:"
+        },
         "modifiers": {
             "add": "Tambah",
             "addHint": "Tambah: tahan, atau ketik untuk kekal aktif. Mengetik pemain akan menambahkan mereka ke pilihan",
@@ -2933,11 +3710,13 @@
             "explain": {
                 "add": "Ketik pemain untuk menambah atau mengalih keluar mereka.",
                 "constrain": "Jarak sama rata, satu paksi semasa mengalih, menukar penskalaan berkadar.",
+                "dragMode": "Fungsi satu jari atau pen pada padang kosong: alihkan paparan, atau lukis kotak atau laso.",
                 "fine": "Pemain bergerak perlahan, di luar grid. Bentuk meninggalkan separuh langkah tetapi masih melekap pada garisan. Putaran mengikut darjah penuh.",
                 "fromCenter": "Blok dilukis dan diubah saiz dari tengahnya.",
                 "grip": "Seret untuk mengalih.",
                 "help": "Gerak isyarat.",
-                "snap": "Menghidupkan atau mematikan lekap pada langkah dan garisan."
+                "snap": "Menghidupkan atau mematikan lekap pada langkah dan garisan.",
+                "subtract": "Kotak atau laso mengeluarkan pemain daripada pilihan."
             },
             "fine": "Halus",
             "fineHint": "Halus: tahan, atau ketik untuk kekal aktif. Pemain bergerak perlahan, di luar grid; bentuk meninggalkan separuh langkah; putaran mengikut darjah penuh",
@@ -2948,12 +3727,17 @@
             "help": "Fungsi butang ini",
             "helpList": {
                 "add": "<b>Tambah</b> ketikan menambah ke pilihan · <b>Tanpa lekap</b> bergerak bebas",
+                "dragMode": "<b>Seret</b> memilih fungsi satu jari pada padang kosong: alihkan paparan, atau lukis kotak atau laso",
                 "fine": "<b>Halus</b> seretan dan putaran tepat · <b>Sama</b> jarak sama rata",
                 "fromCenter": "<b>Dari tengah</b> blok membesar dari tengah",
                 "toggles": "<b>Ketik</b> butang untuk mengekalkannya aktif, atau <b>tahan</b> semasa anda menyeret"
             },
-            "noSnap": "Tanpa lekap"
-        }
+            "noSnap": "Tanpa lekap",
+            "subtract": "Tolak",
+            "subtractHint": "Tolak: tahan, atau ketik untuk kekal aktif. Kotak atau laso mengeluarkan pemain yang diliputinya daripada pilihan"
+        },
+        "redone": "Dibuat semula",
+        "undone": "Dibuat asal"
     },
     "shortcutsDialog": {
         "movement": {
@@ -2987,7 +3771,8 @@
             "select": "Pilihan",
             "shape": "Bentuk",
             "timeline": "Garis masa",
-            "ui": "Paparan"
+            "ui": "Paparan",
+            "field": "Padang"
         }
     },
     "shortcut": {
@@ -3060,8 +3845,11 @@
             "title": "Bantuan",
             "showShortcuts": "Pintasan papan kekunci",
             "website": "Laman web",
-            "guides": "Dokumentasi/Panduan"
+            "guides": "Dokumentasi/Panduan",
+            "reportFeedback": "Laporkan pepijat atau hantar maklum balas…",
+            "viewMyReports": "Lihat laporan saya"
         },
+        "checkForUpdates": "Semak kemas kini…",
         "withShortcut": "{label}  ({shortcut})"
     },
     "fileDialog": {
@@ -3079,6 +3867,13 @@
         },
         "openFailed": {
             "title": "Ralat memuatkan pangkalan data"
+        }
+    },
+    "cues": {
+        "errors": {
+            "create": "Tidak dapat menambah isyarat",
+            "delete": "Tidak dapat memadam isyarat",
+            "update": "Tidak dapat menukar isyarat"
         }
     },
     "coordinates": {
@@ -3103,6 +3898,12 @@
             "onX": "Pada {checkpoint}",
             "onY": "Pada {checkpoint}",
             "outside": "{steps, plural, =0 {LR {checkpoint}} other {# LR {checkpoint}}}"
+        },
+        "noCheckpoint": {
+            "centerLine": "garisan tengah",
+            "centerLineShort": "GT",
+            "frontEdge": "tepi depan",
+            "frontEdgeShort": "TD"
         }
     },
     "activities": {
@@ -3120,9 +3921,684 @@
         "toFive": "{steps, number} ke 5",
         "undefined": "Tidak ditentukan"
     },
+    "tempoMode": {
+        "band": {
+            "action": {
+                "addedChange": "Perubahan tempo ditambah pada {where}",
+                "curve": "Lengkung tempo",
+                "endsOn": "Berakhir pada {tempo}",
+                "endsOnThen": "Berakhir pada {tempo}, kemudian {next}",
+                "gradual": "Perubahan tempo beransur",
+                "held": "Fermata {where} selama {seconds} s",
+                "hold": "Fermata",
+                "holdDrill": "Hentikan drill seketika",
+                "jump": "Lompatan tempo",
+                "measureNumber": "Nombor bar",
+                "movedChange": "Perubahan tempo dialih ke {where}",
+                "rehearsalMark": "Tanda latihan",
+                "removedChange": "Perubahan tempo dibuang pada {where}",
+                "tempo": "Tempo",
+                "timeSignature": "Tanda masa"
+            },
+            "ask": {
+                "add": {
+                    "intro": "Untuk apabila muzik mempunyai rentak tambahan di sini yang tertinggal oleh kiraan. Rakaman tidak berubah: hanya kiraan yang berubah.",
+                    "keepMeasure": "{measure} mendapat {count, plural, other {# kiraan}} dalam masa yang sama ({tempo}).",
+                    "manyKeep": "{moves, plural, other {# gerakan di atasnya mengekalkan kiraannya}}; pemainnya berhenti {count, plural, other {# kiraan}} di penghujung setiap satu.",
+                    "manyShift": "{moves, plural, other {# gerakan di atasnya masing-masing menjadi}} {count, plural, other {# kiraan}} lebih panjang.",
+                    "noMove": "Tiada gerakan merentasinya, jadi pemain berhenti sepanjangnya.",
+                    "oneKeep": "{move} kekal {moveCounts, plural, other {# kiraan}} dan pemainnya berhenti {count, plural, other {# kiraan}} di penghujungnya.",
+                    "oneShift": "{move} dipanjangkan daripada {from} kepada {to, plural, other {# kiraan}}.",
+                    "shift": "{count, plural, other {# kiraan}} masa tambahan di sini ({seconds} s): kiraan dan drill selepasnya beralih lebih lewat berbanding muzik, untuk apabila ia terlalu awal."
+                },
+                "addCountAfter": "Tambah kiraan selepas {where}",
+                "addCountBefore": "Tambah kiraan sebelum {where}",
+                "addMeasureBefore": "Tambah bar ({count, plural, other {# kiraan}}) sebelum bar {measure}",
+                "addedCountAfter": "Kiraan ditambah selepas {where}",
+                "addedCountBefore": "Kiraan ditambah sebelum {where}",
+                "addedMeasureBefore": "Bar ({count, plural, other {# kiraan}}) ditambah sebelum bar {measure}",
+                "breath": {
+                    "many": "{moves, plural, other {# gerakan di atasnya berakhir 1 kiraan lebih awal}}; pemainnya berhenti untuk kiraan itu.",
+                    "noCountAdded": "Tiada kiraan ditambah dan muzik kekal.",
+                    "none": "Untuk jeda dalam drill dengan muzik seperti sedia ada: tiada gerakan merentasi tempat ini untuk berakhir lebih awal.",
+                    "one": "{move}: gerakan {from} → {to, plural, other {# kiraan}}; pemain berhenti pada {where}."
+                },
+                "countsFewer": "{count, plural, other {# kiraan kurang}}",
+                "countsMore": "{count, plural, other {# kiraan lagi}}",
+                "hidden": {
+                    "fewer": "Sebaliknya, buang {where}",
+                    "fewerHint": "Meninggalkan satu kiraan antara kerangka kunci dan penanda.",
+                    "fixHint": "Mereka tiba di formasi satu kiraan sebelum {move} berakhir, dan kiraan dibuang. Satu buat asal memulihkan kedua-duanya.",
+                    "fixTooShort": "Kerangka kunci mereka hanya akan sepanjang satu kiraan, jadi ia tidak boleh berakhir lebih awal.",
+                    "marchersMore": "{names} dan {count, plural, other {# lagi}}",
+                    "text": "Kerangka kunci mereka akan berakhir pada kiraan yang sama dengan {move}. Apabila dua gerakan berakhir serentak, kerangka kunci diutamakan, jadi mereka tidak akan berdiri pada set itu.",
+                    "theMove": "gerakan di bawahnya",
+                    "title": "{marchers} akan terlepas formasi di penghujung {move}"
+                },
+                "laterCountsStay": "Kiraan kemudian kekal pada muzik: untuk apabila ia sudah sepadan.",
+                "noMoveHere": "tiada gerakan di sini",
+                "pageCounts": "Halaman {page}: {from} → {to, plural, other {# kiraan}}",
+                "pagesSentence": "{pages}.",
+                "remove": {
+                    "intro": "Untuk apabila muzik mempunyai lebih sedikit rentak di sini berbanding kiraan. Rakaman tidak berubah: hanya kiraan yang berubah.",
+                    "keep": "Kiraan di sekelilingnya mengisi masa yang sama ({where}: {from} → {to, plural, other {# kiraan}}, {tempo}).",
+                    "manyKeep": "{moves, plural, other {# gerakan di atasnya mengekalkan kiraannya dengan berakhir lebih lewat}}, jika tiada apa-apa yang menghalang di situ.",
+                    "manyShift": "{moves, plural, other {# gerakan di atasnya menjadi lebih pendek.}}",
+                    "marksGo": "{count, plural, other {Tanda latihan {marks} dibuang: bar yang tinggal di situ mengekalkan tandanya sendiri.}}",
+                    "noMove": "Tiada gerakan merentasinya.",
+                    "oneKeep": "{move} mengekalkan {moveCounts, plural, other {# kiraan}} dengan berakhir {count, plural, other {# kiraan}} lebih lewat, jika tiada apa-apa yang menghalang di situ.",
+                    "oneShift": "{move} menjadi {count, plural, other {# kiraan}} lebih pendek.",
+                    "shift": "Masanya turut dibuang: kiraan dan drill kemudian beralih lebih awal berbanding muzik, untuk apabila ia terlalu lewat.",
+                    "title": "Buang {where}"
+                },
+                "removed": "{where} dibuang"
+            },
+            "editor": {
+                "holdHint": "Tempoh fermata {where}, dalam saat",
+                "markHint": "Tanda latihan pada bar {measure} (kosongkan untuk membuangnya)",
+                "notATempo": "\"{value}\" bukan tempo: taip nombor seperti 120, atau 120-90 untuk berubah secara beransur",
+                "renumberHint": "Nombor semula dari bar {measure}: bar selepasnya dikira terus dari nombor yang anda berikan. Kosongkan untuk kembali ke penomboran automatik.",
+                "tempoFromToHint": "Tempo dari {from} hingga {to}: \"120\", atau \"120-90\" untuk berubah secara beransur",
+                "tempoOfHint": "Tempo {where}: \"120\", atau \"120-90\" untuk berubah secara beransur",
+                "tempoOutOfRange": "\"{value}\" di luar julat: tempo adalah dari 20 hingga 400 rentak seminit",
+                "wholeStretch": "Sebaliknya, seluruh bahagian {range} (kini ♩{tempo})"
+            },
+            "label": {
+                "beforeMark": "{where}, sebelum {mark}",
+                "count": "kiraan {count}",
+                "measure": "bar {measure}",
+                "measureCount": "bar {measure} kiraan {count}",
+                "measures": "bar {from}–{to}",
+                "range": "{from} hingga {to}"
+            },
+            "lane": {
+                "clearSelection": "Kosongkan pilihan",
+                "clearSelectionTitle": "Kosongkan pilihan ({key})",
+                "holdLabel": "fermata {seconds}s",
+                "holdLabelShort": "{seconds}s",
+                "markDrag": "{mark} → bar {measure}",
+                "markTitle": "Tanda latihan {mark} pada bar {measure}: seretnya ke bar lain; klik dua kali untuk menamakannya semula",
+                "renumberedTitle": "Bar {measure}: dinombor secara manual; bar selepasnya dikira terus darinya. Klik kanan atau klik dua kali untuk menukarnya.",
+                "shortMeasureTitle": "Bar {measure}: bar pendek, {count, plural, other {# kiraan}}",
+                "tempoLabelTitle": "{range}: klik untuk menaip tempo",
+                "timeSignatureTitle": "Tanda masa {meter}: klik untuk menukarnya dari sini hingga tanda masa seterusnya"
+            },
+            "menu": {
+                "addChange": "Tambah perubahan tempo di sini",
+                "addCountAfter": "Tambah kiraan selepas…",
+                "addCountBefore": "Tambah kiraan sebelum…",
+                "addMark": "Tambah tanda latihan…",
+                "addMeasureBefore": "Tambah bar sebelum…",
+                "cancel": "Batal",
+                "clearSelection": "Kosongkan pilihan",
+                "countTitle": "Bar {measure}, kiraan {count}",
+                "countTitleNoMeasure": "Kiraan {count}",
+                "editMark": "Tanda latihan…",
+                "gradual": "Perubahan beransur",
+                "gradualHint": "Berakhir pada tempo selepasnya ({tempo}); fermata di luar kekal seperti sedia ada",
+                "gradualNothingHint": "Tiada apa untuk diubah: tempo selepasnya sama, atau ia hanya satu kiraan",
+                "gradualTo": "Perubahan beransur ke {tempo}",
+                "holdLength": "Tempoh fermata…",
+                "holdSubtitle": "fermata {seconds} s",
+                "makeHold": "Jadikan fermata",
+                "markMoveHere": "Alih {mark} ke sini dari bar {measure}",
+                "markTaken": "{mark} sudah ada pada bar {measure}. Guna sekali lagi?",
+                "markUseAgain": "Guna {mark} sekali lagi pada bar {measure}",
+                "measureSubtitleMark": "{meter} · tanda {mark}",
+                "measureTitle": "Bar {measure}",
+                "notAHold": "Bukan fermata",
+                "removeChange": "Buang perubahan tempo ini",
+                "removeCount": "Buang kiraan ini…",
+                "removeCounts": "Buang kiraan ini…",
+                "removeMeasure": "Buang bar ini…",
+                "renumber": "Nombor semula dari sini…",
+                "seconds": "{seconds} s",
+                "selectionCounts": "{count, plural, other {# kiraan}}",
+                "setTempo": "Tetapkan tempo…",
+                "timeSignature": "Tanda masa…",
+                "toMeasure": "hingga bar {measure}"
+            },
+            "meterMenu": {
+                "counted": "{meter} dikira {grouping}",
+                "fromSubtitle": "hingga tanda masa seterusnya",
+                "fromTitle": "Dari bar {measure}",
+                "justThisMeasure": "Bar ini sahaja",
+                "justThisMeasureHint": "Hidup: tanda masa untuk bar ini sahaja; bar selepasnya mengekalkan tanda masa masing-masing dan beralih mengikutinya. Mati: ia berterusan hingga tanda masa seterusnya, seperti dalam skor.",
+                "onlySubtitle": "bar selepasnya mengekalkan tanda masa masing-masing",
+                "onlyTitle": "Bar {measure} sahaja",
+                "other": "Lain-lain… (seperti 11/8 3+3+3+2)",
+                "otherHint": "Tanda masa, dan cara ia dikira dalam not perlapan: \"7/8 2+2+3\", \"5/8 3+2\", \"3/2\" (dikira dalam not suku)"
+            },
+            "move": {
+                "from": "Gerakan dari {where}",
+                "its": "Gerakannya",
+                "page": "Halaman {page}",
+                "pagesMove": "Gerakan Halaman {page}"
+            },
+            "tip": {
+                "outlier": "{where} jauh lebih {direction, select, faster {laju} other {perlahan}} ({tempo}) berbanding jirannya ({before}, {after}): ia mungkin tidak sepadan dengan muzik. Klik kanan > Tetapkan tempo… untuk membetulkannya, atau biarkan jika muzik memang begitu."
+            },
+            "toast": {
+                "changedFirst": "{action}: tidak digunakan, kerana persembahan berubah sejurus sebelumnya. Cuba lagi.",
+                "failed": "{action}: {error}",
+                "holdInvalid": "Fermata ialah tempoh dalam saat, seperti 2.5",
+                "holdMade": "{where} ialah fermata. Klik kanan > Tempoh fermata… untuk menetapkan tempohnya.",
+                "markAlreadyThere": "Bar {measure} sudah mempunyai tanda latihan {mark}",
+                "markMoved": "{mark} dialih dari bar {from} ke bar {to}",
+                "meterSetFrom": "{meter} dari {where}, {count, plural, other {# kiraan}} setiap bar; tempo kekal seperti sebelumnya",
+                "meterSetOnly": "{meter} untuk bar {measure} sahaja; tempo kekal seperti sebelumnya",
+                "meterShiftNote": "Bar selepasnya bermula {count, plural, other {# kiraan}} lebih {direction, select, earlier {awal} other {lewat}}",
+                "meterShortNote": "Bar terakhir sebelum tanda masa seterusnya adalah pendek: {count, plural, other {# kiraan}} (ditanda *)",
+                "movesCouldNotKeep": "{count, plural, other {# gerakan tidak dapat mengekalkan kiraannya dan berubah panjang}}",
+                "movesKept": "{count, plural, other {# gerakan mengekalkan kiraannya}}",
+                "movesKeptHold": "{kept, plural, =1 {Gerakan di atasnya mengekalkan kiraannya: pemainnya berhenti} other {# gerakan mengekalkan kiraannya: pemainnya berhenti}} {count, plural, other {# kiraan}} di penghujung",
+                "notATimeSignature": "\"{text}\" bukan tanda masa: cuba 7/8, atau 7/8 2+2+3 (kumpulan dalam not perlapan)",
+                "notMeasureNumber": "\"{value}\" bukan nombor bar",
+                "tooFastOrSlow": "{action}: ini akan menjadikan kiraan terlalu laju atau terlalu perlahan"
+            }
+        },
+        "button": {
+            "hint": "Fail muzik, dan menjajarkan kiraan dengannya: tempo, tanda masa, tanda latihan",
+            "hintOn": "Jajarkan kiraan dengan muzik. <escape></escape> atau <toggle></toggle> untuk keluar.",
+            "label": "Edit muzik",
+            "labelOn": "Mengedit muzik",
+            "text": "Edit muzik"
+        },
+        "errors": {
+            "cantRemoveLastCount": "Tidak dapat membuang kiraan terakhir",
+            "moveOneCountLong": "Gerakan itu hanya sepanjang satu kiraan",
+            "wouldHideSet": "Ini akan menyebabkan kerangka kunci berakhir pada kiraan yang sama dengan gerakan di bawahnya, lalu menyembunyikan set gerakan itu. Buang lebih sedikit kiraan, atau tamatkan kerangka kunci satu kiraan lebih awal.",
+            "wouldRemovePage": "Ini akan membuang satu halaman. Buang lebih sedikit kiraan, atau padam halaman itu dahulu."
+        },
+        "help": {
+            "doubleClickLane": {
+                "title": "Tambah perubahan tempo",
+                "text": "Klik dua kali pada lorong tempo di tempat ia patut berubah. Klik dua kali titik perubahan untuk membuangnya."
+            },
+            "dragChangeDot": {
+                "title": "Alih perubahan tempo",
+                "text": "Seret titiknya ke atas atau ke bawah untuk menukar tempo, atau ke sisi untuk mengalih tempat ia berubah."
+            },
+            "dragEndDot": {
+                "title": "Tetapkan tempat rit. berakhir",
+                "text": "Seret titik segi empat di hujung sesuatu bahagian, supaya tempo seterusnya boleh kembali melompat (a tempo)."
+            },
+            "dragLine": {
+                "title": "Tetapkan tempo",
+                "text": "Seret garisan tempo ke atas atau ke bawah. Untuk menaip tempo, klik kanan dan pilih Tetapkan tempo…"
+            },
+            "dragMeasures": {
+                "title": "Pilih kiraan",
+                "text": "Seret di sepanjang bar atau muzik, kemudian edit kesemuanya sekali gus."
+            },
+            "dragRoundHandle": {
+                "title": "Ubah tempo secara beransur",
+                "text": "Seret pemegang bulat di tengah sesuatu bahagian. Klik dua kali padanya untuk kembali melompat."
+            },
+            "keys": {
+                "escape": "Kosongkan pilihan, atau batalkan seretan; jika tiada apa untuk dikosongkan, berhenti mengedit muzik",
+                "play": "Main dari kepala main, atau berhenti di tempatnya",
+                "tap": "Ketuk tempo: ketuk pada setiap rentak untuk melihat kelajuannya",
+                "toggle": "Mula atau berhenti mengedit muzik",
+                "metronome": "Hidupkan atau matikan metronom"
+            },
+            "label": "Cara mengedit muzik",
+            "rightClick": {
+                "title": "Fermata dan kiraan",
+                "text": "Klik kanan kiraan untuk menjadikannya fermata, mengubah tempo secara beransur, atau menambah dan membuang kiraan."
+            },
+            "rightClickMeasure": {
+                "title": "Bar dan tanda latihan",
+                "text": "Klik kanan bar untuk menomborkannya semula, menetapkan tanda masanya atau menambah tanda. Seret tanda untuk mengalihkannya."
+            },
+            "title": "Jajarkan kiraan dengan muzik",
+            "musicFile": {
+                "title": "Tukar muzik",
+                "text": "Klik nama fail di pengepala untuk menukar, mengimport atau memadam audio, atau menetapkan ofset muzik."
+            }
+        },
+        "importScore": {
+            "choose": "Pilih fail…",
+            "keeps": "Halaman, drill, isyarat dan prop kekal pada kiraannya, jadi ia dimainkan pada tempo skor. Buat asal memulihkan semuanya.",
+            "replaces": "Tempo, tanda masa, bar dan tanda latihan skor menggantikan yang ada dalam persembahan, termasuk apa yang anda ubah di sini.",
+            "title": "Guna pemasaan skor?"
+        },
+        "lanes": {
+            "marks": {
+                "name": "Tanda",
+                "title": "Tanda latihan: klik dua kali untuk menamakan satu, atau seret satu ke bar lain"
+            },
+            "measures": {
+                "name": "Bar",
+                "title": "Bar: seret di sepanjangnya untuk memilih kiraan, klik kanan atau klik dua kali nombor untuk menomborkan semula dari situ, klik tanda masa untuk menukarnya"
+            },
+            "music": {
+                "name": "Muzik",
+                "title": "Muzik: seret di sepanjangnya untuk memilih kiraan, klik untuk mengalih kepala main, atau klik kanan sesuatu tempat untuk memulakan muzik di situ (pada kiraan 1)"
+            },
+            "tempo": {
+                "name": "Tempo",
+                "title": "Tempo: seret garisan ke atas atau ke bawah; seret titik untuk mengalih perubahan tempo, atau pemegang bulat untuk perubahan beransur. Klik dua kali untuk menambah perubahan; klik kanan > Tetapkan tempo… untuk menaipnya. Seret di luar garisan untuk memilih kiraan"
+            }
+        },
+        "popovers": {
+            "countAsk": {
+                "blocked": {
+                    "cancel": "Batal",
+                    "fix": "Tamatkan kerangka kunci satu kiraan lebih awal, kemudian buang"
+                },
+                "footer": "Klik satu untuk melakukannya. <enter></enter> melakukan yang bertanda, iaitu pilihan terakhir anda; <escape></escape> membatalkan, dan Buat asal memulihkan mana-mana daripadanya.",
+                "hold": "Sebaliknya, hentikan drill di sini",
+                "holdIntro": "Muzik tiada rentak tambahan, tetapi pemain perlukan jeda di sini?",
+                "keep": "Kekalkan yang lain di tempatnya",
+                "shift": "Anjakkan semua selepasnya"
+            },
+            "measureGlyph": "b{number}"
+        },
+        "tap": {
+            "average": "Purata {bpm} · bermula semula selepas 2 s",
+            "count": "{count, plural, other {# ketukan}}",
+            "hint": "Ketuk mengikut muzik untuk mencari anggaran tempo muzik",
+            "instructions": "Ketuk <key></key> atau butang pada setiap rentak",
+            "name": "Ketuk tempo",
+            "reset": "Set semula",
+            "selectFirst": "Pilih beberapa kiraan dahulu",
+            "setTarget": "Tetapkan {target} kepada ♩{bpm}",
+            "tap": "Ketuk",
+            "use": "Guna",
+            "useBpm": "Guna ♩{bpm}",
+            "useBpmOn": "Guna ♩{bpm} <muted>pada {target}</muted>",
+            "useHint": "Tempo tetap pada kiraan yang dipilih, atau jika tiada, pada bahagian tempo di bawah kepala main",
+            "useOn": "Guna <muted>pada {target}</muted>"
+        },
+        "timeline": {
+            "playFromPlayhead": "Main dari kepala main",
+            "playLoop": "Gelungkan {measures}",
+            "stopHere": "Berhenti di sini"
+        },
+        "toolbar": {
+            "done": "Selesai",
+            "doneLabel": "Selesai: berhenti mengedit muzik",
+            "metronome": "Metronom",
+            "metronomeHint": "Klik pada setiap kiraan, untuk mendengar sama ada kiraan sepadan dengan muzik",
+            "metronomeOff": "Metronom: mati",
+            "metronomeOn": "Metronom: hidup",
+            "title": "Mengedit muzik"
+        },
+        "import": {
+            "button": "Import",
+            "hint": "Bawa masuk fail muzik, atau tempo, tanda masa, bar dan tanda latihan daripada skor",
+            "audio": "Fail audio…",
+            "score": "Skor MusicXML…"
+        },
+        "music": {
+            "add": "Tambah muzik…",
+            "menuLabel": "Fail muzik",
+            "pick": "Pilih muzik",
+            "importAnother": "Import fail audio lain…",
+            "delete": "Padam fail audio ini…",
+            "offset": "Ofset muzik…",
+            "offsetValue": "{seconds} s",
+            "offsetTitle": "Ofset muzik",
+            "offsetHelp": "Bilangan saat selepas kiraan 1 muzik bermula. Nilai negatif melangkau ke dalam muzik.",
+            "offsetSet": "Tetapkan",
+            "seconds": "saat"
+        }
+    },
     "workspace": {
         "label": "Ruang kerja",
         "editor": "Editor",
         "preview": "Pratonton"
+    },
+    "pit": {
+        "family": {
+            "auxRack": "Rak aux",
+            "bongos": "Bongo",
+            "chimes": "Chimes",
+            "concertBassDrum": "Dram bes konsert",
+            "congas": "Konga",
+            "drumSet": "Set dram",
+            "glockenspiel": "Glockenspiel",
+            "gong": "Gong",
+            "marimba": "Marimba",
+            "mixer": "Pengadun",
+            "podium": "Podium",
+            "speaker": "Pembesar suara",
+            "synth": "Sintesizer",
+            "timpani": "Timpani",
+            "trapTable": "Meja perkusi",
+            "vibraphone": "Vibrafon",
+            "xylophone": "Zilofon",
+            "podiumStand": "Dek podium",
+            "podiumTower": "Menara",
+            "rollingPodium": "Podium beroda",
+            "stepladder": "Tangga lipat",
+            "scaffold": "Menara perancah"
+        },
+        "variant": {
+            "accessories": "Aksesori",
+            "cage": "Rak sangkar",
+            "covered": "Bertutup",
+            "double": "Dua papan kekunci",
+            "gold": "Emas",
+            "inches": "{size} inci",
+            "keys": "{size} kekunci",
+            "low": "Rendah",
+            "mixed": "Campuran",
+            "octaves": "{size} oktaf",
+            "open": "Terbuka",
+            "plain": "Standard",
+            "rosewood": "Kayu rosewood",
+            "silver": "Perak",
+            "single": "Satu papan kekunci",
+            "square": "Segi empat",
+            "syntheticBlack": "Sintetik hitam",
+            "tall": "Tinggi",
+            "toms": "Dram tom",
+            "wide": "Lebar",
+            "aluminum": "Aluminium",
+            "black": "Hitam",
+            "feet": "{size} kaki"
+        }
+    },
+    "feedback": {
+        "window.title": "Laporkan pepijat atau hantar maklum balas",
+        "signIn.heading": "Log masuk untuk menghantar laporan",
+        "signIn.why": "Supaya anda boleh mengikuti laporan anda dan kami boleh memberitahu anda apa yang berlaku kepadanya.",
+        "signIn.button": "Log masuk",
+        "signIn.alternatives": "Tidak mahu log masuk? <github>Laporkan di GitHub</github> atau <discord>tanya di Discord</discord>.",
+        "sent.heading": "Terima kasih atas laporan anda",
+        "sent.body": "Kami telah menghantar salinannya ke e-mel anda. Jika ia menjadi isu GitHub, kami akan menghantar pautannya melalui e-mel supaya anda boleh mengikutinya.",
+        "sent.another": "Hantar lagi",
+        "viewMyReports": "Lihat laporan saya",
+        "type.label": "Tentang apakah ini?",
+        "type.broken": "Ada yang rosak",
+        "type.broken.hint": "Pepijat, ranap atau sesuatu yang tidak berfungsi dengan betul",
+        "type.feature": "Permintaan ciri",
+        "type.feature.hint": "Sesuatu yang anda mahu OpenMarch lakukan",
+        "type.feedback": "Maklum balas umum",
+        "type.feedback.hint": "Apa-apa lagi yang anda ingin beritahu kami",
+        "title.label": "Ringkasan",
+        "title.placeholder": "Dalam satu baris, tentang apakah ini?",
+        "question.whatWentWrong": "Apakah yang tidak kena?",
+        "question.whatWentWrong.placeholder": "Terangkan apa yang berlaku",
+        "question.expected": "Apakah yang anda jangkakan berlaku?",
+        "question.expected.placeholder": "Terangkan apa yang sepatutnya berlaku",
+        "question.steps": "Bagaimanakah kami boleh menyebabkannya berlaku semula?",
+        "question.steps.placeholder": "1. Buka persembahan\n2. …",
+        "question.feature": "Apakah yang anda mahu OpenMarch lakukan?",
+        "question.feature.placeholder": "Terangkan ciri itu dan kegunaannya bagi anda",
+        "question.ideas": "Idea tentang cara ia boleh berfungsi",
+        "question.ideas.placeholder": "Lakaran, contoh daripada aplikasi lain, apa-apa sahaja yang membantu",
+        "question.feedback": "Apakah yang anda ingin beritahu kami?",
+        "question.feedback.placeholder": "Maklum balas anda",
+        "optional": "(pilihan)",
+        "attach.label": "Lampiran",
+        "attach.showFile": "Hantar salinan persembahan saya",
+        "attach.showFile.scrubbed": "Nama pemain dan nota dibuang terlebih dahulu.",
+        "attach.music": "Sertakan muzik",
+        "attach.noShow": "Buka persembahan untuk menghantar salinannya bersama laporan anda.",
+        "attach.diagnostics": "Tindakan dan ralat terkini aplikasi anda turut dihantar, untuk membantu kami mencari masalahnya.",
+        "record.start": "Rakam skrin",
+        "record.microphone": "Dengan mikrofon",
+        "record.hint": "Hanya merakam tetingkap OpenMarch, sehingga 5 minit. Laporan diketepikan semasa anda merakam: tunjukkan masalahnya kepada kami sambil anda menerangkannya.",
+        "record.recording": "Merakam {time}",
+        "record.stop": "Henti",
+        "record.done": "Rakaman sedia ({time})",
+        "record.discard": "Buang",
+        "record.failed.denied": "Rakaman tidak bermula. Pastikan OpenMarch dibenarkan menggunakan skrin dan mikrofon dalam tetapan sistem anda.",
+        "record.failed.unsupported": "Rakaman tidak tersedia pada komputer ini.",
+        "public.label": "Perkara yang mungkin kami kongsi",
+        "public.notice": "Laporan mungkin diringkaskan dalam isu GitHub awam. Kami tidak akan sekali-kali menyiarkan nama, e-mel atau fail anda melainkan anda membenarkannya di bawah.",
+        "public.video": "Rakaman saya boleh disiarkan secara awam",
+        "public.showFile": "Fail persembahan saya boleh disiarkan secara awam",
+        "public.credit": "Kreditkan nama saya jika ini menjadi isu awam",
+        "send": "Hantar laporan",
+        "sending": "Menghantar…",
+        "retention": "Fail yang anda hantar bersama laporan dipadam daripada pelayan kami selepas 2 bulan.",
+        "error.failed": "Laporan anda tidak dapat dihantar. Semak sambungan anda dan cuba lagi.",
+        "attach.music.off": "Muzik tidak dihantar.",
+        "attach.music.on": "Muzik turut dihantar.",
+        "sending.recording": "Memuat naik rakaman…",
+        "sending.show_file": "Memuat naik persembahan anda…",
+        "sending.diagnostics": "Memuat naik diagnostik…",
+        "sending.creating": "Menghantar…",
+        "sent.view": "Lihat laporan ini",
+        "error.signedOut": "Anda telah dilog keluar. Log masuk semula dan hantar laporan itu.",
+        "error.tooMany": "Anda telah menghantar banyak laporan hari ini. Sila cuba lagi esok.",
+        "error.showChanged": "Persembahan lain sedang dibuka sekarang. Semak lampiran dan hantar semula.",
+        "sent.showTooLarge": "Persembahan anda terlalu besar untuk dilampirkan (melebihi 1 GB), jadi laporan dihantar tanpanya.",
+        "close": "Tutup",
+        "record.stopAndReturn": "Henti dan kembali ke laporan",
+        "record.webHint": "Pelayar anda bertanya apa yang hendak dikongsi: pilih tab ini. Laporan diketepikan semasa anda merakam, sehingga 5 minit. Tunjukkan masalahnya kepada kami sambil anda menerangkannya.",
+        "record.failed.webDenied": "Rakaman tidak bermula. Pilih tab ini apabila pelayar anda bertanya, dan benarkan mikrofon jika anda menghidupkannya.",
+        "record.failed.webUnsupported": "Rakaman tidak tersedia dalam pelayar ini.",
+        "drawer.show": "Tunjukkan laporan",
+        "drawer.hide": "Sembunyikan laporan",
+        "drawer.resize": "Ubah saiz laporan",
+        "discard.question": "Buang laporan ini?",
+        "discard.body": "Apa yang anda tulis dan rakam akan hilang.",
+        "discard.confirm": "Buang",
+        "discard.keep": "Teruskan menyunting",
+        "record.preview": "Rakaman anda",
+        "error.details": "Butiran: {message}",
+        "error.refused": "Laporan anda tidak dapat dihantar. Cuba lagi, dan jika ia terus berlaku, beritahu kami di Discord.",
+        "record.failed.microphone": "OpenMarch tidak dibenarkan menggunakan mikrofon. Matikan Dengan mikrofon untuk merakam tanpa bunyi, atau benarkan mikrofon dalam tetapan sistem anda.",
+        "record.failed.webMicrophone": "Pelayar anda tidak membenarkan mikrofon. Matikan Dengan mikrofon untuk merakam tanpa bunyi, atau benarkan mikrofon untuk laman ini."
+    },
+    "fieldEdits": {
+        "issues": {
+            "asymmetricX": "Garisan rujukan X paling kiri dan paling kanan tidak lagi sama jaraknya dari tengah",
+            "centerLocked": "Garisan tengah kekal di tengah semasa kedua-dua sisi disunting bersama",
+            "duplicatePosition": "Sudah ada garisan rujukan {axis} di situ",
+            "invalid": "Perubahan padang itu tidak sah",
+            "invalidStepSize": "Saiz langkah mesti lebih daripada 0",
+            "mirrorIgnored": "Hanya garisan rujukan X dicerminkan",
+            "noGap": "Tiada ruang antara dua garisan rujukan {axis} untuk menambahnya. Berikan kedudukannya.",
+            "notFound": "Garisan rujukan itu tidak wujud lagi",
+            "skippedExisting": "Kedudukan yang sudah mempunyai garisan rujukan dilangkau",
+            "tooMany": "Itu akan menambah terlalu banyak garisan rujukan. Gunakan jarak yang lebih besar.",
+            "yInFront": "Garisan rujukan Y tidak boleh berada di hadapan bahagian hadapan padang. Gunakan 0 atau bilangan langkah negatif.",
+            "mirrorTwinSkipped": "Sisi sebelah sudah mempunyai garisan rujukan di situ, jadi hanya yang ini ditambah",
+            "outsideField": "Kedudukan di luar garisan rujukan paling luar padang ditinggalkan, jadi saiz padang kekal",
+            "fieldResized": "Saiz atau tengah padang berubah. Pemain kekal di kedudukan masing-masing, jadi semak mereka berbanding garisan.",
+            "fieldResizeRefused": "Itu akan mengubah saiz atau tengah padang, jadi tiada apa-apa yang berubah"
+        },
+        "nothingAdded": "Setiap kedudukan sudah mempunyai garisan rujukan",
+        "seriesAdded": "{count, plural, other {# garisan rujukan {axis} ditambah}}",
+        "names": {
+            "yardLine": "garisan ela {yards}",
+            "endZone": "zon hujung",
+            "endZoneShort": "ZH",
+            "endZoneLine": "zon hujung {yards}",
+            "endZoneLineShort": "ZH{yards}",
+            "gridLine": "garisan {line}",
+            "sideSteps": "{side} {steps} langkah dari tengah",
+            "sideStepsShort": "{side} {steps}",
+            "stepsFromFront": "{steps} langkah dari hadapan",
+            "stepsFromFrontShort": "H{steps}"
+        },
+        "failed": "Perubahan padang tidak dapat disimpan, jadi tiada apa-apa yang berubah."
+    },
+    "fieldEditMode": {
+        "panel": {
+            "title": "Padang",
+            "done": "Selesai",
+            "discard": "Buang perubahan",
+            "discardTip": "Kembalikan padang seperti semasa anda membuka panel ini. Buat asal akan mengembalikan perubahan.",
+            "discarded": "Perubahan padang dibuang. Buat asal akan mengembalikannya.",
+            "custom": "Padang tersuai",
+            "changes": "{count, plural, =0 {Tiada perubahan daripada templat} other {# perubahan daripada templat}}",
+            "selectMany": "Pilih banyak",
+            "mirror": "Cerminkan sisi",
+            "mirrorOnTip": "Cerminkan sisi dihidupkan: suntingan pada satu sisi garisan 50 turut menyunting pasangannya",
+            "mirrorOffTip": "Cerminkan sisi dimatikan: setiap garisan disunting secara berasingan",
+            "sections": {
+                "size": "Saiz dan langkah",
+                "template": "Templat",
+                "names": "Nama dan sisi",
+                "markings": "Tanda dan label",
+                "image": "Imej latar belakang",
+                "colors": "Warna"
+            },
+            "tabs": {
+                "setup": "Persediaan",
+                "lines": "Garisan",
+                "appearance": "Penampilan"
+            }
+        },
+        "ruler": {
+            "x": "Seret keluar dari pembaris ini untuk menambah garisan X",
+            "y": "Seret keluar dari pembaris ini untuk menambah garisan Y"
+        },
+        "readout": {
+            "newLine": "Garisan baharu:",
+            "fromCenter": "{side} · {steps} langkah",
+            "center": "Di tengah",
+            "behindFront": "{steps} langkah di belakang hadapan",
+            "toLine": "{steps} ke {line}",
+            "mirrored": "Pasangannya di sisi sebelah juga",
+            "releaseToDelete": "{count, plural, other {Lepaskan untuk memadam # garisan ini}}",
+            "dragOut": "Seret ke padang untuk menambah garisan"
+        },
+        "popover": {
+            "position": "Kedudukan",
+            "side": "Sisi",
+            "stepsFromCenter": "langkah dari tengah",
+            "stepsBehindFront": "langkah di belakang hadapan",
+            "yardLine": "= garisan ela {yard}",
+            "typeHint": "taip 24, +4 atau 85.33/2",
+            "typeHintYards": "taip 24, +4, 47.5yd atau 85.33/2",
+            "shortName": "Nama pendek",
+            "shortNameHint": "Ditunjukkan di tepi padang dan dalam koordinat, seperti 45 atau FH",
+            "name": "Nama",
+            "nameHint": "Digunakan dalam koordinat bertulis dan untuk memilih venue Paparan 3D",
+            "yardNumber": "Nombor ela",
+            "yardNumberHint": "Nombor yang dicat pada padang di garisan ini, jika ada",
+            "none": "tiada",
+            "visible": "Kelihatan",
+            "mirrored": "Dicerminkan dengan {twin}: suntingan dikenakan pada kedua-duanya",
+            "delete": "Padam"
+        },
+        "numberPad": {
+            "label": "Pad nombor",
+            "back": "Padam aksara terakhir",
+            "clear": "Kosongkan",
+            "clearShort": "C"
+        },
+        "namesAlreadyAutomatic": "Garisan itu sudah mempunyai nama yang diberikan oleh kedudukannya",
+        "list": {
+            "xHeading": "X · sisi ke sisi",
+            "yHeading": "Y · hadapan ke belakang",
+            "center": "tengah",
+            "bothSides": "{left}+{right} · {steps}",
+            "oneSide": "{side} · {steps}",
+            "behind": "{steps} ke belakang",
+            "drawAsHashes": "Lukis sebagai hash",
+            "asymmetric": "Garisan X paling luar tidak sama jaraknya dari tengah, jadi padang dilukis tidak di tengah. Alihkan salah satu daripadanya sehingga kedua-dua sisi sepadan.",
+            "hidden": "Tersembunyi",
+            "reference": "Rujukan"
+        },
+        "size": {
+            "width": "Lebar",
+            "depth": "Kedalaman",
+            "steps": "langkah",
+            "stepsTo5": "{steps} ke 5",
+            "extent": "{steps} langkah · {length}"
+        },
+        "names": {
+            "fieldNameHint": "Paparan 3D memilih venuenya daripada nama ini"
+        },
+        "markings": {
+            "edgeLabels": "Label tepi",
+            "yardNumbers": "Nombor ela",
+            "yardNumbersHint": "Langkah dari hadapan ke setiap tepi nombor yang dicat. Kosongkan nombor tuan rumah untuk tidak mengecat sebarang nombor.",
+            "homeBottom": "Tuan rumah, bawah",
+            "homeTop": "Tuan rumah, atas",
+            "awayTop": "Tandang, atas",
+            "awayBottom": "Tandang, bawah"
+        },
+        "image": {
+            "remove": "Buang imej",
+            "ratios": "Nisbah padang {field} · nisbah imej {image}"
+        },
+        "colors": {
+            "field": "Padang",
+            "marchers": "Pemain dan laluan",
+            "shapes": {
+                "circle": "Bulatan",
+                "square": "Segi empat sama",
+                "triangle": "Segi tiga",
+                "x": "X"
+            }
+        },
+        "template": {
+            "title": "Tukar kepada {template}?",
+            "lines": "Garisan: {added} ditambah, {removed} dibuang, {renamed} dinamakan semula atau diubah",
+            "size": "Saiz: {before} → {after} langkah",
+            "keepLook": "Kekalkan rupa saya (warna, label, imej, nama sisi)",
+            "undoNote": "Ini satu langkah untuk dibuat asal.",
+            "cancel": "Batal",
+            "apply": "Tukar",
+            "resetTitle": "Set semula kepada {template}?",
+            "resetApply": "Set semula",
+            "basedOn": "Berdasarkan",
+            "resetShort": "Set semula kepada templat"
+        },
+        "fieldPane": "Garisan padang",
+        "help": {
+            "button": "Papan kekunci",
+            "title": "Papan kekunci",
+            "route": "<tab></tab> memilih garisan seterusnya semasa padang mempunyai fokus papan kekunci. <pane></pane> beralih antara padang dan panel Padang."
+        },
+        "lines": {
+            "pickedMany": "{count} garisan dipilih",
+            "axis": "Garisan mana",
+            "xTab": "Sisi ke sisi · {count}",
+            "yTab": "Hadapan ke belakang · {count}",
+            "canvasHint": "Klik garisan untuk memilihnya · Seret keluar dari pembaris untuk menambah · <keys></keys> untuk selesai",
+            "canvasHintPicked": "Seret garisan yang dipilih untuk mengalihkannya · <keys></keys> untuk nyahpilih"
+        },
+        "line": {
+            "title": "Garisan",
+            "noneHint": "Pilih garisan pada padang atau dalam senarai. Shift-klik untuk memilih lagi. Seret keluar dari pembaris untuk menambah garisan.",
+            "reference": "Guna sebagai rujukan",
+            "mixed": "Bercampur",
+            "add": "Tambah garisan",
+            "everyOther": "Kekalkan selang satu"
+        }
+    },
+    "assets": {
+        "title": "Aset",
+        "empty": "Persembahan ini belum ada aset yang diimport. Import model 3D dari panel Prop.",
+        "notes": {
+            "unused": "{count, plural, other {# aset tidak digunakan}} di mana-mana dalam persembahan · {size}",
+            "missing": "{count, plural, other {# prop menggunakan model yang tiada dalam persembahan ini, jadi dilukis sebagai blok.}}",
+            "large": "Aset menjadikan persembahan ini besar: {size}. Persembahan besar lebih perlahan dibuka, disimpan dan dikongsi."
+        },
+        "removeUnused": {
+            "button": "Buang yang tidak digunakan…",
+            "title": "{count, plural, other {Buang # aset yang tidak digunakan?}}",
+            "description": "Tiada apa-apa dalam persembahan yang menggunakannya. Membuangnya menjadikan persembahan {size} lebih kecil. Buat asal tidak mengembalikannya.",
+            "none": "Semua aset sedang digunakan, jadi tiada apa-apa untuk dibuang.",
+            "cancel": "Batal",
+            "confirm": "{count, plural, other {Buang # aset}}"
+        },
+        "kind": {
+            "model": "Model 3D"
+        },
+        "uses": "{count, plural, other {Digunakan # kali}}",
+        "unused": "Tidak digunakan",
+        "shareNote": "Lesen tidak diketahui: anda mungkin tiada hak untuk berkongsinya",
+        "size": {
+            "bytes": "{value} bait",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Tidak dapat membuang aset yang tidak digunakan",
+            "credits": "Tidak dapat menyimpan kredit"
+        }
     }
 }

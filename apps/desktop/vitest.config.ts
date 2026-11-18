@@ -1,7 +1,9 @@
+// cspell:words ndarray
 import { faker } from "@faker-js/faker";
 import path from "node:path";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
+import { ndarrayAliases } from "./vite.modelImport.mjs";
 
 /**
  * ENVIRONMENT VARIABLES
@@ -15,10 +17,14 @@ export default defineConfig(() => {
 
     return {
         resolve: {
-            alias: {
-                "@": path.join(__dirname, "src"),
-                "@om-electron": path.join(__dirname, "electron"),
-            },
+            alias: [
+                { find: "@", replacement: path.join(__dirname, "src") },
+                {
+                    find: "@om-electron",
+                    replacement: path.join(__dirname, "electron"),
+                },
+                ...ndarrayAliases,
+            ],
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         define: Object.fromEntries(

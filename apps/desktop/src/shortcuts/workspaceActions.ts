@@ -1,3 +1,4 @@
+import tolgee from "@/global/singletons/Tolgee";
 import { isPreviewMode } from "@/stores/PreviewModeStore";
 import type { ActionId } from "./definitions";
 import { isTempoModeOn, TEMPO_MODE_ACTIONS } from "@/tempo/tempoShortcuts";
@@ -52,4 +53,15 @@ export function isActionOffInWorkspace(id: ActionId): boolean {
     if (isPreviewMode()) return !PREVIEW_ACTIONS.has(id);
     // Tempo mode leaves only navigation on (`TEMPO_MODE_ACTIONS`)
     return isTempoModeOn() && !TEMPO_MODE_ACTIONS.has(id);
+}
+
+/**
+ * Why the workspace on screen turns `id` off (`isActionOffInWorkspace`), for every place that
+ * shows it greyed out: Preview edits nothing, and Edit music leaves only navigation on.
+ */
+export function workspaceOffReason(id: ActionId): string | undefined {
+    if (!isActionOffInWorkspace(id)) return undefined;
+    return isPreviewMode()
+        ? tolgee.t("commandPalette.offInPreview")
+        : tolgee.t("commandPalette.offInEditMusic");
 }

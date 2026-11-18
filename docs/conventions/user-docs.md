@@ -78,6 +78,26 @@ Start with the one idea the reader needs, in a sentence or two, then build on it
 early. Short sections with plain headings. Define each term the first time you use it, and use the
 same term everywhere after. End with links to the tasks that use it.
 
+## One home for each idea
+
+Every idea is explained in full on one page, its home: the start flag on How the timeline works, holds on Defined, Held, Not defined, the modes on Basic and Expert, the touch rules on On a tablet. Every other page that needs the idea names it and links to its home, in a sentence at most. Don't explain it again, even in other words.
+
+A reader going start to finish tires of being told the same thing six times, and the copies drift until two pages give different answers. A reader landing cold on one page loses nothing: the link, or the hover text of a glossary term, is one step away. An agent reading one page's plain-text copy follows the link the same way.
+
+- The first time a page uses a glossary word it doesn't explain itself, write it with `<Term id="start-flag">start flag</Term>`. It links to the glossary entry and shows the entry's first sentence when the reader points at it. Once per page is enough. Not on the term's own home page.
+- A glossary entry's first sentence is its whole definition: it's what the hover text shows. Write it to stand alone.
+- When a page has to say something its home also says (a limit, a mode difference), say it in one clause and link.
+
+## Make it easy to find
+
+People search the guide, and agents pick pages from its index, by what they want to do. Make the page they need the obvious hit.
+
+- Title a how-to page with the task, verb first, in the reader's words: "Split a move", "Make marchers stand still". Title a concept page with the thing.
+- Write the `description` as the task or question in plain words, including the word a newcomer or a Pyware user might search for: "Keep marchers still for a stretch of counts (a hold)."
+- Head each section with the task it answers ("Change a move's length"), and answer it in the section's first sentence.
+- Start every how-to page with `<InShort>`: the whole answer in one line, the mouse way first, then the shortcut. "Right-click the move and select **Split**, or press S." The steps below it say the same thing slowly. Nothing between it and the steps restates it, and when the task needs Expert it starts "In Expert, …".
+- Add the other names people use for a thing to its glossary entry, as "Also called …".
+
 ## Voice
 
 - Write to the reader as "you". Present tense, active voice: "The move gets longer", not "The
@@ -139,7 +159,8 @@ and in the glossary page together.
 | page                       | A numbered stretch of counts that ends at a set the marchers reach               |
 | move                       | A stretch of time on the timeline in which marchers go from one place to another |
 | playhead                   | The line on the timeline that marks the count you're looking at                  |
-| start flag                 | Where playback starts                                                            |
+| start flag                 | In Expert, where Play starts and where moved marchers leave from                 |
+| page's flag                | The line at the end of a page on the timeline ("Page 3's flag")                  |
 | Defined, Held, Not defined | A marcher's state on a page (the app's own words, from `timeline.terms`)         |
 | keyframe                   | A position you set for a marcher at a count                                      |
 | Basic, Expert              | The two editor modes                                                             |

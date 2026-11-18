@@ -48,8 +48,8 @@ replacing the first layout's venue and lighting bars and the wide camera bar.
 - **Selecting a camera** flies to it over 1.1 s, ease-in-out, with a small
   upward arc on long moves. With reduced motion, it jumps.
 - **Moving freely:**
-  - the viewer picks a control scheme in the View settings panel or Settings >
-    3D View, because a
+  - the viewer picks a control scheme in 3D View settings › Preferences,
+    because a
     browser can't reliably tell a mouse wheel from a two-finger scroll
     (owner, 2026-11-09);
   - Orbit, the default (owner, 2026-11-10): drag to orbit; right-drag or

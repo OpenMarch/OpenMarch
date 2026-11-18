@@ -1,6 +1,6 @@
 ---
-title: Props
-description: Draw props on the field, size and turn them, move them during the show, and see them as blocks in the 3D View.
+title: Add props to the field
+description: Draw props such as risers, platforms, tarps, walls and backdrops on the field, or import your own 3D models, size and turn them, move them during the show, and see them in the 3D View.
 type: how-to
 covers:
   - apps/desktop/src/components/items
@@ -9,19 +9,31 @@ covers:
   - apps/desktop/src/field/editor/itemTransform.ts
   - apps/desktop/src/view3d/window/props
   - apps/desktop/src/view3d/core/props
+  - apps/desktop/src/showAssets/modelImport
+  - apps/desktop/src/components/assets
+  - apps/desktop/src/showAssets/assetUse.ts
+  - action:importModel
+  - action:placeImportedModel
+  - action:openAssets
+  - action:removeUnusedAssets
+  - i18n:assets
   - i18n:props
 sidebar:
-  order: 4
+  order: 5
 ---
 
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-Props are the set pieces on the field: risers, platforms, floor tarps, walls. You draw a prop's outline on the field, give it a height, and move it during the show the way you move marchers. The 3D View draws each prop as a plain block.
+<InShort>Put the playhead where the prop first appears, select <Ui k="props.title" /> (the cube) in the sidebar, choose an outline such as <Ui k="props.outline.rectangle" plain />, and draw it on the field.</InShort>
 
-The pit's instruments, speakers and podiums aren't in the Props panel: they're set up in the <Ui k="sidebar.marchers" plain /> panel ([Set up the front ensemble](/guides/3d-view/front-ensemble/)).
+A prop is a set piece on the field: a riser, a platform, a floor tarp, a wall or a backdrop. You draw its outline on the field and give it a height, or [import a 3D model](#import-a-3d-model) of it, and move it during the show the way you move marchers. The 3D View draws a drawn prop as a plain block, and an imported one as its model.
+
+The pit's instruments, speakers and podiums aren't props: see [Set up the front ensemble](/guides/3d-view/front-ensemble/).
 
 ## Draw a prop
 
@@ -37,86 +49,169 @@ The pit's instruments, speakers and podiums aren't in the Props panel: they're s
    - <Ui k="props.outline.rectangle" plain />: drag from one corner to the opposite corner.
    - <Ui k="props.outline.circle" plain />: drag from the center out to the edge.
    - <Ui k="props.outline.arc" plain />: click both ends of the arc, then click to set how far it curves.
-   - <Ui k="props.outline.polygon" plain />: click each corner, then double-click to finish.
+   - <Ui k="props.outline.polygon" plain />: click each corner, then double-click the last one to finish.
    - <Ui k="props.outline.freehand" plain />: drag along the shape you want.
 
 </Steps>
 
-The prop appears as soon as you finish, and the drawing tool turns off. To stop drawing without making a prop, select <Ui k="props.draw.cancel" /> in the note or press <Kbd keys="Escape" />.
-
-On a tablet, draw with one finger or the pen; two fingers move the view. For an arc or a polygon, tap the corners; the note's <Ui k="props.draw.undoPoint" /> takes the last one back, and for a polygon <Ui k="props.draw.finish" /> ends it once it has three corners.
-
 <Media
   id="3d-props-draw"
-  alt="Rectangle is chosen in the Props panel, the panel closes, and a drag behind the band draws a rectangle prop on the field."
+  alt="Rectangle is chosen in the Props panel, the panel closes and a note at the bottom of the field says to drag, then a drag in the open field behind the band draws a rectangle prop about ten yards wide."
 />
 
-Corners and ends snap the way marcher positions do, to the coordinate rounding set in the toolbar's <Ui k="inspector.shape.alignmentTab" plain /> tab. Freehand outlines don't snap.
+The prop appears as soon as you finish, and the drawing tool turns off. To stop drawing without making a prop, select <Ui k="props.draw.cancel" /> in the note or press <Kbd keys="Escape" />.
 
-A new prop is on the field from the count the playhead was on, and not before it. It starts as a <Ui k="props.surface.floor" plain /> prop with no height, like a tarp; give it a height in its settings (below) to make it a riser or a wall.
+<Media
+  id="3d-props-polygon"
+  alt="Polygon is chosen in the Props panel, then three clicks near the back sideline set three corners and a double-click sets the fourth and finishes a four-sided prop."
+/>
 
-## Change a prop's name, color and size
+Corners and ends snap to the coordinate rounding grid, as dragged marchers do ([Snap to a grid of steps](/guides/marchers/move-marchers/#snap-to-a-grid-of-steps)). Freehand outlines don't snap.
+
+A new prop is on the field from the playhead's count, not before. It starts as a <Ui k="props.surface.floor" plain /> prop with no height, like a tarp; give it a height (below) to make it a riser or a wall.
+
+On a tablet, tap the corners of an arc or a polygon. The note's <Ui k="props.draw.undoPoint" /> takes the last one back, and for a polygon <Ui k="props.draw.finish" /> ends it once it has three corners.
+
+## Import a 3D model
+
+You can bring in a model of your own, such as a chair, a door frame or a sculpture, as a `.glb` file, or as a `.gltf` file with the files it names (its `.bin` and pictures).
 
 <Steps>
 
 1. Select <Ui k="props.title" /> in the sidebar.
 
-2. In the list, select <Ui k="props.edit" /> (the pencil) next to the prop.
+2. Under <Ui k="props.imported.title" plain />, select <Ui k="props.imported.import" />, and choose the model's files. You can also drop the files anywhere on the window.
+
+3. Check the model on the review that opens in the panel (below), and change what's wrong.
+
+4. Select <Ui k="props.import.add" />.
 
 </Steps>
 
-Or right-click the prop on the field (on a tablet, press and hold it) and choose <Ui k="actions.items.editNamed" values={{ name: "Riser" }} />.
+The model appears under <Ui k="props.imported.title" plain /> with its picture and its footprint. It's stored in the show file, so the show opens with it on any computer. Adding it doesn't place it yet: see [Place an imported model](#place-an-imported-model).
+
+<Media
+  id="3d-props-import-review"
+  alt="The Import a model panel: a picture of a red chair, Rotate X, Rotate Y and Rotate Z, a small X, Y and Z axis drawing in the corner of the picture with Z lit and an arrow around it while the pointer is on Rotate Z, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and the start of Detail."
+  maxWidth={480}
+/>
+
+### The review
+
+- The picture shows the model from the audience, a little to one side. Its front should face you, right side up. If it doesn't, rotate it a quarter turn at a time: <Ui k="props.import.rotateAxis" values={{ axis: "Y" }} /> turns it like a turntable, <Ui k="props.import.rotateAxis" values={{ axis: "X" }} /> brings its top toward you, and <Ui k="props.import.rotateAxis" values={{ axis: "Z" }} /> lays its top to your right. The small drawing in the corner shows the three axes; point at a button, or tap it, and its axis lights up with an arrow showing which way the model will swing.
+- The size is the model's real size, in meters. If it's wrong, the file was made in another unit: under <Ui k="props.import.units.label" plain />, choose the one it was made in. When the size is far off, the import has already picked the likely unit, and says so.
+- <Ui k="props.import.detail.title" plain />, for a model with more than 20,000 triangles: <Ui k="props.import.detail.levels.light" /> simplifies it to about 20,000 so the 3D View stays smooth, and is chosen for you. <Ui k="props.import.detail.levels.detailed" /> (for a model over 100,000) keeps about 100,000, and <Ui k="props.import.detail.levels.original" /> keeps every triangle. Under the choice, the review says how many triangles the model keeps, how much it adds to the show file, and how many performers one copy of it is as heavy to draw as. Above Light, the show also keeps a Light copy: if the 3D View stutters, it draws the Light copies first, before it lowers the quality of everything else.
+- <Ui k="props.import.compare.open" /> shows the model in 3D, to compare the level you chose with the original (or, at Original, with the Light copy). Drag to turn it, scroll to zoom, and switch versions to see what simplifying changed. <Ui k="props.import.compare.stands" plain /> moves the camera 30 m away, about where the audience sees props from.
+
+<Media
+  id="3d-props-import-compare"
+  alt="The Compare in 3D window: a switch between Light and Original, the red chair at its Original level turned a little, the hint Drag to turn, scroll to zoom, and From the stands."
+  maxWidth={600}
+/>
+
+- <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.rotate.title" plain /> appears when a model looks like it would lie on its back, and stands it up.
+- <Ui k="props.import.groups.fixed" plain /> lists what the import changed on its own, such as pictures made smaller. Select it to see the list.
+- <Ui k="props.import.name" plain /> is what the model is called. Props you place from it are numbered after it: Chair 1, Chair 2.
+- <Ui k="props.import.credits.title" plain /> holds the license, author, source and attribution, filled in from the file when it says. Leave them empty if you don't know; empty means unknown. Only import models you have the rights to use.
+
+Each change runs the import again, so the picture and size always show what <Ui k="props.import.add" plain /> stores. <Ui k="props.import.cancel" /> leaves the show as it was.
+
+If a file can't be imported, the review says why under <Ui k="props.import.groups.cantImport" plain />, for example a `.gltf` whose `.bin` wasn't chosen with it, or a model far too detailed. When the import itself failed rather than the file, <Ui k="props.import.tryAgain" /> runs it again.
+
+## Place an imported model
+
+<Steps>
+
+1. Move the playhead to the count where the prop first appears on the field.
+
+2. In the Props panel, under <Ui k="props.imported.title" plain />, select the model. The panel closes.
+
+3. Click the field where the prop goes (on a tablet, tap).
+
+</Steps>
+
+The prop takes the model's footprint and height, and from then on it's like any other prop: drag it, turn it with its handles, and move it during the show. Undo (<Kbd action="performUndo" />) removes the prop and keeps the model under <Ui k="props.imported.title" plain />. A model with height is an <Ui k="props.surface.obstacle" plain /> prop; a flat one is a <Ui k="props.surface.floor" plain /> prop.
+
+You can also find both steps in the command palette: <Ui k="actions.items.importModel" plain /> and <Ui k="actions.items.placeImportedModel" plain />.
+
+The field draws an imported prop as the model seen from above, with a small mark on its front once you zoom in close, and the 3D View draws the model itself. An imported prop keeps the model's shape. Dragging a side or corner handle resizes it evenly, and in its settings Width, Depth and Height change together. A flat model, such as a rug, keeps its width and depth in step and lets its height change on its own. While the model loads in the 3D View, or if the show doesn't have it, the prop draws there as a block.
+
+<Media
+  id="3d-props-imported"
+  alt="The 3D View from the press box, zoomed in behind two color guard performers: three red imported chairs stand in a row on the field near the visitors' sideline, facing the audience."
+/>
+
+## The show's imported models
+
+Every model you import is stored in the show file, whether or not a prop uses it. To see them, select <Ui k="props.imported.manage" /> under <Ui k="props.imported.title" plain /> in the Props panel, or find <Ui k="actions.ui.openAssets" plain /> in the command palette. The <Ui k="assets.title" plain /> view lists each model with its picture, its size in the show file, how many times the show uses it, and its license.
+
+<Media
+  id="3d-props-assets"
+  alt="The Assets view: a note that 1 asset isn't used anywhere in the show, 29 KB, with a Remove unused… button, then two 3D models: a chair, 3.9 MB, used once, whose license is unknown so you may not have the right to share it, and a test pattern, 29 KB, not used, licensed CC-BY-4.0."
+  maxWidth={480}
+/>
+
+- Select a model to see and change its credits: license, author, source and attribution. Changing them doesn't change the model or the props that use it.
+- A model whose license is unknown says you may not have the right to share it. Add its license if you know it.
+- When some models aren't used by any prop, a note at the top says how many and how much space they take. <Ui k="assets.removeUnused.button" /> lists them and removes them only when you confirm. Nothing is ever removed on its own, not when you save or close the show. Undo doesn't bring a removed model back.
+- If an undo brings back a prop whose model you removed, the prop draws as a block, and both the note at the top and the prop's settings say its model is missing. To replace it, import the model again, place it as a new prop and delete the old one.
+- When imported models make the show file large (over 500 MB), the note says so: large shows are slower to open, save and share.
+
+## Change a prop's name, color and size
+
+<Steps>
+
+1. Right-click the prop on the field and choose the edit item, which carries the prop's name, such as <Ui k="actions.items.editNamed" values={{ name: "Riser" }} />. Or select <Ui k="props.title" /> in the sidebar, then <Ui k="props.edit" /> (the pencil) next to the prop.
+
+2. Change what you want in the <Ui k="props.editTitle" plain /> panel.
+
+</Steps>
 
 <Media
   id="3d-props-edit"
-  alt="The Edit Prop panel: Name, Color, Surface, and under Outline from count 33, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, and Transition 1 counts."
+  alt="The Edit Prop panel: Name Riser, Locked off, Color None, Surface Floor, and under Outline from count 20, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, Transition 1 counts, and Roll-out set to Doesn't roll out."
   maxWidth={480}
 />
 
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
-- <Ui k="props.color" />: colors the prop on the field and in the 3D View. Choose <Ui k="props.colorNone" plain /> to go back to the plain look.
-- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In this version the surface doesn't change how the prop is drawn, and marchers don't stand on platforms.
+- <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
+- <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
+- <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on the top surface the import found over its middle, when it found one, rather than at its full height.
 - <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
+- <Ui k="props.rollOut.label" /> (floor props only): which edge a tarp rolls out from. It's saved with the prop, but in this version it doesn't change how the prop is drawn.
 
-The size and turn are set from a count: the heading reads <Ui k="props.outlineFrom" values={{ count: "N" }} plain />, which is the count at or before the playhead. A change you make applies from that count until the prop's next change. That's how a prop grows, shrinks or turns during the show:
+### Grow, shrink or turn a prop during the show
+
+The size and turn are set at a count. The heading <Ui k="props.outlineFrom" values={{ count: "N" }} plain /> names the count the playhead is on, and a change you make goes on that count. The prop keeps its earlier size until then; if it already has a change on that count, yours replaces it.
 
 <Steps>
 
-1. Move the playhead to the count where the change should be complete.
+1. With the prop's <Ui k="props.editTitle" plain /> panel open, move the playhead to the count where the change should be complete.
 
 2. Change <Ui k="props.width" plain />, <Ui k="props.depth" plain />, <Ui k="props.height" plain /> or <Ui k="props.rotation" plain />.
 
-3. Set <Ui k="props.transition" /> to the number of counts the change takes. With 8, the prop turns or resizes over the 8 counts before that count; with 1, it changes on the count.
+3. Set <Ui k="props.transition" /> to the number of counts the change takes. With 8, the prop turns or resizes over the 8 counts up to that count; with 1, it changes on the count.
 
 </Steps>
 
-If the playhead is before the prop's first count, the panel says the prop is off the field there, and you can't change its size until you move the playhead to a count where it's on the field.
-
-To color several props at once, select them on the field: the Props panel shows how many are selected and one color for all of them.
+Before the prop's first count, the panel says the prop is off the field, and you can't change its size there.
 
 ## Resize and turn a prop on the field
 
-Click inside a prop's outline to select it. Handles appear around it:
-
-- Drag a side or a corner to resize the prop. It grows or shrinks about its center.
-- Drag the round handle to turn it about its center.
+Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, or the round handle to turn it, about its center. Like the panel, a resize or turn is saved at the playhead's count. Dragging the handles never moves the prop.
 
 <Media
   id="3d-props-handles"
   alt="A selected rectangle prop with handles: the round handle is dragged to turn the prop, then a corner handle is dragged to make it larger."
 />
 
-Like the fields in the panel, a resize or turn is saved at the count at or before the playhead. Dragging the handles never moves the prop.
-
 ## Move a prop during the show
 
-A prop moves on the timeline the same way a marcher does. Select it and drag it, or use the alignment tools, on a later page: it travels there during that page's move, and it's held in place when nothing moves it. See [Move marchers](/guides/marchers/move-marchers/) and [Moves](/guides/timeline/moves/).
+Select the prop and drag it on a later page, or use the alignment tools, as you would a marcher ([Move marchers](/guides/marchers/move-marchers/)). It travels there during that page's <Term id="move">move</Term>, and it's held in place when nothing moves it. Props aren't in the marcher list.
 
-Props aren't marchers, though: they aren't in the marcher list.
+## Hide or delete a prop
 
-## Hide props and their names
-
-In the Props panel:
+The Props panel lists every prop:
 
 - The eye next to a prop hides it on the field and in the 3D View, or shows it again. Hiding is a view setting on your computer; it doesn't change the show.
 - <Ui k="props.showNames" /> shows or hides every prop's name on the field.
@@ -125,21 +220,21 @@ In the Props panel:
 
 <Media
   id="3d-props-panel"
-  alt="The Props panel: buttons to draw a Rectangle, Circle, Arc, Polygon or Freehand prop, a Show all names switch, and a prop named Riser with its eye, edit and delete buttons."
+  alt="The Props panel: buttons to draw a Rectangle, Circle, Arc, Polygon or Freehand prop, the Imported group with Import…, a chair model and a Manage assets link, a Show all names switch, and a prop named Riser with its eye, edit and delete buttons."
   maxWidth={420}
 />
 
 ## Props in the 3D View
 
-In the 3D View each prop is a solid block: its outline, raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline, as the outlines do on the field. They have no pictures or textures.
+In the 3D View each drawn prop is a solid block: its outline raised to its height, in its color or plain gray. A prop with no height is a thin slab on the field. Blocks move, turn and resize with the timeline, and have no pictures or textures. An imported prop is drawn as its model, with its own colors and textures, and moves, turns and resizes the same way. Props aren't in exports: not on coordinate sheets, drill charts or videos, and not sent to On the Move.
 
 <Media
   id="3d-props-block"
-  alt="The 3D View with an amber block, 1.2 meters tall, standing behind the band on the field."
+  alt="A close view in the 3D View of an amber block, 1.2 meters tall, standing on the field behind the band near the back sideline."
 />
 
 ## Related
 
-- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, props included, in 3D.
+- [Set up the front ensemble](/guides/3d-view/front-ensemble/): the pit's instruments, which stay put all show.
 - [Move marchers](/guides/marchers/move-marchers/): props move the same way.
-- [Moves](/guides/timeline/moves/): how moves place motion on the timeline.
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): watch the show, props included, in 3D.

@@ -1,6 +1,6 @@
 ---
 title: Add the show's music
-description: Add a recording to the show, switch between recordings, and set where the music starts against count 1.
+description: Add a music recording (MP3, WAV and others) to the show, switch between recordings, and set where the music starts against count 1 (the music offset).
 type: how-to
 covers:
   - apps/desktop/src/tempo/TempoMusicFile.tsx
@@ -18,57 +18,57 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps, Aside } from "@astrojs/starlight/components";
 
-Add a recording of the show's music so it plays with the drill and its waveform shows on the timeline. The recording is saved inside the show file, so it travels with the show to another computer.
+<InShort>Select <Ui k="tempoMode.button.text" /> in the timeline's controls (<Kbd keys="Shift+T" />), then <Ui k="tempoMode.music.add" />, and choose the file.</InShort>
 
-OpenMarch opens MP3, WAV, OGG, M4A, AAC and WebM files.
+Add a recording of the show's music so it plays with the drill and its waveform shows on the timeline. The recording is saved inside the show file, so it travels with the show to another computer. OpenMarch opens MP3, WAV, OGG, M4A, AAC and WebM files.
 
 ## Add a music file
 
 <Steps>
 
 1. Select <Ui k="tempoMode.button.text" /> in the timeline's controls (<Kbd keys="Shift+T" />). The timeline changes to Edit music, with its tools along the top.
-2. Select <Ui k="tempoMode.music.add" />. If the show already has music, select <Ui k="tempoMode.import.button" /> and then <Ui k="tempoMode.import.audio" /> instead.
+2. Select <Ui k="tempoMode.music.add" />. If the show already has music, select its file's name, then <Ui k="tempoMode.music.importAnother" />.
 3. Choose the file.
 
 </Steps>
 
-The file's name appears next to <Ui k="tempoMode.toolbar.title" />, and its waveform fills the <Ui k="tempoMode.lanes.music.name" /> lane. The new file becomes the one the show plays. Select <Ui k="tempoMode.toolbar.done" /> or press <Kbd keys="Escape" /> to go back to the timeline.
-
-You can also add music from the command palette (<Kbd action="openCommandPalette" />) with <Ui k="actions.file.insertAudio" />, and when you create a new show.
-
 <Media
-  id="music-file-menu"
-  alt="Edit music's header with the music file Washington_post_march.mp3 selected and its menu open: the file, Music offset 0 s, Import another audio file and Delete this audio file."
+  id="music-add"
+  alt="The left end of Edit music's header in a show with no music yet: Editing music, Add music…, Tap tempo and Metronome."
 />
+
+The file's name takes the place of <Ui k="tempoMode.music.add" />, its waveform fills the <Ui k="tempoMode.lanes.music.name" /> lane, and it becomes the recording the show plays. Select <Ui k="tempoMode.toolbar.done" /> or press <Kbd keys="Escape" /> to go back to the timeline.
+
+You can also add music with <Ui k="actions.file.insertAudio" /> in the command palette (<Kbd action="openCommandPalette" />), or when you create a new show.
 
 ## Switch to another recording
 
-A show can keep several recordings, such as a full-band recording and a MIDI mock-up. Only one plays at a time.
+A show can keep several recordings, such as a full-band recording and a MIDI mock-up. Only one plays at a time. In Edit music, select the music file's name, then the recording you want. A check mark shows the one that plays.
 
-<Steps>
-
-1. In Edit music, select the music file's name.
-2. Choose the recording you want. A check mark shows the one that plays.
-
-</Steps>
+<Media
+  id="music-file-menu"
+  alt="Edit music's header with the music file Washington_post_march.mp3 selected and its menu open: the two recordings in the show, Washington_post_march.mp3 with a check mark and Washington_post_march_MIDI.mp3, then Music offset… 0 s, Import another audio file… and Delete this audio file…."
+  maxWidth={560}
+/>
 
 ## Set where the music starts
 
-The music offset is how many seconds after count 1 the music starts. Use it when the recording has silence or a count-off before the first note, or when the drill starts before the music does.
+The music offset is how many seconds after count 1 the music starts.
 
 <Steps>
 
 1. In Edit music, select the music file's name, then <Ui k="tempoMode.music.offset" />. The menu shows the current offset.
-2. Enter the offset in seconds. A positive number starts the music after count 1; a negative number skips that much of the start of the recording.
+2. Enter the offset in seconds. For silence or a count-off at the start of the recording, enter a negative number: that much of the recording is skipped. If the drill starts before the music, enter a positive number: the music starts that long after count 1.
 3. Select <Ui k="tempoMode.music.offsetSet" />.
 
 </Steps>
 
-The waveform slides under the counts. The offset is part of the show's history, so <Kbd action="performUndo" /> puts it back. The same number is <Ui k="workspaceSettings.audioOffsetSeconds" /> in [Show settings](/guides/field/show-settings/).
+The waveform slides under the counts, and <Kbd action="performUndo" /> puts the offset back. The same number is <Ui k="workspaceSettings.audioOffsetSeconds" /> in [Show settings](/guides/field/show-settings/).
 
-To make the first hit land on a count, play the opening with the metronome on (<Kbd action="toggleMetronome" />) and change the offset until the click and the hit sound together. Then line up the rest of the counts with the tempo: see [Line the counts up with the music](/guides/music/tempo/).
+To make the first hit land on a count, play the opening with the metronome on ([The metronome](/guides/music/metronome/)) and change the offset until the click and the hit sound together. Then line up the rest with the tempo: see [Set the tempo to match the music](/guides/music/tempo/).
 
 ## Delete a recording
 
@@ -83,22 +83,12 @@ To make the first hit land on a count, play the opening with the metronome on (<
 
 With no recording left, the show plays in silence. The counts and drill don't change.
 
-## Change the volume
+## Change the volume or hide the waveform
 
-Select the speaker button in the timeline's controls. Its slider sets the volume of the music and the metronome together, and the speaker icon next to the slider (<Ui k="timeline.sound.mute" />) silences the music while the metronome keeps counting.
-
-## Change how the waveform looks
-
-Open settings (<Kbd action="openSettings" />), choose <Ui k="settings.timeline" />, and under <Ui k="settings.timeline.waveformStyle" /> pick a style:
-
-- <Ui k="settings.timeline.waveformStyle.simplified" />: rounded bars at an even spacing, scaled to the loudest moment.
-- <Ui k="settings.timeline.waveformStyle.precise" />: square bars that line up with each count, scaled so quiet passages show their detail.
-- <Ui k="settings.timeline.waveformStyle.hidden" />: no waveform, so the timeline takes less room. The music still plays.
-
-The <Ui k="tempoMode.lanes.music.name" /> lane in Edit music always shows the waveform.
+The volume and muting the music are on the timeline's speaker button: see [The metronome](/guides/music/metronome/#hear-only-the-metronome). To change how the waveform looks on the timeline, or hide it, use <Ui k="settings.timeline.waveformStyle" /> in [Settings](/guides/reference/settings/#timeline). The <Ui k="tempoMode.lanes.music.name" /> lane in Edit music always shows it.
 
 ## Related
 
 - [How counts and the music fit together](/guides/music/counts-and-music/): counts, tempo and the music offset.
-- [Line the counts up with the music](/guides/music/tempo/): make the counts follow the recording.
+- [Set the tempo to match the music](/guides/music/tempo/): make the counts follow the recording.
 - [The metronome](/guides/music/metronome/): hear the counts against the music.

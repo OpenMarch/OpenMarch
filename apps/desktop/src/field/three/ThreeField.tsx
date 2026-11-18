@@ -33,6 +33,8 @@ import {
     itemGeometryQueryOptions,
     moveMarchersInTargetMutationOptions,
 } from "@/hooks/queries";
+import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import { libraryModels } from "@/showAssets/libraryModels";
 import {
     beatIndexesById,
     itemOutlineChanges,
@@ -80,7 +82,6 @@ import {
 import { ShapeEditor } from "@/shapes/editor/ShapeEditorBar";
 import { PathEditor } from "@/pathways/PathEditor";
 import HandleMenu from "@/shapes/editor/HandleMenu";
-import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
 import FavoritesRing from "@/shapes/tool/FavoritesRing";
 import DockedCommandBar from "@/shortcuts/palette/DockedCommandBar";
 import { useShapeFocus } from "@/shapes/field/useShapeFocus";
@@ -545,9 +546,6 @@ function ThreeFieldView() {
                     ...settingsMoveOptions(
                         () => latest.current.fieldProperties ?? null,
                     ),
-                    // #545: the box's ratio lock is the selection's too
-                    ratioLocked: () =>
-                        useShapeEditorStore.getState().ratioLocked,
                 },
             ),
         [marchers, items, dimming],
@@ -887,6 +885,8 @@ function useFieldItems(
 ): ReadonlyMap<number, string> {
     const { data: itemRows } = useQuery(allItemsQueryOptions());
     const { data: geometry } = useQuery(itemGeometryQueryOptions());
+    const { data: assets } = useQuery(showAssetsQueryOptions());
+    const library = useMemo(() => libraryModels(assets), [assets]);
     const { hiddenPropIds, showPropNames, propNameOverrides } =
         useUiSettingsStore(
             useShallow((s) => ({
@@ -918,8 +918,9 @@ function useFieldItems(
                     item.model ? [[item.marcher_id, item.model] as const] : [],
                 ),
             ),
+            library,
         });
-    }, [items, itemRows, geometry, beats, hiddenPropIds]);
+    }, [items, itemRows, geometry, beats, hiddenPropIds, library]);
     return useMemo(
         () =>
             new Map(

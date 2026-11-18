@@ -5,6 +5,7 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import AudioFile from "@/global/classes/AudioFile";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
+import { useHelpDialogStore } from "@/stores/HelpDialogStore";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { isWebBuild } from "@/utilities/webBuild";
 import { canSendReports, openReport } from "@/feedback/openReport";
@@ -27,6 +28,10 @@ export function useFileActionHandlers() {
     useActionHandler("openSettings", () => {
         void window.electron.openSettingsWindow();
     });
+
+    useActionHandler("openHelp", () =>
+        useHelpDialogStore.getState().setOpen(true),
+    );
 
     // Web builds that can't sign in have no report form (fork #801)
     useActionHandler("reportFeedback", () => openReport(), {

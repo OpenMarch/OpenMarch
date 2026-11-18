@@ -12,7 +12,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import ActionButton from "../ActionButton";
 import { Button } from "@openmarch/ui";
 import { getActionLabel, getActionShortcutLabel } from "../labels";
-import { registerActionHandler } from "../registry";
+import { notifyRefusedPress, registerActionHandler } from "../registry";
 import { useActionHandler } from "../useActionHandler";
 import { useInputModeStore } from "@/stores/InputModeStore";
 
@@ -57,6 +57,160 @@ describe("ActionButton", () => {
         await tolgee.run();
     });
     afterEach(() => cleanup());
+
+    it("greyed out with a reason: stays focusable, says why, and a click does nothing", () => {
+        const run = vi.fn();
+        const off = registerActionHandler("swapMarchers", {
+            run,
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        // Not the native disabled: that can't be hovered or focused to read the reason
+        expect(button).not.toBeDisabled();
+        expect(button).toHaveAttribute("aria-disabled", "true");
+        expect(button).toHaveAccessibleDescription(
+            "Select 2 marchers to swap them",
+        );
+        fireEvent.click(button);
+        expect(run).not.toHaveBeenCalled();
+        // A click shows why, as a press on a menu's entry does
+        expect(
+            screen.getAllByText("Select 2 marchers to swap them").length,
+        ).toBeGreaterThan(1);
+        off();
+    });
+
+    it("a clicked reason closes on Escape, which goes no further, and when the mouse leaves", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        const beyond = vi.fn();
+        window.addEventListener("keydown", beyond);
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        const shown = () =>
+            screen.queryAllByText("Select 2 marchers to swap them").length;
+        const hidden = shown();
+        fireEvent.click(button);
+        expect(shown()).toBeGreaterThan(hidden);
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(shown()).toBe(hidden);
+        expect(beyond).not.toHaveBeenCalled();
+
+        fireEvent.click(button);
+        expect(shown()).toBeGreaterThan(hidden);
+        // React makes its pointer leave from a pointerout to outside the button
+        const out = new MouseEvent("pointerout", {
+            bubbles: true,
+            relatedTarget: document.body,
+        });
+        Object.defineProperty(out, "pointerType", { value: "mouse" });
+        fireEvent(button, out);
+        expect(shown()).toBe(hidden);
+        window.removeEventListener("keydown", beyond);
+        off();
+    });
+
+    it("a refused key press lights the button up and shows why, for a moment", () => {
+        vi.useFakeTimers();
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        const shown = () =>
+            screen.queryAllByText("Select 2 marchers to swap them").length;
+        const hidden = shown();
+        // Another action's refusal isn't this button's
+        act(() => {
+            notifyRefusedPress("flipHorizontal");
+        });
+        expect(shown()).toBe(hidden);
+        act(() => {
+            notifyRefusedPress("swapMarchers");
+        });
+        expect(shown()).toBeGreaterThan(hidden);
+        expect(button.className).toMatch(/ring-2/);
+        act(() => {
+            vi.advanceTimersByTime(2100);
+        });
+        expect(shown()).toBe(hidden);
+        expect(button.className).not.toMatch(/ring-2/);
+        vi.useRealTimers();
+        off();
+    });
+
+    it("Escape after a refused key closes the reason and still reaches the app", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+            disabledReason: () => "Select 2 marchers to swap them",
+        });
+        const beyond = vi.fn();
+        window.addEventListener("keydown", beyond);
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const shown = () =>
+            screen.queryAllByText("Select 2 marchers to swap them").length;
+        const hidden = shown();
+        let showedIt = false;
+        act(() => {
+            showedIt = notifyRefusedPress("swapMarchers");
+        });
+        expect(showedIt).toBe(true);
+        expect(shown()).toBeGreaterThan(hidden);
+        fireEvent.keyDown(window, { key: "Escape" });
+        expect(shown()).toBe(hidden);
+        expect(beyond).toHaveBeenCalledOnce();
+        window.removeEventListener("keydown", beyond);
+        off();
+    });
+
+    it("a button with no reason to show doesn't light up for a refused key", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        let showedIt = true;
+        act(() => {
+            showedIt = notifyRefusedPress("swapMarchers");
+        });
+        expect(showedIt).toBe(false);
+        expect(
+            screen.getByRole("button", { name: "Swap" }).className,
+        ).not.toMatch(/ring-2/);
+        off();
+    });
+
+    it("greyed out with no reason stays plainly disabled", () => {
+        const off = registerActionHandler("swapMarchers", {
+            run: vi.fn(),
+            isEnabled: () => false,
+        });
+        render(<ActionButton action="swapMarchers">Swap</ActionButton>, {
+            wrapper: Providers,
+        });
+        const button = screen.getByRole("button", { name: "Swap" });
+        expect(button).toBeDisabled();
+        expect(button).not.toHaveAttribute("aria-disabled");
+        off();
+    });
 
     it("runs the action on click", () => {
         const run = vi.fn();
