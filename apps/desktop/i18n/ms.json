@@ -115,7 +115,9 @@
             "loadDialogue": "Buka fail…",
             "newDialogue": "Fail baharu…",
             "openExport": "Eksport…",
-            "saveDialogue": "Simpan salinan…"
+            "saveDialogue": "Simpan salinan…",
+            "removeUnusedAssets": "Buang aset yang tidak digunakan…",
+            "removeUnusedAssetsKeywords": "buang padam bersihkan tidak digunakan aset model diimport saiz"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "Buka kumpulan hadapan dan podium",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset kumpulan hadapan mejar dram vibrafon perkusi pembesar suara peralatan pratetap",
             "addFrontEnsembleEquipment": "Tambah peralatan kumpulan hadapan atau podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument mejar dram vibrafon perkusi pembesar suara pengadun menara tangga alat muzik"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument mejar dram vibrafon perkusi pembesar suara pengadun menara tangga alat muzik",
+            "openAssets": "Buka aset persembahan",
+            "openAssetsKeywords": "aset model diimport fail kredit lesen saiz storan pustaka"
         },
         "items": {
             "edit": "Edit prop atau peralatan yang dipilih",
@@ -1479,7 +1483,8 @@
             "title": "Diimport",
             "import": "Import…",
             "empty": "Import model .glb atau .gltf, atau lepaskan satu pada tetingkap, untuk meletakkannya seperti prop lain.",
-            "place": "Letakkan {name}"
+            "place": "Letakkan {name}",
+            "manage": "Urus aset"
         },
         "import": {
             "title": "Import model",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "Masih terperinci: {triangles} segi tiga (sasarannya {cap})"
             }
-        }
+        },
+        "modelMissing": "Model prop ini sudah tiada dalam persembahan, jadi ia dilukis sebagai blok."
     },
     "frontEnsemble": {
         "title": "Kumpulan hadapan dan podium",
@@ -4536,6 +4542,39 @@
             "mixed": "Bercampur",
             "add": "Tambah garisan",
             "everyOther": "Kekalkan selang satu"
+        }
+    },
+    "assets": {
+        "title": "Aset",
+        "empty": "Persembahan ini belum ada aset yang diimport. Import model 3D dari panel Prop.",
+        "notes": {
+            "unused": "{count, plural, other {# aset tidak digunakan}} di mana-mana dalam persembahan · {size}",
+            "missing": "{count, plural, other {# prop menggunakan model yang tiada dalam persembahan ini, jadi dilukis sebagai blok.}}",
+            "large": "Aset menjadikan persembahan ini besar: {size}. Persembahan besar lebih perlahan dibuka, disimpan dan dikongsi."
+        },
+        "removeUnused": {
+            "button": "Buang yang tidak digunakan…",
+            "title": "{count, plural, other {Buang # aset yang tidak digunakan?}}",
+            "description": "Tiada apa-apa dalam persembahan yang menggunakannya. Membuangnya menjadikan persembahan {size} lebih kecil. Buat asal tidak mengembalikannya.",
+            "none": "Semua aset sedang digunakan, jadi tiada apa-apa untuk dibuang.",
+            "cancel": "Batal",
+            "confirm": "{count, plural, other {Buang # aset}}"
+        },
+        "kind": {
+            "model": "Model 3D"
+        },
+        "uses": "{count, plural, other {Digunakan # kali}}",
+        "unused": "Tidak digunakan",
+        "shareNote": "Lesen tidak diketahui: anda mungkin tiada hak untuk berkongsinya",
+        "size": {
+            "bytes": "{value} bait",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Tidak dapat membuang aset yang tidak digunakan",
+            "credits": "Tidak dapat menyimpan kredit"
         }
     }
 }

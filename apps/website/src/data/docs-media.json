@@ -68,6 +68,12 @@
         "height": 768,
         "seconds": 7.7
     },
+    "3d-props-assets": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 996,
+        "height": 1412
+    },
     "3d-props-block": {
         "chapter": "3d-view",
         "kind": "still",

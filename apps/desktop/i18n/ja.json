@@ -115,7 +115,9 @@
             "loadDialogue": "ファイルを開く…",
             "newDialogue": "新規ファイル…",
             "openExport": "エクスポート…",
-            "saveDialogue": "コピーを保存…"
+            "saveDialogue": "コピーを保存…",
+            "removeUnusedAssets": "使われていないアセットを削除…",
+            "removeUnusedAssetsKeywords": "削除 消去 整理 未使用 アセット モデル 読み込み サイズ"
         },
         "labelWithVariant": "{label}（{variant}）",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "フロントアンサンブルと指揮台を開く",
             "openFrontEnsembleKeywords": "ピット フロントアンサンブル 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー 機材 プリセット pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "フロントアンサンブルの機材または指揮台を追加",
-            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "ショーのアセットを開く",
+            "openAssetsKeywords": "アセット 読み込んだモデル ファイル クレジット ライセンス サイズ 容量 ライブラリ"
         },
         "items": {
             "edit": "選択したプロップまたは機材を編集",
@@ -1479,7 +1483,8 @@
             "title": "インポート済み",
             "import": "インポート…",
             "empty": ".glbまたは.gltfのモデルをインポートするか、ウィンドウにドロップすると、ほかのプロップと同じように配置できます。",
-            "place": "{name}を配置"
+            "place": "{name}を配置",
+            "manage": "アセットを管理"
         },
         "import": {
             "title": "モデルをインポート",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "まだ細かい状態です：三角形{triangles}個（目標は{cap}個）"
             }
-        }
+        },
+        "modelMissing": "このプロップのモデルはもうショーにないため、ブロックとして描かれています。"
     },
     "frontEnsemble": {
         "title": "フロントアンサンブルと指揮台",
@@ -4536,6 +4542,39 @@
             "mixed": "混在",
             "add": "ラインを追加",
             "everyOther": "1本おきに残す"
+        }
+    },
+    "assets": {
+        "title": "アセット",
+        "empty": "このショーにはまだ読み込んだアセットがありません。プロップパネルから 3D モデルを読み込めます。",
+        "notes": {
+            "unused": "{count, plural, other {# 個のアセットがショーのどこでも使われていません}} · {size}",
+            "missing": "{count, plural, other {# 個のプロップが、このショーにないモデルを使っているため、ブロックとして描かれています。}}",
+            "large": "アセットのためにこのショーは大きくなっています：{size}。大きなショーは開く・保存する・共有するのに時間がかかります。"
+        },
+        "removeUnused": {
+            "button": "未使用を削除…",
+            "title": "{count, plural, other {使われていないアセット # 個を削除しますか？}}",
+            "description": "ショーの中でこれらを使っているものはありません。削除するとショーが {size} 小さくなります。取り消しでは元に戻りません。",
+            "none": "すべてのアセットが使われているので、削除するものはありません。",
+            "cancel": "キャンセル",
+            "confirm": "{count, plural, other {# 個を削除}}"
+        },
+        "kind": {
+            "model": "3D モデル"
+        },
+        "uses": "{count, plural, other {# 回使用}}",
+        "unused": "未使用",
+        "shareNote": "ライセンス不明：共有する権利がない可能性があります",
+        "size": {
+            "bytes": "{value} バイト",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "使われていないアセットを削除できませんでした",
+            "credits": "クレジットを保存できませんでした"
         }
     }
 }

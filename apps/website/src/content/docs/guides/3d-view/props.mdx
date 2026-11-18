@@ -10,8 +10,13 @@ covers:
   - apps/desktop/src/view3d/window/props
   - apps/desktop/src/view3d/core/props
   - apps/desktop/src/showAssets/modelImport
+  - apps/desktop/src/components/assets
+  - apps/desktop/src/showAssets/assetUse.ts
   - action:importModel
   - action:placeImportedModel
+  - action:openAssets
+  - action:removeUnusedAssets
+  - i18n:assets
   - i18n:props
 sidebar:
   order: 5
@@ -126,6 +131,22 @@ The field draws an imported prop as the model seen from above, with a small mark
   id="3d-props-imported"
   alt="The 3D View from the press box, zoomed in behind two color guard performers: three red imported chairs stand in a row on the field near the visitors' sideline, facing the audience."
 />
+
+## The show's imported models
+
+Every model you import is stored in the show file, whether or not a prop uses it. To see them, select <Ui k="props.imported.manage" /> under <Ui k="props.imported.title" plain /> in the Props panel, or find <Ui k="actions.ui.openAssets" plain /> in the command palette. The <Ui k="assets.title" plain /> view lists each model with its picture, its size in the show file, how many times the show uses it, and its license.
+
+<Media
+  id="3d-props-assets"
+  alt="The Assets view: a note that 1 asset isn't used anywhere in the show, 29 KB, with a Remove unused… button, then two 3D models: a chair, 3.9 MB, used once, whose license is unknown so you may not have the right to share it, and a test pattern, 29 KB, not used, licensed CC-BY-4.0."
+  maxWidth={480}
+/>
+
+- Select a model to see and change its credits: license, author, source and attribution. Changing them doesn't change the model or the props that use it.
+- A model whose license is unknown says you may not have the right to share it. Add its license if you know it.
+- When some models aren't used by any prop, a note at the top says how many and how much space they take. <Ui k="assets.removeUnused.button" /> lists them and removes them only when you confirm. Nothing is ever removed on its own, not when you save or close the show. Undo doesn't bring a removed model back.
+- If an undo brings back a prop whose model you removed, the prop draws as a block, and both the note at the top and the prop's settings say its model is missing. To replace it, import the model again, place it as a new prop and delete the old one.
+- When imported models make the show file large (over 500 MB), the note says so: large shows are slower to open, save and share.
 
 ## Change a prop's name, color and size
 

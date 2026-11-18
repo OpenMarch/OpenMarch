@@ -115,7 +115,9 @@
             "loadDialogue": "เปิดไฟล์…",
             "newDialogue": "ไฟล์ใหม่…",
             "openExport": "ส่งออก…",
-            "saveDialogue": "บันทึกสำเนา…"
+            "saveDialogue": "บันทึกสำเนา…",
+            "removeUnusedAssets": "ลบแอสเซ็ตที่ไม่ได้ใช้…",
+            "removeUnusedAssetsKeywords": "ลบ ล้าง ไม่ได้ใช้ แอสเซ็ต โมเดล นำเข้า ขนาด"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,7 +245,9 @@
             "openFrontEnsemble": "เปิดฟรอนต์อองซอมเบิลและโพเดียม",
             "openFrontEnsembleKeywords": "พิต ฟรอนต์อองซอมเบิล โพเดียม ดรัมเมเจอร์ มาริมบา ไวบราโฟน เพอร์คัชชัน เครื่องกระทบ ลำโพง อุปกรณ์ พรีเซ็ต pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "เพิ่มอุปกรณ์ฟรอนต์อองซอมเบิลหรือโพเดียม",
-            "addFrontEnsembleEquipmentKeywords": "พิต โพเดียม ดรัมเมเจอร์ มาริมบา ไวบราโฟน เพอร์คัชชัน เครื่องกระทบ ลำโพง มิกเซอร์ หอ บันได เครื่องดนตรี pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "พิต โพเดียม ดรัมเมเจอร์ มาริมบา ไวบราโฟน เพอร์คัชชัน เครื่องกระทบ ลำโพง มิกเซอร์ หอ บันได เครื่องดนตรี pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "เปิดแอสเซ็ตของโชว์",
+            "openAssetsKeywords": "แอสเซ็ต โมเดลที่นำเข้า ไฟล์ เครดิต สัญญาอนุญาต ขนาด พื้นที่ ไลบรารี"
         },
         "items": {
             "edit": "แก้ไขพร็อพหรืออุปกรณ์ที่เลือก",
@@ -1479,7 +1483,8 @@
             "title": "นำเข้าแล้ว",
             "import": "นำเข้า…",
             "empty": "นำเข้าโมเดล .glb หรือ .gltf หรือลากมาวางบนหน้าต่าง เพื่อวางเหมือนพร็อพอื่นๆ",
-            "place": "วาง {name}"
+            "place": "วาง {name}",
+            "manage": "จัดการแอสเซ็ต"
         },
         "import": {
             "title": "นำเข้าโมเดล",
@@ -1621,7 +1626,8 @@
                 },
                 "overTriangleCap": "ยังมีรายละเอียดมาก: {triangles} สามเหลี่ยม (เป้าหมายคือ {cap})"
             }
-        }
+        },
+        "modelMissing": "โมเดลของพร็อพนี้ไม่อยู่ในโชว์แล้ว จึงแสดงเป็นบล็อก"
     },
     "frontEnsemble": {
         "title": "ฟรอนต์อองซอมเบิลและโพเดียม",
@@ -4536,6 +4542,39 @@
             "mixed": "ผสม",
             "add": "เพิ่มเส้น",
             "everyOther": "คงไว้เส้นเว้นเส้น"
+        }
+    },
+    "assets": {
+        "title": "แอสเซ็ต",
+        "empty": "โชว์นี้ยังไม่มีแอสเซ็ตที่นำเข้า นำเข้าโมเดล 3D ได้จากแผงพร็อพ",
+        "notes": {
+            "unused": "{count, plural, other {แอสเซ็ต # รายการไม่ได้ใช้}}ที่ใดในโชว์เลย · {size}",
+            "missing": "{count, plural, other {พร็อพ # ชิ้นใช้โมเดลที่โชว์นี้ไม่มี จึงแสดงเป็นบล็อก}}",
+            "large": "แอสเซ็ตทำให้โชว์นี้มีขนาดใหญ่: {size} โชว์ขนาดใหญ่จะเปิด บันทึก และแชร์ได้ช้ากว่า"
+        },
+        "removeUnused": {
+            "button": "ลบที่ไม่ได้ใช้…",
+            "title": "{count, plural, other {ลบแอสเซ็ตที่ไม่ได้ใช้ # รายการไหม}}",
+            "description": "ไม่มีสิ่งใดในโชว์ใช้รายการเหล่านี้ การลบจะทำให้โชว์เล็กลง {size} และเลิกทำไม่สามารถนำกลับมาได้",
+            "none": "แอสเซ็ตทั้งหมดถูกใช้งานอยู่ จึงไม่มีอะไรให้ลบ",
+            "cancel": "ยกเลิก",
+            "confirm": "{count, plural, other {ลบ # รายการ}}"
+        },
+        "kind": {
+            "model": "โมเดล 3D"
+        },
+        "uses": "{count, plural, other {ใช้ # ครั้ง}}",
+        "unused": "ไม่ได้ใช้",
+        "shareNote": "ไม่ทราบสัญญาอนุญาต: คุณอาจไม่มีสิทธิ์แชร์",
+        "size": {
+            "bytes": "{value} ไบต์",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "ลบแอสเซ็ตที่ไม่ได้ใช้ไม่ได้",
+            "credits": "บันทึกเครดิตไม่ได้"
         }
     }
 }

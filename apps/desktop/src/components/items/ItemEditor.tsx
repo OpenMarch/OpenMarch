@@ -152,6 +152,9 @@ export function ItemEditor({ itemId }: { itemId: number }) {
     // An imported model's prop keeps its proportions: its sides change together (#1078)
     const model = item?.model ? library.get(item.model) : undefined;
     const standsUp = model ? hasModelHeight(model.sidecar.sizeM) : false;
+    // Names an imported model the show no longer has (removed, then an undo brought it back)
+    const modelMissing =
+        !!assets && !!item?.model?.startsWith("library:") && !model;
     const changes = useMemo(
         () =>
             item && rows
@@ -313,6 +316,14 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                         <T keyName="props.outlineTitle" />
                     )}
                 </h5>
+                {modelMissing && (
+                    <p
+                        className="text-sub text-text-subtitle"
+                        data-testid="item-model-missing"
+                    >
+                        <T keyName="props.modelMissing" />
+                    </p>
+                )}
                 {shown ? (
                     <div className="grid grid-cols-2 gap-12">
                         <CommitNumber

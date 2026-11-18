@@ -456,12 +456,15 @@ function SizeConfirm({
  * The optional license fields, collapsed, prefilled from the file (props-spec §10): license,
  * author, source and attribution. Empty means Unknown.
  */
-function CreditFields({
+export function CreditFields({
     credits,
     onChange,
+    testIdPrefix = "model-import",
 }: {
     credits: ModelCredits;
     onChange: (credits: ModelCredits) => void;
+    /** Starts each field's test id (the Assets view uses its own) */
+    testIdPrefix?: string;
 }) {
     const { t } = useTranslate();
     const [open, setOpen] = useState(false);
@@ -487,7 +490,7 @@ function CreditFields({
                 onChange={(e) =>
                     onChange({ ...credits, [key]: e.target.value })
                 }
-                data-testid={`model-import-${key}`}
+                data-testid={`${testIdPrefix}-${key}`}
             />
         </label>
     );
@@ -499,7 +502,7 @@ function CreditFields({
                 aria-controls={panelId}
                 onClick={() => setOpen(!open)}
                 className="text-body flex items-center gap-8 text-left font-medium"
-                data-testid="model-import-credits-toggle"
+                data-testid={`${testIdPrefix}-credits-toggle`}
             >
                 <CaretRightIcon
                     size={14}
