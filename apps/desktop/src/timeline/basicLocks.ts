@@ -8,10 +8,12 @@ import {
     type PageBox,
 } from "@/stores/TimelineSelectionStore";
 import { useBasicRows } from "@/hooks/queries/useBasicRows";
+import { useHeldMarksStore } from "./useHeldMarks";
 import type { TimelineEditTarget } from "@/db-functions/timelineMoves";
 import type { TimelineMarcherMove } from "@/db-functions/timelineMoves";
 import {
     lockedMarchersByPage,
+    type BasicHold,
     type BasicRow,
     type SimpleVerdict,
 } from "./basicSimple";
@@ -19,9 +21,10 @@ import {
 /**
  * Basic mode's locks (UI-19, docs/timeline/research/basic-mode, "Simple"): per page box, the
  * marchers Basic can't edit there because their moves there need Expert (a move across a page
- * flag, overlapping moves, a shape, a non-direct path). They still play and draw; edits to them
- * are dropped before writing, with a toast offering **Switch to Expert**. The writer refuses them
- * too (`setPositionsAtBeatInTransaction`), so this is the friendly half.
+ * flag, overlapping moves, a shape, a non-direct path), or because they're Held there from such a
+ * move. They still play and draw; edits to them are dropped before writing, with a toast offering
+ * **Switch to Expert**. The writer refuses them too (`setPositionsAtBeatInTransaction`,
+ * `refuseLockedArrivals`), so this is the friendly half.
  *
  * The store is fed by `useBasicLocksHost` while Basic is on in a timeline file, and is empty
  * otherwise, so everything here is a no-op in Expert and page mode.
@@ -36,9 +39,14 @@ interface BasicLocksState {
     readonly boxes: readonly PageBox[];
     /** Per box (index into `boxes`), the locked marchers and why */
     readonly locked: ReadonlyMap<number, ReadonlyMap<number, Reason>>;
+    /**
+     * @param holds the show's Held holds (`readHeldMarks`): a marcher Held from a move Basic
+     *   can't edit is locked where it's held (`heldArrivalLock`)
+     */
     readonly set: (
         rows: readonly BasicRow[] | null,
         boxes: readonly PageBox[],
+        holds?: readonly BasicHold[],
     ) => void;
 }
 
@@ -48,13 +56,13 @@ export const useBasicLocksStore = create<BasicLocksState>((set) => ({
     rows: null,
     boxes: [],
     locked: NONE,
-    set: (rows, boxes) =>
+    set: (rows, boxes, holds = []) =>
         set({
             rows,
             boxes,
             locked:
                 rows && boxes.length > 0
-                    ? lockedMarchersByPage(rows, boxes)
+                    ? lockedMarchersByPage(rows, boxes, holds)
                     : NONE,
         }),
 }));
@@ -64,9 +72,13 @@ export function useBasicLocksHost(enabled: boolean): void {
     const on = useIsBasicMode() && enabled;
     const { data: rows } = useBasicRows(on);
     const boxes = useTimelineSelectionStore((s) => s.pageBoxes);
+    // Read after every edit, undo or redo that may change them (`useHeldMarksHost`)
+    const holds = useHeldMarksStore((s) => s.marks);
     useEffect(() => {
-        useBasicLocksStore.getState().set(on ? (rows ?? null) : null, boxes);
-    }, [on, rows, boxes]);
+        useBasicLocksStore
+            .getState()
+            .set(on ? (rows ?? null) : null, boxes, holds);
+    }, [on, rows, boxes, holds]);
 }
 
 /** The index of `box` in the store's boxes, or -1 */
