@@ -18,6 +18,8 @@ export interface ReportAttachments {
     /** The show the drawer showed; main refuses (409) if another is open now */
     readonly expectedShowFileName?: string;
     readonly includeAudio: boolean;
+    /** Imported models' files (fork #1027); off unless the person asks */
+    readonly includeAssets?: boolean;
     readonly recording?: { readonly blob: Blob; readonly seconds: number };
 }
 
@@ -37,6 +39,7 @@ export async function submitReport(
         sendShowFile: attachments.sendShowFile,
         expectedShowFileName: attachments.expectedShowFileName,
         includeAudio: attachments.includeAudio,
+        includeAssets: attachments.includeAssets ?? false,
         recording,
         diagnostics: editorDiagnosticsEntries(),
     });

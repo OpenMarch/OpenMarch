@@ -18,11 +18,24 @@ export const SECRETS = [
     "Needs braces check",
     "Talk to Avery's parents",
     "/Users/student/Music",
+    // An imported model's name and credits (fork #1027)
+    "Riley's riser",
+    "Dana Morales",
+    "dana-models.example",
+    "Made by Dana for Riley",
+    "riley_face.png",
 ];
 export const AUDIO = Uint8Array.from(
     { length: 4096 },
     (_, i) => (i * 37) % 251,
 );
+/** An imported model's stored part: a recognizable run of bytes */
+export const MODEL_PART = Uint8Array.from(
+    { length: 5000 },
+    (_, i) => (i * 53 + 7) % 241,
+);
+export const MODEL_PART_HASH = "a".repeat(64);
+export const THUMBNAIL_HASH = "b".repeat(64);
 
 /** A show with names, notes, a tag, a cue, an unknown table, history and music in it */
 export async function makeShowWithSecrets(showPath: string) {
@@ -53,6 +66,48 @@ export async function makeShowWithSecrets(showPath: string) {
         db.prepare(
             "INSERT INTO audio_files (path, nickname, data) VALUES (?, 'Opener mix v3 for Mr. Hayes', ?)",
         ).run("/Users/student/Music/opener.mp3", AUDIO);
+        // An imported model (fork #997): its parts, sidecar and credits
+        db.prepare(
+            "INSERT INTO show_asset_blobs (hash, data) VALUES (?, ?), (?, ?)",
+        ).run(MODEL_PART_HASH, MODEL_PART, THUMBNAIL_HASH, new Uint8Array(300));
+        db.prepare(
+            "INSERT INTO show_assets (id, version_hash, kind, name, parts, sidecar, credits) VALUES (?, ?, 'model', ?, ?, ?, ?)",
+        ).run(
+            "0b6f4a52-4f1e-4f8e-9a51-8e9c1c2b3d4e",
+            "c".repeat(64),
+            "Riley's riser",
+            JSON.stringify({
+                model: MODEL_PART_HASH,
+                thumbnail: THUMBNAIL_HASH,
+            }),
+            JSON.stringify({
+                triangles: 19_996,
+                sizeM: { width: 2, height: 1, depth: 1 },
+                importNotes: {
+                    needsChoice: [],
+                    notes: [],
+                    fixedForYou: [
+                        {
+                            code: "texturesShrunk",
+                            cap: 1024,
+                            textures: [
+                                {
+                                    name: "riley_face.png",
+                                    from: [4096, 4096],
+                                    to: [1024, 1024],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            }),
+            JSON.stringify({
+                license: "CC-BY-4.0",
+                author: "Dana Morales",
+                sourceUrl: "https://dana-models.example/riser",
+                attribution: "Made by Dana for Riley",
+            }),
+        );
     } finally {
         db.close();
     }
