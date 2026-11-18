@@ -1,0 +1,857 @@
+<!-- cspell:disable -->
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            :root {
+                --background: #0b0b0d;
+                --foreground: #ececf1;
+                --muted-foreground: #9a9aa5;
+                --card: #141417;
+                --secondary: #26262b;
+                --border: #2e2e35;
+                --primary: #7aa2ff;
+                --primary-foreground: #0b0b0d;
+                --warning: #f5a524;
+                --destructive: #f05252;
+                --chart-1: #5b8cff;
+                --chart-2: #34d399;
+                --chart-3: #c084fc;
+                --chart-4: #f472b6;
+                --radius: 10px;
+                --font-sans: system-ui, sans-serif;
+            }
+            body {
+                background: var(--background);
+                color: var(--foreground);
+                font-family: var(--font-sans);
+                max-width: 760px;
+                margin: 16px auto !important;
+                padding: 0 12px;
+            }
+        </style>
+        <style>
+            :root {
+                --A: var(--chart-1);
+                --B: var(--chart-3);
+                --entry: var(--chart-2);
+                --bad: var(--destructive);
+                --pin: var(--warning);
+                --steal: var(--chart-4);
+            }
+            body {
+                margin: 0;
+            }
+            .sec {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 16px;
+                margin: 0 0 18px;
+                background: var(--card);
+            }
+            h2 {
+                font-size: 16px;
+                margin: 0 0 6px;
+            }
+            h2 .n {
+                color: var(--muted-foreground);
+                font-weight: 500;
+                margin-right: 6px;
+            }
+            p.u {
+                font-size: 13px;
+                color: var(--muted-foreground);
+                margin: 0 0 12px;
+                line-height: 1.45;
+            }
+            p.u b {
+                color: var(--foreground);
+            }
+            .grid2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .grid3 {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .pane {
+                border: 1px solid var(--border);
+                border-radius: calc(var(--radius) - 2px);
+                padding: 8px;
+                background: var(--background);
+            }
+            .pane svg {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .t {
+                font-size: 13px;
+                font-weight: 600;
+                margin: 6px 0 2px;
+            }
+            .d {
+                font-size: 12px;
+                color: var(--muted-foreground);
+                line-height: 1.4;
+            }
+            .ctl {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin: 0 0 10px;
+                font-size: 12.5px;
+                flex-wrap: wrap;
+            }
+            .ctl button {
+                font: inherit;
+                color: var(--foreground);
+                background: var(--secondary);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 4px 10px;
+                cursor: pointer;
+            }
+            .ctl button.on {
+                background: var(--primary);
+                color: var(--primary-foreground);
+                border-color: var(--primary);
+            }
+            .ctl input[type="range"] {
+                flex: 1;
+                min-width: 160px;
+                accent-color: var(--primary);
+            }
+            .count {
+                font-variant-numeric: tabular-nums;
+                min-width: 70px;
+                color: var(--muted-foreground);
+            }
+            .lean {
+                margin-top: 10px;
+                font-size: 12.5px;
+                line-height: 1.45;
+            }
+            .lean b {
+                color: var(--primary);
+            }
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                font-size: 12px;
+                color: var(--muted-foreground);
+                margin: 0 0 14px;
+            }
+            .legend span::before {
+                content: "";
+                display: inline-block;
+                width: 14px;
+                height: 3px;
+                vertical-align: middle;
+                margin-right: 5px;
+                background: var(--c);
+                border-radius: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="legend">
+            <span style="--c: var(--A)">route A (first follow-the-leader)</span>
+            <span style="--c: var(--B)">route B (the next one)</span>
+            <span style="--c: var(--entry)">entry: getting from A onto B</span>
+            <span style="--c: var(--bad)">problem</span>
+        </div>
+
+        <div class="sec">
+            <h2>
+                <span class="n">1</span>A ripple from one route into the next
+            </h2>
+            <p class="u">
+                Six marchers follow route A, two counts apart. Each one reaches
+                A's end on a different count (the ripple). Each takes a
+                <b>5-count straight entry</b> onto B, then follows B. Play it,
+                then press <b>Move route B</b> to see what an edit does to each
+                way of storing the entry.
+            </p>
+            <div class="ctl">
+                <button id="play">Pause</button>
+                <input
+                    id="scrub"
+                    type="range"
+                    min="0"
+                    max="32"
+                    step="0.05"
+                    value="0"
+                />
+                <span class="count" id="cnt">count 0</span>
+                <button id="edit">Move route B</button>
+            </div>
+            <div class="grid2">
+                <div class="pane">
+                    <svg id="s1" viewBox="0 0 400 300"></svg>
+                    <div class="t">Entry stored on route B (proposed)</div>
+                    <div class="d">
+                        B holds one setting: "straight, 5 counts". Each
+                        marcher's entry is worked out from when it leaves A.
+                        When B moves, every entry re-aims at B's new start.
+                    </div>
+                </div>
+                <div class="pane">
+                    <svg id="s2" viewBox="0 0 400 300"></svg>
+                    <div class="t">Entry stored as its own moves</div>
+                    <div class="d">
+                        Six small straight moves, one per marcher, at fixed
+                        counts and fixed end points. They look the same until B
+                        moves. Then they still end where B used to start, and
+                        marchers jump.
+                    </div>
+                </div>
+            </div>
+            <div class="lean">
+                <b>Why entry-on-route:</b> both play back the same until
+                something changes. The ripple's timing and B's position belong
+                to the routes, so the entry should be worked out from them, not
+                stored as copies that can go out of date. Six separate moves
+                would also each need to be kept in step with A's ripple when A
+                is edited.
+            </div>
+        </div>
+
+        <div class="sec">
+            <h2><span class="n">2</span>How long is an entry?</h2>
+            <p class="u">
+                The marcher leaves A's end and has to cover the gap to B's
+                start. <b>How many counts does that take?</b> Each dot is one
+                count.
+            </p>
+            <div class="grid3" id="len"></div>
+            <div class="lean">
+                <b>My lean: B by default, with A as an override.</b> Counts
+                worked out from distance keep steps marchable without any
+                typing. Typing a count is still allowed when the music calls for
+                it, and a big step gets flagged (your Q5: warn only).
+            </div>
+        </div>
+
+        <div class="sec">
+            <h2><span class="n">3</span>One rule, two uses</h2>
+            <p class="u">
+                The entry that takes a marcher from A onto B is the
+                <b>same rule</b> as option A in Q4 (rejoin after a higher layer
+                lets go). Both answer one question:
+                <b>how does a marcher get onto a route it isn't on?</b> Building
+                it once means one setting, one piece of resolver logic, one
+                bound to prove.
+            </p>
+            <div class="grid2" id="two"></div>
+        </div>
+
+        <div class="sec">
+            <h2><span class="n">4</span>What it looks like on the timeline</h2>
+            <p class="u">
+                One row per marcher, counts left to right. The ripple means each
+                marcher's entry starts on a different count.
+            </p>
+            <div class="grid2" id="tl"></div>
+            <div class="lean">
+                <b>Proposed:</b> B stays one clip, and the entries show as
+                hatched lead-ins on its ragged left edge. Selecting B selects
+                its entry setting. Nothing new to drag or keep lined up.
+            </div>
+        </div>
+
+        <script>
+            const NS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs, parent, text) {
+                const e = document.createElementNS(NS, tag);
+                for (const [k, v] of Object.entries(attrs || {}))
+                    e.setAttribute(k, v);
+                if (text != null) e.textContent = text;
+                if (parent) parent.appendChild(e);
+                return e;
+            }
+            const P = (pts) => pts.map((p) => p.join(",")).join(" ");
+            function grid(s, w, h) {
+                const g = el(
+                    "g",
+                    { style: "stroke: var(--border); stroke-width: 0.6" },
+                    s,
+                );
+                for (let x = 0; x <= w; x += 20)
+                    el("line", { x1: x, y1: 0, x2: x, y2: h }, g);
+                for (let y = 0; y <= h; y += 20)
+                    el("line", { x1: 0, y1: y, x2: w, y2: y }, g);
+            }
+            function line(s, pts, c, o = {}) {
+                return el(
+                    "polyline",
+                    {
+                        points: P(pts),
+                        style: `fill:none; stroke:var(${c}); stroke-width:${o.w || 2.4}; stroke-linejoin:round; stroke-linecap:round;${o.dash ? "stroke-dasharray:" + o.dash + ";" : ""}${o.op != null ? "opacity:" + o.op + ";" : ""}`,
+                    },
+                    s,
+                );
+            }
+            function text(s, x, y, t, o = {}) {
+                return el(
+                    "text",
+                    {
+                        x,
+                        y,
+                        "text-anchor": o.a || "start",
+                        style: `font: ${o.size || 10}px var(--font-sans); fill: var(${o.c || "--muted-foreground"}); ${o.bold ? "font-weight:600;" : ""}`,
+                    },
+                    s,
+                    t,
+                );
+            }
+            const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+            const lerp = (a, b, u) => [
+                a[0] + (b[0] - a[0]) * u,
+                a[1] + (b[1] - a[1]) * u,
+            ];
+            function along(pts, d) {
+                for (let i = 1; i < pts.length; i++) {
+                    const L = dist(pts[i - 1], pts[i]);
+                    if (d <= L || i === pts.length - 1)
+                        return lerp(
+                            pts[i - 1],
+                            pts[i],
+                            Math.max(0, Math.min(1, L ? d / L : 0)),
+                        );
+                    d -= L;
+                }
+            }
+            const len = (pts) =>
+                pts.slice(1).reduce((a, p, i) => a + dist(pts[i], p), 0);
+
+            /* ---------- 1: animation ---------- */
+            const STEP = 20,
+                N = 6,
+                GAP = 40,
+                ENTRY = 5;
+            const A = [
+                [220, 290],
+                [60, 290],
+                [60, 80],
+            ];
+            const B0 = [
+                [150, 50],
+                [360, 50],
+                [360, 180],
+            ];
+            const shift = (pts, dy) => pts.map((p) => [p[0], p[1] + dy]);
+            const LA = len(A),
+                LB = len(B0);
+            const tA = (i) => (LA - (200 - GAP * i)) / STEP; // count marcher i reaches A's end
+            function pos(i, t, B, Bstored) {
+                const ta = tA(i);
+                if (t <= ta)
+                    return {
+                        p: along(A, 200 - GAP * i + STEP * t),
+                        phase: "A",
+                    };
+                if (t <= ta + ENTRY)
+                    return {
+                        p: lerp(A[2], Bstored[0], (t - ta) / ENTRY),
+                        phase: "E",
+                    };
+                const d = Math.min(STEP * (t - ta - ENTRY), LB - GAP * i);
+                return { p: along(B, d), phase: "B", jumped: Bstored !== B };
+            }
+            let edited = false;
+            function scene(svg, mode) {
+                svg.innerHTML = "";
+                grid(svg, 400, 300);
+                const B = edited ? shift(B0, 80) : B0;
+                const Bst = mode === 2 ? B0 : B;
+                if (edited)
+                    line(svg, B0, "--B", { w: 1.4, dash: "4 4", op: 0.5 });
+                line(svg, A, "--A");
+                line(svg, B, "--B");
+                text(svg, 225, 284, "A", { c: "--A", bold: true, size: 12 });
+                text(svg, B[1][0] + 8, B[1][1] + 4, "B", {
+                    c: "--B",
+                    bold: true,
+                    size: 12,
+                });
+                if (edited)
+                    text(svg, B0[1][0] - 4, B0[1][1] - 6, "B before", {
+                        a: "end",
+                        size: 9,
+                    });
+                line(svg, [A[2], Bst[0]], "--entry", { w: 1.6, dash: "4 3" });
+                if (mode === 2 && edited) {
+                    line(svg, [B0[0], B[0]], "--bad", { w: 2, dash: "3 3" });
+                    text(
+                        svg,
+                        B0[0][0] - 6,
+                        (B0[0][1] + B[0][1]) / 2 + 4,
+                        "jump",
+                        { a: "end", c: "--bad", bold: true },
+                    );
+                }
+                const g = el("g", {}, svg);
+                return { g, B, Bst };
+            }
+            const S1 = document.getElementById("s1"),
+                S2 = document.getElementById("s2");
+            let sc1, sc2;
+            function build() {
+                sc1 = scene(S1, 1);
+                sc2 = scene(S2, 2);
+            }
+            function drawDots(sc, t, mode) {
+                sc.g.innerHTML = "";
+                for (let i = N - 1; i >= 0; i--) {
+                    const r = pos(i, t, sc.B, sc.Bst);
+                    const prev = pos(i, Math.max(0, t - 0.5), sc.B, sc.Bst);
+                    const jumping =
+                        mode === 2 && edited && dist(r.p, prev.p) > 40;
+                    const c =
+                        r.phase === "E"
+                            ? "--entry"
+                            : r.phase === "A"
+                              ? "--foreground"
+                              : "--foreground";
+                    el(
+                        "circle",
+                        {
+                            cx: r.p[0],
+                            cy: r.p[1],
+                            r: 7,
+                            style: `fill: var(${jumping ? "--bad" : c}); stroke: var(--background); stroke-width: 1.5`,
+                        },
+                        sc.g,
+                    );
+                    text(sc.g, r.p[0], r.p[1] + 3.5, String(i + 1), {
+                        a: "middle",
+                        c: "--background",
+                        bold: true,
+                        size: 9,
+                    });
+                }
+            }
+            // flash: keep jumped marchers red briefly
+            function frame(t) {
+                drawDots(sc1, t, 1);
+                drawDots(sc2, t, 2);
+                document.getElementById("cnt").textContent =
+                    "count " + Math.floor(t);
+            }
+            build();
+            const scrub = document.getElementById("scrub"),
+                playB = document.getElementById("play"),
+                editB = document.getElementById("edit");
+            let playing = true,
+                t = 0,
+                last = null;
+            function tick(ts) {
+                if (playing) {
+                    if (last != null) {
+                        t += ((ts - last) / 1000) * 4;
+                        if (t > 32.5) t = 0;
+                        scrub.value = t;
+                    }
+                    last = ts;
+                } else last = null;
+                frame(t);
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+            scrub.addEventListener("input", () => {
+                t = +scrub.value;
+                playing = false;
+                playB.textContent = "Play";
+            });
+            playB.addEventListener("click", () => {
+                playing = !playing;
+                playB.textContent = playing ? "Pause" : "Play";
+            });
+            editB.addEventListener("click", () => {
+                edited = !edited;
+                editB.classList.toggle("on", edited);
+                editB.textContent = edited
+                    ? "Put route B back"
+                    : "Move route B";
+                build();
+                t = 0;
+            });
+
+            /* ---------- 2: entry length ---------- */
+            (() => {
+                const host = document.getElementById("len");
+                const a = [40, 130],
+                    b = [200, 50],
+                    Bpath = [b, [300, 50]],
+                    Aend = [[40, 170], a];
+                const D = dist(a, b);
+                const mk = (counts, label, desc, opt = {}) => {
+                    const s = el("svg", { viewBox: "0 0 240 170" });
+                    grid(s, 240, 170);
+                    line(s, [[40, 170], a], "--A");
+                    line(s, [b, [235, 50]], "--B");
+                    line(s, [a, b], "--entry", { w: 1.6 });
+                    for (let k = 0; k <= counts; k++) {
+                        const p = lerp(a, b, k / counts);
+                        const big = k > 0 && D / counts > 30;
+                        el(
+                            "circle",
+                            {
+                                cx: p[0],
+                                cy: p[1],
+                                r: 3,
+                                style: `fill: var(${big ? "--bad" : "--foreground"})`,
+                            },
+                            s,
+                        );
+                    }
+                    text(s, 120, 158, opt.note, {
+                        a: "middle",
+                        c: opt.noteC || "--muted-foreground",
+                    });
+                    text(s, a[0] + 6, a[1] + 14, "leaves A");
+                    text(s, b[0], b[1] - 8, "B starts", { a: "middle" });
+                    const c = document.createElement("div");
+                    c.className = "pane";
+                    c.appendChild(s);
+                    c.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="t">${label}</div><div class="d">${desc}</div>`,
+                    );
+                    host.appendChild(c);
+                };
+                mk(
+                    3,
+                    "A · You type the counts",
+                    '"Take 3 counts." Exact control over timing, but nothing stops the steps from getting too big.',
+                    {
+                        note: `3 counts · ${Math.round((D / 3 / STEP) * 10) / 10}× a normal step`,
+                        noteC: "--bad",
+                    },
+                );
+                mk(
+                    Math.ceil(D / STEP),
+                    "B · Worked out from the distance",
+                    "Counts = distance ÷ the route's step size, rounded up. Always marchable, and it adjusts when either route moves.",
+                    { note: `${Math.ceil(D / STEP)} counts at a normal step` },
+                );
+                mk(
+                    14,
+                    "C · Until your place on B comes up",
+                    "Stretch the entry until the marcher's spot on B is due. Never early or late, but steps can shrink to a shuffle.",
+                    { note: "14 counts · steps get small" },
+                );
+            })();
+
+            /* ---------- 3: same rule ---------- */
+            (() => {
+                const host = document.getElementById("two");
+                const mk = (title, desc, draw) => {
+                    const s = el("svg", { viewBox: "0 0 240 170" });
+                    grid(s, 240, 170);
+                    draw(s);
+                    const c = document.createElement("div");
+                    c.className = "pane";
+                    c.appendChild(s);
+                    c.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="t">${title}</div><div class="d">${desc}</div>`,
+                    );
+                    host.appendChild(c);
+                };
+                mk(
+                    "Ripple: from route A onto route B",
+                    "The marcher starts off route B. Entry: straight, aimed at its spot on B, over the worked-out counts.",
+                    (s) => {
+                        line(
+                            s,
+                            [
+                                [30, 160],
+                                [30, 70],
+                            ],
+                            "--A",
+                        );
+                        line(
+                            s,
+                            [
+                                [120, 40],
+                                [225, 40],
+                                [225, 140],
+                            ],
+                            "--B",
+                        );
+                        line(
+                            s,
+                            [
+                                [30, 70],
+                                [120, 40],
+                            ],
+                            "--entry",
+                            { dash: "4 3" },
+                        );
+                        el(
+                            "circle",
+                            {
+                                cx: 30,
+                                cy: 70,
+                                r: 6,
+                                style: "fill: var(--foreground)",
+                            },
+                            s,
+                        );
+                        text(s, 75, 75, "entry", {
+                            a: "middle",
+                            c: "--entry",
+                            bold: true,
+                        });
+                    },
+                );
+                mk(
+                    "Rejoin: a higher layer lets go",
+                    "The marcher was pulled off its own route. Entry: straight, aimed at its spot on the route, over the worked-out counts.",
+                    (s) => {
+                        line(
+                            s,
+                            [
+                                [30, 160],
+                                [30, 40],
+                                [225, 40],
+                            ],
+                            "--B",
+                            { op: 0.8 },
+                        );
+                        line(
+                            s,
+                            [
+                                [30, 110],
+                                [80, 120],
+                                [120, 110],
+                            ],
+                            "--steal",
+                        );
+                        el(
+                            "circle",
+                            {
+                                cx: 120,
+                                cy: 110,
+                                r: 6,
+                                style: "fill: var(--steal)",
+                            },
+                            s,
+                        );
+                        line(
+                            s,
+                            [
+                                [120, 110],
+                                [165, 40],
+                            ],
+                            "--entry",
+                            { dash: "4 3" },
+                        );
+                        text(s, 150, 88, "entry", { c: "--entry", bold: true });
+                        text(s, 70, 140, "higher layer", {
+                            a: "middle",
+                            c: "--steal",
+                        });
+                    },
+                );
+            })();
+
+            /* ---------- 4: timeline ---------- */
+            (() => {
+                const host = document.getElementById("tl");
+                const X = (c) => 20 + c * 6.6,
+                    rowH = 18,
+                    top = 22;
+                const hatch = (s, id) => {
+                    const d = el("defs", {}, s);
+                    const p = el(
+                        "pattern",
+                        {
+                            id,
+                            width: 5,
+                            height: 5,
+                            patternUnits: "userSpaceOnUse",
+                            patternTransform: "rotate(45)",
+                        },
+                        d,
+                    );
+                    el(
+                        "rect",
+                        {
+                            width: 5,
+                            height: 5,
+                            style: "fill: var(--background)",
+                        },
+                        p,
+                    );
+                    el(
+                        "line",
+                        {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 5,
+                            style: "stroke: var(--entry); stroke-width: 2.5",
+                        },
+                        p,
+                    );
+                };
+                const axis = (s) => {
+                    for (let c = 0; c <= 32; c += 4) {
+                        el(
+                            "line",
+                            {
+                                x1: X(c),
+                                y1: top - 4,
+                                x2: X(c),
+                                y2: top + N * rowH,
+                                style: "stroke: var(--border)",
+                            },
+                            s,
+                        );
+                        text(s, X(c), top - 8, String(c), {
+                            a: "middle",
+                            size: 8.5,
+                        });
+                    }
+                    for (let i = 0; i < N; i++)
+                        text(s, 10, top + i * rowH + 12, String(i + 1), {
+                            a: "middle",
+                            size: 9,
+                        });
+                };
+                const mk = (title, desc, separate) => {
+                    const s = el("svg", {
+                        viewBox: `0 0 240 ${top + N * rowH + 30}`,
+                    });
+                    const id = "h" + (separate ? 2 : 1);
+                    hatch(s, id);
+                    axis(s);
+                    // A clip
+                    el(
+                        "rect",
+                        {
+                            x: X(0),
+                            y: top,
+                            width: X(18.5) - X(0),
+                            height: N * rowH,
+                            rx: 4,
+                            style: "fill: none; stroke: var(--A); stroke-width: 1.4; stroke-dasharray: 2 2",
+                        },
+                        s,
+                    );
+                    for (let i = 0; i < N; i++) {
+                        const y = top + i * rowH + 3,
+                            ta = tA(i);
+                        el(
+                            "rect",
+                            {
+                                x: X(0),
+                                y,
+                                width: X(ta) - X(0),
+                                height: rowH - 6,
+                                rx: 2,
+                                style: "fill: var(--A); opacity: 0.85",
+                            },
+                            s,
+                        );
+                        if (separate)
+                            el(
+                                "rect",
+                                {
+                                    x: X(ta) + 0.5,
+                                    y: y - 1,
+                                    width: X(ta + ENTRY) - X(ta) - 1,
+                                    height: rowH - 4,
+                                    rx: 3,
+                                    style: `fill: url(#${id}); stroke: var(--entry); stroke-width: 1.4`,
+                                },
+                                s,
+                            );
+                        else
+                            el(
+                                "rect",
+                                {
+                                    x: X(ta),
+                                    y,
+                                    width: X(ta + ENTRY) - X(ta),
+                                    height: rowH - 6,
+                                    style: `fill: url(#${id})`,
+                                },
+                                s,
+                            );
+                        el(
+                            "rect",
+                            {
+                                x: X(ta + ENTRY),
+                                y,
+                                width: X(31) - X(ta + ENTRY),
+                                height: rowH - 6,
+                                rx: 2,
+                                style: "fill: var(--B); opacity: 0.85",
+                            },
+                            s,
+                        );
+                    }
+                    if (!separate) {
+                        const pts = [];
+                        for (let i = 0; i < N; i++) {
+                            const y0 = top + i * rowH + 1,
+                                y1 = y0 + rowH - 2;
+                            pts.push([X(tA(i)) - 1, y0], [X(tA(i)) - 1, y1]);
+                        }
+                        pts.push(
+                            [X(31.5), top + N * rowH - 1],
+                            [X(31.5), top + 1],
+                        );
+                        el(
+                            "polygon",
+                            {
+                                points: P(pts),
+                                style: "fill: none; stroke: var(--B); stroke-width: 1.6",
+                            },
+                            s,
+                        );
+                    }
+                    text(
+                        s,
+                        120,
+                        top + N * rowH + 20,
+                        separate
+                            ? "6 extra moves, each with its own counts"
+                            : "one B clip; its left edge follows the ripple",
+                        {
+                            a: "middle",
+                            c: separate ? "--bad" : "--muted-foreground",
+                        },
+                    );
+                    const c = document.createElement("div");
+                    c.className = "pane";
+                    c.appendChild(s);
+                    c.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="t">${title}</div><div class="d">${desc}</div>`,
+                    );
+                    host.appendChild(c);
+                };
+                mk(
+                    "Entry on route B (proposed)",
+                    "Hatched = entry. It's part of B's clip, so moving or resizing B carries it.",
+                    false,
+                );
+                mk(
+                    "Entry as its own moves",
+                    "Each entry is a clip you can grab. More control, but six more things to keep in step with A's ripple.",
+                    true,
+                );
+            })();
+        </script>
+    </body>
+</html>

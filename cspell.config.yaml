@@ -1,4 +1,7 @@
 words:
+  - rehome
+  - rehomed
+  - rehoming
   - CANTOPEN
   - errcode
   - Crossmen
@@ -353,6 +356,7 @@ words:
   - Zingali
   - Zustand
   - 日本語
+  - laned
   - lerp
   - lerped
   - slerp

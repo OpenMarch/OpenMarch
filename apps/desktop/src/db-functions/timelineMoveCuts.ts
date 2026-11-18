@@ -20,6 +20,7 @@ import { setTimelineTransitionDestinationInTransaction } from "./timelineTransit
 import { timelinesWithRange } from "./timelines";
 import { clearOwnPageMoves, sampleShape } from "./timelineMoveHelpers";
 import { memberRowsWhere, readTimeline } from "./timelineMemberRows";
+import { lanedSlots, slotKey } from "./timelineLanes";
 import {
     splitMarchersIntoNewMoveInTransaction,
     splitRefusal,
@@ -307,6 +308,8 @@ export interface MoveRow {
     timelineId: number;
     shapeId: number | null;
     pathStyle: string;
+    /** Its slot walks a drawn path (a lane, spec v0.10): its motion isn't a straight line */
+    laned: boolean;
 }
 
 /**
@@ -331,11 +334,19 @@ export async function rowsIn(
             ? [lt(a.start_beat, range.end), gt(a.end_beat, range.start)]
             : []),
     ];
-    return (await memberRowsWhere(tx, and(...conditions))).map((m) => ({
+    const members = await memberRowsWhere(tx, and(...conditions));
+    const laned = await lanedSlots(
+        tx,
+        members.map((m) => m.assignment),
+    );
+    return members.map((m) => ({
         row: m.assignment,
         timelineId: m.timeline.id,
         shapeId: m.transition.dest_shape_id,
         pathStyle: m.transition.path_style,
+        laned: laned.has(
+            slotKey(m.assignment.transition_id, m.assignment.slot_index),
+        ),
     }));
 }
 
@@ -534,7 +545,7 @@ async function planMove(
     const intoOwnMove = rows.some(
         (r) =>
             !going.has(r.row.marcher_id) &&
-            r.pathStyle !== "direct" &&
+            (r.pathStyle !== "direct" || r.laned) &&
             r.row.start_beat < lastCut,
     );
     if (intoOwnMove) {

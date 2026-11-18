@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import type { DbConnection, DbTransaction } from "@/db-functions/types";
 import {
@@ -46,9 +46,30 @@ export async function readStoredTimelineMemberships(
         if (!set) members.set(row.timelineId, (set = new Set()));
         set.add(row.marcherId);
     }
+    const trails = new Set(
+        (
+            await db
+                .select({ timelineId: schema.timeline_transitions.timeline_id })
+                .from(schema.timeline_transitions)
+                .where(
+                    and(
+                        eq(
+                            schema.timeline_transitions.path_style,
+                            "follow_the_leader",
+                        ),
+                        isNotNull(schema.timeline_transitions.route_id),
+                    ),
+                )
+                .all()
+        ).map((r) => r.timelineId),
+    );
     return timelines
         .sort((a, b) => a.start - b.start || a.id - b.id)
-        .map((t) => ({ ...t, marcherIds: members.get(t.id) ?? new Set() }));
+        .map((t) => ({
+            ...t,
+            marcherIds: members.get(t.id) ?? new Set(),
+            ...(trails.has(t.id) ? { trail: true } : {}),
+        }));
 }
 
 /**
@@ -63,8 +84,11 @@ export function storedTimelineMembershipsFromTables(
     >,
 ): StoredTimelineMembership[] {
     const timelineOfTransition = new Map<number, number>();
-    for (const t of tables.transitions)
+    const trails = new Set<number>();
+    for (const t of tables.transitions) {
         timelineOfTransition.set(t.id, t.timelineId);
+        if (t.trail) trails.add(t.timelineId);
+    }
     const members = new Map<number, Set<number>>();
     for (const a of tables.assignments) {
         const timelineId = timelineOfTransition.get(a.transition);
@@ -76,7 +100,11 @@ export function storedTimelineMembershipsFromTables(
     return tables.timelines
         .map((t) => ({ id: t.id, start: t.start, end: t.end, name: t.name }))
         .sort((a, b) => a.start - b.start || a.id - b.id)
-        .map((t) => ({ ...t, marcherIds: members.get(t.id) ?? new Set() }));
+        .map((t) => ({
+            ...t,
+            marcherIds: members.get(t.id) ?? new Set(),
+            ...(trails.has(t.id) ? { trail: true } : {}),
+        }));
 }
 
 /**

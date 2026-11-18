@@ -1,8 +1,12 @@
 import type {
     AssignmentRow,
+    AdjustProfile,
+    LaneRow,
     OrderMode,
     PathParams,
     PathStyle,
+    RouteGeometry,
+    RouteRow,
     RowImage,
     ShapeKind,
     ShapeRow,
@@ -35,6 +39,8 @@ type TransitionDbRow = typeof schema.timeline_transitions.$inferSelect;
 type AssignmentDbRow = typeof schema.timeline_assignments.$inferSelect;
 type SlotDestinationDbRow =
     typeof schema.timeline_slot_destinations.$inferSelect;
+type RouteDbRow = typeof schema.timeline_routes.$inferSelect;
+type LaneDbRow = typeof schema.timeline_lanes.$inferSelect;
 
 /** A marcher as the resolver reads it. */
 export interface TimelineMarcher {
@@ -83,6 +89,26 @@ export const transitionFromRow = (row: TransitionDbRow): TransitionRow => ({
         row.path_params == null
             ? null
             : (JSON.parse(row.path_params) as PathParams),
+    // A follow-the-leader transition's trail route (R-9′, pathways step 4)
+    route: row.route_id,
+});
+
+/** A route (spec v0.9 §5.2): its geometry, parsed. */
+export const routeFromRow = (row: RouteDbRow): RouteRow => ({
+    geometry: JSON.parse(row.geometry) as RouteGeometry,
+});
+
+/** A lane (spec v0.10 J.1): its slot, route and start offset (null for an own lane). */
+export const laneFromRow = (row: LaneDbRow): LaneRow => ({
+    transition: row.transition_id,
+    slot: row.slot_index,
+    route: row.route_id,
+    offset:
+        row.offset_x === null || row.offset_y === null
+            ? null
+            : [row.offset_x, row.offset_y],
+    adjust:
+        row.adjust === null ? null : (JSON.parse(row.adjust) as AdjustProfile),
 });
 
 export const assignmentFromRow = (row: AssignmentDbRow): AssignmentRow => ({
@@ -162,6 +188,35 @@ export const transitionFromImage = (image: RowImage): TransitionRow => {
         style: field<PathStyle>(image, "style", t, isString),
         order: field<OrderMode>(image, "order", t, isString),
         params: params as PathParams | null,
+        route: typeof image["route"] === "number" ? image["route"] : null,
+    };
+};
+
+/** A route from its change-log image `{id, geometry}` (spec v0.9 §10.2). */
+export const routeFromImage = (image: RowImage): RouteRow => ({
+    geometry: field<RouteGeometry>(
+        image,
+        "geometry",
+        "routes",
+        (v) => typeof v === "object" && v !== null,
+    ),
+});
+
+/** A lane from its change-log image `{id, transition, slot, route, offset, adjust}` (spec v0.10). */
+export const laneFromImage = (image: RowImage): LaneRow => {
+    const t = "lanes";
+    const offset = field<[number, number] | null>(
+        image,
+        "offset",
+        t,
+        (v) => v === null || isXY(v),
+    );
+    return {
+        transition: field(image, "transition", t, isNumber),
+        slot: field(image, "slot", t, isNumber),
+        route: field(image, "route", t, isNumber),
+        offset: offset === null ? null : [offset[0], offset[1]],
+        adjust: (image.adjust ?? null) as AdjustProfile | null,
     };
 };
 
@@ -221,7 +276,7 @@ export interface TimelineTables {
     destinations: SlotDestinationIndex;
 }
 
-/** The five reads of a cold build, in the order a snapshot assembles them. */
+/** The seven reads of a cold build, in the order a snapshot assembles them. */
 function timelineTableQueries(db: DbConnection | DbTransaction) {
     return [
         db
@@ -239,6 +294,8 @@ function timelineTableQueries(db: DbConnection | DbTransaction) {
             .from(schema.timeline_assignments)
             .orderBy(asc(schema.timeline_assignments.id)),
         db.select().from(schema.timeline_slot_destinations),
+        db.select().from(schema.timeline_routes),
+        db.select().from(schema.timeline_lanes),
     ] as const;
 }
 
@@ -252,6 +309,8 @@ function assembleTimelineTables([
     transitions,
     assignments,
     slotDestinations,
+    routes,
+    lanes,
 ]: TimelineTableRows): TimelineTables {
     const destinations: SlotDestinationIndex = new Map();
     for (const row of slotDestinations)
@@ -262,7 +321,11 @@ function assembleTimelineTables([
         shapes: {},
         transitions: {},
         assignments: assignments.map(assignmentFromRow),
+        routes: {},
+        lanes: {},
     };
+    for (const row of routes) snapshot.routes![row.id] = routeFromRow(row);
+    for (const row of lanes) snapshot.lanes![row.id] = laneFromRow(row);
     for (const row of shapes) snapshot.shapes[row.id] = shapeFromRow(row);
     for (const row of transitions)
         snapshot.transitions[row.id] = withPoints(
@@ -280,14 +343,23 @@ function assembleTimelineTables([
 export async function readTimelineTables(
     db: DbConnection | DbTransaction,
 ): Promise<TimelineTables> {
-    const [marchers, shapes, transitions, assignments, slotDestinations] =
-        timelineTableQueries(db);
+    const [
+        marchers,
+        shapes,
+        transitions,
+        assignments,
+        slotDestinations,
+        routes,
+        lanes,
+    ] = timelineTableQueries(db);
     return assembleTimelineTables([
         await marchers,
         await shapes,
         await transitions,
         await assignments,
         await slotDestinations,
+        await routes,
+        await lanes,
     ]);
 }
 

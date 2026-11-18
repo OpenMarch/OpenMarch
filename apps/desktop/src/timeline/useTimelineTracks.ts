@@ -60,6 +60,7 @@ export async function readTimelineViewTables(
             slotCount: t.slot_count,
             start: t.start_beat,
             end: t.end_beat,
+            trail: t.path_style === "follow_the_leader" && t.route_id !== null,
         })),
         assignments: assignments.map(assignmentFromRow),
         shapes,

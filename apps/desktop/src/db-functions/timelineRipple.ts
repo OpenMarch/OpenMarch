@@ -5,6 +5,7 @@ import { mapDbErrors, refuse, TimelineWriteError } from "./timelineErrors";
 import { deleteTimelineTransitionsInTransaction } from "./timelineTransitions";
 import { moveInSentence } from "@/timeline/timelineRangeWords";
 import { readPageGrid, type GridPage, type PageGrid } from "./timelinePageGrid";
+import { rippleOrderMarksInTransaction } from "./shapeRecipes";
 import {
     readHeldMarkArrivals,
     type HeldMarkArrival,
@@ -82,6 +83,10 @@ export {
  *
  * So inserting beats in the page before a hold moves the hold with its arrival, resizing a page
  * moves the hold's edges on its flags, and deleting the held page deletes the hold.
+ *
+ * **Order marks** (a line's order set by hand, pathways step 4g) keep their own beat, which moves
+ * as a Held mark's end edge does: with the page flag it's on, else with its count. A mark set on a
+ * page that goes away (inside it, or on its end flag) goes with it.
  *
  * **When a page is added** (inserted, split off, or added at the end), nothing is written for it.
  * Page mode copies the previous page's coordinates onto a new page; here a marcher with no move over
@@ -534,6 +539,27 @@ function planHeldMarks(
 }
 
 /**
+ * Where an order mark's own beat goes after the grid changes from `before` to `after`: null when
+ * it was said about a page that's gone (inside it, or on its end flag), else it follows its page
+ * flag or its count (`GridEdgeMap.markEdge`, as an end)
+ */
+export function orderMarkPlace(
+    before: PageGrid,
+    after: PageGrid,
+): (beat: number) => number | null {
+    const map = new GridEdgeMap(before, after);
+    const kept = new Set(after.pages.map((p) => p.id));
+    const gone = before.pages.filter((p) => !kept.has(p.id));
+    return (beat) => {
+        if (gone.some((p) => beat > p.start && beat <= p.end)) return null;
+        if (Number.isInteger(beat)) return map.markEdge(beat, "end");
+        // Partway through a count: with that count
+        const whole = Math.floor(beat);
+        return map.beatStart(whole) + (beat - whole);
+    };
+}
+
+/**
  * Rewrites the timeline rows after a page or beat edit that changed the grid from `before` to the
  * grid now in the database. Does nothing when the grid didn't change. See the module comment for
  * the rules, the refusals and the statement order.
@@ -661,6 +687,12 @@ export async function rippleTimelineToPageGridInTransaction({
                 .where(eq(H.id, m.id));
         }
     });
+    // 7b. Order marks set by hand (pathways step 4g) keep their own beat: it follows the page
+    // flag or count it was set on, as a Held mark's edge does, and a mark set on a page that went
+    // away goes with it
+    await mapDbErrors(() =>
+        rippleOrderMarksInTransaction(tx, orderMarkPlace(before, after)),
+    );
     // 8. Empty timelines off their page's box (the others went with their transitions in 1)
     if (emptied.size > 0)
         await mapDbErrors(() =>

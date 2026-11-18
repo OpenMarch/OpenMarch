@@ -54,6 +54,19 @@ export interface DrillChartPath {
     previous?: { x: number; y: number };
     current: { x: number; y: number };
     next?: { x: number; y: number };
+    /**
+     * The path walked from `previous` to `current` when it isn't the straight line between them
+     * (spec R-20 item 10): SVG path data and where the marcher is at the middle beat
+     */
+    previousWalk?: DrillChartWalk;
+    /** The same from `current` to `next` */
+    nextWalk?: DrillChartWalk;
+}
+
+/** A walked path to draw in place of a straight pathway. */
+export interface DrillChartWalk {
+    d: string;
+    mid: { x: number; y: number };
 }
 
 export const DOT_RADIUS = 5;
@@ -219,15 +232,20 @@ export function dotLabelSvg(dot: DrillChartDot, theme: FieldTheme): string {
     });
 }
 
-/** A pathway with its midpoint and endpoint */
+/** A pathway with its midpoint and endpoint: the walked path when given, else the straight line */
 const pathVisualsSvg = (
     start: { x: number; y: number },
     end: { x: number; y: number },
     color: RgbaColor,
+    walk?: DrillChartWalk,
 ) => {
-    const mid = { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
+    const mid = walk
+        ? walk.mid
+        : { x: (start.x + end.x) / 2, y: (start.y + end.y) / 2 };
     return [
-        line(start.x, start.y, end.x, end.y, color, PATHWAY_STROKE),
+        walk
+            ? `<path d="${walk.d}" fill="none" ${paint("stroke", color)} stroke-width="${num(PATHWAY_STROKE)}" />`
+            : line(start.x, start.y, end.x, end.y, color, PATHWAY_STROKE),
         `<circle cx="${num(mid.x)}" cy="${num(mid.y)}" r="${PATH_POINT_RADIUS}" fill="rgb(255,255,255)" ${paint("stroke", color)} stroke-width="2" />`,
         `<circle cx="${num(end.x)}" cy="${num(end.y)}" r="${PATH_POINT_RADIUS}" ${paint("fill", color)} />`,
     ].join("\n");
@@ -241,10 +259,22 @@ export function pathSvg(path: DrillChartPath, theme: FieldTheme): string {
     const out: string[] = [];
     if (path.previous)
         out.push(
-            pathVisualsSvg(path.previous, path.current, theme.previousPath),
+            pathVisualsSvg(
+                path.previous,
+                path.current,
+                theme.previousPath,
+                path.previousWalk,
+            ),
         );
     if (path.next)
-        out.push(pathVisualsSvg(path.current, path.next, theme.nextPath));
+        out.push(
+            pathVisualsSvg(
+                path.current,
+                path.next,
+                theme.nextPath,
+                path.nextWalk,
+            ),
+        );
     if (path.previous)
         out.push(
             `<rect x="${num(path.previous.x - 10)}" y="${num(path.previous.y - 10)}" width="20" height="20" fill="none" stroke="rgb(0,0,255)" stroke-width="3" />`,

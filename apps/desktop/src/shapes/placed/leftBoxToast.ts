@@ -58,6 +58,7 @@ async function refill(
                 y: m.y,
             })),
             async (tx, timelineId) => {
+                // No keepOrderMarks: Close up and Re-split lay the shape out again, so it redefines the line's order there, as any later shape does (pathways step 4g)
                 await saveShapeRecipeInTransaction({
                     tx,
                     timelineId,

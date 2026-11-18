@@ -1,0 +1,1243 @@
+<!-- cspell:disable -->
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            :root {
+                --background: #0b0b0d;
+                --foreground: #ececf1;
+                --muted-foreground: #9a9aa5;
+                --card: #141417;
+                --secondary: #26262b;
+                --border: #2e2e35;
+                --primary: #7aa2ff;
+                --primary-foreground: #0b0b0d;
+                --warning: #f5a524;
+                --destructive: #f05252;
+                --chart-1: #5b8cff;
+                --chart-2: #34d399;
+                --chart-3: #c084fc;
+                --chart-4: #f472b6;
+                --radius: 10px;
+                --font-sans: system-ui, sans-serif;
+            }
+            body {
+                background: var(--background);
+                color: var(--foreground);
+                font-family: var(--font-sans);
+                max-width: 760px;
+                margin: 16px auto !important;
+                padding: 0 12px;
+            }
+        </style>
+        <style>
+            :root {
+                --route: var(--chart-1);
+                --pin: var(--warning);
+                --bad: var(--destructive);
+                --other: var(--chart-3);
+                --good: var(--chart-2);
+                --steal: var(--chart-4);
+            }
+            body {
+                margin: 0;
+            }
+            .q {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 16px;
+                margin: 0 0 18px;
+                background: var(--card);
+            }
+            .q h2 {
+                font-size: 16px;
+                margin: 0 0 6px;
+            }
+            .q h2 .n {
+                color: var(--muted-foreground);
+                font-weight: 500;
+                margin-right: 6px;
+            }
+            .unc {
+                font-size: 13px;
+                color: var(--muted-foreground);
+                margin: 0 0 12px;
+                line-height: 1.45;
+            }
+            .unc b {
+                color: var(--foreground);
+                font-weight: 600;
+            }
+            .opts {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .opts.two {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .opts.four {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .opt {
+                border: 1px solid var(--border);
+                border-radius: calc(var(--radius) - 2px);
+                padding: 8px;
+                background: var(--background);
+            }
+            .opt .lbl {
+                font-size: 13px;
+                font-weight: 600;
+                margin: 6px 0 2px;
+            }
+            .opt .lbl .k {
+                display: inline-block;
+                min-width: 18px;
+                height: 18px;
+                line-height: 18px;
+                text-align: center;
+                border-radius: 4px;
+                background: var(--secondary);
+                margin-right: 4px;
+                font-size: 11px;
+                padding: 0 3px;
+            }
+            .opt .d {
+                font-size: 12px;
+                color: var(--muted-foreground);
+                line-height: 1.4;
+            }
+            .opt svg {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .lean {
+                margin-top: 10px;
+                font-size: 12.5px;
+                line-height: 1.45;
+            }
+            .lean b {
+                color: var(--primary);
+            }
+            .lean ul {
+                margin: 4px 0 0;
+                padding-left: 18px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script>
+            const NS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs, parent, text) {
+                const e = document.createElementNS(NS, tag);
+                for (const [k, v] of Object.entries(attrs || {}))
+                    e.setAttribute(k, v);
+                if (text != null) e.textContent = text;
+                if (parent) parent.appendChild(e);
+                return e;
+            }
+            function mk(h = 170) {
+                const s = el("svg", { viewBox: `0 0 240 ${h}` });
+                const g = el(
+                    "g",
+                    { style: "stroke: var(--border); stroke-width: 0.6" },
+                    s,
+                );
+                for (let x = 0; x <= 240; x += 20)
+                    el("line", { x1: x, y1: 0, x2: x, y2: h }, g);
+                for (let y = 0; y <= h; y += 20)
+                    el("line", { x1: 0, y1: y, x2: 240, y2: y }, g);
+                return s;
+            }
+            const P = (pts) => pts.map((p) => p.join(",")).join(" ");
+            function line(s, pts, c, o = {}) {
+                el(
+                    "polyline",
+                    {
+                        points: P(pts),
+                        style: `fill:none; stroke:var(${c}); stroke-width:${o.w || 2.2}; stroke-linejoin:round; stroke-linecap:round;${o.dash ? "stroke-dasharray:" + o.dash + ";" : ""}${o.op != null ? "opacity:" + o.op + ";" : ""}`,
+                    },
+                    s,
+                );
+            }
+            function poly(s, pts, c, o = {}) {
+                el(
+                    "polygon",
+                    {
+                        points: P(pts),
+                        style: `fill:none; stroke:var(${c}); stroke-width:${o.w || 2.2}; stroke-linejoin:round;${o.dash ? "stroke-dasharray:" + o.dash + ";" : ""}${o.op != null ? "opacity:" + o.op + ";" : ""}`,
+                    },
+                    s,
+                );
+            }
+            function text(s, x, y, t, o = {}) {
+                el(
+                    "text",
+                    {
+                        x,
+                        y,
+                        "text-anchor": o.a || "start",
+                        style: `font: ${o.size || 9.5}px var(--font-sans); fill: var(${o.c || "--muted-foreground"}); ${o.bold ? "font-weight:600;" : ""}`,
+                    },
+                    s,
+                    t,
+                );
+            }
+            function dot(s, p, c = "--foreground", r = 3.2, label) {
+                el(
+                    "circle",
+                    {
+                        cx: p[0],
+                        cy: p[1],
+                        r,
+                        style: `fill: var(${c}); stroke: var(--background); stroke-width: 1`,
+                    },
+                    s,
+                );
+                if (label)
+                    text(s, p[0], p[1] + 3, label, {
+                        a: "middle",
+                        c: "--background",
+                        bold: true,
+                        size: 8,
+                    });
+            }
+            function ring(s, p, c = "--muted-foreground", r = 3.5) {
+                el(
+                    "circle",
+                    {
+                        cx: p[0],
+                        cy: p[1],
+                        r,
+                        style: `fill: none; stroke: var(${c}); stroke-width: 1.3; stroke-dasharray: 2 1.5`,
+                    },
+                    s,
+                );
+            }
+            function diamond(s, p, c = "--pin", r = 5) {
+                el(
+                    "polygon",
+                    {
+                        points: P([
+                            [p[0], p[1] - r],
+                            [p[0] + r, p[1]],
+                            [p[0], p[1] + r],
+                            [p[0] - r, p[1]],
+                        ]),
+                        style: `fill: var(${c}); stroke: var(--background); stroke-width: 1`,
+                    },
+                    s,
+                );
+            }
+            function arrow(s, a, b, c = "--muted-foreground", w = 1.6) {
+                line(s, [a, b], c, { w });
+                const ang = Math.atan2(b[1] - a[1], b[0] - a[0]),
+                    L = 6;
+                el(
+                    "polygon",
+                    {
+                        points: P([
+                            b,
+                            [
+                                b[0] - L * Math.cos(ang - 0.45),
+                                b[1] - L * Math.sin(ang - 0.45),
+                            ],
+                            [
+                                b[0] - L * Math.cos(ang + 0.45),
+                                b[1] - L * Math.sin(ang + 0.45),
+                            ],
+                        ]),
+                        style: `fill: var(${c})`,
+                    },
+                    s,
+                );
+            }
+            const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+            const lerp = (a, b, u) => [
+                a[0] + (b[0] - a[0]) * u,
+                a[1] + (b[1] - a[1]) * u,
+            ];
+            function pointAt(pts, f, closed) {
+                const q = closed ? pts.concat([pts[0]]) : pts;
+                let tot = 0;
+                const L = [];
+                for (let i = 1; i < q.length; i++) {
+                    const d = dist(q[i - 1], q[i]);
+                    L.push(d);
+                    tot += d;
+                }
+                let t = (((f % 1) + 1) % 1) * tot;
+                if (!closed) t = Math.min(1, Math.max(0, f)) * tot;
+                for (let i = 0; i < L.length; i++) {
+                    if (t <= L[i] || i === L.length - 1)
+                        return lerp(
+                            q[i],
+                            q[i + 1],
+                            L[i] ? Math.min(1, t / L[i]) : 0,
+                        );
+                    t -= L[i];
+                }
+            }
+            // strip of per-count dots: xs = positions 0..1 for each count
+            function strip(s, y, xs, label, o = {}) {
+                text(s, 12, y - 8, label, {
+                    c: "--foreground",
+                    bold: true,
+                    size: 9,
+                });
+                line(
+                    s,
+                    [
+                        [14, y],
+                        [226, y],
+                    ],
+                    "--border",
+                    { w: 1 },
+                );
+                xs.forEach((x, i) => {
+                    const big = o.max && i > 0 && x - xs[i - 1] > o.max;
+                    const small =
+                        o.min != null && i > 0 && x - xs[i - 1] < o.min;
+                    dot(
+                        s,
+                        [14 + 212 * x, y],
+                        big ? "--bad" : small ? "--pin" : "--foreground",
+                        3,
+                    );
+                });
+                (o.pins || []).forEach((x) =>
+                    diamond(s, [14 + 212 * x, y + 11], "--pin", 3.5),
+                );
+            }
+            const ease = (u) => u * u * (3 - 2 * u);
+
+            const Q = [];
+            const card = (o) => Q.push(o);
+
+            /* ---------------- O-7 ---------------- */
+            (() => {
+                const S = [40, 130],
+                    S2 = [120, 150],
+                    v1 = [40, 50],
+                    v2 = [170, 50],
+                    E = [170, 130];
+                const base = (s) => {
+                    line(s, [S, v1, v2, E], "--muted-foreground", {
+                        w: 1.3,
+                        dash: "3 3",
+                    });
+                    ring(s, S);
+                    text(s, S[0] - 4, S[1] + 14, "old start", { a: "middle" });
+                    dot(s, E, "--route", 4);
+                    text(s, E[0] + 6, E[1] + 4, "end");
+                };
+                const A = mk();
+                base(A);
+                line(A, [S2, v1, v2, E], "--route");
+                line(A, [S2, v1], "--bad", { w: 2.4 });
+                [v1, v2].forEach((p) => dot(A, p, "--route", 3));
+                dot(A, S2, "--route", 4);
+                text(A, S2[0] + 6, S2[1] + 4, "new start", {
+                    c: "--foreground",
+                });
+                text(A, 100, 105, "first leg bends", {
+                    a: "middle",
+                    c: "--bad",
+                });
+                const dx = S2[0] - S[0],
+                    dy = S2[1] - S[1];
+                const B = mk();
+                base(B);
+                const w1 = [v1[0] + dx, v1[1] + dy];
+                line(B, [S2, w1, v2, E], "--route");
+                [w1, v2].forEach((p) => dot(B, p, "--route", 3));
+                dot(B, S2, "--route", 4);
+                text(B, S2[0] - 6, S2[1] + 4, "new start", {
+                    a: "end",
+                    c: "--foreground",
+                });
+                text(B, 120, 30, "the point near the start moves with it", {
+                    a: "middle",
+                });
+                card({
+                    n: "O-7",
+                    t: "When an earlier move changes where this route starts",
+                    u: 'Q2 covered the <b>end</b> moving. This is the <b>start</b>. You draw a curved route for a marcher in move 2. Later you go back to move 1 and change where that marcher ends up, which is where move 2 starts. "Stay on the field" means the route\'s middle points keep the exact yard-line coordinates you drew them at.',
+                    cls: "two",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Points keep their coordinates",
+                            d: "Same rule as Q2. The route you drew around an obstacle still goes around it, and only the first leg changes. The route is flagged as changed.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Points near the start move with it",
+                            d: "The route keeps its shape near the start but may now cross something you drew it to avoid.",
+                            s: B,
+                        },
+                    ],
+                    lean: "<b>My lean: A,</b> so start and end follow one rule and nothing moves that you didn't move.",
+                });
+            })();
+
+            /* ---------------- O-8 ---------------- */
+            (() => {
+                const R = [
+                    [20, 130],
+                    [20, 50],
+                    [220, 50],
+                ];
+                const ms = [0.62, 0.52, 0.42, 0.32];
+                const base = (s, skip) => {
+                    line(s, R, "--route");
+                    ms.forEach((f, i) => {
+                        if (i !== skip)
+                            dot(
+                                s,
+                                pointAt(R, f),
+                                "--foreground",
+                                5,
+                                String(i + 1),
+                            );
+                    });
+                };
+                const A = mk();
+                base(A, 2);
+                line(
+                    A,
+                    [
+                        [110, 50],
+                        [118, 80],
+                        [150, 80],
+                        [160, 50],
+                    ],
+                    "--pin",
+                );
+                diamond(A, [134, 80]);
+                text(A, 134, 98, "you drag a point on M3's route", {
+                    a: "middle",
+                    c: "--foreground",
+                });
+                text(A, 120, 160, "clearly an edit of M3 alone", {
+                    a: "middle",
+                });
+                const B = mk();
+                base(B, 2);
+                const p3 = pointAt(R, 0.42);
+                ring(B, p3, "--muted-foreground", 5);
+                const n3 = [p3[0] + 10, 100];
+                arrow(B, p3, n3, "--steal");
+                dot(B, n3, "--steal", 5, "3");
+                text(B, 120, 135, "playhead mid-move: you drag M3's dot", {
+                    a: "middle",
+                    c: "--foreground",
+                });
+                text(B, 120, 160, "today this adds a move on top (UI-10)", {
+                    a: "middle",
+                });
+                const C = mk();
+                base(C, 2);
+                const end = [220, 50];
+                ring(C, [150, 50]);
+                dot(C, [150, 95], "--steal", 5, "3");
+                arrow(C, [150, 56], [150, 88], "--steal");
+                text(C, 160, 115, "you move M3's end spot", {
+                    c: "--foreground",
+                });
+                text(C, 120, 160, "M3 no longer ends on the shape", {
+                    a: "middle",
+                });
+                card({
+                    n: "O-8",
+                    t: "Which edits take one marcher off the group's route?",
+                    u: "Q3 decided: four marchers share a route until you edit <b>one</b> of them, then that one gets its own route. The open part is <b>which actions count</b> as editing one marcher. Each panel is an action on M3 alone.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Edit a point on its route",
+                            d: "Detaches M3. No question here.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Drag its dot partway through",
+                            d: "Option 1: M3 detaches and its own route gets a pinned point at this count. Option 2: as today, a short move on top takes M3 there, and M3 rejoins the shared route after it (your Q4 rule).",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Move where it ends",
+                            d: "M3 leaves the shape it was ending on, so it can't follow the shared route to a spot it no longer has. Detaches.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>The real question is B.</b> My lean is option 2 (a move on top, then rejoin). Dragging mid-move already means that everywhere else in the timeline, and it keeps M3 in the group.",
+                });
+            })();
+
+            /* ---------------- O-11 ---------------- */
+            (() => {
+                const N = 8;
+                const even = [...Array(N + 1)].map((_, i) => i / N);
+                const perPin = [...Array(N + 1)].map((_, i) =>
+                    i <= 4 ? 0.5 * ease(i / 4) : 0.5 + 0.5 * ease((i - 4) / 4),
+                );
+                const whole = [...Array(N + 1)].map((_, i) => ease(i / N));
+                const A = mk(150);
+                strip(A, 40, perPin, "Ease each piece between pins", {
+                    min: 0.03,
+                    pins: [0.5],
+                });
+                strip(A, 105, whole, "Ease the whole move once", {
+                    pins: [whole[4]],
+                });
+                text(A, 120, 140, "orange = barely moving", {
+                    a: "middle",
+                    c: "--pin",
+                });
+                const lurch = [...Array(N + 1)].map((_, i) =>
+                    i <= 4 ? (0.15 * i) / 4 : 0.15 + (0.85 * (i - 4)) / 4,
+                );
+                const B = mk(150);
+                strip(B, 40, even, "Even speed, pin in the middle", {
+                    pins: [0.5],
+                });
+                strip(B, 105, lurch, "Even speed, pin early in the path", {
+                    max: 0.15,
+                    pins: [0.15],
+                });
+                text(B, 120, 140, "speed jumps on count 4", {
+                    a: "middle",
+                    c: "--bad",
+                });
+                const C = mk(150);
+                strip(C, 40, even, "Block marching, even", {});
+                strip(C, 105, whole, "Block marching, eased", { max: 0.16 });
+                text(C, 120, 140, "every rank rushes, then drags", {
+                    a: "middle",
+                    c: "--bad",
+                });
+                const D = mk(150);
+                const pre = [0, 0.04, 0.12, 0.25];
+                const re = [0.25, 0.27, 0.32, 0.45, 0.62, 0.8, 1];
+                strip(D, 40, whole, "Eased route, no interruption", {});
+                strip(
+                    D,
+                    105,
+                    pre.concat(re.slice(1)).slice(0, 9),
+                    "Taken over on counts 3–4, then rejoins",
+                    { min: 0.03, max: 0.16 },
+                );
+                text(D, 120, 140, "the ease restarts: slows, then lurches", {
+                    a: "middle",
+                    c: "--bad",
+                });
+                card({
+                    n: "O-11",
+                    t: "Where speeding up and slowing down gets weird",
+                    u: "You said a run can speed up and slow down. Here are four cases where it reads badly, each as one dot per count along a straight line. These are the cases the model has to handle, not reasons to forbid easing.",
+                    cls: "four",
+                    o: [
+                        {
+                            k: "1",
+                            l: "Easing each piece between pins",
+                            d: "If every stretch between pins eases in and out, the marcher nearly stops at every pin, so a midset looks like a pause. Easing should run across the whole move, passing through pins.",
+                            s: A,
+                        },
+                        {
+                            k: "2",
+                            l: "Even speed has its own problem",
+                            d: "With even speed per piece, a pin near the start makes four tiny steps, then four huge ones. That's a lurch you can see. Easing across the pin would smooth it.",
+                            s: B,
+                        },
+                        {
+                            k: "3",
+                            l: "Marching blocks",
+                            d: "A block in step that eases looks like it rushes the middle and drags the ends. Fine for a run, wrong for marching in time.",
+                            s: C,
+                        },
+                        {
+                            k: "4",
+                            l: "A higher layer takes over",
+                            d: "The marcher is pulled off on counts 3–4. When it rejoins, which part of the ease applies? Restarting it gives slow-then-lurch.",
+                            s: D,
+                        },
+                    ],
+                    lean: "<b>My lean:</b> easing is a per-route setting, off by default. When on, it shapes speed across the whole move (pins still land on their counts). A rejoin carries the speed it had rather than restarting the curve. That last part goes to Fable with the Q4 rule.",
+                });
+            })();
+
+            /* ---------------- O-12 ---------------- */
+            (() => {
+                const ring8 = [
+                    [60, 40],
+                    [180, 40],
+                    [200, 60],
+                    [200, 110],
+                    [180, 130],
+                    [60, 130],
+                    [40, 110],
+                    [40, 60],
+                ];
+                const A = mk();
+                poly(A, ring8, "--route");
+                const n = 10,
+                    k = 2;
+                for (let i = 0; i < n; i++) {
+                    const a = pointAt(ring8, i / n, true),
+                        b = pointAt(ring8, (i + k) / n, true);
+                    ring(A, a);
+                }
+                for (let i = 0; i < n; i++) {
+                    const b = pointAt(ring8, (i + k) / n, true);
+                    dot(A, b, "--foreground", 5, String(i + 1));
+                }
+                arrow(A, [100, 40], [140, 40], "--good", 2);
+                arrow(A, [140, 130], [100, 130], "--good", 2);
+                text(A, 120, 85, "everyone moves 2 spots", {
+                    a: "middle",
+                    c: "--foreground",
+                });
+                text(
+                    A,
+                    120,
+                    160,
+                    "the outline is the route: nothing new drawn",
+                    { a: "middle" },
+                );
+                // snake
+                const cols = [50, 90, 130, 170],
+                    rows = [40, 80, 120];
+                const snake = [];
+                rows.forEach((y, r) => {
+                    const xs = r % 2 ? cols.slice().reverse() : cols;
+                    xs.forEach((x) => snake.push([x, y]));
+                });
+                const B = mk();
+                line(B, snake, "--route");
+                snake.forEach((p) => ring(B, p));
+                snake.forEach((p, i) => {
+                    if (i + 1 < snake.length)
+                        dot(B, snake[i + 1], "--foreground", 5, String(i + 1));
+                });
+                arrow(B, [170, 140], [210, 160], "--bad");
+                text(B, 206, 150, "?", { c: "--bad", bold: true, size: 13 });
+                dot(B, [30, 40], "--muted-foreground", 0);
+                text(B, 30, 28, "?", {
+                    a: "middle",
+                    c: "--bad",
+                    bold: true,
+                    size: 13,
+                });
+                text(
+                    B,
+                    120,
+                    160,
+                    "open snake: one falls off, one spot empties",
+                    { a: "middle" },
+                );
+                const C = mk();
+                const loop = snake.concat([
+                    [210, 120],
+                    [210, 20],
+                    [50, 20],
+                ]);
+                line(C, snake, "--route");
+                line(
+                    C,
+                    [
+                        [50, 120],
+                        [30, 120],
+                        [30, 40],
+                    ].reverse(),
+                    "--route",
+                    { op: 0 },
+                );
+                const ret = [
+                    snake[snake.length - 1],
+                    [30, 120],
+                    [30, 140],
+                    [220, 140],
+                ];
+                const sn2 = snake.slice();
+                line(
+                    C,
+                    [
+                        [170, 120],
+                        [170, 145],
+                        [30, 145],
+                        [30, 40],
+                        [50, 40],
+                    ],
+                    "--good",
+                    { dash: "4 3" },
+                );
+                snake.forEach((p) => ring(C, p));
+                snake.forEach((p, i) =>
+                    dot(
+                        C,
+                        snake[(i + 1) % snake.length],
+                        "--foreground",
+                        5,
+                        String(i + 1),
+                    ),
+                );
+                text(C, 22, 95, "return", {
+                    a: "middle",
+                    c: "--good",
+                    size: 8.5,
+                });
+                text(
+                    C,
+                    120,
+                    162,
+                    "looped: the last one walks back to the start",
+                    { a: "middle" },
+                );
+                card({
+                    n: "O-12",
+                    t: "Checking I understood: following along an existing shape",
+                    u: "Two jobs. In both, the route <b>is</b> the shape (or a path through it), so nothing new is drawn, and marchers end on each other's spots. Rings are where they started, dots where they end.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Around a closed outline",
+                            d: "A circle, a box outline, or a block-letter outline. Everyone follows the person ahead along the outline by some number of spots.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Snake through a box (open)",
+                            d: "A serpentine path back and forth through the rows. Everyone shifts forward. The front marcher has nowhere to go, and the first spot empties.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Snake through a box (looped)",
+                            d: "Like a factory line. The last marcher returns to the first spot along a return lane, so the box stays full.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>Questions so I build the right thing:</b><ul><li>Do they always move a whole number of spots, or any distance (ending between spots)?</li><li>Snake: is it open (B), looped (C), or both? In B, where does the front marcher go?</li><li>At the end of a row, do they turn tightly on the grid (as drawn) or swing round outside the box?</li><li>Can the snake run down columns instead of across rows, or diagonally?</li></ul>",
+                });
+            })();
+
+            /* ---------------- O-13 ---------------- */
+            (() => {
+                const L1 = [
+                    [50, 50],
+                    [80, 50],
+                    [80, 105],
+                    [130, 105],
+                    [130, 125],
+                    [50, 125],
+                ];
+                const sc = (pts, f, o) =>
+                    pts.map((p) => [
+                        o[0] + (p[0] - o[0]) * f,
+                        o[1] + (p[1] - o[1]) * f,
+                    ]);
+                const L2 = sc(L1, 1.3, [50, 125]);
+                const mkS = (linked) => {
+                    const s = mk();
+                    poly(s, L1, "--muted-foreground", { w: 1.2, dash: "3 3" });
+                    poly(s, L2, "--other");
+                    const R = linked ? L2 : L1;
+                    poly(s, R, "--route", { w: 1.6, op: linked ? 1 : 0.9 });
+                    for (let i = 0; i < 8; i++)
+                        dot(
+                            s,
+                            pointAt(R, i / 8, true),
+                            linked ? "--foreground" : "--bad",
+                            4,
+                        );
+                    text(s, 200, 40, "letter made", {
+                        a: "middle",
+                        c: "--other",
+                    });
+                    text(s, 200, 52, "bigger", { a: "middle", c: "--other" });
+                    text(
+                        s,
+                        120,
+                        160,
+                        linked
+                            ? "marchers stay on the letter"
+                            : "marchers left behind on the old outline",
+                        {
+                            a: "middle",
+                            c: linked ? "--muted-foreground" : "--bad",
+                        },
+                    );
+                    return s;
+                };
+                card({
+                    n: "O-13",
+                    t: "A shape used as the route, then the shape is edited",
+                    u: "This follows from O-12A. Marchers follow each other around a block-letter L, and the route <b>is</b> the letter's outline. Later you make the letter bigger. <b>Should the route follow the edited letter?</b> Q2 says hand-drawn route points stay put, but here the route was never drawn: it came from the shape.",
+                    cls: "two",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Linked: the route is the shape",
+                            d: "Editing the letter edits the route. The marchers stay on the letter.",
+                            s: mkS(true),
+                        },
+                        {
+                            k: "B",
+                            l: "Copied when the move was made",
+                            d: "The route keeps the old outline. The marchers end up off the letter you can see.",
+                            s: mkS(false),
+                        },
+                    ],
+                    lean: '<b>My lean: A.</b> "Following an existing shape, not a new path" (your words) means linked. Q2\'s rule stays for routes you drew by hand.',
+                });
+            })();
+
+            /* ---------------- O-14 ---------------- */
+            (() => {
+                const block = [
+                    [40, 120],
+                    [60, 120],
+                    [80, 120],
+                    [100, 120],
+                    [120, 120],
+                ];
+                const arc = (r) =>
+                    [...Array(5)].map((_, i) => {
+                        const a = Math.PI * (0.15 + (0.7 * i) / 4);
+                        return [140 - r * Math.cos(a), 140 - r * Math.sin(a)];
+                    });
+                const obst = (s) => {
+                    el(
+                        "rect",
+                        {
+                            x: 92,
+                            y: 62,
+                            width: 36,
+                            height: 22,
+                            rx: 4,
+                            style: "fill: var(--secondary); stroke: var(--other)",
+                        },
+                        s,
+                    );
+                    text(s, 110, 77, "group", {
+                        a: "middle",
+                        c: "--other",
+                        size: 8.5,
+                    });
+                };
+                const mkS = (r, five, note, bad) => {
+                    const s = mk();
+                    obst(s);
+                    const A = arc(r);
+                    block.forEach((p) => ring(s, p));
+                    A.forEach((p) => dot(s, p, "--muted-foreground", 3));
+                    const st = block[2],
+                        en = A[five];
+                    line(s, [st, [70, 75], en], bad ? "--bad" : "--route");
+                    dot(s, en, "--foreground", 5, "5");
+                    text(s, 120, 160, note, {
+                        a: "middle",
+                        c: bad ? "--bad" : "--muted-foreground",
+                    });
+                    return s;
+                };
+                card({
+                    n: "O-14",
+                    t: "A bent route inside a move into a shape",
+                    u: "A block moves into an arc. Marcher 5's route bends around another group to avoid a collision (a Q2-style hand-drawn route). Then the <b>arc</b> changes. Two kinds of change are different questions.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Before",
+                            d: "M5 goes around the other group to its spot on the arc.",
+                            s: mkS(95, 2, "bent around the group", false),
+                        },
+                        {
+                            k: "B",
+                            l: "The arc gets bigger",
+                            d: "M5's spot moves a little. This is just Q2: the bend stays, the last leg changes, and the route is flagged.",
+                            s: mkS(120, 2, "same spot, further out", false),
+                        },
+                        {
+                            k: "C",
+                            l: "Who goes where changes",
+                            d: "Changing the order sends M5 to a spot on the other side. The bend was drawn for a different trip and now makes no sense.",
+                            s: mkS(95, 0, "bend made for the old trip", true),
+                        },
+                    ],
+                    lean: '<b>My lean:</b> B follows Q2. For C, drop the route and say so in a notice ("M5\'s path was cleared because its spot changed"). Undo brings it back.',
+                });
+            })();
+
+            /* ---------------- O-19 ---------------- */
+            (() => {
+                const pts = [
+                    [30, 120],
+                    [70, 50],
+                    [130, 90],
+                    [200, 40],
+                ];
+                const mkS = (steps) => {
+                    const s = mk(150);
+                    steps.forEach((st, j) => {
+                        const y0 = 12 + j * 34;
+                        text(s, 6, y0 + 10, st.l, {
+                            size: 8.5,
+                            c: "--foreground",
+                        });
+                        const sh = (p) => [
+                            90 + (p[0] - 30) * 0.65,
+                            y0 + (p[1] - 40) * 0.3,
+                        ];
+                        line(s, pts.slice(0, st.n).map(sh), "--route", {
+                            w: 1.6,
+                        });
+                        pts.slice(0, st.n).forEach((p) =>
+                            dot(s, sh(p), "--route", 2.2),
+                        );
+                    });
+                    return s;
+                };
+                card({
+                    n: "O-19",
+                    t: "What one Undo removes after drawing a route",
+                    u: "You draw a route by clicking points one by one, then press Enter to finish. Then you press Undo. <b>What does it take away?</b>",
+                    cls: "two",
+                    o: [
+                        {
+                            k: "A",
+                            l: "One point per Undo",
+                            d: "Each click was its own step, so Undo after finishing removes the last point. Precise, but undoing a 12-point route takes 12 presses.",
+                            s: mkS([
+                                { l: "drawn", n: 4 },
+                                { l: "Undo", n: 3 },
+                                { l: "Undo", n: 2 },
+                                { l: "Undo", n: 1 },
+                            ]),
+                        },
+                        {
+                            k: "B",
+                            l: "Points while drawing, whole route after",
+                            d: "While drawing, Backspace (or Undo) removes the last point. Once you press Enter, the route is one edit, and one Undo removes all of it.",
+                            s: mkS([
+                                { l: "drawing", n: 4 },
+                                { l: "Backspace", n: 3 },
+                                { l: "Enter", n: 3 },
+                                { l: "Undo", n: 0 },
+                            ]),
+                        },
+                    ],
+                    lean: "<b>My lean: B.</b> It matches how a single shape placement is one undo step today.",
+                });
+            })();
+
+            /* ---------------- O-20 ---------------- */
+            (() => {
+                const many = (s, op, hi) => {
+                    for (let i = 0; i < 18; i++) {
+                        const y = 20 + i * 7;
+                        line(
+                            s,
+                            [
+                                [20, y],
+                                [80, y + 10 * Math.sin(i)],
+                                [150, y - 15],
+                                [220, y + 5 * Math.cos(i)],
+                            ],
+                            i === hi ? "--route" : "--muted-foreground",
+                            { w: i === hi ? 2.4 : 1, op: i === hi ? 1 : op },
+                        );
+                    }
+                };
+                const A = mk(150);
+                many(A, 0.9, -1);
+                text(A, 120, 145, "every route, full strength", {
+                    a: "middle",
+                    c: "--bad",
+                });
+                const B = mk(150);
+                many(B, 0.18, 7);
+                text(B, 120, 145, "all faint, the selection bright", {
+                    a: "middle",
+                });
+                const C = mk(150);
+                line(
+                    C,
+                    [
+                        [20, 70],
+                        [80, 75],
+                        [150, 55],
+                        [220, 72],
+                    ],
+                    "--route",
+                    { w: 6, op: 0.35 },
+                );
+                line(
+                    C,
+                    [
+                        [20, 70],
+                        [80, 75],
+                        [150, 55],
+                        [220, 72],
+                    ],
+                    "--route",
+                    { w: 1.6 },
+                );
+                line(
+                    C,
+                    [
+                        [20, 100],
+                        [80, 120],
+                        [150, 105],
+                        [220, 110],
+                    ],
+                    "--pin",
+                    { w: 2 },
+                );
+                text(C, 120, 40, "one band for the shared route", {
+                    a: "middle",
+                });
+                text(C, 120, 135, "+ the marchers with their own", {
+                    a: "middle",
+                    c: "--pin",
+                });
+                card({
+                    n: "O-20",
+                    t: "Showing routes when there are 200 marchers",
+                    u: "A show can have hundreds of marchers with routes in the same move. Drawn at once they become spaghetti. <b>Which routes does the field show?</b> Tablet editing (dragging points with a finger, adding points with the pencil) is part of this question but comes after.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Everything",
+                            d: "Complete, unreadable past a few dozen marchers.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Faint, selection bright",
+                            d: "Like the start-flag paths (#337): Off, Selected, or All. You see the shape of all the motion and edit only what's selected.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Group routes drawn once",
+                            d: "A shared route is one thick band. Only marchers with their own route (Q3) get their own line.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: B and C together.</b> Shared routes as one band, plus the existing Off / Selected / All switch.",
+                });
+            })();
+
+            /* ---------------- O-21 ---------------- */
+            (() => {
+                const graph = (s, segs, note) => {
+                    line(
+                        s,
+                        [
+                            [30, 20],
+                            [30, 130],
+                            [225, 130],
+                        ],
+                        "--border",
+                        { w: 1 },
+                    );
+                    text(s, 128, 146, "counts →", { a: "middle", size: 8.5 });
+                    text(s, 14, 75, "how far", { a: "middle", size: 8.5 });
+                    const X = (c) => 30 + c * 16,
+                        Y = (d) => 130 - d * 100;
+                    line(
+                        s,
+                        segs.map(([c, d]) => [X(c), Y(d)]),
+                        "--route",
+                    );
+                    return { X, Y };
+                };
+                const pts = [
+                    [0, 0],
+                    [4, 0.45],
+                    [8, 0.45],
+                    [12, 1],
+                ];
+                const A = mk(170);
+                const g = graph(A, pts);
+                diamond(A, [g.X(4), g.Y(0.45)]);
+                diamond(A, [g.X(8), g.Y(0.45)]);
+                text(A, g.X(6), g.Y(0.45) - 10, "two pins, one point", {
+                    a: "middle",
+                    c: "--foreground",
+                });
+                const B = mk(170);
+                const g2 = graph(B, pts);
+                el(
+                    "rect",
+                    {
+                        x: g2.X(4),
+                        y: 140,
+                        width: g2.X(8) - g2.X(4),
+                        height: 8,
+                        rx: 2,
+                        style: "fill: var(--pin); opacity: 0.8",
+                    },
+                    B,
+                );
+                text(B, g2.X(6), g2.Y(0.45) - 10, "shown as a hold", {
+                    a: "middle",
+                    c: "--foreground",
+                });
+                text(B, g2.X(8) + 4, 147, "hold bar", {
+                    size: 8.5,
+                    c: "--pin",
+                });
+                const C = mk(170);
+                const g3 = graph(C, pts);
+                el(
+                    "line",
+                    {
+                        x1: g3.X(4),
+                        y1: 20,
+                        x2: g3.X(4),
+                        y2: 130,
+                        style: "stroke: var(--other); stroke-dasharray: 3 3",
+                    },
+                    C,
+                );
+                el(
+                    "line",
+                    {
+                        x1: g3.X(8),
+                        y1: 20,
+                        x2: g3.X(8),
+                        y2: 130,
+                        style: "stroke: var(--other); stroke-dasharray: 3 3",
+                    },
+                    C,
+                );
+                text(C, g3.X(2), 30, "move 1", { a: "middle", c: "--other" });
+                text(C, g3.X(10), 30, "move 2", { a: "middle", c: "--other" });
+                text(C, g3.X(6), 30, "hold", { a: "middle", c: "--other" });
+                card({
+                    n: "O-21",
+                    t: "Stopping partway along a route",
+                    u: "A marcher walks to a corner by count 4, marks time until count 8, then carries on. On the route that's two pins on the same point. Your holds work (October) already defines a hold as <b>any stretch where a marcher stands still</b>, with its own display and editing rules. <b>Is this stop a hold?</b> Graphs show distance along the route against counts.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Just route timing",
+                            d: "Stored and shown only on the route. The timeline doesn't show it, so it's easy to miss.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Route timing, shown as a hold",
+                            d: "Stored as the two pins, but the timeline draws a hold bar like any other hold. One way of seeing every stop in the show.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Two moves with a real hold",
+                            d: "Split at the stop: the route becomes two moves with a hold between. Uses existing rules, but one route becomes two to edit.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: B.</b> Stored as route timing, shown with the hold display, so a stop looks the same wherever it comes from.",
+                });
+            })();
+
+            /* ---------------- O-22 ---------------- */
+            (() => {
+                const fig = (s, p, face, travel, c = "--foreground") => {
+                    dot(s, p, c, 6);
+                    const a = (face * Math.PI) / 180;
+                    line(
+                        s,
+                        [p, [p[0] + 13 * Math.cos(a), p[1] + 13 * Math.sin(a)]],
+                        c,
+                        { w: 2.4 },
+                    );
+                    arrow(
+                        s,
+                        [
+                            p[0] - 30 * Math.cos((travel * Math.PI) / 180),
+                            p[1] - 30 * Math.sin((travel * Math.PI) / 180) + 26,
+                        ],
+                        [
+                            p[0] + 30 * Math.cos((travel * Math.PI) / 180),
+                            p[1] + 30 * Math.sin((travel * Math.PI) / 180) + 26,
+                        ],
+                        "--route",
+                    );
+                };
+                const A = mk(120);
+                fig(A, [120, 50], 0, 0);
+                text(A, 120, 112, "faces where it goes", { a: "middle" });
+                const B = mk(120);
+                fig(B, [120, 50], 180, 0);
+                text(B, 120, 112, "faces backfield, travels forward", {
+                    a: "middle",
+                });
+                const C = mk(120);
+                fig(C, [120, 50], 90, 0);
+                text(
+                    C,
+                    120,
+                    112,
+                    "shoulders to the audience, legs go sideways",
+                    { a: "middle" },
+                );
+                card({
+                    n: "O-22",
+                    t: "Which way a marcher faces while it travels",
+                    u: 'Line = which way the marcher faces, arrow = which way it travels. Today the 3D View turns marchers to face where they\'re going. Dot books often say <b>"backwards march"</b> or <b>"slide"</b>. The question is only about the data: <b>should a route have room to store facing now</b> (say per stretch between points), even if the UI comes later?',
+                    o: [
+                        {
+                            k: "A",
+                            l: "Forward march",
+                            d: "The default, and the only one stored today (implied).",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Backwards march",
+                            d: "Travels one way, faces the other.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Slide",
+                            d: "Faces the audience while travelling sideways.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean:</b> reserve an optional facing field per stretch now (missing = forward), with no UI yet. It costs nothing, and it means the 3D View and dot books can use it later without a file change.",
+                });
+            })();
+
+            /* render */
+            const root = document.getElementById("root");
+            Q.forEach((q) => {
+                const d = document.createElement("div");
+                d.className = "q";
+                d.innerHTML = `<h2><span class="n">${q.n}</span>${q.t}</h2><p class="unc">${q.u}</p><div class="opts ${q.cls || ""}"></div><div class="lean">${q.lean}</div>`;
+                const opts = d.querySelector(".opts");
+                q.o.forEach((o) => {
+                    const c = document.createElement("div");
+                    c.className = "opt";
+                    c.appendChild(o.s);
+                    c.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="lbl"><span class="k">${o.k}</span>${o.l}</div><div class="d">${o.d}</div>`,
+                    );
+                    opts.appendChild(c);
+                });
+                root.appendChild(d);
+            });
+        </script>
+    </body>
+</html>

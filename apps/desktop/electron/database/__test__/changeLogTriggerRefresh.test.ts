@@ -79,13 +79,13 @@ describe("change-log trigger refresh on open", () => {
                 .get() as { x: number };
             expect(Object.is(row.x, 0.1 + 0.2)).toBe(true);
 
-            // All 15 change-log triggers exist, and an up-to-date file isn't rewritten on open
+            // All 21 change-log triggers exist, and an up-to-date file isn't rewritten on open
             const count = db
                 .prepare(
                     `SELECT count(*) AS n FROM sqlite_master WHERE type='trigger' AND name LIKE 'timeline_log_%'`,
                 )
                 .get() as { n: number };
-            expect(count.n).toBe(15);
+            expect(count.n).toBe(21);
             const schemaVersion = () =>
                 (
                     db.prepare("PRAGMA schema_version").get() as {

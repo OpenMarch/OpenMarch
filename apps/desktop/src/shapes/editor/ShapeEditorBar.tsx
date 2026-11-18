@@ -13,11 +13,11 @@ import {
     useRef,
     useState,
     type PointerEvent as ReactPointerEvent,
-    type ReactNode,
     type RefObject,
 } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
+import { setShapeEditorRect } from "./shapeEditorRect";
 import { clearPlacement, oneRowRoom } from "./editorPlacement";
 import {
     coverInset,
@@ -38,13 +38,12 @@ import {
     setShapeScrubbing,
     useShapePointerStore,
 } from "../field/shapePointer";
-import { keepFocus } from "./keepFocus";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { runAction } from "@/shortcuts/registry";
-import type { ActionId } from "@/shortcuts/definitions";
 import type { OrderChoice } from "../assign";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
-import { RichTips, Tip } from "@/components/ui/Tip";
+import { keepFocus } from "./keepFocus";
+import { RichTips } from "@/components/ui/Tip";
 import ActionButton from "@/shortcuts/ActionButton";
 import { useIsTouchMode } from "@/stores/InputModeStore";
 import {
@@ -108,6 +107,12 @@ import { ShapeAwayChip } from "./ShapeAwayChip";
 import { GlyphText } from "./GlyphText";
 import { useShapePointerOver } from "../tool/shapeToolMode";
 import "./ShapeEditorSurface.css";
+import {
+    Divider,
+    EDITOR_BAR,
+    EditorButton,
+    IconButton,
+} from "./EditorBarParts";
 import {
     chipLayout,
     quarterTurn,
@@ -507,7 +512,7 @@ function ShapeEditorBar({
         >
             <div
                 className={clsx(
-                    "rounded-6 border-stroke bg-bg-1 bg-modal shadow-modal flex items-center border px-6 py-4",
+                    EDITOR_BAR,
                     twoRows ? "flex-col gap-4" : "gap-6",
                 )}
                 data-testid={`${testId}-bar`}
@@ -1320,19 +1325,12 @@ const EndControls = memo(function EndControls({
                             {tolgee.t("shapes.edit.discard", "Discard")}
                         </ActionButton>
                     )}
-                    <button
-                        type="button"
-                        // text-body after twMerge, which drops it (docs/conventions/ui-styling.md)
-                        className={`${getButtonClassName({
-                            variant: "primary",
-                            size: "compact",
-                        })} text-body`}
-                        onPointerDown={keepFocus}
+                    <EditorButton
                         onClick={() => target.place?.()}
-                        data-testid="shape-editor-place"
+                        testId="shape-editor-place"
                     >
                         {tolgee.t("shapes.edit.place", "Place")}
-                    </button>
+                    </EditorButton>
                 </>
             )}
             {!canPlace && (
@@ -1715,6 +1713,13 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             prefersReducedMotion();
         shown.current = { view, placed: true, gliding, held: false };
         setAbove(target.above);
+        // Where it's going, for the path bar to stack clear of (pathways interaction round 4)
+        setShapeEditorRect({
+            left: target.left,
+            top: target.top,
+            width: room.width,
+            height: room.height,
+        });
         const started = api.start({
             left: target.left,
             top: target.top,
@@ -1762,6 +1767,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
         () => useFieldViewStore.subscribe((view) => latestFollow.current(view)),
         [],
     );
+    useEffect(() => () => setShapeEditorRect(null), []);
     return {
         ref,
         above,
@@ -1913,10 +1919,6 @@ function useTwoRows(
     return twoRows;
 }
 
-function Divider() {
-    return <span className="bg-stroke h-16 w-px" aria-hidden />;
-}
-
 /**
  * The eye (#558): shows whether the marchers, the shape's spots and its walks are hidden, held or
  * latched, and turns the latch over. Its tooltip shows the key, which is held to peek.
@@ -2005,55 +2007,5 @@ export function SnapButton() {
         >
             <MagnetIcon size={14} />
         </IconButton>
-    );
-}
-
-function IconButton({
-    label,
-    action,
-    className,
-    onClick,
-    disabled,
-    pressed,
-    testId,
-    children,
-}: {
-    label: string;
-    /** The action it runs, whose shortcut the tooltip shows */
-    action?: ActionId;
-    className?: string;
-    onClick: () => void;
-    disabled?: boolean;
-    pressed?: boolean;
-    testId?: string;
-    children: ReactNode;
-}) {
-    return (
-        <Tip label={label} action={action}>
-            <button
-                type="button"
-                aria-label={label}
-                aria-pressed={pressed}
-                // aria-disabled, not disabled: a disabled button gets no pointer, so its tooltip
-                // (which says why, as Recalculate's does) wouldn't show
-                aria-disabled={disabled || undefined}
-                onPointerDown={keepFocus}
-                onClick={() => {
-                    if (!disabled) onClick();
-                }}
-                data-testid={testId}
-                className={clsx(
-                    // At least 24 px to hit (WCAG 2.2 target size; review round r429)
-                    "rounded-4 flex min-h-24 min-w-24 items-center justify-center gap-4 p-4",
-                    // On: the icon in the accent on a light accent tint, so the state is plain at a
-                    // glance without reading as a solid button (owner)
-                    pressed ? "bg-accent/15 text-accent" : "hover:text-accent",
-                    disabled && "cursor-default opacity-40 hover:text-inherit",
-                    className,
-                )}
-            >
-                {children}
-            </button>
-        </Tip>
     );
 }

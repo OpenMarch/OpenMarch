@@ -1410,6 +1410,194 @@
             }
         ]
     },
+    "pathPen": {
+        "label": "Path pen",
+        "category": "path",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "P"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "P"
+                    ]
+                }
+            }
+        ]
+    },
+    "editPath": {
+        "label": "Edit path",
+        "category": "path",
+        "bindings": []
+    },
+    "removePath": {
+        "label": "Remove path",
+        "category": "path",
+        "bindings": []
+    },
+    "refitPath": {
+        "label": "Re-fit path",
+        "category": "path",
+        "bindings": []
+    },
+    "adjustRemoveKey": {
+        "label": "Remove bend point",
+        "category": "path",
+        "bindings": []
+    },
+    "editLine": {
+        "label": "Edit marcher's line",
+        "category": "path",
+        "bindings": []
+    },
+    "adjustResetSpot": {
+        "label": "Match group",
+        "category": "path",
+        "bindings": []
+    },
+    "adjustAcknowledge": {
+        "label": "Keep moved bends",
+        "category": "path",
+        "bindings": []
+    },
+    "detachPath": {
+        "label": "Detach from group path",
+        "category": "path",
+        "bindings": []
+    },
+    "detachAllPath": {
+        "label": "Detach all marchers",
+        "category": "path",
+        "bindings": []
+    },
+    "rejoinPath": {
+        "label": "Rejoin group path",
+        "category": "path",
+        "bindings": []
+    },
+    "followTrail": {
+        "label": "Follow",
+        "category": "path",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "L"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "L"
+                    ]
+                }
+            }
+        ]
+    },
+    "followPreview": {
+        "label": "Preview the follow walk",
+        "category": "path",
+        "bindings": []
+    },
+    "followEndsTrail": {
+        "label": "Follow: ends from the trail",
+        "category": "path",
+        "bindings": []
+    },
+    "followEndsKeep": {
+        "label": "Follow: keep end spots",
+        "category": "path",
+        "bindings": []
+    },
+    "followEndsRipple": {
+        "label": "Follow: ripple into the end spots' form",
+        "category": "path",
+        "bindings": []
+    },
+    "reverseTrail": {
+        "label": "Reverse leader",
+        "category": "path",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "L"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "L"
+                    ]
+                }
+            }
+        ]
+    },
+    "toggleMarcherOrder": {
+        "label": "Show order",
+        "category": "path",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "O"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Alt",
+                        "O"
+                    ]
+                }
+            }
+        ]
+    },
+    "setMarcherOrder": {
+        "label": "Set order",
+        "category": "path",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "O"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "O"
+                    ]
+                }
+            }
+        ]
+    },
+    "reverseMarcherOrder": {
+        "label": "Reverse order",
+        "category": "path",
+        "bindings": []
+    },
+    "clearMarcherOrder": {
+        "label": "Clear order",
+        "category": "path",
+        "bindings": []
+    },
+    "pathPointCorner": {
+        "label": "Corner point",
+        "category": "path",
+        "bindings": []
+    },
+    "pathPointSmooth": {
+        "label": "Smooth point",
+        "category": "path",
+        "bindings": []
+    },
     "shapeEnterBox": {
         "label": "Select only this marcher",
         "category": "shape",

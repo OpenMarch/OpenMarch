@@ -190,22 +190,49 @@ function toastMoveEdit(message: string, undo: () => void): void {
 }
 
 /**
- * Why **Split at playhead** (UI-27) can't split `move` now, or null: playing, or the playhead not
- * strictly inside the move (on an end there is nothing to split off).
+ * Why **Split at playhead** (UI-27) can't split `move` now, or null: playing, a line in it that
+ * follows a trail (pathways step 4, AP-T5: cutting a trail at a count isn't kept exact yet), or
+ * the playhead not strictly inside the move (on an end there is nothing to split off).
  */
 export function splitMoveBlocker(
-    move: { readonly start: number; readonly end: number } | undefined,
+    move:
+        | {
+              readonly start: number;
+              readonly end: number;
+              readonly trail?: boolean;
+          }
+        | undefined,
     playheadBeat: number,
     isPlaying: boolean,
 ): string | null {
     if (isPlaying)
         return tolgee.t("timeline.moveSplit.paused", "Pause to split a move.");
+    if (move?.trail)
+        return tolgee.t(
+            "timeline.moveSplit.trail",
+            "Can't split at a count while a line follows a trail. Remove the trail first.",
+        );
     if (move && !(move.start < playheadBeat && playheadBeat < move.end))
         return tolgee.t(
             "inspector.timeline.move.splitHelp",
             "Put the playhead inside the move to split it there.",
         );
     return null;
+}
+
+/**
+ * Why ⌘K's (and the field menu's) **Split at playhead** can't run now, or null: the same checks
+ * the action makes when it runs (no single move strictly around the playhead, then
+ * {@link splitMoveBlocker}), so the entry is never shown available when choosing it would only
+ * refuse.
+ */
+export function splitAtPlayheadBlocker(
+    state: Parameters<typeof moveAtPlayhead>[0],
+    isPlaying: boolean,
+): string | null {
+    const target = moveAtPlayhead(state);
+    if (typeof target === "string") return target;
+    return splitMoveBlocker(target, state.playheadBeat, isPlaying);
 }
 
 /**

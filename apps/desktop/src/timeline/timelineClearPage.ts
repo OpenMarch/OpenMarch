@@ -16,6 +16,7 @@ import {
 } from "@/stores/TimelineSelectionStore";
 import type { HeldMark } from "@/db-functions/timelineHeldMarks";
 import { usePlacedBoxStore } from "@/shapes/placed/placedBoxStore";
+import { isOrderMarkKind } from "@/db-functions/shapeRecipes";
 import { useHeldMarksStore } from "./useHeldMarks";
 import { getTimelineHost } from "./timelineStore";
 import { pageEndBeat } from "./timelineCanvas";
@@ -57,6 +58,7 @@ export interface ClearPageSkips {
     readonly transitions?: Readonly<Record<number, TransitionRow>>;
     /** The shape recipes and their members (`usePlacedBoxStore`) */
     readonly recipes?: readonly {
+        readonly kind?: string;
         readonly timelineId: number | null;
         readonly members: readonly { readonly marcherId: number }[];
     }[];
@@ -83,6 +85,8 @@ const inShapeOf = (
     (skips.recipes ?? []).some(
         (r) =>
             r.timelineId !== null &&
+            // An order set by hand (pathways step 4g) is no shape: the clear doesn't leave its marchers
+            !(r.kind !== undefined && isOrderMarkKind(r.kind)) &&
             r.members.some((m) => m.marcherId === marcherId) &&
             (skips.timelines ?? []).some(
                 (t) =>

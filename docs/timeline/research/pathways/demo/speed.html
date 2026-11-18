@@ -1,0 +1,359 @@
+<!-- cspell:disable -->
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            :root {
+                --background: #0b0b0d;
+                --foreground: #ececf1;
+                --muted-foreground: #9a9aa5;
+                --card: #141417;
+                --secondary: #26262b;
+                --border: #2e2e35;
+                --primary: #7aa2ff;
+                --primary-foreground: #0b0b0d;
+                --warning: #f5a524;
+                --destructive: #f05252;
+                --chart-1: #5b8cff;
+                --chart-2: #34d399;
+                --chart-3: #c084fc;
+                --chart-4: #f472b6;
+                --radius: 10px;
+                --font-sans: system-ui, sans-serif;
+            }
+            body {
+                background: var(--background);
+                color: var(--foreground);
+                font-family: var(--font-sans);
+                max-width: 760px;
+                margin: 16px auto !important;
+                padding: 0 12px;
+            }
+        </style>
+        <style>
+            :root {
+                --route: var(--chart-1);
+                --pin: var(--warning);
+                --bad: var(--destructive);
+                --m2: var(--chart-3);
+            }
+            body {
+                margin: 0;
+            }
+            .sec {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 16px;
+                background: var(--card);
+            }
+            h2 {
+                font-size: 16px;
+                margin: 0 0 6px;
+            }
+            p.u {
+                font-size: 13px;
+                color: var(--muted-foreground);
+                margin: 0 0 10px;
+                line-height: 1.45;
+            }
+            p.u b {
+                color: var(--foreground);
+            }
+            .ctl {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin: 0 0 8px;
+                font-size: 12.5px;
+            }
+            .ctl button {
+                font: inherit;
+                color: var(--foreground);
+                background: var(--secondary);
+                border: 1px solid var(--border);
+                border-radius: 6px;
+                padding: 4px 10px;
+                cursor: pointer;
+            }
+            .ctl input {
+                flex: 1;
+                accent-color: var(--primary);
+            }
+            .cnt {
+                font-variant-numeric: tabular-nums;
+                color: var(--muted-foreground);
+                min-width: 64px;
+            }
+            svg {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .take {
+                margin-top: 10px;
+                font-size: 12.5px;
+                line-height: 1.5;
+            }
+            .take b {
+                color: var(--primary);
+            }
+        </style>
+    </head>
+    <body>
+        <div class="sec">
+            <h2>Where speed changes show up</h2>
+            <p class="u">
+                Each lane is one marcher on a straight line over 8 counts. Faint
+                dots mark where it is on each count. The bar on the right is its
+                speed right now. <b>Purple</b> is a second move,
+                <b>orange diamonds</b> are pins.
+            </p>
+            <div class="ctl">
+                <button id="play">Pause</button
+                ><input
+                    id="scrub"
+                    type="range"
+                    min="0"
+                    max="9"
+                    step="0.02"
+                    value="0"
+                /><span class="cnt" id="cnt">count 0</span
+                ><button id="slow">Slow</button>
+            </div>
+            <svg id="s" viewBox="0 0 700 430"></svg>
+            <div class="take">
+                <b>What this shows.</b> You're right: on one line with evenly
+                placed pins (lane 3), nothing odd happens. Speed changes appear
+                at a <b>boundary</b>, which is either the join between two moves
+                (lane 1) or a pin that isn't evenly placed (lane 4, which is the
+                same thing inside one move). In marching, a crisp change on
+                count 1 of the next set is normal (lane 1). The question is only
+                whether a <b>run</b> should be able to smooth across a boundary
+                (lane 2). The one setup to avoid is easing each piece between
+                pins separately (lane 5), because the marcher stops at every
+                pin.
+            </div>
+        </div>
+        <script>
+            const NS = "http://www.w3.org/2000/svg";
+            const s = document.getElementById("s");
+            function el(tag, a, p, t) {
+                const e = document.createElementNS(NS, tag);
+                for (const k in a) e.setAttribute(k, a[k]);
+                if (t != null) e.textContent = t;
+                (p || s).appendChild(e);
+                return e;
+            }
+            const ease = (u) => u * u * (3 - 2 * u);
+            const T = 8,
+                X0 = 30,
+                X1 = 560;
+            const lanes = [
+                {
+                    t: "1 · Two moves, even speed each (today)",
+                    sub: "move 1 covers a little, move 2 a lot: speed jumps on count 4",
+                    x: (c) =>
+                        c <= 4 ? (0.2 * c) / 4 : 0.2 + (0.8 * (c - 4)) / 4,
+                    split: 4,
+                    pins: [],
+                },
+                {
+                    t: "2 · Same two moves, smoothed across the join",
+                    sub: "still on its spot at count 4, but it speeds up gradually",
+                    x: (c) => Math.pow(c / 8, Math.log(0.2) / Math.log(0.5)),
+                    split: 4,
+                    pins: [],
+                },
+                {
+                    t: "3 · One move, midset pin in the middle, even speed",
+                    sub: "nothing odd: one steady speed",
+                    x: (c) => c / 8,
+                    pins: [4],
+                },
+                {
+                    t: "4 · One move, pin placed early, even speed",
+                    sub: "same jump as lane 1, inside one move",
+                    x: (c) =>
+                        c <= 4 ? (0.2 * c) / 4 : 0.2 + (0.8 * (c - 4)) / 4,
+                    pins: [4],
+                },
+                {
+                    t: "5 · One move, midset pin, each piece eased",
+                    sub: "stops at the pin: looks like a pause that was never drawn",
+                    x: (c) =>
+                        c <= 4
+                            ? 0.5 * ease(c / 4)
+                            : 0.5 + 0.5 * ease((c - 4) / 4),
+                    pins: [4],
+                },
+            ];
+            const H = 90;
+            const speedOf = (L, c) => {
+                const d = 0.02,
+                    a = Math.max(0, c - d),
+                    b = Math.min(T, c + d);
+                return (L.x(b) - L.x(a)) / (b - a);
+            };
+            const live = [];
+            lanes.forEach((L, i) => {
+                const y = 40 + i * H;
+                el(
+                    "text",
+                    {
+                        x: X0,
+                        y: y - 16,
+                        style: "font: 600 13px var(--font-sans); fill: var(--foreground)",
+                    },
+                    null,
+                    L.t,
+                );
+                el(
+                    "text",
+                    {
+                        x: X0,
+                        y: y + 30,
+                        style: "font: 11.5px var(--font-sans); fill: var(--muted-foreground)",
+                    },
+                    null,
+                    L.sub,
+                );
+                const bx = (c) => X0 + (X1 - X0) * L.x(c);
+                if (L.split) {
+                    el("line", {
+                        x1: X0,
+                        y1: y,
+                        x2: bx(L.split),
+                        y2: y,
+                        style: "stroke: var(--route); stroke-width: 3; stroke-linecap: round",
+                    });
+                    el("line", {
+                        x1: bx(L.split),
+                        y1: y,
+                        x2: X1,
+                        y2: y,
+                        style: "stroke: var(--m2); stroke-width: 3; stroke-linecap: round",
+                    });
+                } else
+                    el("line", {
+                        x1: X0,
+                        y1: y,
+                        x2: X1,
+                        y2: y,
+                        style: "stroke: var(--route); stroke-width: 3; stroke-linecap: round",
+                    });
+                for (let c = 0; c <= T; c++) {
+                    el("circle", {
+                        cx: bx(c),
+                        cy: y,
+                        r: 3.2,
+                        style: "fill: var(--muted-foreground); opacity: 0.55",
+                    });
+                    el(
+                        "text",
+                        {
+                            x: bx(c),
+                            y: y + 15,
+                            "text-anchor": "middle",
+                            style: "font: 9px var(--font-sans); fill: var(--muted-foreground)",
+                        },
+                        null,
+                        String(c),
+                    );
+                }
+                L.pins.forEach((c) => {
+                    const x = bx(c);
+                    el("polygon", {
+                        points: `${x},${y - 13} ${x + 5},${y - 8} ${x},${y - 3} ${x - 5},${y - 8}`,
+                        style: "fill: var(--pin)",
+                    });
+                });
+                el("rect", {
+                    x: 600,
+                    y: y - 12,
+                    width: 70,
+                    height: 10,
+                    rx: 3,
+                    style: "fill: var(--secondary)",
+                });
+                const bar = el("rect", {
+                    x: 600,
+                    y: y - 12,
+                    width: 0,
+                    height: 10,
+                    rx: 3,
+                    style: "fill: var(--route)",
+                });
+                el(
+                    "text",
+                    {
+                        x: 635,
+                        y: y + 10,
+                        "text-anchor": "middle",
+                        style: "font: 9.5px var(--font-sans); fill: var(--muted-foreground)",
+                    },
+                    null,
+                    "speed",
+                );
+                const dot = el("circle", {
+                    cx: X0,
+                    cy: y,
+                    r: 8,
+                    style: "fill: var(--foreground); stroke: var(--background); stroke-width: 2",
+                });
+                live.push({ L, dot, bar, bx });
+            });
+            let t = 0,
+                playing = true,
+                last = null,
+                rate = 2.2;
+            const scrub = document.getElementById("scrub"),
+                cnt = document.getElementById("cnt");
+            function draw() {
+                const c = Math.min(T, t);
+                live.forEach(({ L, dot, bar, bx }) => {
+                    dot.setAttribute("cx", bx(c));
+                    const v = speedOf(
+                        L,
+                        Math.min(T - 0.001, Math.max(0.001, c)),
+                    );
+                    bar.setAttribute(
+                        "width",
+                        Math.max(0, Math.min(70, v * 280)),
+                    );
+                    bar.style.fill =
+                        v < 0.03 && c > 0.05 && c < T - 0.05
+                            ? "var(--pin)"
+                            : "var(--route)";
+                });
+                cnt.textContent = "count " + Math.floor(c);
+            }
+            function tick(ts) {
+                if (playing) {
+                    if (last != null) {
+                        t += ((ts - last) / 1000) * rate;
+                        if (t > 9.2) t = 0;
+                        scrub.value = t;
+                    }
+                    last = ts;
+                } else last = null;
+                draw();
+                requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+            document.getElementById("play").onclick = (e) => {
+                playing = !playing;
+                e.target.textContent = playing ? "Pause" : "Play";
+            };
+            document.getElementById("slow").onclick = (e) => {
+                rate = rate > 1.5 ? 0.8 : 2.2;
+                e.target.textContent = rate < 1.5 ? "Normal" : "Slow";
+            };
+            scrub.oninput = () => {
+                t = +scrub.value;
+                playing = false;
+                document.getElementById("play").textContent = "Play";
+            };
+        </script>
+    </body>
+</html>

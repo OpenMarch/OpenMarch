@@ -23,6 +23,8 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
+import { useMarcherOrderStore } from "@/pathways/marcherOrderStore";
+import { undoInOrderSweep } from "@/pathways/orderSweepRoom";
 
 const KEY_BASE = "history";
 
@@ -137,10 +139,22 @@ export const usePerformHistoryAction = () => {
     }, [pendingFocus, pages]);
 
     return useMutation({
-        mutationFn: (type: "undo" | "redo") =>
-            performHistoryAction(type, db, {
+        mutationFn: async (type: "undo" | "redo") => {
+            // Set order open: undo and redo only close it (and bring back a shape tool it put
+            // away), whichever control asked, the title bar's or a toast's as much as the keys
+            if (useMarcherOrderStore.getState().sweep) {
+                undoInOrderSweep(type === "redo");
+                return {
+                    pageIdToGoTo: undefined,
+                    marcherIdsToSelect: undefined,
+                    queriesToInvalidate: undefined,
+                    tableNames: new Set<string>(),
+                };
+            }
+            return performHistoryAction(type, db, {
                 currentPageId: selectedPageContext?.selectedPage?.id,
-            }),
+            });
+        },
         onSuccess: async (response, type) => {
             // Invalidate history query
             void qc.invalidateQueries({

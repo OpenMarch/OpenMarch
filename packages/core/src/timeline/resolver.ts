@@ -8,9 +8,14 @@
  *   transition), updated only from batch after-images (spec 10.2). Marchers,
  *   shapes and transitions are read by id from the host's post-commit mirror
  *   (ADR 0012 section 4), which the caller keeps equal to the committed state.
- * - Local caches (9.2 #1-4): `spans`, `spansByTransition`, `destinations`,
- *   `ftlGeometry`. Cascading caches (9.2 #5-6): `origin`, keyed by
- *   (marcher, span.start), and `ftlEntry`.
+ * - Local caches (9.2 #1-4, #7): `spans`, `spansByTransition`, `destinations`,
+ *   `ftlGeometry`, `routeGeometry` (with each route's group schedule, `routeSchedule`
+ *   of spec J.7). Cascading caches (9.2 #5-6): `origin`, keyed by (marcher,
+ *   span.start), and `ftlEntry`. A laned span's own path and a group member's legs
+ *   (R-14′) are not cached, so W-5 holds trivially: they are rebuilt from `origin`,
+ *   `routeGeometry` and `destinations` on every evaluation.
+ * - Lanes (v0.10, D-20) are read from the host mirror by id and indexed by (transition,
+ *   slot) and by route, like transitions' destination shapes.
  * - Pull-compile (9.5) and the dirty walk (9.4, W-1 to W-4) use explicit work
  *   stacks, never recursion, because dependency depth equals chain length
  *   (9.3). A node seen again while its dependencies are unresolved is a cycle,
@@ -18,14 +23,25 @@
  * - All arithmetic and caches are Float64 (spec 10.1).
  */
 import {
-    arcPoint,
     clamp01,
-    destPath,
+    ftlDestPath,
+    ftlDestination,
     destinationsOf,
     flatten,
     lerp,
     makeTrail,
+    makeAlongTrail,
+    alongEnds,
+    alongPoint,
     paramT,
+    adjustDiagnostics,
+    groupSchedule,
+    resolveAdjust,
+    walkedPoint,
+    type GroupSchedule,
+    type LaneWalk,
+    type ResolvedAdjust,
+    type RouteWalk,
 } from "./geom";
 import type {
     AssignmentRow,
@@ -38,6 +54,7 @@ import type {
     FtlEntryInfo,
     FtlTrail,
     InvalidationReport,
+    LaneRow,
     OrderSource,
     Resolver,
     RowImage,
@@ -69,6 +86,8 @@ interface Entry {
     startDist: number[];
     endDist: number[];
     target: Map<number, XY>;
+    /** R-13″: set when the ends are along the way */
+    along?: { turn: XY[]; straight: number[] };
 }
 
 /** A node of the dependency graph (9.3): an origin or an FTL entry. */
@@ -156,6 +175,8 @@ function coalesce(batch: ChangeBatch) {
         shapes: new Map<number, NetChange>(),
         transitions: new Map<number, NetChange>(),
         assignments: new Map<number, NetChange>(),
+        routes: new Map<number, NetChange>(),
+        lanes: new Map<number, NetChange>(),
     };
     const destinations = new Set<number>();
     for (const c of batch.changes) {
@@ -183,6 +204,8 @@ function coalesce(batch: ChangeBatch) {
         shapes: live(byTable.shapes),
         transitions: live(byTable.transitions),
         assignments: live(byTable.assignments),
+        routes: live(byTable.routes),
+        lanes: live(byTable.lanes),
         destinations,
     };
 }
@@ -274,11 +297,63 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         }
     };
 
+    // trail routes (R-9′, pathways step 4): follow-the-leader transitions by the route they
+    // carry, kept in step with the host (route -> transitions, for route edits)
+    const byTrail = new Map<number, Set<number>>();
+    const trailOf = new Map<number, number>();
+    const setTrail = (tid: number, route: number | null | undefined) => {
+        const old = trailOf.get(tid);
+        if (old !== undefined) byTrail.get(old)?.delete(tid);
+        if (route == null) trailOf.delete(tid);
+        else {
+            trailOf.set(tid, route);
+            setOf(byTrail, route).add(tid);
+        }
+    };
+
+    // lanes (v0.10, D-20): each lane as indexed, by (transition, slot) and by route (J.7: route ->
+    // lanes -> transitions), kept in step with the host
+    const laneRows = new Map<number, LaneRow>();
+    const laneAt = new Map<string, number>(); // `${transition}|${slot}` -> lane id
+    const routeLanes = new Map<number, Set<number>>();
+    // profile[R, P] (J.7): each adjusted lane's resolved keys, on first use; dropped when the lane
+    // or its route changes
+    const laneAdjust = new Map<number, ResolvedAdjust>();
+    const slotKey = (tid: number, slot: number) => `${tid}|${slot}`;
+    /** Re-indexes lane `id` as `row` (null: gone); returns the transitions it was and is on. */
+    const setLane = (id: number, row: LaneRow | null): number[] => {
+        const touched: number[] = [];
+        laneAdjust.delete(id);
+        const old = laneRows.get(id);
+        if (old) {
+            touched.push(old.transition);
+            const k = slotKey(old.transition, old.slot);
+            if (laneAt.get(k) === id) laneAt.delete(k);
+            const l = routeLanes.get(old.route);
+            l?.delete(id);
+            if (l && l.size === 0) routeLanes.delete(old.route);
+            laneRows.delete(id);
+        }
+        if (row) {
+            const copy: LaneRow = { ...row };
+            laneRows.set(id, copy);
+            laneAt.set(slotKey(copy.transition, copy.slot), id);
+            setOf(routeLanes, copy.route).add(id);
+            touched.push(copy.transition);
+        }
+        return touched;
+    };
+
     // ---- local caches (9.2 #1-4)
     const spans = new Map<number, RSpan[]>(); // marcher -> spans
     const byT = new Map<number, Set<RSpan>>(); // spansByTransition
     const dests = new Map<number, XY[]>(); // destinations
     const paths = new Map<number, DestPath>(); // ftlGeometry
+    // routeGeometry (9.2 #7): route -> points, from, to; and its group schedule (J.7), on first use
+    const routeGeo = new Map<
+        number,
+        { walk: RouteWalk; schedule: GroupSchedule | null }
+    >();
     // ---- cascading caches (9.2 #5-6)
     const origins = new Map<string, XY>(); // `${m}|${start}` -> xy
     const entries = new Map<number, Entry>(); // FTL transition -> entry
@@ -322,12 +397,8 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         C.destinationsComputed++;
         report?.destinations.push(tid);
         if (isFtl(t)) {
-            const shape = t.dest == null ? undefined : host.shapes[t.dest];
-            if (!shape)
-                throw new Error(
-                    `follow-the-leader transition ${tid} has no shape (I-T5)`,
-                );
-            paths.set(tid, destPath(shape));
+            // R-13′: with no shape, the line through its slots' destinations
+            paths.set(tid, ftlDestPath(t, host.shapes));
             C.ftlGeometryComputed++;
             report?.ftlGeometry.push(tid);
         } else paths.delete(tid);
@@ -338,10 +409,38 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         spans.set(m, l);
         indexAdd(l);
     }
+    /** 9.2 #7: a route's inner points, from the host mirror; dropped when the route is gone. */
+    function computeRoute(rid: number) {
+        const r = host.routes?.[rid];
+        if (!r) routeGeo.delete(rid);
+        else
+            routeGeo.set(rid, {
+                walk: {
+                    points: r.geometry.points.map((pt) => ({
+                        id: pt.id,
+                        at: pt.at,
+                        ...(pt.tension === undefined
+                            ? {}
+                            : { tension: pt.tension }),
+                        ...(pt.bulge === undefined ? {} : { bulge: pt.bulge }),
+                    })),
+                    from: r.geometry.from,
+                    to: r.geometry.to,
+                    ...(r.geometry.toBulge === undefined
+                        ? {}
+                        : { toBulge: r.geometry.toBulge }),
+                },
+                schedule: null,
+            });
+    }
     for (const t of Object.values(host.transitions)) {
         setDest(t.id, t.dest);
+        setTrail(t.id, t.route);
         computeLocal(t.id);
     }
+    for (const rid of Object.keys(host.routes ?? {})) computeRoute(Number(rid));
+    for (const [id, l] of Object.entries(host.lanes ?? {}))
+        setLane(Number(id), l);
 
     // ---- resolution (pull)
     const spansOf = (m: number): RSpan[] => {
@@ -390,7 +489,7 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         const t = T(tid);
         const F = [...idx(tid)].filter(founding);
         const d: Node[] = F.map((s): Node => ["o", s]);
-        if (t.order === "inherit" && F.length) {
+        if (t.order === "inherit" && t.dest != null && F.length) {
             const prevs = F.map(prevNonHold);
             const U = prevs[0]?.row?.transition;
             if (
@@ -503,6 +602,17 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
             const p = clamp01((b - t.start) / (t.end - t.start));
             if (p <= 0) return origin(s); // endpoints exact (8.10)
             if (p >= 1) return e.target.get(s.m)!;
+            if (e.along)
+                // R-13″: along the way to its end, then straight to its spot
+                return alongPoint(
+                    e.trail,
+                    e.startDist[q]!,
+                    e.endDist[q]!,
+                    e.along.turn[q]!,
+                    e.along.straight[q]!,
+                    e.target.get(s.m)!,
+                    p,
+                );
             return e.trail.at(
                 e.startDist[q]! + (e.endDist[q]! - e.startDist[q]!) * p,
             );
@@ -511,9 +621,51 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         const o = origin(s);
         if (t.style === FTL) return lerp(o, entry(t.id).target.get(s.m)!, p); // R-11
         const dst = dests.get(t.id)![s.row.slot]!;
-        return t.style === "arc"
-            ? arcPoint(o, dst, t.params?.bulge ?? 0, p) // R-8
-            : lerp(o, dst, p); // R-7
+        // R-7, R-8, R-14′ (lane first) through the one walked-path seam
+        return walkedPoint(
+            t,
+            o,
+            dst,
+            p,
+            laneWalk(t.id, s.row.slot),
+            founding(s),
+        );
+    }
+    /** R-14′: the lane on slot `slot` of `tid` with its route's cached geometry, if any. */
+    function laneWalk(tid: number, slot: number): LaneWalk | undefined {
+        const id = laneAt.get(slotKey(tid, slot));
+        if (id === undefined) return undefined;
+        const lane = laneRows.get(id)!;
+        const geo = routeGeo.get(lane.route);
+        if (!geo)
+            throw new Error(
+                `lane ${id} on ${tid}:${slot} has no route ${lane.route} (I-D3)`,
+            );
+        if (lane.offset === null) return { route: geo.walk, offset: null };
+        geo.schedule ??= groupSchedule(geo.walk);
+        return {
+            route: geo.walk,
+            offset: lane.offset,
+            schedule: geo.schedule,
+            adjust: resolvedAdjust(id, lane),
+        };
+    }
+
+    /** R-14′ item 6: lane `id`'s profile on its route's schedule, cached (J.7); null without one */
+    function resolvedAdjust(id: number, lane: LaneRow): ResolvedAdjust | null {
+        if (!lane.adjust) return null;
+        let resolved = laneAdjust.get(id);
+        if (!resolved) {
+            const geo = routeGeo.get(lane.route)!;
+            geo.schedule ??= groupSchedule(geo.walk);
+            resolved = resolveAdjust(
+                geo.schedule,
+                geo.walk.points,
+                lane.adjust,
+            );
+            laneAdjust.set(id, resolved);
+        }
+        return resolved;
     }
 
     function computeEntry(tid: number) {
@@ -522,7 +674,7 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         const F = [...idx(tid)].filter(founding);
         let keyed: Array<[number, RSpan]> | null = null;
         let source: OrderSource = { kind: "slot", fallback: false };
-        if (t.order === "inherit" && F.length) {
+        if (t.order === "inherit" && t.dest != null && F.length) {
             const prevs = F.map(prevNonHold);
             const U = prevs[0]?.row?.transition;
             if (
@@ -540,7 +692,9 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
             if (!keyed) source = { kind: "slot", fallback: true };
         }
         if (!keyed) keyed = F.map((s) => [s.row!.slot, s]);
-        keyed.sort((a, b) => a[0] - b[0] || a[1].m - b[1].m);
+        // R-12′: `reverse` turns the order around, so the other end leads
+        const sign = t.params?.reverse === true ? -1 : 1;
+        keyed.sort((a, b) => sign * (a[0] - b[0]) || a[1].m - b[1].m);
         const members = keyed.map(([, s]) => s.m);
         const os = keyed.map(([, s]) => origin(s));
         const path = paths.get(tid);
@@ -548,30 +702,51 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
             throw new Error(
                 `follow-the-leader transition ${tid} has no destination path`,
             );
-        const trail = makeTrail(os, t.params?.waypoints ?? [], path);
         const n = t.slots;
         const m = members.length;
+        const dest = ftlDestination(path, n, sign < 0);
+        // R-9′: the trail route's drawn part, from the cached route geometry (T-15: none when
+        // the route is missing)
+        const route = t.route == null ? null : routeGeo.get(t.route)?.walk;
+        // R-13″: with its ends along the way, there is no destination path
+        const along = t.dest == null && t.params?.ends === "along";
+        const trail = along
+            ? makeAlongTrail(os, route)
+            : makeTrail(os, t.params?.waypoints ?? [], dest.walked, route);
         const pts = dests.get(tid)!;
+        // each member's point: R-9's sample, or its own slot's destination (R-13′)
+        const pointOf = keyed.map(([, s], q) => dest.member(q, m, s.row!.slot));
         const target = new Map<number, XY>(
-            members.map((mm, q) => [mm, pts[n - m + q]!]),
+            members.map((mm, q) => [mm, pts[pointOf[q]!]!]),
         );
+        const startDist = os.map((_, q) => trail.cum[q]!);
+        const ends = along
+            ? alongEnds(
+                  trail,
+                  pointOf.map((j) => pts[j]!),
+                  startDist,
+              )
+            : null;
         // non-members, from the per-transition row index: never a full scan (9.6)
         rowsOfTransition(tid)
             .filter((r) => !target.has(r.marcher))
             .sort((a, b) => a.slot - b.slot || a.marcher - b.marcher)
-            .forEach((r, k) => target.set(r.marcher, pts[n - m - 1 - k]!));
+            .forEach((r, k) =>
+                target.set(r.marcher, pts[dest.other(k, m, r.slot)]!),
+            );
         entries.set(tid, {
             members,
             source,
             trail,
             qOf: new Map(members.map((mm, q) => [mm, q])),
-            startDist: os.map((_, q) => trail.cum[q]!),
-            endDist: os.map(
-                (_, q) =>
-                    trail.destOffset +
-                    paramT(path.closed, n - m + q, n) * path.L,
-            ),
+            startDist,
+            endDist:
+                ends?.endDist ??
+                os.map((_, q) => trail.destOffset + dest.along(pointOf[q]!)),
             target,
+            ...(ends
+                ? { along: { turn: ends.turn, straight: ends.straight } }
+                : {}),
         });
         C.ftlEntriesComputed++;
     }
@@ -725,9 +900,11 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
                 byT.delete(tid);
                 byTR.delete(tid);
                 setDest(tid, null);
+                setTrail(tid, null);
                 continue;
             }
             setDest(tid, T(tid).dest);
+            setTrail(tid, T(tid).route);
             if (!tc.before || localInputsChanged(tc.before, tc.after))
                 computeLocal(tid, localRecomputed);
             seedTs.add(tid);
@@ -746,6 +923,26 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
                     recomputed.add(tid);
                     seedTs.add(tid);
                 }
+        // Lanes (J.7, v0.10): re-index from the host mirror; seed W-3 for the old and new T
+        for (const id of net.lanes.keys())
+            for (const tid of setLane(id, host.lanes?.[id] ?? null))
+                if (host.transitions[tid]) seedTs.add(tid);
+        // Route geometry (9.4, J.7): recompute, create or drop; seed W-3 for every transition
+        // with a lane on it (route -> lanes -> transitions). On insert or delete the same edit
+        // writes a lane, which seeds above.
+        for (const [rid, rc] of net.routes) {
+            computeRoute(rid);
+            for (const id of routeLanes.get(rid) ?? []) laneAdjust.delete(id);
+            // a trail route (R-9′): its follow-the-leader transitions, whether it was edited,
+            // created or dropped
+            for (const tid of byTrail.get(rid) ?? [])
+                if (host.transitions[tid]) seedTs.add(tid);
+            if (!rc.after) continue;
+            for (const id of routeLanes.get(rid) ?? []) {
+                const tid = laneRows.get(id)!.transition;
+                if (host.transitions[tid]) seedTs.add(tid);
+            }
+        }
         for (const tid of seedTs) seed(tid);
 
         return {
@@ -774,6 +971,14 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
         startDist: [...e.startDist],
         endDist: [...e.endDist],
         targets: [...e.target.entries()],
+        ...(e.along
+            ? {
+                  along: {
+                      turn: [...e.along.turn],
+                      straight: [...e.along.straight],
+                  },
+              }
+            : {}),
     });
     function ftlEntryOf(tid: number): Entry {
         const t = T(tid);
@@ -795,7 +1000,21 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
                     slot: k,
                     message: `Slot ${k} of transition ${t.id} has no assignment`,
                 });
-        if (t.style !== FTL) return;
+        if (t.style !== FTL) {
+            for (let k = 0; k < t.slots; k++) {
+                const id = laneAt.get(slotKey(t.id, k));
+                const lane = id === undefined ? undefined : laneRows.get(id)!;
+                if (lane?.offset && lane.adjust)
+                    out.push(
+                        ...adjustDiagnostics(
+                            resolvedAdjust(id!, lane)!,
+                            t.id,
+                            k,
+                        ),
+                    );
+            }
+            return;
+        }
         let hasFounder = false;
         for (const s of idx(t.id))
             if (founding(s)) {
@@ -914,6 +1133,27 @@ export function createCachedResolver(host: TimelineSnapshot): CachedResolver {
             if (!t) return `stale ftlEntry ${tid}: transition deleted`;
             if (t.style !== FTL)
                 return `stale ftlEntry ${tid}: transition is not follow-the-leader`;
+        }
+        for (const rid of routeGeo.keys())
+            if (!host.routes?.[rid])
+                return `stale routeGeometry ${rid}: route deleted`;
+        for (const [tid, rid] of trailOf)
+            if ((tMaybe(tid)?.route ?? null) !== rid)
+                return `stale trail index for transition ${tid}`;
+        for (const t of Object.values(host.transitions))
+            if (t.route != null && trailOf.get(t.id) !== t.route)
+                return `transition ${t.id}'s trail route is not indexed`;
+        for (const [id, l] of laneRows) {
+            const h = host.lanes?.[id];
+            if (
+                !h ||
+                h.transition !== l.transition ||
+                h.slot !== l.slot ||
+                h.route !== l.route ||
+                JSON.stringify(h.adjust ?? null) !==
+                    JSON.stringify(l.adjust ?? null)
+            )
+                return `stale lane ${id}`;
         }
         for (const l of spans.values())
             for (const s of l) {

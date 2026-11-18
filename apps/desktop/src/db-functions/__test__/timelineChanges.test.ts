@@ -176,6 +176,7 @@ describeDbTests("timeline change-log wrapper", (it) => {
                     dest: 1,
                     style: "direct",
                     params: null,
+                    route: null,
                     order: "inherit",
                     slots: 2,
                     start: 0,

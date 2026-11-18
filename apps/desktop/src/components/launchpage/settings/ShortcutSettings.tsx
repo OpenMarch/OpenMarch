@@ -27,6 +27,10 @@ import { isMacPlatform } from "@/shortcuts/platform";
 import { searchItems } from "@/shortcuts/search";
 import Shortcut from "@/components/ui/Shortcut";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import {
+    FOLLOW_THE_LEADER_ACTIONS,
+    useFollowTheLeader,
+} from "@/pathways/followTheLeader";
 
 /** What the settings view shows as one group; the command palette still groups by raw category. */
 const DISPLAY_GROUPS: readonly {
@@ -42,6 +46,7 @@ const DISPLAY_GROUPS: readonly {
     { id: "select", categories: ["select"] },
     { id: "cursor", categories: ["cursor"] },
     { id: "shape", categories: ["shape"] },
+    { id: "path", categories: ["path"] },
     { id: "field", categories: ["field"] },
     { id: "ui", categories: ["ui"] },
 ];
@@ -249,6 +254,8 @@ export default function ShortcutSettings() {
     const [query, setQuery] = useState("");
     const [recording, setRecording] = useState<ActionId | null>(null);
     const [pending, setPending] = useState<PendingConflict | null>(null);
+    // Follow-the-leader's shortcuts are listed only while it's on (#1095)
+    const followTheLeader = useFollowTheLeader();
 
     useKeyRecorder(
         recording !== null,
@@ -271,7 +278,9 @@ export default function ShortcutSettings() {
 
     const rows = useMemo<Row[]>(
         () =>
-            ACTION_IDS.map((id) => {
+            ACTION_IDS.filter(
+                (id) => followTheLeader || !FOLLOW_THE_LEADER_ACTIONS.has(id),
+            ).map((id) => {
                 const bindings = getDisplayBindings(id, overrides, isMac);
                 return {
                     id,
@@ -281,7 +290,7 @@ export default function ShortcutSettings() {
                     formatted: bindings.map((b) => formatBinding(b, isMac)),
                 };
             }),
-        [overrides, isMac, t],
+        [overrides, isMac, t, followTheLeader],
     );
 
     const visible = searchItems(rows, query, (row) => [

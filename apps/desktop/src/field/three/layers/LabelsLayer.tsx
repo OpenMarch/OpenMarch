@@ -24,6 +24,41 @@ const LABEL_LIFT = DOT_RADIUS * 2.2;
 const LABEL_BESIDE = DOT_RADIUS * 1.6;
 /** The baseline's offset below the label's center, in em. */
 const CENTER_BASELINE = 0.35;
+/**
+ * How far its capitals and digits reach above the label's center, in em
+ * (the baseline is {@link CENTER_BASELINE} below it).
+ */
+const CENTER_CAP_TOP = 0.25;
+
+/**
+ * Where a label is drawn for a marcher at `x`, `y`, in field units: its
+ * middle, its width (`widthEm` of text, an em `size` across) and an em's
+ * height, or with `ink` only the band its capitals and digits fill.
+ */
+export function labelBoxAt(
+    x: number,
+    y: number,
+    widthEm: number,
+    size: number,
+    beside: boolean,
+    ink = false,
+): LabelBox {
+    const width = widthEm * size;
+    const middle = {
+        x: x + (beside ? LABEL_BESIDE + width / 2 : 0),
+        y: y - (beside ? 0 : LABEL_LIFT),
+    };
+    if (!ink) return { ...middle, width, height: size };
+    return {
+        x: middle.x,
+        y: middle.y + ((CENTER_BASELINE - CENTER_CAP_TOP) / 2) * size,
+        width,
+        height: (CENTER_BASELINE + CENTER_CAP_TOP) * size,
+    };
+}
+
+/** A label's size in field units at a style, before Auto shrinks it. */
+export const labelSizeOf = (style: LabelStyle) => LABEL_SIZE * style.scale;
 
 /**
  * The View tab's label form: `labels` written as given (full drill numbers,
@@ -37,6 +72,41 @@ export type LabelStyle = {
 };
 
 const DEFAULT_STYLE: LabelStyle = { form: "fixed", scale: 1, beside: false };
+
+/**
+ * The size Auto draws the labels at, for where `marchers` stand: the style's size shrunk until no
+ * two labels touch
+ */
+export function autoLabelSizeOf(
+    style: LabelStyle,
+    marchers: Pick<FieldMarchers, "ids" | "positions" | "hidden">,
+    labels: ReadonlyMap<number, string>,
+    atlas: GlyphAtlas,
+): number {
+    const fixed = labelSizeOf(style);
+    const { ids, positions, hidden } = marchers;
+    const widths = ids.map((id) => atlas.measure(labels.get(id) ?? ""));
+    return (
+        fixed *
+        autoLabelScale((scale) => {
+            const em = fixed * scale;
+            const boxes: LabelBox[] = [];
+            for (let i = 0; i < ids.length; i++) {
+                if (hidden[i]) continue;
+                boxes.push(
+                    labelBoxAt(
+                        positions[i * 2],
+                        positions[i * 2 + 1],
+                        widths[i],
+                        em,
+                        style.beside,
+                    ),
+                );
+            }
+            return boxes;
+        })
+    );
+}
 
 /**
  * Every marcher's label (drill number) in one instanced draw of SDF glyphs,
@@ -89,7 +159,7 @@ export default function LabelsLayer({
         labels,
         theme,
         style,
-        size: LABEL_SIZE * style.scale,
+        size: labelSizeOf(style),
         shown: new Uint8Array(0) as Uint8Array,
     });
 
@@ -191,7 +261,7 @@ export default function LabelsLayer({
      * marchers stand, worked out again when they move unless it's held.
      */
     function labelSize(before: number) {
-        const fixed = LABEL_SIZE * style.scale;
+        const fixed = labelSizeOf(style);
         if (style.form !== "auto") return fixed;
         const last = drawn.current;
         const moved =
@@ -200,31 +270,7 @@ export default function LabelsLayer({
             labels !== last.labels ||
             style !== last.style;
         if (!moved || (holdAutoSize && style === last.style)) return before;
-        const { ids, positions, hidden } = marchers;
-        const widths = ids.map((id) => atlas.measure(labels.get(id) ?? ""));
-        return (
-            fixed *
-            autoLabelScale((scale) => {
-                const em = fixed * scale;
-                const boxes: LabelBox[] = [];
-                for (let i = 0; i < ids.length; i++) {
-                    if (hidden[i]) continue;
-                    const width = widths[i] * em;
-                    boxes.push({
-                        // The label's middle, wherever it's anchored
-                        x:
-                            positions[i * 2] +
-                            (style.beside ? LABEL_BESIDE + width / 2 : 0),
-                        y:
-                            positions[i * 2 + 1] -
-                            (style.beside ? 0 : LABEL_LIFT),
-                        width,
-                        height: em,
-                    });
-                }
-                return boxes;
-            })
-        );
+        return autoLabelSizeOf(style, marchers, labels, atlas);
     }
 
     return <primitive object={text.mesh} />;

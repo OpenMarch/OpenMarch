@@ -6,6 +6,8 @@ import { addedColumn } from "@/../electron/database/migrations/addColumnGuard";
 import { TIMELINE_MODEL_USER_VERSION } from "@/../electron/database/fileVersion";
 import { transactionWithHistory } from "@/db-functions/history";
 import type { DbConnection } from "@/db-functions/types";
+import { triggerStatements } from "@/../electron/database/migrations/triggers";
+import { createAllUndoTriggers } from "@/db-functions/historyTriggers";
 import {
     convertPagesToTimelineInTransaction,
     type ConvertPagesOptions,
@@ -36,22 +38,54 @@ export async function finishTestConversion(db: DbConnection): Promise<void> {
         last ? Number(last.createdAt) : undefined,
         "timeline",
     );
-    await db.transaction(async (tx) => {
-        for (const query of queries) {
-            if (!query.trim()) continue;
-            const added = addedColumn(query);
-            if (added) {
-                const has = await tx.all(
-                    sql`SELECT 1 FROM pragma_table_info(${added.table}) WHERE lower(name) = ${added.column.toLowerCase()}`,
+    // As convert on open does: foreign keys off outside the transaction (inside one SQLite ignores
+    // the pragma), so a migration that rebuilds a parent table (0024) can drop it
+    await db.run(sql`PRAGMA foreign_keys = OFF`);
+    try {
+        await db.transaction(async (tx) => {
+            // And, as the migration service does, the triggers and views come off first and back
+            // after, so a table rebuild neither trips over them nor loses them
+            const names = async (query: string) =>
+                new Set(
+                    (await tx.all(sql.raw(query))).map((r) =>
+                        Array.isArray(r)
+                            ? String(r[0])
+                            : String((r as { name: string }).name),
+                    ),
                 );
-                if (has.length > 0) continue;
+            for (const s of triggerStatements(new Set(), false).drop)
+                await tx.run(sql.raw(s));
+            // As the migration service runs them: an ADD COLUMN the table already has is skipped.
+            // 0026's already ran before the conversion (`CONVERTER_SCHEMA_MIGRATION_TAGS`), and the
+            // page-era test file took the later migrations' columns when it was built
+            for (const query of queries) {
+                if (!query.trim()) continue;
+                const added = addedColumn(query);
+                const has =
+                    added !== null &&
+                    (
+                        await names(
+                            `SELECT lower(name) FROM pragma_table_info('${added.table}')`,
+                        )
+                    ).has(added.column.toLowerCase());
+                if (!has) await tx.run(sql.raw(query));
             }
-            await tx.run(sql.raw(query));
-        }
-        await tx.run(
-            sql.raw(`PRAGMA user_version = ${TIMELINE_MODEL_USER_VERSION}`),
-        );
-    });
+            const tables = await names(
+                "SELECT name FROM sqlite_schema WHERE type = 'table'",
+            );
+            const route = await names(
+                "SELECT name FROM pragma_table_info('timeline_transitions') WHERE name = 'route_id'",
+            );
+            for (const s of triggerStatements(tables, route.size > 0).create)
+                await tx.run(sql.raw(s));
+            await tx.run(
+                sql.raw(`PRAGMA user_version = ${TIMELINE_MODEL_USER_VERSION}`),
+            );
+        });
+        await createAllUndoTriggers(db);
+    } finally {
+        await db.run(sql`PRAGMA foreign_keys = ON`);
+    }
 }
 
 /**

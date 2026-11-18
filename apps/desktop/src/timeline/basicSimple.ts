@@ -6,7 +6,8 @@
  *
  * A marcher is simple on a page box `[start, end)` when every one of its rows overlapping the box
  * lies inside it, no two of them overlap in time (whatever their layers), and each is a one-slot
- * transition with no shape and a `direct` path. A marcher with no row over the box is simple.
+ * transition with no shape and a `direct` path, on a slot with no drawn path (no lane, spec v0.10).
+ * A marcher with no row over the box is simple.
  */
 
 /** One assignment row with what the predicate needs from its transition. */
@@ -23,6 +24,8 @@ export interface BasicRow {
     slotCount: number;
     shapeId: number | null;
     pathStyle: string;
+    /** Its slot walks a drawn path (a lane, spec v0.10 D-20), so Basic leaves it alone */
+    laned?: boolean;
 }
 
 export type SimpleVerdict =
@@ -65,7 +68,7 @@ const verdictOfSorted = (
         // A shared shapeless transition is fine: a converted show writes one per page, and Basic
         // edits its marchers' slots one by one (UI-19, "Simple")
         if (row.shapeId !== null) better("shape");
-        else if (row.pathStyle !== "direct") better("path");
+        else if (row.pathStyle !== "direct" || row.laned) better("path");
     }
     return reason === null ? SIMPLE : { simple: false, reason };
 };

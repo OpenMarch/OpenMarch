@@ -173,7 +173,7 @@ describe("the frozen fork migrations", () => {
         }
     });
 
-    it("leave upstream's migrations 0000-0016 alone: the folder keeps them and adds 0017 and 0018", () => {
+    it("leave upstream's migrations 0000-0016 alone: the folder keeps them and adds 0017 and 0018, then later migrations", () => {
         expect(folderMigrations.slice(0, 19).map((m) => m.tag)).toEqual([
             ...folderMigrations.slice(0, 17).map((m) => m.tag),
             "0017_timeline_model",

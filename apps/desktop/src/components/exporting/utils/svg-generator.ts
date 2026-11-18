@@ -7,6 +7,7 @@ import { SectionAppearance } from "@/db-functions";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import type { PagePosition, PagePositionMap } from "./exportPagePositions";
 import type { MarcherAppearancesByPageId } from "./exportAppearances";
+import type { ExportWalkedPaths } from "./exportWalkedPaths";
 import {
     drillChartSvg,
     fieldSvg,
@@ -59,6 +60,12 @@ export const generateDrillChartExportSVGs = async (args: {
     marchers: Marcher[];
     /** Positions by page, sampled from the resolver at each page's end beat (P7.7) */
     marcherPagesMap: Pick<PagePositionMap, "marcherPagesByPage">;
+    /**
+     * The walked paths between pages (spec R-20 item 10), from the same snapshot as the
+     * positions. Individual charts draw them in place of the straight line; without them, or
+     * for a straight walk, the line is drawn as before.
+     */
+    walkedPaths?: ExportWalkedPaths;
     sectionAppearances?: SectionAppearance[];
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: DrillChartFieldImage;
@@ -81,6 +88,7 @@ export const generateDrillChartExportSVGs = async (args: {
         individualCharts,
         useImagePlaceholder = true,
         svgMargin = 40,
+        walkedPaths,
     } = args;
     ReadableCoords.setFieldProperties(fieldProperties);
 
@@ -159,13 +167,29 @@ export const generateDrillChartExportSVGs = async (args: {
                 incompleteMarchers.add(index);
                 return;
             }
+            const previous = positionOn(pageIndex - 1, marcher.id);
+            const next = positionOn(pageIndex + 1, marcher.id);
             outputSVGs[index]!.push(
                 chart(dots, {
                     dot,
                     path: {
-                        previous: positionOn(pageIndex - 1, marcher.id),
+                        previous,
                         current: dot,
-                        next: positionOn(pageIndex + 1, marcher.id),
+                        next,
+                        previousWalk:
+                            previous &&
+                            walkedPaths?.(
+                                marcher.id,
+                                sortedPages[pageIndex - 1]!.id,
+                                page.id,
+                            ),
+                        nextWalk:
+                            next &&
+                            walkedPaths?.(
+                                marcher.id,
+                                page.id,
+                                sortedPages[pageIndex + 1]!.id,
+                            ),
                     },
                 }),
             );

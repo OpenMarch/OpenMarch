@@ -25,6 +25,27 @@ import { forgetDiscardedShape } from "../tool/shapeLeave";
 import { subscribeHistoryChanges } from "@/db-functions/history";
 import { shapeToolMode } from "../tool/shapeToolMode";
 import { resetShapePointer, watchShapeEditorFocus } from "./shapePointer";
+import {
+    objectsDrawn,
+    ownLinesDrawn,
+    usePathPenStore,
+} from "@/pathways/pathPenStore";
+import {
+    drawingOf,
+    objectDrawingOf,
+    ownLineDrawingOf,
+    pathPenMode,
+} from "@/pathways/pathPenMode";
+import {
+    cancelOrderSweep,
+    useMarcherOrderStore,
+} from "@/pathways/marcherOrderStore";
+import { OrderSweepMode } from "@/pathways/orderSweepMode";
+import { keepOrderSweep } from "@/pathways/marcherOrderCommands";
+import {
+    setFieldObjects,
+    setFieldUnderlay,
+} from "@/field/editor/fieldUnderlayStore";
 
 /**
  * Puts the shapes on the field's editor (#204): the open Shape tool takes every edit press
@@ -42,6 +63,20 @@ export function useShapeFieldModes(
 ): void {
     const toolOpen = useShapeToolStore((s) => s.tool !== null);
     const hidden = useShapeHidden();
+    // The path pen drawing, or a path open, takes the field's presses first (pathways step 1). A
+    // path only shown (closed) takes a double-click or a right-click on it, under an open shape or
+    // a selected placed box
+    const pathOpen = usePathPenStore(
+        (s) => s.session !== null && s.session.phase !== "closed",
+    );
+    // A closed path start flag positions hide (paths level off) isn't the field's mode; a selected
+    // path object always is, and so are Paths All's paths, so a click selects one (step 3a)
+    const pathShown = usePathPenStore(
+        (s) =>
+            (s.session?.phase === "closed" &&
+                (!s.hidden || s.session.object)) ||
+            s.objects.length > 0,
+    );
     const box = useBoxSelectionStore((s) => s.selected);
     const queryClient = useQueryClient();
     useBoxSelection({ isPlaying });
@@ -51,7 +86,8 @@ export function useShapeFieldModes(
     const live = useMemo(
         () =>
             box
-                ? (liveBoxHolding(box) ?? new LiveBoxMode(box, queryClient))
+                ? (liveBoxHolding(box) ??
+                  new LiveBoxMode(box, queryClient, pathPenMode))
                 : null,
         // A new mode only for another box
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,18 +107,93 @@ export function useShapeFieldModes(
     // the editor and with it a drag's release (review of #516)
     useEffect(() => () => previewPlacedBox(null), [live, toolOpen]);
 
+    const order = useOrderSweepMode(isPlaying);
+    // A tool opened by its key (O for Circle, P for the pen) while Set order is on closes Set
+    // order, rather than opening hidden behind it
+    useEffect(() => {
+        if (toolOpen || pathOpen) cancelOrderSweep();
+    }, [toolOpen, pathOpen]);
+
     useEffect(() => {
         // The pointer was over the last shape, if any; the next cursor check finds the new one
         resetShapePointer();
         // A handle's menu is for the shape it was opened on (#569)
         closeHandleMenu();
-        editor.setMode(toolOpen ? (hidden ? null : shapeToolMode) : live);
-    }, [editor, toolOpen, hidden, live]);
+        editor.setMode(
+            order
+                ? order
+                : pathOpen && !isPlaying
+                  ? pathPenMode
+                  : toolOpen
+                    ? hidden
+                        ? null
+                        : shapeToolMode
+                    : (live ?? (pathShown && !isPlaying ? pathPenMode : null)),
+        );
+    }, [editor, toolOpen, hidden, live, pathOpen, pathShown, isPlaying, order]);
     useEffect(() => () => editor.setMode(null), [editor]);
+    // A selected box takes the presses, but its members' closed group path is still drawn, under
+    // it: the group's line and faint lanes, as when the box isn't selected (owner on #683)
+    const closedSession = usePathPenStore((s) =>
+        s.session?.phase === "closed" && !s.hidden ? s.session : null,
+    );
+    const underBox =
+        live !== null && !toolOpen && !pathOpen && !isPlaying
+            ? closedSession
+            : null;
+    useEffect(() => {
+        setFieldUnderlay(underBox ? drawingOf(underBox) : null);
+    }, [underBox]);
+    useEffect(() => () => setFieldUnderlay(null), []);
+    usePathFieldObjects(toolOpen, isPlaying);
     // Keyboard focus in the floating editor shows the shape's controls (#430)
     useEffect(() => watchShapeEditorFocus(), []);
 
     useShapeWaits(isPlaying, toolOpen);
+}
+
+/**
+ * The path drawings under the field mode's own: Paths All's group paths, each as its one line with
+ * faint lanes (step 3a, AP-O7), and with several marchers on their own paths selected, each one's
+ * line, faint (round 8)
+ */
+function usePathFieldObjects(toolOpen: boolean, isPlaying: boolean): void {
+    const session = usePathPenStore((s) => s.session);
+    const objects = usePathPenStore((s) => s.objects);
+    const ownLines = usePathPenStore((s) => s.ownLines);
+    const pathHidden = usePathPenStore((s) => s.hidden);
+    useEffect(() => {
+        setFieldObjects(
+            isPlaying
+                ? []
+                : [
+                      ...objectsDrawn(objects, session, toolOpen).flatMap(
+                          (o) => objectDrawingOf(o) ?? [],
+                      ),
+                      ...ownLinesDrawn(
+                          ownLines,
+                          session,
+                          pathHidden,
+                          toolOpen,
+                      ).map(ownLineDrawingOf),
+                  ],
+        );
+    }, [objects, session, toolOpen, isPlaying, ownLines, pathHidden]);
+    useEffect(() => () => setFieldObjects([]), []);
+}
+
+/**
+ * Set order's mode while it's on and nothing plays (pathways step 4g): it takes every press, over
+ * everything else
+ */
+function useOrderSweepMode(isPlaying: boolean): OrderSweepMode | null {
+    const queryClient = useQueryClient();
+    const sweeping = useMarcherOrderStore((s) => s.sweep !== null);
+    const mode = useMemo(
+        () => new OrderSweepMode(() => void keepOrderSweep(queryClient)),
+        [queryClient],
+    );
+    return sweeping && !isPlaying ? mode : null;
 }
 
 function useShapeWaits(isPlaying: boolean, open: boolean): void {

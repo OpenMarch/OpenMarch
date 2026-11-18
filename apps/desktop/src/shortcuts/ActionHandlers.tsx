@@ -18,6 +18,13 @@ import { PlacedBoxKeys } from "@/shapes/placed/PlacedBoxKeys";
 import { useBoxSelectionStore } from "@/shapes/placed/boxSelectionStore";
 import { useUnsetActionHandlers } from "./handlers/useUnsetActionHandlers";
 import { useHoldActionHandlers } from "./handlers/useHoldActionHandlers";
+import { PathPenKeys, usePathPenActions } from "@/pathways/usePathPen";
+import { usePathPenStore } from "@/pathways/pathPenStore";
+import {
+    OrderSweepKeys,
+    useMarcherOrderActions,
+} from "@/pathways/useMarcherOrder";
+import { useMarcherOrderStore } from "@/pathways/marcherOrderStore";
 import { useItemActionHandlers } from "./handlers/useItemActionHandlers";
 import { useFieldEditActionHandlers } from "./handlers/useFieldEditActionHandlers";
 import {
@@ -50,6 +57,8 @@ export function EditorActionHandlers() {
     useItemActionHandlers();
     useFieldEditModeEntry();
     useTimelineActionEffects();
+    usePathPenActions();
+    useMarcherOrderActions();
     // Mounted after the handlers above, so the open shape tool's keys are on top, and a selected
     // placed box's below them
     // An open shape waiting out of sight (#416) takes no keys: Escape, undo and the arrows act on
@@ -62,7 +71,16 @@ export function EditorActionHandlers() {
     const shapeDiscarded = useShapeToolStore((s) => s.discarded !== null);
     // The Field panel (#824) takes its keys over everything while it's open
     const fieldPanelOpen = useFieldEditModeStore((s) => s.active);
+    // The path pen drawing, or a path active on the field, takes its keys over everything else
+    // (pathways); a quiet path (closed) takes none but Enter (`usePathPenActions`)
+    const pathOpen = usePathPenStore(
+        (s) => s.session !== null && s.session.phase !== "closed",
+    );
+    // Set order (pathways step 4g) takes Enter and Escape over a path while it's on
+    const sweeping = useMarcherOrderStore((s) => s.sweep !== null);
     if (fieldPanelOpen) return <FieldPanelKeys />;
+    if (sweeping) return <OrderSweepKeys />;
+    if (pathOpen) return <PathPenKeys />;
     if (shapeToolOpen && !shapeHidden) return <ShapeToolKeys />;
     return (
         <>
