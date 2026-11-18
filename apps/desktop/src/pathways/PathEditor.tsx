@@ -56,6 +56,7 @@ import { useShapeToolStore } from "@/shapes/tool/shapeToolStore";
 import { selectOnField } from "@/shapes/placed/boxSelection";
 import { setInsideBox } from "@/shapes/placed/boxSelectionStore";
 import { OffCountWarning, TrailCornerCounts } from "./TrailCornerCounts";
+import { trailOffReason, useFollowTheLeader } from "./followTheLeader";
 import { offCountTally, trailCornersOf } from "./trailCorners";
 import {
     EVEN_FIRST,
@@ -138,6 +139,9 @@ export function PathEditor({
     const ownable = usePathPenStore((s) => s.ownable);
     const shapeToolOpen = useShapeToolStore((s) => s.tool !== null);
     const ownLines = usePathPenStore((s) => s.ownLines);
+    // A trail's leader mark and corner counts only with Follow-the-leader on (#1095)
+    const followTheLeader = useFollowTheLeader();
+    const trailMarks = !!session?.target.trail && followTheLeader;
     if (!session) {
         // Several marchers each on their own path (after Detach all, sim round 3): the bar
         // stays, saying so, instead of going away as if the selection had lost its paths
@@ -167,7 +171,7 @@ export function PathEditor({
         return hidden || shapeToolOpen ? null : (
             <RichTips>
                 {groupLabel}
-                {session.target.trail && (
+                {trailMarks && (
                     <>
                         <TrailLeaderMark session={session} />
                         <TrailCornerCounts session={session} />
@@ -185,12 +189,12 @@ export function PathEditor({
         <>
             {groupLabel}
             {session.phase === "drawing" && <PathPenBanner session={session} />}
-            {session.target.trail && session.follow?.grabbed !== null && (
+            {trailMarks && session.follow?.grabbed !== null && (
                 <RichTips>
                     <TrailLeaderMark session={session} />
                 </RichTips>
             )}
-            {session.target.trail && <TrailCornerCounts session={session} />}
+            {trailMarks && <TrailCornerCounts session={session} />}
             <RichTips>
                 <PathEditorBar
                     session={session}
@@ -520,6 +524,7 @@ function PathEditorBar({
     // The Follow tool's line, its end spots and the pointer stay clear too, with room under each
     // for the field's note (the hover note, the step readout), so the bar never covers the work
     const footprint = useMemo(() => followFootprint(session), [session]);
+    const followTheLeader = useFollowTheLeader();
     const place = stackedPlacement(
         {
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
@@ -552,10 +557,11 @@ function PathEditorBar({
     const { left, top } = (drawing && pinned.current) || place;
     const faded = drawing && session.dragging !== null;
     const quiet = session.phase === "closed";
-    // Step 6 (TC-7): a trail's turns that fall between counts
-    const offCount = quiet
-        ? { turns: 0, corners: 0 }
-        : offCountTally(trailCornersOf(session));
+    // Step 6 (TC-7): a trail's turns that fall between counts (Follow-the-leader on, #1095)
+    const offCount =
+        quiet || !followTheLeader
+            ? { turns: 0, corners: 0 }
+            : offCountTally(trailCornersOf(session));
     const stored = session.target.routeId !== null;
     // The open path's selected point: Corner | Smooth for it, as its menu has (step 2)
     const shape = shapeOf(session);
@@ -576,6 +582,7 @@ function PathEditorBar({
     // While a new path is drawn for two or more marchers: Together (a group path) or Follow (a
     // trail), switched without losing the points placed (pathways step 4)
     const kindChoice =
+        followTheLeader &&
         drawing &&
         !session.byRoute &&
         !session.follow &&
@@ -742,7 +749,7 @@ function PathEditorBar({
                             </Tip>
                         </>
                     )}
-                    {stored && trail && (
+                    {stored && trail && followTheLeader && (
                         <>
                             <Divider />
                             <IconButton
@@ -794,23 +801,30 @@ function PathSlots({ session }: { session: PathSession }) {
     // loose path (round 7) is the marchers' own paths edited together: Edit path
     const group =
         !!session.target.group && !session.target.lane && !isLoose(session);
+    // A trail can't be edited with Follow-the-leader off (#1095): Edit path stays, saying why
+    const followTheLeader = useFollowTheLeader();
+    const locked = !!session.target.trail && !followTheLeader;
     return (
         <>
             <IconButton
                 label={
-                    group
-                        ? tolgee.t(
-                              "pathways.editor.editGroupTip",
-                              "Show the group path's points to drag. Every marcher on it follows",
-                          )
-                        : tolgee.t(
-                              "pathways.editor.editTip",
-                              "Show this path's points to drag. A click on its line does it too",
-                          )
+                    locked
+                        ? trailOffReason()
+                        : group
+                          ? tolgee.t(
+                                "pathways.editor.editGroupTip",
+                                "Show the group path's points to drag. Every marcher on it follows",
+                            )
+                          : tolgee.t(
+                                "pathways.editor.editTip",
+                                "Show this path's points to drag. A click on its line does it too",
+                            )
                 }
                 action="editPath"
+                disabled={locked}
                 pressed={editing}
                 onClick={() => runAction("editPath")}
+                onDisabledClick={sayWhy(locked ? trailOffReason() : null)}
                 testId="path-edit"
                 className={EDIT_SLOT_WIDTH}
             >

@@ -38,6 +38,7 @@ import {
     undoInOrderSweep,
 } from "./orderSweepRoom";
 import { usePathPenStore } from "./pathPenStore";
+import { useFollowTheLeader } from "./followTheLeader";
 
 /** Where each of `ids` stands at `beat` as the field edits it, skipping any the resolver lacks */
 function positionsAt(ids: readonly number[], beat: number): Map<number, XY> {
@@ -116,6 +117,11 @@ export function useMarcherOrderActions(): void {
         [],
     );
     useEffect(() => () => void cancelOrderSweep(), []);
+    // Follow-the-leader switched off (#1095) takes Set order away: an open one is cancelled
+    const followTheLeader = useFollowTheLeader();
+    useEffect(() => {
+        if (!followTheLeader) cancelOrderSweep();
+    }, [followTheLeader]);
 
     useActionHandler("toggleMarcherOrder", () => {
         const { uiSettings, setUiSettings } = useUiSettingsStore.getState();

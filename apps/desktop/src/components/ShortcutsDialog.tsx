@@ -16,6 +16,10 @@ import { getDisplayBindings, type ShortcutOverrides } from "@/shortcuts/keymap";
 import { getActionLabel, type Translate } from "@/shortcuts/labels";
 import { isMacPlatform } from "@/shortcuts/platform";
 import { isBasicMode, useIsBasicMode } from "@/stores/EditorModeStore";
+import {
+    isActionOffByFollowTheLeader,
+    useFollowTheLeader,
+} from "@/pathways/followTheLeader";
 
 /**
  * The order and names of the groups, by each action's category (`shortcuts/definitions.ts`). The
@@ -140,19 +144,22 @@ const shortcutKeys = (binding: string, isMac: boolean) =>
 
 /**
  * Every shortcut, grouped (the actions in `shortcuts/definitions.ts`, as rebound, plus
- * `EXTRA_ROWS`), without the Expert-only ones in Basic mode
+ * `EXTRA_ROWS`), without the Expert-only ones in Basic mode, nor those a setting switches off
+ * (Follow-the-leader, #1095)
  */
 export function shortcutGroups(
     translate: Translate,
     overrides: ShortcutOverrides = {},
     isMac: boolean = isMacPlatform(),
     basic: boolean = isBasicMode(),
+    switchedOff: (id: ActionId) => boolean = isActionOffByFollowTheLeader,
 ): readonly { readonly title: string; readonly rows: readonly Row[] }[] {
     const byCategory = new Map<string, Row[]>();
     for (const id of ACTION_IDS) {
         const action = getActionDefinition(id);
         if (LISTED_ELSEWHERE.has(id)) continue;
         if (basic && action.expertOnly) continue;
+        if (switchedOff(id)) continue;
         const [binding] = getDisplayBindings(id, overrides, isMac);
         if (!binding) continue;
         const rows = byCategory.get(action.category) ?? [];
@@ -217,6 +224,8 @@ export default function ShortcutsDialog() {
     const overrides = useShortcutOverridesStore((s) => s.overrides);
     const { t } = useTolgee(["language"]);
     const basic = useIsBasicMode();
+    // Read so the list follows the switch
+    useFollowTheLeader();
     if (!open) return null;
     const groups = shortcutGroups(
         (key, params) => t(key, params as never),

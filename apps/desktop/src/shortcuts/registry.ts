@@ -4,6 +4,10 @@ import {
     type ActionId,
 } from "./definitions";
 import { isActionOffInWorkspace } from "./workspaceActions";
+import {
+    isActionOffByFollowTheLeader,
+    subscribeToFollowTheLeader,
+} from "@/pathways/followTheLeader";
 
 /**
  * Why a held action was let go: its key came up, or the key was lost (the window lost focus, a
@@ -51,7 +55,12 @@ function notify() {
     listeners.forEach((listener) => listener());
 }
 
+/**
+ * The action's handler, unless a setting takes the action away: with Follow-the-leader off its
+ * actions have none, so no key, palette entry, menu item or button reaches them
+ */
 function top(id: ActionId): ActionHandler | undefined {
+    if (isActionOffByFollowTheLeader(id)) return undefined;
     const stack = handlers.get(id);
     return stack?.[stack.length - 1];
 }
@@ -139,6 +148,9 @@ export function pressAction(
     if (!release) return null;
     return (reason) => release(reason);
 }
+
+// Switching Follow-the-leader adds or takes away its actions: menus and the palette read again
+subscribeToFollowTheLeader(() => notify());
 
 /** Call when a handler's `isEnabled()` result may have changed without a (un)registration. */
 export function notifyActionHandlersChanged(): void {

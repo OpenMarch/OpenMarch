@@ -95,6 +95,23 @@ export default function FieldSettings() {
                     }
                 />
             </SettingRow>
+
+            {/* Pathways M2 (#1095): trails and line orders, off until turned on */}
+            <SettingRow
+                label={<T keyName="settings.field.followTheLeader" />}
+                htmlFor="field-follow-the-leader"
+                description={
+                    <T keyName="settings.field.followTheLeader.description" />
+                }
+            >
+                <Switch
+                    id="field-follow-the-leader"
+                    checked={uiSettings.followTheLeader === true}
+                    onCheckedChange={(followTheLeader) =>
+                        change({ followTheLeader })
+                    }
+                />
+            </SettingRow>
         </SettingsPanel>
     );
 }

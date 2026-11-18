@@ -10,8 +10,10 @@ import {
     pathPenMode,
 } from "../pathPenMode";
 import {
+    activatePath,
     addPoint,
     clearPath,
+    openPath,
     pathKey,
     pathMarcherIds,
     setPathHidden,
@@ -22,6 +24,7 @@ import {
 } from "../pathPenStore";
 import { refitNeeded, type PathTarget } from "../pathTarget";
 import { bigSteps, trailDistances } from "../PathEditor";
+import { setFollowTheLeader } from "../followTheLeader";
 
 /**
  * A trail on the field (pathways step 4, spec Appendix K): the pen draws the part from the
@@ -87,6 +90,8 @@ const at = (x: number, y: number, button = 0): FieldPointer => ({
 });
 
 beforeEach(() => {
+    // Trails are drawn only with Follow-the-leader on (#1095)
+    setFollowTheLeader(true);
     setShapeField({
         fieldProperties: () => fieldProperties,
         zoom: () => ZOOM,
@@ -99,6 +104,37 @@ afterEach(() => {
     clearPath();
     setPathHidden(false);
     setShapeField(null);
+    setFollowTheLeader(false);
+});
+
+describe("a trail with Follow-the-leader off (#1095)", () => {
+    it("is shown, drawn the same, but never drawn again, opened or activated", () => {
+        setFollowTheLeader(false);
+        // Shown quiet, as with the switch on: the file plays it as before
+        showPath(trail(5), "3");
+        const off = drawingOf(usePathPenStore.getState().session)!;
+        setFollowTheLeader(true);
+        showPath(trail(5), "3");
+        expect(drawingOf(usePathPenStore.getState().session)).toEqual(off);
+        setFollowTheLeader(false);
+        expect(openPath()).toBe(false);
+        expect(usePathPenStore.getState().session!.phase).toBe("closed");
+        // A click on its line (`activatePath`) shows it quiet
+        activatePath(trail(5), "3", null, true);
+        expect(usePathPenStore.getState().session!.phase).toBe("closed");
+        // A new trail isn't drawn; a group path still is
+        clearPath();
+        startDrawing(trail(null), "3");
+        expect(usePathPenStore.getState().session).toBeNull();
+        startDrawing(group(), "3");
+        expect(usePathPenStore.getState().session!.phase).toBe("drawing");
+        clearPath();
+        // On again: opened as before
+        setFollowTheLeader(true);
+        showPath(trail(5), "3");
+        expect(openPath()).toBe(true);
+        expect(usePathPenStore.getState().session!.phase).toBe("open");
+    });
 });
 
 describe("a trail on the field (pathways step 4)", () => {

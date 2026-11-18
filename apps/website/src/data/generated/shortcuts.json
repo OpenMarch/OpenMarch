@@ -1042,6 +1042,28 @@
             ]
         },
         {
+            "title": "Paths",
+            "rows": [
+                {
+                    "label": "Path pen",
+                    "other": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "title": "Batch editing",
             "rows": [
                 {
@@ -2694,6 +2716,28 @@
                                 "⌥"
                             ],
                             "gesture": "drag"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "title": "Paths",
+            "rows": [
+                {
+                    "label": "Path pen",
+                    "other": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
                         }
                     ]
                 }
