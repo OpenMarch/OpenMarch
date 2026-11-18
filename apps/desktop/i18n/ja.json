@@ -248,7 +248,11 @@
         "items": {
             "edit": "選択したプロップまたは機材を編集",
             "editNamed": "{name}を編集",
-            "editKeywords": "編集 設定 プロパティ プロップ 機材 指揮台 楽器 名前 サイズ ロック edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "編集 設定 プロパティ プロップ 機材 指揮台 楽器 名前 サイズ ロック edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "3Dモデルをインポート…",
+            "importModelKeywords": "インポート 読み込み 3Dモデル モデル プロップ 小道具 オブジェクト ファイル アップロード import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "インポートしたモデルを配置",
+            "placeImportedModelKeywords": "配置 インポート モデル プロップ 小道具 カスタム place imported model prop 3d custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1469,7 +1473,154 @@
         },
         "locked": "ロック済み",
         "lockLabel": "ロック",
-        "lockHint": "ショー全体で位置は1つ"
+        "lockHint": "ショー全体で位置は1つ",
+        "imported": {
+            "title": "インポート済み",
+            "import": "インポート…",
+            "empty": ".glbまたは.gltfのモデルをインポートするか、ウィンドウにドロップすると、ほかのプロップと同じように配置できます。",
+            "place": "{name}を配置"
+        },
+        "import": {
+            "title": "モデルをインポート",
+            "pictureAlt": "観客側から見たモデル",
+            "working": "モデルを準備しています…",
+            "turn": {
+                "detail": "正面が観客側を向くようにしてください。",
+                "button": "90°回転"
+            },
+            "simplify": {
+                "compare": "簡略化の前と後",
+                "before": "変更前 · {triangles}",
+                "after": "変更後 · {triangles}",
+                "beforeFailed": "元のモデルを描画できませんでした。",
+                "title": "三角形{cap}個に簡略化",
+                "detail": "このファイルには三角形が{triangles}個あります。簡略化すると3Dビューが滑らかに動きます。フィールドには設置面の形だけが描かれます。"
+            },
+            "size": {
+                "title": "サイズ",
+                "value": "{width} × {depth} m、高さ{height} m",
+                "question": "これは実際のサイズですか？違う場合は、ファイルが作成された単位を選んでください。",
+                "suggested": "{unit}で作成されたファイルのようなので、変換しました。サイズを確認してください。"
+            },
+            "units": {
+                "label": "作成時の単位",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "インポートできません",
+                "needsChoice": "選択が必要",
+                "fixed": "自動で修正済み",
+                "notes": "メモ"
+            },
+            "tryAgain": "再試行",
+            "rotate": {
+                "title": "立たせる（Z-upファイル）",
+                "detail": "一部のプログラムはZを上としてエクスポートするため、モデルが仰向けに寝た状態になります。"
+            },
+            "name": "名前",
+            "saveFailed": "モデルをショーに追加できませんでした。",
+            "cancel": "キャンセル",
+            "add": "ショーに追加",
+            "credits": {
+                "title": "ライセンスとクレジット",
+                "unknown": "不明",
+                "proprietary": "全著作権所有",
+                "license": "ライセンス",
+                "author": "作者",
+                "sourceUrl": "入手元",
+                "attribution": "クレジット表記",
+                "rights": "使用する権利のあるモデルだけをインポートしてください。"
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "ファイルにモデルがありません",
+                    "detail": ".glbファイル、または.gltfとそれが参照するファイルを選んでください。"
+                },
+                "severalModelFiles": {
+                    "title": "複数のモデル",
+                    "detail": "1つずつインポートしてください：{names}"
+                },
+                "tooLarge": {
+                    "title": "ファイルが大きすぎます",
+                    "detail": "{size} MB（上限は{limit} MB）"
+                },
+                "unreadable": {
+                    "title": "ファイルを読み込めません"
+                },
+                "externalUri": {
+                    "title": "モデルがインターネットからファイルを読み込みます",
+                    "detail": "{uri}を参照しています。ファイルをダウンロードして、モデルと一緒に選んでください。"
+                },
+                "outsidePickedFiles": {
+                    "title": "モデルがフォルダー外のファイルを参照しています",
+                    "detail": "{uri}を参照しています。"
+                },
+                "missingFile": {
+                    "title": "ファイルがありません：{uri}",
+                    "detail": "モデルファイルと一緒に選んでください。"
+                },
+                "requiredExtension": {
+                    "title": "OpenMarchが読み込めない機能がモデルに必要です",
+                    "detail": "必要な拡張機能：{extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {ファイルに#件のエラーがあります}}"
+                },
+                "imageTooLarge": {
+                    "title": "テクスチャが大きすぎます：{image}",
+                    "detail": "{width} × {height}ピクセルです。1辺の上限は{limit}です。"
+                },
+                "imageUnreadable": {
+                    "title": "テクスチャを読み込めません：{image}"
+                },
+                "tooManyTriangles": {
+                    "title": "細かすぎます",
+                    "detail": "三角形が{triangles}個あります。簡略化できるのは{limit}個までです。"
+                },
+                "rigged": {
+                    "title": "リグ付きモデルには対応していません",
+                    "detail": "静止したバージョンをインポートしてください。"
+                },
+                "noGeometry": {
+                    "title": "ファイルに描画するものがありません"
+                },
+                "timedOut": {
+                    "title": "時間がかかりすぎました",
+                    "detail": "{seconds}秒後に停止しました。"
+                },
+                "failed": {
+                    "title": "準備中に問題が発生しました"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {テクスチャ#個を{cap} pxに縮小}}"
+                },
+                "dracoDecoded": "Draco圧縮を展開",
+                "meshoptDecoded": "meshopt圧縮を展開",
+                "instancesExpanded": "繰り返しのコピーを通常の形状に変換",
+                "extensionsDropped": "不要な機能を除外",
+                "contentDropped": {
+                    "title": "プロップで使わないものを除外",
+                    "animations": "{count, plural, other {アニメーション#個}}",
+                    "cameras": "{count, plural, other {カメラ#個}}",
+                    "morphTargets": "{count, plural, other {シェイプキー#個}}",
+                    "scenes": "{count, plural, other {ほかのシーン#個}}"
+                },
+                "pivotMoved": "底面の中心を設置位置に合わせた"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {ファイルに#件の警告があります}}",
+                "sizeOutOfRange": {
+                    "title": "プロップとしては珍しいサイズ",
+                    "detail": "最も長い辺は{largest} mです。プロップは通常{min}～{max} mです。"
+                },
+                "overTriangleCap": "まだ細かい状態です：三角形{triangles}個（目標は{cap}個）"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "フロントアンサンブルと指揮台",

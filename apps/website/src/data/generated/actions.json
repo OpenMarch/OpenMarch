@@ -1017,6 +1017,16 @@
         "category": "edit",
         "bindings": []
     },
+    "importModel": {
+        "label": "Import a 3D model…",
+        "category": "file",
+        "bindings": []
+    },
+    "placeImportedModel": {
+        "label": "Place an imported model",
+        "category": "edit",
+        "bindings": []
+    },
     "addFrontEnsembleEquipment": {
         "label": "Add front ensemble equipment or podium",
         "category": "ui",

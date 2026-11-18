@@ -248,7 +248,11 @@
         "items": {
             "edit": "I-edit ang napiling prop o kagamitan",
             "editNamed": "I-edit ang {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock i-edit mga setting kagamitan instrumento pangalan laki i-lock"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock i-edit mga setting kagamitan instrumento pangalan laki i-lock",
+            "importModel": "Mag-import ng 3D model…",
+            "importModelKeywords": "import 3d model glb gltf prop upload file object i-import mag-import modelo bagay",
+            "placeImportedModel": "Ilagay ang na-import na model",
+            "placeImportedModelKeywords": "place imported model prop 3d custom glb ilagay na-import"
         }
     },
     "analyticsOptIn": {
@@ -1469,7 +1473,154 @@
         },
         "locked": "Naka-lock",
         "lockLabel": "Naka-lock",
-        "lockHint": "Iisang posisyon sa buong palabas"
+        "lockHint": "Iisang posisyon sa buong palabas",
+        "imported": {
+            "title": "Na-import",
+            "import": "I-import…",
+            "empty": "Mag-import ng .glb o .gltf na model, o i-drop ito sa window, para mailagay ito tulad ng ibang prop.",
+            "place": "Ilagay ang {name}"
+        },
+        "import": {
+            "title": "Mag-import ng model",
+            "pictureAlt": "Ang model kung titingnan mula sa audience",
+            "working": "Inihahanda ang model…",
+            "turn": {
+                "detail": "Dapat nakaharap sa audience ang harap nito.",
+                "button": "Iikot nang 90°"
+            },
+            "simplify": {
+                "compare": "Bago o pagkatapos i-simplify",
+                "before": "Bago · {triangles}",
+                "after": "Pagkatapos · {triangles}",
+                "beforeFailed": "Hindi maiguhit ang orihinal.",
+                "title": "I-simplify sa {cap} triangle",
+                "detail": "May {triangles} triangle ang file. Pinapanatiling smooth ng pag-simplify ang 3D View; ang footprint lang nito ang iginuguhit sa field."
+            },
+            "size": {
+                "title": "Laki",
+                "value": "{width} × {depth} m, {height} m ang taas",
+                "question": "Ito ba ang totoong laki nito? Kung hindi, piliin ang unit na ginamit sa paggawa ng file.",
+                "suggested": "Mukhang ginawa ito sa {unit}, kaya na-convert ito. Tingnan ang laki."
+            },
+            "units": {
+                "label": "Ginawa sa",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Hindi ma-import",
+                "needsChoice": "Kailangan mong pumili",
+                "fixed": "Inayos na para sa iyo",
+                "notes": "Mga tala"
+            },
+            "tryAgain": "Subukang muli",
+            "rotate": {
+                "title": "Itayo ito (Z-up na file)",
+                "detail": "May mga program na nag-e-export nang Z ang pataas, kaya nakahiga nang patihaya ang model."
+            },
+            "name": "Pangalan",
+            "saveFailed": "Hindi naidagdag ang model sa palabas.",
+            "cancel": "Kanselahin",
+            "add": "Idagdag sa palabas",
+            "credits": {
+                "title": "Lisensya at credits",
+                "unknown": "Hindi alam",
+                "proprietary": "Nakalaan ang lahat ng karapatan",
+                "license": "Lisensya",
+                "author": "May-akda",
+                "sourceUrl": "Pinagmulan",
+                "attribution": "Pagkilala",
+                "rights": "Mag-import lang ng mga model na may karapatan kang gamitin."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Walang model sa mga file",
+                    "detail": "Pumili ng .glb file, o ng .gltf kasama ang mga file na binabanggit nito."
+                },
+                "severalModelFiles": {
+                    "title": "Higit sa isang model",
+                    "detail": "Isa-isang i-import: {names}"
+                },
+                "tooLarge": {
+                    "title": "Masyadong malaki ang mga file",
+                    "detail": "{size} MB, lampas sa {limit} MB na limit"
+                },
+                "unreadable": {
+                    "title": "Hindi mabasa ang file"
+                },
+                "externalUri": {
+                    "title": "Naglo-load ang model ng mga file mula sa internet",
+                    "detail": "Binabanggit nito ang {uri}. I-download ang file at piliin ito kasama ng model."
+                },
+                "outsidePickedFiles": {
+                    "title": "May binabanggit ang model na file sa labas ng folder nito",
+                    "detail": "Binabanggit nito ang {uri}."
+                },
+                "missingFile": {
+                    "title": "Nawawalang file: {uri}",
+                    "detail": "Piliin ito kasabay ng model file."
+                },
+                "requiredExtension": {
+                    "title": "Kailangan ng model ang mga feature na hindi mabasa ng OpenMarch",
+                    "detail": "Kailangan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {May # error ang file} other {May # error ang file}}"
+                },
+                "imageTooLarge": {
+                    "title": "Masyadong malaki ang isang texture: {image}",
+                    "detail": "{width} × {height} pixel; {limit} ang limit sa bawat gilid."
+                },
+                "imageUnreadable": {
+                    "title": "Hindi mabasa ang isang texture: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Sobrang detalyado",
+                    "detail": "{triangles} triangle; {limit} ang pinakamaraming kayang i-simplify."
+                },
+                "rigged": {
+                    "title": "Hindi suportado ang mga rigged na model",
+                    "detail": "Mag-import ng bersyong hindi gumagalaw."
+                },
+                "noGeometry": {
+                    "title": "Walang maiguguhit sa file"
+                },
+                "timedOut": {
+                    "title": "Masyadong natagalan",
+                    "detail": "Itinigil pagkalipas ng {seconds} segundo."
+                },
+                "failed": {
+                    "title": "Nagkaproblema habang inihahanda ito"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Pinaliit ang # texture sa {cap} px} other {Pinaliit ang # texture sa {cap} px}}"
+                },
+                "dracoDecoded": "Binuksan ang Draco compression",
+                "meshoptDecoded": "Binuksan ang meshopt compression",
+                "instancesExpanded": "Ginawang simpleng hugis ang mga paulit-ulit na kopya",
+                "extensionsDropped": "Inalis ang mga feature na hindi nito kailangan",
+                "contentDropped": {
+                    "title": "Inalis ang hindi ginagamit ng prop",
+                    "animations": "{count, plural, one {# animation} other {# animation}}",
+                    "cameras": "{count, plural, one {# camera} other {# camera}}",
+                    "morphTargets": "{count, plural, one {# shape key} other {# shape key}}",
+                    "scenes": "{count, plural, one {# iba pang scene} other {# iba pang scene}}"
+                },
+                "pivotMoved": "Inilapag sa lupa sa gitna nito"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {May # babala ang file} other {May # babala ang file}}",
+                "sizeOutOfRange": {
+                    "title": "Hindi karaniwang laki para sa prop",
+                    "detail": "{largest} m ang pinakamahabang gilid nito; karaniwang {min} hanggang {max} m ang mga prop."
+                },
+                "overTriangleCap": "Detalyado pa rin: {triangles} triangle (ang target ay {cap})"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "Front ensemble at mga podium",

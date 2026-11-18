@@ -250,7 +250,11 @@
         "items": {
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "Import a 3D model…",
+            "importModelKeywords": "import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "Place an imported model",
+            "placeImportedModelKeywords": "place imported model prop 3d custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1477,7 +1481,154 @@
         },
         "locked": "Locked",
         "lockLabel": "Locked",
-        "lockHint": "One position for the whole show"
+        "lockHint": "One position for the whole show",
+        "imported": {
+            "title": "Imported",
+            "import": "Import…",
+            "empty": "Import a .glb or .gltf model, or drop one on the window, to place it like any prop.",
+            "place": "Place {name}"
+        },
+        "import": {
+            "title": "Import a model",
+            "pictureAlt": "The model seen from the audience",
+            "working": "Preparing the model…",
+            "turn": {
+                "detail": "The front should face the audience.",
+                "button": "Turn 90°"
+            },
+            "simplify": {
+                "compare": "Before or after simplifying",
+                "before": "Before · {triangles}",
+                "after": "After · {triangles}",
+                "beforeFailed": "Couldn't draw the original.",
+                "title": "Simplify to {cap} triangles",
+                "detail": "The file has {triangles}. Simplifying keeps the 3D View smooth; the field only draws its footprint."
+            },
+            "size": {
+                "title": "Size",
+                "value": "{width} × {depth} m, {height} m tall",
+                "question": "Is that its real size? If not, pick the unit the file was made in.",
+                "suggested": "It looked like it was made in {unit}, so it was converted. Check the size."
+            },
+            "units": {
+                "label": "Made in",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Can't import",
+                "needsChoice": "Needs your choice",
+                "fixed": "Fixed for you",
+                "notes": "Notes"
+            },
+            "tryAgain": "Try again",
+            "rotate": {
+                "title": "Stand it up (Z-up file)",
+                "detail": "Some programs export with Z as up, so the model lies on its back."
+            },
+            "name": "Name",
+            "saveFailed": "Couldn't add the model to the show.",
+            "cancel": "Cancel",
+            "add": "Add to show",
+            "credits": {
+                "title": "License and credits",
+                "unknown": "Unknown",
+                "proprietary": "All rights reserved",
+                "license": "License",
+                "author": "Author",
+                "sourceUrl": "Source",
+                "attribution": "Attribution",
+                "rights": "Only import models you have the rights to use."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "No model in the files",
+                    "detail": "Pick a .glb file, or a .gltf with the files it names."
+                },
+                "severalModelFiles": {
+                    "title": "More than one model",
+                    "detail": "Import one at a time: {names}"
+                },
+                "tooLarge": {
+                    "title": "The files are too large",
+                    "detail": "{size} MB, over the {limit} MB limit"
+                },
+                "unreadable": {
+                    "title": "The file can't be read"
+                },
+                "externalUri": {
+                    "title": "The model loads files from the internet",
+                    "detail": "It names {uri}. Download the file and pick it with the model."
+                },
+                "outsidePickedFiles": {
+                    "title": "The model names a file outside its folder",
+                    "detail": "It names {uri}."
+                },
+                "missingFile": {
+                    "title": "Missing file: {uri}",
+                    "detail": "Pick it together with the model file."
+                },
+                "requiredExtension": {
+                    "title": "The model needs features OpenMarch can't read",
+                    "detail": "Required: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {The file has # error} other {The file has # errors}}"
+                },
+                "imageTooLarge": {
+                    "title": "A texture is too large: {image}",
+                    "detail": "{width} × {height} pixels; the limit is {limit} on a side."
+                },
+                "imageUnreadable": {
+                    "title": "A texture can't be read: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Far too detailed",
+                    "detail": "{triangles} triangles; the most it can simplify is {limit}."
+                },
+                "rigged": {
+                    "title": "Rigged models aren't supported",
+                    "detail": "Import a still version of it."
+                },
+                "noGeometry": {
+                    "title": "The file has nothing to draw"
+                },
+                "timedOut": {
+                    "title": "It took too long",
+                    "detail": "Stopped after {seconds} seconds."
+                },
+                "failed": {
+                    "title": "Something went wrong preparing it"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Shrank # texture to {cap} px} other {Shrank # textures to {cap} px}}"
+                },
+                "dracoDecoded": "Unpacked Draco compression",
+                "meshoptDecoded": "Unpacked meshopt compression",
+                "instancesExpanded": "Turned repeated copies into plain shapes",
+                "extensionsDropped": "Left out features it doesn't need",
+                "contentDropped": {
+                    "title": "Left out what a prop doesn't use",
+                    "animations": "{count, plural, one {# animation} other {# animations}}",
+                    "cameras": "{count, plural, one {# camera} other {# cameras}}",
+                    "morphTargets": "{count, plural, one {# shape key} other {# shape keys}}",
+                    "scenes": "{count, plural, one {# other scene} other {# other scenes}}"
+                },
+                "pivotMoved": "Set it on the ground at its center"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {The file has # warning} other {The file has # warnings}}",
+                "sizeOutOfRange": {
+                    "title": "Unusual size for a prop",
+                    "detail": "Its longest side is {largest} m; props are usually {min} to {max} m."
+                },
+                "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "Front ensemble and podiums",

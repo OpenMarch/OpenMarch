@@ -248,7 +248,11 @@
         "items": {
             "edit": "แก้ไขพร็อพหรืออุปกรณ์ที่เลือก",
             "editNamed": "แก้ไข {name}",
-            "editKeywords": "แก้ไข การตั้งค่า คุณสมบัติ พร็อพ อุปกรณ์ โพเดียม เครื่องดนตรี ชื่อ ขนาด ล็อก edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "แก้ไข การตั้งค่า คุณสมบัติ พร็อพ อุปกรณ์ โพเดียม เครื่องดนตรี ชื่อ ขนาด ล็อก edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "นำเข้าโมเดล 3 มิติ…",
+            "importModelKeywords": "นำเข้า โมเดล 3 มิติ พร็อพ วัตถุ อัปโหลด ไฟล์ import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "วางโมเดลที่นำเข้า",
+            "placeImportedModelKeywords": "วาง โมเดล นำเข้า พร็อพ กำหนดเอง place imported model prop 3d custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1469,7 +1473,154 @@
         },
         "locked": "ล็อกอยู่",
         "lockLabel": "ล็อก",
-        "lockHint": "ตำแหน่งเดียวตลอดทั้งโชว์"
+        "lockHint": "ตำแหน่งเดียวตลอดทั้งโชว์",
+        "imported": {
+            "title": "นำเข้าแล้ว",
+            "import": "นำเข้า…",
+            "empty": "นำเข้าโมเดล .glb หรือ .gltf หรือลากมาวางบนหน้าต่าง เพื่อวางเหมือนพร็อพอื่นๆ",
+            "place": "วาง {name}"
+        },
+        "import": {
+            "title": "นำเข้าโมเดล",
+            "pictureAlt": "โมเดลเมื่อมองจากฝั่งผู้ชม",
+            "working": "กำลังเตรียมโมเดล…",
+            "turn": {
+                "detail": "ด้านหน้าควรหันไปทางผู้ชม",
+                "button": "หมุน 90°"
+            },
+            "simplify": {
+                "compare": "ก่อนหรือหลังลดรายละเอียด",
+                "before": "ก่อน · {triangles}",
+                "after": "หลัง · {triangles}",
+                "beforeFailed": "วาดโมเดลต้นฉบับไม่ได้",
+                "title": "ลดรายละเอียดเหลือ {cap} สามเหลี่ยม",
+                "detail": "ไฟล์นี้มี {triangles} สามเหลี่ยม การลดรายละเอียดช่วยให้มุมมอง 3 มิติลื่นไหล ส่วนสนามจะวาดเฉพาะพื้นที่ที่โมเดลวางอยู่"
+            },
+            "size": {
+                "title": "ขนาด",
+                "value": "{width} × {depth} m สูง {height} m",
+                "question": "นี่คือขนาดจริงหรือไม่ ถ้าไม่ใช่ ให้เลือกหน่วยที่ใช้สร้างไฟล์",
+                "suggested": "ดูเหมือนไฟล์นี้สร้างด้วยหน่วย {unit} จึงแปลงหน่วยให้แล้ว โปรดตรวจสอบขนาด"
+            },
+            "units": {
+                "label": "หน่วยที่ใช้สร้าง",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "นำเข้าไม่ได้",
+                "needsChoice": "ต้องเลือก",
+                "fixed": "แก้ไขให้แล้ว",
+                "notes": "หมายเหตุ"
+            },
+            "tryAgain": "ลองอีกครั้ง",
+            "rotate": {
+                "title": "ตั้งให้ตรง (ไฟล์ Z-up)",
+                "detail": "บางโปรแกรมส่งออกโดยให้แกน Z ชี้ขึ้น โมเดลจึงนอนหงาย"
+            },
+            "name": "ชื่อ",
+            "saveFailed": "เพิ่มโมเดลลงในโชว์ไม่ได้",
+            "cancel": "ยกเลิก",
+            "add": "เพิ่มลงในโชว์",
+            "credits": {
+                "title": "สัญญาอนุญาตและเครดิต",
+                "unknown": "ไม่ทราบ",
+                "proprietary": "สงวนลิขสิทธิ์",
+                "license": "สัญญาอนุญาต",
+                "author": "ผู้สร้าง",
+                "sourceUrl": "แหล่งที่มา",
+                "attribution": "ข้อความให้เครดิต",
+                "rights": "นำเข้าเฉพาะโมเดลที่คุณมีสิทธิ์ใช้งาน"
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "ไม่มีโมเดลในไฟล์",
+                    "detail": "เลือกไฟล์ .glb หรือไฟล์ .gltf พร้อมไฟล์ที่ไฟล์นั้นอ้างถึง"
+                },
+                "severalModelFiles": {
+                    "title": "มีโมเดลมากกว่าหนึ่งรายการ",
+                    "detail": "นำเข้าทีละรายการ: {names}"
+                },
+                "tooLarge": {
+                    "title": "ไฟล์มีขนาดใหญ่เกินไป",
+                    "detail": "{size} MB เกินขีดจำกัด {limit} MB"
+                },
+                "unreadable": {
+                    "title": "อ่านไฟล์ไม่ได้"
+                },
+                "externalUri": {
+                    "title": "โมเดลโหลดไฟล์จากอินเทอร์เน็ต",
+                    "detail": "โมเดลอ้างถึง {uri} ให้ดาวน์โหลดไฟล์นั้นแล้วเลือกพร้อมกับโมเดล"
+                },
+                "outsidePickedFiles": {
+                    "title": "โมเดลอ้างถึงไฟล์ที่อยู่นอกโฟลเดอร์",
+                    "detail": "โมเดลอ้างถึง {uri}"
+                },
+                "missingFile": {
+                    "title": "ไม่มีไฟล์: {uri}",
+                    "detail": "เลือกไฟล์นี้พร้อมกับไฟล์โมเดล"
+                },
+                "requiredExtension": {
+                    "title": "โมเดลต้องใช้ฟีเจอร์ที่ OpenMarch อ่านไม่ได้",
+                    "detail": "ต้องใช้: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {ไฟล์มีข้อผิดพลาด # รายการ}}"
+                },
+                "imageTooLarge": {
+                    "title": "เท็กซ์เจอร์มีขนาดใหญ่เกินไป: {image}",
+                    "detail": "{width} × {height} พิกเซล ขีดจำกัดคือ {limit} ต่อด้าน"
+                },
+                "imageUnreadable": {
+                    "title": "อ่านเท็กซ์เจอร์ไม่ได้: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "มีรายละเอียดมากเกินไป",
+                    "detail": "{triangles} สามเหลี่ยม ลดรายละเอียดได้สูงสุด {limit}"
+                },
+                "rigged": {
+                    "title": "ไม่รองรับโมเดลที่มีริก",
+                    "detail": "นำเข้าเวอร์ชันที่ไม่เคลื่อนไหว"
+                },
+                "noGeometry": {
+                    "title": "ไฟล์ไม่มีสิ่งที่จะวาด"
+                },
+                "timedOut": {
+                    "title": "ใช้เวลานานเกินไป",
+                    "detail": "หยุดหลังจาก {seconds} วินาที"
+                },
+                "failed": {
+                    "title": "เกิดข้อผิดพลาดขณะเตรียมโมเดล"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {ย่อเท็กซ์เจอร์ # รายการเหลือ {cap} px}}"
+                },
+                "dracoDecoded": "คลายการบีบอัด Draco",
+                "meshoptDecoded": "คลายการบีบอัด meshopt",
+                "instancesExpanded": "แปลงสำเนาที่ซ้ำกันเป็นรูปทรงธรรมดา",
+                "extensionsDropped": "ตัดฟีเจอร์ที่ไม่จำเป็นออก",
+                "contentDropped": {
+                    "title": "ตัดสิ่งที่พร็อพไม่ได้ใช้ออก",
+                    "animations": "{count, plural, other {แอนิเมชัน # รายการ}}",
+                    "cameras": "{count, plural, other {กล้อง # ตัว}}",
+                    "morphTargets": "{count, plural, other {shape key # รายการ}}",
+                    "scenes": "{count, plural, other {ฉากอื่น # ฉาก}}"
+                },
+                "pivotMoved": "ตั้งจุดกึ่งกลางฐานไว้บนพื้น"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {ไฟล์มีคำเตือน # รายการ}}",
+                "sizeOutOfRange": {
+                    "title": "ขนาดผิดปกติสำหรับพร็อพ",
+                    "detail": "ด้านที่ยาวที่สุดคือ {largest} m พร็อพมักมีขนาด {min} ถึง {max} m"
+                },
+                "overTriangleCap": "ยังมีรายละเอียดมาก: {triangles} สามเหลี่ยม (เป้าหมายคือ {cap})"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "ฟรอนต์อองซอมเบิลและโพเดียม",

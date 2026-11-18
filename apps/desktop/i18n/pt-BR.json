@@ -248,7 +248,11 @@
         "items": {
             "edit": "Editar adereço ou equipamento selecionado",
             "editNamed": "Editar {name}",
-            "editKeywords": "editar configurações propriedades adereço equipamento pódio instrumento nome tamanho travar edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "editar configurações propriedades adereço equipamento pódio instrumento nome tamanho travar edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "Importar um modelo 3D…",
+            "importModelKeywords": "importar modelo 3d glb gltf adereço objeto enviar arquivo import 3d model prop upload file object",
+            "placeImportedModel": "Posicionar um modelo importado",
+            "placeImportedModelKeywords": "posicionar colocar modelo importado adereço 3d personalizado place imported model prop custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1469,7 +1473,154 @@
         },
         "locked": "Travado",
         "lockLabel": "Travado",
-        "lockHint": "Uma só posição durante todo o show"
+        "lockHint": "Uma só posição durante todo o show",
+        "imported": {
+            "title": "Importados",
+            "import": "Importar…",
+            "empty": "Importe um modelo .glb ou .gltf, ou solte um na janela, para posicioná-lo como qualquer adereço.",
+            "place": "Posicionar {name}"
+        },
+        "import": {
+            "title": "Importar um modelo",
+            "pictureAlt": "O modelo visto da plateia",
+            "working": "Preparando o modelo…",
+            "turn": {
+                "detail": "A frente deve ficar voltada para a plateia.",
+                "button": "Girar 90°"
+            },
+            "simplify": {
+                "compare": "Antes ou depois de simplificar",
+                "before": "Antes · {triangles}",
+                "after": "Depois · {triangles}",
+                "beforeFailed": "Não foi possível desenhar o original.",
+                "title": "Simplificar para {cap} triângulos",
+                "detail": "O arquivo tem {triangles} triângulos. Simplificar mantém a Visualização 3D fluida; o campo desenha só a área que ele ocupa."
+            },
+            "size": {
+                "title": "Tamanho",
+                "value": "{width} × {depth} m, {height} m de altura",
+                "question": "Esse é o tamanho real? Se não for, escolha a unidade em que o arquivo foi feito.",
+                "suggested": "Parecia ter sido feito em {unit}, então foi convertido. Confira o tamanho."
+            },
+            "units": {
+                "label": "Feito em",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Não é possível importar",
+                "needsChoice": "Precisa da sua escolha",
+                "fixed": "Corrigido automaticamente",
+                "notes": "Observações"
+            },
+            "tryAgain": "Tentar novamente",
+            "rotate": {
+                "title": "Colocar em pé (arquivo Z-up)",
+                "detail": "Alguns programas exportam com Z para cima, então o modelo fica deitado de costas."
+            },
+            "name": "Nome",
+            "saveFailed": "Não foi possível adicionar o modelo ao show.",
+            "cancel": "Cancelar",
+            "add": "Adicionar ao show",
+            "credits": {
+                "title": "Licença e créditos",
+                "unknown": "Desconhecida",
+                "proprietary": "Todos os direitos reservados",
+                "license": "Licença",
+                "author": "Autor",
+                "sourceUrl": "Origem",
+                "attribution": "Atribuição",
+                "rights": "Importe apenas modelos que você tem o direito de usar."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Nenhum modelo nos arquivos",
+                    "detail": "Escolha um arquivo .glb, ou um .gltf com os arquivos que ele menciona."
+                },
+                "severalModelFiles": {
+                    "title": "Mais de um modelo",
+                    "detail": "Importe um de cada vez: {names}"
+                },
+                "tooLarge": {
+                    "title": "Os arquivos são grandes demais",
+                    "detail": "{size} MB, acima do limite de {limit} MB"
+                },
+                "unreadable": {
+                    "title": "Não é possível ler o arquivo"
+                },
+                "externalUri": {
+                    "title": "O modelo carrega arquivos da internet",
+                    "detail": "Ele menciona {uri}. Baixe o arquivo e escolha-o junto com o modelo."
+                },
+                "outsidePickedFiles": {
+                    "title": "O modelo menciona um arquivo fora da pasta dele",
+                    "detail": "Ele menciona {uri}."
+                },
+                "missingFile": {
+                    "title": "Arquivo ausente: {uri}",
+                    "detail": "Escolha-o junto com o arquivo do modelo."
+                },
+                "requiredExtension": {
+                    "title": "O modelo precisa de recursos que o OpenMarch não consegue ler",
+                    "detail": "Exige: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {O arquivo tem # erro} other {O arquivo tem # erros}}"
+                },
+                "imageTooLarge": {
+                    "title": "Uma textura é grande demais: {image}",
+                    "detail": "{width} × {height} pixels; o limite é {limit} por lado."
+                },
+                "imageUnreadable": {
+                    "title": "Não é possível ler uma textura: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Detalhado demais",
+                    "detail": "{triangles} triângulos; o máximo que dá para simplificar é {limit}."
+                },
+                "rigged": {
+                    "title": "Modelos com rig não são compatíveis",
+                    "detail": "Importe uma versão estática dele."
+                },
+                "noGeometry": {
+                    "title": "O arquivo não tem nada para desenhar"
+                },
+                "timedOut": {
+                    "title": "Demorou demais",
+                    "detail": "Interrompido após {seconds} segundos."
+                },
+                "failed": {
+                    "title": "Algo deu errado ao prepará-lo"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {# textura reduzida para {cap} px} other {# texturas reduzidas para {cap} px}}"
+                },
+                "dracoDecoded": "Compressão Draco descompactada",
+                "meshoptDecoded": "Compressão meshopt descompactada",
+                "instancesExpanded": "Cópias repetidas transformadas em formas simples",
+                "extensionsDropped": "Recursos desnecessários removidos",
+                "contentDropped": {
+                    "title": "Removido o que um adereço não usa",
+                    "animations": "{count, plural, one {# animação} other {# animações}}",
+                    "cameras": "{count, plural, one {# câmera} other {# câmeras}}",
+                    "morphTargets": "{count, plural, one {# chave de forma} other {# chaves de forma}}",
+                    "scenes": "{count, plural, one {# cena extra} other {# cenas extras}}"
+                },
+                "pivotMoved": "Apoiado no chão pelo centro"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {O arquivo tem # aviso} other {O arquivo tem # avisos}}",
+                "sizeOutOfRange": {
+                    "title": "Tamanho incomum para um adereço",
+                    "detail": "O lado mais longo mede {largest} m; adereços costumam ter de {min} a {max} m."
+                },
+                "overTriangleCap": "Ainda detalhado: {triangles} triângulos (a meta é {cap})"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "Pit e pódios",

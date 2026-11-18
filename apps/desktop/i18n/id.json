@@ -248,7 +248,11 @@
         "items": {
             "edit": "Edit properti atau peralatan yang dipilih",
             "editNamed": "Edit {name}",
-            "editKeywords": "edit ubah pengaturan atribut properti peralatan podium instrumen alat musik nama ukuran kunci settings properties prop equipment instrument name size lock"
+            "editKeywords": "edit ubah pengaturan atribut properti peralatan podium instrumen alat musik nama ukuran kunci settings properties prop equipment instrument name size lock",
+            "importModel": "Impor model 3D…",
+            "importModelKeywords": "impor model 3d glb gltf properti objek unggah file import 3d model prop upload file object",
+            "placeImportedModel": "Tempatkan model yang diimpor",
+            "placeImportedModelKeywords": "tempatkan taruh model impor properti 3d kustom place imported model prop custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1469,7 +1473,154 @@
         },
         "locked": "Terkunci",
         "lockLabel": "Terkunci",
-        "lockHint": "Satu posisi untuk seluruh pertunjukan"
+        "lockHint": "Satu posisi untuk seluruh pertunjukan",
+        "imported": {
+            "title": "Diimpor",
+            "import": "Impor…",
+            "empty": "Impor model .glb atau .gltf, atau lepas di jendela, untuk menempatkannya seperti properti lain.",
+            "place": "Tempatkan {name}"
+        },
+        "import": {
+            "title": "Impor model",
+            "pictureAlt": "Model dilihat dari arah penonton",
+            "working": "Menyiapkan model…",
+            "turn": {
+                "detail": "Bagian depan harus menghadap penonton.",
+                "button": "Putar 90°"
+            },
+            "simplify": {
+                "compare": "Sebelum atau sesudah disederhanakan",
+                "before": "Sebelum · {triangles}",
+                "after": "Sesudah · {triangles}",
+                "beforeFailed": "Gagal menggambar model asli.",
+                "title": "Sederhanakan menjadi {cap} segitiga",
+                "detail": "File ini memiliki {triangles} segitiga. Penyederhanaan menjaga Tampilan 3D tetap lancar; lapangan hanya menggambar jejaknya."
+            },
+            "size": {
+                "title": "Ukuran",
+                "value": "{width} × {depth} m, tinggi {height} m",
+                "question": "Apakah itu ukuran sebenarnya? Jika tidak, pilih satuan yang dipakai saat file dibuat.",
+                "suggested": "Model ini tampaknya dibuat dalam {unit}, jadi sudah dikonversi. Periksa ukurannya."
+            },
+            "units": {
+                "label": "Dibuat dalam",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Tidak dapat diimpor",
+                "needsChoice": "Perlu dipilih",
+                "fixed": "Diperbaiki otomatis",
+                "notes": "Catatan"
+            },
+            "tryAgain": "Coba lagi",
+            "rotate": {
+                "title": "Berdirikan (file Z-up)",
+                "detail": "Beberapa program mengekspor dengan sumbu Z ke atas, sehingga model terbaring telentang."
+            },
+            "name": "Nama",
+            "saveFailed": "Gagal menambahkan model ke pertunjukan.",
+            "cancel": "Batal",
+            "add": "Tambahkan ke pertunjukan",
+            "credits": {
+                "title": "Lisensi dan kredit",
+                "unknown": "Tidak diketahui",
+                "proprietary": "Hak cipta dilindungi",
+                "license": "Lisensi",
+                "author": "Pembuat",
+                "sourceUrl": "Sumber",
+                "attribution": "Atribusi",
+                "rights": "Impor hanya model yang boleh Anda gunakan."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Tidak ada model dalam file",
+                    "detail": "Pilih file .glb, atau file .gltf beserta file yang dirujuknya."
+                },
+                "severalModelFiles": {
+                    "title": "Lebih dari satu model",
+                    "detail": "Impor satu per satu: {names}"
+                },
+                "tooLarge": {
+                    "title": "File terlalu besar",
+                    "detail": "{size} MB, melebihi batas {limit} MB"
+                },
+                "unreadable": {
+                    "title": "File tidak dapat dibaca"
+                },
+                "externalUri": {
+                    "title": "Model memuat file dari internet",
+                    "detail": "Model merujuk {uri}. Unduh file tersebut dan pilih bersama modelnya."
+                },
+                "outsidePickedFiles": {
+                    "title": "Model merujuk file di luar foldernya",
+                    "detail": "Model merujuk {uri}."
+                },
+                "missingFile": {
+                    "title": "File tidak ada: {uri}",
+                    "detail": "Pilih file tersebut bersama file model."
+                },
+                "requiredExtension": {
+                    "title": "Model memerlukan fitur yang tidak dapat dibaca OpenMarch",
+                    "detail": "Diperlukan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {File berisi # kesalahan}}"
+                },
+                "imageTooLarge": {
+                    "title": "Tekstur terlalu besar: {image}",
+                    "detail": "{width} × {height} piksel; batasnya {limit} per sisi."
+                },
+                "imageUnreadable": {
+                    "title": "Tekstur tidak dapat dibaca: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Terlalu detail",
+                    "detail": "{triangles} segitiga; paling banyak yang dapat disederhanakan adalah {limit}."
+                },
+                "rigged": {
+                    "title": "Model dengan rig tidak didukung",
+                    "detail": "Impor versi diamnya."
+                },
+                "noGeometry": {
+                    "title": "File tidak berisi apa pun untuk digambar"
+                },
+                "timedOut": {
+                    "title": "Terlalu lama",
+                    "detail": "Dihentikan setelah {seconds} detik."
+                },
+                "failed": {
+                    "title": "Terjadi kesalahan saat menyiapkan model"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {# tekstur diperkecil menjadi {cap} px}}"
+                },
+                "dracoDecoded": "Kompresi Draco dibongkar",
+                "meshoptDecoded": "Kompresi meshopt dibongkar",
+                "instancesExpanded": "Salinan berulang diubah menjadi bentuk biasa",
+                "extensionsDropped": "Fitur yang tidak diperlukan dihilangkan",
+                "contentDropped": {
+                    "title": "Hal yang tidak dipakai properti dihilangkan",
+                    "animations": "{count, plural, other {# animasi}}",
+                    "cameras": "{count, plural, other {# kamera}}",
+                    "morphTargets": "{count, plural, other {# shape key}}",
+                    "scenes": "{count, plural, other {# adegan lain}}"
+                },
+                "pivotMoved": "Diletakkan di tanah pada titik tengahnya"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {File berisi # peringatan}}",
+                "sizeOutOfRange": {
+                    "title": "Ukuran tidak biasa untuk properti",
+                    "detail": "Sisi terpanjangnya {largest} m; properti biasanya {min} hingga {max} m."
+                },
+                "overTriangleCap": "Masih detail: {triangles} segitiga (targetnya {cap})"
+            }
+        }
     },
     "frontEnsemble": {
         "title": "Front ensemble dan podium",

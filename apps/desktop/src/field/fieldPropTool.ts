@@ -7,10 +7,7 @@ import {
     createItemsMutationOptions,
 } from "@/hooks/queries/useItems";
 import { useTimingObjects } from "@/hooks";
-import {
-    useItemDrawingStore,
-    type EquipmentPlacement,
-} from "@/stores/ItemDrawingStore";
+import { useItemDrawingStore, type Placement } from "@/stores/ItemDrawingStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import { outlineWriteBeatNow } from "@/items/itemOutlineTimeline";
@@ -21,29 +18,34 @@ import {
     newEquipment,
     nextEquipmentName,
 } from "@/items/newEquipment";
+import { newImportedProp } from "@/items/newImportedProp";
 import type { PropToolStamp } from "@/field/editor/propTool";
 import type { FieldEditor, FieldPoint } from "@/field/editor/fieldEditor";
 
 /**
- * The footprint equipment is placed with, in field units, turned for where it lands (a podium
- * on the back half is turned around) once the field is known
+ * The footprint equipment or an imported model is placed with, in field units, turned for where
+ * it lands (a podium on the back half is turned around) once the field is known
  */
 const stampOf = (
-    placing: EquipmentPlacement | null,
+    placing: Placement | null,
     field: () => FieldProperties | null | undefined,
-): PropToolStamp | null =>
-    placing
-        ? {
-              widthPixels: placing.variant.footprint.width * PIXELS_PER_METER,
-              depthPixels: placing.variant.footprint.depth * PIXELS_PER_METER,
-              rotationAt: (center) => {
-                  const grid = field();
-                  return grid
-                      ? equipmentRotationAt(placing.variant, center, grid)
-                      : 0;
-              },
-          }
-        : null;
+): PropToolStamp | null => {
+    if (!placing) return null;
+    const footprint =
+        placing.kind === "equipment"
+            ? placing.variant.footprint
+            : placing.footprint;
+    return {
+        widthPixels: footprint.width * PIXELS_PER_METER,
+        depthPixels: footprint.depth * PIXELS_PER_METER,
+        rotationAt: (center) => {
+            const grid = field();
+            return grid && placing.kind === "equipment"
+                ? equipmentRotationAt(placing.variant, center, grid)
+                : 0;
+        },
+    };
+};
 
 /**
  * Turns the field's prop tool on and off with the Props panel's Draw and
@@ -144,17 +146,28 @@ export function usePropDrawn(): (outline: DrawnOutline) => void {
             mutate([newPropFromDrawing(outline, beat.id)]);
             return;
         }
+        const name = nextEquipmentName(
+            placing.baseName,
+            (items ?? []).map((item) => item.marcher.name),
+        );
+        const home: [number, number] = [outline.centerX, outline.centerY];
         mutate([
-            newEquipment({
-                variant: placing.variant,
-                name: nextEquipmentName(
-                    placing.baseName,
-                    (items ?? []).map((item) => item.marcher.name),
-                ),
-                home: [outline.centerX, outline.centerY],
-                beatId: beat.id,
-                rotation: outline.rotation,
-            }),
+            placing.kind === "equipment"
+                ? newEquipment({
+                      variant: placing.variant,
+                      name,
+                      home,
+                      beatId: beat.id,
+                      rotation: outline.rotation,
+                  })
+                : newImportedProp({
+                      modelValue: placing.modelValue,
+                      footprint: placing.footprint,
+                      name,
+                      home,
+                      beatId: beat.id,
+                      rotation: outline.rotation,
+                  }),
         ]);
     }, []);
 }
