@@ -384,6 +384,8 @@ export interface TimelineBasicPoint {
     readonly count: number;
     /** Its page's name, "2" */
     readonly page: string;
+    /** Why **Remove this count's position** can't run here, or `null`/absent when it can */
+    readonly removeReason?: string | null;
 }
 
 export interface TimelineRangeChange extends TimelineBeatRange {

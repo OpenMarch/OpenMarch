@@ -70,8 +70,8 @@ export const moveMarchersInTargetMutationOptions = () => {
 };
 
 /**
- * Basic mode's **Remove this count's position** (UI-19): one undoable edit merging each marcher's
- * two moves split at `beat` (`removePositionAtBeat`). Like the other timeline writes, the resolver
+ * Basic mode's **Remove this count's position** (UI-19): one undoable edit taking each marcher's
+ * position at `beat` away (`removePositionAtBeat`). Like the other timeline writes, the resolver
  * store picks the change up from the change log, so there is nothing to invalidate.
  */
 export const removePositionAtBeatMutationOptions = () => {

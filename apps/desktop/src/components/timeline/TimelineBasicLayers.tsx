@@ -101,6 +101,49 @@ export const TimelineBasicExpertMarks = memo(function TimelineBasicExpertMarks({
  * The selected marchers' mid-page positions (UI-19): a tick through the box body at each one.
  * Clicking it seeks there; its right-click menu removes it.
  */
+/**
+ * **Remove this count's position**, in a tick's menu (and the playhead's, when it covers a tick).
+ * With a `reason` it can't run: it stays in the menu, dimmed, with the reason under it, and a
+ * press keeps the menu open rather than doing nothing (owner rule: no dead clicks).
+ */
+export function BasicPointRemoveItem({
+    reason,
+    onRemove,
+}: {
+    reason: string | null;
+    onRemove: () => void;
+}) {
+    const { t } = useTranslate();
+    if (reason === null)
+        return (
+            <ContextMenu.Item
+                data-testid="basic-point-remove"
+                className="text-body hover:text-red rounded-4 cursor-pointer px-8 py-4 outline-none"
+                onSelect={onRemove}
+            >
+                {t("timeline.basic.point.remove")}
+            </ContextMenu.Item>
+        );
+    return (
+        <ContextMenu.Item
+            data-testid="basic-point-remove"
+            aria-disabled="true"
+            className="rounded-4 flex max-w-240 cursor-default flex-col gap-2 px-8 py-4 outline-none"
+            onSelect={(event) => event.preventDefault()}
+        >
+            <span className="text-body opacity-50">
+                {t("timeline.basic.point.remove")}
+            </span>
+            <span
+                data-testid="basic-point-remove-reason"
+                className="text-sub text-text-subtitle"
+            >
+                {reason}
+            </span>
+        </ContextMenu.Item>
+    );
+}
+
 export const TimelineBasicPoints = memo(function TimelineBasicPoints({
     points,
     top,
@@ -163,12 +206,10 @@ export const TimelineBasicPoints = memo(function TimelineBasicPoints({
                                 data-timeline-interactive="true"
                                 className="bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 flex flex-col border p-4"
                             >
-                                <ContextMenu.Item
-                                    className="text-body hover:text-red rounded-4 cursor-pointer px-8 py-4 outline-none"
-                                    onSelect={() => onRemove(point.beat)}
-                                >
-                                    {t("timeline.basic.point.remove")}
-                                </ContextMenu.Item>
+                                <BasicPointRemoveItem
+                                    reason={point.removeReason ?? null}
+                                    onRemove={() => onRemove(point.beat)}
+                                />
                             </ContextMenu.Content>
                         </ContextMenu.Portal>
                     )}
