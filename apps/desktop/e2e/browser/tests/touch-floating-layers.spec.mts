@@ -779,3 +779,13 @@ test.describe("a big shape (#936)", () => {
         await expect(readout).toBeHidden();
     });
 });
+
+test("portrait 820 × 1180: no Help in the title bar, so the Shapes tab fits (#1075)", async ({
+    show,
+}) => {
+    const { page } = show;
+    await page.setViewportSize(LAYOUTS[2]);
+    await expectCanvasMatchesShow(show);
+    await expect(page.getByTestId("titlebar-help")).toHaveCount(0);
+    await openPanel(page);
+});
