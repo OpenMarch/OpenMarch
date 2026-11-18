@@ -164,6 +164,47 @@ export async function moveHoldsAnyOf(
     return marcherIds.some((id) => own.has(id));
 }
 
+/**
+ * Of `marcherIds`, those a recipe of move `timelineId` can't list although they arrive where it
+ * is placed: not in the move, with a row ending at its end in a move over other counts. On a
+ * page in Basic that is a marcher whose last mid-page position is at another count than the
+ * others': its part of the page ends at the flag too, but is a move of its own (rule 1 of the
+ * 2026-10-29 revision keeps it out). A move over the same counts (split off, UI-25) isn't named.
+ * By id.
+ */
+export async function leftOutByOtherCounts(
+    tx: DbTransaction,
+    timelineId: number,
+    marcherIds: readonly number[],
+): Promise<number[]> {
+    const own = await moveMembers(tx, timelineId);
+    const out = [...new Set(marcherIds)].filter((id) => !own.has(id));
+    if (out.length === 0) return [];
+    const l = schema.timelines;
+    const move = await tx
+        .select({ start: l.start_beat, end: l.end_beat })
+        .from(l)
+        .where(eq(l.id, timelineId))
+        .get();
+    if (!move) return [];
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const rows = await tx
+        .selectDistinct({ id: a.marcher_id })
+        .from(a)
+        .innerJoin(t, eq(t.id, a.transition_id))
+        .innerJoin(l, eq(l.id, t.timeline_id))
+        .where(
+            and(
+                inArray(a.marcher_id, out),
+                eq(a.end_beat, move.end),
+                ne(l.start_beat, move.start),
+            ),
+        )
+        .all();
+    return rows.map((r) => r.id).sort((x, y) => x - y);
+}
+
 /** The marchers with positions in move `timelineId` */
 async function moveMembers(
     tx: DbTransaction,

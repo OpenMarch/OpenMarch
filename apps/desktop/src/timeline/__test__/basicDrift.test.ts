@@ -360,10 +360,13 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
     });
 
-    // BUG 2: a recipe lists only marchers whose rows are in its move (`saveShapeRecipeInTransaction`).
-    // Basic's mid-page positions put each marcher's rows in moves of their own ([13, 17) for a,
-    // [9, 17) for the others), so a shape placed at the flag keeps only the members of one of
-    // them. Basic shows no moves, so nothing tells the designer why a member was left out.
+    // BUG 2 (still open, owner decision): a recipe lists only marchers whose rows are in its move
+    // (`saveShapeRecipeInTransaction`; ADR 0006, revision of 2026-10-29, rule 1). Basic's mid-page
+    // positions put each marcher's rows in moves of their own ([13, 17) for a, [9, 17) for the
+    // others), so a shape placed at the flag keeps only the members of one of them. Listing a
+    // here needs that ADR rule changed for the parts of a page. Until then the placement is no
+    // longer silent: everyone is set on their spot and the Shape tool's write names who was left
+    // out (`placeWithMidPagePositionBasic.test.ts`).
     it.fails(
         "BUG 2: a shape placed at a page's flag keeps a member that has a mid-page position",
         async ({ db, marchersAndPages: _ }) => {
