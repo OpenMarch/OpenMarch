@@ -150,15 +150,25 @@ describeDbTests("Model import", (it) => {
         ).toHaveTextContent("Simplify to 20,000 triangles");
         expect(within(review).getByTestId("model-import-after")).toBeTruthy();
 
-        fireEvent.click(within(review).getByTestId("model-import-turn"));
+        // Pointing at a Rotate button shows its axis and which way it swings
+        const axes = within(review).getByTestId("model-import-axes");
+        expect(axes.getAttribute("data-active")).toBeNull();
+        const rotateZ = within(review).getByTestId("model-import-rotate-z");
+        fireEvent.pointerEnter(rotateZ);
+        expect(axes.getAttribute("data-active")).toBe("z");
+        expect(within(axes).getByTestId("model-import-axes-ring")).toBeTruthy();
+        fireEvent.pointerLeave(rotateZ);
+        expect(axes.getAttribute("data-active")).toBeNull();
+
+        fireEvent.click(within(review).getByTestId("model-import-rotate-y"));
         await waitFor(() => expect(runs.at(-1)).toMatchObject({ turn: 90 }));
         await waitFor(() =>
             expect(useModelImportSession.getState().running).toBe(false),
         );
 
         // Tipping keeps the turn, and tips the model as the picture shows it
-        const tipped90 = tipped(UPRIGHT, 90, "forward");
-        fireEvent.click(within(review).getByTestId("model-import-tip-forward"));
+        const tipped90 = tipped(UPRIGHT, 90, "x");
+        fireEvent.click(within(review).getByTestId("model-import-rotate-x"));
         await waitFor(() =>
             expect(runs.at(-1)).toMatchObject({ turn: 90, tilt: tipped90 }),
         );

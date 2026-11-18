@@ -241,7 +241,7 @@ describe("importModel", () => {
         expect(choiceOf(result, "tilt")).toMatchObject({ zUpSuspected: false });
         expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
 
-        const tilt = tipped(UPRIGHT, 0, "forward");
+        const tilt = tipped(UPRIGHT, 0, "x");
         const model = imported(
             await run([picked("car-on-side.glb", glb)], { tilt }),
         );
@@ -256,7 +256,7 @@ describe("importModel", () => {
         // it up (tipping about the file's own axis would stand the 1.8 m side up instead)
         const glb = await postGlb([4, 1.4, 1.8]);
         const turn = 90;
-        const tilt = tipped(UPRIGHT, turn, "forward");
+        const tilt = tipped(UPRIGHT, turn, "x");
         const model = imported(
             await run([picked("car.glb", glb)], { turn, tilt }),
         );

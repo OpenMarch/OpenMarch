@@ -3,9 +3,9 @@
  * on a side, in quarter turns, before the turn that faces its front to the audience
  * (`ModelImportChoices.turn`).
  *
- * The review's buttons tip the model as the picture shows it, from the audience: Tip forward
- * brings its top toward you, Tip sideways lays its top to your right. Whatever the turn, a button
- * moves the model on screen the same way.
+ * The review's Rotate X and Rotate Z buttons tip the model as the picture shows it, from the
+ * audience: X brings its top toward you, Z lays its top to your right (Rotate Y is the turn).
+ * Whatever the turn, a button moves the model on screen the same way.
  *
  * Pure: plain numbers, so a tilt crosses `postMessage` and is stored as JSON.
  */
@@ -22,8 +22,8 @@ export const UPRIGHT: Tilt = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 /** A Z-up file stood up: a quarter turn about X, so the file's +Z becomes +Y */
 export const Z_UP_TILT: Tilt = [1, 0, 0, 0, 0, 1, 0, -1, 0];
 
-/** Which way a tip button moves the model */
-export type TipDirection = "forward" | "sideways";
+/** The axis a tip turns the model about, as the picture shows it: left-right or front-back */
+export type TipAxis = "x" | "z";
 
 const multiply = (a: Tilt, b: Tilt): Tilt =>
     [0, 1, 2].flatMap((row) =>
@@ -46,21 +46,21 @@ function turnTilt(turn: Turn): Tilt {
     return [c, 0, s, 0, 1, 0, -s, 0, c];
 }
 
-/** Forward: +Y toward +Z (a quarter turn about X). Sideways: +Y toward +X (about -Z). */
-const TIPS: Record<TipDirection, Tilt> = {
-    forward: [1, 0, 0, 0, 0, -1, 0, 1, 0],
-    sideways: [0, 1, 0, -1, 0, 0, 0, 0, 1],
+/** X: +Y toward +Z (a quarter turn about X). Z: +Y toward +X (about -Z). */
+const TIPS: Record<TipAxis, Tilt> = {
+    x: [1, 0, 0, 0, 0, -1, 0, 1, 0],
+    z: [0, 1, 0, -1, 0, 0, 0, 0, 1],
 };
 
 /**
- * The tilt after one press of a tip button, keeping the turn: the model, turned, tips toward the
- * audience or to the right as seen from them.
+ * The tilt after one press of Rotate X or Rotate Z, keeping the turn: the model, turned, tips
+ * toward the audience or to the right as seen from them.
  */
-export function tipped(tilt: Tilt, turn: Turn, direction: TipDirection): Tilt {
+export function tipped(tilt: Tilt, turn: Turn, axis: TipAxis): Tilt {
     const yaw = turnTilt(turn);
     // turn · tilt' = tip · turn · tilt
     return clean(
-        multiply(multiply(multiply(inverse(yaw), TIPS[direction]), yaw), tilt),
+        multiply(multiply(multiply(inverse(yaw), TIPS[axis]), yaw), tilt),
     );
 }
 

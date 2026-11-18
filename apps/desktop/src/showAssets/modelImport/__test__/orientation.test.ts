@@ -43,34 +43,34 @@ const UP: [number, number, number] = [0, 1, 0];
 const FRONT: [number, number, number] = [0, 0, 1];
 
 describe("tipping a model on the review", () => {
-    it("brings its top toward the audience with Tip forward", () => {
-        const tilt = tipped(UPRIGHT, 0, "forward");
+    it("brings its top toward the audience with Rotate X", () => {
+        const tilt = tipped(UPRIGHT, 0, "x");
         expect(placed(tilt, 0, UP)).toEqual([0, 0, 1]);
     });
 
-    it("lays its top to the right with Tip sideways", () => {
-        const tilt = tipped(UPRIGHT, 0, "sideways");
+    it("lays its top to the right with Rotate Z", () => {
+        const tilt = tipped(UPRIGHT, 0, "z");
         expect(placed(tilt, 0, UP)).toEqual([1, 0, 0]);
     });
 
     it("tips the same way on screen whatever the turn", () => {
         for (const turn of [0, 90, 180, 270] as Turn[]) {
-            const forward = tipped(UPRIGHT, turn, "forward");
+            const forward = tipped(UPRIGHT, turn, "x");
             expect(placed(forward, turn, UP)).toEqual([0, 0, 1]);
-            const sideways = tipped(UPRIGHT, turn, "sideways");
+            const sideways = tipped(UPRIGHT, turn, "z");
             expect(placed(sideways, turn, UP)).toEqual([1, 0, 0]);
         }
     });
 
     it("comes back upright after four tips the same way", () => {
         let tilt = UPRIGHT;
-        for (let i = 0; i < 4; i++) tilt = tipped(tilt, 90, "sideways");
+        for (let i = 0; i < 4; i++) tilt = tipped(tilt, 90, "z");
         expect(sameTilt(tilt, UPRIGHT)).toBe(true);
     });
 
     it("keeps the front where it was when tipping forward", () => {
-        // Tip forward turns about the left-right axis: what faced right still faces right
-        const tilt = tipped(UPRIGHT, 0, "forward");
+        // Rotate X turns about the left-right axis: what faced right still faces right
+        const tilt = tipped(UPRIGHT, 0, "x");
         expect(placed(tilt, 0, [1, 0, 0])).toEqual([1, 0, 0]);
         expect(placed(tilt, 0, FRONT)).toEqual([0, -1, 0]);
     });
@@ -83,7 +83,7 @@ describe("tipping a model on the review", () => {
             const key = tilt.join(",");
             if (seen.has(key)) continue;
             seen.set(key, tilt);
-            queue.push(tipped(tilt, 0, "forward"), tipped(tilt, 0, "sideways"));
+            queue.push(tipped(tilt, 0, "x"), tipped(tilt, 0, "z"));
         }
         expect(seen.size).toBe(24);
         for (const tilt of seen.values()) expect(isTilt(tilt)).toBe(true);
@@ -107,7 +107,7 @@ describe("tilt values", () => {
     it("turns into the quaternion that rotates the same way", () => {
         const seen: Tilt[] = [UPRIGHT];
         for (let i = 0; i < 6; i++)
-            seen.push(tipped(seen.at(-1)!, 0, i % 2 ? "forward" : "sideways"));
+            seen.push(tipped(seen.at(-1)!, 0, i % 2 ? "x" : "z"));
         for (const tilt of seen)
             for (const axis of [[1, 0, 0], [0, 1, 0], FRONT] as [
                 number,

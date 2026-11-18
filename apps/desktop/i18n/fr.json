@@ -1493,13 +1493,7 @@
             "orient": {
                 "detail": "L’avant doit faire face au public, à l’endroit."
             },
-            "turn": {
-                "button": "Tourner de 90°"
-            },
-            "tip": {
-                "forward": "Basculer vers l’avant",
-                "sideways": "Basculer sur le côté"
-            },
+            "rotateAxis": "Pivoter sur {axis}",
             "simplify": {
                 "compare": "Avant ou après simplification",
                 "before": "Avant · {triangles}",

@@ -1493,13 +1493,7 @@
             "orient": {
                 "detail": "Dapat nakaharap sa audience ang harap nito, at nakatayo nang tama."
             },
-            "turn": {
-                "button": "Iikot nang 90°"
-            },
-            "tip": {
-                "forward": "Itumba paharap",
-                "sideways": "Itumba patagilid"
-            },
+            "rotateAxis": "Iikot sa {axis}",
             "simplify": {
                 "compare": "Bago o pagkatapos i-simplify",
                 "before": "Bago · {triangles}",

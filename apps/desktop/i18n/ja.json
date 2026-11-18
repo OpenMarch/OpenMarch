@@ -1493,13 +1493,7 @@
             "orient": {
                 "detail": "正面が観客側を向き、上下が正しくなるようにしてください。"
             },
-            "turn": {
-                "button": "90°回転"
-            },
-            "tip": {
-                "forward": "前に倒す",
-                "sideways": "横に倒す"
-            },
+            "rotateAxis": "{axis}軸で回転",
             "simplify": {
                 "compare": "簡略化の前と後",
                 "before": "変更前 · {triangles}",

@@ -1493,13 +1493,7 @@
             "orient": {
                 "detail": "Bagian depan harus menghadap penonton, dengan sisi atas di atas."
             },
-            "turn": {
-                "button": "Putar 90°"
-            },
-            "tip": {
-                "forward": "Rebahkan ke depan",
-                "sideways": "Rebahkan ke samping"
-            },
+            "rotateAxis": "Putar sumbu {axis}",
             "simplify": {
                 "compare": "Sebelum atau sesudah disederhanakan",
                 "before": "Sebelum · {triangles}",

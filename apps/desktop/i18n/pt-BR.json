@@ -1493,13 +1493,7 @@
             "orient": {
                 "detail": "A frente deve ficar voltada para a plateia, com o lado certo para cima."
             },
-            "turn": {
-                "button": "Girar 90°"
-            },
-            "tip": {
-                "forward": "Tombar para a frente",
-                "sideways": "Tombar para o lado"
-            },
+            "rotateAxis": "Girar em {axis}",
             "simplify": {
                 "compare": "Antes ou depois de simplificar",
                 "before": "Antes · {triangles}",

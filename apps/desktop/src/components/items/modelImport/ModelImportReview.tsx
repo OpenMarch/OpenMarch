@@ -1,7 +1,5 @@
 import { useEffect, useId, useState } from "react";
 import {
-    ArrowArcRightIcon,
-    ArrowBendRightDownIcon,
     ArrowClockwiseIcon,
     CaretRightIcon,
     InfoIcon,
@@ -23,11 +21,11 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
+import AxisPreview, { AXIS_COLORS, type Axis } from "./AxisPreview";
 import {
     sameTilt,
     tipped,
     UPRIGHT,
-    type TipDirection,
 } from "@/showAssets/modelImport/orientation";
 import { useModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
 import {
@@ -89,7 +87,7 @@ const choiceOf = <C extends Choice["code"]>(
 
 /**
  * The model import's one screen (fork #999, props-spec "The review"), in the Props panel: the
- * model's picture with one-click turn and tips, its size to confirm with one-click unit fixes, then the
+ * model's picture with Rotate X, Y and Z and an axis preview, its size to confirm with one-click unit fixes, then the
  * report grouped as Can't import, Needs your choice and Fixed for you, the name and the license
  * fields, and Add. Each choice runs the import again, so what shows is what Add stores. A refusal
  * shows here, never in an alert; Cancel leaves the show as it was.
@@ -111,8 +109,20 @@ export default function ModelImportReview({
     const turn = choiceOf(needs, "turn");
     const appliedTurn = choices.turn ?? turn?.applied ?? 0;
     const appliedTilt = choices.tilt ?? tilt?.applied ?? UPRIGHT;
-    const tip = (direction: TipDirection) =>
-        session.choose({ tilt: tipped(appliedTilt, appliedTurn, direction) });
+    const rotate = (axis: Axis) =>
+        session.choose(
+            axis === "y"
+                ? { turn: ((appliedTurn + 90) % 360) as Turn }
+                : { tilt: tipped(appliedTilt, appliedTurn, axis) },
+        );
+    // The axis the preview shows: pointed at or focused, or just tapped (touch has no hover)
+    const [pointed, setPointed] = useState<Axis | null>(null);
+    const [tapped, setTapped] = useState<Axis | null>(null);
+    useEffect(() => {
+        if (!tapped) return;
+        const timer = setTimeout(() => setTapped(null), 1200);
+        return () => clearTimeout(timer);
+    }, [tapped]);
     // Stood up from Z-up on its own: said in Needs your choice, with a way back
     const zUp = tilt?.zUpSuspected ? tilt : undefined;
     const simplify = choiceOf(needs, "simplify");
@@ -150,7 +160,7 @@ export default function ModelImportReview({
                 onBack={session.saving ? undefined : cancel}
             />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto pr-4">
-                {/* The picture, from the audience side, with the turn and tips under it */}
+                {/* The picture, from the audience side, with Rotate X, Y and Z under it */}
                 <section className="flex flex-col gap-8">
                     {simplified && (
                         <SegmentedTextSwitch
@@ -212,6 +222,9 @@ export default function ModelImportReview({
                                     <T keyName="props.import.simplify.beforeFailed" />
                                 </span>
                             )}
+                            {picture && turn && !showBefore && (
+                                <AxisPreview active={pointed ?? tapped} />
+                            )}
                         </div>
                     )}
                     {turn && model && (
@@ -220,41 +233,35 @@ export default function ModelImportReview({
                                 <T keyName="props.import.orient.detail" />
                             </span>
                             <div className="flex flex-wrap gap-8">
-                                <Button
-                                    size="compact"
-                                    variant="secondary"
-                                    disabled={running}
-                                    data-testid="model-import-turn"
-                                    onClick={() =>
-                                        session.choose({
-                                            turn: ((appliedTurn + 90) %
-                                                360) as Turn,
-                                        })
-                                    }
-                                >
-                                    <ArrowClockwiseIcon size={16} />
-                                    <T keyName="props.import.turn.button" />
-                                </Button>
-                                <Button
-                                    size="compact"
-                                    variant="secondary"
-                                    disabled={running}
-                                    data-testid="model-import-tip-forward"
-                                    onClick={() => tip("forward")}
-                                >
-                                    <ArrowBendRightDownIcon size={16} />
-                                    <T keyName="props.import.tip.forward" />
-                                </Button>
-                                <Button
-                                    size="compact"
-                                    variant="secondary"
-                                    disabled={running}
-                                    data-testid="model-import-tip-sideways"
-                                    onClick={() => tip("sideways")}
-                                >
-                                    <ArrowArcRightIcon size={16} />
-                                    <T keyName="props.import.tip.sideways" />
-                                </Button>
+                                {(["x", "y", "z"] as Axis[]).map((axis) => (
+                                    <Button
+                                        key={axis}
+                                        size="compact"
+                                        variant="secondary"
+                                        disabled={running}
+                                        data-testid={`model-import-rotate-${axis}`}
+                                        onPointerEnter={() => setPointed(axis)}
+                                        onPointerLeave={() => setPointed(null)}
+                                        onFocus={() => setPointed(axis)}
+                                        onBlur={() => setPointed(null)}
+                                        onClick={() => {
+                                            setTapped(axis);
+                                            rotate(axis);
+                                        }}
+                                    >
+                                        <ArrowClockwiseIcon
+                                            size={16}
+                                            color={AXIS_COLORS[axis]}
+                                            weight="bold"
+                                        />
+                                        <T
+                                            keyName="props.import.rotateAxis"
+                                            params={{
+                                                axis: axis.toUpperCase(),
+                                            }}
+                                        />
+                                    </Button>
+                                ))}
                             </div>
                         </div>
                     )}

@@ -1495,13 +1495,7 @@
             "orient": {
                 "detail": "The front should face the audience, right side up."
             },
-            "turn": {
-                "button": "Turn 90°"
-            },
-            "tip": {
-                "forward": "Tip forward",
-                "sideways": "Tip sideways"
-            },
+            "rotateAxis": "Rotate {axis}",
             "simplify": {
                 "compare": "Before or after simplifying",
                 "before": "Before · {triangles}",
