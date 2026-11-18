@@ -103,6 +103,8 @@ const key = (name: string, detail: Detail) => `${name}|${detail}`;
 /** Draws every item that names a model, following the editor's playback. */
 export default function PitModels({ fieldProperties }: PitModelsProps) {
     const quality = useView3dSceneStore((s) => s.quality);
+    // Heavy imported models draw their Light copy near the camera once the view stuttered (#1091)
+    const lightenHeavy = useView3dSceneStore((s) => s.heavyModelsLightened);
     const { data: items } = useQuery(allItemsQueryOptions());
     const { data: geometry } = useQuery(itemGeometryQueryOptions());
     const { beats } = useTimingObjects();
@@ -177,15 +179,19 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
     useEffect(() => {
         const run = { live: true };
         const needed = new Map<string, string>();
+        let heavy = false;
         for (const name of namesKey ? namesKey.split("\n") : [])
             for (const detail of details) {
                 const k = key(name, detail);
                 const imported = library.get(name);
                 if (imported) {
+                    if (imported.lightHash) heavy = true;
                     needed.set(
                         k,
                         detail === "high"
-                            ? imported.modelHash
+                            ? lightenHeavy && imported.lightHash
+                                ? imported.lightHash
+                                : imported.modelHash
                             : imported.distantHash,
                     );
                     continue;
@@ -202,6 +208,7 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                     (error: unknown) => markPitModelFailed(name, error),
                 );
             }
+        useView3dSceneStore.getState()._setHasHeavyModels(heavy);
         // Hold the imported parts the items need, and let go of the rest: they leave the GPU
         const { acquire, release } = holdChanges(held.current, needed);
         const dropped: string[] = [];
@@ -237,7 +244,7 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
         };
         // `loaded` only skips loads already done; every load is cached anyway
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [namesKey, details, library]);
+    }, [namesKey, details, library, lightenHeavy]);
     useEffect(() => {
         const holds = held.current;
         return () => {
@@ -414,7 +421,8 @@ function sameLibrary(
         if (
             !other ||
             other.modelHash !== model.modelHash ||
-            other.distantHash !== model.distantHash
+            other.distantHash !== model.distantHash ||
+            other.lightHash !== model.lightHash
         )
             return false;
     }

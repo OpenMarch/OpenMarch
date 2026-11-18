@@ -18,6 +18,11 @@ export interface LibraryModel {
     modelHash: string;
     /** The distant GLB's blob hash */
     distantHash: string;
+    /**
+     * Beside a level heavier than Light (#1091): the Light copy's blob hash, drawn near the camera
+     * instead of the model once the 3D View lightens heavy models
+     */
+    lightHash: string | null;
     sidecar: ModelSidecar;
 }
 
@@ -39,13 +44,14 @@ export function libraryModels(
     const out = new Map<string, LibraryModel>();
     for (const asset of assets ?? []) {
         if (!isModelAsset(asset)) continue;
-        const { model, distant } = asset.parts;
+        const { model, distant, light } = asset.parts;
         if (!model || !distant) continue;
         const value = showAssetRefValue(asset);
         out.set(value, {
             value,
             modelHash: model,
             distantHash: distant,
+            lightHash: light ?? null,
             sidecar: asset.sidecar,
         });
     }

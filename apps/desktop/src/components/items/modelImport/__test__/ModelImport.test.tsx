@@ -141,14 +141,46 @@ describeDbTests("Model import", (it) => {
         );
         const review = await openReview([picked("SheenChair.glb")]);
 
-        // The size to confirm, the turn, and before and after simplifying
+        // The size to confirm, the turn, and the detail level: Light, with what it costs
         expect(
             within(review).getByTestId("model-import-size").textContent,
         ).toMatch(/^[\d.]+ × [\d.]+ m, [\d.]+ m tall$/);
         expect(
-            within(review).getByTestId("model-import-choices"),
-        ).toHaveTextContent("Simplify to 20,000 triangles");
-        expect(within(review).getByTestId("model-import-after")).toBeTruthy();
+            within(review).getByTestId("model-import-detail-cost").textContent,
+        ).toMatch(
+            /^[\d,]+ triangles · adds [\d.]+ (KB|MB) to the show · each copy draws like \d+ performers?$/,
+        );
+        expect(
+            within(review).queryByTestId("model-import-detail-warning"),
+        ).toBeNull();
+
+        // Original keeps every triangle (#1091), with the honest warning; then back to Light
+        fireEvent.click(
+            within(review).getByTestId("model-import-detail-original"),
+        );
+        await waitFor(() =>
+            expect(runs.at(-1)).toMatchObject({ detail: "original" }),
+        );
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+        expect(
+            within(review).getByTestId("model-import-detail-cost"),
+        ).toHaveTextContent("39,936 triangles");
+        expect(
+            within(review).getByTestId("model-import-detail-warning"),
+        ).toBeTruthy();
+        fireEvent.click(
+            within(review).getByTestId("model-import-detail-light"),
+        );
+        await waitFor(() =>
+            expect(useModelImportSession.getState().running).toBe(false),
+        );
+        await waitFor(() =>
+            expect(
+                within(review).queryByTestId("model-import-detail-warning"),
+            ).toBeNull(),
+        );
 
         // Pointing at a Rotate button shows its axis and which way it swings
         const axes = within(review).getByTestId("model-import-axes");

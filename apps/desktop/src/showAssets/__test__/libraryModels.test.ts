@@ -25,8 +25,23 @@ describe("libraryModels", () => {
             value,
             modelHash: "m".repeat(64),
             distantHash: "d".repeat(64),
+            lightHash: null,
             sidecar: { sizeM: { width: 0.8 } },
         });
+    });
+
+    it("names the Light copy kept beside a heavier level (#1091)", () => {
+        const [model] = libraryModels([
+            asset({
+                parts: {
+                    model: "m".repeat(64),
+                    distant: "d".repeat(64),
+                    thumbnail: "t",
+                    light: "l".repeat(64),
+                },
+            }),
+        ]).values();
+        expect(model?.lightHash).toBe("l".repeat(64));
     });
 
     it("leaves out other kinds, and models missing a GLB or what the field reads", () => {

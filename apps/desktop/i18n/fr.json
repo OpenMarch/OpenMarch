@@ -1494,13 +1494,26 @@
                 "detail": "L’avant doit faire face au public, à l’endroit."
             },
             "rotateAxis": "Pivoter sur {axis}",
-            "simplify": {
-                "compare": "Avant ou après simplification",
-                "before": "Avant · {triangles}",
-                "after": "Après · {triangles}",
-                "beforeFailed": "Impossible de dessiner l’original.",
-                "title": "Simplifier à {cap} triangles",
-                "detail": "Le fichier compte {triangles} triangles. La simplification garde la vue 3D fluide ; le terrain ne dessine que son emprise au sol."
+            "detail": {
+                "title": "Détail",
+                "levels": {
+                    "light": "Léger",
+                    "detailed": "Détaillé",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triangles · ajoute {size} au spectacle · chaque copie se dessine comme {performers, plural, one {# interprète} other {# interprètes}}",
+                "heavy": "Fluide sur la plupart des ordinateurs récents. Si la Vue 3D saccade, elle dessine une copie légère, gardée elle aussi dans le spectacle."
+            },
+            "compare": {
+                "open": "Comparer en 3D…",
+                "title": "Comparer en 3D",
+                "description": "Faites glisser pour regarder autour, puis changez de version pour voir ce que la simplification a changé.",
+                "which": "Version affichée",
+                "lightCopy": "Copie légère",
+                "hint": "Glisser pour tourner, défiler pour zoomer",
+                "stands": "Depuis les gradins",
+                "closeUp": "De près",
+                "originalFailed": "Impossible de charger l’original."
             },
             "size": {
                 "title": "Taille",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Bien trop détaillé",
-                    "detail": "{triangles} triangles ; on peut en simplifier au plus {limit}."
+                    "detail": "{triangles} triangles ; on peut en importer au plus {limit}."
                 },
                 "rigged": {
                     "title": "Les modèles riggés ne sont pas pris en charge",

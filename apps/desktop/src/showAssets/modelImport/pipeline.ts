@@ -49,6 +49,7 @@ import { isTilt, tiltQuaternion, UPRIGHT, Z_UP_TILT } from "./orientation";
 import type { ImageCodec } from "./imageCodec";
 import { precheck } from "./precheck";
 import {
+    DETAILED_TRIANGLE_CAP,
     DISTANT_SIMPLIFY_FROM,
     DISTANT_TEXTURE_CAP,
     DISTANT_TRIANGLE_CAP,
@@ -61,7 +62,7 @@ import {
     PLAUSIBLE_SIZE_M,
     TEXTURE_CAP,
     TRIANGLE_CAP,
-    TRIANGLE_REFUSE_FACTOR,
+    TRIANGLE_HARD_LIMIT,
     UNIT_FIXES,
     Z_UP_FACTOR,
 } from "./rules";
@@ -76,6 +77,7 @@ import {
 import { renderThumbnail } from "./thumbnail";
 import type {
     Choice,
+    DetailLevel,
     Fix,
     ModelImportChoices,
     ModelImportReport,
@@ -120,7 +122,7 @@ export async function importModel(
 
         const { turn, root } = normalize(doc, scene, choices, report);
         await doc.transform(weld());
-        await fitTriangles(doc, scene, choices, report);
+        const detail = await fitTriangles(doc, scene, choices, report);
         // After simplifying, which can move the lowest point
         placeOnGround(scene, root, report);
         stripExtras(doc);
@@ -135,6 +137,12 @@ export async function importModel(
         );
 
         const model = await io.writeBinary(doc);
+        // A level heavier than Light keeps a Light copy beside it, for devices that can't draw it
+        const light =
+            detail.row && detail.level !== "light"
+                ? await makeLight(io, doc)
+                : null;
+        if (detail.row) detail.row.lightTriangles = light?.triangles ?? null;
         const distant = await makeDistant(io, doc, env.images);
         const derived = await derive(doc, env.images);
         const sidecar: ModelSidecar = {
@@ -146,6 +154,8 @@ export async function importModel(
             stand: derived.stand,
             triangles: sceneTriangles(sceneOf(doc)),
             distantTriangles: distant.triangles,
+            detail: detail.level,
+            ...(light ? { lightTriangles: light.triangles } : {}),
             importNotes: {
                 needsChoice: report.needsChoice,
                 fixedForYou: report.fixedForYou,
@@ -163,6 +173,7 @@ export async function importModel(
                     model,
                     distant: distant.bytes,
                     thumbnail: derived.thumbnail,
+                    ...(light ? { light: light.bytes } : {}),
                 },
                 sidecar,
                 credits: creditsOf(opened.json),
@@ -230,7 +241,7 @@ async function readClean(
                     .reduce((m, prim) => m + primitiveTriangles(prim), 0),
             0,
         );
-    const limit = TRIANGLE_CAP * TRIANGLE_REFUSE_FACTOR;
+    const limit = TRIANGLE_HARD_LIMIT;
     if (decoded > limit) {
         report.cantImport.push({
             code: "tooManyTriangles",
@@ -497,36 +508,71 @@ function multiplyQuat(
 
 // ------------------------------------------------------------------ the budget
 
-/** Simplifies past the cap when chosen (pre-selected); notes what remains over it. */
+/**
+ * Brings the model to the chosen level (#1091): Light (pre-selected) simplifies to
+ * `TRIANGLE_CAP`, Detailed to `DETAILED_TRIANGLE_CAP`, Original keeps every triangle. A model
+ * within the Light cap has nothing to choose. Notes what a simplification couldn't reach.
+ */
 async function fitTriangles(
     doc: Document,
     scene: Scene,
     choices: ModelImportChoices,
     report: ModelImportReport,
-): Promise<void> {
+): Promise<{
+    level: DetailLevel;
+    row: Extract<Choice, { code: "detail" }> | null;
+}> {
     const triangles = sceneTriangles(scene);
-    if (triangles <= TRIANGLE_CAP) return;
-    const applied = choices.simplify ?? true;
-    const row: Extract<Choice, { code: "simplify" }> = {
-        code: "simplify",
+    if (triangles <= TRIANGLE_CAP) return { level: "original", row: null };
+    const levels: DetailLevel[] =
+        triangles > DETAILED_TRIANGLE_CAP
+            ? ["light", "detailed", "original"]
+            : ["light", "original"];
+    const asked = choices.detail ?? "light";
+    const applied = levels.includes(asked) ? asked : "light";
+    const row: Extract<Choice, { code: "detail" }> = {
+        code: "detail",
         triangles,
-        cap: TRIANGLE_CAP,
-        preselected: true,
+        levels,
+        preselected: "light",
         applied,
-        simplifiedTriangles: null,
+        appliedTriangles: triangles,
+        lightTriangles: null,
     };
     report.needsChoice.push(row);
-    let after = triangles;
-    if (applied) {
-        after = await simplifyTo(doc, scene, TRIANGLE_CAP);
-        row.simplifiedTriangles = after;
+    const target =
+        applied === "light"
+            ? TRIANGLE_CAP
+            : applied === "detailed"
+              ? DETAILED_TRIANGLE_CAP
+              : null;
+    if (target !== null) {
+        row.appliedTriangles = await simplifyTo(doc, scene, target);
+        if (row.appliedTriangles > target)
+            report.notes.push({
+                code: "overTriangleCap",
+                triangles: row.appliedTriangles,
+                cap: target,
+            });
     }
-    if (after > TRIANGLE_CAP)
-        report.notes.push({
-            code: "overTriangleCap",
-            triangles: after,
-            cap: TRIANGLE_CAP,
-        });
+    return { level: applied, row };
+}
+
+/** The Light copy kept beside a heavier level: the finished model, simplified to the cap. */
+async function makeLight(
+    io: WebIO,
+    doc: Document,
+): Promise<{ bytes: Uint8Array; triangles: number }> {
+    const light = cloneDocument(doc);
+    const scene = sceneOf(light);
+    await simplifyTo(light, scene, TRIANGLE_CAP);
+    await light.transform(
+        prune({ keepAttributes: true, keepSolidTextures: true }),
+    );
+    return {
+        bytes: await io.writeBinary(light),
+        triangles: sceneTriangles(scene),
+    };
 }
 
 /**

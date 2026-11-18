@@ -1494,13 +1494,26 @@
                 "detail": "Dapat nakaharap sa audience ang harap nito, at nakatayo nang tama."
             },
             "rotateAxis": "Iikot sa {axis}",
-            "simplify": {
-                "compare": "Bago o pagkatapos i-simplify",
-                "before": "Bago · {triangles}",
-                "after": "Pagkatapos · {triangles}",
-                "beforeFailed": "Hindi maiguhit ang orihinal.",
-                "title": "I-simplify sa {cap} triangle",
-                "detail": "May {triangles} triangle ang file. Pinapanatiling smooth ng pag-simplify ang 3D View; ang footprint lang nito ang iginuguhit sa field."
+            "detail": {
+                "title": "Detalye",
+                "levels": {
+                    "light": "Magaan",
+                    "detailed": "Detalyado",
+                    "original": "Orihinal"
+                },
+                "cost": "{triangles} triangle · nagdadagdag ng {size} sa show · bawat kopya ay iginuguhit na parang {performers, plural, =1 {# performer} other {# performer}}",
+                "heavy": "Ayos sa karamihan ng bagong computer. Kung nagha-hang ang 3D View, gumuguhit ito ng magaang kopya, na nakatabi rin sa show."
+            },
+            "compare": {
+                "open": "Ikumpara sa 3D…",
+                "title": "Ikumpara sa 3D",
+                "description": "I-drag para tumingin sa paligid, saka magpalit ng bersyon para makita ang binago ng pagpapasimple.",
+                "which": "Bersyong ipapakita",
+                "lightCopy": "Magaang kopya",
+                "hint": "I-drag para iikot, i-scroll para mag-zoom",
+                "stands": "Mula sa stands",
+                "closeUp": "Malapitan",
+                "originalFailed": "Hindi ma-load ang orihinal."
             },
             "size": {
                 "title": "Laki",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Sobrang detalyado",
-                    "detail": "{triangles} triangle; {limit} ang pinakamaraming kayang i-simplify."
+                    "detail": "{triangles} triangle; ang pinakamarami na kaya nitong i-import ay {limit}."
                 },
                 "rigged": {
                     "title": "Hindi suportado ang mga rigged na model",

@@ -1494,13 +1494,26 @@
                 "detail": "Bagian depan harus menghadap penonton, dengan sisi atas di atas."
             },
             "rotateAxis": "Putar sumbu {axis}",
-            "simplify": {
-                "compare": "Sebelum atau sesudah disederhanakan",
-                "before": "Sebelum · {triangles}",
-                "after": "Sesudah · {triangles}",
-                "beforeFailed": "Gagal menggambar model asli.",
-                "title": "Sederhanakan menjadi {cap} segitiga",
-                "detail": "File ini memiliki {triangles} segitiga. Penyederhanaan menjaga Tampilan 3D tetap lancar; lapangan hanya menggambar jejaknya."
+            "detail": {
+                "title": "Detail",
+                "levels": {
+                    "light": "Ringan",
+                    "detailed": "Detail tinggi",
+                    "original": "Asli"
+                },
+                "cost": "{triangles} segitiga · menambah {size} ke pertunjukan · tiap salinan digambar seperti {performers, plural, other {# penampil}}",
+                "heavy": "Lancar di sebagian besar komputer baru. Jika Tampilan 3D tersendat, ia menggambar salinan ringan, yang juga disimpan di pertunjukan."
+            },
+            "compare": {
+                "open": "Bandingkan dalam 3D…",
+                "title": "Bandingkan dalam 3D",
+                "description": "Seret untuk melihat sekeliling, lalu ganti versi untuk melihat apa yang berubah karena penyederhanaan.",
+                "which": "Versi yang ditampilkan",
+                "lightCopy": "Salinan ringan",
+                "hint": "Seret untuk memutar, gulir untuk memperbesar",
+                "stands": "Dari tribun",
+                "closeUp": "Dekat",
+                "originalFailed": "Tidak dapat memuat yang asli."
             },
             "size": {
                 "title": "Ukuran",
@@ -1584,7 +1597,7 @@
                 },
                 "tooManyTriangles": {
                     "title": "Terlalu detail",
-                    "detail": "{triangles} segitiga; paling banyak yang dapat disederhanakan adalah {limit}."
+                    "detail": "{triangles} segitiga; paling banyak yang bisa diimpor {limit}."
                 },
                 "rigged": {
                     "title": "Model dengan rig tidak didukung",

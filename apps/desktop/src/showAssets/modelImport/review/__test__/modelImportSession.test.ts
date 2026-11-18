@@ -80,7 +80,7 @@ describe("the model import session", () => {
     it("drops a run a newer choice replaced", async () => {
         const { runs } = deferredRuns();
         session().open(FILES);
-        session().choose({ simplify: false });
+        session().choose({ detail: "original" });
         expect(runs[0].signal.aborted).toBe(true);
         runs[1].finish(ok("Newer"));
         runs[0].finish(ok("Older"));
@@ -88,25 +88,27 @@ describe("the model import session", () => {
         expect(session().result).toMatchObject({ model: { name: "Newer" } });
     });
 
-    it("loads the before picture once, and again only after a choice other than simplifying", async () => {
+    it("loads the Original once, and again only after a choice other than the level", async () => {
         const { runs } = deferredRuns();
         session().open(FILES);
         runs[0].finish(ok("Riser", 50));
         await vi.waitFor(() => expect(session().running).toBe(false));
 
         session().loadBefore();
-        expect(runs[1].choices).toEqual({ simplify: false });
+        expect(runs[1].choices).toEqual({ detail: "original" });
         runs[1].finish(ok("Riser", 90));
         await vi.waitFor(() =>
             expect(session().before).toMatchObject({
                 status: "ready",
                 triangles: 90,
+                // Its bytes, for the 3D comparison
+                model: new Uint8Array([1]),
             }),
         );
         session().loadBefore();
         expect(runs).toHaveLength(2);
 
-        session().choose({ simplify: false });
+        session().choose({ detail: "detailed" });
         expect(session().before).toMatchObject({ status: "ready" });
         session().choose({ unitFix: "cm" });
         expect(session().before).toBeNull();
